@@ -1,0 +1,12 @@
+package RadIASampleExtension;
+
+{$DESIGNONLY}
+
+requires
+  rtl,
+  RadIA;
+
+contains
+  RadIA.SampleExtension in 'RadIA.SampleExtension.pas';
+
+end.

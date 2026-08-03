@@ -1,0 +1,398 @@
+unit RadIA.Core.ToolRegistry;
+
+interface
+
+uses
+  System.Generics.Collections,
+  System.SysUtils,
+  RadIA.Core.Tools;
+
+type
+  ERadIAToolRegistry = class(Exception);
+  ERadIAToolAlreadyRegistered = class(ERadIAToolRegistry);
+  ERadIAToolNotFound = class(ERadIAToolRegistry);
+  ERadIAInvalidToolDescriptor = class(ERadIAToolRegistry);
+
+  TRadIAToolRegistry = class(
+    TInterfacedObject,
+    IRadIAToolRegistry
+  )
+  private
+    FTools: TDictionary<string, IRadIATool>;
+    function IsValidToolName(const AName: string): Boolean;
+    procedure ValidateJsonSchema(
+      const ASchema: string;
+      const AFieldName: string
+    );
+    procedure ValidateDescriptor(
+      const ADescriptor: TRadIAToolDescriptor
+    );
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure RegisterTool(const ATool: IRadIATool);
+    procedure RegisterTools(const ATools: TArray<IRadIATool>);
+    procedure UnregisterTools(const ANames: TArray<string>);
+    function Resolve(const AName: string): IRadIATool;
+    function TryResolve(
+      const AName: string;
+      out ATool: IRadIATool
+    ): Boolean;
+    function GetDescriptors: TArray<TRadIAToolDescriptor>;
+    function GetCount: Integer;
+    procedure Clear;
+  end;
+
+  TRadIAToolExecutor = class(
+    TInterfacedObject,
+    IRadIAToolExecutor
+  )
+  private
+    FRegistry: IRadIAToolRegistry;
+    function ValidateRequest(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  public
+    constructor Create(const ARegistry: IRadIAToolRegistry);
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
+implementation
+
+uses
+  System.Generics.Defaults,
+  System.JSON;
+
+const
+  CInvalidRequest = 'invalid_request';
+  CToolCancelled = 'tool_cancelled';
+  CToolNotFound = 'tool_not_found';
+  CToolExecutionFailed = 'tool_execution_failed';
+
+{ TRadIAToolRegistry }
+
+constructor TRadIAToolRegistry.Create;
+begin
+  inherited Create;
+  FTools := TDictionary<string, IRadIATool>.Create(
+    TIStringComparer.Ordinal
+  );
+end;
+
+destructor TRadIAToolRegistry.Destroy;
+begin
+  FTools.Free;
+  inherited;
+end;
+
+procedure TRadIAToolRegistry.Clear;
+begin
+  TMonitor.Enter(FTools);
+  try
+    FTools.Clear;
+  finally
+    TMonitor.Exit(FTools);
+  end;
+end;
+
+function TRadIAToolRegistry.GetCount: Integer;
+begin
+  TMonitor.Enter(FTools);
+  try
+    Result := FTools.Count;
+  finally
+    TMonitor.Exit(FTools);
+  end;
+end;
+
+function TRadIAToolRegistry.GetDescriptors:
+  TArray<TRadIAToolDescriptor>;
+var
+  LIndex: Integer;
+  LPair: TPair<string, IRadIATool>;
+begin
+  TMonitor.Enter(FTools);
+  try
+    SetLength(Result, FTools.Count);
+    LIndex := 0;
+    for LPair in FTools do
+    begin
+      Result[LIndex] := LPair.Value.Descriptor;
+      Inc(LIndex);
+    end;
+  finally
+    TMonitor.Exit(FTools);
+  end;
+
+  TArray.Sort<TRadIAToolDescriptor>(
+    Result,
+    TComparer<TRadIAToolDescriptor>.Construct(
+      function(
+        const ALeft: TRadIAToolDescriptor;
+        const ARight: TRadIAToolDescriptor
+      ): Integer
+      begin
+        Result := CompareText(ALeft.Name, ARight.Name);
+      end
+    )
+  );
+end;
+
+function TRadIAToolRegistry.IsValidToolName(
+  const AName: string
+): Boolean;
+var
+  LChar: Char;
+  LIndex: Integer;
+begin
+  Result := False;
+  if AName = '' then
+    Exit;
+  if not CharInSet(AName[Low(AName)], ['A'..'Z']) then
+    Exit;
+
+  for LIndex := Low(AName) to High(AName) do
+  begin
+    LChar := AName[LIndex];
+    if not CharInSet(LChar, ['A'..'Z', 'a'..'z', '0'..'9']) then
+      Exit;
+  end;
+  Result := True;
+end;
+
+procedure TRadIAToolRegistry.RegisterTool(
+  const ATool: IRadIATool
+);
+var
+  LTools: TArray<IRadIATool>;
+begin
+  SetLength(LTools, 1);
+  LTools[0] := ATool;
+  RegisterTools(LTools);
+end;
+
+procedure TRadIAToolRegistry.RegisterTools(
+  const ATools: TArray<IRadIATool>
+);
+var
+  LDescriptor: TRadIAToolDescriptor;
+  LNames: TDictionary<string, Byte>;
+  LTool: IRadIATool;
+begin
+  LNames := TDictionary<string, Byte>.Create(
+    TIStringComparer.Ordinal
+  );
+  try
+    for LTool in ATools do
+    begin
+      if not Assigned(LTool) then
+        raise ERadIAInvalidToolDescriptor.Create(
+          'Tool instance must be assigned.'
+        );
+
+      LDescriptor := LTool.Descriptor;
+      ValidateDescriptor(LDescriptor);
+      if LNames.ContainsKey(LDescriptor.Name) then
+        raise ERadIAToolAlreadyRegistered.CreateFmt(
+          'Tool "%s" occurs more than once in the registration batch.',
+          [LDescriptor.Name]
+        );
+      LNames.Add(LDescriptor.Name, 0);
+    end;
+
+    TMonitor.Enter(FTools);
+    try
+      for LTool in ATools do
+      begin
+        LDescriptor := LTool.Descriptor;
+        if FTools.ContainsKey(LDescriptor.Name) then
+          raise ERadIAToolAlreadyRegistered.CreateFmt(
+            'Tool "%s" is already registered.',
+            [LDescriptor.Name]
+          );
+      end;
+      for LTool in ATools do
+        FTools.Add(LTool.Descriptor.Name, LTool);
+    finally
+      TMonitor.Exit(FTools);
+    end;
+  finally
+    LNames.Free;
+  end;
+end;
+
+procedure TRadIAToolRegistry.UnregisterTools(
+  const ANames: TArray<string>
+);
+var
+  LName: string;
+begin
+  TMonitor.Enter(FTools);
+  try
+    for LName in ANames do
+      FTools.Remove(LName);
+  finally
+    TMonitor.Exit(FTools);
+  end;
+end;
+
+function TRadIAToolRegistry.Resolve(
+  const AName: string
+): IRadIATool;
+begin
+  if not TryResolve(AName, Result) then
+    raise ERadIAToolNotFound.CreateFmt(
+      'Tool "%s" is not registered.',
+      [AName]
+    );
+end;
+
+function TRadIAToolRegistry.TryResolve(
+  const AName: string;
+  out ATool: IRadIATool
+): Boolean;
+begin
+  ATool := nil;
+  TMonitor.Enter(FTools);
+  try
+    Result := FTools.TryGetValue(AName, ATool);
+  finally
+    TMonitor.Exit(FTools);
+  end;
+end;
+
+procedure TRadIAToolRegistry.ValidateDescriptor(
+  const ADescriptor: TRadIAToolDescriptor
+);
+begin
+  if not IsValidToolName(ADescriptor.Name) then
+    raise ERadIAInvalidToolDescriptor.Create(
+      'Tool name must use alphanumeric PascalCase.'
+    );
+  if Trim(ADescriptor.Version) = '' then
+    raise ERadIAInvalidToolDescriptor.Create(
+      'Tool version must not be empty.'
+    );
+  if Trim(ADescriptor.Description) = '' then
+    raise ERadIAInvalidToolDescriptor.Create(
+      'Tool description must not be empty.'
+    );
+  if ADescriptor.TimeoutMs = 0 then
+    raise ERadIAInvalidToolDescriptor.Create(
+      'Tool timeout must be greater than zero.'
+    );
+
+  ValidateJsonSchema(ADescriptor.InputSchema, 'Input schema');
+  ValidateJsonSchema(ADescriptor.OutputSchema, 'Output schema');
+end;
+
+procedure TRadIAToolRegistry.ValidateJsonSchema(
+  const ASchema: string;
+  const AFieldName: string
+);
+var
+  LJson: TJSONValue;
+begin
+  LJson := TJSONObject.ParseJSONValue(ASchema);
+  try
+    if not (LJson is TJSONObject) then
+      raise ERadIAInvalidToolDescriptor.CreateFmt(
+        '%s must be a valid JSON object.',
+        [AFieldName]
+      );
+  finally
+    LJson.Free;
+  end;
+end;
+
+{ TRadIAToolExecutor }
+
+constructor TRadIAToolExecutor.Create(
+  const ARegistry: IRadIAToolRegistry
+);
+begin
+  inherited Create;
+  if not Assigned(ARegistry) then
+    raise EArgumentNilException.Create('ARegistry');
+  FRegistry := ARegistry;
+end;
+
+function TRadIAToolExecutor.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+var
+  LTool: IRadIATool;
+begin
+  Result := ValidateRequest(ARequest);
+  if not Result.Success then
+    Exit;
+
+  if not FRegistry.TryResolve(ARequest.ToolName, LTool) then
+    Exit(
+      TRadIAToolResult.Failed(
+        CToolNotFound,
+        Format('Tool "%s" is not registered.', [ARequest.ToolName])
+      )
+    );
+
+  if Assigned(ARequest.CancellationToken) and
+    ARequest.CancellationToken.CancellationRequested then
+    Exit(
+      TRadIAToolResult.Failed(
+        CToolCancelled,
+        'Tool execution was cancelled.'
+      )
+    );
+
+  try
+    Result := LTool.Execute(ARequest);
+  except
+    on E: Exception do
+      Result := TRadIAToolResult.Failed(
+        CToolExecutionFailed,
+        E.Message
+      );
+  end;
+end;
+
+function TRadIAToolExecutor.ValidateRequest(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+var
+  LJson: TJSONValue;
+begin
+  if Trim(ARequest.ToolName) = '' then
+    Exit(
+      TRadIAToolResult.Failed(
+        CInvalidRequest,
+        'Tool name must not be empty.'
+      )
+    );
+
+  if Trim(ARequest.CorrelationId) = '' then
+    Exit(
+      TRadIAToolResult.Failed(
+        CInvalidRequest,
+        'Correlation ID must not be empty.'
+      )
+    );
+
+  LJson := TJSONObject.ParseJSONValue(ARequest.ArgumentsJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit(
+        TRadIAToolResult.Failed(
+          CInvalidRequest,
+          'Tool arguments must be a valid JSON object.'
+        )
+      );
+  finally
+    LJson.Free;
+  end;
+
+  Result := TRadIAToolResult.Succeeded('{}');
+end;
+
+end.

@@ -1,5 +1,10 @@
 # Guia de Arquitetura de Software do Rad IA
 
+> A evolução planejada para ferramentas internas, fachada de workspace, consentimento, MCP,
+> Designer vivo e conhecimento local está especificada na
+> [Arquitetura Agentiva do RadIA](agentic_architecture.md) e no
+> [Roadmap da Evolução Agentiva](agentic_roadmap.md).
+
 Este guia técnico destina-se a desenvolvedores e arquitetores de software que desejam compreender a engenharia interna, os padrões de design, os fluxos concorrentes e a infraestrutura do **Rad IA**. O plugin roda integrado ao processo principal da IDE do Delphi (`bds.exe`), o que impõe restrições severas de gerenciamento de memória, segurança concorrente (thread safety) e controle de ciclo de vida.
 
 <p align="center">
@@ -116,12 +121,12 @@ O boot do container e o auto-registro de todas as abstrações ocorrem na unit d
 ```mermaid
 graph TD
     Container[(TRadIAContainer)]
-    
+
     subgraph Registry_Boot [Boot Registration]
         Reg[RadIA.OTA.Register.pas]
         Reg -->|Register| Container
     end
-    
+
     subgraph Interfaces [Abstractions]
         IConfig[IRadIAConfig]
         IAdapter[IRadIAIDEAdapter]
@@ -130,18 +135,18 @@ graph TD
         IDecoder[IRadIAErrorDecoder]
         ILoc[IRadIALocalizer]
     end
-    
+
     Container --> IConfig
     Container --> IAdapter
     Container --> IService
     Container --> IClient
     Container --> IDecoder
     Container --> ILoc
-    
+
     subgraph Consumers [Decoupled Components]
         Presenter[TRadIAChatPresenter]
         ProvBase[TRadIAProviderBase]
-        
+
         Presenter -.->|Resolve| Container
         ProvBase -.->|Resolve| Container
     end
@@ -268,7 +273,7 @@ classDiagram
         +FetchAvailableModelsAsync()
         +CancelCurrentRequest()
     }
-    
+
     class TRadIAProviderBase {
         <<abstract>>
         #FConfig: IRadIAConfig
@@ -286,12 +291,12 @@ classDiagram
         +SendPromptAsync()
         +SendPromptStreamAsync()
     }
-    
+
     class TRadIADeepSeekProvider {
         +GetName()
         #GetBaseUrl()
     }
-    
+
     class TRadIAGeminiProvider {
         +SendPromptAsync()
         +SendPromptStreamAsync()
@@ -337,9 +342,9 @@ sequenceDiagram
     Note over Task: Executa em paralelo de forma assíncrona
     Task->>Client: PostStream(RequestBody)
     Client->>API: HTTP POST (Request Stream Active)
-    
+
     Note over API, Client: O servidor começa a enviar pedaços (SSE Chunks)
-    
+
     loop Durante a transmissão de Chunks
         API-->>Client: data: {"choices": [{"delta": {"content": "Record"}}]}
         Client->>Task: Trigger OnWriteCallback(Bytes)

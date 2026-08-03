@@ -4,7 +4,8 @@ interface
 
 uses
   DUnitX.TestFramework, System.SysUtils, System.Classes, RadIA.Core.Interfaces, RadIA.Core.Sessions,
-  RadIA.Core.ProviderRegistry, RadIA.UI.ChatPresenter;
+  RadIA.Core.ProviderRegistry, RadIA.Core.Tools, RadIA.Core.ToolRegistry,
+  RadIA.UI.ChatPresenter;
 
 type
   TMockChatView = class(TInterfacedObject, IRadIAChatView)
@@ -112,6 +113,14 @@ type
     procedure CancelCurrentRequest;
   end;
 
+  TMockReadOnlyTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
   [TestFixture]
   TTestChatPresenter = class
   strict private
@@ -123,6 +132,8 @@ type
     FHasOriginalGemini: Boolean;
     FHasOriginalOpenAI: Boolean;
     FTempDir: string;
+    FToolRegistry: IRadIAToolRegistry;
+    FToolExecutor: IRadIAToolExecutor;
 
     procedure DrainQueuedCalls;
   public
@@ -171,6 +182,14 @@ type
     procedure TestProcessStreamChunkNormalFlow;
     [Test]
     procedure TestProcessStreamChunkAutoReplace;
+    [Test]
+    procedure TestInitializationPublishesTools;
+    [Test]
+    procedure TestToolsCommandPublishesCatalog;
+    [Test]
+    procedure TestExecuteToolPublishesCallAndResult;
+    [Test]
+    procedure TestRevokeToolsCommandConfirmsRevocation;
   end;
 
 implementation
@@ -361,6 +380,30 @@ begin
   if True then ;
 end;
 
+{ TMockReadOnlyTool }
+
+function TMockReadOnlyTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"state":"ready","correlationId":"' +
+    ARequest.CorrelationId + '"}'
+  );
+end;
+
+function TMockReadOnlyTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetIDEState',
+    '1.0.0',
+    'Returns the current IDE state.',
+    '{"type":"object","additionalProperties":false}',
+    '{"type":"object"}',
+    trReadOnly
+  );
+end;
+
 { TTestChatPresenter }
 
 procedure TTestChatPresenter.DrainQueuedCalls;
@@ -410,13 +453,25 @@ begin
     )
   );
 
+  FToolRegistry := TRadIAToolRegistry.Create;
+  FToolRegistry.RegisterTool(TMockReadOnlyTool.Create);
+  FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
   FMockView := TMockChatView.Create;
-  FPresenter := TRadIAChatPresenter.Create(FMockView, FConfig, nil, FTempDir);
+  FPresenter := TRadIAChatPresenter.Create(
+    FMockView,
+    FConfig,
+    nil,
+    FTempDir,
+    FToolRegistry,
+    FToolExecutor
+  );
 end;
 
 procedure TTestChatPresenter.TearDown;
 begin
   FPresenter.Free;
+  FToolExecutor := nil;
+  FToolRegistry := nil;
   FConfig := nil;
   TRadIAConfig.SetStorage(nil);
 
@@ -441,6 +496,68 @@ begin
   Assert.IsTrue(Length(FMockView.ProvidersList) > 0);
   Assert.AreEqual('Gemini', FMockView.ActiveProviderId);
   Assert.AreEqual('Loading...', FMockView.ActiveModelName);
+end;
+
+procedure TTestChatPresenter.TestInitializationPublishesTools;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.OnWebViewReady;
+
+  Assert.Contains(FMockView.LastPostedJson, '"action":"initialize_config"');
+  Assert.Contains(FMockView.LastPostedJson, '"tools":[');
+  Assert.Contains(FMockView.LastPostedJson, '"name":"GetIDEState"');
+end;
+
+procedure TTestChatPresenter.TestToolsCommandPublishesCatalog;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/tools');
+
+  Assert.Contains(FMockView.LastPostedJson, '"action":"show_tools"');
+  Assert.Contains(FMockView.LastPostedJson, '"name":"GetIDEState"');
+end;
+
+procedure TTestChatPresenter.TestExecuteToolPublishesCallAndResult;
+var
+  LMessage: string;
+  LToolCallFound: Boolean;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.ProcessWebMessage(
+    '{"action":"execute_tool","name":"GetIDEState","arguments":{}}'
+  );
+  DrainQueuedCalls;
+
+  LToolCallFound := False;
+  for LMessage in FMockView.PostedMessages do
+  begin
+    if LMessage.Contains('"action":"tool_call"') and
+      LMessage.Contains('"name":"GetIDEState"') then
+    begin
+      LToolCallFound := True;
+      Break;
+    end;
+  end;
+
+  Assert.IsTrue(LToolCallFound);
+  Assert.Contains(FMockView.LastPostedJson, '"action":"tool_result"');
+  Assert.Contains(FMockView.LastPostedJson, '"success":true');
+  Assert.Contains(FMockView.LastPostedJson, '"state":"ready"');
+end;
+
+procedure TTestChatPresenter.TestRevokeToolsCommandConfirmsRevocation;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/revoke-tools');
+
+  Assert.Contains(
+    FMockView.LastPostedJson,
+    'All session tool permissions were revoked.'
+  );
 end;
 
 procedure TTestChatPresenter.TestSendPromptUserMessageIsPosted;

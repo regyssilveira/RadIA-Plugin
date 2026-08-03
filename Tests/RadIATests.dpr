@@ -7,9 +7,44 @@ uses
   System.SysUtils,
   DUnitX.Loggers.Console,
   DUnitX.TestFramework,
-  
+
   // Production Units
   RadIA.Core.Types in '..\Source\Core\RadIA.Core.Types.pas',
+  RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',
+  RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',
+  RadIA.Core.ToolRegistry in '..\Source\Core\RadIA.Core.ToolRegistry.pas',
+  RadIA.Core.Extensions in '..\Source\Core\RadIA.Core.Extensions.pas',
+  RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
+  RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',
+  RadIA.Core.PatchTools in '..\Source\Core\RadIA.Core.PatchTools.pas',
+  RadIA.Core.Build in '..\Source\Core\RadIA.Core.Build.pas',
+  RadIA.Core.BuildTools in '..\Source\Core\RadIA.Core.BuildTools.pas',
+  RadIA.Core.Mcp in '..\Source\Core\RadIA.Core.Mcp.pas',
+  RadIA.Core.Designer in '..\Source\Core\RadIA.Core.Designer.pas',
+  RadIA.Core.DesignerTools in '..\Source\Core\RadIA.Core.DesignerTools.pas',
+  RadIA.Core.DesignerMutations in '..\Source\Core\RadIA.Core.DesignerMutations.pas',
+  RadIA.Core.DesignerMutationTools in '..\Source\Core\RadIA.Core.DesignerMutationTools.pas',
+  RadIA.Core.DesignerProperties in '..\Source\Core\RadIA.Core.DesignerProperties.pas',
+  RadIA.Core.DesignerPropertyTools in '..\Source\Core\RadIA.Core.DesignerPropertyTools.pas',
+  RadIA.Core.DesignerComponents in '..\Source\Core\RadIA.Core.DesignerComponents.pas',
+  RadIA.Core.DesignerComponentTools in '..\Source\Core\RadIA.Core.DesignerComponentTools.pas',
+  RadIA.Core.DesignerEvents in '..\Source\Core\RadIA.Core.DesignerEvents.pas',
+  RadIA.Core.DesignerEventTools in '..\Source\Core\RadIA.Core.DesignerEventTools.pas',
+  RadIA.Core.Debugger in '..\Source\Core\RadIA.Core.Debugger.pas',
+  RadIA.Core.DebuggerTools in '..\Source\Core\RadIA.Core.DebuggerTools.pas',
+  RadIA.Core.DebuggerControlTools in '..\Source\Core\RadIA.Core.DebuggerControlTools.pas',
+  RadIA.Core.DebuggerBreakpointTools in '..\Source\Core\RadIA.Core.DebuggerBreakpointTools.pas',
+  RadIA.Core.DebuggerWatches in '..\Source\Core\RadIA.Core.DebuggerWatches.pas',
+  RadIA.Core.DebuggerInspectionTools in '..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas',
+  RadIA.Core.InlineReviews in '..\Source\Core\RadIA.Core.InlineReviews.pas',
+  RadIA.Core.InlineReviewTools in '..\Source\Core\RadIA.Core.InlineReviewTools.pas',
+  RadIA.Core.Knowledge in '..\Source\Core\RadIA.Core.Knowledge.pas',
+  RadIA.Core.KnowledgeTools in '..\Source\Core\RadIA.Core.KnowledgeTools.pas',
+  RadIA.Core.KnowledgeStore in '..\Source\Core\RadIA.Core.KnowledgeStore.pas',
+  RadIA.Core.KnowledgeScheduler in '..\Source\Core\RadIA.Core.KnowledgeScheduler.pas',
+  RadIA.Core.Workspace in '..\Source\Core\RadIA.Core.Workspace.pas',
+  RadIA.Core.WorkspaceBoundary in '..\Source\Core\RadIA.Core.WorkspaceBoundary.pas',
+  RadIA.Core.WorkspaceTools in '..\Source\Core\RadIA.Core.WorkspaceTools.pas',
   RadIA.Core.Interfaces in '..\Source\Core\RadIA.Core.Interfaces.pas',
   RadIA.Core.ChatMessage in '..\Source\Core\RadIA.Core.ChatMessage.pas',
   RadIA.Core.Container in '..\Source\Core\RadIA.Core.Container.pas',
@@ -33,6 +68,16 @@ uses
   RadIA.Core.ErrorDecoder in '..\Source\Core\RadIA.Core.ErrorDecoder.pas',
   RadIA.Core.Localizer in '..\Source\Core\RadIA.Core.Localizer.pas',
   RadIA.OTA.Adapter in '..\Source\Integration\RadIA.OTA.Adapter.pas',
+  RadIA.OTA.Workspace in '..\Source\Integration\RadIA.OTA.Workspace.pas',
+  RadIA.OTA.Designer in '..\Source\Integration\RadIA.OTA.Designer.pas',
+  RadIA.OTA.Debugger in '..\Source\Integration\RadIA.OTA.Debugger.pas',
+  RadIA.OTA.TextReader in '..\Source\Integration\RadIA.OTA.TextReader.pas',
+  RadIA.OTA.Knowledge in '..\Source\Integration\RadIA.OTA.Knowledge.pas',
+  RadIA.OTA.KnowledgeNotifier in '..\Source\Integration\RadIA.OTA.KnowledgeNotifier.pas',
+  RadIA.OTA.InlineReviews in '..\Source\Integration\RadIA.OTA.InlineReviews.pas',
+  RadIA.OTA.Consent in '..\Source\Integration\RadIA.OTA.Consent.pas',
+  RadIA.OTA.Build in '..\Source\Integration\RadIA.OTA.Build.pas',
+  RadIA.MCP.NamedPipe in '..\Source\Integration\RadIA.MCP.NamedPipe.pas',
   RadIA.OTA.Helper in '..\Source\Integration\RadIA.OTA.Helper.pas',
   RadIA.OTA.EditorHook in '..\Source\Integration\RadIA.OTA.EditorHook.pas',
   RadIA.OTA.ContextParser in '..\Source\Integration\RadIA.OTA.ContextParser.pas',
@@ -60,7 +105,7 @@ uses
   RadIA.Provider.Bedrock in '..\Source\Providers\RadIA.Provider.Bedrock.pas',
   RadIA.UI.ChatPresenter in '..\Source\UI\RadIA.UI.ChatPresenter.pas',
   RadIA.UI.ConfigPresenter in '..\Source\UI\RadIA.UI.ConfigPresenter.pas',
-  
+
   // Test Suites
   RadIA.Tests.Config in 'Source\RadIA.Tests.Config.pas',
   RadIA.Tests.EditorHook in 'Source\RadIA.Tests.EditorHook.pas',
@@ -95,7 +140,28 @@ uses
   RadIA.Tests.ProviderBooster in 'Source\RadIA.Tests.ProviderBooster.pas',
   RadIA.Tests.CoverageBooster in 'Source\RadIA.Tests.CoverageBooster.pas',
   RadIA.Tests.OTAHelper in 'Source\RadIA.Tests.OTAHelper.pas',
-  RadIA.Tests.HttpClient in 'Source\RadIA.Tests.HttpClient.pas';
+  RadIA.Tests.HttpClient in 'Source\RadIA.Tests.HttpClient.pas',
+  RadIA.Tests.ToolRegistry in 'Source\RadIA.Tests.ToolRegistry.pas',
+  RadIA.Tests.WorkspaceTools in 'Source\RadIA.Tests.WorkspaceTools.pas',
+  RadIA.Tests.WorkspaceBoundary in 'Source\RadIA.Tests.WorkspaceBoundary.pas',
+  RadIA.Tests.Patches in 'Source\RadIA.Tests.Patches.pas',
+  RadIA.Tests.BuildTools in 'Source\RadIA.Tests.BuildTools.pas',
+  RadIA.Tests.Mcp in 'Source\RadIA.Tests.Mcp.pas',
+  RadIA.Tests.DesignerTools in 'Source\RadIA.Tests.DesignerTools.pas',
+  RadIA.Tests.DesignerMutations in 'Source\RadIA.Tests.DesignerMutations.pas',
+  RadIA.Tests.DesignerProperties in 'Source\RadIA.Tests.DesignerProperties.pas',
+  RadIA.Tests.DebuggerTools in 'Source\RadIA.Tests.DebuggerTools.pas',
+  RadIA.Tests.DebuggerControlTools in 'Source\RadIA.Tests.DebuggerControlTools.pas',
+  RadIA.Tests.DebuggerBreakpointTools in 'Source\RadIA.Tests.DebuggerBreakpointTools.pas',
+  RadIA.Tests.DebuggerInspectionTools in 'Source\RadIA.Tests.DebuggerInspectionTools.pas',
+  RadIA.Tests.InlineReviews in 'Source\RadIA.Tests.InlineReviews.pas',
+  RadIA.Tests.Knowledge in 'Source\RadIA.Tests.Knowledge.pas',
+  RadIA.Tests.KnowledgeScheduler in 'Source\RadIA.Tests.KnowledgeScheduler.pas',
+  RadIA.Tests.KnowledgeNotifier in 'Source\RadIA.Tests.KnowledgeNotifier.pas',
+  RadIA.Tests.Extensions in 'Source\RadIA.Tests.Extensions.pas',
+  RadIA.Tests.DesignerComponents in 'Source\RadIA.Tests.DesignerComponents.pas',
+  RadIA.Tests.DesignerEvents in 'Source\RadIA.Tests.DesignerEvents.pas',
+  RadIA.Tests.ToolSecurity in 'Source\RadIA.Tests.ToolSecurity.pas';
 
 var
   Runner: ITestRunner;
@@ -104,14 +170,15 @@ var
 begin
   try
     TRadIAConfig.SetBaseRegistryPath('Software\RadIA\Tests');
+    TDUnitX.CheckCommandLine;
     Runner := TDUnitX.CreateRunner;
     Runner.UseRTTI := True;
-    
+
     Logger := TDUnitXConsoleLogger.Create(True);
     Runner.AddLogger(Logger);
-    
+
     Results := Runner.Execute;
-    
+
     if not Results.AllPassed then
       System.ExitCode := 1
     else

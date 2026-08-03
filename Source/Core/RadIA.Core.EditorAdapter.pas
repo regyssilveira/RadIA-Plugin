@@ -34,7 +34,8 @@ type
 implementation
 
 uses
-  ToolsAPI, RadIA.Core.Logger, System.SysUtils, System.Classes;
+  ToolsAPI, RadIA.Core.Logger, System.SysUtils, System.Classes,
+  RadIA.OTA.TextReader;
 
 { TRadIAOTAEditorAdapter }
 
@@ -56,39 +57,6 @@ begin
     Result := LEditorServices.TopView;
 end;
 
-function ReadEditorText(const AEditReader: IOTAEditReader): string;
-var
-  LBuffer: TBytes;
-  LTextBytes: TBytes;
-  LBytesRead: Integer;
-  LOffset: Integer;
-const
-  CChunkSize = 8192;
-begin
-  Result := '';
-  if not Assigned(AEditReader) then
-    Exit;
-
-  SetLength(LBuffer, CChunkSize);
-  LOffset := 0;
-  repeat
-    LBytesRead := AEditReader.GetText(LOffset, PAnsiChar(@LBuffer[0]), CChunkSize);
-    if LBytesRead > 0 then
-    begin
-      SetLength(LTextBytes, Length(LTextBytes) + LBytesRead);
-      Move(LBuffer[0], LTextBytes[Length(LTextBytes) - LBytesRead], LBytesRead);
-      Inc(LOffset, LBytesRead);
-    end;
-  until LBytesRead < CChunkSize;
-
-  if Length(LTextBytes) > 0 then
-  begin
-    Result := TEncoding.UTF8.GetString(LTextBytes);
-    if (Length(Result) > 0) and (Result[Length(Result)] = #0) then
-      SetLength(Result, Length(Result) - 1);
-  end;
-end;
-
 function TRadIAOTAEditorAdapter.ReadFallbackText: string;
 var
   LModuleServices: IOTAModuleServices;
@@ -108,7 +76,9 @@ begin
   begin
     if Supports(LModule.GetModuleFileEditor(I), IOTASourceEditor, LSourceEditor) then
     begin
-      Result := ReadEditorText(LSourceEditor.CreateReader);
+      Result := ReadRadIAEditReaderText(
+        LSourceEditor.CreateReader
+      );
       Break;
     end;
   end;
@@ -121,7 +91,9 @@ begin
   Result := '';
   LEditBuffer := IOTAEditBuffer(GetCurrentEditBuffer);
   if Assigned(LEditBuffer) then
-    Result := ReadEditorText(LEditBuffer.CreateReader);
+    Result := ReadRadIAEditReaderText(
+      LEditBuffer.CreateReader
+    );
 
   if Result.IsEmpty then
     Result := ReadFallbackText;
@@ -271,7 +243,7 @@ begin
     LEditReader := LEditBuffer.CreateReader;
     if Assigned(LEditReader) then
     begin
-      LText := ReadEditorText(LEditReader);
+      LText := ReadRadIAEditReaderText(LEditReader);
       LLines := TStringList.Create;
       try
         LLines.Text := LText;

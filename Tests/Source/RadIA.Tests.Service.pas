@@ -768,7 +768,11 @@ begin
   try
     LHistory := MakeHistory(6);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(6, Length(LTrimmed), 'Should NOT trim when under limit');
+    Assert.AreEqual(
+      6,
+      Integer(Length(LTrimmed)),
+      'Should NOT trim when under limit'
+    );
   finally
     LService.Free;
   end;
@@ -787,7 +791,11 @@ begin
   try
     LHistory := MakeHistory(10);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(10, Length(LTrimmed), 'Should NOT trim at exact limit');
+    Assert.AreEqual(
+      10,
+      Integer(Length(LTrimmed)),
+      'Should NOT trim at exact limit'
+    );
   finally
     LService.Free;
   end;
@@ -806,7 +814,11 @@ begin
   try
     LHistory := MakeHistory(10);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(6, Length(LTrimmed), 'Should trim to MaxHistoryMessages*2 messages');
+    Assert.AreEqual(
+      6,
+      Integer(Length(LTrimmed)),
+      'Should trim to MaxHistoryMessages*2 messages'
+    );
   finally
     LService.Free;
   end;
@@ -825,7 +837,11 @@ begin
   try
     LHistory := MakeHistory(8);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(4, Length(LTrimmed), 'Should keep exactly MaxHistoryMessages*2 newest messages');
+    Assert.AreEqual(
+      4,
+      Integer(Length(LTrimmed)),
+      'Should keep exactly MaxHistoryMessages*2 newest messages'
+    );
     Assert.AreEqual('Message 4', LTrimmed[0].Content, 'First kept message should be index 4');
     Assert.AreEqual('Message 7', LTrimmed[3].Content, 'Last kept message should be index 7');
   finally
@@ -848,7 +864,11 @@ begin
     LHistory := MakeHistoryWithSystem(4);
     LTrimmed := LService.TrimHistory(LHistory);
     { TrimHistory strips system messages from count; 4 user/assistant < 6 limit → no trim }
-    Assert.AreEqual(4, Length(LTrimmed), 'System messages must not be counted toward trim limit');
+    Assert.AreEqual(
+      4,
+      Integer(Length(LTrimmed)),
+      'System messages must not be counted toward trim limit'
+    );
     Assert.AreNotEqual(mrSystem, LTrimmed[0].Role, 'System messages should be stripped from trimmed result');
   finally
     LService.Free;
@@ -1350,11 +1370,14 @@ var
   LConfig: IRadIAConfig;
   LService: TRadIAService;
   LMockClient: TMockHttpClient;
+  LFinished: Boolean;
+  LTimeout: Integer;
 begin
   LConfig := TMockConfig.Create(5);
   LConfig.SetActiveProvider('DeepSeek');
   LConfig.SetApiKey('DeepSeek', 'dummy-key');
   LConfig.SetActiveModel('DeepSeek', 'deepseek-chat');
+  LFinished := False;
 
   LMockClient := TMockHttpClient.Create('{"choices":[{"message":{"role":"assistant","content":"Response"}}]}');
   TRadIAContainer.Register<IRadIAHttpClient>(LMockClient as IRadIAHttpClient);
@@ -1364,11 +1387,20 @@ begin
     LService.SendPrompt('Hello Cancel', [],
       procedure(const AResponse: string; const AError: string; AIsCached: Boolean; const AUsage: TTokenUsage)
       begin
-        if True then ;
+        LFinished := True;
       end);
 
     LService.CancelCurrentRequest;
-    Assert.Pass;
+
+    LTimeout := 0;
+    while (not LFinished) and (LTimeout < 2000) do
+    begin
+      Sleep(5);
+      Inc(LTimeout, 5);
+      System.Classes.CheckSynchronize(5);
+    end;
+
+    Assert.IsTrue(LFinished, 'Cancelled request must finish before the service is released');
   finally
     LService.Free;
     TRadIAContainer.Register<IRadIAHttpClient>(nil);

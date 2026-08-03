@@ -5,7 +5,8 @@ interface
 uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections, RadIA.Core.Interfaces,
   RadIA.Core.Sessions, RadIA.Core.PromptTemplates,
-  RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types;
+  RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
+  RadIA.Core.Tools, RadIA.Core.ToolSecurity, RadIA.Core.Workspace;
 
 type
   IRadIAChatView = interface
@@ -70,6 +71,10 @@ type
     FDataDir: string;
     FDTOBuilder: IRadIADTOBuilder;
     FProjectGenerator: IRadIAProjectGenerator;
+    FToolRegistry: IRadIAToolRegistry;
+    FToolExecutor: IRadIAToolExecutor;
+    FToolPolicyExecutor: IRadIAToolPolicyExecutor;
+    FWorkspace: IRadIAWorkspaceFacade;
 
     procedure UpdateModelsCombo;
 
@@ -81,6 +86,8 @@ type
    out AActiveModel: string): TJSONArray;
 
     function BuildSlashCommandsJsonArray: TJSONArray;
+    function BuildToolsJsonArray: TJSONArray;
+    function ToolRiskName(const ARisk: TRadIAToolRisk): string;
 
     procedure LoadChatHistory;
     procedure SaveChatHistory;
@@ -125,14 +132,42 @@ type
     procedure HandleErrorMessage(const AText: string);
     procedure HandleUpdateStreamMessage(const AText: string; const AIsDone: Boolean);
     procedure HandleSendPromptMessage(const AText: string);
+    procedure HandleExecuteToolMessage(
+      const AName: string;
+      const AArgumentsJson: string
+    );
     procedure HandleGenerateDTOMessage(const AInput, AInputType, AOutputType: string);
     procedure HandleCreateProjectMessage(const AFilesJson: string);
     procedure HandleCancelRequestMessage;
     procedure HandleClearChatMessage;
     procedure HandleStreamChunkMessage(const AText: string; const AIsDone: Boolean; const AError: string);
+    function TryHandleToolPrompt(const APromptText: string): Boolean;
+    procedure ExecuteRegisteredTool(
+      const AName: string;
+      const AArgumentsJson: string
+    );
+    procedure PostToolCallToWeb(
+      const AName: string;
+      const AArgumentsJson: string;
+      const ACorrelationId: string
+    );
+    procedure PostToolResultToWeb(
+      const AName: string;
+      const ACorrelationId: string;
+      const AResult: TRadIAToolResult
+    );
+    class function SerializeToolResult(
+      const AName: string;
+      const ACorrelationId: string;
+      const AResult: TRadIAToolResult
+    ): string; static;
+    procedure PostToolsCatalogToWeb(const AAction: string);
+    procedure PostJsonToWeb(const AJson: TJSONObject);
   public
     constructor Create(const AView: IRadIAChatView; const AConfig: IRadIAConfig;
-        const AService: IRadIAService = nil; const ADataDir: string = '');
+      const AService: IRadIAService = nil; const ADataDir: string = '';
+      const AToolRegistry: IRadIAToolRegistry = nil;
+      const AToolExecutor: IRadIAToolExecutor = nil);
     destructor Destroy; override;
 
     procedure Initialize(const AWebFilesDir: string);
@@ -217,8 +252,14 @@ end;
 
 { TRadIAChatPresenter }
 
-constructor TRadIAChatPresenter.Create(const AView: IRadIAChatView; const AConfig: IRadIAConfig;
-    const AService: IRadIAService; const ADataDir: string);
+constructor TRadIAChatPresenter.Create(
+  const AView: IRadIAChatView;
+  const AConfig: IRadIAConfig;
+  const AService: IRadIAService;
+  const ADataDir: string;
+  const AToolRegistry: IRadIAToolRegistry;
+  const AToolExecutor: IRadIAToolExecutor
+);
 begin
   inherited Create;
   FView := AView;
@@ -259,6 +300,20 @@ begin
     FDTOBuilder := TRadIADTOBuilder.Create;
   if not TRadIAContainer.TryResolve<IRadIAProjectGenerator>(FProjectGenerator) then
     FProjectGenerator := TRadIAProjectGenerator.Create;
+
+  if Assigned(AToolRegistry) then
+    FToolRegistry := AToolRegistry
+  else
+    TRadIAContainer.TryResolve<IRadIAToolRegistry>(FToolRegistry);
+
+  if Assigned(AToolExecutor) then
+    FToolExecutor := AToolExecutor
+  else
+    TRadIAContainer.TryResolve<IRadIAToolExecutor>(FToolExecutor);
+  TRadIAContainer.TryResolve<IRadIAToolPolicyExecutor>(
+    FToolPolicyExecutor
+  );
+  TRadIAContainer.TryResolve<IRadIAWorkspaceFacade>(FWorkspace);
 
   if ADataDir.IsEmpty then
     FDataDir := TPath.Combine(TPath.GetHomePath, 'RadIA')
@@ -479,6 +534,33 @@ var
   LSlashObj: TJSONObject;
 begin
   Result := TJSONArray.Create;
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/tools');
+  LSlashObj.AddPair('description', 'Lists available read-only IDE tools.');
+  LSlashObj.AddPair('name', 'IDE Tools');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/revoke-tools');
+  LSlashObj.AddPair(
+    'description',
+    'Revokes all IDE tool permissions granted for this session.'
+  );
+  LSlashObj.AddPair('name', 'Revoke Tool Permissions');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/tool');
+  LSlashObj.AddPair(
+    'description',
+    'Runs a read-only IDE tool with optional JSON arguments.'
+  );
+  LSlashObj.AddPair('name', 'Run IDE Tool');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
   for LTemplate in FTemplateManager.GetTemplates do
   begin
     if not LTemplate.SlashCommand.IsEmpty then
@@ -490,6 +572,42 @@ begin
       LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(LTemplate.IsProjectGenerator));
       Result.AddElement(LSlashObj);
     end;
+  end;
+end;
+
+function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;
+var
+  LDescriptor: TRadIAToolDescriptor;
+  LJson: TJSONObject;
+begin
+  Result := TJSONArray.Create;
+  if not Assigned(FToolRegistry) then
+    Exit;
+
+  for LDescriptor in FToolRegistry.GetDescriptors do
+  begin
+    LJson := TJSONObject.Create;
+    LJson.AddPair('name', LDescriptor.Name);
+    LJson.AddPair('version', LDescriptor.Version);
+    LJson.AddPair('description', LDescriptor.Description);
+    LJson.AddPair('inputSchema', LDescriptor.InputSchema);
+    LJson.AddPair('risk', ToolRiskName(LDescriptor.Risk));
+    Result.AddElement(LJson);
+  end;
+end;
+
+function TRadIAChatPresenter.ToolRiskName(
+  const ARisk: TRadIAToolRisk
+): string;
+begin
+  case ARisk of
+    trReadOnly: Result := 'readOnly';
+    trReversibleWrite: Result := 'reversibleWrite';
+    trStructuralWrite: Result := 'structuralWrite';
+    trExecution: Result := 'execution';
+    trDestructive: Result := 'destructive';
+  else
+    Result := 'sensitive';
   end;
 end;
 procedure TRadIAChatPresenter.UpdateModelsCombo;
@@ -792,11 +910,14 @@ begin
   if LText.IsEmpty then
     Exit;
 
-  LProcessed := PreProcessPrompt(LText);
   FPromptHistoryManager.Add(FView.GetPromptInput);
   SavePromptHistory;
 
   FView.SetPromptInput('');
+  if TryHandleToolPrompt(LText) then
+    Exit;
+
+  LProcessed := PreProcessPrompt(LText);
   PostToWebView('add_message', 'user', LText);
   SendPromptToAI(LProcessed);
 end;
@@ -805,6 +926,9 @@ procedure TRadIAChatPresenter.SendPromptText(const APromptText: string);
 var
   LProcessed: string;
 begin
+  if TryHandleToolPrompt(APromptText) then
+    Exit;
+
   LProcessed := PreProcessPrompt(APromptText);
   PostToWebView('add_message', 'user', APromptText);
   SendPromptToAI(LProcessed);
@@ -1053,6 +1177,7 @@ var
   LActiveProvider: string;
   LActiveModel: string;
   LSessionId: string;
+  LGuard: IRadIALifecycleGuard;
   HandleStreamCallback: TStreamChunkCallback;
 begin
   LActiveProvider := FConfig.GetActiveProvider;
@@ -1079,6 +1204,7 @@ begin
   if FConfig.IsWebLoginProvider(LActiveProvider) then
     LActiveModel := 'Web Login';
   LSessionId := FSessionManager.ActiveSessionId;
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
 
   TLogger.Log(Format('SendPromptToAI started. Provider=%s, Model=%s, PromptLength=%d, Session=%s',
     [LActiveProvider, LActiveModel, Length(APromptText), LSessionId]), 'UI');
@@ -1100,6 +1226,8 @@ begin
       procedure
         var LCtx: TStreamChunkCtx;
         begin
+          if not LGuard.IsAlive then
+            Exit;
           LCtx.Chunk := AChunk; LCtx.IsDone := AIsDone; LCtx.Error := AError;
           LCtx.SessionId := LSessionId; LCtx.ActiveProvider := LActiveProvider;
           LCtx.ActiveModel := LActiveModel;
@@ -1213,6 +1341,7 @@ var
   LDoneHandled: Boolean;
   LActiveProvider: string;
   LActiveModel: string;
+  LGuard: IRadIALifecycleGuard;
 begin
   if not CheckQuotaAvailability then
     Exit;
@@ -1224,6 +1353,7 @@ begin
 
   LActiveProvider := FConfig.GetActiveProvider;
   LActiveModel := FConfig.GetActiveModel(LActiveProvider);
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
 
   TLogger.Log(Format('GenerateDTO started. Provider=%s, Model=%s, InputLength=%d, InputType=%s, OutputType=%s',
     [LActiveProvider, LActiveModel, Length(AInput), AInputType, AOutputType]), 'UI');
@@ -1238,6 +1368,8 @@ begin
           TThreadProcedure(
           procedure
           begin
+            if not LGuard.IsAlive then
+              Exit;
             ProcessDTOGeneratorChunk(AChunk, AError, AIsDone, LDoneHandled, LPromptText, LActiveProvider);
           end));
       end);
@@ -1274,15 +1406,19 @@ begin
 end;
 
 procedure TRadIAChatPresenter.QueueOnUI(const AProcedure: TProc);
+var
+  LGuard: IRadIALifecycleGuard;
 begin
   if not Assigned(AProcedure) then
     Exit;
 
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
   TThread.ForceQueue(nil,
     TThreadProcedure(
     procedure
     begin
-      AProcedure;
+      if LGuard.IsAlive then
+        AProcedure;
     end));
 end;
 
@@ -1419,6 +1555,19 @@ begin
     end);
 end;
 
+procedure TRadIAChatPresenter.HandleExecuteToolMessage(
+  const AName: string;
+  const AArgumentsJson: string
+);
+begin
+  QueueOnUI(
+    procedure
+    begin
+      ExecuteRegisteredTool(AName, AArgumentsJson);
+    end
+  );
+end;
+
 procedure TRadIAChatPresenter.HandleGenerateDTOMessage(const AInput, AInputType, AOutputType: string);
 begin
   QueueOnUI(
@@ -1530,6 +1679,9 @@ end;
 
 procedure TRadIAChatPresenter.DispatchInteractionMessage(const AAction: string;
   const AJson: TJSONObject; var AHandled: Boolean);
+var
+  LArguments: TJSONValue;
+  LArgumentsJson: string;
 begin
   AHandled := True;
   if AAction = 'update_stream' then
@@ -1545,6 +1697,18 @@ begin
       AJson.GetValue<string>('outputType', ''))
   else if AAction = 'cancel_request' then
     HandleCancelRequestMessage
+  else if AAction = 'execute_tool' then
+  begin
+    LArguments := AJson.GetValue('arguments');
+    if Assigned(LArguments) then
+      LArgumentsJson := LArguments.ToJSON
+    else
+      LArgumentsJson := '{}';
+    HandleExecuteToolMessage(
+      AJson.GetValue<string>('name', ''),
+      LArgumentsJson
+    );
+  end
   else if AAction = 'stream_chunk' then
     HandleStreamChunkMessage(
       AJson.GetValue<string>('text', ''),
@@ -1552,6 +1716,241 @@ begin
       AJson.GetValue<string>('error', ''))
   else
     AHandled := False;
+end;
+
+function TRadIAChatPresenter.TryHandleToolPrompt(
+  const APromptText: string
+): Boolean;
+var
+  LArgumentsJson: string;
+  LCommand: string;
+  LSeparator: Integer;
+  LText: string;
+  LToolName: string;
+begin
+  Result := False;
+  LText := Trim(APromptText);
+
+  if SameText(LText, '/tools') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToolsCatalogToWeb('show_tools');
+    Exit(True);
+  end;
+
+  if SameText(LText, '/revoke-tools') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    if Assigned(FToolPolicyExecutor) then
+      FToolPolicyExecutor.RevokeSessionPermissions;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'All session tool permissions were revoked.'
+    );
+    Exit(True);
+  end;
+
+  if not SameText(LText, '/tool') and
+    not LText.StartsWith('/tool ', True) then
+    Exit;
+
+  PostToWebView('add_message', 'user', APromptText);
+  LCommand := Trim(Copy(LText, Length('/tool') + 1, MaxInt));
+  LSeparator := Pos(' ', LCommand);
+  if LSeparator > 0 then
+  begin
+    LToolName := Trim(Copy(LCommand, Low(LCommand), LSeparator - 1));
+    LArgumentsJson := Trim(Copy(LCommand, LSeparator + 1, MaxInt));
+  end
+  else
+  begin
+    LToolName := LCommand;
+    LArgumentsJson := '{}';
+  end;
+
+  if LArgumentsJson = '' then
+    LArgumentsJson := '{}';
+  ExecuteRegisteredTool(LToolName, LArgumentsJson);
+  Result := True;
+end;
+
+procedure TRadIAChatPresenter.ExecuteRegisteredTool(
+  const AName: string;
+  const AArgumentsJson: string
+);
+var
+  LCorrelationId: string;
+  LExecutor: IRadIAToolExecutor;
+  LGuard: IRadIALifecycleGuard;
+  LProjectId: string;
+  LProject: TRadIAProjectSnapshot;
+  LRequest: TRadIAToolRequest;
+  LResult: TRadIAToolResult;
+begin
+  LCorrelationId := TGUID.NewGuid.ToString;
+  PostToolCallToWeb(AName, AArgumentsJson, LCorrelationId);
+
+  if not Assigned(FToolRegistry) or not Assigned(FToolExecutor) then
+  begin
+    LResult := TRadIAToolResult.Failed(
+      'tools_unavailable',
+      'The IDE tool service is not available.'
+    );
+    PostToolResultToWeb(AName, LCorrelationId, LResult);
+    Exit;
+  end;
+
+  LProjectId := '';
+  if Assigned(FWorkspace) then
+  begin
+    LProject := FWorkspace.GetActiveProject;
+    LProjectId := LProject.FileName;
+  end;
+
+  LRequest := TRadIAToolRequest.Create(
+    AName,
+    AArgumentsJson,
+    LCorrelationId,
+    'chat',
+    FSessionManager.ActiveSessionId,
+    LProjectId,
+    'workspace'
+  );
+  LExecutor := FToolExecutor;
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TInterlocked.Increment(GActiveThreadCount);
+  TThread.CreateAnonymousThread(
+    procedure
+    var
+      LResultJson: string;
+      LToolResult: TRadIAToolResult;
+    begin
+      try
+        LToolResult := LExecutor.Execute(LRequest);
+        LResultJson := SerializeToolResult(
+          AName,
+          LCorrelationId,
+          LToolResult
+        );
+        TThread.Queue(
+          nil,
+          TThreadProcedure(
+            procedure
+            begin
+              if LGuard.IsAlive then
+              begin
+                if not GIsShuttingDown then
+                  Self.FView.PostMessageToWeb(LResultJson);
+              end;
+            end
+          )
+        );
+      finally
+        TInterlocked.Decrement(GActiveThreadCount);
+      end;
+    end
+  ).Start;
+end;
+
+procedure TRadIAChatPresenter.PostJsonToWeb(
+  const AJson: TJSONObject
+);
+var
+  LSerialized: string;
+begin
+  LSerialized := AJson.ToJSON;
+  if not FWebViewReady then
+    FPendingWebMessages.Add(LSerialized)
+  else
+    FView.PostMessageToWeb(LSerialized);
+end;
+
+procedure TRadIAChatPresenter.PostToolCallToWeb(
+  const AName: string;
+  const AArgumentsJson: string;
+  const ACorrelationId: string
+);
+var
+  LArguments: TJSONValue;
+  LJson: TJSONObject;
+begin
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'tool_call');
+    LJson.AddPair('name', AName);
+    LJson.AddPair('correlationId', ACorrelationId);
+    LArguments := TJSONObject.ParseJSONValue(AArgumentsJson);
+    if Assigned(LArguments) then
+      LJson.AddPair('arguments', LArguments)
+    else
+      LJson.AddPair('argumentsText', AArgumentsJson);
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.PostToolResultToWeb(
+  const AName: string;
+  const ACorrelationId: string;
+  const AResult: TRadIAToolResult
+);
+begin
+  FView.PostMessageToWeb(
+    SerializeToolResult(AName, ACorrelationId, AResult)
+  );
+end;
+
+class function TRadIAChatPresenter.SerializeToolResult(
+  const AName: string;
+  const ACorrelationId: string;
+  const AResult: TRadIAToolResult
+): string;
+var
+  LContent: TJSONValue;
+  LJson: TJSONObject;
+begin
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'tool_result');
+    LJson.AddPair('name', AName);
+    LJson.AddPair('correlationId', ACorrelationId);
+    LJson.AddPair('success', TJSONBool.Create(AResult.Success));
+    LJson.AddPair('truncated', TJSONBool.Create(AResult.Truncated));
+    if AResult.Success then
+    begin
+      LContent := TJSONObject.ParseJSONValue(AResult.ContentJson);
+      if Assigned(LContent) then
+        LJson.AddPair('result', LContent)
+      else
+        LJson.AddPair('resultText', AResult.ContentJson);
+    end
+    else
+    begin
+      LJson.AddPair('errorCode', AResult.ErrorCode);
+      LJson.AddPair('errorMessage', AResult.ErrorMessage);
+    end;
+    Result := LJson.ToJSON;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.PostToolsCatalogToWeb(
+  const AAction: string
+);
+var
+  LJson: TJSONObject;
+begin
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', AAction);
+    LJson.AddPair('tools', BuildToolsJsonArray);
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
 end;
 
 procedure TRadIAChatPresenter.DispatchWebMessage(const AAction: string; const AJson: TJSONObject);
@@ -1898,6 +2297,7 @@ begin
     LJson.AddPair('providers', BuildProvidersJsonArray);
     LJson.AddPair('models', BuildModelsJsonArray(LActiveProvider, LIsWebLogin, LActiveModel));
     LJson.AddPair('slashCommands', BuildSlashCommandsJsonArray);
+    LJson.AddPair('tools', BuildToolsJsonArray);
     LJson.AddPair('activeProvider', LActiveProvider);
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));

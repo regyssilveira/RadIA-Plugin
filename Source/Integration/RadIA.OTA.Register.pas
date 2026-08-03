@@ -10,6 +10,7 @@ type
   TRadIAWizard = class(TInterfacedObject, IOTAWizard)
   private
     FEditorHook: TObject;
+    FKnowledgeNotifier: TObject;
     FTimer: TTimer;
     FOptionsPages: TInterfaceList;
     procedure RegisterMenus;
@@ -41,12 +42,32 @@ procedure Register;
 implementation
 
 uses
-  System.SysUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms, System.Win.Registry, Winapi.Windows,
+  System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
+  System.Win.Registry, Winapi.Windows,
   RadIA.OTA.EditorHook, RadIA.UI.DiffForm, RadIA.UI.ConfigForm, RadIA.OTA.Helper, RadIA.Core.Types, RadIA.Core.Mediator,
   RadIA.Core.Config, RadIA.OTA.DockableForm, RadIA.Core.Interfaces, RadIA.Core.Logger, RadIA.OTA.Options,
   RadIA.Core.Container, RadIA.Core.Service, RadIA.OTA.Adapter, RadIA.Core.TextNormalizer, RadIA.Core.DTO.Generator,
   RadIA.Core.ProjectGenerator, RadIA.Core.HttpClient, RadIA.Core.ErrorDecoder, RadIA.Core.Localizer,
-  RadIA.Core.EditorAdapter;
+  RadIA.Core.EditorAdapter, RadIA.Core.Tools, RadIA.Core.ToolRegistry, RadIA.Core.Workspace,
+  RadIA.Core.Extensions, RadIA.Core.Version,
+  RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
+  RadIA.Core.ToolSecurity, RadIA.Core.Patches, RadIA.Core.PatchTools,
+  RadIA.Core.Build, RadIA.Core.BuildTools, RadIA.OTA.Workspace,
+  RadIA.Core.Mcp, RadIA.OTA.Consent, RadIA.OTA.Build,
+  RadIA.Core.Designer, RadIA.Core.DesignerTools,
+  RadIA.Core.DesignerMutations, RadIA.Core.DesignerMutationTools,
+  RadIA.Core.DesignerProperties, RadIA.Core.DesignerPropertyTools,
+  RadIA.Core.DesignerComponents, RadIA.Core.DesignerComponentTools,
+  RadIA.Core.DesignerEvents, RadIA.Core.DesignerEventTools,
+  RadIA.Core.Debugger, RadIA.Core.DebuggerTools,
+  RadIA.Core.DebuggerControlTools, RadIA.Core.DebuggerBreakpointTools,
+  RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
+  RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
+  RadIA.Core.Knowledge, RadIA.Core.KnowledgeTools,
+  RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
+  RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.Knowledge,
+  RadIA.OTA.KnowledgeNotifier, RadIA.OTA.InlineReviews,
+  RadIA.MCP.NamedPipe;
 
 const
   GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = $00000004;
@@ -59,6 +80,7 @@ var
   GAboutBoxIndex: Integer = -1;
   LAboutServices: IOTAAboutBoxServices;
   GModuleHandle: HMODULE = 0;
+  GMcpServer: IRadIAMcpServer;
 
 procedure LogDebug(const AMsg: string);
 begin
@@ -124,7 +146,7 @@ begin
         LBitmap.Handle,
         False,
         'Apache 2.0 License',
-        'v0.0.29'
+        'v' + CRadIAVersion
       );
     end;
   finally
@@ -195,6 +217,11 @@ begin
 
   FEditorHook := TRadIAEditorHook.Create(nil);
   TRadIAEditorHook(FEditorHook).Install;
+  FKnowledgeNotifier := TRadIAOTAKnowledgeNotifier.Create(
+    nil,
+    TRadIAContainer.Resolve<IRadIAKnowledgeRefreshScheduler>
+  );
+  TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Install;
   RegisterMenus;
   RegisterOptions;
 
@@ -209,6 +236,8 @@ end;
 destructor TRadIAWizard.Destroy;
 begin
   GIsShuttingDown := Application.Terminated;
+  if Assigned(GMcpServer) then
+    GMcpServer.Stop;
 
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm.UnregisterDockableForm;
@@ -221,6 +250,11 @@ begin
   begin
     FTimer.Enabled := False;
     FTimer.Free;
+  end;
+  if Assigned(FKnowledgeNotifier) then
+  begin
+    TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Uninstall;
+    FreeAndNil(FKnowledgeNotifier);
   end;
   UnregisterOptions;
   UnregisterMenus;
@@ -590,6 +624,242 @@ initialization
   TLogger.SetActiveLogger(TRadIAContainer.Resolve<IRadIALogger>);
   TRadIAContainer.Register<IRadIAIDEAdapter>(TRadIAConcreteIDEAdapter.Create);
   TRadIAContainer.Register<IRadIAEditorAdapter>(TRadIAOTAEditorAdapter.Create);
+  TRadIAContainer.Register<IRadIAToolRegistry>(TRadIAToolRegistry.Create);
+  TRadIAContainer.Register<IRadIAToolExtensionHost>(
+    TRadIAToolExtensionHost.Create(
+      TRadIAContainer.Resolve<IRadIAToolRegistry>
+    )
+  );
+  SetRadIAToolExtensionHost(
+    TRadIAContainer.Resolve<IRadIAToolExtensionHost>
+  );
+  TRadIAContainer.Register<IRadIAConsentProvider>(
+    TRadIAOTAConsentProvider.Create
+  );
+  TRadIAContainer.Register<IRadIAToolAuditSink>(
+    TRadIAJsonLinesToolAuditSink.Create(
+      TPath.Combine(
+        TPath.Combine(TPath.GetHomePath, 'RadIA'),
+        'audit\tools.jsonl'
+      )
+    )
+  );
+  TRadIAContainer.Register<IRadIASecretRedactor>(
+    TRadIASecretRedactor.Create
+  );
+  TRadIAContainer.Register<IRadIAToolExecutor>(
+    TRadIAToolPolicyExecutor.Create(
+      TRadIAContainer.Resolve<IRadIAToolRegistry>,
+      TRadIAToolExecutor.Create(
+        TRadIAContainer.Resolve<IRadIAToolRegistry>
+      ),
+      TRadIAContainer.Resolve<IRadIAConsentProvider>,
+      TRadIAContainer.Resolve<IRadIAToolAuditSink>,
+      TRadIAContainer.Resolve<IRadIASecretRedactor>
+    ) as IRadIAToolExecutor
+  );
+  TRadIAContainer.Register<IRadIAToolPolicyExecutor>(
+    TRadIAContainer.Resolve<IRadIAToolExecutor> as
+      IRadIAToolPolicyExecutor
+  );
+  TRadIAContainer.Register<IRadIAWorkspaceFacade>(
+    TRadIAOTAWorkspaceFacade.Create(
+      TRadIAContainer.Resolve<IRadIAIDEAdapter>,
+      TRadIAContainer.Resolve<IRadIAEditorAdapter>
+    )
+  );
+  TRadIAContainer.Register<IRadIAEditorMutationFacade>(
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade> as
+      IRadIAEditorMutationFacade
+  );
+  TRadIAContainer.Register<IRadIAFormDesignerFacade>(
+    TRadIAOTAFormDesignerFacade.Create
+  );
+  TRadIAContainer.Register<IRadIAFormDesignerMutationFacade>(
+    TRadIAContainer.Resolve<IRadIAFormDesignerFacade> as
+      IRadIAFormDesignerMutationFacade
+  );
+  TRadIAContainer.Register<IRadIAFormDesignerComponentFacade>(
+    TRadIAContainer.Resolve<IRadIAFormDesignerFacade> as
+      IRadIAFormDesignerComponentFacade
+  );
+  TRadIAContainer.Register<IRadIAFormDesignerEventFacade>(
+    TRadIAContainer.Resolve<IRadIAFormDesignerFacade> as
+      IRadIAFormDesignerEventFacade
+  );
+  TRadIAContainer.Register<IRadIAFormEventService>(
+    TRadIAFormEventService.Create(
+      TRadIAContainer.Resolve<IRadIAFormDesignerEventFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAComponentChangeService>(
+    TRadIAComponentChangeService.Create(
+      TRadIAContainer.Resolve<IRadIAFormDesignerComponentFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAComponentLayoutService>(
+    TRadIAComponentLayoutService.Create(
+      TRadIAContainer.Resolve<IRadIAFormDesignerMutationFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAComponentPropertyService>(
+    TRadIAComponentPropertyService.Create(
+      TRadIAContainer.Resolve<IRadIAFormDesignerMutationFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIADebuggerFacade>(
+    TRadIAOTADebuggerFacade.Create
+  );
+  TRadIAContainer.Register<IRadIADebuggerControlFacade>(
+    TRadIAContainer.Resolve<IRadIADebuggerFacade> as
+      IRadIADebuggerControlFacade
+  );
+  TRadIAContainer.Register<IRadIADebuggerBreakpointFacade>(
+    TRadIAContainer.Resolve<IRadIADebuggerFacade> as
+      IRadIADebuggerBreakpointFacade
+  );
+  TRadIAContainer.Register<IRadIADebuggerEvaluationFacade>(
+    TRadIAContainer.Resolve<IRadIADebuggerFacade> as
+      IRadIADebuggerEvaluationFacade
+  );
+  TRadIAContainer.Register<IRadIADebuggerSessionFacade>(
+    TRadIAContainer.Resolve<IRadIADebuggerFacade> as
+      IRadIADebuggerSessionFacade
+  );
+  TRadIAContainer.Register<IRadIADebuggerWatchService>(
+    TRadIADebuggerWatchService.Create(
+      TRadIAContainer.Resolve<IRadIADebuggerEvaluationFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAWorkspaceBoundary>(
+    TRadIAWorkspaceBoundary.Create
+  );
+  TRadIAContainer.Register<IRadIAKnowledgeSource>(
+    TRadIAOTAKnowledgeSource.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+    )
+  );
+  TRadIAContainer.Register<IRadIAKnowledgeStore>(
+    TRadIAJsonKnowledgeStore.Create(
+      TPath.Combine(
+        TPath.Combine(TPath.GetHomePath, 'RadIA'),
+        'Knowledge'
+      )
+    )
+  );
+  TRadIAContainer.Register<IRadIAKnowledgeService>(
+    TRadIALocalKnowledgeService.Create(
+      TRadIAContainer.Resolve<IRadIAKnowledgeSource>,
+      TRadIAContainer.Resolve<IRadIAKnowledgeStore>
+    )
+  );
+  TRadIAContainer.Register<IRadIAKnowledgeRefreshScheduler>(
+    TRadIAKnowledgeRefreshScheduler.Create(
+      TRadIAContainer.Resolve<IRadIAKnowledgeService>
+    )
+  );
+  TRadIAContainer.Register<IRadIAPatchService>(
+    TRadIAPatchService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+    )
+  );
+  TRadIAContainer.Register<IRadIAInlineReviewVisualFacade>(
+    TRadIAOTAInlineReviewFacade.Create
+  );
+  TRadIAContainer.Register<IRadIAInlineReviewService>(
+    TRadIAInlineReviewService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+      TRadIAContainer.Resolve<IRadIAPatchService>,
+      TRadIAContainer.Resolve<IRadIAInlineReviewVisualFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIABuildFacade>(
+    TRadIAOTABuildFacade.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+    )
+  );
+  RegisterRadIAWorkspaceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+  );
+  RegisterRadIAPatchTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAPatchService>
+  );
+  RegisterRadIAInlineReviewTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAInlineReviewService>
+  );
+  RegisterRadIABuildTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIABuildFacade>
+  );
+  RegisterRadIADesignerTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAFormDesignerFacade>
+  );
+  RegisterRadIADesignerMutationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAComponentLayoutService>
+  );
+  RegisterRadIADesignerPropertyTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAComponentPropertyService>
+  );
+  RegisterRadIADesignerComponentTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAComponentChangeService>
+  );
+  RegisterRadIADesignerEventTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAFormEventService>
+  );
+  RegisterRadIADebuggerTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADebuggerFacade>
+  );
+  RegisterRadIADebuggerControlTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADebuggerControlFacade>
+  );
+  RegisterRadIADebuggerBreakpointTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADebuggerBreakpointFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+  );
+  RegisterRadIADebuggerInspectionTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADebuggerEvaluationFacade>,
+    TRadIAContainer.Resolve<IRadIADebuggerWatchService>,
+    TRadIAContainer.Resolve<IRadIADebuggerSessionFacade>
+  );
+  RegisterRadIAKnowledgeTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAKnowledgeService>
+  );
+  TRadIAContainer.Register<IRadIAMcpProtocol>(
+    TRadIAMcpProtocol.Create(
+      TRadIAContainer.Resolve<IRadIAToolRegistry>,
+      TRadIAContainer.Resolve<IRadIAToolExecutor>
+    )
+  );
+  TRadIAContainer.Register<IRadIAMcpServer>(
+    TRadIANamedPipeMcpServer.Create(
+      TRadIAContainer.Resolve<IRadIAMcpProtocol>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TPath.Combine(
+        TPath.Combine(TPath.GetHomePath, 'RadIA'),
+        'mcp.json'
+      )
+    )
+  );
+  GMcpServer := TRadIAContainer.Resolve<IRadIAMcpServer>;
+  GMcpServer.Start;
   TRadIAContainer.Register<IRadIAService>(TRadIAService.Create(TRadIAContainer.Resolve<IRadIAConfig>));
   TRadIAContainer.Register<IRadIATextNormalizer>(TRadIATextNormalizer.Create);
   TRadIAContainer.Register<IRadIAMediator>(TRadIAMediator.Instance);
@@ -600,6 +870,10 @@ initialization
   TRadIAContainer.Register<IRadIALocalizer>(TRadIALocalizer.Create);
 
 finalization
+  SetRadIAToolExtensionHost(nil);
+  if Assigned(GMcpServer) then
+    GMcpServer.Stop;
+  GMcpServer := nil;
   TLogger.SetActiveLogger(nil);
   TRadIAContainer.Clear;
 

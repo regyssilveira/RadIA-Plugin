@@ -65,7 +65,7 @@
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.0.29.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=0.0.29.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     </PropertyGroup>
@@ -73,14 +73,14 @@
         <DCC_Namespace>System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.0.29.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=0.0.29.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64x)'!=''">
         <DCC_Namespace>System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=0.0.29.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=0.0.29.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <BCC_EnableBatchCompilation>true</BCC_EnableBatchCompilation>
     </PropertyGroup>
@@ -112,6 +112,41 @@
         <DCCReference Include="vclie.dcp"/>
         <DCCReference Include="designide.dcp"/>
         <DCCReference Include="Source\Core\RadIA.Core.Types.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Version.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Tools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ToolRegistry.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Extensions.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ToolSecurity.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Patches.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.PatchTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Build.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.BuildTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Mcp.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Designer.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerMutations.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerMutationTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerProperties.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerPropertyTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerComponents.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerComponentTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerEvents.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DesignerEventTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Debugger.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DebuggerTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DebuggerControlTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DebuggerBreakpointTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DebuggerWatches.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.DebuggerInspectionTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.InlineReviews.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.InlineReviewTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Knowledge.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.KnowledgeTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.KnowledgeStore.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.KnowledgeScheduler.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.Workspace.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.WorkspaceBoundary.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.WorkspaceTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Interfaces.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ChatMessage.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Container.pas"/>
@@ -156,6 +191,16 @@
         <DCCReference Include="Source\Providers\RadIA.Provider.Mistral.pas"/>
         <DCCReference Include="Source\Providers\RadIA.Provider.Bedrock.pas"/>
         <DCCReference Include="Source\Integration\RadIA.OTA.Adapter.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.Workspace.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.Designer.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.Debugger.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.TextReader.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.Knowledge.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.KnowledgeNotifier.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.InlineReviews.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.Consent.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.Build.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.MCP.NamedPipe.pas"/>
         <DCCReference Include="Source\Integration\RadIA.OTA.Register.pas"/>
         <DCCReference Include="Source\Integration\RadIA.OTA.Helper.pas"/>
         <DCCReference Include="Source\Integration\RadIA.OTA.EditorHook.pas"/>

@@ -7,12 +7,17 @@ uses
   RadIA.Core.TokenUsage, RadIA.Provider.Gemini, RadIA.Provider.OpenAI, RadIA.Provider.Claude;
 
 type
+  TTestRadIAOpenAIProvider = class(TRadIAOpenAIProvider)
+  protected
+    function GetCodexExecutablePath: string; override;
+  end;
+
   [TestFixture]
   TTestRadIAProviders = class
   private
     FConfig: IRadIAConfig;
     FGeminiProv: TRadIAGeminiProvider;
-    FOpenAIProv: TRadIAOpenAIProvider;
+    FOpenAIProv: TTestRadIAOpenAIProvider;
     FClaudeProv: TRadIAClaudeProvider;
 
     function InvokeBuildRequestBody(AProvider: TObject; const APrompt: string;
@@ -72,6 +77,11 @@ uses
   RadIA.Tests.Service, RadIA.Core.ChatMessage, RadIA.Provider.Generic,
   RadIA.Core.SettingsStorage, RadIA.Core.Types, RadIA.Core.Config;
 
+function TTestRadIAOpenAIProvider.GetCodexExecutablePath: string;
+begin
+  Result := '';
+end;
+
 { TTestRadIAProviders }
 
 procedure TTestRadIAProviders.Setup;
@@ -80,7 +90,7 @@ begin
   TRadIAConfig.SetStorage(TRadIAMemorySettingsStorage.Create);
   FConfig := TRadIAConfig.Create;
   FGeminiProv := TRadIAGeminiProvider.Create(FConfig);
-  FOpenAIProv := TRadIAOpenAIProvider.Create(FConfig);
+  FOpenAIProv := TTestRadIAOpenAIProvider.Create(FConfig);
   FClaudeProv := TRadIAClaudeProvider.Create(FConfig);
 end;
 
@@ -302,7 +312,7 @@ begin
   );
   try
     Assert.AreEqual('DeepSeek AI', LProv.GetName);
-    Assert.AreEqual(1, Length(LProv.GetAvailableModels));
+    Assert.AreEqual(1, Integer(Length(LProv.GetAvailableModels)));
     Assert.AreEqual('deepseek-chat', LProv.GetAvailableModels[0]);
   finally
     LProv.Free;
@@ -451,6 +461,7 @@ var
   LType: TRttiInstanceType;
   LMethod: TRttiMethod;
   LInvokeParams: TArray<TValue>;
+  LCallback: TCompletionCallback;
   LCallbackCalled: Boolean;
 begin
   LContext := TRttiContext.Create;
@@ -459,18 +470,23 @@ begin
   Assert.IsNotNull(LMethod, 'RunCodexLoop method must exist');
 
   LCallbackCalled := False;
-
-  SetLength(LInvokeParams, 5);
-  LInvokeParams[0] := 'invalid_codex_cli_executable_name.exe';
-  LInvokeParams[1] := 'test prompt';
-  LInvokeParams[2] := TValue.From<TCompletionCallback>(
-    procedure(const AResponse: string; const AError: string; AFromCache: Boolean; const AUsage: TTokenUsage)
+  LCallback :=
+    procedure(
+      const AResponse: string;
+      const AError: string;
+      AFromCache: Boolean;
+      const AUsage: TTokenUsage
+    )
     begin
       LCallbackCalled := True;
       Assert.IsFalse(AFromCache);
       Assert.Contains(AError, 'Failed to create the Codex process');
-    end
-  );
+    end;
+
+  SetLength(LInvokeParams, 5);
+  LInvokeParams[0] := 'invalid_codex_cli_executable_name.exe';
+  LInvokeParams[1] := 'test prompt';
+  LInvokeParams[2] := TValue.From<TCompletionCallback>(LCallback);
   LInvokeParams[3] := TValue.From<TStreamChunkCallback>(nil);
   LInvokeParams[4] := False;
 
@@ -487,6 +503,7 @@ var
   LType: TRttiInstanceType;
   LMethod: TRttiMethod;
   LInvokeParams: TArray<TValue>;
+  LCallback: TCompletionCallback;
   LCallbackCalled: Boolean;
   LCmdLine: string;
 begin
@@ -497,18 +514,23 @@ begin
 
   LCallbackCalled := False;
   LCmdLine := 'cmd.exe /c echo {"type": "item.completed", "item": {"text": "hello from cmd"}}';
-
-  SetLength(LInvokeParams, 5);
-  LInvokeParams[0] := LCmdLine;
-  LInvokeParams[1] := 'test prompt';
-  LInvokeParams[2] := TValue.From<TCompletionCallback>(
-    procedure(const AResponse: string; const AError: string; AFromCache: Boolean; const AUsage: TTokenUsage)
+  LCallback :=
+    procedure(
+      const AResponse: string;
+      const AError: string;
+      AFromCache: Boolean;
+      const AUsage: TTokenUsage
+    )
     begin
       LCallbackCalled := True;
       Assert.IsTrue(AFromCache);
       Assert.AreEqual('hello from cmd', AResponse);
-    end
-  );
+    end;
+
+  SetLength(LInvokeParams, 5);
+  LInvokeParams[0] := LCmdLine;
+  LInvokeParams[1] := 'test prompt';
+  LInvokeParams[2] := TValue.From<TCompletionCallback>(LCallback);
   LInvokeParams[3] := TValue.From<TStreamChunkCallback>(nil);
   LInvokeParams[4] := False;
 
@@ -522,7 +544,6 @@ end;
 procedure TTestRadIAProviders.TestOpenAI_SendPromptAsync_OAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
-  I: Integer;
 begin
   LCallbackCalled := False;
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
@@ -540,21 +561,12 @@ begin
     1000
   );
 
-  for I := 1 to 50 do
-  begin
-    CheckSynchronize(100);
-    if LCallbackCalled then
-      Break;
-    Sleep(100);
-  end;
-
-  Assert.IsTrue(LCallbackCalled, 'Callback should be called');
+  Assert.IsTrue(LCallbackCalled, 'Missing executable must report the error synchronously');
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_SendPromptStreamAsync_OAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
-  I: Integer;
 begin
   LCallbackCalled := False;
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
@@ -575,15 +587,7 @@ begin
     1000
   );
 
-  for I := 1 to 50 do
-  begin
-    CheckSynchronize(100);
-    if LCallbackCalled then
-      Break;
-    Sleep(100);
-  end;
-
-  Assert.IsTrue(LCallbackCalled, 'Stream callback should be called');
+  Assert.IsTrue(LCallbackCalled, 'Missing executable must report the stream error synchronously');
 end;
 
 

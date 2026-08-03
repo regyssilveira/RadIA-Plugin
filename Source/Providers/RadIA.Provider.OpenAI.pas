@@ -9,7 +9,6 @@ type
   TRadIAOpenAIProvider = class(TRadIAOpenAICompatibleProvider)
   private
     FThreadId: string;
-    function GetCodexExecutablePath: string;
     function ExtractDeltaText(const ADeltaObj: TJSONObject): string;
     procedure WritePromptToPipe(AWriteHandle: THandle; const APrompt: string);
     procedure ReadCodexOutputPipe(AReadHandle: THandle; const AIsStream: Boolean;
@@ -24,6 +23,7 @@ type
       const AStreamCallback: TStreamChunkCallback; const AIsStream: Boolean);
     function GetEffectiveSystemPrompt: string;
   protected
+    function GetCodexExecutablePath: string; virtual;
     function GetBaseUrl: string; override;
     function GetModelsDiscoveryUrl: string; override;
     function FilterModelId(const AId: string): Boolean; override;

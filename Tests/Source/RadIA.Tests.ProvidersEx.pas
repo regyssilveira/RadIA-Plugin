@@ -1436,7 +1436,7 @@ begin
   end;
 
   Assert.IsTrue(LFinished, 'Fetch should have finished');
-  Assert.AreEqual(2, Length(LModels));
+  Assert.AreEqual(2, Integer(Length(LModels)));
   Assert.AreEqual('llama3:latest', LModels[0]);
   Assert.AreEqual('phi3:latest', LModels[1]);
   Assert.IsTrue(LError.IsEmpty);
@@ -1689,7 +1689,7 @@ begin
   end;
 
   Assert.IsTrue(LFinished, 'Gemini Fetch should have finished');
-  Assert.AreEqual(2, Length(LModels));
+  Assert.AreEqual(2, Integer(Length(LModels)));
   Assert.AreEqual('gemini-1.5-flash', LModels[0]);
   Assert.AreEqual('gemini-1.5-pro', LModels[1]);
   Assert.IsTrue(LError.IsEmpty);

@@ -1,0 +1,311 @@
+# Catálogo Inicial de Ferramentas Agentivas
+
+## 1. Convenções
+
+Os nomes públicos das ferramentas são estáveis, em inglês e usam `PascalCase`. Uma alteração
+incompatível de argumentos ou resultado exige nova versão do contrato.
+
+Cada ferramenta deve declarar:
+
+- Categoria.
+- Nível de risco.
+- Capacidade exigida.
+- Schema de entrada e saída.
+- Limite de resposta.
+- Idempotência.
+- Timeout.
+- Possíveis efeitos.
+
+## 2. Slice inicial
+
+Estas ferramentas formam o primeiro incremento somente leitura:
+
+| Ferramenta | Resultado principal | Risco |
+|---|---|---|
+| `GetIDEState` | Versão, plataforma, estado de shutdown e capacidades | Somente leitura |
+| `GetActiveProject` | Projeto, caminho, configuração e plataforma | Somente leitura |
+| `ListProjectUnits` | Units do projeto ativo | Somente leitura |
+| `GetActiveUnit` | Unit e arquivo ativos | Somente leitura |
+| `ListOpenFiles` | Arquivos abertos na IDE | Somente leitura |
+| `GetEditorContent` | Conteúdo vivo do editor | Somente leitura |
+| `GetEditorSelection` | Seleção e posição | Somente leitura |
+| `GetCursorPosition` | Linha e coluna | Somente leitura |
+| `GetCompilerMessages` | Erros e warnings estruturados | Somente leitura |
+| `FindInProject` | Ocorrências limitadas por escopo | Somente leitura |
+
+O conteúdo retornado deve indicar truncamento, tamanho original e revisão/hash quando aplicável.
+
+## 3. Editor
+
+### Leitura
+
+- `GetEditorContent`
+- `GetEditorSelection`
+- `GetCursorPosition`
+- `GetEditorLine`
+- `ListOpenFiles`
+- `FindInEditor`
+- `FindInProject`
+- `GetUnitSymbols`
+
+### Escrita reversível
+
+- `PreparePatch`
+- `ApplyPatch`
+- `RevertPatch`
+- `InsertCodeAtCursor`
+- `ReplaceEditorSelection`
+- `ApplyTextPatch`
+- `AddToUses`
+- `RemoveFromUses`
+- `SaveActiveFile`
+- `SaveAllFiles`
+- `UndoAgentChange`
+
+Todas as escritas devem usar revisão do buffer como precondição.
+
+O fluxo implementado usa `PreparePatch` para gerar um preview imutável sem efeitos,
+`ApplyPatch` para aplicar somente após consentimento e revalidação atômica, e `RevertPatch`
+para restaurar o conteúdo original quando a revisão produzida ainda estiver ativa.
+
+### Revisão inline
+
+- `PublishInlineReview`
+- `ListInlineReviews`
+- `PrepareInlineReviewFix`
+- `RemoveInlineReview`
+- `ClearInlineReviews`
+
+Revisões são limitadas a 128 itens, ancoradas ao arquivo, hash completo do buffer e intervalo de
+linhas. O notifier compatível com Delphi 11, 12 e 13 sublinha as linhas conforme a severidade e
+mostra a mensagem no status do editor. Se o buffer mudar, a revisão deixa de ser renderizada.
+Sugestões não escrevem código diretamente: `PrepareInlineReviewFix` cria um preview no serviço de
+patches, que continua sujeito a consentimento, precondições e reversão.
+
+## 4. Projeto e project group
+
+### Leitura
+
+- `GetActiveProject`
+- `ListProjects`
+- `ListProjectUnits`
+- `GetProjectMetadata`
+- `ListProjectConfigurations`
+- `ListProjectPlatforms`
+- `GetProjectSearchPath`
+- `GetConditionalDefines`
+- `GetProjectOutputPaths`
+- `GetProjectDependencies`
+
+### Escrita estrutural
+
+- `SetActiveConfiguration`
+- `SetActivePlatform`
+- `AddUnitToProject`
+- `RemoveUnitFromProject`
+- `CreateUnit`
+- `CreateProjectFromTemplate`
+- `SetProjectSearchPath`
+- `SetConditionalDefines`
+- `SetProjectOutputPath`
+
+Alterações em `.dproj`, `.dpr` ou `.groupproj` devem produzir preview e backup lógico reversível.
+
+## 5. Build e execução
+
+- `CompileProject`
+- `BuildProject`
+- `CleanProject`
+- `CancelBuild`
+- `GetBuildStatus`
+- `GetCompilerMessages`
+- `RunWithDebugger`
+- `RunWithoutDebugger`
+- `StopRunningProject`
+
+Build não equivale a autorização para executar binários. Execução possui consentimento próprio.
+
+O `BuildProject` implementado aceita os modos `make`, `build`, `check` e `clean`, executa em
+background pela OTA e não inicia o binário produzido. `CancelBuild` e timeout atuam somente sobre
+a compilação em background atualmente controlada pelo RadIA.
+
+## 6. Debugger
+
+### Leitura
+
+- `GetDebuggerState`
+- `GetCallStack`
+- `EvaluateDebuggerExpression`
+- `ListDebuggerWatches`
+- `EvaluateDebuggerWatches`
+- `ListBreakpoints`
+- `GetCurrentExecutionLocation`
+
+Implementado: `GetDebuggerState`, `ListBreakpoints`, `GetCallStack`, `EvaluateDebuggerExpression`,
+`ListDebuggerWatches` e `EvaluateDebuggerWatches`. As operações são somente
+leitura, executadas na thread principal e devolvem snapshots sem reter interfaces do debugger.
+A pilha só é consultada quando a OTA declara acesso seguro e a janela de acesso é encerrada em
+`finally`.
+
+Locals e outras expressões no frame atual são consultados pelo avaliador público da OTA com
+`eseNone`, que proíbe chamadas, getters e outros efeitos colaterais. A OTA não publica uma API para
+enumerar a janela interna Locals/Watch; por isso o RadIA mantém uma lista própria, limitada a 32
+expressões de até 256 caracteres, e a reavalia pelo thread atual.
+
+### Controle
+
+- `StartDebugging`
+- `PauseDebugging`
+- `StepInto`
+- `StepOver`
+- `StepOut`
+- `ContinueDebugging`
+- `StopDebugging`
+- `AddBreakpoint`
+- `RemoveBreakpoint`
+- `AddDebuggerWatch`
+- `RemoveDebuggerWatch`
+
+Implementado: `PauseDebugging`, `ContinueDebugging`, `StepInto`, `StepOver`, `StepOut` e
+`StopDebugging`. Cada ação valida o estado atual, usa somente a OTA pública, é não idempotente e
+exige consentimento e auditoria antes de alcançar o adapter. Pausa, continuação e steps possuem
+risco `Execution`; encerramento possui risco `Destructive` e nunca reutiliza permissão de sessão.
+`AddBreakpoint` aceita somente fontes Pascal dentro do workspace, rejeita duplicatas e informa
+`RemoveBreakpoint` como operação inversa. `RemoveBreakpoint` exige confirmação destrutiva em toda
+chamada. `StartDebugging` executa `Make` no projeto ativo e inicia somente o `TargetName` produzido
+por esse build, sem aceitar caminho de executável arbitrário. A lista de watches é estado interno
+limitado e suas alterações usam consentimento estrutural.
+
+## 7. Form Designer
+
+### Leitura
+
+- `GetActiveForm`
+- `ListFormComponents`
+- `GetFormProperties`
+- `GetComponentProperties`
+- `CaptureActiveForm`
+- `GetLiveFormText`
+
+Implementado inicialmente: `GetActiveForm` e `ListFormComponents`. Ambos leem o Designer vivo
+pela OTA, retornam snapshots e não retêm interfaces ou componentes da IDE.
+
+O primeiro ciclo mutável está disponível por `PrepareComponentLayout`, `ApplyComponentLayout` e
+`RevertComponentLayout`. O preview registra bounds originais e propostos; aplicação e reversão
+revalidam form, componente e geometria imediatamente antes da alteração.
+
+Propriedades escalares publicadas possuem o mesmo ciclo por `PrepareComponentProperty`,
+`ApplyComponentProperty` e `RevertComponentProperty`. O adapter aceita somente propriedades
+graváveis com tipos simples, recusa `Name`, eventos e referências a objetos, revalida valor e tipo
+antes de escrever e tenta restaurar o valor original se a aplicação falhar. Nomes de propriedades
+associados a senha, segredo, token, chave de API ou connection string também são recusados.
+
+Criação e remoção usam `PrepareAddFormComponent`, `PrepareRemoveFormComponent`,
+`ApplyFormComponentChange` e `RevertFormComponentChange`. O preview mantém classe, nome, parent e
+geometria; a aplicação revalida o formulário vivo e a reversão executa a operação inversa. Esta
+primeira versão aceita somente controles VCL de uma allowlist explícita e exige parent explícito.
+
+### Mutação
+
+- `OpenFormDesigner`
+- `OpenCodeEditor`
+- `AddFormComponent` (implementado pelo ciclo de preview)
+- `RemoveFormComponent` (implementado pelo ciclo de preview)
+- `SetFormProperty`
+- `SetComponentProperty`
+- `MoveFormComponent`
+- `ResizeFormComponent`
+- `AddEventHandler` (implementado pelo ciclo de preview)
+
+`PrepareFormEventHandler`, `ApplyFormEventHandler` e `RevertFormEventHandler` formam uma transação
+entre o buffer Pascal e o Form Designer vivo. A assinatura é criada pelo `IDesigner`, preservando o
+tipo real do evento. Aplicação e reversão exigem que o vínculo e o snapshot completo do buffer ainda
+coincidam com o preview; código concorrente do usuário nunca é sobrescrito silenciosamente.
+
+## 8. Git
+
+### Leitura
+
+- `GetGitStatus`
+- `GetGitDiff`
+- `GetCurrentBranch`
+- `GetRecentCommits`
+
+### Mutação
+
+- `StageFiles`
+- `CreateBranch`
+- `CommitChanges`
+
+Não serão oferecidas ferramentas de reset destrutivo ou descarte irrestrito.
+
+## 9. Conhecimento
+
+- `IndexProjectKnowledge`
+- `SearchProjectKnowledge`
+- `ClearProjectKnowledge`
+- `GetKnowledgeStatus`
+- `GetKnowledgeDocument`
+
+As cinco ferramentas estão implementadas. A indexação é incremental e local; a busca retorna chunks
+rastreáveis; o status expõe apenas contagens agregadas; a leitura de documento retorna conteúdo
+limitado com arquivo, revisão e linhas; a limpeza remove somente dados derivados reconstruíveis.
+
+O índice lexical agora possui persistência local opcional por projeto. O snapshot é versionado,
+gravado atomicamente sob a pasta de dados do RadIA e identificado por hash SHA-256 do projeto.
+Conteúdo inválido ou incompatível não é carregado; a indexação seguinte o reconstrói. A limpeza
+remove memória e arquivo derivado sem alterar qualquer fonte do workspace.
+
+Notificações de edição, save, rename e fechamento apenas marcam o projeto como alterado. Um
+scheduler com debounce inicia a atualização incremental em background, mantém somente índices e
+identidades escalares dos módulos e deixa de agendar trabalho assim que o shutdown é detectado.
+
+Resultados devem citar arquivo, símbolo, revisão e intervalo relevante.
+
+## 10. Auditoria
+
+- `QueryAuditLog`
+- `GetAgentChanges`
+- `GetPendingReviews`
+
+A auditoria não deve devolver secrets removidos durante a sanitização.
+
+## 11. Ordem de implementação
+
+1. Leitura de IDE, projeto e editor.
+2. Leitura de build.
+3. Pipeline de segurança.
+4. Patches e revisão.
+5. Build controlado.
+6. MCP.
+7. Designer.
+8. Debugger.
+9. Conhecimento.
+10. Git mutável.
+11. Extensões adicionais pelo contrato versionado.
+
+## 12. Extensões locais
+
+Pacotes confiáveis podem registrar ferramentas adicionais por `IRadIAToolExtension`. O host recebe
+o lote por um registrar limitado, valida schemas, nomes, versão da API, prefixo e colisões, e publica
+todas as ferramentas atomicamente.
+
+Ferramentas externas não possuem um caminho alternativo de execução: chat e MCP continuam usando o
+executor central de política, consentimento, auditoria e cancelamento. A liberação do token
+`IRadIAToolExtensionRegistration` remove somente as ferramentas pertencentes à extensão.
+
+Consulte `docs/tool_extension_guide.md` e o pacote em `Examples/ToolExtension`.
+
+## 13. Critérios para adicionar uma ferramenta
+
+Uma nova ferramenta somente entra no registry quando:
+
+- Possuir contrato documentado.
+- Possuir implementação fake testável.
+- Declarar risco e efeitos.
+- Validar todos os argumentos.
+- Respeitar limites do workspace.
+- Sanitizar resultado e erros.
+- Possuir teste de cancelamento quando executar trabalho demorado.
+- Possuir comportamento definido para shutdown.
+- Indicar suporte por versão da IDE.

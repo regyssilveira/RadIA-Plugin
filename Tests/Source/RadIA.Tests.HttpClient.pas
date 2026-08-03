@@ -10,6 +10,10 @@ type
   TTestRadIAHttpClient = class
   private
     FClient: IRadIAHttpClient;
+    FServer: IRadIALoopbackServer;
+    FServerUrl: string;
+    FCallbackObserved: Boolean;
+    procedure LoopbackCallback(const ACode, AError: string);
   public
     [Setup]
     procedure Setup;
@@ -29,18 +33,36 @@ type
 implementation
 
 uses
-  RadIA.Core.HttpClient, System.SysUtils, System.Net.URLClient;
+  RadIA.Core.HttpClient,
+  RadIA.Core.IndyLoopback,
+  System.SysUtils,
+  System.Net.URLClient;
 
 { TTestRadIAHttpClient }
 
 procedure TTestRadIAHttpClient.Setup;
 begin
   FClient := TRadIAConcreteHttpClient.Create;
+  FServer := TRadIAIndyLoopbackServer.Create;
+  FCallbackObserved := False;
+  FServer.Start(61340, LoopbackCallback);
+  FServerUrl := 'http://127.0.0.1:61340';
 end;
 
 procedure TTestRadIAHttpClient.TearDown;
 begin
+  if Assigned(FServer) then
+    FServer.Stop;
+  FServer := nil;
   FClient := nil;
+end;
+
+procedure TTestRadIAHttpClient.LoopbackCallback(
+  const ACode: string;
+  const AError: string
+);
+begin
+  FCallbackObserved := (ACode <> '') or (AError <> '');
 end;
 
 procedure TTestRadIAHttpClient.TestGetVersionFromSonarQube;
@@ -49,14 +71,14 @@ var
   LHeaders: TNetHeaders;
   LResponse: string;
 begin
-  LUrl := 'http://localhost:9000/api/server/version';
+  LUrl := FServerUrl + '/callback?code=http-client-test';
   SetLength(LHeaders, 0);
   try
     LResponse := FClient.Get(LUrl, LHeaders, 5000);
-    Assert.IsNotEmpty(LResponse, 'Should receive version response from SonarQube');
+    Assert.IsNotEmpty(LResponse, 'Should receive a response from the local server');
   except
     on E: Exception do
-      Assert.Fail('GET request to SonarQube version endpoint failed: ' + E.Message);
+      Assert.Fail('GET request to the local server failed: ' + E.Message);
   end;
 end;
 
@@ -65,7 +87,7 @@ var
   LUrl: string;
   LHeaders: TNetHeaders;
 begin
-  LUrl := 'http://localhost:9000/api/nonexistent_endpoint_for_test';
+  LUrl := FServerUrl + '/nonexistent_endpoint_for_test';
   SetLength(LHeaders, 0);
 
   Assert.WillRaise(
@@ -84,7 +106,7 @@ var
   LHeaders: TNetHeaders;
   LBody: string;
 begin
-  LUrl := 'http://localhost:9000/api/nonexistent_endpoint_for_test';
+  LUrl := FServerUrl + '/nonexistent_endpoint_for_test';
   SetLength(LHeaders, 0);
   LBody := '{"test": true}';
 
@@ -103,7 +125,7 @@ var
   LUrl: string;
   LHeaders: TNetHeaders;
 begin
-  LUrl := 'http://localhost:9000/api/server/version';
+  LUrl := FServerUrl + '/callback?code=cancel-test';
   SetLength(LHeaders, 0);
 
   FClient.Cancel;

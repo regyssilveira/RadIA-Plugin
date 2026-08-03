@@ -106,7 +106,7 @@ Insira as chaves obtidas nas configurações do plugin (**Settings** no topo do 
    * **Instruções:** Habilite o acesso aos modelos desejados (como Claude da Anthropic ou Llama da Meta) na console do Bedrock. Crie credenciais de acesso IAM no console da AWS para obter uma **Access Key ID** e uma **Secret Access Key**. Nas opções do Rad IA, configure esses dois campos, informe a **Região** da AWS onde o Bedrock está provisionado (ex: `us-east-1`) e, opcionalmente, forneça o **Session Token** se estiver utilizando credenciais temporárias do IAM.
 
    > [!IMPORTANT]
-   > **Permissões IAM e Acesso a Modelos no Bedrock:** 
+  > **Permissões IAM e Acesso a Modelos no Bedrock:**
    > * A chave de acesso IAM utilizada deve possuir políticas de segurança anexadas que permitam a execução das ações `bedrock:InvokeModel` e `bedrock:InvokeModelWithResponseStream`.
    > * Por padrão, a AWS Bedrock exige que você solicite acesso aos modelos individualmente no Console AWS da região desejada (menu *Model Access*). Certifique-se de que o acesso aos modelos que planeja utilizar (como Claude 3 da Anthropic) já foi solicitado e concedido antes de tentar conectá-los no Rad IA.
 
@@ -124,11 +124,63 @@ O script `.\build.ps1` aceita os seguintes parâmetros:
 * `-IDE64`: Compila e instala o plugin especificamente para a IDE de 64 bits do Delphi 13 Florence.
 * `-DelphiVersion "<versao>"`: Opcional. Permite forçar o uso de uma versão específica do Delphi instalada no sistema (ex: `"23.0"`, `"37.0"`, `"Athens"`).
 * `-Test`: Opcional. Compila e executa a suíte de testes unitários (DUnitX). Por padrão, os testes são omitidos do processo de compilação.
+* `-Package`: Gera um arquivo ZIP autocontido em `Output\Packages`, com manifesto SHA-256,
+  instalador, BPL, DCP, bridge MCP, WebView2Loader, recursos web, documentação e exemplo de extensão.
 
 > [!TIP]
 > **Suporte a Múltiplas Versões da IDE:** Se você possuir mais de uma versão do Delphi instalada no Windows e executar o script com `-Install` ou `-Uninstall` sem passar o parâmetro `-DelphiVersion`, o script listará automaticamente as versões instaladas encontradas no registro e exibirá um menu no console para que você selecione de forma interativa qual deseja utilizar.
 
 > [!NOTE]
 > **Autodetecção do DUnitX:** Se o parâmetro `-Test` for fornecido, o instalador verifica automaticamente se o framework DUnitX está instalado no Delphi selecionado. Se o DUnitX não for encontrado, o script exibirá um aviso no console, desativará a execução dos testes de forma automática e prosseguirá normalmente com a compilação e instalação do plugin principal.
+
+### Pacote de distribuição
+
+Para gerar um pacote Release:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "23.0" -Release -Package
+```
+
+Depois de extrair o ZIP, feche todas as IDEs e execute o instalador incluído:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 -DelphiVersion "23.0"
+```
+
+Para verificar o pacote sem instalar ou exigir o fechamento da IDE:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "23.0" -ValidateOnly
+```
+
+Para o Delphi 13 IDE64, gere e instale usando `-IDE64`. O instalador recusa uma versão ou arquitetura
+diferente da registrada no manifesto. Também recusa paths absolutos, traversal, duplicidades,
+arquivos ausentes, arquivos não manifestados, tamanhos divergentes e hashes SHA-256 inválidos.
+
+Na IDE64, o package é registrado no subkey oficial
+`HKCU\Software\Embarcadero\BDS\37.0\Known Packages x64`. A IDE Win32 continua usando
+`Known Packages`; os binários permanecem separados em `Bpl` e `Bpl\Win64`.
+
+O diretório `Output\Packages` também recebe `SHA256SUMS.txt` com o hash de cada ZIP disponível.
+
+Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File .\scripts\Test-RadIA.Package.ps1 `
+  -PackagePath .\Output\Packages\RadIA-v0.0.29-Delphi-22.0-Win32-Release.zip `
+  -DelphiVersion "22.0"
+```
+
+Para o pacote IDE64 do Delphi 13, acrescente `-IDE64`. A suíte confirma a validação íntegra e
+também exige rejeição de arquivos extras, conteúdo corrompido, versão ou plataforma incompatível,
+path traversal e caminhos duplicados no manifesto.
+
+A bridge MCP é instalada ao lado da BPL como `RadIA.MCP.Bridge.exe`. Clientes externos podem usar
+esse executável sem depender da árvore de fontes ou do diretório `Output`.
 
 

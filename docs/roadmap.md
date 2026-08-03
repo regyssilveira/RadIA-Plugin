@@ -1,5 +1,9 @@
 # Rad IA - Roadmap de Evolução
 
+> A evolução para uma plataforma agentiva está detalhada no
+> [Roadmap da Evolução Agentiva](agentic_roadmap.md). Esse roadmap complementa as versões de
+> produto abaixo e define gates próprios de arquitetura, segurança e compatibilidade.
+
 Este documento descreve o planejamento estratégico e a visão de futuro do assistente de IA **Rad IA**, focado em trazer produtividade e resolver as dores reais do desenvolvedor Delphi no seu dia a dia.
 
 > [!NOTE]

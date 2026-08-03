@@ -103,7 +103,7 @@ begin
     Assert.IsTrue(LMeta.HasApiKey, 'HasApiKey should be True');
     Assert.IsTrue(LMeta.HasCustomUrl, 'HasCustomUrl should be True');
     Assert.IsTrue(LMeta.IsDynamic, 'IsDynamic should be True');
-    Assert.AreEqual(2, Length(LMeta.DefaultModels), 'DefaultModels count does not match');
+    Assert.AreEqual(2, Integer(Length(LMeta.DefaultModels)), 'DefaultModels count does not match');
     Assert.AreEqual('dynamic-model-v1', LMeta.DefaultModels[0], 'First model does not match');
   end
   else
@@ -120,7 +120,7 @@ begin
   Assert.IsNotNull(LProvider, 'Provider instance should not be null');
   Assert.AreEqual('Test Dynamic AI', LProvider.GetName, 'GetName does not match');
   Assert.AreEqual('TestDynamic', LProvider.GetProviderId, 'GetProviderId does not match');
-  Assert.AreEqual(2, Length(LProvider.GetAvailableModels), 'Models count does not match');
+  Assert.AreEqual(2, Integer(Length(LProvider.GetAvailableModels)), 'Models count does not match');
   Assert.AreEqual('dynamic-model-v1', LProvider.GetAvailableModels[0], 'First model does not match');
 
   // Testar se a API Key do JSON foi propagada corretamente

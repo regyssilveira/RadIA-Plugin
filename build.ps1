@@ -4,7 +4,9 @@ param(
     [switch]$Release,
     [switch]$IDE64,
     [string]$DelphiVersion,
-    [switch]$Test
+    [switch]$Test,
+    [switch]$NoCoverage,
+    [switch]$Package
 )
 $ErrorActionPreference = "Stop"
 $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -13,6 +15,34 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "         Iniciando Build do Rad IA           " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
+
+# 0. Validar consistencia da versao publica
+$declaredVersion = (
+    Get-Content -LiteralPath ".\package.json" -Raw |
+    ConvertFrom-Json
+).version
+$versionUnitContent = Get-Content `
+    -LiteralPath ".\Source\Core\RadIA.Core.Version.pas" `
+    -Raw
+$expectedVersionConstant = "CRadIAVersion = '$declaredVersion';"
+if (-not $versionUnitContent.Contains($expectedVersionConstant)) {
+    throw "RadIA.Core.Version.pas does not match package.json."
+}
+$resourceContent = Get-Content -LiteralPath ".\RadIA.rc" -Raw
+$resourceVersion = $declaredVersion.Replace(".", ",") + ",0"
+$resourceVersionText = $declaredVersion + ".0"
+if (
+    -not $resourceContent.Contains("FILEVERSION $resourceVersion") -or
+    -not $resourceContent.Contains("PRODUCTVERSION $resourceVersion") -or
+    -not $resourceContent.Contains(
+        "VALUE `"FileVersion`", `"$resourceVersionText\0`""
+    ) -or
+    -not $resourceContent.Contains(
+        "VALUE `"ProductVersion`", `"$resourceVersionText\0`""
+    )
+) {
+    throw "RadIA.rc does not match package.json."
+}
 
 # 1. Detectar instalacoes do Delphi no Registro do Windows
 $installations = @()
@@ -45,34 +75,49 @@ $selectedInstall = $null
 
 if ($DelphiVersion) {
     # Tentar encontrar a versao informada pelo usuario
-    $selectedInstall = $installations | Where-Object { 
-        $_.Version -eq $DelphiVersion -or 
+    $selectedInstall = $installations | Where-Object {
+        $_.Version -eq $DelphiVersion -or
         $_.Name -like "*$DelphiVersion*"
     } | Select-Object -First 1
-    
+
     if (-not $selectedInstall) {
-        Write-Warning "Versao do Delphi '$DelphiVersion' nao encontrada no registro. Tentando prosseguir com o PATH padrao."
+        Write-Warning (
+            "Versao do Delphi '$DelphiVersion' nao encontrada no registro. " +
+            "Tentando prosseguir com o PATH padrao."
+        )
     } else {
-        Write-Host "Versao do Delphi selecionada via parametro: $($selectedInstall.Name) ($($selectedInstall.Version))" -ForegroundColor Green
+        Write-Host (
+            "Versao do Delphi selecionada via parametro: " +
+            "$($selectedInstall.Name) ($($selectedInstall.Version))"
+        ) -ForegroundColor Green
     }
 }
 
 # Se nao houver versao pre-definida, resolvemos dinamicamente
 if (-not $selectedInstall) {
     if ($installations.Count -eq 0) {
-        Write-Host "Nenhuma instalacao do Delphi encontrada no Registro do Windows. Tentando prosseguir com o PATH padrao." -ForegroundColor Yellow
+        Write-Host (
+            "Nenhuma instalacao do Delphi encontrada no Registro do Windows. " +
+            "Tentando prosseguir com o PATH padrao."
+        ) -ForegroundColor Yellow
     } elseif ($installations.Count -eq 1) {
         $selectedInstall = $installations[0]
-        Write-Host "Unica instalacao do Delphi detectada: $($selectedInstall.Name) ($($selectedInstall.Version))" -ForegroundColor Green
+        Write-Host (
+            "Unica instalacao do Delphi detectada: " +
+            "$($selectedInstall.Name) ($($selectedInstall.Version))"
+        ) -ForegroundColor Green
     } else {
         Write-Host ""
         Write-Host "Multiplas versoes do Delphi detectadas no sistema:" -ForegroundColor Cyan
         for ($i = 0; $i -lt $installations.Count; $i++) {
-            Write-Host "  [$($i + 1)] $($installations[$i].Name) ($($installations[$i].Version)) em $($installations[$i].RootDir)" -ForegroundColor Yellow
+            Write-Host (
+                "  [$($i + 1)] $($installations[$i].Name) " +
+                "($($installations[$i].Version)) em $($installations[$i].RootDir)"
+            ) -ForegroundColor Yellow
         }
         Write-Host "  [$($installations.Count + 1)] Cancelar Operacao" -ForegroundColor Red
         Write-Host ""
-        
+
         $choice = 0
         while ($choice -lt 1 -or $choice -gt ($installations.Count + 1)) {
             $inputVal = Read-Host "Selecione a versao do Delphi desejada (1-$($installations.Count + 1))"
@@ -80,12 +125,12 @@ if (-not $selectedInstall) {
                 $choice = [int]$inputVal
             }
         }
-        
+
         if ($choice -eq ($installations.Count + 1)) {
             Write-Host "Operacao cancelada pelo usuario." -ForegroundColor Red
             Exit
         }
-        
+
         $selectedInstall = $installations[$choice - 1]
         Write-Host "Versao selecionada: $($selectedInstall.Name)" -ForegroundColor Green
     }
@@ -142,7 +187,6 @@ if ($IDE64) {
     Write-Host "Compilando para IDE de 32 bits (Win32) por padrao." -ForegroundColor Yellow
 }
 
-
 # Processar Desinstalacao (se a flag -Uninstall for fornecida)
 if ($Uninstall) {
     if (Get-Process bds -ErrorAction SilentlyContinue) {
@@ -150,7 +194,10 @@ if ($Uninstall) {
         Write-Host "=========================================================================" -ForegroundColor Red
         Write-Host "ERRO: A IDE do Delphi (bds.exe) esta aberta no momento." -ForegroundColor Red
         Write-Host "Por favor, salve seu trabalho e feche todas as instancias da IDE" -ForegroundColor Red
-        Write-Host "antes de executar a desinstalacao do plugin Rad IA para evitar arquivos travados." -ForegroundColor Red
+        Write-Host (
+            "antes de executar a desinstalacao do plugin Rad IA " +
+            "para evitar arquivos travados."
+        ) -ForegroundColor Red
         Write-Host "=========================================================================" -ForegroundColor Red
         Write-Host ""
         throw "A IDE do Delphi esta aberta."
@@ -172,13 +219,17 @@ if ($Uninstall) {
     }
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
+    $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
     $targetDcp = "$targetDcpDir\RadIA.dcp"
     $targetWeb = "$publicBplDir\Web"
 
     Write-Host "Removendo pacote do Registro do Windows..." -ForegroundColor Yellow
     $regPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Known Packages"
     if ($IDE64) {
-        $regPath = "HKCU:\Software\Embarcadero\BDS\${delphiVer}_x64\Known Packages"
+        $regPath = (
+            "HKCU:\Software\Embarcadero\BDS\$delphiVer\" +
+            "Known Packages x64"
+        )
     }
     if (Test-Path $regPath) {
         Remove-ItemProperty -Path $regPath -Name $targetBpl -ErrorAction SilentlyContinue | Out-Null
@@ -187,6 +238,9 @@ if ($Uninstall) {
     Write-Host "Removendo binarios e recursos do sistema..." -ForegroundColor Yellow
     if (Test-Path $targetBpl) {
         Remove-Item -Path $targetBpl -Force | Out-Null
+    }
+    if (Test-Path $targetBridge) {
+        Remove-Item -Path $targetBridge -Force | Out-Null
     }
     if (Test-Path $targetDcp) {
         Remove-Item -Path $targetDcp -Force | Out-Null
@@ -230,7 +284,12 @@ New-Item -ItemType Directory -Force -Path $dcuPath, $binPath, $bplPath, $dcpPath
 
 # 5. Limpeza de arquivos temporarios de compilacao em pastas de fontes
 Write-Host "Limpando diretorios de codigo-fonte de compilacoes antigas..." -ForegroundColor Yellow
-Get-ChildItem -Path . -Recurse -Include *.dcu, *.exe, *.bpl, *.dcp, *.identcache, *.local | Where-Object { $_.FullName -notmatch "Output" } | Remove-Item -Force
+Get-ChildItem `
+    -Path . `
+    -Recurse `
+    -Include *.dcu, *.exe, *.bpl, *.dcp, *.identcache, *.local |
+    Where-Object { $_.FullName -notmatch "Output" } |
+    Remove-Item -Force
 
 # 6. Compilar Recursos e Pacote Principal (RadIA.dpk)
 Write-Host "Compilando recursos RadIA.rc..." -ForegroundColor Yellow
@@ -254,17 +313,52 @@ if ($LASTEXITCODE -ne 0) {
     throw "Compilacao do pacote principal falhou."
 }
 
-# 6.1 Verificar disponibilidade do DUnitX caso os testes tenham sido explicitamente solicitados
+# 6.1 Compilar pacote de exemplo da API de extensoes
+Write-Host "Compilando exemplo de extensao ($platform)..." -ForegroundColor Yellow
+$extensionParams = @(
+    "-Q",
+    "-U$dcpPath",
+    "-NU$dcuPath",
+    "-LE$bplPath",
+    "-LN$dcpPath"
+)
+if ($Release) {
+    $extensionParams += @('-$D-', '-$L-', '-O+', '-DRELEASE')
+} else {
+    $extensionParams += @('-$D+', '-$L+', '-O-', '-DDEBUG')
+}
+& $compiler $extensionParams "Examples\ToolExtension\RadIA.SampleExtension.dpk"
+if ($LASTEXITCODE -ne 0) {
+    throw "Compilacao do exemplo da API de extensoes falhou."
+}
+
+# 6.2 Compilar bridge MCP stdio para clientes externos
+Write-Host "Compilando bridge MCP stdio ($platform)..." -ForegroundColor Yellow
+$mcpBridgeParams = @("-Q", "-NU$dcuPath", "-E$binPath")
+if ($Release) {
+    $mcpBridgeParams += @('-$D-', '-$L-', '-O+', '-DRELEASE')
+} else {
+    $mcpBridgeParams += @('-$D+', '-$L+', '-O-', '-DDEBUG')
+}
+& $compiler $mcpBridgeParams "Source\MCP\RadIA.MCP.Bridge.dpr"
+if ($LASTEXITCODE -ne 0) {
+    throw "Compilacao do bridge MCP stdio falhou."
+}
+
+# 6.3 Verificar disponibilidade do DUnitX caso os testes tenham sido explicitamente solicitados
 $runTests = $Test
 if ($runTests) {
     $dunitxPath = ""
     if ($selectedInstall) {
         $dunitxPath = Join-Path $selectedInstall.RootDir "source\DUnitX"
     }
-    
+
     if (-not $dunitxPath -or -not (Test-Path $dunitxPath)) {
         Write-Host "AVISO: O framework DUnitX nao foi detectado na sua instalacao do Delphi." -ForegroundColor Yellow
-        Write-Host "       Os testes unitarios serao desativados automaticamente e o instalador prosseguira." -ForegroundColor Yellow
+        Write-Host (
+            "       Os testes unitarios serao desativados automaticamente " +
+            "e o instalador prosseguira."
+        ) -ForegroundColor Yellow
         $runTests = $false
     }
 }
@@ -275,30 +369,40 @@ if ($runTests) {
     Push-Location Tests
     try {
         # DCU e Bin caminhos relativos de dentro da pasta Tests
-        $testsDcuPath = "..\Output\$delphiVer\dcu\Win32\$configName"
-        $testsBinPath = "..\Output\$delphiVer\bin\Win32\$configName"
+        $testsDcuPath = "..\Output\$delphiVer\dcu\$platform\$configName"
+        $testsBinPath = "..\Output\$delphiVer\bin\$platform\$configName"
         New-Item -ItemType Directory -Force -Path $testsDcuPath, $testsBinPath | Out-Null
-        
+
         $dccParamsTests = @("-Q", "-LUdesignide", "-LUvclie", "-NU$testsDcuPath", "-E$testsBinPath", "-DTESTS", "-GD")
         if ($Release) {
             $dccParamsTests += @('-$D-', '-$L-', '-O+', '-DRELEASE')
         } else {
             $dccParamsTests += @('-$D+', '-$L+', '-O-', '-DDEBUG')
         }
-        
+
         # 7.1 Resolver Search Paths globais do Delphi no Registro para que compile com as mesmas units da IDE
         if ($selectedInstall) {
-            $libRegPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Library\Win32"
+            $libRegPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Library\$platform"
             if (Test-Path $libRegPath) {
-                $searchPath = (Get-ItemProperty -Path $libRegPath -Name "Search Path" -ErrorAction SilentlyContinue)."Search Path"
+                $librarySettings = Get-ItemProperty `
+                    -Path $libRegPath `
+                    -Name "Search Path" `
+                    -ErrorAction SilentlyContinue
+                $searchPath = $librarySettings."Search Path"
                 if ($searchPath) {
                     # Substitui as macro-variaveis do Delphi pelo caminho fisico correspondente
                     $resolvedPath = $searchPath.Replace('$(BDS)', $selectedInstall.RootDir)
-                    $resolvedPath = $resolvedPath.Replace('$(BDSCOMMONDIR)', "C:\Users\Public\Documents\Embarcadero\Studio\$delphiVer")
+                    $commonDirectory = (
+                        "C:\Users\Public\Documents\Embarcadero\Studio\$delphiVer"
+                    )
+                    $resolvedPath = $resolvedPath.Replace(
+                        '$(BDSCOMMONDIR)',
+                        $commonDirectory
+                    )
                     $dccParamsTests += "-U$resolvedPath"
                 }
             }
-            
+
             # Fallback de seguranca caso o DUnitX nao esteja no Search Path do registro mas exista na pasta source
             $dunitxPath = Join-Path $selectedInstall.RootDir "source\DUnitX"
             if (Test-Path $dunitxPath) {
@@ -306,44 +410,82 @@ if ($runTests) {
                 $dccParamsTests += "-U$(Join-Path $dunitxPath 'src')"
             }
         }
-        
-        & dcc32 $dccParamsTests RadIATests.dpr
+
+        # Usa response file para evitar o limite de tamanho da linha de comando do Windows.
+        # O Search Path global da IDE pode conter milhares de caracteres.
+        $testsResponseFile = Join-Path (Resolve-Path $testsDcuPath) "RadIATests.rsp"
+        $testsResponseLines = @($dccParamsTests | ForEach-Object {
+            if ($_ -match '\s') {
+                '"{0}"' -f $_
+            } else {
+                $_
+            }
+        })
+        $testsResponseLines += "RadIATests.dpr"
+        [System.IO.File]::WriteAllLines(
+            $testsResponseFile,
+            $testsResponseLines,
+            [System.Text.Encoding]::Default
+        )
+
+        try {
+            & $compiler "@$testsResponseFile"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Compilacao da suite de testes falhou."
+            }
+        } finally {
+            Remove-Item -LiteralPath $testsResponseFile -Force -ErrorAction SilentlyContinue
+        }
     } finally {
         Pop-Location
     }
 
     # 8. Executar os Testes Unitarios e Cobertura de Codigo
-    $testsExe = ".\Output\$delphiVer\bin\Win32\$configName\RadIATests.exe"
-    $testsMap = ".\Output\$delphiVer\bin\Win32\$configName\RadIATests.map"
+    $testsExe = ".\Output\$delphiVer\bin\$platform\$configName\RadIATests.exe"
+    $testsMap = ".\Output\$delphiVer\bin\$platform\$configName\RadIATests.map"
     if (Test-Path $testsExe) {
         # Tentar localizar o CodeCoverage.exe dinamicamente
         $docsPath = [Environment]::GetFolderPath('MyDocuments')
         $studioDocsPath = Join-Path $docsPath "Embarcadero\Studio"
         $codeCoverageExe = $null
-        
+
         if (Test-Path $studioDocsPath) {
-            $codeCoverageExe = Get-ChildItem -Path $studioDocsPath -Filter "CodeCoverage.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1
+            $codeCoverageExe = Get-ChildItem `
+                -Path $studioDocsPath `
+                -Filter "CodeCoverage.exe" `
+                -Recurse `
+                -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty FullName -First 1
         }
-        
-        if ($codeCoverageExe -and (Test-Path $codeCoverageExe)) {
+
+        $coverageSupported = -not $IDE64
+        if (
+            (-not $NoCoverage) -and
+            $coverageSupported -and
+            $codeCoverageExe -and
+            (Test-Path $codeCoverageExe)
+        ) {
             Write-Host "Ferramenta de cobertura de codigo detectada em: $codeCoverageExe" -ForegroundColor Green
-            Write-Host "Executando testes unitarios com instrumentacao de cobertura de codigo..." -ForegroundColor Yellow
-            
+            Write-Host (
+                "Executando testes unitarios com instrumentacao " +
+                "de cobertura de codigo..."
+            ) -ForegroundColor Yellow
+
             $coverageOutputDir = ".\Output\Coverage"
             if (-not (Test-Path $coverageOutputDir)) {
                 New-Item -ItemType Directory -Force -Path $coverageOutputDir | Out-Null
             }
-            
+
             # Gerar lista de paths de busca para o CodeCoverage (Source e subdiretorios)
             $sourcePaths = @()
             $sourcePaths += (Get-Item -Path "Source").FullName
             $sourcePaths += Get-ChildItem -Path "Source" -Recurse -Directory | Select-Object -ExpandProperty FullName
             $sourcePaths | Out-File -FilePath "$coverageOutputDir\paths.lst" -Encoding ascii
-            
+
             # Gerar lista de units do projeto com a extensao .pas
             $units = Get-ChildItem -Path "Source" -Filter "*.pas" -Recurse | Select-Object -ExpandProperty Name
             $units | Out-File -FilePath "$coverageOutputDir\units.lst" -Encoding ascii
-            
+
             # Executar DelphiCodeCoverage
             $ccArgs = @(
                 "-e", $testsExe,
@@ -354,31 +496,47 @@ if ($runTests) {
                 "-xml",
                 "-xmllines",
                 "-xmlgenerics",
-                "-html"
+                "-html",
+                "-tec"
             )
-            
+
             & $codeCoverageExe $ccArgs
-            
+
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "=============================================" -ForegroundColor Green
                 Write-Host "    Build, Testes e Cobertura Concluidos!    " -ForegroundColor Green
                 Write-Host " Relatorios salvos em: $coverageOutputDir" -ForegroundColor Green
                 Write-Host "=============================================" -ForegroundColor Green
             } else {
-                Write-Warning "A execucao do CodeCoverage.exe retornou erro (codigo $LASTEXITCODE)."
+                throw "Code coverage or the instrumented test suite failed with exit code $LASTEXITCODE."
             }
         } else {
-            Write-Host "=========================================================================" -ForegroundColor Yellow
-            Write-Host "AVISO: A ferramenta 'CodeCoverage.exe' nao foi encontrada no seu sistema." -ForegroundColor Yellow
-            Write-Host "       A cobertura de testes nao sera gerada." -ForegroundColor Yellow
-            Write-Host "       Para gerar relatorios de cobertura, instale o 'Delphi Code Coverage' via GetIt" -ForegroundColor Yellow
-            Write-Host "       ou baixe manualmente a partir do link oficial:" -ForegroundColor Yellow
-            Write-Host "       https://github.com/DelphiCodeCoverage/DelphiCodeCoverage" -ForegroundColor Cyan
-            Write-Host "=========================================================================" -ForegroundColor Yellow
-            
+            if (-not $coverageSupported) {
+                Write-Host "Coverage is unavailable for IDE64; running tests directly." -ForegroundColor Yellow
+            } elseif ($NoCoverage) {
+                Write-Host "Cobertura desativada pela flag -NoCoverage." -ForegroundColor Yellow
+            } else {
+                Write-Host (
+                    "========================================================================="
+                ) -ForegroundColor Yellow
+                Write-Host (
+                    "AVISO: A ferramenta 'CodeCoverage.exe' nao foi encontrada " +
+                    "no seu sistema."
+                ) -ForegroundColor Yellow
+                Write-Host "       A cobertura de testes nao sera gerada." -ForegroundColor Yellow
+                Write-Host "       Instale o 'Delphi Code Coverage' via GetIt ou consulte:" -ForegroundColor Yellow
+                Write-Host "       https://github.com/DelphiCodeCoverage/DelphiCodeCoverage" -ForegroundColor Cyan
+                Write-Host (
+                    "========================================================================="
+                ) -ForegroundColor Yellow
+            }
+
             Write-Host "Executando suite de testes de forma direta..." -ForegroundColor Yellow
             & $testsExe
-            
+            if ($LASTEXITCODE -ne 0) {
+                throw "A suite de testes retornou falhas."
+            }
+
             Write-Host "=============================================" -ForegroundColor Green
             Write-Host "    Build e Testes Concluidos com Sucesso!   " -ForegroundColor Green
             Write-Host "=============================================" -ForegroundColor Green
@@ -392,7 +550,156 @@ if ($runTests) {
     Write-Host "=============================================" -ForegroundColor Green
 }
 
-# 9. Instalacao automatizada (se a flag -Install for fornecida)
+# 9. Criar pacote de distribuicao reproduzivel
+if ($Package) {
+    $productVersion = (
+        Get-Content -LiteralPath ".\package.json" -Raw |
+        ConvertFrom-Json
+    ).version
+    $packageName = (
+        "RadIA-v$productVersion-Delphi-$delphiVer-" +
+        "$platform-$configName"
+    )
+    $packagesRoot = [IO.Path]::GetFullPath(".\Output\Packages")
+    $stagingRoot = [IO.Path]::GetFullPath(
+        (Join-Path $packagesRoot "staging\$packageName")
+    )
+    if (-not $stagingRoot.StartsWith(
+        $packagesRoot + [IO.Path]::DirectorySeparatorChar,
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "Unexpected package staging path."
+    }
+    if (Test-Path -LiteralPath $stagingRoot) {
+        Remove-Item -LiteralPath $stagingRoot -Recurse -Force
+    }
+
+    $packageDirectories = @(
+        $stagingRoot,
+        (Join-Path $stagingRoot "Bpl"),
+        (Join-Path $stagingRoot "Dcp"),
+        (Join-Path $stagingRoot "Bin"),
+        (Join-Path $stagingRoot "Web"),
+        (Join-Path $stagingRoot "Redist"),
+        (Join-Path $stagingRoot "Docs"),
+        (Join-Path $stagingRoot "Scripts"),
+        (Join-Path $stagingRoot "Examples\ToolExtension")
+    )
+    New-Item -ItemType Directory -Force -Path $packageDirectories |
+        Out-Null
+
+    Copy-Item `
+        -LiteralPath "$bplPath\RadIA.bpl" `
+        -Destination (Join-Path $stagingRoot "Bpl\RadIA.bpl")
+    Copy-Item `
+        -LiteralPath "$dcpPath\RadIA.dcp" `
+        -Destination (Join-Path $stagingRoot "Dcp\RadIA.dcp")
+    Copy-Item `
+        -LiteralPath "$binPath\RadIA.MCP.Bridge.exe" `
+        -Destination (Join-Path $stagingRoot "Bin\RadIA.MCP.Bridge.exe")
+    Copy-Item `
+        -Path ".\Source\UI\Web\*" `
+        -Destination (Join-Path $stagingRoot "Web") `
+        -Recurse
+    Copy-Item `
+        -LiteralPath ".\Redist\$platform\WebView2Loader.dll" `
+        -Destination (Join-Path $stagingRoot "Redist\WebView2Loader.dll")
+    Copy-Item `
+        -LiteralPath ".\docs\install_config.md" `
+        -Destination (Join-Path $stagingRoot "Docs\install_config.md")
+    Copy-Item `
+        -LiteralPath ".\docs\tool_extension_guide.md" `
+        -Destination (Join-Path $stagingRoot "Docs\tool_extension_guide.md")
+    Copy-Item `
+        -LiteralPath ".\docs\agentic_migration_0_1.md" `
+        -Destination (Join-Path $stagingRoot "Docs\agentic_migration_0_1.md")
+    Copy-Item `
+        -LiteralPath ".\scripts\Install-RadIA.Package.ps1" `
+        -Destination (Join-Path $stagingRoot "Scripts\Install-RadIA.Package.ps1")
+    Copy-Item `
+        -Path ".\Examples\ToolExtension\*" `
+        -Destination (Join-Path $stagingRoot "Examples\ToolExtension") `
+        -Recurse
+    Copy-Item -LiteralPath ".\LICENSE" -Destination $stagingRoot
+    Copy-Item -LiteralPath ".\README.md" -Destination $stagingRoot
+
+    $manifestFiles = @(
+        Get-ChildItem -LiteralPath $stagingRoot -Recurse -File |
+        Sort-Object FullName |
+        ForEach-Object {
+            [PSCustomObject]@{
+                path = $_.FullName.Substring(
+                    $stagingRoot.Length + 1
+                ).Replace("\", "/")
+                sha256 = (
+                    Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
+                ).Hash
+                size = $_.Length
+            }
+        }
+    )
+    $manifest = [PSCustomObject]@{
+        schemaVersion = 1
+        product = "RadIA"
+        productVersion = $productVersion
+        delphiVersion = $delphiVer
+        platform = $platform
+        configuration = $configName
+        files = $manifestFiles
+    }
+    $manifest |
+        ConvertTo-Json -Depth 5 |
+        Set-Content `
+            -LiteralPath (Join-Path $stagingRoot "manifest.json") `
+            -Encoding UTF8
+
+    $packageValidationArgs = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        (Join-Path $stagingRoot "Scripts\Install-RadIA.Package.ps1"),
+        "-DelphiVersion",
+        $delphiVer,
+        "-ValidateOnly"
+    )
+    if ($IDE64) {
+        $packageValidationArgs += "-IDE64"
+    }
+    & powershell.exe $packageValidationArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Package validation failed."
+    }
+
+    $packageFile = Join-Path $packagesRoot "$packageName.zip"
+    if (Test-Path -LiteralPath $packageFile) {
+        Remove-Item -LiteralPath $packageFile -Force
+    }
+    Compress-Archive `
+        -Path (Join-Path $stagingRoot "*") `
+        -DestinationPath $packageFile `
+        -CompressionLevel Optimal
+    Remove-Item -LiteralPath $stagingRoot -Recurse -Force
+    $checksumLines = @(
+        Get-ChildItem `
+            -LiteralPath $packagesRoot `
+            -Filter "RadIA-v*.zip" |
+        Sort-Object Name |
+        ForEach-Object {
+            $hash = (
+                Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
+            ).Hash
+            "$hash *$($_.Name)"
+        }
+    )
+    Set-Content `
+        -LiteralPath (Join-Path $packagesRoot "SHA256SUMS.txt") `
+        -Value $checksumLines `
+        -Encoding ASCII
+    Write-Host "Pacote criado em: $packageFile" -ForegroundColor Green
+}
+
+# 10. Instalacao automatizada (se a flag -Install for fornecida)
 if ($Install) {
     if (Get-Process bds -ErrorAction SilentlyContinue) {
         Write-Host ""
@@ -425,6 +732,7 @@ if ($Install) {
     New-Item -ItemType Directory -Force -Path $targetBplDir, $targetDcpDir | Out-Null
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
+    $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
     $targetDcp = "$targetDcpDir\RadIA.dcp"
 
     # 9.1 Garantir existencia de WebView2Loader.dll na pasta da IDE correspondente a arquitetura
@@ -442,8 +750,18 @@ if ($Install) {
             Write-Host "WebView2Loader.dll (32-bit) nao encontrada em $ideBinDir." -ForegroundColor Yellow
             $redist32 = ".\Redist\Win32\$dllName"
             if (Test-Path $redist32) {
-                Write-Host "Solicitando privilegios para copiar WebView2Loader.dll (32-bit) para a pasta bin da IDE..." -ForegroundColor Yellow
-                Start-Process powershell -Verb RunAs -ArgumentList "-Command Copy-Item -Path '$redist32' -Destination '$ideBinDir\$dllName' -Force" -Wait
+                Write-Host (
+                    "Solicitando privilegios para copiar WebView2Loader.dll " +
+                    "(32-bit) para a pasta bin da IDE..."
+                ) -ForegroundColor Yellow
+                $copyCommand = (
+                    "-Command Copy-Item -Path '$redist32' " +
+                    "-Destination '$ideBinDir\$dllName' -Force"
+                )
+                Start-Process powershell `
+                    -Verb RunAs `
+                    -ArgumentList $copyCommand `
+                    -Wait
             }
         }
     } else {
@@ -451,14 +769,28 @@ if ($Install) {
             Write-Host "WebView2Loader.dll (64-bit) nao encontrada em $ideBin64Dir." -ForegroundColor Yellow
             $redist64 = ".\Redist\Win64\$dllName"
             if (Test-Path $redist64) {
-                Write-Host "Solicitando privilegios para copiar WebView2Loader.dll (64-bit) para a pasta bin64 da IDE..." -ForegroundColor Yellow
-                Start-Process powershell -Verb RunAs -ArgumentList "-Command Copy-Item -Path '$redist64' -Destination '$ideBin64Dir\$dllName' -Force" -Wait
+                Write-Host (
+                    "Solicitando privilegios para copiar WebView2Loader.dll " +
+                    "(64-bit) para a pasta bin64 da IDE..."
+                ) -ForegroundColor Yellow
+                $copyCommand = (
+                    "-Command Copy-Item -Path '$redist64' " +
+                    "-Destination '$ideBin64Dir\$dllName' -Force"
+                )
+                Start-Process powershell `
+                    -Verb RunAs `
+                    -ArgumentList $copyCommand `
+                    -Wait
             }
         }
     }
 
     Write-Host "Copiando binarios e recursos para as pastas da IDE..." -ForegroundColor Yellow
     Copy-Item -Path ".\Output\$delphiVer\bpl\$platform\RadIA.bpl" -Destination $targetBpl -Force
+    Copy-Item `
+        -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.MCP.Bridge.exe" `
+        -Destination $targetBridge `
+        -Force
     Copy-Item -Path ".\Output\$delphiVer\dcp\$platform\RadIA.dcp" -Destination $targetDcp -Force
 
     $sourceWeb = Join-Path (Get-Location) "Source\UI\Web"
@@ -510,15 +842,24 @@ if ($Install) {
     Write-Host "Registrando pacote no Registro do Windows..." -ForegroundColor Yellow
     $regPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Known Packages"
     if ($IDE64) {
-        $regPath = "HKCU:\Software\Embarcadero\BDS\${delphiVer}_x64\Known Packages"
+        $regPath = (
+            "HKCU:\Software\Embarcadero\BDS\$delphiVer\" +
+            "Known Packages x64"
+        )
     }
-    
+
     # Garante que a chave existe no registro antes de gravar
     if (-not (Test-Path $regPath)) {
         New-Item -Path $regPath -Force | Out-Null
     }
-    
-    New-ItemProperty -Path $regPath -Name $targetBpl -Value "Rad IA - AI Assistant for Delphi IDE" -PropertyType String -Force | Out-Null
+
+    New-ItemProperty `
+        -Path $regPath `
+        -Name $targetBpl `
+        -Value "Rad IA - AI Assistant for Delphi IDE" `
+        -PropertyType String `
+        -Force |
+        Out-Null
 
     Write-Host "=============================================" -ForegroundColor Green
     Write-Host " Plugin instalado com sucesso no Delphi!     " -ForegroundColor Green
