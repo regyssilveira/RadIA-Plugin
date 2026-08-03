@@ -1,7 +1,7 @@
 # Migração para a plataforma agentiva
 
-> Documento preparatório. A versão pública permanece `0.0.29` até a aprovação dos gates manuais e
-> a decisão explícita de publicação.
+> A plataforma agentiva é promovida à versão pública `1.0.0` após a aprovação dos gates
+> automatizados e dos smokes reais da matriz Delphi.
 
 ## Compatibilidade
 

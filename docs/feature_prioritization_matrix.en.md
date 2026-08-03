@@ -30,7 +30,7 @@ The table below crosses **Effort (Difficulty)** with **Impact (Benefit)** to hel
 | **16. Threads and PPL Assistant** | New | 🔴 High | 🔴 High | **Strategic Bet** |
 | **17. Automatic Internationalization (i18n)** | New | 🔴 High | 🔴 High | **Strategic Bet** |
 | **18. Inline Autocomplete (Ghost Text)** | Backlog | 🔴 High | 🔴 High | **Strategic Bet** |
-| **19. IDE Debugger Integration (OTA)** | Backlog | 🔴 High | 🔴 High | **Strategic Bet** |
+| **19. IDE Debugger Integration (OTA)** | Completed | 🔴 High | 🔴 High | **Delivered** |
 | **20. Native macOS/Linux Support (Lazarus)** | Backlog | 🔴 High | 🟡 Low-Medium | **Discard/Long Term** |
 
 ---
@@ -133,9 +133,10 @@ Features that deeply modify the structure of multiple files simultaneously (DFM 
 * **Benefit:** **High**. Provides the premium experience of real-time inline code copilot suggestions (similar to VS Code) inside the Delphi editor.
 * **Complexity:** **Very High**. Delphi's Open Tools API (OTA) **does not provide native support** for drawing inline ghost text. Implementing this requires advanced and risky Win32 Windows techniques, such as window subclassing, Win32 message hooking, and GDI / Direct2D paint hooks on the IDE editor window.
 
-### 3.6. IDE Debugger Integration (OTA) (Backlog - v0.3.0+)
-* **Benefit:** **High**. Runtime fault analysis at the exact moment they occur in debug mode.
-* **Complexity:** **High**. Requires registering and monitoring complex and sensitive IDE debugger callbacks via `IOTADebuggerNotifier`. Any failure or latency here can crash the debugger or cause Access Violations in the IDE (`bds.exe`).
+### 3.6. IDE Debugger Integration (OTA) (Completed)
+
+Delivered by the agentic platform with state inspection, control, breakpoints, evaluation, and
+watches. Mutating operations enforce consent, state preconditions, and safe failure.
 
 ### 3.7. Native macOS/Linux Support (Lazarus/FPC) (Backlog - v0.3.0+)
 * **Benefit:** **Low-Medium**. Would expand Rad IA's reach to Lazarus and Free Pascal developers.

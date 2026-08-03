@@ -15,6 +15,7 @@ Source/
 ├── Core/           # Regras de negócio centrais, modelos, configurações e utilitários
 ├── Providers/      # Adaptadores e clientes para provedores de IA (Gemini, OpenAI, etc.)
 ├── Integration/    # Integração com a IDE Delphi via Open Tools API (OTA)
+├── MCP/            # Bridge executável MCP por stdio
 └── UI/             # Interfaces com o usuário baseadas em VCL e componentes Web
     └── Web/        # Lógica HTML5/JS/CSS que roda na WebView2 (EdgeBrowser)
 ```
@@ -42,6 +43,16 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | [RadIA.Core.ProjectGenerator.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.ProjectGenerator.pas) | Lógica para geração de scaffolds e templates estruturais de novos projetos Delphi a partir de prompt. |
 | [RadIA.Core.DTO.Generator.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.DTO.Generator.pas) | Mecanismo de engenharia reversa para conversão de DDLs SQL e JSON em estruturas de classes Delphi. |
 | [RadIA.Core.EditorAdapter.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.EditorAdapter.pas) | Interface `IRadIAEditorAdapter` e implementação `TRadIAOTAEditorAdapter` do padrão Adapter para desacoplamento do editor de código da IDE Delphi. |
+| `RadIA.Core.Tools` e `ToolRegistry` | Contratos, descritores e registry compartilhado de tools. |
+| `RadIA.Core.ToolSecurity` e `WorkspaceBoundary` | Política, auditoria e confinamento de paths. |
+| `RadIA.Core.Workspace*` | Fachada de workspace e tools de editor e projeto. |
+| `RadIA.Core.Patches` e `PatchTools` | Preview, precondições, aplicação e reversão de patches. |
+| `RadIA.Core.Build*` | Contratos e ferramentas do ciclo de build controlado. |
+| `RadIA.Core.Designer*` | Facades e tools de componentes, propriedades, eventos e layout. |
+| `RadIA.Core.Debugger*` | Estado, controle, breakpoints, avaliação e watches. |
+| `RadIA.Core.Knowledge*` | Indexação, persistência, scheduler, busca e leitura limitada. |
+| `RadIA.Core.Mcp` | Protocolo MCP, sessões, cancelamento, métricas e despacho. |
+| `RadIA.Core.Extensions` | API versionada e ciclo de registro de extensões. |
 
 ### 2.2 Camada de Provedores (`Source/Providers/`)
 Encapsula a comunicação HTTP específica com cada provedor de Inteligência Artificial.
@@ -68,8 +79,22 @@ Usa as APIs de extensão da IDE Delphi (**Open Tools API - OTA**) para acoplar o
 | [RadIA.OTA.DockableForm.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.DockableForm.pas) | Formulário base compatível com a IDE que permite que as telas do Rad IA se acoplem (docking) em abas laterais. |
 | [RadIA.OTA.Helper.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Helper.pas) | Encapsula funções utilitárias complexas para manipulação de texto no editor, consumindo o editor ativo via `IRadIAEditorAdapter`. |
 | [RadIA.OTA.MessageViewHook.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.MessageViewHook.pas) | Intercepta e gerencia os itens de erros e avisos da aba "Messages" para habilitar o Smart Build Debugger. |
+| `RadIA.OTA.Workspace` e `TextReader` | Fachada OTA de workspace e leitura segura de buffers. |
+| `RadIA.OTA.Consent` | Diálogo nativo e decisões de ferramentas mutáveis. |
+| `RadIA.OTA.Build` | Adapter do build e captura estruturada de resultados. |
+| `RadIA.OTA.Designer` | Adapter do Form Designer vivo na thread principal. |
+| `RadIA.OTA.Debugger` | Adapter de estado e controle do debugger. |
+| `RadIA.OTA.InlineReviews` | Apresentação e ciclo das revisões inline. |
+| `RadIA.OTA.Knowledge*` | Índice local e notificações de edit, save, rename e close. |
+| `RadIA.MCP.NamedPipe` | Servidor local, ACL, discovery por PID e transporte. |
 
-### 2.4 Camada de Interface do Usuário (`Source/UI/`)
+### 2.4 Bridge MCP (`Source/MCP/`)
+
+| Unidade | Propósito Técnico |
+| :--- | :--- |
+| `RadIA.MCP.Bridge.dpr` | Bridge stdio que descobre a IDE e encaminha MCP ao named pipe local. |
+
+### 2.5 Camada de Interface do Usuário (`Source/UI/`)
 Formulários e quadros visuais VCL desenvolvidos sob o padrão MVP (Model-View-Presenter).
 
 | Unidade | Propósito Técnico |

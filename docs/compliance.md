@@ -5,7 +5,10 @@ Este documento estabelece as diretrizes de compliance, termos de uso e política
 ---
 
 ## 1. Aviso de Marcas Registradas (Trademark Disclaimer)
-Todas as marcas mencionadas (incluindo *Embarcadero Delphi*, *Microsoft Windows*, *Microsoft Edge*, *WebView2*, *Google Gemini*, *OpenAI ChatGPT*, *Anthropic Claude*, *DeepSeek*, *Groq* e *Ollama*) pertencem aos seus respectivos proprietários. A menção a elas serve única e exclusivamente para fins de descrição de compatibilidade, configuração e integração tecnológica. 
+Todas as marcas mencionadas, incluindo *Embarcadero Delphi*, *Microsoft Windows*,
+*Microsoft Edge*, *WebView2*, *Google Gemini*, *OpenAI ChatGPT*, *Anthropic Claude*, *DeepSeek*,
+*Groq* e *Ollama*, pertencem aos seus respectivos proprietários. A menção serve apenas para
+descrever compatibilidade, configuração e integração tecnológica.
 
 O **Rad IA** é um projeto independente, open-source e não possui qualquer afiliação oficial, patrocínio ou associação comercial com os detentores dessas marcas.
 
@@ -30,3 +33,12 @@ Ao utilizar provedores baseados em nuvem (Google Gemini, OpenAI, Anthropic, Deep
 
 *   **Uso Corporativo Restrito:** Para empresas e desenvolvedores trabalhando com código proprietário confidencial ou sob regras de conformidade corporativa rígidas (como LGPD ou GDPR), **recomendamos fortemente o uso do Ollama configurado localmente**.
 *   **Privacidade Total:** Com modelos offline (como Llama 3, Phi-3 ou Mistral rodando no Ollama), todo o processamento das mensagens e códigos ocorre localmente na máquina ou servidor da rede interna, garantindo que nenhum dado confidencial saia da infraestrutura da empresa.
+
+### Dados locais da plataforma agentiva
+
+O RadIA mantém auditoria sanitizada em `%APPDATA%\RadIA\audit\tools.jsonl` e índices reconstruíveis
+em `%APPDATA%\RadIA\Knowledge`. Esses dados permanecem locais, salvo quando uma ação autorizada
+inclui conteúdo do projeto no contexto enviado ao provider selecionado.
+
+Preserve a auditoria quando necessária para rastreabilidade. Remova índices somente com todas as
+IDEs fechadas e conforme a política de retenção da organização.

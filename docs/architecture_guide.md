@@ -1,5 +1,9 @@
 # Guia de Arquitetura de Software do Rad IA
 
+> Este guia descreve a base histórica do plugin. Para registry de tools, workspace OTA, segurança,
+> MCP, Designer, debugger e conhecimento local, leia também a
+> [Arquitetura Agentiva](agentic_architecture.md).
+
 > A evolução planejada para ferramentas internas, fachada de workspace, consentimento, MCP,
 > Designer vivo e conhecimento local está especificada na
 > [Arquitetura Agentiva do RadIA](agentic_architecture.md) e no

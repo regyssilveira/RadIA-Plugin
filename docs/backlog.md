@@ -10,6 +10,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
+| **Plataforma Agentiva Segura para Delphi 11/12/13** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.0.0 |
 | **Correção de Seleção do Editor e Bloqueio do Gemini OAuth** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.29 |
 | **Adapter da Open Tools API e Testes de Rede** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.0.28 |
 | **Resolução de Code Smells e Ampliação de Testes** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.27 |
@@ -32,7 +33,6 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Assistente de Threads e PPL** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Internacionalização Automática (i18n Wizard)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Autocompletar Inline (Ghost Text)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Integração com Depurador da IDE (OTA)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Geração de Docs de Projeto (API.md)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐ Média | v0.3.0+ |
 | **Suporte Nativo macOS/Linux (Lazarus)** | 🔲 Planejado | 🔴 Alta | 🟢 Baixa | v0.3.0+ |
 
@@ -53,6 +53,20 @@ Para detalhes completos de objetivos, impactos e referências técnicas de cada 
 ## ✅ 3. Histórico de Conclusões (Completed)
 
 Consulte os detalhes de implementação de cada recurso agrupado por versão:
+
+### Plataforma agentiva concluída
+
+- Registry interno compartilhado entre chat, MCP e extensões.
+- Fachada OTA de workspace, editor, projeto, build, Form Designer e debugger.
+- Consentimento por risco, auditoria sanitizada e workspace boundary.
+- Patches revisáveis, reversíveis e protegidos por hash-base.
+- Bridge MCP local com discovery independente por processo da IDE.
+- Conhecimento incremental e reconstruível, isolado por projeto.
+- Revisão inline e API versionada para extensões externas.
+- Matriz validada no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+
+Consulte a [auditoria de conclusão](agentic_completion_audit.md) e o
+[roadmap agentivo](agentic_roadmap.md).
 
 <details>
   <summary><b>📦 v0.0.29 — Correção de Seleção do Editor e Bloqueio do Gemini OAuth (Clique para expandir)</b></summary>

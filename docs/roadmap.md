@@ -17,6 +17,15 @@ Este documento descreve o planejamento estratégico e a visão de futuro do assi
 
 Abaixo estão listadas as conquistas e os valores entregues em cada versão já lançada do plugin:
 
+### Plataforma agentiva segura — concluída
+
+O RadIA evoluiu do chat multi-provider para uma plataforma integrada à IDE com registry de
+ferramentas, workspace OTA, consentimento, auditoria, patches reversíveis, build, MCP, Form
+Designer, debugger, revisão inline, conhecimento local e extensões versionadas.
+
+A matriz foi validada no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. Consulte o
+[roadmap agentivo](agentic_roadmap.md) e a [auditoria de conclusão](agentic_completion_audit.md).
+
 <details>
   <summary><b>📦 v0.0.29 — Correção de Seleção do Editor e Bloqueio do Gemini OAuth (Concluído)</b></summary>
 

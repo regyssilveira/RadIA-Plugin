@@ -106,7 +106,7 @@ Enter the obtained keys in the plugin settings (**Settings** at the top of the c
    * **Instructions:** Enable access to your desired models (such as Anthropic Claude or Meta Llama) inside the Bedrock console. Create IAM access credentials inside the AWS console to obtain an **Access Key ID** and a **Secret Access Key**. In the Rad IA options frame, configure these fields, enter the AWS **Region** where Bedrock is provisioned (e.g., `us-east-1`), and optionally provide the **Session Token** if you are using temporary IAM credentials.
 
    > [!IMPORTANT]
-   > **IAM Permissions and Model Access in Bedrock:** 
+   > **IAM Permissions and Model Access in Bedrock:**
    > * The IAM access key used must have security policies attached that allow executing the actions `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream`.
    > * By default, AWS Bedrock requires you to request access to models individually in the AWS Console of your desired region (*Model Access* menu). Make sure that access to the models you plan to use (such as Anthropic Claude 3) has already been requested and granted before trying to connect them in Rad IA.
 
@@ -115,6 +115,10 @@ Enter the obtained keys in the plugin settings (**Settings** at the top of the c
 ---
 
 ## 4. PowerShell Build Script (Advanced Options)
+
+The distribution package installs `RadIA.MCP.Bridge.exe` next to the BPL. For per-process
+discovery, multi-IDE selection, handshake, consent, and troubleshooting, see the
+[MCP Integration Guide](mcp_integration_guide.en.md).
 
 The `.\build.ps1` script supports the following switches:
 

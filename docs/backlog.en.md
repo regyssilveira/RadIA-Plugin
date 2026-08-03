@@ -10,6 +10,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
+| **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
 | **Editor Selection Fixes and Gemini OAuth Block** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.29 |
 | **Open Tools API Adapter and Network Testing** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐ High | v0.0.28 |
 | **Resolution of Code Smells and Test Coverage Expansion** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.27 |
@@ -32,7 +33,6 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Threads and PPL Assistant** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Automated Internationalization (i18n Wizard)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Smart Inline Autocomplete (Ghost Text)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **IDE Debugger Auto Hook (OTA)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Project Docs Auto Generation (API.md)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐ Medium | v0.3.0+ |
 | **Native macOS/Linux Support (Lazarus)** | 🔲 Planned | 🔴 High | 🟢 Low | v0.3.0+ |
 
@@ -53,6 +53,20 @@ For complete details on objectives, impacts, and technical specifications for ea
 ## ✅ 3. Completed History
 
 Check the implementation details of each completed feature grouped by target release version:
+
+### Agentic platform completed
+
+- Internal registry shared by chat, MCP, and extensions.
+- OTA facade for workspace, editor, project, build, Form Designer, and debugger.
+- Risk-based consent, sanitized audit, and workspace boundary.
+- Reviewable and reversible patches protected by base hashes.
+- Local MCP bridge with independent discovery per IDE process.
+- Incremental and rebuildable knowledge isolated per project.
+- Inline reviews and a versioned external extension API.
+- Validated matrix for Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+
+See the [completion audit](agentic_completion_audit.md) and
+[agentic roadmap](agentic_roadmap.md).
 
 <details>
   <summary><b>📦 v0.0.29 — Editor Selection Fixes and Gemini OAuth Block (Click to expand)</b></summary>

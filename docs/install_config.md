@@ -172,7 +172,7 @@ Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File .\scripts\Test-RadIA.Package.ps1 `
-  -PackagePath .\Output\Packages\RadIA-v0.0.29-Delphi-22.0-Win32-Release.zip `
+  -PackagePath .\Output\Packages\RadIA-v1.0.0-Delphi-22.0-Win32-Release.zip `
   -DelphiVersion "22.0"
 ```
 
@@ -183,4 +183,6 @@ path traversal e caminhos duplicados no manifesto.
 A bridge MCP é instalada ao lado da BPL como `RadIA.MCP.Bridge.exe`. Clientes externos podem usar
 esse executável sem depender da árvore de fontes ou do diretório `Output`.
 
+Para discovery por processo, seleção entre várias IDEs, handshake, consentimento e diagnóstico,
+consulte o [Guia de Integração MCP](mcp_integration_guide.md).
 

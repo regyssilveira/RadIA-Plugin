@@ -30,7 +30,7 @@ A tabela abaixo cruza o **Esforço (Dificuldade)** com o **Impacto (Benefício)*
 | **16. Assistente de Threads e PPL** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
 | **17. Internacionalização Automática (i18n)** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
 | **18. Autocompletar Inline (Ghost Text)** | Backlog | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
-| **19. Integração com Depurador da IDE (OTA)** | Backlog | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
+| **19. Integração com Depurador da IDE (OTA)** | Concluído | 🔴 Alta | 🔴 Alto | **Entregue** |
 | **20. Suporte Nativo macOS/Linux (Lazarus)** | Backlog | 🔴 Alta | 🟡 Baixo-Médio | **Descarte/Longo Prazo** |
 
 ---
@@ -133,9 +133,10 @@ Features que alteram profundamente a estrutura de múltiplos arquivos simultanea
 * **Benefício:** **Alto**. Fornece a experiência premium de co-pilotagem de código em tempo real no editor do Delphi, semelhante ao VS Code.
 * **Complexidade:** **Muito Alta**. A Open Tools API (OTA) do Delphi **não fornece suporte nativo** para desenhar texto fantasma (cinza) inline no editor de código. Implementar isso exige o uso de técnicas avançadas e arriscadas do Windows, como subclassing de janelas Win32, interceptação de mensagens do Windows (messages hooking) e hooks nas rotas de pintura gráfica (GDI / Direct2D) da IDE.
 
-### 3.6. Integração com Depurador da IDE (OTA) (Backlog - v0.3.0+)
-* **Benefício:** **Alto**. Análise de falhas em tempo de execução no exato instante em que ocorrem na depuração.
-* **Complexidade:** **Alta**. Exige registrar e monitorar callbacks complexos e sensíveis da IDE usando `IOTADebuggerNotifier`. Qualquer falha ou lentidão nesse monitoramento pode travar a depuração da IDE do Delphi ou causar Access Violations na IDE (`bds.exe`).
+### 3.6. Integração com Depurador da IDE (OTA) (Concluída)
+
+Entregue pela plataforma agentiva com leitura de estado, controle, breakpoints, avaliação e watches.
+As operações mutáveis passam por consentimento, precondições de estado e falha segura.
 
 ### 3.7. Suporte Nativo macOS/Linux (Lazarus/FPC) (Backlog - v0.3.0+)
 * **Benefício:** **Baixo-Médio**. Expandiria o uso do Rad IA para desenvolvedores do ecossistema Free Pascal / Lazarus.

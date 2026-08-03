@@ -141,6 +141,10 @@ git checkout develop
 * Versão atualizada em código, metadados e documentação.
 * `npx eslint` executado.
 * Build Delphi executado com sucesso.
+* Pacotes Release gerados para Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+* Validação positiva e negativa executada para cada pacote.
+* `SHA256SUMS.txt` publicado com os quatro ZIPs gerados pelo mesmo commit.
+* Nenhum processo ou discovery MCP órfão após os smokes.
 * Branch de trabalho publicada.
 * `develop` atualizado e publicado.
 * `main` atualizado e publicado.

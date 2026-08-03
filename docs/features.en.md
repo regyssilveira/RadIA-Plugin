@@ -64,3 +64,14 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Storage Abstraction** | Infrastructure | Persistence abstraction via `ISettingsStorage` allowing in-memory configurations. | ✅ Completed |
 | **Presentation Testing** | Infrastructure | Automated DUnitX test suite validating Presenters logic with mocked Views. | ✅ Completed |
 | **Editor Hook** | Infrastructure | Resilient editor context-menu integration using an asynchronous VCL hook, compatible with Delphi 12/13 and stable during new project creation. | ✅ Completed |
+| **Agentic Registry** | Agentic | Catalog shared by chat, MCP, and extensions. | ✅ Completed |
+| **Consent and Audit** | Security | Scoped decisions and a sanitized audit trail. | ✅ Completed |
+| **Reviewable Patches** | Agentic | Preview, base hash, apply, and reversal with conflict detection. | ✅ Completed |
+| **OTA Workspace** | Integration | Facades for editor, project, build, Designer, and debugger. | ✅ Completed |
+| **Local MCP Server** | Integration | Stdio bridge, named pipe, and per-PID discovery. | ✅ Completed |
+| **Agentic Designer** | Integration | Reviewable components, properties, events, and layout. | ✅ Completed |
+| **Agentic Debugger** | Integration | State, control, breakpoints, expression evaluation, and watches. | ✅ Completed |
+| **Inline Review** | Editor | Visual review with controlled apply and reversal in the editor. | ✅ Completed |
+| **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
+| **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
+| **Delphi 11/12/13 and IDE64** | Compatibility | Validated Win32 matrix plus Delphi 13 IDE64. | ✅ Completed |

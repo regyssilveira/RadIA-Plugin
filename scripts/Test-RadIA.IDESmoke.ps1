@@ -115,7 +115,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $parsed |
                 Where-Object { $_.id -eq 2 }
         ).result.structuredContent
-        if ($initialize.result.serverInfo.version -ne "0.0.29") {
+        if ($initialize.result.serverInfo.version -ne "1.0.0") {
             throw "Unexpected RadIA version in cycle $cycle."
         }
         if ($ideState.platform -ne $platform) {

@@ -13,6 +13,15 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 Below are the achievements and values delivered in each release version of the plugin:
 
+### Secure agentic platform — completed
+
+RadIA evolved from multi-provider chat into an IDE-integrated platform with a tool registry, OTA
+workspace, consent, audit, reversible patches, build, MCP, Form Designer, debugger, inline review,
+local knowledge, and versioned extensions.
+
+The matrix was validated on Delphi 11, 12, and 13 Win32 and Delphi 13 IDE64. See the
+[agentic roadmap](agentic_roadmap.md) and [completion audit](agentic_completion_audit.md).
+
 <details>
   <summary><b>📦 v0.0.29 — Editor Selection Fixes and Gemini OAuth Block (Completed)</b></summary>
 

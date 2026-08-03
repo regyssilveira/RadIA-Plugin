@@ -42,6 +42,16 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | [RadIA.Core.ProjectGenerator.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.ProjectGenerator.pas) | Logic for generating scaffolds and structural templates for new Delphi projects from prompts. |
 | [RadIA.Core.DTO.Generator.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.DTO.Generator.pas) | Reverse engineering mechanism for converting SQL DDLs and JSON into Delphi class structures. |
 | [RadIA.Core.EditorAdapter.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.EditorAdapter.pas) | `IRadIAEditorAdapter` interface and `TRadIAOTAEditorAdapter` implementation of the Adapter pattern to decouple the code editor from the Delphi IDE. |
+| `RadIA.Core.Tools` and `ToolRegistry` | Agentic tool contracts, descriptors, and shared registry. |
+| `RadIA.Core.ToolSecurity` and `WorkspaceBoundary` | Policy, audit, and path confinement. |
+| `RadIA.Core.Workspace*` | Workspace facade and editor and project tools. |
+| `RadIA.Core.Patches` and `PatchTools` | Patch preview, preconditions, application, and reversal. |
+| `RadIA.Core.Build*` | Controlled build-cycle contracts and tools. |
+| `RadIA.Core.Designer*` | Component, property, event, and layout facades and tools. |
+| `RadIA.Core.Debugger*` | State, control, breakpoint, evaluation, and watch tools. |
+| `RadIA.Core.Knowledge*` | Indexing, persistence, scheduling, search, and bounded reads. |
+| `RadIA.Core.Mcp` | MCP protocol, sessions, cancellation, metrics, and dispatch. |
+| `RadIA.Core.Extensions` | Versioned API and extension registration lifecycle. |
 
 ### 2.2 Providers Layer (`Source/Providers/`)
 Encapsulates provider-specific HTTP communication with Artificial Intelligence APIs.
@@ -68,8 +78,22 @@ Uses Delphi's extension APIs (**Open Tools API - OTA**) to dock visual panels an
 | [RadIA.OTA.DockableForm.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.DockableForm.pas) | IDE-compatible base form that allows Rad IA views to dock inside lateral tabs. |
 | [RadIA.OTA.Helper.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Helper.pas) | Encapsulates complex text manipulation utility functions, consuming the active editor via `IRadIAEditorAdapter`. |
 | [RadIA.OTA.MessageViewHook.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.MessageViewHook.pas) | Intercepts and manages error and warning items in the IDE's "Messages" tab to enable the Smart Build Debugger. |
+| `RadIA.OTA.Workspace` and `TextReader` | OTA workspace facade and safe buffer reads. |
+| `RadIA.OTA.Consent` | Native dialog and mutating-tool decisions. |
+| `RadIA.OTA.Build` | Build adapter and structured result capture. |
+| `RadIA.OTA.Designer` | Live Form Designer adapter on the IDE main thread. |
+| `RadIA.OTA.Debugger` | IDE debugger state and control adapter. |
+| `RadIA.OTA.InlineReviews` | Inline review presentation and lifecycle. |
+| `RadIA.OTA.Knowledge*` | Local index and edit, save, rename, and close notifications. |
+| `RadIA.MCP.NamedPipe` | Local server, ACL, per-PID discovery, and transport. |
 
-### 2.4 User Interface Layer (`Source/UI/`)
+### 2.4 MCP Bridge (`Source/MCP/`)
+
+| Unit | Technical Purpose |
+| :--- | :--- |
+| `RadIA.MCP.Bridge.dpr` | Stdio bridge that discovers the IDE and forwards MCP to the local pipe. |
+
+### 2.5 User Interface Layer (`Source/UI/`)
 VCL forms and frames developed under the MVP (Model-View-Presenter) pattern.
 
 | Unit | Technical Purpose |

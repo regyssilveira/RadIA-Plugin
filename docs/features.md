@@ -64,3 +64,14 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Abstração de Armazenamento** | Infraestrutura | Abstração de persistência via `ISettingsStorage` facilitando testes em memória. | ✅ Concluído |
 | **Testes de Apresentação** | Infraestrutura | Suíte de testes automatizados com DUnitX validando lógica de Presenters com mocks de Views. | ✅ Concluído |
 | **Hook do Editor** | Infraestrutura | Integração resiliente com o menu contextual do editor via hook VCL assíncrono, compatível com Delphi 12/13 e estável durante a criação de novos projetos. | ✅ Concluído |
+| **Registry Agentivo** | Agentivo | Catálogo compartilhado por chat, MCP e extensões. | ✅ Concluído |
+| **Consentimento e Auditoria** | Segurança | Decisões por escopo e trilha sanitizada. | ✅ Concluído |
+| **Patches Revisáveis** | Agentivo | Preview, hash-base, aplicação e reversão com detecção de conflito. | ✅ Concluído |
+| **Workspace OTA** | Integração | Fachadas para editor, projeto, build, Designer e debugger. | ✅ Concluído |
+| **Servidor MCP Local** | Integração | Bridge stdio, named pipe e discovery por PID. | ✅ Concluído |
+| **Designer Agentivo** | Integração | Componentes, propriedades, eventos e layout revisáveis. | ✅ Concluído |
+| **Debugger Agentivo** | Integração | Estado, controle, breakpoints, avaliação de expressões e watches. | ✅ Concluído |
+| **Revisão Inline** | Editor | Ciclo visual com aplicação e reversão controladas no editor. | ✅ Concluído |
+| **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
+| **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
+| **Delphi 11/12/13 e IDE64** | Compatibilidade | Matriz validada em Win32 e Delphi 13 IDE64. | ✅ Concluído |

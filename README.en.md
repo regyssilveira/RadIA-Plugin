@@ -58,12 +58,43 @@ This project adopts clear language rules and design standards for both human dev
 *   **Request Cancellation and Action Locking:** A dynamic circular stop button integrated inside the prompt input aborts active requests instantly and safely. While processing, session actions, toolbar buttons, and chat switching are locked to preserve the active context.
 
 *   **Configurable Concise Responses:** General option to prefer more direct AI answers, reducing long explanations and saving tokens without blocking detailed responses when explicitly requested.
+*   **Secure Agentic Tools:** Chat executes structured editor, project, build, Form Designer, and
+    debugger tools with risk-based consent and workspace confinement.
+*   **Reviewable and Reversible Editing:** Patches use previews, base hashes, and preconditions,
+    reject stale content, and support controlled reversal.
+*   **Local MCP Server:** The stdio bridge connects clients to the intended IDE through per-PID
+    discovery and a local named pipe, using the same policies as chat.
+*   **Local Project Knowledge:** A rebuildable per-project index follows edit, save, rename, and
+    close events to provide contextual search without an external indexing service.
 
 ### 2.1 Complete Feature Checklist
 
 To check the development status, keyboard shortcuts, categories, and all integrated providers in detail, please refer to our:
 
 👉 [**Complete Feature Checklist (docs/features.en.md)**](docs/features.en.md)
+
+### 2.2 RadIA capabilities at a glance
+
+| Area | What RadIA can do |
+| :--- | :--- |
+| **Chat and AI** | Use providers, streaming, sessions, templates, slash commands, and cancellation. |
+| **Editor** | Read, explain, review, refactor, optimize SQL, find bugs, and generate tests. |
+| **Safe editing** | Preview, validate base hashes, apply, and reverse patches without overwriting changes. |
+| **Generation** | Create XML docs, DTOs, models, methods, and complete Delphi project structures. |
+| **Workspace** | Inspect IDE, project group, modules, files, and authorized active context. |
+| **Build** | Start and cancel builds, inspect state, and structure errors and warnings. |
+| **Form Designer** | Inspect and change components, properties, events, and layout with consent. |
+| **Debugger** | Inspect state, control execution, manage breakpoints, and evaluate expressions. |
+| **Inline review** | Present editor suggestions and apply or reverse reviewed changes. |
+| **Local knowledge** | Index projects, search symbols, and follow edit, save, rename, and close events. |
+| **MCP** | Expose tools through stdio, a named pipe, and per-process discovery. |
+| **Security** | Confine paths, classify risk, request consent, and keep a sanitized audit trail. |
+| **Extensions** | Register external tools through the versioned public API. |
+| **Providers** | Integrate Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama, and others. |
+| **Compatibility** | Run on Delphi 11, 12, and 13 Win32 and Delphi 13 IDE64. |
+
+Parameters, preconditions, and risks are documented in the
+[Agentic Tool Catalog](docs/tool_catalog.md).
 
 ### 3. How It Works & Architecture
 Rad IA is built entirely in Object Pascal (Delphi) using the **Open Tools API (OTA)** to interface with the IDE's editor services, message services, and theme services.
@@ -72,6 +103,8 @@ The user interface uses a hybrid architecture:
 2.  **Edge WebView2 Engine:** Displays the message history using local HTML5, CSS (incorporating glassmorphism/modern dark UI that adapts to the IDE theme), and JavaScript libraries (Prism.js and Marked.js) to render rich markdown and copyable code blocks without freezing the main IDE thread.
 3.  **MVP (Model-View-Presenter) Pattern:** Presentation logic and flow coordination (such as sending messages, changing providers, and saving configuration) are completely decoupled from VCL forms and encapsulated in Presenters (`TChatPresenter` and `TConfigPresenter`), allowing UI components to act as passive Views.
 4.  **Storage Abstraction (`ISettingsStorage`):** For better maintainability and testing isolation, the option persistence layer has been abstracted. In production, settings are stored in the Windows Registry (`TRegistrySettingsStorage`), while unit tests run against an in-memory storage (`TMemorySettingsStorage`), ensuring tests do not corrupt the developer's local registry keys.
+5.  **Agentic Platform:** A registry shared by chat and MCP coordinates tools, the OTA workspace,
+    consent, audit, patches, build, Designer, debugger, and local knowledge.
 
 For an in-depth understanding of the plugin's infrastructure, asynchronous concurrent flows (streaming via background threads), WebView2 lifecycle management on IDE shutdown, and design patterns, please refer to our:
 
@@ -116,6 +149,16 @@ To get the most out of Rad IA features in your daily development workflow, check
 *   👉 [**Editor Integration & Code Generation Guide (docs/user_guide_editor_generation.en.md)**](docs/user_guide_editor_generation.en.md): Context-aware editor actions, Smart Diff visual comparison, XML documentation, DTO converter, and full-project prompt generation.
 *   👉 [**Diagnostics & Code Analysis Guide (docs/user_guide_diagnostics_analysis.en.md)**](docs/user_guide_diagnostics_analysis.en.md): Smart Build Debugger compilation assistance, call stack parsing via Stack Trace Assistant, and memory leak static auditing.
 *   👉 [**Chat Panel & Session Management Guide (docs/user_guide_chat_sessions.en.md)**](docs/user_guide_chat_sessions.en.md): Input text shortcuts, prompt history navigation, persistent multi-sessions, and prompt template backups.
+*   👉 [**Agentic Tools Guide**](docs/user_guide_agentic_tools.en.md): Consent, safe execution,
+    patches, builds, and request examples.
+*   👉 [**MCP Integration Guide**](docs/mcp_integration_guide.en.md): Stdio bridge, per-PID discovery,
+    MCP sessions, security, and diagnostics.
+*   👉 [**Local Knowledge Guide**](docs/user_guide_project_knowledge.en.md): Indexing, search,
+    persistence, privacy, and rebuild.
+*   👉 [**Agentic Designer and Debugger Guide**](docs/user_guide_designer_debugger.en.md):
+    Components, properties, events, breakpoints, watches, and control.
+*   👉 [**Agentic Troubleshooting**](docs/troubleshooting_agentic_platform.en.md): Tool, MCP,
+    workspace, and knowledge diagnostics.
 *   👉 [**Commit Message Convention (docs/commit_convention.en.md)**](docs/commit_convention.en.md): English commit message standard using prefixes like `feat`, `fix`, `docs`, `refactor`, and others.
 *   👉 [**Branch Naming Convention (docs/branch_convention.en.md)**](docs/branch_convention.en.md): `<type>/<description>` standard with prefixes like `feat/`, `fix/`, `docs/`, `test/`, and `chore/`.
 *   👉 [**Release Finalization Process (docs/release_process.en.md)**](docs/release_process.en.md): Checklist to update versions, validate builds, merge `develop`/`main`, create tags, and clean up branches.
@@ -145,6 +188,8 @@ PluginDelphiIA/
 │   ├── compliance.md / .en.md          # Legal notices, privacy, and compliance
 │   ├── new_provider_guide.md / .en.md  # Guide to adding new providers
 │   ├── user_guide_*.md                 # Detailed usage manuals (chat, editor, stack trace)
+│   ├── mcp_integration_guide*.md       # MCP client integration with the IDE
+│   ├── tool_*.md                       # Tool catalog, extensions, and security
 │
 ├── RadIA.groupproj                     # Delphi Project Group solution
 ├── RadIA.dpk                           # Delphi design-time package source (BPL)
@@ -155,6 +200,7 @@ PluginDelphiIA/
 │   ├── Core/                           # Core units (interfaces, settings, DTOs)
 │   ├── Providers/                      # AI API Clients (Gemini, OpenAI, Claude, Ollama)
 │   ├── Integration/                    # ToolsAPI IDE integration (hooks, wizards, options)
+│   ├── MCP/                            # MCP stdio bridge for external clients
 │   └── UI/                             # VCL Forms, Frames, and dialog windows
 │       └── Web/                        # Local HTML5/JS chat resources (WebView2)
 │           └── vendor/                 # Third-party libraries (Prism, Marked, diff2html)

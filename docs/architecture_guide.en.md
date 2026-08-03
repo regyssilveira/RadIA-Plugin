@@ -1,5 +1,9 @@
 # Software Architecture Guide
 
+> This guide describes the original plugin foundation. For the tool registry, OTA workspace,
+> security, MCP, Designer, debugger, and local knowledge, also see the
+> [Agentic Architecture](agentic_architecture.md).
+
 This technical guide is intended for developers and software architects who want to understand the internal engineering, design patterns, concurrent workflows, and infrastructure of **Rad IA**. The plugin runs integrated into the main process of the Delphi IDE (`bds.exe`), which imposes strict memory management, thread safety, and lifecycle control constraints.
 
 <p align="center">
@@ -116,12 +120,12 @@ Container boot and automatic registration of all abstractions happen inside the 
 ```mermaid
 graph TD
     Container[(TRadIAContainer)]
-    
+
     subgraph Registry_Boot [Boot Registration]
         Reg[RadIA.OTA.Register.pas]
         Reg -->|Register| Container
     end
-    
+
     subgraph Interfaces [Abstractions]
         IConfig[IRadIAConfig]
         IAdapter[IRadIAIDEAdapter]
@@ -130,18 +134,18 @@ graph TD
         IDecoder[IRadIAErrorDecoder]
         ILoc[IRadIALocalizer]
     end
-    
+
     Container --> IConfig
     Container --> IAdapter
     Container --> IService
     Container --> IClient
     Container --> IDecoder
     Container --> ILoc
-    
+
     subgraph Consumers [Decoupled Components]
         Presenter[TRadIAChatPresenter]
         ProvBase[TRadIAProviderBase]
-        
+
         Presenter -.->|Resolve| Container
         ProvBase -.->|Resolve| Container
     end
@@ -268,7 +272,7 @@ classDiagram
         +FetchAvailableModelsAsync()
         +CancelCurrentRequest()
     }
-    
+
     class TRadIAProviderBase {
         <<abstract>>
         #FConfig: IRadIAConfig
@@ -286,12 +290,12 @@ classDiagram
         +SendPromptAsync()
         +SendPromptStreamAsync()
     }
-    
+
     class TRadIADeepSeekProvider {
         +GetName()
         #GetBaseUrl()
     }
-    
+
     class TRadIAGeminiProvider {
         +SendPromptAsync()
         +SendPromptStreamAsync()
@@ -337,9 +341,9 @@ sequenceDiagram
     Note over Task: Runs in parallel asynchronously
     Task->>Client: PostStream(RequestBody)
     Client->>API: HTTP POST (Request Stream Active)
-    
+
     Note over API, Client: Server starts streaming response chunks (SSE)
-    
+
     loop During Event Stream Transmission
         API-->>Client: data: {"choices": [{"delta": {"content": "Record"}}]}
         Client->>Task: Trigger OnWriteCallback(Bytes)

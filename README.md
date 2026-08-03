@@ -58,12 +58,43 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
 *   **Cancelamento e Bloqueio de Ações:** Botão de parada dinâmico redondo integrado na cápsula do prompt para interromper requisições assíncronas de forma segura. Durante o processamento, ações de sessão, botões da barra superior e troca de chats ficam bloqueados para preservar o contexto ativo.
 
 *   **Respostas Concisas Configuráveis:** Opção geral para preferir respostas mais objetivas da IA, reduzindo explicações longas e economizando tokens sem impedir respostas detalhadas quando solicitadas explicitamente.
+*   **Ferramentas Agentivas Seguras:** O chat executa ferramentas estruturadas do editor, projeto,
+    build, Form Designer e debugger, com consentimento por risco e confinamento ao workspace.
+*   **Edição Revisável e Reversível:** Patches usam preview, hash-base e precondições, recusam
+    conteúdo desatualizado e permitem reversão controlada.
+*   **Servidor MCP Local:** A bridge stdio conecta clientes MCP à instância correta da IDE por
+    discovery por PID, usando named pipe local e as mesmas políticas do chat.
+*   **Conhecimento Local do Projeto:** Um índice reconstruível por projeto acompanha edição, save,
+    rename e fechamento para oferecer busca contextual sem serviço externo.
 
 ### 2.1 Tabela Completa de Recursos (Features)
 
 Para conferir o status de desenvolvimento, atalhos de teclado, categorias e todos os provedores integrados em detalhes, consulte o nosso:
 
 👉 [**Catálogo Completo de Recursos (docs/features.md)**](docs/features.md)
+
+### 2.2 Capacidades do RadIA em um relance
+
+| Área | O que o RadIA pode fazer |
+| :--- | :--- |
+| **Chat e IA** | Usar providers, streaming, sessões, templates, slash commands e cancelamento. |
+| **Editor** | Ler código, explicar, revisar, refatorar, otimizar SQL, localizar bugs e gerar testes. |
+| **Edição segura** | Preparar preview, validar hash-base, aplicar e reverter patches sem sobrescrever mudanças. |
+| **Geração** | Criar documentação XML, DTOs, models, métodos e estruturas de projetos Delphi. |
+| **Workspace** | Consultar IDE, projeto, project group, módulos, arquivos e contexto ativo autorizado. |
+| **Build** | Iniciar e cancelar builds, acompanhar estado e estruturar erros e warnings. |
+| **Form Designer** | Consultar e alterar componentes, propriedades, eventos e layout com consentimento. |
+| **Debugger** | Consultar estado, controlar execução, gerenciar breakpoints e avaliar expressões. |
+| **Revisão inline** | Apresentar sugestões no editor e aplicar ou reverter alterações revisadas. |
+| **Conhecimento local** | Indexar projetos, pesquisar símbolos e acompanhar edit, save, rename e close. |
+| **MCP** | Expor tools a clientes locais por bridge stdio, named pipe e discovery por processo. |
+| **Segurança** | Confinar paths, classificar risco, solicitar consentimento e manter auditoria sanitizada. |
+| **Extensões** | Registrar ferramentas externas pela API pública versionada. |
+| **Providers** | Integrar Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama e outros backends. |
+| **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
+
+Os parâmetros, precondições e riscos estão no
+[Catálogo de Ferramentas Agentivas](docs/tool_catalog.md).
 
 ### 3. Como Funciona e Arquitetura
 O Rad IA é construído inteiramente em Object Pascal (Delphi) usando a **Open Tools API (OTA)** para interagir com o editor de código, gerenciamento de mensagens e detecção de temas da IDE.
@@ -72,6 +103,8 @@ A interface utiliza uma arquitetura híbrida:
 2.  **Motor WebView2 (Edge):** Exibe as mensagens e respostas da IA utilizando HTML5, CSS e JS locais (Marked.js para Markdown e Prism.js para realce de sintaxe). A interface se adapta automaticamente ao tema da IDE (Light/Dark) e roda de forma fluida sem congelar a IDE.
 3.  **Padrão MVP (Model-View-Presenter):** A lógica de apresentação e a coordenação de fluxos (como envio de mensagens, troca de provedores e salvamento de configurações) são totalmente desacopladas do formulário VCL e encapsuladas em Presenters (`TChatPresenter` e `TConfigPresenter`), permitindo que a interface gráfica atue como uma View passiva.
 4.  **Abstração de Armazenamento (`ISettingsStorage`):** Para maior manutenibilidade e testabilidade, o mecanismo de persistência de opções foi abstraído. Em produção, os dados são salvos no Registro do Windows (`TRegistrySettingsStorage`), enquanto nos testes unitários são persistidos temporariamente em memória (`TMemorySettingsStorage`), garantindo isolamento total dos testes sem corromper as credenciais reais do desenvolvedor.
+5.  **Plataforma Agentiva:** Um registry compartilhado pelo chat e MCP coordena ferramentas,
+    workspace OTA, consentimento, auditoria, patches, build, Designer, debugger e conhecimento local.
 
 Para uma compreensão aprofundada da infraestrutura do plugin, fluxos concorrentes assíncronos (streaming via background threads), ciclo de vida do WebView2 no encerramento da IDE e padrões de projeto aplicados, consulte o nosso:
 
@@ -101,7 +134,9 @@ O Rad IA adota uma arquitetura de registro de provedores orientada a metadados (
 
 ### 5.2 Usando GitHub Copilot Remoto (Nativo - Fase 2) ou via Proxy Local (Fase 1)
 
-O Rad IA suporta a integração direta e remota com o **GitHub Copilot** na nuvem (sem necessidade de rodar proxies locais) a partir das opções do plugin, incluindo facilidades de login integrado por PIN e importação de chave do VS Code em um clique. 
+O Rad IA suporta a integração direta e remota com o **GitHub Copilot** na nuvem, sem necessidade
+de proxies locais. As opções incluem login integrado por PIN e importação das credenciais do
+VS Code em um clique.
 
 Caso prefira rodar um proxy local compatível com a API da OpenAI (Fase 1), isso também continua suportado através do registro de provedor dinâmico em arquivo JSON. Para mais detalhes, consulte:
 
@@ -114,6 +149,16 @@ Para aprender a tirar o máximo proveito das funcionalidades do Rad IA no seu di
 *   👉 [**Guia de Integração com Editor & Geração de Código (docs/user_guide_editor_generation.md)**](docs/user_guide_editor_generation.md): Ações contextuais de editor, comparador visual Smart Diff, documentação XML e criação de DTOs e projetos do zero.
 *   👉 [**Guia de Diagnóstico de Erros & Análise de Código (docs/user_guide_diagnostics_analysis.md)**](docs/user_guide_diagnostics_analysis.md): Explicações e correções de erros com o Smart Build Debugger, decodificação de logs com o Assistente de Stack Trace e auditorias estáticas contra vazamento de memória.
 *   👉 [**Guia do Painel de Chat & Gerenciamento de Sessões (docs/user_guide_chat_sessions.md)**](docs/user_guide_chat_sessions.md): Atalhos de digitação, histórico de prompts, múltiplas sessões persistentes e backups de templates.
+*   👉 [**Guia das Ferramentas Agentivas**](docs/user_guide_agentic_tools.md): Consentimento,
+    execução segura, patches, build e exemplos de solicitações.
+*   👉 [**Guia de Integração MCP**](docs/mcp_integration_guide.md): Bridge stdio, discovery por PID,
+    sessão MCP, segurança e diagnóstico.
+*   👉 [**Guia do Conhecimento Local**](docs/user_guide_project_knowledge.md): Indexação, busca,
+    persistência, privacidade e reconstrução.
+*   👉 [**Guia do Designer e Debugger Agentivos**](docs/user_guide_designer_debugger.md):
+    Componentes, propriedades, eventos, breakpoints, watches e controle.
+*   👉 [**Solução de Problemas Agentivos**](docs/troubleshooting_agentic_platform.md): Diagnóstico de
+    ferramentas, MCP, workspace e conhecimento.
 *   👉 [**Convenção de Mensagens de Commit (docs/commit_convention.md)**](docs/commit_convention.md): Padrão de mensagens em inglês com prefixos como `feat`, `fix`, `docs`, `refactor` e outros.
 *   👉 [**Convenção de Nomes de Branch (docs/branch_convention.md)**](docs/branch_convention.md): Padrão `<tipo>/<descrição>` com prefixos como `feat/`, `fix/`, `docs/`, `test/` e `chore/`.
 *   👉 [**Processo de Finalização de Release (docs/release_process.md)**](docs/release_process.md): Checklist para atualizar versão, validar build, mergear `develop`/`main`, criar tag e limpar branches.
@@ -143,6 +188,8 @@ PluginDelphiIA/
 │   ├── compliance.md / .en.md          # Avisos legais, privacidade e compliance
 │   ├── new_provider_guide.md / .en.md  # Guia para adicionar novos provedores
 │   ├── user_guide_*.md                 # Guias detalhados de uso (chat, editor, stack trace)
+│   ├── mcp_integration_guide*.md       # Integração de clientes MCP com a IDE
+│   ├── tool_*.md                       # Catálogo, extensões e segurança das ferramentas
 │
 ├── RadIA.groupproj                     # Grupo de Projetos do Delphi
 ├── RadIA.dpk                           # Pacote Delphi de design-time (BPL)
@@ -153,6 +200,7 @@ PluginDelphiIA/
 │   ├── Core/                           # Units centrais (interfaces, configurações, DTOs)
 │   ├── Providers/                      # Clientes de API (Gemini, OpenAI, Claude, Ollama)
 │   ├── Integration/                    # Integração com a Open Tools API da IDE (Hooks, Options)
+│   ├── MCP/                            # Bridge MCP stdio para clientes externos
 │   └── UI/                             # Telas, Frames e diálogos em VCL
 │       └── Web/                        # Componentes locais do chat em HTML5/JS (WebView2)
 │           └── vendor/                 # Bibliotecas de terceiros (Prism, Marked, diff2html)

@@ -5,7 +5,10 @@ This document establishes the compliance guidelines, terms of use, and data priv
 ---
 
 ## 1. Trademark Disclaimer
-All trademarks, logos, service marks, and trade names mentioned in this project (including, but not limited to: *Embarcadero Delphi*, *Microsoft Windows*, *Microsoft Edge*, *WebView2*, *Google Gemini*, *OpenAI ChatGPT*, *Anthropic Claude*, *DeepSeek*, *Groq*, and *Ollama*) are the property of their respective owners. 
+All trademarks, logos, service marks, and trade names mentioned in this project, including
+*Embarcadero Delphi*, *Microsoft Windows*, *Microsoft Edge*, *WebView2*, *Google Gemini*,
+*OpenAI ChatGPT*, *Anthropic Claude*, *DeepSeek*, *Groq*, and *Ollama*, are the property of their
+respective owners.
 
 The use of these names and trademarks is solely for compatibility, configuration, and technology integration description purposes. **Rad IA** is an independent, open-source project and has no official affiliation, sponsorship, endorsement, or association with the owners of these trademarks.
 
@@ -30,3 +33,12 @@ When using cloud-based providers (Google Gemini, OpenAI, Anthropic, DeepSeek, or
 
 *   **Confidential Corporate Use:** If you work on projects with restricted proprietary code or under strict corporate compliance regulations (such as GDPR or LGPD), **we strongly recommend using Ollama** configured locally.
 *   **Total Offline Privacy:** By running local models offline (such as Llama 3, Phi-3, or Mistral via Ollama), all prompt and code processing is performed entirely within your machine or internal network, ensuring that no proprietary source code ever leaves your company's secure environment.
+
+### Local agentic platform data
+
+RadIA stores a sanitized audit trail at `%APPDATA%\RadIA\audit\tools.jsonl` and rebuildable indexes
+at `%APPDATA%\RadIA\Knowledge`. This data remains local unless an authorized operation includes
+project content in context sent to the selected provider.
+
+Preserve audit data when required for traceability. Remove indexes only after closing every IDE
+and according to the organization's retention policy.

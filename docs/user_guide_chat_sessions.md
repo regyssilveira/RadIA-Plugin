@@ -1,5 +1,9 @@
 # Guia de Uso: Painel de Chat & Gerenciamento de Sessões
 
+> O chat também pode executar ferramentas estruturadas da IDE. Consulte o
+> [Guia das Ferramentas Agentivas](user_guide_agentic_tools.md) para consentimento, preview,
+> cancelamento, auditoria e resultados.
+
 Este guia detalha o funcionamento da interface de chat do **Rad IA**, os atalhos de produtividade, o gerenciamento de múltiplas sessões e os fluxos de backup e customização de templates.
 
 ---

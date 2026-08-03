@@ -1,5 +1,9 @@
 # User Guide: Chat Panel & Session Management
 
+> Chat can also execute structured IDE tools. See the
+> [Agentic Tools Guide](user_guide_agentic_tools.en.md) for consent, previews, cancellation,
+> auditing, and results.
+
 This guide details the operation of **Rad IA**'s chat interface, productivity shortcuts, multiple session management, and template backup/customization workflows.
 
 ---
