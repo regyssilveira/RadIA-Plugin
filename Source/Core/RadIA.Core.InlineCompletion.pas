@@ -11,6 +11,8 @@ type
   private
     FFileName: string;
     FLanguage: string;
+    FCursorColumn: Integer;
+    FCursorLine: Integer;
     FPrefix: string;
     FProjectContext: string;
     FRevision: string;
@@ -30,6 +32,12 @@ type
     function IsValid: Boolean;
     function Limited(const AMaxCharacters: Integer):
       TRadIAInlineCompletionContext;
+    function WithCursor(
+      const ALine: Integer;
+      const AColumn: Integer
+    ): TRadIAInlineCompletionContext;
+    property CursorColumn: Integer read FCursorColumn;
+    property CursorLine: Integer read FCursorLine;
     property FileName: string read FFileName;
     property Language: string read FLanguage;
     property Prefix: string read FPrefix;
@@ -100,10 +108,11 @@ type
 
   IRadIAInlineCompletionView = interface
     ['{76F72D1C-2B17-4C88-A08A-A14B7FE4ED8D}']
-    procedure Apply(
+    function Apply(
       const AContext: TRadIAInlineCompletionContext;
-      const AText: string
-    );
+      const AText: string;
+      out AUpdatedContext: TRadIAInlineCompletionContext
+    ): Boolean;
     procedure Clear;
     procedure Show(
       const AContext: TRadIAInlineCompletionContext;
@@ -293,6 +302,8 @@ begin
   FSymbolName := ASymbolName;
   FProjectContext := AProjectContext;
   FRevision := ARevision;
+  FCursorLine := 0;
+  FCursorColumn := 0;
 end;
 
 function TRadIAInlineCompletionContext.IsValid: Boolean;
@@ -334,6 +345,18 @@ begin
     LProjectContext,
     FRevision
   );
+  Result.FCursorLine := FCursorLine;
+  Result.FCursorColumn := FCursorColumn;
+end;
+
+function TRadIAInlineCompletionContext.WithCursor(
+  const ALine: Integer;
+  const AColumn: Integer
+): TRadIAInlineCompletionContext;
+begin
+  Result := Self;
+  Result.FCursorLine := ALine;
+  Result.FCursorColumn := AColumn;
 end;
 
 { TRadIAInlineCompletionResponse }
@@ -562,6 +585,7 @@ function TRadIAInlineCompletionController.AcceptAll: Boolean;
 var
   LContext: TRadIAInlineCompletionContext;
   LSuggestion: string;
+  LUpdatedContext: TRadIAInlineCompletionContext;
 begin
   TMonitor.Enter(FLock);
   try
@@ -571,9 +595,8 @@ begin
   finally
     TMonitor.Exit(FLock);
   end;
-  Result := LSuggestion <> '';
-  if Result then
-    FView.Apply(LContext, LSuggestion);
+  Result := (LSuggestion <> '') and
+    FView.Apply(LContext, LSuggestion, LUpdatedContext);
   FView.Clear;
 end;
 
@@ -582,6 +605,7 @@ var
   LAcceptedText: string;
   LContext: TRadIAInlineCompletionContext;
   LRemainingText: string;
+  LUpdatedContext: TRadIAInlineCompletionContext;
 begin
   TMonitor.Enter(FLock);
   try
@@ -595,11 +619,25 @@ begin
   finally
     TMonitor.Exit(FLock);
   end;
-  FView.Apply(LContext, LAcceptedText);
+  if not FView.Apply(
+    LContext,
+    LAcceptedText,
+    LUpdatedContext
+  ) then
+  begin
+    Reject;
+    Exit(False);
+  end;
+  TMonitor.Enter(FLock);
+  try
+    FContext := LUpdatedContext;
+  finally
+    TMonitor.Exit(FLock);
+  end;
   if LRemainingText = '' then
     FView.Clear
   else
-    FView.Show(LContext, LRemainingText);
+    FView.Show(LUpdatedContext, LRemainingText);
 end;
 
 function TRadIAInlineCompletionController.CachedSuggestion(

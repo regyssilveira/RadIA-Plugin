@@ -28,20 +28,23 @@ type
     IRadIAInlineCompletionView
   )
   private
+    FApplyAllowed: Boolean;
     FAppliedText: string;
     FClearCount: Integer;
     FShownText: string;
   public
-    procedure Apply(
+    function Apply(
       const AContext: TRadIAInlineCompletionContext;
-      const AText: string
-    );
+      const AText: string;
+      out AUpdatedContext: TRadIAInlineCompletionContext
+    ): Boolean;
     procedure Clear;
     procedure Show(
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
     property AppliedText: string read FAppliedText;
+    property ApplyAllowed: Boolean read FApplyAllowed write FApplyAllowed;
     property ClearCount: Integer read FClearCount;
     property ShownText: string read FShownText;
   end;
@@ -77,6 +80,10 @@ type
     procedure LimitsContextAroundCursor;
     [Test]
     procedure BuildsExplicitFimPrompt;
+    [Test]
+    procedure PreservesCursorThroughContextLimit;
+    [Test]
+    procedure RefusesAcceptanceWhenViewRevisionChanged;
   end;
 
 implementation
@@ -97,12 +104,20 @@ end;
 
 { TRadIAInlineCompletionViewStub }
 
-procedure TRadIAInlineCompletionViewStub.Apply(
+function TRadIAInlineCompletionViewStub.Apply(
   const AContext: TRadIAInlineCompletionContext;
-  const AText: string
-);
+  const AText: string;
+  out AUpdatedContext: TRadIAInlineCompletionContext
+): Boolean;
 begin
+  if not FApplyAllowed then
+    Exit(False);
   FAppliedText := FAppliedText + AText;
+  AUpdatedContext := AContext.WithCursor(
+    AContext.CursorLine,
+    AContext.CursorColumn + Length(AText)
+  );
+  Result := True;
 end;
 
 procedure TRadIAInlineCompletionViewStub.Clear;
@@ -212,6 +227,23 @@ begin
   Assert.AreEqual(5, Length(LLimited.ProjectContext));
 end;
 
+procedure TRadIAInlineCompletionTests.PreservesCursorThroughContextLimit;
+var
+  LContext: TRadIAInlineCompletionContext;
+begin
+  LContext := Context('cursor').WithCursor(12, 7).Limited(256);
+  Assert.AreEqual(12, LContext.CursorLine);
+  Assert.AreEqual(7, LContext.CursorColumn);
+end;
+
+procedure TRadIAInlineCompletionTests.RefusesAcceptanceWhenViewRevisionChanged;
+begin
+  FController.Request(Context('stale'));
+  FView.ApplyAllowed := False;
+  Assert.IsFalse(FController.AcceptAll);
+  Assert.AreEqual('', FView.AppliedText);
+end;
+
 procedure TRadIAInlineCompletionTests.RejectClearsSuggestion;
 begin
   FController.Request(Context('5'));
@@ -239,6 +271,7 @@ begin
   FProvider := TRadIAInlineCompletionProviderStub.Create;
   FProvider.Response := '```pascal'#10'WriteLn(''Hello'');'#10'end;'#10'```';
   FView := TRadIAInlineCompletionViewStub.Create;
+  FView.ApplyAllowed := True;
   LProvider := FProvider;
   LView := FView;
   LOptions := TRadIAInlineCompletionOptions.Create(0, 4096, 512);

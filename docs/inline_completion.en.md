@@ -1,8 +1,7 @@
 # Inline assistance and Fill-in-the-Middle
 
 This document describes the RadIA 2.0.0 inline-assistance architecture. Delivery is incremental.
-The domain engine is implemented; automatic capture and visual presentation still need to be
-connected to the Open Tools API.
+The engine, explicit capture, and first visual overlay are now connected to the Open Tools API.
 
 ## Goal
 
@@ -23,13 +22,18 @@ accepts the whole suggestion or the next word.
 6. Delivery occurs only while generation and revision are current.
 7. The visual layer shows the suggestion without touching the buffer.
 
-## Planned editor actions
+## Editor menu actions
 
-- Accept the entire suggestion.
-- Accept only the next word.
-- Reject the suggestion.
-- Request an alternative.
-- Disable by session, project, file, or language.
+| Action | Initial shortcut |
+|---|---|
+| Request suggestion | `Ctrl+Alt+Space` |
+| Accept the entire suggestion | `Ctrl+Alt+Right` |
+| Accept only the next word | `Ctrl+Alt+Down` |
+| Request an alternative | `Ctrl+Alt+]` |
+| Reject the suggestion | `Ctrl+Alt+Backspace` |
+
+The shortcuts appear in the **Rad IA** submenu of the editor context menu. The first request in
+each session explains which context will be sent and requires explicit consent.
 
 ## Security and privacy
 
@@ -37,6 +41,8 @@ accepts the whole suggestion or the next word.
 - Prefix, suffix, and context are bounded independently of the model context window.
 - A cancelled request cannot publish a late response.
 - Acceptance must validate the captured revision before inserting text.
+- File, revision hash, line, and column must still match at acceptance time.
+- After partial acceptance, the view returns a new snapshot before the controller keeps the remainder.
 - Local and remote providers share the same contract and cancellation rules.
 
 ## Implemented components
@@ -47,9 +53,12 @@ accepts the whole suggestion or the next word.
 - `TRadIAServiceInlineCompletionProvider`: adapter for the active RadIA provider.
 - `TRadIAInlineCompletionController`: cache, cancellation, sanitization, and acceptance actions.
 - `IRadIAInlineCompletionView`: boundary preventing the engine from writing directly to the editor.
+- `TRadIAOTAInlineCompletionSession`: OTA capture, optimistic validation, insertion, and Ghost Text.
 
 ## Integration status
 
-The next increment connects the controller to the existing OTA adapters, implements the Ghost Text
-overlay, and registers acceptance and rejection shortcuts. The feature must not be advertised as
-available to end users until that integration is complete and validated in a real IDE.
+The first OTA flow is deliberately user-triggered: it captures only the active buffer and basic
+project metadata, displays the first line as Ghost Text, and never changes the buffer before
+acceptance. Continuous capture, multiline virtual rows, configurable shortcuts, and project,
+file, or language disable controls remain pending. The feature is only complete after visual
+validation across the supported IDE matrix.

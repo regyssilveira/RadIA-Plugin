@@ -4,7 +4,10 @@ interface
 
 uses
   System.Classes, Vcl.Menus, Vcl.Forms, Vcl.ExtCtrls,
-  RadIA.Core.Interfaces, RadIA.OTA.ContextParser;
+  RadIA.Core.Interfaces,
+  RadIA.Core.InlineCompletion,
+  RadIA.OTA.ContextParser,
+  RadIA.OTA.InlineCompletion;
 
 type
   { Manager to create and handle RadIA IDE contextual actions }
@@ -15,6 +18,9 @@ type
     FIDENotifierIndex: Integer;
     FEditorNotifiers: TInterfaceList;
     FIDEAdapter: IRadIAIDEAdapter;
+    FInlineCompletionConsentGranted: Boolean;
+    FInlineCompletionController: IRadIAInlineCompletionController;
+    FInlineCompletionSession: IRadIAOTAInlineCompletionSession;
     FMediator: IRadIAMediator;
     {$IFNDEF TESTS}
     FTimer: TTimer;
@@ -59,6 +65,11 @@ type
     procedure OnGettingStartedExecute(Sender: TObject);
     procedure OnShowChatExecute(Sender: TObject);
     procedure OnShowTerminalExecute(Sender: TObject);
+    procedure OnInlineCompletionAcceptExecute(Sender: TObject);
+    procedure OnInlineCompletionAlternativeExecute(Sender: TObject);
+    procedure OnInlineCompletionNextWordExecute(Sender: TObject);
+    procedure OnInlineCompletionRejectExecute(Sender: TObject);
+    procedure OnInlineCompletionRequestExecute(Sender: TObject);
 
     function BuildCreateExamplePrompt(const ASourceCode: string; const AContext: TMethodExampleContext): string;
     function GetEditorCodeContext(out ACode: string; out AUsedSelection: Boolean): Boolean;
@@ -84,6 +95,7 @@ implementation
 uses
   System.Generics.Collections,
   System.SysUtils,
+  System.UITypes,
   Vcl.Dialogs,
   Winapi.Windows, ToolsAPI,
   RadIA.Core.Types,
@@ -124,6 +136,11 @@ threadvar
 { TRadIAEditorHook }
 
 constructor TRadIAEditorHook.Create(AOwner: TComponent);
+var
+  LDispatcher: TRadIAInlineCompletionDispatcher;
+  LProvider: IRadIAInlineCompletionProvider;
+  LRunner: TRadIAInlineCompletionRunner;
+  LView: IRadIAInlineCompletionView;
 begin
   inherited Create(AOwner);
   if not TRadIAContainer.TryResolve<IRadIAIDEAdapter>(FIDEAdapter) then
@@ -131,6 +148,37 @@ begin
   if not TRadIAContainer.TryResolve<IRadIAMediator>(FMediator) then
     FMediator := TRadIAMediator.Instance;
   FOldActiveFormChange := nil;
+  FInlineCompletionConsentGranted := False;
+  FInlineCompletionSession := TRadIAOTAInlineCompletionSession.Create;
+  if TRadIAContainer.TryResolve<IRadIAInlineCompletionProvider>(
+    LProvider
+  ) then
+  begin
+    LView := FInlineCompletionSession;
+    LRunner :=
+      procedure(const AAction: TProc)
+      begin
+        TThread.CreateAnonymousThread(AAction).Start;
+      end;
+    LDispatcher :=
+      procedure(const AAction: TProc)
+      begin
+        TThread.Queue(
+          nil,
+          procedure
+          begin
+            AAction();
+          end
+        );
+      end;
+    FInlineCompletionController := TRadIAInlineCompletionController.Create(
+      LProvider,
+      LView,
+      TRadIAInlineCompletionOptions.Default,
+      LRunner,
+      LDispatcher
+    );
+  end;
   FIDENotifierIndex := -1;
   FEditorNotifiers := TInterfaceList.Create;
   {$IFNDEF TESTS}
@@ -144,6 +192,10 @@ end;
 destructor TRadIAEditorHook.Destroy;
 begin
   Uninstall;
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Stop;
+  FInlineCompletionController := nil;
+  FInlineCompletionSession := nil;
   FEditorNotifiers.Free;
   inherited Destroy;
 end;
@@ -666,6 +718,40 @@ begin
   LSubItem.OnClick := OnReviewExecute;
   LRootItem.Add(LSubItem);
 
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := '-';
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Request Inline Suggestion';
+  LSubItem.ShortCut := ShortCut(VK_SPACE, [ssCtrl, ssAlt]);
+  LSubItem.OnClick := OnInlineCompletionRequestExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Accept Inline Suggestion';
+  LSubItem.ShortCut := ShortCut(VK_RIGHT, [ssCtrl, ssAlt]);
+  LSubItem.OnClick := OnInlineCompletionAcceptExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Accept Next Inline Word';
+  LSubItem.ShortCut := ShortCut(VK_DOWN, [ssCtrl, ssAlt]);
+  LSubItem.OnClick := OnInlineCompletionNextWordExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Request Alternative Inline Suggestion';
+  LSubItem.ShortCut := ShortCut(VK_OEM_6, [ssCtrl, ssAlt]);
+  LSubItem.OnClick := OnInlineCompletionAlternativeExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Reject Inline Suggestion';
+  LSubItem.ShortCut := ShortCut(VK_BACK, [ssCtrl, ssAlt]);
+  LSubItem.OnClick := OnInlineCompletionRejectExecute;
+  LRootItem.Add(LSubItem);
+
   // Separator visual
   LSubItem := TMenuItem.Create(APopupMenu);
   LSubItem.Caption := '-';
@@ -795,6 +881,68 @@ end;
 procedure TRadIAEditorHook.OnShowTerminalExecute(Sender: TObject);
 begin
   ShowRadIATerminal;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionAcceptExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.AcceptAll;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionAlternativeExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.RequestAlternative;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionNextWordExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.AcceptNextWord;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionRejectExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Reject;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionRequestExecute(
+  Sender: TObject
+);
+var
+  LContext: TRadIAInlineCompletionContext;
+begin
+  if not Assigned(FInlineCompletionController) or
+    not Assigned(FInlineCompletionSession) then
+    Exit;
+  if not FInlineCompletionConsentGranted then
+  begin
+    if MessageDlg(
+      'RadIA will send a bounded context from the active editor buffer ' +
+      'to the selected provider to generate an inline suggestion. ' +
+      'Continue for this IDE session?',
+      mtConfirmation,
+      [mbYes, mbNo],
+      0
+    ) <> mrYes then
+      Exit;
+    FInlineCompletionConsentGranted := True;
+  end;
+  if not FInlineCompletionSession.Capture(LContext) then
+  begin
+    ShowMessage('No supported active code buffer was found.');
+    Exit;
+  end;
+  FInlineCompletionController.Request(LContext);
 end;
 
 procedure TRadIAEditorHook.OnOptimizeExecute(Sender: TObject);

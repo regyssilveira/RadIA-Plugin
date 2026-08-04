@@ -1,8 +1,8 @@
 # Assistência inline e Fill-in-the-Middle
 
 Este documento descreve a arquitetura de assistência inline do RadIA 2.0.0. O recurso está sendo
-entregue de forma incremental. O motor de domínio já existe; a captura automática e a apresentação
-visual no editor ainda precisam ser conectadas à Open Tools API.
+entregue de forma incremental. O motor, a captura explícita e o primeiro overlay visual já estão
+conectados à Open Tools API.
 
 ## Objetivo
 
@@ -23,13 +23,18 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 6. A entrega ocorre somente se a geração e a revisão ainda forem atuais.
 7. A camada visual exibe a sugestão sem tocar no buffer.
 
-## Ações previstas no editor
+## Ações disponíveis no menu do editor
 
-- Aceitar toda a sugestão.
-- Aceitar somente a próxima palavra.
-- Rejeitar a sugestão.
-- Solicitar uma alternativa.
-- Desativar por sessão, projeto, arquivo ou linguagem.
+| Ação | Atalho inicial |
+|---|---|
+| Solicitar sugestão | `Ctrl+Alt+Espaço` |
+| Aceitar toda a sugestão | `Ctrl+Alt+Direita` |
+| Aceitar somente a próxima palavra | `Ctrl+Alt+Baixo` |
+| Solicitar uma alternativa | `Ctrl+Alt+]` |
+| Rejeitar a sugestão | `Ctrl+Alt+Backspace` |
+
+Os atalhos aparecem no submenu **Rad IA** do menu contextual do editor. O primeiro pedido de cada
+sessão informa qual contexto será enviado e exige consentimento explícito.
 
 ## Segurança e privacidade
 
@@ -37,6 +42,8 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 - Prefixo, sufixo e contexto possuem limites independentes da janela total do modelo.
 - Uma solicitação cancelada não pode publicar uma resposta atrasada.
 - O aceite deve validar a revisão capturada antes de inserir texto.
+- Arquivo, hash da revisão, linha e coluna precisam continuar idênticos no momento do aceite.
+- Após o aceite parcial, a view devolve um novo snapshot ao controller antes de manter o restante.
 - Providers locais e remotos usam o mesmo contrato e as mesmas regras de cancelamento.
 
 ## Componentes implementados
@@ -47,9 +54,12 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 - `TRadIAServiceInlineCompletionProvider`: adaptador para o provider ativo do RadIA.
 - `TRadIAInlineCompletionController`: cache, cancelamento, saneamento e ações de aceite.
 - `IRadIAInlineCompletionView`: fronteira que impede o motor de escrever diretamente no editor.
+- `TRadIAOTAInlineCompletionSession`: captura OTA, validação otimista, inserção e Ghost Text.
 
 ## Estado da integração
 
-O próximo incremento conecta o controller aos adaptadores OTA existentes, implementa o overlay de
-Ghost Text e registra atalhos de aceite/rejeição. Até essa conexão ser concluída e validada em IDE
-real, o recurso não deve ser anunciado como disponível ao usuário final.
+O primeiro fluxo OTA é deliberadamente acionado pelo usuário: ele captura somente o buffer ativo e
+metadados básicos do projeto, apresenta a primeira linha como Ghost Text e nunca modifica o buffer
+antes do aceite. Captura contínua, sugestões multilinha com linhas virtuais, atalhos configuráveis e
+desativação por projeto, arquivo ou linguagem permanecem pendentes. O recurso só será considerado
+concluído depois da validação visual na matriz de IDEs suportada.

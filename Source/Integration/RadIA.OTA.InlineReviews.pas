@@ -10,6 +10,15 @@ uses
   RadIA.Core.InlineReviews;
 
 type
+  TRadIAEditPaintContext = record
+    View: IOTAEditView;
+    LineNumber: Integer;
+    Canvas: TCanvas;
+    TextRect: TRect;
+    LineRect: TRect;
+    CellSize: TSize;
+  end;
+
   TRadIAOTAInlineReviewFacade = class(
     TInterfacedObject,
     IRadIAInlineReviewVisualFacade,
@@ -32,6 +41,10 @@ type
     procedure RegisterCurrentView;
     procedure RunOnMainThread(const AAction: TThreadProcedure);
     procedure UnregisterView;
+  protected
+    procedure PaintOverlay(
+      const APaintContext: TRadIAEditPaintContext
+    ); virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -41,15 +54,15 @@ type
       const AReviews: TArray<TRadIAInlineReview>
     );
     procedure ClearReviews;
-    procedure AfterSave;
-    procedure BeforeSave;
-    procedure Destroyed;
-    procedure Modified;
-    procedure EditorIdle(const View: IOTAEditView);
+    procedure AfterSave; virtual;
+    procedure BeforeSave; virtual;
+    procedure Destroyed; virtual;
+    procedure Modified; virtual;
+    procedure EditorIdle(const View: IOTAEditView); virtual;
     procedure BeginPaint(
       const View: IOTAEditView;
       var FullRepaint: Boolean
-    );
+    ); virtual;
     procedure PaintLine(
       const View: IOTAEditView;
       LineNumber: Integer;
@@ -60,8 +73,8 @@ type
       const TextRect: TRect;
       const LineRect: TRect;
       const CellSize: TSize
-    );
-    procedure EndPaint(const View: IOTAEditView);
+    ); virtual;
+    procedure EndPaint(const View: IOTAEditView); virtual;
   end;
 
 implementation
@@ -211,20 +224,36 @@ procedure TRadIAOTAInlineReviewFacade.PaintLine(
   const CellSize: TSize
 );
 var
+  LPaintContext: TRadIAEditPaintContext;
   LReview: TRadIAInlineReview;
   LRight: Integer;
   LUnderlineY: Integer;
 begin
-  if not SameText(FCurrentRevision, FExpectedRevision) or
-    not FindReview(LineNumber, LReview) then
-    Exit;
-  Canvas.Pen.Color := ColorFor(LReview.Severity);
-  Canvas.Pen.Width := 2;
-  LUnderlineY := Min(TextRect.Bottom - 1, LineRect.Bottom - 1);
-  LRight := TextRect.Left + (TextWidth * CellSize.cx);
-  LRight := Min(Max(LRight, TextRect.Left + CellSize.cx), LineRect.Right);
-  Canvas.MoveTo(TextRect.Left, LUnderlineY);
-  Canvas.LineTo(LRight, LUnderlineY);
+  if SameText(FCurrentRevision, FExpectedRevision) and
+    FindReview(LineNumber, LReview) then
+  begin
+    Canvas.Pen.Color := ColorFor(LReview.Severity);
+    Canvas.Pen.Width := 2;
+    LUnderlineY := Min(TextRect.Bottom - 1, LineRect.Bottom - 1);
+    LRight := TextRect.Left + (TextWidth * CellSize.cx);
+    LRight := Min(Max(LRight, TextRect.Left + CellSize.cx), LineRect.Right);
+    Canvas.MoveTo(TextRect.Left, LUnderlineY);
+    Canvas.LineTo(LRight, LUnderlineY);
+  end;
+  LPaintContext.View := View;
+  LPaintContext.LineNumber := LineNumber;
+  LPaintContext.Canvas := Canvas;
+  LPaintContext.TextRect := TextRect;
+  LPaintContext.LineRect := LineRect;
+  LPaintContext.CellSize := CellSize;
+  PaintOverlay(LPaintContext);
+end;
+
+procedure TRadIAOTAInlineReviewFacade.PaintOverlay(
+  const APaintContext: TRadIAEditPaintContext
+);
+begin
+  // Descendants may add editor decorations through the compact paint context.
 end;
 
 procedure TRadIAOTAInlineReviewFacade.RegisterCurrentView;

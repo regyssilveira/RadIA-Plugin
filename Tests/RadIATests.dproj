@@ -184,6 +184,7 @@
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Knowledge.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.KnowledgeNotifier.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.InlineReviews.pas"/>
+        <DCCReference Include="..\Source\Integration\RadIA.OTA.InlineCompletion.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.IDENavigation.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Consent.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Build.pas"/>

@@ -110,6 +110,7 @@ uses
   RadIA.OTA.Knowledge in '..\Source\Integration\RadIA.OTA.Knowledge.pas',
   RadIA.OTA.KnowledgeNotifier in '..\Source\Integration\RadIA.OTA.KnowledgeNotifier.pas',
   RadIA.OTA.InlineReviews in '..\Source\Integration\RadIA.OTA.InlineReviews.pas',
+  RadIA.OTA.InlineCompletion in '..\Source\Integration\RadIA.OTA.InlineCompletion.pas',
   RadIA.OTA.IDENavigation in '..\Source\Integration\RadIA.OTA.IDENavigation.pas',
   RadIA.OTA.Consent in '..\Source\Integration\RadIA.OTA.Consent.pas',
   RadIA.OTA.Build in '..\Source\Integration\RadIA.OTA.Build.pas',
