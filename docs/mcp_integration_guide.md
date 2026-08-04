@@ -234,7 +234,8 @@ Abra **RadIA > Settings > CLI & MCP** e siga este fluxo:
 4. clique em **Diagnose** para conferir a detecção do CLI e o estado MCP;
 5. clique em **Preview** para revisar exatamente o conteúdo proposto;
 6. use **Connect / Repair** e confirme o arquivo e o backup exibidos;
-7. use **Disconnect** para remover somente a entrada gerenciada pelo RadIA.
+7. use **Test Handshake** para validar a bridge contra a instância atual da IDE;
+8. use **Disconnect** para remover somente a entrada gerenciada pelo RadIA.
 
 Os três caminhos são persistidos separadamente para cada cliente e restaurados quando a tela é
 reaberta. Um campo vazio de executável mantém a detecção automática pelo `PATH`.
@@ -242,3 +243,18 @@ reaberta. Um campo vazio de executável mantém a detecção automática pelo `P
 O botão de conexão fica desabilitado quando a bridge não existe, a configuração é inválida ou o
 cliente já está configurado corretamente. Instalação de CLI e alteração MCP são operações
 independentes e nenhuma delas ocorre sem confirmação visual.
+
+### Diagnóstico de handshake
+
+**Test Handshake** usa o discovery específico `mcp.<pid>.json` da IDE atual, e não o alias global
+`mcp.json`. A bridge é iniciada em background e recebe por stdin a sequência:
+
+1. `initialize` com a versão de protocolo suportada;
+2. `notifications/initialized`;
+3. `ping`;
+4. `tools/list`.
+
+O diagnóstico só fica verde quando a bridge encerra normalmente, as três respostas JSON-RPC são
+válidas, a negociação retorna uma versão de protocolo e `tools/list` contém um array de
+ferramentas. O painel mostra a quantidade real de tools registradas na instância. O processo possui
+timeout de 30 segundos e sua árvore é encerrada se a tela for fechada.

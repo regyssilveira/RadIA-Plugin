@@ -17,6 +17,8 @@ type
     procedure TimeoutTerminatesProcessTree;
     [Test]
     procedure CancellationTerminatesProcessTree;
+    [Test]
+    procedure WritesStandardInputAndClosesPipe;
   end;
 
 implementation
@@ -147,6 +149,33 @@ begin
     Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
     Assert.IsTrue(LResult.TimedOut);
     Assert.IsFalse(LResult.Succeeded);
+  finally
+    LCompleted.Free;
+  end;
+end;
+
+procedure TRadIACliProcessTests.WritesStandardInputAndClosesPipe;
+var
+  LCompleted: TEvent;
+  LResult: TRadIACliProcessResult;
+begin
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    TRadIACliProcessRunner.StartWithInput(
+      NewCommandInvocation('findstr radia-input'),
+      'radia-input' + sLineBreak,
+      5000,
+      nil,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LResult := AResult;
+        LCompleted.SetEvent;
+      end
+    );
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
+    Assert.IsTrue(LResult.Succeeded);
+    Assert.Contains(LResult.StdOut, 'radia-input');
   finally
     LCompleted.Free;
   end;

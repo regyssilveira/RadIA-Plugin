@@ -255,8 +255,12 @@ Instalação opcional entregue nesta branch: a tela **CLI & MCP** apresenta o co
 pré-requisitos e confirmação antes de instalar ou atualizar Codex CLI, Claude Code e Gemini CLI por
 npm, ou GitHub Copilot CLI por WinGet. A execução é assíncrona, observável, limitada por timeout e
 cancelada em cascata no fechamento. IDs de pacote são allowlisted sintaticamente antes de chegar ao
-shell, e nenhum binário de terceiros é redistribuído. O item permanece aberto para o diagnóstico de
-handshake MCP.
+shell, e nenhum binário de terceiros é redistribuído.
+
+Diagnóstico de handshake entregue nesta branch: a tela inicia a bridge configurada contra o
+discovery `mcp.<pid>.json` da IDE atual, envia `initialize`, `notifications/initialized`, `ping` e
+`tools/list` por stdin, valida as respostas JSON-RPC e apresenta versão do protocolo e contagem real
+de tools. O teste E2E da suíte inicia servidor named pipe e bridge reais e comprova o ciclo completo.
 
 ## Cenário E2E obrigatório
 

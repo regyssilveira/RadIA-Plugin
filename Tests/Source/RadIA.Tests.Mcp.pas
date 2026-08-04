@@ -102,6 +102,9 @@ type
     procedure NamedPipeDeliversCancellationWhileToolRuns;
     [Test]
     procedure MetricsExposeSanitizedSessionCounters;
+    [Test]
+    [Category('ExternalProcess')]
+    procedure StdioBridgeCompletesLiveHandshake;
   end;
 
 implementation
@@ -112,6 +115,9 @@ uses
   System.IOUtils,
   System.SysUtils,
   Winapi.Windows,
+  RadIA.Core.AgentExecutors,
+  RadIA.Core.CliProcess,
+  RadIA.Core.McpHandshake,
   RadIA.MCP.NamedPipe,
   RadIA.Tests.Patches,
   RadIA.Core.ToolRegistry,
@@ -951,6 +957,59 @@ begin
   Assert.Contains(LResponse, '"name":"GetState"');
   Assert.Contains(LResponse, '"readOnlyHint":true');
   Assert.Contains(LResponse, '"inputSchema":{"type":"object"');
+end;
+
+procedure TTestRadIAMcpProtocol.StdioBridgeCompletesLiveHandshake;
+var
+  LBridgePath: string;
+  LCompleted: TEvent;
+  LConnectionFile: string;
+  LHandshake: TRadIAMcpHandshakeResult;
+  LInvocation: TRadIACliInvocation;
+  LProcessResult: TRadIACliProcessResult;
+  LRootPath: string;
+  LServer: IRadIAMcpServer;
+  LSession: IRadIACliProcessSession;
+begin
+  LServer := CreateNamedPipeServer(LRootPath, LConnectionFile);
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    LServer.Start;
+    LBridgePath := TPath.Combine(
+      ExtractFilePath(ParamStr(0)),
+      'RadIA.MCP.Bridge.exe'
+    );
+    Assert.IsTrue(TFile.Exists(LBridgePath));
+    LInvocation := TRadIACliInvocation.Create(
+      LBridgePath,
+      [GetInstanceConnectionFile(LConnectionFile)],
+      ExtractFilePath(LBridgePath),
+      'jsonl'
+    );
+    LSession := TRadIACliProcessRunner.StartWithInput(
+      LInvocation,
+      TRadIAMcpHandshake.BuildInput,
+      30000,
+      nil,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LProcessResult := AResult;
+        LCompleted.SetEvent;
+      end
+    );
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(30000));
+    Assert.IsTrue(LProcessResult.Succeeded, LProcessResult.StdErr);
+    LHandshake := TRadIAMcpHandshake.ParseOutput(LProcessResult.StdOut);
+    Assert.IsTrue(LHandshake.Succeeded, LHandshake.Message);
+    Assert.AreEqual(1, LHandshake.ToolCount);
+    Assert.IsFalse(LSession.IsRunning);
+  finally
+    LServer.Stop;
+    LCompleted.Free;
+    if TDirectory.Exists(LRootPath) then
+      TDirectory.Delete(LRootPath, True);
+  end;
 end;
 
 procedure TTestRadIAMcpProtocol.WriteClientMessage(

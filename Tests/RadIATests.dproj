@@ -109,6 +109,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.CliManager.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.CliMcpSettings.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.McpProvisioning.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.McpHandshake.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolRegistry.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolViews.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Extensions.pas"/>
@@ -246,6 +247,7 @@
         <DCCReference Include="Source\RadIA.Tests.CliManager.pas"/>
         <DCCReference Include="Source\RadIA.Tests.CliMcpSettings.pas"/>
         <DCCReference Include="Source\RadIA.Tests.McpProvisioning.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.McpHandshake.pas"/>
         <DCCReference Include="Source\RadIA.Tests.WorkspaceTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.WorkspaceBoundary.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Patches.pas"/>

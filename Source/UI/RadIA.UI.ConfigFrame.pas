@@ -67,9 +67,11 @@ type
     FBtnMcpPreview: TButton;
     FBtnMcpProvision: TButton;
     FBtnMcpRemove: TButton;
+    FBtnMcpHandshake: TButton;
     FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
     FCliMcpSettings: TRadIACliMcpSettings;
     FCliInstallSession: IRadIACliProcessSession;
+    FMcpHandshakeSession: IRadIACliProcessSession;
     FCliInstallGuard: IInterface;
 
     procedure BtnBrowseLogPathClick(Sender: TObject);
@@ -79,10 +81,14 @@ type
     procedure BtnCliRefreshClick(Sender: TObject);
     procedure BtnCliInstallClick(Sender: TObject);
     procedure BtnMcpPreviewClick(Sender: TObject);
+    procedure BtnMcpHandshakeClick(Sender: TObject);
     procedure BtnMcpProvisionClick(Sender: TObject);
     procedure BtnMcpRemoveClick(Sender: TObject);
     procedure CliClientChange(Sender: TObject);
     procedure CompleteCliInstall(
+      const AResult: TRadIACliProcessResult
+    );
+    procedure CompleteMcpHandshake(
       const AResult: TRadIACliProcessResult
     );
 
@@ -100,6 +106,7 @@ type
     function GetDefaultMcpConfigPath(
       const AClientId: string
     ): string;
+    function GetMcpConnectionPath: string;
     function GetSelectedCliDefinition(
       out ADefinition: TRadIACliDefinition
     ): Boolean;
@@ -350,7 +357,8 @@ uses
   RadIA.UI.Resources, System.UITypes, Vcl.FileCtrl,
   Winapi.Messages, Winapi.ShellAPI, RadIA.UI.GithubAuthForm,
   Winapi.Windows, System.SysUtils, ToolsAPI,
-  RadIA.Core.Container, RadIA.Core.ToolSecurity;
+  RadIA.Core.Container, RadIA.Core.McpHandshake,
+  RadIA.Core.ToolSecurity;
 
 {$R *.dfm}
 
@@ -678,6 +686,15 @@ begin
   FBtnMcpRemove.Caption := 'Disconnect';
   FBtnMcpRemove.OnClick := BtnMcpRemoveClick;
 
+  FBtnMcpHandshake := TButton.Create(Self);
+  FBtnMcpHandshake.Parent := FPnlCliMcp;
+  FBtnMcpHandshake.Left := 384;
+  FBtnMcpHandshake.Top := 282;
+  FBtnMcpHandshake.Width := 130;
+  FBtnMcpHandshake.Height := 27;
+  FBtnMcpHandshake.Caption := 'Test Handshake';
+  FBtnMcpHandshake.OnClick := BtnMcpHandshakeClick;
+
   FMemoMcpPreview := TMemo.Create(Self);
   FMemoMcpPreview.Parent := FPnlCliMcp;
   FMemoMcpPreview.Left := 16;
@@ -759,7 +776,10 @@ begin
   (FCliInstallGuard as IRadIAConfigLifecycleGuard).Invalidate;
   if Assigned(FCliInstallSession) then
     FCliInstallSession.Cancel;
+  if Assigned(FMcpHandshakeSession) then
+    FMcpHandshakeSession.Cancel;
   FCliInstallSession := nil;
+  FMcpHandshakeSession := nil;
   FCliInstallGuard := nil;
   FAgentExecutorSettings.Free;
   FCliMcpSettings.Free;
@@ -1255,6 +1275,54 @@ begin
   RefreshCliMcpDiagnostics;
 end;
 
+procedure TRadIAFrameAIConfig.BtnMcpHandshakeClick(Sender: TObject);
+var
+  LGuard: IRadIAConfigLifecycleGuard;
+  LInvocation: TRadIACliInvocation;
+begin
+  SaveCliMcpSettings;
+  if not TFile.Exists(FEdtMcpBridge.Text) then
+  begin
+    ShowMessage('The Rad IA MCP bridge executable was not found.');
+    Exit;
+  end;
+  if not TFile.Exists(GetMcpConnectionPath) then
+  begin
+    ShowMessage('The MCP discovery file for this IDE instance was not found.');
+    Exit;
+  end;
+  LInvocation := TRadIACliInvocation.Create(
+    FEdtMcpBridge.Text,
+    [GetMcpConnectionPath],
+    TPath.GetDirectoryName(FEdtMcpBridge.Text),
+    'jsonl'
+  );
+  FMemoMcpPreview.Text := 'Testing initialize, ping, and tools/list...' + sLineBreak;
+  FLblMcpStatus.Caption := 'MCP status: testing live handshake...';
+  FBtnMcpHandshake.Enabled := False;
+  LGuard := FCliInstallGuard as IRadIAConfigLifecycleGuard;
+  FMcpHandshakeSession := TRadIACliProcessRunner.StartWithInput(
+    LInvocation,
+    TRadIAMcpHandshake.BuildInput,
+    30000,
+    nil,
+    nil,
+    procedure(AResult: TRadIACliProcessResult)
+    begin
+      TThread.Queue(
+        nil,
+        TThreadProcedure(
+          procedure
+          begin
+            if LGuard.IsAlive then
+              CompleteMcpHandshake(AResult);
+          end
+        )
+      );
+    end
+  );
+end;
+
 procedure TRadIAFrameAIConfig.CompleteCliInstall(
   const AResult: TRadIACliProcessResult
 );
@@ -1278,6 +1346,31 @@ begin
       )
     );
   RefreshCliMcpDiagnostics;
+end;
+
+procedure TRadIAFrameAIConfig.CompleteMcpHandshake(
+  const AResult: TRadIACliProcessResult
+);
+var
+  LHandshake: TRadIAMcpHandshakeResult;
+begin
+  FMcpHandshakeSession := nil;
+  FBtnMcpHandshake.Enabled := True;
+  if not AResult.Succeeded then
+  begin
+    FLblMcpStatus.Caption := 'MCP status: live handshake failed.';
+    FMemoMcpPreview.Text := Trim(AResult.StdErr);
+    Exit;
+  end;
+  LHandshake := TRadIAMcpHandshake.ParseOutput(AResult.StdOut);
+  FMemoMcpPreview.Text := LHandshake.Message;
+  if LHandshake.Succeeded then
+    FLblMcpStatus.Caption := Format(
+      'MCP status: live handshake verified (%d tools).',
+      [LHandshake.ToolCount]
+    )
+  else
+    FLblMcpStatus.Caption := 'MCP status: ' + LHandshake.Message;
 end;
 
 procedure TRadIAFrameAIConfig.BtnMcpPreviewClick(Sender: TObject);
@@ -1430,6 +1523,14 @@ begin
   Result := '';
 end;
 
+function TRadIAFrameAIConfig.GetMcpConnectionPath: string;
+begin
+  Result := TPath.Combine(
+    TPath.Combine(TPath.GetHomePath, 'RadIA'),
+    Format('mcp.%d.json', [GetCurrentProcessId])
+  );
+end;
+
 function TRadIAFrameAIConfig.GetSelectedCliDefinition(
   out ADefinition: TRadIACliDefinition
 ): Boolean;
@@ -1543,6 +1644,10 @@ begin
   FBtnMcpRemove.Enabled :=
     (LPreview.State <> mpsMissing) and
     (LPreview.State <> mpsInvalid);
+  FBtnMcpHandshake.Enabled :=
+    TFile.Exists(FEdtMcpBridge.Text) and
+    TFile.Exists(GetMcpConnectionPath) and
+    not Assigned(FMcpHandshakeSession);
   if LPreview.State = mpsInvalid then
     FMemoMcpPreview.Text := LPreview.Summary
   else

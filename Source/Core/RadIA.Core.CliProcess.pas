@@ -45,6 +45,14 @@ type
       const AOnStdErr: TProc<string>;
       const AOnComplete: TProc<TRadIACliProcessResult>
     ): IRadIACliProcessSession; static;
+    class function StartWithInput(
+      const AInvocation: TRadIACliInvocation;
+      const AStdInput: string;
+      const ATimeoutMs: Cardinal;
+      const AOnStdOut: TProc<string>;
+      const AOnStdErr: TProc<string>;
+      const AOnComplete: TProc<TRadIACliProcessResult>
+    ): IRadIACliProcessSession; static;
   end;
 
 implementation
@@ -70,6 +78,7 @@ type
   )
   private
     FInvocation: TRadIACliInvocation;
+    FStdInput: string;
     FTimeoutMs: Cardinal;
     FOnStdOut: TProc<string>;
     FOnStdErr: TProc<string>;
@@ -95,11 +104,21 @@ type
       const AResult: TRadIACliProcessResult
     );
     function HasTimedOut(const AStartedAt: UInt64): Boolean;
+    procedure PrepareStandardInput(
+      var AReadHandle: THandle;
+      var AWriteHandle: THandle;
+      const ASecurity: TSecurityAttributes
+    );
+    function ResolveStandardInputHandle(
+      const AReadHandle: THandle
+    ): THandle;
     procedure StartWorker;
     procedure TerminateProcessTree;
+    procedure WriteStandardInput(const AHandle: THandle);
   public
     constructor Create(
       const AInvocation: TRadIACliInvocation;
+      const AStdInput: string;
       const ATimeoutMs: Cardinal;
       const AOnStdOut: TProc<string>;
       const AOnStdErr: TProc<string>;
@@ -136,6 +155,7 @@ end;
 
 constructor TRadIACliProcessSession.Create(
   const AInvocation: TRadIACliInvocation;
+  const AStdInput: string;
   const ATimeoutMs: Cardinal;
   const AOnStdOut: TProc<string>;
   const AOnStdErr: TProc<string>;
@@ -144,6 +164,7 @@ constructor TRadIACliProcessSession.Create(
 begin
   inherited Create;
   FInvocation := AInvocation;
+  FStdInput := AStdInput;
   FTimeoutMs := ATimeoutMs;
   FOnStdOut := AOnStdOut;
   FOnStdErr := AOnStdErr;
@@ -283,6 +304,8 @@ var
   LStdErr: string;
   LStdErrRead: THandle;
   LStdErrWrite: THandle;
+  LStdInRead: THandle;
+  LStdInWrite: THandle;
   LStdOut: string;
   LStdOutRead: THandle;
   LStdOutWrite: THandle;
@@ -293,6 +316,8 @@ begin
   LStdOutWrite := 0;
   LStdErrRead := 0;
   LStdErrWrite := 0;
+  LStdInRead := 0;
+  LStdInWrite := 0;
   ZeroMemory(@LProcessInfo, SizeOf(LProcessInfo));
   ZeroMemory(@LStartupInfo, SizeOf(LStartupInfo));
   LStartupInfo.cb := SizeOf(LStartupInfo);
@@ -306,13 +331,14 @@ begin
     if not CreatePipe(LStdOutRead, LStdOutWrite, @LSecurity, 0) or
       not CreatePipe(LStdErrRead, LStdErrWrite, @LSecurity, 0) then
       RaiseLastOSError;
+    PrepareStandardInput(LStdInRead, LStdInWrite, LSecurity);
     SetHandleInformation(LStdOutRead, HANDLE_FLAG_INHERIT, 0);
     SetHandleInformation(LStdErrRead, HANDLE_FLAG_INHERIT, 0);
     LStartupInfo.dwFlags := STARTF_USESTDHANDLES or STARTF_USESHOWWINDOW;
     LStartupInfo.wShowWindow := SW_HIDE;
     LStartupInfo.hStdOutput := LStdOutWrite;
     LStartupInfo.hStdError := LStdErrWrite;
-    LStartupInfo.hStdInput := GetStdHandle(STD_INPUT_HANDLE);
+    LStartupInfo.hStdInput := ResolveStandardInputHandle(LStdInRead);
     LCommandLine := FInvocation.ToCommandLine;
     UniqueString(LCommandLine);
     LCreated := CreateProcess(
@@ -331,6 +357,7 @@ begin
       RaiseLastOSError;
     CloseHandleIfAssigned(LStdOutWrite);
     CloseHandleIfAssigned(LStdErrWrite);
+    CloseHandleIfAssigned(LStdInRead);
     TMonitor.Enter(FLock);
     try
       LJobConfigured := ConfigureJob(LProcessInfo.hProcess);
@@ -342,6 +369,8 @@ begin
       TMonitor.Exit(FLock);
     end;
     ResumeThread(LProcessInfo.hThread);
+    WriteStandardInput(LStdInWrite);
+    CloseHandleIfAssigned(LStdInWrite);
     LStartedAt := GetTickCount64;
     repeat
       DrainPipe(LStdOutRead, LStdOut, FOnStdOut);
@@ -370,6 +399,8 @@ begin
   CloseHandleIfAssigned(LStdErrWrite);
   CloseHandleIfAssigned(LStdOutRead);
   CloseHandleIfAssigned(LStdErrRead);
+  CloseHandleIfAssigned(LStdInRead);
+  CloseHandleIfAssigned(LStdInWrite);
   TMonitor.Enter(FLock);
   try
     CloseHandleIfAssigned(FJobHandle);
@@ -429,6 +460,37 @@ begin
   end;
 end;
 
+procedure TRadIACliProcessSession.PrepareStandardInput(
+  var AReadHandle: THandle;
+  var AWriteHandle: THandle;
+  const ASecurity: TSecurityAttributes
+);
+var
+  LSecurity: TSecurityAttributes;
+begin
+  if FStdInput = '' then
+    Exit;
+  LSecurity := ASecurity;
+  if not CreatePipe(AReadHandle, AWriteHandle, @LSecurity, 0) then
+    RaiseLastOSError;
+  if not SetHandleInformation(
+    AWriteHandle,
+    HANDLE_FLAG_INHERIT,
+    0
+  ) then
+    RaiseLastOSError;
+end;
+
+function TRadIACliProcessSession.ResolveStandardInputHandle(
+  const AReadHandle: THandle
+): THandle;
+begin
+  if AReadHandle <> 0 then
+    Result := AReadHandle
+  else
+    Result := GetStdHandle(STD_INPUT_HANDLE);
+end;
+
 procedure TRadIACliProcessSession.StartWorker;
 var
   LThread: TThread;
@@ -458,6 +520,35 @@ begin
     TerminateJobObject(FJobHandle, CCancelledExitCode);
 end;
 
+procedure TRadIACliProcessSession.WriteStandardInput(
+  const AHandle: THandle
+);
+var
+  LBytes: TBytes;
+  LBytesWritten: Cardinal;
+  LOffset: Integer;
+begin
+  if (AHandle = 0) or (FStdInput = '') then
+    Exit;
+  LBytes := TEncoding.UTF8.GetBytes(FStdInput);
+  LOffset := 0;
+  while LOffset < Length(LBytes) do
+  begin
+    LBytesWritten := 0;
+    if not WriteFile(
+      AHandle,
+      LBytes[LOffset],
+      Length(LBytes) - LOffset,
+      LBytesWritten,
+      nil
+    ) then
+      RaiseLastOSError;
+    if LBytesWritten = 0 then
+      raise EWriteError.Create('Unable to write process standard input.');
+    Inc(LOffset, LBytesWritten);
+  end;
+end;
+
 { TRadIACliProcessRunner }
 
 class function TRadIACliProcessRunner.Start(
@@ -472,6 +563,30 @@ var
 begin
   LSession := TRadIACliProcessSession.Create(
     AInvocation,
+    '',
+    ATimeoutMs,
+    AOnStdOut,
+    AOnStdErr,
+    AOnComplete
+  );
+  Result := LSession;
+  LSession.StartWorker;
+end;
+
+class function TRadIACliProcessRunner.StartWithInput(
+  const AInvocation: TRadIACliInvocation;
+  const AStdInput: string;
+  const ATimeoutMs: Cardinal;
+  const AOnStdOut: TProc<string>;
+  const AOnStdErr: TProc<string>;
+  const AOnComplete: TProc<TRadIACliProcessResult>
+): IRadIACliProcessSession;
+var
+  LSession: TRadIACliProcessSession;
+begin
+  LSession := TRadIACliProcessSession.Create(
+    AInvocation,
+    AStdInput,
     ATimeoutMs,
     AOnStdOut,
     AOnStdErr,
