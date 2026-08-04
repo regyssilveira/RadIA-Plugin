@@ -19,6 +19,8 @@ type
     procedure CancellationTerminatesProcessTree;
     [Test]
     procedure WritesStandardInputAndClosesPipe;
+    [Test]
+    procedure WritesContinuousInteractiveInput;
   end;
 
 implementation
@@ -26,6 +28,7 @@ implementation
 uses
   System.SyncObjs,
   System.SysUtils,
+  Winapi.Windows,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliProcess;
 
@@ -176,6 +179,52 @@ begin
     Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
     Assert.IsTrue(LResult.Succeeded);
     Assert.Contains(LResult.StdOut, 'radia-input');
+  finally
+    LCompleted.Free;
+  end;
+end;
+
+procedure TRadIACliProcessTests.WritesContinuousInteractiveInput;
+var
+  LCompleted: TEvent;
+  LDeadline: UInt64;
+  LResult: TRadIACliProcessResult;
+  LSession: IRadIACliProcessSession;
+  LWritten: Boolean;
+begin
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    LSession := TRadIACliProcessRunner.StartInteractive(
+      TRadIACliInvocation.Create(
+        'powershell.exe',
+        [
+          '-NoLogo',
+          '-NoProfile',
+          '-Command',
+          '$value = Read-Host; Write-Output "received-$value"'
+        ],
+        GetCurrentDir,
+        'text'
+      ),
+      5000,
+      nil,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LResult := AResult;
+        LCompleted.SetEvent;
+      end
+    );
+    LDeadline := GetTickCount64 + 2000;
+    repeat
+      LWritten := LSession.WriteInput('radia-live-input' + sLineBreak);
+      if not LWritten then
+        Sleep(10);
+    until LWritten or (GetTickCount64 >= LDeadline);
+    Assert.IsTrue(LWritten, 'Interactive stdin did not become ready.');
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
+    Assert.IsTrue(LResult.Succeeded);
+    Assert.Contains(LResult.StdOut, 'received-radia-live-input');
   finally
     LCompleted.Free;
   end;

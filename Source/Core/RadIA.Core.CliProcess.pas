@@ -31,9 +31,10 @@ type
   end;
 
   IRadIACliProcessSession = interface
-    ['{F917860C-BA70-4429-8522-9394B0392C75}']
+    ['{1D64664F-B40B-409D-85F2-C5E612A13F00}']
     procedure Cancel;
     function IsRunning: Boolean;
+    function WriteInput(const AText: string): Boolean;
   end;
 
   TRadIACliProcessRunner = class
@@ -48,6 +49,13 @@ type
     class function StartWithInput(
       const AInvocation: TRadIACliInvocation;
       const AStdInput: string;
+      const ATimeoutMs: Cardinal;
+      const AOnStdOut: TProc<string>;
+      const AOnStdErr: TProc<string>;
+      const AOnComplete: TProc<TRadIACliProcessResult>
+    ): IRadIACliProcessSession; static;
+    class function StartInteractive(
+      const AInvocation: TRadIACliInvocation;
       const ATimeoutMs: Cardinal;
       const AOnStdOut: TProc<string>;
       const AOnStdErr: TProc<string>;
@@ -85,6 +93,8 @@ type
     FOnComplete: TProc<TRadIACliProcessResult>;
     FLock: TObject;
     FJobHandle: THandle;
+    FStdInWriteHandle: THandle;
+    FInteractive: Boolean;
     FRunning: Boolean;
     FCancelRequested: Boolean;
     procedure AppendCaptured(
@@ -104,6 +114,7 @@ type
       const AResult: TRadIACliProcessResult
     );
     function HasTimedOut(const AStartedAt: UInt64): Boolean;
+    procedure ActivateStandardInput(var AHandle: THandle);
     procedure PrepareStandardInput(
       var AReadHandle: THandle;
       var AWriteHandle: THandle;
@@ -119,6 +130,7 @@ type
     constructor Create(
       const AInvocation: TRadIACliInvocation;
       const AStdInput: string;
+      const AInteractive: Boolean;
       const ATimeoutMs: Cardinal;
       const AOnStdOut: TProc<string>;
       const AOnStdErr: TProc<string>;
@@ -127,6 +139,7 @@ type
     destructor Destroy; override;
     procedure Cancel;
     function IsRunning: Boolean;
+    function WriteInput(const AText: string): Boolean;
   end;
 
 { TRadIACliProcessResult }
@@ -156,6 +169,7 @@ end;
 constructor TRadIACliProcessSession.Create(
   const AInvocation: TRadIACliInvocation;
   const AStdInput: string;
+  const AInteractive: Boolean;
   const ATimeoutMs: Cardinal;
   const AOnStdOut: TProc<string>;
   const AOnStdErr: TProc<string>;
@@ -165,12 +179,14 @@ begin
   inherited Create;
   FInvocation := AInvocation;
   FStdInput := AStdInput;
+  FInteractive := AInteractive;
   FTimeoutMs := ATimeoutMs;
   FOnStdOut := AOnStdOut;
   FOnStdErr := AOnStdErr;
   FOnComplete := AOnComplete;
   FLock := TObject.Create;
   FJobHandle := 0;
+  FStdInWriteHandle := 0;
   FRunning := False;
   FCancelRequested := False;
 end;
@@ -193,6 +209,25 @@ begin
   if LRemaining <= 0 then
     Exit;
   ATarget := ATarget + AChunk.Substring(0, Min(Length(AChunk), LRemaining));
+end;
+
+procedure TRadIACliProcessSession.ActivateStandardInput(
+  var AHandle: THandle
+);
+begin
+  WriteStandardInput(AHandle);
+  if not FInteractive then
+  begin
+    CloseHandleIfAssigned(AHandle);
+    Exit;
+  end;
+  TMonitor.Enter(FLock);
+  try
+    FStdInWriteHandle := AHandle;
+    AHandle := 0;
+  finally
+    TMonitor.Exit(FLock);
+  end;
 end;
 
 procedure TRadIACliProcessSession.Cancel;
@@ -369,8 +404,7 @@ begin
       TMonitor.Exit(FLock);
     end;
     ResumeThread(LProcessInfo.hThread);
-    WriteStandardInput(LStdInWrite);
-    CloseHandleIfAssigned(LStdInWrite);
+    ActivateStandardInput(LStdInWrite);
     LStartedAt := GetTickCount64;
     repeat
       DrainPipe(LStdOutRead, LStdOut, FOnStdOut);
@@ -403,6 +437,7 @@ begin
   CloseHandleIfAssigned(LStdInWrite);
   TMonitor.Enter(FLock);
   try
+    CloseHandleIfAssigned(FStdInWriteHandle);
     CloseHandleIfAssigned(FJobHandle);
   finally
     TMonitor.Exit(FLock);
@@ -468,7 +503,7 @@ procedure TRadIACliProcessSession.PrepareStandardInput(
 var
   LSecurity: TSecurityAttributes;
 begin
-  if FStdInput = '' then
+  if (FStdInput = '') and not FInteractive then
     Exit;
   LSecurity := ASecurity;
   if not CreatePipe(AReadHandle, AWriteHandle, @LSecurity, 0) then
@@ -520,6 +555,58 @@ begin
     TerminateJobObject(FJobHandle, CCancelledExitCode);
 end;
 
+function TRadIACliProcessSession.WriteInput(
+  const AText: string
+): Boolean;
+var
+  LBytes: TBytes;
+  LBytesWritten: Cardinal;
+  LInputHandle: THandle;
+  LOffset: Integer;
+begin
+  Result := False;
+  if AText = '' then
+    Exit;
+  LBytes := TEncoding.UTF8.GetBytes(AText);
+  LInputHandle := 0;
+  TMonitor.Enter(FLock);
+  try
+    if not FRunning or (FStdInWriteHandle = 0) then
+      Exit;
+    if not DuplicateHandle(
+      GetCurrentProcess,
+      FStdInWriteHandle,
+      GetCurrentProcess,
+      @LInputHandle,
+      0,
+      False,
+      DUPLICATE_SAME_ACCESS
+    ) then
+      Exit;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  try
+    LOffset := 0;
+    while LOffset < Length(LBytes) do
+    begin
+      LBytesWritten := 0;
+      if not WriteFile(
+        LInputHandle,
+        LBytes[LOffset],
+        Length(LBytes) - LOffset,
+        LBytesWritten,
+        nil
+      ) or (LBytesWritten = 0) then
+        Exit;
+      Inc(LOffset, LBytesWritten);
+    end;
+    Result := True;
+  finally
+    CloseHandleIfAssigned(LInputHandle);
+  end;
+end;
+
 procedure TRadIACliProcessSession.WriteStandardInput(
   const AHandle: THandle
 );
@@ -564,6 +651,30 @@ begin
   LSession := TRadIACliProcessSession.Create(
     AInvocation,
     '',
+    False,
+    ATimeoutMs,
+    AOnStdOut,
+    AOnStdErr,
+    AOnComplete
+  );
+  Result := LSession;
+  LSession.StartWorker;
+end;
+
+class function TRadIACliProcessRunner.StartInteractive(
+  const AInvocation: TRadIACliInvocation;
+  const ATimeoutMs: Cardinal;
+  const AOnStdOut: TProc<string>;
+  const AOnStdErr: TProc<string>;
+  const AOnComplete: TProc<TRadIACliProcessResult>
+): IRadIACliProcessSession;
+var
+  LSession: TRadIACliProcessSession;
+begin
+  LSession := TRadIACliProcessSession.Create(
+    AInvocation,
+    '',
+    True,
     ATimeoutMs,
     AOnStdOut,
     AOnStdErr,
@@ -587,6 +698,7 @@ begin
   LSession := TRadIACliProcessSession.Create(
     AInvocation,
     AStdInput,
+    False,
     ATimeoutMs,
     AOnStdOut,
     AOnStdErr,

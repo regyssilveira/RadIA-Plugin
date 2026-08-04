@@ -11,6 +11,7 @@ visibilidade acompanham o desktop do Delphi.
 - captura incremental e simultânea de stdout e stderr;
 - interpretação incremental de ANSI SGR, inclusive quando a sequência é dividida entre chunks;
 - cores ANSI normais e brilhantes, texto em negrito e reset de estilo em uma saída rica;
+- entrada contínua para responder prompts enquanto o processo permanece ativo;
 - botão **Stop** que encerra toda a árvore de processos;
 - timeout máximo de 30 minutos por comando;
 - histórico persistente dos últimos 200 comandos;
@@ -20,8 +21,8 @@ visibilidade acompanham o desktop do Delphi.
 
 Sequências ANSI de estilo (`0`, `1`, `22`, `30–37`, `39` e `90–97`) são interpretadas e não
 aparecem como texto bruto. Outros comandos CSI, como limpeza e movimentação de cursor, são removidos
-da saída estática com segurança. Emulação de cursor, stdin contínuo e resize dependem da futura
-camada ConPTY e continuam fora do escopo do executor de comandos atual.
+da saída estática com segurança. A entrada contínua já usa um pipe persistente e thread-safe.
+Emulação de cursor, resize e semântica completa de console ainda dependem da camada ConPTY.
 
 ## Fluxo de uso
 
@@ -30,7 +31,8 @@ camada ConPTY e continuam fora do escopo do executor de comandos atual.
 3. Escolha PowerShell ou Command Prompt.
 4. Digite um comando ou selecione um snippet.
 5. Clique em **Run**.
-6. Use **Stop** para cancelar o processo e seus subprocessos.
+6. Se o processo solicitar entrada, digite a resposta e clique em **Send**.
+7. Use **Stop** para cancelar o processo e seus subprocessos.
 
 O terminal executa exatamente o comando informado pelo usuário. Ele não habilita automaticamente
 permissões de agente ou opções autônomas dos CLIs. O histórico é salvo localmente em

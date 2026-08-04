@@ -40,6 +40,7 @@ type
       const AResult: TRadIACliProcessResult
     );
     function GetWorkingDirectory: string;
+    procedure HandleRunningInput;
     procedure HistoryChange(Sender: TObject);
     procedure LoadHistory;
     procedure RunClick(Sender: TObject);
@@ -300,6 +301,7 @@ procedure TRadIATerminalFrame.FinishCommand(
 begin
   FSession := nil;
   FRunButton.Enabled := True;
+  FRunButton.Caption := 'Run';
   FStopButton.Enabled := False;
   if AResult.Cancelled then
     FStatusLabel.Caption := 'Cancelled'
@@ -337,6 +339,20 @@ begin
     FCommandEdit.Text := LEntries[High(LEntries) - LIndex].Command;
 end;
 
+procedure TRadIATerminalFrame.HandleRunningInput;
+begin
+  if Trim(FCommandEdit.Text) = '' then
+    Exit;
+  if FSession.WriteInput(FCommandEdit.Text + sLineBreak) then
+  begin
+    AppendOutput('> ' + FCommandEdit.Text + sLineBreak);
+    FCommandEdit.Clear;
+    FStatusLabel.Caption := 'Input sent';
+  end
+  else
+    FStatusLabel.Caption := 'Input channel is not ready';
+end;
+
 procedure TRadIATerminalFrame.LoadHistory;
 var
   LEntries: TArray<TRadIATerminalHistoryEntry>;
@@ -365,7 +381,10 @@ var
   LProfiles: TArray<TRadIATerminalProfile>;
 begin
   if Assigned(FSession) and FSession.IsRunning then
+  begin
+    HandleRunningInput;
     Exit;
+  end;
   LCommand := Trim(FCommandEdit.Text);
   if LCommand = '' then
     Exit;
@@ -377,10 +396,11 @@ begin
   LInvocation := LProfile.BuildInvocation(LCommand, GetWorkingDirectory);
   AppendOutput(sLineBreak + '> ' + LCommand + sLineBreak);
   FRunButton.Enabled := False;
+  FRunButton.Caption := 'Send';
   FStopButton.Enabled := True;
   FStatusLabel.Caption := 'Running in ' + LInvocation.WorkingDirectory;
   LGuard := FLifecycleGuard as IRadIATerminalLifecycleGuard;
-  FSession := TRadIACliProcessRunner.Start(
+  FSession := TRadIACliProcessRunner.StartInteractive(
     LInvocation,
     30 * 60 * 1000,
     procedure(AChunk: string)
@@ -423,6 +443,8 @@ begin
       );
     end
   );
+  FRunButton.Enabled := True;
+  FCommandEdit.Clear;
 end;
 
 procedure TRadIATerminalFrame.SnippetChange(Sender: TObject);
