@@ -101,7 +101,8 @@ implementation
 
 uses
   System.DateUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.Logger;
 
 constructor TRadIADebugEvent.Create(
   const ASequence: Int64;
@@ -215,7 +216,11 @@ begin
     try
       FStore.Append(LEvent);
     except
-      // Debugger notifications must never be disrupted by audit I/O.
+      on E: Exception do
+        TLogger.Log(
+          'Debug timeline persistence failed: ' + E.Message,
+          'Warning'
+        );
     end;
   end;
 end;

@@ -71,6 +71,7 @@ uses
   System.Math,
   System.SysUtils,
   Winapi.Windows,
+  RadIA.Core.Logger,
   RadIA.Core.Types,
   RadIA.OTA.TextReader;
 
@@ -289,7 +290,11 @@ begin
     try
       FView.RemoveNotifier(FViewNotifierIndex);
     except
-      // The IDE may already have destroyed the edit view during shutdown.
+      on E: Exception do
+        TLogger.Log(
+          'Inline review notifier removal failed: ' + E.Message,
+          'Warning'
+        );
     end;
   end;
   FViewNotifierIndex := -1;

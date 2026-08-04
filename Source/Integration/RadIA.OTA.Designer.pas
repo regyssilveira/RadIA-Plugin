@@ -93,6 +93,7 @@ uses
   Vcl.ExtCtrls,
   Vcl.StdCtrls,
   Winapi.Windows,
+  RadIA.Core.Logger,
   RadIA.Core.Types,
   RadIA.OTA.TextReader;
 
@@ -608,7 +609,11 @@ begin
           );
           LDesignerEditor.FormDesigner.Modified;
         except
-          // The transaction reports failure after the best-effort rollback.
+          on E: Exception do
+            TLogger.Log(
+              'Designer event rollback failed: ' + E.Message,
+              'Error'
+            );
         end;
       end;
     end
