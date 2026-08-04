@@ -313,7 +313,7 @@ var
 begin
   LPreview := FService.Prepare(BuildSpecs);
   Assert.IsTrue(LPreview.Success);
-  Assert.AreEqual(2, Integer(Length(LPreview.Preview.Entries)));
+  Assert.AreEqual<Integer>(2, Length(LPreview.Preview.Entries));
 
   Assert.IsTrue(FService.Apply(LPreview.Preview.Id).Success);
   Assert.AreEqual(

@@ -844,9 +844,9 @@ begin
   try
     LHistory := MakeHistory(6);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       6,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should NOT trim when under limit'
     );
   finally
@@ -867,9 +867,9 @@ begin
   try
     LHistory := MakeHistory(10);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       10,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should NOT trim at exact limit'
     );
   finally
@@ -890,9 +890,9 @@ begin
   try
     LHistory := MakeHistory(10);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       6,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should trim to MaxHistoryMessages*2 messages'
     );
   finally
@@ -913,9 +913,9 @@ begin
   try
     LHistory := MakeHistory(8);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       4,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should keep exactly MaxHistoryMessages*2 newest messages'
     );
     Assert.AreEqual('Message 4', LTrimmed[0].Content, 'First kept message should be index 4');
@@ -940,9 +940,9 @@ begin
     LHistory := MakeHistoryWithSystem(4);
     LTrimmed := LService.TrimHistory(LHistory);
     { TrimHistory strips system messages from count; 4 user/assistant < 6 limit → no trim }
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       4,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'System messages must not be counted toward trim limit'
     );
     Assert.AreNotEqual(mrSystem, LTrimmed[0].Role, 'System messages should be stripped from trimmed result');

@@ -39,7 +39,7 @@ begin
       ''
     );
   LEvents := LTimeline.ListEvents(0, 100);
-  Assert.AreEqual(10, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(10, Length(LEvents));
   Assert.AreEqual(Int64(3), LEvents[0].Sequence);
   Assert.AreEqual(Int64(12), LTimeline.GetLastSequence);
 end;

@@ -344,9 +344,9 @@ begin
         LStagingPath := LTransaction.StagingPath;
         Assert.AreEqual(ptsPrepared, LTransaction.State);
         Assert.IsTrue(TDirectory.Exists(LStagingPath));
-        Assert.AreEqual(
+        Assert.AreEqual<Integer>(
           0,
-          Integer(Length(TDirectory.GetFileSystemEntries(LDestination)))
+          Length(TDirectory.GetFileSystemEntries(LDestination))
         );
 
         LTransaction.Commit;
@@ -363,9 +363,9 @@ begin
 
         Assert.AreEqual(ptsRolledBack, LTransaction.State);
         Assert.IsTrue(TDirectory.Exists(LDestination));
-        Assert.AreEqual(
+        Assert.AreEqual<Integer>(
           0,
-          Integer(Length(TDirectory.GetFileSystemEntries(LDestination)))
+          Length(TDirectory.GetFileSystemEntries(LDestination))
         );
       finally
         LTransaction.Free;

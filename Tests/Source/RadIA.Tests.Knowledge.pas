@@ -198,7 +198,7 @@ begin
     'CalculateTotal',
     10
   );
-  Assert.AreEqual(0, Integer(Length(LHits)));
+  Assert.AreEqual<Integer>(0, Length(LHits));
 end;
 
 procedure TTestRadIALocalKnowledge.ClearProjectDeletesPersistedIndex;
@@ -275,7 +275,7 @@ begin
       '*.knowledge.json',
       TSearchOption.soTopDirectoryOnly
     );
-    Assert.AreEqual(1, Integer(Length(LFiles)));
+    Assert.AreEqual<Integer>(1, Length(LFiles));
     TFile.WriteAllText(LFiles[0], '{invalid', TEncoding.UTF8);
 
     LStore := TRadIAJsonKnowledgeStore.Create(LRootPath);
@@ -444,7 +444,7 @@ begin
   Assert.AreEqual(1, LRefresh.RemovedFiles);
   Assert.AreEqual(1, LRefresh.IndexedFiles);
   LHits := FService.Search(FSource.ProjectId, 'invoice', 10);
-  Assert.AreEqual(0, Integer(Length(LHits)));
+  Assert.AreEqual<Integer>(0, Length(LHits));
 end;
 
 procedure TTestRadIALocalKnowledge.ReplacesChangedDocuments;

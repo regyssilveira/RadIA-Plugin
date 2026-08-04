@@ -114,7 +114,7 @@ begin
     Assert.AreEqual(2, LReport.Total);
     Assert.AreEqual(1, LReport.Passed);
     Assert.AreEqual(1, LReport.Failed);
-    Assert.AreEqual(2, Integer(Length(LReport.TestCases)));
+    Assert.AreEqual<Integer>(2, Length(LReport.TestCases));
     Assert.AreEqual(Int64(30), LReport.DurationMs);
     Assert.AreEqual('TSampleTests', LReport.TestCases[1].FixtureName);
     Assert.AreEqual(dtsFailed, LReport.TestCases[1].Status);
@@ -210,7 +210,7 @@ begin
   Assert.AreEqual(1, FRunner.ExecuteCount);
   Assert.AreEqual('bin\Tests.exe', FRunner.LastRequest.ExecutablePath);
   Assert.AreEqual(Cardinal(5000), FRunner.LastRequest.TimeoutMs);
-  Assert.AreEqual(1, Integer(Length(FRunner.LastRequest.Tests)));
+  Assert.AreEqual<Integer>(1, Length(FRunner.LastRequest.Tests));
   Assert.IsTrue(LResult.ContentJson.Contains('"status":"failed"'));
   Assert.IsTrue(LResult.ContentJson.Contains('"total":2'));
 end;

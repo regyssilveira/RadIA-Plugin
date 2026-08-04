@@ -290,7 +290,7 @@ begin
     0
   );
   Assert.AreNotEqual<THandle>(
-    THandle(INVALID_HANDLE_VALUE),
+    INVALID_HANDLE_VALUE,
     Result
   );
   LMode := PIPE_READMODE_MESSAGE or PIPE_NOWAIT;
@@ -548,7 +548,7 @@ begin
       0
     );
     Assert.AreNotEqual<THandle>(
-      THandle(INVALID_HANDLE_VALUE),
+      INVALID_HANDLE_VALUE,
       LPipe
     );
     try
@@ -752,7 +752,7 @@ begin
       0
     );
     Assert.AreNotEqual<THandle>(
-      THandle(INVALID_HANDLE_VALUE),
+      INVALID_HANDLE_VALUE,
       LPipe
     );
 

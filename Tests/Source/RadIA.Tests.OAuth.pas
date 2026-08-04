@@ -201,7 +201,11 @@ var
   LChallenge: string;
 begin
   LVerifier := TRadIAOAuthManager.GenerateVerifier;
-  Assert.AreEqual(64, Integer(Length(LVerifier)), 'Verifier must be 64 characters long.');
+  Assert.AreEqual<Integer>(
+    64,
+    Length(LVerifier),
+    'Verifier must be 64 characters long.'
+  );
 
   LChallenge := TRadIAOAuthManager.GenerateChallenge(LVerifier);
   Assert.IsNotEmpty(LChallenge, 'Challenge must not be empty.');

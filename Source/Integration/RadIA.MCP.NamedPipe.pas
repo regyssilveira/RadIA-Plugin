@@ -325,7 +325,7 @@ function TRadIANamedPipeWorker.CreateSecurityDescriptor(
 begin
   ASecurityDescriptor := nil;
   Result := ConvertStringSecurityDescriptorToSecurityDescriptor(
-    PWideChar(string(CSecurityDescriptor)),
+    PWideChar(CSecurityDescriptor),
     CSecurityDescriptorRevision,
     @ASecurityDescriptor,
     nil

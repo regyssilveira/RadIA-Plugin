@@ -167,7 +167,7 @@ begin
   );
   LEvents := LAudit.GetEvents;
 
-  Assert.AreEqual(1, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.Contains(LEvents[0].ArgumentsJson, '"apiKey":"[REDACTED]"');
   Assert.Contains(
     LEvents[0].ArgumentsJson,
@@ -297,7 +297,7 @@ begin
 
   Assert.AreEqual(2, LConsent.RequestCount);
   Assert.AreEqual(2, LTool.ExecutionCount);
-  Assert.AreEqual(2, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(2, Length(LEvents));
   Assert.AreEqual(cdAllowOnce, LEvents[0].Decision);
   Assert.AreEqual(aoSucceeded, LEvents[0].Outcome);
   Assert.AreEqual(cdAllowOnce, LEvents[1].Decision);
@@ -334,7 +334,7 @@ begin
   Assert.AreEqual('consent_cancelled', LResult.ErrorCode);
   Assert.AreEqual(0, LTool.ExecutionCount);
   Assert.AreEqual(1, LConsent.RequestCount);
-  Assert.AreEqual(1, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.AreEqual(cdCancel, LEvents[0].Decision);
   Assert.AreEqual(aoCancelled, LEvents[0].Outcome);
 end;
@@ -397,7 +397,7 @@ begin
 
   Assert.AreEqual(2, LConsent.RequestCount);
   Assert.AreEqual(2, LTool.ExecutionCount);
-  Assert.AreEqual(2, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(2, Length(LEvents));
   Assert.AreEqual(cdAllowSession, LEvents[0].Decision);
   Assert.AreEqual(cdAllowSession, LEvents[1].Decision);
 end;
@@ -552,7 +552,7 @@ begin
 
   Assert.IsFalse(LResult.Success);
   Assert.AreEqual('tool_not_found', LResult.ErrorCode);
-  Assert.AreEqual(1, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.AreEqual('MissingTool', LEvents[0].ToolName);
   Assert.AreEqual(aoUnsupported, LEvents[0].Outcome);
 end;

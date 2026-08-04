@@ -209,7 +209,7 @@ begin
 
   LDescriptors := FRegistry.GetDescriptors;
 
-  Assert.AreEqual(2, Integer(Length(LDescriptors)));
+  Assert.AreEqual<Integer>(2, Length(LDescriptors));
   Assert.AreEqual('AlphaTool', LDescriptors[0].Name);
   Assert.AreEqual('ZuluTool', LDescriptors[1].Name);
 end;

@@ -312,7 +312,7 @@ begin
   );
   try
     Assert.AreEqual('DeepSeek AI', LProv.GetName);
-    Assert.AreEqual(1, Integer(Length(LProv.GetAvailableModels)));
+    Assert.AreEqual<Integer>(1, Length(LProv.GetAvailableModels));
     Assert.AreEqual('deepseek-chat', LProv.GetAvailableModels[0]);
   finally
     LProv.Free;

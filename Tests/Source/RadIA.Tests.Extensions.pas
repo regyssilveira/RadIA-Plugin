@@ -289,7 +289,7 @@ begin
   Assert.AreEqual(1, FHost.Count);
   Assert.IsTrue(FRegistry.TryResolve('SampleEcho', LTool));
   LDescriptors := FHost.GetDescriptors;
-  Assert.AreEqual(1, Integer(Length(LDescriptors)));
+  Assert.AreEqual<Integer>(1, Length(LDescriptors));
   Assert.AreEqual('SampleExtension', LDescriptors[0].Id);
   Assert.AreEqual('1.0.0', LDescriptors[0].Version);
   Assert.AreEqual('Sample', LDescriptors[0].ToolPrefix);

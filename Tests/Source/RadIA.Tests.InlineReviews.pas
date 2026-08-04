@@ -109,8 +109,8 @@ procedure TTestRadIAInlineReviews.HidesReviewAfterRevisionChanges;
 begin
   Assert.IsTrue(FService.Publish(BuildReview(2, 2)).Success);
   FWorkspace.Content := FWorkspace.Content + sLineBreak + '// Edit';
-  Assert.AreEqual(0, Integer(Length(FService.ListCurrent)));
-  Assert.AreEqual(0, Integer(Length(FVisual.Reviews)));
+  Assert.AreEqual<Integer>(0, Length(FService.ListCurrent));
+  Assert.AreEqual<Integer>(0, Length(FVisual.Reviews));
 end;
 
 procedure TTestRadIAInlineReviews.PreparesSuggestionWithPatchService;
@@ -132,8 +132,8 @@ begin
   LResult := FService.Publish(BuildReview(2, 2));
   Assert.IsTrue(LResult.Success);
   Assert.IsNotEmpty(LResult.Review.Id);
-  Assert.AreEqual(1, Integer(Length(FService.ListCurrent)));
-  Assert.AreEqual(1, Integer(Length(FVisual.Reviews)));
+  Assert.AreEqual<Integer>(1, Length(FService.ListCurrent));
+  Assert.AreEqual<Integer>(1, Length(FVisual.Reviews));
 end;
 
 procedure TTestRadIAInlineReviews.RegistersExpectedRiskLevels;
@@ -173,9 +173,9 @@ begin
   LFirst := FService.Publish(BuildReview(1, 1));
   LSecond := FService.Publish(BuildReview(2, 2));
   Assert.IsTrue(FService.Remove(LFirst.Review.Id));
-  Assert.AreEqual(1, Integer(Length(FService.ListCurrent)));
+  Assert.AreEqual<Integer>(1, Length(FService.ListCurrent));
   FService.Clear;
-  Assert.AreEqual(0, Integer(Length(FService.ListCurrent)));
+  Assert.AreEqual<Integer>(0, Length(FService.ListCurrent));
   Assert.IsTrue(FVisual.ClearCount > 0);
   Assert.IsNotEmpty(LSecond.Review.Id);
 end;
