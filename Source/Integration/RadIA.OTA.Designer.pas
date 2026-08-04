@@ -100,6 +100,22 @@ uses
 const
   CDesignerUnavailable = 'The Form Designer is shutting down.';
 
+type
+  TRadIAComponentCreationContext = record
+  private
+    FComponentClass: TComponentClass;
+    FDesigner: INTAFormEditor;
+    FEditor: IOTAFormEditor;
+    FParent: TComponent;
+  end;
+
+  TRadIAPropertyMutationContext = record
+  private
+    FDesigner: INTAFormEditor;
+    FNative: TComponent;
+    FPropInfo: PPropInfo;
+  end;
+
 function ResolveAllowedComponentClass(
   const AClassName: string
 ): TComponentClass;
@@ -415,6 +431,212 @@ begin
   end;
 end;
 
+function ResolveComponentCreation(
+  const AFormFileName: string;
+  const AParentName: string;
+  const AClassName: string;
+  const AComponentName: string;
+  out AContext: TRadIAComponentCreationContext
+): Boolean;
+var
+  LModule: IOTAModule;
+  LParent: IOTAComponent;
+begin
+  AContext := Default(TRadIAComponentCreationContext);
+  Result := FindActiveFormEditor(LModule, AContext.FEditor) and
+    SameFileName(AContext.FEditor.FileName, AFormFileName) and
+    not Assigned(FindNamedComponent(AContext.FEditor, AComponentName));
+  if not Result then
+    Exit;
+  if Trim(AParentName) = '' then
+    LParent := AContext.FEditor.GetRootComponent
+  else
+    LParent := FindNamedComponent(AContext.FEditor, AParentName);
+  AContext.FComponentClass := ResolveAllowedComponentClass(AClassName);
+  AContext.FParent := GetNativeComponent(LParent);
+  Result := Assigned(LParent) and
+    Assigned(AContext.FComponentClass) and
+    Assigned(AContext.FParent) and
+    Supports(AContext.FEditor, INTAFormEditor, AContext.FDesigner) and
+    Assigned(AContext.FDesigner.FormDesigner);
+end;
+
+function CreateResolvedComponent(
+  const AContext: TRadIAComponentCreationContext;
+  const AClassName: string;
+  const AComponentName: string;
+  const ABounds: TRadIAComponentBounds;
+  out ACreated: TRadIAFormComponentSnapshot
+): Boolean;
+var
+  LComponent: IOTAComponent;
+  LNative: TComponent;
+begin
+  Result := False;
+  LNative := AContext.FDesigner.FormDesigner.CreateComponent(
+    AContext.FComponentClass,
+    AContext.FParent,
+    ABounds.Left,
+    ABounds.Top,
+    ABounds.Width,
+    ABounds.Height
+  );
+  if not Assigned(LNative) then
+    Exit;
+  try
+    if not (LNative is TControl) then
+      Exit;
+    LNative.Name := AComponentName;
+    TControl(LNative).SetBounds(
+      ABounds.Left,
+      ABounds.Top,
+      ABounds.Width,
+      ABounds.Height
+    );
+    LComponent := AContext.FEditor.FindComponent(AComponentName);
+    if not Assigned(LComponent) then
+      Exit;
+    ACreated := CreateComponentSnapshot(LComponent, AContext.FEditor);
+    if not SameText(ACreated.Name, AComponentName) or
+      not SameText(ACreated.ClassName, AClassName) then
+      Exit;
+    AContext.FDesigner.FormDesigner.Modified;
+    Result := True;
+  finally
+    if not Result then
+    begin
+      if Assigned(LComponent) then
+        LComponent.Delete
+      else
+        LNative.Free;
+    end;
+  end;
+end;
+
+function ComponentSnapshotMatches(
+  const AActual: TRadIAFormComponentSnapshot;
+  const AExpected: TRadIAFormComponentSnapshot
+): Boolean;
+begin
+  Result := SameText(AActual.ClassName, AExpected.ClassName) and
+    SameText(AActual.ParentName, AExpected.ParentName) and
+    (AActual.Left = AExpected.Left) and
+    (AActual.Top = AExpected.Top) and
+    (AActual.Width = AExpected.Width) and
+    (AActual.Height = AExpected.Height);
+end;
+
+function RemoveResolvedComponent(
+  const AEditor: IOTAFormEditor;
+  const AExpected: TRadIAFormComponentSnapshot;
+  out AActual: TRadIAFormComponentSnapshot
+): Boolean;
+var
+  LComponent: IOTAComponent;
+  LDesigner: INTAFormEditor;
+begin
+  Result := False;
+  LComponent := FindNamedComponent(AEditor, AExpected.Name);
+  if not Assigned(LComponent) or
+    (LComponent.GetComponentCount > 0) or
+    (LComponent.GetControlCount > 0) then
+    Exit;
+  AActual := CreateComponentSnapshot(LComponent, AEditor);
+  if not ComponentSnapshotMatches(AActual, AExpected) then
+    Exit;
+  if not LComponent.Delete then
+    Exit;
+  LComponent := nil;
+  if Supports(AEditor, INTAFormEditor, LDesigner) and
+    Assigned(LDesigner.FormDesigner) then
+    LDesigner.FormDesigner.Modified;
+  Result := True;
+end;
+
+procedure RestoreComponentProperty(
+  const AContext: TRadIAPropertyMutationContext;
+  const AExpectedValue: TRadIAComponentPropertyValue;
+  out AActualValue: TRadIAComponentPropertyValue
+);
+begin
+  try
+    SetPropValue(
+      AContext.FNative,
+      AContext.FPropInfo,
+      AExpectedValue.Value
+    );
+    TryReadProperty(
+      AContext.FNative,
+      AExpectedValue.Name,
+      AActualValue
+    );
+  except
+    AActualValue := Default(TRadIAComponentPropertyValue);
+  end;
+end;
+
+function ResolvePropertyMutation(
+  const AFormFileName: string;
+  const AComponentName: string;
+  const AExpectedValue: TRadIAComponentPropertyValue;
+  const ANewValue: TRadIAComponentPropertyValue;
+  out AContext: TRadIAPropertyMutationContext;
+  out AActualValue: TRadIAComponentPropertyValue
+): Boolean;
+var
+  LComponent: IOTAComponent;
+  LFormEditor: IOTAFormEditor;
+  LModule: IOTAModule;
+begin
+  AContext := Default(TRadIAPropertyMutationContext);
+  Result := FindActiveFormEditor(LModule, LFormEditor) and
+    SameFileName(LFormEditor.FileName, AFormFileName);
+  if not Result then
+    Exit;
+  LComponent := FindNamedComponent(LFormEditor, AComponentName);
+  AContext.FNative := GetNativeComponent(LComponent);
+  Result := TryReadProperty(
+    AContext.FNative,
+    AExpectedValue.Name,
+    AActualValue
+  ) and AActualValue.Equals(AExpectedValue) and
+    (ANewValue.Name = AExpectedValue.Name) and
+    (ANewValue.TypeName = AExpectedValue.TypeName) and
+    Supports(LFormEditor, INTAFormEditor, AContext.FDesigner) and
+    Assigned(AContext.FDesigner.FormDesigner);
+  if Result then
+    AContext.FPropInfo := GetPropInfo(
+      AContext.FNative.ClassInfo,
+      AExpectedValue.Name
+    );
+end;
+
+function ApplyResolvedProperty(
+  const AContext: TRadIAPropertyMutationContext;
+  const AExpectedValue: TRadIAComponentPropertyValue;
+  const ANewValue: TRadIAComponentPropertyValue;
+  out AActualValue: TRadIAComponentPropertyValue
+): Boolean;
+begin
+  Result := False;
+  try
+    SetPropValue(AContext.FNative, AContext.FPropInfo, ANewValue.Value);
+    if not TryReadProperty(
+      AContext.FNative,
+      AExpectedValue.Name,
+      AActualValue
+    ) or not AActualValue.Equals(ANewValue) then
+    begin
+      RestoreComponentProperty(AContext, AExpectedValue, AActualValue);
+      Exit;
+    end;
+    AContext.FDesigner.FormDesigner.Modified;
+    Result := True;
+  except
+    RestoreComponentProperty(AContext, AExpectedValue, AActualValue);
+  end;
+end;
+
 { TRadIAOTAFormDesignerFacade }
 
 function TRadIAOTAFormDesignerFacade.CreateComponent(
@@ -434,71 +656,23 @@ begin
   RunOnMainThread(
     procedure
     var
-      LComponent: IOTAComponent;
-      LComponentClass: TComponentClass;
-      LDesigner: INTAFormEditor;
-      LEditor: IOTAFormEditor;
-      LModule: IOTAModule;
-      LNative: TComponent;
-      LNativeParent: TComponent;
-      LParent: IOTAComponent;
+      LContext: TRadIAComponentCreationContext;
     begin
-      if not FindActiveFormEditor(LModule, LEditor) or
-        not SameFileName(LEditor.FileName, AFormFileName) or
-        Assigned(FindNamedComponent(LEditor, AComponentName)) then
+      if not ResolveComponentCreation(
+        AFormFileName,
+        AParentName,
+        AClassName,
+        AComponentName,
+        LContext
+      ) then
         Exit;
-      if Trim(AParentName) = '' then
-        LParent := LEditor.GetRootComponent
-      else
-        LParent := FindNamedComponent(LEditor, AParentName);
-      if not Assigned(LParent) then
-        Exit;
-      LComponentClass := ResolveAllowedComponentClass(AClassName);
-      LNativeParent := GetNativeComponent(LParent);
-      if not Assigned(LComponentClass) or
-        not Assigned(LNativeParent) or
-        not Supports(LEditor, INTAFormEditor, LDesigner) or
-        not Assigned(LDesigner.FormDesigner) then
-        Exit;
-
-      LNative := LDesigner.FormDesigner.CreateComponent(
-        LComponentClass,
-        LNativeParent,
-        ABounds.Left,
-        ABounds.Top,
-        ABounds.Width,
-        ABounds.Height
+      LResult := CreateResolvedComponent(
+        LContext,
+        AClassName,
+        AComponentName,
+        ABounds,
+        LCreated
       );
-      if not Assigned(LNative) then
-        Exit;
-      try
-        if not (LNative is TControl) then
-          Exit;
-        LNative.Name := AComponentName;
-        TControl(LNative).SetBounds(
-          ABounds.Left,
-          ABounds.Top,
-          ABounds.Width,
-          ABounds.Height
-        );
-        LComponent := LEditor.FindComponent(AComponentName);
-        if not Assigned(LComponent) then
-          Exit;
-        LCreated := CreateComponentSnapshot(LComponent, LEditor);
-        if not SameText(LCreated.Name, AComponentName) or
-          not SameText(LCreated.ClassName, AClassName) then
-          Exit;
-        LDesigner.FormDesigner.Modified;
-        LResult := True;
-      finally
-        if not LResult then
-        begin
-          if Assigned(LComponent) then
-            LComponent.Delete
-          else
-            LNative.Free;
-        end;
-      end;
     end
   );
   ACreated := LCreated;
@@ -741,35 +915,13 @@ begin
   RunOnMainThread(
     procedure
     var
-      LComponent: IOTAComponent;
-      LDesigner: INTAFormEditor;
       LEditor: IOTAFormEditor;
       LModule: IOTAModule;
     begin
       if not FindActiveFormEditor(LModule, LEditor) or
         not SameFileName(LEditor.FileName, AFormFileName) then
         Exit;
-      LComponent := FindNamedComponent(LEditor, AExpected.Name);
-      if not Assigned(LComponent) then
-        Exit;
-      if (LComponent.GetComponentCount > 0) or
-        (LComponent.GetControlCount > 0) then
-        Exit;
-      LActual := CreateComponentSnapshot(LComponent, LEditor);
-      if not SameText(LActual.ClassName, AExpected.ClassName) or
-        not SameText(LActual.ParentName, AExpected.ParentName) or
-        (LActual.Left <> AExpected.Left) or
-        (LActual.Top <> AExpected.Top) or
-        (LActual.Width <> AExpected.Width) or
-        (LActual.Height <> AExpected.Height) then
-        Exit;
-      if not LComponent.Delete then
-        Exit;
-      LComponent := nil;
-      if Supports(LEditor, INTAFormEditor, LDesigner) and
-        Assigned(LDesigner.FormDesigner) then
-        LDesigner.FormDesigner.Modified;
-      LResult := True;
+      LResult := RemoveResolvedComponent(LEditor, AExpected, LActual);
     end
   );
   AActual := LActual;
@@ -975,71 +1127,23 @@ begin
   RunOnMainThread(
     procedure
     var
-      LComponent: IOTAComponent;
-      LFormDesigner: INTAFormEditor;
-      LFormEditor: IOTAFormEditor;
-      LModule: IOTAModule;
-      LNative: TComponent;
-      LPropInfo: PPropInfo;
+      LContext: TRadIAPropertyMutationContext;
     begin
-      if not FindActiveFormEditor(LModule, LFormEditor) then
-        Exit;
-      if not SameFileName(LFormEditor.FileName, AFormFileName) then
-        Exit;
-
-      LComponent := FindNamedComponent(LFormEditor, AComponentName);
-      LNative := GetNativeComponent(LComponent);
-      if not TryReadProperty(
-        LNative,
-        AExpectedValue.Name,
+      if not ResolvePropertyMutation(
+        AFormFileName,
+        AComponentName,
+        AExpectedValue,
+        ANewValue,
+        LContext,
         LActualValue
-      ) or not LActualValue.Equals(AExpectedValue) then
+      ) then
         Exit;
-      if (ANewValue.Name <> AExpectedValue.Name) or
-        (ANewValue.TypeName <> AExpectedValue.TypeName) then
-        Exit;
-      if not Supports(
-        LFormEditor,
-        INTAFormEditor,
-        LFormDesigner
-      ) or not Assigned(LFormDesigner.FormDesigner) then
-        Exit;
-
-      LPropInfo := GetPropInfo(
-        LNative.ClassInfo,
-        AExpectedValue.Name
+      LResult := ApplyResolvedProperty(
+        LContext,
+        AExpectedValue,
+        ANewValue,
+        LActualValue
       );
-      try
-        SetPropValue(LNative, LPropInfo, ANewValue.Value);
-        if not TryReadProperty(
-          LNative,
-          AExpectedValue.Name,
-          LActualValue
-        ) or not LActualValue.Equals(ANewValue) then
-        begin
-          SetPropValue(LNative, LPropInfo, AExpectedValue.Value);
-          TryReadProperty(
-            LNative,
-            AExpectedValue.Name,
-            LActualValue
-          );
-          Exit;
-        end;
-        LFormDesigner.FormDesigner.Modified;
-      except
-        try
-          SetPropValue(LNative, LPropInfo, AExpectedValue.Value);
-          TryReadProperty(
-            LNative,
-            AExpectedValue.Name,
-            LActualValue
-          );
-        except
-          LActualValue := Default(TRadIAComponentPropertyValue);
-        end;
-        Exit;
-      end;
-      LResult := True;
     end
   );
   AActualValue := LActualValue;
