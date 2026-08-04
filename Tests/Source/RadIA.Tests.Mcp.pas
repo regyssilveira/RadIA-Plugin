@@ -882,8 +882,9 @@ begin
   Assert.Contains(LResponse, '"isError":false');
   Assert.Contains(
     LResponse,
-    '"structuredContent":{"value":"ready"}'
+    '"structuredContent":{"value":"ready"'
   );
+  Assert.Contains(LResponse, '"sourceTool":"GetState"');
   Assert.AreEqual(1, FTool.ExecutionCount);
   Assert.AreEqual('mcp', FTool.LastRequest.Origin);
   Assert.AreEqual('test-session', FTool.LastRequest.SessionId);

@@ -5,7 +5,8 @@ interface
 uses
   System.Generics.Collections,
   System.SysUtils,
-  RadIA.Core.Tools;
+  RadIA.Core.Tools,
+  RadIA.Core.ToolViews;
 
 type
   ERadIAToolRegistry = class(Exception);
@@ -49,11 +50,15 @@ type
   )
   private
     FRegistry: IRadIAToolRegistry;
+    FViewResolver: IRadIAToolViewResolver;
     function ValidateRequest(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
   public
-    constructor Create(const ARegistry: IRadIAToolRegistry);
+    constructor Create(
+      const ARegistry: IRadIAToolRegistry;
+      const AViewResolver: IRadIAToolViewResolver = nil
+    );
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
@@ -310,13 +315,18 @@ end;
 { TRadIAToolExecutor }
 
 constructor TRadIAToolExecutor.Create(
-  const ARegistry: IRadIAToolRegistry
+  const ARegistry: IRadIAToolRegistry;
+  const AViewResolver: IRadIAToolViewResolver
 );
 begin
   inherited Create;
   if not Assigned(ARegistry) then
     raise EArgumentNilException.Create('ARegistry');
   FRegistry := ARegistry;
+  if Assigned(AViewResolver) then
+    FViewResolver := AViewResolver
+  else
+    FViewResolver := TRadIAToolViewResolver.Create;
 end;
 
 function TRadIAToolExecutor.Execute(
@@ -348,6 +358,7 @@ begin
 
   try
     Result := LTool.Execute(ARequest);
+    Result := FViewResolver.Attach(ARequest.ToolName, Result);
   except
     on E: Exception do
       Result := TRadIAToolResult.Failed(

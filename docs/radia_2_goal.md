@@ -218,6 +218,10 @@ Expansão OTA entregue nesta branch: sete tools cobrem project groups, dependên
 símbolos do buffer vivo, navegação confinada por arquivo ou símbolo e ações da IDE protegidas por
 allowlist e consentimento.
 
+Experiência de revisão entregue nesta branch: resultados JSON bem-sucedidos agora carregam uma
+intenção visual uniforme para chat e MCP, e o Smart Diff permite aceitar ou rejeitar cada bloco
+antes de aplicar a composição selecionada ao editor.
+
 Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
 remoção seletiva. A etapa permanece aberta até a integração visual e o diagnóstico operacional.

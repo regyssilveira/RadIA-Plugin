@@ -339,7 +339,9 @@ begin
   LResult := FExecutor.Execute(LRequest);
 
   Assert.IsTrue(LResult.Success);
-  Assert.AreEqual('{"value":42}', LResult.ContentJson);
+  Assert.Contains(LResult.ContentJson, '"value":42');
+  Assert.Contains(LResult.ContentJson, '"_radiaView"');
+  Assert.Contains(LResult.ContentJson, '"sourceTool":"SampleTool"');
 end;
 
 procedure TTestRadIAToolExecutor.TestInvalidArgumentsReturnStructuredError;

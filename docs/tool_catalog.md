@@ -21,6 +21,35 @@ Cada ferramenta deve declarar:
 - Timeout.
 - Possíveis efeitos.
 
+### Contrato de intenção visual
+
+Toda execução bem-sucedida que retorna um objeto JSON recebe o campo reservado `_radiaView`. Esse
+campo permite que chat, MCP e futuras superfícies visuais escolham a mesma apresentação sem
+conhecer regras particulares de cada ferramenta:
+
+```json
+{
+  "_radiaView": {
+    "version": 1,
+    "kind": "explorer",
+    "action": "show_explorer",
+    "sourceTool": "ListProjectUnits"
+  }
+}
+```
+
+Os tipos atuais são `details`, `explorer`, `editor_navigation`, `diff` e `activity`. Resultados de
+erro, arrays e conteúdo truncado são preservados. Clientes que não implementam visualizações podem
+ignorar `_radiaView`; o restante do contrato continua compatível.
+
+| Família da ferramenta | Visualização sugerida |
+|---|---|
+| Navegação de arquivo ou símbolo | Editor |
+| Preview, patch e Git diff | Diff |
+| Build, teste, debug e timeline | Atividade |
+| Projeto, units, símbolos e estado da IDE | Explorer |
+| Demais ferramentas | Detalhes |
+
 ## 2. Slice inicial
 
 Estas ferramentas formam o primeiro incremento somente leitura:

@@ -215,6 +215,10 @@ OTA expansion delivered on this branch: seven tools now cover project groups, na
 live-buffer symbols, confined file or symbol navigation, and IDE actions protected by an allowlist
 and consent.
 
+Review experience delivered on this branch: successful JSON results now carry a uniform visual
+intent for chat and MCP, while Smart Diff allows accepting or rejecting each block before applying
+the selected composition to the editor.
+
 Foundation delivered on this branch: the MCP provisioner now covers the client catalog, preview,
 drift detection, JSON merge, managed TOML block, backup, verification, repair, rollback, and
 selective removal. This item remains open until visual integration and operational diagnostics.

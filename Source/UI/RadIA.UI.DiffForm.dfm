@@ -140,6 +140,7 @@ object FormAIDiff: TRadIAFormAIDiff
       UserDataFolder = '%LOCALAPPDATA%\bds.exe.WebView2'
       OnCreateWebViewCompleted = EdgeBrowserCreateWebViewCompleted
       OnNavigationCompleted = EdgeBrowserNavigationCompleted
+      OnWebMessageReceived = EdgeBrowserWebMessageReceived
       ExplicitWidth = 854
       ExplicitHeight = 551
     end

@@ -48,7 +48,9 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
     *   *Gerar Testes Unitários:* Gerar estruturas prontas de testes usando DUnitX.
     *   *Localizar Bugs:* Buscar memory leaks, exceptions soltas e falhas de lógica.
     *   Quando não houver seleção, o Rad IA envia a unit inteira como contexto, preservando blocos Pascal formatados no chat e mantendo `/explain` separado dos fluxos de review.
-*   **Comparador Visual Inteligente (Smart Diff):** Visualização de refatorações lado a lado (Original vs. Sugerido) com realce vermelho/verde e botão **[Aplicar Alteração]** direto no editor. A aplicação substitui o bloco original de forma segura e recusa a operação quando o trecho original não é encontrado, evitando duplicação de código.
+*   **Comparador Visual Inteligente (Smart Diff):** Visualização de refatorações lado a lado
+    (Original vs. Sugerido), com aceite ou rejeição por bloco. O botão **[Aplicar Selecionados]**
+    substitui o trecho original com segurança e recusa a operação quando ele não é encontrado.
 *   **Depurador de Compilação (Smart Build):** Integração com a aba *Messages* do Delphi. Clique com o botão direito nos erros de compilação da IDE para obter explicações e correções instantâneas.
 *   **Documentação XML Automática:** Geração de comentários XML estruturados (`/// <summary>`) acima do cabeçalho de métodos para alimentar o Help Insight.
 *   **Conversor de DTO e Modelos:** Geração automática e instantânea de classes (DTOs) e records Object Pascal a partir de JSON ou scripts de tabelas SQL (DDL), com suporte inteligente a DEXT ORM, TMS Aurelius, REST.Json e Vanilla Delphi.
@@ -113,7 +115,7 @@ Referências rápidas:
 | **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
 
 As ferramentas implementadas estão no
-[Catálogo das 80 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
+[Catálogo das 87 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
 planejadas permanecem no [Catálogo Arquitetural](docs/tool_catalog.md).
 
 ### 3. Como Funciona e Arquitetura
