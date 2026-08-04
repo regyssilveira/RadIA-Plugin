@@ -690,7 +690,7 @@ if ($Package) {
     $checksumLines = @(
         Get-ChildItem `
             -LiteralPath $packagesRoot `
-            -Filter "RadIA-v*.zip" |
+            -Filter "RadIA-v$productVersion-*.zip" |
         Sort-Object Name |
         ForEach-Object {
             $hash = (
