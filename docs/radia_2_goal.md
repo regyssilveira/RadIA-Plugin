@@ -251,6 +251,13 @@ CLIs não serão redistribuídos dentro do package. O instalador deverá detecta
 e, mediante consentimento, delegar a instalação ou atualização aos canais oficiais de cada
 fornecedor.
 
+Instalação opcional entregue nesta branch: a tela **CLI & MCP** apresenta o comando oficial,
+pré-requisitos e confirmação antes de instalar ou atualizar Codex CLI, Claude Code e Gemini CLI por
+npm, ou GitHub Copilot CLI por WinGet. A execução é assíncrona, observável, limitada por timeout e
+cancelada em cascata no fechamento. IDs de pacote são allowlisted sintaticamente antes de chegar ao
+shell, e nenhum binário de terceiros é redistribuído. O item permanece aberto para o diagnóstico de
+handshake MCP.
+
 ## Cenário E2E obrigatório
 
 1. Criar uma aplicação VCL de cadastro a partir de uma descrição.

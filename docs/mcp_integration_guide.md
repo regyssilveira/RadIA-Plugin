@@ -202,9 +202,8 @@ Consulte também o [Manual Completo do RadIA](user_manual.md).
 
 ## Provisionamento seguro dos clientes CLI
 
-O RadIA 2.0 possui um mecanismo de provisionamento para Codex CLI, Claude Code, Gemini CLI e
-GitHub Copilot CLI. A integração visual ainda será ligada à tela de configurações, mas o contrato
-central já garante que o processo siga estas etapas:
+O RadIA 2.0 possui um mecanismo visual de provisionamento para Codex CLI, Claude Code, Gemini CLI e
+GitHub Copilot CLI. O contrato central garante que o processo siga estas etapas:
 
 1. detectar se a configuração está ausente, válida, divergente ou inválida;
 2. gerar uma prévia sem alterar o arquivo;
@@ -221,7 +220,7 @@ Codex, o RadIA controla apenas o bloco delimitado por `BEGIN/END RadIA managed M
 conteúdo externo ao bloco permanece intacto. Configurações inválidas nunca são sobrescritas.
 
 O backup é deliberadamente estável e representa o estado imediatamente anterior à última mutação.
-Antes de provisionar ou remover pela interface, o RadIA sempre deverá apresentar a prévia e solicitar
+Antes de provisionar ou remover pela interface, o Rad IA apresenta a prévia e solicita
 consentimento explícito.
 
 ### Uso pela tela de configurações
@@ -229,7 +228,8 @@ consentimento explícito.
 Abra **RadIA > Settings > CLI & MCP** e siga este fluxo:
 
 1. selecione Codex, Claude, Gemini ou GitHub Copilot;
-2. opcionalmente informe um executável CLI fora do `PATH`;
+2. use **Install** ou **Update** para revisar e executar opcionalmente o canal oficial, ou informe
+   um executável CLI fora do `PATH`;
 3. revise os caminhos sugeridos da configuração do cliente e da bridge;
 4. clique em **Diagnose** para conferir a detecção do CLI e o estado MCP;
 5. clique em **Preview** para revisar exatamente o conteúdo proposto;
@@ -240,5 +240,5 @@ Os três caminhos são persistidos separadamente para cada cliente e restaurados
 reaberta. Um campo vazio de executável mantém a detecção automática pelo `PATH`.
 
 O botão de conexão fica desabilitado quando a bridge não existe, a configuração é inválida ou o
-cliente já está configurado corretamente. A tela não instala CLIs nem modifica configurações sem
-uma confirmação visual.
+cliente já está configurado corretamente. Instalação de CLI e alteração MCP são operações
+independentes e nenhuma delas ocorre sem confirmação visual.

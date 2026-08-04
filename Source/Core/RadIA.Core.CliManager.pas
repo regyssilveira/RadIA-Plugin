@@ -70,6 +70,22 @@ type
     property Source: string read FSource;
   end;
 
+  TRadIACliInstallPlan = record
+  private
+    FExecutablePath: string;
+    FArguments: TArray<string>;
+    FPreview: string;
+  public
+    constructor Create(
+      const AExecutablePath: string;
+      const AArguments: TArray<string>;
+      const APreview: string
+    );
+    property ExecutablePath: string read FExecutablePath;
+    property Arguments: TArray<string> read FArguments;
+    property Preview: string read FPreview;
+  end;
+
   IRadIACliEnvironment = interface
     ['{E49148CA-B27C-49B5-9190-18B52EA570C6}']
     function FileExists(const AFileName: string): Boolean;
@@ -109,6 +125,23 @@ type
       const AConfiguredPath: string = ''
     ): TRadIACliDetection;
     function DetectAll: TArray<TRadIACliDetection>;
+  end;
+
+  TRadIACliInstaller = class
+  private
+    class function BuildNpmPlan(
+      const ADefinition: TRadIACliDefinition
+    ): TRadIACliInstallPlan; static;
+    class function BuildWingetPlan(
+      const ADefinition: TRadIACliDefinition
+    ): TRadIACliInstallPlan; static;
+    class procedure ValidatePackageId(
+      const APackageId: string
+    ); static;
+  public
+    class function BuildPlan(
+      const ADefinition: TRadIACliDefinition
+    ): TRadIACliInstallPlan; static;
   end;
 
 implementation
@@ -203,6 +236,19 @@ begin
   Result := System.SysUtils.FileExists(AFileName);
 end;
 
+{ TRadIACliInstallPlan }
+
+constructor TRadIACliInstallPlan.Create(
+  const AExecutablePath: string;
+  const AArguments: TArray<string>;
+  const APreview: string
+);
+begin
+  FExecutablePath := AExecutablePath;
+  FArguments := AArguments;
+  FPreview := APreview;
+end;
+
 function TRadIACliEnvironment.GetPathEntries: TArray<string>;
 var
   LList: TStringList;
@@ -228,19 +274,19 @@ begin
       'codex',
       'Codex CLI',
       ['codex.exe', 'codex.cmd', 'codex'],
-      cicOfficialInstaller,
+      cicNpm,
       '@openai/codex',
       'https://github.com/openai/codex'
-    ),
+    ).WithPrerequisites(['Node.js 20 or later']),
     TRadIACliDefinition.Create(
       ckClaude,
       'claude',
       'Claude Code',
       ['claude.exe', 'claude.cmd', 'claude'],
-      cicOfficialInstaller,
+      cicNpm,
       '@anthropic-ai/claude-code',
       'https://docs.anthropic.com/en/docs/claude-code'
-    ).WithPrerequisites(['Git Bash or WSL']),
+    ).WithPrerequisites(['Node.js 18 or later', 'Git Bash or WSL']),
     TRadIACliDefinition.Create(
       ckGemini,
       'gemini',
@@ -331,6 +377,74 @@ begin
   finally
     LDetections.Free;
   end;
+end;
+
+{ TRadIACliInstaller }
+
+class function TRadIACliInstaller.BuildNpmPlan(
+  const ADefinition: TRadIACliDefinition
+): TRadIACliInstallPlan;
+var
+  LCommand: string;
+begin
+  LCommand := 'npm install --global ' + ADefinition.PackageId + '@latest';
+  Result := TRadIACliInstallPlan.Create(
+    'cmd.exe',
+    ['/d', '/s', '/c', LCommand],
+    LCommand
+  );
+end;
+
+class function TRadIACliInstaller.BuildPlan(
+  const ADefinition: TRadIACliDefinition
+): TRadIACliInstallPlan;
+begin
+  ValidatePackageId(ADefinition.PackageId);
+  case ADefinition.PrimaryChannel of
+    cicNpm:
+      Result := BuildNpmPlan(ADefinition);
+    cicWinget:
+      Result := BuildWingetPlan(ADefinition);
+  else
+    raise EInvalidOpException.Create(
+      'Automated installation is unavailable for this official channel.'
+    );
+  end;
+end;
+
+class procedure TRadIACliInstaller.ValidatePackageId(
+  const APackageId: string
+);
+var
+  LCharacter: Char;
+begin
+  if Trim(APackageId) = '' then
+    raise EArgumentException.Create('The official package ID is unavailable.');
+  for LCharacter in APackageId do
+    if not CharInSet(
+      LCharacter,
+      ['a'..'z', 'A'..'Z', '0'..'9', '@', '/', '.', '_', '-']
+    ) then
+      raise EArgumentException.Create(
+        'The official package ID contains invalid characters.'
+      );
+end;
+
+class function TRadIACliInstaller.BuildWingetPlan(
+  const ADefinition: TRadIACliDefinition
+): TRadIACliInstallPlan;
+var
+  LCommand: string;
+begin
+  LCommand :=
+    'winget install --id ' + ADefinition.PackageId +
+    ' --exact --source winget --accept-source-agreements ' +
+    '--accept-package-agreements --disable-interactivity';
+  Result := TRadIACliInstallPlan.Create(
+    'cmd.exe',
+    ['/d', '/s', '/c', LCommand],
+    LCommand
+  );
 end;
 
 function TRadIACliDetector.FindInPath(

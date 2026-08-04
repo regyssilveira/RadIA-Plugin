@@ -35,6 +35,12 @@ type
     [Test]
     procedure ReportsMissingExecutable;
     [Test]
+    procedure NpmInstallPlansUseOfficialPackages;
+    [Test]
+    procedure CopilotInstallPlanUsesOfficialWingetPackage;
+    [Test]
+    procedure InstallPlanRejectsShellMetacharacters;
+    [Test]
     procedure DetectAllReturnsOneResultPerDefinition;
     [Test]
     procedure DefaultEnvironmentCanDetectWithoutConfiguration;
@@ -230,6 +236,58 @@ begin
   finally
     LDetector.Free;
   end;
+end;
+
+procedure TRadIACliManagerTests.CopilotInstallPlanUsesOfficialWingetPackage;
+var
+  LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('copilot', LDefinition));
+  LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
+  Assert.AreEqual('cmd.exe', LPlan.ExecutablePath);
+  Assert.AreEqual('/d', LPlan.Arguments[0]);
+  Assert.Contains(LPlan.Preview, 'winget install');
+  Assert.Contains(LPlan.Preview, 'GitHub.Copilot');
+  Assert.Contains(LPlan.Preview, '--disable-interactivity');
+end;
+
+procedure TRadIACliManagerTests.NpmInstallPlansUseOfficialPackages;
+var
+  LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
+  Assert.Contains(LPlan.Preview, '@openai/codex@latest');
+  Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
+  LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
+  Assert.Contains(LPlan.Preview, '@anthropic-ai/claude-code@latest');
+  Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
+  LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
+  Assert.Contains(LPlan.Preview, '@google/gemini-cli@latest');
+end;
+
+procedure TRadIACliManagerTests.InstallPlanRejectsShellMetacharacters;
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  LDefinition := TRadIACliDefinition.Create(
+    ckGemini,
+    'unsafe',
+    'Unsafe',
+    ['unsafe.cmd'],
+    cicNpm,
+    '@vendor/package & whoami',
+    'https://example.invalid'
+  );
+  Assert.WillRaise(
+    procedure
+    begin
+      TRadIACliInstaller.BuildPlan(LDefinition);
+    end,
+    EArgumentException
+  );
 end;
 
 initialization
