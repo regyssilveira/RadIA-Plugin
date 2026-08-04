@@ -24,7 +24,7 @@ auditoria e confinamento ao workspace. A entrega final será validada no Delphi 
 
 | Capacidade | Evidência atual | Estado para o goal |
 |---|---|---|
-| Registry e segurança | 80 tools internas, política, consentimento e auditoria | Pronto |
+| Registry e segurança | 87 tools internas, política, consentimento e auditoria | Pronto |
 | Chat | Providers, streaming, sessões, Agent Mode e loop observável | Pronto |
 | Projeto novo | Wizard visual e seis templates determinísticos | Pronto |
 | Projeto vivo | Leitura e operações estruturais transacionais | Pronto |
@@ -49,7 +49,7 @@ As lacunas originais agora aparecem no catálogo interno registrado:
 - operações Git;
 - loop agentivo nativo.
 
-O catálogo gerado contém 80 tools. Os fluxos possuem testes proporcionais ao risco e permanecem
+O catálogo gerado contém 87 tools. Os fluxos possuem testes proporcionais ao risco e permanecem
 sujeitos à validação E2E na IDE antes da release 2.0.
 
 ## Marcos
@@ -213,6 +213,10 @@ Os itens abaixo pertencem à versão 2.0.0 e reabrem o gate de release:
 7. permitir escolher entre agente nativo e executores CLI sem reiniciar a IDE;
 8. oferecer instalação opcional pelos canais oficiais, diagnóstico e onboarding;
 9. validar novamente Delphi 11, 12 e 13 antes de publicar os artefatos finais.
+
+Expansão OTA entregue nesta branch: sete tools cobrem project groups, dependências nativas,
+símbolos do buffer vivo, navegação confinada por arquivo ou símbolo e ações da IDE protegidas por
+allowlist e consentimento.
 
 Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e

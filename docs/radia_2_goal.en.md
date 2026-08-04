@@ -49,7 +49,7 @@ The original target gaps are now registered as built-in tools:
 - Git operations;
 - a native agent loop.
 
-The generated catalog contains 80 tools. The flows have tests proportional to their risk and remain
+The generated catalog contains 87 tools. The flows have tests proportional to their risk and remain
 subject to in-IDE E2E validation before the 2.0 release.
 
 ## Milestones
@@ -210,6 +210,10 @@ The following items belong to version 2.0.0 and reopen its release gate:
 7. allow switching between the native agent and CLI executors without restarting the IDE;
 8. provide optional official-channel installation, diagnostics, and onboarding;
 9. validate Delphi 11, 12, and 13 again before publishing the final artifacts.
+
+OTA expansion delivered on this branch: seven tools now cover project groups, native dependencies,
+live-buffer symbols, confined file or symbol navigation, and IDE actions protected by an allowlist
+and consent.
 
 Foundation delivered on this branch: the MCP provisioner now covers the client catalog, preview,
 drift detection, JSON merge, managed TOML block, backup, verification, repair, rollback, and

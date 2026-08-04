@@ -138,6 +138,8 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviews.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviewTools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigation.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigationTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Knowledge.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.KnowledgeTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.KnowledgeStore.pas"/>
@@ -175,6 +177,7 @@
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Knowledge.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.KnowledgeNotifier.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.InlineReviews.pas"/>
+        <DCCReference Include="..\Source\Integration\RadIA.OTA.IDENavigation.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Consent.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Build.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.MCP.NamedPipe.pas"/>
@@ -249,6 +252,7 @@
         <DCCReference Include="Source\RadIA.Tests.DebuggerBreakpointTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DebuggerInspectionTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.InlineReviews.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.IDENavigation.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Knowledge.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeScheduler.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeNotifier.pas"/>

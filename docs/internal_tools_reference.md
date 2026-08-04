@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 80 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
+Esta página explica as 87 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -37,6 +37,21 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetEditorSelection` | Lê a seleção atual do editor. | Em ações direcionadas a um trecho, como explicar, revisar, testar ou refatorar. |
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | Para contextualizar erros, símbolos, inserções e revisões ancoradas. |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | Depois de um build ou quando o objetivo envolve corrigir falhas de compilação. |
+
+## Navegação, símbolos e project groups
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `ListProjectGroupProjects` | Lista os projetos carregados no project group atual. | Para entender soluções com executável, packages, bibliotecas ou testes separados. |
+| `GetProjectDependencies` | Consulta as dependências reais do projeto ativo pela OTA. | Antes de decidir ordem de build, impacto ou relacionamento entre projetos. |
+| `GetUnitSymbols` | Extrai classes, records, interfaces e rotinas do buffer ativo com suas linhas. | Para localizar declarações sem pesquisar texto cegamente. |
+| `NavigateToFile` | Abre um arquivo pertencente a um projeto carregado e posiciona o cursor. | Quando uma análise, erro ou plano aponta para arquivo, linha e coluna específicos. |
+| `NavigateToSymbol` | Posiciona o editor em um símbolo da unit ativa. | Depois de `GetUnitSymbols` ou quando o usuário pede para mostrar uma declaração. |
+| `ListIDEActions` | Lista somente ações disponíveis na allowlist segura. | Antes de oferecer uma ação visual da IDE. |
+| `ExecuteIDEAction` | Executa uma ação allowlisted após consentimento. | Para abrir painéis ou buscas da IDE sem automação de UI frágil. |
+
+Navegação de arquivo é confinada aos projetos abertos. A execução de ações usa uma allowlist fixa,
+passa pela classificação `execution` e não aceita nomes arbitrários recebidos do agente ou MCP.
 
 ## Patch de um arquivo
 

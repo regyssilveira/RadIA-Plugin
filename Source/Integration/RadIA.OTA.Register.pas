@@ -22,6 +22,10 @@ type
     procedure OnProjectWizardClick(Sender: TObject);
     procedure OnTimerEvent(Sender: TObject);
     procedure RestoreWindowVisibility;
+    procedure ReleaseDebugTimelineNotifier;
+    procedure ReleaseEditorHook;
+    procedure ReleaseKnowledgeNotifier;
+    procedure ReleasePinnedModule;
   public
     constructor Create;
     destructor Destroy; override;
@@ -77,12 +81,14 @@ uses
   RadIA.Core.DebuggerControlTools, RadIA.Core.DebuggerBreakpointTools,
   RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
+  RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.DebugTimelineStore,
   RadIA.OTA.Knowledge,
   RadIA.OTA.KnowledgeNotifier, RadIA.OTA.InlineReviews,
+  RadIA.OTA.IDENavigation,
   RadIA.MCP.NamedPipe;
 
 const
@@ -261,7 +267,57 @@ begin
   TRadIAContainer.Resolve<IRadIAMediator>.RegisterDiffHandler(OnRequestDiff);
 end;
 
+procedure TRadIAWizard.ReleaseDebugTimelineNotifier;
+begin
+  if not Assigned(FDebugTimelineNotifier) then
+    Exit;
+  TRadIAOTADebugTimelineNotifier(FDebugTimelineNotifier).Uninstall;
+  if GIsShuttingDown then
+    FDebugTimelineNotifier := nil
+  else
+    FreeAndNil(FDebugTimelineNotifier);
+end;
+
+procedure TRadIAWizard.ReleaseEditorHook;
+begin
+  if not Assigned(FEditorHook) then
+    Exit;
+  TRadIAEditorHook(FEditorHook).Uninstall;
+  if GIsShuttingDown then
+    FEditorHook := nil
+  else
+    FreeAndNil(FEditorHook);
+end;
+
+procedure TRadIAWizard.ReleaseKnowledgeNotifier;
+begin
+  if not Assigned(FKnowledgeNotifier) then
+    Exit;
+  if GIsShuttingDown then
+  begin
+    TRadIAOTAKnowledgeNotifier(
+      FKnowledgeNotifier
+    ).PrepareForShutdown;
+    FKnowledgeNotifier := nil;
+  end
+  else
+  begin
+    TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Uninstall;
+    FreeAndNil(FKnowledgeNotifier);
+  end;
+end;
+
+procedure TRadIAWizard.ReleasePinnedModule;
+begin
+  if GIsShuttingDown or (GModuleHandle = 0) then
+    Exit;
+  FreeLibrary(GModuleHandle);
+  GModuleHandle := 0;
+end;
+
 destructor TRadIAWizard.Destroy;
+var
+  LMediator: IRadIAMediator;
 begin
   LogDebug('TRadIAWizard.Destroy started');
   GIsShuttingDown :=
@@ -285,7 +341,6 @@ begin
   LogDebug('TRadIAWizard.Destroy dockable form released');
   {$ENDIF}
 
-  var LMediator: IRadIAMediator;
   if TRadIAContainer.TryResolve<IRadIAMediator>(LMediator) then
     LMediator.UnregisterDiffHandler;
   LogDebug('TRadIAWizard.Destroy mediator released');
@@ -295,64 +350,20 @@ begin
     FTimer.Free;
   end;
   LogDebug('TRadIAWizard.Destroy timer released');
-  if Assigned(FKnowledgeNotifier) then
-  begin
-    if GIsShuttingDown then
-    begin
-      TRadIAOTAKnowledgeNotifier(
-        FKnowledgeNotifier
-      ).PrepareForShutdown;
-      FKnowledgeNotifier := nil;
-    end
-    else
-    begin
-      TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Uninstall;
-      FreeAndNil(FKnowledgeNotifier);
-    end;
-  end;
+  ReleaseKnowledgeNotifier;
   LogDebug('TRadIAWizard.Destroy knowledge notifier released');
-  if Assigned(FDebugTimelineNotifier) then
-  begin
-    if GIsShuttingDown then
-    begin
-      TRadIAOTADebugTimelineNotifier(
-        FDebugTimelineNotifier
-      ).Uninstall;
-      FDebugTimelineNotifier := nil
-    end
-    else
-    begin
-      TRadIAOTADebugTimelineNotifier(
-        FDebugTimelineNotifier
-      ).Uninstall;
-      FreeAndNil(FDebugTimelineNotifier);
-    end;
-  end;
+  ReleaseDebugTimelineNotifier;
   LogDebug('TRadIAWizard.Destroy debug notifier released');
   UnregisterOptions;
   LogDebug('TRadIAWizard.Destroy options released');
   UnregisterMenus;
   LogDebug('TRadIAWizard.Destroy menus released');
-  if GIsShuttingDown then
-  begin
-    TRadIAEditorHook(FEditorHook).Uninstall;
-    FEditorHook := nil
-  end
-  else
-  begin
-    TRadIAEditorHook(FEditorHook).Uninstall;
-    FreeAndNil(FEditorHook);
-  end;
+  ReleaseEditorHook;
   LogDebug('TRadIAWizard.Destroy editor hook released');
   FOptionsPages.Free;
   LogDebug('TRadIAWizard.Destroy owned objects released');
 
-  // Se nao for shutdown geral da IDE (ou seja, desinstalacao normal do pacote), libere a referencia de modulo
-  if (not GIsShuttingDown) and (GModuleHandle <> 0) then
-  begin
-    FreeLibrary(GModuleHandle);
-    GModuleHandle := 0;
-  end;
+  ReleasePinnedModule;
 
   GWizardIndex := -1;
   LogDebug('TRadIAWizard.Destroy completed');
@@ -821,6 +832,11 @@ initialization
   TRadIAContainer.Register<IRadIADebuggerFacade>(
     TRadIAOTADebuggerFacade.Create
   );
+  TRadIAContainer.Register<IRadIAIDENavigationFacade>(
+    TRadIAOTAIDENavigationFacade.Create(
+      TRadIAContainer.Resolve<IRadIAEditorAdapter>
+    )
+  );
   TRadIAContainer.Register<IRadIADebuggerControlFacade>(
     TRadIAContainer.Resolve<IRadIADebuggerFacade> as
       IRadIADebuggerControlFacade
@@ -966,6 +982,10 @@ initialization
   RegisterRadIAWorkspaceTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+  );
+  RegisterRadIAIDENavigationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAIDENavigationFacade>
   );
   RegisterRadIAProjectTemplateTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

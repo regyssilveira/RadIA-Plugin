@@ -52,6 +52,8 @@ O conteúdo retornado deve indicar truncamento, tamanho original e revisão/hash
 - `FindInEditor`
 - `FindInProject`
 - `GetUnitSymbols`
+- `NavigateToFile`
+- `NavigateToSymbol`
 
 ### Escrita reversível
 
@@ -101,6 +103,19 @@ patches, que continua sujeito a consentimento, precondições e reversão.
 - `GetConditionalDefines`
 - `GetProjectOutputPaths`
 - `GetProjectDependencies`
+- `ListProjectGroupProjects`
+
+As tools acima agora usam diretamente o project group e o grafo de dependências da OTA. A navegação
+por arquivo só aceita arquivos pertencentes a projetos abertos; a navegação por símbolo usa o buffer
+vivo da unit ativa.
+
+### Ações seguras da IDE
+
+- `ListIDEActions`
+- `ExecuteIDEAction`
+
+`ListIDEActions` retorna apenas ações presentes em uma allowlist de navegação e visualização.
+`ExecuteIDEAction` é classificada como execução, exige consentimento e recusa nomes fora dessa lista.
 
 ### Escrita estrutural
 
