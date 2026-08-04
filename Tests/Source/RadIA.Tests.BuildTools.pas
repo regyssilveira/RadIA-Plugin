@@ -165,9 +165,11 @@ end;
 
 procedure TTestRadIABuildTools.Setup;
 var
+  LBuildFacade: IRadIABuildFacade;
   LProject: TRadIAProjectSnapshot;
 begin
   FBuildFacade := TTestRadIABuildFacade.Create;
+  LBuildFacade := FBuildFacade;
   LProject := TRadIAProjectSnapshot.Create(
     'ProjectOne',
     'C:\Project\ProjectOne.dproj',
@@ -183,7 +185,7 @@ begin
   );
   FBuildFacade.CurrentStatus := bsIdle;
   FRegistry := TRadIAToolRegistry.Create;
-  RegisterRadIABuildTools(FRegistry, FBuildFacade);
+  RegisterRadIABuildTools(FRegistry, LBuildFacade);
 end;
 
 procedure TTestRadIABuildTools.StatusToolIsReadOnly;

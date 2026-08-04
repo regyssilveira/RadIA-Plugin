@@ -62,7 +62,6 @@ uses
   System.IOUtils,
   System.SyncObjs,
   System.SysUtils,
-  System.Types,
   Winapi.Windows;
 
 const
@@ -261,7 +260,7 @@ var
   LProcessInfo: TProcessInformation;
   LSecurityAttributes: TSecurityAttributes;
   LStartupInfo: TStartupInfo;
-  LStopwatch: TStopwatch;
+  LStopwatch: System.Diagnostics.TStopwatch;
   LWaitResult: Cardinal;
 begin
   AExitCode := Cardinal(-1);
@@ -306,7 +305,7 @@ begin
     ) then
       RaiseLastOSError;
     try
-      LStopwatch := TStopwatch.StartNew;
+      LStopwatch := System.Diagnostics.TStopwatch.StartNew;
       repeat
         LWaitResult := WaitForSingleObject(LProcessInfo.hProcess, 25);
         if TInterlocked.CompareExchange(

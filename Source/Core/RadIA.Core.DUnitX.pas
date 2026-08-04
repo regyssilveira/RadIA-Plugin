@@ -70,8 +70,6 @@ type
     property Total: Integer read FTotal;
     property Passed: Integer read FPassed;
     property Failed: Integer read FFailed;
-    property Errors: Integer read FErrors;
-    property Ignored: Integer read FIgnored;
     property DurationMs: Int64 read FDurationMs;
     property TestCases: TArray<TRadIADUnitXTestCase> read FTestCases;
   end;
@@ -131,7 +129,7 @@ uses
   Xml.XMLIntf;
 
 type
-  TRadIADUnitXReportAccess = record helper for TRadIADUnitXReport
+  TRadIADUnitXReportHelper = record helper for TRadIADUnitXReport
     procedure AddTestCase(const ATestCase: TRadIADUnitXTestCase);
     procedure SetSummary(
       const AName: string;
@@ -142,7 +140,7 @@ type
     );
   end;
 
-  TRadIADUnitXTestCaseAccess = record helper for TRadIADUnitXTestCase
+  TRadIADUnitXTestCaseHelper = record helper for TRadIADUnitXTestCase
     procedure Initialize(
       const AFixtureName: string;
       const ANode: IXMLNode
@@ -251,7 +249,7 @@ begin
   end;
 end;
 
-{ TRadIADUnitXReportAccess }
+{ TRadIADUnitXReportHelper }
 
 { TRadIADUnitXRunRequest }
 
@@ -266,7 +264,7 @@ begin
   FTests := Copy(ATests);
 end;
 
-procedure TRadIADUnitXReportAccess.AddTestCase(
+procedure TRadIADUnitXReportHelper.AddTestCase(
   const ATestCase: TRadIADUnitXTestCase
 );
 var
@@ -278,7 +276,7 @@ begin
   Inc(FDurationMs, ATestCase.DurationMs);
 end;
 
-procedure TRadIADUnitXReportAccess.SetSummary(
+procedure TRadIADUnitXReportHelper.SetSummary(
   const AName: string;
   const ATotal: Integer;
   const AFailed: Integer;
@@ -294,9 +292,9 @@ begin
   FPassed := ATotal - AFailed - AErrors - AIgnored;
 end;
 
-{ TRadIADUnitXTestCaseAccess }
+{ TRadIADUnitXTestCaseHelper }
 
-procedure TRadIADUnitXTestCaseAccess.Initialize(
+procedure TRadIADUnitXTestCaseHelper.Initialize(
   const AFixtureName: string;
   const ANode: IXMLNode
 );

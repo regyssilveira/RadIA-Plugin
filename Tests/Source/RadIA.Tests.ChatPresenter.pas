@@ -4,7 +4,7 @@ interface
 
 uses
   DUnitX.TestFramework, System.SysUtils, System.Classes, RadIA.Core.Interfaces, RadIA.Core.Sessions,
-  RadIA.Core.ProviderRegistry, RadIA.Core.Tools, RadIA.Core.ToolRegistry,
+  RadIA.Core.ProviderRegistry, RadIA.Core.Tools,
   RadIA.UI.ChatPresenter;
 
 type
@@ -202,7 +202,7 @@ implementation
 
 uses
   RadIA.Core.Config, RadIA.Core.SettingsStorage, System.IOUtils, RadIA.Core.Mediator,
-  RadIA.Core.TokenUsage;
+  RadIA.Core.TokenUsage, RadIA.Core.ToolRegistry;
 
 { TMockChatView }
 

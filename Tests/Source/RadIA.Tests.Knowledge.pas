@@ -80,7 +80,6 @@ type
 implementation
 
 uses
-  System.Classes,
   System.IOUtils,
   System.SysUtils,
   RadIA.Core.KnowledgeStore,

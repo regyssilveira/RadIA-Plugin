@@ -34,7 +34,6 @@ type
     procedure Commit;
     procedure Rollback;
     property State: TRadIAProjectTransactionState read FState;
-    property DestinationPath: string read FDestinationPath;
     property DestinationExisted: Boolean read FDestinationExisted;
     property StagingPath: string read FStagingPath;
   end;

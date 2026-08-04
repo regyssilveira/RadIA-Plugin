@@ -68,11 +68,13 @@ var
   LControl: IRadIAKnowledgeModuleNotifierControl;
   LNotifier: IOTAModuleNotifier;
   LNotifierReference: IInterface;
+  LSchedulerReference: IRadIAKnowledgeRefreshScheduler;
   LScheduler: TRadIAFakeKnowledgeRefreshScheduler;
 begin
   LScheduler := TRadIAFakeKnowledgeRefreshScheduler.Create;
+  LSchedulerReference := LScheduler;
   LNotifierReference := CreateRadIAKnowledgeModuleNotifier(
-    LScheduler
+    LSchedulerReference
   );
   Assert.IsTrue(
     Supports(LNotifierReference, IOTAModuleNotifier, LNotifier)
@@ -98,11 +100,13 @@ procedure TTestRadIAKnowledgeNotifier.ModuleEventsMarkKnowledgeDirty;
 var
   LNotifier: IOTAModuleNotifier;
   LNotifierReference: IInterface;
+  LSchedulerReference: IRadIAKnowledgeRefreshScheduler;
   LScheduler: TRadIAFakeKnowledgeRefreshScheduler;
 begin
   LScheduler := TRadIAFakeKnowledgeRefreshScheduler.Create;
+  LSchedulerReference := LScheduler;
   LNotifierReference := CreateRadIAKnowledgeModuleNotifier(
-    LScheduler
+    LSchedulerReference
   );
   Assert.IsTrue(
     Supports(LNotifierReference, IOTAModuleNotifier, LNotifier)

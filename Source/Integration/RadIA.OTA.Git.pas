@@ -24,7 +24,6 @@ type
       const AMessage: string;
       const AFingerprint: string
     );
-    property PreviewId: string read FPreviewId;
     property RootPath: string read FRootPath;
     property Paths: TArray<string> read FPaths;
     property Message: string read FMessage;
@@ -365,9 +364,9 @@ var
   LCommandLine: string;
   LOutputHandle: THandle;
   LOutputPath: string;
-  LProcessInfo: TProcessInformation;
-  LSecurityAttributes: TSecurityAttributes;
-  LStartupInfo: TStartupInfo;
+  LProcessInfo: Winapi.Windows.TProcessInformation;
+  LSecurityAttributes: Winapi.Windows.TSecurityAttributes;
+  LStartupInfo: Winapi.Windows.TStartupInfo;
   LWaitResult: Cardinal;
 begin
   AOutput := '';
@@ -376,22 +375,22 @@ begin
     TPath.GetTempPath,
     'radia-git-' + TGUID.NewGuid.ToString + '.log'
   );
-  ZeroMemory(
+  Winapi.Windows.ZeroMemory(
     @LSecurityAttributes,
     SizeOf(LSecurityAttributes)
   );
   LSecurityAttributes.nLength := SizeOf(LSecurityAttributes);
   LSecurityAttributes.bInheritHandle := True;
-  LOutputHandle := CreateFile(
+  LOutputHandle := Winapi.Windows.CreateFile(
     PChar(LOutputPath),
-    GENERIC_WRITE,
-    FILE_SHARE_READ,
+    Winapi.Windows.GENERIC_WRITE,
+    Winapi.Windows.FILE_SHARE_READ,
     @LSecurityAttributes,
-    CREATE_ALWAYS,
-    FILE_ATTRIBUTE_TEMPORARY,
+    Winapi.Windows.CREATE_ALWAYS,
+    Winapi.Windows.FILE_ATTRIBUTE_TEMPORARY,
     0
   );
-  if LOutputHandle = INVALID_HANDLE_VALUE then
+  if LOutputHandle = Winapi.Windows.INVALID_HANDLE_VALUE then
     RaiseLastOSError;
   try
     LCommandLine :=
@@ -399,20 +398,20 @@ begin
       QuoteArgument(ARootPath);
     for LArgument in AArguments do
       LCommandLine := LCommandLine + ' ' + QuoteArgument(LArgument);
-    ZeroMemory(@LStartupInfo, SizeOf(LStartupInfo));
+    Winapi.Windows.ZeroMemory(@LStartupInfo, SizeOf(LStartupInfo));
     LStartupInfo.cb := SizeOf(LStartupInfo);
-    LStartupInfo.dwFlags := STARTF_USESTDHANDLES;
+    LStartupInfo.dwFlags := Winapi.Windows.STARTF_USESTDHANDLES;
     LStartupInfo.hStdOutput := LOutputHandle;
     LStartupInfo.hStdError := LOutputHandle;
     LStartupInfo.hStdInput := 0;
-    ZeroMemory(@LProcessInfo, SizeOf(LProcessInfo));
-    if not CreateProcess(
+    Winapi.Windows.ZeroMemory(@LProcessInfo, SizeOf(LProcessInfo));
+    if not Winapi.Windows.CreateProcess(
       nil,
       PChar(LCommandLine),
       nil,
       nil,
       True,
-      CREATE_NO_WINDOW,
+      Winapi.Windows.CREATE_NO_WINDOW,
       nil,
       PChar(ARootPath),
       LStartupInfo,
@@ -420,22 +419,22 @@ begin
     ) then
       RaiseLastOSError;
     try
-      LWaitResult := WaitForSingleObject(
+      LWaitResult := Winapi.Windows.WaitForSingleObject(
         LProcessInfo.hProcess,
         60000
       );
-      if LWaitResult = WAIT_TIMEOUT then
+      if LWaitResult = Winapi.Windows.WAIT_TIMEOUT then
       begin
-        TerminateProcess(LProcessInfo.hProcess, 4);
-        WaitForSingleObject(LProcessInfo.hProcess, 5000);
+        Winapi.Windows.TerminateProcess(LProcessInfo.hProcess, 4);
+        Winapi.Windows.WaitForSingleObject(LProcessInfo.hProcess, 5000);
       end;
-      GetExitCodeProcess(LProcessInfo.hProcess, Result);
+      Winapi.Windows.GetExitCodeProcess(LProcessInfo.hProcess, Result);
     finally
-      CloseHandle(LProcessInfo.hThread);
-      CloseHandle(LProcessInfo.hProcess);
+      Winapi.Windows.CloseHandle(LProcessInfo.hThread);
+      Winapi.Windows.CloseHandle(LProcessInfo.hProcess);
     end;
   finally
-    CloseHandle(LOutputHandle);
+    Winapi.Windows.CloseHandle(LOutputHandle);
   end;
   if TFile.Exists(LOutputPath) then
   begin

@@ -63,6 +63,7 @@ uses
   System.SysUtils,
   RadIA.Core.DebuggerBreakpointTools,
   RadIA.Core.ToolRegistry,
+  RadIA.Core.Workspace,
   RadIA.Core.WorkspaceBoundary,
   RadIA.Tests.WorkspaceTools;
 
@@ -200,14 +201,21 @@ begin
 end;
 
 procedure TTestRadIADebuggerBreakpointTools.Setup;
+var
+  LBoundary: IRadIAWorkspaceBoundary;
+  LDebugger: IRadIADebuggerBreakpointFacade;
+  LWorkspace: IRadIAWorkspaceFacade;
 begin
   FRegistry := TRadIAToolRegistry.Create;
   FDebugger := TRadIAFakeDebuggerBreakpointFacade.Create;
+  LBoundary := TRadIAWorkspaceBoundary.Create;
+  LDebugger := FDebugger;
+  LWorkspace := TRadIAFakeWorkspaceFacade.Create;
   RegisterRadIADebuggerBreakpointTools(
     FRegistry,
-    FDebugger,
-    TRadIAFakeWorkspaceFacade.Create,
-    TRadIAWorkspaceBoundary.Create
+    LDebugger,
+    LWorkspace,
+    LBoundary
   );
   FExecutor := TRadIAToolExecutor.Create(FRegistry);
 end;

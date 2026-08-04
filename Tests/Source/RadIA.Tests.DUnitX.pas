@@ -24,8 +24,6 @@ type
     ): TRadIADUnitXRunResult;
     function Cancel: Boolean;
     function GetStatus: TRadIADUnitXRunStatus;
-    property CancelResult: Boolean
-      read FCancelResult write FCancelResult;
     property ExecuteCount: Integer read FExecuteCount;
     property LastRequest: TRadIADUnitXRunRequest read FLastRequest;
     property RunResult: TRadIADUnitXRunResult
@@ -216,10 +214,13 @@ begin
 end;
 
 procedure TRadIADUnitXToolTests.Setup;
+var
+  LRunner: IRadIADUnitXRunner;
 begin
   FRegistry := TRadIAToolRegistry.Create;
   FRunner := TRadIADUnitXRunnerStub.Create;
-  RegisterRadIADUnitXTools(FRegistry, FRunner);
+  LRunner := FRunner;
+  RegisterRadIADUnitXTools(FRegistry, LRunner);
 end;
 
 initialization

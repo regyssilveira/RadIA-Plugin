@@ -182,15 +182,20 @@ begin
 end;
 
 procedure TTestRadIADebuggerInspectionTools.Setup;
+var
+  LEvaluator: IRadIADebuggerEvaluationFacade;
+  LSession: IRadIADebuggerSessionFacade;
 begin
   FEvaluator := TRadIAFakeDebuggerInspection.Create;
-  FWatches := TRadIADebuggerWatchService.Create(FEvaluator);
+  LEvaluator := FEvaluator;
+  LSession := FEvaluator;
+  FWatches := TRadIADebuggerWatchService.Create(LEvaluator);
   FRegistry := TRadIAToolRegistry.Create;
   RegisterRadIADebuggerInspectionTools(
     FRegistry,
-    FEvaluator,
+    LEvaluator,
     FWatches,
-    FEvaluator
+    LSession
   );
   FExecutor := TRadIAToolExecutor.Create(FRegistry);
 end;

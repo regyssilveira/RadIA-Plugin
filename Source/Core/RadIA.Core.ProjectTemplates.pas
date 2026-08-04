@@ -59,11 +59,6 @@ type
       const AFiles: TArray<TRadIAProjectTemplateFile>
     );
     function PreviewJson: string;
-    property TemplateId: string read FTemplateId;
-    property ProjectName: string read FProjectName;
-    property Kind: TRadIAProjectTemplateKind read FKind;
-    property DelphiVersion: string read FDelphiVersion;
-    property Platforms: TArray<string> read FPlatforms;
     property Files: TArray<TRadIAProjectTemplateFile> read FFiles;
   end;
 

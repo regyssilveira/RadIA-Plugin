@@ -66,7 +66,6 @@ type
     property ActiveRequests: Integer read GetActiveRequests;
     property CancellationRequests: Integer
       read GetCancellationRequests;
-    property ClientId: string read FClientId;
     property CompletedRequests: Integer read GetCompletedRequests;
     property Initialized: Boolean read FInitialized;
     property ProjectId: string read FProjectId write FProjectId;

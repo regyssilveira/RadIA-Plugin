@@ -263,6 +263,7 @@ begin
       'SampleEcho'
     )
   );
+  Assert.IsTrue(Assigned(LRegistration));
   Assert.AreEqual(1, FRegistry.Count);
 
   LRegistration := nil;

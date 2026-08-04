@@ -18,7 +18,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.DebugTimeline,
   RadIA.Core.DebugTimelineTools,
   RadIA.Core.ToolRegistry,

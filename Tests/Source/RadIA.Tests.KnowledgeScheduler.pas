@@ -56,7 +56,6 @@ type
 implementation
 
 uses
-  System.Classes,
   System.SyncObjs,
   System.SysUtils,
   Winapi.Windows;

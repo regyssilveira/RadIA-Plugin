@@ -61,8 +61,7 @@ uses
   System.SysUtils,
   System.SyncObjs,
   ToolsAPI,
-  Winapi.Windows,
-  RadIA.Core.Types;
+  Winapi.Windows;
 
 const
   CBuildBusy = 'build_busy';

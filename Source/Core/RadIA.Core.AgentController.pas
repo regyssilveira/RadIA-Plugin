@@ -143,6 +143,8 @@ begin
   if TInterlocked.CompareExchange(FRunning, 1, 0) <> 0 then
     raise EInvalidOp.Create('An agent run is already active.');
   LKeepAlive := Self;
+  if not Assigned(LKeepAlive) then
+    raise EInvalidOp.Create('Agent controller lifetime is unavailable.');
   TInterlocked.Increment(GActiveThreadCount);
   TThread.CreateAnonymousThread(
     procedure

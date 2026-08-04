@@ -24,12 +24,6 @@ type
       const ACompletionTokens: Integer
     ): Int64;
     function IsConfigured: Boolean;
-    property Provider: string read FProvider;
-    property Model: string read FModel;
-    property InputUsdPerMillionTokens: Double
-      read FInputUsdPerMillionTokens;
-    property OutputUsdPerMillionTokens: Double
-      read FOutputUsdPerMillionTokens;
   end;
 
   TRadIAAgentPricingCatalog = class

@@ -52,7 +52,6 @@ type
     );
     property Id: string read FId;
     property Operation: TRadIAProjectFileOperation read FOperation;
-    property Kind: TRadIAProjectFileKind read FKind;
     property MainFileName: string read FMainFileName;
     property Files: TArray<TRadIAProjectFileContent> read FFiles;
     property Applied: Boolean read FApplied write FApplied;

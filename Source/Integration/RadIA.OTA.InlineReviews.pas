@@ -213,18 +213,18 @@ procedure TRadIAOTAInlineReviewFacade.PaintLine(
 var
   LReview: TRadIAInlineReview;
   LRight: Integer;
-  LY: Integer;
+  LUnderlineY: Integer;
 begin
   if not SameText(FCurrentRevision, FExpectedRevision) or
     not FindReview(LineNumber, LReview) then
     Exit;
   Canvas.Pen.Color := ColorFor(LReview.Severity);
   Canvas.Pen.Width := 2;
-  LY := Min(TextRect.Bottom - 1, LineRect.Bottom - 1);
+  LUnderlineY := Min(TextRect.Bottom - 1, LineRect.Bottom - 1);
   LRight := TextRect.Left + (TextWidth * CellSize.cx);
   LRight := Min(Max(LRight, TextRect.Left + CellSize.cx), LineRect.Right);
-  Canvas.MoveTo(TextRect.Left, LY);
-  Canvas.LineTo(LRight, LY);
+  Canvas.MoveTo(TextRect.Left, LUnderlineY);
+  Canvas.LineTo(LRight, LUnderlineY);
 end;
 
 procedure TRadIAOTAInlineReviewFacade.RegisterCurrentView;

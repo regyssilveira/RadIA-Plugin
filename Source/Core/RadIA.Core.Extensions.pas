@@ -434,14 +434,14 @@ begin
     raise ERadIAInvalidToolExtension.Create(
       'Extension API range must be positive and ordered.'
     );
-  if (ADescriptor.MinimumApiVersion > CRadIAToolExtensionApiVersion) or
-    (ADescriptor.MaximumApiVersion < CRadIAToolExtensionApiVersion) then
+  if (ADescriptor.MinimumApiVersion > GetRadIAToolExtensionApiVersion) or
+    (ADescriptor.MaximumApiVersion < GetRadIAToolExtensionApiVersion) then
     raise ERadIAInvalidToolExtension.CreateFmt(
       'Extension API range %d..%d is incompatible with API %d.',
       [
         ADescriptor.MinimumApiVersion,
         ADescriptor.MaximumApiVersion,
-        CRadIAToolExtensionApiVersion
+        GetRadIAToolExtensionApiVersion
       ]
     );
 end;

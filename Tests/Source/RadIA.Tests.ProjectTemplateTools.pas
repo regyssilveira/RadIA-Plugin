@@ -588,6 +588,7 @@ end;
 
 procedure TRadIAProjectTemplateToolTests.Setup;
 var
+  LBuildFacade: IRadIABuildFacade;
   LWorkspace: IRadIAWorkspaceFacade;
 begin
   FRootPath := TPath.Combine(
@@ -598,6 +599,7 @@ begin
   LWorkspace := TRadIAProjectTemplateWorkspaceStub.Create(FRootPath);
   FOpeningStub := TRadIAProjectOpeningStub.Create;
   FBuildStub := TRadIAProjectBuildStub.Create;
+  LBuildFacade := FBuildStub;
   FService := TRadIAProjectTemplateService.Create(
     LWorkspace,
     TRadIAWorkspaceBoundary.Create,
@@ -607,7 +609,7 @@ begin
   RegisterRadIAProjectTemplateTools(
     FRegistry,
     FService,
-    FBuildStub
+    LBuildFacade
   );
 end;
 
