@@ -197,6 +197,27 @@ This evidence validates installation, loading, catalog discovery, rendering, edi
 shutdown, template creation, and safe Designer editing. The continuous journey with debugging, a
 validated fix, and a reviewable Git commit also passed on Delphi 13.
 
+## Competitive expansion before release
+
+The following items belong to version 2.0.0 and reopen its release gate:
+
+1. expand the OTA surface for navigation, symbols, project groups, dependencies, and IDE actions;
+2. make intent-to-view a uniform tool contract;
+3. complete inline diff with per-block acceptance and rejection;
+4. implement a CLI Manager for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot CLI;
+5. provision MCP with detection, backup, merge, testing, repair, and safe removal;
+6. integrate a dockable terminal with profiles, history, snippets, and process-tree shutdown;
+7. allow switching between the native agent and CLI executors without restarting the IDE;
+8. provide optional official-channel installation, diagnostics, and onboarding;
+9. validate Delphi 11, 12, and 13 again before publishing the final artifacts.
+
+Foundation delivered on this branch: the MCP provisioner now covers the client catalog, preview,
+drift detection, JSON merge, managed TOML block, backup, verification, repair, rollback, and
+selective removal. This item remains open until visual integration and operational diagnostics.
+
+CLIs will not be redistributed inside the package. With explicit consent, the installer will detect
+existing installations and delegate installation or updates to each vendor's official channels.
+
 ## Required E2E scenario
 
 1. Create a VCL CRUD application from a description.

@@ -214,6 +214,10 @@ Os itens abaixo pertencem à versão 2.0.0 e reabrem o gate de release:
 8. oferecer instalação opcional pelos canais oficiais, diagnóstico e onboarding;
 9. validar novamente Delphi 11, 12 e 13 antes de publicar os artefatos finais.
 
+Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
+detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
+remoção seletiva. A etapa permanece aberta até a integração visual e o diagnóstico operacional.
+
 CLIs não serão redistribuídos dentro do package. O instalador deverá detectar instalações existentes
 e, mediante consentimento, delegar a instalação ou atualização aos canais oficiais de cada
 fornecedor.

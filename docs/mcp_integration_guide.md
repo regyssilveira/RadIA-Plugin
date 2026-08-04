@@ -199,3 +199,27 @@ Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
 - **Projeto incorreto:** selecione explicitamente o discovery do PID correto.
 
 Consulte também o [Manual Completo do RadIA](user_manual.md).
+
+## Provisionamento seguro dos clientes CLI
+
+O RadIA 2.0 possui um mecanismo de provisionamento para Codex CLI, Claude Code, Gemini CLI e
+GitHub Copilot CLI. A integração visual ainda será ligada à tela de configurações, mas o contrato
+central já garante que o processo siga estas etapas:
+
+1. detectar se a configuração está ausente, válida, divergente ou inválida;
+2. gerar uma prévia sem alterar o arquivo;
+3. confirmar que `RadIA.MCP.Bridge.exe` existe;
+4. preservar servidores MCP e preferências que não pertencem ao RadIA;
+5. criar `<configuração>.radia.bak` antes de qualquer alteração;
+6. inserir ou reparar somente a entrada `radia`;
+7. reler e validar o arquivo gravado;
+8. restaurar o backup automaticamente se a validação falhar;
+9. remover somente a entrada gerenciada quando o usuário desconectar o cliente.
+
+Arquivos JSON são mesclados como objetos, preservando as demais propriedades. No `config.toml` do
+Codex, o RadIA controla apenas o bloco delimitado por `BEGIN/END RadIA managed MCP server`; todo o
+conteúdo externo ao bloco permanece intacto. Configurações inválidas nunca são sobrescritas.
+
+O backup é deliberadamente estável e representa o estado imediatamente anterior à última mutação.
+Antes de provisionar ou remover pela interface, o RadIA sempre deverá apresentar a prévia e solicitar
+consentimento explícito.
