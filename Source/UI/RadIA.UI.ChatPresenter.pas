@@ -7,6 +7,7 @@ uses
   RadIA.Core.Sessions, RadIA.Core.PromptTemplates,
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
+  RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
   RadIA.Core.Tools, RadIA.Core.ToolSecurity, RadIA.Core.Workspace;
 
 type
@@ -78,6 +79,8 @@ type
     FWorkspace: IRadIAWorkspaceFacade;
     FAgentModeEnabled: Boolean;
     FAgentController: IRadIAAgentRunController;
+    FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
+    FCliProcessSession: IRadIACliProcessSession;
 
     procedure UpdateModelsCombo;
 
@@ -142,6 +145,11 @@ type
     procedure SetAgentModeEnabled(const AEnabled: Boolean);
     procedure PostAgentModeToWeb;
     procedure StartAgentRun(const AObjective: string);
+    function TryStartCliAgentRun(const AObjective: string): Boolean;
+    procedure HandleCliAgentFinished(
+      const AResult: TRadIACliProcessResult;
+      const AClientName: string
+    );
     procedure PauseAgentRun;
     procedure ResumeAgentRun;
     procedure PostAgentStateToWeb(const ASnapshotJson: string);
@@ -156,6 +164,18 @@ type
     procedure HandleCancelRequestMessage;
     procedure HandleClearChatMessage;
     procedure HandleStreamChunkMessage(const AText: string; const AIsDone: Boolean; const AError: string);
+    function TryHandleAgentCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleCatalogCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    procedure HandleExplicitToolCommand(
+      const APromptText: string;
+      const ACommandText: string
+    );
     function TryHandleToolPrompt(const APromptText: string): Boolean;
     procedure ExecuteRegisteredTool(
       const AName: string;
@@ -179,10 +199,20 @@ type
     procedure PostToolsCatalogToWeb(const AAction: string);
     procedure PostJsonToWeb(const AJson: TJSONObject);
   public
-    constructor Create(const AView: IRadIAChatView; const AConfig: IRadIAConfig;
-      const AService: IRadIAService = nil; const ADataDir: string = '';
-      const AToolRegistry: IRadIAToolRegistry = nil;
-      const AToolExecutor: IRadIAToolExecutor = nil);
+    constructor Create(
+      const AView: IRadIAChatView;
+      const AConfig: IRadIAConfig;
+      const AService: IRadIAService = nil;
+      const ADataDir: string = ''
+    ); overload;
+    constructor Create(
+      const AView: IRadIAChatView;
+      const AConfig: IRadIAConfig;
+      const AService: IRadIAService;
+      const ADataDir: string;
+      const AToolRegistry: IRadIAToolRegistry;
+      const AToolExecutor: IRadIAToolExecutor
+    ); overload;
     destructor Destroy; override;
 
     procedure Initialize(const AWebFilesDir: string);
@@ -250,6 +280,7 @@ uses
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
   RadIA.Core.AgentPricing, RadIA.Core.AgentProvider,
+  RadIA.Core.CliManager, RadIA.Core.CliMcpSettings,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -267,6 +298,23 @@ begin
 end;
 
 { TRadIAChatPresenter }
+
+constructor TRadIAChatPresenter.Create(
+  const AView: IRadIAChatView;
+  const AConfig: IRadIAConfig;
+  const AService: IRadIAService;
+  const ADataDir: string
+);
+begin
+  Create(
+    AView,
+    AConfig,
+    AService,
+    ADataDir,
+    nil,
+    nil
+  );
+end;
 
 constructor TRadIAChatPresenter.Create(
   const AView: IRadIAChatView;
@@ -290,6 +338,7 @@ begin
   FPendingPrompt := '';
   FLoginPopupOpen := False;
   FAgentModeEnabled := True;
+  FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
 
   // WebViewBridge events removed
 
@@ -349,6 +398,11 @@ end;
 
 destructor TRadIAChatPresenter.Destroy;
 begin
+  if Assigned(FCliProcessSession) then
+  begin
+    FCliProcessSession.Cancel;
+    FCliProcessSession := nil;
+  end;
   if Assigned(FAgentController) then
   begin
     FAgentController.Cancel;
@@ -376,6 +430,7 @@ begin
   FTemplateManager.Free;
   FSessionManager.Free;
   FPendingWebMessages.Free;
+  FAgentExecutorSettings.Free;
 
   if FOwnsService and Assigned(FAIService) then
     FAIService := nil;
@@ -1319,7 +1374,9 @@ begin
     FCancelledByUser := True;
     TLogger.Log('CancelRequest: User requested cancellation.', 'UI');
     FView.SetRequestState(False);
-    if Assigned(FAgentController) and FAgentController.IsRunning then
+    if Assigned(FCliProcessSession) and FCliProcessSession.IsRunning then
+      FCliProcessSession.Cancel
+    else if Assigned(FAgentController) and FAgentController.IsRunning then
       FAgentController.Cancel
     else
       FAIService.CancelCurrentRequest;
@@ -1793,20 +1850,13 @@ begin
     AHandled := False;
 end;
 
-function TRadIAChatPresenter.TryHandleToolPrompt(
-  const APromptText: string
+function TRadIAChatPresenter.TryHandleAgentCommand(
+  const APromptText: string;
+  const ACommandText: string
 ): Boolean;
-var
-  LArgumentsJson: string;
-  LCommand: string;
-  LSeparator: Integer;
-  LText: string;
-  LToolName: string;
 begin
-  Result := False;
-  LText := Trim(APromptText);
-
-  if LText.StartsWith('/agent run ', True) then
+  Result := True;
+  if ACommandText.StartsWith('/agent run ', True) then
   begin
     PostToWebView('add_message', 'user', APromptText);
     if not FAgentModeEnabled then
@@ -1819,51 +1869,59 @@ begin
       Exit(True);
     end;
     StartAgentRun(
-      Trim(Copy(LText, Length('/agent run ') + 1, MaxInt))
+      Trim(Copy(ACommandText, Length('/agent run ') + 1, MaxInt))
     );
-    Exit(True);
+    Exit;
   end;
 
-  if SameText(LText, '/agent pause') then
+  if SameText(ACommandText, '/agent pause') then
   begin
     PauseAgentRun;
-    Exit(True);
+    Exit;
   end;
 
-  if SameText(LText, '/agent resume') then
+  if SameText(ACommandText, '/agent resume') then
   begin
     ResumeAgentRun;
-    Exit(True);
+    Exit;
   end;
 
-  if SameText(LText, '/agent cancel') then
+  if SameText(ACommandText, '/agent cancel') then
   begin
     CancelRequest;
-    Exit(True);
+    Exit;
   end;
 
-  if SameText(LText, '/agent') or
-    SameText(LText, '/agent on') or
-    SameText(LText, '/agent off') then
+  if SameText(ACommandText, '/agent') or
+    SameText(ACommandText, '/agent on') or
+    SameText(ACommandText, '/agent off') then
   begin
     PostToWebView('add_message', 'user', APromptText);
-    if SameText(LText, '/agent on') then
+    if SameText(ACommandText, '/agent on') then
       SetAgentModeEnabled(True)
-    else if SameText(LText, '/agent off') then
+    else if SameText(ACommandText, '/agent off') then
       SetAgentModeEnabled(False)
     else
       SetAgentModeEnabled(not FAgentModeEnabled);
-    Exit(True);
+    Exit;
   end;
+  Result := False;
+end;
 
-  if SameText(LText, '/tools') then
+function TRadIAChatPresenter.TryHandleCatalogCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := True;
+  if SameText(ACommandText, '/tools') then
   begin
     PostToWebView('add_message', 'user', APromptText);
     PostToolsCatalogToWeb('show_tools');
-    Exit(True);
+    Exit;
   end;
 
-  if SameText(LText, '/revoke-tools') then
+  if SameText(ACommandText, '/revoke-tools') then
   begin
     PostToWebView('add_message', 'user', APromptText);
     if Assigned(FToolPolicyExecutor) then
@@ -1873,15 +1931,23 @@ begin
       'assistant',
       'All session tool permissions were revoked.'
     );
-    Exit(True);
-  end;
-
-  if not SameText(LText, '/tool') and
-    not LText.StartsWith('/tool ', True) then
     Exit;
+  end;
+  Result := False;
+end;
 
+procedure TRadIAChatPresenter.HandleExplicitToolCommand(
+  const APromptText: string;
+  const ACommandText: string
+);
+var
+  LArgumentsJson: string;
+  LCommand: string;
+  LSeparator: Integer;
+  LToolName: string;
+begin
   PostToWebView('add_message', 'user', APromptText);
-  LCommand := Trim(Copy(LText, Length('/tool') + 1, MaxInt));
+  LCommand := Trim(Copy(ACommandText, Length('/tool') + 1, MaxInt));
   LSeparator := Pos(' ', LCommand);
   if LSeparator > 0 then
   begin
@@ -1897,7 +1963,23 @@ begin
   if LArgumentsJson = '' then
     LArgumentsJson := '{}';
   ExecuteRegisteredTool(LToolName, LArgumentsJson);
-  Result := True;
+end;
+
+function TRadIAChatPresenter.TryHandleToolPrompt(
+  const APromptText: string
+): Boolean;
+var
+  LText: string;
+begin
+  LText := Trim(APromptText);
+  if TryHandleAgentCommand(APromptText, LText) then
+    Exit(True);
+  if TryHandleCatalogCommand(APromptText, LText) then
+    Exit(True);
+  Result := SameText(LText, '/tool') or
+    LText.StartsWith('/tool ', True);
+  if Result then
+    HandleExplicitToolCommand(APromptText, LText);
 end;
 
 procedure TRadIAChatPresenter.ExecuteRegisteredTool(
@@ -2205,6 +2287,8 @@ var
   LStore: IRadIAAgentCheckpointStore;
   LUserMessage: IRadIAChatMessage;
 begin
+  if TryStartCliAgentRun(AObjective) then
+    Exit;
   if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
   begin
     PostToWebView(
@@ -2306,6 +2390,162 @@ begin
     LSessionId,
     LProjectId,
     LLimits
+  );
+end;
+
+function TRadIAChatPresenter.TryStartCliAgentRun(
+  const AObjective: string
+): Boolean;
+var
+  LClientSettings: TRadIACliMcpClientSettings;
+  LClientStore: TRadIACliMcpSettings;
+  LDefinition: TRadIACliDefinition;
+  LDetection: TRadIACliDetection;
+  LDetector: TRadIACliDetector;
+  LGuard: IRadIALifecycleGuard;
+  LInvocation: TRadIACliInvocation;
+  LProject: TRadIAProjectSnapshot;
+  LSettings: TRadIAAgentExecutorSettings;
+  LUserMessage: IRadIAChatMessage;
+  LWorkingDirectory: string;
+begin
+  LSettings := FAgentExecutorSettings.Load;
+  Result := LSettings.Kind = aekCli;
+  if not Result then
+    Exit;
+  if not CheckQuotaAvailability then
+    Exit;
+  if not TRadIACliCatalog.FindById(LSettings.CliClientId, LDefinition) then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'The selected CLI executor is no longer supported.'
+    );
+    Exit;
+  end;
+  LProject := Default(TRadIAProjectSnapshot);
+  if Assigned(FWorkspace) then
+    LProject := FWorkspace.GetActiveProject;
+  LWorkingDirectory := ExtractFileDir(LProject.FileName);
+  if LWorkingDirectory = '' then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Open a Delphi project before starting an external CLI agent.'
+    );
+    Exit;
+  end;
+
+  LClientStore := TRadIACliMcpSettings.Create;
+  try
+    LClientSettings := LClientStore.Load(LDefinition.Id, '', '');
+  finally
+    LClientStore.Free;
+  end;
+  LDetector := TRadIACliDetector.Create;
+  try
+    LDetection := LDetector.Detect(
+      LDefinition,
+      LClientSettings.CliExecutablePath
+    );
+  finally
+    LDetector.Free;
+  end;
+  if not LDetection.Installed then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      LDefinition.DisplayName +
+        ' was not found. Open Settings > CLI & MCP to diagnose it.'
+    );
+    Exit;
+  end;
+
+  LInvocation := TRadIACliInvocationBuilder.Build(
+    LDefinition,
+    LDetection.ExecutablePath,
+    AObjective,
+    LWorkingDirectory
+  );
+  LUserMessage := TRadIAChatMessage.CreateMessage(
+    mrUser,
+    AObjective,
+    LDefinition.DisplayName,
+    'CLI'
+  );
+  FHistory := FHistory + [LUserMessage];
+  SaveChatHistory;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  FCliProcessSession := TRadIACliProcessRunner.Start(
+    LInvocation,
+    15 * 60 * 1000,
+    nil,
+    nil,
+    procedure(AResult: TRadIACliProcessResult)
+    begin
+      TThread.Queue(
+        nil,
+        procedure
+        begin
+          if LGuard.IsAlive then
+            Self.HandleCliAgentFinished(
+              AResult,
+              LDefinition.DisplayName
+            );
+        end
+      );
+    end
+  );
+end;
+
+procedure TRadIAChatPresenter.HandleCliAgentFinished(
+  const AResult: TRadIACliProcessResult;
+  const AClientName: string
+);
+var
+  LMessage: IRadIAChatMessage;
+  LResponse: string;
+begin
+  FCliProcessSession := nil;
+  FRequestInProgress := False;
+  FView.SetRequestState(False);
+  if AResult.Cancelled or FCancelledByUser then
+    LResponse := 'CLI agent execution was cancelled.'
+  else if AResult.TimedOut then
+    LResponse := 'CLI agent execution exceeded the 15-minute limit.'
+  else if not AResult.Succeeded then
+  begin
+    LResponse := Trim(AResult.StdErr);
+    if LResponse = '' then
+      LResponse := Trim(AResult.StdOut);
+    if LResponse = '' then
+      LResponse := Format(
+        'CLI agent failed with exit code %d.',
+        [AResult.ExitCode]
+      );
+  end
+  else
+    LResponse := TRadIACliOutputParser.ExtractFinalText(AResult.StdOut);
+  LMessage := TRadIAChatMessage.CreateMessage(
+    mrAssistant,
+    LResponse,
+    AClientName,
+    'CLI'
+  );
+  FHistory := FHistory + [LMessage];
+  SaveChatHistory;
+  PostToWebView(
+    'add_message',
+    'assistant',
+    LResponse,
+    AClientName,
+    'CLI'
   );
 end;
 

@@ -26,6 +26,24 @@ do Windows apenas na fronteira de execução. O prompt não é concatenado a um 
 - A seleção não habilita opções de aprovação automática dos CLIs.
 - MCP continua sendo provisionado e diagnosticado separadamente.
 
-Esta camada estabelece os perfis e a preferência persistente. O transporte de processos, streaming,
-cancelamento da árvore de processos e renderização no terminal acoplável são a próxima parte do
-mesmo fluxo antes do fechamento da versão 2.0.
+Essa configuração estabelece os perfis e a preferência persistente usados pelo transporte descrito
+a seguir.
+
+## Execução integrada ao chat
+
+Quando **Selected CLI** está ativo e existe um projeto Delphi aberto, o modo agente encaminha o
+objetivo ao CLI detectado usando a pasta do projeto como diretório de trabalho. O processo:
+
+- roda fora da thread da interface;
+- captura stdout e stderr incrementalmente, com limite de memória;
+- normaliza a resposta final de JSON ou JSONL para a conversa;
+- possui timeout de 15 minutos;
+- entra em um Job Object do Windows;
+- encerra toda a árvore de processos ao cancelar, exceder o timeout ou fechar o RadIA.
+
+Se o executável não estiver disponível, o RadIA não inicia uma execução parcial: ele informa o
+problema e direciona o usuário ao diagnóstico em **CLI & MCP**. A seleção pode ser alterada para o
+agente nativo e vale na próxima solicitação, sem reiniciar a IDE.
+
+O terminal acoplável reutilizará o mesmo transporte e callbacks incrementais; sua interface visual,
+histórico e snippets ainda fazem parte do gate da versão 2.0.

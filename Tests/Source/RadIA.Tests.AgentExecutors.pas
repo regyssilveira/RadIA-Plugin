@@ -29,6 +29,10 @@ type
     procedure CommandLineQuotesPromptWithoutShellExpansion;
     [Test]
     procedure EmptyPromptIsRejected;
+    [Test]
+    procedure StructuredOutputsReturnLastAssistantText;
+    [Test]
+    procedure PlainOutputIsPreserved;
   end;
 
 implementation
@@ -195,6 +199,34 @@ begin
   finally
     LSettings.Free;
   end;
+end;
+
+procedure TRadIAAgentExecutorTests.PlainOutputIsPreserved;
+begin
+  Assert.AreEqual(
+    'Plain CLI response',
+    TRadIACliOutputParser.ExtractFinalText('  Plain CLI response  ')
+  );
+end;
+
+procedure TRadIAAgentExecutorTests.StructuredOutputsReturnLastAssistantText;
+var
+  LOutput: string;
+begin
+  LOutput :=
+    '{"type":"item.completed","item":{"type":"agent_message",' +
+    '"text":"Codex answer"}}' + sLineBreak +
+    '{"type":"result","result":"Final answer"}';
+  Assert.AreEqual(
+    'Final answer',
+    TRadIACliOutputParser.ExtractFinalText(LOutput)
+  );
+  Assert.AreEqual(
+    'Gemini answer',
+    TRadIACliOutputParser.ExtractFinalText(
+      '{"response":"Gemini answer","stats":{"tokens":12}}'
+    )
+  );
 end;
 
 procedure TRadIAAgentExecutorTests.UnknownCliSelectionIsRejected;

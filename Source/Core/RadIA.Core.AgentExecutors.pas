@@ -3,6 +3,7 @@ unit RadIA.Core.AgentExecutors;
 interface
 
 uses
+  System.JSON,
   RadIA.Core.CliManager,
   RadIA.Core.SettingsStorage;
 
@@ -80,9 +81,28 @@ type
     ): TRadIACliInvocation; static;
   end;
 
+  TRadIACliOutputParser = class
+  private
+    class function FindArrayText(
+      const AArray: TJSONArray;
+      out AText: string
+    ): Boolean; static;
+    class function FindObjectText(
+      const AObject: TJSONObject;
+      out AText: string
+    ): Boolean; static;
+    class function FindText(
+      const AValue: TObject;
+      out AText: string
+    ): Boolean; static;
+  public
+    class function ExtractFinalText(const AOutput: string): string; static;
+  end;
+
 implementation
 
 uses
+  System.Classes,
   System.Generics.Collections,
   System.SysUtils,
   RadIA.Core.Config;
@@ -297,6 +317,99 @@ begin
     raise EArgumentOutOfRangeException.Create('The CLI prompt exceeds the supported limit.');
   if Trim(AWorkingDirectory) = '' then
     raise EArgumentException.Create('The CLI working directory is required.');
+end;
+
+{ TRadIACliOutputParser }
+
+class function TRadIACliOutputParser.ExtractFinalText(
+  const AOutput: string
+): string;
+var
+  LCandidate: string;
+  LJson: TJSONValue;
+  LLine: string;
+  LLines: TStringList;
+begin
+  Result := '';
+  LLines := TStringList.Create;
+  try
+    LLines.Text := AOutput;
+    for LLine in LLines do
+    begin
+      LJson := TJSONObject.ParseJSONValue(Trim(LLine));
+      try
+        if Assigned(LJson) and FindText(LJson, LCandidate) and
+          (Trim(LCandidate) <> '') then
+          Result := LCandidate;
+      finally
+        LJson.Free;
+      end;
+    end;
+  finally
+    LLines.Free;
+  end;
+  if Result = '' then
+    Result := Trim(AOutput);
+end;
+
+class function TRadIACliOutputParser.FindText(
+  const AValue: TObject;
+  out AText: string
+): Boolean;
+begin
+  AText := '';
+  if AValue is TJSONObject then
+    Exit(FindObjectText(TJSONObject(AValue), AText));
+  if AValue is TJSONArray then
+    Exit(FindArrayText(TJSONArray(AValue), AText));
+  Result := False;
+end;
+
+class function TRadIACliOutputParser.FindArrayText(
+  const AArray: TJSONArray;
+  out AText: string
+): Boolean;
+var
+  LChild: TJSONValue;
+begin
+  for LChild in AArray do
+    if FindText(LChild, AText) then
+      Exit(True);
+  AText := '';
+  Result := False;
+end;
+
+class function TRadIACliOutputParser.FindObjectText(
+  const AObject: TJSONObject;
+  out AText: string
+): Boolean;
+const
+  CPreferredNames: array[0..4] of string = (
+    'result',
+    'response',
+    'text',
+    'message',
+    'content'
+  );
+var
+  LName: string;
+  LPair: TJSONPair;
+  LPreferred: TJSONValue;
+begin
+  AText := '';
+  for LName in CPreferredNames do
+  begin
+    LPreferred := AObject.GetValue(LName);
+    if LPreferred is TJSONString then
+    begin
+      AText := TJSONString(LPreferred).Value;
+      Exit(True);
+    end;
+  end;
+  for LPair in AObject do
+    if FindText(LPair.JsonValue, AText) then
+      Exit(True);
+  Result := False;
 end;
 
 end.

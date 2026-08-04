@@ -225,7 +225,9 @@ antes de aplicar a composição selecionada ao editor.
 Fundação de executores híbridos entregue nesta branch: a configuração permite persistir o agente
 nativo ou um dos quatro CLIs suportados sem reiniciar a IDE. Os perfis não interativos constroem
 argumentos separados, solicitam saída estruturada e não habilitam aprovação automática. O item
-permanece aberto até conectar o transporte assíncrono, streaming e cancelamento por árvore.
+agora inclui transporte assíncrono, captura incremental, normalização de JSONL, timeout e
+cancelamento da árvore via Job Object. O item permanece aberto para o terminal visual, histórico,
+snippets e onboarding.
 
 Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
