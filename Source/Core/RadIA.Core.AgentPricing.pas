@@ -2,6 +2,9 @@ unit RadIA.Core.AgentPricing;
 
 interface
 
+uses
+  System.JSON;
+
 type
   TRadIAAgentPricing = record
   private
@@ -33,6 +36,21 @@ type
   private
     FFileName: string;
     FDefaultRunBudgetMicros: Int64;
+    procedure LoadCatalogSettings(const ARoot: TJSONObject);
+    function PricingMatches(
+      const AItem: TJSONObject;
+      const AProvider: string;
+      const AModel: string;
+      const AExactModel: Boolean
+    ): Boolean;
+    function TryResolvePass(
+      const APrices: TJSONArray;
+      const AProvider: string;
+      const AModel: string;
+      const AExactModel: Boolean;
+      out AMatched: Boolean;
+      out APricing: TRadIAAgentPricing
+    ): Boolean;
     procedure ValidateRate(
       const AName: string;
       const AValue: Double
@@ -53,7 +71,6 @@ implementation
 
 uses
   System.IOUtils,
-  System.JSON,
   System.Math,
   System.SysUtils;
 
@@ -135,6 +152,49 @@ begin
   end;
 end;
 
+procedure TRadIAAgentPricingCatalog.LoadCatalogSettings(
+  const ARoot: TJSONObject
+);
+var
+  LBudgetUsd: Double;
+begin
+  if ARoot.GetValue<Integer>('schemaVersion', 0) <> 1 then
+    raise EConvertError.Create(
+      'Agent pricing catalog schema is not supported.'
+    );
+  if not SameText(ARoot.GetValue<string>('currency', ''), 'USD') then
+    raise EConvertError.Create(
+      'Agent pricing catalog currently supports only USD.'
+    );
+  LBudgetUsd := ARoot.GetValue<Double>(
+    'defaultRunBudgetUsd',
+    CDefaultBudgetUsd
+  );
+  if (LBudgetUsd <= 0) or (LBudgetUsd > 10000) then
+    raise EConvertError.Create(
+      'Agent default run budget must be between USD 0 and 10000.'
+    );
+  FDefaultRunBudgetMicros := Round(LBudgetUsd * 1000000);
+end;
+
+function TRadIAAgentPricingCatalog.PricingMatches(
+  const AItem: TJSONObject;
+  const AProvider: string;
+  const AModel: string;
+  const AExactModel: Boolean
+): Boolean;
+var
+  LItemModel: string;
+begin
+  if not SameText(AItem.GetValue<string>('provider', ''), AProvider) then
+    Exit(False);
+  LItemModel := AItem.GetValue<string>('model', '');
+  if AExactModel then
+    Result := SameText(LItemModel, AModel)
+  else
+    Result := LItemModel = '*';
+end;
+
 function TRadIAAgentPricingCatalog.TryResolve(
   const AProvider: string;
   const AModel: string;
@@ -142,13 +202,7 @@ function TRadIAAgentPricingCatalog.TryResolve(
 ): Boolean;
 var
   LArray: TJSONArray;
-  LBudgetUsd: Double;
-  LIndex: Integer;
-  LInputRate: Double;
-  LItem: TJSONObject;
-  LItemModel: string;
-  LOutputRate: Double;
-  LPass: Integer;
+  LMatched: Boolean;
   LRoot: TJSONObject;
   LText: string;
 begin
@@ -160,64 +214,69 @@ begin
   if not Assigned(LRoot) then
     raise EConvertError.Create('Agent pricing catalog is not valid JSON.');
   try
-    if LRoot.GetValue<Integer>('schemaVersion', 0) <> 1 then
-      raise EConvertError.Create(
-        'Agent pricing catalog schema is not supported.'
-      );
-    if not SameText(LRoot.GetValue<string>('currency', ''), 'USD') then
-      raise EConvertError.Create(
-        'Agent pricing catalog currently supports only USD.'
-      );
-    LBudgetUsd := LRoot.GetValue<Double>(
-      'defaultRunBudgetUsd',
-      CDefaultBudgetUsd
-    );
-    if (LBudgetUsd <= 0) or (LBudgetUsd > 10000) then
-      raise EConvertError.Create(
-        'Agent default run budget must be between USD 0 and 10000.'
-      );
-    FDefaultRunBudgetMicros := Round(LBudgetUsd * 1000000);
+    LoadCatalogSettings(LRoot);
     LArray := LRoot.GetValue<TJSONArray>('prices');
     if not Assigned(LArray) then
       Exit;
-    for LPass := 0 to 1 do
-    begin
-      for LIndex := 0 to LArray.Count - 1 do
-      begin
-        if not (LArray.Items[LIndex] is TJSONObject) then
-          Continue;
-        LItem := TJSONObject(LArray.Items[LIndex]);
-        if not SameText(
-          LItem.GetValue<string>('provider', ''),
-          AProvider
-        ) then
-          Continue;
-        LItemModel := LItem.GetValue<string>('model', '');
-        if (LPass = 0) and not SameText(LItemModel, AModel) then
-          Continue;
-        if (LPass = 1) and (LItemModel <> '*') then
-          Continue;
-        LInputRate := LItem.GetValue<Double>(
-          'inputUsdPerMillionTokens',
-          0
-        );
-        LOutputRate := LItem.GetValue<Double>(
-          'outputUsdPerMillionTokens',
-          0
-        );
-        ValidateRate('input', LInputRate);
-        ValidateRate('output', LOutputRate);
-        APricing := TRadIAAgentPricing.Create(
-          AProvider,
-          LItemModel,
-          LInputRate,
-          LOutputRate
-        );
-        Exit(APricing.IsConfigured);
-      end;
-    end;
+    Result := TryResolvePass(
+      LArray,
+      AProvider,
+      AModel,
+      True,
+      LMatched,
+      APricing
+    );
+    if not LMatched then
+      Result := TryResolvePass(
+        LArray,
+        AProvider,
+        AModel,
+        False,
+        LMatched,
+        APricing
+      );
   finally
     LRoot.Free;
+  end;
+end;
+
+function TRadIAAgentPricingCatalog.TryResolvePass(
+  const APrices: TJSONArray;
+  const AProvider: string;
+  const AModel: string;
+  const AExactModel: Boolean;
+  out AMatched: Boolean;
+  out APricing: TRadIAAgentPricing
+): Boolean;
+var
+  LIndex: Integer;
+  LInputRate: Double;
+  LItem: TJSONObject;
+  LItemModel: string;
+  LOutputRate: Double;
+begin
+  Result := False;
+  AMatched := False;
+  for LIndex := 0 to APrices.Count - 1 do
+  begin
+    if not (APrices.Items[LIndex] is TJSONObject) then
+      Continue;
+    LItem := TJSONObject(APrices.Items[LIndex]);
+    if not PricingMatches(LItem, AProvider, AModel, AExactModel) then
+      Continue;
+    AMatched := True;
+    LItemModel := LItem.GetValue<string>('model', '');
+    LInputRate := LItem.GetValue<Double>('inputUsdPerMillionTokens', 0);
+    LOutputRate := LItem.GetValue<Double>('outputUsdPerMillionTokens', 0);
+    ValidateRate('input', LInputRate);
+    ValidateRate('output', LOutputRate);
+    APricing := TRadIAAgentPricing.Create(
+      AProvider,
+      LItemModel,
+      LInputRate,
+      LOutputRate
+    );
+    Exit(APricing.IsConfigured);
   end;
 end;
 

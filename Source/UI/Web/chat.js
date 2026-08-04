@@ -26,10 +26,10 @@ function normalizeCodeLanguage(language, code) {
     '',
     'code',
     'codigo',
-    'cÃ³digo',
+    'c\u00F3digo',
     'snippet',
     'snippet de codigo',
-    'snippet de cÃ³digo'
+    'snippet de c\u00F3digo'
   ];
 
   if (pascalAliases.includes(normalized) ||
@@ -511,82 +511,56 @@ function renderComponentPropertyPreview(card, result, actionName) {
   );
 }
 
+const TOOL_RESULT_RENDERERS = {
+  PreparePatch: [renderPatchPreview, 'ApplyPatch'],
+  ApplyPatch: [renderPatchPreview, 'RevertPatch'],
+  PrepareComponentLayout: [
+    renderComponentLayoutPreview,
+    'ApplyComponentLayout'
+  ],
+  ApplyComponentLayout: [
+    renderComponentLayoutPreview,
+    'RevertComponentLayout'
+  ],
+  RevertComponentLayout: [
+    renderComponentLayoutPreview,
+    'ApplyComponentLayout'
+  ],
+  PrepareComponentProperty: [
+    renderComponentPropertyPreview,
+    'ApplyComponentProperty'
+  ],
+  ApplyComponentProperty: [
+    renderComponentPropertyPreview,
+    'RevertComponentProperty'
+  ],
+  RevertComponentProperty: [
+    renderComponentPropertyPreview,
+    'ApplyComponentProperty'
+  ]
+};
+
+function renderDefaultToolResult(content, data) {
+  content.textContent = data.success
+    ? formatToolPayload(data.result ?? data.resultText)
+    : `${data.errorCode || 'tool_error'}: ${data.errorMessage || 'Tool execution failed.'}`;
+}
+
 function renderToolResult(data) {
   const card = TOOL_CARDS.get(data.correlationId) ||
     createToolCard(data.name, data.correlationId);
   const status = card.querySelector('.tool-card-status');
   const content = card.querySelector('.tool-card-content');
+  const renderer = data.success && data.result
+    ? TOOL_RESULT_RENDERERS[data.name]
+    : undefined;
 
   card.classList.toggle('tool-card-error', !data.success);
   status.textContent = data.success ? 'Completed' : 'Failed';
-  if (data.success && data.name === 'PreparePatch' && data.result) {
-    renderPatchPreview(card, data.result, 'ApplyPatch');
-  } else if (data.success && data.name === 'ApplyPatch' && data.result) {
-    renderPatchPreview(card, data.result, 'RevertPatch');
-  } else if (
-    data.success &&
-    data.name === 'PrepareComponentLayout' &&
-    data.result
-  ) {
-    renderComponentLayoutPreview(
-      card,
-      data.result,
-      'ApplyComponentLayout'
-    );
-  } else if (
-    data.success &&
-    data.name === 'ApplyComponentLayout' &&
-    data.result
-  ) {
-    renderComponentLayoutPreview(
-      card,
-      data.result,
-      'RevertComponentLayout'
-    );
-  } else if (
-    data.success &&
-    data.name === 'RevertComponentLayout' &&
-    data.result
-  ) {
-    renderComponentLayoutPreview(
-      card,
-      data.result,
-      'ApplyComponentLayout'
-    );
-  } else if (
-    data.success &&
-    data.name === 'PrepareComponentProperty' &&
-    data.result
-  ) {
-    renderComponentPropertyPreview(
-      card,
-      data.result,
-      'ApplyComponentProperty'
-    );
-  } else if (
-    data.success &&
-    data.name === 'ApplyComponentProperty' &&
-    data.result
-  ) {
-    renderComponentPropertyPreview(
-      card,
-      data.result,
-      'RevertComponentProperty'
-    );
-  } else if (
-    data.success &&
-    data.name === 'RevertComponentProperty' &&
-    data.result
-  ) {
-    renderComponentPropertyPreview(
-      card,
-      data.result,
-      'ApplyComponentProperty'
-    );
+  if (renderer) {
+    renderer[0](card, data.result, renderer[1]);
   } else {
-    content.textContent = data.success
-      ? formatToolPayload(data.result ?? data.resultText)
-      : `${data.errorCode || 'tool_error'}: ${data.errorMessage || 'Tool execution failed.'}`;
+    renderDefaultToolResult(content, data);
   }
   TOOL_CARDS.delete(data.correlationId);
   chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1582,7 +1556,7 @@ function applyCode(id) {
 
 function renderTokenStats(text) {
   const parts = String(text || '')
-    .split('Â·')
+    .split('\u00B7')
     .map(part => part.trim())
     .filter(Boolean);
 
@@ -1622,7 +1596,7 @@ function renderTokenStats(text) {
     if (index > 0) {
       const separator = document.createElement('span');
       separator.className = 'token-stat-separator';
-      separator.textContent = 'Â·';
+      separator.textContent = '\u00B7';
       statusText.appendChild(separator);
     }
 

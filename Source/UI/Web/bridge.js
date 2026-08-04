@@ -21,7 +21,7 @@
           !hasPageText([
             'you are using our basic model',
             'voce esta usando o nosso modelo basico',
-            'vocÃª estÃ¡ usando o nosso modelo bÃ¡sico'
+            'voc\u00EA est\u00E1 usando o nosso modelo b\u00E1sico'
           ]);
       },
       isGenerating: () => {
