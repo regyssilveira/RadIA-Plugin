@@ -590,6 +590,7 @@ begin
       begin
         if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
            SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
+           SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
            SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
         begin
           LToolsAlreadyPopulated := True;
@@ -636,6 +637,7 @@ begin
       begin
         if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
            SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
+           SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
            SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
         begin
           LToolsPopulated := True;
@@ -674,6 +676,7 @@ procedure TRadIAWizard.UnregisterMenus;
         LItem := AToolsMenu[I];
         if SameText(LItem.Caption, 'RadIA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Chat Panel') or
+           SameText(LItem.Caption, 'Rad IA Terminal') or
            SameText(LItem.Caption, 'Fix Last Compiler Error') or
            SameText(LItem.Caption, 'RadIA New Project...') then
         begin

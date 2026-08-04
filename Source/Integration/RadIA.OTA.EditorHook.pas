@@ -57,6 +57,7 @@ type
     procedure OnCreateExampleExecute(Sender: TObject);
     procedure OnFixErrorExecute(Sender: TObject);
     procedure OnShowChatExecute(Sender: TObject);
+    procedure OnShowTerminalExecute(Sender: TObject);
 
     function BuildCreateExamplePrompt(const ASourceCode: string; const AContext: TMethodExampleContext): string;
     function GetEditorCodeContext(out ACode: string; out AUsedSelection: Boolean): Boolean;
@@ -98,6 +99,11 @@ const
 procedure ShowRadIAChat;
 begin
   // Stub for unit tests to avoid pulling VCL Forms/WebView2 components
+end;
+
+procedure ShowRadIATerminal;
+begin
+  // Stub for unit tests to avoid pulling native dockable forms.
 end;
 {$ENDIF}
 
@@ -690,6 +696,11 @@ begin
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Terminal';
+  LItem.OnClick := OnShowTerminalExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Fix Last Compiler Error';
   LItem.OnClick := OnFixErrorExecute;
   AMenuItem.Add(LItem);
@@ -762,6 +773,11 @@ end;
 procedure TRadIAEditorHook.OnShowChatExecute(Sender: TObject);
 begin
   ShowRadIAChat;
+end;
+
+procedure TRadIAEditorHook.OnShowTerminalExecute(Sender: TObject);
+begin
+  ShowRadIATerminal;
 end;
 
 procedure TRadIAEditorHook.OnOptimizeExecute(Sender: TObject);

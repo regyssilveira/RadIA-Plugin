@@ -229,6 +229,10 @@ agora inclui transporte assíncrono, captura incremental, normalização de JSON
 cancelamento da árvore via Job Object. O item permanece aberto para o terminal visual, histórico,
 snippets e onboarding.
 
+Terminal acoplável entregue nesta branch: painel nativo registrado no desktop do Delphi, perfis
+PowerShell e Command Prompt, streaming de stdout/stderr, histórico local limitado, snippets,
+timeout e encerramento em cascata. A etapa permanece aberta somente para o onboarding integrado.
+
 Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
 remoção seletiva. A etapa permanece aberta até a integração visual e o diagnóstico operacional.

@@ -3,26 +3,26 @@ unit RadIA.OTA.DockableForm;
 interface
 
 procedure ShowRadIAChat;
+procedure ShowRadIATerminal;
 procedure RegisterDockableForm;
 procedure UnregisterDockableForm;
 
 implementation
 
 uses
-  System.Actions,
   System.Classes,
   System.IniFiles,
   System.SysUtils,
   DesignIntf,
   Vcl.ActnList,
   Vcl.ComCtrls,
-  Vcl.Controls,
   Vcl.Forms,
   Vcl.ImgList,
   Vcl.Menus,
   ToolsAPI,
   RadIA.Core.Types,
-  RadIA.UI.ChatFrame;
+  RadIA.UI.ChatFrame,
+  RadIA.UI.TerminalFrame;
 
 type
   TRadIACustomDockableForm = class;
@@ -39,12 +39,24 @@ type
   TRadIACustomDockableForm = class(TInterfacedObject, INTACustomDockableForm)
   private
     FForm: TCustomForm;
-    FFrame: TRadIAFrameAIChat;
+    FFrame: TCustomFrame;
     FObserver: TRadIADockableFormObserver;
+    FCaption: string;
+    FIdentifier: string;
+    FFrameClass: TCustomFrameClass;
+    FDefaultWidth: Integer;
+    FDefaultHeight: Integer;
     procedure ApplyIDETheme;
+    procedure EnsureFrameContent;
     procedure FormRemoved;
   public
-    constructor Create;
+    constructor Create(
+      const ACaption: string;
+      const AIdentifier: string;
+      const AFrameClass: TCustomFrameClass;
+      const ADefaultWidth: Integer;
+      const ADefaultHeight: Integer
+    );
     destructor Destroy; override;
     function GetCaption: string;
     function GetFrameClass: TCustomFrameClass;
@@ -72,6 +84,9 @@ var
   GRadIADockableForm: INTACustomDockableForm;
   GRadIADockableFormHost: TRadIACustomDockableForm = nil;
   GRadIADockableFormRegistered: Boolean = False;
+  GRadIATerminalDockableForm: INTACustomDockableForm;
+  GRadIATerminalDockableFormHost: TRadIACustomDockableForm = nil;
+  GRadIATerminalDockableFormRegistered: Boolean = False;
 
 procedure ShowRadIAChat;
 begin
@@ -80,6 +95,13 @@ begin
     Exit;
 
   GRadIADockableFormHost.Show;
+end;
+
+procedure ShowRadIATerminal;
+begin
+  RegisterDockableForm;
+  if Assigned(GRadIATerminalDockableFormHost) then
+    GRadIATerminalDockableFormHost.Show;
 end;
 
 procedure RegisterDockableForm;
@@ -93,11 +115,31 @@ begin
 
   if not Assigned(GRadIADockableFormHost) then
   begin
-    GRadIADockableFormHost := TRadIACustomDockableForm.Create;
+    GRadIADockableFormHost := TRadIACustomDockableForm.Create(
+      'Rad IA Chat',
+      'RadIADockableForm',
+      TRadIAFrameAIChat,
+      990,
+      650
+    );
     GRadIADockableForm := GRadIADockableFormHost;
   end;
   LServices.RegisterDockableForm(GRadIADockableForm);
   GRadIADockableFormRegistered := True;
+
+  if not Assigned(GRadIATerminalDockableFormHost) then
+  begin
+    GRadIATerminalDockableFormHost := TRadIACustomDockableForm.Create(
+      'Rad IA Terminal',
+      'RadIATerminalDockableForm',
+      TRadIATerminalFrame,
+      900,
+      520
+    );
+    GRadIATerminalDockableForm := GRadIATerminalDockableFormHost;
+  end;
+  LServices.RegisterDockableForm(GRadIATerminalDockableForm);
+  GRadIATerminalDockableFormRegistered := True;
 end;
 
 procedure UnregisterDockableForm;
@@ -109,6 +151,9 @@ begin
     GRadIADockableForm := nil;
     GRadIADockableFormHost := nil;
     GRadIADockableFormRegistered := False;
+    GRadIATerminalDockableForm := nil;
+    GRadIATerminalDockableFormHost := nil;
+    GRadIATerminalDockableFormRegistered := False;
     Exit;
   end;
 
@@ -118,9 +163,17 @@ begin
 
   if Assigned(GRadIADockableFormHost) then
     GRadIADockableFormHost.ReleaseForm;
+  if GRadIATerminalDockableFormRegistered and
+    Supports(BorlandIDEServices, INTAServices270, LServices) then
+    LServices.UnregisterDockableForm(GRadIATerminalDockableForm);
+  if Assigned(GRadIATerminalDockableFormHost) then
+    GRadIATerminalDockableFormHost.ReleaseForm;
   GRadIADockableForm := nil;
   GRadIADockableFormHost := nil;
   GRadIADockableFormRegistered := False;
+  GRadIATerminalDockableForm := nil;
+  GRadIATerminalDockableFormHost := nil;
+  GRadIATerminalDockableFormRegistered := False;
 end;
 
 { TRadIADockableFormObserver }
@@ -144,9 +197,20 @@ end;
 
 { TRadIACustomDockableForm }
 
-constructor TRadIACustomDockableForm.Create;
+constructor TRadIACustomDockableForm.Create(
+  const ACaption: string;
+  const AIdentifier: string;
+  const AFrameClass: TCustomFrameClass;
+  const ADefaultWidth: Integer;
+  const ADefaultHeight: Integer
+);
 begin
   inherited Create;
+  FCaption := ACaption;
+  FIdentifier := AIdentifier;
+  FFrameClass := AFrameClass;
+  FDefaultWidth := ADefaultWidth;
+  FDefaultHeight := ADefaultHeight;
   FObserver := TRadIADockableFormObserver.Create(Self);
 end;
 
@@ -170,8 +234,19 @@ begin
     if Assigned(FForm) then
       LThemingServices.ApplyTheme(FForm);
     LThemingServices.ApplyTheme(FFrame);
-    FFrame.ApplyCurrentTheme;
+    if FFrame is TRadIAFrameAIChat then
+      TRadIAFrameAIChat(FFrame).ApplyCurrentTheme
+    else if FFrame is TRadIATerminalFrame then
+      TRadIATerminalFrame(FFrame).ApplyCurrentTheme;
   end;
+end;
+
+procedure TRadIACustomDockableForm.EnsureFrameContent;
+begin
+  if FFrame is TRadIAFrameAIChat then
+    TRadIAFrameAIChat(FFrame).EnsureVisibleContent
+  else if FFrame is TRadIATerminalFrame then
+    TRadIATerminalFrame(FFrame).EnsureVisibleContent;
 end;
 
 procedure TRadIACustomDockableForm.CustomizePopupMenu(APopupMenu: TPopupMenu);
@@ -197,14 +272,14 @@ end;
 
 procedure TRadIACustomDockableForm.FrameCreated(AFrame: TCustomFrame);
 begin
-  FFrame := TRadIAFrameAIChat(AFrame);
+  FFrame := AFrame;
   ApplyIDETheme;
-  FFrame.EnsureVisibleContent;
+  EnsureFrameContent;
 end;
 
 function TRadIACustomDockableForm.GetCaption: string;
 begin
-  Result := 'Rad IA Chat';
+  Result := FCaption;
 end;
 
 function TRadIACustomDockableForm.GetEditState: TEditState;
@@ -214,12 +289,12 @@ end;
 
 function TRadIACustomDockableForm.GetFrameClass: TCustomFrameClass;
 begin
-  Result := TRadIAFrameAIChat;
+  Result := FFrameClass;
 end;
 
 function TRadIACustomDockableForm.GetIdentifier: string;
 begin
-  Result := 'RadIADockableForm';
+  Result := FIdentifier;
 end;
 
 function TRadIACustomDockableForm.GetMenuActionList: TCustomActionList;
@@ -251,12 +326,8 @@ begin
 end;
 
 procedure TRadIACustomDockableForm.ReleaseForm;
-var
-  LForm: TCustomForm;
 begin
-  LForm := FForm;
-  if Assigned(LForm) then
-    LForm.Free;
+  FForm.Free;
   FForm := nil;
   FFrame := nil;
 end;
@@ -281,15 +352,14 @@ begin
   begin
     FForm := LServices.CreateDockableForm(Self);
     FForm.FreeNotification(FObserver);
-    FForm.Width := 990;
-    FForm.Height := 650;
+    FForm.Width := FDefaultWidth;
+    FForm.Height := FDefaultHeight;
   end;
 
   ApplyIDETheme;
   FForm.Show;
   FForm.BringToFront;
-  if Assigned(FFrame) then
-    FFrame.EnsureVisibleContent;
+  EnsureFrameContent;
 end;
 
 end.
