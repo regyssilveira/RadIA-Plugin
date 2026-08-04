@@ -4,6 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
+  System.JSON,
   RadIA.Core.Tools;
 
 type
@@ -127,6 +128,26 @@ type
       const AParamsJson: string;
       const ASession: TRadIAMcpSession
     ): string;
+    function DispatchMethod(
+      const AMethod: string;
+      const AIdJson: string;
+      const AJson: TJSONObject;
+      const ASession: TRadIAMcpSession
+    ): string;
+    function HandleNotification(
+      const AMethod: string;
+      const AJson: TJSONObject;
+      const ASession: TRadIAMcpSession;
+      out AHandled: Boolean
+    ): string;
+    function IsInitializeParamsValid(
+      const AJson: TJSONObject
+    ): Boolean;
+    function ProcessRequest(
+      const AJson: TJSONObject;
+      const ASession: TRadIAMcpSession;
+      out AIdJson: string
+    ): string;
     function RiskIsDestructive(
       const ARisk: TRadIAToolRisk
     ): Boolean;
@@ -144,7 +165,6 @@ type
 implementation
 
 uses
-  System.JSON,
   System.SyncObjs,
   System.SysUtils,
   RadIA.Core.Version;
@@ -655,16 +675,41 @@ begin
   FExecutor := AExecutor;
 end;
 
+function TRadIAMcpProtocol.DispatchMethod(
+  const AMethod: string;
+  const AIdJson: string;
+  const AJson: TJSONObject;
+  const ASession: TRadIAMcpSession
+): string;
+var
+  LParams: TJSONValue;
+begin
+  if AMethod = 'ping' then
+    Exit(BuildSuccess(AIdJson, '{}'));
+  if AMethod = 'tools/list' then
+    Exit(BuildToolsList(AIdJson));
+  if AMethod = 'radia/metrics' then
+    Exit(BuildMetrics(AIdJson, ASession));
+  if AMethod = 'tools/call' then
+  begin
+    LParams := AJson.GetValue('params');
+    if Assigned(LParams) then
+      Exit(CallTool(AIdJson, LParams.ToJSON, ASession));
+    Exit(CallTool(AIdJson, '{}', ASession));
+  end;
+  Result := BuildError(
+    AIdJson,
+    CMethodNotFound,
+    'Method not found.'
+  );
+end;
+
 function TRadIAMcpProtocol.HandleMessage(
   const AMessage: string;
   const ASession: TRadIAMcpSession
 ): string;
 var
-  LId: TJSONValue;
   LIdJson: string;
-  LJson: TJSONObject;
-  LMethod: string;
-  LParams: TJSONValue;
   LParsed: TJSONValue;
 begin
   if not Assigned(ASession) then
@@ -679,86 +724,7 @@ begin
     try
       if not (LParsed is TJSONObject) then
         Exit(BuildError('null', CInvalidRequest, 'Invalid request.'));
-      LJson := TJSONObject(LParsed);
-      if LJson.GetValue<string>('jsonrpc', '') <> CJsonRpcVersion then
-        Exit(BuildError(
-          'null',
-          CInvalidRequest,
-          'Invalid JSON-RPC version.'
-        ));
-
-      LMethod := LJson.GetValue<string>('method', '');
-      LId := LJson.GetValue('id');
-      if Assigned(LId) then
-        LIdJson := LId.ToJSON
-      else
-        LIdJson := 'null';
-
-      if LMethod = 'notifications/initialized' then
-        Exit('');
-      if LMethod = 'notifications/cancelled' then
-      begin
-        LParams := LJson.GetValue('params');
-        if Assigned(LParams) then
-          Exit(CancelRequest(LParams.ToJSON, ASession));
-        Exit('');
-      end;
-      if not Assigned(LId) or (LId is TJSONNull) then
-        Exit(BuildError(
-          'null',
-          CInvalidRequest,
-          'JSON-RPC request ID is required.'
-        ));
-      if not (LId is TJSONString) and
-        not (LId is TJSONNumber) then
-        Exit(BuildError(
-          'null',
-          CInvalidRequest,
-          'JSON-RPC request ID must be a string or number.'
-        ));
-      if LMethod = 'initialize' then
-      begin
-        LParams := LJson.GetValue('params');
-        if not (LParams is TJSONObject) or
-          (TJSONObject(LParams).GetValue<string>(
-            'protocolVersion',
-            ''
-          ) = '') or
-          not (TJSONObject(LParams).GetValue('capabilities') is
-            TJSONObject) or
-          not (TJSONObject(LParams).GetValue('clientInfo') is
-            TJSONObject) then
-          Exit(BuildError(
-            LIdJson,
-            CInvalidParams,
-            'Initialize parameters are incomplete.'
-          ));
-        Exit(BuildInitializeResult(LIdJson, ASession));
-      end;
-      if not ASession.Initialized then
-        Exit(BuildError(
-          LIdJson,
-          CNotInitialized,
-          'MCP session is not initialized.'
-        ));
-      if LMethod = 'ping' then
-        Exit(BuildSuccess(LIdJson, '{}'));
-      if LMethod = 'tools/list' then
-        Exit(BuildToolsList(LIdJson));
-      if LMethod = 'radia/metrics' then
-        Exit(BuildMetrics(LIdJson, ASession));
-      if LMethod = 'tools/call' then
-      begin
-        LParams := LJson.GetValue('params');
-        if Assigned(LParams) then
-          Exit(CallTool(LIdJson, LParams.ToJSON, ASession));
-        Exit(CallTool(LIdJson, '{}', ASession));
-      end;
-      Result := BuildError(
-        LIdJson,
-        CMethodNotFound,
-        'Method not found.'
-      );
+      Result := ProcessRequest(TJSONObject(LParsed), ASession, LIdJson);
     except
       on Exception do
         Result := BuildError(
@@ -770,6 +736,94 @@ begin
   finally
     LParsed.Free;
   end;
+end;
+
+function TRadIAMcpProtocol.HandleNotification(
+  const AMethod: string;
+  const AJson: TJSONObject;
+  const ASession: TRadIAMcpSession;
+  out AHandled: Boolean
+): string;
+var
+  LParams: TJSONValue;
+begin
+  AHandled := AMethod = 'notifications/initialized';
+  if AHandled then
+    Exit('');
+  AHandled := AMethod = 'notifications/cancelled';
+  if not AHandled then
+    Exit('');
+  LParams := AJson.GetValue('params');
+  if Assigned(LParams) then
+    Exit(CancelRequest(LParams.ToJSON, ASession));
+  Result := '';
+end;
+
+function TRadIAMcpProtocol.IsInitializeParamsValid(
+  const AJson: TJSONObject
+): Boolean;
+var
+  LParams: TJSONValue;
+begin
+  LParams := AJson.GetValue('params');
+  Result := (LParams is TJSONObject) and
+    (TJSONObject(LParams).GetValue<string>('protocolVersion', '') <> '') and
+    (TJSONObject(LParams).GetValue('capabilities') is TJSONObject) and
+    (TJSONObject(LParams).GetValue('clientInfo') is TJSONObject);
+end;
+
+function TRadIAMcpProtocol.ProcessRequest(
+  const AJson: TJSONObject;
+  const ASession: TRadIAMcpSession;
+  out AIdJson: string
+): string;
+var
+  LHandled: Boolean;
+  LId: TJSONValue;
+  LMethod: string;
+begin
+  AIdJson := 'null';
+  if AJson.GetValue<string>('jsonrpc', '') <> CJsonRpcVersion then
+    Exit(BuildError(
+      'null',
+      CInvalidRequest,
+      'Invalid JSON-RPC version.'
+    ));
+  LMethod := AJson.GetValue<string>('method', '');
+  LId := AJson.GetValue('id');
+  Result := HandleNotification(LMethod, AJson, ASession, LHandled);
+  if LHandled then
+    Exit;
+  if not Assigned(LId) or (LId is TJSONNull) then
+    Exit(BuildError(
+      'null',
+      CInvalidRequest,
+      'JSON-RPC request ID is required.'
+    ));
+  if not (LId is TJSONString) and not (LId is TJSONNumber) then
+    Exit(BuildError(
+      'null',
+      CInvalidRequest,
+      'JSON-RPC request ID must be a string or number.'
+    ));
+  AIdJson := LId.ToJSON;
+  if LMethod = 'initialize' then
+  begin
+    if not IsInitializeParamsValid(AJson) then
+      Exit(BuildError(
+        AIdJson,
+        CInvalidParams,
+        'Initialize parameters are incomplete.'
+      ));
+    Exit(BuildInitializeResult(AIdJson, ASession));
+  end;
+  if not ASession.Initialized then
+    Exit(BuildError(
+      AIdJson,
+      CNotInitialized,
+      'MCP session is not initialized.'
+    ));
+  Result := DispatchMethod(LMethod, AIdJson, AJson, ASession);
 end;
 
 function TRadIAMcpProtocol.RiskIsDestructive(
