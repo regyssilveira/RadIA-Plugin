@@ -71,9 +71,11 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M7 — Journeys | Planned | End-to-end Delphi recipes approved |
 | M8 — Proof and release | Blocked by previous milestones | Matrix, ten cycles, and audits approved |
 
-The first M1 increment already includes a Fill-in-the-Middle engine, debounce, cancellation, cache,
-limits, a decoupled provider, and tests. OTA visual integration, scope controls, and acceptance in a
-real IDE remain mandatory before the milestone can be marked complete.
+M1 now includes a Fill-in-the-Middle engine, debounce, cancellation, cache, limits, a decoupled
+provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture uses the live
+buffer, cursor position, and current symbol. Multiline virtual rows, configurable shortcuts, and
+visual acceptance across the complete IDE matrix remain mandatory before the milestone can be
+marked complete.
 
 ## Milestone transition rules
 

@@ -72,9 +72,11 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M7 — Jornadas | Planejado | Receitas Delphi ponta a ponta aprovadas |
 | M8 — Prova e release | Bloqueado pelos anteriores | Matriz, dez ciclos e auditorias aprovados |
 
-O primeiro incremento do M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache,
-limites, provider desacoplado e testes. A integração visual OTA, os controles de escopo e o aceite
-em IDE real continuam obrigatórios antes de marcar o marco como concluído.
+O M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache, limites, provider
+desacoplado, captura contínua opt-in, controles de escopo e Ghost Text OTA. A captura usa o buffer
+vivo, a posição do cursor e o símbolo vigente. Sugestões multilinha com linhas virtuais, atalhos
+configuráveis e o aceite visual em toda a matriz de IDEs continuam obrigatórios antes de marcar o
+marco como concluído.
 
 ## Regras de passagem entre marcos
 

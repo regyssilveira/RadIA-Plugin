@@ -82,7 +82,7 @@ pela política não chegam ao provider.
 ## Estado da integração
 
 O fluxo OTA manual e a captura contínua opt-in estão conectados. Ambos capturam somente o buffer
-ativo e metadados básicos do projeto, apresentam a primeira linha como Ghost Text e nunca modificam
-o buffer antes do aceite. Sugestões multilinha com linhas virtuais e atalhos configuráveis
-permanecem pendentes. O recurso só será considerado concluído depois da validação visual na matriz
-de IDEs suportada.
+ativo, resolvem o símbolo vigente a partir da linha do cursor e incluem metadados básicos do projeto.
+A primeira linha é apresentada como Ghost Text e o buffer nunca é modificado antes do aceite.
+Sugestões multilinha com linhas virtuais e atalhos configuráveis permanecem pendentes. O recurso só
+será considerado concluído depois da validação visual na matriz de IDEs suportada.

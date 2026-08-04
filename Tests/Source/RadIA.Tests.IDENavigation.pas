@@ -71,6 +71,10 @@ type
     [Test]
     procedure ScannerHonorsMaximum;
     [Test]
+    procedure ScannerFindsSymbolAtCursorLine;
+    [Test]
+    procedure ScannerRejectsLineBeforeFirstSymbol;
+    [Test]
     procedure NavigationFailureIsStructured;
   end;
 
@@ -301,6 +305,44 @@ begin
     0,
     Length(TRadIAUnitSymbolScanner.Scan('procedure X;', 0))
   );
+end;
+
+procedure TRadIAIDENavigationTests.ScannerFindsSymbolAtCursorLine;
+var
+  LSymbol: TRadIAUnitSymbol;
+begin
+  Assert.IsTrue(
+    TRadIAUnitSymbolScanner.TryFindAtLine(
+      '  TRadIAItem = class' + sLineBreak +
+      '  end;' + sLineBreak +
+      sLineBreak +
+      'procedure TRadIAItem.Save;' + sLineBreak +
+      'begin' + sLineBreak +
+      '  DoWork;' + sLineBreak +
+      'end;',
+      6,
+      LSymbol
+    )
+  );
+  Assert.AreEqual('procedure', LSymbol.Kind);
+  Assert.AreEqual('TRadIAItem.Save', LSymbol.Name);
+  Assert.AreEqual(4, LSymbol.Line);
+end;
+
+procedure TRadIAIDENavigationTests.ScannerRejectsLineBeforeFirstSymbol;
+var
+  LSymbol: TRadIAUnitSymbol;
+begin
+  Assert.IsFalse(
+    TRadIAUnitSymbolScanner.TryFindAtLine(
+      'unit Sample;' + sLineBreak +
+      sLineBreak +
+      'procedure Execute;',
+      2,
+      LSymbol
+    )
+  );
+  Assert.AreEqual('', LSymbol.Name);
 end;
 
 procedure TRadIAIDENavigationTests.ScannerRecognizesTypesAndRoutines;

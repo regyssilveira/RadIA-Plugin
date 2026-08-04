@@ -80,6 +80,7 @@ uses
   System.SysUtils,
   Vcl.Graphics,
   RadIA.Core.Container,
+  RadIA.Core.IDENavigation,
   RadIA.Core.Interfaces,
   RadIA.Core.Logger,
   RadIA.Core.Types,
@@ -125,6 +126,8 @@ var
   LProjectContext: string;
   LProjectName: string;
   LProjectFolder: string;
+  LSymbol: TRadIAUnitSymbol;
+  LSymbolName: string;
   LSuffix: string;
   LView: IOTAEditView;
   LEditorAdapter: IRadIAEditorAdapter;
@@ -167,12 +170,24 @@ begin
   end;
   LProjectContext := 'Project: ' + LProjectName + sLineBreak +
     'Root: ' + LProjectFolder;
+  LSymbolName := '';
+  if TRadIAUnitSymbolScanner.TryFindAtLine(
+    LContent,
+    LView.Position.Row,
+    LSymbol
+  ) then
+  begin
+    LSymbolName := LSymbol.Name;
+    LProjectContext := LProjectContext + sLineBreak +
+      'Current symbol: ' + LSymbol.Kind + ' ' + LSymbol.Name +
+      ' at line ' + LSymbol.Line.ToString;
+  end;
   AContext := TRadIAInlineCompletionContext.Create(
     LFileName,
     LanguageForFile(LFileName),
     LPrefix,
     LSuffix,
-    '',
+    LSymbolName,
     LProjectContext,
     THashSHA2.GetHashString(LContent)
   ).WithCursor(LView.Position.Row, LView.Position.Column);

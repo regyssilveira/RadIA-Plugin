@@ -100,6 +100,11 @@ type
       const AContent: string;
       const AMaxSymbols: Integer
     ): TArray<TRadIAUnitSymbol>; static;
+    class function TryFindAtLine(
+      const AContent: string;
+      const ALine: Integer;
+      out ASymbol: TRadIAUnitSymbol
+    ): Boolean; static;
   end;
 
 implementation
@@ -281,6 +286,29 @@ begin
   finally
     LSymbols.Free;
     LLines.Free;
+  end;
+end;
+
+class function TRadIAUnitSymbolScanner.TryFindAtLine(
+  const AContent: string;
+  const ALine: Integer;
+  out ASymbol: TRadIAUnitSymbol
+): Boolean;
+var
+  LSymbol: TRadIAUnitSymbol;
+  LSymbols: TArray<TRadIAUnitSymbol>;
+begin
+  ASymbol := Default(TRadIAUnitSymbol);
+  Result := False;
+  if ALine <= 0 then
+    Exit;
+  LSymbols := Scan(AContent, MaxInt);
+  for LSymbol in LSymbols do
+  begin
+    if LSymbol.Line > ALine then
+      Break;
+    ASymbol := LSymbol;
+    Result := True;
   end;
 end;
 

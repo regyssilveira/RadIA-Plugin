@@ -81,6 +81,7 @@ never reach the provider.
 ## Integration status
 
 The manual OTA flow and opt-in continuous capture are connected. Both capture only the active
-buffer and basic project metadata, display the first line as Ghost Text, and never change the
-buffer before acceptance. Multiline virtual rows and configurable shortcuts remain pending. The
-feature is only complete after visual validation across the supported IDE matrix.
+buffer, resolve the current symbol from the cursor line, and include basic project metadata. They
+display the first line as Ghost Text and never change the buffer before acceptance. Multiline
+virtual rows and configurable shortcuts remain pending. The feature is only complete after visual
+validation across the supported IDE matrix.

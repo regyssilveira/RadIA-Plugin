@@ -55,6 +55,8 @@ The board below summarizes the current status of mapped short and medium-term fe
 *   Goal for leading the Delphi development experience.
     *   M0: clear the blocking Sonar baseline and automate every gate.
     *   M1–M3: deliver Ghost Text, an interactive terminal, and a unified execution center.
+    *   M1 delivered in this increment: OTA Ghost Text capture now resolves the current symbol
+        directly from the live buffer and cursor line, without depending on the saved file.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
