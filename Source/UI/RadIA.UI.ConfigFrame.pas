@@ -6,6 +6,7 @@ uses  System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
   Vcl.ComCtrls, System.Generics.Collections,
   RadIA.UI.ConfigPresenter,
+  RadIA.Core.AgentExecutors,
   RadIA.Core.CliManager,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.McpProvisioning;
@@ -52,6 +53,7 @@ type
 
     FTsCliMcp: TTabSheet;
     FPnlCliMcp: TPanel;
+    FCmbAgentExecutor: TComboBox;
     FCmbCliClient: TComboBox;
     FEdtCliExecutable: TEdit;
     FEdtMcpConfig: TEdit;
@@ -63,6 +65,7 @@ type
     FBtnMcpPreview: TButton;
     FBtnMcpProvision: TButton;
     FBtnMcpRemove: TButton;
+    FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
     FCliMcpSettings: TRadIACliMcpSettings;
 
     procedure BtnBrowseLogPathClick(Sender: TObject);
@@ -97,10 +100,12 @@ type
     function McpStateText(
       const AState: TRadIAMcpProvisionState
     ): string;
+    procedure LoadAgentExecutorSettings;
     procedure OpenUrl(const AUrl: string);
     procedure RefreshCliMcpDiagnostics;
     procedure RefreshMcpPreview;
     procedure SaveCliMcpSettings;
+    procedure SaveAgentExecutorSettings;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -550,6 +555,17 @@ begin
   FPnlCliMcp.BevelOuter := bvNone;
   FPnlCliMcp.ShowCaption := False;
 
+  CreateLabel(FPnlCliMcp, 'Chat executor:', 280, 16);
+  FCmbAgentExecutor := TComboBox.Create(Self);
+  FCmbAgentExecutor.Parent := FPnlCliMcp;
+  FCmbAgentExecutor.Left := 280;
+  FCmbAgentExecutor.Top := 34;
+  FCmbAgentExecutor.Width := 240;
+  FCmbAgentExecutor.Style := csDropDownList;
+  FCmbAgentExecutor.Items.Add('RadIA native agent');
+  FCmbAgentExecutor.Items.Add('Selected CLI');
+  FCmbAgentExecutor.ItemIndex := 0;
+
   CreateLabel(FPnlCliMcp, 'CLI client:', 16, 16);
   FCmbCliClient := TComboBox.Create(Self);
   FCmbCliClient.Parent := FPnlCliMcp;
@@ -630,6 +646,7 @@ var
 begin
   inherited Create(AOwner);
   FPresenter := TRadIAConfigPresenter.Create(Self);
+  FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
   FCliMcpSettings := TRadIACliMcpSettings.Create;
 
   // Update RadioGroup text in runtime for OAuth
@@ -661,6 +678,7 @@ begin
   CreateGeneralTab;
   CreateSecurityTab;
   CreateCliMcpTab;
+  LoadAgentExecutorSettings;
 
   LActiveTheme := 'light';
   LUseIDETheme := False;
@@ -682,6 +700,7 @@ end;
 
 destructor TRadIAFrameAIConfig.Destroy;
 begin
+  FAgentExecutorSettings.Free;
   FCliMcpSettings.Free;
   FPresenter.Free;
   FEdtTemperatures.Free;
@@ -957,6 +976,10 @@ begin
     FCmbCliClient.StyleElements - [seClient, seBorder];
   FCmbCliClient.Color := LColors.InputBgColor;
   FCmbCliClient.Font.Color := LColors.TextColor;
+  FCmbAgentExecutor.StyleElements :=
+    FCmbAgentExecutor.StyleElements - [seClient, seBorder];
+  FCmbAgentExecutor.Color := LColors.InputBgColor;
+  FCmbAgentExecutor.Font.Color := LColors.TextColor;
 
   ApplyThemeToCheckboxes([chkIsProjectGenerator, FChkSmartConfig, FChkInjectDelphiVersion,
     FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled,
@@ -1363,6 +1386,44 @@ begin
   );
 end;
 
+procedure TRadIAFrameAIConfig.LoadAgentExecutorSettings;
+var
+  LDefinition: TRadIACliDefinition;
+  LDefinitions: TArray<TRadIACliDefinition>;
+  LIndex: Integer;
+  LSettings: TRadIAAgentExecutorSettings;
+begin
+  LSettings := FAgentExecutorSettings.Load;
+  FCmbAgentExecutor.ItemIndex := Ord(LSettings.Kind);
+  LDefinitions := TRadIACliCatalog.All;
+  for LIndex := Low(LDefinitions) to High(LDefinitions) do
+  begin
+    LDefinition := LDefinitions[LIndex];
+    if SameText(LDefinition.Id, LSettings.CliClientId) then
+    begin
+      FCmbCliClient.ItemIndex := LIndex;
+      CliClientChange(FCmbCliClient);
+      Break;
+    end;
+  end;
+end;
+
+procedure TRadIAFrameAIConfig.SaveAgentExecutorSettings;
+var
+  LDefinition: TRadIACliDefinition;
+  LKind: TRadIAAgentExecutorKind;
+begin
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  if FCmbAgentExecutor.ItemIndex = Ord(aekCli) then
+    LKind := aekCli
+  else
+    LKind := aekNative;
+  FAgentExecutorSettings.Save(
+    TRadIAAgentExecutorSettings.Create(LKind, LDefinition.Id)
+  );
+end;
+
 procedure TRadIAFrameAIConfig.TvCategoriesChange(Sender: TObject; Node: TTreeNode);
 begin
   if Assigned(Node) then
@@ -1576,6 +1637,8 @@ end;
 
 procedure TRadIAFrameAIConfig.BtnSaveClick(Sender: TObject);
 begin
+  SaveCliMcpSettings;
+  SaveAgentExecutorSettings;
   FPresenter.SaveConfig;
 end;
 

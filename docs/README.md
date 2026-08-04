@@ -37,6 +37,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Arquitetura alvo e contratos | [Catálogo arquitetural](tool_catalog.md) |
 | Consentimento, risco e auditoria | [Modelo de segurança](tool_security_model.md) |
 | MCP e clientes externos | [Integração MCP](mcp_integration_guide.md) |
+| Seleção de executores CLI | [Executores CLI](cli_executors.md) |
 | Conhecimento local | [Conhecimento do projeto](user_guide_project_knowledge.md) |
 | Form Designer e debugger | [Designer e debugger](user_guide_designer_debugger.md) |
 | Extensões de ferramentas | [Extensões](tool_extension_guide.md) |

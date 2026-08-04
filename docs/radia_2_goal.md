@@ -222,6 +222,11 @@ Experiência de revisão entregue nesta branch: resultados JSON bem-sucedidos ag
 intenção visual uniforme para chat e MCP, e o Smart Diff permite aceitar ou rejeitar cada bloco
 antes de aplicar a composição selecionada ao editor.
 
+Fundação de executores híbridos entregue nesta branch: a configuração permite persistir o agente
+nativo ou um dos quatro CLIs suportados sem reiniciar a IDE. Os perfis não interativos constroem
+argumentos separados, solicitam saída estruturada e não habilitam aprovação automática. O item
+permanece aberto até conectar o transporte assíncrono, streaming e cancelamento por árvore.
+
 Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
 remoção seletiva. A etapa permanece aberta até a integração visual e o diagnóstico operacional.

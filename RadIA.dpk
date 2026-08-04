@@ -42,6 +42,7 @@ contains
   RadIA.Core.Version in 'Source\Core\RadIA.Core.Version.pas',
   RadIA.Core.Tools in 'Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in 'Source\Core\RadIA.Core.AgentRuntime.pas',
+  RadIA.Core.AgentExecutors in 'Source\Core\RadIA.Core.AgentExecutors.pas',
   RadIA.Core.AgentProvider in 'Source\Core\RadIA.Core.AgentProvider.pas',
   RadIA.Core.AgentController in 'Source\Core\RadIA.Core.AgentController.pas',
   RadIA.Core.AgentPricing in 'Source\Core\RadIA.Core.AgentPricing.pas',
