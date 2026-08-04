@@ -34,6 +34,11 @@ type
     FConsentRememberReversible: Boolean;
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
+    FInlineCompletionEnabled: Boolean;
+    FInlineCompletionDelay: string;
+    FInlineCompletionExcludedFiles: string;
+    FInlineCompletionExcludedLanguages: string;
+    FInlineCompletionExcludedProjects: string;
     FQuotaEnabled: Boolean;
     FQuotaLimit: string;
     FQuotaUsedText: string;
@@ -118,6 +123,16 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetInlineCompletionEnabled: Boolean;
+    procedure SetInlineCompletionEnabled(const AValue: Boolean);
+    function GetInlineCompletionDelay: string;
+    procedure SetInlineCompletionDelay(const AValue: string);
+    function GetInlineCompletionExcludedFiles: string;
+    procedure SetInlineCompletionExcludedFiles(const AValue: string);
+    function GetInlineCompletionExcludedLanguages: string;
+    procedure SetInlineCompletionExcludedLanguages(const AValue: string);
+    function GetInlineCompletionExcludedProjects: string;
+    procedure SetInlineCompletionExcludedProjects(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -225,6 +240,8 @@ type
     [Test]
     procedure TestConsentSettingsAreValidatedAndPersisted;
     [Test]
+    procedure TestInlineCompletionSettingsAreValidatedAndPersisted;
+    [Test]
     procedure TestTemplateCreationAndSelection;
     [Test]
     procedure TestResetQuotaUsage;
@@ -262,6 +279,7 @@ begin
   ConsentTimeoutSeconds := '60';
   ConsentShowArguments := True;
   ConsentRememberReversible := True;
+  FInlineCompletionDelay := '700';
 end;
 
 destructor TMockConfigView.Destroy;
@@ -427,6 +445,66 @@ procedure TMockConfigView.SetConsentRememberExecution(
 );
 begin
   ConsentRememberExecution := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionEnabled: Boolean;
+begin
+  Result := FInlineCompletionEnabled;
+end;
+
+procedure TMockConfigView.SetInlineCompletionEnabled(
+  const AValue: Boolean
+);
+begin
+  FInlineCompletionEnabled := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionDelay: string;
+begin
+  Result := FInlineCompletionDelay;
+end;
+
+procedure TMockConfigView.SetInlineCompletionDelay(
+  const AValue: string
+);
+begin
+  FInlineCompletionDelay := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionExcludedFiles: string;
+begin
+  Result := FInlineCompletionExcludedFiles;
+end;
+
+procedure TMockConfigView.SetInlineCompletionExcludedFiles(
+  const AValue: string
+);
+begin
+  FInlineCompletionExcludedFiles := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionExcludedLanguages: string;
+begin
+  Result := FInlineCompletionExcludedLanguages;
+end;
+
+procedure TMockConfigView.SetInlineCompletionExcludedLanguages(
+  const AValue: string
+);
+begin
+  FInlineCompletionExcludedLanguages := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionExcludedProjects: string;
+begin
+  Result := FInlineCompletionExcludedProjects;
+end;
+
+procedure TMockConfigView.SetInlineCompletionExcludedProjects(
+  const AValue: string
+);
+begin
+  FInlineCompletionExcludedProjects := AValue;
 end;
 
 function TMockConfigView.GetQuotaEnabled: Boolean; begin Result := QuotaEnabled; end;
@@ -628,6 +706,42 @@ begin
   Assert.IsFalse(FConfig.ConsentRememberReversible);
   Assert.IsTrue(FConfig.ConsentRememberStructural);
   Assert.IsTrue(FConfig.ConsentRememberExecution);
+end;
+
+procedure TTestConfigPresenter.
+  TestInlineCompletionSettingsAreValidatedAndPersisted;
+begin
+  FPresenter.LoadConfig;
+  FMockView.SetInlineCompletionDelay('100');
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'between 250 and 5000'
+  );
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetInlineCompletionEnabled(True);
+  FMockView.SetInlineCompletionDelay('900');
+  FMockView.SetInlineCompletionExcludedLanguages('sql; markdown');
+  FMockView.SetInlineCompletionExcludedFiles('generated; vendor');
+  FMockView.SetInlineCompletionExcludedProjects('legacy; archive');
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  Assert.IsTrue(FConfig.AutocompleteEnabled);
+  Assert.AreEqual(900, FConfig.AutocompleteDelay);
+  Assert.AreEqual(
+    'sql; markdown',
+    FConfig.AutocompleteExcludedLanguages
+  );
+  Assert.AreEqual(
+    'generated; vendor',
+    FConfig.AutocompleteExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy; archive',
+    FConfig.AutocompleteExcludedProjects
+  );
 end;
 
 procedure TTestConfigPresenter.TestTemplateCreationAndSelection;

@@ -36,6 +36,27 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 Os atalhos aparecem no submenu **Rad IA** do menu contextual do editor. O primeiro pedido de cada
 sessão informa qual contexto será enviado e exige consentimento explícito.
 
+## Assistência contínua e escopo
+
+A assistência contínua nasce desligada. Para ativá-la, abra **Rad IA > Settings > Security &
+Consent** e marque **Enable continuous inline completion**. O próprio texto da opção informa que
+um contexto limitado do buffer ativo será enviado ao provider selecionado.
+
+Na mesma seção é possível configurar:
+
+- atraso de inatividade entre 250 e 5000 milissegundos;
+- linguagens excluídas, separadas por ponto e vírgula;
+- fragmentos de nome ou path de arquivo excluídos;
+- fragmentos de nome ou path de projeto excluídos.
+
+As alterações passam a valer sem reiniciar a IDE. O menu contextual também oferece
+**Pause/Resume Inline Completion for Session**. A pausa de sessão não altera a preferência
+persistida e volta ao estado normal quando a IDE é reiniciada.
+
+No modo contínuo, o RadIA usa `INTAEditViewNotifier.EditorIdle`; não existe polling de conteúdo. Um
+snapshot só é solicitado quando arquivo, revisão ou posição do cursor mudam. Contextos bloqueados
+pela política não chegam ao provider.
+
 ## Segurança e privacidade
 
 - O contexto do projeto é um campo explícito do pedido, não uma coleta oculta.
@@ -45,6 +66,8 @@ sessão informa qual contexto será enviado e exige consentimento explícito.
 - Arquivo, hash da revisão, linha e coluna precisam continuar idênticos no momento do aceite.
 - Após o aceite parcial, a view devolve um novo snapshot ao controller antes de manter o restante.
 - Providers locais e remotos usam o mesmo contrato e as mesmas regras de cancelamento.
+- A preferência contínua utiliza uma chave nova e segura, desligada por padrão; configurações
+  antigas de autocomplete não concedem consentimento implicitamente.
 
 ## Componentes implementados
 
@@ -58,8 +81,8 @@ sessão informa qual contexto será enviado e exige consentimento explícito.
 
 ## Estado da integração
 
-O primeiro fluxo OTA é deliberadamente acionado pelo usuário: ele captura somente o buffer ativo e
-metadados básicos do projeto, apresenta a primeira linha como Ghost Text e nunca modifica o buffer
-antes do aceite. Captura contínua, sugestões multilinha com linhas virtuais, atalhos configuráveis e
-desativação por projeto, arquivo ou linguagem permanecem pendentes. O recurso só será considerado
-concluído depois da validação visual na matriz de IDEs suportada.
+O fluxo OTA manual e a captura contínua opt-in estão conectados. Ambos capturam somente o buffer
+ativo e metadados básicos do projeto, apresentam a primeira linha como Ghost Text e nunca modificam
+o buffer antes do aceite. Sugestões multilinha com linhas virtuais e atalhos configuráveis
+permanecem pendentes. O recurso só será considerado concluído depois da validação visual na matriz
+de IDEs suportada.

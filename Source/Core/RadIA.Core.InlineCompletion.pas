@@ -65,6 +65,22 @@ type
       read FMaxSuggestionCharacters;
   end;
 
+  TRadIAInlineCompletionPolicy = class
+  private
+    class function IsListed(
+      const AValue: string;
+      const AList: string;
+      const AExactMatch: Boolean
+    ): Boolean; static;
+  public
+    class function IsAllowed(
+      const AContext: TRadIAInlineCompletionContext;
+      const AExcludedLanguages: string;
+      const AExcludedFiles: string;
+      const AExcludedProjects: string
+    ): Boolean; static;
+  end;
+
   IRadIAInlineCompletionCancellationToken = interface
     ['{17FB756B-D196-4F4B-A53D-C3D2AF4EB875}']
     function IsCancellationRequested: Boolean;
@@ -134,6 +150,9 @@ type
       const AContext: TRadIAInlineCompletionContext
     );
     procedure RequestAlternative;
+    procedure Configure(
+      const AOptions: TRadIAInlineCompletionOptions
+    );
     function AcceptAll: Boolean;
     function AcceptNextWord: Boolean;
     procedure Reject;
@@ -205,6 +224,9 @@ type
       const AContext: TRadIAInlineCompletionContext
     );
     procedure RequestAlternative;
+    procedure Configure(
+      const AOptions: TRadIAInlineCompletionOptions
+    );
     function AcceptAll: Boolean;
     function AcceptNextWord: Boolean;
     procedure Reject;
@@ -518,6 +540,74 @@ begin
   );
 end;
 
+{ TRadIAInlineCompletionPolicy }
+
+class function TRadIAInlineCompletionPolicy.IsAllowed(
+  const AContext: TRadIAInlineCompletionContext;
+  const AExcludedLanguages: string;
+  const AExcludedFiles: string;
+  const AExcludedProjects: string
+): Boolean;
+begin
+  Result := AContext.IsValid and
+    not IsListed(
+      AContext.Language,
+      AExcludedLanguages,
+      True
+    ) and
+    not IsListed(
+      AContext.FileName,
+      AExcludedFiles,
+      False
+    ) and
+    not IsListed(
+      AContext.ProjectContext,
+      AExcludedProjects,
+      False
+    );
+end;
+
+class function TRadIAInlineCompletionPolicy.IsListed(
+  const AValue: string;
+  const AList: string;
+  const AExactMatch: Boolean
+): Boolean;
+var
+  LItem: string;
+  LItems: TStringList;
+  LNormalizedItem: string;
+  LNormalizedList: string;
+  LNormalizedValue: string;
+begin
+  Result := False;
+  if AList.Trim.IsEmpty then
+    Exit;
+  LNormalizedList := AList.Replace(',', ';')
+    .Replace(#13, ';')
+    .Replace(#10, ';');
+  LNormalizedValue := AValue.Trim.ToLower;
+  LItems := TStringList.Create;
+  try
+    LItems.StrictDelimiter := True;
+    LItems.Delimiter := ';';
+    LItems.DelimitedText := LNormalizedList;
+    for LItem in LItems do
+    begin
+      LNormalizedItem := LItem.Trim.ToLower;
+      if LNormalizedItem.IsEmpty then
+        Continue;
+      if AExactMatch and
+        SameText(LNormalizedValue, LNormalizedItem) then
+        Exit(True);
+      if not AExactMatch and
+        LNormalizedValue.Contains(LNormalizedItem) then
+        Exit(True);
+    end;
+  finally
+    LItems.Free;
+  end;
+end;
+
 { TRadIAInlineCompletionCache }
 
 constructor TRadIAInlineCompletionCache.Create;
@@ -654,6 +744,21 @@ begin
   end;
 end;
 
+procedure TRadIAInlineCompletionController.Configure(
+  const AOptions: TRadIAInlineCompletionOptions
+);
+begin
+  TMonitor.Enter(FLock);
+  try
+    if AOptions.MaxContextCharacters = 0 then
+      FOptions := TRadIAInlineCompletionOptions.Default
+    else
+      FOptions := AOptions;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
 constructor TRadIAInlineCompletionController.Create(
   const AProvider: IRadIAInlineCompletionProvider;
   const AView: IRadIAInlineCompletionView;
@@ -773,13 +878,20 @@ var
   LContext: TRadIAInlineCompletionContext;
   LGeneration: Integer;
   LKeepAlive: IInterface;
+  LMaxContextCharacters: Integer;
 begin
   if not AContext.IsValid then
   begin
     Reject;
     Exit;
   end;
-  LContext := AContext.Limited(FOptions.MaxContextCharacters);
+  TMonitor.Enter(FLock);
+  try
+    LMaxContextCharacters := FOptions.MaxContextCharacters;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  LContext := AContext.Limited(LMaxContextCharacters);
   TMonitor.Enter(FLock);
   try
     FStopped := False;
@@ -838,10 +950,17 @@ procedure TRadIAInlineCompletionController.RunRequest(
   const ACancellation: IRadIAInlineCompletionCancellationToken
 );
 var
+  LDebounceMs: Cardinal;
   LSuggestion: string;
 begin
-  if FOptions.DebounceMs > 0 then
-    TThread.Sleep(FOptions.DebounceMs);
+  TMonitor.Enter(FLock);
+  try
+    LDebounceMs := FOptions.DebounceMs;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if LDebounceMs > 0 then
+    TThread.Sleep(LDebounceMs);
   if ACancellation.IsCancellationRequested or
     not IsCurrent(AGeneration) then
     Exit;
@@ -864,6 +983,7 @@ function TRadIAInlineCompletionController.SanitizeSuggestion(
 ): string;
 var
   LFenceEnd: Integer;
+  LMaxSuggestionCharacters: Integer;
 begin
   Result := AValue.Replace(#13#10, #10)
     .Replace(#13, #10)
@@ -883,8 +1003,14 @@ begin
       Length(Result) - Length(AContext.Suffix) + 1,
       Length(AContext.Suffix)
     );
-  if Length(Result) > FOptions.MaxSuggestionCharacters then
-    SetLength(Result, FOptions.MaxSuggestionCharacters);
+  TMonitor.Enter(FLock);
+  try
+    LMaxSuggestionCharacters := FOptions.MaxSuggestionCharacters;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if Length(Result) > LMaxSuggestionCharacters then
+    SetLength(Result, LMaxSuggestionCharacters);
 end;
 
 procedure TRadIAInlineCompletionController.Stop;

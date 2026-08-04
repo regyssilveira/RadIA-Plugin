@@ -129,6 +129,12 @@ type
     procedure SetAutocompleteModel(const AModel: string);
     function GetAutocompleteDelay: Integer;
     procedure SetAutocompleteDelay(const AValue: Integer);
+    function GetAutocompleteExcludedFiles: string;
+    procedure SetAutocompleteExcludedFiles(const AValue: string);
+    function GetAutocompleteExcludedLanguages: string;
+    procedure SetAutocompleteExcludedLanguages(const AValue: string);
+    function GetAutocompleteExcludedProjects: string;
+    procedure SetAutocompleteExcludedProjects(const AValue: string);
     function GetProviderAuthType(const AProviderName: string): string;
     procedure SetProviderAuthType(const AProviderName: string; const AValue: string);
     function IsWebLoginProvider(const AProviderName: string): Boolean;
@@ -731,9 +737,45 @@ begin
   Result := 300;
 end;
 
+function TMockConfig.GetAutocompleteExcludedFiles: string;
+begin
+  Result := '';
+end;
+
+function TMockConfig.GetAutocompleteExcludedLanguages: string;
+begin
+  Result := '';
+end;
+
+function TMockConfig.GetAutocompleteExcludedProjects: string;
+begin
+  Result := '';
+end;
+
 procedure TMockConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
   // Added harmless statement to satisfy SonarQube EmptyRoutine and RedundantJump rules in Delphi mock
+  if True then ;
+end;
+
+procedure TMockConfig.SetAutocompleteExcludedFiles(
+  const AValue: string
+);
+begin
+  if True then ;
+end;
+
+procedure TMockConfig.SetAutocompleteExcludedLanguages(
+  const AValue: string
+);
+begin
+  if True then ;
+end;
+
+procedure TMockConfig.SetAutocompleteExcludedProjects(
+  const AValue: string
+);
+begin
   if True then ;
 end;
 

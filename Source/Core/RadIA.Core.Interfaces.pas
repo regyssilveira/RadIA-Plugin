@@ -127,6 +127,12 @@ type
     procedure SetAutocompleteModel(const AModel: string);
     function GetAutocompleteDelay: Integer;
     procedure SetAutocompleteDelay(const AValue: Integer);
+    function GetAutocompleteExcludedFiles: string;
+    procedure SetAutocompleteExcludedFiles(const AValue: string);
+    function GetAutocompleteExcludedLanguages: string;
+    procedure SetAutocompleteExcludedLanguages(const AValue: string);
+    function GetAutocompleteExcludedProjects: string;
+    procedure SetAutocompleteExcludedProjects(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -194,6 +200,12 @@ type
     property AutocompleteProvider: string read GetAutocompleteProvider write SetAutocompleteProvider;
     property AutocompleteModel: string read GetAutocompleteModel write SetAutocompleteModel;
     property AutocompleteDelay: Integer read GetAutocompleteDelay write SetAutocompleteDelay;
+    property AutocompleteExcludedFiles: string
+      read GetAutocompleteExcludedFiles write SetAutocompleteExcludedFiles;
+    property AutocompleteExcludedLanguages: string
+      read GetAutocompleteExcludedLanguages write SetAutocompleteExcludedLanguages;
+    property AutocompleteExcludedProjects: string
+      read GetAutocompleteExcludedProjects write SetAutocompleteExcludedProjects;
     property SmartConfigEnabled: Boolean read GetSmartConfigEnabled write SetSmartConfigEnabled;
     property LogEnabled: Boolean read GetLogEnabled write SetLogEnabled;
     property LogPath: string read GetLogPath write SetLogPath;

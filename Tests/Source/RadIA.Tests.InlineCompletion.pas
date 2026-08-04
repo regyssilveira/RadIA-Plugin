@@ -84,6 +84,14 @@ type
     procedure PreservesCursorThroughContextLimit;
     [Test]
     procedure RefusesAcceptanceWhenViewRevisionChanged;
+    [Test]
+    procedure PolicyAllowsContextOutsideExclusions;
+    [Test]
+    procedure PolicyExcludesLanguage;
+    [Test]
+    procedure PolicyExcludesFileAndProjectFragments;
+    [Test]
+    procedure UpdatesOptionsAtRuntime;
   end;
 
 implementation
@@ -236,6 +244,50 @@ begin
   Assert.AreEqual(7, LContext.CursorColumn);
 end;
 
+procedure TRadIAInlineCompletionTests.PolicyAllowsContextOutsideExclusions;
+begin
+  Assert.IsTrue(
+    TRadIAInlineCompletionPolicy.IsAllowed(
+      Context('allowed'),
+      'sql, markdown',
+      'generated;vendor',
+      'legacy-project'
+    )
+  );
+end;
+
+procedure TRadIAInlineCompletionTests.PolicyExcludesFileAndProjectFragments;
+begin
+  Assert.IsFalse(
+    TRadIAInlineCompletionPolicy.IsAllowed(
+      Context('file'),
+      '',
+      'sample.pas',
+      ''
+    )
+  );
+  Assert.IsFalse(
+    TRadIAInlineCompletionPolicy.IsAllowed(
+      Context('project'),
+      '',
+      '',
+      'unit sample'
+    )
+  );
+end;
+
+procedure TRadIAInlineCompletionTests.PolicyExcludesLanguage;
+begin
+  Assert.IsFalse(
+    TRadIAInlineCompletionPolicy.IsAllowed(
+      Context('language'),
+      'markdown; DELPHI',
+      '',
+      ''
+    )
+  );
+end;
+
 procedure TRadIAInlineCompletionTests.RefusesAcceptanceWhenViewRevisionChanged;
 begin
   FController.Request(Context('stale'));
@@ -298,6 +350,16 @@ procedure TRadIAInlineCompletionTests.ShowsSanitizedSuggestion;
 begin
   FController.Request(Context('1'));
   Assert.AreEqual('WriteLn(''Hello'');', FView.ShownText);
+end;
+
+procedure TRadIAInlineCompletionTests.UpdatesOptionsAtRuntime;
+begin
+  FController.Configure(
+    TRadIAInlineCompletionOptions.Create(0, 4096, 4)
+  );
+  FProvider.Response := 'LongSuggestion';
+  FController.Request(Context('runtime-options'));
+  Assert.AreEqual('Long', FView.ShownText);
 end;
 
 procedure TRadIAInlineCompletionTests.TearDown;

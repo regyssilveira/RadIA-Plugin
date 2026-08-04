@@ -42,7 +42,7 @@ type
     FBtnResetQuota: TButton;
 
     FTsSecurity: TTabSheet;
-    FPnlSecurity: TPanel;
+    FPnlSecurity: TScrollBox;
     FLblConsentSummary: TLabel;
     FLblConsentTimeout: TLabel;
     FEdtConsentTimeout: TEdit;
@@ -51,6 +51,15 @@ type
     FChkConsentRememberStructural: TCheckBox;
     FChkConsentRememberExecution: TCheckBox;
     FBtnRevokeConsent: TButton;
+    FChkInlineCompletionEnabled: TCheckBox;
+    FEdtInlineCompletionDelay: TEdit;
+    FEdtInlineCompletionExcludedFiles: TEdit;
+    FEdtInlineCompletionExcludedLanguages: TEdit;
+    FEdtInlineCompletionExcludedProjects: TEdit;
+    FLblInlineCompletionDelay: TLabel;
+    FLblInlineCompletionExcludedFiles: TLabel;
+    FLblInlineCompletionExcludedLanguages: TLabel;
+    FLblInlineCompletionExcludedProjects: TLabel;
 
     FTsCliMcp: TTabSheet;
     FPnlCliMcp: TPanel;
@@ -186,6 +195,16 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetInlineCompletionEnabled: Boolean;
+    procedure SetInlineCompletionEnabled(const AValue: Boolean);
+    function GetInlineCompletionDelay: string;
+    procedure SetInlineCompletionDelay(const AValue: string);
+    function GetInlineCompletionExcludedFiles: string;
+    procedure SetInlineCompletionExcludedFiles(const AValue: string);
+    function GetInlineCompletionExcludedLanguages: string;
+    procedure SetInlineCompletionExcludedLanguages(const AValue: string);
+    function GetInlineCompletionExcludedProjects: string;
+    procedure SetInlineCompletionExcludedProjects(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -531,11 +550,10 @@ begin
   FTsSecurity.Caption := 'Security & Consent';
   FTsSecurity.TabVisible := False;
 
-  FPnlSecurity := TPanel.Create(Self);
+  FPnlSecurity := TScrollBox.Create(Self);
   FPnlSecurity.Parent := FTsSecurity;
   FPnlSecurity.Align := alClient;
-  FPnlSecurity.BevelOuter := bvNone;
-  FPnlSecurity.ShowCaption := False;
+  FPnlSecurity.BorderStyle := bsNone;
 
   FLblConsentSummary := CreateLabel(
     FPnlSecurity,
@@ -592,6 +610,63 @@ begin
   FBtnRevokeConsent.Height := 28;
   FBtnRevokeConsent.Caption := 'Revoke session permissions';
   FBtnRevokeConsent.OnClick := BtnRevokeConsentClick;
+
+  FChkInlineCompletionEnabled := CreateCheckBox(
+    FPnlSecurity,
+    'Enable continuous inline completion (sends bounded editor context)',
+    16,
+    328,
+    500
+  );
+  FLblInlineCompletionDelay := CreateLabel(
+    FPnlSecurity,
+    'Idle delay in milliseconds (250-5000):',
+    16,
+    364
+  );
+  FEdtInlineCompletionDelay := CreateEdit(
+    FPnlSecurity,
+    16,
+    384,
+    100,
+    True
+  );
+  FLblInlineCompletionExcludedLanguages := CreateLabel(
+    FPnlSecurity,
+    'Excluded languages (semicolon separated, for example sql;markdown):',
+    16,
+    424
+  );
+  FEdtInlineCompletionExcludedLanguages := CreateEdit(
+    FPnlSecurity,
+    16,
+    444,
+    500
+  );
+  FLblInlineCompletionExcludedFiles := CreateLabel(
+    FPnlSecurity,
+    'Excluded file fragments (semicolon separated):',
+    16,
+    484
+  );
+  FEdtInlineCompletionExcludedFiles := CreateEdit(
+    FPnlSecurity,
+    16,
+    504,
+    500
+  );
+  FLblInlineCompletionExcludedProjects := CreateLabel(
+    FPnlSecurity,
+    'Excluded project name or path fragments (semicolon separated):',
+    16,
+    544
+  );
+  FEdtInlineCompletionExcludedProjects := CreateEdit(
+    FPnlSecurity,
+    16,
+    564,
+    500
+  );
 end;
 
 procedure TRadIAFrameAIConfig.CreateCliMcpTab;
@@ -998,6 +1073,13 @@ begin
     FTsSecurity.SetParentBackground(False);
     FTsSecurity.SetColor(LColors.BgBase);
   end;
+  if Assigned(FPnlSecurity) then
+  begin
+    FPnlSecurity.StyleElements :=
+      FPnlSecurity.StyleElements - [seClient, seBorder];
+    FPnlSecurity.Color := LColors.BgBase;
+    FPnlSecurity.Font.Color := LColors.TextColor;
+  end;
   if Assigned(FTsCliMcp) then
   begin
     FTsCliMcp.StyleElements :=
@@ -1011,7 +1093,7 @@ begin
     pnlGithubCopilot, pnlAzureOpenAI, pnlQwen,
     pnlMistral, pnlBedrock, pnlSystemPrompt,
     pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral,
-    FPnlSecurity, FPnlCliMcp], LColors);
+    FPnlCliMcp], LColors);
 
   for LEditD in FEdtTemperatures.Values do ApplyThemeToEdits([LEditD], LColors);
   for LEditD in FEdtMaxTokens.Values do ApplyThemeToEdits([LEditD], LColors);
@@ -1023,6 +1105,9 @@ begin
     edtQwenKey, edtMistralKey, edtAwsAccessKeyId, edtAwsSecretAccessKey,
     edtAwsRegion, edtAwsSessionToken, edtTemplateName, edtTemplateDesc, edtTemplateSlash,
     FEdtLogPath, FEdtLogMaxSize, FEdtQuotaLimit, FEdtConsentTimeout,
+    FEdtInlineCompletionDelay, FEdtInlineCompletionExcludedFiles,
+    FEdtInlineCompletionExcludedLanguages,
+    FEdtInlineCompletionExcludedProjects,
     FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge], LColors);
 
   ApplyThemeToLabels([lblGeminiKey, lblOpenAIKey, lblOpenAICustomUrl, lblClaudeKey,
@@ -1032,6 +1117,9 @@ begin
     lblAwsSessionToken, lblTemplateName, lblTemplateDesc, lblTemplateSlash,
     lblTemplateBody, FLblTemplateOrigin, FLblLogPath, FLblQuotaLimit, FLblQuotaUsed,
     FLblConsentSummary, FLblConsentTimeout, FLblCliStatus,
+    FLblInlineCompletionDelay, FLblInlineCompletionExcludedFiles,
+    FLblInlineCompletionExcludedLanguages,
+    FLblInlineCompletionExcludedProjects,
     FLblMcpStatus], LColors, False);
 
   ApplyThemeToLabels([lnkGeminiGetKey, lnkOpenAIGetKey, lnkClaudeGetKey, lnkDeepSeekGetKey,
@@ -1065,7 +1153,8 @@ begin
   ApplyThemeToCheckboxes([chkIsProjectGenerator, FChkSmartConfig, FChkInjectDelphiVersion,
     FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled,
     FChkConsentShowArguments, FChkConsentRememberReversible,
-    FChkConsentRememberStructural, FChkConsentRememberExecution], LColors);
+    FChkConsentRememberStructural, FChkConsentRememberExecution,
+    FChkInlineCompletionEnabled], LColors);
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
   ApplyThemeToGroupBoxes([FGrpQuota], LColors);
@@ -2241,6 +2330,68 @@ procedure TRadIAFrameAIConfig.SetConsentRememberExecution(
 );
 begin
   FChkConsentRememberExecution.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetInlineCompletionEnabled: Boolean;
+begin
+  Result := FChkInlineCompletionEnabled.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetInlineCompletionEnabled(
+  const AValue: Boolean
+);
+begin
+  FChkInlineCompletionEnabled.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetInlineCompletionDelay: string;
+begin
+  Result := FEdtInlineCompletionDelay.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetInlineCompletionDelay(
+  const AValue: string
+);
+begin
+  FEdtInlineCompletionDelay.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetInlineCompletionExcludedFiles: string;
+begin
+  Result := FEdtInlineCompletionExcludedFiles.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetInlineCompletionExcludedFiles(
+  const AValue: string
+);
+begin
+  FEdtInlineCompletionExcludedFiles.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetInlineCompletionExcludedLanguages:
+  string;
+begin
+  Result := FEdtInlineCompletionExcludedLanguages.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetInlineCompletionExcludedLanguages(
+  const AValue: string
+);
+begin
+  FEdtInlineCompletionExcludedLanguages.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetInlineCompletionExcludedProjects:
+  string;
+begin
+  Result := FEdtInlineCompletionExcludedProjects.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetInlineCompletionExcludedProjects(
+  const AValue: string
+);
+begin
+  FEdtInlineCompletionExcludedProjects.Text := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetQuotaEnabled: Boolean;

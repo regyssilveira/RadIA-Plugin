@@ -65,6 +65,16 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetInlineCompletionEnabled: Boolean;
+    procedure SetInlineCompletionEnabled(const AValue: Boolean);
+    function GetInlineCompletionDelay: string;
+    procedure SetInlineCompletionDelay(const AValue: string);
+    function GetInlineCompletionExcludedFiles: string;
+    procedure SetInlineCompletionExcludedFiles(const AValue: string);
+    function GetInlineCompletionExcludedLanguages: string;
+    procedure SetInlineCompletionExcludedLanguages(const AValue: string);
+    function GetInlineCompletionExcludedProjects: string;
+    procedure SetInlineCompletionExcludedProjects(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -107,6 +117,7 @@ type
     function ValidateProvidersParams: Boolean;
     function ValidateQuota: Boolean;
     function ValidateConsent: Boolean;
+    function ValidateInlineCompletion: Boolean;
     procedure PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string);
     procedure PopulateTemplatesList;
   public
@@ -268,6 +279,19 @@ begin
   FView.SetConsentRememberExecution(
     FConfig.ConsentRememberExecution
   );
+  FView.SetInlineCompletionEnabled(FConfig.AutocompleteEnabled);
+  FView.SetInlineCompletionDelay(
+    IntToStr(FConfig.AutocompleteDelay)
+  );
+  FView.SetInlineCompletionExcludedFiles(
+    FConfig.AutocompleteExcludedFiles
+  );
+  FView.SetInlineCompletionExcludedLanguages(
+    FConfig.AutocompleteExcludedLanguages
+  );
+  FView.SetInlineCompletionExcludedProjects(
+    FConfig.AutocompleteExcludedProjects
+  );
 
   // Load Advanced Parameters for registered providers
   for LProviderId in FProvidersList do
@@ -361,6 +385,20 @@ begin
   end;
 end;
 
+function TRadIAConfigPresenter.ValidateInlineCompletion: Boolean;
+var
+  LDelay: Integer;
+begin
+  Result := TryStrToInt(
+    FView.GetInlineCompletionDelay,
+    LDelay
+  ) and (LDelay >= 250) and (LDelay <= 5000);
+  if not Result then
+    FView.ShowMessageDialog(
+      'Inline completion delay must be between 250 and 5000 milliseconds.'
+    );
+end;
+
 procedure TRadIAConfigPresenter.PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string);
 var
   LFormatSettings: TFormatSettings;
@@ -418,6 +456,20 @@ begin
     FView.GetConsentRememberStructural;
   FConfig.ConsentRememberExecution :=
     FView.GetConsentRememberExecution;
+  FConfig.AutocompleteEnabled :=
+    FView.GetInlineCompletionEnabled;
+  FConfig.AutocompleteDelay := StrToInt(
+    FView.GetInlineCompletionDelay
+  );
+  FConfig.AutocompleteExcludedFiles := Trim(
+    FView.GetInlineCompletionExcludedFiles
+  );
+  FConfig.AutocompleteExcludedLanguages := Trim(
+    FView.GetInlineCompletionExcludedLanguages
+  );
+  FConfig.AutocompleteExcludedProjects := Trim(
+    FView.GetInlineCompletionExcludedProjects
+  );
 
   for LProviderId in FProvidersList do
   begin
@@ -460,6 +512,7 @@ begin
   if not ValidateProvidersParams then Exit;
   if not ValidateQuota then Exit;
   if not ValidateConsent then Exit;
+  if not ValidateInlineCompletion then Exit;
 
   PersistConfig(LOllamaUrl, LOpenAIUrl, LLMStudioUrl, LAzureUrl);
 end;

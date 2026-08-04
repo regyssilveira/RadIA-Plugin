@@ -8,6 +8,8 @@ uses
   RadIA.OTA.InlineReviews;
 
 type
+  TRadIAInlineCompletionIdleHandler = reference to procedure;
+
   IRadIAOTAInlineCompletionSession = interface(
     IRadIAInlineCompletionView
   )
@@ -15,6 +17,11 @@ type
     function Capture(
       out AContext: TRadIAInlineCompletionContext
     ): Boolean;
+    procedure ConfigureContinuous(
+      const AEnabled: Boolean;
+      const AIdleHandler: TRadIAInlineCompletionIdleHandler
+    );
+    procedure WatchCurrentView;
   end;
 
   TRadIAOTAInlineCompletionSession = class(
@@ -24,6 +31,8 @@ type
   )
   private
     FContext: TRadIAInlineCompletionContext;
+    FContinuousEnabled: Boolean;
+    FIdleHandler: TRadIAInlineCompletionIdleHandler;
     FSuggestion: string;
     FView: IOTAEditView;
     FViewNotifierIndex: Integer;
@@ -47,6 +56,10 @@ type
     function Capture(
       out AContext: TRadIAInlineCompletionContext
     ): Boolean;
+    procedure ConfigureContinuous(
+      const AEnabled: Boolean;
+      const AIdleHandler: TRadIAInlineCompletionIdleHandler
+    );
     procedure Clear;
     procedure Show(
       const AContext: TRadIAInlineCompletionContext;
@@ -55,6 +68,7 @@ type
     procedure Destroyed; override;
     procedure Modified; override;
     procedure EditorIdle(const View: IOTAEditView); override;
+    procedure WatchCurrentView;
   end;
 
 implementation
@@ -171,7 +185,27 @@ begin
   FContext := Default(TRadIAInlineCompletionContext);
   if Assigned(FView) then
     FView.Paint;
-  UnregisterView;
+  if not FContinuousEnabled then
+    UnregisterView;
+end;
+
+procedure TRadIAOTAInlineCompletionSession.ConfigureContinuous(
+  const AEnabled: Boolean;
+  const AIdleHandler: TRadIAInlineCompletionIdleHandler
+);
+begin
+  FContinuousEnabled := AEnabled;
+  if AEnabled then
+  begin
+    FIdleHandler := AIdleHandler;
+    WatchCurrentView;
+  end
+  else
+  begin
+    FIdleHandler := nil;
+    if FSuggestion = '' then
+      UnregisterView;
+  end;
 end;
 
 constructor TRadIAOTAInlineCompletionSession.Create;
@@ -210,11 +244,15 @@ procedure TRadIAOTAInlineCompletionSession.EditorIdle(
   const View: IOTAEditView
 );
 begin
-  if (FSuggestion <> '') and Assigned(View) then
+  if not Assigned(View) then
+    Exit;
+  if FSuggestion <> '' then
     View.SetTempMsg(
       'RadIA Ghost Text: accept, reject, or request an alternative ' +
       'from the RadIA editor menu.'
-    );
+    )
+  else if FContinuousEnabled and Assigned(FIdleHandler) then
+    FIdleHandler();
 end;
 
 function TRadIAOTAInlineCompletionSession.FirstSuggestionLine: string;
@@ -329,6 +367,17 @@ begin
   end;
   FViewNotifierIndex := -1;
   FView := nil;
+end;
+
+procedure TRadIAOTAInlineCompletionSession.WatchCurrentView;
+var
+  LView: IOTAEditView;
+begin
+  if not FContinuousEnabled then
+    Exit;
+  LView := CurrentView;
+  if Assigned(LView) then
+    RegisterView(LView);
 end;
 
 end.

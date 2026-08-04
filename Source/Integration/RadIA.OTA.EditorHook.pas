@@ -17,9 +17,12 @@ type
     FInstalled: Boolean;
     FIDENotifierIndex: Integer;
     FEditorNotifiers: TInterfaceList;
+    FConfig: IRadIAConfig;
     FIDEAdapter: IRadIAIDEAdapter;
     FInlineCompletionConsentGranted: Boolean;
     FInlineCompletionController: IRadIAInlineCompletionController;
+    FInlineCompletionLastKey: string;
+    FInlineCompletionSessionEnabled: Boolean;
     FInlineCompletionSession: IRadIAOTAInlineCompletionSession;
     FMediator: IRadIAMediator;
     {$IFNDEF TESTS}
@@ -70,6 +73,9 @@ type
     procedure OnInlineCompletionNextWordExecute(Sender: TObject);
     procedure OnInlineCompletionRejectExecute(Sender: TObject);
     procedure OnInlineCompletionRequestExecute(Sender: TObject);
+    procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
+    procedure RequestContinuousInlineCompletion;
+    procedure RefreshInlineCompletionWatch;
 
     function BuildCreateExamplePrompt(const ASourceCode: string; const AContext: TMethodExampleContext): string;
     function GetEditorCodeContext(out ACode: string; out AUsedSelection: Boolean): Boolean;
@@ -138,6 +144,7 @@ threadvar
 constructor TRadIAEditorHook.Create(AOwner: TComponent);
 var
   LDispatcher: TRadIAInlineCompletionDispatcher;
+  LOptions: TRadIAInlineCompletionOptions;
   LProvider: IRadIAInlineCompletionProvider;
   LRunner: TRadIAInlineCompletionRunner;
   LView: IRadIAInlineCompletionView;
@@ -147,8 +154,11 @@ begin
     FIDEAdapter := TRadIAConcreteIDEAdapter.Create;
   if not TRadIAContainer.TryResolve<IRadIAMediator>(FMediator) then
     FMediator := TRadIAMediator.Instance;
+  TRadIAContainer.TryResolve<IRadIAConfig>(FConfig);
   FOldActiveFormChange := nil;
   FInlineCompletionConsentGranted := False;
+  FInlineCompletionSessionEnabled := True;
+  FInlineCompletionLastKey := '';
   FInlineCompletionSession := TRadIAOTAInlineCompletionSession.Create;
   if TRadIAContainer.TryResolve<IRadIAInlineCompletionProvider>(
     LProvider
@@ -171,13 +181,22 @@ begin
           end
         );
       end;
+    if Assigned(FConfig) then
+      LOptions := TRadIAInlineCompletionOptions.Create(
+        FConfig.AutocompleteDelay,
+        24000,
+        4000
+      )
+    else
+      LOptions := TRadIAInlineCompletionOptions.Default;
     FInlineCompletionController := TRadIAInlineCompletionController.Create(
       LProvider,
       LView,
-      TRadIAInlineCompletionOptions.Default,
+      LOptions,
       LRunner,
       LDispatcher
     );
+    RefreshInlineCompletionWatch;
   end;
   FIDENotifierIndex := -1;
   FEditorNotifiers := TInterfaceList.Create;
@@ -195,6 +214,7 @@ begin
   if Assigned(FInlineCompletionController) then
     FInlineCompletionController.Stop;
   FInlineCompletionController := nil;
+  FInlineCompletionSession.ConfigureContinuous(False, nil);
   FInlineCompletionSession := nil;
   FEditorNotifiers.Free;
   inherited Destroy;
@@ -323,7 +343,10 @@ begin
     begin
       LActiveForm := Screen.ActiveForm;
       if Assigned(LActiveForm) and SameText(LActiveForm.ClassName, 'TEditWindow') then
+      begin
+        RefreshInlineCompletionWatch;
         QueueHookActiveEditor;
+      end;
     end;
   except
     on E: Exception do
@@ -752,6 +775,11 @@ begin
   LSubItem.OnClick := OnInlineCompletionRejectExecute;
   LRootItem.Add(LSubItem);
 
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Pause/Resume Inline Completion for Session';
+  LSubItem.OnClick := OnInlineCompletionSessionToggleExecute;
+  LRootItem.Add(LSubItem);
+
   // Separator visual
   LSubItem := TMenuItem.Create(APopupMenu);
   LSubItem.Caption := '-';
@@ -942,6 +970,81 @@ begin
     ShowMessage('No supported active code buffer was found.');
     Exit;
   end;
+  FInlineCompletionController.Request(LContext);
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionSessionToggleExecute(
+  Sender: TObject
+);
+begin
+  FInlineCompletionSessionEnabled :=
+    not FInlineCompletionSessionEnabled;
+  FInlineCompletionLastKey := '';
+  if not FInlineCompletionSessionEnabled and
+    Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Stop;
+  RefreshInlineCompletionWatch;
+end;
+
+procedure TRadIAEditorHook.RefreshInlineCompletionWatch;
+var
+  LEnabled: Boolean;
+  LIdleHandler: TRadIAInlineCompletionIdleHandler;
+begin
+  if not Assigned(FInlineCompletionSession) or
+    not Assigned(FConfig) then
+    Exit;
+  LEnabled := FInlineCompletionSessionEnabled and
+    FConfig.AutocompleteEnabled;
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Configure(
+      TRadIAInlineCompletionOptions.Create(
+        FConfig.AutocompleteDelay,
+        24000,
+        4000
+      )
+    );
+  if LEnabled then
+  begin
+    LIdleHandler :=
+      procedure
+      begin
+        RequestContinuousInlineCompletion;
+      end;
+  end
+  else
+    LIdleHandler := nil;
+  FInlineCompletionSession.ConfigureContinuous(
+    LEnabled,
+    LIdleHandler
+  );
+end;
+
+procedure TRadIAEditorHook.RequestContinuousInlineCompletion;
+var
+  LContext: TRadIAInlineCompletionContext;
+  LRequestKey: string;
+begin
+  if not FInlineCompletionSessionEnabled or
+    not Assigned(FConfig) or
+    not FConfig.AutocompleteEnabled or
+    not Assigned(FInlineCompletionController) or
+    not FInlineCompletionSession.Capture(LContext) then
+    Exit;
+  if not TRadIAInlineCompletionPolicy.IsAllowed(
+    LContext,
+    FConfig.AutocompleteExcludedLanguages,
+    FConfig.AutocompleteExcludedFiles,
+    FConfig.AutocompleteExcludedProjects
+  ) then
+    Exit;
+  LRequestKey := LContext.FileName.ToLower + '|' +
+    LContext.Revision + '|' +
+    LContext.CursorLine.ToString + '|' +
+    LContext.CursorColumn.ToString;
+  if SameText(LRequestKey, FInlineCompletionLastKey) then
+    Exit;
+  FInlineCompletionLastKey := LRequestKey;
   FInlineCompletionController.Request(LContext);
 end;
 

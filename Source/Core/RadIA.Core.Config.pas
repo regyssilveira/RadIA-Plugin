@@ -30,6 +30,9 @@ type
     FAutocompleteProvider: string;
     FAutocompleteModel: string;
     FAutocompleteDelay: Integer;
+    FAutocompleteExcludedFiles: string;
+    FAutocompleteExcludedLanguages: string;
+    FAutocompleteExcludedProjects: string;
     FAzureApiVersion: string;
     FAwsAccessKeyId: string;
     FAwsSecretAccessKey: string;
@@ -129,6 +132,12 @@ type
     procedure SetAutocompleteModel(const AModel: string);
     function GetAutocompleteDelay: Integer;
     procedure SetAutocompleteDelay(const AValue: Integer);
+    function GetAutocompleteExcludedFiles: string;
+    procedure SetAutocompleteExcludedFiles(const AValue: string);
+    function GetAutocompleteExcludedLanguages: string;
+    procedure SetAutocompleteExcludedLanguages(const AValue: string);
+    function GetAutocompleteExcludedProjects: string;
+    procedure SetAutocompleteExcludedProjects(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -230,10 +239,13 @@ begin
   FQuotaCycleStart := Now;
   FActiveSessionId := '';
 
-  FAutocompleteEnabled := True;
+  FAutocompleteEnabled := False;
   FAutocompleteProvider := TConfigDefaults.AutocompleteProvider;
   FAutocompleteModel := TConfigDefaults.AutocompleteModel;
   FAutocompleteDelay := TConfigDefaults.AutocompleteDelay;
+  FAutocompleteExcludedFiles := '';
+  FAutocompleteExcludedLanguages := '';
+  FAutocompleteExcludedProjects := '';
   FInjectDelphiVersion := True;
   FConciseResponses := True;
   FConsentTimeoutSeconds := 60;
@@ -382,10 +394,32 @@ begin
     FQuotaCycleStart := ReadRegDouble('QuotaCycleStart', Now);
     FActiveSessionId := ReadRegString('ActiveSessionId', '');
 
-    FAutocompleteEnabled := ReadRegInt('AutocompleteEnabled', 1) <> 0;
+    FAutocompleteEnabled := ReadRegInt(
+      'InlineCompletionEnabled',
+      0
+    ) <> 0;
     FAutocompleteProvider := FStorage.ReadString('AutocompleteProvider', TConfigDefaults.AutocompleteProvider);
     FAutocompleteModel := ReadRegString('AutocompleteModel', TConfigDefaults.AutocompleteModel);
-    FAutocompleteDelay := ReadRegInt('AutocompleteDelay', TConfigDefaults.AutocompleteDelay);
+    FAutocompleteDelay := EnsureRange(
+      ReadRegInt(
+        'AutocompleteDelay',
+        TConfigDefaults.AutocompleteDelay
+      ),
+      250,
+      5000
+    );
+    FAutocompleteExcludedFiles := ReadRegString(
+      'AutocompleteExcludedFiles',
+      ''
+    );
+    FAutocompleteExcludedLanguages := ReadRegString(
+      'AutocompleteExcludedLanguages',
+      ''
+    );
+    FAutocompleteExcludedProjects := ReadRegString(
+      'AutocompleteExcludedProjects',
+      ''
+    );
     FInjectDelphiVersion := ReadRegInt('InjectDelphiVersion', 1) <> 0;
     FConciseResponses := ReadRegInt('ConciseResponses', 1) <> 0;
     FConsentTimeoutSeconds := EnsureRange(
@@ -635,10 +669,25 @@ begin
     FStorage.WriteFloat('QuotaCycleStart', FQuotaCycleStart);
     FStorage.WriteString('ActiveSessionId', FActiveSessionId);
 
-    FStorage.WriteInteger('AutocompleteEnabled', IfThen(FAutocompleteEnabled, 1, 0));
+    FStorage.WriteInteger(
+      'InlineCompletionEnabled',
+      IfThen(FAutocompleteEnabled, 1, 0)
+    );
     FStorage.WriteString('AutocompleteProvider', FAutocompleteProvider);
     FStorage.WriteString('AutocompleteModel', FAutocompleteModel);
     FStorage.WriteInteger('AutocompleteDelay', FAutocompleteDelay);
+    FStorage.WriteString(
+      'AutocompleteExcludedFiles',
+      FAutocompleteExcludedFiles
+    );
+    FStorage.WriteString(
+      'AutocompleteExcludedLanguages',
+      FAutocompleteExcludedLanguages
+    );
+    FStorage.WriteString(
+      'AutocompleteExcludedProjects',
+      FAutocompleteExcludedProjects
+    );
     FStorage.WriteInteger('InjectDelphiVersion', IfThen(FInjectDelphiVersion, 1, 0));
     FStorage.WriteInteger('ConciseResponses', IfThen(FConciseResponses, 1, 0));
     FStorage.WriteInteger('ConsentTimeoutSeconds', FConsentTimeoutSeconds);
@@ -1038,9 +1087,45 @@ begin
   Result := FAutocompleteDelay;
 end;
 
+function TRadIAConfig.GetAutocompleteExcludedFiles: string;
+begin
+  Result := FAutocompleteExcludedFiles;
+end;
+
+function TRadIAConfig.GetAutocompleteExcludedLanguages: string;
+begin
+  Result := FAutocompleteExcludedLanguages;
+end;
+
+function TRadIAConfig.GetAutocompleteExcludedProjects: string;
+begin
+  Result := FAutocompleteExcludedProjects;
+end;
+
 procedure TRadIAConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
-  FAutocompleteDelay := AValue;
+  FAutocompleteDelay := EnsureRange(AValue, 250, 5000);
+end;
+
+procedure TRadIAConfig.SetAutocompleteExcludedFiles(
+  const AValue: string
+);
+begin
+  FAutocompleteExcludedFiles := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetAutocompleteExcludedLanguages(
+  const AValue: string
+);
+begin
+  FAutocompleteExcludedLanguages := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetAutocompleteExcludedProjects(
+  const AValue: string
+);
+begin
+  FAutocompleteExcludedProjects := AValue.Trim;
 end;
 
 function TRadIAConfig.GetSmartConfigEnabled: Boolean;

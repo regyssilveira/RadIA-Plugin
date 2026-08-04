@@ -35,6 +35,8 @@ type
     [Test]
     procedure TestConsentTimeoutIsClamped;
     [Test]
+    procedure TestInlineCompletionSafeDefaultsAndPersistence;
+    [Test]
     procedure TestOllamaBaseUrlPersistence;
     [Test]
     procedure TestJsonNewlineHandling;
@@ -177,6 +179,39 @@ begin
   Assert.AreEqual(15, FConfig.ConsentTimeoutSeconds);
   FConfig.ConsentTimeoutSeconds := 900;
   Assert.AreEqual(600, FConfig.ConsentTimeoutSeconds);
+end;
+
+procedure TTestRadIAConfig.
+  TestInlineCompletionSafeDefaultsAndPersistence;
+begin
+  Assert.IsFalse(FConfig.AutocompleteEnabled);
+  FConfig.AutocompleteEnabled := True;
+  FConfig.AutocompleteDelay := 900;
+  FConfig.AutocompleteExcludedLanguages := 'sql;markdown';
+  FConfig.AutocompleteExcludedFiles := 'generated;vendor';
+  FConfig.AutocompleteExcludedProjects := 'legacy;archive';
+  FConfig.Save;
+  FConfig.Load;
+
+  Assert.IsTrue(FConfig.AutocompleteEnabled);
+  Assert.AreEqual(900, FConfig.AutocompleteDelay);
+  Assert.AreEqual(
+    'sql;markdown',
+    FConfig.AutocompleteExcludedLanguages
+  );
+  Assert.AreEqual(
+    'generated;vendor',
+    FConfig.AutocompleteExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy;archive',
+    FConfig.AutocompleteExcludedProjects
+  );
+
+  FConfig.AutocompleteDelay := 1;
+  Assert.AreEqual(250, FConfig.AutocompleteDelay);
+  FConfig.AutocompleteDelay := 9000;
+  Assert.AreEqual(5000, FConfig.AutocompleteDelay);
 end;
 
 procedure TTestRadIAConfig.TestOllamaBaseUrlPersistence;
