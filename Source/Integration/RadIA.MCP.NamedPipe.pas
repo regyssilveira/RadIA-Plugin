@@ -83,6 +83,12 @@ type
   end;
 
   TRadIANamedPipeWorker = class(TThread)
+  private type
+    TRadIAPipeReadStatus = (
+      prsMessage,
+      prsRetry,
+      prsClosed
+    );
   private
     FConnectionFile: string;
     FEndpoint: string;
@@ -102,6 +108,33 @@ type
       const AErrorMessage: string
     ): string;
     function GetMessageMethod(const AMessage: string): string;
+    function DispatchMessage(
+      const APipe: THandle;
+      const AMessage: string;
+      const ASession: TRadIAMcpSession;
+      var ARequestWorker: TRadIAMcpRequestWorker
+    ): Boolean;
+    function FlushCompletedRequest(
+      const APipe: THandle;
+      var ARequestWorker: TRadIAMcpRequestWorker
+    ): Boolean;
+    function HandleImmediateMessage(
+      const APipe: THandle;
+      const AMessage: string;
+      const AMethod: string;
+      const ASession: TRadIAMcpSession;
+      out AHandled: Boolean
+    ): Boolean;
+    function PrepareToolCall(
+      const APipe: THandle;
+      const AMessage: string;
+      const ASession: TRadIAMcpSession;
+      out ARejected: Boolean
+    ): Boolean;
+    function ReadClientMessage(
+      const APipe: THandle;
+      out AMessage: string
+    ): TRadIAPipeReadStatus;
     procedure HandleClient(const APipe: THandle);
     function RequestFinished(
       const AWorker: TRadIAMcpRequestWorker
@@ -414,6 +447,103 @@ begin
   end;
 end;
 
+function TRadIANamedPipeWorker.DispatchMessage(
+  const APipe: THandle;
+  const AMessage: string;
+  const ASession: TRadIAMcpSession;
+  var ARequestWorker: TRadIAMcpRequestWorker
+): Boolean;
+var
+  LHandled: Boolean;
+  LMethod: string;
+  LRejected: Boolean;
+begin
+  Result := False;
+  try
+    LMethod := GetMessageMethod(AMessage);
+    if not HandleImmediateMessage(
+      APipe,
+      AMessage,
+      LMethod,
+      ASession,
+      LHandled
+    ) then
+      Exit;
+    if LHandled then
+      Exit(True);
+    if Assigned(ARequestWorker) then
+    begin
+      ASession.RecordMessageReceived;
+      ASession.RecordRejectedRequest;
+      Exit(WriteMessage(APipe, BuildBusyResponse(AMessage)));
+    end;
+    if LMethod = 'tools/call' then
+    begin
+      if not PrepareToolCall(
+        APipe,
+        AMessage,
+        ASession,
+        LRejected
+      ) then
+        Exit;
+      if LRejected then
+        Exit(True);
+    end;
+    ARequestWorker := TRadIAMcpRequestWorker.Create(
+      AMessage,
+      FProtocol,
+      ASession
+    );
+    ARequestWorker.Start;
+    Result := True;
+  except
+    on Exception do
+      Result := WriteMessage(
+        APipe,
+        '{"jsonrpc":"2.0","id":null,"error":{' +
+        '"code":-32603,"message":"Internal server error."}}'
+      );
+  end;
+end;
+
+function TRadIANamedPipeWorker.FlushCompletedRequest(
+  const APipe: THandle;
+  var ARequestWorker: TRadIAMcpRequestWorker
+): Boolean;
+var
+  LResponse: string;
+begin
+  Result := True;
+  if not Assigned(ARequestWorker) or
+    not RequestFinished(ARequestWorker) then
+    Exit;
+  LResponse := ARequestWorker.Response;
+  ARequestWorker.Free;
+  ARequestWorker := nil;
+  if LResponse <> '' then
+    Result := WriteMessage(APipe, LResponse);
+end;
+
+function TRadIANamedPipeWorker.HandleImmediateMessage(
+  const APipe: THandle;
+  const AMessage: string;
+  const AMethod: string;
+  const ASession: TRadIAMcpSession;
+  out AHandled: Boolean
+): Boolean;
+var
+  LResponse: string;
+begin
+  AHandled := (AMethod = 'notifications/cancelled') or
+    (AMethod = 'notifications/initialized');
+  Result := True;
+  if not AHandled then
+    Exit;
+  LResponse := FProtocol.HandleMessage(AMessage, ASession);
+  if LResponse <> '' then
+    Result := WriteMessage(APipe, LResponse);
+end;
+
 function TRadIANamedPipeWorker.WaitUntilReady(
   out AErrorCode: DWORD
 ): Boolean;
@@ -428,10 +558,8 @@ procedure TRadIANamedPipeWorker.HandleClient(
 );
 var
   LMessage: string;
-  LMethod: string;
-  LProject: TRadIAProjectSnapshot;
   LRequestWorker: TRadIAMcpRequestWorker;
-  LResponse: string;
+  LReadStatus: TRadIAPipeReadStatus;
   LSession: TRadIAMcpSession;
 begin
   LSession := TRadIAMcpSession.Create(
@@ -440,88 +568,26 @@ begin
     ''
   );
   LRequestWorker := nil;
-  LResponse := '';
   try
     while not IsStopping do
     begin
-      if Assigned(LRequestWorker) and
-        RequestFinished(LRequestWorker) then
-      begin
-        LResponse := LRequestWorker.Response;
-        LRequestWorker.Free;
-        LRequestWorker := nil;
-        if (LResponse <> '') and
-          not WriteMessage(APipe, LResponse) then
-          Exit;
-      end;
-
-      if not ReadMessage(APipe, LMessage) then
-      begin
-        if GetLastError = ERROR_NO_DATA then
-        begin
-          Sleep(CPipePollIntervalMs);
-          Continue;
-        end;
+      if not FlushCompletedRequest(APipe, LRequestWorker) then
         Exit;
-      end;
-
-      try
-        LResponse := '';
-        LMethod := GetMessageMethod(LMessage);
-        if (LMethod = 'notifications/cancelled') or
-          (LMethod = 'notifications/initialized') then
-        begin
-          LResponse := FProtocol.HandleMessage(LMessage, LSession);
-          if (LResponse <> '') and
-            not WriteMessage(APipe, LResponse) then
-            Exit;
-          Continue;
-        end;
-        if Assigned(LRequestWorker) then
-        begin
-          LSession.RecordMessageReceived;
-          LSession.RecordRejectedRequest;
-          if not WriteMessage(APipe, BuildBusyResponse(LMessage)) then
-            Exit;
-          Continue;
-        end;
-        if LMethod = 'tools/call' then
-        begin
-          if not IsIDEReady then
-          begin
-            LSession.RecordMessageReceived;
-            LSession.RecordRejectedRequest;
-            LResponse := BuildErrorResponse(
-              LMessage,
-              -32004,
-              'The Delphi IDE is still starting. Retry shortly.'
-            );
-            if not WriteMessage(APipe, LResponse) then
-              Exit;
-            Continue;
-          end;
-          LProject := FWorkspace.GetActiveProject;
-          LSession.ProjectId := LProject.FileName;
-        end;
-        LRequestWorker := TRadIAMcpRequestWorker.Create(
-          LMessage,
-          FProtocol,
-          LSession
-        );
-        LRequestWorker.Start;
-      except
-        on Exception do
-          LResponse :=
-            '{"jsonrpc":"2.0","id":null,"error":{' +
-            '"code":-32603,"message":"Internal server error."}}';
-      end;
-
-      if LResponse <> '' then
+      LReadStatus := ReadClientMessage(APipe, LMessage);
+      if LReadStatus = prsClosed then
+        Exit;
+      if LReadStatus = prsRetry then
       begin
-        if not WriteMessage(APipe, LResponse) then
-          Exit;
-        LResponse := '';
+        Sleep(CPipePollIntervalMs);
+        Continue;
       end;
+      if not DispatchMessage(
+        APipe,
+        LMessage,
+        LSession,
+        LRequestWorker
+      ) then
+        Exit;
     end;
   finally
     if Assigned(LRequestWorker) then
@@ -533,6 +599,46 @@ begin
     end;
     LSession.Free;
   end;
+end;
+
+function TRadIANamedPipeWorker.PrepareToolCall(
+  const APipe: THandle;
+  const AMessage: string;
+  const ASession: TRadIAMcpSession;
+  out ARejected: Boolean
+): Boolean;
+var
+  LProject: TRadIAProjectSnapshot;
+begin
+  ARejected := not IsIDEReady;
+  if ARejected then
+  begin
+    ASession.RecordMessageReceived;
+    ASession.RecordRejectedRequest;
+    Exit(WriteMessage(
+      APipe,
+      BuildErrorResponse(
+        AMessage,
+        -32004,
+        'The Delphi IDE is still starting. Retry shortly.'
+      )
+    ));
+  end;
+  LProject := FWorkspace.GetActiveProject;
+  ASession.ProjectId := LProject.FileName;
+  Result := True;
+end;
+
+function TRadIANamedPipeWorker.ReadClientMessage(
+  const APipe: THandle;
+  out AMessage: string
+): TRadIAPipeReadStatus;
+begin
+  if ReadMessage(APipe, AMessage) then
+    Exit(prsMessage);
+  if GetLastError = ERROR_NO_DATA then
+    Exit(prsRetry);
+  Result := prsClosed;
 end;
 
 function TRadIANamedPipeWorker.GetMessageMethod(
