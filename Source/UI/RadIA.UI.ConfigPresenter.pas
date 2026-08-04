@@ -75,6 +75,8 @@ type
     procedure SetInlineCompletionExcludedLanguages(const AValue: string);
     function GetInlineCompletionExcludedProjects: string;
     procedure SetInlineCompletionExcludedProjects(const AValue: string);
+    function GetInlineShortcutProfile: string;
+    procedure SetInlineShortcutProfile(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -151,6 +153,7 @@ type
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
   System.Classes, System.SysUtils, RadIA.Core.Config, RadIA.Core.Container,
   RadIA.Core.IndyLoopback, RadIA.Core.OAuth, System.StrUtils;
 
@@ -211,6 +214,7 @@ procedure TRadIAConfigPresenter.LoadConfig;
 var
   LFormatSettings: TFormatSettings;
   LProviderId: string;
+  LShortcutConfig: IRadIAInlineShortcutConfig;
 begin
   LFormatSettings := TFormatSettings.Invariant;
 
@@ -292,6 +296,14 @@ begin
   FView.SetInlineCompletionExcludedProjects(
     FConfig.AutocompleteExcludedProjects
   );
+  if Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig) then
+    FView.SetInlineShortcutProfile(
+      LShortcutConfig.InlineShortcutProfile
+    )
+  else
+    FView.SetInlineShortcutProfile(
+      TRadIAInlineShortcutProfile.DefaultText
+    );
 
   // Load Advanced Parameters for registered providers
   for LProviderId in FProvidersList do
@@ -388,14 +400,28 @@ end;
 function TRadIAConfigPresenter.ValidateInlineCompletion: Boolean;
 var
   LDelay: Integer;
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
 begin
   Result := TryStrToInt(
     FView.GetInlineCompletionDelay,
     LDelay
   ) and (LDelay >= 250) and (LDelay <= 5000);
   if not Result then
+  begin
     FView.ShowMessageDialog(
       'Inline completion delay must be between 250 and 5000 milliseconds.'
+    );
+    Exit;
+  end;
+  Result := TRadIAInlineShortcutProfile.TryParse(
+    FView.GetInlineShortcutProfile,
+    LProfile,
+    LError
+  );
+  if not Result then
+    FView.ShowMessageDialog(
+      'Invalid inline shortcut profile: ' + LError
     );
 end;
 
@@ -403,6 +429,7 @@ procedure TRadIAConfigPresenter.PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMS
 var
   LFormatSettings: TFormatSettings;
   LProviderId: string;
+  LShortcutConfig: IRadIAInlineShortcutConfig;
   LTemp: Double;
   LMax: Integer;
   LTime: Integer;
@@ -470,6 +497,10 @@ begin
   FConfig.AutocompleteExcludedProjects := Trim(
     FView.GetInlineCompletionExcludedProjects
   );
+  if Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig) then
+    LShortcutConfig.InlineShortcutProfile := Trim(
+      FView.GetInlineShortcutProfile
+    );
 
   for LProviderId in FProvidersList do
   begin

@@ -4,10 +4,14 @@ interface
 
 uses
   System.Classes, RadIA.Core.Interfaces, RadIA.Core.TokenUsage,
-  RadIA.Core.SettingsStorage;
+  RadIA.Core.SettingsStorage, RadIA.Core.InlineShortcuts;
 
 type
-  TRadIAConfig = class(TInterfacedObject, IRadIAConfig)
+  TRadIAConfig = class(
+    TInterfacedObject,
+    IRadIAConfig,
+    IRadIAInlineShortcutConfig
+  )
   private
     class var FBaseRegistryPath: string;
     class var FInstance: TRadIAConfig;
@@ -33,6 +37,7 @@ type
     FAutocompleteExcludedFiles: string;
     FAutocompleteExcludedLanguages: string;
     FAutocompleteExcludedProjects: string;
+    FInlineShortcutProfile: string;
     FAzureApiVersion: string;
     FAwsAccessKeyId: string;
     FAwsSecretAccessKey: string;
@@ -138,6 +143,8 @@ type
     procedure SetAutocompleteExcludedLanguages(const AValue: string);
     function GetAutocompleteExcludedProjects: string;
     procedure SetAutocompleteExcludedProjects(const AValue: string);
+    function GetInlineShortcutProfile: string;
+    procedure SetInlineShortcutProfile(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -246,6 +253,7 @@ begin
   FAutocompleteExcludedFiles := '';
   FAutocompleteExcludedLanguages := '';
   FAutocompleteExcludedProjects := '';
+  FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
   FInjectDelphiVersion := True;
   FConciseResponses := True;
   FConsentTimeoutSeconds := 60;
@@ -419,6 +427,10 @@ begin
     FAutocompleteExcludedProjects := ReadRegString(
       'AutocompleteExcludedProjects',
       ''
+    );
+    FInlineShortcutProfile := ReadRegString(
+      'InlineShortcutProfile',
+      TRadIAInlineShortcutProfile.DefaultText
     );
     FInjectDelphiVersion := ReadRegInt('InjectDelphiVersion', 1) <> 0;
     FConciseResponses := ReadRegInt('ConciseResponses', 1) <> 0;
@@ -687,6 +699,10 @@ begin
     FStorage.WriteString(
       'AutocompleteExcludedProjects',
       FAutocompleteExcludedProjects
+    );
+    FStorage.WriteString(
+      'InlineShortcutProfile',
+      FInlineShortcutProfile
     );
     FStorage.WriteInteger('InjectDelphiVersion', IfThen(FInjectDelphiVersion, 1, 0));
     FStorage.WriteInteger('ConciseResponses', IfThen(FConciseResponses, 1, 0));
@@ -1102,6 +1118,11 @@ begin
   Result := FAutocompleteExcludedProjects;
 end;
 
+function TRadIAConfig.GetInlineShortcutProfile: string;
+begin
+  Result := FInlineShortcutProfile;
+end;
+
 procedure TRadIAConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
   FAutocompleteDelay := EnsureRange(AValue, 250, 5000);
@@ -1126,6 +1147,13 @@ procedure TRadIAConfig.SetAutocompleteExcludedProjects(
 );
 begin
   FAutocompleteExcludedProjects := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetInlineShortcutProfile(
+  const AValue: string
+);
+begin
+  FInlineShortcutProfile := AValue.Trim;
 end;
 
 function TRadIAConfig.GetSmartConfigEnabled: Boolean;

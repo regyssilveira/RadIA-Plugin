@@ -53,6 +53,7 @@ type
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
   System.SysUtils, System.JSON, RadIA.Core.Config;
 
 { TTestRadIAConfig }
@@ -183,13 +184,22 @@ end;
 
 procedure TTestRadIAConfig.
   TestInlineCompletionSafeDefaultsAndPersistence;
+var
+  LShortcutConfig: IRadIAInlineShortcutConfig;
 begin
   Assert.IsFalse(FConfig.AutocompleteEnabled);
+  Assert.IsTrue(
+    Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig)
+  );
   FConfig.AutocompleteEnabled := True;
   FConfig.AutocompleteDelay := 900;
   FConfig.AutocompleteExcludedLanguages := 'sql;markdown';
   FConfig.AutocompleteExcludedFiles := 'generated;vendor';
   FConfig.AutocompleteExcludedProjects := 'legacy;archive';
+  LShortcutConfig.InlineShortcutProfile :=
+    'request=Ctrl+Shift+Space; accept=Ctrl+Alt+Right; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace';
   FConfig.Save;
   FConfig.Load;
 
@@ -206,6 +216,10 @@ begin
   Assert.AreEqual(
     'legacy;archive',
     FConfig.AutocompleteExcludedProjects
+  );
+  Assert.Contains(
+    LShortcutConfig.InlineShortcutProfile,
+    'request=Ctrl+Shift+Space'
   );
 
   FConfig.AutocompleteDelay := 1;

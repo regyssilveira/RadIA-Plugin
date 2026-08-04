@@ -147,6 +147,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviews.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineCompletion.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.InlineShortcuts.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviewTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigation.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigationTools.pas"/>

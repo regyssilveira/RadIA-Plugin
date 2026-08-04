@@ -92,11 +92,18 @@ type
     procedure PolicyExcludesFileAndProjectFragments;
     [Test]
     procedure UpdatesOptionsAtRuntime;
+    [Test]
+    procedure ShortcutProfileRoundTripsDefaults;
+    [Test]
+    procedure ShortcutProfileRejectsDuplicateKeys;
+    [Test]
+    procedure ShortcutProfileRejectsMissingActions;
   end;
 
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
   System.SysUtils;
 
 { TRadIAInlineCompletionProviderStub }
@@ -350,6 +357,57 @@ procedure TRadIAInlineCompletionTests.ShowsSanitizedSuggestion;
 begin
   FController.Request(Context('1'));
   Assert.AreEqual('WriteLn(''Hello'');', FView.ShownText);
+end;
+
+procedure TRadIAInlineCompletionTests.ShortcutProfileRejectsDuplicateKeys;
+var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
+begin
+  Assert.IsFalse(
+    TRadIAInlineShortcutProfile.TryParse(
+      'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Space; ' +
+      'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+      'reject=Ctrl+Alt+Backspace',
+      LProfile,
+      LError
+    )
+  );
+  Assert.Contains(LError, 'unique');
+end;
+
+procedure TRadIAInlineCompletionTests.ShortcutProfileRejectsMissingActions;
+var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
+begin
+  Assert.IsFalse(
+    TRadIAInlineShortcutProfile.TryParse(
+      'request=Ctrl+Alt+Space',
+      LProfile,
+      LError
+    )
+  );
+  Assert.Contains(LError, 'Missing');
+end;
+
+procedure TRadIAInlineCompletionTests.ShortcutProfileRoundTripsDefaults;
+var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
+begin
+  Assert.IsTrue(
+    TRadIAInlineShortcutProfile.TryParse(
+      TRadIAInlineShortcutProfile.DefaultText,
+      LProfile,
+      LError
+    ),
+    LError
+  );
+  Assert.AreEqual(
+    TRadIAInlineShortcutProfile.DefaultText,
+    LProfile.ToText
+  );
 end;
 
 procedure TRadIAInlineCompletionTests.UpdatesOptionsAtRuntime;

@@ -39,6 +39,7 @@ type
     FInlineCompletionExcludedFiles: string;
     FInlineCompletionExcludedLanguages: string;
     FInlineCompletionExcludedProjects: string;
+    FInlineShortcutProfile: string;
     FQuotaEnabled: Boolean;
     FQuotaLimit: string;
     FQuotaUsedText: string;
@@ -133,6 +134,8 @@ type
     procedure SetInlineCompletionExcludedLanguages(const AValue: string);
     function GetInlineCompletionExcludedProjects: string;
     procedure SetInlineCompletionExcludedProjects(const AValue: string);
+    function GetInlineShortcutProfile: string;
+    procedure SetInlineShortcutProfile(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -254,6 +257,7 @@ type
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
   RadIA.Core.Config, RadIA.Core.SettingsStorage, System.SysUtils;
 
 { TMockConfigView }
@@ -280,6 +284,10 @@ begin
   ConsentShowArguments := True;
   ConsentRememberReversible := True;
   FInlineCompletionDelay := '700';
+  FInlineShortcutProfile :=
+    'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace';
 end;
 
 destructor TMockConfigView.Destroy;
@@ -500,11 +508,23 @@ begin
   Result := FInlineCompletionExcludedProjects;
 end;
 
+function TMockConfigView.GetInlineShortcutProfile: string;
+begin
+  Result := FInlineShortcutProfile;
+end;
+
 procedure TMockConfigView.SetInlineCompletionExcludedProjects(
   const AValue: string
 );
 begin
   FInlineCompletionExcludedProjects := AValue;
+end;
+
+procedure TMockConfigView.SetInlineShortcutProfile(
+  const AValue: string
+);
+begin
+  FInlineShortcutProfile := AValue;
 end;
 
 function TMockConfigView.GetQuotaEnabled: Boolean; begin Result := QuotaEnabled; end;
@@ -710,6 +730,8 @@ end;
 
 procedure TTestConfigPresenter.
   TestInlineCompletionSettingsAreValidatedAndPersisted;
+var
+  LShortcutConfig: IRadIAInlineShortcutConfig;
 begin
   FPresenter.LoadConfig;
   FMockView.SetInlineCompletionDelay('100');
@@ -720,11 +742,29 @@ begin
   );
 
   FMockView.LastMessageDialogText := '';
+  FMockView.SetInlineCompletionDelay('900');
+  FMockView.SetInlineShortcutProfile(
+    'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Space; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace'
+  );
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'must be unique'
+  );
+
+  FMockView.LastMessageDialogText := '';
   FMockView.SetInlineCompletionEnabled(True);
   FMockView.SetInlineCompletionDelay('900');
   FMockView.SetInlineCompletionExcludedLanguages('sql; markdown');
   FMockView.SetInlineCompletionExcludedFiles('generated; vendor');
   FMockView.SetInlineCompletionExcludedProjects('legacy; archive');
+  FMockView.SetInlineShortcutProfile(
+    'request=Ctrl+Shift+Space; accept=Ctrl+Alt+Right; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace'
+  );
   FPresenter.SaveConfig;
 
   Assert.IsTrue(FMockView.CloseViewCalled);
@@ -741,6 +781,13 @@ begin
   Assert.AreEqual(
     'legacy; archive',
     FConfig.AutocompleteExcludedProjects
+  );
+  Assert.IsTrue(
+    Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig)
+  );
+  Assert.Contains(
+    LShortcutConfig.InlineShortcutProfile,
+    'request=Ctrl+Shift+Space'
   );
 end;
 

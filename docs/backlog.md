@@ -57,6 +57,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M1–M3: entregar Ghost Text, terminal interativo e central unificada de execução.
     *   M1 entregue nesta etapa: a captura OTA do Ghost Text agora resolve o símbolo vigente
         diretamente do buffer vivo e da linha do cursor, sem depender do arquivo salvo.
+    *   M1 entregue nesta etapa: cinco atalhos configuráveis usam bindings parciais nativos da OTA,
+        com persistência, validação de perfil, bloqueio de duplicidade e detecção de conflito.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

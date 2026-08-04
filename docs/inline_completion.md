@@ -25,7 +25,7 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 
 ## Ações disponíveis no menu do editor
 
-| Ação | Atalho inicial |
+| Ação | Atalho padrão |
 |---|---|
 | Solicitar sugestão | `Ctrl+Alt+Espaço` |
 | Aceitar toda a sugestão | `Ctrl+Alt+Direita` |
@@ -35,6 +35,19 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 
 Os atalhos aparecem no submenu **Rad IA** do menu contextual do editor. O primeiro pedido de cada
 sessão informa qual contexto será enviado e exige consentimento explícito.
+
+Os atalhos são bindings parciais nativos da Open Tools API e funcionam diretamente no editor, sem
+abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Security & Consent** e edite
+**Inline shortcuts** usando o formato:
+
+```text
+request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; reject=Ctrl+Alt+Backspace
+```
+
+As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. O RadIA não
+salva perfis incompletos, teclas inválidas ou atalhos duplicados. A configuração é recarregada ao
+voltar ao editor, sem reiniciar a IDE. Se o keymap ativo do Delphi já possuir o mesmo atalho, o
+comando existente permanece prioritário e o conflito é registrado no log do RadIA.
 
 ## Assistência contínua e escopo
 
@@ -84,5 +97,5 @@ pela política não chegam ao provider.
 O fluxo OTA manual e a captura contínua opt-in estão conectados. Ambos capturam somente o buffer
 ativo, resolvem o símbolo vigente a partir da linha do cursor e incluem metadados básicos do projeto.
 A primeira linha é apresentada como Ghost Text e o buffer nunca é modificado antes do aceite.
-Sugestões multilinha com linhas virtuais e atalhos configuráveis permanecem pendentes. O recurso só
-será considerado concluído depois da validação visual na matriz de IDEs suportada.
+Sugestões multilinha com linhas virtuais permanecem pendentes. O recurso só será considerado
+concluído depois da validação visual na matriz de IDEs suportada.

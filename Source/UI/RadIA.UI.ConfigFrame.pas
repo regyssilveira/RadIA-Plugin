@@ -56,10 +56,12 @@ type
     FEdtInlineCompletionExcludedFiles: TEdit;
     FEdtInlineCompletionExcludedLanguages: TEdit;
     FEdtInlineCompletionExcludedProjects: TEdit;
+    FEdtInlineShortcutProfile: TEdit;
     FLblInlineCompletionDelay: TLabel;
     FLblInlineCompletionExcludedFiles: TLabel;
     FLblInlineCompletionExcludedLanguages: TLabel;
     FLblInlineCompletionExcludedProjects: TLabel;
+    FLblInlineShortcutProfile: TLabel;
 
     FTsCliMcp: TTabSheet;
     FPnlCliMcp: TPanel;
@@ -205,6 +207,8 @@ type
     procedure SetInlineCompletionExcludedLanguages(const AValue: string);
     function GetInlineCompletionExcludedProjects: string;
     procedure SetInlineCompletionExcludedProjects(const AValue: string);
+    function GetInlineShortcutProfile: string;
+    procedure SetInlineShortcutProfile(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -667,6 +671,18 @@ begin
     564,
     500
   );
+  FLblInlineShortcutProfile := CreateLabel(
+    FPnlSecurity,
+    'Inline shortcuts (request, accept, nextWord, alternative, reject):',
+    16,
+    604
+  );
+  FEdtInlineShortcutProfile := CreateEdit(
+    FPnlSecurity,
+    16,
+    624,
+    640
+  );
 end;
 
 procedure TRadIAFrameAIConfig.CreateCliMcpTab;
@@ -1108,6 +1124,7 @@ begin
     FEdtInlineCompletionDelay, FEdtInlineCompletionExcludedFiles,
     FEdtInlineCompletionExcludedLanguages,
     FEdtInlineCompletionExcludedProjects,
+    FEdtInlineShortcutProfile,
     FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge], LColors);
 
   ApplyThemeToLabels([lblGeminiKey, lblOpenAIKey, lblOpenAICustomUrl, lblClaudeKey,
@@ -1120,6 +1137,7 @@ begin
     FLblInlineCompletionDelay, FLblInlineCompletionExcludedFiles,
     FLblInlineCompletionExcludedLanguages,
     FLblInlineCompletionExcludedProjects,
+    FLblInlineShortcutProfile,
     FLblMcpStatus], LColors, False);
 
   ApplyThemeToLabels([lnkGeminiGetKey, lnkOpenAIGetKey, lnkClaudeGetKey, lnkDeepSeekGetKey,
@@ -2392,6 +2410,18 @@ procedure TRadIAFrameAIConfig.SetInlineCompletionExcludedProjects(
 );
 begin
   FEdtInlineCompletionExcludedProjects.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetInlineShortcutProfile: string;
+begin
+  Result := FEdtInlineShortcutProfile.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetInlineShortcutProfile(
+  const AValue: string
+);
+begin
+  FEdtInlineShortcutProfile.Text := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetQuotaEnabled: Boolean;

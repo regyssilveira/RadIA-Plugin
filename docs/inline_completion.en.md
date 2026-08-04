@@ -24,7 +24,7 @@ accepts the whole suggestion or the next word.
 
 ## Editor menu actions
 
-| Action | Initial shortcut |
+| Action | Default shortcut |
 |---|---|
 | Request suggestion | `Ctrl+Alt+Space` |
 | Accept the entire suggestion | `Ctrl+Alt+Right` |
@@ -34,6 +34,19 @@ accepts the whole suggestion or the next word.
 
 The shortcuts appear in the **Rad IA** submenu of the editor context menu. The first request in
 each session explains which context will be sent and requires explicit consent.
+
+The shortcuts are native Open Tools API partial bindings and work directly in the editor without
+opening the context menu. To change them, open **Rad IA > Settings > Security & Consent** and edit
+**Inline shortcuts** using this format:
+
+```text
+request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; reject=Ctrl+Alt+Backspace
+```
+
+The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. RadIA does
+not save incomplete profiles, invalid keys, or duplicate shortcuts. The profile reloads after
+returning to the editor, without restarting the IDE. If the active Delphi keymap already owns a
+shortcut, the existing command keeps priority and RadIA records the conflict in its log.
 
 ## Continuous assistance and scope
 
@@ -83,5 +96,5 @@ never reach the provider.
 The manual OTA flow and opt-in continuous capture are connected. Both capture only the active
 buffer, resolve the current symbol from the cursor line, and include basic project metadata. They
 display the first line as Ghost Text and never change the buffer before acceptance. Multiline
-virtual rows and configurable shortcuts remain pending. The feature is only complete after visual
-validation across the supported IDE matrix.
+virtual rows remain pending. The feature is only complete after visual validation across the
+supported IDE matrix.

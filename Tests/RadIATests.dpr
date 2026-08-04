@@ -66,6 +66,7 @@ uses
   RadIA.Core.DebuggerInspectionTools in '..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas',
   RadIA.Core.InlineReviews in '..\Source\Core\RadIA.Core.InlineReviews.pas',
   RadIA.Core.InlineCompletion in '..\Source\Core\RadIA.Core.InlineCompletion.pas',
+  RadIA.Core.InlineShortcuts in '..\Source\Core\RadIA.Core.InlineShortcuts.pas',
   RadIA.Core.InlineReviewTools in '..\Source\Core\RadIA.Core.InlineReviewTools.pas',
   RadIA.Core.IDENavigation in '..\Source\Core\RadIA.Core.IDENavigation.pas',
   RadIA.Core.IDENavigationTools in '..\Source\Core\RadIA.Core.IDENavigationTools.pas',

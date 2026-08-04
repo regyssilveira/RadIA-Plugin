@@ -73,9 +73,9 @@ decision requires `leader` on every axis together with the M8 evidence.
 
 M1 now includes a Fill-in-the-Middle engine, debounce, cancellation, cache, limits, a decoupled
 provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture uses the live
-buffer, cursor position, and current symbol. Multiline virtual rows, configurable shortcuts, and
-visual acceptance across the complete IDE matrix remain mandatory before the milestone can be
-marked complete.
+buffer, cursor position, and current symbol. All five shortcuts are configurable OTA bindings,
+validated and reloaded without restarting the IDE. Multiline virtual rows and visual acceptance
+across the complete IDE matrix remain mandatory before the milestone can be marked complete.
 
 ## Milestone transition rules
 
