@@ -44,7 +44,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Decompositor de Forms (Code-Behind)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Assistente de Threads e PPL** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Internacionalização Automática (i18n Wizard)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Autocompletar Inline (Ghost Text)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
+| **Autocompletar Inline (Ghost Text)** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Geração de Docs de Projeto (API.md)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐ Média | v0.3.0+ |
 | **Suporte Nativo macOS/Linux (Lazarus)** | 🔲 Planejado | 🔴 Alta | 🟢 Baixa | v0.3.0+ |
 

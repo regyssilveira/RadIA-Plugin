@@ -36,6 +36,55 @@ capability must be discoverable, observable, cancellable, and proven in a real I
 | Installation | Finish the first workflow without manual configuration-file editing |
 | Stability | Ten consecutive cycles per supported combination without leaks or orphan processes |
 
+## Leadership scorecard
+
+RadIA will only be considered the leader when it simultaneously exceeds the following axes.
+Matching one isolated capability is not sufficient:
+
+| Axis | Mandatory leadership evidence |
+|---|---|
+| Delphi journey | Create, edit, design, build, test, debug, fix, and deliver without leaving the IDE |
+| Continuous assistance | Chat, Ghost Text, and contextual actions share context, policy, and history |
+| IDE control | Live buffer, project, Form Designer, build, tests, and debugger are observed through OTA |
+| Hybrid execution | Native agent, providers, CLIs, and local models use the same tools and consent layer |
+| Security | Every relevant mutation has preview, scope, consent, audit, and proportional rollback |
+| Transparency | Plan, tool, diff, cost, tokens, duration, result, and failure remain visible |
+| Extensibility | Commands, skills, templates, and tools can be installed with explicit permissions |
+| Knowledge | Incremental lexical and semantic retrieval is private, citable, and workspace-isolated |
+| Operations | Installation, diagnostics, updates, repair, and removal are guided and reproducible |
+| Compatibility | The same experience passes on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64 |
+
+Each axis receives one of these states: `missing`, `partial`, `equivalent`, or `leader`. The release
+decision requires `leader` on every axis together with the M8 evidence.
+
+## Execution status
+
+| Milestone | Status | Gate to advance |
+|---|---|---|
+| M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
+| M1 — Inline assistance | In progress | OTA Ghost Text, shortcuts, consent, and real matrix approved |
+| M2 — Terminal | Planned | PTY, ANSI, stdin, resize, and process-tree shutdown validated |
+| M3 — Unified center | Planned | Observable, pausable, resumable, and persistent journey |
+| M4 — Extensions | Planned | Safe declarative installation without recompilation or restart |
+| M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
+| M6 — Installation | Planned | First value and diagnostics without manual file editing |
+| M7 — Journeys | Planned | End-to-end Delphi recipes approved |
+| M8 — Proof and release | Blocked by previous milestones | Matrix, ten cycles, and audits approved |
+
+The first M1 increment already includes a Fill-in-the-Middle engine, debounce, cancellation, cache,
+limits, a decoupled provider, and tests. OTA visual integration, scope controls, and acceptance in a
+real IDE remain mandatory before the milestone can be marked complete.
+
+## Milestone transition rules
+
+1. Code, documentation, and unit tests form one delivery.
+2. A visual capability only finishes after validation in a real IDE.
+3. A provider or CLI integration only finishes after cancellation, timeout, and failure are exercised.
+4. A mutation only finishes after preview, consent, concurrent conflict, and rollback are tested.
+5. Every round queries Sonar; no new issue may be incorporated into the baseline.
+6. Every completed increment is committed and pushed from the working branch.
+7. Release gates always use Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+
 ## Milestones
 
 ### M0 — Blocking quality

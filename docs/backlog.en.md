@@ -44,7 +44,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Legacy Form Decomposer (Code-Behind)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Threads and PPL Assistant** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Automated Internationalization (i18n Wizard)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **Smart Inline Autocomplete (Ghost Text)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
+| **Smart Inline Autocomplete (Ghost Text)** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Project Docs Auto Generation (API.md)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐ Medium | v0.3.0+ |
 | **Native macOS/Linux Support (Lazarus)** | 🔲 Planned | 🔴 High | 🟢 Low | v0.3.0+ |
 

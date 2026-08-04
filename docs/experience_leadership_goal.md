@@ -37,6 +37,55 @@ real.
 | Instalação | Instalar, diagnosticar e concluir o primeiro fluxo sem editar arquivos manualmente |
 | Estabilidade | Dez ciclos consecutivos por combinação suportada, sem leak ou processo órfão |
 
+## Placar de liderança
+
+O RadIA só será considerado líder quando superar simultaneamente os seguintes eixos. Não basta
+igualar uma capacidade isolada:
+
+| Eixo | Evidência obrigatória para liderança |
+|---|---|
+| Jornada Delphi | Criar, editar, desenhar, compilar, testar, depurar, corrigir e entregar sem sair da IDE |
+| Assistência contínua | Chat, Ghost Text e ações contextuais compartilham contexto, política e histórico |
+| Controle da IDE | Buffer vivo, projeto, Form Designer, build, testes e debugger são observados por OTA |
+| Execução híbrida | Agente nativo, providers, CLIs e modelos locais usam a mesma camada de tools e consentimento |
+| Segurança | Toda mutação relevante possui preview, escopo, consentimento, auditoria e rollback proporcional |
+| Transparência | Plano, tool, diff, custo, tokens, duração, resultado e falha permanecem visíveis |
+| Extensibilidade | Comandos, skills, templates e tools podem ser instalados com permissões explícitas |
+| Conhecimento | Recuperação incremental, lexical e semântica, privada, citável e isolada por workspace |
+| Operação | Instalação, diagnóstico, atualização, reparo e remoção são guiados e reproduzíveis |
+| Compatibilidade | A mesma experiência passa no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64 |
+
+Cada eixo recebe um dos estados `ausente`, `parcial`, `equivalente` ou `líder`. A decisão de release
+exige `líder` em todos os eixos, acompanhada das evidências do M8.
+
+## Estado de execução
+
+| Marco | Estado | Gate para avançar |
+|---|---|---|
+| M0 — Qualidade | Em execução | Gate Sonar verde ou classificação administrativa dos falsos positivos comprovados |
+| M1 — Assistência inline | Em execução | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
+| M2 — Terminal | Planejado | PTY, ANSI, stdin, resize e encerramento de árvore validados |
+| M3 — Central unificada | Planejado | Jornada observável, pausável, retomável e persistente |
+| M4 — Extensões | Planejado | Instalação declarativa segura sem recompilar ou reiniciar |
+| M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
+| M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
+| M7 — Jornadas | Planejado | Receitas Delphi ponta a ponta aprovadas |
+| M8 — Prova e release | Bloqueado pelos anteriores | Matriz, dez ciclos e auditorias aprovados |
+
+O primeiro incremento do M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache,
+limites, provider desacoplado e testes. A integração visual OTA, os controles de escopo e o aceite
+em IDE real continuam obrigatórios antes de marcar o marco como concluído.
+
+## Regras de passagem entre marcos
+
+1. Código, documentação e testes unitários formam uma única entrega.
+2. Uma capacidade visual só termina depois de validação na IDE real.
+3. Uma integração de provider ou CLI só termina depois de cancelamento, timeout e falha exercitados.
+4. Uma mutação só termina depois de preview, consentimento, conflito concorrente e rollback testados.
+5. Cada rodada consulta o Sonar; nenhum issue novo pode ser incorporado ao baseline.
+6. Cada incremento concluído é commitado e enviado pela branch de trabalho.
+7. Gates de release sempre usam Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+
 ## Marcos
 
 ### M0 — Qualidade bloqueante
