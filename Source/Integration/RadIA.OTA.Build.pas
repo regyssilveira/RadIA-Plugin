@@ -23,6 +23,12 @@ type
       out APlatform: string;
       out AIDERoot: string
     ): Boolean;
+    procedure CaptureIDEContext(
+      out AProjectFile: string;
+      out AConfiguration: string;
+      out APlatform: string;
+      out AIDERoot: string
+    );
     function ExecuteBuildProcess(
       const ACommandLine: string;
       const AWorkingDirectory: string;
@@ -99,33 +105,13 @@ begin
   AIDERoot := '';
   LAction :=
     procedure
-    var
-      LIndex: Integer;
-      LModule: IOTAModule;
-      LModuleServices: IOTAModuleServices;
-      LProject: IOTAProject;
-      LServices: IOTAServices;
     begin
-      if Supports(BorlandIDEServices, IOTAModuleServices, LModuleServices) then
-      begin
-        for LIndex := 0 to LModuleServices.ModuleCount - 1 do
-        begin
-          LModule := LModuleServices.Modules[LIndex];
-          if Assigned(LModule) and
-            (Trim(LModule.FileName) <> '') and
-            TFile.Exists(LModule.FileName) then
-            LModule.Save(False, True);
-        end;
-        LProject := LModuleServices.GetActiveProject;
-        if Assigned(LProject) then
-        begin
-          LProjectFile := LProject.FileName;
-          LConfiguration := LProject.CurrentConfiguration;
-          LPlatform := LProject.CurrentPlatform;
-        end;
-      end;
-      if Supports(BorlandIDEServices, IOTAServices, LServices) then
-        LIDERoot := LServices.GetRootDirectory;
+      CaptureIDEContext(
+        LProjectFile,
+        LConfiguration,
+        LPlatform,
+        LIDERoot
+      );
     end;
   TThread.Synchronize(nil, LAction);
   AProjectFile := LProjectFile;
@@ -134,6 +120,41 @@ begin
   AIDERoot := LIDERoot;
   Result := (AProjectFile <> '') and TFile.Exists(AProjectFile) and
     (AIDERoot <> '');
+end;
+
+procedure TRadIAOTABuildFacade.CaptureIDEContext(
+  out AProjectFile: string;
+  out AConfiguration: string;
+  out APlatform: string;
+  out AIDERoot: string
+);
+var
+  LIndex: Integer;
+  LModule: IOTAModule;
+  LModuleServices: IOTAModuleServices;
+  LProject: IOTAProject;
+  LServices: IOTAServices;
+begin
+  if Supports(BorlandIDEServices, IOTAModuleServices, LModuleServices) then
+  begin
+    for LIndex := 0 to LModuleServices.ModuleCount - 1 do
+    begin
+      LModule := LModuleServices.Modules[LIndex];
+      if Assigned(LModule) and
+        (Trim(LModule.FileName) <> '') and
+        TFile.Exists(LModule.FileName) then
+        LModule.Save(False, True);
+    end;
+    LProject := LModuleServices.GetActiveProject;
+    if Assigned(LProject) then
+    begin
+      AProjectFile := LProject.FileName;
+      AConfiguration := LProject.CurrentConfiguration;
+      APlatform := LProject.CurrentPlatform;
+    end;
+  end;
+  if Supports(BorlandIDEServices, IOTAServices, LServices) then
+    AIDERoot := LServices.GetRootDirectory;
 end;
 
 constructor TRadIAOTABuildFacade.Create(

@@ -69,6 +69,15 @@ type
 
   TRadIAProjectTemplateEngine = class
   private
+    procedure ValidateDelphiVersion(
+      const ADelphiVersion: string
+    );
+    procedure ValidatePlatforms(
+      const APlatforms: TArray<string>
+    );
+    procedure ValidateProjectName(
+      const AProjectName: string
+    );
     procedure ValidateRequest(
       const ARequest: TRadIAProjectTemplateRequest
     );
@@ -704,49 +713,27 @@ begin
   );
 end;
 
-procedure TRadIAProjectTemplateEngine.ValidateRequest(
-  const ARequest: TRadIAProjectTemplateRequest
+procedure TRadIAProjectTemplateEngine.ValidateDelphiVersion(
+  const ADelphiVersion: string
 );
-var
-  LChar: Char;
-  LIndex: Integer;
-  LPlatform: string;
 begin
-  if (Length(ARequest.ProjectName) < 1) or
-    (Length(ARequest.ProjectName) > 64) then
-    raise EArgumentException.Create(
-      'Project name must contain between 1 and 64 characters.'
-    );
-  for LIndex := Low(ARequest.ProjectName) to High(ARequest.ProjectName) do
-  begin
-    LChar := ARequest.ProjectName[LIndex];
-    if LIndex = Low(ARequest.ProjectName) then
-    begin
-      if not CharInSet(LChar, ['A'..'Z', 'a'..'z', '_']) then
-        raise EArgumentException.Create(
-          'Project name must start with a letter or underscore.'
-        );
-    end
-    else if not CharInSet(
-      LChar,
-      ['A'..'Z', 'a'..'z', '0'..'9', '_']
-    ) then
-      raise EArgumentException.Create(
-        'Project name contains unsupported characters.'
-      );
-  end;
-  if not MatchText(
-    ARequest.DelphiVersion,
-    ['22.0', '23.0', '37.0']
-  ) then
+  if not MatchText(ADelphiVersion, ['22.0', '23.0', '37.0']) then
     raise EArgumentException.Create(
       'Project template supports Delphi versions 22.0, 23.0, and 37.0.'
     );
-  if Length(ARequest.Platforms) = 0 then
+end;
+
+procedure TRadIAProjectTemplateEngine.ValidatePlatforms(
+  const APlatforms: TArray<string>
+);
+var
+  LPlatform: string;
+begin
+  if Length(APlatforms) = 0 then
     raise EArgumentException.Create(
       'Project template requires at least one platform.'
     );
-  for LPlatform in ARequest.Platforms do
+  for LPlatform in APlatforms do
   begin
     if not SameText(LPlatform, 'Win32') and
       not SameText(LPlatform, 'Win64') then
@@ -754,6 +741,42 @@ begin
         'Project template supports only Win32 and Win64.'
       );
   end;
+end;
+
+procedure TRadIAProjectTemplateEngine.ValidateProjectName(
+  const AProjectName: string
+);
+var
+  LChar: Char;
+  LIndex: Integer;
+begin
+  if (Length(AProjectName) < 1) or (Length(AProjectName) > 64) then
+    raise EArgumentException.Create(
+      'Project name must contain between 1 and 64 characters.'
+    );
+  for LIndex := Low(AProjectName) to High(AProjectName) do
+  begin
+    LChar := AProjectName[LIndex];
+    if (LIndex = Low(AProjectName)) and
+      not CharInSet(LChar, ['A'..'Z', 'a'..'z', '_']) then
+      raise EArgumentException.Create(
+        'Project name must start with a letter or underscore.'
+      );
+    if (LIndex > Low(AProjectName)) and
+      not CharInSet(LChar, ['A'..'Z', 'a'..'z', '0'..'9', '_']) then
+      raise EArgumentException.Create(
+        'Project name contains unsupported characters.'
+      );
+  end;
+end;
+
+procedure TRadIAProjectTemplateEngine.ValidateRequest(
+  const ARequest: TRadIAProjectTemplateRequest
+);
+begin
+  ValidateProjectName(ARequest.ProjectName);
+  ValidateDelphiVersion(ARequest.DelphiVersion);
+  ValidatePlatforms(ARequest.Platforms);
 end;
 
 end.
