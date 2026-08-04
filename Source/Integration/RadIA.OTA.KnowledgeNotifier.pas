@@ -6,6 +6,7 @@ uses
   System.Classes,
   System.Generics.Collections,
   Vcl.ExtCtrls,
+  ToolsAPI,
   RadIA.Core.KnowledgeScheduler;
 
 type
@@ -41,6 +42,20 @@ type
       out AFileName: string;
       out AAttachment: TRadIAKnowledgeModuleAttachment
     ): Boolean;
+    function CanRefreshAttachments(
+      out AModuleServices: IOTAModuleServices
+    ): Boolean;
+    procedure RefreshModuleAttachment(
+      const AModule: IOTAModule;
+      const ANotifier: IOTAModuleNotifier;
+      const ACurrentFiles: TDictionary<string, Boolean>
+    );
+    procedure RemoveStaleAttachments(
+      const ACurrentFiles: TDictionary<string, Boolean>
+    );
+    procedure RemoveInstalledNotifiers(
+      const AModuleServices: IOTAModuleServices
+    );
     procedure RefreshAttachments;
     procedure TimerEvent(Sender: TObject);
   public
@@ -67,7 +82,6 @@ uses
   System.IOUtils,
   System.SyncObjs,
   System.SysUtils,
-  ToolsAPI,
   RadIA.Core.Logger,
   RadIA.Core.Types;
 
@@ -183,6 +197,19 @@ begin
   FModuleNotifierControl := LNotifier;
 end;
 
+function TRadIAOTAKnowledgeNotifier.CanRefreshAttachments(
+  out AModuleServices: IOTAModuleServices
+): Boolean;
+begin
+  Result := not GIsShuttingDown and
+    (TInterlocked.CompareExchange(GProjectTransitionCount, 0, 0) = 0) and
+    Supports(
+      BorlandIDEServices,
+      IOTAModuleServices,
+      AModuleServices
+    );
+end;
+
 destructor TRadIAOTAKnowledgeNotifier.Destroy;
 begin
   Uninstall;
@@ -231,84 +258,117 @@ end;
 procedure TRadIAOTAKnowledgeNotifier.RefreshAttachments;
 var
   LCurrentFiles: TDictionary<string, Boolean>;
-  LFileName: string;
   LIndex: Integer;
-  LExistingAttachment: TRadIAKnowledgeModuleAttachment;
-  LExistingFileName: string;
   LModule: IOTAModule;
-  LModuleIdentity: NativeUInt;
   LModuleServices: IOTAModuleServices;
   LNotifier: IOTAModuleNotifier;
-  LNotifierIndex: Integer;
-  LStaleFiles: TList<string>;
 begin
-  if GIsShuttingDown or
-    (TInterlocked.CompareExchange(
-      GProjectTransitionCount,
-      0,
-      0
-    ) > 0) or
-    not Supports(
-      BorlandIDEServices,
-      IOTAModuleServices,
-      LModuleServices
-    ) then
+  if not CanRefreshAttachments(LModuleServices) then
     Exit;
 
   LCurrentFiles := TDictionary<string, Boolean>.Create;
-  LStaleFiles := TList<string>.Create;
   try
     Supports(FModuleNotifier, IOTAModuleNotifier, LNotifier);
     for LIndex := 0 to LModuleServices.ModuleCount - 1 do
     begin
       LModule := LModuleServices.Modules[LIndex];
-      if not Assigned(LModule) then
-        Continue;
-      LFileName := LModule.FileName;
-      if not SupportsSourceFile(LFileName) then
-        Continue;
-      LCurrentFiles.AddOrSetValue(LFileName, True);
-      LModuleIdentity := NativeUInt(Pointer(LModule));
-      if TryFindAttachment(
-        LModuleIdentity,
-        LExistingFileName,
-        LExistingAttachment
-      ) then
-      begin
-        if not SameText(LExistingFileName, LFileName) then
-        begin
-          FAttachments.Remove(LExistingFileName);
-          FAttachments.AddOrSetValue(
-            LFileName,
-            LExistingAttachment
-          );
-        end;
-      end
-      else
-      begin
-        LNotifierIndex := LModule.AddNotifier(LNotifier);
-        if LNotifierIndex >= 0 then
-          FAttachments.Add(
-            LFileName,
-            TRadIAKnowledgeModuleAttachment.Create(
-              LModuleIdentity,
-              LNotifierIndex
-            )
-          );
-      end;
+      if Assigned(LModule) then
+        RefreshModuleAttachment(LModule, LNotifier, LCurrentFiles);
       LModule := nil;
     end;
+    RemoveStaleAttachments(LCurrentFiles);
+  finally
+    LCurrentFiles.Free;
+  end;
+end;
 
-    for LFileName in FAttachments.Keys do
+procedure TRadIAOTAKnowledgeNotifier.RefreshModuleAttachment(
+  const AModule: IOTAModule;
+  const ANotifier: IOTAModuleNotifier;
+  const ACurrentFiles: TDictionary<string, Boolean>
+);
+var
+  LExistingAttachment: TRadIAKnowledgeModuleAttachment;
+  LExistingFileName: string;
+  LFileName: string;
+  LModuleIdentity: NativeUInt;
+  LNotifierIndex: Integer;
+begin
+  LFileName := AModule.FileName;
+  if not SupportsSourceFile(LFileName) then
+    Exit;
+  ACurrentFiles.AddOrSetValue(LFileName, True);
+  LModuleIdentity := NativeUInt(Pointer(AModule));
+  if TryFindAttachment(
+    LModuleIdentity,
+    LExistingFileName,
+    LExistingAttachment
+  ) then
+  begin
+    if not SameText(LExistingFileName, LFileName) then
     begin
-      if not LCurrentFiles.ContainsKey(LFileName) then
-        LStaleFiles.Add(LFileName);
+      FAttachments.Remove(LExistingFileName);
+      FAttachments.AddOrSetValue(LFileName, LExistingAttachment);
     end;
+    Exit;
+  end;
+  LNotifierIndex := AModule.AddNotifier(ANotifier);
+  if LNotifierIndex >= 0 then
+    FAttachments.Add(
+      LFileName,
+      TRadIAKnowledgeModuleAttachment.Create(
+        LModuleIdentity,
+        LNotifierIndex
+      )
+    );
+end;
+
+procedure TRadIAOTAKnowledgeNotifier.RemoveInstalledNotifiers(
+  const AModuleServices: IOTAModuleServices
+);
+var
+  LFileName: string;
+  LIndex: Integer;
+  LModule: IOTAModule;
+begin
+  for LIndex := 0 to AModuleServices.ModuleCount - 1 do
+  begin
+    LModule := AModuleServices.Modules[LIndex];
+    if not Assigned(LModule) then
+      Continue;
+    LFileName := LModule.FileName;
+    if FAttachments.ContainsKey(LFileName) then
+    begin
+      try
+        LModule.RemoveNotifier(FAttachments[LFileName].NotifierIndex);
+      except
+        on E: Exception do
+          TLogger.Log(
+            'Knowledge notifier removal failed: ' + E.Message,
+            'Knowledge'
+          );
+      end;
+    end;
+    LModule := nil;
+  end;
+end;
+
+procedure TRadIAOTAKnowledgeNotifier.RemoveStaleAttachments(
+  const ACurrentFiles: TDictionary<string, Boolean>
+);
+var
+  LFileName: string;
+  LStaleFiles: TList<string>;
+begin
+  LStaleFiles := TList<string>.Create;
+  try
+    for LFileName in FAttachments.Keys do
+      if not ACurrentFiles.ContainsKey(LFileName) then
+        LStaleFiles.Add(LFileName);
     for LFileName in LStaleFiles do
       FAttachments.Remove(LFileName);
   finally
     LStaleFiles.Free;
-    LCurrentFiles.Free;
   end;
 end;
 
@@ -354,9 +414,6 @@ end;
 
 procedure TRadIAOTAKnowledgeNotifier.Uninstall;
 var
-  LFileName: string;
-  LIndex: Integer;
-  LModule: IOTAModule;
   LModuleServices: IOTAModuleServices;
 begin
   if not FInstalled then
@@ -374,30 +431,7 @@ begin
     IOTAModuleServices,
     LModuleServices
   ) then
-  begin
-    for LIndex := 0 to LModuleServices.ModuleCount - 1 do
-    begin
-      LModule := LModuleServices.Modules[LIndex];
-      if not Assigned(LModule) then
-        Continue;
-      LFileName := LModule.FileName;
-      if FAttachments.ContainsKey(LFileName) then
-      begin
-        try
-          LModule.RemoveNotifier(
-            FAttachments[LFileName].NotifierIndex
-          );
-        except
-          on E: Exception do
-            TLogger.Log(
-              'Knowledge notifier removal failed: ' + E.Message,
-              'Knowledge'
-            );
-        end;
-      end;
-      LModule := nil;
-    end;
-  end;
+    RemoveInstalledNotifiers(LModuleServices);
   FAttachments.Clear;
 end;
 

@@ -192,6 +192,11 @@ type
     IRadIAKnowledgeService
   )
   private type
+    TRadIAKnowledgeFileRefresh = (
+      kfrSkipped,
+      kfrUpdated
+    );
+
     TRadIAKnowledgeChunkEntry = class
     private
       FChunk: TRadIAKnowledgeChunk;
@@ -242,6 +247,21 @@ type
       const ALine: string;
       out ASymbol: string
     ): Boolean;
+    function NeedsDocumentUpdate(
+      const AProjectId: string;
+      const AFileName: string;
+      const ARevision: string
+    ): Boolean;
+    function RefreshFile(
+      const AProjectId: string;
+      const AFileName: string
+    ): TRadIAKnowledgeFileRefresh;
+    procedure RemoveStaleFiles(
+      const AProjectId: string;
+      const AKnownFiles: TDictionary<string, Boolean>;
+      out AIndexedFiles: Integer;
+      out ARemovedFiles: Integer
+    );
     procedure EnsureProjectLoaded(const AProjectId: string);
     function CreateSnapshot(
       const AProjectId: string
@@ -818,24 +838,36 @@ begin
     LLine.StartsWith('class function ');
 end;
 
+function TRadIALocalKnowledgeService.NeedsDocumentUpdate(
+  const AProjectId: string;
+  const AFileName: string;
+  const ARevision: string
+): Boolean;
+var
+  LEntry: TRadIAKnowledgeFileEntry;
+  LIndex: TRadIAKnowledgeProjectIndex;
+begin
+  TMonitor.Enter(FProjects);
+  try
+    LIndex := GetOrCreateProject(AProjectId);
+    Result := not LIndex.Files.TryGetValue(AFileName, LEntry) or
+      not SameText(LEntry.Revision, ARevision);
+  finally
+    TMonitor.Exit(FProjects);
+  end;
+end;
+
 function TRadIALocalKnowledgeService.RefreshProject:
   TRadIAKnowledgeRefreshResult;
 var
-  LChunks: TArray<TRadIAKnowledgeChunk>;
-  LDocument: TRadIAKnowledgeDocument;
-  LEntry: TRadIAKnowledgeFileEntry;
   LFileName: string;
   LFiles: TArray<string>;
-  LIndex: TRadIAKnowledgeProjectIndex;
   LIndexedFiles: Integer;
   LKnownFiles: TDictionary<string, Boolean>;
-  LNeedsUpdate: Boolean;
   LProjectId: string;
   LRemovedFiles: Integer;
   LSkippedFiles: Integer;
   LSnapshot: TRadIAKnowledgeIndexSnapshot;
-  LStoredFile: string;
-  LToRemove: TList<string>;
   LUpdatedFiles: Integer;
 begin
   LProjectId := Trim(FSource.GetProjectId);
@@ -850,7 +882,6 @@ begin
     SetLength(LFiles, CMaxProjectFiles);
 
   LKnownFiles := TDictionary<string, Boolean>.Create;
-  LToRemove := TList<string>.Create;
   try
     LUpdatedFiles := 0;
     LSkippedFiles := 0;
@@ -866,69 +897,18 @@ begin
       if Trim(LFileName) = '' then
         Continue;
       LKnownFiles.AddOrSetValue(LFileName, True);
-      if not FSource.ReadSourceFile(LFileName, LDocument) or
-        (Length(LDocument.Content) > CMaxDocumentCharacters) then
-      begin
+      if RefreshFile(LProjectId, LFileName) = kfrUpdated then
+        Inc(LUpdatedFiles)
+      else
         Inc(LSkippedFiles);
-        Continue;
-      end;
-
-      TMonitor.Enter(FProjects);
-      try
-        LIndex := GetOrCreateProject(LProjectId);
-        LNeedsUpdate :=
-          not LIndex.Files.TryGetValue(LFileName, LEntry) or
-          not SameText(LEntry.Revision, LDocument.Revision);
-      finally
-        TMonitor.Exit(FProjects);
-      end;
-      if not LNeedsUpdate then
-      begin
-        Inc(LSkippedFiles);
-        Continue;
-      end;
-
-      LChunks := BuildChunks(LDocument);
-      TMonitor.Enter(FProjects);
-      try
-        LIndex := GetOrCreateProject(LProjectId);
-        LNeedsUpdate :=
-          not LIndex.Files.TryGetValue(LFileName, LEntry) or
-          not SameText(LEntry.Revision, LDocument.Revision);
-        if LNeedsUpdate then
-        begin
-          LEntry := TRadIAKnowledgeFileEntry.Create(
-            LDocument.Revision,
-            LChunks
-          );
-          LIndex.Files.AddOrSetValue(LFileName, LEntry);
-          Inc(LUpdatedFiles);
-        end
-        else
-          Inc(LSkippedFiles);
-      finally
-        TMonitor.Exit(FProjects);
-      end;
     end;
 
-    TMonitor.Enter(FProjects);
-    try
-      LIndex := GetOrCreateProject(LProjectId);
-      for LStoredFile in LIndex.Files.Keys do
-      begin
-        if not LKnownFiles.ContainsKey(LStoredFile) then
-          LToRemove.Add(LStoredFile);
-      end;
-      for LStoredFile in LToRemove do
-      begin
-        LIndex.Files.Remove(LStoredFile);
-        Inc(LRemovedFiles);
-      end;
-      LIndexedFiles := LIndex.Files.Count;
-      FLoadedProjects.AddOrSetValue(LProjectId, True);
-    finally
-      TMonitor.Exit(FProjects);
-    end;
+    RemoveStaleFiles(
+      LProjectId,
+      LKnownFiles,
+      LIndexedFiles,
+      LRemovedFiles
+    );
     if Assigned(FStore) then
     begin
       LSnapshot := CreateSnapshot(LProjectId);
@@ -942,8 +922,80 @@ begin
       LRemovedFiles
     );
   finally
-    LToRemove.Free;
     LKnownFiles.Free;
+  end;
+end;
+
+function TRadIALocalKnowledgeService.RefreshFile(
+  const AProjectId: string;
+  const AFileName: string
+): TRadIAKnowledgeFileRefresh;
+var
+  LChunks: TArray<TRadIAKnowledgeChunk>;
+  LDocument: TRadIAKnowledgeDocument;
+  LEntry: TRadIAKnowledgeFileEntry;
+  LIndex: TRadIAKnowledgeProjectIndex;
+begin
+  Result := kfrSkipped;
+  if not FSource.ReadSourceFile(AFileName, LDocument) or
+    (Length(LDocument.Content) > CMaxDocumentCharacters) then
+    Exit;
+  if not NeedsDocumentUpdate(
+    AProjectId,
+    AFileName,
+    LDocument.Revision
+  ) then
+    Exit;
+  LChunks := BuildChunks(LDocument);
+  TMonitor.Enter(FProjects);
+  try
+    LIndex := GetOrCreateProject(AProjectId);
+    if LIndex.Files.TryGetValue(AFileName, LEntry) and
+      SameText(LEntry.Revision, LDocument.Revision) then
+      Exit;
+    LEntry := TRadIAKnowledgeFileEntry.Create(
+      LDocument.Revision,
+      LChunks
+    );
+    LIndex.Files.AddOrSetValue(AFileName, LEntry);
+    Result := kfrUpdated;
+  finally
+    TMonitor.Exit(FProjects);
+  end;
+end;
+
+procedure TRadIALocalKnowledgeService.RemoveStaleFiles(
+  const AProjectId: string;
+  const AKnownFiles: TDictionary<string, Boolean>;
+  out AIndexedFiles: Integer;
+  out ARemovedFiles: Integer
+);
+var
+  LIndex: TRadIAKnowledgeProjectIndex;
+  LStoredFile: string;
+  LToRemove: TList<string>;
+begin
+  ARemovedFiles := 0;
+  LToRemove := TList<string>.Create;
+  try
+    TMonitor.Enter(FProjects);
+    try
+      LIndex := GetOrCreateProject(AProjectId);
+      for LStoredFile in LIndex.Files.Keys do
+        if not AKnownFiles.ContainsKey(LStoredFile) then
+          LToRemove.Add(LStoredFile);
+      for LStoredFile in LToRemove do
+      begin
+        LIndex.Files.Remove(LStoredFile);
+        Inc(ARemovedFiles);
+      end;
+      AIndexedFiles := LIndex.Files.Count;
+      FLoadedProjects.AddOrSetValue(AProjectId, True);
+    finally
+      TMonitor.Exit(FProjects);
+    end;
+  finally
+    LToRemove.Free;
   end;
 end;
 
