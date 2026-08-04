@@ -231,7 +231,12 @@ snippets e onboarding.
 
 Terminal acoplável entregue nesta branch: painel nativo registrado no desktop do Delphi, perfis
 PowerShell e Command Prompt, streaming de stdout/stderr, histórico local limitado, snippets,
-timeout e encerramento em cascata. A etapa permanece aberta somente para o onboarding integrado.
+timeout e encerramento em cascata.
+
+Onboarding integrado entregue nesta branch: uma jornada não modal apresenta chat, provider e
+executor, consentimento, CLI/MCP, terminal e criação de projeto. O fluxo aparece automaticamente
+uma vez por versão, preserva a última etapa, pode ser reaberto pelo menu Tools e nunca altera
+configurações sem ação explícita. A etapa de terminal e onboarding está concluída.
 
 Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e

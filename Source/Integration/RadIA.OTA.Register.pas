@@ -51,7 +51,8 @@ uses
   System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
   System.Win.Registry, Winapi.Windows,
   RadIA.OTA.EditorHook, RadIA.UI.DiffForm, RadIA.UI.ConfigForm,
-  RadIA.UI.ProjectWizard, RadIA.OTA.Helper, RadIA.Core.Types,
+  RadIA.UI.ProjectWizard, RadIA.UI.OnboardingForm,
+  RadIA.OTA.Helper, RadIA.OTA.Onboarding, RadIA.Core.Types,
   RadIA.Core.Mediator,
   RadIA.Core.Config, RadIA.OTA.DockableForm, RadIA.Core.Interfaces, RadIA.Core.Logger, RadIA.OTA.Options,
   RadIA.Core.Container, RadIA.Core.Service, RadIA.OTA.Adapter, RadIA.Core.TextNormalizer, RadIA.Core.DTO.Generator,
@@ -243,6 +244,7 @@ begin
     LThemingServices.RegisterFormClass(TRadIAFormAIDiff);
     LThemingServices.RegisterFormClass(TRadIAFormAIConfig);
     LThemingServices.RegisterFormClass(TRadIAProjectWizardForm);
+    LThemingServices.RegisterFormClass(TRadIAOnboardingForm);
   end;
 
   FEditorHook := TRadIAEditorHook.Create(nil);
@@ -337,6 +339,7 @@ begin
   end;
 
   {$IFNDEF TESTS}
+  RadIA.OTA.Onboarding.ReleaseRadIAOnboarding;
   RadIA.OTA.DockableForm.UnregisterDockableForm;
   LogDebug('TRadIAWizard.Destroy dockable form released');
   {$ENDIF}
@@ -591,6 +594,7 @@ begin
         if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
            SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
            SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
+           SameText(LToolsMenu[I].Caption, 'Rad IA Getting Started') or
            SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
         begin
           LToolsAlreadyPopulated := True;
@@ -638,6 +642,7 @@ begin
         if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
            SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
            SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
+           SameText(LToolsMenu[I].Caption, 'Rad IA Getting Started') or
            SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
         begin
           LToolsPopulated := True;
@@ -661,6 +666,7 @@ begin
     LogDebug('Tools menu populated. Disabling timer.');
     FTimer.Enabled := False;
     RestoreWindowVisibility;
+    ShowRadIAOnboarding(False);
   end;
 end;
 
@@ -677,6 +683,7 @@ procedure TRadIAWizard.UnregisterMenus;
         if SameText(LItem.Caption, 'RadIA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Terminal') or
+           SameText(LItem.Caption, 'Rad IA Getting Started') or
            SameText(LItem.Caption, 'Fix Last Compiler Error') or
            SameText(LItem.Caption, 'RadIA New Project...') then
         begin

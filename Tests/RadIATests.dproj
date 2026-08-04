@@ -105,6 +105,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentExecutors.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.CliProcess.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Terminal.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.Onboarding.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.CliManager.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.CliMcpSettings.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.McpProvisioning.pas"/>
@@ -241,6 +242,7 @@
         <DCCReference Include="Source\RadIA.Tests.AgentExecutors.pas"/>
         <DCCReference Include="Source\RadIA.Tests.CliProcess.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Terminal.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.Onboarding.pas"/>
         <DCCReference Include="Source\RadIA.Tests.CliManager.pas"/>
         <DCCReference Include="Source\RadIA.Tests.CliMcpSettings.pas"/>
         <DCCReference Include="Source\RadIA.Tests.McpProvisioning.pas"/>

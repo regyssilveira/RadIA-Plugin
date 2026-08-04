@@ -7,8 +7,9 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 1. [Tudo que o RadIA pode fazer](capabilities.md)
 2. [Manual completo do usuário](user_manual.md)
 3. [Instalação e configuração](install_config.md)
-4. [Recursos e funcionalidades](features.md)
-5. [Solução de problemas](troubleshooting_agentic_platform.md)
+4. [Onboarding guiado](onboarding.md)
+5. [Recursos e funcionalidades](features.md)
+6. [Solução de problemas](troubleshooting_agentic_platform.md)
 
 ## Uso diário
 
@@ -39,6 +40,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | MCP e clientes externos | [Integração MCP](mcp_integration_guide.md) |
 | Seleção de executores CLI | [Executores CLI](cli_executors.md) |
 | Terminal acoplável | [Terminal](terminal.md) |
+| Primeira execução e jornada guiada | [Onboarding](onboarding.md) |
 | Conhecimento local | [Conhecimento do projeto](user_guide_project_knowledge.md) |
 | Form Designer e debugger | [Designer e debugger](user_guide_designer_debugger.md) |
 | Extensões de ferramentas | [Extensões](tool_extension_guide.md) |

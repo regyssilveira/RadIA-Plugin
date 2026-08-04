@@ -56,6 +56,7 @@ type
     procedure OnReviewExecute(Sender: TObject);
     procedure OnCreateExampleExecute(Sender: TObject);
     procedure OnFixErrorExecute(Sender: TObject);
+    procedure OnGettingStartedExecute(Sender: TObject);
     procedure OnShowChatExecute(Sender: TObject);
     procedure OnShowTerminalExecute(Sender: TObject);
 
@@ -89,6 +90,7 @@ uses
   RadIA.Core.Mediator,
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm,
+  RadIA.OTA.Onboarding,
   {$ENDIF}
   RadIA.Core.Logger, RadIA.Core.Container, RadIA.OTA.Adapter, RadIA.OTA.Helper;
 
@@ -104,6 +106,11 @@ end;
 procedure ShowRadIATerminal;
 begin
   // Stub for unit tests to avoid pulling native dockable forms.
+end;
+
+procedure ShowRadIAOnboarding(const AForce: Boolean);
+begin
+  // Stub for unit tests to avoid pulling the onboarding form.
 end;
 {$ENDIF}
 
@@ -701,6 +708,11 @@ begin
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Getting Started';
+  LItem.OnClick := OnGettingStartedExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Fix Last Compiler Error';
   LItem.OnClick := OnFixErrorExecute;
   AMenuItem.Add(LItem);
@@ -773,6 +785,11 @@ end;
 procedure TRadIAEditorHook.OnShowChatExecute(Sender: TObject);
 begin
   ShowRadIAChat;
+end;
+
+procedure TRadIAEditorHook.OnGettingStartedExecute(Sender: TObject);
+begin
+  ShowRadIAOnboarding(True);
 end;
 
 procedure TRadIAEditorHook.OnShowTerminalExecute(Sender: TObject);

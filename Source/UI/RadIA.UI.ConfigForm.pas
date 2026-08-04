@@ -15,6 +15,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     procedure LoadConfig;
+    procedure SelectCategory(const ACategory: string);
   published
     pnlSidebar: TPanel;
     tvCategories: TTreeView;
@@ -118,6 +119,21 @@ end;
 procedure TRadIAFormAIConfig.LoadConfig;
 begin
   FFrameConfig.LoadConfig;
+end;
+
+procedure TRadIAFormAIConfig.SelectCategory(const ACategory: string);
+var
+  I: Integer;
+begin
+  FFrameConfig.SelectCategoryByName(ACategory);
+  for I := 0 to tvCategories.Items.Count - 1 do
+  begin
+    if SameText(tvCategories.Items[I].Text, ACategory) then
+    begin
+      tvCategories.Selected := tvCategories.Items[I];
+      Exit;
+    end;
+  end;
 end;
 
 procedure TRadIAFormAIConfig.btnSaveClick(Sender: TObject);
