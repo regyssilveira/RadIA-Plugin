@@ -68,6 +68,7 @@ This index brings together the functional, operational, and technical documentat
 | Product roadmap | [Roadmap](roadmap.en.md) |
 | Backlog | [Backlog](backlog.en.md) |
 | RadIA 2.0 goal | [Complete development journey](radia_2_goal.en.md) |
+| Leadership goal | [Complete Delphi experience](experience_leadership_goal.en.md) |
 
 ## Security and compliance
 

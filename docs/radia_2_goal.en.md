@@ -18,6 +18,7 @@ auditing, and workspace confinement. The final delivery will be validated on Del
 - `/tools` represents the active IDE instance, including extensions.
 - The [generated catalog](runtime_tool_catalog.md) records built-in tools verified against source.
 - The [architectural catalog](tool_catalog.md) describes existing contracts and target capabilities.
+- The [leadership goal](experience_leadership_goal.en.md) defines the next experience evolution.
 - This document defines the completion criteria for the 2.0 goal.
 
 ## August 2026 baseline

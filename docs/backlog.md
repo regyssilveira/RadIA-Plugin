@@ -12,6 +12,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | :--- | :---: | :---: | :---: | :---: |
 | **Plataforma Agentiva Segura para Delphi 11/12/13** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.0.0 |
 | **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Goal RadIA 2.0 — Liderança da Experiência Delphi** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -50,6 +51,13 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 ---
 
 ## ⏳ 1. Em Desenvolvimento (Work in Progress)
+
+*   Goal de liderança da experiência Delphi.
+    *   M0: zerar o baseline bloqueante do Sonar e automatizar todos os gates.
+    *   M1–M3: entregar Ghost Text, terminal interativo e central unificada de execução.
+    *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
+    *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
+    *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 
 *   Hardening E2E dentro da IDE e preparação da release RadIA 2.0.
     *   Concluído: matriz Delphi 11/12/13, instalação Delphi 13 Win32/IDE64, três ciclos de smoke por

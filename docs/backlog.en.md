@@ -12,6 +12,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | :--- | :---: | :---: | :---: | :---: |
 | **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
 | **RadIA 2.0 Goal — Complete Development Journey** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **RadIA 2.0 Goal — Leading the Delphi Experience** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -50,6 +51,13 @@ The board below summarizes the current status of mapped short and medium-term fe
 ---
 
 ## ⏳ 1. Work in Progress (WIP)
+
+*   Goal for leading the Delphi development experience.
+    *   M0: clear the blocking Sonar baseline and automate every gate.
+    *   M1–M3: deliver Ghost Text, an interactive terminal, and a unified execution center.
+    *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
+    *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
+    *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 
 *   In-IDE E2E hardening and RadIA 2.0 release preparation.
     *   Completed: Delphi 11/12/13 matrix, Delphi 13 Win32/IDE64 installation, three smoke cycles per

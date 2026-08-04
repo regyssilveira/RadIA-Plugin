@@ -18,6 +18,7 @@ auditoria e confinamento ao workspace. A entrega final será validada no Delphi 
 - O comando `/tools` representa a instância ativa, incluindo extensões.
 - O [catálogo gerado](runtime_tool_catalog.md) registra as tools internas verificadas no código.
 - O [catálogo arquitetural](tool_catalog.md) descreve contratos existentes e capacidades alvo.
+- O [goal de liderança](experience_leadership_goal.md) define a próxima evolução da experiência.
 - Este documento registra os critérios de conclusão do goal 2.0.
 
 ## Baseline de agosto de 2026
