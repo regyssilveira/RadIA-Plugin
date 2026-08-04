@@ -4,7 +4,6 @@ interface
 
 uses
   System.Classes,
-  System.SyncObjs,
   RadIA.Core.Mcp,
   RadIA.Core.Workspace;
 
@@ -52,6 +51,7 @@ implementation
 uses
   System.IOUtils,
   System.JSON,
+  System.SyncObjs,
   System.SysUtils,
   Winapi.Windows,
   RadIA.Core.Logger,
@@ -821,8 +821,10 @@ begin
         LJson.Free;
       end;
     except
-      on Exception do
-        Continue;
+      on E: Exception do
+        OutputDebugString(
+          PChar('RadIA MCP stale connection cleanup error: ' + E.Message)
+        );
     end;
   end;
 end;

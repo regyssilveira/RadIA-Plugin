@@ -84,7 +84,7 @@ begin
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
   begin
-    Result[LIndex] := Trim(LArray.Items[LIndex].Value);
+    Result[LIndex] := Trim(LArray[LIndex].Value);
     if Result[LIndex] = '' then
       raise EArgumentException.Create('Test names cannot be empty.');
   end;

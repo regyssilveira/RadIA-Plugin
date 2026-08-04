@@ -500,11 +500,11 @@ begin
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
   begin
-    if not (LArray.Items[LIndex] is TJSONString) then
+    if not (LArray[LIndex] is TJSONString) then
       raise EArgumentException.Create(
         'Argument "platforms" must contain only strings.'
       );
-    Result[LIndex] := LArray.Items[LIndex].Value;
+    Result[LIndex] := LArray[LIndex].Value;
   end;
 end;
 

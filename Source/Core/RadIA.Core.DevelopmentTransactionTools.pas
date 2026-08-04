@@ -191,11 +191,11 @@ begin
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
   begin
-    if not (LArray.Items[LIndex] is TJSONObject) then
+    if not (LArray[LIndex] is TJSONObject) then
       raise EArgumentException.Create(
         'Each development operation must be an object.'
       );
-    LOperationJson := TJSONObject(LArray.Items[LIndex]);
+    LOperationJson := TJSONObject(LArray[LIndex]);
     Result[LIndex] := TRadIADevelopmentOperation.Create(
       ParseKind(LOperationJson.GetValue<string>('kind', '')),
       LOperationJson.GetValue<string>('previewId', '')

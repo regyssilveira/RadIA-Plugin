@@ -72,7 +72,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.ToolRegistry;
 
 const

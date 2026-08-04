@@ -95,7 +95,7 @@ begin
     Exit;
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
-    Result[LIndex] := LArray.Items[LIndex].Value;
+    Result[LIndex] := LArray[LIndex].Value;
 end;
 
 constructor TRadIAGitToolBase.Create(const AGit: IRadIAGitFacade);

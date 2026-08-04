@@ -193,7 +193,6 @@ uses
 
 const
   CCompensationFailed = 'compensation_failed';
-  COperationFailed = 'operation_failed';
   CPreconditionFailed = 'precondition_failed';
   CPreviewExpired = 'preview_expired';
   CPreviewNotFound = 'preview_not_found';

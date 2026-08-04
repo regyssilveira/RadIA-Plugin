@@ -3,7 +3,6 @@ unit RadIA.Core.ToolSecurity;
 interface
 
 uses
-  System.Classes,
   System.Generics.Collections,
   RadIA.Core.Tools;
 

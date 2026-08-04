@@ -259,9 +259,9 @@ begin
   AMatched := False;
   for LIndex := 0 to APrices.Count - 1 do
   begin
-    if not (APrices.Items[LIndex] is TJSONObject) then
+    if not (APrices[LIndex] is TJSONObject) then
       Continue;
-    LItem := TJSONObject(APrices.Items[LIndex]);
+    LItem := TJSONObject(APrices[LIndex]);
     if not PricingMatches(LItem, AProvider, AModel, AExactModel) then
       Continue;
     AMatched := True;

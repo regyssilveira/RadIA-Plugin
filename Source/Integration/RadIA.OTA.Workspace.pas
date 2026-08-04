@@ -4,7 +4,6 @@ interface
 
 uses
   System.Classes,
-  System.SysUtils,
   RadIA.Core.Interfaces,
   RadIA.Core.Workspace,
   RadIA.Core.Patches;
@@ -55,6 +54,7 @@ uses
   System.Generics.Collections,
   System.Hash,
   System.IOUtils,
+  System.SysUtils,
   ToolsAPI,
   Winapi.Windows,
   RadIA.Core.Types,

@@ -5,9 +5,6 @@ interface
 uses
   System.Classes,
   Vcl.CheckLst,
-  Vcl.ComCtrls,
-  Vcl.Controls,
-  Vcl.Dialogs,
   Vcl.Forms,
   Vcl.StdCtrls,
   RadIA.Core.ProjectTemplateService,
@@ -53,6 +50,8 @@ implementation
 uses
   System.IOUtils,
   System.SysUtils,
+  Vcl.Controls,
+  Vcl.Dialogs,
   Vcl.Graphics;
 
 function DefaultDelphiVersion: string;

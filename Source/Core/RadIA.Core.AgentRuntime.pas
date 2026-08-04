@@ -3,8 +3,6 @@ unit RadIA.Core.AgentRuntime;
 interface
 
 uses
-  System.Classes,
-  System.Diagnostics,
   System.Generics.Collections,
   RadIA.Core.Tools;
 
@@ -293,6 +291,7 @@ function RadIAAgentStatusName(
 implementation
 
 uses
+  System.Diagnostics,
   System.IOUtils,
   System.JSON,
   System.Math,
@@ -1132,9 +1131,9 @@ begin
     begin
       for LIndex := 0 to LStepArray.Count - 1 do
       begin
-        if not (LStepArray.Items[LIndex] is TJSONObject) then
+        if not (LStepArray[LIndex] is TJSONObject) then
           Continue;
-        LStepJson := TJSONObject(LStepArray.Items[LIndex]);
+        LStepJson := TJSONObject(LStepArray[LIndex]);
         LStep := Default(TRadIAAgentStep);
         LStep.Index := LStepJson.GetValue<Integer>('index', LIndex + 1);
         LStep.ToolName := LStepJson.GetValue<string>('toolName', '');

@@ -26,7 +26,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.McpHandshake;
 
 function CompleteOutput: string;

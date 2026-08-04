@@ -61,7 +61,6 @@ implementation
 
 uses
   System.JSON,
-  System.SysUtils,
   RadIA.Core.ToolRegistry,
   RadIA.Core.WorkspaceTools;
 

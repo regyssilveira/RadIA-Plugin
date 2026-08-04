@@ -81,7 +81,7 @@ begin
   for LNameIndex := Low(AActionNames) to High(AActionNames) do
     for LActionIndex := 0 to LActionList.ActionCount - 1 do
     begin
-      LAction := LActionList.Actions[LActionIndex];
+      LAction := LActionList[LActionIndex];
       if Assigned(LAction) and
         SameText(LAction.Name, AActionNames[LNameIndex]) then
         Exit(LAction);

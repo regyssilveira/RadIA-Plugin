@@ -3,7 +3,6 @@ unit RadIA.Core.KnowledgeScheduler;
 interface
 
 uses
-  System.Classes,
   System.SysUtils,
   RadIA.Core.Knowledge;
 
@@ -53,6 +52,7 @@ type
 implementation
 
 uses
+  System.Classes,
   System.SyncObjs,
   Winapi.Windows,
   RadIA.Core.Types;

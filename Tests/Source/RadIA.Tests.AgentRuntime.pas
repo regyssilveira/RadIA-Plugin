@@ -6,9 +6,6 @@ uses
   System.Generics.Collections,
   System.SysUtils,
   DUnitX.TestFramework,
-  RadIA.Core.AgentController,
-  RadIA.Core.AgentPricing,
-  RadIA.Core.AgentProvider,
   RadIA.Core.AgentRuntime,
   RadIA.Core.Interfaces,
   RadIA.Core.TokenUsage,
@@ -186,7 +183,10 @@ implementation
 uses
   System.Classes,
   System.IOUtils,
-  System.SyncObjs;
+  System.SyncObjs,
+  RadIA.Core.AgentController,
+  RadIA.Core.AgentPricing,
+  RadIA.Core.AgentProvider;
 
 { TRadIAMockAgentDecisionProvider }
 

@@ -135,9 +135,9 @@ begin
       SetLength(LChunks, LArray.Count);
       for LIndex := 0 to LArray.Count - 1 do
       begin
-        if not (LArray.Items[LIndex] is TJSONObject) then
+        if not (LArray[LIndex] is TJSONObject) then
           Exit(False);
-        LItem := TJSONObject(LArray.Items[LIndex]);
+        LItem := TJSONObject(LArray[LIndex]);
         LChunks[LIndex] := TRadIAKnowledgeChunk.Create(
           LItem.GetValue<string>('id', ''),
           LItem.GetValue<string>('fileName', ''),

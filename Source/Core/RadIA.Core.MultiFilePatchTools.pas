@@ -225,11 +225,11 @@ begin
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
   begin
-    if not (LArray.Items[LIndex] is TJSONObject) then
+    if not (LArray[LIndex] is TJSONObject) then
       raise EArgumentException.Create(
         'Each multi-file patch entry must be an object.'
       );
-    LEntryJson := TJSONObject(LArray.Items[LIndex]);
+    LEntryJson := TJSONObject(LArray[LIndex]);
     Result[LIndex] := TRadIAMultiFilePatchSpec.Create(
       LEntryJson.GetValue<string>('targetFile', ''),
       LEntryJson.GetValue<string>('baseRevision', ''),

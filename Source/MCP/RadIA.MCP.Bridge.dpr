@@ -119,8 +119,10 @@ begin
     ) then
       TFile.Delete(AConnectionFile);
   except
-    on Exception do
-      Exit;
+    on E: Exception do
+      OutputDebugString(
+        PChar('RadIA MCP owned connection cleanup error: ' + E.Message)
+      );
   end;
 end;
 

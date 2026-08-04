@@ -4,14 +4,9 @@ interface
 
 uses
   DUnitX.TestFramework,
-  System.Classes,
-  System.IOUtils,
-  System.SysUtils,
   RadIA.Core.Tools,
-  RadIA.Core.ToolRegistry,
   RadIA.Core.ToolSecurity,
-  RadIA.Core.Types,
-  RadIA.OTA.Consent;
+  RadIA.Core.ToolRegistry;
 
 type
   TTestRadIATool = class(TInterfacedObject, IRadIATool)
@@ -83,9 +78,13 @@ type
 implementation
 
 uses
+  System.IOUtils,
+  System.SysUtils,
   RadIA.Core.Config,
   RadIA.Core.Interfaces,
-  RadIA.Core.SettingsStorage;
+  RadIA.Core.SettingsStorage,
+  RadIA.Core.Types,
+  RadIA.OTA.Consent;
 
 { TTestRadIATool }
 
