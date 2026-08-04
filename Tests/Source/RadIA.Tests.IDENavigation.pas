@@ -295,9 +295,12 @@ begin
     'procedure Second;',
     1
   );
-  Assert.AreEqual(1, Length(LSymbols));
+  Assert.AreEqual<Integer>(1, Length(LSymbols));
   Assert.AreEqual('First', LSymbols[0].Name);
-  Assert.AreEqual(0, Length(TRadIAUnitSymbolScanner.Scan('procedure X;', 0)));
+  Assert.AreEqual<Integer>(
+    0,
+    Length(TRadIAUnitSymbolScanner.Scan('procedure X;', 0))
+  );
 end;
 
 procedure TRadIAIDENavigationTests.ScannerRecognizesTypesAndRoutines;
@@ -312,7 +315,7 @@ begin
     'procedure TRadIAItem.Save;',
     20
   );
-  Assert.AreEqual(5, Length(LSymbols));
+  Assert.AreEqual<Integer>(5, Length(LSymbols));
   Assert.AreEqual('class', LSymbols[0].Kind);
   Assert.AreEqual('TRadIAItem', LSymbols[0].Name);
   Assert.AreEqual('function', LSymbols[3].Kind);

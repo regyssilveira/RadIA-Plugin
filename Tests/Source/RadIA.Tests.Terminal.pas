@@ -41,7 +41,10 @@ uses
 
 procedure TRadIATerminalTests.CatalogProvidesShellProfilesAndSnippets;
 begin
-  Assert.AreEqual(2, Length(TRadIATerminalCatalog.Profiles));
+  Assert.AreEqual<Integer>(
+    2,
+    Length(TRadIATerminalCatalog.Profiles)
+  );
   Assert.IsTrue(Length(TRadIATerminalCatalog.Snippets) >= 4);
   Assert.AreEqual(
     'powershell',
@@ -57,7 +60,7 @@ begin
   LHistory := TRadIATerminalHistory.Create(FFileName);
   try
     LHistory.Load;
-    Assert.AreEqual(0, Length(LHistory.Entries));
+    Assert.AreEqual<Integer>(0, Length(LHistory.Entries));
   finally
     LHistory.Free;
   end;
@@ -65,16 +68,19 @@ end;
 
 procedure TRadIATerminalTests.EmptyCommandIsRejected;
 var
+  LInvocation: TRadIACliInvocation;
   LProfile: TRadIATerminalProfile;
+  LTestMethod: TTestLocalMethod;
 begin
+  LInvocation := Default(TRadIACliInvocation);
   LProfile := TRadIATerminalCatalog.Profiles[0];
-  Assert.WillRaise(
+  LTestMethod :=
     procedure
     begin
-      LProfile.BuildInvocation('', FDirectory);
-    end,
-    EArgumentException
-  );
+      LInvocation := LProfile.BuildInvocation('', FDirectory);
+    end;
+  Assert.WillRaise(LTestMethod, EArgumentException);
+  Assert.AreEqual('', LInvocation.ExecutablePath);
 end;
 
 procedure TRadIATerminalTests.HistoryEnforcesLimit;
@@ -92,7 +98,7 @@ begin
     LHistory.Add(
       TRadIATerminalHistoryEntry.Create(Now, 'cmd', 'third', 0)
     );
-    Assert.AreEqual(2, Length(LHistory.Entries));
+    Assert.AreEqual<Integer>(2, Length(LHistory.Entries));
     Assert.AreEqual('second', LHistory.Entries[0].Command);
   finally
     LHistory.Free;
@@ -121,7 +127,7 @@ begin
   LReloaded := TRadIATerminalHistory.Create(FFileName);
   try
     LReloaded.Load;
-    Assert.AreEqual(1, Length(LReloaded.Entries));
+    Assert.AreEqual<Integer>(1, Length(LReloaded.Entries));
     Assert.AreEqual('git status', LReloaded.Entries[0].Command);
     Assert.AreEqual<Cardinal>(7, LReloaded.Entries[0].ExitCode);
   finally

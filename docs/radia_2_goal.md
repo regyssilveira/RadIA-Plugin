@@ -150,8 +150,7 @@ auditoria.
 - Publicar instalador, migração, manual e evidências de release.
 
 Estado: baseline pré-release validado. A build atual foi instalada no Delphi 13 Win32 e IDE64. O smoke
-confirmou o
-SHA-256 da BPL instalada, versão, catálogo de 80 tools, remoção do discovery e ausência de processos
+confirmou o SHA-256 da BPL instalada, versão, catálogo de 87 tools, remoção do discovery e ausência de processos
 descendentes após o shutdown. O painel de chat também foi criado como `TOTADockForm` pela API nativa
 `INTACustomDockableForm` e renderizado em uma IDE real sem a tela em branco. O hardening adicional
 eliminou acesso tardio a objetos VCL já destruídos. A retenção do `bds.exe` foi eliminada ao
@@ -161,20 +160,19 @@ lateral permanece como aceite visual manual porque a IDE elevada bloqueia entrad
 processos; criação, visibilidade e persistência do host são automatizadas. A jornada E2E contínua
 abaixo foi aprovada no Delphi 13.
 
-## Evidências de validação — 3 de agosto de 2026
+## Evidências de validação — 4 de agosto de 2026
 
-- Delphi 11, 12 e 13 Win32 após hardening dos notifiers: 511 testes com cobertura e quatro testes
-  externos por versão, sem falhas ou leaks.
-- Smoke real Win32: Delphi 11 e 12 passaram um ciclo de carga, catálogo MCP com 80 tools e shutdown
+- Delphi 11, 12 e 13 Win32: 590 testes diretos por versão, sem falhas, testes ignorados ou leaks.
+- Smoke real Win32: Delphi 11 e 12 passaram um ciclo de carga, catálogo MCP com 87 tools e shutdown
   limpo; Delphi 13 passou três ciclos consecutivos sob a asserção endurecida de processo raiz.
-- Delphi 13 IDE64: 515 testes diretos, sem falhas ou leaks.
+- Delphi 13 IDE64: 590 testes diretos, sem falhas, testes ignorados ou leaks.
 - Candidatos 2.0.0: pacotes validados para Delphi 11/12/13 Win32 e Delphi 13 IDE64, manual completo e
   guia de migração 1.x→2.0 publicados na documentação.
-- Delphi 13 Win32: três ciclos reais de carga e shutdown com 80 tools e nenhum processo órfão.
+- Delphi 13 Win32: três ciclos reais de carga e shutdown com 87 tools e nenhum processo órfão.
 - Delphi 13 Form Designer: `TButton` criado, listado e revertido no designer vivo com preview e
   consentimento.
 - Delphi 13 build de template: removido o diálogo modal de grupo de projeto não persistido.
-- Delphi 13 IDE64: três ciclos reais de carga e shutdown com 80 tools e nenhum processo órfão.
+- Delphi 13 IDE64: três ciclos reais de carga e shutdown com 87 tools e nenhum processo órfão.
 - Chat/WebView2: host nativo `TOTADockForm` e painel renderizados em uma IDE real, sem tela branca,
   com o controle visual do modo agente presente.
 - Desktop da IDE: dois ciclos reais confirmaram visibilidade e restauração da geometria do
@@ -222,12 +220,12 @@ Experiência de revisão entregue nesta branch: resultados JSON bem-sucedidos ag
 intenção visual uniforme para chat e MCP, e o Smart Diff permite aceitar ou rejeitar cada bloco
 antes de aplicar a composição selecionada ao editor.
 
-Fundação de executores híbridos entregue nesta branch: a configuração permite persistir o agente
+Executores híbridos entregues nesta branch: a configuração permite persistir o agente
 nativo ou um dos quatro CLIs suportados sem reiniciar a IDE. Os perfis não interativos constroem
 argumentos separados, solicitam saída estruturada e não habilitam aprovação automática. O item
 agora inclui transporte assíncrono, captura incremental, normalização de JSONL, timeout e
-cancelamento da árvore via Job Object. O item permanece aberto para o terminal visual, histórico,
-snippets e onboarding.
+cancelamento da árvore via Job Object. O terminal visual, histórico, snippets e onboarding também
+estão integrados.
 
 Terminal acoplável entregue nesta branch: painel nativo registrado no desktop do Delphi, perfis
 PowerShell e Command Prompt, streaming de stdout/stderr, histórico local limitado, snippets,
@@ -238,14 +236,14 @@ executor, consentimento, CLI/MCP, terminal e criação de projeto. O fluxo apare
 uma vez por versão, preserva a última etapa, pode ser reaberto pelo menu Tools e nunca altera
 configurações sem ação explícita. A etapa de terminal e onboarding está concluída.
 
-Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de clientes, preview,
+Provisionamento MCP entregue nesta branch: o provisionador cobre catálogo de clientes, preview,
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
-remoção seletiva. A etapa permanece aberta até a integração visual e o diagnóstico operacional.
+remoção seletiva, com integração visual e diagnóstico operacional.
 
 Integração visual entregue nesta branch: a categoria **CLI & MCP** permite escolher o cliente,
 sobrescrever caminhos, diagnosticar CLI e configuração MCP, revisar a proposta e executar conexão,
-reparo ou remoção seletiva com confirmação explícita. O item permanece aberto para instalação
-opcional pelos canais oficiais e diagnóstico de handshake.
+reparo ou remoção seletiva com confirmação explícita. A instalação opcional pelos canais oficiais
+e o diagnóstico de handshake também estão concluídos.
 
 CLIs não serão redistribuídos dentro do package. O instalador deverá detectar instalações existentes
 e, mediante consentimento, delegar a instalação ou atualização aos canais oficiais de cada
@@ -261,6 +259,9 @@ Diagnóstico de handshake entregue nesta branch: a tela inicia a bridge configur
 discovery `mcp.<pid>.json` da IDE atual, envia `initialize`, `notifications/initialized`, `ping` e
 `tools/list` por stdin, valida as respostas JSON-RPC e apresenta versão do protocolo e contagem real
 de tools. O teste E2E da suíte inicia servidor named pipe e bridge reais e comprova o ciclo completo.
+
+Estado da expansão competitiva: concluída. Os nove itens foram implementados; a matriz final e os
+artefatos reproduzíveis permanecem como gates de preparação, sem publicar tag ou release.
 
 ## Cenário E2E obrigatório
 

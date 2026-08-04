@@ -20,7 +20,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Build Autocorretivo e Runner DUnitX** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.5.0 |
 | **Debug Agent Orientado a Eventos** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.6.0 |
 | **Git Revisável e Pipeline de Entrega** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐ Alta | v1.7.0 |
-| **CLI Manager, Terminal e Experiência Híbrida** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **CLI Manager, Terminal e Experiência Híbrida** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Hardening E2E e Release RadIA 2.0** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Correção de Seleção do Editor e Bloqueio do Gemini OAuth** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.29 |
 | **Adapter da Open Tools API e Testes de Rede** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.0.28 |
@@ -53,12 +53,12 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 
 *   Hardening E2E dentro da IDE e preparação da release RadIA 2.0.
     *   Concluído: matriz Delphi 11/12/13, instalação Delphi 13 Win32/IDE64, três ciclos de smoke por
-        arquitetura, 80 tools, WebView2 renderizado, edição real via MCP, build pela tool, 515 testes
+        arquitetura, 87 tools, WebView2 renderizado, edição real via MCP, build pela tool, 590 testes
         diretos, template VCL criado/aberto/compilado/revertido, edição real do Form Designer com
         consentimento, fluxo real de debug com breakpoint, call stack e timeline, além do ciclo de
         erro de compilação, diagnóstico, correção, rebuild, DUnitX e commit Git revisável com paths
         selecionados.
-    *   Concluído na compatibilidade real: Delphi 11 e 12 passaram carga da BPL, catálogo MCP de 80
+    *   Concluído na compatibilidade real: Delphi 11 e 12 passaram carga da BPL, catálogo MCP de 87
         tools e shutdown limpo; Delphi 13 passou três ciclos consecutivos com verificação de qualquer
         processo raiz remanescente.
     *   Concluído visualmente: o painel agora é criado pela API nativa `INTACustomDockableForm` da
@@ -74,7 +74,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         persistência do host são cobertas pelo smoke automatizado.
     *   Concluído no shutdown: os hooks OTA de editor e debug agora são desregistrados antes de
         abandonar seus objetos durante o encerramento, sem liberar VCL/WebView2. A build instalada
-        passou em três ciclos consecutivos de carga e shutdown do Delphi 13, com 80 tools e sem
+        passou em três ciclos consecutivos de carga e shutdown do Delphi 13, com 87 tools e sem
         retenção do `bds.exe`.
     *   Concluído no E2E contínuo do Delphi 13: template, Form Designer, build, DUnitX, debug,
         correção validada, commit Git revisável e shutdown foram aprovados na mesma jornada.

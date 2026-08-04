@@ -35,7 +35,7 @@ var
   LSteps: TArray<TRadIAOnboardingStep>;
 begin
   LSteps := TRadIAOnboardingCatalog.Steps;
-  Assert.AreEqual(6, Length(LSteps));
+  Assert.AreEqual<Integer>(6, Length(LSteps));
   Assert.AreEqual(Ord(oaOpenChat), Ord(LSteps[0].Action));
   Assert.AreEqual(Ord(oaOpenProviderSettings), Ord(LSteps[1].Action));
   Assert.AreEqual(Ord(oaOpenSecuritySettings), Ord(LSteps[2].Action));

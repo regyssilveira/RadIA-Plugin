@@ -141,7 +141,7 @@ end;
 
 procedure TRadIAMcpProvisioningTests.CatalogContainsEverySupportedCli;
 begin
-  Assert.AreEqual(4, Length(TRadIAMcpClientCatalog.All));
+  Assert.AreEqual<Integer>(4, Length(TRadIAMcpClientCatalog.All));
 end;
 
 procedure TRadIAMcpProvisioningTests.InvalidJsonIsNotOverwritten;

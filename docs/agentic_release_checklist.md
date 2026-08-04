@@ -19,10 +19,10 @@ A avaliação requisito por requisito está em `agentic_completion_audit.md`.
 
 ## Compatibilidade automatizada
 
-- [x] Delphi 11 Win32: pacote, bridge, extensão e 442 testes.
-- [x] Delphi 12 Win32: pacote, bridge, extensão e 442 testes.
-- [x] Delphi 13 Win32: pacote, bridge, extensão e 442 testes.
-- [x] Delphi 13 IDE64: pacote, bridge, extensão e 442 testes.
+- [x] Delphi 11 Win32: pacote, bridge, extensão e 590 testes.
+- [x] Delphi 12 Win32: pacote, bridge, extensão e 590 testes.
+- [x] Delphi 13 Win32: pacote, bridge, extensão e 590 testes.
+- [x] Delphi 13 IDE64: pacote, bridge, extensão e 590 testes.
 - [x] Zero teste ignorado, falha, erro ou vazamento.
 - [x] Cobertura instrumentada: 78% no Delphi 12.
 - [x] ESLint aprovado.

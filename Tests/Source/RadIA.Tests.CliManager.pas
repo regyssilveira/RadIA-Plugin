@@ -98,10 +98,10 @@ procedure TRadIACliManagerTests.CatalogContainsSupportedExecutors;
 var
   LDefinition: TRadIACliDefinition;
 begin
-  Assert.AreEqual(4, Length(TRadIACliCatalog.All));
+  Assert.AreEqual<Integer>(4, Length(TRadIACliCatalog.All));
   Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
-    Assert.AreEqual('Codex CLI', LDefinition.DisplayName);
-    Assert.Contains(LDefinition.ToDiagnosticText, '@openai/codex');
+  Assert.AreEqual('Codex CLI', LDefinition.DisplayName);
+  Assert.Contains(LDefinition.ToDiagnosticText, '@openai/codex');
   Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
   Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
   Assert.IsTrue(TRadIACliCatalog.FindById('copilot', LDefinition));
@@ -115,7 +115,7 @@ begin
   LEnvironment := TRadIAFakeCliEnvironment.Create([]);
   LDetector := TRadIACliDetector.Create(LEnvironment);
   try
-    Assert.AreEqual(4, Length(LDetector.DetectAll));
+    Assert.AreEqual<Integer>(4, Length(LDetector.DetectAll));
   finally
     LDetector.Free;
   end;
@@ -127,7 +127,7 @@ var
 begin
   LDetector := TRadIACliDetector.Create;
   try
-    Assert.AreEqual(4, Length(LDetector.DetectAll));
+    Assert.AreEqual<Integer>(4, Length(LDetector.DetectAll));
   finally
     LDetector.Free;
   end;
@@ -271,7 +271,10 @@ end;
 procedure TRadIACliManagerTests.InstallPlanRejectsShellMetacharacters;
 var
   LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+  LTestMethod: TTestLocalMethod;
 begin
+  LPlan := Default(TRadIACliInstallPlan);
   LDefinition := TRadIACliDefinition.Create(
     ckGemini,
     'unsafe',
@@ -281,13 +284,13 @@ begin
     '@vendor/package & whoami',
     'https://example.invalid'
   );
-  Assert.WillRaise(
+  LTestMethod :=
     procedure
     begin
-      TRadIACliInstaller.BuildPlan(LDefinition);
-    end,
-    EArgumentException
-  );
+      LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
+    end;
+  Assert.WillRaise(LTestMethod, EArgumentException);
+  Assert.AreEqual('', LPlan.ExecutablePath);
 end;
 
 initialization

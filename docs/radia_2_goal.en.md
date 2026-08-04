@@ -148,7 +148,7 @@ reset, or discard tools are exposed, and commit remains subject to consent and a
 - Publish installer, migration guide, user manual, and release evidence.
 
 Status: pre-release baseline validated. The current build was installed on Delphi 13 Win32 and IDE64. Smoke tests
-confirmed the installed BPL SHA-256, version, 80-tool catalog, discovery cleanup, and the absence of
+confirmed the installed BPL SHA-256, version, 87-tool catalog, discovery cleanup, and the absence of
 descendant processes after shutdown. The chat panel was also created as a `TOTADockForm` through
 the native `INTACustomDockableForm` API and rendered in a real IDE without a blank screen.
 Additional shutdown hardening removed late access to already destroyed VCL objects. `bds.exe`
@@ -158,20 +158,19 @@ build ended without an orphan process. Lateral dropping remains a manual visual 
 the elevated IDE blocks synthetic cross-process input; host creation, visibility, and persistence
 are automated. The continuous E2E journey below passed on Delphi 13.
 
-## Validation evidence — August 3, 2026
+## Validation evidence — August 4, 2026
 
-- Delphi 11, 12, and 13 Win32 after notifier hardening: 511 coverage tests plus four external tests
-  per version, with no failures or leaks.
-- Real Win32 smoke: Delphi 11 and 12 passed one load cycle, the 80-tool MCP catalog, and clean
+- Delphi 11, 12, and 13 Win32: 590 direct tests per version, with no failures, ignored tests, or leaks.
+- Real Win32 smoke: Delphi 11 and 12 passed one load cycle, the 87-tool MCP catalog, and clean
   shutdown; Delphi 13 passed three consecutive cycles under the hardened root-process assertion.
-- Delphi 13 IDE64: 515 direct tests, with no failures or leaks.
+- Delphi 13 IDE64: 590 direct tests, with no failures, ignored tests, or leaks.
 - 2.0.0 candidates: validated packages for Delphi 11/12/13 Win32 and Delphi 13 IDE64, with the complete
   manual and 1.x-to-2.0 migration guide published in the documentation.
-- Delphi 13 Win32: three real load and shutdown cycles with 80 tools and no orphan process.
+- Delphi 13 Win32: three real load and shutdown cycles with 87 tools and no orphan process.
 - Delphi 13 Form Designer: a `TButton` was created, listed, and reverted in the live designer with
   preview and consent.
 - Delphi 13 template build: the modal prompt for an unpersisted project group was eliminated.
-- Delphi 13 IDE64: three real load and shutdown cycles with 80 tools and no orphan process.
+- Delphi 13 IDE64: three real load and shutdown cycles with 87 tools and no orphan process.
 - Chat/WebView2: native `TOTADockForm` host and panel rendered in a real IDE without a blank screen,
   with the agent-mode visual control present.
 - IDE desktop: two real cycles confirmed `TOTADockForm` visibility and geometry restoration; the
@@ -219,17 +218,35 @@ Review experience delivered on this branch: successful JSON results now carry a 
 intent for chat and MCP, while Smart Diff allows accepting or rejecting each block before applying
 the selected composition to the editor.
 
-Foundation delivered on this branch: the MCP provisioner now covers the client catalog, preview,
+Hybrid executors delivered on this branch: settings persist the native agent or one of four supported
+CLIs without restarting the IDE. Non-interactive profiles use separated arguments and structured
+output, with asynchronous streaming, JSONL normalization, timeout, and Job Object cancellation.
+The dockable terminal, bounded history, snippets, and onboarding are also integrated.
+
+MCP provisioning delivered on this branch: the provisioner covers the client catalog, preview,
 drift detection, JSON merge, managed TOML block, backup, verification, repair, rollback, and
-selective removal. This item remains open until visual integration and operational diagnostics.
+selective removal, with visual integration and operational diagnostics.
 
 Visual integration delivered on this branch: the **CLI & MCP** category supports client selection,
 path overrides, CLI and MCP diagnostics, proposal review, and explicit confirmation for connect,
-repair, or selective removal. The item remains open for optional official-channel installation and
-handshake diagnostics.
+repair, or selective removal. Optional official-channel installation and handshake diagnostics are
+also complete.
 
 CLIs will not be redistributed inside the package. With explicit consent, the installer will detect
 existing installations and delegate installation or updates to each vendor's official channels.
+
+Optional installation delivered on this branch: the **CLI & MCP** screen previews the official
+command and prerequisites, asks for confirmation, and runs installation or update asynchronously
+with observable output, timeout, and process-tree cancellation. Third-party binaries are never
+redistributed.
+
+Handshake diagnostics delivered on this branch: the screen starts the configured bridge against the
+current IDE's `mcp.<pid>.json`, sends `initialize`, `notifications/initialized`, `ping`, and
+`tools/list`, validates JSON-RPC responses, and reports protocol version and the live tool count.
+The E2E test starts a real named-pipe server and bridge for the complete cycle.
+
+Competitive expansion status: complete. All nine items are implemented; the final matrix and
+reproducible artifacts remain preparation gates, without publishing a tag or release.
 
 ## Required E2E scenario
 
