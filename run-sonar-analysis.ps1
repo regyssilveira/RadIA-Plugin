@@ -5,9 +5,12 @@
     This script executes the sonar-scanner CLI tool to analyze the project codebase,
     resolving the SonarQube token securely from parameters, local .env file, or environment variables.
 .PARAMETER Token
-    The SonarQube access token. If not provided, the script attempts to load it from the .env file or the SONAR_TOKEN environment variable.
+    The SonarQube access token. If omitted, the script loads it from .env or
+    the SONAR_TOKEN environment variable.
 .PARAMETER HostUrl
     The URL of the SonarQube server. Defaults to http://localhost:9000.
+.PARAMETER QualityGate
+    Waits for the exact analysis and fails unless its Quality Gate is OK.
 .EXAMPLE
     .\run-sonar-analysis.ps1
 .EXAMPLE
@@ -17,7 +20,8 @@ param(
     [string]$Token = "",
     [string]$HostUrl = "http://localhost:9000",
     [switch]$Test,
-    [string]$DelphiVersion = ""
+    [string]$DelphiVersion = "",
+    [switch]$QualityGate
 )
 
 $ErrorActionPreference = "Stop"
@@ -68,7 +72,7 @@ if ($Test) {
     if ($DelphiVersion) {
         $buildParams += @("-DelphiVersion", $DelphiVersion)
     }
-    
+
     # Executar build.ps1 com testes e cobertura
     powershell.exe -ExecutionPolicy Bypass -File build.ps1 $buildParams
     if ($LASTEXITCODE -ne 0) {
@@ -83,7 +87,10 @@ Write-Host "Checking for sonar-scanner executable..." -ForegroundColor Cyan
 $ScannerCmd = Get-Command "sonar-scanner" -ErrorAction SilentlyContinue
 
 if ($null -eq $ScannerCmd) {
-    Write-Error "The 'sonar-scanner' executable was not found in your PATH. Please install SonarQube Scanner CLI and make sure it is added to the system environment variables."
+    Write-Error (
+        "The 'sonar-scanner' executable was not found in PATH. " +
+        "Install SonarQube Scanner CLI and add it to PATH."
+    )
     Exit 1
 }
 
@@ -99,4 +106,14 @@ if ($LASTEXITCODE -eq 0) {
 } else {
     Write-Error "SonarQube analysis failed with exit code $LASTEXITCODE."
     Exit $LASTEXITCODE
+}
+
+if ($QualityGate) {
+    & (Join-Path $PSScriptRoot "scripts\Test-RadIA.SonarQualityGate.ps1") `
+        -Token $ResolvedToken `
+        -HostUrl $HostUrl
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "SonarQube Quality Gate verification failed."
+        Exit $LASTEXITCODE
+    }
 }

@@ -1,6 +1,7 @@
 # Release Finalization Process
 
-This document describes the recommended flow to finalize a **Rad IA** release with `develop`, `main`, and tags synchronized.
+This document describes the recommended flow to finalize a **Rad IA** release with `develop`, `main`,
+and tags synchronized.
 
 > [!IMPORTANT]
 > Create the tag only after `main` is updated to the same validated commit that reached `develop`.
@@ -17,7 +18,8 @@ git fetch --all --tags
 git tag --sort=-v:refname
 ```
 
-Use the latest published tag to define the next version. Example: if the latest tag is `v0.0.17`, the next release is `v0.0.18`.
+Use the latest published tag to define the next version. Example: if the latest tag is `v0.0.17`, the
+next release is `v0.0.18`.
 
 Working branches must follow the [Branch Naming Convention](branch_convention.en.md).
 
@@ -54,7 +56,26 @@ When unit tests need to be validated:
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0" -Test
 ```
 
-Known warnings may be accepted when they do not block the release, but they should be mentioned in the final summary.
+Run the analysis and wait for the Quality Gate of that exact analysis:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1 `
+  -Test `
+  -DelphiVersion "22.0" `
+  -QualityGate
+```
+
+The command fails when SonarQube processing fails, times out, or any Quality Gate condition is
+rejected. Do not prepare a merge, tag, or release package in that state.
+
+The `SonarQube release gate` workflow repeats this barrier for pull requests targeting `develop` and
+`main`, pushes to those branches, and every `v*` tag. The self-hosted Windows runner must have the
+`radia-delphi` label, Delphi 11, and `sonar-scanner`; configure `SONAR_TOKEN` as a repository secret
+and `SONAR_HOST_URL` as a repository variable. Require the job as a status check in the `develop`
+and `main` branch protection rules.
+
+Known warnings may be accepted only when they are not a rejected Quality Gate condition, and they
+should be mentioned in the final summary.
 
 ---
 
@@ -69,7 +90,8 @@ git commit -m "chore: Prepare v0.0.18 release"
 git push origin <working-branch>
 ```
 
-Adjust the message and version according to the real release. Commit messages must follow the [Commit Message Convention](commit_convention.en.md).
+Adjust the message and version according to the real release. Commit messages must follow the
+[Commit Message Convention](commit_convention.en.md).
 
 ---
 
@@ -84,7 +106,8 @@ git merge --ff-only <working-branch>
 git push origin develop
 ```
 
-If fast-forward is not possible, investigate before continuing. Do not create a tag while `develop` and the working branch are divergent.
+If fast-forward is not possible, investigate before continuing. Do not create a tag while `develop`
+and the working branch are divergent.
 
 ---
 
@@ -141,6 +164,8 @@ git checkout develop
 * Version updated in code, metadata, and documentation.
 * `npx eslint` executed.
 * Delphi build executed successfully.
+* The exact analysis passed the SonarQube Quality Gate.
+* Required `Build, analyze, and enforce Quality Gate` status check passed.
 * Release packages generated for Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
 * Positive and negative validation completed for every package.
 * `SHA256SUMS.txt` published with the four ZIPs generated from the same commit.
