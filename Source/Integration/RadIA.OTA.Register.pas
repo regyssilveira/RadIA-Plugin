@@ -82,6 +82,7 @@ uses
   RadIA.Core.DebuggerControlTools, RadIA.Core.DebuggerBreakpointTools,
   RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
+  RadIA.Core.InlineCompletion,
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
@@ -1101,6 +1102,12 @@ initialization
   GMcpServer := TRadIAContainer.Resolve<IRadIAMcpServer>;
   GMcpServer.Start;
   TRadIAContainer.Register<IRadIAService>(TRadIAService.Create(TRadIAContainer.Resolve<IRadIAConfig>));
+  TRadIAContainer.Register<IRadIAInlineCompletionProvider>(
+    TRadIAServiceInlineCompletionProvider.Create(
+      TRadIAContainer.Resolve<IRadIAService>,
+      30000
+    )
+  );
   TRadIAContainer.Register<IRadIATextNormalizer>(TRadIATextNormalizer.Create);
   TRadIAContainer.Register<IRadIAMediator>(TRadIAMediator.Instance);
   TRadIAContainer.Register<IRadIADTOBuilder>(TRadIADTOBuilder.Create);

@@ -143,6 +143,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerWatches.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviews.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.InlineCompletion.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviewTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigation.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigationTools.pas"/>
@@ -264,6 +265,7 @@
         <DCCReference Include="Source\RadIA.Tests.DebuggerBreakpointTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DebuggerInspectionTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.InlineReviews.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.InlineCompletion.pas"/>
         <DCCReference Include="Source\RadIA.Tests.IDENavigation.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Knowledge.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeScheduler.pas"/>
