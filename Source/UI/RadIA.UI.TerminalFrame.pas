@@ -4,6 +4,7 @@ interface
 
 uses
   System.Classes,
+  Vcl.ComCtrls,
   Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.StdCtrls,
@@ -21,12 +22,17 @@ type
     FRunButton: TButton;
     FStopButton: TButton;
     FClearButton: TButton;
-    FOutputMemo: TMemo;
+    FOutputEditor: TRichEdit;
     FStatusLabel: TLabel;
+    FAnsiParser: TRadIATerminalAnsiParser;
     FHistory: TRadIATerminalHistory;
     FSession: IRadIACliProcessSession;
     FLifecycleGuard: IInterface;
     procedure AppendOutput(const AText: string);
+    procedure AppendSegment(
+      const ASegment: TRadIATerminalTextSegment
+    );
+    procedure BuildControls;
     procedure ClearClick(Sender: TObject);
     procedure FinishCommand(
       const ACommand: string;
@@ -39,6 +45,8 @@ type
     procedure RunClick(Sender: TObject);
     procedure SnippetChange(Sender: TObject);
     procedure StopClick(Sender: TObject);
+  protected
+    procedure CreateWnd; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -48,12 +56,15 @@ type
 
 implementation
 
+{$R *.dfm}
+
 uses
   System.DateUtils,
   System.IOUtils,
   System.SyncObjs,
   System.SysUtils,
   Vcl.Controls,
+  Vcl.Graphics,
   RadIA.Core.AgentExecutors,
   RadIA.OTA.Helper;
 
@@ -99,13 +110,53 @@ end;
 constructor TRadIATerminalFrame.Create(AOwner: TComponent);
 var
   LAppData: string;
-  LProfile: TRadIATerminalProfile;
-  LSnippet: TRadIATerminalSnippet;
 begin
   inherited Create(AOwner);
   Align := alClient;
   FLifecycleGuard := TRadIATerminalLifecycleGuard.Create;
+  FAnsiParser := TRadIATerminalAnsiParser.Create;
 
+  LAppData := GetEnvironmentVariable('APPDATA');
+  if LAppData = '' then
+    LAppData := TPath.GetHomePath;
+  FHistory := TRadIATerminalHistory.Create(
+    TPath.Combine(LAppData, 'RadIA\terminal-history.json')
+  );
+end;
+
+destructor TRadIATerminalFrame.Destroy;
+var
+  LGuard: IRadIATerminalLifecycleGuard;
+begin
+  if Supports(
+    FLifecycleGuard,
+    IRadIATerminalLifecycleGuard,
+    LGuard
+  ) then
+    LGuard.Invalidate;
+  if Assigned(FSession) then
+  begin
+    FSession.Cancel;
+    FSession := nil;
+  end;
+  FAnsiParser.Free;
+  FHistory.Free;
+  inherited Destroy;
+end;
+
+procedure TRadIATerminalFrame.CreateWnd;
+begin
+  inherited;
+  if Assigned(FTopPanel) then
+    Exit;
+  BuildControls;
+end;
+
+procedure TRadIATerminalFrame.BuildControls;
+var
+  LProfile: TRadIATerminalProfile;
+  LSnippet: TRadIATerminalSnippet;
+begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
@@ -166,53 +217,74 @@ begin
   FStatusLabel.SetBounds(8, 78, 820, 20);
   FStatusLabel.Caption := 'Ready';
 
-  FOutputMemo := TMemo.Create(Self);
-  FOutputMemo.Parent := Self;
-  FOutputMemo.Align := alClient;
-  FOutputMemo.ReadOnly := True;
-  FOutputMemo.ScrollBars := ssBoth;
-  FOutputMemo.WordWrap := False;
-  FOutputMemo.Font.Name := 'Consolas';
-  FOutputMemo.Font.Size := 10;
-
-  LAppData := GetEnvironmentVariable('APPDATA');
-  if LAppData = '' then
-    LAppData := TPath.GetHomePath;
-  FHistory := TRadIATerminalHistory.Create(
-    TPath.Combine(LAppData, 'RadIA\terminal-history.json')
-  );
+  FOutputEditor := TRichEdit.Create(Self);
+  FOutputEditor.Parent := Self;
+  FOutputEditor.Align := alClient;
+  FOutputEditor.ReadOnly := True;
+  FOutputEditor.ScrollBars := ssBoth;
+  FOutputEditor.WordWrap := False;
+  FOutputEditor.Font.Name := 'Consolas';
+  FOutputEditor.Font.Size := 10;
   LoadHistory;
 end;
 
-destructor TRadIATerminalFrame.Destroy;
-begin
-  (FLifecycleGuard as IRadIATerminalLifecycleGuard).Invalidate;
-  if Assigned(FSession) then
-  begin
-    FSession.Cancel;
-    FSession := nil;
-  end;
-  FHistory.Free;
-  inherited Destroy;
-end;
-
 procedure TRadIATerminalFrame.AppendOutput(const AText: string);
+var
+  LSegment: TRadIATerminalTextSegment;
 begin
   if AText = '' then
     Exit;
-  FOutputMemo.SelStart := Length(FOutputMemo.Text);
-  FOutputMemo.SelText := AText;
+  for LSegment in FAnsiParser.Feed(AText) do
+    AppendSegment(LSegment);
+end;
+
+procedure TRadIATerminalFrame.AppendSegment(
+  const ASegment: TRadIATerminalTextSegment
+);
+const
+  TERMINAL_COLORS: array[TRadIATerminalColor] of TColor = (
+    clWindowText,
+    clBlack,
+    $000000CC,
+    $0000A000,
+    $0000A0A0,
+    $00CC0000,
+    $00A000A0,
+    $00A0A000,
+    $00C0C0C0,
+    $00606060,
+    $004040FF,
+    $0040E040,
+    $0040E0E0,
+    $00FF8080,
+    $00E040E0,
+    $00E0E040,
+    clWhite
+  );
+begin
+  FOutputEditor.SelStart := Length(FOutputEditor.Text);
+  FOutputEditor.SelLength := 0;
+  if ASegment.Style.Foreground = tcDefault then
+    FOutputEditor.SelAttributes.Color := FOutputEditor.Font.Color
+  else
+    FOutputEditor.SelAttributes.Color :=
+      TERMINAL_COLORS[ASegment.Style.Foreground];
+  FOutputEditor.SelAttributes.Style := [];
+  if ASegment.Style.Bold then
+    FOutputEditor.SelAttributes.Style := [fsBold];
+  FOutputEditor.SelText := ASegment.Text;
 end;
 
 procedure TRadIATerminalFrame.ApplyCurrentTheme;
 begin
   Invalidate;
-  FOutputMemo.Invalidate;
+  FOutputEditor.Invalidate;
 end;
 
 procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
 begin
-  FOutputMemo.Clear;
+  FOutputEditor.Clear;
+  FAnsiParser.Reset;
 end;
 
 procedure TRadIATerminalFrame.EnsureVisibleContent;

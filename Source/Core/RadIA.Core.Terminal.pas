@@ -7,6 +7,72 @@ uses
   RadIA.Core.AgentExecutors;
 
 type
+  TRadIATerminalColor = (
+    tcDefault,
+    tcBlack,
+    tcRed,
+    tcGreen,
+    tcYellow,
+    tcBlue,
+    tcMagenta,
+    tcCyan,
+    tcWhite,
+    tcBrightBlack,
+    tcBrightRed,
+    tcBrightGreen,
+    tcBrightYellow,
+    tcBrightBlue,
+    tcBrightMagenta,
+    tcBrightCyan,
+    tcBrightWhite
+  );
+
+  TRadIATerminalTextStyle = record
+  private
+    FForeground: TRadIATerminalColor;
+    FBold: Boolean;
+  public
+    class function Default: TRadIATerminalTextStyle; static;
+    property Foreground: TRadIATerminalColor read FForeground;
+    property Bold: Boolean read FBold;
+  end;
+
+  TRadIATerminalTextSegment = record
+  private
+    FText: string;
+    FStyle: TRadIATerminalTextStyle;
+  public
+    constructor Create(
+      const AText: string;
+      const AStyle: TRadIATerminalTextStyle
+    );
+    property Text: string read FText;
+    property Style: TRadIATerminalTextStyle read FStyle;
+  end;
+
+  TRadIATerminalAnsiParser = class
+  private
+    FPending: string;
+    FStyle: TRadIATerminalTextStyle;
+    procedure ApplyCode(const ACode: Integer);
+    procedure ApplySgr(const AParameters: string);
+    procedure AppendSegment(
+      var ASegments: TArray<TRadIATerminalTextSegment>;
+      const AText: string
+    );
+    function ConsumeEscape(
+      const AInput: string;
+      const AStartIndex: Integer;
+      out ANextIndex: Integer
+    ): Boolean;
+  public
+    constructor Create;
+    function Feed(
+      const AChunk: string
+    ): TArray<TRadIATerminalTextSegment>;
+    procedure Reset;
+  end;
+
   TRadIATerminalProfile = record
   private
     FId: string;
@@ -88,6 +154,177 @@ uses
   System.IOUtils,
   System.JSON,
   System.SysUtils;
+
+{ TRadIATerminalTextStyle }
+
+class function TRadIATerminalTextStyle.Default:
+  TRadIATerminalTextStyle;
+begin
+  Result.FForeground := tcDefault;
+  Result.FBold := False;
+end;
+
+{ TRadIATerminalTextSegment }
+
+constructor TRadIATerminalTextSegment.Create(
+  const AText: string;
+  const AStyle: TRadIATerminalTextStyle
+);
+begin
+  FText := AText;
+  FStyle := AStyle;
+end;
+
+{ TRadIATerminalAnsiParser }
+
+procedure TRadIATerminalAnsiParser.ApplyCode(const ACode: Integer);
+begin
+  case ACode of
+    0:
+      FStyle := TRadIATerminalTextStyle.Default;
+    1:
+      FStyle.FBold := True;
+    22:
+      FStyle.FBold := False;
+    30..37:
+      FStyle.FForeground :=
+        TRadIATerminalColor(Ord(tcBlack) + ACode - 30);
+    39:
+      FStyle.FForeground := tcDefault;
+    90..97:
+      FStyle.FForeground :=
+        TRadIATerminalColor(Ord(tcBrightBlack) + ACode - 90);
+  end;
+end;
+
+procedure TRadIATerminalAnsiParser.ApplySgr(
+  const AParameters: string
+);
+var
+  LCode: Integer;
+  LParameter: string;
+  LParameters: TArray<string>;
+begin
+  if AParameters = '' then
+  begin
+    ApplyCode(0);
+    Exit;
+  end;
+  LParameters := AParameters.Split([';']);
+  for LParameter in LParameters do
+  begin
+    if not TryStrToInt(LParameter, LCode) then
+      Continue;
+    ApplyCode(LCode);
+  end;
+end;
+
+procedure TRadIATerminalAnsiParser.AppendSegment(
+  var ASegments: TArray<TRadIATerminalTextSegment>;
+  const AText: string
+);
+var
+  LIndex: Integer;
+begin
+  if AText = '' then
+    Exit;
+  LIndex := Length(ASegments);
+  if (LIndex > 0) and
+    (ASegments[LIndex - 1].Style.Foreground = FStyle.Foreground) and
+    (ASegments[LIndex - 1].Style.Bold = FStyle.Bold) then
+  begin
+    ASegments[LIndex - 1].FText :=
+      ASegments[LIndex - 1].Text + AText;
+    Exit;
+  end;
+  SetLength(ASegments, LIndex + 1);
+  ASegments[LIndex] := TRadIATerminalTextSegment.Create(
+    AText,
+    FStyle
+  );
+end;
+
+function TRadIATerminalAnsiParser.ConsumeEscape(
+  const AInput: string;
+  const AStartIndex: Integer;
+  out ANextIndex: Integer
+): Boolean;
+var
+  LFinalIndex: Integer;
+begin
+  ANextIndex := AStartIndex;
+  if (AStartIndex >= Length(AInput)) or
+    (AInput[AStartIndex + 1] <> '[') then
+  begin
+    ANextIndex := AStartIndex + 1;
+    Exit(True);
+  end;
+  LFinalIndex := AStartIndex + 2;
+  while (LFinalIndex <= Length(AInput)) and
+    not (
+      (Ord(AInput[LFinalIndex]) >= $40) and
+      (Ord(AInput[LFinalIndex]) <= $7E)
+    ) do
+    Inc(LFinalIndex);
+  if LFinalIndex > Length(AInput) then
+    Exit(False);
+  if AInput[LFinalIndex] = 'm' then
+    ApplySgr(
+      Copy(
+        AInput,
+        AStartIndex + 2,
+        LFinalIndex - AStartIndex - 2
+      )
+    );
+  ANextIndex := LFinalIndex;
+  Result := True;
+end;
+
+constructor TRadIATerminalAnsiParser.Create;
+begin
+  inherited Create;
+  Reset;
+end;
+
+function TRadIATerminalAnsiParser.Feed(
+  const AChunk: string
+): TArray<TRadIATerminalTextSegment>;
+var
+  LEscapeIndex: Integer;
+  LIndex: Integer;
+  LInput: string;
+  LNextIndex: Integer;
+begin
+  SetLength(Result, 0);
+  LInput := FPending + AChunk;
+  FPending := '';
+  LIndex := 1;
+  while LIndex <= Length(LInput) do
+  begin
+    LEscapeIndex := Pos(#27, LInput, LIndex);
+    if LEscapeIndex = 0 then
+    begin
+      AppendSegment(Result, Copy(LInput, LIndex, MaxInt));
+      Exit;
+    end;
+    AppendSegment(
+      Result,
+      Copy(LInput, LIndex, LEscapeIndex - LIndex)
+    );
+    if not ConsumeEscape(LInput, LEscapeIndex, LNextIndex) then
+    begin
+      FPending := Copy(LInput, LEscapeIndex, MaxInt);
+      Exit;
+    end;
+    LIndex := LNextIndex + 1;
+  end;
+end;
+
+procedure TRadIATerminalAnsiParser.Reset;
+begin
+  FPending := '';
+  FStyle := TRadIATerminalTextStyle.Default;
+end;
 
 { TRadIATerminalProfile }
 

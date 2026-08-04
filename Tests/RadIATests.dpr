@@ -17,6 +17,7 @@ uses
   RadIA.Core.AgentExecutors in '..\Source\Core\RadIA.Core.AgentExecutors.pas',
   RadIA.Core.CliProcess in '..\Source\Core\RadIA.Core.CliProcess.pas',
   RadIA.Core.Terminal in '..\Source\Core\RadIA.Core.Terminal.pas',
+  RadIA.UI.TerminalFrame in '..\Source\UI\RadIA.UI.TerminalFrame.pas',
   RadIA.Core.Onboarding in '..\Source\Core\RadIA.Core.Onboarding.pas',
   RadIA.UI.OnboardingForm in '..\Source\UI\RadIA.UI.OnboardingForm.pas',
   RadIA.UI.Resources in '..\Source\UI\RadIA.UI.Resources.pas',

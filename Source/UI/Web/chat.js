@@ -185,11 +185,11 @@ const btnNewChatSidebar = document.getElementById('btn-new-chat-sidebar');
 const sessionsList    = document.getElementById('sessions-list');
 
 let SLASH_COMMANDS = [
-  { name: '/explain', desc: 'Explains the selected code in the editor', shortcut: 'Ctrl+Shift+E' },
-  { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: 'Ctrl+Shift+R' },
-  { name: '/bugs', desc: 'Finds bugs and memory leaks in the selected code', shortcut: 'Ctrl+Shift+B' },
-  { name: '/doc', desc: 'Generates XML documentation for the selected method', shortcut: 'Ctrl+Shift+D' },
-  { name: '/template', desc: 'Opens the prompt templates library', shortcut: 'Ctrl+Shift+T' },
+  { name: '/explain', desc: 'Explains the selected code in the editor', shortcut: '' },
+  { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: '' },
+  { name: '/bugs', desc: 'Finds bugs and memory leaks in the selected code', shortcut: '' },
+  { name: '/doc', desc: 'Generates XML documentation for the selected method', shortcut: '' },
+  { name: '/template', desc: 'Opens the prompt templates library', shortcut: '' },
   { name: '/stacktrace', desc: 'Analyzes an error log or stack trace and points out the root cause', shortcut: '' },
   { name: '/review', desc: 'Performs static analysis on the active unit (leaks/SOLID)', shortcut: '' },
   { name: '/createproject', desc: 'Generates a complete Delphi project from specification', shortcut: '' }
@@ -1970,8 +1970,8 @@ function initializeConfig(data) {
 
   if (data.slashCommands && Array.isArray(data.slashCommands)) {
     const baseCommands = [
-      { name: '/template', desc: 'Opens the prompt templates library', shortcut: 'Ctrl+Shift+T' },
-      { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: 'Ctrl+Shift+R' },
+      { name: '/template', desc: 'Opens the prompt templates library', shortcut: '' },
+      { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: '' },
       { name: '/optimize', desc: 'Performs performance analysis and optimizations', shortcut: '' },
       { name: '/review', desc: 'Performs static analysis on the active unit (leaks/SOLID)', shortcut: '' }
     ];
@@ -1981,15 +1981,10 @@ function initializeConfig(data) {
       const commandName = cmd.command.toLowerCase();
       SLASH_COMMANDS = SLASH_COMMANDS.filter(c => c.name.toLowerCase() !== commandName);
 
-      let shortcut = '';
-      if (cmd.command === '/explain') shortcut = 'Ctrl+Shift+E';
-      else if (cmd.command === '/bugs') shortcut = 'Ctrl+Shift+B';
-      else if (cmd.command === '/doc') shortcut = 'Ctrl+Shift+D';
-
       SLASH_COMMANDS.push({
         name: cmd.command,
         desc: cmd.description || cmd.name,
-        shortcut: shortcut
+        shortcut: ''
       });
     });
   }

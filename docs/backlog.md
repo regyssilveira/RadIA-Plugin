@@ -59,6 +59,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         diretamente do buffer vivo e da linha do cursor, sem depender do arquivo salvo.
     *   M1 entregue nesta etapa: cinco atalhos configuráveis usam bindings parciais nativos da OTA,
         com persistência, validação de perfil, bloqueio de duplicidade e detecção de conflito.
+    *   M2 entregue nesta etapa: parser ANSI SGR incremental e saída rica preservam cores e negrito
+        mesmo quando sequências de escape chegam divididas entre chunks.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

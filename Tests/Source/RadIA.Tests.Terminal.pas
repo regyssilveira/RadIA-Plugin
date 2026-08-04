@@ -28,6 +28,14 @@ type
     procedure HistoryEnforcesLimit;
     [Test]
     procedure CorruptedHistoryIsIgnored;
+    [Test]
+    procedure AnsiParserPreservesStyleAcrossChunks;
+    [Test]
+    procedure AnsiParserHandlesSplitEscapeSequence;
+    [Test]
+    procedure AnsiParserResetsStyleAndIgnoresCursorCommand;
+    [Test]
+    procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
   end;
 
 implementation
@@ -36,8 +44,69 @@ uses
   System.DateUtils,
   System.IOUtils,
   System.SysUtils,
+  Vcl.Forms,
   RadIA.Core.AgentExecutors,
-  RadIA.Core.Terminal;
+  RadIA.Core.Terminal,
+  RadIA.UI.TerminalFrame;
+
+procedure TRadIATerminalTests.AnsiParserHandlesSplitEscapeSequence;
+var
+  LParser: TRadIATerminalAnsiParser;
+  LSegments: TArray<TRadIATerminalTextSegment>;
+begin
+  LParser := TRadIATerminalAnsiParser.Create;
+  try
+    LSegments := LParser.Feed(#27'[9');
+    Assert.AreEqual<Integer>(0, Length(LSegments));
+    LSegments := LParser.Feed('2mgreen');
+    Assert.AreEqual<Integer>(1, Length(LSegments));
+    Assert.AreEqual('green', LSegments[0].Text);
+    Assert.AreEqual(
+      tcBrightGreen,
+      LSegments[0].Style.Foreground
+    );
+  finally
+    LParser.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.AnsiParserPreservesStyleAcrossChunks;
+var
+  LParser: TRadIATerminalAnsiParser;
+  LSegments: TArray<TRadIATerminalTextSegment>;
+begin
+  LParser := TRadIATerminalAnsiParser.Create;
+  try
+    LSegments := LParser.Feed(#27'[1;31merror');
+    Assert.AreEqual<Integer>(1, Length(LSegments));
+    Assert.AreEqual(tcRed, LSegments[0].Style.Foreground);
+    Assert.IsTrue(LSegments[0].Style.Bold);
+    LSegments := LParser.Feed(' continued');
+    Assert.AreEqual(' continued', LSegments[0].Text);
+    Assert.AreEqual(tcRed, LSegments[0].Style.Foreground);
+  finally
+    LParser.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.AnsiParserResetsStyleAndIgnoresCursorCommand;
+var
+  LParser: TRadIATerminalAnsiParser;
+  LSegments: TArray<TRadIATerminalTextSegment>;
+begin
+  LParser := TRadIATerminalAnsiParser.Create;
+  try
+    LSegments := LParser.Feed(
+      #27'[34mblue'#27'[0m default'#27'[2Kdone'
+    );
+    Assert.AreEqual<Integer>(2, Length(LSegments));
+    Assert.AreEqual(tcBlue, LSegments[0].Style.Foreground);
+    Assert.AreEqual(' defaultdone', LSegments[1].Text);
+    Assert.AreEqual(tcDefault, LSegments[1].Style.Foreground);
+  finally
+    LParser.Free;
+  end;
+end;
 
 procedure TRadIATerminalTests.CatalogProvidesShellProfilesAndSnippets;
 begin
@@ -167,6 +236,27 @@ procedure TRadIATerminalTests.TearDown;
 begin
   if TDirectory.Exists(FDirectory) then
     TDirectory.Delete(FDirectory, True);
+end;
+
+procedure TRadIATerminalTests.
+  TerminalFrameCreatesAndDestroysWithoutResourceFailure;
+var
+  LFrame: TRadIATerminalFrame;
+  LHost: TForm;
+begin
+  LHost := TForm.CreateNew(nil);
+  try
+    LHost.Show;
+    LFrame := TRadIATerminalFrame.Create(LHost);
+    try
+      LFrame.Parent := LHost;
+      Assert.IsTrue(LFrame.HandleAllocated);
+    finally
+      LFrame.Free;
+    end;
+  finally
+    LHost.Free;
+  end;
 end;
 
 initialization

@@ -63,7 +63,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 |---|---|---|
 | M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
 | M1 — Inline assistance | In progress | OTA Ghost Text, shortcuts, consent, and real matrix approved |
-| M2 — Terminal | Planned | PTY, ANSI, stdin, resize, and process-tree shutdown validated |
+| M2 — Terminal | In progress | PTY, ANSI, stdin, resize, and process-tree shutdown validated |
 | M3 — Unified center | Planned | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | Planned | Safe declarative installation without recompilation or restart |
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
@@ -76,6 +76,10 @@ provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture
 buffer, cursor position, and current symbol. All five shortcuts are configurable OTA bindings,
 validated and reloaded without restarting the IDE. Multiline virtual rows and visual acceptance
 across the complete IDE matrix remain mandatory before the milestone can be marked complete.
+
+M2 now includes an incremental ANSI SGR parser and rich output, preserving style even when an escape
+sequence is split across chunks. Migrating the executor to ConPTY, cursor emulation, continuous
+stdin, resize, and multiple sessions are still required to complete the milestone.
 
 ## Milestone transition rules
 

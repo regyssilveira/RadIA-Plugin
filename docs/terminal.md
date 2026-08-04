@@ -9,12 +9,19 @@ visibilidade acompanham o desktop do Delphi.
 - perfis para Windows PowerShell e Command Prompt;
 - diretório de trabalho automático na pasta do projeto Delphi ativo;
 - captura incremental e simultânea de stdout e stderr;
+- interpretação incremental de ANSI SGR, inclusive quando a sequência é dividida entre chunks;
+- cores ANSI normais e brilhantes, texto em negrito e reset de estilo em uma saída rica;
 - botão **Stop** que encerra toda a árvore de processos;
 - timeout máximo de 30 minutos por comando;
 - histórico persistente dos últimos 200 comandos;
 - reutilização de comandos pelo seletor de histórico;
 - snippets para build do Delphi 13, testes, `git status` e `git diff --check`;
 - saída monoespaçada com código de saída e estado final.
+
+Sequências ANSI de estilo (`0`, `1`, `22`, `30–37`, `39` e `90–97`) são interpretadas e não
+aparecem como texto bruto. Outros comandos CSI, como limpeza e movimentação de cursor, são removidos
+da saída estática com segurança. Emulação de cursor, stdin contínuo e resize dependem da futura
+camada ConPTY e continuam fora do escopo do executor de comandos atual.
 
 ## Fluxo de uso
 

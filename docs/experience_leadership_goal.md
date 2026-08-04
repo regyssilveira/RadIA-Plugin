@@ -64,7 +64,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 |---|---|---|
 | M0 — Qualidade | Em execução | Gate Sonar verde ou classificação administrativa dos falsos positivos comprovados |
 | M1 — Assistência inline | Em execução | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
-| M2 — Terminal | Planejado | PTY, ANSI, stdin, resize e encerramento de árvore validados |
+| M2 — Terminal | Em execução | PTY, ANSI, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Planejado | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Planejado | Instalação declarativa segura sem recompilar ou reiniciar |
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
@@ -77,6 +77,10 @@ desacoplado, captura contínua opt-in, controles de escopo e Ghost Text OTA. A c
 vivo, a posição do cursor e o símbolo vigente. Os cinco atalhos são bindings OTA configuráveis,
 validados e recarregados sem reiniciar a IDE. Sugestões multilinha com linhas virtuais e o aceite
 visual em toda a matriz de IDEs continuam obrigatórios antes de marcar o marco como concluído.
+
+O M2 agora possui parser ANSI SGR incremental e saída rica, preservando estilo mesmo quando uma
+sequência chega dividida entre chunks. A migração do executor para ConPTY, emulação de cursor, stdin
+contínuo, resize e múltiplas sessões ainda são necessárias para concluir o marco.
 
 ## Regras de passagem entre marcos
 
