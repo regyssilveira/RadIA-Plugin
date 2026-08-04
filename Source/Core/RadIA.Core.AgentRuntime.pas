@@ -219,6 +219,15 @@ type
     function ExecuteToolDecision(
       const ADecision: TRadIAAgentDecision
     ): Boolean;
+    function CanContinueLoop: Boolean;
+    procedure ExecuteNextDecision;
+    procedure HandleCompletionDecision(
+      const ADecision: TRadIAAgentDecision
+    );
+    procedure HandleDecisionException(const AMessage: string);
+    procedure HandlePlanDecision(
+      const ADecision: TRadIAAgentDecision
+    );
     function BuildSnapshotJson: string;
     function BuildDecisionContextJson: string;
     function BuildCallSignature(
@@ -862,6 +871,32 @@ begin
   Result := FRepeatedCallCount <= FLimits.MaxRepeatedCalls;
 end;
 
+function TRadIAAgentRuntime.CanContinueLoop: Boolean;
+begin
+  Result := False;
+  if not CheckBudgets then
+    Exit;
+  if TInterlocked.CompareExchange(FCancelRequested, 0, 0) <> 0 then
+  begin
+    ChangeStatus(asCancelled, 'Agent run was cancelled.');
+    Exit;
+  end;
+  if TInterlocked.CompareExchange(FPauseRequested, 0, 0) <> 0 then
+  begin
+    ChangeStatus(asPaused, 'Agent run was paused.');
+    Exit;
+  end;
+  if FSteps.Count >= FLimits.MaxSteps then
+  begin
+    ChangeStatus(
+      asFailed,
+      'Agent stopped after reaching the configured step limit.'
+    );
+    Exit;
+  end;
+  Result := True;
+end;
+
 function TRadIAAgentRuntime.ExecuteDecision(
   const ADecision: TRadIAAgentDecision
 ): Boolean;
@@ -869,18 +904,7 @@ begin
   Result := False;
   case ADecision.Kind of
     adPlan:
-    begin
-      if FPlanApproved or HasValidPlan then
-        ChangeStatus(asFailed, 'Agent returned more than one plan.')
-      else
-      begin
-        FPlanJson := ADecision.PlanJson;
-        if not HasValidPlan then
-          ChangeStatus(asFailed, 'Agent returned an invalid plan.')
-        else
-          ChangeStatus(asAwaitingApproval, ADecision.Message);
-      end;
-    end;
+      HandlePlanDecision(ADecision);
     adToolCall:
       if not FPlanApproved or not HasValidPlan then
         ChangeStatus(
@@ -890,21 +914,7 @@ begin
       else
         Result := ExecuteToolDecision(ADecision);
     adComplete:
-    begin
-      if ValidationAllowsCompletion(FMessage) then
-        ChangeStatus(asCompleted, ADecision.Message)
-      else
-      begin
-        Inc(FValidationRejectionCount);
-        if FValidationRejectionCount >= 3 then
-          ChangeStatus(
-            asFailed,
-            'Agent repeatedly attempted to finish without validation.'
-          )
-        else
-          ChangeStatus(asRunning, FMessage);
-      end;
-    end;
+      HandleCompletionDecision(ADecision);
     adFail:
       ChangeStatus(asFailed, ADecision.Message);
   else
@@ -912,55 +922,28 @@ begin
   end;
 end;
 
-function TRadIAAgentRuntime.ExecuteLoop: TRadIAAgentRunResult;
+procedure TRadIAAgentRuntime.ExecuteNextDecision;
 var
   LDecision: TRadIAAgentDecision;
+begin
+  try
+    LDecision := FDecisionProvider.NextDecision(BuildDecisionContextJson);
+    if CheckBudgets then
+      ExecuteDecision(LDecision);
+  except
+    on E: Exception do
+      HandleDecisionException(E.Message);
+  end;
+end;
+
+function TRadIAAgentRuntime.ExecuteLoop: TRadIAAgentRunResult;
 begin
   ChangeStatus(asRunning, 'Agent run started.');
   while FStatus = asRunning do
   begin
-    if not CheckBudgets then
+    if not CanContinueLoop then
       Break;
-    if TInterlocked.CompareExchange(FCancelRequested, 0, 0) <> 0 then
-    begin
-      ChangeStatus(asCancelled, 'Agent run was cancelled.');
-      Break;
-    end;
-    if TInterlocked.CompareExchange(FPauseRequested, 0, 0) <> 0 then
-    begin
-      ChangeStatus(asPaused, 'Agent run was paused.');
-      Break;
-    end;
-    if FSteps.Count >= FLimits.MaxSteps then
-    begin
-      ChangeStatus(
-        asFailed,
-        'Agent stopped after reaching the configured step limit.'
-      );
-      Break;
-    end;
-
-    try
-      LDecision := FDecisionProvider.NextDecision(
-        BuildDecisionContextJson
-      );
-      if not CheckBudgets then
-        Break;
-      ExecuteDecision(LDecision);
-    except
-      on E: Exception do
-      begin
-        if TInterlocked.CompareExchange(FCancelRequested, 0, 0) <> 0 then
-          ChangeStatus(asCancelled, 'Agent run was cancelled.')
-        else if TInterlocked.CompareExchange(FPauseRequested, 0, 0) <> 0 then
-          ChangeStatus(asPaused, 'Agent run was paused.')
-        else
-          ChangeStatus(
-            asFailed,
-            'Agent decision failed: ' + E.Message
-          );
-      end;
-    end;
+    ExecuteNextDecision;
   end;
 
   Result := TRadIAAgentRunResult.Create(
@@ -968,6 +951,53 @@ begin
     FMessage,
     FSteps.Count
   );
+end;
+
+procedure TRadIAAgentRuntime.HandleCompletionDecision(
+  const ADecision: TRadIAAgentDecision
+);
+begin
+  if ValidationAllowsCompletion(FMessage) then
+  begin
+    ChangeStatus(asCompleted, ADecision.Message);
+    Exit;
+  end;
+  Inc(FValidationRejectionCount);
+  if FValidationRejectionCount >= 3 then
+    ChangeStatus(
+      asFailed,
+      'Agent repeatedly attempted to finish without validation.'
+    )
+  else
+    ChangeStatus(asRunning, FMessage);
+end;
+
+procedure TRadIAAgentRuntime.HandleDecisionException(
+  const AMessage: string
+);
+begin
+  if TInterlocked.CompareExchange(FCancelRequested, 0, 0) <> 0 then
+    ChangeStatus(asCancelled, 'Agent run was cancelled.')
+  else if TInterlocked.CompareExchange(FPauseRequested, 0, 0) <> 0 then
+    ChangeStatus(asPaused, 'Agent run was paused.')
+  else
+    ChangeStatus(asFailed, 'Agent decision failed: ' + AMessage);
+end;
+
+procedure TRadIAAgentRuntime.HandlePlanDecision(
+  const ADecision: TRadIAAgentDecision
+);
+begin
+  if FPlanApproved or HasValidPlan then
+  begin
+    ChangeStatus(asFailed, 'Agent returned more than one plan.');
+    Exit;
+  end;
+  FPlanJson := ADecision.PlanJson;
+  if not HasValidPlan then
+    ChangeStatus(asFailed, 'Agent returned an invalid plan.')
+  else
+    ChangeStatus(asAwaitingApproval, ADecision.Message);
 end;
 
 function TRadIAAgentRuntime.ElapsedMilliseconds: Int64;

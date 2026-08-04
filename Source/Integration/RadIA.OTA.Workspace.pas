@@ -154,6 +154,68 @@ begin
     Delete(Result, Length(Result), 1);
 end;
 
+function ReplaceEditorContent(
+  const ASourceEditor: IOTASourceEditor;
+  const AContent: string
+): Boolean;
+var
+  LCurrentContent: string;
+  LEditWriter: IOTAEditWriter;
+  LUtf8Bytes: TBytes;
+  LUtf8Text: UTF8String;
+begin
+  Result := False;
+  LCurrentContent := ReadRadIAEditReaderText(ASourceEditor.CreateReader);
+  LUtf8Bytes := TEncoding.UTF8.GetBytes(LCurrentContent);
+  LEditWriter := ASourceEditor.CreateUndoableWriter;
+  if not Assigned(LEditWriter) then
+    Exit;
+  LEditWriter.CopyTo(0);
+  if Length(LUtf8Bytes) > 0 then
+    LEditWriter.DeleteTo(Length(LUtf8Bytes));
+  LUtf8Text := UTF8Encode(PrepareEditorWriterContent(AContent));
+  LEditWriter.Insert(PAnsiChar(LUtf8Text));
+  LEditWriter := nil;
+  Result := True;
+end;
+
+function TryApplyEditorContent(
+  const AFileName: string;
+  const AExpectedRevision: string;
+  const ANewContent: string;
+  out AAppliedRevision: string
+): Boolean;
+var
+  LCurrentContent: string;
+  LCurrentRevision: string;
+  LSourceEditor: IOTASourceEditor;
+begin
+  Result := False;
+  LSourceEditor := FindSourceEditor(AFileName);
+  if not Assigned(LSourceEditor) then
+    Exit;
+  LCurrentContent := ReadRadIAEditReaderText(LSourceEditor.CreateReader);
+  LCurrentRevision := THashSHA2.GetHashString(LCurrentContent);
+  AAppliedRevision := LCurrentRevision;
+  if not SameText(LCurrentRevision, AExpectedRevision) then
+    Exit;
+  if not ReplaceEditorContent(LSourceEditor, ANewContent) then
+    Exit;
+  AAppliedRevision := THashSHA2.GetHashString(
+    ReadRadIAEditReaderText(LSourceEditor.CreateReader)
+  );
+  Result := SameText(
+    AAppliedRevision,
+    THashSHA2.GetHashString(ANewContent)
+  );
+  if Result then
+    Exit;
+  if ReplaceEditorContent(LSourceEditor, LCurrentContent) then
+    AAppliedRevision := THashSHA2.GetHashString(
+      ReadRadIAEditReaderText(LSourceEditor.CreateReader)
+    );
+end;
+
 { TRadIAOTAWorkspaceFacade }
 
 constructor TRadIAOTAWorkspaceFacade.Create(
@@ -184,65 +246,13 @@ begin
   LResult := False;
   RunOnMainThread(
     procedure
-    var
-      LCurrentContent: string;
-      LCurrentRevision: string;
-      LEditWriter: IOTAEditWriter;
-      LSourceEditor: IOTASourceEditor;
-      LUtf8Bytes: TBytes;
-      LUtf8Text: UTF8String;
     begin
-      LSourceEditor := FindSourceEditor(AFileName);
-      if not Assigned(LSourceEditor) then
-        Exit;
-
-      LCurrentContent := ReadRadIAEditReaderText(
-        LSourceEditor.CreateReader
+      LResult := TryApplyEditorContent(
+        AFileName,
+        AExpectedRevision,
+        ANewContent,
+        LAppliedRevision
       );
-      LCurrentRevision := THashSHA2.GetHashString(LCurrentContent);
-      LAppliedRevision := LCurrentRevision;
-      if not SameText(LCurrentRevision, AExpectedRevision) then
-        Exit;
-
-      LUtf8Bytes := TEncoding.UTF8.GetBytes(LCurrentContent);
-      LEditWriter := LSourceEditor.CreateUndoableWriter;
-      if not Assigned(LEditWriter) then
-        Exit;
-      LEditWriter.CopyTo(0);
-      if Length(LUtf8Bytes) > 0 then
-        LEditWriter.DeleteTo(Length(LUtf8Bytes));
-      LUtf8Text := UTF8Encode(
-        PrepareEditorWriterContent(ANewContent)
-      );
-      LEditWriter.Insert(PAnsiChar(LUtf8Text));
-      LEditWriter := nil;
-      LAppliedRevision := THashSHA2.GetHashString(
-        ReadRadIAEditReaderText(LSourceEditor.CreateReader)
-      );
-      LResult := SameText(
-        LAppliedRevision,
-        THashSHA2.GetHashString(ANewContent)
-      );
-      if not LResult then
-      begin
-        LUtf8Bytes := TEncoding.UTF8.GetBytes(
-          ReadRadIAEditReaderText(LSourceEditor.CreateReader)
-        );
-        LEditWriter := LSourceEditor.CreateUndoableWriter;
-        if not Assigned(LEditWriter) then
-          Exit;
-        LEditWriter.CopyTo(0);
-        if Length(LUtf8Bytes) > 0 then
-          LEditWriter.DeleteTo(Length(LUtf8Bytes));
-        LUtf8Text := UTF8Encode(
-          PrepareEditorWriterContent(LCurrentContent)
-        );
-        LEditWriter.Insert(PAnsiChar(LUtf8Text));
-        LEditWriter := nil;
-        LAppliedRevision := THashSHA2.GetHashString(
-          ReadRadIAEditReaderText(LSourceEditor.CreateReader)
-        );
-      end;
     end
   );
   AAppliedRevision := LAppliedRevision;
