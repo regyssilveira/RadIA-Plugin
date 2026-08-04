@@ -31,6 +31,7 @@ type
     procedure BackClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
     procedure NextClick(Sender: TObject);
+    procedure ApplyCurrentTheme;
     procedure RefreshStep;
   protected
     procedure CreateWnd; override;
@@ -131,6 +132,7 @@ begin
   FBackButton.OnClick := BackClick;
 
   RefreshStep;
+  ApplyCurrentTheme;
 end;
 
 procedure TRadIAOnboardingForm.ActionClick(Sender: TObject);
@@ -151,12 +153,17 @@ begin
 end;
 
 procedure TRadIAOnboardingForm.CreateWnd;
+begin
+  inherited CreateWnd;
+  ApplyCurrentTheme;
+end;
+
+procedure TRadIAOnboardingForm.ApplyCurrentTheme;
 var
   LActiveTheme: string;
   LColors: TRadIAThemeColors;
   LThemingServices: IOTAIDEThemingServices;
 begin
-  inherited CreateWnd;
   LActiveTheme := 'light';
   if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) and
     LThemingServices.IDEThemingEnabled then
@@ -166,10 +173,14 @@ begin
   end;
   LColors := TRadIAThemeColors.GetColorsForTheme(LActiveTheme);
   Color := LColors.BgBase;
-  FFooterPanel.Color := LColors.BgBase;
-  FHeaderLabel.Font.Color := LColors.TextColor;
-  FProgressLabel.Font.Color := LColors.TextColor;
-  FDescriptionLabel.Font.Color := LColors.TextColor;
+  if Assigned(FFooterPanel) then
+    FFooterPanel.Color := LColors.BgBase;
+  if Assigned(FHeaderLabel) then
+    FHeaderLabel.Font.Color := LColors.TextColor;
+  if Assigned(FProgressLabel) then
+    FProgressLabel.Font.Color := LColors.TextColor;
+  if Assigned(FDescriptionLabel) then
+    FDescriptionLabel.Font.Color := LColors.TextColor;
   if SameText(LActiveTheme, 'dark') then
     TRadIAUIHelper.ApplyDarkTitleBar(Self, True);
 end;
