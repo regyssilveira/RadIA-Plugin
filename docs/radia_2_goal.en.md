@@ -215,6 +215,11 @@ Foundation delivered on this branch: the MCP provisioner now covers the client c
 drift detection, JSON merge, managed TOML block, backup, verification, repair, rollback, and
 selective removal. This item remains open until visual integration and operational diagnostics.
 
+Visual integration delivered on this branch: the **CLI & MCP** category supports client selection,
+path overrides, CLI and MCP diagnostics, proposal review, and explicit confirmation for connect,
+repair, or selective removal. The item remains open for optional official-channel installation and
+handshake diagnostics.
+
 CLIs will not be redistributed inside the package. With explicit consent, the installer will detect
 existing installations and delegate installation or updates to each vendor's official channels.
 

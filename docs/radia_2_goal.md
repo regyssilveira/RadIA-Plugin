@@ -218,6 +218,11 @@ Fundação entregue nesta branch: o provisionador MCP já cobre catálogo de cli
 detecção de drift, merge JSON, bloco TOML gerenciado, backup, verificação, reparação, rollback e
 remoção seletiva. A etapa permanece aberta até a integração visual e o diagnóstico operacional.
 
+Integração visual entregue nesta branch: a categoria **CLI & MCP** permite escolher o cliente,
+sobrescrever caminhos, diagnosticar CLI e configuração MCP, revisar a proposta e executar conexão,
+reparo ou remoção seletiva com confirmação explícita. O item permanece aberto para instalação
+opcional pelos canais oficiais e diagnóstico de handshake.
+
 CLIs não serão redistribuídos dentro do package. O instalador deverá detectar instalações existentes
 e, mediante consentimento, delegar a instalação ou atualização aos canais oficiais de cada
 fornecedor.

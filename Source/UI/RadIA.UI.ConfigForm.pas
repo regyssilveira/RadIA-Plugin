@@ -67,6 +67,7 @@ begin
 
   LNodeGeneral := tvCategories.Items.Add(nil, 'General / Logs');
   tvCategories.Items.Add(nil, 'Security & Consent');
+  tvCategories.Items.Add(nil, 'CLI & MCP');
   tvCategories.Items.Add(nil, 'System Prompt');
   tvCategories.Items.Add(nil, 'Templates');
   LNodeProviders := tvCategories.Items.Add(nil, 'AI Providers');

@@ -223,3 +223,22 @@ conteúdo externo ao bloco permanece intacto. Configurações inválidas nunca s
 O backup é deliberadamente estável e representa o estado imediatamente anterior à última mutação.
 Antes de provisionar ou remover pela interface, o RadIA sempre deverá apresentar a prévia e solicitar
 consentimento explícito.
+
+### Uso pela tela de configurações
+
+Abra **RadIA > Settings > CLI & MCP** e siga este fluxo:
+
+1. selecione Codex, Claude, Gemini ou GitHub Copilot;
+2. opcionalmente informe um executável CLI fora do `PATH`;
+3. revise os caminhos sugeridos da configuração do cliente e da bridge;
+4. clique em **Diagnose** para conferir a detecção do CLI e o estado MCP;
+5. clique em **Preview** para revisar exatamente o conteúdo proposto;
+6. use **Connect / Repair** e confirme o arquivo e o backup exibidos;
+7. use **Disconnect** para remover somente a entrada gerenciada pelo RadIA.
+
+Os três caminhos são persistidos separadamente para cada cliente e restaurados quando a tela é
+reaberta. Um campo vazio de executável mantém a detecção automática pelo `PATH`.
+
+O botão de conexão fica desabilitado quando a bridge não existe, a configuração é inválida ou o
+cliente já está configurado corretamente. A tela não instala CLIs nem modifica configurações sem
+uma confirmação visual.

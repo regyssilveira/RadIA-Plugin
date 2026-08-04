@@ -200,3 +200,22 @@ remains intact. Invalid configurations are never overwritten.
 
 The stable backup represents the state immediately before the latest mutation. Before provisioning
 or removal through the UI, RadIA must always present the preview and request explicit consent.
+
+### Using the settings screen
+
+Open **RadIA > Settings > CLI & MCP** and follow this workflow:
+
+1. select Codex, Claude, Gemini, or GitHub Copilot;
+2. optionally enter a CLI executable that is not available through `PATH`;
+3. review the suggested client configuration and bridge paths;
+4. click **Diagnose** to check CLI detection and MCP state;
+5. click **Preview** to review the exact proposed content;
+6. use **Connect / Repair** and confirm the displayed configuration and backup;
+7. use **Disconnect** to remove only the entry managed by RadIA.
+
+The three paths are persisted independently for each client and restored when the screen is reopened.
+An empty executable field keeps automatic `PATH` detection enabled.
+
+The connection button remains disabled when the bridge is missing, the configuration is invalid,
+or the client is already configured correctly. This screen never installs CLIs or changes client
+configuration without visual confirmation.

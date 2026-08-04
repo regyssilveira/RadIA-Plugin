@@ -5,7 +5,10 @@ interface
 uses  System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
   Vcl.ComCtrls, System.Generics.Collections,
-  RadIA.UI.ConfigPresenter;
+  RadIA.UI.ConfigPresenter,
+  RadIA.Core.CliManager,
+  RadIA.Core.CliMcpSettings,
+  RadIA.Core.McpProvisioning;
 
 type
   TRadIAFrameAIConfig = class(TFrame, IRadIAConfigView)
@@ -47,9 +50,29 @@ type
     FChkConsentRememberExecution: TCheckBox;
     FBtnRevokeConsent: TButton;
 
+    FTsCliMcp: TTabSheet;
+    FPnlCliMcp: TPanel;
+    FCmbCliClient: TComboBox;
+    FEdtCliExecutable: TEdit;
+    FEdtMcpConfig: TEdit;
+    FEdtMcpBridge: TEdit;
+    FLblCliStatus: TLabel;
+    FLblMcpStatus: TLabel;
+    FMemoMcpPreview: TMemo;
+    FBtnCliRefresh: TButton;
+    FBtnMcpPreview: TButton;
+    FBtnMcpProvision: TButton;
+    FBtnMcpRemove: TButton;
+    FCliMcpSettings: TRadIACliMcpSettings;
+
     procedure BtnBrowseLogPathClick(Sender: TObject);
     procedure BtnResetQuotaClick(Sender: TObject);
     procedure BtnRevokeConsentClick(Sender: TObject);
+    procedure BtnCliRefreshClick(Sender: TObject);
+    procedure BtnMcpPreviewClick(Sender: TObject);
+    procedure BtnMcpProvisionClick(Sender: TObject);
+    procedure BtnMcpRemoveClick(Sender: TObject);
+    procedure CliClientChange(Sender: TObject);
 
     function CreateCheckBox(AParent: TWinControl; const ACaption: string; const ALeft,
         ATop, AWidth: Integer): TCheckBox;
@@ -58,9 +81,26 @@ type
     function CreateLabel(AParent: TWinControl; const ACaption: string; const ALeft, ATop: Integer): TLabel;
     procedure CreateGeneralTab;
     procedure CreateSecurityTab;
+    procedure CreateCliMcpTab;
     procedure CreateTemplateOriginLabel;
     procedure CreateProviderAdvancedControls(ATabSheet: TTabSheet; const AProviderId: string);
+    function GetBridgePath: string;
+    function GetDefaultMcpConfigPath(
+      const AClientId: string
+    ): string;
+    function GetSelectedCliDefinition(
+      out ADefinition: TRadIACliDefinition
+    ): Boolean;
+    function GetSelectedMcpProfile(
+      out AProfile: TRadIAMcpClientProfile
+    ): Boolean;
+    function McpStateText(
+      const AState: TRadIAMcpProvisionState
+    ): string;
     procedure OpenUrl(const AUrl: string);
+    procedure RefreshCliMcpDiagnostics;
+    procedure RefreshMcpPreview;
+    procedure SaveCliMcpSettings;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -495,6 +535,93 @@ begin
   FBtnRevokeConsent.OnClick := BtnRevokeConsentClick;
 end;
 
+procedure TRadIAFrameAIConfig.CreateCliMcpTab;
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  FTsCliMcp := TTabSheet.Create(Self);
+  FTsCliMcp.PageControl := pgcSettings;
+  FTsCliMcp.Caption := 'CLI & MCP';
+  FTsCliMcp.TabVisible := False;
+
+  FPnlCliMcp := TPanel.Create(Self);
+  FPnlCliMcp.Parent := FTsCliMcp;
+  FPnlCliMcp.Align := alClient;
+  FPnlCliMcp.BevelOuter := bvNone;
+  FPnlCliMcp.ShowCaption := False;
+
+  CreateLabel(FPnlCliMcp, 'CLI client:', 16, 16);
+  FCmbCliClient := TComboBox.Create(Self);
+  FCmbCliClient.Parent := FPnlCliMcp;
+  FCmbCliClient.Left := 16;
+  FCmbCliClient.Top := 34;
+  FCmbCliClient.Width := 240;
+  FCmbCliClient.Style := csDropDownList;
+  FCmbCliClient.OnChange := CliClientChange;
+  for LDefinition in TRadIACliCatalog.All do
+    FCmbCliClient.Items.Add(LDefinition.DisplayName);
+
+  CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 70);
+  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 88, 520);
+
+  FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 120);
+  FBtnCliRefresh := TButton.Create(Self);
+  FBtnCliRefresh.Parent := FPnlCliMcp;
+  FBtnCliRefresh.Left := 548;
+  FBtnCliRefresh.Top := 86;
+  FBtnCliRefresh.Width := 96;
+  FBtnCliRefresh.Height := 25;
+  FBtnCliRefresh.Caption := 'Diagnose';
+  FBtnCliRefresh.OnClick := BtnCliRefreshClick;
+
+  CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 152);
+  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 170, 628);
+  CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 206);
+  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 224, 628);
+
+  FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 256);
+  FBtnMcpPreview := TButton.Create(Self);
+  FBtnMcpPreview.Parent := FPnlCliMcp;
+  FBtnMcpPreview.Left := 16;
+  FBtnMcpPreview.Top := 282;
+  FBtnMcpPreview.Width := 104;
+  FBtnMcpPreview.Height := 27;
+  FBtnMcpPreview.Caption := 'Preview';
+  FBtnMcpPreview.OnClick := BtnMcpPreviewClick;
+
+  FBtnMcpProvision := TButton.Create(Self);
+  FBtnMcpProvision.Parent := FPnlCliMcp;
+  FBtnMcpProvision.Left := 128;
+  FBtnMcpProvision.Top := 282;
+  FBtnMcpProvision.Width := 136;
+  FBtnMcpProvision.Height := 27;
+  FBtnMcpProvision.Caption := 'Connect / Repair';
+  FBtnMcpProvision.OnClick := BtnMcpProvisionClick;
+
+  FBtnMcpRemove := TButton.Create(Self);
+  FBtnMcpRemove.Parent := FPnlCliMcp;
+  FBtnMcpRemove.Left := 272;
+  FBtnMcpRemove.Top := 282;
+  FBtnMcpRemove.Width := 104;
+  FBtnMcpRemove.Height := 27;
+  FBtnMcpRemove.Caption := 'Disconnect';
+  FBtnMcpRemove.OnClick := BtnMcpRemoveClick;
+
+  FMemoMcpPreview := TMemo.Create(Self);
+  FMemoMcpPreview.Parent := FPnlCliMcp;
+  FMemoMcpPreview.Left := 16;
+  FMemoMcpPreview.Top := 320;
+  FMemoMcpPreview.Width := 628;
+  FMemoMcpPreview.Height := 150;
+  FMemoMcpPreview.ReadOnly := True;
+  FMemoMcpPreview.ScrollBars := ssBoth;
+  FMemoMcpPreview.WordWrap := False;
+
+  if FCmbCliClient.Items.Count > 0 then
+    FCmbCliClient.ItemIndex := 0;
+  CliClientChange(FCmbCliClient);
+end;
+
 constructor TRadIAFrameAIConfig.Create(AOwner: TComponent);
 var
   LThemingServices: IOTAIDEThemingServices;
@@ -503,6 +630,7 @@ var
 begin
   inherited Create(AOwner);
   FPresenter := TRadIAConfigPresenter.Create(Self);
+  FCliMcpSettings := TRadIACliMcpSettings.Create;
 
   // Update RadioGroup text in runtime for OAuth
   if grpGeminiAuthType.Items.Count > 1 then
@@ -532,6 +660,7 @@ begin
 
   CreateGeneralTab;
   CreateSecurityTab;
+  CreateCliMcpTab;
 
   LActiveTheme := 'light';
   LUseIDETheme := False;
@@ -553,6 +682,7 @@ end;
 
 destructor TRadIAFrameAIConfig.Destroy;
 begin
+  FCliMcpSettings.Free;
   FPresenter.Free;
   FEdtTemperatures.Free;
   FEdtMaxTokens.Free;
@@ -768,13 +898,20 @@ begin
     FTsSecurity.SetParentBackground(False);
     FTsSecurity.SetColor(LColors.BgBase);
   end;
+  if Assigned(FTsCliMcp) then
+  begin
+    FTsCliMcp.StyleElements :=
+      FTsCliMcp.StyleElements - [seClient, seBorder];
+    FTsCliMcp.SetParentBackground(False);
+    FTsCliMcp.SetColor(LColors.BgBase);
+  end;
 
   ApplyThemeToPanels([pnlGemini, pnlOpenAI, pnlClaude, pnlDeepSeek, pnlGroq, pnlOllama,
     pnlOpenRouter, pnlLMStudio,
     pnlGithubCopilot, pnlAzureOpenAI, pnlQwen,
     pnlMistral, pnlBedrock, pnlSystemPrompt,
     pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral,
-    FPnlSecurity], LColors);
+    FPnlSecurity, FPnlCliMcp], LColors);
 
   for LEditD in FEdtTemperatures.Values do ApplyThemeToEdits([LEditD], LColors);
   for LEditD in FEdtMaxTokens.Values do ApplyThemeToEdits([LEditD], LColors);
@@ -785,7 +922,8 @@ begin
     edtGithubCopilotKey, edtAzureKey, edtAzureUrl, edtAzureModel, edtAzureApiVersion,
     edtQwenKey, edtMistralKey, edtAwsAccessKeyId, edtAwsSecretAccessKey,
     edtAwsRegion, edtAwsSessionToken, edtTemplateName, edtTemplateDesc, edtTemplateSlash,
-    FEdtLogPath, FEdtLogMaxSize, FEdtQuotaLimit, FEdtConsentTimeout], LColors);
+    FEdtLogPath, FEdtLogMaxSize, FEdtQuotaLimit, FEdtConsentTimeout,
+    FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge], LColors);
 
   ApplyThemeToLabels([lblGeminiKey, lblOpenAIKey, lblOpenAICustomUrl, lblClaudeKey,
     lblDeepSeekKey, lblGroqKey, lblOllamaUrl, lblOpenRouterKey, lblLMStudioUrl,
@@ -793,7 +931,8 @@ begin
     lblMistralKey, lblAwsAccessKeyId, lblAwsSecretAccessKey, lblAwsRegion,
     lblAwsSessionToken, lblTemplateName, lblTemplateDesc, lblTemplateSlash,
     lblTemplateBody, FLblTemplateOrigin, FLblLogPath, FLblQuotaLimit, FLblQuotaUsed,
-    FLblConsentSummary, FLblConsentTimeout], LColors, False);
+    FLblConsentSummary, FLblConsentTimeout, FLblCliStatus,
+    FLblMcpStatus], LColors, False);
 
   ApplyThemeToLabels([lnkGeminiGetKey, lnkOpenAIGetKey, lnkClaudeGetKey, lnkDeepSeekGetKey,
     lnkGroqGetKey, lnkOpenRouterGetKey, lnkQwenGetKey, lnkMistralGetKey, lnkBedrockGetKey], LColors, True);
@@ -809,6 +948,15 @@ begin
   lstTemplates.StyleElements := lstTemplates.StyleElements - [seClient, seBorder];
   lstTemplates.Color := LColors.InputBgColor;
   lstTemplates.Font.Color := LColors.TextColor;
+
+  FMemoMcpPreview.StyleElements :=
+    FMemoMcpPreview.StyleElements - [seClient, seBorder];
+  FMemoMcpPreview.Color := LColors.InputBgColor;
+  FMemoMcpPreview.Font.Color := LColors.TextColor;
+  FCmbCliClient.StyleElements :=
+    FCmbCliClient.StyleElements - [seClient, seBorder];
+  FCmbCliClient.Color := LColors.InputBgColor;
+  FCmbCliClient.Font.Color := LColors.TextColor;
 
   ApplyThemeToCheckboxes([chkIsProjectGenerator, FChkSmartConfig, FChkInjectDelphiVersion,
     FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled,
@@ -932,6 +1080,289 @@ begin
   ShowMessage('All session permissions were revoked.');
 end;
 
+procedure TRadIAFrameAIConfig.BtnCliRefreshClick(Sender: TObject);
+begin
+  RefreshCliMcpDiagnostics;
+end;
+
+procedure TRadIAFrameAIConfig.BtnMcpPreviewClick(Sender: TObject);
+begin
+  SaveCliMcpSettings;
+  RefreshMcpPreview;
+end;
+
+procedure TRadIAFrameAIConfig.BtnMcpProvisionClick(Sender: TObject);
+var
+  LProfile: TRadIAMcpClientProfile;
+  LProvisioner: TRadIAMcpProvisioner;
+  LPreview: TRadIAMcpProvisionPreview;
+  LResult: TRadIAMcpProvisionResult;
+  LConfirmation: string;
+begin
+  if not GetSelectedMcpProfile(LProfile) then
+    Exit;
+  SaveCliMcpSettings;
+  LProvisioner := TRadIAMcpProvisioner.Create;
+  try
+    LPreview := LProvisioner.Preview(
+      LProfile,
+      FEdtMcpConfig.Text,
+      FEdtMcpBridge.Text
+    );
+    FMemoMcpPreview.Text := LPreview.ProposedContent;
+    if LPreview.State = mpsInvalid then
+    begin
+      ShowMessage(LPreview.Summary);
+      Exit;
+    end;
+    if not LPreview.Changed then
+    begin
+      ShowMessage('The RadIA MCP bridge is already configured.');
+      Exit;
+    end;
+    LConfirmation := Format(
+      'Connect or repair RadIA MCP for %s?' + sLineBreak + sLineBreak +
+      'Configuration: %s' + sLineBreak +
+      'Backup: %s.radia.bak',
+      [
+        LProfile.DisplayName,
+        FEdtMcpConfig.Text,
+        FEdtMcpConfig.Text
+      ]
+    );
+    if MessageDlg(
+      LConfirmation,
+      mtConfirmation,
+      [mbYes, mbNo],
+      0
+    ) <> mrYes then
+      Exit;
+    LResult := LProvisioner.Provision(
+      LProfile,
+      FEdtMcpConfig.Text,
+      FEdtMcpBridge.Text
+    );
+    ShowMessage(LResult.Message);
+  finally
+    LProvisioner.Free;
+  end;
+  RefreshCliMcpDiagnostics;
+end;
+
+procedure TRadIAFrameAIConfig.BtnMcpRemoveClick(Sender: TObject);
+var
+  LProfile: TRadIAMcpClientProfile;
+  LProvisioner: TRadIAMcpProvisioner;
+  LResult: TRadIAMcpProvisionResult;
+begin
+  if not GetSelectedMcpProfile(LProfile) then
+    Exit;
+  SaveCliMcpSettings;
+  if MessageDlg(
+    Format(
+      'Disconnect RadIA MCP from %s?' + sLineBreak + sLineBreak +
+      'Only the managed RadIA entry will be removed.' + sLineBreak +
+      'Configuration: %s',
+      [LProfile.DisplayName, FEdtMcpConfig.Text]
+    ),
+    mtConfirmation,
+    [mbYes, mbNo],
+    0
+  ) <> mrYes then
+    Exit;
+  LProvisioner := TRadIAMcpProvisioner.Create;
+  try
+    LResult := LProvisioner.Remove(
+      LProfile,
+      FEdtMcpConfig.Text
+    );
+    ShowMessage(LResult.Message);
+  finally
+    LProvisioner.Free;
+  end;
+  RefreshCliMcpDiagnostics;
+end;
+
+procedure TRadIAFrameAIConfig.CliClientChange(Sender: TObject);
+var
+  LDefinition: TRadIACliDefinition;
+  LSettings: TRadIACliMcpClientSettings;
+begin
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  LSettings := FCliMcpSettings.Load(
+    LDefinition.Id,
+    GetDefaultMcpConfigPath(LDefinition.Id),
+    GetBridgePath
+  );
+  FEdtCliExecutable.Text := LSettings.CliExecutablePath;
+  FEdtMcpConfig.Text := LSettings.McpConfigPath;
+  FEdtMcpBridge.Text := LSettings.McpBridgePath;
+  RefreshCliMcpDiagnostics;
+end;
+
+function TRadIAFrameAIConfig.GetBridgePath: string;
+var
+  LBuffer: array[0..MAX_PATH] of Char;
+  LModuleFile: string;
+begin
+  SetString(
+    LModuleFile,
+    LBuffer,
+    GetModuleFileName(HInstance, LBuffer, Length(LBuffer))
+  );
+  Result := TPath.Combine(
+    TPath.GetDirectoryName(LModuleFile),
+    'RadIA.MCP.Bridge.exe'
+  );
+end;
+
+function TRadIAFrameAIConfig.GetDefaultMcpConfigPath(
+  const AClientId: string
+): string;
+var
+  LHomePath: string;
+begin
+  LHomePath := TPath.GetHomePath;
+  if SameText(AClientId, 'codex') then
+    Exit(TPath.Combine(LHomePath, '.codex\config.toml'));
+  if SameText(AClientId, 'claude') then
+    Exit(TPath.Combine(LHomePath, '.claude.json'));
+  if SameText(AClientId, 'gemini') then
+    Exit(TPath.Combine(LHomePath, '.gemini\settings.json'));
+  if SameText(AClientId, 'copilot') then
+    Exit(TPath.Combine(LHomePath, '.copilot\mcp-config.json'));
+  Result := '';
+end;
+
+function TRadIAFrameAIConfig.GetSelectedCliDefinition(
+  out ADefinition: TRadIACliDefinition
+): Boolean;
+var
+  LDefinitions: TArray<TRadIACliDefinition>;
+begin
+  LDefinitions := TRadIACliCatalog.All;
+  Result :=
+    (FCmbCliClient.ItemIndex >= Low(LDefinitions)) and
+    (FCmbCliClient.ItemIndex <= High(LDefinitions));
+  if Result then
+    ADefinition := LDefinitions[FCmbCliClient.ItemIndex]
+  else
+    ADefinition := Default(TRadIACliDefinition);
+end;
+
+function TRadIAFrameAIConfig.GetSelectedMcpProfile(
+  out AProfile: TRadIAMcpClientProfile
+): Boolean;
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  Result :=
+    GetSelectedCliDefinition(LDefinition) and
+    TRadIAMcpClientCatalog.FindById(LDefinition.Id, AProfile);
+  if not Result then
+    AProfile := Default(TRadIAMcpClientProfile);
+end;
+
+function TRadIAFrameAIConfig.McpStateText(
+  const AState: TRadIAMcpProvisionState
+): string;
+begin
+  case AState of
+    mpsMissing:
+      Result := 'not configured';
+    mpsConfigured:
+      Result := 'configured and verified';
+    mpsDrifted:
+      Result := 'configuration differs; repair is available';
+    mpsInvalid:
+      Result := 'invalid configuration; no write will be performed';
+  else
+    Result := 'unknown';
+  end;
+end;
+
+procedure TRadIAFrameAIConfig.RefreshCliMcpDiagnostics;
+var
+  LDefinition: TRadIACliDefinition;
+  LDetection: TRadIACliDetection;
+  LDetector: TRadIACliDetector;
+begin
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  SaveCliMcpSettings;
+  LDetector := TRadIACliDetector.Create;
+  try
+    LDetection := LDetector.Detect(
+      LDefinition,
+      FEdtCliExecutable.Text
+    );
+  finally
+    LDetector.Free;
+  end;
+  if LDetection.Installed then
+    FLblCliStatus.Caption := Format(
+      'CLI status: detected via %s at %s',
+      [LDetection.Source, LDetection.ExecutablePath]
+    )
+  else
+    FLblCliStatus.Caption :=
+      'CLI status: not detected. Install it through the official channel.';
+  RefreshMcpPreview;
+end;
+
+procedure TRadIAFrameAIConfig.RefreshMcpPreview;
+var
+  LProfile: TRadIAMcpClientProfile;
+  LPreview: TRadIAMcpProvisionPreview;
+  LProvisioner: TRadIAMcpProvisioner;
+begin
+  if not GetSelectedMcpProfile(LProfile) then
+    Exit;
+  LProvisioner := TRadIAMcpProvisioner.Create;
+  try
+    LPreview := LProvisioner.Preview(
+      LProfile,
+      FEdtMcpConfig.Text,
+      FEdtMcpBridge.Text
+    );
+  finally
+    LProvisioner.Free;
+  end;
+  if not TFile.Exists(FEdtMcpBridge.Text) then
+    FLblMcpStatus.Caption :=
+      'MCP status: RadIA.MCP.Bridge.exe was not found at the selected path.'
+  else
+    FLblMcpStatus.Caption := 'MCP status: ' + McpStateText(LPreview.State);
+  FBtnMcpProvision.Enabled :=
+    TFile.Exists(FEdtMcpBridge.Text) and
+    (LPreview.State <> mpsInvalid) and
+    LPreview.Changed;
+  FBtnMcpRemove.Enabled :=
+    (LPreview.State <> mpsMissing) and
+    (LPreview.State <> mpsInvalid);
+  if LPreview.State = mpsInvalid then
+    FMemoMcpPreview.Text := LPreview.Summary
+  else
+    FMemoMcpPreview.Text := LPreview.ProposedContent;
+end;
+
+procedure TRadIAFrameAIConfig.SaveCliMcpSettings;
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  FCliMcpSettings.Save(
+    LDefinition.Id,
+    TRadIACliMcpClientSettings.Create(
+      Trim(FEdtCliExecutable.Text),
+      Trim(FEdtMcpConfig.Text),
+      Trim(FEdtMcpBridge.Text)
+    )
+  );
+end;
+
 procedure TRadIAFrameAIConfig.TvCategoriesChange(Sender: TObject; Node: TTreeNode);
 begin
   if Assigned(Node) then
@@ -944,12 +1375,14 @@ var
   LPages: TArray<TTabSheet>;
   I: Integer;
 begin
-  LNames := ['General / Logs', 'Security & Consent', 'System Prompt', 'Templates',
+  LNames := ['General / Logs', 'Security & Consent', 'CLI & MCP',
+             'System Prompt', 'Templates',
              'Gemini', 'OpenAI',
              'Claude', 'DeepSeek', 'Groq', 'Ollama', 'OpenRouter', 'LM Studio',
              'GitHub Copilot', 'Azure OpenAI', 'Alibaba Qwen', 'Mistral AI', 'AWS Bedrock'];
 
-  LPages := [FTsGeneral, FTsSecurity, tsSystemPrompt, tsTemplates, tsGemini, tsOpenAI,
+  LPages := [FTsGeneral, FTsSecurity, FTsCliMcp, tsSystemPrompt,
+             tsTemplates, tsGemini, tsOpenAI,
              tsClaude, tsDeepSeek, tsGroq, tsOllama, tsOpenRouter, tsLMStudio,
              tsGithubCopilot, tsAzureOpenAI, tsQwen, tsMistral, tsBedrock];
 
