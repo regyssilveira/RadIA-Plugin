@@ -36,8 +36,20 @@ type
     FLblQuotaUsed: TLabel;
     FBtnResetQuota: TButton;
 
+    FTsSecurity: TTabSheet;
+    FPnlSecurity: TPanel;
+    FLblConsentSummary: TLabel;
+    FLblConsentTimeout: TLabel;
+    FEdtConsentTimeout: TEdit;
+    FChkConsentShowArguments: TCheckBox;
+    FChkConsentRememberReversible: TCheckBox;
+    FChkConsentRememberStructural: TCheckBox;
+    FChkConsentRememberExecution: TCheckBox;
+    FBtnRevokeConsent: TButton;
+
     procedure BtnBrowseLogPathClick(Sender: TObject);
     procedure BtnResetQuotaClick(Sender: TObject);
+    procedure BtnRevokeConsentClick(Sender: TObject);
 
     function CreateCheckBox(AParent: TWinControl; const ACaption: string; const ALeft,
         ATop, AWidth: Integer): TCheckBox;
@@ -45,6 +57,7 @@ type
         const ANumbersOnly: Boolean = False): TEdit;
     function CreateLabel(AParent: TWinControl; const ACaption: string; const ALeft, ATop: Integer): TLabel;
     procedure CreateGeneralTab;
+    procedure CreateSecurityTab;
     procedure CreateTemplateOriginLabel;
     procedure CreateProviderAdvancedControls(ATabSheet: TTabSheet; const AProviderId: string);
     procedure OpenUrl(const AUrl: string);
@@ -101,6 +114,16 @@ type
     procedure SetLogPath(const AValue: string);
     function GetLogMaxSize: string;
     procedure SetLogMaxSize(const AValue: string);
+    function GetConsentTimeoutSeconds: string;
+    procedure SetConsentTimeoutSeconds(const AValue: string);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -269,7 +292,8 @@ implementation
 
 uses
   System.IOUtils, System.JSON, RadIA.UI.Resources, System.UITypes, Vcl.FileCtrl,
-  Winapi.ShellAPI, RadIA.UI.GithubAuthForm, Winapi.Windows, System.SysUtils, ToolsAPI;
+  Winapi.ShellAPI, RadIA.UI.GithubAuthForm, Winapi.Windows, System.SysUtils, ToolsAPI,
+  RadIA.Core.Container, RadIA.Core.ToolSecurity;
 
 {$R *.dfm}
 
@@ -401,6 +425,76 @@ begin
   FBtnResetQuota.OnClick := BtnResetQuotaClick;
 end;
 
+procedure TRadIAFrameAIConfig.CreateSecurityTab;
+begin
+  FTsSecurity := TTabSheet.Create(Self);
+  FTsSecurity.PageControl := pgcSettings;
+  FTsSecurity.Caption := 'Security & Consent';
+  FTsSecurity.TabVisible := False;
+
+  FPnlSecurity := TPanel.Create(Self);
+  FPnlSecurity.Parent := FTsSecurity;
+  FPnlSecurity.Align := alClient;
+  FPnlSecurity.BevelOuter := bvNone;
+  FPnlSecurity.ShowCaption := False;
+
+  FLblConsentSummary := CreateLabel(
+    FPnlSecurity,
+    'Read-only operations run automatically. Destructive operations always require approval.',
+    16,
+    16
+  );
+  FLblConsentSummary.AutoSize := False;
+  FLblConsentSummary.WordWrap := True;
+  FLblConsentSummary.Width := 520;
+  FLblConsentSummary.Height := 40;
+
+  FLblConsentTimeout := CreateLabel(
+    FPnlSecurity,
+    'Consent dialog timeout (15-600 seconds):',
+    16,
+    72
+  );
+  FEdtConsentTimeout := CreateEdit(FPnlSecurity, 16, 92, 100, True);
+  FChkConsentShowArguments := CreateCheckBox(
+    FPnlSecurity,
+    'Show tool arguments in the consent dialog',
+    16,
+    132,
+    360
+  );
+  FChkConsentRememberReversible := CreateCheckBox(
+    FPnlSecurity,
+    'Allow session permission for reversible writes',
+    16,
+    164,
+    380
+  );
+  FChkConsentRememberStructural := CreateCheckBox(
+    FPnlSecurity,
+    'Allow session permission for structural writes',
+    16,
+    196,
+    380
+  );
+  FChkConsentRememberExecution := CreateCheckBox(
+    FPnlSecurity,
+    'Allow session permission for build, tests, and execution',
+    16,
+    228,
+    420
+  );
+
+  FBtnRevokeConsent := TButton.Create(Self);
+  FBtnRevokeConsent.Parent := FPnlSecurity;
+  FBtnRevokeConsent.Left := 16;
+  FBtnRevokeConsent.Top := 276;
+  FBtnRevokeConsent.Width := 190;
+  FBtnRevokeConsent.Height := 28;
+  FBtnRevokeConsent.Caption := 'Revoke session permissions';
+  FBtnRevokeConsent.OnClick := BtnRevokeConsentClick;
+end;
+
 constructor TRadIAFrameAIConfig.Create(AOwner: TComponent);
 var
   LThemingServices: IOTAIDEThemingServices;
@@ -437,6 +531,7 @@ begin
   CreateProviderAdvancedControls(tsBedrock, 'Bedrock');
 
   CreateGeneralTab;
+  CreateSecurityTab;
 
   LActiveTheme := 'light';
   LUseIDETheme := False;
@@ -666,12 +761,20 @@ begin
     FTsGeneral.SetParentBackground(False);
     FTsGeneral.SetColor(LColors.BgBase);
   end;
+  if Assigned(FTsSecurity) then
+  begin
+    FTsSecurity.StyleElements :=
+      FTsSecurity.StyleElements - [seClient, seBorder];
+    FTsSecurity.SetParentBackground(False);
+    FTsSecurity.SetColor(LColors.BgBase);
+  end;
 
   ApplyThemeToPanels([pnlGemini, pnlOpenAI, pnlClaude, pnlDeepSeek, pnlGroq, pnlOllama,
     pnlOpenRouter, pnlLMStudio,
     pnlGithubCopilot, pnlAzureOpenAI, pnlQwen,
     pnlMistral, pnlBedrock, pnlSystemPrompt,
-    pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral], LColors);
+    pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral,
+    FPnlSecurity], LColors);
 
   for LEditD in FEdtTemperatures.Values do ApplyThemeToEdits([LEditD], LColors);
   for LEditD in FEdtMaxTokens.Values do ApplyThemeToEdits([LEditD], LColors);
@@ -682,14 +785,15 @@ begin
     edtGithubCopilotKey, edtAzureKey, edtAzureUrl, edtAzureModel, edtAzureApiVersion,
     edtQwenKey, edtMistralKey, edtAwsAccessKeyId, edtAwsSecretAccessKey,
     edtAwsRegion, edtAwsSessionToken, edtTemplateName, edtTemplateDesc, edtTemplateSlash,
-    FEdtLogPath, FEdtLogMaxSize, FEdtQuotaLimit], LColors);
+    FEdtLogPath, FEdtLogMaxSize, FEdtQuotaLimit, FEdtConsentTimeout], LColors);
 
   ApplyThemeToLabels([lblGeminiKey, lblOpenAIKey, lblOpenAICustomUrl, lblClaudeKey,
     lblDeepSeekKey, lblGroqKey, lblOllamaUrl, lblOpenRouterKey, lblLMStudioUrl,
     lblAzureKey, lblAzureUrl, lblAzureModel, lblAzureApiVersion, lblQwenKey,
     lblMistralKey, lblAwsAccessKeyId, lblAwsSecretAccessKey, lblAwsRegion,
     lblAwsSessionToken, lblTemplateName, lblTemplateDesc, lblTemplateSlash,
-    lblTemplateBody, FLblTemplateOrigin, FLblLogPath, FLblQuotaLimit, FLblQuotaUsed], LColors, False);
+    lblTemplateBody, FLblTemplateOrigin, FLblLogPath, FLblQuotaLimit, FLblQuotaUsed,
+    FLblConsentSummary, FLblConsentTimeout], LColors, False);
 
   ApplyThemeToLabels([lnkGeminiGetKey, lnkOpenAIGetKey, lnkClaudeGetKey, lnkDeepSeekGetKey,
     lnkGroqGetKey, lnkOpenRouterGetKey, lnkQwenGetKey, lnkMistralGetKey, lnkBedrockGetKey], LColors, True);
@@ -707,7 +811,9 @@ begin
   lstTemplates.Font.Color := LColors.TextColor;
 
   ApplyThemeToCheckboxes([chkIsProjectGenerator, FChkSmartConfig, FChkInjectDelphiVersion,
-    FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled], LColors);
+    FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled,
+    FChkConsentShowArguments, FChkConsentRememberReversible,
+    FChkConsentRememberStructural, FChkConsentRememberExecution], LColors);
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
   ApplyThemeToGroupBoxes([FGrpQuota], LColors);
@@ -811,6 +917,21 @@ begin
   FPresenter.ResetQuota;
 end;
 
+procedure TRadIAFrameAIConfig.BtnRevokeConsentClick(Sender: TObject);
+var
+  LPolicyExecutor: IRadIAToolPolicyExecutor;
+begin
+  if not TRadIAContainer.TryResolve<IRadIAToolPolicyExecutor>(
+    LPolicyExecutor
+  ) then
+  begin
+    ShowMessage('The consent policy service is not available.');
+    Exit;
+  end;
+  LPolicyExecutor.RevokeSessionPermissions;
+  ShowMessage('All session permissions were revoked.');
+end;
+
 procedure TRadIAFrameAIConfig.TvCategoriesChange(Sender: TObject; Node: TTreeNode);
 begin
   if Assigned(Node) then
@@ -823,11 +944,12 @@ var
   LPages: TArray<TTabSheet>;
   I: Integer;
 begin
-  LNames := ['General / Logs', 'System Prompt', 'Templates', 'Gemini', 'OpenAI',
+  LNames := ['General / Logs', 'Security & Consent', 'System Prompt', 'Templates',
+             'Gemini', 'OpenAI',
              'Claude', 'DeepSeek', 'Groq', 'Ollama', 'OpenRouter', 'LM Studio',
              'GitHub Copilot', 'Azure OpenAI', 'Alibaba Qwen', 'Mistral AI', 'AWS Bedrock'];
 
-  LPages := [FTsGeneral, tsSystemPrompt, tsTemplates, tsGemini, tsOpenAI,
+  LPages := [FTsGeneral, FTsSecurity, tsSystemPrompt, tsTemplates, tsGemini, tsOpenAI,
              tsClaude, tsDeepSeek, tsGroq, tsOllama, tsOpenRouter, tsLMStudio,
              tsGithubCopilot, tsAzureOpenAI, tsQwen, tsMistral, tsBedrock];
 
@@ -1268,6 +1390,66 @@ end;
 procedure TRadIAFrameAIConfig.SetLogMaxSize(const AValue: string);
 begin
   FEdtLogMaxSize.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetConsentTimeoutSeconds: string;
+begin
+  Result := FEdtConsentTimeout.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetConsentTimeoutSeconds(
+  const AValue: string
+);
+begin
+  FEdtConsentTimeout.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetConsentShowArguments: Boolean;
+begin
+  Result := FChkConsentShowArguments.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetConsentShowArguments(
+  const AValue: Boolean
+);
+begin
+  FChkConsentShowArguments.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetConsentRememberReversible: Boolean;
+begin
+  Result := FChkConsentRememberReversible.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  FChkConsentRememberReversible.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetConsentRememberStructural: Boolean;
+begin
+  Result := FChkConsentRememberStructural.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  FChkConsentRememberStructural.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetConsentRememberExecution: Boolean;
+begin
+  Result := FChkConsentRememberExecution.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  FChkConsentRememberExecution.Checked := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetQuotaEnabled: Boolean;

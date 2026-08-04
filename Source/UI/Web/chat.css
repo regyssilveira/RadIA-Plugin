@@ -52,6 +52,18 @@
   color: var(--accent-hover);
 }
 
+.header-action-btn.agent-mode-enabled {
+  color: var(--accent);
+}
+
+.header-action-btn.agent-mode-enabled .btn-icon {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+
+.header-action-btn.agent-mode-disabled {
+  color: var(--fg-muted);
+}
+
 .header-action-btn:disabled {
   color: var(--fg-muted);
   cursor: not-allowed;
@@ -268,6 +280,19 @@
 @media (max-width: 520px) {
   .welcome-actions {
     grid-template-columns: 1fr;
+  }
+
+  #chat-header {
+    padding: 0 8px;
+  }
+
+  .header-title,
+  .header-action-btn .btn-label {
+    display: none;
+  }
+
+  .header-right {
+    gap: 10px;
   }
 }
 
@@ -1720,6 +1745,75 @@ body.light-theme .message-avatar.provider-avatar-badge {
 
 .tool-card-error {
   border-color: #ef4444;
+}
+
+.agent-run-card {
+  width: min(760px, calc(100% - 24px));
+  margin: 8px auto;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-elevated) 90%, var(--accent) 10%);
+}
+
+.agent-run-header,
+.agent-run-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-run-header {
+  justify-content: space-between;
+}
+
+.agent-run-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--fg-secondary);
+  background: var(--bg-secondary);
+  text-transform: capitalize;
+}
+
+.agent-run-objective {
+  margin-top: 8px;
+  color: var(--fg-primary);
+}
+
+.agent-run-metrics {
+  margin-top: 5px;
+  color: var(--fg-secondary);
+  font-size: 12px;
+}
+
+.agent-run-plan,
+.agent-run-steps {
+  margin: 10px 0;
+  padding-left: 22px;
+  color: var(--fg-secondary);
+}
+
+.agent-run-plan:empty,
+.agent-run-steps:empty {
+  display: none;
+}
+
+.agent-run-plan {
+  color: var(--fg-primary);
+}
+
+.agent-control-button {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-primary);
+  background: var(--bg-secondary);
+  cursor: pointer;
+}
+
+.agent-control-button:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .tool-catalog h3 {

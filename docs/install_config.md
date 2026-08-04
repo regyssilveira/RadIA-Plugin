@@ -172,7 +172,7 @@ Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File .\scripts\Test-RadIA.Package.ps1 `
-  -PackagePath .\Output\Packages\RadIA-v1.0.0-Delphi-22.0-Win32-Release.zip `
+  -PackagePath .\Output\Packages\RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip `
   -DelphiVersion "22.0"
 ```
 

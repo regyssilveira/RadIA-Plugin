@@ -14,8 +14,19 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 | Comando | Descrição | Contexto Automático da IDE |
 | :--- | :--- | :--- |
+| `/agent [on\|off]` | Alterna ou define o modo agente e sincroniza o botão visual. | Chat ativo. |
+| `/agent run <objetivo>` | Inicia um loop agentivo observável usando o catálogo atual. | Sessão e workspace ativos. |
+| `/agent pause` | Pausa o loop após interromper com segurança a decisão atual. | Execução agentiva ativa. |
+| `/agent resume` | Retoma o último checkpoint da sessão. | Execução agentiva pausada. |
+| `/agent cancel` | Cancela a decisão e a execução agentiva atuais. | Execução agentiva ativa. |
+| `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
+| `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |
+| `/revoke-tools` | Revoga permissões concedidas na sessão. | Sessão de chat ativa. |
 | `/explain` | Analisa e explica didaticamente a lógica do código selecionado no editor. | Envia o trecho de código selecionado. |
 | `/refactor` | Otimiza a performance, legibilidade e aplica boas práticas (Clean Code/SOLID) no código selecionado. | Envia o trecho de código selecionado. |
+| `/optimize` | Alias de otimização e refatoração de código. | Envia o trecho de código selecionado. |
+| `/performance` | Analisa gargalos e oportunidades de desempenho. | Envia o código selecionado. |
+| `/test` | Gera testes unitários DUnitX para o código selecionado. | Envia o trecho de código selecionado. |
 | `/bugs` | Varre o código selecionado em busca de memory leaks, tratamento incorreto de exceções e erros de lógica. | Envia o trecho de código selecionado. |
 | `/doc` | Gera comentários de documentação no formato XML (`/// <summary>`) compatível com o Delphi Help Insight. | Envia a assinatura do método selecionado. |
 | `/template` | Abre o menu flutuante de biblioteca de templates para escolha de prompts reutilizáveis. | — |
@@ -31,6 +42,14 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 ## Customização e Backups de Comandos
 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
+
+Os comandos da família `/agent`, além de `/tools`, `/tool` e `/revoke-tools`, são internos e não
+podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para
+exemplos.
+
+Os demais comandos são fornecidos pelos templates instalados. Como esses templates podem ser
+editados, restaurados, importados ou removidos, digitar `/` no chat é a fonte de verdade para a
+lista disponível no perfil atual.
 
 Cada template cadastrado pode especificar:
 - **Slash Command**: O comando que acionará o template diretamente no chat (ex: `/explain`).

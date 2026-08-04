@@ -49,14 +49,51 @@ type
 implementation
 
 uses
+  System.Actions,
   System.Math,
   System.SysUtils,
   ToolsAPI,
+  Vcl.ActnList,
+  Vcl.Forms,
   Winapi.Windows,
   RadIA.Core.Types;
 
 const
   CDebuggerUnavailable = 'The debugger is shutting down.';
+
+function FindIDEAction(
+  const AActionNames: array of string
+): TBasicAction;
+var
+  LAction: TContainedAction;
+  LActionIndex: Integer;
+  LActionList: TCustomActionList;
+  LNameIndex: Integer;
+  LServices: INTAServices;
+begin
+  Result := nil;
+  if not Supports(BorlandIDEServices, INTAServices, LServices) then
+    Exit;
+  LActionList := LServices.ActionList;
+  if not Assigned(LActionList) then
+    Exit;
+
+  for LNameIndex := Low(AActionNames) to High(AActionNames) do
+    for LActionIndex := 0 to LActionList.ActionCount - 1 do
+    begin
+      LAction := LActionList.Actions[LActionIndex];
+      if Assigned(LAction) and
+        SameText(LAction.Name, AActionNames[LNameIndex]) then
+        Exit(LAction);
+    end;
+end;
+
+function HasDebugProcess(
+  const ADebugger: IOTADebuggerServices
+): Boolean;
+begin
+  Result := Assigned(ADebugger) and (ADebugger.ProcessCount > 0);
+end;
 
 function ProcessStateToString(
   const AState: TOTAProcessState
@@ -656,11 +693,12 @@ begin
   RunOnMainThread(
     procedure
     var
+      LAction: TBasicAction;
       LDebugger: IOTADebuggerServices;
       LModuleServices: IOTAModuleServices;
       LProcess: IOTAProcess;
       LProject: IOTAProject;
-      LTargetName: string;
+      LWaitCount: Integer;
     begin
       if not Supports(
         BorlandIDEServices,
@@ -713,20 +751,41 @@ begin
           );
           Exit;
         end;
-        LTargetName := LProject.ProjectOptions.TargetName;
-        if (Trim(LTargetName) = '') or
-          not FileExists(LTargetName) then
+        LAction := FindIDEAction([
+          'RunRunCommand',
+          'ProjectRunCommand',
+          'DebuggerRunCommand',
+          'RunCommand',
+          'RunProjectCommand'
+        ]);
+        if not Assigned(LAction) then
         begin
           LResult := TRadIADebuggerActionResult.Failed(
-            'target_unavailable',
-            'The active project target was not produced by the build.',
+            'debugger_action_unavailable',
+            'The IDE Run action is unavailable.',
             'no_process'
           );
           Exit;
         end;
-        LDebugger.CreateProcess(LTargetName, '');
+        LAction.Execute;
+        LWaitCount := 30;
+        while (LWaitCount > 0) and not HasDebugProcess(LDebugger) do
+        begin
+          Application.ProcessMessages;
+          Sleep(100);
+          Dec(LWaitCount);
+        end;
+        if not HasDebugProcess(LDebugger) then
+        begin
+          LResult := TRadIADebuggerActionResult.Failed(
+            'debugger_start_not_confirmed',
+            'The IDE did not start a debug process.',
+            'no_process'
+          );
+          Exit;
+        end;
         LResult := TRadIADebuggerActionResult.Succeeded(
-          'The IDE accepted the active project debug session.',
+          'The IDE started the active project debug session.',
           'no_process',
           'starting'
         );

@@ -60,6 +60,8 @@ This project adopts clear language rules and design standards for both human dev
 *   **Configurable Concise Responses:** General option to prefer more direct AI answers, reducing long explanations and saving tokens without blocking detailed responses when explicitly requested.
 *   **Secure Agentic Tools:** Chat executes structured editor, project, build, Form Designer, and
     debugger tools with risk-based consent and workspace confinement.
+*   **Observable Agent Loop:** `/agent run` executes explicit objectives with a live progress card,
+    pause, cancellation, checkpoints, and resume without turning ordinary questions into actions.
 *   **Reviewable and Reversible Editing:** Patches use previews, base hashes, and preconditions,
     reject stale content, and support controlled reversal.
 *   **Local MCP Server:** The stdio bridge connects clients to the intended IDE through per-PID
@@ -72,6 +74,23 @@ This project adopts clear language rules and design standards for both human dev
 To check the development status, keyboard shortcuts, categories, and all integrated providers in detail, please refer to our:
 
 👉 [**Complete Feature Checklist (docs/features.en.md)**](docs/features.en.md)
+
+For a guided path from initial setup to tools, MCP, Designer, debugger, and local knowledge:
+
+👉 [**Everything RadIA can do**](docs/capabilities.en.md)
+
+👉 [**Complete RadIA 2.0 User Manual**](docs/user_manual.en.md)
+
+To browse all functional, operational, and technical documentation:
+
+👉 [**RadIA Documentation Center**](docs/README.en.md)
+
+Quick references:
+
+- [Everything RadIA can do](docs/capabilities.en.md)
+- [What each tool does and when to use it](docs/internal_tools_reference.md)
+- [All 80 built-in tools](docs/runtime_tool_catalog.md)
+- [All slash commands](docs/slash_commands.en.md)
 
 ### 2.2 RadIA capabilities at a glance
 
@@ -93,8 +112,9 @@ To check the development status, keyboard shortcuts, categories, and all integra
 | **Providers** | Integrate Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama, and others. |
 | **Compatibility** | Run on Delphi 11, 12, and 13 Win32 and Delphi 13 IDE64. |
 
-Parameters, preconditions, and risks are documented in the
-[Agentic Tool Catalog](docs/tool_catalog.md).
+Implemented tools are listed in the
+[80 Built-in Tool Catalog](docs/runtime_tool_catalog.md). Contracts and planned evolution remain
+in the [Architectural Catalog](docs/tool_catalog.md).
 
 ### 3. How It Works & Architecture
 Rad IA is built entirely in Object Pascal (Delphi) using the **Open Tools API (OTA)** to interface with the IDE's editor services, message services, and theme services.
@@ -146,6 +166,10 @@ If you prefer to run a local proxy compatible with the OpenAI API (Phase 1), thi
 
 To get the most out of Rad IA features in your daily development workflow, check our detailed reference guides:
 
+*   👉 [**Everything RadIA can do**](docs/capabilities.en.md): Complete functional map for chat,
+    editor, generation, Agent Mode, MCP, Designer, build, tests, debugger, Git, and security.
+*   👉 [**Complete RadIA 2.0 User Manual**](docs/user_manual.en.md): Entry point covering agentic
+    tool access, capabilities, examples, security, limitations, and references.
 *   👉 [**Editor Integration & Code Generation Guide (docs/user_guide_editor_generation.en.md)**](docs/user_guide_editor_generation.en.md): Context-aware editor actions, Smart Diff visual comparison, XML documentation, DTO converter, and full-project prompt generation.
 *   👉 [**Diagnostics & Code Analysis Guide (docs/user_guide_diagnostics_analysis.en.md)**](docs/user_guide_diagnostics_analysis.en.md): Smart Build Debugger compilation assistance, call stack parsing via Stack Trace Assistant, and memory leak static auditing.
 *   👉 [**Chat Panel & Session Management Guide (docs/user_guide_chat_sessions.en.md)**](docs/user_guide_chat_sessions.en.md): Input text shortcuts, prompt history navigation, persistent multi-sessions, and prompt template backups.

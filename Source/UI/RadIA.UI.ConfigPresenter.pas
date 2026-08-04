@@ -55,6 +55,16 @@ type
     procedure SetLogPath(const AValue: string);
     function GetLogMaxSize: string;
     procedure SetLogMaxSize(const AValue: string);
+    function GetConsentTimeoutSeconds: string;
+    procedure SetConsentTimeoutSeconds(const AValue: string);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -96,6 +106,7 @@ type
     function ValidateUrls(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string): Boolean;
     function ValidateProvidersParams: Boolean;
     function ValidateQuota: Boolean;
+    function ValidateConsent: Boolean;
     procedure PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string);
     procedure PopulateTemplatesList;
   public
@@ -244,6 +255,19 @@ begin
   FView.SetSmartConfigEnabled(FConfig.SmartConfigEnabled);
   FView.SetInjectDelphiVersion(FConfig.InjectDelphiVersion);
   FView.SetConciseResponses(FConfig.ConciseResponses);
+  FView.SetConsentTimeoutSeconds(
+    IntToStr(FConfig.ConsentTimeoutSeconds)
+  );
+  FView.SetConsentShowArguments(FConfig.ConsentShowArguments);
+  FView.SetConsentRememberReversible(
+    FConfig.ConsentRememberReversible
+  );
+  FView.SetConsentRememberStructural(
+    FConfig.ConsentRememberStructural
+  );
+  FView.SetConsentRememberExecution(
+    FConfig.ConsentRememberExecution
+  );
 
   // Load Advanced Parameters for registered providers
   for LProviderId in FProvidersList do
@@ -321,6 +345,22 @@ begin
   Result := True;
 end;
 
+function TRadIAConfigPresenter.ValidateConsent: Boolean;
+var
+  LTimeout: Integer;
+begin
+  Result := TryStrToInt(
+    FView.GetConsentTimeoutSeconds,
+    LTimeout
+  ) and (LTimeout >= 15) and (LTimeout <= 600);
+  if not Result then
+  begin
+    FView.ShowMessageDialog(
+      'Consent timeout must be between 15 and 600 seconds.'
+    );
+  end;
+end;
+
 procedure TRadIAConfigPresenter.PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string);
 var
   LFormatSettings: TFormatSettings;
@@ -368,6 +408,16 @@ begin
   FConfig.SmartConfigEnabled := FView.GetSmartConfigEnabled;
   FConfig.InjectDelphiVersion := FView.GetInjectDelphiVersion;
   FConfig.ConciseResponses := FView.GetConciseResponses;
+  FConfig.ConsentTimeoutSeconds := StrToInt(
+    FView.GetConsentTimeoutSeconds
+  );
+  FConfig.ConsentShowArguments := FView.GetConsentShowArguments;
+  FConfig.ConsentRememberReversible :=
+    FView.GetConsentRememberReversible;
+  FConfig.ConsentRememberStructural :=
+    FView.GetConsentRememberStructural;
+  FConfig.ConsentRememberExecution :=
+    FView.GetConsentRememberExecution;
 
   for LProviderId in FProvidersList do
   begin
@@ -409,6 +459,7 @@ begin
   if not ValidateUrls(LOllamaUrl, LOpenAIUrl, LLMStudioUrl, LAzureUrl) then Exit;
   if not ValidateProvidersParams then Exit;
   if not ValidateQuota then Exit;
+  if not ValidateConsent then Exit;
 
   PersistConfig(LOllamaUrl, LOpenAIUrl, LLMStudioUrl, LAzureUrl);
 end;

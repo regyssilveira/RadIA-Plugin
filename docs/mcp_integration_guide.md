@@ -33,6 +33,36 @@ Para selecionar uma IDE específica, informe o discovery correspondente:
 Não selecione um arquivo apenas pela data quando houver várias IDEs. Relacione o PID do nome ao
 processo `bds.exe` desejado. O discovery é removido quando o processo termina normalmente.
 
+## Configuração de um cliente
+
+Clientes que aceitam servidores MCP por comando podem usar uma configuração equivalente a:
+
+```json
+{
+  "mcpServers": {
+    "radia-delphi": {
+      "command": "C:\\caminho\\RadIA.MCP.Bridge.exe",
+      "args": [
+        "C:\\Users\\usuario\\AppData\\Roaming\\RadIA\\mcp.12345.json"
+      ]
+    }
+  }
+}
+```
+
+Remova `args` para usar automaticamente `mcp.json`. O nome do campo raiz varia entre clientes;
+consulte a documentação do cliente, mas preserve `command` e o argumento de discovery.
+
+O executável instalado normalmente fica em:
+
+```text
+C:\Users\Public\Documents\Embarcadero\Studio\37.0\Bpl\RadIA.MCP.Bridge.exe
+C:\Users\Public\Documents\Embarcadero\Studio\37.0\Bpl\Win64\RadIA.MCP.Bridge.exe
+```
+
+Use a bridge da mesma arquitetura do package carregado. Não copie apenas o executável: ele depende
+do discovery publicado pela IDE.
+
 ## Sessão MCP
 
 O cliente deve enviar `initialize` antes de `tools/list` ou `tools/call`. A bridge transporta as
@@ -49,6 +79,69 @@ Sequência recomendada:
 
 O catálogo retornado por `tools/list` é autoritativo para a instância. Não mantenha schemas
 copiados indefinidamente, pois extensões locais podem adicionar ou remover ferramentas.
+
+### Métodos implementados
+
+- `initialize`
+- `notifications/initialized`
+- `ping`
+- `tools/list`
+- `tools/call`
+
+O protocolo negociado pela versão 1.0 é `2025-06-18`.
+
+Exemplo conceitual de inicialização:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "my-client",
+      "version": "1.0"
+    }
+  }
+}
+```
+
+Depois da resposta, o cliente pode enviar `notifications/initialized` e consultar `tools/list`.
+
+Exemplo de chamada:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "GetActiveProject",
+    "arguments": {}
+  }
+}
+```
+
+Não escreva JSON-RPC manualmente quando o cliente já implementa MCP. Esses exemplos servem para
+diagnóstico e desenvolvimento de integrações.
+
+## Capacidades expostas
+
+O MCP publica o mesmo registry do chat, incluindo tools disponíveis para:
+
+- IDE, projeto, units, arquivos e editor;
+- patches revisáveis;
+- build e mensagens do compilador;
+- Form Designer;
+- debugger, breakpoints e watches;
+- revisão inline;
+- conhecimento local;
+- extensões carregadas na IDE.
+
+Execute `tools/list` em cada conexão. O [catálogo técnico](tool_catalog.md) contém a visão de
+arquitetura, mas somente o resultado runtime confirma o que está registrado naquela IDE.
 
 ## Consentimento
 
@@ -69,6 +162,30 @@ negação ou shutdown da IDE encerram a solicitação com falha segura.
 Consulte o [modelo de segurança](tool_security_model.md) e o
 [catálogo de ferramentas](tool_catalog.md).
 
+## Várias IDEs simultâneas
+
+Cada `mcp.<pid>.json` representa somente um processo:
+
+1. identifique o PID da IDE desejada;
+2. associe o projeto aberto nessa IDE;
+3. configure uma instância da bridge para aquele discovery;
+4. use nomes distintos no cliente, como `radia-project-a` e `radia-project-b`;
+5. não compartilhe consentimento entre as conexões.
+
+O arquivo `mcp.json` é conveniente para uma única IDE, mas pode mudar quando outra instância inicia.
+Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
+
+## Verificação operacional
+
+1. Abra o Delphi e um projeto.
+2. Confirme que `mcp.<pid>.json` foi criado.
+3. Inicie ou recarregue o servidor no cliente MCP.
+4. Verifique que `initialize` retorna RadIA `2.0.0`.
+5. Execute `tools/list`.
+6. Chame `GetIDEState` e `GetActiveProject`.
+7. Para testar consentimento, use uma tool mutável somente em um projeto descartável.
+8. Feche a IDE e confirme que discovery e conexão são encerrados.
+
 ## Diagnóstico rápido
 
 - **Bridge encerra imediatamente:** confirme que a IDE está aberta e que o discovery existe.
@@ -77,3 +194,8 @@ Consulte o [modelo de segurança](tool_security_model.md) e o
 - **Solicitação pendente:** procure o diálogo de consentimento na IDE.
 - **Pipe não encontrado:** confirme se o PID ainda existe e reinicie a bridge.
 - **Discovery órfão:** feche a bridge, confirme que o PID não existe e reabra a IDE.
+- **Sem resposta após tool mutável:** verifique o diálogo nativo de consentimento.
+- **Schema inválido:** descarte o cache local do catálogo e execute novamente `tools/list`.
+- **Projeto incorreto:** selecione explicitamente o discovery do PID correto.
+
+Consulte também o [Manual Completo do RadIA](user_manual.md).

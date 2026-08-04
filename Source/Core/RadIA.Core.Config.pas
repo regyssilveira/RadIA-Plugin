@@ -37,6 +37,11 @@ type
     FAwsSessionToken: string;
     FInjectDelphiVersion: Boolean;
     FConciseResponses: Boolean;
+    FConsentTimeoutSeconds: Integer;
+    FConsentShowArguments: Boolean;
+    FConsentRememberReversible: Boolean;
+    FConsentRememberStructural: Boolean;
+    FConsentRememberExecution: Boolean;
 
     { Dynamic String-based settings (avoiding TDictionary generics due to BPL RTL unloading bugs) }
     FApiKeysList: TStringList;
@@ -147,6 +152,16 @@ type
     procedure SetInjectDelphiVersion(const AValue: Boolean);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
+    function GetConsentTimeoutSeconds: Integer;
+    procedure SetConsentTimeoutSeconds(const AValue: Integer);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -221,6 +236,11 @@ begin
   FAutocompleteDelay := TConfigDefaults.AutocompleteDelay;
   FInjectDelphiVersion := True;
   FConciseResponses := True;
+  FConsentTimeoutSeconds := 60;
+  FConsentShowArguments := True;
+  FConsentRememberReversible := True;
+  FConsentRememberStructural := False;
+  FConsentRememberExecution := False;
 
   Load;
 end;
@@ -368,6 +388,18 @@ begin
     FAutocompleteDelay := ReadRegInt('AutocompleteDelay', TConfigDefaults.AutocompleteDelay);
     FInjectDelphiVersion := ReadRegInt('InjectDelphiVersion', 1) <> 0;
     FConciseResponses := ReadRegInt('ConciseResponses', 1) <> 0;
+    FConsentTimeoutSeconds := EnsureRange(
+      ReadRegInt('ConsentTimeoutSeconds', 60),
+      15,
+      600
+    );
+    FConsentShowArguments := ReadRegInt('ConsentShowArguments', 1) <> 0;
+    FConsentRememberReversible :=
+      ReadRegInt('ConsentRememberReversible', 1) <> 0;
+    FConsentRememberStructural :=
+      ReadRegInt('ConsentRememberStructural', 0) <> 0;
+    FConsentRememberExecution :=
+      ReadRegInt('ConsentRememberExecution', 0) <> 0;
 
     FStorage.CloseKey;
 
@@ -609,6 +641,23 @@ begin
     FStorage.WriteInteger('AutocompleteDelay', FAutocompleteDelay);
     FStorage.WriteInteger('InjectDelphiVersion', IfThen(FInjectDelphiVersion, 1, 0));
     FStorage.WriteInteger('ConciseResponses', IfThen(FConciseResponses, 1, 0));
+    FStorage.WriteInteger('ConsentTimeoutSeconds', FConsentTimeoutSeconds);
+    FStorage.WriteInteger(
+      'ConsentShowArguments',
+      IfThen(FConsentShowArguments, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'ConsentRememberReversible',
+      IfThen(FConsentRememberReversible, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'ConsentRememberStructural',
+      IfThen(FConsentRememberStructural, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'ConsentRememberExecution',
+      IfThen(FConsentRememberExecution, 1, 0)
+    );
     FStorage.CloseKey;
 
     TLogger.Configure(FLogEnabled, FLogPath, FLogMaxSizeKB);
@@ -896,6 +945,62 @@ end;
 procedure TRadIAConfig.SetConciseResponses(const AValue: Boolean);
 begin
   FConciseResponses := AValue;
+end;
+
+function TRadIAConfig.GetConsentTimeoutSeconds: Integer;
+begin
+  Result := FConsentTimeoutSeconds;
+end;
+
+procedure TRadIAConfig.SetConsentTimeoutSeconds(const AValue: Integer);
+begin
+  FConsentTimeoutSeconds := EnsureRange(AValue, 15, 600);
+end;
+
+function TRadIAConfig.GetConsentShowArguments: Boolean;
+begin
+  Result := FConsentShowArguments;
+end;
+
+procedure TRadIAConfig.SetConsentShowArguments(const AValue: Boolean);
+begin
+  FConsentShowArguments := AValue;
+end;
+
+function TRadIAConfig.GetConsentRememberReversible: Boolean;
+begin
+  Result := FConsentRememberReversible;
+end;
+
+procedure TRadIAConfig.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberReversible := AValue;
+end;
+
+function TRadIAConfig.GetConsentRememberStructural: Boolean;
+begin
+  Result := FConsentRememberStructural;
+end;
+
+procedure TRadIAConfig.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberStructural := AValue;
+end;
+
+function TRadIAConfig.GetConsentRememberExecution: Boolean;
+begin
+  Result := FConsentRememberExecution;
+end;
+
+procedure TRadIAConfig.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberExecution := AValue;
 end;
 
 function TRadIAConfig.GetAutocompleteEnabled: Boolean;

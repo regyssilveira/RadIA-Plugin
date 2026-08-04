@@ -3,6 +3,7 @@ unit RadIA.OTA.Consent;
 interface
 
 uses
+  RadIA.Core.Interfaces,
   RadIA.Core.Tools,
   RadIA.Core.ToolSecurity;
 
@@ -12,13 +13,20 @@ type
     IRadIAConsentProvider
   )
   private
+    FConfig: IRadIAConfig;
     FTimeoutMs: Cardinal;
     function ShowConsentDialog(
       const ARequest: TRadIAToolRequest;
       const ADescriptor: TRadIAToolDescriptor
     ): TRadIAConsentDecision;
   public
-    constructor Create(const ATimeoutMs: Cardinal = 60000);
+    constructor Create(
+      const ATimeoutMs: Cardinal = 0;
+      const AConfig: IRadIAConfig = nil
+    );
+    function CanRememberForSession(
+      const ARisk: TRadIAToolRisk
+    ): Boolean;
     function RequestConsent(
       const ARequest: TRadIAToolRequest;
       const ADescriptor: TRadIAToolDescriptor
@@ -36,6 +44,7 @@ uses
   Vcl.Graphics,
   Vcl.StdCtrls,
   Winapi.Windows,
+  RadIA.Core.Config,
   RadIA.Core.Types;
 
 const
@@ -57,7 +66,8 @@ type
     );
     procedure ConfigureContent(
       const ARequest: TRadIAToolRequest;
-      const ADescriptor: TRadIAToolDescriptor
+      const ADescriptor: TRadIAToolDescriptor;
+      const AShowArguments: Boolean
     );
     function RiskName(const ARisk: TRadIAToolRisk): string;
     procedure TimerTick(Sender: TObject);
@@ -65,7 +75,9 @@ type
     constructor CreateConsent(
       const ARequest: TRadIAToolRequest;
       const ADescriptor: TRadIAToolDescriptor;
-      const ATimeoutMs: Cardinal
+      const ATimeoutMs: Cardinal;
+      const AShowArguments: Boolean;
+      const AAllowSession: Boolean
     );
   end;
 
@@ -93,7 +105,8 @@ end;
 
 procedure TRadIAConsentForm.ConfigureContent(
   const ARequest: TRadIAToolRequest;
-  const ADescriptor: TRadIAToolDescriptor
+  const ADescriptor: TRadIAToolDescriptor;
+  const AShowArguments: Boolean
 );
 var
   LArgumentsMemo: TMemo;
@@ -144,7 +157,11 @@ begin
   LArgumentsMemo.ReadOnly := True;
   LArgumentsMemo.ScrollBars := ssBoth;
   LArgumentsMemo.WordWrap := False;
-  LArgumentsMemo.Text := ARequest.ArgumentsJson;
+  if AShowArguments then
+    LArgumentsMemo.Text := ARequest.ArgumentsJson
+  else
+    LArgumentsMemo.Text :=
+      'Arguments are hidden by your Security & Consent settings.';
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := Self;
@@ -157,7 +174,9 @@ end;
 constructor TRadIAConsentForm.CreateConsent(
   const ARequest: TRadIAToolRequest;
   const ADescriptor: TRadIAToolDescriptor;
-  const ATimeoutMs: Cardinal
+  const ATimeoutMs: Cardinal;
+  const AShowArguments: Boolean;
+  const AAllowSession: Boolean
 );
 begin
   inherited CreateNew(nil);
@@ -166,14 +185,14 @@ begin
   ClientWidth := 560;
   ClientHeight := 400;
   Position := poMainFormCenter;
-  ConfigureContent(ARequest, ADescriptor);
+  ConfigureContent(ARequest, ADescriptor, AShowArguments);
 
   AddButton('Allow once', 20, CAllowOnceModalResult);
   AddButton(
     'Allow session',
     132,
     CAllowSessionModalResult,
-    ADescriptor.Risk <> trDestructive
+    AAllowSession
   );
   AddButton('Deny', 356, CDenyModalResult);
   AddButton('Cancel', 468, mrCancel);
@@ -225,13 +244,31 @@ end;
 { TRadIAOTAConsentProvider }
 
 constructor TRadIAOTAConsentProvider.Create(
-  const ATimeoutMs: Cardinal
+  const ATimeoutMs: Cardinal;
+  const AConfig: IRadIAConfig
 );
 begin
   inherited Create;
-  if ATimeoutMs = 0 then
-    raise EArgumentOutOfRangeException.Create('ATimeoutMs');
+  FConfig := AConfig;
+  if not Assigned(FConfig) then
+    FConfig := TRadIAConfig.GetInstance;
   FTimeoutMs := ATimeoutMs;
+end;
+
+function TRadIAOTAConsentProvider.CanRememberForSession(
+  const ARisk: TRadIAToolRisk
+): Boolean;
+begin
+  case ARisk of
+    trReversibleWrite:
+      Result := FConfig.ConsentRememberReversible;
+    trStructuralWrite:
+      Result := FConfig.ConsentRememberStructural;
+    trExecution:
+      Result := FConfig.ConsentRememberExecution;
+  else
+    Result := False;
+  end;
 end;
 
 function TRadIAOTAConsentProvider.RequestConsent(
@@ -268,11 +305,17 @@ function TRadIAOTAConsentProvider.ShowConsentDialog(
 ): TRadIAConsentDecision;
 var
   LForm: TRadIAConsentForm;
+  LTimeoutMs: Cardinal;
 begin
+  LTimeoutMs := FTimeoutMs;
+  if LTimeoutMs = 0 then
+    LTimeoutMs := Cardinal(FConfig.ConsentTimeoutSeconds) * 1000;
   LForm := TRadIAConsentForm.CreateConsent(
     ARequest,
     ADescriptor,
-    FTimeoutMs
+    LTimeoutMs,
+    FConfig.ConsentShowArguments,
+    CanRememberForSession(ADescriptor.Risk)
   );
   try
     case LForm.ShowModal of

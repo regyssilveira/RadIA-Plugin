@@ -23,6 +23,10 @@ type
     procedure TestGenerateProjectEmptyJSON;
     [Test]
     procedure TestGenerateProjectRollbackOnError;
+    [Test]
+    procedure TestRejectsPathTraversal;
+    [Test]
+    procedure TestRejectsDuplicatePaths;
   end;
 
 implementation
@@ -150,6 +154,44 @@ begin
   LWrittenFile1 := TPath.Combine(FTempDir, 'FirstValidFile.pas');
   Assert.IsFalse(TFile.Exists(LWrittenFile1), 'Rollback failed: FirstValidFile.pas should have been ' +
       'cleaned up and deleted');
+end;
+
+procedure TTestRadIAProjectGenerator.TestRejectsDuplicatePaths;
+var
+  LErrorMsg: string;
+  LJson: string;
+begin
+  LJson :=
+    '[{"path":"UnitOne.pas","content":"unit UnitOne; end."},' +
+    '{"path":"UnitOne.pas","content":"unit UnitOne; end."}]';
+
+  Assert.IsFalse(
+    FGenerator.GenerateFromJSON(LJson, LErrorMsg, FTempDir)
+  );
+  Assert.Contains(LErrorMsg, 'duplicate file path');
+  Assert.IsFalse(TFile.Exists(TPath.Combine(FTempDir, 'UnitOne.pas')));
+end;
+
+procedure TTestRadIAProjectGenerator.TestRejectsPathTraversal;
+var
+  LErrorMsg: string;
+  LEscapedFile: string;
+  LJson: string;
+begin
+  LEscapedFile := TPath.GetFullPath(
+    TPath.Combine(FTempDir, '..\escaped-radia-test.pas')
+  );
+  if TFile.Exists(LEscapedFile) then
+    TFile.Delete(LEscapedFile);
+  LJson :=
+    '[{"path":"..\\escaped-radia-test.pas",' +
+    '"content":"unit Escaped; end."}]';
+
+  Assert.IsFalse(
+    FGenerator.GenerateFromJSON(LJson, LErrorMsg, FTempDir)
+  );
+  Assert.Contains(LErrorMsg, 'escapes the destination folder');
+  Assert.IsFalse(TFile.Exists(LEscapedFile));
 end;
 
 initialization

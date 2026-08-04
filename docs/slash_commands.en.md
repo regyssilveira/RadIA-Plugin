@@ -14,8 +14,19 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 
 | Command | Description | Automatic IDE Context |
 | :--- | :--- | :--- |
+| `/agent [on\|off]` | Toggles or sets Agent Mode and synchronizes the visual button. | Active chat. |
+| `/agent run <objective>` | Starts an observable agent loop with the current catalog. | Active session and workspace. |
+| `/agent pause` | Safely interrupts the current decision and pauses the loop. | Active agent run. |
+| `/agent resume` | Resumes the latest checkpoint for the session. | Paused agent run. |
+| `/agent cancel` | Cancels the current decision and agent run. | Active agent run. |
+| `/tools` | Shows the tool catalog for the current IDE instance. | IDE state and extensions. |
+| `/tool <name> {JSON}` | Runs a tool with optional JSON arguments. | Workspace and session. |
+| `/revoke-tools` | Revokes permissions granted in the session. | Active chat session. |
 | `/explain` | Analyzes and explains the logic of the selected code block in the editor. | Sends the selected code snippet. |
 | `/refactor` | Optimizes performance, readability, and applies SOLID/Clean Code best practices. | Sends the selected code snippet. |
+| `/optimize` | Alias for code optimization and refactoring. | Sends the selected code snippet. |
+| `/performance` | Analyzes bottlenecks and performance opportunities. | Sends the selected code snippet. |
+| `/test` | Generates DUnitX unit tests for the selected code. | Sends the selected code snippet. |
 | `/bugs` | Scans selected code for memory leaks, unhandled exceptions, and logic bugs. | Sends the selected code snippet. |
 | `/doc` | Generates Delphi-compliant XML help documentation tags (`/// <summary>`) above methods. | Sends the selected method signature. |
 | `/template` | Opens the quick prompt template library selector. | — |
@@ -31,6 +42,13 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 ## Customization and Command Backups
 
 Rad IA allows you to edit, delete, or add new commands and prompt templates directly from the plugin options inside the IDE (`Tools -> Options -> Rad IA -> Templates`).
+
+The `/agent` command family, `/tools`, `/tool`, and `/revoke-tools` are internal commands and cannot
+be replaced by templates.
+See the [Complete RadIA User Manual](user_manual.en.md) for examples.
+
+The remaining commands come from installed templates. Because templates can be edited, restored,
+imported, or removed, typing `/` in chat is authoritative for the current profile.
 
 Each template registry can define:
 - **Slash Command**: The command string that triggers the template in chat (e.g., `/explain`).

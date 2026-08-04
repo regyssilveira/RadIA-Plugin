@@ -8,6 +8,11 @@ uses  Winapi.Messages, System.SysUtils, System.Classes,
   RadIA.UI.ChatPresenter;
 
 type
+  TRadIAEdgeBrowser = class(TEdgeBrowser)
+  public
+    procedure RefreshControllerBounds;
+  end;
+
   TRadIAFrameAIChat = class(TFrame, IRadIAChatView)
     pnlToolbar: TPanel;
     lblTitle: TLabel;
@@ -55,10 +60,8 @@ type
     FWebViewInitialized: Boolean;
     FPopupMenuTemplates: TPopupMenu;
     FLifecycleGuard: IInterface;
-    FEdgeBrowser: TEdgeBrowser;
-
-
-
+    FEdgeBrowser: TRadIAEdgeBrowser;
+    FLayoutRefreshQueued: Boolean;
 
     procedure UpdateWebViewNavigation;
     procedure UpdateSendButtonVisual(const AInProgress: Boolean);
@@ -67,6 +70,7 @@ type
     function ColorToHex(AColor: TColor): string;
     procedure CreateEdgeBrowser;
     procedure EnsureMainWebView;
+    procedure RefreshBrowserLayout;
     procedure CMShowingChanged(var Message: TMessage); message CM_SHOWINGCHANGED;
     procedure InitializeWebView;
     procedure CopyWebFiles;
@@ -189,6 +193,11 @@ end;
 
 { TRadIAFrameAIChat }
 
+procedure TRadIAEdgeBrowser.RefreshControllerBounds;
+begin
+  Resize;
+end;
+
 constructor TRadIAFrameAIChat.Create(AOwner: TComponent);
 var
   LThemingServices: IOTAIDEThemingServices;
@@ -196,6 +205,7 @@ begin
   inherited Create(AOwner);
   FBrowserInitialized := False;
   FWebViewInitialized := False;
+  FLayoutRefreshQueued := False;
 
   if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
   begin
@@ -298,14 +308,14 @@ procedure TRadIAFrameAIChat.CMShowingChanged(var Message: TMessage);
 begin
   inherited;
   if Showing then
-    EnsureMainWebView;
+    EnsureVisibleContent;
 end;
 
 procedure TRadIAFrameAIChat.CreateEdgeBrowser;
 begin
   if not Assigned(FEdgeBrowser) then
   begin
-    FEdgeBrowser := TEdgeBrowser.Create(nil);
+    FEdgeBrowser := TRadIAEdgeBrowser.Create(nil);
     FEdgeBrowser.Parent := pnlBrowser;
     FEdgeBrowser.Align := alClient;
     FEdgeBrowser.AlignWithMargins := True;
@@ -344,14 +354,50 @@ end;
 procedure TRadIAFrameAIChat.EnsureVisibleContent;
 begin
   EnsureMainWebView;
+  RefreshBrowserLayout;
+end;
+
+procedure TRadIAFrameAIChat.RefreshBrowserLayout;
+var
+  LGuard: IRadIALifecycleGuard;
+begin
+  if FLayoutRefreshQueued then
+    Exit;
+
+  FLayoutRefreshQueued := True;
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.ForceQueue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if not LGuard.IsAlive then
+          Exit;
+        FLayoutRefreshQueued := False;
+        if GIsShuttingDown or not Assigned(FEdgeBrowser) or
+          not Assigned(pnlBrowser) then
+          Exit;
+
+        pnlBrowser.Realign;
+        FEdgeBrowser.SetBounds(
+          0,
+          0,
+          pnlBrowser.ClientWidth,
+          pnlBrowser.ClientHeight
+        );
+        FEdgeBrowser.RefreshControllerBounds;
+      end
+    )
+  );
 end;
 
 procedure TRadIAFrameAIChat.DestroyWnd;
 var
-  LEdgeToFree: TEdgeBrowser;
+  LEdgeToFree: TRadIAEdgeBrowser;
 begin
   FBrowserInitialized := False;
   FWebViewInitialized := False;
+  FLayoutRefreshQueued := False;
 
   if Assigned(FEdgeBrowser) then
   begin

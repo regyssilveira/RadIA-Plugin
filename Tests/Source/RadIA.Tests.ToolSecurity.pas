@@ -75,10 +75,17 @@ type
     [Test]
     procedure ConsentProviderDeniesDuringShutdown;
     [Test]
+    procedure ConsentProviderHonorsSessionRiskPreferences;
+    [Test]
     procedure UnknownToolIsDeniedAndAudited;
   end;
 
 implementation
+
+uses
+  RadIA.Core.Config,
+  RadIA.Core.Interfaces,
+  RadIA.Core.SettingsStorage;
 
 { TTestRadIATool }
 
@@ -213,6 +220,52 @@ begin
     );
   finally
     GIsShuttingDown := LOriginalShutdown;
+  end;
+end;
+
+procedure TTestRadIAToolSecurity.
+  ConsentProviderHonorsSessionRiskPreferences;
+var
+  LConfig: IRadIAConfig;
+  LProvider: TRadIAOTAConsentProvider;
+  LStorage: IRadIASettingsStorage;
+begin
+  LStorage := TRadIAMemorySettingsStorage.Create;
+  TRadIAConfig.SetStorage(LStorage);
+  LConfig := TRadIAConfig.Create;
+  LConfig.ConsentRememberReversible := True;
+  LConfig.ConsentRememberStructural := False;
+  LConfig.ConsentRememberExecution := False;
+  LProvider := TRadIAOTAConsentProvider.Create(1000, LConfig);
+  try
+    Assert.IsTrue(
+      LProvider.CanRememberForSession(trReversibleWrite)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trStructuralWrite)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trExecution)
+    );
+    LConfig.ConsentRememberStructural := True;
+    LConfig.ConsentRememberExecution := True;
+    Assert.IsTrue(
+      LProvider.CanRememberForSession(trStructuralWrite)
+    );
+    Assert.IsTrue(
+      LProvider.CanRememberForSession(trExecution)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trDestructive)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trSensitive)
+    );
+  finally
+    LProvider.Free;
+    LConfig := nil;
+    LStorage := nil;
+    TRadIAConfig.SetStorage(nil);
   end;
 end;
 

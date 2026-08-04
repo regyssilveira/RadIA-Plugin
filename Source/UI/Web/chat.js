@@ -160,6 +160,7 @@ const chatContainer   = document.getElementById('chat-container');
 const btnClearChat    = document.getElementById('btn-clear-chat');
 const btnHistory      = document.getElementById('btn-history');
 const btnSettings     = document.getElementById('btn-settings');
+const btnAgentMode    = document.getElementById('btn-agent-mode');
 
 const promptTextarea  = document.getElementById('prompt-textarea');
 const btnSendPrompt   = document.getElementById('btn-send-prompt');
@@ -194,7 +195,107 @@ let SLASH_COMMANDS = [
   { name: '/createproject', desc: 'Generates a complete Delphi project from specification', shortcut: '' }
 ];
 let AVAILABLE_TOOLS = [];
+let agentModeEnabled = true;
 const TOOL_CARDS = new Map();
+const AGENT_CARDS = new Map();
+
+function setAgentMode(enabled) {
+  agentModeEnabled = enabled !== false;
+  btnAgentMode.classList.toggle('agent-mode-enabled', agentModeEnabled);
+  btnAgentMode.classList.toggle('agent-mode-disabled', !agentModeEnabled);
+  btnAgentMode.title = `Agent Mode: ${agentModeEnabled ? 'On' : 'Off'}`;
+  btnAgentMode.querySelector('.btn-label').textContent =
+    agentModeEnabled ? 'Agent On' : 'Agent Off';
+}
+
+function createAgentControl(label, action, disabled = false) {
+  const button = document.createElement('button');
+  button.className = 'agent-control-button';
+  button.textContent = label;
+  button.disabled = disabled;
+  button.addEventListener('click', () => {
+    postMessageToDelphi({ action });
+  });
+  return button;
+}
+
+function renderAgentState(data) {
+  const state = data?.state;
+  if (!state || typeof state !== 'object') return;
+
+  const sessionId = state.sessionId || 'active';
+  let card = AGENT_CARDS.get(sessionId);
+  if (!card) {
+    card = document.createElement('section');
+    card.className = 'agent-run-card';
+    card.innerHTML =
+      '<div class="agent-run-header">' +
+      '<strong>Agent run</strong><span class="agent-run-status"></span>' +
+      '</div><div class="agent-run-objective"></div>' +
+      '<div class="agent-run-metrics"></div>' +
+      '<ol class="agent-run-plan"></ol><ol class="agent-run-steps"></ol>' +
+      '<div class="agent-run-controls"></div>';
+    AGENT_CARDS.set(sessionId, card);
+    chatContainer.appendChild(card);
+  }
+
+  const status = state.status || 'unknown';
+  card.dataset.status = status;
+  card.querySelector('.agent-run-status').textContent = status;
+  card.querySelector('.agent-run-objective').textContent = state.objective || '';
+  const elapsedSeconds = Math.round((state.elapsedMilliseconds || 0) / 1000);
+  let metricsText =
+    `${state.totalTokens || 0}/${state.maxTotalTokens || 0} tokens · ` +
+    `${elapsedSeconds}s/${Math.round((state.maxDurationMilliseconds || 0) / 1000)}s`;
+  if (state.pricingConfigured) {
+    const estimatedCost = (state.estimatedCostMicros || 0) / 1000000;
+    const costLimit = (state.maxEstimatedCostMicros || 0) / 1000000;
+    metricsText += ` · USD ${estimatedCost.toFixed(4)}/${costLimit.toFixed(2)}`;
+  } else {
+    metricsText += ' · cost pricing not configured';
+  }
+  card.querySelector('.agent-run-metrics').textContent = metricsText;
+
+  const planElement = card.querySelector('.agent-run-plan');
+  planElement.replaceChildren();
+  const plan = Array.isArray(state.plan) ? state.plan : [];
+  plan.forEach(planStep => {
+    const item = document.createElement('li');
+    const title = planStep?.title || 'Planned step';
+    const description = planStep?.description || '';
+    item.textContent = description ? `${title} — ${description}` : title;
+    planElement.appendChild(item);
+  });
+
+  const stepsElement = card.querySelector('.agent-run-steps');
+  stepsElement.replaceChildren();
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  steps.forEach(step => {
+    const item = document.createElement('li');
+    const outcome = step.success ? 'completed' : (step.errorCode || 'failed');
+    item.textContent = `${step.index}. ${step.toolName} — ${outcome}`;
+    item.title = formatToolPayload(
+      step.success ? step.result : step.errorMessage
+    );
+    stepsElement.appendChild(item);
+  });
+
+  const controls = card.querySelector('.agent-run-controls');
+  controls.replaceChildren();
+  controls.appendChild(createAgentControl(
+    'Approve plan',
+    'approve_agent',
+    status !== 'awaitingApproval'
+  ));
+  controls.appendChild(createAgentControl('Pause', 'pause_agent', status !== 'running'));
+  controls.appendChild(createAgentControl('Resume', 'resume_agent', status !== 'paused'));
+  controls.appendChild(createAgentControl(
+    'Cancel',
+    'cancel_request',
+    status !== 'running'
+  ));
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
 function formatToolPayload(payload) {
   if (payload === undefined || payload === null) {
@@ -1112,6 +1213,13 @@ promptTextarea.addEventListener('keydown', (e) => {
 
 btnSendPrompt.addEventListener('click', handleSend);
 
+btnAgentMode.addEventListener('click', () => {
+  postMessageToDelphi({
+    action: 'set_agent_mode',
+    enabled: !agentModeEnabled
+  });
+});
+
 function handleSend() {
   if (requestInProgress) {
     postMessageToDelphi({ action: 'cancel_request' });
@@ -1884,6 +1992,7 @@ function initializeConfig(data) {
 
   updateModelsList(data.models, data.activeModel);
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
+  setAgentMode(data.agentModeEnabled);
 
   if (data.slashCommands && Array.isArray(data.slashCommands)) {
     const baseCommands = [
@@ -2220,6 +2329,8 @@ if (globalThis.chrome?.webview) {
       case 'show_tools':            showTools(data.tools);                                       break;
       case 'tool_call':             renderToolCall(data);                                        break;
       case 'tool_result':           renderToolResult(data);                                      break;
+      case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
+      case 'agent_state':           renderAgentState(data);                                      break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

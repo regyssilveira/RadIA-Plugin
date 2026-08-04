@@ -2,7 +2,14 @@ param(
     [ValidateSet("22.0", "23.0", "37.0")]
     [string]$DelphiVersion = "23.0",
     [ValidateRange(30, 600)]
-    [int]$StartupTimeoutSeconds = 180
+    [int]$StartupTimeoutSeconds = 180,
+    [ValidateRange(30, 600)]
+    [int]$ShutdownTimeoutSeconds = 120,
+    [switch]$SkipBuildAndTests,
+    [switch]$SkipTemplateBuild,
+    [switch]$ExerciseDebugger,
+    [switch]$ExerciseCorrection,
+    [switch]$ExerciseGit
 )
 
 $ErrorActionPreference = "Stop"
@@ -572,7 +579,9 @@ function Invoke-RadIAToolWithConsent {
         if (-not $response -or
             $response.error -or
             $response.result.isError) {
-            throw "Tool $Name failed after consent."
+            $responseDetails = $response |
+                ConvertTo-Json -Depth 10 -Compress
+            throw "Tool $Name failed after consent: $responseDetails"
         }
         return $response.result.structuredContent
     } finally {
@@ -605,6 +614,19 @@ function New-RadIAKnowledgeSmokeProject {
         -LiteralPath (Join-Path $SourceRoot "Tests") `
         -Destination (Join-Path $Directory "Tests") `
         -Recurse
+    $copiedProjectPath = Join-Path $Directory "Tests\RadIATests.dproj"
+    $copiedProject = Get-Content `
+        -LiteralPath $copiedProjectPath `
+        -Raw `
+        -Encoding UTF8
+    $copiedProject = $copiedProject.Replace(
+        "..\Output\",
+        "Output\"
+    )
+    Set-Content `
+        -LiteralPath $copiedProjectPath `
+        -Value $copiedProject `
+        -Encoding UTF8
 }
 
 $bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
@@ -662,11 +684,48 @@ New-RadIAKnowledgeSmokeProject `
     -SourceRoot $workspaceRoot
 
 $projectPath = Join-Path $smokeDirectory "Tests\RadIATests.dproj"
+$projectContent = Get-Content -LiteralPath $projectPath -Raw
+$projectContent = $projectContent.Replace(
+    '$(DelphiVer)',
+    $DelphiVersion
+)
+Set-Content -LiteralPath $projectPath -Value $projectContent -Encoding UTF8
+$gitRoot = Split-Path -Parent $projectPath
+if ($ExerciseGit) {
+    & git -C $gitRoot init --quiet
+    & git -C $gitRoot config user.name "RadIA Smoke"
+    & git -C $gitRoot config user.email "radia-smoke@example.invalid"
+    & git -C $gitRoot add --all
+    & git -C $gitRoot commit --quiet -m "test: create smoke baseline"
+    if ($LASTEXITCODE -ne 0) {
+        throw "The disposable Git baseline could not be created."
+    }
+}
 $unitPath = Join-Path $smokeDirectory (
     "Tests\Source\RadIA.Tests.TextNormalizer.pas"
 )
 $renamedUnitPath = Join-Path $smokeDirectory (
     "Tests\Source\RadIA.Tests.TextNormalizerRenamed.pas"
+)
+$generatedProjectDirectory = Join-Path $smokeDirectory (
+    "Tests\GeneratedVclApp"
+)
+$generatedProjectPath = Join-Path $generatedProjectDirectory (
+    "RadIAJourneyApp.dproj"
+)
+$testExecutableCandidates = @(
+    (Join-Path $smokeDirectory (
+        "Tests\Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Tests\Output\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Output\bin\Win32\Debug\RadIATests.exe"
+    ))
 )
 $process = Start-Process -FilePath $bdsPath -PassThru
 $instanceFile = Join-Path (
@@ -706,6 +765,233 @@ try {
     if ($initialIndex.indexedFiles -lt 2) {
         throw "The initial knowledge index did not include the smoke sources."
     }
+
+    $templatePreview = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "PreviewProjectTemplate" `
+        -Arguments @{
+            projectName = "RadIAJourneyApp"
+            template = "vcl"
+            delphiVersion = $DelphiVersion
+            platforms = @("Win32")
+            destinationPath = $generatedProjectDirectory
+        }
+    if (-not $templatePreview.previewId) {
+        throw "The VCL template preview did not return a preview ID."
+    }
+    $templateResult = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "CreateProjectFromTemplate" `
+        -Arguments @{
+            previewId = $templatePreview.previewId
+        }
+    if (-not $templateResult.committed) {
+        throw "The reviewed VCL project was not committed."
+    }
+    if (-not (Test-Path -LiteralPath $generatedProjectPath)) {
+        throw "The generated VCL project file was not published."
+    }
+    if ($SkipTemplateBuild) {
+        $templateOpen = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "OpenCreatedProject" `
+            -Arguments @{
+                previewId = $templatePreview.previewId
+            }
+        if (-not $templateOpen.opened) {
+            throw "The generated VCL project was not opened."
+        }
+    } else {
+        $templateValidation = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "ValidateCreatedProject" `
+            -Arguments @{
+                previewId = $templatePreview.previewId
+                timeoutMs = 600000
+            }
+        if (-not $templateValidation.buildSucceeded) {
+            $validationDetails = $templateValidation |
+                ConvertTo-Json -Depth 8 -Compress
+            throw (
+                "The generated VCL project failed validation: " +
+                $validationDetails
+            )
+        }
+    }
+    $generatedActiveProject = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "GetActiveProject"
+    if (-not [IO.Path]::GetFullPath(
+        $generatedActiveProject.fileName
+    ).Equals(
+        [IO.Path]::GetFullPath($generatedProjectPath),
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "The generated VCL project did not become active."
+    }
+    $activeForm = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "GetActiveForm"
+    if (-not $activeForm.available -or
+        $activeForm.name -ne "RadIAMainForm") {
+        throw "The generated VCL form did not become active in the Designer."
+    }
+    $propertyPreview = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "PrepareComponentProperty" `
+        -Arguments @{
+            componentName = "RadIAMainForm"
+            propertyName = "Caption"
+            value = "RadIA Designer Journey"
+        }
+    $propertyApply = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "ApplyComponentProperty" `
+        -Arguments @{
+            previewId = $propertyPreview.previewId
+        }
+    if ($propertyApply.proposedValue -ne "RadIA Designer Journey") {
+        throw "The reviewed VCL caption was not applied in the Designer."
+    }
+    $propertyRevert = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "RevertComponentProperty" `
+        -Arguments @{
+            previewId = $propertyPreview.previewId
+        }
+    if ($propertyRevert.originalValue -ne "RadIAJourneyApp") {
+        throw "The VCL caption rollback did not return its original value."
+    }
+    $componentPreview = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "PrepareAddFormComponent" `
+        -Arguments @{
+            parentName = "RadIAMainForm"
+            className = "TButton"
+            componentName = "RadIAJourneyButton"
+            left = 24
+            top = 24
+            width = 140
+            height = 32
+        }
+    if (-not $componentPreview.previewId) {
+        throw "The VCL component preview did not return a preview ID."
+    }
+    $componentApply = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "ApplyFormComponentChange" `
+        -Arguments @{
+            previewId = $componentPreview.previewId
+        }
+    if ($componentApply.component.name -ne "RadIAJourneyButton" -or
+        $componentApply.component.className -ne "TButton") {
+        throw "The reviewed TButton was not created in the Form Designer."
+    }
+    $createdComponents = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "ListFormComponents" `
+        -Arguments @{
+            maxCount = 100
+        }
+    $createdButton = @(
+        $createdComponents.components |
+            Where-Object {
+                $_.name -eq "RadIAJourneyButton" -and
+                    $_.className -eq "TButton"
+            }
+    )
+    if ($createdButton.Count -ne 1) {
+        throw "The created TButton was not visible through the live Designer."
+    }
+    $componentRevert = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "RevertFormComponentChange" `
+        -Arguments @{
+            previewId = $componentPreview.previewId
+        }
+    if ($componentRevert.component.name -ne "RadIAJourneyButton") {
+        throw "The reviewed TButton rollback was not completed."
+    }
+    $revertedComponents = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "ListFormComponents" `
+        -Arguments @{
+            maxCount = 100
+        }
+    if (@(
+        $revertedComponents.components |
+            Where-Object { $_.name -eq "RadIAJourneyButton" }
+    ).Count -ne 0) {
+        throw "The reverted TButton remained in the Form Designer."
+    }
+    Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
+    Start-Sleep -Seconds 2
+
+    $templateRollback = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "RevertCreatedProject" `
+        -Arguments @{
+            previewId = $templatePreview.previewId
+        }
+    if (-not $templateRollback.rolledBack) {
+        throw "The generated VCL project was not rolled back."
+    }
+    if (Test-Path -LiteralPath $generatedProjectDirectory) {
+        $remainingGeneratedFiles = @(
+            Get-ChildItem `
+                -LiteralPath $generatedProjectDirectory `
+                -File `
+                -Recurse `
+                -Force
+        )
+        $unexpectedGeneratedFiles = @(
+            $remainingGeneratedFiles |
+                Where-Object {
+                    $_.Name -ne "RadIAJourneyApp.dproj.local"
+                }
+        )
+        if ($unexpectedGeneratedFiles.Count -gt 0) {
+            throw "The generated VCL project files remained after rollback."
+        }
+    }
+    Wait-RadIACondition -TimeoutSeconds 60 -Condition {
+        try {
+            $activeProject = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetActiveProject"
+            $activeProject -and
+                [IO.Path]::GetFullPath($activeProject.fileName).Equals(
+                    [IO.Path]::GetFullPath($projectPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+        } catch {
+            $false
+        }
+    } -FailureMessage "The validation project did not reactivate."
 
     Open-RadIAPath -Process $process -Path $unitPath
     Start-Sleep -Seconds 2
@@ -772,6 +1058,218 @@ try {
         throw "The IDE did not save the modified smoke unit."
     }
 
+    if (-not $SkipBuildAndTests) {
+        if ($ExerciseCorrection) {
+            $contentBeforeFailure = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetEditorContent"
+            $failurePatch = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $unitPath
+                    baseRevision = $contentBeforeFailure.revision
+                    originalText = "// $marker"
+                    replacementText = (
+                        "// $marker`r`n" +
+                        "  RadIAIntentionalCompilerFailure;"
+                    )
+                }
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "ApplyPatch" `
+                -Arguments @{
+                    previewId = $failurePatch.previewId
+                }
+            )
+            Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
+            Start-Sleep -Seconds 2
+            $failedBuild = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($failedBuild.success) {
+                throw "The intentional compiler failure unexpectedly built."
+            }
+            if ($failedBuild.messages.Count -lt 1) {
+                throw "The failed build did not return compiler diagnostics."
+            }
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RevertPatch" `
+                -Arguments @{
+                    previewId = $failurePatch.previewId
+                }
+            )
+            Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
+            Start-Sleep -Seconds 2
+        }
+        $buildResult = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "BuildProject" `
+            -Arguments @{
+                mode = "build"
+                timeoutMs = 600000
+                clearMessages = $true
+            }
+        if (-not $buildResult.success) {
+            $buildDetails = $buildResult | ConvertTo-Json -Depth 8 -Compress
+            throw (
+                "The RadIA build tool did not build the smoke project: " +
+                $buildDetails
+            )
+        }
+        $testExecutablePath = @(
+            $testExecutableCandidates |
+                Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
+        ) | Select-Object -First 1
+        if (-not $testExecutablePath) {
+            throw "The smoke-test executable was not produced."
+        }
+
+        $testResult = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "RunDUnitXTests" `
+            -Arguments @{
+                executablePath = $testExecutablePath
+                timeoutMs = 600000
+            }
+        if ($testResult.status -ne "succeeded") {
+            throw "The RadIA DUnitX runner did not pass the smoke suite."
+        }
+        if ($ExerciseDebugger) {
+            $breakpoint = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "AddBreakpoint" `
+                -Arguments @{
+                    fileName = $unitPath
+                    lineNumber = 50
+                }
+            if ($breakpoint.action -ne "added") {
+                throw "The debugger breakpoint was not added."
+            }
+            $debugStart = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "StartDebugging"
+            if (-not $debugStart.accepted) {
+                throw "The debugger did not accept the start request."
+            }
+            Wait-RadIACondition -TimeoutSeconds 90 -Condition {
+                try {
+                    $debugState = Invoke-RadIATool `
+                        -BridgePath $bridgePath `
+                        -InstanceFile $instanceFile `
+                        -Name "GetDebuggerState"
+                    $debugState.state -in @("stopped", "exception")
+                } catch {
+                    $false
+                }
+            } -FailureMessage "The debugger did not stop at the breakpoint."
+            $callStack = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetCallStack" `
+                -Arguments @{
+                    maxCount = 50
+                }
+            if (-not $callStack.accessible -or
+                $callStack.frames.Count -lt 1) {
+                throw "The debugger call stack was not available."
+            }
+            $timeline = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetDebugTimeline" `
+                -Arguments @{
+                    sinceSequence = 0
+                    maxCount = 100
+                }
+            if ($timeline.events.Count -lt 1) {
+                throw "The event-driven debug timeline remained empty."
+            }
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "StopDebugging"
+            )
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RemoveBreakpoint" `
+                -Arguments @{
+                    fileName = $unitPath
+                    lineNumber = 50
+                }
+            )
+        }
+    }
+    if ($ExerciseGit) {
+            $gitPath = "Source/RadIA.Tests.TextNormalizer.pas"
+            $gitStatus = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetGitStatus"
+            $gitDiff = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetGitDiff" `
+                -Arguments @{
+                    paths = @($gitPath)
+                }
+            if ($gitDiff.diff -notmatch $marker) {
+                throw "The reviewed Git diff did not contain the smoke change."
+            }
+            $gitPreview = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "PreviewGitCommit" `
+                -Arguments @{
+                    paths = @($gitPath)
+                    message = "test: validate RadIA reviewed commit"
+                }
+            if (-not $gitPreview.previewId -or
+                $gitPreview.diff -notmatch $marker) {
+                throw "The Git commit preview was not reviewable."
+            }
+            $gitCommit = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "CommitChanges" `
+                -Arguments @{
+                    previewId = $gitPreview.previewId
+                }
+            if (-not $gitCommit.committed -or -not $gitCommit.commit) {
+                throw "The reviewed local Git commit was not created."
+            }
+            $committedMessage = & git -C $gitRoot log -1 --pretty=%s
+            if ($committedMessage -ne "test: validate RadIA reviewed commit") {
+                throw "The disposable repository has an unexpected commit."
+            }
+    }
+
     Invoke-RadIAFileMenuCommand -Process $process -AccessKey "A"
     Set-RadIAFileDialogPath `
         -Process $process `
@@ -818,30 +1316,56 @@ try {
         if ($remainingProcess.MainWindowHandle -ne [IntPtr]::Zero) {
             [void]$remainingProcess.CloseMainWindow()
             if (-not $remainingProcess.WaitForExit(3000)) {
-                $confirmWindow =
-                    [RadIAWindowNative]::FindVisibleWindow(
-                        [uint32]$process.Id,
-                        "TMessageForm"
-                    )
-                $noButton = [RadIAWindowNative]::FindChildByText(
-                    $confirmWindow,
-                    "&No"
+                $shutdownDeadline = [DateTime]::UtcNow.AddSeconds(
+                    $ShutdownTimeoutSeconds
                 )
-                if ($noButton -eq [IntPtr]::Zero) {
-                    $noButton = [RadIAWindowNative]::FindChildByText(
-                        $confirmWindow,
-                        "No"
-                    )
+                while (-not $remainingProcess.HasExited -and
+                    [DateTime]::UtcNow -lt $shutdownDeadline) {
+                    $confirmWindow =
+                        [RadIAWindowNative]::FindVisibleWindow(
+                            [uint32]$process.Id,
+                            "TMessageForm"
+                        )
+                    if ($confirmWindow -ne [IntPtr]::Zero) {
+                        $noButton = [RadIAWindowNative]::FindChildByText(
+                            $confirmWindow,
+                            "&No"
+                        )
+                        if ($noButton -ne [IntPtr]::Zero) {
+                            [void][RadIAWindowNative]::PostMessage(
+                                $noButton,
+                                0x00F5,
+                                [IntPtr]0,
+                                [IntPtr]0
+                            )
+                        }
+                    }
+                    $saveDialog =
+                        [RadIAWindowNative]::FindVisibleWindow(
+                            [uint32]$process.Id,
+                            "#32770"
+                        )
+                    if ($saveDialog -ne [IntPtr]::Zero) {
+                        $cancelButton =
+                            [RadIAWindowNative]::FindChildById(
+                                $saveDialog,
+                                2
+                            )
+                        if ($cancelButton -ne [IntPtr]::Zero) {
+                            [void][RadIAWindowNative]::PostMessage(
+                                $cancelButton,
+                                0x00F5,
+                                [IntPtr]0,
+                                [IntPtr]0
+                            )
+                            Start-Sleep -Milliseconds 200
+                            [void]$remainingProcess.CloseMainWindow()
+                        }
+                    }
+                    Start-Sleep -Milliseconds 200
+                    $remainingProcess.Refresh()
                 }
-                if ($noButton -ne [IntPtr]::Zero) {
-                    [void][RadIAWindowNative]::SendMessage(
-                        $noButton,
-                        0x00F5,
-                        [IntPtr]0,
-                        [IntPtr]0
-                    )
-                }
-                if (-not $remainingProcess.WaitForExit(30000)) {
+                if (-not $remainingProcess.HasExited) {
                     throw "Delphi did not exit after the smoke test."
                 }
             }
@@ -861,5 +1385,5 @@ try {
 
 Write-Host (
     "Knowledge notifier smoke passed for Delphi " +
-    "${DelphiVersion}: edit, save, rename and close."
+    "${DelphiVersion}: edit, save, build, tests, rename and close."
 )

@@ -54,6 +54,7 @@ uses
   System.JSON,
   System.SysUtils,
   Winapi.Windows,
+  RadIA.Core.Logger,
   RadIA.Core.Types;
 
 const
@@ -862,17 +863,21 @@ end;
 
 procedure TRadIANamedPipeMcpServer.Stop;
 begin
+  TLogger.Log('MCP Stop entered', 'MCP');
   if TInterlocked.Exchange(FRunning, 0) = 0 then
     Exit;
 
   if Assigned(FWorker) then
   begin
     FWorker.Terminate;
+    TLogger.Log('MCP Stop waiting for worker', 'MCP');
     FWorker.WaitFor;
+    TLogger.Log('MCP Stop worker finished', 'MCP');
     FWorker.Free;
     FWorker := nil;
   end;
   DeleteConnectionFile;
+  TLogger.Log('MCP Stop completed', 'MCP');
 end;
 
 procedure TRadIANamedPipeMcpServer.WriteConnectionFile;

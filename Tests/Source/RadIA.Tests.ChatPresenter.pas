@@ -190,12 +190,19 @@ type
     procedure TestExecuteToolPublishesCallAndResult;
     [Test]
     procedure TestRevokeToolsCommandConfirmsRevocation;
+    [Test]
+    procedure TestAgentCommandSynchronizesState;
+    [Test]
+    procedure TestDisabledAgentModeBlocksToolExecution;
+    [Test]
+    procedure TestAgentRunPublishesObservableState;
   end;
 
 implementation
 
 uses
-  RadIA.Core.Config, RadIA.Core.SettingsStorage, System.IOUtils, RadIA.Core.Mediator;
+  RadIA.Core.Config, RadIA.Core.SettingsStorage, System.IOUtils, RadIA.Core.Mediator,
+  RadIA.Core.TokenUsage;
 
 { TMockChatView }
 
@@ -343,8 +350,13 @@ end;
 procedure TMockIAProvider.SendPromptAsync(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
   const ACallback: TCompletionCallback; const ATemperature: Double; const AMaxTokens: Integer);
 begin
-  // Added harmless statement to satisfy SonarQube EmptyRoutine and RedundantJump rules in Delphi mock
-  if True then ;
+  ACallback(
+    '{"kind":"plan","message":"Approve mock plan.",' +
+    '"steps":[{"title":"Inspect project"}]}',
+    '',
+    False,
+    TTokenUsage.Empty
+  );
 end;
 
 procedure TMockIAProvider.SendPromptStreamAsync(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
@@ -558,6 +570,61 @@ begin
     FMockView.LastPostedJson,
     'All session tool permissions were revoked.'
   );
+end;
+
+procedure TTestChatPresenter.TestAgentCommandSynchronizesState;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/agent off');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_mode_changed"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"enabled":false');
+  Assert.Contains(FMockView.LastPostedJson, 'Agent mode is disabled.');
+end;
+
+procedure TTestChatPresenter.TestAgentRunPublishesObservableState;
+var
+  LAttempt: Integer;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/agent run inspect the active project');
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"title":"Inspect project"');
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'inspect the active project'
+  );
+
+  FPresenter.ProcessWebMessage('{"action":"cancel_request"}');
+  DrainQueuedCalls;
+end;
+
+procedure TTestChatPresenter.TestDisabledAgentModeBlocksToolExecution;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/agent off');
+  FPresenter.ProcessWebMessage(
+    '{"action":"execute_tool","name":"GetIDEState","arguments":{}}'
+  );
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.LastPostedJson, 'Agent mode is off.');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"action":"tool_call"');
 end;
 
 procedure TTestChatPresenter.TestSendPromptUserMessageIsPosted;

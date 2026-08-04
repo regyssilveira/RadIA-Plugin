@@ -31,6 +31,10 @@ type
     [Test]
     procedure TestConciseResponsesPersistence;
     [Test]
+    procedure TestConsentPreferencesPersistenceAndSafeDefaults;
+    [Test]
+    procedure TestConsentTimeoutIsClamped;
+    [Test]
     procedure TestOllamaBaseUrlPersistence;
     [Test]
     procedure TestJsonNewlineHandling;
@@ -141,6 +145,38 @@ begin
 
   FConfig.Load;
   Assert.IsFalse(FConfig.ConciseResponses);
+end;
+
+procedure TTestRadIAConfig.
+  TestConsentPreferencesPersistenceAndSafeDefaults;
+begin
+  Assert.AreEqual(60, FConfig.ConsentTimeoutSeconds);
+  Assert.IsTrue(FConfig.ConsentShowArguments);
+  Assert.IsTrue(FConfig.ConsentRememberReversible);
+  Assert.IsFalse(FConfig.ConsentRememberStructural);
+  Assert.IsFalse(FConfig.ConsentRememberExecution);
+
+  FConfig.ConsentTimeoutSeconds := 120;
+  FConfig.ConsentShowArguments := False;
+  FConfig.ConsentRememberReversible := False;
+  FConfig.ConsentRememberStructural := True;
+  FConfig.ConsentRememberExecution := True;
+  FConfig.Save;
+  FConfig.Load;
+
+  Assert.AreEqual(120, FConfig.ConsentTimeoutSeconds);
+  Assert.IsFalse(FConfig.ConsentShowArguments);
+  Assert.IsFalse(FConfig.ConsentRememberReversible);
+  Assert.IsTrue(FConfig.ConsentRememberStructural);
+  Assert.IsTrue(FConfig.ConsentRememberExecution);
+end;
+
+procedure TTestRadIAConfig.TestConsentTimeoutIsClamped;
+begin
+  FConfig.ConsentTimeoutSeconds := 1;
+  Assert.AreEqual(15, FConfig.ConsentTimeoutSeconds);
+  FConfig.ConsentTimeoutSeconds := 900;
+  Assert.AreEqual(600, FConfig.ConsentTimeoutSeconds);
 end;
 
 procedure TTestRadIAConfig.TestOllamaBaseUrlPersistence;

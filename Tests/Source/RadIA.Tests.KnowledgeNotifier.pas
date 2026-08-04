@@ -25,6 +25,8 @@ type
   TTestRadIAKnowledgeNotifier = class
   public
     [Test]
+    procedure DeactivatedModuleEventsDoNotScheduleRefresh;
+    [Test]
     procedure ModuleEventsMarkKnowledgeDirty;
     [Test]
     procedure SourceFilterAcceptsOnlyIndexableDelphiFiles;
@@ -60,6 +62,37 @@ begin
 end;
 
 { TTestRadIAKnowledgeNotifier }
+
+procedure TTestRadIAKnowledgeNotifier.DeactivatedModuleEventsDoNotScheduleRefresh;
+var
+  LControl: IRadIAKnowledgeModuleNotifierControl;
+  LNotifier: IOTAModuleNotifier;
+  LNotifierReference: IInterface;
+  LScheduler: TRadIAFakeKnowledgeRefreshScheduler;
+begin
+  LScheduler := TRadIAFakeKnowledgeRefreshScheduler.Create;
+  LNotifierReference := CreateRadIAKnowledgeModuleNotifier(
+    LScheduler
+  );
+  Assert.IsTrue(
+    Supports(LNotifierReference, IOTAModuleNotifier, LNotifier)
+  );
+  Assert.IsTrue(
+    Supports(
+      LNotifierReference,
+      IRadIAKnowledgeModuleNotifierControl,
+      LControl
+    )
+  );
+
+  LControl.Deactivate;
+  LNotifier.Modified;
+  LNotifier.AfterSave;
+  LNotifier.ModuleRenamed('Renamed.Unit.pas');
+  LNotifier.Destroyed;
+
+  Assert.AreEqual(0, LScheduler.DirtyCount);
+end;
 
 procedure TTestRadIAKnowledgeNotifier.ModuleEventsMarkKnowledgeDirty;
 var

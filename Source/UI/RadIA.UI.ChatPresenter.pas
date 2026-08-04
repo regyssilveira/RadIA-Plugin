@@ -6,6 +6,7 @@ uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections, RadIA.Core.Interfaces,
   RadIA.Core.Sessions, RadIA.Core.PromptTemplates,
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
+  RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
   RadIA.Core.Tools, RadIA.Core.ToolSecurity, RadIA.Core.Workspace;
 
 type
@@ -75,6 +76,8 @@ type
     FToolExecutor: IRadIAToolExecutor;
     FToolPolicyExecutor: IRadIAToolPolicyExecutor;
     FWorkspace: IRadIAWorkspaceFacade;
+    FAgentModeEnabled: Boolean;
+    FAgentController: IRadIAAgentRunController;
 
     procedure UpdateModelsCombo;
 
@@ -136,6 +139,18 @@ type
       const AName: string;
       const AArgumentsJson: string
     );
+    procedure SetAgentModeEnabled(const AEnabled: Boolean);
+    procedure PostAgentModeToWeb;
+    procedure StartAgentRun(const AObjective: string);
+    procedure PauseAgentRun;
+    procedure ResumeAgentRun;
+    procedure PostAgentStateToWeb(const ASnapshotJson: string);
+    procedure HandleAgentFinished(
+      const AResult: TRadIAAgentRunResult;
+      const AProvider: string;
+      const AModel: string
+    );
+    function BuildAgentToolCatalogJson: string;
     procedure HandleGenerateDTOMessage(const AInput, AInputType, AOutputType: string);
     procedure HandleCreateProjectMessage(const AFilesJson: string);
     procedure HandleCancelRequestMessage;
@@ -234,6 +249,7 @@ uses
   RadIA.Core.ProviderRegistry, RadIA.Core.ConversationExporter,
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
+  RadIA.Core.AgentPricing, RadIA.Core.AgentProvider,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -273,6 +289,7 @@ begin
   FActiveModels := [];
   FPendingPrompt := '';
   FLoginPopupOpen := False;
+  FAgentModeEnabled := True;
 
   // WebViewBridge events removed
 
@@ -332,6 +349,12 @@ end;
 
 destructor TRadIAChatPresenter.Destroy;
 begin
+  if Assigned(FAgentController) then
+  begin
+    FAgentController.Cancel;
+    FAgentController := nil;
+  end;
+
   if Assigned(FModelsProvider) then
   begin
     try
@@ -534,6 +557,47 @@ var
   LSlashObj: TJSONObject;
 begin
   Result := TJSONArray.Create;
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent');
+  LSlashObj.AddPair(
+    'description',
+    'Toggles agent mode or sets it with on/off.'
+  );
+  LSlashObj.AddPair('name', 'Agent Mode');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent run');
+  LSlashObj.AddPair(
+    'description',
+    'Starts an observable agent run for an explicit objective.'
+  );
+  LSlashObj.AddPair('name', 'Run Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent pause');
+  LSlashObj.AddPair('description', 'Pauses the active agent run.');
+  LSlashObj.AddPair('name', 'Pause Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent resume');
+  LSlashObj.AddPair('description', 'Resumes the paused agent checkpoint.');
+  LSlashObj.AddPair('name', 'Resume Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent cancel');
+  LSlashObj.AddPair('description', 'Cancels the active agent run.');
+  LSlashObj.AddPair('name', 'Cancel Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
   LSlashObj := TJSONObject.Create;
   LSlashObj.AddPair('command', '/tools');
   LSlashObj.AddPair('description', 'Lists available read-only IDE tools.');
@@ -1255,7 +1319,10 @@ begin
     FCancelledByUser := True;
     TLogger.Log('CancelRequest: User requested cancellation.', 'UI');
     FView.SetRequestState(False);
-    FAIService.CancelCurrentRequest;
+    if Assigned(FAgentController) and FAgentController.IsRunning then
+      FAgentController.Cancel
+    else
+      FAIService.CancelCurrentRequest;
   end;
 end;
 
@@ -1709,6 +1776,14 @@ begin
       LArgumentsJson
     );
   end
+  else if AAction = 'set_agent_mode' then
+    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
+  else if AAction = 'pause_agent' then
+    PauseAgentRun
+  else if AAction = 'resume_agent' then
+    ResumeAgentRun
+  else if AAction = 'approve_agent' then
+    ResumeAgentRun
   else if AAction = 'stream_chunk' then
     HandleStreamChunkMessage(
       AJson.GetValue<string>('text', ''),
@@ -1730,6 +1805,56 @@ var
 begin
   Result := False;
   LText := Trim(APromptText);
+
+  if LText.StartsWith('/agent run ', True) then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    if not FAgentModeEnabled then
+    begin
+      PostToWebView(
+        'add_message',
+        'assistant',
+        'Agent mode is off. Enable it before starting an agent run.'
+      );
+      Exit(True);
+    end;
+    StartAgentRun(
+      Trim(Copy(LText, Length('/agent run ') + 1, MaxInt))
+    );
+    Exit(True);
+  end;
+
+  if SameText(LText, '/agent pause') then
+  begin
+    PauseAgentRun;
+    Exit(True);
+  end;
+
+  if SameText(LText, '/agent resume') then
+  begin
+    ResumeAgentRun;
+    Exit(True);
+  end;
+
+  if SameText(LText, '/agent cancel') then
+  begin
+    CancelRequest;
+    Exit(True);
+  end;
+
+  if SameText(LText, '/agent') or
+    SameText(LText, '/agent on') or
+    SameText(LText, '/agent off') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    if SameText(LText, '/agent on') then
+      SetAgentModeEnabled(True)
+    else if SameText(LText, '/agent off') then
+      SetAgentModeEnabled(False)
+    else
+      SetAgentModeEnabled(not FAgentModeEnabled);
+    Exit(True);
+  end;
 
   if SameText(LText, '/tools') then
   begin
@@ -1788,6 +1913,16 @@ var
   LRequest: TRadIAToolRequest;
   LResult: TRadIAToolResult;
 begin
+  if not FAgentModeEnabled then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent mode is off. Enable it with the Agent button or /agent on.'
+    );
+    Exit;
+  end;
+
   LCorrelationId := TGUID.NewGuid.ToString;
   PostToolCallToWeb(AName, AArgumentsJson, LCorrelationId);
 
@@ -1932,6 +2067,257 @@ begin
       LJson.AddPair('errorMessage', AResult.ErrorMessage);
     end;
     Result := LJson.ToJSON;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.SetAgentModeEnabled(const AEnabled: Boolean);
+begin
+  if not AEnabled and Assigned(FAgentController) and
+    FAgentController.IsRunning then
+    FAgentController.Cancel;
+  FAgentModeEnabled := AEnabled;
+  PostAgentModeToWeb;
+  if FAgentModeEnabled then
+    PostToWebView('add_message', 'assistant', 'Agent mode is enabled.')
+  else
+    PostToWebView('add_message', 'assistant', 'Agent mode is disabled.');
+end;
+
+function TRadIAChatPresenter.BuildAgentToolCatalogJson: string;
+var
+  LTools: TJSONArray;
+begin
+  LTools := BuildToolsJsonArray;
+  try
+    Result := LTools.ToJSON;
+  finally
+    LTools.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.HandleAgentFinished(
+  const AResult: TRadIAAgentRunResult;
+  const AProvider: string;
+  const AModel: string
+);
+var
+  LAssistantMessage: IRadIAChatMessage;
+  LGuard: IRadIALifecycleGuard;
+begin
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.Queue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if not LGuard.IsAlive then
+          Exit;
+        FRequestInProgress := False;
+        FCancelledByUser := AResult.Status = asCancelled;
+        FView.SetRequestState(False);
+        LAssistantMessage := TRadIAChatMessage.CreateMessage(
+          mrAssistant,
+          AResult.Message,
+          AProvider,
+          AModel
+        );
+        FHistory := FHistory + [LAssistantMessage];
+        SaveChatHistory;
+        PostToWebView(
+          'add_message',
+          'assistant',
+          AResult.Message,
+          AProvider,
+          AModel
+        );
+      end
+    )
+  );
+end;
+
+procedure TRadIAChatPresenter.PauseAgentRun;
+begin
+  if Assigned(FAgentController) and FAgentController.IsRunning then
+    FAgentController.Pause;
+end;
+
+procedure TRadIAChatPresenter.PostAgentStateToWeb(
+  const ASnapshotJson: string
+);
+var
+  LGuard: IRadIALifecycleGuard;
+begin
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.Queue(
+    nil,
+    TThreadProcedure(
+      procedure
+      var
+        LJson: TJSONObject;
+        LState: TJSONValue;
+      begin
+        if not LGuard.IsAlive then
+          Exit;
+        LState := TJSONObject.ParseJSONValue(ASnapshotJson);
+        if not Assigned(LState) then
+          Exit;
+        LJson := TJSONObject.Create;
+        try
+          LJson.AddPair('action', 'agent_state');
+          LJson.AddPair('state', LState);
+          PostJsonToWeb(LJson);
+        finally
+          LJson.Free;
+        end;
+      end
+    )
+  );
+end;
+
+procedure TRadIAChatPresenter.ResumeAgentRun;
+begin
+  if not Assigned(FAgentController) or FAgentController.IsRunning then
+    Exit;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  FAgentController.Resume(FSessionManager.ActiveSessionId);
+end;
+
+procedure TRadIAChatPresenter.StartAgentRun(
+  const AObjective: string
+);
+var
+  LActiveModel: string;
+  LActiveProvider: string;
+  LCheckpointDirectory: string;
+  LDecisionProvider: IRadIAAgentDecisionProvider;
+  LGuard: IRadIALifecycleGuard;
+  LLimits: TRadIAAgentLimits;
+  LPricing: TRadIAAgentPricing;
+  LPricingCatalog: TRadIAAgentPricingCatalog;
+  LProviderSettings: TRadIAAgentProviderSettings;
+  LProject: TRadIAProjectSnapshot;
+  LProjectId: string;
+  LSessionId: string;
+  LStore: IRadIAAgentCheckpointStore;
+  LUserMessage: IRadIAChatMessage;
+begin
+  if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent runtime is unavailable because the IDE tool service is not ready.'
+    );
+    Exit;
+  end;
+  if not CheckQuotaAvailability then
+    Exit;
+
+  LActiveProvider := FConfig.GetActiveProvider;
+  LActiveModel := FConfig.GetActiveModel(LActiveProvider);
+  if FConfig.IsWebLoginProvider(LActiveProvider) then
+    LActiveModel := 'Web Login';
+  LSessionId := FSessionManager.ActiveSessionId;
+  if LSessionId = '' then
+  begin
+    CreateNewSession;
+    LSessionId := FSessionManager.ActiveSessionId;
+  end;
+
+  LProjectId := '';
+  if Assigned(FWorkspace) then
+  begin
+    LProject := FWorkspace.GetActiveProject;
+    LProjectId := LProject.FileName;
+  end;
+  LPricingCatalog := TRadIAAgentPricingCatalog.Create(
+    TPath.Combine(FDataDir, 'agent-pricing.json')
+  );
+  try
+    if LPricingCatalog.TryResolve(
+      LActiveProvider,
+      LActiveModel,
+      LPricing
+    ) then
+    begin
+      LProviderSettings := TRadIAAgentProviderSettings.WithPricing(
+        BuildAgentToolCatalogJson,
+        LPricing
+      );
+      LLimits := TRadIAAgentLimits.Create(
+        20,
+        3,
+        15 * 60 * 1000,
+        100000,
+        LPricingCatalog.DefaultRunBudgetMicros
+      );
+    end
+    else
+    begin
+      LProviderSettings := TRadIAAgentProviderSettings.Default(
+        BuildAgentToolCatalogJson
+      );
+      LLimits := TRadIAAgentLimits.Default;
+    end;
+  finally
+    LPricingCatalog.Free;
+  end;
+  LDecisionProvider := TRadIAAgentServiceDecisionProvider.Create(
+    FAIService,
+    FHistory,
+    LProviderSettings
+  );
+  LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  FAgentController := TRadIAAgentRunController.Create(
+    FToolExecutor,
+    LDecisionProvider,
+    LStore,
+    procedure(const ASnapshotJson: string)
+    begin
+      if LGuard.IsAlive then
+        PostAgentStateToWeb(ASnapshotJson);
+    end,
+    procedure(const AResult: TRadIAAgentRunResult)
+    begin
+      if LGuard.IsAlive then
+        HandleAgentFinished(AResult, LActiveProvider, LActiveModel);
+    end
+  );
+
+  LUserMessage := TRadIAChatMessage.CreateMessage(
+    mrUser,
+    AObjective,
+    LActiveProvider,
+    LActiveModel
+  );
+  FHistory := FHistory + [LUserMessage];
+  SaveChatHistory;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  FAgentController.Start(
+    AObjective,
+    LSessionId,
+    LProjectId,
+    LLimits
+  );
+end;
+
+procedure TRadIAChatPresenter.PostAgentModeToWeb;
+var
+  LJson: TJSONObject;
+begin
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'agent_mode_changed');
+    LJson.AddPair('enabled', TJSONBool.Create(FAgentModeEnabled));
+    PostJsonToWeb(LJson);
   finally
     LJson.Free;
   end;
@@ -2298,6 +2684,7 @@ begin
     LJson.AddPair('models', BuildModelsJsonArray(LActiveProvider, LIsWebLogin, LActiveModel));
     LJson.AddPair('slashCommands', BuildSlashCommandsJsonArray);
     LJson.AddPair('tools', BuildToolsJsonArray);
+    LJson.AddPair('agentModeEnabled', TJSONBool.Create(FAgentModeEnabled));
     LJson.AddPair('activeProvider', LActiveProvider);
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));

@@ -60,6 +60,8 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
 *   **Respostas Concisas Configuráveis:** Opção geral para preferir respostas mais objetivas da IA, reduzindo explicações longas e economizando tokens sem impedir respostas detalhadas quando solicitadas explicitamente.
 *   **Ferramentas Agentivas Seguras:** O chat executa ferramentas estruturadas do editor, projeto,
     build, Form Designer e debugger, com consentimento por risco e confinamento ao workspace.
+*   **Loop Agentivo Observável:** `/agent run` executa objetivos em etapas com cartão de progresso,
+    pausa, cancelamento, checkpoint e retomada sem transformar perguntas comuns em ações.
 *   **Edição Revisável e Reversível:** Patches usam preview, hash-base e precondições, recusam
     conteúdo desatualizado e permitem reversão controlada.
 *   **Servidor MCP Local:** A bridge stdio conecta clientes MCP à instância correta da IDE por
@@ -72,6 +74,23 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
 Para conferir o status de desenvolvimento, atalhos de teclado, categorias e todos os provedores integrados em detalhes, consulte o nosso:
 
 👉 [**Catálogo Completo de Recursos (docs/features.md)**](docs/features.md)
+
+Para aprender desde a configuração inicial até tools, MCP, Designer, debugger e conhecimento local:
+
+👉 [**Tudo que o RadIA pode fazer**](docs/capabilities.md)
+
+👉 [**Manual Completo do RadIA 2.0**](docs/user_manual.md)
+
+Para navegar por toda a documentação funcional, operacional e técnica:
+
+👉 [**Centro de Documentação do RadIA**](docs/README.md)
+
+Referências rápidas:
+
+- [Tudo que o RadIA pode fazer](docs/capabilities.md)
+- [O que faz e quando usar cada ferramenta](docs/internal_tools_reference.md)
+- [Todas as 80 ferramentas internas](docs/runtime_tool_catalog.md)
+- [Todos os comandos de barra](docs/slash_commands.md)
 
 ### 2.2 Capacidades do RadIA em um relance
 
@@ -93,8 +112,9 @@ Para conferir o status de desenvolvimento, atalhos de teclado, categorias e todo
 | **Providers** | Integrar Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama e outros backends. |
 | **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
 
-Os parâmetros, precondições e riscos estão no
-[Catálogo de Ferramentas Agentivas](docs/tool_catalog.md).
+As ferramentas implementadas estão no
+[Catálogo das 80 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
+planejadas permanecem no [Catálogo Arquitetural](docs/tool_catalog.md).
 
 ### 3. Como Funciona e Arquitetura
 O Rad IA é construído inteiramente em Object Pascal (Delphi) usando a **Open Tools API (OTA)** para interagir com o editor de código, gerenciamento de mensagens e detecção de temas da IDE.
@@ -146,6 +166,10 @@ Caso prefira rodar um proxy local compatível com a API da OpenAI (Fase 1), isso
 
 Para aprender a tirar o máximo proveito das funcionalidades do Rad IA no seu dia a dia de desenvolvimento, consulte os nossos manuais práticos e detalhados:
 
+*   👉 [**Tudo que o RadIA pode fazer**](docs/capabilities.md): Mapa funcional completo do chat,
+    editor, geração, agente, MCP, Designer, build, testes, debugger, Git e segurança.
+*   👉 [**Manual Completo do RadIA 2.0**](docs/user_manual.md): Ponto de entrada com ativação das
+    ferramentas agentivas, capacidades, exemplos, segurança, limitações e referências.
 *   👉 [**Guia de Integração com Editor & Geração de Código (docs/user_guide_editor_generation.md)**](docs/user_guide_editor_generation.md): Ações contextuais de editor, comparador visual Smart Diff, documentação XML e criação de DTOs e projetos do zero.
 *   👉 [**Guia de Diagnóstico de Erros & Análise de Código (docs/user_guide_diagnostics_analysis.md)**](docs/user_guide_diagnostics_analysis.md): Explicações e correções de erros com o Smart Build Debugger, decodificação de logs com o Assistente de Stack Trace e auditorias estáticas contra vazamento de memória.
 *   👉 [**Guia do Painel de Chat & Gerenciamento de Sessões (docs/user_guide_chat_sessions.md)**](docs/user_guide_chat_sessions.md): Atalhos de digitação, histórico de prompts, múltiplas sessões persistentes e backups de templates.

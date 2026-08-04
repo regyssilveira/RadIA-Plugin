@@ -43,6 +43,11 @@ type
     FAwsSessionToken: string;
     FInjectDelphiVersion: Boolean;
     FConciseResponses: Boolean;
+    FConsentTimeoutSeconds: Integer;
+    FConsentShowArguments: Boolean;
+    FConsentRememberReversible: Boolean;
+    FConsentRememberStructural: Boolean;
+    FConsentRememberExecution: Boolean;
   public
     constructor Create(const AMaxHistory: Integer; const ASystemPrompt: string = '');
     destructor Destroy; override;
@@ -89,6 +94,16 @@ type
     procedure SetInjectDelphiVersion(const AValue: Boolean);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
+    function GetConsentTimeoutSeconds: Integer;
+    procedure SetConsentTimeoutSeconds(const AValue: Integer);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -297,6 +312,11 @@ begin
   FAwsSessionToken := '';
   FInjectDelphiVersion := True;
   FConciseResponses := True;
+  FConsentTimeoutSeconds := 60;
+  FConsentShowArguments := True;
+  FConsentRememberReversible := True;
+  FConsentRememberStructural := False;
+  FConsentRememberExecution := False;
 end;
 
 destructor TMockConfig.Destroy;
@@ -548,6 +568,62 @@ end;
 procedure TMockConfig.SetConciseResponses(const AValue: Boolean);
 begin
   FConciseResponses := AValue;
+end;
+
+function TMockConfig.GetConsentTimeoutSeconds: Integer;
+begin
+  Result := FConsentTimeoutSeconds;
+end;
+
+procedure TMockConfig.SetConsentTimeoutSeconds(const AValue: Integer);
+begin
+  FConsentTimeoutSeconds := AValue;
+end;
+
+function TMockConfig.GetConsentShowArguments: Boolean;
+begin
+  Result := FConsentShowArguments;
+end;
+
+procedure TMockConfig.SetConsentShowArguments(const AValue: Boolean);
+begin
+  FConsentShowArguments := AValue;
+end;
+
+function TMockConfig.GetConsentRememberReversible: Boolean;
+begin
+  Result := FConsentRememberReversible;
+end;
+
+procedure TMockConfig.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberReversible := AValue;
+end;
+
+function TMockConfig.GetConsentRememberStructural: Boolean;
+begin
+  Result := FConsentRememberStructural;
+end;
+
+procedure TMockConfig.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberStructural := AValue;
+end;
+
+function TMockConfig.GetConsentRememberExecution: Boolean;
+begin
+  Result := FConsentRememberExecution;
+end;
+
+procedure TMockConfig.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberExecution := AValue;
 end;
 
 function TMockConfig.GetApiKey(const AProviderName: string): string;

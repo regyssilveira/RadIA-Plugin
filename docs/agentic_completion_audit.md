@@ -29,7 +29,7 @@ um smoke único não comprova estabilidade prolongada.
 | Delphi 13 Win32 | pacote Win32 | 442 testes e dez ciclos reais consecutivos | Comprovado |
 | Delphi 13 IDE64 | pacote Win64 | 442 testes e dez ciclos reais consecutivos | Comprovado |
 | Shutdown seguro | guards, worker, watchdog e ordem de finalização | Dez ciclos D11/D12/D13 e IDE64 | Comprovado |
-| Independência do AEFOS | arquitetura e ADR clean-room | Zero referência em código, testes, exemplos e scripts | Comprovado |
+| Independência da implementação | arquitetura e ADRs | Código, testes, exemplos e scripts autocontidos | Comprovado |
 | Distribuição | `build.ps1`, instalador e manifesto | Quatro ZIPs finais e `SHA256SUMS` publicados juntos | Comprovado |
 
 ## Evidência automatizada consolidada

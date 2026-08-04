@@ -90,12 +90,41 @@ uses
   System.Variants,
   ToolsAPI,
   Vcl.Controls,
+  Vcl.ExtCtrls,
+  Vcl.StdCtrls,
   Winapi.Windows,
   RadIA.Core.Types,
   RadIA.OTA.TextReader;
 
 const
   CDesignerUnavailable = 'The Form Designer is shutting down.';
+
+function ResolveAllowedComponentClass(
+  const AClassName: string
+): TComponentClass;
+begin
+  Result := nil;
+  if SameText(AClassName, 'TButton') then
+    Exit(TButton);
+  if SameText(AClassName, 'TCheckBox') then
+    Exit(TCheckBox);
+  if SameText(AClassName, 'TComboBox') then
+    Exit(TComboBox);
+  if SameText(AClassName, 'TEdit') then
+    Exit(TEdit);
+  if SameText(AClassName, 'TGroupBox') then
+    Exit(TGroupBox);
+  if SameText(AClassName, 'TLabel') then
+    Exit(TLabel);
+  if SameText(AClassName, 'TListBox') then
+    Exit(TListBox);
+  if SameText(AClassName, 'TMemo') then
+    Exit(TMemo);
+  if SameText(AClassName, 'TPanel') then
+    Exit(TPanel);
+  if SameText(AClassName, 'TRadioButton') then
+    Result := TRadioButton;
+end;
 
 function IsSensitivePropertyName(
   const APropertyName: string
@@ -309,6 +338,26 @@ begin
     Result := LComponent.Name;
 end;
 
+function FindNamedComponent(
+  const AFormEditor: IOTAFormEditor;
+  const AComponentName: string
+): IOTAComponent;
+var
+  LRoot: IOTAComponent;
+begin
+  Result := nil;
+  if not Assigned(AFormEditor) then
+    Exit;
+  LRoot := AFormEditor.GetRootComponent;
+  if (Trim(AComponentName) = '') or
+    (Assigned(LRoot) and SameText(
+      GetComponentName(LRoot),
+      AComponentName
+    )) then
+    Exit(LRoot);
+  Result := AFormEditor.FindComponent(AComponentName);
+end;
+
 function IsSelected(
   const AComponent: IOTAComponent;
   const AFormEditor: IOTAFormEditor
@@ -385,49 +434,69 @@ begin
     procedure
     var
       LComponent: IOTAComponent;
+      LComponentClass: TComponentClass;
       LDesigner: INTAFormEditor;
       LEditor: IOTAFormEditor;
       LModule: IOTAModule;
       LNative: TComponent;
+      LNativeParent: TComponent;
       LParent: IOTAComponent;
     begin
       if not FindActiveFormEditor(LModule, LEditor) or
         not SameFileName(LEditor.FileName, AFormFileName) or
-        Assigned(LEditor.FindComponent(AComponentName)) then
+        Assigned(FindNamedComponent(LEditor, AComponentName)) then
         Exit;
       if Trim(AParentName) = '' then
         LParent := LEditor.GetRootComponent
       else
-        LParent := LEditor.FindComponent(AParentName);
+        LParent := FindNamedComponent(LEditor, AParentName);
       if not Assigned(LParent) then
         Exit;
+      LComponentClass := ResolveAllowedComponentClass(AClassName);
+      LNativeParent := GetNativeComponent(LParent);
+      if not Assigned(LComponentClass) or
+        not Assigned(LNativeParent) or
+        not Supports(LEditor, INTAFormEditor, LDesigner) or
+        not Assigned(LDesigner.FormDesigner) then
+        Exit;
 
-      LComponent := LEditor.CreateComponent(
-        LParent,
-        AClassName,
+      LNative := LDesigner.FormDesigner.CreateComponent(
+        LComponentClass,
+        LNativeParent,
         ABounds.Left,
         ABounds.Top,
         ABounds.Width,
         ABounds.Height
       );
-      if not Assigned(LComponent) then
+      if not Assigned(LNative) then
         Exit;
       try
-        LNative := GetNativeComponent(LComponent);
-        if not Assigned(LNative) or not (LNative is TControl) then
+        if not (LNative is TControl) then
           Exit;
         LNative.Name := AComponentName;
+        TControl(LNative).SetBounds(
+          ABounds.Left,
+          ABounds.Top,
+          ABounds.Width,
+          ABounds.Height
+        );
+        LComponent := LEditor.FindComponent(AComponentName);
+        if not Assigned(LComponent) then
+          Exit;
         LCreated := CreateComponentSnapshot(LComponent, LEditor);
         if not SameText(LCreated.Name, AComponentName) or
           not SameText(LCreated.ClassName, AClassName) then
           Exit;
-        if Supports(LEditor, INTAFormEditor, LDesigner) and
-          Assigned(LDesigner.FormDesigner) then
-          LDesigner.FormDesigner.Modified;
+        LDesigner.FormDesigner.Modified;
         LResult := True;
       finally
-        if not LResult and Assigned(LComponent) then
-          LComponent.Delete;
+        if not LResult then
+        begin
+          if Assigned(LComponent) then
+            LComponent.Delete
+          else
+            LNative.Free;
+        end;
       end;
     end
   );
@@ -471,7 +540,8 @@ begin
         not Supports(LEditor, INTAFormEditor, LDesignerEditor) or
         not Assigned(LDesignerEditor.FormDesigner) then
         Exit;
-      LComponent := LEditor.FindComponent(
+      LComponent := FindNamedComponent(
+        LEditor,
         AExpected.Identity.ComponentName
       );
       LNative := GetNativeComponent(LComponent);
@@ -569,7 +639,7 @@ begin
     begin
       if not FindActiveFormEditor(LModule, LEditor) then
         Exit;
-      LComponent := LEditor.FindComponent(AComponentName);
+      LComponent := FindNamedComponent(LEditor, AComponentName);
       if not Assigned(LComponent) then
         Exit;
       LFileName := LEditor.FileName;
@@ -615,7 +685,7 @@ begin
         LDesignerEditor.FormDesigner.IsSourceReadOnly or
         LDesignerEditor.FormDesigner.MethodExists(AHandlerName) then
         Exit;
-      LComponent := LEditor.FindComponent(AComponentName);
+      LComponent := FindNamedComponent(LEditor, AComponentName);
       LNative := GetNativeComponent(LComponent);
       if not IsWritableEvent(LNative, AEventName, LPropInfo) then
         Exit;
@@ -674,7 +744,7 @@ begin
       if not FindActiveFormEditor(LModule, LEditor) or
         not SameFileName(LEditor.FileName, AFormFileName) then
         Exit;
-      LComponent := LEditor.FindComponent(AExpected.Name);
+      LComponent := FindNamedComponent(LEditor, AExpected.Name);
       if not Assigned(LComponent) then
         Exit;
       if (LComponent.GetComponentCount > 0) or
@@ -734,7 +804,8 @@ begin
         not Supports(LEditor, INTAFormEditor, LDesignerEditor) or
         not Assigned(LDesignerEditor.FormDesigner) then
         Exit;
-      LComponent := LEditor.FindComponent(
+      LComponent := FindNamedComponent(
+        LEditor,
         AExpected.Identity.ComponentName
       );
       LNative := GetNativeComponent(LComponent);
@@ -808,7 +879,7 @@ begin
       if not SameFileName(LFormEditor.FileName, AFormFileName) then
         Exit;
 
-      LComponent := LFormEditor.FindComponent(AComponentName);
+      LComponent := FindNamedComponent(LFormEditor, AComponentName);
       LNative := GetNativeComponent(LComponent);
       if not Assigned(LNative) or
         not (LNative is TControl) then
@@ -911,7 +982,7 @@ begin
       if not SameFileName(LFormEditor.FileName, AFormFileName) then
         Exit;
 
-      LComponent := LFormEditor.FindComponent(AComponentName);
+      LComponent := FindNamedComponent(LFormEditor, AComponentName);
       LNative := GetNativeComponent(LComponent);
       if not TryReadProperty(
         LNative,
@@ -1028,7 +1099,7 @@ begin
     begin
       if not FindActiveFormEditor(LModule, LFormEditor) then
         Exit;
-      LComponent := LFormEditor.FindComponent(AComponentName);
+      LComponent := FindNamedComponent(LFormEditor, AComponentName);
       if not Assigned(LComponent) or
         not LComponent.IsTControl then
         Exit;
@@ -1077,7 +1148,7 @@ begin
     begin
       if not FindActiveFormEditor(LModule, LFormEditor) then
         Exit;
-      LComponent := LFormEditor.FindComponent(AComponentName);
+      LComponent := FindNamedComponent(LFormEditor, AComponentName);
       LNative := GetNativeComponent(LComponent);
       if not TryReadProperty(LNative, APropertyName, LValue) then
         Exit;

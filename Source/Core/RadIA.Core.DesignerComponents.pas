@@ -399,7 +399,7 @@ begin
       'The component class is not in the safe VCL allowlist.'
     ));
   if not IsValidIdentifier(AComponentName) or
-    not IsValidIdentifier(AParentName) then
+    ((AParentName <> '') and not IsValidIdentifier(AParentName)) then
     Exit(TRadIAComponentChangeResult.Failed(
       'invalid_component',
       'Component and parent names must be valid Pascal identifiers.'

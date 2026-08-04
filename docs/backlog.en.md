@@ -11,6 +11,17 @@ The board below summarizes the current status of mapped short and medium-term fe
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
 | **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
+| **RadIA 2.0 Goal — Complete Development Journey** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
+| **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
+| **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
+| **Multi-file Editing and Transactional Diff** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.3.0 |
+| **Visual Design↔Code Flow** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐ High | v1.4.0 |
+| **Self-correcting Build and DUnitX Runner** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.5.0 |
+| **Event-driven Debug Agent** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.6.0 |
+| **Reviewable Git and Delivery Pipeline** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐ High | v1.7.0 |
+| **CLI Manager, Terminal, and Hybrid Experience** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **E2E Hardening and RadIA 2.0 Release** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Editor Selection Fixes and Gemini OAuth Block** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.29 |
 | **Open Tools API Adapter and Network Testing** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐ High | v0.0.28 |
 | **Resolution of Code Smells and Test Coverage Expansion** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.27 |
@@ -40,7 +51,43 @@ The board below summarizes the current status of mapped short and medium-term fe
 
 ## ⏳ 1. Work in Progress (WIP)
 
-*   *No active task currently in progress in this branch.*
+*   In-IDE E2E hardening and RadIA 2.0 release preparation.
+    *   Completed: Delphi 11/12/13 matrix, Delphi 13 Win32/IDE64 installation, three smoke cycles per
+        architecture, 80 tools, rendered WebView2, real MCP editing, tool-driven build, 515 direct
+        tests, VCL template creation/open/build/rollback, real Form Designer editing with consent,
+        and a
+        real debug flow with breakpoint, call stack, and timeline, plus the compiler-error,
+        diagnostics, correction, rebuild, DUnitX, and a reviewable Git commit with selected paths.
+    *   Real compatibility completed: Delphi 11 and 12 passed BPL loading, the 80-tool MCP catalog,
+        and clean shutdown; Delphi 13 passed three consecutive cycles while checking for any
+        remaining root process.
+    *   Visually completed: the panel is now created through OTA's native
+        `INTACustomDockableForm` API as a `TOTADockForm`, with rendered WebView2, theme, chat, and
+        agent-mode button, without the former blank screen. The IDE now owns the host, docking
+        commands, and desktop state.
+    *   Form Designer completed: real `TButton` creation, listing, and rollback through preview and
+        consent, using native VCL classes and deterministic bounds.
+    *   Build completed: unpersisted project groups no longer open modal dialogs during
+        `ValidateCreatedProject`.
+    *   Manual visual acceptance: lateral dropping remains user-driven because the elevated IDE
+        blocks synthetic cross-process input. Native creation, visibility, and host persistence are
+        covered by the automated smoke.
+    *   Shutdown completed: editor and debugger OTA hooks are now unregistered before their objects
+        are abandoned during shutdown, without freeing VCL/WebView2. The installed build passed
+        three consecutive Delphi 13 load and shutdown cycles with 80 tools and no `bds.exe`
+        retention.
+    *   Delphi 13 continuous E2E completed: template, Form Designer, build, DUnitX, debugging,
+        validated correction, reviewable Git commit, and shutdown passed in the same journey.
+    *   Native host completed: two real cycles proved `TOTADockForm` creation, visibility, IDE
+        desktop geometry restoration, and clean shutdown. The lateral drop gesture remains a manual
+        visual acceptance because the elevated IDE blocks synthetic cross-process input; this does
+        not change the native docking capability supplied by OTA.
+    *   Additional CDB diagnosis: retention happens before `ExitProcess`; one capture placed the
+        main thread in `IdeservicesFileNotification`. A later AV inspected an already unloaded
+        DevExpress BPL through an MMX call chain, but a smoke run with MMX temporarily disabled also
+        retained `bds.exe`, ruling it out as the root cause. The correlation with
+        `IdeservicesFileNotification` led to explicitly removing the editor and debugger OTA hooks;
+        this fix closed the retention gate across three consecutive smoke cycles.
 
 ---
 
@@ -59,6 +106,7 @@ Check the implementation details of each completed feature grouped by target rel
 - Internal registry shared by chat, MCP, and extensions.
 - OTA facade for workspace, editor, project, build, Form Designer, and debugger.
 - Risk-based consent, sanitized audit, and workspace boundary.
+- **Security & Consent** settings with timeout, arguments, risk-based memory, and immediate revoke.
 - Reviewable and reversible patches protected by base hashes.
 - Local MCP bridge with independent discovery per IDE process.
 - Incremental and rebuildable knowledge isolated per project.

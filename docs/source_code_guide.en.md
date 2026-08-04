@@ -75,7 +75,7 @@ Uses Delphi's extension APIs (**Open Tools API - OTA**) to dock visual panels an
 | [RadIA.OTA.Register.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Register.pas) | Plugin entry point. Registers the main Wizard in the IDE (`TRadIAWizard`) and initializes the IoC container. |
 | [RadIA.OTA.EditorHook.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.EditorHook.pas) | Action interceptor hook. Manages right-click context menus in the Delphi IDE code editor. |
 | [RadIA.OTA.ContextParser.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.ContextParser.pas) | Extracts and normalizes source code from the text editor to send as context in AI prompts. |
-| [RadIA.OTA.DockableForm.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.DockableForm.pas) | IDE-compatible base form that allows Rad IA views to dock inside lateral tabs. |
+| [RadIA.OTA.DockableForm.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.DockableForm.pas) | `INTACustomDockableForm` adapter that delegates host creation, docking, and IDE desktop persistence to OTA. |
 | [RadIA.OTA.Helper.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Helper.pas) | Encapsulates complex text manipulation utility functions, consuming the active editor via `IRadIAEditorAdapter`. |
 | [RadIA.OTA.MessageViewHook.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.MessageViewHook.pas) | Intercepts and manages error and warning items in the IDE's "Messages" tab to enable the Smart Build Debugger. |
 | `RadIA.OTA.Workspace` and `TextReader` | OTA workspace facade and safe buffer reads. |

@@ -160,6 +160,16 @@ type
     procedure SetInjectDelphiVersion(const AValue: Boolean);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
+    function GetConsentTimeoutSeconds: Integer;
+    procedure SetConsentTimeoutSeconds(const AValue: Integer);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -195,6 +205,16 @@ type
     property ActiveSessionId: string read GetActiveSessionId write SetActiveSessionId;
     property InjectDelphiVersion: Boolean read GetInjectDelphiVersion write SetInjectDelphiVersion;
     property ConciseResponses: Boolean read GetConciseResponses write SetConciseResponses;
+    property ConsentTimeoutSeconds: Integer
+      read GetConsentTimeoutSeconds write SetConsentTimeoutSeconds;
+    property ConsentShowArguments: Boolean
+      read GetConsentShowArguments write SetConsentShowArguments;
+    property ConsentRememberReversible: Boolean
+      read GetConsentRememberReversible write SetConsentRememberReversible;
+    property ConsentRememberStructural: Boolean
+      read GetConsentRememberStructural write SetConsentRememberStructural;
+    property ConsentRememberExecution: Boolean
+      read GetConsentRememberExecution write SetConsentRememberExecution;
   end;
 
   IRadIAService = interface

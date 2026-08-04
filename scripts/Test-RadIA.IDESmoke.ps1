@@ -4,17 +4,313 @@ param(
     [string]$DelphiVersion,
     [ValidateRange(1, 50)]
     [int]$Cycles = 10,
-    [ValidateRange(30, 600)]
+    [ValidateRange(30, 1800)]
     [int]$StartupTimeoutSeconds = 180,
-    [switch]$IDE64
+    [switch]$IDE64,
+    [switch]$SkipPackageHashCheck,
+    [switch]$ExerciseDocking
 )
 
+function Get-RadIAProcessDescendants {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$ParentProcessId
+    )
+
+    $processes = @(
+        Get-CimInstance Win32_Process |
+            Select-Object ProcessId, ParentProcessId, Name
+    )
+    $pendingParents = [Collections.Generic.Queue[int]]::new()
+    $pendingParents.Enqueue($ParentProcessId)
+    $descendants = @()
+    while ($pendingParents.Count -gt 0) {
+        $currentParent = $pendingParents.Dequeue()
+        $children = @(
+            $processes |
+                Where-Object {
+                    $_.ParentProcessId -eq $currentParent
+                }
+        )
+        foreach ($child in $children) {
+            $descendants += $child
+            $pendingParents.Enqueue([int]$child.ProcessId)
+        }
+    }
+    return $descendants
+}
+
+function Get-RadIATargetIDEProcesses {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ExecutablePath
+    )
+
+    return @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object {
+                try {
+                    [IO.Path]::GetFullPath($_.Path).Equals(
+                        [IO.Path]::GetFullPath($ExecutablePath),
+                        [StringComparison]::OrdinalIgnoreCase
+                    )
+                } catch {
+                    $false
+                }
+            }
+    )
+}
+
 $ErrorActionPreference = "Stop"
+
+if ($ExerciseDocking) {
+    if ($Cycles -lt 2) {
+        throw "Docking validation requires at least two IDE cycles."
+    }
+    Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class RadIADockingSmokeNative
+{
+    public delegate bool EnumCallback(IntPtr handle, IntPtr parameter);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Rect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(
+        EnumCallback callback,
+        IntPtr parameter
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumChildWindows(
+        IntPtr parent,
+        EnumCallback callback,
+        IntPtr parameter
+    );
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(
+        IntPtr handle,
+        out uint processId
+    );
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetClassName(
+        IntPtr handle,
+        StringBuilder value,
+        int maximumCount
+    );
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(
+        IntPtr handle,
+        StringBuilder value,
+        int maximumCount
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(
+        IntPtr handle,
+        out Rect rectangle
+    );
+
+    public static IntPtr FindDockWindow(
+        int processId,
+        IntPtr mainWindow
+    )
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumCallback callback = delegate(IntPtr handle, IntPtr parameter)
+        {
+            uint ownerProcessId;
+            GetWindowThreadProcessId(handle, out ownerProcessId);
+            string className = ReadClassName(handle);
+            string caption = ReadCaption(handle);
+            if (ownerProcessId == processId &&
+                (className == "TOTADockForm" ||
+                 caption.StartsWith("Rad IA Chat")))
+            {
+                result = handle;
+                return false;
+            }
+            return true;
+        };
+        EnumWindows(callback, IntPtr.Zero);
+        if (result == IntPtr.Zero && mainWindow != IntPtr.Zero)
+        {
+            EnumChildWindows(mainWindow, callback, IntPtr.Zero);
+        }
+        return result;
+    }
+
+    private static string ReadClassName(IntPtr handle)
+    {
+        StringBuilder value = new StringBuilder(256);
+        GetClassName(handle, value, value.Capacity);
+        return value.ToString();
+    }
+
+    private static string ReadCaption(IntPtr handle)
+    {
+        StringBuilder value = new StringBuilder(512);
+        GetWindowText(handle, value, value.Capacity);
+        return value.ToString();
+    }
+
+}
+"@
+}
+
+function Get-RadIADockInfo {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$Process
+    )
+
+    $handle = [RadIADockingSmokeNative]::FindDockWindow(
+        $Process.Id,
+        $Process.MainWindowHandle
+    )
+    if ($handle -eq [IntPtr]::Zero) {
+        return $null
+    }
+    $rectangle = New-Object RadIADockingSmokeNative+Rect
+    if (-not [RadIADockingSmokeNative]::GetWindowRect(
+        $handle,
+        [ref]$rectangle
+    )) {
+        return $null
+    }
+    return [pscustomobject]@{
+        Handle = $handle
+        Left = $rectangle.Left
+        Top = $rectangle.Top
+        Right = $rectangle.Right
+        Bottom = $rectangle.Bottom
+        Width = $rectangle.Right - $rectangle.Left
+        Height = $rectangle.Bottom - $rectangle.Top
+    }
+}
+
+function Wait-RadIADockInfo {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$Process,
+        [Parameter(Mandatory)]
+        [int]$TimeoutSeconds
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $dockInfo = Get-RadIADockInfo -Process $Process
+        if ($dockInfo) {
+            return $dockInfo
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "The RadIA native dockable form did not open."
+}
+
+function Restore-RadIADockingVisibility {
+    if (-not $script:ExerciseDocking) {
+        return
+    }
+    if ($script:DockingHadWindowVisible) {
+        Set-ItemProperty `
+            -LiteralPath $script:DockingRegistryPath `
+            -Name "WindowVisible" `
+            -Value $script:DockingOriginalWindowVisible
+    } else {
+        Remove-ItemProperty `
+            -LiteralPath $script:DockingRegistryPath `
+            -Name "WindowVisible" `
+            -ErrorAction SilentlyContinue
+    }
+    if (-not $script:DockingHadRegistryKey) {
+        Remove-Item `
+            -LiteralPath $script:DockingRegistryPath `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+$versionUnitPath = Join-Path `
+    $repositoryRoot `
+    "Source\Core\RadIA.Core.Version.pas"
+$versionSource = Get-Content `
+    -LiteralPath $versionUnitPath `
+    -Raw `
+    -Encoding utf8
+$versionMatch = [regex]::Match(
+    $versionSource,
+    "CRadIAVersion\s*=\s*'([^']+)';"
+)
+if (-not $versionMatch.Success) {
+    throw "RadIA version constant was not found: $versionUnitPath"
+}
+$expectedVersion = $versionMatch.Groups[1].Value
+$toolManifestPath = Join-Path $repositoryRoot "docs\runtime_tools.json"
+$toolManifest = Get-Content -LiteralPath $toolManifestPath -Raw -Encoding utf8 |
+    ConvertFrom-Json
+$expectedToolNames = @(
+    $toolManifest.groups |
+        ForEach-Object { $_.tools } |
+        Sort-Object -Unique
+)
 $platform = "Win32"
 $binName = "bin"
+$shutdownTimeoutMs = 30000
+
+if ($ExerciseDocking) {
+    $script:DockingRegistryPath = (
+        "HKCU:\Software\Embarcadero\BDS\" +
+        "$DelphiVersion\RadIA"
+    )
+    $script:DockingHadRegistryKey = Test-Path `
+        -LiteralPath $script:DockingRegistryPath
+    if (-not $script:DockingHadRegistryKey) {
+        New-Item `
+            -Path $script:DockingRegistryPath `
+            -Force |
+            Out-Null
+    }
+    $dockProperties = Get-ItemProperty `
+        -LiteralPath $script:DockingRegistryPath
+    $dockWindowVisible = $dockProperties.PSObject.Properties[
+        "WindowVisible"
+    ]
+    $script:DockingHadWindowVisible = $null -ne $dockWindowVisible
+    $script:DockingOriginalWindowVisible = $null
+    if ($script:DockingHadWindowVisible) {
+        $script:DockingOriginalWindowVisible = $dockWindowVisible.Value
+    }
+    New-ItemProperty `
+        -LiteralPath $script:DockingRegistryPath `
+        -Name "WindowVisible" `
+        -PropertyType DWord `
+        -Value 1 `
+        -Force |
+        Out-Null
+    trap {
+        Restore-RadIADockingVisibility
+        Write-Error $_
+        exit 1
+    }
+}
 if ($IDE64) {
     $platform = "Win64"
     $binName = "bin64"
+    $shutdownTimeoutMs = 60000
 }
 
 $bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
@@ -40,24 +336,33 @@ if (-not (Test-Path -LiteralPath $bridgePath -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $radIABpl -PathType Leaf)) {
     throw "Installed RadIA package was not found: $radIABpl"
 }
-$targetProcesses = @(
-    Get-Process bds -ErrorAction SilentlyContinue |
-    Where-Object {
-        try {
-            [IO.Path]::GetFullPath($_.Path).Equals(
-                [IO.Path]::GetFullPath($bdsPath),
-                [StringComparison]::OrdinalIgnoreCase
-            )
-        } catch {
-            $false
-        }
+if (-not $SkipPackageHashCheck) {
+    $builtPackagePath = Join-Path (
+        "$repositoryRoot\Output\$DelphiVersion\bpl\$platform"
+    ) "RadIA.bpl"
+    if (-not (Test-Path -LiteralPath $builtPackagePath -PathType Leaf)) {
+        throw "Built RadIA package was not found: $builtPackagePath"
     }
-)
+    $installedPackageHash = (
+        Get-FileHash -LiteralPath $radIABpl -Algorithm SHA256
+    ).Hash
+    $builtPackageHash = (
+        Get-FileHash -LiteralPath $builtPackagePath -Algorithm SHA256
+    ).Hash
+    if ($installedPackageHash -ne $builtPackageHash) {
+        throw (
+            "Installed RadIA package does not match the current build. " +
+            "Close Delphi and reinstall before running the IDE smoke."
+        )
+    }
+}
+$targetProcesses = @(Get-RadIATargetIDEProcesses -ExecutablePath $bdsPath)
 if ($targetProcesses.Count -gt 0) {
     throw "Close all instances of the target Delphi IDE: $bdsPath"
 }
 
 $results = @()
+$dockedGeometry = $null
 for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     $startedAt = [DateTime]::UtcNow
     $process = Start-Process -FilePath $bdsPath -PassThru
@@ -85,6 +390,37 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not (Test-Path -LiteralPath $instanceFile)) {
             throw "MCP discovery was not created in cycle $cycle."
         }
+        if ($ExerciseDocking) {
+            $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
+            $dockInfo = Wait-RadIADockInfo `
+                -Process $currentProcess `
+                -TimeoutSeconds 60
+            if ($cycle -eq 1) {
+                $dockedGeometry = $dockInfo
+            } elseif ($cycle -eq 2) {
+                $tolerance = 40
+                $positionRestored = (
+                    [Math]::Abs(
+                        $dockInfo.Left - $dockedGeometry.Left
+                    ) -le $tolerance -and
+                    [Math]::Abs(
+                        $dockInfo.Top - $dockedGeometry.Top
+                    ) -le $tolerance -and
+                    [Math]::Abs(
+                        $dockInfo.Right - $dockedGeometry.Right
+                    ) -le $tolerance -and
+                    [Math]::Abs(
+                        $dockInfo.Bottom - $dockedGeometry.Bottom
+                    ) -le $tolerance
+                )
+                if (-not $positionRestored) {
+                    throw (
+                        "The RadIA dock position was not restored " +
+                        "after restarting Delphi."
+                    )
+                }
+            }
+        }
 
         $requests = @(
             (
@@ -98,7 +434,11 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 '"notifications/initialized","params":{}}'
             ),
             (
-                '{"jsonrpc":"2.0","id":2,"method":"tools/call",' +
+                '{"jsonrpc":"2.0","id":2,"method":"tools/list",' +
+                '"params":{}}'
+            ),
+            (
+                '{"jsonrpc":"2.0","id":3,"method":"tools/call",' +
                 '"params":{"name":"GetIDEState","arguments":{}}}'
             )
         )
@@ -111,12 +451,30 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 ForEach-Object { $_ | ConvertFrom-Json }
         )
         $initialize = $parsed | Where-Object { $_.id -eq 1 }
+        $runtimeToolNames = @(
+            (
+                $parsed |
+                    Where-Object { $_.id -eq 2 }
+            ).result.tools |
+                ForEach-Object { $_.name } |
+                Sort-Object -Unique
+        )
         $ideState = (
             $parsed |
-                Where-Object { $_.id -eq 2 }
+                Where-Object { $_.id -eq 3 }
         ).result.structuredContent
-        if ($initialize.result.serverInfo.version -ne "1.0.0") {
+        $missingTools = @(
+            $expectedToolNames |
+                Where-Object { $_ -notin $runtimeToolNames }
+        )
+        if ($initialize.result.serverInfo.version -ne $expectedVersion) {
             throw "Unexpected RadIA version in cycle $cycle."
+        }
+        if ($missingTools.Count -gt 0) {
+            throw (
+                "Runtime catalog is missing built-in tools in cycle " +
+                "$cycle`: $($missingTools -join ', ')"
+            )
         }
         if ($ideState.platform -ne $platform) {
             throw "Unexpected IDE platform in cycle $cycle."
@@ -125,12 +483,37 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             throw "IDE version name was empty in cycle $cycle."
         }
 
+        $descendants = @(
+            Get-RadIAProcessDescendants -ParentProcessId $process.Id
+        )
         $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
-        if (-not $currentProcess.WaitForExit(30000)) {
+        if (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
             throw "Delphi did not exit cleanly in cycle $cycle."
+        }
+        $rootDeadline = [DateTime]::UtcNow.AddSeconds(10)
+        do {
+            $targetProcesses = @(
+                Get-RadIATargetIDEProcesses -ExecutablePath $bdsPath
+            )
+            if ($targetProcesses.Count -gt 0) {
+                Start-Sleep -Milliseconds 100
+            }
+        } while (
+            ($targetProcesses.Count -gt 0) -and
+            ([DateTime]::UtcNow -lt $rootDeadline)
+        )
+        if ($targetProcesses.Count -gt 0) {
+            $targetProcessIds = @(
+                $targetProcesses |
+                    ForEach-Object { $_.Id }
+            )
+            throw (
+                "Delphi process remained after cycle $cycle`: " +
+                ($targetProcessIds -join ", ")
+            )
         }
         $cleanupDeadline = [DateTime]::UtcNow.AddSeconds(5)
         while ((Test-Path -LiteralPath $instanceFile) -and
@@ -139,6 +522,41 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         if (Test-Path -LiteralPath $instanceFile) {
             throw "MCP discovery remained after cycle $cycle."
+        }
+        $descendantIds = @(
+            $descendants |
+                ForEach-Object { [int]$_.ProcessId }
+        )
+        $orphanDeadline = [DateTime]::UtcNow.AddSeconds(10)
+        $remainingDescendants = @()
+        do {
+            $remainingDescendants = @(
+                $descendantIds |
+                    Where-Object {
+                        Get-Process -Id $_ -ErrorAction SilentlyContinue
+                    }
+            )
+            if ($remainingDescendants.Count -gt 0) {
+                Start-Sleep -Milliseconds 100
+            }
+        } while (
+            ($remainingDescendants.Count -gt 0) -and
+            ([DateTime]::UtcNow -lt $orphanDeadline)
+        )
+        if ($remainingDescendants.Count -gt 0) {
+            $orphanNames = @(
+                $descendants |
+                    Where-Object {
+                        $_.ProcessId -in $remainingDescendants
+                    } |
+                    ForEach-Object {
+                        "$($_.Name):$($_.ProcessId)"
+                    }
+            )
+            throw (
+                "IDE descendants remained after cycle $cycle`: " +
+                ($orphanNames -join ", ")
+            )
         }
 
         $elapsed = [Math]::Round(
@@ -150,11 +568,19 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             ProcessId = $process.Id
             Version = $ideState.versionName
             Platform = $ideState.platform
+            ToolCount = $runtimeToolNames.Count
+            DescendantCount = $descendants.Count
             Seconds = $elapsed
+            DockingExercised = [bool]$ExerciseDocking
+            DockPositionRestored = (
+                [bool]$ExerciseDocking -and
+                $cycle -ge 2
+            )
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
-            "$DelphiVersion $platform in $elapsed s."
+            "$DelphiVersion $platform with " +
+            "$($runtimeToolNames.Count) tools in $elapsed s."
         )
     } finally {
         $remainingProcess = Get-Process `
@@ -175,3 +601,10 @@ Write-Host (
     "$DelphiVersion $platform. Range: " +
     "$minimumSeconds-$maximumSeconds s."
 )
+if ($ExerciseDocking) {
+    Write-Host (
+        "Native TOTADockForm visibility and desktop-state " +
+        "restoration passed."
+    )
+    Restore-RadIADockingVisibility
+}

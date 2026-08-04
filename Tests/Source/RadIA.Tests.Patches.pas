@@ -31,6 +31,10 @@ type
       const ANewContent: string;
       out AAppliedRevision: string
     ): Boolean;
+    function ReadContent(
+      const AFileName: string;
+      const AMaxCharacters: Integer
+    ): TRadIAEditorContent;
     function GetIDEState: TRadIAIDEState;
     function GetActiveProject: TRadIAProjectSnapshot;
     function GetActiveUnit: string;
@@ -110,6 +114,16 @@ begin
   if Result then
     FContent := ANewContent;
   AAppliedRevision := Revision;
+end;
+
+function TTestRadIAPatchWorkspace.ReadContent(
+  const AFileName: string;
+  const AMaxCharacters: Integer
+): TRadIAEditorContent;
+begin
+  if not SameFileName(AFileName, FFileName) then
+    Exit(Default(TRadIAEditorContent));
+  Result := GetEditorContent(AMaxCharacters);
 end;
 
 procedure TTestRadIAPatches.ApplyFailurePreservesOriginalBuffer;

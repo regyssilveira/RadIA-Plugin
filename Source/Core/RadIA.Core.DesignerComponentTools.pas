@@ -42,6 +42,10 @@ type
       const AJson: TJSONObject;
       const AName: string
     ): Integer;
+    function GetOptionalString(
+      const AJson: TJSONObject;
+      const AName: string
+    ): string;
     function GetString(
       const AJson: TJSONObject;
       const AName: string
@@ -185,12 +189,28 @@ begin
   );
   Result := ToToolResult(
     FService.PrepareAdd(
-      GetString(AJson, 'parentName'),
+      GetOptionalString(AJson, 'parentName'),
       GetString(AJson, 'className'),
       GetString(AJson, 'componentName'),
       LBounds
     )
   );
+end;
+
+function TRadIADesignerComponentTool.GetOptionalString(
+  const AJson: TJSONObject;
+  const AName: string
+): string;
+var
+  LValue: TJSONValue;
+begin
+  LValue := AJson.GetValue(AName);
+  if not (LValue is TJSONString) then
+    raise EArgumentException.CreateFmt(
+      'Argument "%s" must be a string.',
+      [AName]
+    );
+  Result := LValue.Value;
 end;
 
 function TRadIADesignerComponentTool.GetDescriptor:

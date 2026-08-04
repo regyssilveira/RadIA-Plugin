@@ -1,5 +1,12 @@
 # Agentic Form Designer and debugger guide
 
+## Event-driven timeline
+
+`GetDebugTimeline` records Open Tools API notifications instead of continuously polling the
+debugger. Pass the last received `sequence` as `sinceSequence` to retrieve only new events. Each
+item contains its UTC timestamp, kind, process, state, and details. A persistent JSON Lines trail
+is stored at `.radia/debug/timeline.jsonl` in the active project.
+
 ## Form Designer
 
 Designer tools operate on the active form. They can inspect components, properties, events, and

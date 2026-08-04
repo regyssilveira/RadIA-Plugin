@@ -15,7 +15,7 @@ A avaliação requisito por requisito está em `agentic_completion_audit.md`.
 - [x] Conhecimento local incremental, persistente e reconstruível.
 - [x] Status e leitura limitada de documentos do índice.
 - [x] API versionada para extensões e pacote externo de exemplo.
-- [x] ADR clean-room registra fronteiras e controles de independência do AEFOS.
+- [x] ADRs registram as fronteiras do registry interno e do workspace OTA.
 
 ## Compatibilidade automatizada
 

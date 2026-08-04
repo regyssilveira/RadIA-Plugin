@@ -43,6 +43,10 @@ type
       const ANewContent: string;
       out AAppliedRevision: string
     ): Boolean;
+    function ReadContent(
+      const AFileName: string;
+      const AMaxCharacters: Integer
+    ): TRadIAEditorContent;
   end;
 
 implementation
@@ -50,12 +54,48 @@ implementation
 uses
   System.Generics.Collections,
   System.Hash,
+  System.IOUtils,
   ToolsAPI,
   Winapi.Windows,
-  RadIA.Core.Types;
+  RadIA.Core.Types,
+  RadIA.OTA.TextReader;
 
 const
   CWorkspaceUnavailable = 'The IDE workspace is shutting down.';
+
+function FindSourceEditor(
+  const AFileName: string
+): IOTASourceEditor;
+var
+  LEditorIndex: Integer;
+  LModule: IOTAModule;
+  LModuleIndex: Integer;
+  LModuleServices: IOTAModuleServices;
+  LSourceEditor: IOTASourceEditor;
+begin
+  Result := nil;
+  if not Supports(
+    BorlandIDEServices,
+    IOTAModuleServices,
+    LModuleServices
+  ) then
+    Exit;
+  for LModuleIndex := 0 to LModuleServices.ModuleCount - 1 do
+  begin
+    LModule := LModuleServices.Modules[LModuleIndex];
+    if not Assigned(LModule) then
+      Continue;
+    for LEditorIndex := 0 to LModule.ModuleFileCount - 1 do
+    begin
+      if Supports(
+        LModule.ModuleFileEditors[LEditorIndex],
+        IOTASourceEditor,
+        LSourceEditor
+      ) and SameFileName(LSourceEditor.FileName, AFileName) then
+        Exit(LSourceEditor);
+    end;
+  end;
+end;
 
 function GetActiveProjectFromOTA: IOTAProject;
 var
@@ -146,28 +186,38 @@ begin
     procedure
     var
       LCurrentContent: string;
-      LCurrentFileName: string;
       LCurrentRevision: string;
+      LEditWriter: IOTAEditWriter;
+      LSourceEditor: IOTASourceEditor;
       LUtf8Bytes: TBytes;
+      LUtf8Text: UTF8String;
     begin
-      LCurrentFileName := GetCurrentModuleFileName;
-      if not SameFileName(LCurrentFileName, AFileName) then
+      LSourceEditor := FindSourceEditor(AFileName);
+      if not Assigned(LSourceEditor) then
         Exit;
 
-      LCurrentContent := FEditorAdapter.GetText;
+      LCurrentContent := ReadRadIAEditReaderText(
+        LSourceEditor.CreateReader
+      );
       LCurrentRevision := THashSHA2.GetHashString(LCurrentContent);
       LAppliedRevision := LCurrentRevision;
       if not SameText(LCurrentRevision, AExpectedRevision) then
         Exit;
 
       LUtf8Bytes := TEncoding.UTF8.GetBytes(LCurrentContent);
-      FEditorAdapter.ReplaceText(
-        0,
-        Length(LUtf8Bytes),
+      LEditWriter := LSourceEditor.CreateUndoableWriter;
+      if not Assigned(LEditWriter) then
+        Exit;
+      LEditWriter.CopyTo(0);
+      if Length(LUtf8Bytes) > 0 then
+        LEditWriter.DeleteTo(Length(LUtf8Bytes));
+      LUtf8Text := UTF8Encode(
         PrepareEditorWriterContent(ANewContent)
       );
+      LEditWriter.Insert(PAnsiChar(LUtf8Text));
+      LEditWriter := nil;
       LAppliedRevision := THashSHA2.GetHashString(
-        FEditorAdapter.GetText
+        ReadRadIAEditReaderText(LSourceEditor.CreateReader)
       );
       LResult := SameText(
         LAppliedRevision,
@@ -176,20 +226,68 @@ begin
       if not LResult then
       begin
         LUtf8Bytes := TEncoding.UTF8.GetBytes(
-          FEditorAdapter.GetText
+          ReadRadIAEditReaderText(LSourceEditor.CreateReader)
         );
-        FEditorAdapter.ReplaceText(
-          0,
-          Length(LUtf8Bytes),
+        LEditWriter := LSourceEditor.CreateUndoableWriter;
+        if not Assigned(LEditWriter) then
+          Exit;
+        LEditWriter.CopyTo(0);
+        if Length(LUtf8Bytes) > 0 then
+          LEditWriter.DeleteTo(Length(LUtf8Bytes));
+        LUtf8Text := UTF8Encode(
           PrepareEditorWriterContent(LCurrentContent)
         );
+        LEditWriter.Insert(PAnsiChar(LUtf8Text));
+        LEditWriter := nil;
         LAppliedRevision := THashSHA2.GetHashString(
-          FEditorAdapter.GetText
+          ReadRadIAEditReaderText(LSourceEditor.CreateReader)
         );
       end;
     end
   );
   AAppliedRevision := LAppliedRevision;
+  Result := LResult;
+end;
+
+function TRadIAOTAWorkspaceFacade.ReadContent(
+  const AFileName: string;
+  const AMaxCharacters: Integer
+): TRadIAEditorContent;
+var
+  LResult: TRadIAEditorContent;
+begin
+  RunOnMainThread(
+    procedure
+    var
+      LContent: string;
+      LOriginalLength: Integer;
+      LSourceEditor: IOTASourceEditor;
+      LTruncated: Boolean;
+    begin
+      LSourceEditor := FindSourceEditor(AFileName);
+      if not Assigned(LSourceEditor) then
+      begin
+        LResult := Default(TRadIAEditorContent);
+        Exit;
+      end;
+      LContent := ReadRadIAEditReaderText(
+        LSourceEditor.CreateReader
+      );
+      LOriginalLength := Length(LContent);
+      LTruncated := (AMaxCharacters > 0) and
+        (LOriginalLength > AMaxCharacters);
+      if LTruncated then
+        SetLength(LContent, AMaxCharacters);
+      LResult := TRadIAEditorContent.Create(
+        TPath.GetFileNameWithoutExtension(AFileName),
+        AFileName,
+        LContent,
+        THashSHA2.GetHashString(LContent),
+        LOriginalLength,
+        LTruncated
+      );
+    end
+  );
   Result := LResult;
 end;
 

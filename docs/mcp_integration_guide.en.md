@@ -32,6 +32,35 @@ To select a specific IDE, pass its discovery file:
 
 When multiple IDEs are running, match the PID in the file name to the intended `bds.exe` process.
 
+## Client configuration
+
+Clients that accept command-based MCP servers can use an equivalent configuration:
+
+```json
+{
+  "mcpServers": {
+    "radia-delphi": {
+      "command": "C:\\path\\RadIA.MCP.Bridge.exe",
+      "args": [
+        "C:\\Users\\user\\AppData\\Roaming\\RadIA\\mcp.12345.json"
+      ]
+    }
+  }
+}
+```
+
+Remove `args` to use `mcp.json`. The root field name varies by client; preserve the command and
+discovery argument.
+
+Typical installed paths are:
+
+```text
+C:\Users\Public\Documents\Embarcadero\Studio\37.0\Bpl\RadIA.MCP.Bridge.exe
+C:\Users\Public\Documents\Embarcadero\Studio\37.0\Bpl\Win64\RadIA.MCP.Bridge.exe
+```
+
+Use the bridge matching the loaded package architecture.
+
 ## MCP session
 
 The client must send `initialize` before `tools/list` or `tools/call`. The bridge transports MCP
@@ -49,6 +78,65 @@ Recommended sequence:
 The list returned by `tools/list` is authoritative for that IDE instance. Local extensions may
 change the catalog, so clients should not keep copied schemas indefinitely.
 
+### Implemented methods
+
+- `initialize`
+- `notifications/initialized`
+- `ping`
+- `tools/list`
+- `tools/call`
+
+Version 1.0 negotiates protocol `2025-06-18`.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "my-client",
+      "version": "1.0"
+    }
+  }
+}
+```
+
+After the response, the client may send `notifications/initialized` and call `tools/list`.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "GetActiveProject",
+    "arguments": {}
+  }
+}
+```
+
+These raw messages are for diagnostics and integration development. Use the client's native MCP
+implementation when available.
+
+## Exposed capabilities
+
+MCP publishes the same registry as chat, including available tools for:
+
+- IDE, project, units, files, and editor;
+- reviewable patches;
+- build and compiler messages;
+- Form Designer;
+- debugger, breakpoints, and watches;
+- inline reviews;
+- local knowledge;
+- extensions loaded by the IDE.
+
+Call `tools/list` for every connection. The technical catalog describes the architecture, but the
+runtime response is authoritative.
+
 ## Consent and security
 
 External calls use the same policies as chat. A mutating tool may open a native consent dialog in
@@ -59,6 +147,25 @@ workspace boundary to MCP paths. Clients must handle structured errors, timeouts
 
 See the [security model](tool_security_model.md) and [tool catalog](tool_catalog.md).
 
+## Multiple IDE instances
+
+Each `mcp.<pid>.json` represents one process. Match the PID and open project, configure one bridge
+per discovery file, and give each client entry a distinct name. `mcp.json` is convenient for a
+single IDE but may change when another process starts.
+
+For reproducible automation, prefer `mcp.<pid>.json`.
+
+## Operational verification
+
+1. Open Delphi and a project.
+2. Confirm that `mcp.<pid>.json` exists.
+3. Start or reload the MCP server in the client.
+4. Verify that `initialize` reports RadIA `2.0.0`.
+5. Call `tools/list`.
+6. Call `GetIDEState` and `GetActiveProject`.
+7. Test mutable consent only in a disposable project.
+8. Close the IDE and confirm that discovery and connection are removed.
+
 ## Troubleshooting
 
 - **Bridge exits immediately:** verify that the IDE is running and discovery exists.
@@ -66,3 +173,7 @@ See the [security model](tool_security_model.md) and [tool catalog](tool_catalog
 - **Tool unavailable:** refresh `tools/list` and verify its required IDE context.
 - **Pending call:** check for a consent dialog in the IDE.
 - **Pipe not found:** verify that the PID still exists and restart the bridge.
+- **Invalid schema:** discard the cached catalog and call `tools/list` again.
+- **Wrong project:** select the discovery file for the intended PID.
+
+See also the [Complete RadIA User Manual](user_manual.en.md).

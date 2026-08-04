@@ -5,7 +5,17 @@
 O RadIA pode transformar uma solicitação do chat em chamadas estruturadas de ferramentas da IDE.
 Chat e MCP usam o mesmo catálogo, as mesmas políticas de segurança e a mesma auditoria.
 
+O botão **Agent On/Off** no cabeçalho do chat habilita ou bloqueia a execução de ferramentas pelo
+chat. O estado também pode ser alterado com `/agent`, `/agent on` ou `/agent off`. Digite `/tools`
+para abrir o catálogo e `/tool <Nome> {JSON}` para executar uma ferramenta. Prompts livres continuam
+sendo conversa com o provider e não iniciam automaticamente um loop autônomo.
+
+Use `/agent run <objetivo>` para iniciar o loop autônomo. Antes de qualquer tool, revise o plano e
+selecione **Approve plan**. O cartão vivo mostra estado, etapas, tokens e tempo e oferece Pause,
+Resume e Cancel; os mesmos controles existem como `/agent pause`, `/agent resume` e `/agent cancel`.
+
 Consulte o [catálogo de ferramentas](tool_catalog.md) para nomes, parâmetros e níveis de risco.
+Para uma visão completa do produto, consulte o [Manual Completo do RadIA](user_manual.md).
 
 ## Fluxo de uma operação
 

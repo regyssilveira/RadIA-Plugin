@@ -9,6 +9,11 @@ uses
   RadIA.Core.KnowledgeScheduler;
 
 type
+  IRadIAKnowledgeModuleNotifierControl = interface
+    ['{01D61062-F268-463C-814D-2617D0670950}']
+    procedure Deactivate;
+  end;
+
   TRadIAKnowledgeModuleAttachment = record
   private
     FModuleIdentity: NativeUInt;
@@ -28,6 +33,7 @@ type
       TDictionary<string, TRadIAKnowledgeModuleAttachment>;
     FInstalled: Boolean;
     FModuleNotifier: IInterface;
+    FModuleNotifierControl: IRadIAKnowledgeModuleNotifierControl;
     FScheduler: IRadIAKnowledgeRefreshScheduler;
     FTimer: TTimer;
     function TryFindAttachment(
@@ -47,6 +53,7 @@ type
       const AFileName: string
     ): Boolean; static;
     procedure Install;
+    procedure PrepareForShutdown;
     procedure Uninstall;
   end;
 
@@ -58,6 +65,7 @@ implementation
 
 uses
   System.IOUtils,
+  System.SyncObjs,
   System.SysUtils,
   ToolsAPI,
   RadIA.Core.Logger,
@@ -66,7 +74,8 @@ uses
 type
   TRadIAKnowledgeModuleNotifier = class(
     TNotifierObject,
-    IOTAModuleNotifier
+    IOTAModuleNotifier,
+    IRadIAKnowledgeModuleNotifierControl
   )
   private
     FScheduler: IRadIAKnowledgeRefreshScheduler;
@@ -74,6 +83,7 @@ type
     constructor Create(
       const AScheduler: IRadIAKnowledgeRefreshScheduler
     );
+    procedure Deactivate;
     procedure AfterSave;
     procedure BeforeSave;
     function CheckOverwrite: Boolean;
@@ -97,7 +107,8 @@ end;
 
 procedure TRadIAKnowledgeModuleNotifier.AfterSave;
 begin
-  FScheduler.MarkDirty;
+  if Assigned(FScheduler) then
+    FScheduler.MarkDirty;
 end;
 
 procedure TRadIAKnowledgeModuleNotifier.BeforeSave;
@@ -118,21 +129,29 @@ begin
   FScheduler := AScheduler;
 end;
 
+procedure TRadIAKnowledgeModuleNotifier.Deactivate;
+begin
+  FScheduler := nil;
+end;
+
 procedure TRadIAKnowledgeModuleNotifier.Destroyed;
 begin
-  FScheduler.MarkDirty;
+  if Assigned(FScheduler) then
+    FScheduler.MarkDirty;
 end;
 
 procedure TRadIAKnowledgeModuleNotifier.Modified;
 begin
-  FScheduler.MarkDirty;
+  if Assigned(FScheduler) then
+    FScheduler.MarkDirty;
 end;
 
 procedure TRadIAKnowledgeModuleNotifier.ModuleRenamed(
   const NewName: string
 );
 begin
-  FScheduler.MarkDirty;
+  if Assigned(FScheduler) then
+    FScheduler.MarkDirty;
 end;
 
 { TRadIAOTAKnowledgeNotifier }
@@ -150,6 +169,8 @@ constructor TRadIAOTAKnowledgeNotifier.Create(
   AOwner: TComponent;
   const AScheduler: IRadIAKnowledgeRefreshScheduler
 );
+var
+  LNotifier: TRadIAKnowledgeModuleNotifier;
 begin
   inherited Create(AOwner);
   if not Assigned(AScheduler) then
@@ -157,15 +178,29 @@ begin
   FScheduler := AScheduler;
   FAttachments :=
     TDictionary<string, TRadIAKnowledgeModuleAttachment>.Create;
-  FModuleNotifier := CreateRadIAKnowledgeModuleNotifier(FScheduler);
+  LNotifier := TRadIAKnowledgeModuleNotifier.Create(FScheduler);
+  FModuleNotifier := LNotifier;
+  FModuleNotifierControl := LNotifier;
 end;
 
 destructor TRadIAOTAKnowledgeNotifier.Destroy;
 begin
   Uninstall;
+  FModuleNotifierControl := nil;
   FModuleNotifier := nil;
   FAttachments.Free;
   inherited;
+end;
+
+procedure TRadIAOTAKnowledgeNotifier.PrepareForShutdown;
+begin
+  FInstalled := False;
+  if Assigned(FTimer) then
+    FTimer.Enabled := False;
+  FScheduler.Stop;
+  if Assigned(FModuleNotifierControl) then
+    FModuleNotifierControl.Deactivate;
+  FAttachments.Clear;
 end;
 
 procedure TRadIAOTAKnowledgeNotifier.Install;
@@ -208,6 +243,11 @@ var
   LStaleFiles: TList<string>;
 begin
   if GIsShuttingDown or
+    (TInterlocked.CompareExchange(
+      GProjectTransitionCount,
+      0,
+      0
+    ) > 0) or
     not Supports(
       BorlandIDEServices,
       IOTAModuleServices,
@@ -296,6 +336,12 @@ end;
 
 procedure TRadIAOTAKnowledgeNotifier.TimerEvent(Sender: TObject);
 begin
+  if TInterlocked.CompareExchange(
+    GProjectTransitionCount,
+    0,
+    0
+  ) > 0 then
+    Exit;
   if GIsShuttingDown then
   begin
     FTimer.Enabled := False;

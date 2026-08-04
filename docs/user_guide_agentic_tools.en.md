@@ -5,7 +5,18 @@
 RadIA can turn a chat request into structured Delphi IDE tool calls. Chat and MCP share the same
 catalog, security policies, consent flow, and audit trail.
 
+The **Agent On/Off** button in the chat header enables or blocks chat tool execution. The same state
+can be changed with `/agent`, `/agent on`, or `/agent off`. Enter `/tools` to display the catalog and
+`/tool <Name> {JSON}` to run a tool. Free-form prompts remain provider conversations and do not
+automatically start an autonomous loop.
+
+Use `/agent run <objective>` to start the autonomous loop. Before any tool runs, review the plan and
+select **Approve plan**. The live card displays status, steps, tokens, and time and provides Pause,
+Resume, and Cancel; the same controls are available through `/agent pause`, `/agent resume`, and
+`/agent cancel`.
+
 See the [tool catalog](tool_catalog.md) for tool names, parameters, and risk levels.
+For a complete product overview, see the [Complete RadIA User Manual](user_manual.en.md).
 
 ## Operation flow
 

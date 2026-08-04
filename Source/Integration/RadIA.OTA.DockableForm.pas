@@ -2,228 +2,294 @@ unit RadIA.OTA.DockableForm;
 
 interface
 
-uses  System.Classes, DockForm,
-  RadIA.UI.ChatFrame;
-
-type
-  TFormRadIADockable = class(TDockableForm)
-  private
-    FChatFrame: TRadIAFrameAIChat;
-    procedure ApplyIDETheme;
-    procedure LoadWindowSize;
-    procedure SaveVisibilityState(const AVisible: Boolean);
-  protected
-    procedure DoShow; override;
-    procedure DoHide; override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-  end;
-
 procedure ShowRadIAChat;
 procedure RegisterDockableForm;
 procedure UnregisterDockableForm;
-
-var
-  FormRadIADockable: TFormRadIADockable = nil;
 
 implementation
 
 uses
-  DeskUtil, RadIA.Core.Config, RadIA.UI.Resources, Winapi.Windows, System.SysUtils, System.Win.Registry,
-      Vcl.Controls, Vcl.Forms, ToolsAPI;
+  System.Actions,
+  System.Classes,
+  System.IniFiles,
+  System.SysUtils,
+  DesignIntf,
+  Vcl.ActnList,
+  Vcl.ComCtrls,
+  Vcl.Controls,
+  Vcl.Forms,
+  Vcl.ImgList,
+  Vcl.Menus,
+  ToolsAPI,
+  RadIA.Core.Types,
+  RadIA.UI.ChatFrame;
+
+type
+  TRadIACustomDockableForm = class;
+
+  TRadIADockableFormObserver = class(TComponent)
+  private
+    FHost: TRadIACustomDockableForm;
+  protected
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+  public
+    constructor Create(AHost: TRadIACustomDockableForm); reintroduce;
+  end;
+
+  TRadIACustomDockableForm = class(TInterfacedObject, INTACustomDockableForm)
+  private
+    FForm: TCustomForm;
+    FFrame: TRadIAFrameAIChat;
+    FObserver: TRadIADockableFormObserver;
+    procedure ApplyIDETheme;
+    procedure FormRemoved;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function GetCaption: string;
+    function GetFrameClass: TCustomFrameClass;
+    procedure FrameCreated(AFrame: TCustomFrame);
+    function GetIdentifier: string;
+    function GetMenuActionList: TCustomActionList;
+    function GetMenuImageList: TCustomImageList;
+    procedure CustomizePopupMenu(APopupMenu: TPopupMenu);
+    function GetToolbarActionList: TCustomActionList;
+    function GetToolbarImageList: TCustomImageList;
+    procedure CustomizeToolBar(AToolBar: TToolBar);
+    procedure LoadWindowState(ADesktop: TCustomIniFile; const ASection: string);
+    procedure SaveWindowState(
+      ADesktop: TCustomIniFile;
+      const ASection: string;
+      AIsProject: Boolean
+    );
+    function GetEditState: TEditState;
+    function EditAction(AAction: TEditAction): Boolean;
+    procedure ReleaseForm;
+    procedure Show;
+  end;
+
+var
+  GRadIADockableForm: INTACustomDockableForm;
+  GRadIADockableFormHost: TRadIACustomDockableForm = nil;
+  GRadIADockableFormRegistered: Boolean = False;
 
 procedure ShowRadIAChat;
 begin
-  if not Assigned(FormRadIADockable) then
-  begin
-    FormRadIADockable := TFormRadIADockable.Create(nil);
-  end;
+  RegisterDockableForm;
+  if not Assigned(GRadIADockableFormHost) then
+    Exit;
 
-  ShowDockableForm(FormRadIADockable);
+  GRadIADockableFormHost.Show;
 end;
 
 procedure RegisterDockableForm;
+var
+  LServices: INTAServices270;
 begin
-  if @RegisterFieldAddress <> nil then
-    RegisterFieldAddress('FormRadIADockable', @FormRadIADockable);
-  RegisterDesktopFormClass(TFormRadIADockable, 'FormRadIADockable', 'FormRadIADockable');
+  if GRadIADockableFormRegistered then
+    Exit;
+  if not Supports(BorlandIDEServices, INTAServices270, LServices) then
+    Exit;
+
+  if not Assigned(GRadIADockableFormHost) then
+  begin
+    GRadIADockableFormHost := TRadIACustomDockableForm.Create;
+    GRadIADockableForm := GRadIADockableFormHost;
+  end;
+  LServices.RegisterDockableForm(GRadIADockableForm);
+  GRadIADockableFormRegistered := True;
 end;
 
 procedure UnregisterDockableForm;
-begin
-  if @UnRegisterFieldAddress <> nil then
-    UnRegisterFieldAddress(@FormRadIADockable);
-  FreeAndNil(FormRadIADockable);
-end;
-
-{ TFormRadIADockable }
-
-constructor TFormRadIADockable.Create(AOwner: TComponent);
 var
-  LThemingServices: IOTAIDEThemingServices;
+  LServices: INTAServices270;
 begin
-  FormRadIADockable := Self;
-  inherited Create(AOwner);
-  Caption := 'Rad IA Chat';
-  Name := 'FormRadIADockable';
-  DeskSection := 'FormRadIADockable';
-  AutoSave := True;
-  SaveStateNecessary := True;
-
-  { Default dimensions for the first run or when floating }
-  Width := 990;
-  Height := 650;
-  LoadWindowSize;
-
-  FChatFrame := TRadIAFrameAIChat.Create(Self);
-  FChatFrame.Parent := Self;
-  FChatFrame.Align := alClient;
-
-  if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
+  if GIsShuttingDown then
   begin
-    if LThemingServices.IDEThemingEnabled then
-    begin
-      LThemingServices.ApplyTheme(Self);
-    end;
+    GRadIADockableForm := nil;
+    GRadIADockableFormHost := nil;
+    GRadIADockableFormRegistered := False;
+    Exit;
   end;
 
-  ApplyIDETheme;
+  if GRadIADockableFormRegistered and
+    Supports(BorlandIDEServices, INTAServices270, LServices) then
+    LServices.UnregisterDockableForm(GRadIADockableForm);
 
-  if Assigned(FChatFrame) then
-    FChatFrame.EnsureVisibleContent;
+  if Assigned(GRadIADockableFormHost) then
+    GRadIADockableFormHost.ReleaseForm;
+  GRadIADockableForm := nil;
+  GRadIADockableFormHost := nil;
+  GRadIADockableFormRegistered := False;
 end;
 
-procedure TFormRadIADockable.LoadWindowSize;
-var
-  LReg: TRegistry;
-  LRegPath: string;
-  LPositionLoaded: Boolean;
-begin
-  LPositionLoaded := False;
-  LReg := TRegistry.Create;
-  try
-    LReg.RootKey := HKEY_CURRENT_USER;
-    LRegPath := TRadIAConfig.GetRegistryPath;
-    if LReg.OpenKeyReadOnly(LRegPath) then
-    begin
-      if LReg.ValueExists('WindowWidth') then
-        Width := LReg.ReadInteger('WindowWidth');
-      if LReg.ValueExists('WindowHeight') then
-        Height := LReg.ReadInteger('WindowHeight');
-      if LReg.ValueExists('WindowLeft') and LReg.ValueExists('WindowTop') then
-      begin
-        Left := LReg.ReadInteger('WindowLeft');
-        Top := LReg.ReadInteger('WindowTop');
-        LPositionLoaded := True;
-      end;
-      LReg.CloseKey;
-    end;
-  finally
-    LReg.Free;
-  end;
+{ TRadIADockableFormObserver }
 
-  if LPositionLoaded then
-    Position := poDesigned
-  else
-    Position := poScreenCenter;
+constructor TRadIADockableFormObserver.Create(AHost: TRadIACustomDockableForm);
+begin
+  inherited Create(nil);
+  FHost := AHost;
 end;
 
-destructor TFormRadIADockable.Destroy;
-var
-  LReg: TRegistry;
-  LRegPath: string;
+procedure TRadIADockableFormObserver.Notification(
+  AComponent: TComponent;
+  Operation: TOperation
+);
 begin
-  if Floating then
-  begin
-    LReg := TRegistry.Create;
-    try
-      LReg.RootKey := HKEY_CURRENT_USER;
-      LRegPath := TRadIAConfig.GetRegistryPath;
-      if LReg.OpenKey(LRegPath, True) then
-      begin
-        LReg.WriteInteger('WindowWidth', Width);
-        LReg.WriteInteger('WindowHeight', Height);
-        LReg.WriteInteger('WindowLeft', Left);
-        LReg.WriteInteger('WindowTop', Top);
-        LReg.CloseKey;
-      end;
-    finally
-      LReg.Free;
-    end;
-  end;
+  inherited Notification(AComponent, Operation);
+  if (Operation = opRemove) and Assigned(FHost) and
+    (AComponent = FHost.FForm) then
+    FHost.FormRemoved;
+end;
 
-  if FormRadIADockable = Self then
-    FormRadIADockable := nil;
+{ TRadIACustomDockableForm }
+
+constructor TRadIACustomDockableForm.Create;
+begin
+  inherited Create;
+  FObserver := TRadIADockableFormObserver.Create(Self);
+end;
+
+destructor TRadIACustomDockableForm.Destroy;
+begin
+  FObserver.Free;
   inherited Destroy;
 end;
 
-procedure TFormRadIADockable.SaveVisibilityState(const AVisible: Boolean);
-var
-  LReg: TRegistry;
-  LRegPath: string;
-begin
-  LReg := TRegistry.Create;
-  try
-    LReg.RootKey := HKEY_CURRENT_USER;
-    LRegPath := TRadIAConfig.GetRegistryPath;
-    if LReg.OpenKey(LRegPath, True) then
-    begin
-      LReg.WriteBool('WindowVisible', AVisible);
-      LReg.CloseKey;
-    end;
-  finally
-    LReg.Free;
-  end;
-end;
-
-procedure TFormRadIADockable.DoShow;
+procedure TRadIACustomDockableForm.ApplyIDETheme;
 var
   LThemingServices: IOTAIDEThemingServices;
 begin
-  inherited DoShow;
-  SaveVisibilityState(True);
+  if not Assigned(FFrame) then
+    Exit;
+  if not Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
+    Exit;
 
-  if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
+  if LThemingServices.IDEThemingEnabled then
   begin
-    if LThemingServices.IDEThemingEnabled then
-    begin
-      LThemingServices.ApplyTheme(Self);
-      LThemingServices.ApplyTheme(FChatFrame);
-    end;
+    if Assigned(FForm) then
+      LThemingServices.ApplyTheme(FForm);
+    LThemingServices.ApplyTheme(FFrame);
+    FFrame.ApplyCurrentTheme;
+  end;
+end;
+
+procedure TRadIACustomDockableForm.CustomizePopupMenu(APopupMenu: TPopupMenu);
+begin
+  // The IDE adds its standard docking commands to the popup menu.
+end;
+
+procedure TRadIACustomDockableForm.CustomizeToolBar(AToolBar: TToolBar);
+begin
+  // The RadIA frame owns its toolbar, so the native host needs no extra toolbar.
+end;
+
+function TRadIACustomDockableForm.EditAction(AAction: TEditAction): Boolean;
+begin
+  Result := False;
+end;
+
+procedure TRadIACustomDockableForm.FormRemoved;
+begin
+  FForm := nil;
+  FFrame := nil;
+end;
+
+procedure TRadIACustomDockableForm.FrameCreated(AFrame: TCustomFrame);
+begin
+  FFrame := TRadIAFrameAIChat(AFrame);
+  ApplyIDETheme;
+  FFrame.EnsureVisibleContent;
+end;
+
+function TRadIACustomDockableForm.GetCaption: string;
+begin
+  Result := 'Rad IA Chat';
+end;
+
+function TRadIACustomDockableForm.GetEditState: TEditState;
+begin
+  Result := [];
+end;
+
+function TRadIACustomDockableForm.GetFrameClass: TCustomFrameClass;
+begin
+  Result := TRadIAFrameAIChat;
+end;
+
+function TRadIACustomDockableForm.GetIdentifier: string;
+begin
+  Result := 'RadIADockableForm';
+end;
+
+function TRadIACustomDockableForm.GetMenuActionList: TCustomActionList;
+begin
+  Result := nil;
+end;
+
+function TRadIACustomDockableForm.GetMenuImageList: TCustomImageList;
+begin
+  Result := nil;
+end;
+
+function TRadIACustomDockableForm.GetToolbarActionList: TCustomActionList;
+begin
+  Result := nil;
+end;
+
+function TRadIACustomDockableForm.GetToolbarImageList: TCustomImageList;
+begin
+  Result := nil;
+end;
+
+procedure TRadIACustomDockableForm.LoadWindowState(
+  ADesktop: TCustomIniFile;
+  const ASection: string
+);
+begin
+  // The native IDE host restores docking, size, and visibility.
+end;
+
+procedure TRadIACustomDockableForm.ReleaseForm;
+var
+  LForm: TCustomForm;
+begin
+  LForm := FForm;
+  if Assigned(LForm) then
+    LForm.Free;
+  FForm := nil;
+  FFrame := nil;
+end;
+
+procedure TRadIACustomDockableForm.SaveWindowState(
+  ADesktop: TCustomIniFile;
+  const ASection: string;
+  AIsProject: Boolean
+);
+begin
+  // The native IDE host persists its standard docking state.
+end;
+
+procedure TRadIACustomDockableForm.Show;
+var
+  LServices: INTAServices270;
+begin
+  if not Supports(BorlandIDEServices, INTAServices270, LServices) then
+    Exit;
+
+  if not Assigned(FForm) then
+  begin
+    FForm := LServices.CreateDockableForm(Self);
+    FForm.FreeNotification(FObserver);
+    FForm.Width := 990;
+    FForm.Height := 650;
   end;
 
   ApplyIDETheme;
+  FForm.Show;
+  FForm.BringToFront;
+  if Assigned(FFrame) then
+    FFrame.EnsureVisibleContent;
 end;
-
-procedure TFormRadIADockable.DoHide;
-begin
-  inherited DoHide;
-  SaveVisibilityState(False);
-end;
-
-procedure TFormRadIADockable.ApplyIDETheme;
-var
-  LThemingServices: IOTAIDEThemingServices;
-  LActiveTheme: string;
-begin
-  if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
-  begin
-    if LThemingServices.IDEThemingEnabled then
-    begin
-      LActiveTheme := LThemingServices.ActiveTheme;
-      if IsThemeDark(LActiveTheme) then
-        FChatFrame.SetTheme('dark')
-      else
-        FChatFrame.SetTheme('light');
-    end;
-  end;
-end;
-
-initialization
-  RegisterDockableForm;
-
-finalization
-  UnregisterDockableForm;
 
 end.

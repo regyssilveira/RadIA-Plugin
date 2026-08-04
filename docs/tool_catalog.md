@@ -1,5 +1,10 @@
 # Catálogo Inicial de Ferramentas Agentivas
 
+> Este documento descreve a arquitetura alvo e inclui itens de roadmap. Para a lista verificável
+> das tools realmente registradas pelo package atual, consulte o
+> [catálogo gerado do runtime](runtime_tool_catalog.md). Na IDE, `/tools` permanece a fonte final,
+> pois extensões podem adicionar ferramentas dinamicamente.
+
 ## 1. Convenções
 
 Os nomes públicos das ferramentas são estáveis, em inglês e usam `PascalCase`. Uma alteração
@@ -233,11 +238,13 @@ coincidam com o preview; código concorrente do usuário nunca é sobrescrito si
 
 ### Mutação
 
-- `StageFiles`
-- `CreateBranch`
+- `PreviewGitCommit`
 - `CommitChanges`
 
-Não serão oferecidas ferramentas de reset destrutivo ou descarte irrestrito.
+`GetGitStatus`, `GetGitDiff`, `PreviewGitCommit` e `CommitChanges` estão implementadas. O preview
+não altera o index e congela paths, mensagem, diff e fingerprint. O commit exige index inicialmente
+limpo, revalida o fingerprint e adiciona somente os paths revisados. Não são oferecidas ferramentas
+de reset destrutivo, descarte irrestrito ou push.
 
 ## 9. Conhecimento
 

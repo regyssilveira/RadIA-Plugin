@@ -29,6 +29,11 @@ type
     FLogEnabled: Boolean;
     FLogPath: string;
     FLogMaxSize: string;
+    FConsentTimeoutSeconds: string;
+    FConsentShowArguments: Boolean;
+    FConsentRememberReversible: Boolean;
+    FConsentRememberStructural: Boolean;
+    FConsentRememberExecution: Boolean;
     FQuotaEnabled: Boolean;
     FQuotaLimit: string;
     FQuotaUsedText: string;
@@ -103,6 +108,16 @@ type
     procedure SetLogPath(const AValue: string);
     function GetLogMaxSize: string;
     procedure SetLogMaxSize(const AValue: string);
+    function GetConsentTimeoutSeconds: string;
+    procedure SetConsentTimeoutSeconds(const AValue: string);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -147,6 +162,16 @@ type
     property LogEnabled: Boolean read FLogEnabled write FLogEnabled;
     property LogPath: string read FLogPath write FLogPath;
     property LogMaxSize: string read FLogMaxSize write FLogMaxSize;
+    property ConsentTimeoutSeconds: string
+      read FConsentTimeoutSeconds write FConsentTimeoutSeconds;
+    property ConsentShowArguments: Boolean
+      read FConsentShowArguments write FConsentShowArguments;
+    property ConsentRememberReversible: Boolean
+      read FConsentRememberReversible write FConsentRememberReversible;
+    property ConsentRememberStructural: Boolean
+      read FConsentRememberStructural write FConsentRememberStructural;
+    property ConsentRememberExecution: Boolean
+      read FConsentRememberExecution write FConsentRememberExecution;
     property QuotaEnabled: Boolean read FQuotaEnabled write FQuotaEnabled;
     property QuotaLimit: string read FQuotaLimit write FQuotaLimit;
     property QuotaUsedText: string read FQuotaUsedText write FQuotaUsedText;
@@ -198,6 +223,8 @@ type
     [Test]
     procedure TestSaveConfigValidatesIntegersRobustly;
     [Test]
+    procedure TestConsentSettingsAreValidatedAndPersisted;
+    [Test]
     procedure TestTemplateCreationAndSelection;
     [Test]
     procedure TestResetQuotaUsage;
@@ -232,6 +259,9 @@ begin
   FocusTemplateNameCalled := False;
   InjectDelphiVersion := True;
   ConciseResponses := True;
+  ConsentTimeoutSeconds := '60';
+  ConsentShowArguments := True;
+  ConsentRememberReversible := True;
 end;
 
 destructor TMockConfigView.Destroy;
@@ -339,6 +369,65 @@ function TMockConfigView.GetLogPath: string; begin Result := LogPath; end;
 procedure TMockConfigView.SetLogPath(const AValue: string); begin LogPath := AValue; end;
 function TMockConfigView.GetLogMaxSize: string; begin Result := LogMaxSize; end;
 procedure TMockConfigView.SetLogMaxSize(const AValue: string); begin LogMaxSize := AValue; end;
+function TMockConfigView.GetConsentTimeoutSeconds: string;
+begin
+  Result := ConsentTimeoutSeconds;
+end;
+
+procedure TMockConfigView.SetConsentTimeoutSeconds(
+  const AValue: string
+);
+begin
+  ConsentTimeoutSeconds := AValue;
+end;
+
+function TMockConfigView.GetConsentShowArguments: Boolean;
+begin
+  Result := ConsentShowArguments;
+end;
+
+procedure TMockConfigView.SetConsentShowArguments(
+  const AValue: Boolean
+);
+begin
+  ConsentShowArguments := AValue;
+end;
+
+function TMockConfigView.GetConsentRememberReversible: Boolean;
+begin
+  Result := ConsentRememberReversible;
+end;
+
+procedure TMockConfigView.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  ConsentRememberReversible := AValue;
+end;
+
+function TMockConfigView.GetConsentRememberStructural: Boolean;
+begin
+  Result := ConsentRememberStructural;
+end;
+
+procedure TMockConfigView.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  ConsentRememberStructural := AValue;
+end;
+
+function TMockConfigView.GetConsentRememberExecution: Boolean;
+begin
+  Result := ConsentRememberExecution;
+end;
+
+procedure TMockConfigView.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  ConsentRememberExecution := AValue;
+end;
 
 function TMockConfigView.GetQuotaEnabled: Boolean; begin Result := QuotaEnabled; end;
 procedure TMockConfigView.SetQuotaEnabled(const AValue: Boolean); begin QuotaEnabled := AValue; end;
@@ -511,6 +600,34 @@ begin
 
   Assert.IsFalse(FMockView.LastMessageDialogText.IsEmpty);
   Assert.IsFalse(FMockView.CloseViewCalled);
+end;
+
+procedure TTestConfigPresenter.
+  TestConsentSettingsAreValidatedAndPersisted;
+begin
+  FPresenter.LoadConfig;
+  FMockView.SetConsentTimeoutSeconds('10');
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'between 15 and 600'
+  );
+  Assert.IsFalse(FMockView.CloseViewCalled);
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetConsentTimeoutSeconds('90');
+  FMockView.SetConsentShowArguments(False);
+  FMockView.SetConsentRememberReversible(False);
+  FMockView.SetConsentRememberStructural(True);
+  FMockView.SetConsentRememberExecution(True);
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  Assert.AreEqual(90, FConfig.ConsentTimeoutSeconds);
+  Assert.IsFalse(FConfig.ConsentShowArguments);
+  Assert.IsFalse(FConfig.ConsentRememberReversible);
+  Assert.IsTrue(FConfig.ConsentRememberStructural);
+  Assert.IsTrue(FConfig.ConsentRememberExecution);
 end;
 
 procedure TTestConfigPresenter.TestTemplateCreationAndSelection;
