@@ -50,6 +50,7 @@ type
     FChkConsentRememberReversible: TCheckBox;
     FChkConsentRememberStructural: TCheckBox;
     FChkConsentRememberExecution: TCheckBox;
+    FChkKnowledgeSemanticEnabled: TCheckBox;
     FBtnRevokeConsent: TButton;
     FChkInlineCompletionEnabled: TCheckBox;
     FEdtInlineCompletionDelay: TEdit;
@@ -197,6 +198,8 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -615,23 +618,30 @@ begin
   FBtnRevokeConsent.Caption := 'Revoke session permissions';
   FBtnRevokeConsent.OnClick := BtnRevokeConsentClick;
 
+  FChkKnowledgeSemanticEnabled := CreateCheckBox(
+    FPnlSecurity,
+    'Enable local semantic project knowledge (no network)',
+    16,
+    320,
+    500
+  );
   FChkInlineCompletionEnabled := CreateCheckBox(
     FPnlSecurity,
     'Enable continuous inline completion (sends bounded editor context)',
     16,
-    328,
+    360,
     500
   );
   FLblInlineCompletionDelay := CreateLabel(
     FPnlSecurity,
     'Idle delay in milliseconds (250-5000):',
     16,
-    364
+    396
   );
   FEdtInlineCompletionDelay := CreateEdit(
     FPnlSecurity,
     16,
-    384,
+    416,
     100,
     True
   );
@@ -639,48 +649,48 @@ begin
     FPnlSecurity,
     'Excluded languages (semicolon separated, for example sql;markdown):',
     16,
-    424
+    456
   );
   FEdtInlineCompletionExcludedLanguages := CreateEdit(
     FPnlSecurity,
     16,
-    444,
+    476,
     500
   );
   FLblInlineCompletionExcludedFiles := CreateLabel(
     FPnlSecurity,
     'Excluded file fragments (semicolon separated):',
     16,
-    484
+    516
   );
   FEdtInlineCompletionExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    504,
+    536,
     500
   );
   FLblInlineCompletionExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Excluded project name or path fragments (semicolon separated):',
     16,
-    544
+    576
   );
   FEdtInlineCompletionExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    564,
+    596,
     500
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
     'Inline shortcuts (request, accept, nextWord, alternative, reject):',
     16,
-    604
+    636
   );
   FEdtInlineShortcutProfile := CreateEdit(
     FPnlSecurity,
     16,
-    624,
+    656,
     640
   );
 end;
@@ -1172,7 +1182,7 @@ begin
     FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled,
     FChkConsentShowArguments, FChkConsentRememberReversible,
     FChkConsentRememberStructural, FChkConsentRememberExecution,
-    FChkInlineCompletionEnabled], LColors);
+    FChkKnowledgeSemanticEnabled, FChkInlineCompletionEnabled], LColors);
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
   ApplyThemeToGroupBoxes([FGrpQuota], LColors);
@@ -2348,6 +2358,18 @@ procedure TRadIAFrameAIConfig.SetConsentRememberExecution(
 );
 begin
   FChkConsentRememberExecution.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := FChkKnowledgeSemanticEnabled.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  FChkKnowledgeSemanticEnabled.Checked := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetInlineCompletionEnabled: Boolean;

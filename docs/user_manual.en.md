@@ -129,6 +129,7 @@ Under **Settings > Security & Consent**, users can configure:
 - session permission for reversible writes;
 - session permission, disabled by default, for structural writes;
 - session permission, disabled by default, for builds, tests, and execution.
+- local semantic project knowledge, disabled by default, without network code transmission.
 
 Destructive and sensitive tools never offer session permission. Auditing, secret sanitization, and
 workspace confinement cannot be disabled.

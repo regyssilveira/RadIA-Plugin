@@ -34,6 +34,7 @@ type
     FConsentRememberReversible: Boolean;
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
+    FKnowledgeSemanticEnabled: Boolean;
     FInlineCompletionEnabled: Boolean;
     FInlineCompletionDelay: string;
     FInlineCompletionExcludedFiles: string;
@@ -124,6 +125,8 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -190,6 +193,8 @@ type
       read FConsentRememberStructural write FConsentRememberStructural;
     property ConsentRememberExecution: Boolean
       read FConsentRememberExecution write FConsentRememberExecution;
+    property KnowledgeSemanticEnabled: Boolean
+      read FKnowledgeSemanticEnabled write FKnowledgeSemanticEnabled;
     property QuotaEnabled: Boolean read FQuotaEnabled write FQuotaEnabled;
     property QuotaLimit: string read FQuotaLimit write FQuotaLimit;
     property QuotaUsedText: string read FQuotaUsedText write FQuotaUsedText;
@@ -244,6 +249,8 @@ type
     procedure TestConsentSettingsAreValidatedAndPersisted;
     [Test]
     procedure TestInlineCompletionSettingsAreValidatedAndPersisted;
+    [Test]
+    procedure TestSemanticKnowledgeConsentIsPersisted;
     [Test]
     procedure TestTemplateCreationAndSelection;
     [Test]
@@ -453,6 +460,18 @@ procedure TMockConfigView.SetConsentRememberExecution(
 );
 begin
   ConsentRememberExecution := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := KnowledgeSemanticEnabled;
+end;
+
+procedure TMockConfigView.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  KnowledgeSemanticEnabled := AValue;
 end;
 
 function TMockConfigView.GetInlineCompletionEnabled: Boolean;
@@ -789,6 +808,18 @@ begin
     LShortcutConfig.InlineShortcutProfile,
     'request=Ctrl+Shift+Space'
   );
+end;
+
+procedure TTestConfigPresenter.TestSemanticKnowledgeConsentIsPersisted;
+begin
+  FPresenter.LoadConfig;
+  Assert.IsFalse(FMockView.GetKnowledgeSemanticEnabled);
+
+  FMockView.SetKnowledgeSemanticEnabled(True);
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
 end;
 
 procedure TTestConfigPresenter.TestTemplateCreationAndSelection;

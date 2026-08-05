@@ -918,7 +918,10 @@ initialization
     TRadIALocalKnowledgeService.Create(
       TRadIAContainer.Resolve<IRadIAKnowledgeSource>,
       TRadIAContainer.Resolve<IRadIAKnowledgeStore>,
-      TRadIALocalHashEmbeddingProvider.Create
+      TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
+        TRadIAConfig.GetInstance,
+        TRadIALocalHashEmbeddingProvider.Create
+      )
     )
   );
   TRadIAContainer.Register<IRadIAKnowledgeRefreshScheduler>(

@@ -48,6 +48,7 @@ type
     FConsentRememberReversible: Boolean;
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
+    FKnowledgeSemanticEnabled: Boolean;
   public
     constructor Create(const AMaxHistory: Integer; const ASystemPrompt: string = '');
     destructor Destroy; override;
@@ -104,6 +105,8 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -630,6 +633,18 @@ procedure TMockConfig.SetConsentRememberExecution(
 );
 begin
   FConsentRememberExecution := AValue;
+end;
+
+function TMockConfig.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := FKnowledgeSemanticEnabled;
+end;
+
+procedure TMockConfig.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeSemanticEnabled := AValue;
 end;
 
 function TMockConfig.GetApiKey(const AProviderName: string): string;

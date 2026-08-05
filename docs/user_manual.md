@@ -163,6 +163,7 @@ Em **Settings > Security & Consent**, é possível configurar:
 - permissão de sessão para escrita reversível;
 - permissão de sessão, desabilitada por padrão, para escrita estrutural;
 - permissão de sessão, desabilitada por padrão, para build, testes e execução.
+- conhecimento semântico local, desabilitado por padrão, sem envio de código pela rede.
 
 Tools destrutivas ou sensíveis nunca oferecem permissão de sessão. Auditoria, sanitização de
 secrets e confinamento ao workspace não podem ser desativados.

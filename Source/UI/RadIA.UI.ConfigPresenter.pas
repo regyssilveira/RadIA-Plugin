@@ -65,6 +65,8 @@ type
     procedure SetConsentRememberStructural(const AValue: Boolean);
     function GetConsentRememberExecution: Boolean;
     procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -283,6 +285,9 @@ begin
   FView.SetConsentRememberExecution(
     FConfig.ConsentRememberExecution
   );
+  FView.SetKnowledgeSemanticEnabled(
+    FConfig.KnowledgeSemanticEnabled
+  );
   FView.SetInlineCompletionEnabled(FConfig.AutocompleteEnabled);
   FView.SetInlineCompletionDelay(
     IntToStr(FConfig.AutocompleteDelay)
@@ -483,6 +488,8 @@ begin
     FView.GetConsentRememberStructural;
   FConfig.ConsentRememberExecution :=
     FView.GetConsentRememberExecution;
+  FConfig.KnowledgeSemanticEnabled :=
+    FView.GetKnowledgeSemanticEnabled;
   FConfig.AutocompleteEnabled :=
     FView.GetInlineCompletionEnabled;
   FConfig.AutocompleteDelay := StrToInt(

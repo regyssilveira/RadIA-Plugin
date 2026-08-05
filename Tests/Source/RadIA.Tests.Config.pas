@@ -37,6 +37,8 @@ type
     [Test]
     procedure TestInlineCompletionSafeDefaultsAndPersistence;
     [Test]
+    procedure TestSemanticKnowledgeConsentAndProvider;
+    [Test]
     procedure TestOllamaBaseUrlPersistence;
     [Test]
     procedure TestJsonNewlineHandling;
@@ -54,6 +56,8 @@ implementation
 
 uses
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.Knowledge,
+  RadIA.Core.KnowledgeEmbeddings,
   System.SysUtils, System.JSON, RadIA.Core.Config;
 
 { TTestRadIAConfig }
@@ -226,6 +230,35 @@ begin
   Assert.AreEqual(250, FConfig.AutocompleteDelay);
   FConfig.AutocompleteDelay := 9000;
   Assert.AreEqual(5000, FConfig.AutocompleteDelay);
+end;
+
+procedure TTestRadIAConfig.TestSemanticKnowledgeConsentAndProvider;
+var
+  LEmbedding: TArray<Single>;
+  LEmbeddingLength: Integer;
+  LProvider: IRadIAKnowledgeEmbeddingProvider;
+begin
+  Assert.IsFalse(FConfig.KnowledgeSemanticEnabled);
+  LProvider := TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
+    FConfig,
+    TRadIALocalHashEmbeddingProvider.Create
+  );
+  LEmbedding := LProvider.Embed('create a Delphi form');
+  LEmbeddingLength := Length(LEmbedding);
+  Assert.AreEqual(0, LEmbeddingLength);
+
+  FConfig.KnowledgeSemanticEnabled := True;
+  FConfig.Save;
+  FConfig.Load;
+  Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  LEmbedding := LProvider.Embed('create a Delphi form');
+  LEmbeddingLength := Length(LEmbedding);
+  Assert.AreEqual(LProvider.GetDimensions, LEmbeddingLength);
+
+  FConfig.KnowledgeSemanticEnabled := False;
+  LEmbedding := LProvider.Embed('create a Delphi form');
+  LEmbeddingLength := Length(LEmbedding);
+  Assert.AreEqual(0, LEmbeddingLength);
 end;
 
 procedure TTestRadIAConfig.TestOllamaBaseUrlPersistence;

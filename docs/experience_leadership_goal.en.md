@@ -192,6 +192,10 @@ contract, a network-free local vector provider, versioned per-workspace persiste
 plus vector explanations for every result. A remote provider with visual consent and configurable
 exclusions remains pending.
 
+Local visual consent is now available under **Settings > Security & Consent**, disabled by default
+and applied immediately without restarting the IDE. Remote providers and configurable file and
+project exclusions remain pending.
+
 ### M6 — Installation and first value
 
 - Create a signed visual installer and prepare an IDE package-manager channel.

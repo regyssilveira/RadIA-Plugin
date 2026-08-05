@@ -199,6 +199,10 @@ embeddings, provider vetorial local sem rede, persistência versionada por works
 dos componentes lexical e vetorial de cada resultado. Provider remoto com consentimento visual e
 exclusões configuráveis continuam pendentes.
 
+O consentimento visual local agora está disponível em **Settings > Security & Consent**, desativado
+por padrão e aplicado imediatamente sem reiniciar a IDE. Providers remotos e exclusões configuráveis
+por arquivo e projeto continuam pendentes.
+
 ### M6 — Instalação e primeiro valor
 
 - Criar instalador visual assinado e preparar um canal compatível com o gerenciador da IDE.

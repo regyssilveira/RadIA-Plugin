@@ -3,6 +3,7 @@ unit RadIA.Core.KnowledgeEmbeddings;
 interface
 
 uses
+  RadIA.Core.Interfaces,
   RadIA.Core.Knowledge;
 
 type
@@ -20,6 +21,24 @@ type
     function Embed(const AText: string): TArray<Single>;
   end;
 
+  TRadIAConfigurableKnowledgeEmbeddingProvider = class(
+    TInterfacedObject,
+    IRadIAKnowledgeEmbeddingProvider
+  )
+  private
+    FConfig: IRadIAConfig;
+    FProvider: IRadIAKnowledgeEmbeddingProvider;
+  public
+    constructor Create(
+      const AConfig: IRadIAConfig;
+      const AProvider: IRadIAKnowledgeEmbeddingProvider
+    );
+    function GetId: string;
+    function GetDimensions: Integer;
+    function IsLocal: Boolean;
+    function Embed(const AText: string): TArray<Single>;
+  end;
+
 implementation
 
 uses
@@ -28,6 +47,44 @@ uses
 
 const
   CEmbeddingDimensions = 256;
+
+constructor TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
+  const AConfig: IRadIAConfig;
+  const AProvider: IRadIAKnowledgeEmbeddingProvider
+);
+begin
+  inherited Create;
+  if not Assigned(AConfig) then
+    raise EArgumentNilException.Create('AConfig');
+  if not Assigned(AProvider) then
+    raise EArgumentNilException.Create('AProvider');
+  FConfig := AConfig;
+  FProvider := AProvider;
+end;
+
+function TRadIAConfigurableKnowledgeEmbeddingProvider.Embed(
+  const AText: string
+): TArray<Single>;
+begin
+  if not FConfig.KnowledgeSemanticEnabled then
+    Exit(nil);
+  Result := FProvider.Embed(AText);
+end;
+
+function TRadIAConfigurableKnowledgeEmbeddingProvider.GetDimensions: Integer;
+begin
+  Result := FProvider.GetDimensions;
+end;
+
+function TRadIAConfigurableKnowledgeEmbeddingProvider.GetId: string;
+begin
+  Result := FProvider.GetId;
+end;
+
+function TRadIAConfigurableKnowledgeEmbeddingProvider.IsLocal: Boolean;
+begin
+  Result := FProvider.IsLocal;
+end;
 
 function TRadIALocalHashEmbeddingProvider.Embed(
   const AText: string

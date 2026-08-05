@@ -24,8 +24,8 @@ Typical chat or MCP requests include:
 - “Rebuild the index for this project.”
 
 Search results include file, position, excerpt, total score, lexical contribution, vector
-contribution, and a ranking explanation. If the embedding provider fails or is omitted while
-constructing the service, retrieval automatically uses the deterministic lexical fallback. Search
+contribution, and a ranking explanation. If the embedding provider fails or is disabled under
+**Settings > Security & Consent**, retrieval automatically uses the deterministic lexical fallback. Search
 and document reads enforce result and payload limits.
 
 ## Storage and privacy
@@ -34,10 +34,14 @@ Snapshots are stored under `%APPDATA%\RadIA\Knowledge`, separated by a derived p
 Format 2 persists vectors with chunks and remains compatible with lexical format 1 snapshots. They
 are not authoritative source files and may be removed to force a rebuild.
 
-The default `local-hash-v1` provider calculates vectors entirely inside the IDE process without
-HTTP, tokens, or code transmission. The architecture accepts optional providers through a contract,
-but no remote provider is enabled implicitly. Content is sent to an AI provider only when an
-authorized request includes it as context.
+**Enable local semantic project knowledge (no network)** is disabled by default. When users enable
+it under **Settings > Security & Consent**, the `local-hash-v1` provider calculates vectors entirely
+inside the IDE process without HTTP, tokens, or code transmission. The preference takes effect
+immediately without restarting the IDE. Disabling it stops vector calculation for new indexing and
+search operations while deterministic lexical retrieval remains available.
+
+The architecture accepts optional providers through a contract, but no remote provider is enabled
+implicitly. Content is sent to an AI provider only when an authorized request includes it as context.
 
 ## Rebuild and troubleshooting
 

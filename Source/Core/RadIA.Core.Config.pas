@@ -37,6 +37,7 @@ type
     FAutocompleteExcludedFiles: string;
     FAutocompleteExcludedLanguages: string;
     FAutocompleteExcludedProjects: string;
+    FKnowledgeSemanticEnabled: Boolean;
     FInlineShortcutProfile: string;
     FAzureApiVersion: string;
     FAwsAccessKeyId: string;
@@ -145,6 +146,8 @@ type
     procedure SetAutocompleteExcludedProjects(const AValue: string);
     function GetInlineShortcutProfile: string;
     procedure SetInlineShortcutProfile(const AValue: string);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -253,6 +256,7 @@ begin
   FAutocompleteExcludedFiles := '';
   FAutocompleteExcludedLanguages := '';
   FAutocompleteExcludedProjects := '';
+  FKnowledgeSemanticEnabled := False;
   FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
   FInjectDelphiVersion := True;
   FConciseResponses := True;
@@ -428,6 +432,10 @@ begin
       'AutocompleteExcludedProjects',
       ''
     );
+    FKnowledgeSemanticEnabled := ReadRegInt(
+      'KnowledgeSemanticEnabled',
+      0
+    ) <> 0;
     FInlineShortcutProfile := ReadRegString(
       'InlineShortcutProfile',
       TRadIAInlineShortcutProfile.DefaultText
@@ -699,6 +707,10 @@ begin
     FStorage.WriteString(
       'AutocompleteExcludedProjects',
       FAutocompleteExcludedProjects
+    );
+    FStorage.WriteInteger(
+      'KnowledgeSemanticEnabled',
+      IfThen(FKnowledgeSemanticEnabled, 1, 0)
     );
     FStorage.WriteString(
       'InlineShortcutProfile',
@@ -1123,6 +1135,11 @@ begin
   Result := FInlineShortcutProfile;
 end;
 
+function TRadIAConfig.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := FKnowledgeSemanticEnabled;
+end;
+
 procedure TRadIAConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
   FAutocompleteDelay := EnsureRange(AValue, 250, 5000);
@@ -1154,6 +1171,13 @@ procedure TRadIAConfig.SetInlineShortcutProfile(
 );
 begin
   FInlineShortcutProfile := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeSemanticEnabled := AValue;
 end;
 
 function TRadIAConfig.GetSmartConfigEnabled: Boolean;
