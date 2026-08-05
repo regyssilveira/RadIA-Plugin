@@ -136,6 +136,14 @@ type
     ): TRadIAToolResult;
   end;
 
+  TMockInstallationHealthTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
   [TestFixture]
   TTestChatPresenter = class
   strict private
@@ -189,6 +197,8 @@ type
     procedure TestExtensionsCommandOpensManager;
     [Test]
     procedure TestHealthCommandExecutesProjectHealth;
+    [Test]
+    procedure TestDoctorCommandExecutesInstallationHealth;
     [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
@@ -482,6 +492,28 @@ begin
   );
 end;
 
+function TMockInstallationHealthTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"status":"ready","issues":[]}'
+  );
+end;
+
+function TMockInstallationHealthTool.GetDescriptor:
+  TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetInstallationHealth',
+    '1.0.0',
+    'Returns mock installation health.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  );
+end;
+
 { TTestChatPresenter }
 
 procedure TTestChatPresenter.DrainQueuedCalls;
@@ -534,6 +566,7 @@ begin
   FToolRegistry := TRadIAToolRegistry.Create;
   FToolRegistry.RegisterTool(TMockReadOnlyTool.Create);
   FToolRegistry.RegisterTool(TMockProjectHealthTool.Create);
+  FToolRegistry.RegisterTool(TMockInstallationHealthTool.Create);
   FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
   FMockView := TMockChatView.Create;
   FPresenter := TRadIAChatPresenter.Create(
@@ -721,6 +754,14 @@ begin
   DrainQueuedCalls;
 
   Assert.Contains(FMockView.PostedMessages.Text, '"health":"healthy"');
+end;
+
+procedure TTestChatPresenter.TestDoctorCommandExecutesInstallationHealth;
+begin
+  FPresenter.SendPromptText('/doctor');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"ready"');
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

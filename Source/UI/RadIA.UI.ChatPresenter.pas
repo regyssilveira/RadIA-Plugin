@@ -666,7 +666,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..13] of string = (
+  CNativeCommands: array[0..14] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -679,6 +679,7 @@ const
     '/settings',
     '/extensions',
     '/health',
+    '/doctor',
     '/tools',
     '/revoke-tools'
   );
@@ -853,6 +854,11 @@ begin
     '/health',
     'Summarizes project health and prioritized risks.',
     'Project Health'
+  );
+  AddCommand(
+    '/doctor',
+    'Diagnoses the RadIA installation and first-run readiness.',
+    'Installation Doctor'
   );
   AddCommand('/tools', 'Lists available read-only IDE tools.', 'IDE Tools');
   AddCommand(
@@ -2210,6 +2216,15 @@ begin
     HandleExplicitToolCommand(
       APromptText,
       '/tool GetProjectHealth {}'
+    );
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/doctor') then
+  begin
+    HandleExplicitToolCommand(
+      APromptText,
+      '/tool GetInstallationHealth {}'
     );
     Exit;
   end;

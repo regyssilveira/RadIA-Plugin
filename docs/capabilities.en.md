@@ -19,6 +19,7 @@ This page is the functional map of RadIA 2.0.
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
 | Project health | Summarize IDE, compiler, build, tests, and local knowledge risks without running mutations. |
+| Installation doctor | Diagnose provider, CLI, MCP, terminal, and web assets with actionable local recommendations. |
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints and resource limits. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
 | Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |

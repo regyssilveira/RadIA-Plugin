@@ -138,6 +138,13 @@ Consulte [Conhecimento do projeto](user_guide_project_knowledge.md).
 compilador, último build, última execução DUnitX e estado do conhecimento local. O relatório é
 somente leitura e prioriza riscos críticos, altos e médios sem iniciar build, testes ou indexação.
 
+### Diagnóstico da instalação
+
+`GetInstallationHealth` e `/doctor` verificam localmente se o provider ativo está configurado, se
+a CLI selecionada está disponível quando necessária, se a bridge e a configuração MCP existem, se
+o terminal interativo está disponível e se os recursos web do chat estão completos. O resultado
+não expõe credenciais e inclui recomendações de configuração, provisionamento ou reparo.
+
 ## Modo agente
 
 O modo agente oferece:

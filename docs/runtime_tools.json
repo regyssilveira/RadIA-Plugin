@@ -25,6 +25,13 @@
       ]
     },
     {
+      "name": "Installation health",
+      "source": "Source/Core/RadIA.Core.InstallationHealthTools.pas",
+      "tools": [
+        "GetInstallationHealth"
+      ]
+    },
+    {
       "name": "IDE navigation and project graph",
       "source": "Source/Core/RadIA.Core.IDENavigationTools.pas",
       "tools": [

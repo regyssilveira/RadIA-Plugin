@@ -92,6 +92,7 @@ uses
   RadIA.Core.KnowledgeHistory,
   RadIA.Core.KnowledgeTools,
   RadIA.Core.ProjectHealthTools,
+  RadIA.Core.InstallationHealthTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.DebugTimelineStore,
@@ -116,6 +117,19 @@ var
 procedure LogDebug(const AMsg: string);
 begin
   TLogger.Log(AMsg, 'Register');
+end;
+
+function GetRadIAModuleDirectory: string;
+var
+  LBuffer: array[0..MAX_PATH] of Char;
+  LModuleFile: string;
+begin
+  SetString(
+    LModuleFile,
+    LBuffer,
+    GetModuleFileName(HInstance, LBuffer, Length(LBuffer))
+  );
+  Result := TPath.GetDirectoryName(LModuleFile);
 end;
 
 procedure RegisterSplashAndAbout;
@@ -1130,6 +1144,20 @@ initialization
     TRadIAContainer.Resolve<IRadIABuildFacade>,
     TRadIAContainer.Resolve<IRadIADUnitXRunner>,
     TRadIAContainer.Resolve<IRadIAKnowledgeService>
+  );
+  RegisterRadIAInstallationHealthTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAInstallationHealthProbe.Create(
+      TRadIAConfig.GetInstance,
+      TPath.Combine(
+        GetRadIAModuleDirectory,
+        'RadIA.MCP.Bridge.exe'
+      ),
+      TPath.Combine(
+        TPath.Combine(TPath.GetHomePath, 'RadIA'),
+        'Web'
+      )
+    )
   );
   TRadIAContainer.Register<IRadIAMcpProtocol>(
     TRadIAMcpProtocol.Create(
