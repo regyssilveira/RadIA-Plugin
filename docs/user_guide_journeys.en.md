@@ -6,13 +6,24 @@ tests, debugger evidence, and Git visible in chat.
 
 Type `/journey` to list the available recipes.
 
+Every recipe accepts optional context after the command, for example:
+
+```text
+/journey create VCL inventory application with FireDAC and SQLite
+/journey fix-build preserve the public API of CustomerService
+/journey debug Access Violation while closing the orders form
+```
+
+Context is limited to 4,000 characters and appended to the structured objective. It never changes
+consent rules or replaces plan review.
+
 | Command | Objective |
 |---|---|
-| `/journey create` | Create, open, build, and explain a new Delphi project. |
-| `/journey fix-build` | Diagnose compiler errors, apply a minimal repair, and rebuild. |
-| `/journey tests` | Identify gaps, add DUnitX tests, and run relevant validation. |
-| `/journey debug` | Reproduce a failure, collect debugger evidence, fix, and validate. |
-| `/journey release` | Check health, build, tests, diff, and prepare a commit preview. |
+| `/journey create [requirements]` | Create, open, build, and explain a new Delphi project. |
+| `/journey fix-build [constraints]` | Diagnose errors, apply a minimal repair, and rebuild. |
+| `/journey tests [focus]` | Identify gaps, add DUnitX tests, and run validation. |
+| `/journey debug [symptom]` | Reproduce a failure, collect evidence, fix, and validate. |
+| `/journey release [scope]` | Check gates and diff, then prepare a commit preview. |
 
 ## Execution model
 
@@ -25,4 +36,3 @@ Type `/journey` to list the available recipes.
 
 Recipes grant no additional permission. The release journey prepares a local preview but never
 pushes or publishes artifacts without an explicit user instruction.
-

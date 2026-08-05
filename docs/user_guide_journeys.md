@@ -6,13 +6,24 @@ checkpoints e mantém diffs, build, testes, debugger e Git observáveis no chat.
 
 Digite `/journey` para listar as receitas disponíveis.
 
+Cada receita aceita contexto opcional depois do comando, por exemplo:
+
+```text
+/journey create aplicativo VCL de estoque com FireDAC e SQLite
+/journey fix-build preserve a API pública da unit CustomerService
+/journey debug Access Violation ao fechar o formulário de pedidos
+```
+
+O contexto é limitado a 4.000 caracteres e anexado ao objetivo estruturado. Ele não altera as
+regras de consentimento nem substitui a revisão do plano.
+
 | Comando | Objetivo |
 |---|---|
-| `/journey create` | Criar, abrir, compilar e explicar um novo projeto Delphi. |
-| `/journey fix-build` | Diagnosticar erros do compilador, aplicar correção mínima e recompilar. |
-| `/journey tests` | Identificar lacunas, criar testes DUnitX e executar a validação relevante. |
-| `/journey debug` | Reproduzir uma falha, coletar evidências do debugger, corrigir e validar. |
-| `/journey release` | Verificar saúde, build, testes, diff e preparar preview de commit. |
+| `/journey create [requisitos]` | Criar, abrir, compilar e explicar um novo projeto Delphi. |
+| `/journey fix-build [restrições]` | Diagnosticar erros, aplicar correção mínima e recompilar. |
+| `/journey tests [foco]` | Identificar lacunas, criar testes DUnitX e executar a validação. |
+| `/journey debug [sintoma]` | Reproduzir uma falha, coletar evidências, corrigir e validar. |
+| `/journey release [escopo]` | Verificar gates, diff e preparar preview de commit. |
 
 ## Como a execução funciona
 
@@ -33,4 +44,3 @@ faz push nem publica artefatos sem uma instrução explícita do usuário.
 - Use **tests** para ampliar cobertura sem misturar refatorações não relacionadas.
 - Use **debug** quando a causa exige estado de execução, breakpoints, stack, watches ou avaliação.
 - Use **release** antes de uma entrega para reunir gates técnicos e revisar o escopo do commit.
-

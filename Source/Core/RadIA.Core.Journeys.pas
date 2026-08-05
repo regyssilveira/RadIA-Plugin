@@ -29,6 +29,11 @@ type
       const ACommand: string;
       out ADefinition: TRadIAJourneyDefinition
     ): Boolean; static;
+    class function Resolve(
+      const AInput: string;
+      out ADefinition: TRadIAJourneyDefinition;
+      out AContext: string
+    ): Boolean; static;
     class function HelpText: string; static;
   end;
 
@@ -109,6 +114,43 @@ begin
   begin
     if SameText(LDefinition.Command, Trim(ACommand)) then
     begin
+      ADefinition := LDefinition;
+      Exit(True);
+    end;
+  end;
+  Result := False;
+end;
+
+class function TRadIAJourneyCatalog.Resolve(
+  const AInput: string;
+  out ADefinition: TRadIAJourneyDefinition;
+  out AContext: string
+): Boolean;
+const
+  MAX_CONTEXT_LENGTH = 4000;
+var
+  LDefinition: TRadIAJourneyDefinition;
+  LInput: string;
+begin
+  ADefinition := Default(TRadIAJourneyDefinition);
+  AContext := '';
+  LInput := Trim(AInput);
+  for LDefinition in All do
+  begin
+    if SameText(LInput, LDefinition.Command) then
+    begin
+      ADefinition := LDefinition;
+      Exit(True);
+    end;
+    if LInput.StartsWith(LDefinition.Command + ' ', True) then
+    begin
+      AContext := Trim(
+        Copy(LInput, Length(LDefinition.Command) + 1, MaxInt)
+      );
+      if Length(AContext) > MAX_CONTEXT_LENGTH then
+        raise EArgumentException.Create(
+          'Journey context must not exceed 4000 characters.'
+        );
       ADefinition := LDefinition;
       Exit(True);
     end;

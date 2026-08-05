@@ -2340,7 +2340,9 @@ function TRadIAChatPresenter.TryHandleJourneyCommand(
   const ACommandText: string
 ): Boolean;
 var
+  LContext: string;
   LDefinition: TRadIAJourneyDefinition;
+  LObjective: string;
 begin
   Result := True;
   if SameText(ACommandText, '/journey') then
@@ -2353,12 +2355,29 @@ begin
     );
     Exit;
   end;
-  if not TRadIAJourneyCatalog.Find(ACommandText, LDefinition) then
-    Exit(False);
+  try
+    if not TRadIAJourneyCatalog.Resolve(
+      ACommandText,
+      LDefinition,
+      LContext
+    ) then
+      Exit(False);
+  except
+    on E: EArgumentException do
+    begin
+      PostToWebView('add_message', 'user', APromptText);
+      PostToWebView('add_message', 'assistant', E.Message);
+      Exit;
+    end;
+  end;
   PostToWebView('add_message', 'user', APromptText);
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
-  StartAgentRun(LDefinition.Objective);
+  LObjective := LDefinition.Objective;
+  if not LContext.IsEmpty then
+    LObjective := LObjective + sLineBreak +
+      'User-provided context: ' + LContext;
+  StartAgentRun(LObjective);
 end;
 
 procedure TRadIAChatPresenter.ExecuteRegisteredTool(

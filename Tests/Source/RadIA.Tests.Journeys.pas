@@ -13,11 +13,16 @@ type
     procedure CatalogContainsFiveEndToEndJourneys;
     [Test]
     procedure JourneyObjectivesPreserveSafetyGates;
+    [Test]
+    procedure ResolvesOptionalUserContext;
+    [Test]
+    procedure RejectsOversizedUserContext;
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   RadIA.Core.Journeys;
 
 procedure TTestRadIAJourneys.CatalogContainsFiveEndToEndJourneys;
@@ -51,6 +56,53 @@ begin
   );
   Assert.Contains(LDefinition.Objective, 'Never push or publish');
   Assert.Contains(LDefinition.Objective, 'explicit user instruction');
+end;
+
+procedure TTestRadIAJourneys.ResolvesOptionalUserContext;
+var
+  LContext: string;
+  LDefinition: TRadIAJourneyDefinition;
+begin
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Resolve(
+      '/journey create VCL inventory app with SQLite',
+      LDefinition,
+      LContext
+    )
+  );
+  Assert.AreEqual('/journey create', LDefinition.Command);
+  Assert.AreEqual('VCL inventory app with SQLite', LContext);
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Resolve(
+      '/JOURNEY FIX-BUILD',
+      LDefinition,
+      LContext
+    )
+  );
+  Assert.AreEqual('', LContext);
+end;
+
+procedure TTestRadIAJourneys.RejectsOversizedUserContext;
+var
+  LContext: string;
+  LDefinition: TRadIAJourneyDefinition;
+  LRaised: Boolean;
+begin
+  LRaised := False;
+  try
+    TRadIAJourneyCatalog.Resolve(
+      '/journey tests ' + StringOfChar('x', 4001),
+      LDefinition,
+      LContext
+    );
+  except
+    on E: EArgumentException do
+    begin
+      LRaised := True;
+      Assert.Contains(E.Message, '4000');
+    end;
+  end;
+  Assert.IsTrue(LRaised);
 end;
 
 initialization
