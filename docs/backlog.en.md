@@ -69,6 +69,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         and walks older matches without requiring the mouse.
     *   M2 delivered in this increment: a visual ANSI/CSI buffer preserves per-cell styling and
         applies carriage return, overwrite, movement, positioning, erase, and cursor save/restore.
+    *   M2 complete: multiple tabbed sessions keep independent processes, buffers, and input;
+        closing a tab cancels only its own tree and preserves at least one open session.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

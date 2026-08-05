@@ -48,6 +48,8 @@ type
     procedure ScreenResizesAndRejectsInvalidWidth;
     [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
+    [Test]
+    procedure TerminalTabsCreateAndCloseIndependentSessions;
   end;
 
 implementation
@@ -409,6 +411,37 @@ begin
     try
       LFrame.Parent := LHost;
       Assert.IsTrue(LFrame.HandleAllocated);
+    finally
+      LFrame.Free;
+    end;
+  finally
+    LHost.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.
+  TerminalTabsCreateAndCloseIndependentSessions;
+var
+  LFrame: TRadIATerminalTabsFrame;
+  LFirstSession: TObject;
+  LHost: TForm;
+begin
+  LHost := TForm.CreateNew(nil);
+  try
+    LHost.Show;
+    LFrame := TRadIATerminalTabsFrame.Create(LHost);
+    try
+      LFrame.Parent := LHost;
+      Assert.AreEqual<Integer>(1, LFrame.TestSessionCount);
+      LFirstSession := LFrame.TestActiveSession;
+      Assert.IsNotNull(LFirstSession);
+      LFrame.TestAddSession;
+      Assert.AreEqual<Integer>(2, LFrame.TestSessionCount);
+      Assert.IsFalse(LFirstSession = LFrame.TestActiveSession);
+      LFrame.TestCloseSession;
+      Assert.AreEqual<Integer>(1, LFrame.TestSessionCount);
+      LFrame.TestCloseSession;
+      Assert.AreEqual<Integer>(1, LFrame.TestSessionCount);
     finally
       LFrame.Free;
     end;

@@ -86,9 +86,35 @@ type
     procedure EnsureVisibleContent;
   end;
 
+  TRadIATerminalTabsFrame = class(TCustomFrame)
+  private
+    FAddButton: TButton;
+    FCloseButton: TButton;
+    FNextSessionNumber: Integer;
+    FPageControl: TPageControl;
+    FToolbar: TPanel;
+    procedure AddClick(Sender: TObject);
+    function AddSession: TRadIATerminalFrame;
+    procedure CloseClick(Sender: TObject);
+    function GetActiveSession: TRadIATerminalFrame;
+  protected
+    procedure CreateWnd; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure ApplyCurrentTheme;
+    procedure EnsureVisibleContent;
+    {$IFDEF TESTS}
+    procedure TestAddSession;
+    function TestActiveSession: TObject;
+    procedure TestCloseSession;
+    function TestSessionCount: Integer;
+    {$ENDIF}
+  end;
+
 implementation
 
 {$R *.dfm}
+{$R RadIA.UI.TerminalTabsFrame.dfm}
 
 uses
   System.DateUtils,
@@ -319,7 +345,8 @@ end;
 procedure TRadIATerminalFrame.ApplyCurrentTheme;
 begin
   Invalidate;
-  FOutputEditor.Invalidate;
+  if Assigned(FOutputEditor) then
+    FOutputEditor.Invalidate;
 end;
 
 procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
@@ -645,5 +672,136 @@ begin
   if Assigned(FSession) then
     FSession.Cancel;
 end;
+
+{ TRadIATerminalTabsFrame }
+
+procedure TRadIATerminalTabsFrame.AddClick(Sender: TObject);
+begin
+  AddSession;
+end;
+
+procedure TRadIATerminalTabsFrame.CreateWnd;
+begin
+  inherited;
+  if Assigned(FPageControl) and (FPageControl.PageCount = 0) then
+    AddSession;
+end;
+
+function TRadIATerminalTabsFrame.AddSession: TRadIATerminalFrame;
+var
+  LTab: TTabSheet;
+begin
+  Inc(FNextSessionNumber);
+  LTab := TTabSheet.Create(FPageControl);
+  LTab.PageControl := FPageControl;
+  LTab.Caption := 'Terminal ' + FNextSessionNumber.ToString;
+  Result := TRadIATerminalFrame.Create(LTab);
+  Result.Parent := LTab;
+  Result.Align := alClient;
+  Result.ApplyCurrentTheme;
+  FPageControl.ActivePage := LTab;
+  Result.EnsureVisibleContent;
+end;
+
+procedure TRadIATerminalTabsFrame.ApplyCurrentTheme;
+var
+  LIndex: Integer;
+  LSession: TRadIATerminalFrame;
+begin
+  for LIndex := 0 to FPageControl.PageCount - 1 do
+  begin
+    LSession := TRadIATerminalFrame(
+      FPageControl.Pages[LIndex].Controls[0]
+    );
+    LSession.ApplyCurrentTheme;
+  end;
+end;
+
+procedure TRadIATerminalTabsFrame.CloseClick(Sender: TObject);
+var
+  LPage: TTabSheet;
+begin
+  if FPageControl.PageCount <= 1 then
+    Exit;
+  LPage := FPageControl.ActivePage;
+  LPage.Free;
+  EnsureVisibleContent;
+end;
+
+constructor TRadIATerminalTabsFrame.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  Align := alClient;
+
+  FToolbar := TPanel.Create(Self);
+  FToolbar.Parent := Self;
+  FToolbar.Align := alTop;
+  FToolbar.Height := 36;
+  FToolbar.BevelOuter := bvNone;
+  FToolbar.ShowCaption := False;
+
+  FAddButton := TButton.Create(Self);
+  FAddButton.Parent := FToolbar;
+  FAddButton.SetBounds(8, 4, 110, 27);
+  FAddButton.Caption := 'New terminal';
+  FAddButton.Hint := 'Create an independent terminal session';
+  FAddButton.ShowHint := True;
+  FAddButton.OnClick := AddClick;
+
+  FCloseButton := TButton.Create(Self);
+  FCloseButton.Parent := FToolbar;
+  FCloseButton.SetBounds(126, 4, 110, 27);
+  FCloseButton.Caption := 'Close terminal';
+  FCloseButton.Hint := 'Cancel and close the active terminal session';
+  FCloseButton.ShowHint := True;
+  FCloseButton.OnClick := CloseClick;
+
+  FPageControl := TPageControl.Create(Self);
+  FPageControl.Parent := Self;
+  FPageControl.Align := alClient;
+end;
+
+procedure TRadIATerminalTabsFrame.EnsureVisibleContent;
+var
+  LSession: TRadIATerminalFrame;
+begin
+  LSession := GetActiveSession;
+  if Assigned(LSession) then
+    LSession.EnsureVisibleContent;
+end;
+
+function TRadIATerminalTabsFrame.GetActiveSession:
+  TRadIATerminalFrame;
+var
+  LPage: TTabSheet;
+begin
+  Result := nil;
+  LPage := FPageControl.ActivePage;
+  if Assigned(LPage) and (LPage.ControlCount > 0) and
+    (LPage.Controls[0] is TRadIATerminalFrame) then
+    Result := TRadIATerminalFrame(LPage.Controls[0]);
+end;
+
+{$IFDEF TESTS}
+procedure TRadIATerminalTabsFrame.TestAddSession;
+begin
+  AddClick(Self);
+end;
+
+function TRadIATerminalTabsFrame.TestActiveSession: TObject;
+begin
+  Result := GetActiveSession;
+end;
+
+procedure TRadIATerminalTabsFrame.TestCloseSession;
+begin
+  CloseClick(Self);
+end;
+
+function TRadIATerminalTabsFrame.TestSessionCount: Integer;
+begin
+  Result := FPageControl.PageCount;
+end;
+{$ENDIF}
 
 end.

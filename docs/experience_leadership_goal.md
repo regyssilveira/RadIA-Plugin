@@ -64,7 +64,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 |---|---|---|
 | M0 — Qualidade | Em execução | Gate Sonar verde ou classificação administrativa dos falsos positivos comprovados |
 | M1 — Assistência inline | Em execução | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
-| M2 — Terminal | Em execução | PTY, ANSI, stdin, resize e encerramento de árvore validados |
+| M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Planejado | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Planejado | Instalação declarativa segura sem recompilar ou reiniciar |
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
@@ -78,10 +78,10 @@ vivo, a posição do cursor e o símbolo vigente. Os cinco atalhos são bindings
 validados e recarregados sem reiniciar a IDE. Sugestões multilinha com linhas virtuais e o aceite
 visual em toda a matriz de IDEs continuam obrigatórios antes de marcar o marco como concluído.
 
-O M2 agora possui buffer visual ANSI/CSI com cursor e sobrescrita, saída rica, stdin contínuo,
-execução por ConPTY, resize em dimensões de caracteres e busca reversa por `Ctrl+R`. O estilo e o
-estado do parser permanecem íntegros mesmo quando uma sequência chega dividida entre chunks.
-Múltiplas sessões em abas ainda são necessárias para concluir o marco.
+O M2 possui buffer visual ANSI/CSI com cursor e sobrescrita, saída rica, stdin contínuo, execução
+por ConPTY, resize em dimensões de caracteres, busca reversa por `Ctrl+R` e múltiplas sessões em
+abas. Cada aba mantém processo, entrada, saída e ciclo de vida independentes. O estilo e o estado
+do parser permanecem íntegros mesmo quando uma sequência chega dividida entre chunks.
 
 ## Regras de passagem entre marcos
 

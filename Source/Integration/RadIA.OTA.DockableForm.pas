@@ -132,7 +132,7 @@ begin
     GRadIATerminalDockableFormHost := TRadIACustomDockableForm.Create(
       'Rad IA Terminal',
       'RadIATerminalDockableForm',
-      TRadIATerminalFrame,
+      TRadIATerminalTabsFrame,
       900,
       520
     );
@@ -236,8 +236,8 @@ begin
     LThemingServices.ApplyTheme(FFrame);
     if FFrame is TRadIAFrameAIChat then
       TRadIAFrameAIChat(FFrame).ApplyCurrentTheme
-    else if FFrame is TRadIATerminalFrame then
-      TRadIATerminalFrame(FFrame).ApplyCurrentTheme;
+    else if FFrame is TRadIATerminalTabsFrame then
+      TRadIATerminalTabsFrame(FFrame).ApplyCurrentTheme;
   end;
 end;
 
@@ -245,8 +245,8 @@ procedure TRadIACustomDockableForm.EnsureFrameContent;
 begin
   if FFrame is TRadIAFrameAIChat then
     TRadIAFrameAIChat(FFrame).EnsureVisibleContent
-  else if FFrame is TRadIATerminalFrame then
-    TRadIATerminalFrame(FFrame).EnsureVisibleContent;
+  else if FFrame is TRadIATerminalTabsFrame then
+    TRadIATerminalTabsFrame(FFrame).EnsureVisibleContent;
 end;
 
 procedure TRadIACustomDockableForm.CustomizePopupMenu(APopupMenu: TPopupMenu);

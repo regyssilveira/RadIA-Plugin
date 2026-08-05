@@ -14,6 +14,8 @@ do Delphi.
 - cores ANSI normais e brilhantes, texto em negrito e reset de estilo em uma saída rica;
 - buffer de tela com sobrescrita por retorno de carro, posição e movimento de cursor CSI;
 - limpeza ANSI de linha ou tela e save/restore da posição do cursor;
+- múltiplas sessões simultâneas em abas, cada uma com processo, entrada e saída independentes;
+- fechamento isolado de aba com cancelamento seguro apenas da árvore de processos correspondente;
 - entrada contínua para responder prompts enquanto o processo permanece ativo;
 - sessão Windows ConPTY com canais UTF-8 e fallback para pipes em sistemas sem a API;
 - resize automático da pseudo-console em colunas e linhas quando o painel muda de tamanho;
@@ -30,17 +32,19 @@ aparecem como texto bruto. O buffer visual aplica movimentação relativa e abso
 retorno de carro, backspace, tabulação, limpeza de linha/tela e save/restore de posição. Isso permite
 que barras de progresso e ferramentas interativas atualizem o conteúdo existente sem produzir
 linhas duplicadas. Em Windows 10 1809 ou superior, a execução usa ConPTY, mantém entrada contínua e
-atualiza as dimensões do console conforme o painel. Múltiplas sessões em abas ainda estão pendentes.
+atualiza as dimensões do console conforme o painel.
 
 ## Fluxo de uso
 
 1. Abra um projeto na IDE.
 2. Abra **Rad IA Terminal**.
-3. Escolha PowerShell ou Command Prompt.
-4. Digite um comando ou selecione um snippet.
-5. Clique em **Run**.
-6. Se o processo solicitar entrada, digite a resposta e clique em **Send**.
-7. Use **Stop** para cancelar o processo e seus subprocessos.
+3. Use **New terminal** quando precisar de outra sessão simultânea.
+4. Escolha PowerShell ou Command Prompt na aba ativa.
+5. Digite um comando ou selecione um snippet.
+6. Clique em **Run**.
+7. Se o processo solicitar entrada, digite a resposta e clique em **Send**.
+8. Use **Stop** para cancelar o processo e seus subprocessos.
+9. Use **Close terminal** para cancelar e remover somente a aba ativa.
 
 Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Cada novo
 acionamento percorre os resultados anteriores, do mais recente para o mais antigo. Alterar

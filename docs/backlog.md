@@ -69,6 +69,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         percorre ocorrências anteriores sem exigir o mouse.
     *   M2 entregue nesta etapa: buffer visual ANSI/CSI preserva estilo por célula e executa
         retorno de carro, sobrescrita, movimento, posição, limpeza e save/restore de cursor.
+    *   M2 concluído: múltiplas sessões em abas mantêm processos, buffers e entrada independentes;
+        fechar uma aba cancela apenas sua própria árvore e preserva pelo menos uma sessão aberta.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

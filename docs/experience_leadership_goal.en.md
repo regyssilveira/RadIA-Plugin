@@ -63,7 +63,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 |---|---|---|
 | M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
 | M1 — Inline assistance | In progress | OTA Ghost Text, shortcuts, consent, and real matrix approved |
-| M2 — Terminal | In progress | PTY, ANSI, stdin, resize, and process-tree shutdown validated |
+| M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
 | M3 — Unified center | Planned | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | Planned | Safe declarative installation without recompilation or restart |
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
@@ -77,10 +77,10 @@ buffer, cursor position, and current symbol. All five shortcuts are configurable
 validated and reloaded without restarting the IDE. Multiline virtual rows and visual acceptance
 across the complete IDE matrix remain mandatory before the milestone can be marked complete.
 
-M2 now includes a visual ANSI/CSI buffer with cursor overwrite, rich output, continuous stdin,
-ConPTY execution, character-dimension resize, and reverse history search through `Ctrl+R`. Styling
-and parser state remain intact even when an escape sequence is split across chunks. Multiple tabbed
-sessions are still required to complete the milestone.
+M2 includes a visual ANSI/CSI buffer with cursor overwrite, rich output, continuous stdin, ConPTY
+execution, character-dimension resize, reverse history search through `Ctrl+R`, and multiple tabbed
+sessions. Each tab owns independent process, input, output, and lifecycle state. Styling and parser
+state remain intact even when an escape sequence is split across chunks.
 
 ## Milestone transition rules
 
