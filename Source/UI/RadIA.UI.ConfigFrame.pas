@@ -51,6 +51,7 @@ type
     FChkConsentRememberStructural: TCheckBox;
     FChkConsentRememberExecution: TCheckBox;
     FChkKnowledgeSemanticEnabled: TCheckBox;
+    FChkKnowledgeApprovedHistoryEnabled: TCheckBox;
     FEdtKnowledgeExcludedFiles: TEdit;
     FEdtKnowledgeExcludedProjects: TEdit;
     FBtnRevokeConsent: TButton;
@@ -204,6 +205,8 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
     function GetKnowledgeExcludedFiles: string;
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
@@ -633,47 +636,58 @@ begin
     320,
     500
   );
+  FChkKnowledgeApprovedHistoryEnabled := CreateCheckBox(
+    FPnlSecurity,
+    'Include approved agent run summaries in local project knowledge',
+    16,
+    346,
+    560
+  );
+  FChkKnowledgeApprovedHistoryEnabled.Hint :=
+    'Indexes only completed runs with an approved plan from the current project. ' +
+    'Tool arguments and results are never included.';
+  FChkKnowledgeApprovedHistoryEnabled.ShowHint := True;
   FLblKnowledgeExcludedFiles := CreateLabel(
     FPnlSecurity,
     'Knowledge excluded file fragments (semicolon separated):',
     16,
-    356
+    382
   );
   FEdtKnowledgeExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    376,
+    402,
     500
   );
   FLblKnowledgeExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Knowledge excluded project name or path fragments (semicolon separated):',
     16,
-    416
+    442
   );
   FEdtKnowledgeExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    436,
+    462,
     500
   );
   FChkInlineCompletionEnabled := CreateCheckBox(
     FPnlSecurity,
     'Enable continuous inline completion (sends bounded editor context)',
     16,
-    480,
+    506,
     500
   );
   FLblInlineCompletionDelay := CreateLabel(
     FPnlSecurity,
     'Idle delay in milliseconds (250-5000):',
     16,
-    516
+    542
   );
   FEdtInlineCompletionDelay := CreateEdit(
     FPnlSecurity,
     16,
-    536,
+    562,
     100,
     True
   );
@@ -681,48 +695,48 @@ begin
     FPnlSecurity,
     'Excluded languages (semicolon separated, for example sql;markdown):',
     16,
-    576
+    602
   );
   FEdtInlineCompletionExcludedLanguages := CreateEdit(
     FPnlSecurity,
     16,
-    596,
+    622,
     500
   );
   FLblInlineCompletionExcludedFiles := CreateLabel(
     FPnlSecurity,
     'Excluded file fragments (semicolon separated):',
     16,
-    636
+    662
   );
   FEdtInlineCompletionExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    656,
+    682,
     500
   );
   FLblInlineCompletionExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Excluded project name or path fragments (semicolon separated):',
     16,
-    696
+    722
   );
   FEdtInlineCompletionExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    716,
+    742,
     500
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
     'Inline shortcuts (request, accept, nextWord, alternative, reject):',
     16,
-    756
+    782
   );
   FEdtInlineShortcutProfile := CreateEdit(
     FPnlSecurity,
     16,
-    776,
+    802,
     640
   );
 end;
@@ -1216,7 +1230,8 @@ begin
     FChkConciseResponses, FChkLogEnabled, FChkQuotaEnabled,
     FChkConsentShowArguments, FChkConsentRememberReversible,
     FChkConsentRememberStructural, FChkConsentRememberExecution,
-    FChkKnowledgeSemanticEnabled, FChkInlineCompletionEnabled], LColors);
+    FChkKnowledgeSemanticEnabled, FChkKnowledgeApprovedHistoryEnabled,
+    FChkInlineCompletionEnabled], LColors);
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
   ApplyThemeToGroupBoxes([FGrpQuota], LColors);
@@ -2399,11 +2414,23 @@ begin
   Result := FChkKnowledgeSemanticEnabled.Checked;
 end;
 
+function TRadIAFrameAIConfig.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := FChkKnowledgeApprovedHistoryEnabled.Checked;
+end;
+
 procedure TRadIAFrameAIConfig.SetKnowledgeSemanticEnabled(
   const AValue: Boolean
 );
 begin
   FChkKnowledgeSemanticEnabled.Checked := AValue;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  FChkKnowledgeApprovedHistoryEnabled.Checked := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetKnowledgeExcludedFiles: string;

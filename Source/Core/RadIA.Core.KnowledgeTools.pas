@@ -16,7 +16,8 @@ implementation
 uses
   System.Diagnostics,
   System.JSON,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.KnowledgeHistory;
 
 type
   TRadIAKnowledgeToolKind = (
@@ -123,6 +124,10 @@ var
   LArguments: TJSONObject;
   LNavigation: TJSONObject;
 begin
+  if TRadIAApprovedHistoryKnowledgeSource.IsHistoryDocument(
+    AFileName
+  ) then
+    Exit;
   LNavigation := TJSONObject.Create;
   LNavigation.AddPair('tool', 'NavigateToFile');
   LArguments := TJSONObject.Create;

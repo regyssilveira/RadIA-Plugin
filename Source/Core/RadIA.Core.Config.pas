@@ -38,6 +38,7 @@ type
     FAutocompleteExcludedLanguages: string;
     FAutocompleteExcludedProjects: string;
     FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeApprovedHistoryEnabled: Boolean;
     FKnowledgeExcludedFiles: string;
     FKnowledgeExcludedProjects: string;
     FInlineShortcutProfile: string;
@@ -150,6 +151,8 @@ type
     procedure SetInlineShortcutProfile(const AValue: string);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
     function GetKnowledgeExcludedFiles: string;
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
@@ -263,6 +266,7 @@ begin
   FAutocompleteExcludedLanguages := '';
   FAutocompleteExcludedProjects := '';
   FKnowledgeSemanticEnabled := False;
+  FKnowledgeApprovedHistoryEnabled := False;
   FKnowledgeExcludedFiles := '';
   FKnowledgeExcludedProjects := '';
   FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
@@ -442,6 +446,10 @@ begin
     );
     FKnowledgeSemanticEnabled := ReadRegInt(
       'KnowledgeSemanticEnabled',
+      0
+    ) <> 0;
+    FKnowledgeApprovedHistoryEnabled := ReadRegInt(
+      'KnowledgeApprovedHistoryEnabled',
       0
     ) <> 0;
     FKnowledgeExcludedFiles := ReadRegString(
@@ -727,6 +735,10 @@ begin
     FStorage.WriteInteger(
       'KnowledgeSemanticEnabled',
       IfThen(FKnowledgeSemanticEnabled, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'KnowledgeApprovedHistoryEnabled',
+      IfThen(FKnowledgeApprovedHistoryEnabled, 1, 0)
     );
     FStorage.WriteString(
       'KnowledgeExcludedFiles',
@@ -1164,6 +1176,11 @@ begin
   Result := FKnowledgeSemanticEnabled;
 end;
 
+function TRadIAConfig.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := FKnowledgeApprovedHistoryEnabled;
+end;
+
 function TRadIAConfig.GetKnowledgeExcludedFiles: string;
 begin
   Result := FKnowledgeExcludedFiles;
@@ -1212,6 +1229,13 @@ procedure TRadIAConfig.SetKnowledgeSemanticEnabled(
 );
 begin
   FKnowledgeSemanticEnabled := AValue;
+end;
+
+procedure TRadIAConfig.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeApprovedHistoryEnabled := AValue;
 end;
 
 procedure TRadIAConfig.SetKnowledgeExcludedFiles(

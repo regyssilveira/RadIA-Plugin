@@ -84,6 +84,7 @@ uses
   RadIA.Core.Knowledge in '..\Source\Core\RadIA.Core.Knowledge.pas',
   RadIA.Core.KnowledgeEmbeddings in '..\Source\Core\RadIA.Core.KnowledgeEmbeddings.pas',
   RadIA.Core.KnowledgePrivacy in '..\Source\Core\RadIA.Core.KnowledgePrivacy.pas',
+  RadIA.Core.KnowledgeHistory in '..\Source\Core\RadIA.Core.KnowledgeHistory.pas',
   RadIA.Core.KnowledgeTools in '..\Source\Core\RadIA.Core.KnowledgeTools.pas',
   RadIA.Core.KnowledgeStore in '..\Source\Core\RadIA.Core.KnowledgeStore.pas',
   RadIA.Core.KnowledgeScheduler in '..\Source\Core\RadIA.Core.KnowledgeScheduler.pas',

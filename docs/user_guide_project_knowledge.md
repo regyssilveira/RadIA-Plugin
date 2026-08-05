@@ -80,3 +80,14 @@ inclui no contexto de uma solicitação.
 - A descoberta é limitada a 5.000 arquivos e cada arquivo é limitado a 2 MiB.
 
 Consulte também o [guia de ferramentas agentivas](user_guide_agentic_tools.md).
+
+## Memória de execuções agentivas aprovadas
+
+A opção **Include approved agent run summaries in local project knowledge** fica desligada por
+padrão. Quando ativada, acrescenta ao índice somente resumos de execuções que pertencem ao projeto
+atual, tiveram o plano aprovado pelo usuário e foram concluídas com sucesso.
+
+O documento virtual contém objetivo, estado, quantidade de etapas e data de atualização.
+Argumentos, resultados e payloads de ferramentas não são copiados. Execuções de outro projeto
+nunca entram no índice atual. Desligar a opção bloqueia resultados persistidos imediatamente; a
+próxima atualização do índice os remove fisicamente.

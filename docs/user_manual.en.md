@@ -130,6 +130,7 @@ Under **Settings > Security & Consent**, users can configure:
 - session permission, disabled by default, for structural writes;
 - session permission, disabled by default, for builds, tests, and execution.
 - local semantic project knowledge, disabled by default, without network code transmission.
+- local memory of approved agent run summaries, disabled by default and isolated per project.
 - knowledge exclusions using file and project path fragments.
 
 Destructive and sensitive tools never offer session permission. Auditing, secret sanitization, and

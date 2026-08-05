@@ -67,6 +67,8 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
     function GetKnowledgeExcludedFiles: string;
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
@@ -292,6 +294,9 @@ begin
   FView.SetKnowledgeSemanticEnabled(
     FConfig.KnowledgeSemanticEnabled
   );
+  FView.SetKnowledgeApprovedHistoryEnabled(
+    FConfig.KnowledgeApprovedHistoryEnabled
+  );
   FView.SetKnowledgeExcludedFiles(
     FConfig.KnowledgeExcludedFiles
   );
@@ -500,6 +505,8 @@ begin
     FView.GetConsentRememberExecution;
   FConfig.KnowledgeSemanticEnabled :=
     FView.GetKnowledgeSemanticEnabled;
+  FConfig.KnowledgeApprovedHistoryEnabled :=
+    FView.GetKnowledgeApprovedHistoryEnabled;
   FConfig.KnowledgeExcludedFiles := Trim(
     FView.GetKnowledgeExcludedFiles
   );

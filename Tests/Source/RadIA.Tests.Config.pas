@@ -239,6 +239,7 @@ var
   LProvider: IRadIAKnowledgeEmbeddingProvider;
 begin
   Assert.IsFalse(FConfig.KnowledgeSemanticEnabled);
+  Assert.IsFalse(FConfig.KnowledgeApprovedHistoryEnabled);
   LProvider := TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
     FConfig,
     TRadIALocalHashEmbeddingProvider.Create
@@ -248,11 +249,13 @@ begin
   Assert.AreEqual(0, LEmbeddingLength);
 
   FConfig.KnowledgeSemanticEnabled := True;
+  FConfig.KnowledgeApprovedHistoryEnabled := True;
   FConfig.KnowledgeExcludedFiles := 'generated; secrets';
   FConfig.KnowledgeExcludedProjects := 'legacy; archive';
   FConfig.Save;
   FConfig.Load;
   Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  Assert.IsTrue(FConfig.KnowledgeApprovedHistoryEnabled);
   Assert.AreEqual(
     'generated; secrets',
     FConfig.KnowledgeExcludedFiles

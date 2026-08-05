@@ -49,6 +49,7 @@ type
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
     FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeApprovedHistoryEnabled: Boolean;
     FKnowledgeExcludedFiles: string;
     FKnowledgeExcludedProjects: string;
   public
@@ -109,6 +110,8 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
     function GetKnowledgeExcludedFiles: string;
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
@@ -651,6 +654,18 @@ procedure TMockConfig.SetKnowledgeSemanticEnabled(
 );
 begin
   FKnowledgeSemanticEnabled := AValue;
+end;
+
+function TMockConfig.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := FKnowledgeApprovedHistoryEnabled;
+end;
+
+procedure TMockConfig.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeApprovedHistoryEnabled := AValue;
 end;
 
 function TMockConfig.GetKnowledgeExcludedFiles: string;

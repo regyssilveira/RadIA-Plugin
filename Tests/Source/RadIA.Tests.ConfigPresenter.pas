@@ -35,6 +35,7 @@ type
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
     FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeApprovedHistoryEnabled: Boolean;
     FKnowledgeExcludedFiles: string;
     FKnowledgeExcludedProjects: string;
     FInlineCompletionEnabled: Boolean;
@@ -129,6 +130,8 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
     function GetKnowledgeExcludedFiles: string;
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
@@ -201,6 +204,9 @@ type
       read FConsentRememberExecution write FConsentRememberExecution;
     property KnowledgeSemanticEnabled: Boolean
       read FKnowledgeSemanticEnabled write FKnowledgeSemanticEnabled;
+    property KnowledgeApprovedHistoryEnabled: Boolean
+      read FKnowledgeApprovedHistoryEnabled
+      write FKnowledgeApprovedHistoryEnabled;
     property KnowledgeExcludedFiles: string
       read FKnowledgeExcludedFiles write FKnowledgeExcludedFiles;
     property KnowledgeExcludedProjects: string
@@ -482,6 +488,18 @@ procedure TMockConfigView.SetKnowledgeSemanticEnabled(
 );
 begin
   KnowledgeSemanticEnabled := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := KnowledgeApprovedHistoryEnabled;
+end;
+
+procedure TMockConfigView.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  KnowledgeApprovedHistoryEnabled := AValue;
 end;
 
 function TMockConfigView.GetKnowledgeExcludedFiles: string;
@@ -848,14 +866,17 @@ procedure TTestConfigPresenter.TestSemanticKnowledgeConsentIsPersisted;
 begin
   FPresenter.LoadConfig;
   Assert.IsFalse(FMockView.GetKnowledgeSemanticEnabled);
+  Assert.IsFalse(FMockView.GetKnowledgeApprovedHistoryEnabled);
 
   FMockView.SetKnowledgeSemanticEnabled(True);
+  FMockView.SetKnowledgeApprovedHistoryEnabled(True);
   FMockView.SetKnowledgeExcludedFiles('generated; secret');
   FMockView.SetKnowledgeExcludedProjects('legacy; archive');
   FPresenter.SaveConfig;
 
   Assert.IsTrue(FMockView.CloseViewCalled);
   Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  Assert.IsTrue(FConfig.KnowledgeApprovedHistoryEnabled);
   Assert.AreEqual(
     'generated; secret',
     FConfig.KnowledgeExcludedFiles

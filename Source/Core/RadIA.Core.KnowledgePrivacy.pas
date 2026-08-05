@@ -79,7 +79,8 @@ implementation
 
 uses
   System.Generics.Collections,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.KnowledgeHistory;
 
 constructor TRadIAConfigurableKnowledgeService.Create(
   const AConfig: IRadIAConfig;
@@ -129,6 +130,10 @@ begin
     AFileName
   ) then
     Exit(False);
+  if TRadIAApprovedHistoryKnowledgeSource.IsHistoryDocument(
+    AFileName
+  ) and not FConfig.KnowledgeApprovedHistoryEnabled then
+    Exit(False);
   Result := FService.GetDocument(AProjectId, AFileName, ADocument);
 end;
 
@@ -171,6 +176,11 @@ begin
       if TRadIAKnowledgePrivacyPolicy.IsFileAllowed(
         FConfig,
         LHit.Chunk.FileName
+      ) and (
+        FConfig.KnowledgeApprovedHistoryEnabled or
+        not TRadIAApprovedHistoryKnowledgeSource.IsHistoryDocument(
+          LHit.Chunk.FileName
+        )
       ) then
         LHits.Add(LHit);
     end;

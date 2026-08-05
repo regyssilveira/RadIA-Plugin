@@ -76,3 +76,13 @@ implicitly. Content is sent to an AI provider only when an authorized request in
 - Discovery is limited to 5,000 files and every file is limited to 2 MiB.
 
 See also the [agentic tools guide](user_guide_agentic_tools.en.md).
+
+## Approved agent run memory
+
+**Include approved agent run summaries in local project knowledge** is disabled by default. When
+enabled, it adds only summaries of runs that belong to the current project, had a user-approved
+plan, and completed successfully.
+
+The virtual document contains the objective, status, step count, and update time. Tool arguments,
+results, and payloads are never copied. Runs from another project never enter the current index.
+Disabling the option blocks persisted results immediately; the next refresh removes them physically.

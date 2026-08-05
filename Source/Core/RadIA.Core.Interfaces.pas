@@ -135,6 +135,8 @@ type
     procedure SetAutocompleteExcludedProjects(const AValue: string);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
     function GetKnowledgeExcludedFiles: string;
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
@@ -214,6 +216,9 @@ type
       read GetAutocompleteExcludedProjects write SetAutocompleteExcludedProjects;
     property KnowledgeSemanticEnabled: Boolean
       read GetKnowledgeSemanticEnabled write SetKnowledgeSemanticEnabled;
+    property KnowledgeApprovedHistoryEnabled: Boolean
+      read GetKnowledgeApprovedHistoryEnabled
+      write SetKnowledgeApprovedHistoryEnabled;
     property KnowledgeExcludedFiles: string
       read GetKnowledgeExcludedFiles write SetKnowledgeExcludedFiles;
     property KnowledgeExcludedProjects: string

@@ -89,6 +89,7 @@ uses
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeEmbeddings,
   RadIA.Core.KnowledgePrivacy,
+  RadIA.Core.KnowledgeHistory,
   RadIA.Core.KnowledgeTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
@@ -904,9 +905,16 @@ initialization
   TRadIAContainer.Register<IRadIAKnowledgeSource>(
     TRadIAConfigurableKnowledgeSource.Create(
       TRadIAConfig.GetInstance,
-      TRadIAOTAKnowledgeSource.Create(
-        TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
-        TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+      TRadIAApprovedHistoryKnowledgeSource.Create(
+        TRadIAConfig.GetInstance,
+        TRadIAOTAKnowledgeSource.Create(
+          TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+          TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+        ),
+        TPath.Combine(
+          TPath.Combine(TPath.GetHomePath, 'RadIA'),
+          'agent-checkpoints'
+        )
       )
     )
   );
