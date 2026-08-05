@@ -12,7 +12,8 @@ param(
     [switch]$ExerciseInlineCompletion,
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
-    [string]$EvidencePath = ""
+    [string]$EvidencePath = "",
+    [string]$InlineCompletionEvidencePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -25,6 +26,12 @@ if ($ExercisePackageLifecycle -and -not $EvidencePath) {
     throw (
         "Package lifecycle validation requires -EvidencePath so every " +
         "cycle is bound to a proven release package."
+    )
+}
+if ($InlineCompletionEvidencePath -and -not $ExerciseInlineCompletion) {
+    throw (
+        "Inline completion evidence requires " +
+        "-ExerciseInlineCompletion."
     )
 }
 if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
@@ -561,8 +568,16 @@ $inlineSmokeLogPath = ""
 $script:InlineLogSettingsInitialized = $false
 
 trap {
-    Restore-RadIADockingVisibility
-    Restore-RadIAInlineCompletionLogSettings
+    if (Get-Command `
+        Restore-RadIADockingVisibility `
+        -ErrorAction SilentlyContinue) {
+        Restore-RadIADockingVisibility
+    }
+    if (Get-Command `
+        Restore-RadIAInlineCompletionLogSettings `
+        -ErrorAction SilentlyContinue) {
+        Restore-RadIAInlineCompletionLogSettings
+    }
     Write-Error $_
     exit 1
 }
@@ -1203,4 +1218,53 @@ if ($EvidencePath) {
         ConvertTo-Json -Depth 6 |
         Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
     Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
+}
+if ($InlineCompletionEvidencePath) {
+    & git -C $repositoryRoot diff --quiet
+    $sourceDirty = $LASTEXITCODE -ne 0
+    & git -C $repositoryRoot diff --cached --quiet
+    $sourceDirty = $sourceDirty -or ($LASTEXITCODE -ne 0)
+    if ($sourceDirty) {
+        throw "Inline completion evidence requires a clean tracked source."
+    }
+    $sourceCommit = (
+        & git -C $repositoryRoot rev-parse HEAD
+    ).Trim()
+    if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch "^[0-9a-f]{40}$") {
+        throw "The source commit could not be resolved."
+    }
+    $resolvedInlineEvidencePath = [IO.Path]::GetFullPath(
+        $InlineCompletionEvidencePath
+    )
+    $inlineEvidenceDirectory = Split-Path -Parent $resolvedInlineEvidencePath
+    if ($inlineEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $inlineEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "inlineCompletionVisualSmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedInlineEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "Inline completion evidence created: " +
+        $resolvedInlineEvidencePath
+    )
 }
