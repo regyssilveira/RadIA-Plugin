@@ -46,7 +46,8 @@ type
 
   TRadIAToolExecutor = class(
     TInterfacedObject,
-    IRadIAToolExecutor
+    IRadIAToolExecutor,
+    IRadIAToolDescriptorProvider
   )
   private
     FRegistry: IRadIAToolRegistry;
@@ -62,6 +63,10 @@ type
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
+    function TryGetToolDescriptor(
+      const AName: string;
+      out ADescriptor: TRadIAToolDescriptor
+    ): Boolean;
   end;
 
 implementation
@@ -366,6 +371,20 @@ begin
         E.Message
       );
   end;
+end;
+
+function TRadIAToolExecutor.TryGetToolDescriptor(
+  const AName: string;
+  out ADescriptor: TRadIAToolDescriptor
+): Boolean;
+var
+  LTool: IRadIATool;
+begin
+  Result := FRegistry.TryResolve(AName, LTool);
+  if Result then
+    ADescriptor := LTool.Descriptor
+  else
+    ADescriptor := Default(TRadIAToolDescriptor);
 end;
 
 function TRadIAToolExecutor.ValidateRequest(

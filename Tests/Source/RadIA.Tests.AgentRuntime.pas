@@ -34,7 +34,8 @@ type
 
   TRadIAMockAgentToolExecutor = class(
     TInterfacedObject,
-    IRadIAToolExecutor
+    IRadIAToolExecutor,
+    IRadIAToolDescriptorProvider
   )
   private
     FCallCount: Integer;
@@ -45,6 +46,10 @@ type
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
+    function TryGetToolDescriptor(
+      const AName: string;
+      out ADescriptor: TRadIAToolDescriptor
+    ): Boolean;
     property CallCount: Integer read FCallCount;
     property OnExecute: TProc read FOnExecute write FOnExecute;
     property ToolResult: TRadIAToolResult read FResult write FResult;
@@ -245,6 +250,31 @@ begin
   if Assigned(FOnExecute) then
     FOnExecute;
   Result := FResult;
+end;
+
+function TRadIAMockAgentToolExecutor.TryGetToolDescriptor(
+  const AName: string;
+  out ADescriptor: TRadIAToolDescriptor
+): Boolean;
+var
+  LRisk: TRadIAToolRisk;
+begin
+  Result := Trim(AName) <> '';
+  if SameText(AName, 'ApplyPatch') then
+    LRisk := trReversibleWrite
+  else if SameText(AName, 'BuildProject') or
+    SameText(AName, 'RunDUnitXTests') then
+    LRisk := trExecution
+  else
+    LRisk := trReadOnly;
+  ADescriptor := TRadIAToolDescriptor.Create(
+    AName,
+    '1.0.0',
+    'Mock agent tool.',
+    '{}',
+    '{}',
+    LRisk
+  );
 end;
 
 { TRadIAMemoryAgentCheckpointStore }
@@ -1170,6 +1200,8 @@ begin
     );
     Assert.Contains(LStoreObject.SnapshotJson, '"durationMilliseconds":');
     Assert.Contains(LStoreObject.SnapshotJson, '"mutation":false');
+    Assert.Contains(LStoreObject.SnapshotJson, '"risk":"readOnly"');
+    Assert.Contains(LStoreObject.SnapshotJson, '"affectedFiles":[]');
   finally
     LRuntime.Free;
   end;
@@ -1181,6 +1213,7 @@ var
   LExecutorObject: TRadIAMockAgentToolExecutor;
   LExecutor: IRadIAToolExecutor;
   LProvider: IRadIAAgentDecisionProvider;
+  LStoreObject: TRadIAMemoryAgentCheckpointStore;
   LStore: IRadIAAgentCheckpointStore;
   LRuntime: TRadIAAgentRuntime;
   LResult: TRadIAAgentRunResult;
@@ -1194,12 +1227,16 @@ begin
       'Approve correction plan.',
       '[{"title":"Correct and validate"}]'
     ),
-    TRadIAAgentDecision.CallTool('ApplyPatch', '{"previewId":"p1"}'),
+    TRadIAAgentDecision.CallTool(
+      'ApplyPatch',
+      '{"previewId":"p1","targetFile":"Source/Unit1.pas"}'
+    ),
     TRadIAAgentDecision.Complete('Too early.'),
     TRadIAAgentDecision.CallTool('BuildProject', '{"mode":"make"}'),
     TRadIAAgentDecision.Complete('Correction validated.')
   ]);
-  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
+  LStore := LStoreObject;
   LRuntime := NewRuntime(LExecutor, LProvider, LStore);
   try
     LResult := LRuntime.Start(
@@ -1213,6 +1250,11 @@ begin
     Assert.AreEqual(asCompleted, LResult.Status);
     Assert.AreEqual('Correction validated.', LResult.Message);
     Assert.AreEqual(2, LExecutorObject.CallCount);
+    Assert.Contains(LStoreObject.SnapshotJson, '"risk":"reversibleWrite"');
+    Assert.Contains(
+      LStoreObject.SnapshotJson.Replace('\/', '/'),
+      '"affectedFiles":["Source/Unit1.pas"]'
+    );
   finally
     LRuntime.Free;
   end;

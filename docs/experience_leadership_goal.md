@@ -65,7 +65,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M0 — Qualidade | Em execução | Gate Sonar verde ou classificação administrativa dos falsos positivos comprovados |
 | M1 — Assistência inline | Em execução | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
-| M3 — Central unificada | Planejado | Jornada observável, pausável, retomável e persistente |
+| M3 — Central unificada | Em execução | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Planejado | Instalação declarativa segura sem recompilar ou reiniciar |
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
 | M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
@@ -138,6 +138,9 @@ aprovação, preservando o checkpoint e bloqueando alterações após a primeira
 segura também foi entregue: **Replay step** e `/agent replay` repetem a chamada somente em uma
 execução pausada, passam novamente por consentimento, registram a etapa de origem e permanecem
 pausados para revisão.
+Cada etapa agora apresenta a classificação formal de risco da ferramenta e agrega os arquivos
+afetados informados em campos de caminho reconhecidos. O resumo não interpreta texto livre de
+argumentos ou resultados, evitando expor conteúdo arbitrário como se fosse um caminho.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

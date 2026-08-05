@@ -146,7 +146,37 @@ type
     ): TRadIAToolResult;
   end;
 
+  IRadIAToolDescriptorProvider = interface
+    ['{38BDBF91-EC26-4F07-9938-F217784BBC81}']
+    function TryGetToolDescriptor(
+      const AName: string;
+      out ADescriptor: TRadIAToolDescriptor
+    ): Boolean;
+  end;
+
+function RadIAToolRiskName(const ARisk: TRadIAToolRisk): string;
+
 implementation
+
+function RadIAToolRiskName(const ARisk: TRadIAToolRisk): string;
+begin
+  case ARisk of
+    trReadOnly:
+      Result := 'readOnly';
+    trReversibleWrite:
+      Result := 'reversibleWrite';
+    trStructuralWrite:
+      Result := 'structuralWrite';
+    trExecution:
+      Result := 'execution';
+    trDestructive:
+      Result := 'destructive';
+    trSensitive:
+      Result := 'sensitive';
+  else
+    Result := 'unknown';
+  end;
+end;
 
 { TRadIAToolDescriptor }
 

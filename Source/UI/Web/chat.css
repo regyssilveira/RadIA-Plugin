@@ -1799,6 +1799,22 @@ body.light-theme .message-avatar.provider-avatar-badge {
   margin-top: 8px;
 }
 
+.agent-run-impact {
+  margin-top: 8px;
+  color: var(--fg-secondary);
+}
+
+.agent-run-impact summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.agent-run-impact ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+
 .agent-validation-indicator {
   padding: 2px 7px;
   border: 1px solid var(--border);

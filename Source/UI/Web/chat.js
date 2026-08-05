@@ -240,7 +240,8 @@ function createAgentStep(step, status) {
   metadata.className = 'agent-run-step-metadata';
   metadata.textContent =
     `Correlation: ${step.correlationId || 'unavailable'} · ` +
-    `Started: ${Math.max(0, step.startedElapsedMilliseconds || 0)} ms`;
+    `Started: ${Math.max(0, step.startedElapsedMilliseconds || 0)} ms · ` +
+    `Risk: ${step.risk || 'unknown'}`;
   details.appendChild(metadata);
 
   const argumentsTitle = document.createElement('strong');
@@ -277,6 +278,48 @@ function createAgentStep(step, status) {
   details.appendChild(replay);
   item.appendChild(details);
   return item;
+}
+
+function renderAgentImpact(card, steps) {
+  const impact = card.querySelector('.agent-run-impact');
+  impact.replaceChildren();
+  const riskOrder = {
+    unknown: 0,
+    readOnly: 1,
+    reversibleWrite: 2,
+    structuralWrite: 3,
+    execution: 4,
+    destructive: 5,
+    sensitive: 6
+  };
+  let highestRisk = 'unknown';
+  const files = [];
+  steps.forEach(step => {
+    const risk = step.risk || 'unknown';
+    if ((riskOrder[risk] || 0) > (riskOrder[highestRisk] || 0)) {
+      highestRisk = risk;
+    }
+    const affectedFiles = Array.isArray(step.affectedFiles) ? step.affectedFiles : [];
+    affectedFiles.forEach(file => {
+      if (!files.some(existing => existing.toLowerCase() === file.toLowerCase())) {
+        files.push(file);
+      }
+    });
+  });
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  summary.textContent = `Highest risk: ${highestRisk} · ${files.length} affected file(s)`;
+  details.appendChild(summary);
+  if (files.length > 0) {
+    const list = document.createElement('ul');
+    files.forEach(file => {
+      const item = document.createElement('li');
+      item.textContent = file;
+      list.appendChild(item);
+    });
+    details.appendChild(list);
+  }
+  impact.appendChild(details);
 }
 
 function renderAgentValidation(card, state) {
@@ -449,6 +492,7 @@ function renderAgentState(data) {
       '<div class="agent-run-message"></div>' +
       '<div class="agent-run-metrics"></div>' +
       '<div class="agent-run-validation"></div>' +
+      '<div class="agent-run-impact"></div>' +
       '<ol class="agent-run-plan"></ol><ol class="agent-run-steps"></ol>' +
       '<div class="agent-run-controls"></div>';
     AGENT_CARDS.set(sessionId, card);
@@ -475,6 +519,7 @@ function renderAgentState(data) {
   }
   card.querySelector('.agent-run-metrics').textContent = metricsText;
   renderAgentValidation(card, state);
+  renderAgentImpact(card, steps);
 
   const planElement = card.querySelector('.agent-run-plan');
   const plan = Array.isArray(state.plan) ? state.plan : [];

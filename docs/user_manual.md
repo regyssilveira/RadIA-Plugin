@@ -120,6 +120,11 @@ Prompts comuns continuam sendo enviados ao provider como conversa. O loop autôn
 `/agent run`, evitando que uma pergunta comum execute tools por acidente. Para automação externa e
 descoberta programática, use também o [MCP](mcp_integration_guide.md).
 
+O cartão da execução mostra a timeline expansível de cada tool, incluindo risco formal, duração,
+correlação, argumentos, resultados, erros e arquivos afetados. Os arquivos são extraídos somente
+de campos de caminho reconhecidos em chamadas mutáveis concluídas com sucesso; texto livre não é
+tratado como caminho.
+
 ### 3.2 Consentimento
 
 Ferramentas de leitura podem ser executadas diretamente. Operações mutáveis ou de execução exibem

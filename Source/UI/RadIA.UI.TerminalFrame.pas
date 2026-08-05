@@ -402,6 +402,7 @@ procedure TRadIATerminalFrame.EnsureVisibleContent;
 begin
   if not Assigned(FCommandEdit) or
     not Assigned(FCommandEdit.Parent) or
+    not Assigned(GetParentForm(FCommandEdit)) or
     (FCommandEdit.ParentWindow = 0) or
     not FCommandEdit.CanFocus then
     Exit;

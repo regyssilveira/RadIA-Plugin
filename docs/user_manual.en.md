@@ -91,6 +91,10 @@ Regular prompts remain provider conversations. The autonomous loop requires `/ag
 accidental tool execution for ordinary questions. External automation remains available through
 the [MCP bridge](mcp_integration_guide.en.md).
 
+The live run card shows an expandable timeline for every tool, including formal risk, duration,
+correlation, arguments, results, errors, and affected files. Files are extracted only from
+recognized path fields in successful mutation calls; free-form text is not treated as a path.
+
 ### 3.2 Consent
 
 Read-only tools may run directly. Mutating and execution tools display their name, risk, and scope:

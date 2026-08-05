@@ -212,6 +212,8 @@ type
       DurationMilliseconds: Int64;
       Mutation: Boolean;
       ReplayOfStepIndex: Integer;
+      Risk: string;
+      AffectedFiles: TArray<string>;
     end;
     TRadIAAgentValidationState = record
       MutationPending: Boolean;
@@ -221,6 +223,7 @@ type
     end;
   private
     FToolExecutor: IRadIAToolExecutor;
+    FDescriptorProvider: IRadIAToolDescriptorProvider;
     FDecisionProvider: IRadIAAgentDecisionProvider;
     FUsageProvider: IRadIAAgentUsageProvider;
     FCheckpointStore: IRadIAAgentCheckpointStore;
@@ -283,6 +286,13 @@ type
     );
     procedure NotifyAndCheckpoint;
     procedure LoadSnapshot(const ASnapshotJson: string);
+    function LoadStep(
+      const AStepJson: TJSONObject;
+      const ADefaultIndex: Integer
+    ): TRadIAAgentStep;
+    function LoadAffectedFiles(
+      const AStepJson: TJSONObject
+    ): TArray<string>;
     procedure ResetRun;
     procedure ValidateStart(
       const AObjective: string;
@@ -297,6 +307,21 @@ type
     function EffectiveEstimatedCostMicros: Int64;
     function AnalyzeValidationState: TRadIAAgentValidationState;
     function IsMutationTool(const AToolName: string): Boolean;
+    function ResolveRiskName(const AToolName: string): string;
+    function ExtractAffectedFiles(
+      const AArgumentsJson: string;
+      const AResultJson: string
+    ): TArray<string>;
+    procedure CollectFilePaths(
+      const AValue: TJSONValue;
+      const AKey: string;
+      const APaths: TList<string>
+    );
+    procedure AddUniqueFilePath(
+      const APath: string;
+      const APaths: TList<string>
+    );
+    function IsFilePathKey(const AKey: string): Boolean;
     function ValidationAllowsCompletion(
       out AMessage: string
     ): Boolean;
@@ -840,6 +865,11 @@ begin
     raise EArgumentNilException.Create('ACheckpointStore');
 
   FToolExecutor := AToolExecutor;
+  Supports(
+    AToolExecutor,
+    IRadIAToolDescriptorProvider,
+    FDescriptorProvider
+  );
   FDecisionProvider := ADecisionProvider;
   Supports(ADecisionProvider, IRadIAAgentUsageProvider, FUsageProvider);
   FCheckpointStore := ACheckpointStore;
@@ -878,6 +908,14 @@ begin
   LStep.DurationMilliseconds := Max(0, ADurationMilliseconds);
   LStep.Mutation := IsMutationTool(ADecision.ToolName);
   LStep.ReplayOfStepIndex := FReplayOfStepIndex;
+  LStep.Risk := ResolveRiskName(ADecision.ToolName);
+  if LStep.Mutation and LStep.Success then
+    LStep.AffectedFiles := ExtractAffectedFiles(
+      ADecision.ArgumentsJson,
+      AResult.ContentJson
+    )
+  else
+    LStep.AffectedFiles := [];
   FSteps.Add(LStep);
 end;
 
@@ -926,6 +964,8 @@ end;
 
 function TRadIAAgentRuntime.BuildSnapshotJson: string;
 var
+  LFile: string;
+  LFileArray: TJSONArray;
   LRoot: TJSONObject;
   LStepArray: TJSONArray;
   LStepJson: TJSONObject;
@@ -1041,6 +1081,11 @@ begin
         'replayOfStepIndex',
         TJSONNumber.Create(LStep.ReplayOfStepIndex)
       );
+      LStepJson.AddPair('risk', LStep.Risk);
+      LFileArray := TJSONArray.Create;
+      for LFile in LStep.AffectedFiles do
+        LFileArray.Add(LFile);
+      LStepJson.AddPair('affectedFiles', LFileArray);
       LStepArray.AddElement(LStepJson);
     end;
     Result := LRoot.ToJSON;
@@ -1345,6 +1390,116 @@ begin
   Result := True;
 end;
 
+procedure TRadIAAgentRuntime.AddUniqueFilePath(
+  const APath: string;
+  const APaths: TList<string>
+);
+const
+  MAX_AFFECTED_FILES = 100;
+  MAX_FILE_PATH_LENGTH = 1024;
+var
+  LExisting: string;
+  LPath: string;
+begin
+  if APaths.Count >= MAX_AFFECTED_FILES then
+    Exit;
+  LPath := Trim(APath);
+  if (LPath = '') or (Length(LPath) > MAX_FILE_PATH_LENGTH) then
+    Exit;
+  for LExisting in APaths do
+  begin
+    if SameText(LExisting, LPath) then
+      Exit;
+  end;
+  APaths.Add(LPath);
+end;
+
+procedure TRadIAAgentRuntime.CollectFilePaths(
+  const AValue: TJSONValue;
+  const AKey: string;
+  const APaths: TList<string>
+);
+var
+  LArray: TJSONArray;
+  LIndex: Integer;
+  LObject: TJSONObject;
+  LPair: TJSONPair;
+begin
+  if not Assigned(AValue) then
+    Exit;
+  if (AValue is TJSONString) and IsFilePathKey(AKey) then
+  begin
+    AddUniqueFilePath(TJSONString(AValue).Value, APaths);
+    Exit;
+  end;
+  if AValue is TJSONArray then
+  begin
+    LArray := TJSONArray(AValue);
+    for LIndex := 0 to LArray.Count - 1 do
+      CollectFilePaths(LArray[LIndex], AKey, APaths);
+    Exit;
+  end;
+  if not (AValue is TJSONObject) then
+    Exit;
+  LObject := TJSONObject(AValue);
+  for LIndex := 0 to LObject.Count - 1 do
+  begin
+    LPair := LObject.Pairs[LIndex];
+    CollectFilePaths(
+      LPair.JsonValue,
+      LPair.JsonString.Value,
+      APaths
+    );
+  end;
+end;
+
+function TRadIAAgentRuntime.ExtractAffectedFiles(
+  const AArgumentsJson: string;
+  const AResultJson: string
+): TArray<string>;
+var
+  LPaths: TList<string>;
+  LValue: TJSONValue;
+begin
+  LPaths := TList<string>.Create;
+  try
+    LValue := TJSONObject.ParseJSONValue(AArgumentsJson);
+    try
+      CollectFilePaths(LValue, '', LPaths);
+    finally
+      LValue.Free;
+    end;
+    LValue := TJSONObject.ParseJSONValue(AResultJson);
+    try
+      CollectFilePaths(LValue, '', LPaths);
+    finally
+      LValue.Free;
+    end;
+    Result := LPaths.ToArray;
+  finally
+    LPaths.Free;
+  end;
+end;
+
+function TRadIAAgentRuntime.IsFilePathKey(
+  const AKey: string
+): Boolean;
+begin
+  Result :=
+    SameText(AKey, 'path') or
+    SameText(AKey, 'file') or
+    SameText(AKey, 'files') or
+    SameText(AKey, 'fileName') or
+    SameText(AKey, 'filePath') or
+    SameText(AKey, 'targetFile') or
+    SameText(AKey, 'targetFiles') or
+    SameText(AKey, 'projectFile') or
+    SameText(AKey, 'changedFiles') or
+    SameText(AKey, 'affectedFiles') or
+    SameText(AKey, 'createdFiles') or
+    SameText(AKey, 'removedFiles');
+end;
+
 function TRadIAAgentRuntime.IsMutationTool(
   const AToolName: string
 ): Boolean;
@@ -1363,6 +1518,21 @@ begin
     SameText(AToolName, 'ApplyDesignerEvent');
 end;
 
+function TRadIAAgentRuntime.ResolveRiskName(
+  const AToolName: string
+): string;
+var
+  LDescriptor: TRadIAToolDescriptor;
+begin
+  if Assigned(FDescriptorProvider) and
+    FDescriptorProvider.TryGetToolDescriptor(AToolName, LDescriptor) then
+    Exit(RadIAToolRiskName(LDescriptor.Risk));
+  if IsMutationTool(AToolName) then
+    Result := RadIAToolRiskName(trReversibleWrite)
+  else
+    Result := RadIAToolRiskName(trReadOnly);
+end;
+
 procedure TRadIAAgentRuntime.LoadSnapshot(
   const ASnapshotJson: string
 );
@@ -1371,7 +1541,6 @@ var
   LPlan: TJSONValue;
   LStepArray: TJSONArray;
   LStepJson: TJSONObject;
-  LStep: TRadIAAgentStep;
   LIndex: Integer;
 begin
   LRoot := TJSONObject.ParseJSONValue(ASnapshotJson) as TJSONObject;
@@ -1428,46 +1597,67 @@ begin
         if not (LStepArray[LIndex] is TJSONObject) then
           Continue;
         LStepJson := TJSONObject(LStepArray[LIndex]);
-        LStep := Default(TRadIAAgentStep);
-        LStep.Index := LStepJson.GetValue<Integer>('index', LIndex + 1);
-        LStep.ToolName := LStepJson.GetValue<string>('toolName', '');
-        LStep.ArgumentsJson := LStepJson.GetValue<string>(
-          'arguments',
-          '{}'
-        );
-        LStep.CorrelationId := LStepJson.GetValue<string>(
-          'correlationId',
-          ''
-        );
-        LStep.Success := LStepJson.GetValue<Boolean>('success', False);
-        LStep.ResultJson := LStepJson.GetValue<string>('result', '');
-        LStep.ErrorCode := LStepJson.GetValue<string>('errorCode', '');
-        LStep.ErrorMessage := LStepJson.GetValue<string>(
-          'errorMessage',
-          ''
-        );
-        LStep.StartedElapsedMilliseconds := LStepJson.GetValue<Int64>(
-          'startedElapsedMilliseconds',
-          0
-        );
-        LStep.DurationMilliseconds := LStepJson.GetValue<Int64>(
-          'durationMilliseconds',
-          0
-        );
-        LStep.Mutation := LStepJson.GetValue<Boolean>(
-          'mutation',
-          IsMutationTool(LStep.ToolName)
-        );
-        LStep.ReplayOfStepIndex := LStepJson.GetValue<Integer>(
-          'replayOfStepIndex',
-          0
-        );
-        FSteps.Add(LStep);
+        FSteps.Add(LoadStep(LStepJson, LIndex + 1));
       end;
     end;
   finally
     LRoot.Free;
   end;
+end;
+
+function TRadIAAgentRuntime.LoadAffectedFiles(
+  const AStepJson: TJSONObject
+): TArray<string>;
+var
+  LFileArray: TJSONArray;
+  LFileIndex: Integer;
+  LValue: TJSONValue;
+begin
+  Result := nil;
+  LValue := AStepJson.GetValue('affectedFiles');
+  if not (LValue is TJSONArray) then
+    Exit;
+  LFileArray := TJSONArray(LValue);
+  SetLength(Result, LFileArray.Count);
+  for LFileIndex := 0 to LFileArray.Count - 1 do
+    Result[LFileIndex] := LFileArray[LFileIndex].Value;
+end;
+
+function TRadIAAgentRuntime.LoadStep(
+  const AStepJson: TJSONObject;
+  const ADefaultIndex: Integer
+): TRadIAAgentStep;
+begin
+  Result := Default(TRadIAAgentStep);
+  Result.Index := AStepJson.GetValue<Integer>('index', ADefaultIndex);
+  Result.ToolName := AStepJson.GetValue<string>('toolName', '');
+  Result.ArgumentsJson := AStepJson.GetValue<string>('arguments', '{}');
+  Result.CorrelationId := AStepJson.GetValue<string>('correlationId', '');
+  Result.Success := AStepJson.GetValue<Boolean>('success', False);
+  Result.ResultJson := AStepJson.GetValue<string>('result', '');
+  Result.ErrorCode := AStepJson.GetValue<string>('errorCode', '');
+  Result.ErrorMessage := AStepJson.GetValue<string>('errorMessage', '');
+  Result.StartedElapsedMilliseconds := AStepJson.GetValue<Int64>(
+    'startedElapsedMilliseconds',
+    0
+  );
+  Result.DurationMilliseconds := AStepJson.GetValue<Int64>(
+    'durationMilliseconds',
+    0
+  );
+  Result.Mutation := AStepJson.GetValue<Boolean>(
+    'mutation',
+    IsMutationTool(Result.ToolName)
+  );
+  Result.ReplayOfStepIndex := AStepJson.GetValue<Integer>(
+    'replayOfStepIndex',
+    0
+  );
+  Result.Risk := AStepJson.GetValue<string>(
+    'risk',
+    ResolveRiskName(Result.ToolName)
+  );
+  Result.AffectedFiles := LoadAffectedFiles(AStepJson);
 end;
 
 procedure TRadIAAgentRuntime.NotifyAndCheckpoint;

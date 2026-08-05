@@ -64,7 +64,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
 | M1 — Inline assistance | In progress | OTA Ghost Text, shortcuts, consent, and real matrix approved |
 | M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
-| M3 — Unified center | Planned | Observable, pausable, resumable, and persistent journey |
+| M3 — Unified center | In progress | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | Planned | Safe declarative installation without recompilation or restart |
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
 | M6 — Installation | Planned | First value and diagnostics without manual file editing |
@@ -133,6 +133,9 @@ The **Edit plan** editor and `/agent plan` revise 1–50 steps while execution a
 preserving the checkpoint and blocking changes after the first tool. Safe step replay is available
 as well: **Replay step** and `/agent replay` repeat a call only in a paused run, pass
 through consent again, record the source step, and remain paused for review.
+Each step now presents the tool's formal risk classification and aggregates affected files from
+recognized path fields. The summary does not interpret free-form argument or result text, avoiding
+the exposure of arbitrary content as if it were a path.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.
