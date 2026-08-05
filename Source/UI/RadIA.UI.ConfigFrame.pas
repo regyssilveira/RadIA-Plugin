@@ -54,6 +54,14 @@ type
     FChkKnowledgeApprovedHistoryEnabled: TCheckBox;
     FEdtKnowledgeExcludedFiles: TEdit;
     FEdtKnowledgeExcludedProjects: TEdit;
+    FChkKnowledgeRemoteEnabled: TCheckBox;
+    FChkKnowledgeRemoteConsent: TCheckBox;
+    FEdtKnowledgeRemoteEndpoint: TEdit;
+    FEdtKnowledgeRemoteModel: TEdit;
+    FEdtKnowledgeRemoteApiKey: TEdit;
+    FEdtKnowledgeRemoteDimensions: TEdit;
+    FEdtKnowledgeRemoteTimeout: TEdit;
+    FEdtKnowledgeRemoteInputLimit: TEdit;
     FBtnRevokeConsent: TButton;
     FChkInlineCompletionEnabled: TCheckBox;
     FEdtInlineCompletionDelay: TEdit;
@@ -67,6 +75,10 @@ type
     FLblInlineCompletionExcludedProjects: TLabel;
     FLblKnowledgeExcludedFiles: TLabel;
     FLblKnowledgeExcludedProjects: TLabel;
+    FLblKnowledgeRemoteEndpoint: TLabel;
+    FLblKnowledgeRemoteModel: TLabel;
+    FLblKnowledgeRemoteApiKey: TLabel;
+    FLblKnowledgeRemoteLimits: TLabel;
     FLblInlineShortcutProfile: TLabel;
 
     FTsCliMcp: TTabSheet;
@@ -211,6 +223,22 @@ type
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
     procedure SetKnowledgeExcludedProjects(const AValue: string);
+    function GetKnowledgeRemoteEnabled: Boolean;
+    procedure SetKnowledgeRemoteEnabled(const AValue: Boolean);
+    function GetKnowledgeRemoteConsent: Boolean;
+    procedure SetKnowledgeRemoteConsent(const AValue: Boolean);
+    function GetKnowledgeRemoteEndpoint: string;
+    procedure SetKnowledgeRemoteEndpoint(const AValue: string);
+    function GetKnowledgeRemoteModel: string;
+    procedure SetKnowledgeRemoteModel(const AValue: string);
+    function GetKnowledgeRemoteApiKey: string;
+    procedure SetKnowledgeRemoteApiKey(const AValue: string);
+    function GetKnowledgeRemoteDimensions: string;
+    procedure SetKnowledgeRemoteDimensions(const AValue: string);
+    function GetKnowledgeRemoteTimeout: string;
+    procedure SetKnowledgeRemoteTimeout(const AValue: string);
+    function GetKnowledgeRemoteInputLimit: string;
+    procedure SetKnowledgeRemoteInputLimit(const AValue: string);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -671,23 +699,96 @@ begin
     462,
     500
   );
+  FChkKnowledgeRemoteEnabled := CreateCheckBox(
+    FPnlSecurity,
+    'Use a remote OpenAI-compatible embedding provider',
+    16,
+    502,
+    520
+  );
+  FChkKnowledgeRemoteConsent := CreateCheckBox(
+    FPnlSecurity,
+    'I consent to sending bounded project text to this endpoint',
+    16,
+    528,
+    560
+  );
+  FLblKnowledgeRemoteEndpoint := CreateLabel(
+    FPnlSecurity,
+    'Remote embeddings endpoint (HTTPS or loopback HTTP):',
+    16,
+    562
+  );
+  FEdtKnowledgeRemoteEndpoint := CreateEdit(
+    FPnlSecurity,
+    16,
+    582,
+    500
+  );
+  FLblKnowledgeRemoteModel := CreateLabel(
+    FPnlSecurity,
+    'Embedding model:',
+    16,
+    622
+  );
+  FEdtKnowledgeRemoteModel := CreateEdit(FPnlSecurity, 16, 642, 240);
+  FLblKnowledgeRemoteApiKey := CreateLabel(
+    FPnlSecurity,
+    'API key (protected with Windows DPAPI):',
+    276,
+    622
+  );
+  FEdtKnowledgeRemoteApiKey := CreateEdit(
+    FPnlSecurity,
+    276,
+    642,
+    240
+  );
+  FEdtKnowledgeRemoteApiKey.PasswordChar := '*';
+  FLblKnowledgeRemoteLimits := CreateLabel(
+    FPnlSecurity,
+    'Dimensions / timeout ms / maximum input characters:',
+    16,
+    682
+  );
+  FEdtKnowledgeRemoteDimensions := CreateEdit(
+    FPnlSecurity,
+    16,
+    702,
+    100,
+    True
+  );
+  FEdtKnowledgeRemoteTimeout := CreateEdit(
+    FPnlSecurity,
+    132,
+    702,
+    100,
+    True
+  );
+  FEdtKnowledgeRemoteInputLimit := CreateEdit(
+    FPnlSecurity,
+    248,
+    702,
+    120,
+    True
+  );
   FChkInlineCompletionEnabled := CreateCheckBox(
     FPnlSecurity,
     'Enable continuous inline completion (sends bounded editor context)',
     16,
-    506,
+    752,
     500
   );
   FLblInlineCompletionDelay := CreateLabel(
     FPnlSecurity,
     'Idle delay in milliseconds (250-5000):',
     16,
-    542
+    788
   );
   FEdtInlineCompletionDelay := CreateEdit(
     FPnlSecurity,
     16,
-    562,
+    808,
     100,
     True
   );
@@ -695,48 +796,48 @@ begin
     FPnlSecurity,
     'Excluded languages (semicolon separated, for example sql;markdown):',
     16,
-    602
+    848
   );
   FEdtInlineCompletionExcludedLanguages := CreateEdit(
     FPnlSecurity,
     16,
-    622,
+    868,
     500
   );
   FLblInlineCompletionExcludedFiles := CreateLabel(
     FPnlSecurity,
     'Excluded file fragments (semicolon separated):',
     16,
-    662
+    908
   );
   FEdtInlineCompletionExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    682,
+    928,
     500
   );
   FLblInlineCompletionExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Excluded project name or path fragments (semicolon separated):',
     16,
-    722
+    968
   );
   FEdtInlineCompletionExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    742,
+    988,
     500
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
     'Inline shortcuts (request, accept, nextWord, alternative, reject):',
     16,
-    782
+    1028
   );
   FEdtInlineShortcutProfile := CreateEdit(
     FPnlSecurity,
     16,
-    802,
+    1048,
     640
   );
 end;
@@ -1181,6 +1282,9 @@ begin
     FEdtInlineCompletionExcludedLanguages,
     FEdtInlineCompletionExcludedProjects, FEdtKnowledgeExcludedFiles,
     FEdtKnowledgeExcludedProjects,
+    FEdtKnowledgeRemoteEndpoint, FEdtKnowledgeRemoteModel,
+    FEdtKnowledgeRemoteApiKey, FEdtKnowledgeRemoteDimensions,
+    FEdtKnowledgeRemoteTimeout, FEdtKnowledgeRemoteInputLimit,
     FEdtInlineShortcutProfile,
     FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge], LColors);
 
@@ -1195,6 +1299,8 @@ begin
     FLblInlineCompletionExcludedLanguages,
     FLblInlineCompletionExcludedProjects, FLblKnowledgeExcludedFiles,
     FLblKnowledgeExcludedProjects,
+    FLblKnowledgeRemoteEndpoint, FLblKnowledgeRemoteModel,
+    FLblKnowledgeRemoteApiKey, FLblKnowledgeRemoteLimits,
     FLblInlineShortcutProfile,
     FLblMcpStatus], LColors, False);
 
@@ -1231,6 +1337,7 @@ begin
     FChkConsentShowArguments, FChkConsentRememberReversible,
     FChkConsentRememberStructural, FChkConsentRememberExecution,
     FChkKnowledgeSemanticEnabled, FChkKnowledgeApprovedHistoryEnabled,
+    FChkKnowledgeRemoteEnabled, FChkKnowledgeRemoteConsent,
     FChkInlineCompletionEnabled], LColors);
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
@@ -2455,6 +2562,102 @@ procedure TRadIAFrameAIConfig.SetKnowledgeExcludedProjects(
 );
 begin
   FEdtKnowledgeExcludedProjects.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteEnabled: Boolean;
+begin
+  Result := FChkKnowledgeRemoteEnabled.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteEnabled(
+  const AValue: Boolean
+);
+begin
+  FChkKnowledgeRemoteEnabled.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteConsent: Boolean;
+begin
+  Result := FChkKnowledgeRemoteConsent.Checked;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteConsent(
+  const AValue: Boolean
+);
+begin
+  FChkKnowledgeRemoteConsent.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteEndpoint: string;
+begin
+  Result := FEdtKnowledgeRemoteEndpoint.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteEndpoint(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeRemoteEndpoint.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteModel: string;
+begin
+  Result := FEdtKnowledgeRemoteModel.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteModel(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeRemoteModel.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteApiKey: string;
+begin
+  Result := FEdtKnowledgeRemoteApiKey.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteApiKey(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeRemoteApiKey.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteDimensions: string;
+begin
+  Result := FEdtKnowledgeRemoteDimensions.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteDimensions(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeRemoteDimensions.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteTimeout: string;
+begin
+  Result := FEdtKnowledgeRemoteTimeout.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteTimeout(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeRemoteTimeout.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeRemoteInputLimit: string;
+begin
+  Result := FEdtKnowledgeRemoteInputLimit.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeRemoteInputLimit(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeRemoteInputLimit.Text := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetInlineCompletionEnabled: Boolean;

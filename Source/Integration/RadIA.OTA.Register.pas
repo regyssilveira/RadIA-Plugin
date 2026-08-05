@@ -88,6 +88,8 @@ uses
   RadIA.Core.InlineCompletion,
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeEmbeddings,
+  RadIA.Core.KnowledgeEmbeddingSelection,
+  RadIA.Core.RemoteKnowledgeSettings,
   RadIA.Core.KnowledgePrivacy,
   RadIA.Core.KnowledgeHistory,
   RadIA.Core.KnowledgeTools,
@@ -949,7 +951,10 @@ initialization
         TRadIAContainer.Resolve<IRadIAKnowledgeStore>,
         TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
           TRadIAConfig.GetInstance,
-          TRadIALocalHashEmbeddingProvider.Create
+          TRadIAKnowledgeEmbeddingSelector.Create(
+            TRadIALocalHashEmbeddingProvider.Create,
+            TRadIARemoteKnowledgeSettings.Create
+          )
         )
       )
     )

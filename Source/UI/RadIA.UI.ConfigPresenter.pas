@@ -3,7 +3,8 @@ unit RadIA.UI.ConfigPresenter;
 interface
 
 uses
-  Vcl.Graphics, RadIA.Core.Interfaces, RadIA.Core.PromptTemplates;
+  Vcl.Graphics, RadIA.Core.Interfaces, RadIA.Core.PromptTemplates,
+  RadIA.Core.RemoteKnowledgeSettings;
 
 type
   IRadIAConfigView = interface
@@ -73,6 +74,22 @@ type
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
     procedure SetKnowledgeExcludedProjects(const AValue: string);
+    function GetKnowledgeRemoteEnabled: Boolean;
+    procedure SetKnowledgeRemoteEnabled(const AValue: Boolean);
+    function GetKnowledgeRemoteConsent: Boolean;
+    procedure SetKnowledgeRemoteConsent(const AValue: Boolean);
+    function GetKnowledgeRemoteEndpoint: string;
+    procedure SetKnowledgeRemoteEndpoint(const AValue: string);
+    function GetKnowledgeRemoteModel: string;
+    procedure SetKnowledgeRemoteModel(const AValue: string);
+    function GetKnowledgeRemoteApiKey: string;
+    procedure SetKnowledgeRemoteApiKey(const AValue: string);
+    function GetKnowledgeRemoteDimensions: string;
+    procedure SetKnowledgeRemoteDimensions(const AValue: string);
+    function GetKnowledgeRemoteTimeout: string;
+    procedure SetKnowledgeRemoteTimeout(const AValue: string);
+    function GetKnowledgeRemoteInputLimit: string;
+    procedure SetKnowledgeRemoteInputLimit(const AValue: string);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -119,20 +136,29 @@ type
     FConfig: IRadIAConfig;
     FTemplateManager: TPromptTemplateManager;
     FOwnsTemplateManager: Boolean;
+    FOwnsRemoteKnowledgeSettings: Boolean;
     FProvidersList: TArray<string>;
     FOAuthManager: TObject;
+    FRemoteKnowledgeSettings: TRadIARemoteKnowledgeSettings;
 
     function ValidateUrl(const AUrl: string; const AFieldName: string): Boolean;
     function ValidateUrls(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string): Boolean;
     function ValidateProvidersParams: Boolean;
     function ValidateQuota: Boolean;
     function ValidateConsent: Boolean;
+    function ValidateRemoteKnowledge: Boolean;
     function ValidateInlineCompletion: Boolean;
     procedure PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string);
     procedure PopulateTemplatesList;
   public
     constructor Create(const AView: IRadIAConfigView; const AConfig: IRadIAConfig = nil;
-        const ATemplateManager: TPromptTemplateManager = nil);
+        const ATemplateManager: TPromptTemplateManager = nil); overload;
+    constructor Create(
+      const AView: IRadIAConfigView;
+      const AConfig: IRadIAConfig;
+      const ATemplateManager: TPromptTemplateManager;
+      const ARemoteKnowledgeSettings: TRadIARemoteKnowledgeSettings
+    ); overload;
     destructor Destroy; override;
 
     procedure LoadConfig;
@@ -162,13 +188,27 @@ implementation
 
 uses
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.RemoteKnowledgeEmbeddings,
   System.Classes, System.SysUtils, RadIA.Core.Config, RadIA.Core.Container,
   RadIA.Core.IndyLoopback, RadIA.Core.OAuth, System.StrUtils;
 
 { TRadIAConfigPresenter }
 
-constructor TRadIAConfigPresenter.Create(const AView: IRadIAConfigView; const AConfig: IRadIAConfig;
-    const ATemplateManager: TPromptTemplateManager);
+constructor TRadIAConfigPresenter.Create(
+  const AView: IRadIAConfigView;
+  const AConfig: IRadIAConfig;
+  const ATemplateManager: TPromptTemplateManager
+);
+begin
+  Create(AView, AConfig, ATemplateManager, nil);
+end;
+
+constructor TRadIAConfigPresenter.Create(
+  const AView: IRadIAConfigView;
+  const AConfig: IRadIAConfig;
+  const ATemplateManager: TPromptTemplateManager;
+  const ARemoteKnowledgeSettings: TRadIARemoteKnowledgeSettings
+);
 begin
   inherited Create;
   FView := AView;
@@ -195,12 +235,24 @@ begin
     FTemplateManager.Load;
     FOwnsTemplateManager := True;
   end;
+  if Assigned(ARemoteKnowledgeSettings) then
+  begin
+    FRemoteKnowledgeSettings := ARemoteKnowledgeSettings;
+    FOwnsRemoteKnowledgeSettings := False;
+  end
+  else
+  begin
+    FRemoteKnowledgeSettings := TRadIARemoteKnowledgeSettings.Create;
+    FOwnsRemoteKnowledgeSettings := True;
+  end;
 end;
 
 destructor TRadIAConfigPresenter.Destroy;
 begin
   if FOwnsTemplateManager then
     FTemplateManager.Free;
+  if FOwnsRemoteKnowledgeSettings then
+    FRemoteKnowledgeSettings.Free;
   FOAuthManager.Free;
   inherited Destroy;
 end;
@@ -222,9 +274,12 @@ procedure TRadIAConfigPresenter.LoadConfig;
 var
   LFormatSettings: TFormatSettings;
   LProviderId: string;
+  LRemote: TRadIARemoteKnowledgeConfiguration;
   LShortcutConfig: IRadIAInlineShortcutConfig;
 begin
   LFormatSettings := TFormatSettings.Invariant;
+  FRemoteKnowledgeSettings.Load;
+  LRemote := FRemoteKnowledgeSettings.GetConfiguration;
 
   if SameText(FConfig.GetProviderAuthType('Gemini'), 'oauth') or
      SameText(FConfig.GetProviderAuthType('Gemini'), 'web_login') then
@@ -302,6 +357,16 @@ begin
   );
   FView.SetKnowledgeExcludedProjects(
     FConfig.KnowledgeExcludedProjects
+  );
+  FView.SetKnowledgeRemoteEnabled(LRemote.Enabled);
+  FView.SetKnowledgeRemoteConsent(LRemote.ConsentGranted);
+  FView.SetKnowledgeRemoteEndpoint(LRemote.Endpoint);
+  FView.SetKnowledgeRemoteModel(LRemote.Model);
+  FView.SetKnowledgeRemoteApiKey(LRemote.ApiKey);
+  FView.SetKnowledgeRemoteDimensions(IntToStr(LRemote.Dimensions));
+  FView.SetKnowledgeRemoteTimeout(IntToStr(LRemote.TimeoutMs));
+  FView.SetKnowledgeRemoteInputLimit(
+    IntToStr(LRemote.MaxInputCharacters)
   );
   FView.SetInlineCompletionEnabled(FConfig.AutocompleteEnabled);
   FView.SetInlineCompletionDelay(
@@ -445,9 +510,56 @@ begin
     );
 end;
 
+function TRadIAConfigPresenter.ValidateRemoteKnowledge: Boolean;
+var
+  LDimensions: Integer;
+  LInputLimit: Integer;
+  LOptions: TRadIARemoteEmbeddingOptions;
+  LTimeout: Integer;
+begin
+  Result := True;
+  if not FView.GetKnowledgeRemoteEnabled then
+    Exit;
+  if not FView.GetKnowledgeRemoteConsent then
+  begin
+    FView.ShowMessageDialog(
+      'Remote knowledge requires explicit network consent.'
+    );
+    Exit(False);
+  end;
+  if not TryStrToInt(FView.GetKnowledgeRemoteDimensions, LDimensions) or
+    not TryStrToInt(FView.GetKnowledgeRemoteTimeout, LTimeout) or
+    not TryStrToInt(FView.GetKnowledgeRemoteInputLimit, LInputLimit) then
+  begin
+    FView.ShowMessageDialog(
+      'Remote knowledge limits must be valid integers.'
+    );
+    Exit(False);
+  end;
+  try
+    LOptions := TRadIARemoteEmbeddingOptions.Create(
+      Trim(FView.GetKnowledgeRemoteEndpoint),
+      Trim(FView.GetKnowledgeRemoteModel),
+      FView.GetKnowledgeRemoteApiKey,
+      LDimensions,
+      LTimeout,
+      LInputLimit
+    );
+    Result := not LOptions.Endpoint.IsEmpty;
+  except
+    on E: EArgumentException do
+    begin
+      FView.ShowMessageDialog(E.Message);
+      Result := False;
+    end;
+  end;
+end;
+
 procedure TRadIAConfigPresenter.PersistConfig(const AOllamaUrl, AOpenAIUrl, ALMStudioUrl, AAzureUrl: string);
 var
   LFormatSettings: TFormatSettings;
+  LRemoteConfiguration: TRadIARemoteKnowledgeConfiguration;
+  LRemoteLimits: TRadIARemoteKnowledgeLimits;
   LProviderId: string;
   LShortcutConfig: IRadIAInlineShortcutConfig;
   LTemp: Double;
@@ -513,6 +625,20 @@ begin
   FConfig.KnowledgeExcludedProjects := Trim(
     FView.GetKnowledgeExcludedProjects
   );
+  LRemoteLimits := TRadIARemoteKnowledgeLimits.Create(
+    StrToInt(FView.GetKnowledgeRemoteDimensions),
+    StrToInt(FView.GetKnowledgeRemoteTimeout),
+    StrToInt(FView.GetKnowledgeRemoteInputLimit)
+  );
+  LRemoteConfiguration := TRadIARemoteKnowledgeConfiguration.Create(
+    FView.GetKnowledgeRemoteEnabled,
+    FView.GetKnowledgeRemoteConsent,
+    Trim(FView.GetKnowledgeRemoteEndpoint),
+    Trim(FView.GetKnowledgeRemoteModel),
+    FView.GetKnowledgeRemoteApiKey,
+    LRemoteLimits
+  );
+  FRemoteKnowledgeSettings.Save(LRemoteConfiguration);
   FConfig.AutocompleteEnabled :=
     FView.GetInlineCompletionEnabled;
   FConfig.AutocompleteDelay := StrToInt(
@@ -573,6 +699,7 @@ begin
   if not ValidateProvidersParams then Exit;
   if not ValidateQuota then Exit;
   if not ValidateConsent then Exit;
+  if not ValidateRemoteKnowledge then Exit;
   if not ValidateInlineCompletion then Exit;
 
   PersistConfig(LOllamaUrl, LOpenAIUrl, LLMStudioUrl, LAzureUrl);

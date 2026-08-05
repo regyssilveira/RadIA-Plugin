@@ -206,7 +206,8 @@ pending until separate remote consent and explicit visual configuration are avai
 
 Remote embedding selection is now fail-closed: semantic search and network authorization are
 independent decisions. Without remote enablement, separate consent, and a valid provider, the index
-keeps using only the local provider. The settings screen still needs to expose this configuration.
+keeps using only the local provider. The settings screen exposes endpoint, model, protected
+credential, dimensions, timeout, and input limit and applies changes without restarting the IDE.
 
 Search and rebuild operations now publish local latency in milliseconds, status reports the
 estimated index size, and every response preserves the project identity. With explained scores,

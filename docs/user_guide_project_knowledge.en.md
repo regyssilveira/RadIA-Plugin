@@ -62,8 +62,24 @@ new exclusion immediately blocks search and document reads for content already i
 refresh also removes matching files from the persisted snapshot. Removing a pattern allows content
 to be indexed again.
 
-The architecture accepts optional providers through a contract, but no remote provider is enabled
-implicitly. Content is sent to an AI provider only when an authorized request includes it as context.
+### Optional remote embeddings
+
+Under **Settings > Security & Consent**, users can configure an OpenAI-compatible embedding
+endpoint. Activation requires all of the following:
+
+- **Use a remote OpenAI-compatible embedding provider**;
+- **I consent to sending bounded project text to this endpoint**;
+- an HTTPS endpoint, or HTTP only on `localhost`, `127.0.0.1`, or `::1`;
+- a valid model, dimensions, timeout, and input limit.
+
+Remote consent is independent from semantic search. Enabling **Enable local semantic project
+knowledge** alone never authorizes network traffic. Without consent, when remote use is disabled,
+or when settings are invalid, `local-hash-v1` remains active. Windows DPAPI protects the API key,
+the key never enters JSON, and the transport does not follow redirects. The input limit bounds each
+submitted excerpt; network failures preserve deterministic lexical fallback.
+
+Changing the provider, model, or dimensions may require **Rebuild knowledge** so persisted vectors
+use a uniform configuration.
 
 ## Rebuild and troubleshooting
 

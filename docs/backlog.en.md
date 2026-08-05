@@ -121,6 +121,9 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M5 delivered in this stage: embedding selection is fail-closed and keeps the local
         provider when remote use is disabled, lacks separate consent, or has invalid settings;
         enabling semantic search alone never authorizes source code transmission.
+    *   M5 delivered in this stage: **Security & Consent** configures the remote provider without
+        registry editing, protects the API key with DPAPI, and validates consent, endpoint, model,
+        and limits before applying dynamic selection to the index.
     *   M5 delivered in this stage: completed and approved histories can feed the index after
         explicit consent, isolated by project and without tool payloads.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.

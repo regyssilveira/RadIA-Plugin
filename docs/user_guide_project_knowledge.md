@@ -65,9 +65,25 @@ minúsculas e procura o fragmento no caminho completo. Uma exclusão nova bloque
 busca e leitura do conteúdo já indexado. Na atualização seguinte, o RadIA também remove esses
 arquivos do snapshot persistido. Remover um padrão permite que o conteúdo volte a ser indexado.
 
-A arquitetura aceita providers opcionais por contrato, mas nenhum provider remoto é ativado
-implicitamente. O conteúdo somente é enviado a um provider de IA quando uma ação autorizada o
-inclui no contexto de uma solicitação.
+### Embeddings remotos opcionais
+
+Em **Settings > Security & Consent**, o usuário pode configurar um endpoint de embeddings
+OpenAI-compatible. A ativação exige simultaneamente:
+
+- **Use a remote OpenAI-compatible embedding provider**;
+- **I consent to sending bounded project text to this endpoint**;
+- endpoint HTTPS, ou HTTP apenas em `localhost`, `127.0.0.1` ou `::1`;
+- modelo, dimensões, timeout e limite de entrada válidos.
+
+O consentimento remoto é independente da opção de busca semântica. Portanto, habilitar somente
+**Enable local semantic project knowledge** nunca autoriza tráfego de rede. Sem consentimento,
+com o remoto desligado ou diante de configuração inválida, o provider `local-hash-v1` permanece
+ativo. A chave é armazenada com Windows DPAPI, nunca entra no JSON e o transporte não segue
+redirecionamentos. O limite de entrada restringe cada trecho enviado; falhas de rede preservam o
+fallback lexical determinístico.
+
+Alterar provider, modelo ou dimensões pode exigir **Rebuild knowledge** para que os vetores
+persistidos usem uma configuração uniforme.
 
 ## Reconstrução e problemas comuns
 

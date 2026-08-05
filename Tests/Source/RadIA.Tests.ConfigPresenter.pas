@@ -5,6 +5,7 @@ interface
 uses
   DUnitX.TestFramework, System.Generics.Collections,
   Vcl.Graphics, RadIA.Core.Interfaces,
+  RadIA.Core.RemoteKnowledgeSettings,
   RadIA.UI.ConfigPresenter;
 
 type
@@ -38,6 +39,14 @@ type
     FKnowledgeApprovedHistoryEnabled: Boolean;
     FKnowledgeExcludedFiles: string;
     FKnowledgeExcludedProjects: string;
+    FKnowledgeRemoteEnabled: Boolean;
+    FKnowledgeRemoteConsent: Boolean;
+    FKnowledgeRemoteEndpoint: string;
+    FKnowledgeRemoteModel: string;
+    FKnowledgeRemoteApiKey: string;
+    FKnowledgeRemoteDimensions: string;
+    FKnowledgeRemoteTimeout: string;
+    FKnowledgeRemoteInputLimit: string;
     FInlineCompletionEnabled: Boolean;
     FInlineCompletionDelay: string;
     FInlineCompletionExcludedFiles: string;
@@ -136,6 +145,22 @@ type
     procedure SetKnowledgeExcludedFiles(const AValue: string);
     function GetKnowledgeExcludedProjects: string;
     procedure SetKnowledgeExcludedProjects(const AValue: string);
+    function GetKnowledgeRemoteEnabled: Boolean;
+    procedure SetKnowledgeRemoteEnabled(const AValue: Boolean);
+    function GetKnowledgeRemoteConsent: Boolean;
+    procedure SetKnowledgeRemoteConsent(const AValue: Boolean);
+    function GetKnowledgeRemoteEndpoint: string;
+    procedure SetKnowledgeRemoteEndpoint(const AValue: string);
+    function GetKnowledgeRemoteModel: string;
+    procedure SetKnowledgeRemoteModel(const AValue: string);
+    function GetKnowledgeRemoteApiKey: string;
+    procedure SetKnowledgeRemoteApiKey(const AValue: string);
+    function GetKnowledgeRemoteDimensions: string;
+    procedure SetKnowledgeRemoteDimensions(const AValue: string);
+    function GetKnowledgeRemoteTimeout: string;
+    procedure SetKnowledgeRemoteTimeout(const AValue: string);
+    function GetKnowledgeRemoteInputLimit: string;
+    procedure SetKnowledgeRemoteInputLimit(const AValue: string);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -247,6 +272,7 @@ type
     FMockView: TMockConfigView;
     FPresenter: TRadIAConfigPresenter;
     FConfig: IRadIAConfig;
+    FRemoteSettings: TRadIARemoteKnowledgeSettings;
   public
     [Setup]
     procedure Setup;
@@ -267,6 +293,8 @@ type
     procedure TestInlineCompletionSettingsAreValidatedAndPersisted;
     [Test]
     procedure TestSemanticKnowledgeConsentIsPersisted;
+    [Test]
+    procedure TestRemoteKnowledgeRequiresConsentAndValidEndpoint;
     [Test]
     procedure TestTemplateCreationAndSelection;
     [Test]
@@ -294,6 +322,9 @@ begin
   TempMap := TDictionary<string, string>.Create;
   MaxTokensMap := TDictionary<string, string>.Create;
   TimeoutMap := TDictionary<string, string>.Create;
+  FKnowledgeRemoteDimensions := '1536';
+  FKnowledgeRemoteTimeout := '30000';
+  FKnowledgeRemoteInputLimit := '12000';
   FOAuthLoggedInMap := TDictionary<string, Boolean>.Create;
 
   SaveDialogResult := True;
@@ -526,6 +557,102 @@ begin
   KnowledgeExcludedProjects := AValue;
 end;
 
+function TMockConfigView.GetKnowledgeRemoteEnabled: Boolean;
+begin
+  Result := FKnowledgeRemoteEnabled;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeRemoteEnabled := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteConsent: Boolean;
+begin
+  Result := FKnowledgeRemoteConsent;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteConsent(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeRemoteConsent := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteEndpoint: string;
+begin
+  Result := FKnowledgeRemoteEndpoint;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteEndpoint(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteEndpoint := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteModel: string;
+begin
+  Result := FKnowledgeRemoteModel;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteModel(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteModel := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteApiKey: string;
+begin
+  Result := FKnowledgeRemoteApiKey;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteApiKey(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteApiKey := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteDimensions: string;
+begin
+  Result := FKnowledgeRemoteDimensions;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteDimensions(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteDimensions := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteTimeout: string;
+begin
+  Result := FKnowledgeRemoteTimeout;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteTimeout(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteTimeout := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteInputLimit: string;
+begin
+  Result := FKnowledgeRemoteInputLimit;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteInputLimit(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteInputLimit := AValue;
+end;
+
 function TMockConfigView.GetInlineCompletionEnabled: Boolean;
 begin
   Result := FInlineCompletionEnabled;
@@ -710,12 +837,22 @@ begin
   FConfig.Load;
 
   FMockView := TMockConfigView.Create;
-  FPresenter := TRadIAConfigPresenter.Create(FMockView, FConfig);
+  FRemoteSettings := TRadIARemoteKnowledgeSettings.Create(
+    LMemoryStorage,
+    'Software\RadIA\Tests\ConfigPresenter\RemoteKnowledge'
+  );
+  FPresenter := TRadIAConfigPresenter.Create(
+    FMockView,
+    FConfig,
+    nil,
+    FRemoteSettings
+  );
 end;
 
 procedure TTestConfigPresenter.TearDown;
 begin
   FPresenter.Free;
+  FRemoteSettings.Free;
   FConfig := nil;
   TRadIAConfig.SetStorage(nil);
 end;
@@ -860,6 +997,55 @@ begin
     LShortcutConfig.InlineShortcutProfile,
     'request=Ctrl+Shift+Space'
   );
+end;
+
+procedure TTestConfigPresenter.
+  TestRemoteKnowledgeRequiresConsentAndValidEndpoint;
+var
+  LConfiguration: TRadIARemoteKnowledgeConfiguration;
+begin
+  FPresenter.LoadConfig;
+  FMockView.SetKnowledgeRemoteEnabled(True);
+  FMockView.SetKnowledgeRemoteConsent(False);
+  FMockView.SetKnowledgeRemoteEndpoint(
+    'https://example.test/v1/embeddings'
+  );
+  FMockView.SetKnowledgeRemoteModel('embedding-model');
+  FPresenter.SaveConfig;
+
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'explicit network consent'
+  );
+  Assert.IsFalse(FMockView.CloseViewCalled);
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetKnowledgeRemoteConsent(True);
+  FMockView.SetKnowledgeRemoteEndpoint(
+    'http://remote.example/v1/embeddings'
+  );
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'HTTPS or loopback HTTP'
+  );
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetKnowledgeRemoteEndpoint(
+    'https://example.test/v1/embeddings'
+  );
+  FMockView.SetKnowledgeRemoteApiKey('secret-key');
+  FMockView.SetKnowledgeRemoteDimensions('768');
+  FMockView.SetKnowledgeRemoteTimeout('15000');
+  FMockView.SetKnowledgeRemoteInputLimit('8000');
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  LConfiguration := FRemoteSettings.GetConfiguration;
+  Assert.IsTrue(LConfiguration.Enabled);
+  Assert.IsTrue(LConfiguration.ConsentGranted);
+  Assert.AreEqual('embedding-model', LConfiguration.Model);
+  Assert.AreEqual<Integer>(768, LConfiguration.Dimensions);
 end;
 
 procedure TTestConfigPresenter.TestSemanticKnowledgeConsentIsPersisted;

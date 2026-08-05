@@ -121,6 +121,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M5 entregue nesta etapa: o seletor de embeddings é fail-closed e mantém o provider local
         quando o remoto está desligado, sem consentimento separado ou com configuração inválida;
         habilitar busca semântica, isoladamente, nunca autoriza envio de código à rede.
+    *   M5 entregue nesta etapa: **Security & Consent** configura o provider remoto sem editar o
+        Registro, protege a API key com DPAPI e valida consentimento, endpoint, modelo e limites
+        antes de aplicar a seleção dinâmica ao índice.
     *   M5 entregue nesta etapa: históricos concluídos e aprovados podem alimentar o índice
         mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
     *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas

@@ -213,7 +213,8 @@ consentimento remoto separado e configuração visual explícita.
 
 O seletor de embeddings remotos agora falha de forma fechada: busca semântica e autorização de rede
 são decisões independentes. Sem habilitação remota, consentimento separado e provider válido, o
-índice continua usando apenas o provider local. A tela ainda precisa expor essa configuração.
+índice continua usando apenas o provider local. A tela expõe endpoint, modelo, credencial protegida,
+dimensões, timeout e limite de entrada e aplica as alterações sem reiniciar a IDE.
 
 Busca e reconstrução agora publicam latência local em milissegundos, o status informa o tamanho
 estimado do índice e todas as respostas preservam a identidade do projeto. Com scores explicados,
