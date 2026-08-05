@@ -187,6 +187,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -DelphiVersion "37.0" `
   -Cycles 10 `
   -ExerciseDocking `
+  -ExercisePackageLifecycle `
   -EvidencePath "Output\Validation\Delphi13-Win32.json"
 ```
 
@@ -194,6 +195,10 @@ Add `-IDE64` for Delphi 13 IDE64. Evidence generation is fail-closed: it rejects
 `-SkipPackageHashCheck`, a missing package, a hash mismatch, dirty-source manifest evidence, or an
 installed BPL that differs from the BPL in the proven ZIP. Close every IDE instance before
 installation and smoke testing; the script also refuses to run when the target is already open.
+
+`-ExercisePackageLifecycle` runs `Uninstall`, `Install`, and `Repair` from the proven ZIP before
+each IDE launch while preserving user data. A cycle proceeds only after the installer revalidates
+the manifest, hashes, registry, BPL, DCP, bridge, and Web assets.
 
 The versioned 2.0.0 matrix summary is stored in `ide_smoke_evidence_2.0.0.json`. It records ZIP and
 BPL hashes, 10 passing cycles per target, duration range, the 90-tool catalog, native docking,

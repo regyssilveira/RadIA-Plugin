@@ -9,6 +9,7 @@ param(
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
+    [switch]$ExercisePackageLifecycle,
     [string]$EvidencePath = ""
 )
 
@@ -16,6 +17,12 @@ if ($EvidencePath -and $SkipPackageHashCheck) {
     throw (
         "Evidence output requires package provenance validation. " +
         "Remove -SkipPackageHashCheck."
+    )
+}
+if ($ExercisePackageLifecycle -and -not $EvidencePath) {
+    throw (
+        "Package lifecycle validation requires -EvidencePath so every " +
+        "cycle is bound to a proven release package."
     )
 }
 
@@ -73,6 +80,78 @@ function Get-RadIATargetIDEProcesses {
                 }
             }
     )
+}
+
+function Invoke-RadIAPackageCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$InstallerPath,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("Install", "Repair", "Uninstall")]
+        [string]$Mode
+    )
+
+    $arguments = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        $InstallerPath,
+        "-DelphiVersion",
+        $script:DelphiVersion,
+        "-Mode",
+        $Mode
+    )
+    if ($script:IDE64) {
+        $arguments += "-IDE64"
+    }
+
+    $previousErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+    if ($exitCode -ne 0) {
+        throw (
+            "Package $Mode failed for Delphi " +
+            "$($script:DelphiVersion) $script:platform. Output: $output"
+        )
+    }
+}
+
+function Invoke-RadIAPackageLifecycle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath
+    )
+
+    $packageRoot = Join-Path (
+        [IO.Path]::GetTempPath()
+    ) ("RadIA-IDESmoke-Lifecycle-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        Expand-Archive `
+            -LiteralPath $PackagePath `
+            -DestinationPath $packageRoot
+        $installer = Join-Path `
+            $packageRoot `
+            "scripts\Install-RadIA.Package.ps1"
+        Invoke-RadIAPackageCommand `
+            -InstallerPath $installer `
+            -Mode "Uninstall"
+        Invoke-RadIAPackageCommand `
+            -InstallerPath $installer `
+            -Mode "Install"
+        Invoke-RadIAPackageCommand `
+            -InstallerPath $installer `
+            -Mode "Repair"
+    } finally {
+        if (Test-Path -LiteralPath $packageRoot) {
+            Remove-Item -LiteralPath $packageRoot -Recurse -Force
+        }
+    }
 }
 
 $ErrorActionPreference = "Stop"
@@ -439,6 +518,24 @@ $results = @()
 $dockedGeometry = $null
 for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     $startedAt = [DateTime]::UtcNow
+    $packageLifecycleSeconds = 0
+    $packageLifecycleModes = @()
+    if ($ExercisePackageLifecycle) {
+        $packageLifecycleModes = @(
+            "Uninstall",
+            "Install",
+            "Repair"
+        )
+        $packageLifecycleStartedAt = [DateTime]::UtcNow
+        Invoke-RadIAPackageLifecycle -PackagePath $releasePackagePath
+        $packageLifecycleSeconds = [Math]::Round(
+            (
+                [DateTime]::UtcNow -
+                $packageLifecycleStartedAt
+            ).TotalSeconds,
+            2
+        )
+    }
     $process = Start-Process -FilePath $bdsPath -PassThru
     $instanceFile = Join-Path (
         [Environment]::GetFolderPath("ApplicationData")
@@ -652,6 +749,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [bool]$ExerciseDocking -and
                 $cycle -ge 2
             )
+            PackageLifecycleExercised = [bool]$ExercisePackageLifecycle
+            PackageLifecycleModes = $packageLifecycleModes
+            PackageLifecycleSeconds = $packageLifecycleSeconds
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -704,6 +804,7 @@ if ($EvidencePath) {
         cyclesRequested = $Cycles
         cyclesPassed = $results.Count
         dockingExercised = [bool]$ExerciseDocking
+        packageLifecycleExercised = [bool]$ExercisePackageLifecycle
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
         cycles = $results
     } |

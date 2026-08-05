@@ -269,7 +269,8 @@ Credential fields are rejected recursively and never enter extension packages.
 
 - [x] Run the complete build and test matrix.
 - Validate inline assistance, terminal, execution center, extensions, and knowledge in a real IDE.
-- Complete ten installation, usage, update, and shutdown cycles per supported combination.
+- [x] Complete ten uninstall, install, repair, usage, and shutdown cycles per supported combination.
+- Validate a real upgrade between different package versions on every supported combination.
 - Pass the create, edit, design, test, debug, fix, and commit continuous journey.
 - [x] Regenerate four packages from one commit and publish independent hashes.
 - [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
@@ -285,9 +286,10 @@ The consolidated real-IDE matrix is stored in `ide_smoke_evidence_2.0.0.json`. D
 Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 completed 10/10 cycles each, totaling 40
 cycles bound to the published ZIP, source commit, and installed BPL. Every target exposed 90
 tools, exercised native `TOTADockForm` docking, restored the desktop state, and exited without
-orphan processes. These cycles prove startup, usage, and shutdown, but do not repeat installation
-and update in every cycle. That part of the gate and the complete continuous visual journey remain
-open and are not inferred from the smoke test.
+orphan processes. Every cycle also ran `Uninstall`, `Install`, and `Repair`, preserved user data,
+and revalidated the manifest, hashes, registry, and installed files before launching the IDE. A
+cross-version upgrade and the complete continuous visual journey remain open and are not inferred
+from the smoke test.
 
 The reproducible audit is stored in `release_audit_2.0.0.en.md`. It removed the only silent Web
 connection at startup, added semantics and keyboard operation to Web surfaces, and created a local
