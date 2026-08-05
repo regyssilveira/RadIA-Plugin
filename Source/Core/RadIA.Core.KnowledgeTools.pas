@@ -359,6 +359,19 @@ begin
         TJSONNumber.Create(LHit.Chunk.EndLine)
       );
       LItem.AddPair('score', TJSONNumber.Create(LHit.Score));
+      LItem.AddPair(
+        'lexicalScore',
+        TJSONNumber.Create(LHit.LexicalScore)
+      );
+      LItem.AddPair(
+        'vectorScore',
+        TJSONNumber.Create(LHit.VectorScore)
+      );
+      LItem.AddPair('explanation', LHit.Explanation);
+      LItem.AddPair(
+        'embeddingProvider',
+        LHit.Chunk.EmbeddingProviderId
+      );
       LContent := LHit.Chunk.Content;
       if Length(LContent) > CMaxResultContentCharacters then
         LContent := Copy(

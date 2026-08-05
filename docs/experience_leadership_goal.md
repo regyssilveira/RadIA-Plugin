@@ -194,6 +194,11 @@ reload; tools declarativas com execução isolada continuam pendentes.
 
 **Saída:** contexto relevante de grandes soluções sem perder privacidade ou rastreabilidade.
 
+**Entregue até aqui:** busca híbrida com fallback lexical determinístico, contrato opcional de
+embeddings, provider vetorial local sem rede, persistência versionada por workspace e explicação
+dos componentes lexical e vetorial de cada resultado. Provider remoto com consentimento visual e
+exclusões configuráveis continuam pendentes.
+
 ### M6 — Instalação e primeiro valor
 
 - Criar instalador visual assinado e preparar um canal compatível com o gerenciador da IDE.

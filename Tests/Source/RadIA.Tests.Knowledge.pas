@@ -9,6 +9,20 @@ uses
   RadIA.Core.Tools;
 
 type
+  TRadIAFakeEmbeddingProvider = class(
+    TInterfacedObject,
+    IRadIAKnowledgeEmbeddingProvider
+  )
+  private
+    FRaiseError: Boolean;
+  public
+    constructor Create(const ARaiseError: Boolean = False);
+    function GetId: string;
+    function GetDimensions: Integer;
+    function IsLocal: Boolean;
+    function Embed(const AText: string): TArray<Single>;
+  end;
+
   TRadIAFakeKnowledgeSource = class(
     TInterfacedObject,
     IRadIAKnowledgeSource
@@ -70,6 +84,16 @@ type
     [Test]
     procedure KnowledgeDocumentHonorsContentLimit;
     [Test]
+    procedure HybridSearchFindsConceptWithoutLexicalOverlap;
+    [Test]
+    procedure EmbeddingFailureFallsBackToLexicalSearch;
+    [Test]
+    procedure PersistsEmbeddingsWithWorkspaceIsolation;
+    [Test]
+    procedure LocalEmbeddingProviderIsDeterministicAndPrivate;
+    [Test]
+    procedure LoadsLegacyLexicalSnapshot;
+    [Test]
     procedure PersistsAndReloadsIndex;
     [Test]
     procedure ClearProjectDeletesPersistedIndex;
@@ -81,8 +105,10 @@ implementation
 
 uses
   System.IOUtils,
+  System.StrUtils,
   System.SysUtils,
   RadIA.Core.KnowledgeStore,
+  RadIA.Core.KnowledgeEmbeddings,
   RadIA.Core.KnowledgeTools,
   RadIA.Core.ToolRegistry;
 
@@ -112,6 +138,46 @@ const
     '  end;' + sLineBreak +
     'implementation' + sLineBreak +
     'end.';
+
+{ TRadIAFakeEmbeddingProvider }
+
+constructor TRadIAFakeEmbeddingProvider.Create(
+  const ARaiseError: Boolean
+);
+begin
+  inherited Create;
+  FRaiseError := ARaiseError;
+end;
+
+function TRadIAFakeEmbeddingProvider.Embed(
+  const AText: string
+): TArray<Single>;
+begin
+  if FRaiseError then
+    raise EInvalidOpException.Create('Embedding provider unavailable.');
+  SetLength(Result, 2);
+  if ContainsText(AText, 'money') or
+    ContainsText(AText, 'amount') or
+    ContainsText(AText, 'CalculateTotal') then
+    Result[0] := 1
+  else
+    Result[1] := 1;
+end;
+
+function TRadIAFakeEmbeddingProvider.GetDimensions: Integer;
+begin
+  Result := 2;
+end;
+
+function TRadIAFakeEmbeddingProvider.GetId: string;
+begin
+  Result := 'fake-semantic-v1';
+end;
+
+function TRadIAFakeEmbeddingProvider.IsLocal: Boolean;
+begin
+  Result := True;
+end;
 
 { TRadIAFakeKnowledgeSource }
 
@@ -371,6 +437,9 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, 'Sample.Service.pas');
   Assert.Contains(LResult.ContentJson, '"startLine":');
+  Assert.Contains(LResult.ContentJson, '"lexicalScore":');
+  Assert.Contains(LResult.ContentJson, '"vectorScore":');
+  Assert.Contains(LResult.ContentJson, '"explanation":');
 
   LResult := ExecuteTool('ClearProjectKnowledge', '{}');
   Assert.IsTrue(LResult.Success);
@@ -379,6 +448,147 @@ begin
     '{"query":"CalculateTotal"}'
   );
   Assert.Contains(LResult.ContentJson, '"count":0');
+end;
+
+procedure TTestRadIALocalKnowledge.
+  HybridSearchFindsConceptWithoutLexicalOverlap;
+var
+  LHits: TArray<TRadIAKnowledgeSearchHit>;
+  LService: IRadIAKnowledgeService;
+begin
+  LService := TRadIALocalKnowledgeService.Create(
+    FSource,
+    nil,
+    TRadIAFakeEmbeddingProvider.Create
+  );
+  Assert.IsTrue(LService.RefreshProject.Success);
+  LHits := LService.Search(FSource.ProjectId, 'money amount', 5);
+  Assert.IsTrue(Length(LHits) > 0);
+  Assert.AreEqual(CFirstFile, LHits[0].Chunk.FileName);
+  Assert.AreEqual<Integer>(0, LHits[0].LexicalScore);
+  Assert.IsTrue(LHits[0].VectorScore > 0);
+  Assert.Contains(LHits[0].Explanation, 'vector');
+end;
+
+procedure TTestRadIALocalKnowledge.
+  EmbeddingFailureFallsBackToLexicalSearch;
+var
+  LHits: TArray<TRadIAKnowledgeSearchHit>;
+  LService: IRadIAKnowledgeService;
+begin
+  LService := TRadIALocalKnowledgeService.Create(
+    FSource,
+    nil,
+    TRadIAFakeEmbeddingProvider.Create(True)
+  );
+  Assert.IsTrue(LService.RefreshProject.Success);
+  LHits := LService.Search(FSource.ProjectId, 'CalculateTotal', 5);
+  Assert.IsTrue(Length(LHits) > 0);
+  Assert.IsTrue(LHits[0].LexicalScore > 0);
+  Assert.AreEqual<Integer>(0, LHits[0].VectorScore);
+  Assert.Contains(LHits[0].Explanation, 'lexical');
+end;
+
+procedure TTestRadIALocalKnowledge.
+  LocalEmbeddingProviderIsDeterministicAndPrivate;
+var
+  LEmbeddingLength: Integer;
+  LFirst: TArray<Single>;
+  LProvider: IRadIAKnowledgeEmbeddingProvider;
+  LSecond: TArray<Single>;
+begin
+  LProvider := TRadIALocalHashEmbeddingProvider.Create;
+  Assert.IsTrue(LProvider.IsLocal);
+  Assert.AreEqual('local-hash-v1', LProvider.GetId);
+  LFirst := LProvider.Embed('calculate the total amount');
+  LSecond := LProvider.Embed('calculate the total amount');
+  LEmbeddingLength := Length(LFirst);
+  Assert.AreEqual(LProvider.GetDimensions, LEmbeddingLength);
+  Assert.AreEqual(LFirst[0], LSecond[0]);
+  Assert.AreEqual(LFirst[42], LSecond[42]);
+end;
+
+procedure TTestRadIALocalKnowledge.LoadsLegacyLexicalSnapshot;
+var
+  LFileName: string;
+  LFiles: TArray<string>;
+  LRootPath: string;
+  LService: IRadIAKnowledgeService;
+  LSnapshot: TRadIAKnowledgeIndexSnapshot;
+  LStore: IRadIAKnowledgeStore;
+  LText: string;
+begin
+  LRootPath := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-legacy-knowledge-' + TGUID.NewGuid.ToString
+  );
+  try
+    LStore := TRadIAJsonKnowledgeStore.Create(LRootPath);
+    LService := TRadIALocalKnowledgeService.Create(FSource, LStore);
+    Assert.IsTrue(LService.RefreshProject.Success);
+    LService := nil;
+    LFiles := TDirectory.GetFiles(LRootPath, '*.knowledge.json');
+    Assert.AreEqual<Integer>(1, Length(LFiles));
+    LFileName := LFiles[0];
+    LText := TFile.ReadAllText(LFileName, TEncoding.UTF8);
+    TFile.WriteAllText(
+      LFileName,
+      LText.Replace('"version":2', '"version":1'),
+      TEncoding.UTF8
+    );
+    Assert.IsTrue(LStore.Load(FSource.ProjectId, LSnapshot));
+    Assert.IsTrue(Length(LSnapshot.Chunks) > 0);
+    Assert.AreEqual<Integer>(0, Length(LSnapshot.Chunks[0].Embedding));
+  finally
+    LService := nil;
+    LStore := nil;
+    if TDirectory.Exists(LRootPath) then
+      TDirectory.Delete(LRootPath, True);
+  end;
+end;
+
+procedure TTestRadIALocalKnowledge.
+  PersistsEmbeddingsWithWorkspaceIsolation;
+var
+  LHits: TArray<TRadIAKnowledgeSearchHit>;
+  LRootPath: string;
+  LService: IRadIAKnowledgeService;
+  LStore: IRadIAKnowledgeStore;
+begin
+  LRootPath := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-vector-knowledge-' + TGUID.NewGuid.ToString
+  );
+  try
+    LStore := TRadIAJsonKnowledgeStore.Create(LRootPath);
+    LService := TRadIALocalKnowledgeService.Create(
+      FSource,
+      LStore,
+      TRadIAFakeEmbeddingProvider.Create
+    );
+    Assert.IsTrue(LService.RefreshProject.Success);
+    LService := nil;
+    LStore := nil;
+
+    LStore := TRadIAJsonKnowledgeStore.Create(LRootPath);
+    LService := TRadIALocalKnowledgeService.Create(
+      FSource,
+      LStore,
+      TRadIAFakeEmbeddingProvider.Create
+    );
+    LHits := LService.Search(FSource.ProjectId, 'money amount', 5);
+    Assert.IsTrue(Length(LHits) > 0);
+    Assert.IsTrue(LHits[0].VectorScore > 0);
+    Assert.AreEqual<Integer>(
+      0,
+      Length(LService.Search('another-workspace', 'money amount', 5))
+    );
+  finally
+    LService := nil;
+    LStore := nil;
+    if TDirectory.Exists(LRootPath) then
+      TDirectory.Delete(LRootPath, True);
+  end;
 end;
 
 procedure TTestRadIALocalKnowledge.PersistsAndReloadsIndex;

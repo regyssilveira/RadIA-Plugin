@@ -3,7 +3,8 @@
 ## Objetivo
 
 O conhecimento local permite pesquisar símbolos e trechos do projeto sem depender de um serviço
-externo. O índice é derivado do workspace e pode ser reconstruído.
+externo. O índice é derivado do workspace, pode ser reconstruído e combina busca lexical com
+similaridade vetorial local.
 
 ## Ciclo do índice
 
@@ -24,16 +25,22 @@ Solicitações típicas no chat ou MCP:
 - “Leia o trecho indexado desta unit.”
 - “Reconstrua o índice deste projeto.”
 
-A busca retorna resultados limitados com arquivo, posição e trecho relevante. A leitura de
-documentos também possui limites para evitar respostas e payloads excessivos.
+A busca retorna resultados limitados com arquivo, posição, trecho relevante, score total, parcela
+lexical, parcela vetorial e uma explicação do ranking. Se o provider de embeddings falhar ou estiver
+desabilitado na construção do serviço, o mesmo fluxo usa automaticamente o fallback lexical
+determinístico. A leitura de documentos também possui limites para evitar respostas e payloads
+excessivos.
 
 ## Armazenamento e privacidade
 
-Snapshots ficam em `%APPDATA%\RadIA\Knowledge`, separados por identidade derivada do projeto. Eles
-não são arquivos-fonte autoritativos e podem ser removidos para forçar reconstrução.
+Snapshots ficam em `%APPDATA%\RadIA\Knowledge`, separados por identidade derivada do projeto. O
+formato 2 persiste os vetores junto aos chunks e continua lendo snapshots lexicais do formato 1.
+Eles não são arquivos-fonte autoritativos e podem ser removidos para forçar reconstrução.
 
-O índice permanece local. Seu conteúdo somente é enviado a um provedor quando uma ação autorizada
-o inclui no contexto de uma solicitação.
+O provider padrão `local-hash-v1` calcula os vetores inteiramente no processo da IDE, sem HTTP,
+tokens ou envio de código. A arquitetura aceita providers opcionais por contrato, mas nenhum
+provider remoto é ativado implicitamente. O conteúdo somente é enviado a um provider de IA quando
+uma ação autorizada o inclui no contexto de uma solicitação.
 
 ## Reconstrução e problemas comuns
 

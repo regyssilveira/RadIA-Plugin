@@ -187,6 +187,11 @@ declarative tool execution remains pending.
 
 **Outcome:** relevant large-solution context with privacy and traceability.
 
+**Delivered so far:** hybrid retrieval with deterministic lexical fallback, an optional embedding
+contract, a network-free local vector provider, versioned per-workspace persistence, and lexical
+plus vector explanations for every result. A remote provider with visual consent and configurable
+exclusions remains pending.
+
 ### M6 — Installation and first value
 
 - Create a signed visual installer and prepare an IDE package-manager channel.

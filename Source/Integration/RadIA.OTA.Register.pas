@@ -87,7 +87,8 @@ uses
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
   RadIA.Core.InlineCompletion,
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
-  RadIA.Core.Knowledge, RadIA.Core.KnowledgeTools,
+  RadIA.Core.Knowledge, RadIA.Core.KnowledgeEmbeddings,
+  RadIA.Core.KnowledgeTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.DebugTimelineStore,
@@ -916,7 +917,8 @@ initialization
   TRadIAContainer.Register<IRadIAKnowledgeService>(
     TRadIALocalKnowledgeService.Create(
       TRadIAContainer.Resolve<IRadIAKnowledgeSource>,
-      TRadIAContainer.Resolve<IRadIAKnowledgeStore>
+      TRadIAContainer.Resolve<IRadIAKnowledgeStore>,
+      TRadIALocalHashEmbeddingProvider.Create
     )
   );
   TRadIAContainer.Register<IRadIAKnowledgeRefreshScheduler>(
