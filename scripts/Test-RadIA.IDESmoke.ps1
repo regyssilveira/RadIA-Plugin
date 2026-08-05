@@ -9,6 +9,7 @@ param(
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
+    [switch]$ExerciseInlineCompletion,
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = ""
@@ -423,6 +424,49 @@ function Wait-RadIADockInfo {
     throw "The RadIA native dockable form did not open."
 }
 
+function Wait-RadIAInlineCompletionDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$LogPath,
+        [Parameter(Mandatory)]
+        [string]$FileName
+    )
+
+    $preparedPattern = (
+        "Ghost text prepared: lines=2, file=$FileName"
+    )
+    $paintedPattern = (
+        "Ghost text painted: lines=2, file=$FileName"
+    )
+    $paintDeadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $logContent = ""
+        if (Test-Path -LiteralPath $LogPath -PathType Leaf) {
+            $logContent = Get-Content -LiteralPath $LogPath -Raw
+        }
+        $prepared = $logContent.Contains($preparedPattern)
+        $painted = $logContent.Contains($paintedPattern)
+        if (-not ($prepared -and $painted)) {
+            Start-Sleep -Milliseconds 100
+        }
+    } while (
+        -not ($prepared -and $painted) -and
+        [DateTime]::UtcNow -lt $paintDeadline
+    )
+    if (-not $prepared) {
+        throw "The local inline suggestion was not prepared."
+    }
+    if (-not $painted) {
+        throw "The Ghost Text overlay did not reach the OTA paint cycle."
+    }
+    return [pscustomobject]@{
+        Prepared = $true
+        Painted = $true
+        LineCount = 2
+        FileName = $FileName
+    }
+}
+
 function Restore-RadIADockingVisibility {
     if (-not $script:ExerciseDocking) {
         return
@@ -441,6 +485,39 @@ function Restore-RadIADockingVisibility {
     if (-not $script:DockingHadRegistryKey) {
         Remove-Item `
             -LiteralPath $script:DockingRegistryPath `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+function Restore-RadIAInlineCompletionLogSettings {
+    if (-not $script:InlineLogSettingsInitialized) {
+        return
+    }
+    if ($script:InlineLogHadEnabled) {
+        Set-ItemProperty `
+            -LiteralPath $script:InlineLogRegistryPath `
+            -Name "LogEnabled" `
+            -Value $script:InlineLogOriginalEnabled
+    } else {
+        Remove-ItemProperty `
+            -LiteralPath $script:InlineLogRegistryPath `
+            -Name "LogEnabled" `
+            -ErrorAction SilentlyContinue
+    }
+    if ($script:InlineLogHadPath) {
+        Set-ItemProperty `
+            -LiteralPath $script:InlineLogRegistryPath `
+            -Name "LogPath" `
+            -Value $script:InlineLogOriginalPath
+    } else {
+        Remove-ItemProperty `
+            -LiteralPath $script:InlineLogRegistryPath `
+            -Name "LogPath" `
+            -ErrorAction SilentlyContinue
+    }
+    if (-not $script:InlineLogHadRegistryKey) {
+        Remove-Item `
+            -LiteralPath $script:InlineLogRegistryPath `
             -ErrorAction SilentlyContinue
     }
 }
@@ -479,6 +556,16 @@ $upgradePackageEvidence = $null
 $upgradePackagePath = ""
 $upgradeFromVersion = ""
 $upgradeFromPackageSha256 = ""
+$inlineSmokeUnitPath = ""
+$inlineSmokeLogPath = ""
+$script:InlineLogSettingsInitialized = $false
+
+trap {
+    Restore-RadIADockingVisibility
+    Restore-RadIAInlineCompletionLogSettings
+    Write-Error $_
+    exit 1
+}
 
 if ($ExerciseDocking) {
     $script:DockingRegistryPath = (
@@ -510,16 +597,79 @@ if ($ExerciseDocking) {
         -Value 1 `
         -Force |
         Out-Null
-    trap {
-        Restore-RadIADockingVisibility
-        Write-Error $_
-        exit 1
-    }
 }
 if ($IDE64) {
     $platform = "Win64"
     $binName = "bin64"
     $shutdownTimeoutMs = 60000
+}
+if ($ExerciseInlineCompletion) {
+    $script:InlineLogRegistryPath = (
+        "HKCU:\Software\Embarcadero\BDS\" +
+        "$DelphiVersion\RadIA"
+    )
+    $script:InlineLogHadRegistryKey = Test-Path `
+        -LiteralPath $script:InlineLogRegistryPath
+    if (-not $script:InlineLogHadRegistryKey) {
+        New-Item `
+            -Path $script:InlineLogRegistryPath `
+            -Force |
+            Out-Null
+    }
+    $inlineLogProperties = Get-ItemProperty `
+        -LiteralPath $script:InlineLogRegistryPath
+    $inlineLogEnabled = $inlineLogProperties.PSObject.Properties[
+        "LogEnabled"
+    ]
+    $inlineLogPath = $inlineLogProperties.PSObject.Properties[
+        "LogPath"
+    ]
+    $script:InlineLogHadEnabled = $null -ne $inlineLogEnabled
+    $script:InlineLogHadPath = $null -ne $inlineLogPath
+    $script:InlineLogOriginalEnabled = $null
+    $script:InlineLogOriginalPath = $null
+    if ($script:InlineLogHadEnabled) {
+        $script:InlineLogOriginalEnabled = $inlineLogEnabled.Value
+    }
+    if ($script:InlineLogHadPath) {
+        $script:InlineLogOriginalPath = $inlineLogPath.Value
+    }
+    $inlineSmokeRoot = Join-Path (
+        "$repositoryRoot\Output\Validation\InlineCompletionSmoke"
+    ) (
+        "$DelphiVersion-$platform-" +
+        [Guid]::NewGuid().ToString("N")
+    )
+    $inlineSmokeLogDirectory = Join-Path $inlineSmokeRoot "Logs"
+    New-Item `
+        -ItemType Directory `
+        -Path $inlineSmokeLogDirectory `
+        -Force |
+        Out-Null
+    $inlineSmokeLogPath = Join-Path `
+        $inlineSmokeLogDirectory `
+        "radia.log"
+    $inlineSmokeUnitPath = Join-Path `
+        $repositoryRoot `
+        "Tests\Source\RadIA.Tests.TextNormalizer.pas"
+    if (-not (Test-Path -LiteralPath $inlineSmokeUnitPath -PathType Leaf)) {
+        throw "Inline completion smoke sources were not found."
+    }
+    New-ItemProperty `
+        -LiteralPath $script:InlineLogRegistryPath `
+        -Name "LogEnabled" `
+        -PropertyType DWord `
+        -Value 1 `
+        -Force |
+        Out-Null
+    New-ItemProperty `
+        -LiteralPath $script:InlineLogRegistryPath `
+        -Name "LogPath" `
+        -PropertyType String `
+        -Value $inlineSmokeLogDirectory `
+        -Force |
+        Out-Null
+    $script:InlineLogSettingsInitialized = $true
 }
 
 $bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
@@ -688,7 +838,22 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             2
         )
     }
-    $process = Start-Process -FilePath $bdsPath -PassThru
+    $launchArguments = @()
+    if ($ExerciseInlineCompletion) {
+        $launchArguments = @($inlineSmokeUnitPath)
+    }
+    $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
+    try {
+        if ($ExerciseInlineCompletion) {
+            $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = "1"
+        }
+        $process = Start-Process `
+            -FilePath $bdsPath `
+            -ArgumentList $launchArguments `
+            -PassThru
+    } finally {
+        $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = $inlineSmokeEnvironment
+    }
     $instanceFile = Join-Path (
         [Environment]::GetFolderPath("ApplicationData")
     ) "RadIA\mcp.$($process.Id).json"
@@ -805,6 +970,55 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not $ideState.versionName) {
             throw "IDE version name was empty in cycle $cycle."
         }
+        $inlineDiagnostic = $null
+        if ($ExerciseInlineCompletion) {
+            $editorRequests = @(
+                (
+                    '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
+                    '"params":{"protocolVersion":"2025-06-18",' +
+                    '"capabilities":{},"clientInfo":{' +
+                    '"name":"radia-inline-smoke","version":"1"}}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","method":' +
+                    '"notifications/initialized","params":{}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","id":4,"method":"tools/call",' +
+                    '"params":{"name":"GetEditorContent","arguments":{}}}'
+                )
+            )
+            $editorDeadline = [DateTime]::UtcNow.AddSeconds(90)
+            $editorContent = $null
+            Start-Sleep -Seconds 5
+            do {
+                $editorResponses = @(
+                    $editorRequests |
+                        & $bridgePath $instanceFile |
+                        ForEach-Object { $_ | ConvertFrom-Json }
+                )
+                if ($LASTEXITCODE -ne 0) {
+                    throw "MCP editor inspection failed in cycle $cycle."
+                }
+                $editorResponse = $editorResponses |
+                    Where-Object { $_.id -eq 4 }
+                $editorContent = $editorResponse.result.structuredContent
+                if (-not $editorContent.fileName) {
+                    Start-Sleep -Seconds 2
+                }
+            } while (
+                -not $editorContent.fileName -and
+                [DateTime]::UtcNow -lt $editorDeadline
+            )
+            if (-not $editorContent.fileName) {
+                throw "No active editor was found for Ghost Text."
+            }
+            $inlineDiagnostic = Wait-RadIAInlineCompletionDiagnostic `
+                -LogPath $inlineSmokeLogPath `
+                -FileName (
+                    [IO.Path]::GetFileName($editorContent.fileName)
+                )
+        }
 
         $descendants = @(
             Get-RadIAProcessDescendants `
@@ -888,6 +1102,10 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             ([DateTime]::UtcNow - $startedAt).TotalSeconds,
             2
         )
+        $inlineLineCount = 0
+        if ($inlineDiagnostic) {
+            $inlineLineCount = $inlineDiagnostic.LineCount
+        }
         $results += [pscustomobject]@{
             Cycle = $cycle
             ProcessId = $process.Id
@@ -906,6 +1124,16 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             PackageLifecycleSeconds = $packageLifecycleSeconds
             UpgradeExercised = [bool]$upgradePackageEvidence
             UpgradeFromVersion = $upgradeFromVersion
+            InlineCompletionExercised = [bool]$ExerciseInlineCompletion
+            InlineCompletionPrepared = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.Prepared
+            )
+            InlineCompletionPainted = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.Painted
+            )
+            InlineCompletionLineCount = $inlineLineCount
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -938,6 +1166,12 @@ if ($ExerciseDocking) {
     )
     Restore-RadIADockingVisibility
 }
+if ($ExerciseInlineCompletion) {
+    Write-Host (
+        "Local multiline Ghost Text preparation and OTA painting passed."
+    )
+    Restore-RadIAInlineCompletionLogSettings
+}
 if ($EvidencePath) {
     $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
     $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
@@ -958,6 +1192,7 @@ if ($EvidencePath) {
         cyclesRequested = $Cycles
         cyclesPassed = $results.Count
         dockingExercised = [bool]$ExerciseDocking
+        inlineCompletionExercised = [bool]$ExerciseInlineCompletion
         packageLifecycleExercised = [bool]$ExercisePackageLifecycle
         upgradeExercised = [bool]$upgradePackageEvidence
         upgradeFromVersion = $upgradeFromVersion

@@ -44,7 +44,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Decompositor de Forms (Code-Behind)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Assistente de Threads e PPL** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Internacionalização Automática (i18n Wizard)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Autocompletar Inline (Ghost Text)** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Autocompletar Inline (Ghost Text)** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Geração de Docs de Projeto (API.md)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐ Média | v0.3.0+ |
 | **Suporte Nativo macOS/Linux (Lazarus)** | 🔲 Planejado | 🔴 Alta | 🟢 Baixa | v0.3.0+ |
 
@@ -61,6 +61,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         com persistência, validação de perfil, bloqueio de duplicidade e detecção de conflito.
     *   M1 entregue nesta etapa: Ghost Text multilinha usa overlays virtuais por linha, faixa de
         continuação sem sobrepor código real e desenho após o EOF, preservando o buffer até o aceite.
+    *   M1 validado em IDE real: preparação local e pintura OTA aprovadas no Delphi 11, 12 e 13
+        Win32 e no Delphi 13 IDE64, com evidência reproduzível e sem enviar conteúdo ao provider.
     *   M2 entregue nesta etapa: parser ANSI SGR incremental e saída rica preservam cores e negrito
         mesmo quando sequências de escape chegam divididas entre chunks.
     *   M2 entregue nesta etapa: stdin contínuo mantém o canal de entrada aberto e permite responder

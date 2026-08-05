@@ -74,7 +74,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Agentic Designer** | Integration | Reviewable components, properties, events, and layout. | ✅ Completed |
 | **Agentic Debugger** | Integration | State, control, breakpoints, expression evaluation, and watches. | ✅ Completed |
 | **Inline Review** | Editor | Visual review with controlled apply and reversal in the editor. | ✅ Completed |
-| **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | 🚧 Visual validation |
+| **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
 | **Signed Declarative Extensions** | Security | RSA-SHA256 packages with fingerprints, first-use trust, and visual revocation. | ✅ Completed |

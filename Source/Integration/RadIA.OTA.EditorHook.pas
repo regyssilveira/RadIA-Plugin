@@ -86,6 +86,7 @@ type
     FTimer: TTimer;
     FHookPending: Boolean;
     FHookRequestedAt: UInt64;
+    FInlineCompletionSmokePending: Boolean;
     {$ENDIF}
 
     procedure ActiveFormChange(Sender: TObject);
@@ -132,6 +133,7 @@ type
     procedure OnInlineCompletionPreviewDiagnosticExecute(Sender: TObject);
     procedure OnInlineCompletionRequestExecute(Sender: TObject);
     procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
+    function TryPreviewInlineCompletionDiagnostic: Boolean;
     procedure RequestContinuousInlineCompletion;
     procedure RefreshInlineCompletionWatch;
     procedure RefreshKeyboardBinding;
@@ -434,6 +436,10 @@ begin
   FTimer := nil;
   FHookPending := False;
   FHookRequestedAt := 0;
+  FInlineCompletionSmokePending := SameText(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_INLINE_COMPLETION'),
+    '1'
+  );
   {$ENDIF}
   FInstalled := False;
 end;
@@ -1197,6 +1203,12 @@ end;
 procedure TRadIAEditorHook.OnInlineCompletionPreviewDiagnosticExecute(
   Sender: TObject
 );
+begin
+  if not TryPreviewInlineCompletionDiagnostic then
+    ShowMessage('No supported active code buffer was found.');
+end;
+
+function TRadIAEditorHook.TryPreviewInlineCompletionDiagnostic: Boolean;
 const
   CDiagnosticSuggestion =
     'RadIAGhostTextDiagnostic' + sLineBreak +
@@ -1204,18 +1216,17 @@ const
 var
   LContext: TRadIAInlineCompletionContext;
 begin
+  Result := False;
   if not Assigned(FInlineCompletionController) or
     not Assigned(FInlineCompletionSession) then
     Exit;
   if not FInlineCompletionSession.Capture(LContext) then
-  begin
-    ShowMessage('No supported active code buffer was found.');
     Exit;
-  end;
   FInlineCompletionController.Preview(
     LContext,
     CDiagnosticSuggestion
   );
+  Result := True;
 end;
 
 procedure TRadIAEditorHook.OnInlineCompletionRequestExecute(
@@ -1573,6 +1584,10 @@ var
 begin
   if (not FInstalled) or GIsShuttingDown then
     Exit;
+
+  if FInlineCompletionSmokePending and
+    TryPreviewInlineCompletionDiagnostic then
+    FInlineCompletionSmokePending := False;
 
   if not FHookPending then
   begin

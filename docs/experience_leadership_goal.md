@@ -63,7 +63,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | Marco | Estado | Gate para avançar |
 |---|---|---|
 | M0 — Qualidade | Em execução | Gate Sonar verde ou falsos positivos comprovados e classificados |
-| M1 — Assistência inline | Em execução | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
+| M1 — Assistência inline | Concluído | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Em execução | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Em execução | Instalação declarativa segura sem recompilar ou reiniciar |
@@ -77,7 +77,8 @@ desacoplado, captura contínua opt-in, controles de escopo e Ghost Text OTA. A c
 vivo, a posição do cursor e o símbolo vigente. Os cinco atalhos são bindings OTA configuráveis,
 validados e recarregados sem reiniciar a IDE. Sugestões multilinha agora usam overlays virtuais por
 linha, preservam quebras no aceite e mantêm continuações separadas do código real. O aceite visual
-em toda a matriz de IDEs continua obrigatório antes de marcar o marco como concluído.
+foi aprovado no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. A evidência registra separadamente
+a preparação e a pintura OTA de duas linhas sem persistir conteúdo do editor.
 
 O M2 possui buffer visual ANSI/CSI com cursor e sobrescrita, saída rica, stdin contínuo, execução
 por ConPTY, resize em dimensões de caracteres, busca reversa por `Ctrl+R` e múltiplas sessões em

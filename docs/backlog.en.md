@@ -44,7 +44,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Legacy Form Decomposer (Code-Behind)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Threads and PPL Assistant** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Automated Internationalization (i18n Wizard)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **Smart Inline Autocomplete (Ghost Text)** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **Smart Inline Autocomplete (Ghost Text)** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Project Docs Auto Generation (API.md)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐ Medium | v0.3.0+ |
 | **Native macOS/Linux Support (Lazarus)** | 🔲 Planned | 🔴 High | 🟢 Low | v0.3.0+ |
 
@@ -61,6 +61,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         bindings with persistence, profile validation, duplicate rejection, and conflict detection.
     *   M1 delivered in this increment: multiline Ghost Text uses per-line virtual overlays, a
         continuation lane that avoids real code, and EOF overflow while preserving the buffer.
+    *   M1 validated in real IDEs: local preparation and OTA painting passed on Delphi 11, 12, and
+        13 Win32 plus Delphi 13 IDE64, with reproducible evidence and no provider content transfer.
     *   M2 delivered in this increment: an incremental ANSI SGR parser and rich output preserve
         colors and bold styling even when escape sequences arrive split across chunks.
     *   M2 delivered in this increment: continuous stdin keeps the input channel open and accepts

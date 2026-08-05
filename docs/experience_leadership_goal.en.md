@@ -62,7 +62,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | Milestone | Status | Gate to advance |
 |---|---|---|
 | M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
-| M1 — Inline assistance | In progress | OTA Ghost Text, shortcuts, consent, and real matrix approved |
+| M1 — Inline assistance | Completed | OTA Ghost Text, shortcuts, consent, and real matrix approved |
 | M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
 | M3 — Unified center | In progress | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | In progress | Safe declarative installation without recompilation or restart |
@@ -76,7 +76,8 @@ provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture
 buffer, cursor position, and current symbol. All five shortcuts are configurable OTA bindings,
 validated and reloaded without restarting the IDE. Multiline suggestions now use per-line virtual
 overlays, preserve line breaks on acceptance, and keep continuations separate from real code.
-Visual acceptance across the complete IDE matrix remains mandatory before completion.
+Visual acceptance passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. Evidence records
+two-line preparation and OTA painting separately without persisting editor content.
 
 M2 includes a visual ANSI/CSI buffer with cursor overwrite, rich output, continuous stdin, ConPTY
 execution, character-dimension resize, reverse history search through `Ctrl+R`, and multiple tabbed
