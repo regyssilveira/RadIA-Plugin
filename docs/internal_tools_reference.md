@@ -196,9 +196,9 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `IndexProjectKnowledge` | Constrói ou atualiza o índice local do projeto. | Na primeira busca, após mudanças relevantes ou por solicitação explícita. |
-| `SearchProjectKnowledge` | Pesquisa arquivos, símbolos e trechos relevantes. | Quando o agente precisa localizar contexto além da unit ativa. |
+| `SearchProjectKnowledge` | Pesquisa arquivos e trechos e oferece abertura direta da origem no chat. | Quando o agente precisa localizar contexto além da unit ativa. |
 | `GetKnowledgeStatus` | Informa estado, contagem e atualização do índice. | Para decidir se uma busca pode ser usada ou se é preciso reindexar. |
-| `GetKnowledgeDocument` | Recupera um documento específico do índice. | Depois que a busca identifica um resultado que precisa de leitura detalhada. |
+| `GetKnowledgeDocument` | Recupera chunks e oferece abertura direta da origem no chat. | Depois que a busca identifica um resultado que precisa de leitura detalhada. |
 | `ClearProjectKnowledge` | Remove o índice reconstruível do projeto. | Para corrigir inconsistências, atender privacidade ou forçar reconstrução. |
 
 ## Testes DUnitX

@@ -357,6 +357,7 @@ procedure TRadIATerminalFrame.ApplyDeferredFocus(
   const AGuard: IRadIATerminalLifecycleGuard
 );
 var
+  LCommandHandle: HWND;
   LParentForm: TCustomForm;
 begin
   if not AGuard.IsAlive then
@@ -366,10 +367,15 @@ begin
     Exit;
   LParentForm := GetParentForm(FCommandEdit);
   if not Assigned(LParentForm) or not LParentForm.Showing or
-    not LParentForm.HandleAllocated or not FCommandEdit.HandleAllocated or
-    not FCommandEdit.CanFocus then
+    not LParentForm.HandleAllocated or not FCommandEdit.HandleAllocated then
     Exit;
-  FCommandEdit.SetFocus;
+  LCommandHandle := FCommandEdit.Handle;
+  if not IsWindow(LCommandHandle) or
+    (GetParent(LCommandHandle) = 0) or
+    not IsWindowVisible(LCommandHandle) or
+    not FCommandEdit.Enabled then
+    Exit;
+  Winapi.Windows.SetFocus(LCommandHandle);
 end;
 
 procedure TRadIATerminalFrame.ClearClick(Sender: TObject);

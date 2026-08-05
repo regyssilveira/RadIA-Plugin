@@ -420,6 +420,8 @@ begin
   Assert.Contains(LResult.ContentJson, '"fileName":');
   Assert.Contains(LResult.ContentJson, 'CalculateTotal');
   Assert.Contains(LResult.ContentJson, '"startLine":');
+  Assert.Contains(LResult.ContentJson, '"tool":"NavigateToFile"');
+  Assert.Contains(LResult.ContentJson, '"column":1');
 end;
 
 procedure TTestRadIALocalKnowledge.KnowledgeToolsIndexSearchAndClear;
@@ -440,6 +442,8 @@ begin
   Assert.Contains(LResult.ContentJson, '"lexicalScore":');
   Assert.Contains(LResult.ContentJson, '"vectorScore":');
   Assert.Contains(LResult.ContentJson, '"explanation":');
+  Assert.Contains(LResult.ContentJson, '"navigation":');
+  Assert.Contains(LResult.ContentJson, '"tool":"NavigateToFile"');
 
   LResult := ExecuteTool('ClearProjectKnowledge', '{}');
   Assert.IsTrue(LResult.Success);

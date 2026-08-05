@@ -5,6 +5,10 @@ O RadIA 2.0 inclui um terminal nativo acoplável à IDE. Abra-o pelo botão **>_
 mesmo mecanismo de docking do chat, portanto posição, tamanho e visibilidade acompanham o desktop
 do Delphi.
 
+O botão e o comando são equivalentes: quem prefere interação visual pode clicar em **Terminal** no
+cabeçalho do chat, enquanto quem prefere teclado pode digitar `/terminal`. O foco inicial só é
+aplicado depois que toda a hierarquia visual do painel acoplável estiver conectada à janela da IDE.
+
 ## Recursos
 
 - perfis para Windows PowerShell e Command Prompt;

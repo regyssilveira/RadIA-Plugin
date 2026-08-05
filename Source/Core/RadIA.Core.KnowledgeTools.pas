@@ -40,6 +40,11 @@ type
     ): TRadIAToolResult;
     function ExecuteClear: TRadIAToolResult;
     function GetDescriptor: TRadIAToolDescriptor;
+    procedure AddNavigation(
+      const AJson: TJSONObject;
+      const AFileName: string;
+      const ALine: Integer
+    );
     function GetIntegerArgument(
       const AJson: TJSONObject;
       const AName: string;
@@ -106,6 +111,25 @@ begin
     raise EArgumentNilException.Create('AKnowledge');
   FKind := AKind;
   FKnowledge := AKnowledge;
+end;
+
+procedure TRadIAKnowledgeTool.AddNavigation(
+  const AJson: TJSONObject;
+  const AFileName: string;
+  const ALine: Integer
+);
+var
+  LArguments: TJSONObject;
+  LNavigation: TJSONObject;
+begin
+  LNavigation := TJSONObject.Create;
+  LNavigation.AddPair('tool', 'NavigateToFile');
+  LArguments := TJSONObject.Create;
+  LArguments.AddPair('fileName', AFileName);
+  LArguments.AddPair('line', TJSONNumber.Create(ALine));
+  LArguments.AddPair('column', TJSONNumber.Create(1));
+  LNavigation.AddPair('arguments', LArguments);
+  AJson.AddPair('navigation', LNavigation);
 end;
 
 function TRadIAKnowledgeTool.Execute(
@@ -218,6 +242,11 @@ begin
       LItem.AddPair(
         'endLine',
         TJSONNumber.Create(LChunk.EndLine)
+      );
+      AddNavigation(
+        LItem,
+        LDocument.FileName,
+        LChunk.StartLine
       );
       LItem.AddPair('content', LContent);
       LArray.AddElement(LItem);
@@ -357,6 +386,11 @@ begin
       LItem.AddPair(
         'endLine',
         TJSONNumber.Create(LHit.Chunk.EndLine)
+      );
+      AddNavigation(
+        LItem,
+        LHit.Chunk.FileName,
+        LHit.Chunk.StartLine
       );
       LItem.AddPair('score', TJSONNumber.Create(LHit.Score));
       LItem.AddPair(

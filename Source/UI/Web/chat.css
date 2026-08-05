@@ -1747,6 +1747,37 @@ body.light-theme .message-avatar.provider-avatar-badge {
   border-color: #ef4444;
 }
 
+.knowledge-result-summary {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.knowledge-result-source {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+
+.knowledge-result-detail {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.knowledge-result-source pre {
+  max-height: 140px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.knowledge-result-source .tool-action-button {
+  justify-self: start;
+}
+
 .agent-run-card {
   width: min(760px, calc(100% - 24px));
   margin: 8px auto;

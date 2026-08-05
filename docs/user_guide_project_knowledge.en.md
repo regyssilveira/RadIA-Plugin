@@ -28,6 +28,10 @@ contribution, and a ranking explanation. If the embedding provider fails or is d
 **Settings > Security & Consent**, retrieval automatically uses the deterministic lexical fallback. Search
 and document reads enforce result and payload limits.
 
+Search results and document chunks show an **Open source** action in chat. It uses `NavigateToFile`
+to open the file at the first line of the excerpt. Navigation is read-only and remains subject to
+the active workspace boundary and the normal tool policy.
+
 ## Storage and privacy
 
 Snapshots are stored under `%APPDATA%\RadIA\Knowledge`, separated by a derived project identity.

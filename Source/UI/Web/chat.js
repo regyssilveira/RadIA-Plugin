@@ -956,7 +956,7 @@ function renderToolCall(data) {
   TOOL_CARDS.set(data.correlationId, card);
 }
 
-function createToolActionButton(label, toolName, previewId) {
+function createToolArgumentsButton(label, toolName, args) {
   const button = document.createElement('button');
   button.className = 'tool-action-button';
   button.type = 'button';
@@ -966,10 +966,103 @@ function createToolActionButton(label, toolName, previewId) {
     postMessageToDelphi({
       action: 'execute_tool',
       name: toolName,
-      arguments: { previewId }
+      arguments: args
     });
   });
   return button;
+}
+
+function createToolActionButton(label, toolName, previewId) {
+  return createToolArgumentsButton(label, toolName, { previewId });
+}
+
+function renderKnowledgeSearchResult(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const results = Array.isArray(result.results) ? result.results : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'knowledge-result-summary';
+  summary.textContent = `${results.length} result(s) for “${result.query || ''}”`;
+  content.appendChild(summary);
+
+  results.forEach(item => {
+    const source = document.createElement('section');
+    source.className = 'knowledge-result-source';
+
+    const title = document.createElement('strong');
+    title.textContent = `${item.fileName || ''}:${Math.max(1, item.startLine || 1)}`;
+    source.appendChild(title);
+
+    const detail = document.createElement('span');
+    detail.className = 'knowledge-result-detail';
+    detail.textContent = [
+      item.symbol || 'source chunk',
+      item.explanation || '',
+      `score ${Math.max(0, item.score || 0)}`
+    ].filter(Boolean).join(' · ');
+    source.appendChild(detail);
+
+    const excerpt = document.createElement('pre');
+    excerpt.textContent = item.content || '';
+    source.appendChild(excerpt);
+
+    const navigation = item.navigation || {};
+    if (navigation.tool && navigation.arguments) {
+      source.appendChild(
+        createToolArgumentsButton(
+          'Open source',
+          navigation.tool,
+          navigation.arguments
+        )
+      );
+    }
+    content.appendChild(source);
+  });
+}
+
+function renderKnowledgeDocumentResult(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const chunks = Array.isArray(result.chunks) ? result.chunks : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'knowledge-result-summary';
+  summary.textContent = `${chunks.length} chunk(s) from ${result.fileName || ''}`;
+  content.appendChild(summary);
+
+  chunks.forEach(item => {
+    const source = document.createElement('section');
+    source.className = 'knowledge-result-source';
+
+    const title = document.createElement('strong');
+    title.textContent = [
+      result.fileName || '',
+      Math.max(1, item.startLine || 1)
+    ].join(':');
+    source.appendChild(title);
+
+    const detail = document.createElement('span');
+    detail.className = 'knowledge-result-detail';
+    detail.textContent = item.symbol || 'source chunk';
+    source.appendChild(detail);
+
+    const excerpt = document.createElement('pre');
+    excerpt.textContent = item.content || '';
+    source.appendChild(excerpt);
+
+    const navigation = item.navigation || {};
+    if (navigation.tool && navigation.arguments) {
+      source.appendChild(
+        createToolArgumentsButton(
+          'Open source',
+          navigation.tool,
+          navigation.arguments
+        )
+      );
+    }
+    content.appendChild(source);
+  });
 }
 
 function renderPatchPreview(card, result, actionName) {
@@ -1090,6 +1183,8 @@ function renderComponentPropertyPreview(card, result, actionName) {
 }
 
 const TOOL_RESULT_RENDERERS = {
+  SearchProjectKnowledge: [renderKnowledgeSearchResult, ''],
+  GetKnowledgeDocument: [renderKnowledgeDocumentResult, ''],
   PreparePatch: [renderPatchPreview, 'ApplyPatch'],
   ApplyPatch: [renderPatchPreview, 'RevertPatch'],
   PrepareComponentLayout: [

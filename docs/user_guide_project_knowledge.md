@@ -31,6 +31,10 @@ desabilitado em **Settings > Security & Consent**, o mesmo fluxo usa automaticam
 determinístico. A leitura de documentos também possui limites para evitar respostas e payloads
 excessivos.
 
+Os resultados de busca e os chunks de um documento exibem a ação **Open source** no chat. Ela usa
+`NavigateToFile` para abrir o arquivo diretamente na linha inicial do trecho. A navegação é somente
+leitura e continua sujeita ao limite do workspace ativo e à política normal de ferramentas.
+
 ## Armazenamento e privacidade
 
 Snapshots ficam em `%APPDATA%\RadIA\Knowledge`, separados por identidade derivada do projeto. O
