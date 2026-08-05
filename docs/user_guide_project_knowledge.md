@@ -43,6 +43,12 @@ calcula os vetores inteiramente no processo da IDE, sem HTTP, tokens ou envio de
 preferência entra em vigor imediatamente, sem reiniciar a IDE. Ao desabilitá-la, novas indexações
 e buscas deixam de calcular vetores e continuam funcionando com busca lexical determinística.
 
+Os campos **Knowledge excluded file fragments** e **Knowledge excluded project name or path
+fragments** aceitam itens separados por ponto e vírgula. A comparação ignora maiúsculas e
+minúsculas e procura o fragmento no caminho completo. Uma exclusão nova bloqueia imediatamente
+busca e leitura do conteúdo já indexado. Na atualização seguinte, o RadIA também remove esses
+arquivos do snapshot persistido. Remover um padrão permite que o conteúdo volte a ser indexado.
+
 A arquitetura aceita providers opcionais por contrato, mas nenhum provider remoto é ativado
 implicitamente. O conteúdo somente é enviado a um provider de IA quando uma ação autorizada o
 inclui no contexto de uma solicitação.
@@ -53,6 +59,7 @@ inclui no contexto de uma solicitação.
 - Se o projeto foi movido, deixe o RadIA criar a nova identidade de índice.
 - Se um snapshot estiver corrompido, feche a IDE, remova apenas a pasta correspondente e reabra.
 - Arquivos fora do workspace autorizado não são indexados.
+- Use exclusões para pastas geradas, código de terceiros ou projetos que não devem entrar no índice.
 - Arquivos gerados, binários e formatos não suportados podem ser ignorados.
 
 Consulte também o [guia de ferramentas agentivas](user_guide_agentic_tools.md).

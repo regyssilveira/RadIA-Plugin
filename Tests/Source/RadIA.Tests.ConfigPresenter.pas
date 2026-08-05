@@ -35,6 +35,8 @@ type
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
     FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeExcludedFiles: string;
+    FKnowledgeExcludedProjects: string;
     FInlineCompletionEnabled: Boolean;
     FInlineCompletionDelay: string;
     FInlineCompletionExcludedFiles: string;
@@ -127,6 +129,10 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -195,6 +201,10 @@ type
       read FConsentRememberExecution write FConsentRememberExecution;
     property KnowledgeSemanticEnabled: Boolean
       read FKnowledgeSemanticEnabled write FKnowledgeSemanticEnabled;
+    property KnowledgeExcludedFiles: string
+      read FKnowledgeExcludedFiles write FKnowledgeExcludedFiles;
+    property KnowledgeExcludedProjects: string
+      read FKnowledgeExcludedProjects write FKnowledgeExcludedProjects;
     property QuotaEnabled: Boolean read FQuotaEnabled write FQuotaEnabled;
     property QuotaLimit: string read FQuotaLimit write FQuotaLimit;
     property QuotaUsedText: string read FQuotaUsedText write FQuotaUsedText;
@@ -472,6 +482,30 @@ procedure TMockConfigView.SetKnowledgeSemanticEnabled(
 );
 begin
   KnowledgeSemanticEnabled := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeExcludedFiles: string;
+begin
+  Result := KnowledgeExcludedFiles;
+end;
+
+procedure TMockConfigView.SetKnowledgeExcludedFiles(
+  const AValue: string
+);
+begin
+  KnowledgeExcludedFiles := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeExcludedProjects: string;
+begin
+  Result := KnowledgeExcludedProjects;
+end;
+
+procedure TMockConfigView.SetKnowledgeExcludedProjects(
+  const AValue: string
+);
+begin
+  KnowledgeExcludedProjects := AValue;
 end;
 
 function TMockConfigView.GetInlineCompletionEnabled: Boolean;
@@ -816,10 +850,20 @@ begin
   Assert.IsFalse(FMockView.GetKnowledgeSemanticEnabled);
 
   FMockView.SetKnowledgeSemanticEnabled(True);
+  FMockView.SetKnowledgeExcludedFiles('generated; secret');
+  FMockView.SetKnowledgeExcludedProjects('legacy; archive');
   FPresenter.SaveConfig;
 
   Assert.IsTrue(FMockView.CloseViewCalled);
   Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  Assert.AreEqual(
+    'generated; secret',
+    FConfig.KnowledgeExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy; archive',
+    FConfig.KnowledgeExcludedProjects
+  );
 end;
 
 procedure TTestConfigPresenter.TestTemplateCreationAndSelection;

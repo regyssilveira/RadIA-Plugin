@@ -88,6 +88,7 @@ uses
   RadIA.Core.InlineCompletion,
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeEmbeddings,
+  RadIA.Core.KnowledgePrivacy,
   RadIA.Core.KnowledgeTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
@@ -901,9 +902,12 @@ initialization
     )
   );
   TRadIAContainer.Register<IRadIAKnowledgeSource>(
-    TRadIAOTAKnowledgeSource.Create(
-      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
-      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+    TRadIAConfigurableKnowledgeSource.Create(
+      TRadIAConfig.GetInstance,
+      TRadIAOTAKnowledgeSource.Create(
+        TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+        TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+      )
     )
   );
   TRadIAContainer.Register<IRadIAKnowledgeStore>(
@@ -915,12 +919,15 @@ initialization
     )
   );
   TRadIAContainer.Register<IRadIAKnowledgeService>(
-    TRadIALocalKnowledgeService.Create(
-      TRadIAContainer.Resolve<IRadIAKnowledgeSource>,
-      TRadIAContainer.Resolve<IRadIAKnowledgeStore>,
-      TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
-        TRadIAConfig.GetInstance,
-        TRadIALocalHashEmbeddingProvider.Create
+    TRadIAConfigurableKnowledgeService.Create(
+      TRadIAConfig.GetInstance,
+      TRadIALocalKnowledgeService.Create(
+        TRadIAContainer.Resolve<IRadIAKnowledgeSource>,
+        TRadIAContainer.Resolve<IRadIAKnowledgeStore>,
+        TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
+          TRadIAConfig.GetInstance,
+          TRadIALocalHashEmbeddingProvider.Create
+        )
       )
     )
   );

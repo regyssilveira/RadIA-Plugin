@@ -67,6 +67,10 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -288,6 +292,12 @@ begin
   FView.SetKnowledgeSemanticEnabled(
     FConfig.KnowledgeSemanticEnabled
   );
+  FView.SetKnowledgeExcludedFiles(
+    FConfig.KnowledgeExcludedFiles
+  );
+  FView.SetKnowledgeExcludedProjects(
+    FConfig.KnowledgeExcludedProjects
+  );
   FView.SetInlineCompletionEnabled(FConfig.AutocompleteEnabled);
   FView.SetInlineCompletionDelay(
     IntToStr(FConfig.AutocompleteDelay)
@@ -490,6 +500,12 @@ begin
     FView.GetConsentRememberExecution;
   FConfig.KnowledgeSemanticEnabled :=
     FView.GetKnowledgeSemanticEnabled;
+  FConfig.KnowledgeExcludedFiles := Trim(
+    FView.GetKnowledgeExcludedFiles
+  );
+  FConfig.KnowledgeExcludedProjects := Trim(
+    FView.GetKnowledgeExcludedProjects
+  );
   FConfig.AutocompleteEnabled :=
     FView.GetInlineCompletionEnabled;
   FConfig.AutocompleteDelay := StrToInt(

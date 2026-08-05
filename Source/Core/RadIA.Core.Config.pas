@@ -38,6 +38,8 @@ type
     FAutocompleteExcludedLanguages: string;
     FAutocompleteExcludedProjects: string;
     FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeExcludedFiles: string;
+    FKnowledgeExcludedProjects: string;
     FInlineShortcutProfile: string;
     FAzureApiVersion: string;
     FAwsAccessKeyId: string;
@@ -148,6 +150,10 @@ type
     procedure SetInlineShortcutProfile(const AValue: string);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -257,6 +263,8 @@ begin
   FAutocompleteExcludedLanguages := '';
   FAutocompleteExcludedProjects := '';
   FKnowledgeSemanticEnabled := False;
+  FKnowledgeExcludedFiles := '';
+  FKnowledgeExcludedProjects := '';
   FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
   FInjectDelphiVersion := True;
   FConciseResponses := True;
@@ -436,6 +444,14 @@ begin
       'KnowledgeSemanticEnabled',
       0
     ) <> 0;
+    FKnowledgeExcludedFiles := ReadRegString(
+      'KnowledgeExcludedFiles',
+      ''
+    );
+    FKnowledgeExcludedProjects := ReadRegString(
+      'KnowledgeExcludedProjects',
+      ''
+    );
     FInlineShortcutProfile := ReadRegString(
       'InlineShortcutProfile',
       TRadIAInlineShortcutProfile.DefaultText
@@ -711,6 +727,14 @@ begin
     FStorage.WriteInteger(
       'KnowledgeSemanticEnabled',
       IfThen(FKnowledgeSemanticEnabled, 1, 0)
+    );
+    FStorage.WriteString(
+      'KnowledgeExcludedFiles',
+      FKnowledgeExcludedFiles
+    );
+    FStorage.WriteString(
+      'KnowledgeExcludedProjects',
+      FKnowledgeExcludedProjects
     );
     FStorage.WriteString(
       'InlineShortcutProfile',
@@ -1140,6 +1164,16 @@ begin
   Result := FKnowledgeSemanticEnabled;
 end;
 
+function TRadIAConfig.GetKnowledgeExcludedFiles: string;
+begin
+  Result := FKnowledgeExcludedFiles;
+end;
+
+function TRadIAConfig.GetKnowledgeExcludedProjects: string;
+begin
+  Result := FKnowledgeExcludedProjects;
+end;
+
 procedure TRadIAConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
   FAutocompleteDelay := EnsureRange(AValue, 250, 5000);
@@ -1178,6 +1212,20 @@ procedure TRadIAConfig.SetKnowledgeSemanticEnabled(
 );
 begin
   FKnowledgeSemanticEnabled := AValue;
+end;
+
+procedure TRadIAConfig.SetKnowledgeExcludedFiles(
+  const AValue: string
+);
+begin
+  FKnowledgeExcludedFiles := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetKnowledgeExcludedProjects(
+  const AValue: string
+);
+begin
+  FKnowledgeExcludedProjects := AValue.Trim;
 end;
 
 function TRadIAConfig.GetSmartConfigEnabled: Boolean;

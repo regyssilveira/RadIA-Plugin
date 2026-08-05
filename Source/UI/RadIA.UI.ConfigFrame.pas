@@ -51,6 +51,8 @@ type
     FChkConsentRememberStructural: TCheckBox;
     FChkConsentRememberExecution: TCheckBox;
     FChkKnowledgeSemanticEnabled: TCheckBox;
+    FEdtKnowledgeExcludedFiles: TEdit;
+    FEdtKnowledgeExcludedProjects: TEdit;
     FBtnRevokeConsent: TButton;
     FChkInlineCompletionEnabled: TCheckBox;
     FEdtInlineCompletionDelay: TEdit;
@@ -62,6 +64,8 @@ type
     FLblInlineCompletionExcludedFiles: TLabel;
     FLblInlineCompletionExcludedLanguages: TLabel;
     FLblInlineCompletionExcludedProjects: TLabel;
+    FLblKnowledgeExcludedFiles: TLabel;
+    FLblKnowledgeExcludedProjects: TLabel;
     FLblInlineShortcutProfile: TLabel;
 
     FTsCliMcp: TTabSheet;
@@ -200,6 +204,10 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
     function GetInlineCompletionEnabled: Boolean;
     procedure SetInlineCompletionEnabled(const AValue: Boolean);
     function GetInlineCompletionDelay: string;
@@ -625,23 +633,47 @@ begin
     320,
     500
   );
+  FLblKnowledgeExcludedFiles := CreateLabel(
+    FPnlSecurity,
+    'Knowledge excluded file fragments (semicolon separated):',
+    16,
+    356
+  );
+  FEdtKnowledgeExcludedFiles := CreateEdit(
+    FPnlSecurity,
+    16,
+    376,
+    500
+  );
+  FLblKnowledgeExcludedProjects := CreateLabel(
+    FPnlSecurity,
+    'Knowledge excluded project name or path fragments (semicolon separated):',
+    16,
+    416
+  );
+  FEdtKnowledgeExcludedProjects := CreateEdit(
+    FPnlSecurity,
+    16,
+    436,
+    500
+  );
   FChkInlineCompletionEnabled := CreateCheckBox(
     FPnlSecurity,
     'Enable continuous inline completion (sends bounded editor context)',
     16,
-    360,
+    480,
     500
   );
   FLblInlineCompletionDelay := CreateLabel(
     FPnlSecurity,
     'Idle delay in milliseconds (250-5000):',
     16,
-    396
+    516
   );
   FEdtInlineCompletionDelay := CreateEdit(
     FPnlSecurity,
     16,
-    416,
+    536,
     100,
     True
   );
@@ -649,48 +681,48 @@ begin
     FPnlSecurity,
     'Excluded languages (semicolon separated, for example sql;markdown):',
     16,
-    456
+    576
   );
   FEdtInlineCompletionExcludedLanguages := CreateEdit(
     FPnlSecurity,
     16,
-    476,
+    596,
     500
   );
   FLblInlineCompletionExcludedFiles := CreateLabel(
     FPnlSecurity,
     'Excluded file fragments (semicolon separated):',
     16,
-    516
+    636
   );
   FEdtInlineCompletionExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    536,
+    656,
     500
   );
   FLblInlineCompletionExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Excluded project name or path fragments (semicolon separated):',
     16,
-    576
+    696
   );
   FEdtInlineCompletionExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    596,
+    716,
     500
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
     'Inline shortcuts (request, accept, nextWord, alternative, reject):',
     16,
-    636
+    756
   );
   FEdtInlineShortcutProfile := CreateEdit(
     FPnlSecurity,
     16,
-    656,
+    776,
     640
   );
 end;
@@ -1133,7 +1165,8 @@ begin
     FEdtLogPath, FEdtLogMaxSize, FEdtQuotaLimit, FEdtConsentTimeout,
     FEdtInlineCompletionDelay, FEdtInlineCompletionExcludedFiles,
     FEdtInlineCompletionExcludedLanguages,
-    FEdtInlineCompletionExcludedProjects,
+    FEdtInlineCompletionExcludedProjects, FEdtKnowledgeExcludedFiles,
+    FEdtKnowledgeExcludedProjects,
     FEdtInlineShortcutProfile,
     FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge], LColors);
 
@@ -1146,7 +1179,8 @@ begin
     FLblConsentSummary, FLblConsentTimeout, FLblCliStatus,
     FLblInlineCompletionDelay, FLblInlineCompletionExcludedFiles,
     FLblInlineCompletionExcludedLanguages,
-    FLblInlineCompletionExcludedProjects,
+    FLblInlineCompletionExcludedProjects, FLblKnowledgeExcludedFiles,
+    FLblKnowledgeExcludedProjects,
     FLblInlineShortcutProfile,
     FLblMcpStatus], LColors, False);
 
@@ -2370,6 +2404,30 @@ procedure TRadIAFrameAIConfig.SetKnowledgeSemanticEnabled(
 );
 begin
   FChkKnowledgeSemanticEnabled.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeExcludedFiles: string;
+begin
+  Result := FEdtKnowledgeExcludedFiles.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeExcludedFiles(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeExcludedFiles.Text := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetKnowledgeExcludedProjects: string;
+begin
+  Result := FEdtKnowledgeExcludedProjects.Text;
+end;
+
+procedure TRadIAFrameAIConfig.SetKnowledgeExcludedProjects(
+  const AValue: string
+);
+begin
+  FEdtKnowledgeExcludedProjects.Text := AValue;
 end;
 
 function TRadIAFrameAIConfig.GetInlineCompletionEnabled: Boolean;

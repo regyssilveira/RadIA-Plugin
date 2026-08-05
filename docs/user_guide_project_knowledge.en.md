@@ -40,6 +40,12 @@ inside the IDE process without HTTP, tokens, or code transmission. The preferenc
 immediately without restarting the IDE. Disabling it stops vector calculation for new indexing and
 search operations while deterministic lexical retrieval remains available.
 
+**Knowledge excluded file fragments** and **Knowledge excluded project name or path fragments**
+accept semicolon-separated items. Matching is case-insensitive and searches the complete path. A
+new exclusion immediately blocks search and document reads for content already indexed. The next
+refresh also removes matching files from the persisted snapshot. Removing a pattern allows content
+to be indexed again.
+
 The architecture accepts optional providers through a contract, but no remote provider is enabled
 implicitly. Content is sent to an AI provider only when an authorized request includes it as context.
 
@@ -49,6 +55,7 @@ implicitly. Content is sent to an AI provider only when an authorized request in
 - Let RadIA create a new index identity after moving a project.
 - If a snapshot is corrupt, close the IDE and remove only the affected snapshot folder.
 - Files outside the authorized workspace are not indexed.
+- Use exclusions for generated folders, third-party code, or projects that must not enter the index.
 - Generated files, binaries, and unsupported formats may be ignored.
 
 See also the [agentic tools guide](user_guide_agentic_tools.en.md).

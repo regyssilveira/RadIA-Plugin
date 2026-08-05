@@ -189,12 +189,12 @@ declarative tool execution remains pending.
 
 **Delivered so far:** hybrid retrieval with deterministic lexical fallback, an optional embedding
 contract, a network-free local vector provider, versioned per-workspace persistence, and lexical
-plus vector explanations for every result. A remote provider with visual consent and configurable
-exclusions remains pending.
+plus vector explanations for every result. A remote provider remains pending.
 
 Local visual consent is now available under **Settings > Security & Consent**, disabled by default
-and applied immediately without restarting the IDE. Remote providers and configurable file and
-project exclusions remain pending.
+and applied immediately without restarting the IDE. Configurable file and project exclusions block
+queries immediately and remove persisted content on the next refresh. Remote providers remain
+pending.
 
 ### M6 — Installation and first value
 

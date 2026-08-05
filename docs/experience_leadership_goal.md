@@ -196,12 +196,12 @@ reload; tools declarativas com execução isolada continuam pendentes.
 
 **Entregue até aqui:** busca híbrida com fallback lexical determinístico, contrato opcional de
 embeddings, provider vetorial local sem rede, persistência versionada por workspace e explicação
-dos componentes lexical e vetorial de cada resultado. Provider remoto com consentimento visual e
-exclusões configuráveis continuam pendentes.
+dos componentes lexical e vetorial de cada resultado. Provider remoto continua pendente.
 
 O consentimento visual local agora está disponível em **Settings > Security & Consent**, desativado
-por padrão e aplicado imediatamente sem reiniciar a IDE. Providers remotos e exclusões configuráveis
-por arquivo e projeto continuam pendentes.
+por padrão e aplicado imediatamente sem reiniciar a IDE. Exclusões configuráveis por arquivo e
+projeto bloqueiam consultas imediatamente e removem o conteúdo persistido na atualização seguinte.
+Providers remotos continuam pendentes.
 
 ### M6 — Instalação e primeiro valor
 

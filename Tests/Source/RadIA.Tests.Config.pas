@@ -248,9 +248,19 @@ begin
   Assert.AreEqual(0, LEmbeddingLength);
 
   FConfig.KnowledgeSemanticEnabled := True;
+  FConfig.KnowledgeExcludedFiles := 'generated; secrets';
+  FConfig.KnowledgeExcludedProjects := 'legacy; archive';
   FConfig.Save;
   FConfig.Load;
   Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  Assert.AreEqual(
+    'generated; secrets',
+    FConfig.KnowledgeExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy; archive',
+    FConfig.KnowledgeExcludedProjects
+  );
   LEmbedding := LProvider.Embed('create a Delphi form');
   LEmbeddingLength := Length(LEmbedding);
   Assert.AreEqual(LProvider.GetDimensions, LEmbeddingLength);

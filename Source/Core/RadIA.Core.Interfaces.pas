@@ -135,6 +135,10 @@ type
     procedure SetAutocompleteExcludedProjects(const AValue: string);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -210,6 +214,10 @@ type
       read GetAutocompleteExcludedProjects write SetAutocompleteExcludedProjects;
     property KnowledgeSemanticEnabled: Boolean
       read GetKnowledgeSemanticEnabled write SetKnowledgeSemanticEnabled;
+    property KnowledgeExcludedFiles: string
+      read GetKnowledgeExcludedFiles write SetKnowledgeExcludedFiles;
+    property KnowledgeExcludedProjects: string
+      read GetKnowledgeExcludedProjects write SetKnowledgeExcludedProjects;
     property SmartConfigEnabled: Boolean read GetSmartConfigEnabled write SetSmartConfigEnabled;
     property LogEnabled: Boolean read GetLogEnabled write SetLogEnabled;
     property LogPath: string read GetLogPath write SetLogPath;

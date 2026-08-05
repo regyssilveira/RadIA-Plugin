@@ -49,6 +49,8 @@ type
     FConsentRememberStructural: Boolean;
     FConsentRememberExecution: Boolean;
     FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeExcludedFiles: string;
+    FKnowledgeExcludedProjects: string;
   public
     constructor Create(const AMaxHistory: Integer; const ASystemPrompt: string = '');
     destructor Destroy; override;
@@ -107,6 +109,10 @@ type
     procedure SetConsentRememberExecution(const AValue: Boolean);
     function GetKnowledgeSemanticEnabled: Boolean;
     procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -645,6 +651,26 @@ procedure TMockConfig.SetKnowledgeSemanticEnabled(
 );
 begin
   FKnowledgeSemanticEnabled := AValue;
+end;
+
+function TMockConfig.GetKnowledgeExcludedFiles: string;
+begin
+  Result := FKnowledgeExcludedFiles;
+end;
+
+function TMockConfig.GetKnowledgeExcludedProjects: string;
+begin
+  Result := FKnowledgeExcludedProjects;
+end;
+
+procedure TMockConfig.SetKnowledgeExcludedFiles(const AValue: string);
+begin
+  FKnowledgeExcludedFiles := AValue;
+end;
+
+procedure TMockConfig.SetKnowledgeExcludedProjects(const AValue: string);
+begin
+  FKnowledgeExcludedProjects := AValue;
 end;
 
 function TMockConfig.GetApiKey(const AProviderName: string): string;
