@@ -1850,6 +1850,61 @@ body.light-theme .message-avatar.provider-avatar-badge {
   max-height: 420px;
 }
 
+.agent-step-git {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.agent-step-git > pre,
+.agent-step-git-diff {
+  max-height: 420px;
+  margin: 6px 0 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: pre;
+}
+
+.agent-step-git-metadata {
+  margin-top: 5px;
+  color: var(--fg-secondary);
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.agent-step-git-diff span {
+  display: block;
+  min-height: 1em;
+}
+
+.agent-step-git-diff .is-addition {
+  color: #86efac;
+  background: #052e16;
+}
+
+.agent-step-git-diff .is-removal {
+  color: #fca5a5;
+  background: #450a0a;
+}
+
+body.light-theme .agent-step-git-diff .is-addition {
+  color: #166534;
+  background: #dcfce7;
+}
+
+body.light-theme .agent-step-git-diff .is-removal {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.agent-step-git-diff .is-header {
+  color: var(--accent);
+}
+
 .agent-validation-indicator {
   padding: 2px 7px;
   border: 1px solid var(--border);

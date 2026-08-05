@@ -143,6 +143,10 @@ and ignored tests.
 per-file review inside the timeline. The block shows three context lines and removed/added line
 counts, and it does not provide a parallel mutation shortcut: apply and revert remain behind the
 central consent flow.
+The Git journey is integrated as well: `GetGitStatus` shows repository status, `GetGitDiff` and
+`PreviewGitCommit` present a colored unified diff with file and line counts, and `CommitChanges`
+records the resulting local SHA. The preview keeps its message, paths, and fingerprint visible
+without offering an automatic push.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

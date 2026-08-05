@@ -1,5 +1,11 @@
 /* global postMessageToDelphi */
 
+const AGENT_GIT_TOOLS = new Set([
+  'GetGitStatus',
+  'GetGitDiff',
+  'PreviewGitCommit',
+  'CommitChanges'
+]);
 
 function looksLikePascalCode(code) {
   const text = String(code || '');
@@ -286,6 +292,72 @@ function appendAgentPatchReview(details, step) {
   details.appendChild(review);
 }
 
+function appendAgentGitDiff(evidence, result) {
+  if (typeof result.diff !== 'string') {
+    return;
+  }
+  const summary = RadIAAgentGit.summarizeDiff(result.diff);
+  const metadata = document.createElement('div');
+  metadata.className = 'agent-step-git-metadata';
+  metadata.textContent =
+    `${summary.files.length} file(s) · ` +
+    `${summary.additions} addition(s) · ${summary.removals} removal(s)`;
+  const diff = document.createElement('pre');
+  diff.className = 'agent-step-git-diff';
+  const maximumVisibleLines = 2000;
+  summary.tokens.slice(0, maximumVisibleLines).forEach(token => {
+    const line = document.createElement('span');
+    line.className = `is-${token.kind}`;
+    line.textContent = token.text + '\n';
+    diff.appendChild(line);
+  });
+  if (summary.tokens.length > maximumVisibleLines) {
+    const truncated = document.createElement('span');
+    truncated.className = 'is-header';
+    truncated.textContent =
+      `… ${summary.tokens.length - maximumVisibleLines} additional line(s) hidden`;
+    diff.appendChild(truncated);
+  }
+  evidence.appendChild(metadata);
+  evidence.appendChild(diff);
+}
+
+function appendAgentGitEvidence(details, step) {
+  if (!AGENT_GIT_TOOLS.has(step.toolName)) {
+    return;
+  }
+  const result = parseAgentStepResult(step);
+  if (!result) {
+    return;
+  }
+  const evidence = document.createElement('section');
+  evidence.className = 'agent-step-git';
+  const title = document.createElement('strong');
+  title.textContent = 'Git evidence';
+  evidence.appendChild(title);
+  if (step.toolName === 'GetGitStatus' && typeof result.status === 'string') {
+    const status = document.createElement('pre');
+    status.textContent = result.status || 'Working tree clean';
+    evidence.appendChild(status);
+  }
+  if (step.toolName === 'PreviewGitCommit') {
+    const preview = document.createElement('div');
+    preview.className = 'agent-step-git-metadata';
+    const paths = Array.isArray(result.paths) ? result.paths.length : 0;
+    preview.textContent =
+      `Message: ${result.message || ''} · ${paths} selected path(s) · ` +
+      `Fingerprint: ${result.fingerprint || 'unavailable'}`;
+    evidence.appendChild(preview);
+  }
+  if (step.toolName === 'CommitChanges' && result.committed === true) {
+    const commit = document.createElement('code');
+    commit.textContent = `Local commit: ${result.commit || 'unavailable'}`;
+    evidence.appendChild(commit);
+  }
+  appendAgentGitDiff(evidence, result);
+  details.appendChild(evidence);
+}
+
 function createAgentStep(step, status) {
   const item = document.createElement('li');
   item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
@@ -325,6 +397,7 @@ function createAgentStep(step, status) {
   );
   details.appendChild(resultBlock);
   appendAgentPatchReview(details, step);
+  appendAgentGitEvidence(details, step);
   const replay = document.createElement('button');
   replay.className = 'agent-step-replay';
   replay.textContent = 'Replay step';

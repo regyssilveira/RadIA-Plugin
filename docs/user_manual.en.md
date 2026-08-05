@@ -100,6 +100,9 @@ remain in the checkpoint and return when the run is opened from history.
 Successful patch steps present **Reviewed changes** inside their details. Each file shows only the
 changed block, three context lines, and removed/added totals. This view is review-only; applying or
 reverting remains an audited tool call subject to configured consent.
+Git steps present **Git evidence**. Status is readable; diffs color added and removed lines while
+showing files and totals; commit previews show their message, selected path count, and fingerprint;
+and completed commits show the local SHA. RadIA does not push automatically through this flow.
 
 ### 3.2 Consent
 

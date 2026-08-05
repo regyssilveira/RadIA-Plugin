@@ -148,6 +148,10 @@ Etapas de `PreparePatch`, `ApplyPatch`, `RevertPatch` e suas variantes multiarqu
 uma revisão visual por arquivo na própria timeline. O bloco mostra três linhas de contexto,
 quantidade de linhas removidas e adicionadas e não oferece um atalho paralelo para mutação:
 aplicar ou reverter continua passando pelo fluxo central de consentimento.
+A jornada Git também está integrada: `GetGitStatus` mostra o estado textual do repositório,
+`GetGitDiff` e `PreviewGitCommit` apresentam diff unificado colorido com arquivos e contagens,
+e `CommitChanges` registra o SHA local criado. O preview mantém mensagem, caminhos e fingerprint
+visíveis, sem oferecer push automático.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

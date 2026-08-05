@@ -131,6 +131,10 @@ Etapas de patch bem-sucedidas apresentam **Reviewed changes** dentro de seus det
 mostra apenas o bloco alterado, três linhas de contexto e os totais removidos/adicionados. Essa
 visualização é somente para revisão; aplicar ou reverter continua sendo uma tool auditada e sujeita
 ao consentimento configurado.
+As etapas Git apresentam **Git evidence**. O status aparece como saída legível; diffs exibem linhas
+adicionadas e removidas com cores, arquivos e totais; o preview de commit mostra mensagem,
+quantidade de caminhos e fingerprint; e o commit concluído mostra o SHA local. O RadIA não faz
+push automático por esse fluxo.
 
 ### 3.2 Consentimento
 

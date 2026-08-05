@@ -29,7 +29,8 @@ module.exports = [
         chrome: "readonly",
         module: "readonly",
         require: "readonly",
-        RadIAAgentDiff: "readonly"
+        RadIAAgentDiff: "readonly",
+        RadIAAgentGit: "readonly"
       }
     },
     rules: {
