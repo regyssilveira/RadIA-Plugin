@@ -7,7 +7,7 @@ uses
   System.JSON;
 
 const
-  CRadIADeclarativeExtensionSchemaVersion = 2;
+  CRadIADeclarativeExtensionSchemaVersion = 3;
 
 type
   TRadIADeclarativeCommand = record
@@ -35,6 +35,25 @@ type
     property Prompt: string read FPrompt;
   end;
 
+  TRadIADeclarativeTool = record
+  private
+    FExtensionId: string;
+    FName: string;
+    FDescription: string;
+    FTargetTool: string;
+  public
+    constructor Create(
+      const AExtensionId: string;
+      const AName: string;
+      const ADescription: string;
+      const ATargetTool: string
+    );
+    property ExtensionId: string read FExtensionId;
+    property Name: string read FName;
+    property Description: string read FDescription;
+    property TargetTool: string read FTargetTool;
+  end;
+
   TRadIADeclarativeExtensionDiagnostic = record
   private
     FFileName: string;
@@ -58,6 +77,7 @@ type
   private
     FDirectory: string;
     FCommands: TList<TRadIADeclarativeCommand>;
+    FTools: TList<TRadIADeclarativeTool>;
     FDiagnostics: TList<TRadIADeclarativeExtensionDiagnostic>;
     procedure AtomicWrite(
       const AFileName: string;
@@ -109,6 +129,21 @@ type
       const AReservedCommands: TArray<string>;
       const ASchemaVersion: Integer
     ): TArray<TRadIADeclarativeCommand>;
+    function ParseTools(
+      const AJson: TJSONObject;
+      const AExtensionId: string;
+      const ASchemaVersion: Integer
+    ): TArray<TRadIADeclarativeTool>;
+    function ParseTool(
+      const AJson: TJSONObject;
+      const AExtensionId: string
+    ): TRadIADeclarativeTool;
+    procedure ValidateToolFields(
+      const AExtensionId: string;
+      const AName: string;
+      const ADescription: string;
+      const ATargetTool: string
+    );
     procedure ValidateCommandFields(
       const AName: string;
       const ADescription: string;
@@ -119,7 +154,11 @@ type
       const AExtensionId: string;
       const AVersion: string
     );
-    procedure ValidatePermissions(const AJson: TJSONObject);
+    procedure ValidatePermissions(
+      const AJson: TJSONObject;
+      const AHasPromptCapabilities: Boolean;
+      const AHasTools: Boolean
+    );
   public
     constructor Create(const ADirectory: string);
     destructor Destroy; override;
@@ -140,6 +179,7 @@ type
       out AMessage: string
     ): Boolean;
     procedure Reload(const AReservedCommands: TArray<string>);
+    procedure ReportRuntimeError(const AMessage: string);
     function SetEnabled(
       const AExtensionId: string;
       const AEnabled: Boolean;
@@ -147,6 +187,7 @@ type
       out AMessage: string
     ): Boolean;
     function GetCommands: TArray<TRadIADeclarativeCommand>;
+    function GetTools: TArray<TRadIADeclarativeTool>;
     function GetDiagnostics:
       TArray<TRadIADeclarativeExtensionDiagnostic>;
     function TryResolve(
@@ -165,6 +206,7 @@ uses
 
 const
   CCommandPermission = 'chat.prompt';
+  CToolAliasPermission = 'tool.alias';
   CMaximumCommandsPerExtension = 100;
   CMaximumDescriptionLength = 500;
   CMaximumManifestBytes = 1048576;
@@ -243,6 +285,21 @@ begin
   FPrompt := APrompt;
 end;
 
+{ TRadIADeclarativeTool }
+
+constructor TRadIADeclarativeTool.Create(
+  const AExtensionId: string;
+  const AName: string;
+  const ADescription: string;
+  const ATargetTool: string
+);
+begin
+  FExtensionId := AExtensionId;
+  FName := AName;
+  FDescription := ADescription;
+  FTargetTool := ATargetTool;
+end;
+
 { TRadIADeclarativeExtensionDiagnostic }
 
 constructor TRadIADeclarativeExtensionDiagnostic.Create(
@@ -271,12 +328,14 @@ begin
     );
   FDirectory := TPath.GetFullPath(ADirectory);
   FCommands := TList<TRadIADeclarativeCommand>.Create;
+  FTools := TList<TRadIADeclarativeTool>.Create;
   FDiagnostics := TList<TRadIADeclarativeExtensionDiagnostic>.Create;
 end;
 
 destructor TRadIADeclarativeExtensionManager.Destroy;
 begin
   FDiagnostics.Free;
+  FTools.Free;
   FCommands.Free;
   inherited Destroy;
 end;
@@ -308,6 +367,12 @@ function TRadIADeclarativeExtensionManager.GetDiagnostics:
   TArray<TRadIADeclarativeExtensionDiagnostic>;
 begin
   Result := FDiagnostics.ToArray;
+end;
+
+function TRadIADeclarativeExtensionManager.GetTools:
+  TArray<TRadIADeclarativeTool>;
+begin
+  Result := FTools.ToArray;
 end;
 
 function TRadIADeclarativeExtensionManager.InstallOrUpdate(
@@ -536,8 +601,11 @@ var
   LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
   LEnabled: Boolean;
   LExtensionId: string;
+  LHasPromptCapabilities: Boolean;
+  LHasTools: Boolean;
   LJson: TJSONObject;
   LSchemaVersion: Integer;
+  LTools: TArray<TRadIADeclarativeTool>;
   LVersion: string;
 begin
   if TFile.GetSize(AFileName) > CMaximumManifestBytes then
@@ -570,7 +638,16 @@ begin
           'Extension ID is already loaded from another manifest.'
         );
     LEnabled := LJson.GetValue<Boolean>('enabled', True);
-    ValidatePermissions(LJson);
+    LHasPromptCapabilities :=
+      Assigned(LJson.GetValue('commands')) or
+      Assigned(LJson.GetValue('templates')) or
+      Assigned(LJson.GetValue('skills'));
+    LHasTools := Assigned(LJson.GetValue('tools'));
+    ValidatePermissions(
+      LJson,
+      LHasPromptCapabilities,
+      LHasTools
+    );
     if not LEnabled then
     begin
       FDiagnostics.Add(
@@ -589,13 +666,24 @@ begin
       AReservedCommands,
       LSchemaVersion
     );
+    LTools := ParseTools(LJson, LExtensionId, LSchemaVersion);
+    if (Length(LCommands) + Length(LTools) = 0) or
+      (Length(LCommands) + Length(LTools) >
+        CMaximumCommandsPerExtension) then
+      raise EArgumentException.Create(
+        'Manifest must contain between 1 and 100 capabilities.'
+      );
     FCommands.AddRange(LCommands);
+    FTools.AddRange(LTools);
     FDiagnostics.Add(
       TRadIADeclarativeExtensionDiagnostic.Create(
         AFileName,
         LExtensionId,
         'loaded',
-        Format('%d capability item(s) loaded.', [Length(LCommands)])
+        Format(
+          '%d capability item(s) loaded.',
+          [Length(LCommands) + Length(LTools)]
+        )
       )
     );
   finally
@@ -734,15 +822,118 @@ begin
         LCommands
       );
     end;
-    if (LCommands.Count = 0) or
-      (LCommands.Count > CMaximumCommandsPerExtension) then
+    if LCommands.Count > CMaximumCommandsPerExtension then
       raise EArgumentException.Create(
-        'Manifest must contain between 1 and 100 capabilities.'
+        'Manifest cannot contain more than 100 prompt capabilities.'
       );
     Result := LCommands.ToArray;
   finally
     LCommands.Free;
   end;
+end;
+
+function TRadIADeclarativeExtensionManager.ParseTools(
+  const AJson: TJSONObject;
+  const AExtensionId: string;
+  const ASchemaVersion: Integer
+): TArray<TRadIADeclarativeTool>;
+var
+  LArray: TJSONArray;
+  LExistingTool: TRadIADeclarativeTool;
+  LIndex: Integer;
+  LParsedTool: TRadIADeclarativeTool;
+  LTools: TList<TRadIADeclarativeTool>;
+  LValue: TJSONValue;
+begin
+  Result := [];
+  LValue := AJson.GetValue('tools');
+  if not Assigned(LValue) then
+    Exit;
+  if ASchemaVersion < 3 then
+    raise EArgumentException.Create(
+      'Declarative tools require schema version 3.'
+    );
+  if not (LValue is TJSONArray) then
+    raise EArgumentException.Create('Manifest tools must be an array.');
+  LArray := TJSONArray(LValue);
+  LTools := TList<TRadIADeclarativeTool>.Create;
+  try
+    for LIndex := 0 to LArray.Count - 1 do
+    begin
+      if not (LArray[LIndex] is TJSONObject) then
+        raise EArgumentException.Create(
+          'Each declarative tool must be a JSON object.'
+        );
+      LParsedTool := ParseTool(
+        TJSONObject(LArray[LIndex]),
+        AExtensionId
+      );
+      for LExistingTool in LTools do
+        if SameText(
+          LExistingTool.Name,
+          LParsedTool.Name
+        ) then
+          raise EArgumentException.Create(
+            'Manifest contains duplicate declarative tool names.'
+          );
+      LTools.Add(LParsedTool);
+    end;
+    Result := LTools.ToArray;
+  finally
+    LTools.Free;
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.ParseTool(
+  const AJson: TJSONObject;
+  const AExtensionId: string
+): TRadIADeclarativeTool;
+var
+  LDescription: string;
+  LName: string;
+  LTargetTool: string;
+begin
+  LName := Trim(AJson.GetValue<string>('name', ''));
+  LDescription := Trim(AJson.GetValue<string>('description', ''));
+  LTargetTool := Trim(AJson.GetValue<string>('targetTool', ''));
+  ValidateToolFields(
+    AExtensionId,
+    LName,
+    LDescription,
+    LTargetTool
+  );
+  Result := TRadIADeclarativeTool.Create(
+    AExtensionId,
+    LName,
+    LDescription,
+    LTargetTool
+  );
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidateToolFields(
+  const AExtensionId: string;
+  const AName: string;
+  const ADescription: string;
+  const ATargetTool: string
+);
+begin
+  if not IsPascalIdentifier(AName) then
+    raise EArgumentException.Create(
+      'Declarative tool name must use alphanumeric PascalCase.'
+    );
+  if not AName.StartsWith(AExtensionId, True) then
+    raise EArgumentException.Create(
+      'Declarative tool name must start with the extension ID.'
+    );
+  if (ADescription = '') or
+    (Length(ADescription) > CMaximumDescriptionLength) then
+    raise EArgumentException.Create(
+      'Tool description must contain between 1 and 500 characters.'
+    );
+  if not IsPascalIdentifier(ATargetTool) then
+    raise EArgumentException.Create(
+      'Declarative target tool must use alphanumeric PascalCase.'
+    );
 end;
 
 procedure TRadIADeclarativeExtensionManager.ValidateCommandFields(
@@ -772,10 +963,16 @@ begin
 end;
 
 procedure TRadIADeclarativeExtensionManager.ValidatePermissions(
-  const AJson: TJSONObject
+  const AJson: TJSONObject;
+  const AHasPromptCapabilities: Boolean;
+  const AHasTools: Boolean
 );
 var
   LArray: TJSONArray;
+  LHasPromptPermission: Boolean;
+  LHasToolPermission: Boolean;
+  LIndex: Integer;
+  LPermission: string;
   LValue: TJSONValue;
 begin
   LValue := AJson.GetValue('permissions');
@@ -784,10 +981,31 @@ begin
       'Manifest permissions must be an array.'
     );
   LArray := TJSONArray(LValue);
-  if (LArray.Count <> 1) or
-    not SameText(LArray[0].Value, CCommandPermission) then
+  LHasPromptPermission := False;
+  LHasToolPermission := False;
+  for LIndex := 0 to LArray.Count - 1 do
+  begin
+    LPermission := LArray[LIndex].Value;
+    if SameText(LPermission, CCommandPermission) then
+      LHasPromptPermission := True
+    else if SameText(LPermission, CToolAliasPermission) then
+      LHasToolPermission := True
+    else
+      raise EArgumentException.Create(
+        'Manifest contains an unsupported permission.'
+      );
+  end;
+  if AHasPromptCapabilities <> LHasPromptPermission then
     raise EArgumentException.Create(
-      'Command extensions require only the chat.prompt permission.'
+      'Prompt capabilities require exactly the chat.prompt permission.'
+    );
+  if AHasTools <> LHasToolPermission then
+    raise EArgumentException.Create(
+      'Declarative tools require exactly the tool.alias permission.'
+    );
+  if LArray.Count <> Ord(AHasPromptCapabilities) + Ord(AHasTools) then
+    raise EArgumentException.Create(
+      'Manifest permissions must not contain duplicates.'
     );
 end;
 
@@ -799,6 +1017,7 @@ var
   LFileNames: TArray<string>;
 begin
   FCommands.Clear;
+  FTools.Clear;
   FDiagnostics.Clear;
   if not TDirectory.Exists(FDirectory) then
     TDirectory.CreateDirectory(FDirectory);
@@ -824,6 +1043,20 @@ begin
         );
     end;
   end;
+end;
+
+procedure TRadIADeclarativeExtensionManager.ReportRuntimeError(
+  const AMessage: string
+);
+begin
+  FDiagnostics.Add(
+    TRadIADeclarativeExtensionDiagnostic.Create(
+      '',
+      '',
+      'runtime-rejected',
+      AMessage
+    )
+  );
 end;
 
 function TRadIADeclarativeExtensionManager.SetEnabled(

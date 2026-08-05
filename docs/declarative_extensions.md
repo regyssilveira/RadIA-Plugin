@@ -1,7 +1,7 @@
 # Extensões declarativas
 
-O RadIA 2.0 pode carregar comandos, templates e skills de chat sem recompilar o plugin ou reiniciar
-o Delphi. Cada extensão é um manifesto `*.radia.json` armazenado em:
+O RadIA 2.0 pode carregar comandos, templates, skills e aliases seguros de tools sem recompilar o
+plugin ou reiniciar o Delphi. Cada extensão é um manifesto `*.radia.json` armazenado em:
 
 ```text
 %USERPROFILE%\RadIA\extensions
@@ -27,15 +27,15 @@ da ativação e o conjunto completo é recarregado depois da troca. Se houver co
 inválido ou falha de escrita, o RadIA restaura automaticamente a versão anterior. Um chat aberto
 atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estado.
 
-## Manifesto versão 2
+## Manifesto versão 3
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "TeamWorkflow",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "enabled": true,
-  "permissions": ["chat.prompt"],
+  "permissions": ["chat.prompt", "tool.alias"],
   "templates": [
     {
       "name": "Team fix plan",
@@ -51,26 +51,35 @@ atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estad
       "command": "/team-style",
       "instructions": "Review this code using the team conventions:\n\n```pascal\n{code}\n```"
     }
+  ],
+  "tools": [
+    {
+      "name": "TeamWorkflowProjectHealth",
+      "description": "Inspect project health using the team's published name.",
+      "targetTool": "GetProjectHealth"
+    }
   ]
 }
 ```
 
-O exemplo completo está em `Examples/DeclarativeExtension/team-workflow.radia.json`. Manifestos
-schema 1 continuam compatíveis e carregam seus `commands` sem migração.
+Os exemplos completos estão em `Examples/DeclarativeExtension/team-workflow.radia.json` e
+`Examples/DeclarativeExtension/team-tools.radia.json`. Manifestos schema 1 e 2 continuam
+compatíveis sem migração.
 
 ## Campos e validação
 
 | Campo | Regra |
 |---|---|
-| `schemaVersion` | `1` para comandos legados ou `2` para commands, templates e skills. |
+| `schemaVersion` | `1` para comandos, `2` para templates/skills e `3` para aliases de tools. |
 | `id` | Identificador PascalCase alfanumérico e exclusivo. |
 | `version` | Versão semântica `major.minor.patch`. |
 | `enabled` | Opcional; `false` mantém o manifesto instalado, mas inativo. |
-| `permissions` | Nesta versão deve conter somente `chat.prompt`. |
+| `permissions` | Deve declarar exatamente `chat.prompt` e/ou `tool.alias`, conforme as capacidades presentes. |
 | `commands` | Comandos de prompt; usa o campo `prompt`. |
 | `templates` | Templates reutilizáveis; usa o campo `prompt` e requer schema 2. |
 | `skills` | Instruções especializadas; usa `instructions` e requer schema 2. |
-| limite total | Entre 1 e 100 itens somando commands, templates e skills. |
+| `tools` | Aliases de tools internas; requer schema 3, `tool.alias`, `name`, `description` e `targetTool`. |
+| limite total | Entre 1 e 100 itens somando commands, templates, skills e tools. |
 | `command` | `/` seguido de letras, números ou hífens; máximo de 32 caracteres após a barra. |
 | `prompt` | Texto não vazio com até 32.768 caracteres. |
 
@@ -84,12 +93,21 @@ Arquivos inválidos não carregam parcialmente: o diagnóstico indica `loaded`, 
 - `{argument}`: texto digitado após o comando.
 - `{specification}` e `{stacktrace}`: aliases compatíveis com os templates internos.
 
-## Limites de segurança
+## Tools declarativas e limites de segurança
 
 A extensão declarativa somente expande um prompt ou instrução quando o usuário escolhe ou digita
-seu comando. Ela não executa scripts, tools, processos, escrita ou operações da OTA. Permissões
-adicionais são recusadas. Tools avançadas continuam disponíveis pela API BPL descrita no
-[guia de extensões](tool_extension_guide.md) e passam pela política central de risco e consentimento.
+seu comando. O schema 3 também pode publicar um alias para uma tool interna já registrada. O alias:
+
+- deve iniciar com o `id` da extensão, evitando apropriação do namespace global;
+- não pode apontar para outro alias declarativo, impedindo cadeias e ciclos;
+- herda schema de entrada/saída, risco, timeout e idempotência da tool de destino;
+- passa pela mesma política central de consentimento e auditoria usada pelo chat e MCP;
+- é removido imediatamente quando a extensão é desabilitada, removida ou recarregada;
+- não executa scripts ou binários arbitrários e não amplia as permissões da tool de destino.
+
+Targets inexistentes, colisões ou falhas de registro produzem o diagnóstico `runtime-rejected` e
+preservam o conjunto anterior de aliases. Tools avançadas com implementação própria continuam
+disponíveis pela API BPL descrita no [guia de extensões](tool_extension_guide.md).
 
 O gerenciador visual conclui o ciclo local de instalação, atualização, ativação, diagnóstico e
 remoção de manifestos.

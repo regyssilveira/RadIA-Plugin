@@ -59,6 +59,7 @@ contains
   RadIA.Core.ToolViews in 'Source\Core\RadIA.Core.ToolViews.pas',
   RadIA.Core.Extensions in 'Source\Core\RadIA.Core.Extensions.pas',
   RadIA.Core.DeclarativeExtensions in 'Source\Core\RadIA.Core.DeclarativeExtensions.pas',
+  RadIA.Core.DeclarativeTools in 'Source\Core\RadIA.Core.DeclarativeTools.pas',
   RadIA.Core.DeclarativeExtensionPackages in 'Source\Core\RadIA.Core.DeclarativeExtensionPackages.pas',
   RadIA.Core.RsaSignature in 'Source\Core\RadIA.Core.RsaSignature.pas',
   RadIA.Core.ExtensionPublisherTrust in 'Source\Core\RadIA.Core.ExtensionPublisherTrust.pas',

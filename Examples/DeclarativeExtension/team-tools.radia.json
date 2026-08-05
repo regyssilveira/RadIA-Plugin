@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 3,
+  "id": "TeamTools",
+  "version": "3.0.0",
+  "enabled": true,
+  "permissions": [
+    "tool.alias"
+  ],
+  "tools": [
+    {
+      "name": "TeamToolsProjectHealth",
+      "description": "Inspect project health under the team namespace.",
+      "targetTool": "GetProjectHealth"
+    }
+  ]
+}

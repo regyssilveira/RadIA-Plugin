@@ -6,6 +6,7 @@ uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections, RadIA.Core.Interfaces,
   RadIA.Core.Sessions, RadIA.Core.PromptTemplates,
   RadIA.Core.DeclarativeExtensions,
+  RadIA.Core.DeclarativeTools,
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
   RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
@@ -61,6 +62,7 @@ type
     FTemplateManager: TPromptTemplateManager;
     FDeclarativeExtensionManager:
       TRadIADeclarativeExtensionManager;
+    FDeclarativeToolBinder: TRadIADeclarativeToolBinder;
     FAccumulatedUsage: TTokenUsage;
     FHistory: TArray<IRadIAChatMessage>;
     FRequestInProgress: Boolean;
@@ -432,6 +434,10 @@ begin
     TRadIADeclarativeExtensionManager.Create(
       TPath.Combine(FDataDir, 'extensions')
     );
+  if Assigned(FToolRegistry) then
+    FDeclarativeToolBinder := TRadIADeclarativeToolBinder.Create(
+      FToolRegistry
+    );
   ReloadDeclarativeExtensions;
 
   FSessionManager := TRadIASessionManager.Create(TPath.Combine(FDataDir, 'sessions'));
@@ -469,6 +475,7 @@ begin
     FAIService.CancelCurrentRequest;
 
   FPromptHistoryManager.Free;
+  FDeclarativeToolBinder.Free;
   FDeclarativeExtensionManager.Free;
   FTemplateManager.Free;
   FSessionManager.Free;
@@ -653,6 +660,7 @@ function TRadIAChatPresenter.BuildDeclarativeExtensionStatus: string;
 var
   LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
   LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
+  LSourceName: string;
 begin
   LDiagnostics := FDeclarativeExtensionManager.GetDiagnostics;
   if Length(LDiagnostics) = 0 then
@@ -662,8 +670,11 @@ begin
   begin
     if Result <> '' then
       Result := Result + sLineBreak;
+    LSourceName := ExtractFileName(LDiagnostic.FileName);
+    if LSourceName.IsEmpty then
+      LSourceName := 'declarative tools';
     Result := Result + '[' + LDiagnostic.Status + '] ' +
-      ExtractFileName(LDiagnostic.FileName) + ': ' +
+      LSourceName + ': ' +
       LDiagnostic.Message;
   end;
 end;
@@ -717,6 +728,22 @@ begin
   FDeclarativeExtensionManager.Reload(
     BuildReservedSlashCommands
   );
+  if not Assigned(FDeclarativeToolBinder) then
+    Exit;
+  try
+    FDeclarativeToolBinder.Reload(
+      FDeclarativeExtensionManager.GetTools
+    );
+  except
+    on E: Exception do
+    begin
+      FDeclarativeExtensionManager.ReportRuntimeError(E.Message);
+      TLogger.Log(
+        'Declarative tool reload rejected: ' + E.Message,
+        'Extensions'
+      );
+    end;
+  end;
 end;
 
 function TRadIAChatPresenter.BuildSlashCommandsJsonArray: TJSONArray;

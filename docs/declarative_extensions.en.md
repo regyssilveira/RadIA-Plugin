@@ -1,7 +1,7 @@
 # Declarative extensions
 
-RadIA 2.0 can load chat commands, templates, and skills without rebuilding the plugin or restarting
-Delphi. Each extension is a `*.radia.json` manifest stored under:
+RadIA 2.0 can load chat commands, templates, skills, and safe tool aliases without rebuilding the
+plugin or restarting Delphi. Each extension is a `*.radia.json` manifest stored under:
 
 ```text
 %USERPROFILE%\RadIA\extensions
@@ -19,20 +19,42 @@ and status changes use an atomic write. RadIA validates the candidate first, rel
 installed set, and restores the previous file if validation or activation fails. An open chat
 refreshes its catalog, while chats opened later load the current state directly.
 
-Schema 2 supports `commands` and `templates` with a `prompt` field, plus `skills` with an
-`instructions` field. Every item has a name, description, unique slash command, and prompt content.
-The total is limited to 100 items. Schema 1 command manifests remain compatible without migration.
-Both schemas require a unique PascalCase ID, semantic version, and only the `chat.prompt`
-permission. Any collision or invalid item rejects the complete manifest. Diagnostics report
-`loaded`, `disabled`, or `rejected`.
+Schema 2 supports templates and skills. Schema 3 adds `tools`, which publish safe aliases for
+existing internal tools. Permissions must exactly match the capabilities present: `chat.prompt`
+for prompt capabilities and `tool.alias` for aliases. Schema 1 and 2 manifests remain compatible.
+The combined total is limited to 100 capabilities.
+
+```json
+{
+  "schemaVersion": 3,
+  "id": "TeamTools",
+  "version": "3.0.0",
+  "permissions": ["tool.alias"],
+  "tools": [
+    {
+      "name": "TeamToolsProjectHealth",
+      "description": "Inspect project health under the team namespace.",
+      "targetTool": "GetProjectHealth"
+    }
+  ]
+}
+```
+
+An alias name must start with the extension ID and cannot target another declarative alias. It
+inherits the target input/output schemas, risk, timeout, and idempotency. Execution therefore uses
+the same consent and audit policy exposed to chat and MCP. Disabling, removing, or reloading the
+extension unregisters the alias. Missing targets, collisions, and registration failures preserve
+the previous alias set and appear as `runtime-rejected`. Schema 3 cannot execute arbitrary scripts
+or binaries and cannot widen the target tool's permissions.
 
 Prompts and skill instructions may use `{code}`, `{argument}`, `{specification}`, and
-`{stacktrace}`. Declarative prompt capabilities do not run scripts, tools, processes, writes, or OTA
-operations. Advanced tools remain available through the
+`{stacktrace}`. Declarative prompt capabilities do not run processes, writes, or OTA operations.
+Advanced tools with custom implementations remain available through the
 BPL API documented in the [extension guide](tool_extension_guide.md) and remain subject to central
 risk and consent policies.
 
-See `Examples/DeclarativeExtension/team-workflow.radia.json` for a complete schema 2 extension.
+See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2 and
+`Examples/DeclarativeExtension/team-tools.radia.json` for a complete schema 3 tool alias.
 
 The visual manager completes the local install, update, activation, diagnostics, and removal cycle.
 

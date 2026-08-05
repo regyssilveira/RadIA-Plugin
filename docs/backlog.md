@@ -106,6 +106,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         tamanho, hash, identidade e publicador ao pacote assinado.
     *   M4 entregue nesta etapa: manifesto schema 2 adiciona templates e skills declarativas,
         preserva commands schema 1 e mantém todas as capacidades restritas a `chat.prompt`.
+    *   M4 entregue nesta etapa: schema 3 publica aliases de tools internas no registry comum ao
+        chat e MCP, com namespace da extensão, permissão `tool.alias`, risco herdado, bloqueio de
+        cadeias e rollback do catálogo quando o target ou o registro é inválido.
     *   M5 entregue nesta etapa: busca e reconstrução expõem latência local, o status informa
         tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
     *   M5 entregue nesta etapa: o índice incremental cobre Pascal, DFM/FMX textual, projetos e

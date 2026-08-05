@@ -47,13 +47,35 @@ type
     procedure RejectsDuplicateCommandsAcrossCapabilityKinds;
     [Test]
     procedure SchemaOneDoesNotEnableSkills;
+    [Test]
+    procedure LoadsSchemaThreeDeclarativeToolContract;
+    [Test]
+    procedure RejectsDeclarativeToolWithoutExplicitPermission;
+    [Test]
+    procedure RejectsDeclarativeToolOutsideExtensionNamespace;
+    [Test]
+    procedure BindsDeclarativeToolWithInheritedPolicyMetadata;
+    [Test]
+    procedure BinderRejectsUnknownOrChainedTargets;
   end;
 
 implementation
 
 uses
   System.IOUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.DeclarativeTools,
+  RadIA.Core.ToolRegistry,
+  RadIA.Core.Tools;
+
+type
+  TRadIATestTargetTool = class(TInterfacedObject, IRadIATool)
+  public
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+    function GetDescriptor: TRadIAToolDescriptor;
+  end;
 
 const
   CValidManifest =
@@ -62,6 +84,125 @@ const
     '"name":"Team review","description":"Apply the team review policy.",' +
     '"command":"/team-review","prompt":"Review using the team policy: {code}"' +
     '}]}';
+
+function TRadIATestTargetTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"target":"' + ARequest.ToolName + '"}'
+  );
+end;
+
+function TRadIATestTargetTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetProjectHealth',
+    '1.0.0',
+    'Returns project health.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  ).WithExecutionOptions(5000, True);
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  BinderRejectsUnknownOrChainedTargets;
+var
+  LBinder: TRadIADeclarativeToolBinder;
+  LDefinitions: TArray<TRadIADeclarativeTool>;
+  LRegistry: IRadIAToolRegistry;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(TRadIATestTargetTool.Create);
+  LBinder := TRadIADeclarativeToolBinder.Create(LRegistry);
+  try
+    LDefinitions := [
+      TRadIADeclarativeTool.Create(
+        'TeamTools',
+        'TeamToolsUnknown',
+        'Unknown target.',
+        'MissingTool'
+      )
+    ];
+    Assert.WillRaise(
+      procedure
+      begin
+        LBinder.Reload(LDefinitions);
+      end,
+      EArgumentException
+    );
+    LDefinitions := [
+      TRadIADeclarativeTool.Create(
+        'TeamTools',
+        'TeamToolsFirst',
+        'First alias.',
+        'TeamToolsSecond'
+      ),
+      TRadIADeclarativeTool.Create(
+        'TeamTools',
+        'TeamToolsSecond',
+        'Second alias.',
+        'GetProjectHealth'
+      )
+    ];
+    Assert.WillRaise(
+      procedure
+      begin
+        LBinder.Reload(LDefinitions);
+      end,
+      EArgumentException
+    );
+  finally
+    LBinder.Free;
+  end;
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  BindsDeclarativeToolWithInheritedPolicyMetadata;
+var
+  LAlias: IRadIATool;
+  LBinder: TRadIADeclarativeToolBinder;
+  LDefinitions: TArray<TRadIADeclarativeTool>;
+  LRegistry: IRadIAToolRegistry;
+  LRequest: TRadIAToolRequest;
+  LResult: TRadIAToolResult;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(TRadIATestTargetTool.Create);
+  LBinder := TRadIADeclarativeToolBinder.Create(LRegistry);
+  try
+    LDefinitions := [
+      TRadIADeclarativeTool.Create(
+        'TeamTools',
+        'TeamToolsProjectHealth',
+        'Team project health.',
+        'GetProjectHealth'
+      )
+    ];
+    LBinder.Reload(LDefinitions);
+    Assert.IsTrue(
+      LRegistry.TryResolve('TeamToolsProjectHealth', LAlias)
+    );
+    Assert.AreEqual(trReadOnly, LAlias.Descriptor.Risk);
+    Assert.AreEqual<Cardinal>(5000, LAlias.Descriptor.TimeoutMs);
+    Assert.IsTrue(LAlias.Descriptor.Idempotent);
+    LRequest := TRadIAToolRequest.Create(
+      'TeamToolsProjectHealth',
+      '{}',
+      'test-correlation'
+    );
+    LResult := LAlias.Execute(LRequest);
+    Assert.IsTrue(LResult.Success);
+    Assert.Contains(LResult.ContentJson, 'GetProjectHealth');
+    LBinder.Reload([]);
+    Assert.IsFalse(
+      LRegistry.TryResolve('TeamToolsProjectHealth', LAlias)
+    );
+  finally
+    LBinder.Free;
+  end;
+end;
 
 procedure TRadIADeclarativeExtensionTests.
   EnablesDisablesAndRemovesWithoutRestart;
@@ -201,6 +342,60 @@ begin
   Assert.AreEqual<Integer>(1, Length(LDiagnostics));
   Assert.AreEqual('loaded', LDiagnostics[0].Status);
   Assert.Contains(LDiagnostics[0].Message, '2 capability');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  LoadsSchemaThreeDeclarativeToolContract;
+const
+  CManifest =
+    '{"schemaVersion":3,"id":"TeamTools","version":"3.0.0",' +
+    '"permissions":["tool.alias"],"tools":[{' +
+    '"name":"TeamToolsProjectHealth",' +
+    '"description":"Expose project health under the team namespace.",' +
+    '"targetTool":"GetProjectHealth"}]}';
+var
+  LTools: TArray<TRadIADeclarativeTool>;
+begin
+  WriteManifest('tools.radia.json', CManifest);
+  FManager.Reload([]);
+  LTools := FManager.GetTools;
+  Assert.AreEqual<Integer>(1, Length(LTools));
+  Assert.AreEqual('TeamTools', LTools[0].ExtensionId);
+  Assert.AreEqual('TeamToolsProjectHealth', LTools[0].Name);
+  Assert.AreEqual('GetProjectHealth', LTools[0].TargetTool);
+  Assert.AreEqual('loaded', FManager.GetDiagnostics[0].Status);
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  RejectsDeclarativeToolOutsideExtensionNamespace;
+const
+  CManifest =
+    '{"schemaVersion":3,"id":"TeamTools","version":"3.0.0",' +
+    '"permissions":["tool.alias"],"tools":[{' +
+    '"name":"ForeignProjectHealth","description":"Invalid namespace.",' +
+    '"targetTool":"GetProjectHealth"}]}';
+begin
+  WriteManifest('foreign-tool.radia.json', CManifest);
+  FManager.Reload([]);
+  Assert.AreEqual<Integer>(0, Length(FManager.GetTools));
+  Assert.AreEqual('rejected', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, 'extension ID');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  RejectsDeclarativeToolWithoutExplicitPermission;
+const
+  CManifest =
+    '{"schemaVersion":3,"id":"TeamTools","version":"3.0.0",' +
+    '"permissions":["chat.prompt"],"tools":[{' +
+    '"name":"TeamToolsProjectHealth","description":"Missing permission.",' +
+    '"targetTool":"GetProjectHealth"}]}';
+begin
+  WriteManifest('tool-permission.radia.json', CManifest);
+  FManager.Reload([]);
+  Assert.AreEqual<Integer>(0, Length(FManager.GetTools));
+  Assert.AreEqual('rejected', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, 'permission');
 end;
 
 procedure TRadIADeclarativeExtensionTests.

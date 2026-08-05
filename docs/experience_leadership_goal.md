@@ -179,7 +179,9 @@ fechado com limites e SHA-256, assinatura RSA-SHA256 via Windows CNG, fingerprin
 primeiro uso, trust store local e revogação visual de publicadores. O catálogo remoto já possui
 navegador visual assíncrono, busca, URL persistente, schema, HTTPS, limites, download transacional
 e vínculo ao pacote assinado. O schema 2 entrega commands, templates e skills de prompt com hot
-reload; tools declarativas com execução isolada continuam pendentes.
+reload. O schema 3 adiciona aliases de tools internas com namespace próprio, permissão
+`tool.alias`, metadados de risco herdados, registro comum ao chat e MCP e rollback do catálogo em
+falhas. Execução de scripts isolados permanece fora do contrato declarativo.
 
 **Saída:** uma capacidade simples pode ser adicionada sem recompilar o RadIA ou reiniciar a IDE.
 
