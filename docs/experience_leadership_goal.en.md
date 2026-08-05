@@ -127,7 +127,8 @@ state remain intact even when an escape sequence is split across chunks.
 
 Delivered in this increment: the live card is now an auditable timeline with the current message,
 limits, tokens, cost, duration, correlation, arguments, results, errors, mutations, and build and
-test indicators. Plan editing, step replay, and searchable persistence remain pending.
+test indicators. The **Runs** button and `/agent history` search checkpoints by objective, status,
+or session without exposing tool payloads. Plan editing and step replay remain pending.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

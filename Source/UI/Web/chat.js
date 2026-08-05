@@ -162,6 +162,7 @@ const btnHistory      = document.getElementById('btn-history');
 const btnSettings     = document.getElementById('btn-settings');
 const btnAgentMode    = document.getElementById('btn-agent-mode');
 const btnTerminal     = document.getElementById('btn-terminal');
+const btnAgentHistory = document.getElementById('btn-agent-history');
 
 const promptTextarea  = document.getElementById('prompt-textarea');
 const btnSendPrompt   = document.getElementById('btn-send-prompt');
@@ -279,6 +280,60 @@ function renderAgentValidation(card, state) {
     indicator.textContent = `${label}: ${value.replace('-', ' ')}`;
     validationElement.appendChild(indicator);
   });
+}
+
+function renderAgentHistory(data) {
+  const panel = document.createElement('section');
+  panel.className = 'agent-history-panel';
+
+  const header = document.createElement('div');
+  header.className = 'agent-history-header';
+  const title = document.createElement('strong');
+  title.textContent = `Agent runs (${data.total || 0})`;
+  const search = document.createElement('input');
+  search.type = 'search';
+  search.placeholder = 'Search objective, status, or session ID';
+  search.value = data.query || '';
+  const submitSearch = () => {
+    postMessageToDelphi({
+      action: 'search_agent_history',
+      query: search.value.trim()
+    });
+  };
+  search.addEventListener('keydown', event => {
+    if (event.key === 'Enter') submitSearch();
+  });
+  const searchButton = document.createElement('button');
+  searchButton.textContent = 'Search';
+  searchButton.addEventListener('click', submitSearch);
+  header.append(title, search, searchButton);
+  panel.appendChild(header);
+
+  const runs = Array.isArray(data.runs) ? data.runs : [];
+  const list = document.createElement('ol');
+  list.className = 'agent-history-list';
+  runs.forEach(run => {
+    const item = document.createElement('li');
+    const runTitle = document.createElement('strong');
+    runTitle.textContent = run.objective || 'Untitled agent run';
+    const metadata = document.createElement('span');
+    metadata.textContent =
+      `${run.status || 'unknown'} · ${run.stepCount || 0} steps · ` +
+      `${run.updatedAtUtc || 'unknown time'} · ${run.sessionId || ''}`;
+    item.append(runTitle, metadata);
+    list.appendChild(item);
+  });
+  if (runs.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'agent-history-empty';
+    empty.textContent = 'No persisted agent runs match this search.';
+    panel.appendChild(empty);
+  } else {
+    panel.appendChild(list);
+  }
+  chatContainer.appendChild(panel);
+  search.focus();
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function renderAgentState(data) {
@@ -1342,6 +1397,10 @@ btnTerminal.addEventListener('click', () => {
   postMessageToDelphi({ action: 'open_terminal' });
 });
 
+btnAgentHistory.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'search_agent_history', query: '' });
+});
+
 
 btnNewChatSidebar.addEventListener('click', () => {
   if (!canChangeSession()) {
@@ -2365,6 +2424,7 @@ if (globalThis.chrome?.webview) {
       case 'tool_result':           renderToolResult(data);                                      break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
       case 'agent_state':           renderAgentState(data);                                      break;
+      case 'agent_history':         renderAgentHistory(data);                                    break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

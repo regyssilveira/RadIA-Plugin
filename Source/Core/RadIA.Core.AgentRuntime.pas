@@ -145,6 +145,28 @@ type
     procedure Request;
   end;
 
+  TRadIAAgentCheckpointSummary = record
+  private
+    FSessionId: string;
+    FObjective: string;
+    FStatus: string;
+    FStepCount: Integer;
+    FUpdatedAtUtc: string;
+  public
+    constructor Create(
+      const ASessionId: string;
+      const AObjective: string;
+      const AStatus: string;
+      const AStepCount: Integer;
+      const AUpdatedAtUtc: string
+    );
+    property SessionId: string read FSessionId;
+    property Objective: string read FObjective;
+    property Status: string read FStatus;
+    property StepCount: Integer read FStepCount;
+    property UpdatedAtUtc: string read FUpdatedAtUtc;
+  end;
+
   TRadIAAgentFileCheckpointStore = class(
     TInterfacedObject,
     IRadIAAgentCheckpointStore
@@ -163,6 +185,9 @@ type
       const ASessionId: string;
       out ASnapshotJson: string
     ): Boolean;
+    function Search(
+      const AQuery: string
+    ): TArray<TRadIAAgentCheckpointSummary>;
     procedure Delete(const ASessionId: string);
   end;
 
@@ -296,10 +321,13 @@ function RadIAAgentStatusName(
 implementation
 
 uses
+  System.DateUtils,
   System.Diagnostics,
+  System.Generics.Defaults,
   System.IOUtils,
   System.JSON,
   System.Math,
+  System.StrUtils,
   System.SyncObjs,
   System.SysUtils;
 
@@ -468,6 +496,23 @@ begin
   FStepCount := AStepCount;
 end;
 
+{ TRadIAAgentCheckpointSummary }
+
+constructor TRadIAAgentCheckpointSummary.Create(
+  const ASessionId: string;
+  const AObjective: string;
+  const AStatus: string;
+  const AStepCount: Integer;
+  const AUpdatedAtUtc: string
+);
+begin
+  FSessionId := ASessionId;
+  FObjective := AObjective;
+  FStatus := AStatus;
+  FStepCount := AStepCount;
+  FUpdatedAtUtc := AUpdatedAtUtc;
+end;
+
 { TRadIAAgentFileCheckpointStore }
 
 constructor TRadIAAgentFileCheckpointStore.Create(
@@ -515,6 +560,91 @@ begin
     ASnapshotJson,
     TEncoding.UTF8
   );
+end;
+
+function TRadIAAgentFileCheckpointStore.Search(
+  const AQuery: string
+): TArray<TRadIAAgentCheckpointSummary>;
+var
+  LFileName: string;
+  LFiles: TArray<string>;
+  LList: TList<TRadIAAgentCheckpointSummary>;
+  LObjective: string;
+  LQuery: string;
+  LRoot: TJSONObject;
+  LSessionId: string;
+  LSnapshot: string;
+  LStatus: string;
+  LSteps: TJSONArray;
+  LSummary: TRadIAAgentCheckpointSummary;
+  LValue: TJSONValue;
+begin
+  Result := [];
+  if not TDirectory.Exists(FDirectory) then
+    Exit;
+  LQuery := Trim(AQuery);
+  LFiles := TDirectory.GetFiles(FDirectory, '*.json');
+  LList := TList<TRadIAAgentCheckpointSummary>.Create;
+  try
+    for LFileName in LFiles do
+    begin
+      LSnapshot := TFile.ReadAllText(LFileName, TEncoding.UTF8);
+      LValue := TJSONObject.ParseJSONValue(LSnapshot);
+      if not (LValue is TJSONObject) then
+      begin
+        LValue.Free;
+        Continue;
+      end;
+      LRoot := TJSONObject(LValue);
+      try
+        LSessionId := LRoot.GetValue<string>(
+          'sessionId',
+          TPath.GetFileNameWithoutExtension(LFileName)
+        );
+        LObjective := LRoot.GetValue<string>('objective', '');
+        LStatus := LRoot.GetValue<string>('status', 'unknown');
+        if (LQuery <> '') and
+          not ContainsText(LSessionId, LQuery) and
+          not ContainsText(LObjective, LQuery) and
+          not ContainsText(LStatus, LQuery) then
+          Continue;
+        LSteps := LRoot.GetValue('steps') as TJSONArray;
+        if Assigned(LSteps) then
+          LSummary := TRadIAAgentCheckpointSummary.Create(
+            LSessionId,
+            LObjective,
+            LStatus,
+            LSteps.Count,
+            DateToISO8601(TFile.GetLastWriteTimeUtc(LFileName), True)
+          )
+        else
+          LSummary := TRadIAAgentCheckpointSummary.Create(
+            LSessionId,
+            LObjective,
+            LStatus,
+            0,
+            DateToISO8601(TFile.GetLastWriteTimeUtc(LFileName), True)
+          );
+        LList.Add(LSummary);
+      finally
+        LRoot.Free;
+      end;
+    end;
+    LList.Sort(
+      TComparer<TRadIAAgentCheckpointSummary>.Construct(
+        function(
+          const ALeft: TRadIAAgentCheckpointSummary;
+          const ARight: TRadIAAgentCheckpointSummary
+        ): Integer
+        begin
+          Result := CompareText(ARight.UpdatedAtUtc, ALeft.UpdatedAtUtc);
+        end
+      )
+    );
+    Result := LList.ToArray;
+  finally
+    LList.Free;
+  end;
 end;
 
 function TRadIAAgentFileCheckpointStore.TryLoad(

@@ -19,6 +19,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/agent pause` | Pausa o loop após interromper com segurança a decisão atual. | Execução agentiva ativa. |
 | `/agent resume` | Retoma o último checkpoint da sessão. | Execução agentiva pausada. |
 | `/agent cancel` | Cancela a decisão e a execução agentiva atuais. | Execução agentiva ativa. |
+| `/agent history [filtro]` | Pesquisa execuções por objetivo, estado ou ID. | Checkpoints locais. |
 | `/terminal` | Abre o terminal integrado acoplável. | Projeto e desktop atuais da IDE. |
 | `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
 | `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |

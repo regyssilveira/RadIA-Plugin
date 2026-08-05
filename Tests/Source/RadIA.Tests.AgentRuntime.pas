@@ -155,6 +155,8 @@ type
     [Test]
     procedure TestFileStoreRejectsUnsafeSessionId;
     [Test]
+    procedure TestFileStoreSearchesSafeCheckpointSummaries;
+    [Test]
     procedure TestProviderParsesToolDecision;
     [Test]
     procedure TestProviderParsesFencedCompletion;
@@ -440,6 +442,49 @@ begin
     end,
     EArgumentException
   );
+end;
+
+procedure TTestRadIAAgentRuntime.TestFileStoreSearchesSafeCheckpointSummaries;
+var
+  LDirectory: string;
+  LRuns: TArray<TRadIAAgentCheckpointSummary>;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-agent-search-' + TGUID.NewGuid.ToString
+  );
+  LStore := TRadIAAgentFileCheckpointStore.Create(LDirectory);
+  try
+    LStore.Save(
+      'build-session',
+      '{"sessionId":"build-session","objective":"Repair build",' +
+      '"status":"completed","steps":[{"arguments":"secret"}]}'
+    );
+    LStore.Save(
+      'review-session',
+      '{"sessionId":"review-session","objective":"Review source",' +
+      '"status":"paused","steps":[]}'
+    );
+    TFile.WriteAllText(
+      TPath.Combine(LDirectory, 'corrupt.json'),
+      'not-json',
+      TEncoding.UTF8
+    );
+
+    LRuns := LStore.Search('BUILD');
+
+    Assert.AreEqual<Integer>(1, Length(LRuns));
+    Assert.AreEqual('build-session', LRuns[0].SessionId);
+    Assert.AreEqual('Repair build', LRuns[0].Objective);
+    Assert.AreEqual('completed', LRuns[0].Status);
+    Assert.AreEqual(1, LRuns[0].StepCount);
+    Assert.IsNotEmpty(LRuns[0].UpdatedAtUtc);
+  finally
+    LStore.Free;
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
 end;
 
 procedure TTestRadIAAgentRuntime.TestDurationBudgetStopsAfterSlowDecision;
@@ -868,16 +913,19 @@ begin
 end;
 
 procedure TTestRadIAAgentRuntime.TestProviderRejectsInvalidDecision;
+var
+  LRaised: Boolean;
 begin
-  Assert.WillRaise(
-    procedure
-    begin
-      TRadIAAgentServiceDecisionProvider.ParseDecision(
-        '{"kind":"unknown"}'
-      );
-    end,
-    EConvertError
-  );
+  LRaised := False;
+  try
+    TRadIAAgentServiceDecisionProvider.ParseDecision(
+      '{"kind":"unknown"}'
+    );
+  except
+    on EConvertError do
+      LRaised := True;
+  end;
+  Assert.IsTrue(LRaised);
 end;
 
 procedure TTestRadIAAgentRuntime.TestStopsAtStepLimit;

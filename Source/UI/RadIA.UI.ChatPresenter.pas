@@ -153,6 +153,7 @@ type
     );
     procedure PauseAgentRun;
     procedure ResumeAgentRun;
+    procedure PostAgentHistoryToWeb(const AQuery: string);
     procedure PostAgentStateToWeb(const ASnapshotJson: string);
     procedure HandleAgentFinished(
       const AResult: TRadIAAgentRunResult;
@@ -166,6 +167,10 @@ type
     procedure HandleClearChatMessage;
     procedure HandleStreamChunkMessage(const AText: string; const AIsDone: Boolean; const AError: string);
     function TryHandleAgentCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentHistoryCommand(
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
@@ -651,6 +656,16 @@ begin
   LSlashObj.AddPair('command', '/agent cancel');
   LSlashObj.AddPair('description', 'Cancels the active agent run.');
   LSlashObj.AddPair('name', 'Cancel Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent history');
+  LSlashObj.AddPair(
+    'description',
+    'Searches persisted agent runs without exposing tool payloads.'
+  );
+  LSlashObj.AddPair('name', 'Agent Run History');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
@@ -1851,6 +1866,8 @@ begin
     ResumeAgentRun
   else if AAction = 'approve_agent' then
     ResumeAgentRun
+  else if AAction = 'search_agent_history' then
+    PostAgentHistoryToWeb(AJson.GetValue<string>('query', ''))
   else if AAction = 'stream_chunk' then
     HandleStreamChunkMessage(
       AJson.GetValue<string>('text', ''),
@@ -1866,6 +1883,8 @@ function TRadIAChatPresenter.TryHandleAgentCommand(
 ): Boolean;
 begin
   Result := True;
+  if TryHandleAgentHistoryCommand(APromptText, ACommandText) then
+    Exit;
   if ACommandText.StartsWith('/agent run ', True) then
   begin
     PostToWebView('add_message', 'user', APromptText);
@@ -1916,6 +1935,21 @@ begin
     Exit;
   end;
   Result := False;
+end;
+
+function TRadIAChatPresenter.TryHandleAgentHistoryCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := SameText(ACommandText, '/agent history') or
+    ACommandText.StartsWith('/agent history ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  PostAgentHistoryToWeb(
+    Trim(Copy(ACommandText, Length('/agent history') + 1, MaxInt))
+  );
 end;
 
 function TRadIAChatPresenter.TryHandleCatalogCommand(
@@ -2273,6 +2307,57 @@ begin
       end
     )
   );
+end;
+
+procedure TRadIAChatPresenter.PostAgentHistoryToWeb(
+  const AQuery: string
+);
+const
+  MAX_VISIBLE_RUNS = 50;
+var
+  LArray: TJSONArray;
+  LCheckpointDirectory: string;
+  LIndex: Integer;
+  LJson: TJSONObject;
+  LLastVisibleIndex: Integer;
+  LRunJson: TJSONObject;
+  LRuns: TArray<TRadIAAgentCheckpointSummary>;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  try
+    LRuns := LStore.Search(AQuery);
+  finally
+    LStore.Free;
+  end;
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'agent_history');
+    LJson.AddPair('query', AQuery);
+    LJson.AddPair('total', TJSONNumber.Create(Length(LRuns)));
+    LArray := TJSONArray.Create;
+    LJson.AddPair('runs', LArray);
+    LLastVisibleIndex := High(LRuns);
+    if LLastVisibleIndex >= MAX_VISIBLE_RUNS then
+      LLastVisibleIndex := MAX_VISIBLE_RUNS - 1;
+    for LIndex := 0 to LLastVisibleIndex do
+    begin
+      LRunJson := TJSONObject.Create;
+      LRunJson.AddPair('sessionId', LRuns[LIndex].SessionId);
+      LRunJson.AddPair('objective', LRuns[LIndex].Objective);
+      LRunJson.AddPair('status', LRuns[LIndex].Status);
+      LRunJson.AddPair(
+        'stepCount',
+        TJSONNumber.Create(LRuns[LIndex].StepCount)
+      );
+      LRunJson.AddPair('updatedAtUtc', LRuns[LIndex].UpdatedAtUtc);
+      LArray.AddElement(LRunJson);
+    end;
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
 end;
 
 procedure TRadIAChatPresenter.ResumeAgentRun;

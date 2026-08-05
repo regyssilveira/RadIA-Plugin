@@ -73,6 +73,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         closing a tab cancels only its own tree and preserves at least one open session.
     *   M3 delivered in this increment: the execution center shows an expandable timeline with
         arguments, result, error, correlation, duration, mutation, and validation indicators.
+    *   M3 delivered in this increment: the run index searches checkpoints through **Runs** or
+        `/agent history`, without exposing tool arguments and results.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

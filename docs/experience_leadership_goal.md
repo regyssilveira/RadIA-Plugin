@@ -131,7 +131,8 @@ do parser permanecem íntegros mesmo quando uma sequência chega dividida entre 
 
 Entregue nesta etapa: o cartão vivo tornou-se uma timeline auditável com mensagem atual, limites,
 tokens, custo, duração, correlação, argumentos, resultados, erros, mutações e indicadores de
-build e testes. Edição de plano, repetição de etapa e persistência pesquisável seguem pendentes.
+build e testes. O botão **Runs** e `/agent history` pesquisam checkpoints por objetivo, estado ou
+sessão sem expor payloads das tools. Edição de plano e repetição de etapa seguem pendentes.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

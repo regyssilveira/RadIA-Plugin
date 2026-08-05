@@ -95,6 +95,9 @@ build e testes. Cada etapa da timeline pode ser expandida para inspecionar argum
 erro, correlação, duração e se a operação foi uma mutação. Seus botões ou os comandos
 `/agent pause`, `/agent resume` e `/agent cancel` controlam a execução. Cada mudança de estado é
 persistida em `RadIA\agent-checkpoints`, permitindo retomar a sessão depois de uma pausa.
+Use o botão **Runs** ou `/agent history [filtro]` para localizar execuções por objetivo, estado ou
+ID da sessão. O índice mostra somente metadados; argumentos e resultados das tools não são expostos
+pela pesquisa.
 Para habilitar a estimativa e o limite monetário, configure o
 [catálogo local de custos](agent_pricing.md).
 

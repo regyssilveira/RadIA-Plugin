@@ -198,6 +198,8 @@ type
     [Test]
     procedure TestAgentCommandSynchronizesState;
     [Test]
+    procedure TestAgentHistoryCommandPublishesSafeIndex;
+    [Test]
     procedure TestTerminalCommandOpensTerminal;
     [Test]
     procedure TestDisabledAgentModeBlocksToolExecution;
@@ -594,6 +596,17 @@ begin
   Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_mode_changed"');
   Assert.Contains(FMockView.PostedMessages.Text, '"enabled":false');
   Assert.Contains(FMockView.LastPostedJson, 'Agent mode is disabled.');
+end;
+
+procedure TTestChatPresenter.TestAgentHistoryCommandPublishesSafeIndex;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/agent history build');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_history"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"query":"build"');
 end;
 
 procedure TTestChatPresenter.TestTerminalCommandOpensTerminal;

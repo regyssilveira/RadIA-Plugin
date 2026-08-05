@@ -1868,6 +1868,47 @@ body.light-theme .message-avatar.provider-avatar-badge {
   background: var(--bg-secondary);
 }
 
+.agent-history-panel {
+  margin: 12px 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.agent-history-header {
+  display: grid;
+  grid-template-columns: auto minmax(140px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.agent-history-header input,
+.agent-history-header button {
+  min-height: 30px;
+}
+
+.agent-history-list {
+  margin: 12px 0 0;
+  padding-left: 24px;
+}
+
+.agent-history-list li {
+  margin-bottom: 10px;
+}
+
+.agent-history-list strong,
+.agent-history-list span {
+  display: block;
+}
+
+.agent-history-list span,
+.agent-history-empty {
+  margin-top: 3px;
+  color: var(--fg-secondary);
+  font-size: 12px;
+}
+
 .agent-control-button {
   padding: 5px 10px;
   border: 1px solid var(--border);
