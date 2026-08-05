@@ -22,6 +22,7 @@ uses
   Vcl.ImgList,
   Vcl.Menus,
   ToolsAPI,
+  RadIA.Core.Logger,
   RadIA.Core.Types,
   RadIA.UI.ChatFrame,
   RadIA.UI.TerminalFrame;
@@ -124,7 +125,13 @@ begin
   if GRadIADockableFormRegistered then
     Exit;
   if not Supports(BorlandIDEServices, INTAServices270, LServices) then
+  begin
+    TLogger.Log(
+      'INTAServices270 is unavailable; native dock registration was skipped.',
+      'DockableForm'
+    );
     Exit;
+  end;
 
   if not Assigned(GRadIADockableFormHost) then
   begin
@@ -153,6 +160,7 @@ begin
   end;
   LServices.RegisterDockableForm(GRadIATerminalDockableForm);
   GRadIATerminalDockableFormRegistered := True;
+  TLogger.Log('Native chat and terminal docks registered.', 'DockableForm');
 end;
 
 procedure UnregisterDockableForm;
@@ -368,15 +376,34 @@ procedure TRadIACustomDockableForm.Show;
 var
   LServices: INTAServices270;
 begin
+  TLogger.Log('Show requested for ' + FIdentifier + '.', 'DockableForm');
   if not Supports(BorlandIDEServices, INTAServices270, LServices) then
+  begin
+    TLogger.Log(
+      'INTAServices270 is unavailable while showing ' + FIdentifier + '.',
+      'DockableForm'
+    );
     Exit;
+  end;
 
   if not Assigned(FForm) then
   begin
     FForm := LServices.CreateDockableForm(Self);
+    if not Assigned(FForm) then
+    begin
+      TLogger.Log(
+        'The IDE returned no native form for ' + FIdentifier + '.',
+        'DockableForm'
+      );
+      Exit;
+    end;
     FForm.FreeNotification(FObserver);
     FForm.Width := FDefaultWidth;
     FForm.Height := FDefaultHeight;
+    TLogger.Log(
+      'Native form created for ' + FIdentifier + ': ' + FForm.ClassName + '.',
+      'DockableForm'
+    );
   end;
 
   ApplyIDETheme;
@@ -384,6 +411,7 @@ begin
   ApplyWindowIdentity;
   FForm.BringToFront;
   EnsureFrameContent;
+  TLogger.Log('Native form shown for ' + FIdentifier + '.', 'DockableForm');
 end;
 
 end.
