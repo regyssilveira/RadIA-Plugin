@@ -26,7 +26,10 @@ module.exports = [
         Prism: "readonly",
         confirm: "readonly",
         navigator: "readonly",
-        chrome: "readonly"
+        chrome: "readonly",
+        module: "readonly",
+        require: "readonly",
+        RadIAAgentDiff: "readonly"
       }
     },
     rules: {

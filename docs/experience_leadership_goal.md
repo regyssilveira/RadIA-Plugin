@@ -144,6 +144,10 @@ argumentos ou resultados, evitando expor conteúdo arbitrário como se fosse um 
 A evidência de validação também deixou de ser apenas binária: o checkpoint e o cartão mostram o
 status e a duração do build, a quantidade de mensagens do compilador e o resumo DUnitX com total,
 aprovados, falhas, erros e ignorados.
+Etapas de `PreparePatch`, `ApplyPatch`, `RevertPatch` e suas variantes multiarquivo agora incluem
+uma revisão visual por arquivo na própria timeline. O bloco mostra três linhas de contexto,
+quantidade de linhas removidas e adicionadas e não oferece um atalho paralelo para mutação:
+aplicar ou reverter continua passando pelo fluxo central de consentimento.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

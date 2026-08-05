@@ -1815,6 +1815,41 @@ body.light-theme .message-avatar.provider-avatar-badge {
   overflow-wrap: anywhere;
 }
 
+.agent-step-diff {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.agent-step-diff > p {
+  margin: 4px 0 8px;
+  color: var(--fg-secondary);
+  font-size: 11px;
+}
+
+.agent-step-diff > details {
+  margin-top: 6px;
+}
+
+.agent-step-diff summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.agent-step-diff-metadata {
+  margin-top: 4px;
+  color: var(--fg-secondary);
+  font-size: 10px;
+}
+
+.agent-step-diff .patch-preview-comparison {
+  margin-top: 6px;
+  max-height: 420px;
+}
+
 .agent-validation-indicator {
   padding: 2px 7px;
   border: 1px solid var(--border);

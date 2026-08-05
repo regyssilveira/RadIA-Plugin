@@ -97,6 +97,9 @@ recognized path fields in successful mutation calls; free-form text is not treat
 When a journey includes validation, **Validation evidence** shows build status and duration,
 compiler message count, and DUnitX totals, passes, failures, errors, and ignored tests. These data
 remain in the checkpoint and return when the run is opened from history.
+Successful patch steps present **Reviewed changes** inside their details. Each file shows only the
+changed block, three context lines, and removed/added totals. This view is review-only; applying or
+reverting remains an audited tool call subject to configured consent.
 
 ### 3.2 Consent
 

@@ -5,7 +5,8 @@
   "main": "eslint.config.js",
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test:web": "node --test Tests/Web/*.test.js"
   },
   "devDependencies": {
     "eslint": "^9.0.0"

@@ -139,6 +139,10 @@ the exposure of arbitrary content as if it were a path.
 Validation evidence is no longer merely binary: the checkpoint and live card show build status
 and duration, compiler message count, and the DUnitX summary with totals, passes, failures, errors,
 and ignored tests.
+`PreparePatch`, `ApplyPatch`, `RevertPatch`, and their multi-file variants now include a visual
+per-file review inside the timeline. The block shows three context lines and removed/added line
+counts, and it does not provide a parallel mutation shortcut: apply and revert remain behind the
+central consent flow.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

@@ -127,6 +127,10 @@ tratado como caminho.
 Quando a jornada inclui validação, a seção **Validation evidence** apresenta status e duração do
 build, quantidade de mensagens do compilador e contagens DUnitX de total, aprovados, falhas, erros
 e ignorados. Esses dados permanecem no checkpoint e voltam a aparecer ao abrir o histórico.
+Etapas de patch bem-sucedidas apresentam **Reviewed changes** dentro de seus detalhes. Cada arquivo
+mostra apenas o bloco alterado, três linhas de contexto e os totais removidos/adicionados. Essa
+visualização é somente para revisão; aplicar ou reverter continua sendo uma tool auditada e sujeita
+ao consentimento configurado.
 
 ### 3.2 Consentimento
 

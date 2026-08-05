@@ -221,6 +221,71 @@ function createAgentControl(label, action, disabled = false) {
   return button;
 }
 
+function parseAgentStepResult(step) {
+  if (!step.success || !step.result) {
+    return null;
+  }
+  if (typeof step.result === 'object') {
+    return step.result;
+  }
+  try {
+    return JSON.parse(step.result);
+  } catch {
+    return null;
+  }
+}
+
+function appendAgentPatchReview(details, step) {
+  const result = parseAgentStepResult(step);
+  if (!result) {
+    return;
+  }
+  const files = RadIAAgentDiff.extractFiles(step.toolName, result);
+  if (files.length === 0) {
+    return;
+  }
+  const review = document.createElement('section');
+  review.className = 'agent-step-diff';
+  const title = document.createElement('strong');
+  title.textContent = `Reviewed changes (${files.length} file(s))`;
+  const note = document.createElement('p');
+  note.textContent =
+    'Review-only snapshot. Applying or reverting still follows the agent consent flow.';
+  review.appendChild(title);
+  review.appendChild(note);
+  files.forEach(file => {
+    const hunk = RadIAAgentDiff.buildHunk(
+      file.originalContent,
+      file.proposedContent
+    );
+    const fileDetails = document.createElement('details');
+    fileDetails.open = files.length === 1;
+    const fileSummary = document.createElement('summary');
+    fileSummary.textContent = file.targetFile || 'Changed file';
+    const hunkMetadata = document.createElement('div');
+    hunkMetadata.className = 'agent-step-diff-metadata';
+    hunkMetadata.textContent =
+      `Starting at line ${hunk.originalStartLine} · ` +
+      `${hunk.originalChangedLines} removed · ` +
+      `${hunk.proposedChangedLines} added`;
+    const comparison = document.createElement('div');
+    comparison.className = 'patch-preview-comparison';
+    const before = document.createElement('pre');
+    before.className = 'patch-preview-before';
+    before.textContent = hunk.original;
+    const after = document.createElement('pre');
+    after.className = 'patch-preview-after';
+    after.textContent = hunk.proposed;
+    comparison.appendChild(before);
+    comparison.appendChild(after);
+    fileDetails.appendChild(fileSummary);
+    fileDetails.appendChild(hunkMetadata);
+    fileDetails.appendChild(comparison);
+    review.appendChild(fileDetails);
+  });
+  details.appendChild(review);
+}
+
 function createAgentStep(step, status) {
   const item = document.createElement('li');
   item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
@@ -259,6 +324,7 @@ function createAgentStep(step, status) {
     step.success ? step.result : step.errorMessage
   );
   details.appendChild(resultBlock);
+  appendAgentPatchReview(details, step);
   const replay = document.createElement('button');
   replay.className = 'agent-step-replay';
   replay.textContent = 'Replay step';
