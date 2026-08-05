@@ -68,7 +68,7 @@ decision. Use **Trusted publishers...** to inspect fingerprints and revoke trust
 Version 1 remains compatible but is integrity-only and requires a one-time warning. The trust store
 uses atomic writes, validates IDs and fingerprints, rejects duplicates and reparse points, and does
 not silently replace invalid state. A signed package proves possession of its private key; users
-should still verify the fingerprint through an independent channel. Trusted remote catalogs remain
-a future M4 stage. The secure schema, HTTPS, transactional download, and package verification
-foundation is documented in [Remote extension catalog](extension_catalog.en.md); its visual browser
-is still being integrated.
+should still verify the fingerprint through an independent channel. Distributed publication and
+revocation remain a future M4 stage. The asynchronous visual browser, secure schema, HTTPS,
+transactional download, and package verification are documented in
+[Remote extension catalog](extension_catalog.en.md).

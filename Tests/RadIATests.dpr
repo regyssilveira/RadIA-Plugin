@@ -39,6 +39,7 @@ uses
   RadIA.Core.RsaSignature in '..\Source\Core\RadIA.Core.RsaSignature.pas',
   RadIA.Core.ExtensionPublisherTrust in '..\Source\Core\RadIA.Core.ExtensionPublisherTrust.pas',
   RadIA.Core.ExtensionCatalog in '..\Source\Core\RadIA.Core.ExtensionCatalog.pas',
+  RadIA.UI.ExtensionCatalogForm in '..\Source\UI\RadIA.UI.ExtensionCatalogForm.pas',
   RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
   RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',
   RadIA.Core.PatchTools in '..\Source\Core\RadIA.Core.PatchTools.pas',

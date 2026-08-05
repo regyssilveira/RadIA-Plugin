@@ -55,8 +55,16 @@ Mesmo depois dessas verificações, um publicador desconhecido passa pelo consen
 uso do gerenciador. Um catálogo adulterado não consegue transformar uma chave desconhecida em chave
 confiável.
 
-## Estado da integração
+## Uso no gerenciador
 
-O schema, transporte HTTPS, parser, download transacional e verificação cruzada estão implementados
-e cobertos por testes. A próxima etapa do M4 conecta essa camada ao navegador visual assíncrono do
-gerenciador de extensões, mantendo operações de rede fora da thread principal da IDE.
+1. Abra **Tools > Rad IA Extensions...**.
+2. Clique em **Browse catalog...**.
+3. Informe a URL HTTPS do catálogo e clique em **Load catalog**.
+4. Use a busca para filtrar por nome, ID, descrição ou publicador.
+5. Selecione uma extensão e clique em **Download**.
+6. Revise a identidade e o fingerprint do publicador no consentimento de primeiro uso.
+
+O catálogo e os pacotes são baixados em background, sem bloquear a thread visual da IDE. A URL é
+lembrada em `%USERPROFILE%\RadIA\extension-catalog.json`; credenciais em URL são recusadas e não são
+armazenadas. O pacote só segue para a instalação compartilhada depois de todas as verificações,
+portanto o fluxo local e o remoto aplicam a mesma política de confiança.

@@ -135,6 +135,15 @@ type
     ): TRadIAExtensionCatalog; static;
   end;
 
+  TRadIAExtensionCatalogPreferences = class
+  private
+    FFileName: string;
+  public
+    constructor Create(const AFileName: string);
+    function LoadUrl: string;
+    procedure SaveUrl(const AUrl: string);
+  end;
+
 implementation
 
 uses
@@ -609,6 +618,75 @@ begin
     raise EArgumentException.Create(
       'Catalog publisher fingerprint is invalid.'
     );
+end;
+
+{ TRadIAExtensionCatalogPreferences }
+
+constructor TRadIAExtensionCatalogPreferences.Create(
+  const AFileName: string
+);
+begin
+  inherited Create;
+  if Trim(AFileName) = '' then
+    raise EArgumentException.Create(
+      'Extension catalog preferences file name cannot be empty.'
+    );
+  FFileName := TPath.GetFullPath(AFileName);
+end;
+
+function TRadIAExtensionCatalogPreferences.LoadUrl: string;
+var
+  LJson: TJSONObject;
+begin
+  Result := '';
+  if not TFile.Exists(FFileName) then
+    Exit;
+  if (GetFileAttributes(PChar(FFileName)) and
+    FILE_ATTRIBUTE_REPARSE_POINT) <> 0 then
+    raise EArgumentException.Create(
+      'Extension catalog preferences cannot be a reparse point.'
+    );
+  if TFile.GetSize(FFileName) > 65536 then
+    raise EArgumentException.Create(
+      'Extension catalog preferences exceed the size limit.'
+    );
+  LJson := TJSONObject.ParseJSONValue(
+    TFile.ReadAllText(FFileName, TEncoding.UTF8)
+  ) as TJSONObject;
+  if not Assigned(LJson) then
+    raise EArgumentException.Create(
+      'Extension catalog preferences must be a JSON object.'
+    );
+  try
+    if LJson.GetValue<Integer>('schemaVersion', 0) <> 1 then
+      raise EArgumentException.Create(
+        'Extension catalog preferences schema is unsupported.'
+      );
+    Result := Trim(LJson.GetValue<string>('url', ''));
+    if Result <> '' then
+      TRadIAExtensionCatalogClient.ValidateHttpsUrl(Result);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAExtensionCatalogPreferences.SaveUrl(
+  const AUrl: string
+);
+var
+  LContent: TArray<Byte>;
+  LJson: TJSONObject;
+begin
+  TRadIAExtensionCatalogClient.ValidateHttpsUrl(AUrl);
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('schemaVersion', TJSONNumber.Create(1));
+    LJson.AddPair('url', Trim(AUrl));
+    LContent := TEncoding.UTF8.GetBytes(LJson.ToJSON);
+    TRadIAExtensionCatalogClient.AtomicWrite(FFileName, LContent);
+  finally
+    LJson.Free;
+  end;
 end;
 
 end.

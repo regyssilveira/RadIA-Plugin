@@ -36,8 +36,12 @@ type
     FHistorySearchIndex: Integer;
     FHistorySearchQuery: string;
     FUpdatingHistorySearch: Boolean;
+    FFocusQueued: Boolean;
     FSession: IRadIACliProcessSession;
     FLifecycleGuard: IInterface;
+    procedure ApplyDeferredFocus(
+      const AGuard: IRadIATerminalLifecycleGuard
+    );
     procedure AppendOutput(const AText: string);
     procedure AppendSegment(
       const ASegment: TRadIATerminalTextSegment
@@ -349,6 +353,25 @@ begin
     FOutputEditor.Invalidate;
 end;
 
+procedure TRadIATerminalFrame.ApplyDeferredFocus(
+  const AGuard: IRadIATerminalLifecycleGuard
+);
+var
+  LParentForm: TCustomForm;
+begin
+  if not AGuard.IsAlive then
+    Exit;
+  FFocusQueued := False;
+  if not Assigned(FCommandEdit) or not Assigned(FCommandEdit.Parent) then
+    Exit;
+  LParentForm := GetParentForm(FCommandEdit);
+  if not Assigned(LParentForm) or not LParentForm.Showing or
+    not LParentForm.HandleAllocated or not FCommandEdit.HandleAllocated or
+    not FCommandEdit.CanFocus then
+    Exit;
+  FCommandEdit.SetFocus;
+end;
+
 procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
 begin
   FOutputEditor.Clear;
@@ -400,16 +423,23 @@ end;
 
 procedure TRadIATerminalFrame.EnsureVisibleContent;
 var
-  LParentForm: TCustomForm;
+  LGuard: IRadIATerminalLifecycleGuard;
 begin
-  if not Assigned(FCommandEdit) or not Assigned(FCommandEdit.Parent) then
+  if FFocusQueued or not Supports(
+    FLifecycleGuard,
+    IRadIATerminalLifecycleGuard,
+    LGuard
+  ) then
     Exit;
-  LParentForm := GetParentForm(FCommandEdit);
-  if not Assigned(LParentForm) or not LParentForm.Showing or
-    not LParentForm.HandleAllocated or not FCommandEdit.HandleAllocated or
-    not FCommandEdit.CanFocus then
-    Exit;
-  FCommandEdit.SetFocus;
+  FFocusQueued := True;
+  TThread.Queue(
+    nil,
+    procedure
+    begin
+      if LGuard.IsAlive then
+        ApplyDeferredFocus(LGuard);
+    end
+  );
 end;
 
 procedure TRadIATerminalFrame.FinishCommand(

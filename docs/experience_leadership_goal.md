@@ -177,8 +177,8 @@ tool e limita listas extensas, sem criar polling ou controlar uma sessão por co
 **Entregue até aqui:** manifestos de comandos com hot reload, instalação transacional, pacote
 fechado com limites e SHA-256, assinatura RSA-SHA256 via Windows CNG, fingerprint, consentimento no
 primeiro uso, trust store local e revogação visual de publicadores. O catálogo remoto já possui
-schema, HTTPS, limites, download transacional e vínculo ao pacote assinado; navegador visual,
-skills, templates e tools declarativas continuam pendentes.
+navegador visual assíncrono, busca, URL persistente, schema, HTTPS, limites, download transacional
+e vínculo ao pacote assinado; skills, templates e tools declarativas continuam pendentes.
 
 **Saída:** uma capacidade simples pode ser adicionada sem recompilar o RadIA ou reiniciar a IDE.
 

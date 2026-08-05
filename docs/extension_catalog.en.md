@@ -52,8 +52,16 @@ The catalog client:
 An unknown publisher still goes through first-use consent after these checks. A tampered catalog
 cannot turn an unknown key into a trusted key.
 
-## Integration status
+## Using the manager
 
-The schema, HTTPS transport, parser, transactional download, and cross-verification are implemented
-and covered by tests. The next M4 step connects this layer to the extension manager's asynchronous
-visual browser while keeping network operations off the IDE main thread.
+1. Open **Tools > Rad IA Extensions...**.
+2. Click **Browse catalog...**.
+3. Enter the catalog HTTPS URL and click **Load catalog**.
+4. Search by name, ID, description, or publisher.
+5. Select an extension and click **Download**.
+6. Review the publisher identity and fingerprint during first-use consent.
+
+Catalogs and packages are downloaded in the background without blocking the IDE UI thread. The URL
+is remembered in `%USERPROFILE%\RadIA\extension-catalog.json`; URL credentials are rejected and are
+never stored. The package enters the shared installation flow only after every check succeeds, so
+local and remote packages use the same trust policy.

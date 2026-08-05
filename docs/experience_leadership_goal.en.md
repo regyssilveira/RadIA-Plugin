@@ -170,9 +170,9 @@ bounds long lists, without introducing polling or controlling a session on its o
 
 **Delivered so far:** hot-reload command manifests, transactional installation, closed packages
 with limits and SHA-256, RSA-SHA256 through Windows CNG, fingerprints, first-use consent, a local
-trust store, and visual publisher revocation. The remote catalog now has a schema, HTTPS, limits,
-transactional downloads, and signed-package binding; its visual browser plus declarative skills,
-templates, and tools remain pending.
+trust store, and visual publisher revocation. The remote catalog now has an asynchronous visual
+browser, search, persisted URL, schema, HTTPS, limits, transactional downloads, and signed-package
+binding; declarative skills, templates, and tools remain pending.
 
 **Outcome:** simple capabilities can be added without rebuilding RadIA or restarting the IDE.
 

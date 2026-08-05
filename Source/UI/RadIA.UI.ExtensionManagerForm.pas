@@ -15,6 +15,7 @@ uses
 type
   TRadIAExtensionManagerForm = class(TForm)
   private
+    FCatalogButton: TButton;
     FCloseButton: TButton;
     FEnableButton: TButton;
     FFooterPanel: TPanel;
@@ -31,6 +32,7 @@ type
     FTrustStoreAvailable: Boolean;
     procedure ApplyCurrentTheme;
     function BuildReservedCommands: TArray<string>;
+    procedure CatalogClick(Sender: TObject);
     procedure CloseClick(Sender: TObject);
     function ConfirmPackageTrust(
       const APackageFileName: string;
@@ -41,6 +43,7 @@ type
       out ADiagnostic: TRadIADeclarativeExtensionDiagnostic
     ): Boolean;
     procedure InstallClick(Sender: TObject);
+    procedure InstallPackageFile(const AFileName: string);
     procedure ListSelectItem(
       Sender: TObject;
       Item: TListItem;
@@ -73,7 +76,8 @@ uses
   Vcl.Controls,
   RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.Mediator,
-  RadIA.Core.PromptTemplates;
+  RadIA.Core.PromptTemplates,
+  RadIA.UI.ExtensionCatalogForm;
 
 type
   TRadIATrustedPublishersForm = class(TForm)
@@ -299,6 +303,12 @@ begin
   FPublishersButton.Enabled := FTrustStoreAvailable;
   FPublishersButton.OnClick := PublishersClick;
 
+  FCatalogButton := TButton.Create(Self);
+  FCatalogButton.Parent := FFooterPanel;
+  FCatalogButton.SetBounds(648, 8, 132, 27);
+  FCatalogButton.Caption := 'Browse catalog...';
+  FCatalogButton.OnClick := CatalogClick;
+
   FCloseButton := TButton.Create(Self);
   FCloseButton.Parent := FFooterPanel;
   FCloseButton.SetBounds(822, 8, 90, 27);
@@ -392,6 +402,24 @@ end;
 procedure TRadIAExtensionManagerForm.CloseClick(Sender: TObject);
 begin
   ModalResult := mrClose;
+end;
+
+procedure TRadIAExtensionManagerForm.CatalogClick(Sender: TObject);
+var
+  LPackageFileName: string;
+begin
+  if not BrowseRadIAExtensionCatalog(
+    Self,
+    TPath.Combine(TPath.GetHomePath, 'RadIA'),
+    LPackageFileName
+  ) then
+    Exit;
+  try
+    InstallPackageFile(LPackageFileName);
+  finally
+    if TFile.Exists(LPackageFileName) then
+      TFile.Delete(LPackageFileName);
+  end;
 end;
 
 function TRadIAExtensionManagerForm.ConfirmPackageTrust(
@@ -517,7 +545,6 @@ end;
 
 procedure TRadIAExtensionManagerForm.InstallClick(Sender: TObject);
 var
-  LDecision: TRadIAExtensionPackageTrustDecision;
   LExtensionId: string;
   LMessage: string;
 begin
@@ -525,36 +552,47 @@ begin
     Exit;
   if SameText(ExtractFileExt(FOpenDialog.FileName), '.radiaext') then
   begin
-    try
-      if not ConfirmPackageTrust(
-        FOpenDialog.FileName,
-        LDecision
-      ) then
-      begin
-        SetStatus('Package installation cancelled.');
-        Exit;
-      end;
-      TRadIATrustedExtensionPackageInstaller.Install(
-        FOpenDialog.FileName,
-        FManager,
-        FReservedCommands,
-        FTrustStore,
-        LDecision,
-        LExtensionId,
-        LMessage
-      );
-    except
-      on E: Exception do
-        LMessage := 'Package rejected: ' + E.Message;
+    InstallPackageFile(FOpenDialog.FileName);
+    Exit;
+  end;
+  FManager.InstallOrUpdate(
+    FOpenDialog.FileName,
+    FReservedCommands,
+    LExtensionId,
+    LMessage
+  );
+  SetStatus(LMessage);
+  RefreshList;
+  NotifyChat;
+end;
+
+procedure TRadIAExtensionManagerForm.InstallPackageFile(
+  const AFileName: string
+);
+var
+  LDecision: TRadIAExtensionPackageTrustDecision;
+  LExtensionId: string;
+  LMessage: string;
+begin
+  try
+    if not ConfirmPackageTrust(AFileName, LDecision) then
+    begin
+      SetStatus('Package installation cancelled.');
+      Exit;
     end;
-  end
-  else
-    FManager.InstallOrUpdate(
-      FOpenDialog.FileName,
+    TRadIATrustedExtensionPackageInstaller.Install(
+      AFileName,
+      FManager,
       FReservedCommands,
+      FTrustStore,
+      LDecision,
       LExtensionId,
       LMessage
     );
+  except
+    on E: Exception do
+      LMessage := 'Package rejected: ' + E.Message;
+  end;
   SetStatus(LMessage);
   RefreshList;
   NotifyChat;

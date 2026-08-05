@@ -60,6 +60,8 @@ type
     procedure RejectsDownloadedPackageHashMismatch;
     [Test]
     procedure RejectsPublisherMismatch;
+    [Test]
+    procedure PersistsValidatedCatalogUrl;
   end;
 
 implementation
@@ -266,6 +268,32 @@ begin
     'https://catalog.example.test/catalog.json',
     FTransport.LastUrl
   );
+end;
+
+procedure TRadIAExtensionCatalogTests.PersistsValidatedCatalogUrl;
+var
+  LFileName: string;
+  LPreferences: TRadIAExtensionCatalogPreferences;
+begin
+  LFileName := TPath.Combine(FDirectory, 'catalog-preferences.json');
+  LPreferences := TRadIAExtensionCatalogPreferences.Create(LFileName);
+  try
+    Assert.AreEqual('', LPreferences.LoadUrl);
+    LPreferences.SaveUrl('https://catalog.example.test/catalog.json');
+    Assert.AreEqual(
+      'https://catalog.example.test/catalog.json',
+      LPreferences.LoadUrl
+    );
+    Assert.WillRaise(
+      procedure
+      begin
+        LPreferences.SaveUrl('http://catalog.example.test/catalog.json');
+      end,
+      EArgumentException
+    );
+  finally
+    LPreferences.Free;
+  end;
 end;
 
 procedure TRadIAExtensionCatalogTests.
