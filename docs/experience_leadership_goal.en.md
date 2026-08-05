@@ -206,6 +206,11 @@ Markdown, text, AsciiDoc, and reStructuredText documentation. Documentation disc
 to the root and `docs/doc` folders with file-count, size, and workspace-boundary limits; the OTA
 notifier uses the same centralized format policy.
 
+As a foundation for approved history, the sanitized checkpoint catalog now preserves `projectId`
+and `planApproved` and provides a bounded query that returns only completed runs with an approved
+plan belonging exactly to the requested project. The query does not expose tool arguments or
+results. Opt-in ingestion of these summaries into the index remains pending.
+
 ### M6 — Installation and first value
 
 - Create a signed visual installer and prepare an IDE package-manager channel.

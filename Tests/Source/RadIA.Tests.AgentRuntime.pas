@@ -166,6 +166,8 @@ type
     [Test]
     procedure TestFileStoreSearchesSafeCheckpointSummaries;
     [Test]
+    procedure TestFileStoreFiltersApprovedCompletedHistoryByProject;
+    [Test]
     procedure TestFileStoreUpdatesOnlyPendingValidatedPlan;
     [Test]
     procedure TestProviderParsesToolDecision;
@@ -496,6 +498,7 @@ begin
     LStore.Save(
       'build-session',
       '{"sessionId":"build-session","objective":"Repair build",' +
+      '"projectId":"C:\\Work\\Sample.dproj","planApproved":true,' +
       '"status":"completed","steps":[{"arguments":"secret"}]}'
     );
     LStore.Save(
@@ -515,8 +518,66 @@ begin
     Assert.AreEqual('build-session', LRuns[0].SessionId);
     Assert.AreEqual('Repair build', LRuns[0].Objective);
     Assert.AreEqual('completed', LRuns[0].Status);
+    Assert.AreEqual('C:\Work\Sample.dproj', LRuns[0].ProjectId);
+    Assert.IsTrue(LRuns[0].PlanApproved);
     Assert.AreEqual(1, LRuns[0].StepCount);
     Assert.IsNotEmpty(LRuns[0].UpdatedAtUtc);
+  finally
+    LStore.Free;
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestFileStoreFiltersApprovedCompletedHistoryByProject;
+var
+  LDirectory: string;
+  LRuns: TArray<TRadIAAgentCheckpointSummary>;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-approved-history-' + TGUID.NewGuid.ToString
+  );
+  LStore := TRadIAAgentFileCheckpointStore.Create(LDirectory);
+  try
+    LStore.Save(
+      'approved-complete',
+      '{"sessionId":"approved-complete","projectId":"project-a",' +
+      '"objective":"Repair approved build","status":"completed",' +
+      '"planApproved":true,"steps":[]}'
+    );
+    LStore.Save(
+      'unapproved-complete',
+      '{"sessionId":"unapproved-complete","projectId":"project-a",' +
+      '"objective":"Unapproved","status":"completed",' +
+      '"planApproved":false,"steps":[]}'
+    );
+    LStore.Save(
+      'approved-paused',
+      '{"sessionId":"approved-paused","projectId":"project-a",' +
+      '"objective":"Paused","status":"paused",' +
+      '"planApproved":true,"steps":[]}'
+    );
+    LStore.Save(
+      'other-project',
+      '{"sessionId":"other-project","projectId":"project-b",' +
+      '"objective":"Other project","status":"completed",' +
+      '"planApproved":true,"steps":[]}'
+    );
+
+    LRuns := LStore.SearchApproved('project-a', 10);
+
+    Assert.AreEqual<Integer>(1, Length(LRuns));
+    Assert.AreEqual('approved-complete', LRuns[0].SessionId);
+    Assert.AreEqual('Repair approved build', LRuns[0].Objective);
+    Assert.AreEqual('project-a', LRuns[0].ProjectId);
+    Assert.IsTrue(LRuns[0].PlanApproved);
+    Assert.AreEqual<Integer>(
+      0,
+      Length(LStore.SearchApproved('project-b', 0))
+    );
   finally
     LStore.Free;
     if TDirectory.Exists(LDirectory) then

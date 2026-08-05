@@ -148,6 +148,8 @@ type
 
   TRadIAAgentCheckpointSummary = record
   private
+    FPlanApproved: Boolean;
+    FProjectId: string;
     FSessionId: string;
     FObjective: string;
     FStatus: string;
@@ -159,8 +161,12 @@ type
       const AObjective: string;
       const AStatus: string;
       const AStepCount: Integer;
-      const AUpdatedAtUtc: string
+      const AUpdatedAtUtc: string;
+      const AProjectId: string;
+      const APlanApproved: Boolean
     );
+    property ProjectId: string read FProjectId;
+    property PlanApproved: Boolean read FPlanApproved;
     property SessionId: string read FSessionId;
     property Objective: string read FObjective;
     property Status: string read FStatus;
@@ -189,6 +195,10 @@ type
     ): Boolean;
     function Search(
       const AQuery: string
+    ): TArray<TRadIAAgentCheckpointSummary>;
+    function SearchApproved(
+      const AProjectId: string;
+      const AMaxCount: Integer
     ): TArray<TRadIAAgentCheckpointSummary>;
     function UpdatePlan(
       const ASessionId: string;
@@ -567,9 +577,13 @@ constructor TRadIAAgentCheckpointSummary.Create(
   const AObjective: string;
   const AStatus: string;
   const AStepCount: Integer;
-  const AUpdatedAtUtc: string
+  const AUpdatedAtUtc: string;
+  const AProjectId: string;
+  const APlanApproved: Boolean
 );
 begin
+  FPlanApproved := APlanApproved;
+  FProjectId := AProjectId;
   FSessionId := ASessionId;
   FObjective := AObjective;
   FStatus := AStatus;
@@ -688,6 +702,8 @@ var
   LFiles: TArray<string>;
   LList: TList<TRadIAAgentCheckpointSummary>;
   LObjective: string;
+  LPlanApproved: Boolean;
+  LProjectId: string;
   LQuery: string;
   LRoot: TJSONObject;
   LSessionId: string;
@@ -720,6 +736,8 @@ begin
           TPath.GetFileNameWithoutExtension(LFileName)
         );
         LObjective := LRoot.GetValue<string>('objective', '');
+        LPlanApproved := LRoot.GetValue<Boolean>('planApproved', False);
+        LProjectId := LRoot.GetValue<string>('projectId', '');
         LStatus := LRoot.GetValue<string>('status', 'unknown');
         if (LQuery <> '') and
           not ContainsText(LSessionId, LQuery) and
@@ -733,7 +751,9 @@ begin
             LObjective,
             LStatus,
             LSteps.Count,
-            DateToISO8601(TFile.GetLastWriteTimeUtc(LFileName), True)
+            DateToISO8601(TFile.GetLastWriteTimeUtc(LFileName), True),
+            LProjectId,
+            LPlanApproved
           )
         else
           LSummary := TRadIAAgentCheckpointSummary.Create(
@@ -741,7 +761,9 @@ begin
             LObjective,
             LStatus,
             0,
-            DateToISO8601(TFile.GetLastWriteTimeUtc(LFileName), True)
+            DateToISO8601(TFile.GetLastWriteTimeUtc(LFileName), True),
+            LProjectId,
+            LPlanApproved
           );
         LList.Add(LSummary);
       finally
@@ -759,6 +781,36 @@ begin
         end
       )
     );
+    Result := LList.ToArray;
+  finally
+    LList.Free;
+  end;
+end;
+
+function TRadIAAgentFileCheckpointStore.SearchApproved(
+  const AProjectId: string;
+  const AMaxCount: Integer
+): TArray<TRadIAAgentCheckpointSummary>;
+var
+  LList: TList<TRadIAAgentCheckpointSummary>;
+  LSummary: TRadIAAgentCheckpointSummary;
+begin
+  Result := [];
+  if (Trim(AProjectId) = '') or
+    (AMaxCount < 1) or
+    (AMaxCount > 200) then
+    Exit;
+  LList := TList<TRadIAAgentCheckpointSummary>.Create;
+  try
+    for LSummary in Search('') do
+    begin
+      if LSummary.PlanApproved and
+        SameText(LSummary.Status, 'completed') and
+        SameText(LSummary.ProjectId, AProjectId) then
+        LList.Add(LSummary);
+      if LList.Count >= AMaxCount then
+        Break;
+    end;
     Result := LList.ToArray;
   finally
     LList.Free;
