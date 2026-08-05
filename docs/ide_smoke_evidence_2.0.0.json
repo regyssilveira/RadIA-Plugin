@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "product": "RadIA",
+  "productVersion": "2.0.0",
+  "sourceCommit": "d50ad9f7ddd4f00fb9536b3b373d912d00b34558",
+  "cyclesRequestedPerTarget": 10,
+  "toolCount": 90,
+  "dockingExercised": true,
+  "desktopStateRestored": true,
+  "orphanProcessesDetected": false,
+  "targets": [
+    {
+      "delphiVersion": "22.0",
+      "platform": "Win32",
+      "releasePackage": "RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip",
+      "releasePackageSha256": "3C0ABEBEC83508269FC2E8A376F5AB54FCF18055BE43F70B278BD0596D5FA194",
+      "installedBplSha256": "FF2E6499EDD24D8C2B6978753B6BB036A67AB5C65E14D78F5CB7F03704E6D7DE",
+      "cyclesPassed": 10,
+      "minimumSeconds": 7.96,
+      "maximumSeconds": 9.26,
+      "generatedAtUtc": "2026-08-05T19:53:08.1310074Z"
+    },
+    {
+      "delphiVersion": "23.0",
+      "platform": "Win32",
+      "releasePackage": "RadIA-v2.0.0-Delphi-23.0-Win32-Release.zip",
+      "releasePackageSha256": "E2DB4EBF2BE8D66BC7589731180D44B395BF3376BB830A1F38F33B03B3C89805",
+      "installedBplSha256": "372BF08F03F89FA7CB0DCB8FC564E4CCE54995B946F4B4B659689EECFFF1CD14",
+      "cyclesPassed": 10,
+      "minimumSeconds": 46.77,
+      "maximumSeconds": 49.34,
+      "generatedAtUtc": "2026-08-05T20:17:52.3813503Z"
+    },
+    {
+      "delphiVersion": "37.0",
+      "platform": "Win32",
+      "releasePackage": "RadIA-v2.0.0-Delphi-37.0-Win32-Release.zip",
+      "releasePackageSha256": "73170D6A1A3F7BD7F8294AEDFCC9A1E240E76DB7C8A6911416F095F3C03740C6",
+      "installedBplSha256": "9D7C0A3821F5D7F8AD3C32947895DBD5400D30C681CF43440DD7E917F3B9F833",
+      "cyclesPassed": 10,
+      "minimumSeconds": 19.24,
+      "maximumSeconds": 73.78,
+      "generatedAtUtc": "2026-08-05T20:27:05.0588487Z"
+    },
+    {
+      "delphiVersion": "37.0",
+      "platform": "Win64",
+      "releasePackage": "RadIA-v2.0.0-Delphi-37.0-Win64-Release.zip",
+      "releasePackageSha256": "21F1DE2E6E38242C96FA15A2752138F9ADE417C4572CD75AD2C5DE9F6E43F868",
+      "installedBplSha256": "C9174E096C926855316900065A2045421310316B4AC26C486D666AA68D8D9022",
+      "cyclesPassed": 10,
+      "minimumSeconds": 43.31,
+      "maximumSeconds": 99.99,
+      "generatedAtUtc": "2026-08-05T20:38:03.3050021Z"
+    }
+  ]
+}

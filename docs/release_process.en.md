@@ -195,6 +195,10 @@ Add `-IDE64` for Delphi 13 IDE64. Evidence generation is fail-closed: it rejects
 installed BPL that differs from the BPL in the proven ZIP. Close every IDE instance before
 installation and smoke testing; the script also refuses to run when the target is already open.
 
+The versioned 2.0.0 matrix summary is stored in `ide_smoke_evidence_2.0.0.json`. It records ZIP and
+BPL hashes, 10 passing cycles per target, duration range, the 90-tool catalog, native docking,
+desktop restoration, and the absence of orphan processes.
+
 ---
 
 ## Final Checklist

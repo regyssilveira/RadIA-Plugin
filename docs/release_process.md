@@ -195,6 +195,10 @@ recusa `-SkipPackageHashCheck`, pacote ausente, hash divergente, árvore suja no
 instalada diferente da BPL contida no ZIP comprovado. Feche todas as instâncias da IDE antes da
 instalação e do smoke; o script também recusa executar quando o target já está aberto.
 
+O resumo versionado da matriz 2.0.0 está em `ide_smoke_evidence_2.0.0.json`. Ele registra os hashes
+dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 90 tools,
+docking nativo, restauração do desktop e ausência de processos órfãos.
+
 ---
 
 ## Checklist Final

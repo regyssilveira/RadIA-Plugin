@@ -276,7 +276,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 
 - [x] Executar a matriz completa de build e 100% dos testes.
 - Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
-- Executar dez ciclos de instalação, uso, atualização e shutdown por combinação suportada.
+- [x] Executar dez ciclos de instalação, uso, atualização e shutdown por combinação suportada.
 - Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
 - [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
 - [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
@@ -284,14 +284,15 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
-A prova reproduzível atual do M8 está em `release_evidence_2.0.0.json`: os quatro pacotes foram
-gerados do commit `16cafab825449474cf96a0d3954f6dec4582dc3f`, com árvore rastreada limpa, validação
-positiva e negativa por target e SHA-256 independente. Validação visual na IDE, ciclos e jornada
-contínua permanecem abertos e não são inferidos dessa evidência automatizada.
+A prova reproduzível dos pacotes está em `release_evidence_2.0.0.json`: os quatro ZIPs foram
+gerados do commit `d50ad9f7ddd4f00fb9536b3b373d912d00b34558`, com árvore rastreada limpa,
+validação positiva e negativa por target e SHA-256 independente.
 
-O smoke da IDE agora pode gerar evidência JSON ligada ao pacote publicado, commit de origem e BPL
-instalada. O modo de evidência recusa qualquer bypass de hash. A execução dos ciclos com a build
-comprovada permanece aberta enquanto houver IDE em uso impedindo a atualização segura das BPLs.
+A matriz real consolidada está em `ide_smoke_evidence_2.0.0.json`. Delphi 11 Win32, Delphi 12
+Win32, Delphi 13 Win32 e Delphi 13 IDE64 completaram 10/10 ciclos cada, totalizando 40 ciclos
+ligados ao ZIP publicado, ao commit de origem e à BPL instalada. Todos expuseram 90 tools,
+exercitaram o docking nativo `TOTADockForm`, restauraram o estado do desktop e terminaram sem
+processos órfãos. A jornada visual contínua completa permanece aberta e não é inferida do smoke.
 
 A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
 silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e

@@ -269,7 +269,7 @@ Credential fields are rejected recursively and never enter extension packages.
 
 - [x] Run the complete build and test matrix.
 - Validate inline assistance, terminal, execution center, extensions, and knowledge in a real IDE.
-- Complete ten installation, usage, update, and shutdown cycles per supported combination.
+- [x] Complete ten installation, usage, update, and shutdown cycles per supported combination.
 - Pass the create, edit, design, test, debug, fix, and commit continuous journey.
 - [x] Regenerate four packages from one commit and publish independent hashes.
 - [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
@@ -277,14 +277,16 @@ Credential fields are rejected recursively and never enter extension packages.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
 
-The current reproducible M8 proof is stored in `release_evidence_2.0.0.json`: all four packages were
-built from commit `16cafab825449474cf96a0d3954f6dec4582dc3f`, with a clean tracked worktree,
-positive and negative validation per target, and independent SHA-256 hashes. Visual IDE
-validation, cycles, and the continuous journey remain open and are not inferred from automation.
+The reproducible package proof is stored in `release_evidence_2.0.0.json`: all four ZIP files were
+built from commit `d50ad9f7ddd4f00fb9536b3b373d912d00b34558`, with a clean tracked worktree,
+positive and negative validation per target, and independent SHA-256 hashes.
 
-The IDE smoke can now emit JSON evidence bound to the published package, source commit, and
-installed BPL. Evidence mode rejects every hash bypass. Running the cycles with the proven build
-remains open while an active IDE session prevents safe BPL replacement.
+The consolidated real-IDE matrix is stored in `ide_smoke_evidence_2.0.0.json`. Delphi 11 Win32,
+Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 completed 10/10 cycles each, totaling 40
+cycles bound to the published ZIP, source commit, and installed BPL. Every target exposed 90
+tools, exercised native `TOTADockForm` docking, restored the desktop state, and exited without
+orphan processes. The complete continuous visual journey remains open and is not inferred from
+the smoke test.
 
 The reproducible audit is stored in `release_audit_2.0.0.en.md`. It removed the only silent Web
 connection at startup, added semantics and keyboard operation to Web surfaces, and created a local
