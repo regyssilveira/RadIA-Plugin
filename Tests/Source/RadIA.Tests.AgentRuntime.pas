@@ -146,6 +146,8 @@ type
     [Test]
     procedure TestMutationRequiresSuccessfulBuildBeforeCompletion;
     [Test]
+    procedure TestValidationSnapshotIncludesBuildAndDUnitXEvidence;
+    [Test]
     procedure TestFailedBuildRequiresCorrectionAndSuccessfulRebuild;
     [Test]
     procedure TestToolFailureIsAddedToDecisionContext;
@@ -1251,10 +1253,83 @@ begin
     Assert.AreEqual('Correction validated.', LResult.Message);
     Assert.AreEqual(2, LExecutorObject.CallCount);
     Assert.Contains(LStoreObject.SnapshotJson, '"risk":"reversibleWrite"');
+    Assert.Contains(LStoreObject.SnapshotJson, '"buildStatus":"succeeded"');
     Assert.Contains(
       LStoreObject.SnapshotJson.Replace('\/', '/'),
       '"affectedFiles":["Source/Unit1.pas"]'
     );
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestValidationSnapshotIncludesBuildAndDUnitXEvidence;
+var
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LStoreObject: TRadIAMemoryAgentCheckpointStore;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{}')
+  );
+  LExecutorObject.OnExecute :=
+    procedure
+    begin
+      case LExecutorObject.CallCount of
+        2:
+          LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+            '{"status":"succeeded","durationMs":1250,' +
+            '"messages":[{"text":"Hint"}]}'
+          );
+        3:
+          LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+            '{"status":"succeeded","durationMs":2400,"report":{' +
+            '"total":12,"passed":11,"failed":0,"errors":0,' +
+            '"ignored":1}}'
+          );
+      else
+        LExecutorObject.ToolResult := TRadIAToolResult.Succeeded('{}');
+      end;
+    end;
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Approve validation plan.',
+      '[{"title":"Change, build, and test"}]'
+    ),
+    TRadIAAgentDecision.CallTool('ApplyPatch', '{"previewId":"p1"}'),
+    TRadIAAgentDecision.CallTool('BuildProject', '{"mode":"make"}'),
+    TRadIAAgentDecision.CallTool(
+      'RunDUnitXTests',
+      '{"executablePath":"tests.exe"}'
+    ),
+    TRadIAAgentDecision.Complete('Validation evidence captured.')
+  ]);
+  LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
+  LStore := LStoreObject;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Capture build and test evidence.',
+      'validation-evidence-session',
+      'project',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('validation-evidence-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.Contains(LStoreObject.SnapshotJson, '"buildDurationMilliseconds":1250');
+    Assert.Contains(LStoreObject.SnapshotJson, '"buildMessageCount":1');
+    Assert.Contains(LStoreObject.SnapshotJson, '"testStatus":"succeeded"');
+    Assert.Contains(LStoreObject.SnapshotJson, '"testDurationMilliseconds":2400');
+    Assert.Contains(LStoreObject.SnapshotJson, '"testTotal":12');
+    Assert.Contains(LStoreObject.SnapshotJson, '"testPassed":11');
+    Assert.Contains(LStoreObject.SnapshotJson, '"testIgnored":1');
   finally
     LRuntime.Free;
   end;

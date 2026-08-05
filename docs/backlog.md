@@ -81,6 +81,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         somente em pausa, reutilizando consentimento e registrando a etapa de origem.
     *   M3 entregue nesta etapa: cada etapa mostra o risco formal da tool e agrega arquivos
         afetados somente a partir de campos de caminho reconhecidos.
+    *   M3 entregue nesta etapa: evidências estruturadas exibem duração e mensagens do build,
+        além das contagens completas da última execução DUnitX.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

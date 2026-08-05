@@ -124,6 +124,9 @@ O cartão da execução mostra a timeline expansível de cada tool, incluindo ri
 correlação, argumentos, resultados, erros e arquivos afetados. Os arquivos são extraídos somente
 de campos de caminho reconhecidos em chamadas mutáveis concluídas com sucesso; texto livre não é
 tratado como caminho.
+Quando a jornada inclui validação, a seção **Validation evidence** apresenta status e duração do
+build, quantidade de mensagens do compilador e contagens DUnitX de total, aprovados, falhas, erros
+e ignorados. Esses dados permanecem no checkpoint e voltam a aparecer ao abrir o histórico.
 
 ### 3.2 Consentimento
 

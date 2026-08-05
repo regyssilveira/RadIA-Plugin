@@ -325,6 +325,8 @@ function renderAgentImpact(card, steps) {
 function renderAgentValidation(card, state) {
   const validation = state.validation || {};
   const validationElement = card.querySelector('.agent-run-validation');
+  const buildStatus = validation.buildStatus ||
+    (validation.buildPassed ? 'succeeded' : 'notRun');
   let testStatus = 'not-run';
   if (validation.testsRun) {
     testStatus = validation.testsPassed ? 'passed' : 'failed';
@@ -332,7 +334,7 @@ function renderAgentValidation(card, state) {
   validationElement.replaceChildren();
   const indicators = [
     ['Changes', validation.mutationPending ? 'pending' : 'clean'],
-    ['Build', validation.buildPassed ? 'passed' : 'not-passed'],
+    ['Build', buildStatus === 'succeeded' ? 'passed' : 'not-passed'],
     ['Tests', testStatus]
   ];
   indicators.forEach(([label, value]) => {
@@ -341,6 +343,36 @@ function renderAgentValidation(card, state) {
     indicator.textContent = `${label}: ${value.replace('-', ' ')}`;
     validationElement.appendChild(indicator);
   });
+  const evidenceLines = [];
+  if (buildStatus !== 'notRun') {
+    evidenceLines.push(
+      `Build: ${buildStatus} · ` +
+      `${Math.max(0, validation.buildDurationMilliseconds || 0)} ms · ` +
+      `${Math.max(0, validation.buildMessageCount || 0)} compiler message(s)`
+    );
+  }
+  if (validation.testsRun) {
+    evidenceLines.push(
+      `DUnitX: ${validation.testStatus || testStatus} · ` +
+      `${Math.max(0, validation.testDurationMilliseconds || 0)} ms · ` +
+      `${Math.max(0, validation.testTotal || 0)} total · ` +
+      `${Math.max(0, validation.testPassed || 0)} passed · ` +
+      `${Math.max(0, validation.testFailed || 0)} failed · ` +
+      `${Math.max(0, validation.testErrors || 0)} error(s) · ` +
+      `${Math.max(0, validation.testIgnored || 0)} ignored`
+    );
+  }
+  if (evidenceLines.length > 0) {
+    const evidence = document.createElement('details');
+    evidence.className = 'agent-validation-evidence';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Validation evidence';
+    const content = document.createElement('pre');
+    content.textContent = evidenceLines.join('\n');
+    evidence.appendChild(summary);
+    evidence.appendChild(content);
+    validationElement.appendChild(evidence);
+  }
 }
 
 function renderAgentPlanItems(planElement, plan) {

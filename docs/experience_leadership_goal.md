@@ -141,6 +141,9 @@ pausados para revisão.
 Cada etapa agora apresenta a classificação formal de risco da ferramenta e agrega os arquivos
 afetados informados em campos de caminho reconhecidos. O resumo não interpreta texto livre de
 argumentos ou resultados, evitando expor conteúdo arbitrário como se fosse um caminho.
+A evidência de validação também deixou de ser apenas binária: o checkpoint e o cartão mostram o
+status e a duração do build, a quantidade de mensagens do compilador e o resumo DUnitX com total,
+aprovados, falhas, erros e ignorados.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

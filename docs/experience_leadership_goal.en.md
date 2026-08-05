@@ -136,6 +136,9 @@ through consent again, record the source step, and remain paused for review.
 Each step now presents the tool's formal risk classification and aggregates affected files from
 recognized path fields. The summary does not interpret free-form argument or result text, avoiding
 the exposure of arbitrary content as if it were a path.
+Validation evidence is no longer merely binary: the checkpoint and live card show build status
+and duration, compiler message count, and the DUnitX summary with totals, passes, failures, errors,
+and ignored tests.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

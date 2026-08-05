@@ -218,8 +218,18 @@ type
     TRadIAAgentValidationState = record
       MutationPending: Boolean;
       BuildPassed: Boolean;
+      BuildStatus: string;
+      BuildDurationMilliseconds: Int64;
+      BuildMessageCount: Integer;
       TestsRun: Boolean;
       TestsPassed: Boolean;
+      TestStatus: string;
+      TestDurationMilliseconds: Int64;
+      TestTotal: Integer;
+      TestPassed: Integer;
+      TestFailed: Integer;
+      TestErrors: Integer;
+      TestIgnored: Integer;
     end;
   private
     FToolExecutor: IRadIAToolExecutor;
@@ -306,6 +316,14 @@ type
     function EffectiveTotalTokens: Integer;
     function EffectiveEstimatedCostMicros: Int64;
     function AnalyzeValidationState: TRadIAAgentValidationState;
+    procedure ApplyBuildEvidence(
+      const AStep: TRadIAAgentStep;
+      var AValidation: TRadIAAgentValidationState
+    );
+    procedure ApplyTestEvidence(
+      const AStep: TRadIAAgentStep;
+      var AValidation: TRadIAAgentValidationState
+    );
     function IsMutationTool(const AToolName: string): Boolean;
     function ResolveRiskName(const AToolName: string): string;
     function ExtractAffectedFiles(
@@ -925,27 +943,112 @@ var
   LStep: TRadIAAgentStep;
 begin
   Result := Default(TRadIAAgentValidationState);
+  Result.BuildStatus := 'notRun';
+  Result.TestStatus := 'notRun';
   for LStep in FSteps do
   begin
     if IsMutationTool(LStep.ToolName) and LStep.Success then
     begin
       Result.MutationPending := True;
       Result.BuildPassed := False;
+      Result.BuildStatus := 'notRun';
+      Result.BuildDurationMilliseconds := 0;
+      Result.BuildMessageCount := 0;
       Result.TestsRun := False;
       Result.TestsPassed := False;
+      Result.TestStatus := 'notRun';
+      Result.TestDurationMilliseconds := 0;
+      Result.TestTotal := 0;
+      Result.TestPassed := 0;
+      Result.TestFailed := 0;
+      Result.TestErrors := 0;
+      Result.TestIgnored := 0;
       Continue;
     end;
     if not Result.MutationPending then
       Continue;
     if SameText(LStep.ToolName, 'BuildProject') then
-      Result.BuildPassed := LStep.Success and
-        LStep.ResultJson.Contains('"status":"succeeded"');
+      ApplyBuildEvidence(LStep, Result);
     if SameText(LStep.ToolName, 'RunDUnitXTests') then
+      ApplyTestEvidence(LStep, Result);
+  end;
+end;
+
+procedure TRadIAAgentRuntime.ApplyBuildEvidence(
+  const AStep: TRadIAAgentStep;
+  var AValidation: TRadIAAgentValidationState
+);
+var
+  LMessages: TJSONArray;
+  LRoot: TJSONObject;
+  LValue: TJSONValue;
+begin
+  AValidation.BuildStatus := 'failed';
+  AValidation.BuildDurationMilliseconds := AStep.DurationMilliseconds;
+  AValidation.BuildMessageCount := 0;
+  LRoot := TJSONObject.ParseJSONValue(AStep.ResultJson) as TJSONObject;
+  if not Assigned(LRoot) then
+  begin
+    AValidation.BuildPassed := False;
+    Exit;
+  end;
+  try
+    AValidation.BuildStatus := LRoot.GetValue<string>('status', 'failed');
+    AValidation.BuildDurationMilliseconds := LRoot.GetValue<Int64>(
+      'durationMs',
+      AStep.DurationMilliseconds
+    );
+    LValue := LRoot.GetValue('messages');
+    if LValue is TJSONArray then
     begin
-      Result.TestsRun := True;
-      Result.TestsPassed := LStep.Success and
-        LStep.ResultJson.Contains('"status":"succeeded"');
+      LMessages := TJSONArray(LValue);
+      AValidation.BuildMessageCount := LMessages.Count;
     end;
+    AValidation.BuildPassed := AStep.Success and
+      SameText(AValidation.BuildStatus, 'succeeded');
+  finally
+    LRoot.Free;
+  end;
+end;
+
+procedure TRadIAAgentRuntime.ApplyTestEvidence(
+  const AStep: TRadIAAgentStep;
+  var AValidation: TRadIAAgentValidationState
+);
+var
+  LReport: TJSONObject;
+  LRoot: TJSONObject;
+  LValue: TJSONValue;
+begin
+  AValidation.TestsRun := True;
+  AValidation.TestStatus := 'failed';
+  AValidation.TestDurationMilliseconds := AStep.DurationMilliseconds;
+  LRoot := TJSONObject.ParseJSONValue(AStep.ResultJson) as TJSONObject;
+  if not Assigned(LRoot) then
+  begin
+    AValidation.TestsPassed := False;
+    Exit;
+  end;
+  try
+    AValidation.TestStatus := LRoot.GetValue<string>('status', 'failed');
+    AValidation.TestDurationMilliseconds := LRoot.GetValue<Int64>(
+      'durationMs',
+      AStep.DurationMilliseconds
+    );
+    LValue := LRoot.GetValue('report');
+    if LValue is TJSONObject then
+    begin
+      LReport := TJSONObject(LValue);
+      AValidation.TestTotal := LReport.GetValue<Integer>('total', 0);
+      AValidation.TestPassed := LReport.GetValue<Integer>('passed', 0);
+      AValidation.TestFailed := LReport.GetValue<Integer>('failed', 0);
+      AValidation.TestErrors := LReport.GetValue<Integer>('errors', 0);
+      AValidation.TestIgnored := LReport.GetValue<Integer>('ignored', 0);
+    end;
+    AValidation.TestsPassed := AStep.Success and
+      SameText(AValidation.TestStatus, 'succeeded');
+  finally
+    LRoot.Free;
   end;
 end;
 
@@ -1043,6 +1146,15 @@ begin
       'buildPassed',
       TJSONBool.Create(LValidation.BuildPassed)
     );
+    LValidationJson.AddPair('buildStatus', LValidation.BuildStatus);
+    LValidationJson.AddPair(
+      'buildDurationMilliseconds',
+      TJSONNumber.Create(LValidation.BuildDurationMilliseconds)
+    );
+    LValidationJson.AddPair(
+      'buildMessageCount',
+      TJSONNumber.Create(LValidation.BuildMessageCount)
+    );
     LValidationJson.AddPair(
       'testsRun',
       TJSONBool.Create(LValidation.TestsRun)
@@ -1050,6 +1162,31 @@ begin
     LValidationJson.AddPair(
       'testsPassed',
       TJSONBool.Create(LValidation.TestsPassed)
+    );
+    LValidationJson.AddPair('testStatus', LValidation.TestStatus);
+    LValidationJson.AddPair(
+      'testDurationMilliseconds',
+      TJSONNumber.Create(LValidation.TestDurationMilliseconds)
+    );
+    LValidationJson.AddPair(
+      'testTotal',
+      TJSONNumber.Create(LValidation.TestTotal)
+    );
+    LValidationJson.AddPair(
+      'testPassed',
+      TJSONNumber.Create(LValidation.TestPassed)
+    );
+    LValidationJson.AddPair(
+      'testFailed',
+      TJSONNumber.Create(LValidation.TestFailed)
+    );
+    LValidationJson.AddPair(
+      'testErrors',
+      TJSONNumber.Create(LValidation.TestErrors)
+    );
+    LValidationJson.AddPair(
+      'testIgnored',
+      TJSONNumber.Create(LValidation.TestIgnored)
     );
     LRoot.AddPair('validation', LValidationJson);
     LStepArray := TJSONArray.Create;

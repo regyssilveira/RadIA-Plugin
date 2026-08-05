@@ -81,6 +81,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         only while paused, reusing consent and recording the source step.
     *   M3 delivered in this increment: each step shows the tool's formal risk and aggregates
         affected files only from recognized path fields.
+    *   M3 delivered in this increment: structured evidence shows build duration and messages,
+        plus the complete counts from the latest DUnitX run.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

@@ -94,6 +94,9 @@ the [MCP bridge](mcp_integration_guide.en.md).
 The live run card shows an expandable timeline for every tool, including formal risk, duration,
 correlation, arguments, results, errors, and affected files. Files are extracted only from
 recognized path fields in successful mutation calls; free-form text is not treated as a path.
+When a journey includes validation, **Validation evidence** shows build status and duration,
+compiler message count, and DUnitX totals, passes, failures, errors, and ignored tests. These data
+remain in the checkpoint and return when the run is opened from history.
 
 ### 3.2 Consent
 
