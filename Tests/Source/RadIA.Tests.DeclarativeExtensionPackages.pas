@@ -60,6 +60,8 @@ type
     procedure RejectsPackageIdentityMismatch;
     [Test]
     procedure RejectsCompressedOversizedEntry;
+    [Test]
+    procedure ReadsSchemaTwoTemplatePackage;
   end;
 
 implementation
@@ -81,6 +83,12 @@ const
     '"enabled":true,"permissions":["chat.prompt"],"commands":[{' +
     '"name":"Package review","description":"Review from a verified package.",' +
     '"command":"/package-review","prompt":"Review package input: {code}"' +
+    '}]}';
+  CSchemaTwoPackageManifest =
+    '{"schemaVersion":2,"id":"PackagedCommands","version":"1.2.0",' +
+    '"enabled":true,"permissions":["chat.prompt"],"templates":[{' +
+    '"name":"Package plan","description":"Plan from a verified package.",' +
+    '"command":"/package-plan","prompt":"Plan package input: {argument}"' +
     '}]}';
   CRsaModulus =
     'teUwBI7/eDWLlI0bCfZ72J6Rn+PjH1KcLuRE7Lbjuetb6WHPGgdjgYJWWx8I' +
@@ -283,6 +291,35 @@ begin
   Assert.AreEqual('radia.test', LPackage.Publisher.Id);
   Assert.AreEqual('Rad IA Test Publisher', LPackage.Publisher.Name);
   Assert.AreEqual<Integer>(64, Length(LPackage.Publisher.Fingerprint));
+end;
+
+procedure TRadIADeclarativeExtensionPackageTests.
+  ReadsSchemaTwoTemplatePackage;
+var
+  LManager: TRadIADeclarativeExtensionManager;
+  LPackage: TRadIADeclarativeExtensionPackage;
+  LTemplate: TRadIADeclarativeCommand;
+begin
+  LPackage := TRadIADeclarativeExtensionPackageReader.Read(
+    CreatePackage(
+      CSchemaTwoPackageManifest,
+      'PackagedCommands.radia.json',
+      '',
+      False
+    )
+  );
+  LManager := TRadIADeclarativeExtensionManager.Create(FDirectory);
+  try
+    TFile.WriteAllBytes(
+      TPath.Combine(FDirectory, 'PackagedCommands.radia.json'),
+      LPackage.ManifestContent
+    );
+    LManager.Reload([]);
+    Assert.IsTrue(LManager.TryResolve('/package-plan', LTemplate));
+    Assert.AreEqual('template', LTemplate.Kind);
+  finally
+    LManager.Free;
+  end;
 end;
 
 procedure TRadIADeclarativeExtensionPackageTests.

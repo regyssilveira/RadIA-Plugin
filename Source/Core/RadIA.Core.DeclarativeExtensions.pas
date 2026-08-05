@@ -7,12 +7,13 @@ uses
   System.JSON;
 
 const
-  CRadIADeclarativeExtensionSchemaVersion = 1;
+  CRadIADeclarativeExtensionSchemaVersion = 2;
 
 type
   TRadIADeclarativeCommand = record
   private
     FExtensionId: string;
+    FKind: string;
     FName: string;
     FDescription: string;
     FSlashCommand: string;
@@ -20,12 +21,14 @@ type
   public
     constructor Create(
       const AExtensionId: string;
+      const AKind: string;
       const AName: string;
       const ADescription: string;
       const ASlashCommand: string;
       const APrompt: string
     );
     property ExtensionId: string read FExtensionId;
+    property Kind: string read FKind;
     property Name: string read FName;
     property Description: string read FDescription;
     property SlashCommand: string read FSlashCommand;
@@ -87,12 +90,24 @@ type
       const AJson: TJSONObject;
       const AExtensionId: string;
       const AReservedCommands: TArray<string>;
-      const AExistingCommands: TArray<TRadIADeclarativeCommand>
+      const AExistingCommands: TArray<TRadIADeclarativeCommand>;
+      const AKind: string;
+      const APromptField: string
     ): TRadIADeclarativeCommand;
+    procedure ParseCapabilityArray(
+      const AJson: TJSONObject;
+      const AArrayName: string;
+      const AKind: string;
+      const APromptField: string;
+      const AExtensionId: string;
+      const AReservedCommands: TArray<string>;
+      const ACommands: TList<TRadIADeclarativeCommand>
+    );
     function ParseCommands(
       const AJson: TJSONObject;
       const AExtensionId: string;
-      const AReservedCommands: TArray<string>
+      const AReservedCommands: TArray<string>;
+      const ASchemaVersion: Integer
     ): TArray<TRadIADeclarativeCommand>;
     procedure ValidateCommandFields(
       const AName: string;
@@ -213,6 +228,7 @@ end;
 
 constructor TRadIADeclarativeCommand.Create(
   const AExtensionId: string;
+  const AKind: string;
   const AName: string;
   const ADescription: string;
   const ASlashCommand: string;
@@ -220,6 +236,7 @@ constructor TRadIADeclarativeCommand.Create(
 );
 begin
   FExtensionId := AExtensionId;
+  FKind := AKind;
   FName := AName;
   FDescription := ADescription;
   FSlashCommand := ASlashCommand;
@@ -539,7 +556,8 @@ begin
     raise EArgumentException.Create('Manifest root must be a JSON object.');
   try
     LSchemaVersion := LJson.GetValue<Integer>('schemaVersion', 0);
-    if LSchemaVersion <> CRadIADeclarativeExtensionSchemaVersion then
+    if (LSchemaVersion < 1) or
+      (LSchemaVersion > CRadIADeclarativeExtensionSchemaVersion) then
       raise EArgumentException.Create(
         'Unsupported declarative extension schema version.'
       );
@@ -568,7 +586,8 @@ begin
     LCommands := ParseCommands(
       LJson,
       LExtensionId,
-      AReservedCommands
+      AReservedCommands,
+      LSchemaVersion
     );
     FCommands.AddRange(LCommands);
     FDiagnostics.Add(
@@ -576,7 +595,7 @@ begin
         AFileName,
         LExtensionId,
         'loaded',
-        Format('%d command(s) loaded.', [Length(LCommands)])
+        Format('%d capability item(s) loaded.', [Length(LCommands)])
       )
     );
   finally
@@ -588,7 +607,9 @@ function TRadIADeclarativeExtensionManager.ParseCommand(
   const AJson: TJSONObject;
   const AExtensionId: string;
   const AReservedCommands: TArray<string>;
-  const AExistingCommands: TArray<TRadIADeclarativeCommand>
+  const AExistingCommands: TArray<TRadIADeclarativeCommand>;
+  const AKind: string;
+  const APromptField: string
 ): TRadIADeclarativeCommand;
 var
   LDescription: string;
@@ -602,7 +623,7 @@ begin
   LSlashCommand := LowerCase(
     Trim(AJson.GetValue<string>('command', ''))
   );
-  LPrompt := Trim(AJson.GetValue<string>('prompt', ''));
+  LPrompt := Trim(AJson.GetValue<string>(APromptField, ''));
   ValidateCommandFields(
     LName,
     LDescription,
@@ -623,6 +644,7 @@ begin
       );
   Result := TRadIADeclarativeCommand.Create(
     AExtensionId,
+    AKind,
     LName,
     LDescription,
     LSlashCommand,
@@ -630,43 +652,93 @@ begin
   );
 end;
 
-function TRadIADeclarativeExtensionManager.ParseCommands(
+procedure TRadIADeclarativeExtensionManager.ParseCapabilityArray(
   const AJson: TJSONObject;
+  const AArrayName: string;
+  const AKind: string;
+  const APromptField: string;
   const AExtensionId: string;
-  const AReservedCommands: TArray<string>
-): TArray<TRadIADeclarativeCommand>;
+  const AReservedCommands: TArray<string>;
+  const ACommands: TList<TRadIADeclarativeCommand>
+);
 var
   LArray: TJSONArray;
-  LCommands: TList<TRadIADeclarativeCommand>;
   LIndex: Integer;
   LValue: TJSONValue;
 begin
-  LValue := AJson.GetValue('commands');
+  LValue := AJson.GetValue(AArrayName);
+  if not Assigned(LValue) then
+    Exit;
   if not (LValue is TJSONArray) then
-    raise EArgumentException.Create('Manifest commands must be an array.');
-  LArray := TJSONArray(LValue);
-  if (LArray.Count = 0) or
-    (LArray.Count > CMaximumCommandsPerExtension) then
     raise EArgumentException.Create(
-      'Manifest must contain between 1 and 100 commands.'
+      'Manifest ' + AArrayName + ' must be an array.'
     );
+  LArray := TJSONArray(LValue);
+  for LIndex := 0 to LArray.Count - 1 do
+  begin
+    if not (LArray[LIndex] is TJSONObject) then
+      raise EArgumentException.Create(
+        'Each ' + AKind + ' must be a JSON object.'
+      );
+    ACommands.Add(
+      ParseCommand(
+        TJSONObject(LArray[LIndex]),
+        AExtensionId,
+        AReservedCommands,
+        ACommands.ToArray,
+        AKind,
+        APromptField
+      )
+    );
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.ParseCommands(
+  const AJson: TJSONObject;
+  const AExtensionId: string;
+  const AReservedCommands: TArray<string>;
+  const ASchemaVersion: Integer
+): TArray<TRadIADeclarativeCommand>;
+var
+  LCommands: TList<TRadIADeclarativeCommand>;
+begin
   LCommands := TList<TRadIADeclarativeCommand>.Create;
   try
-    for LIndex := 0 to LArray.Count - 1 do
+    ParseCapabilityArray(
+      AJson,
+      'commands',
+      'command',
+      'prompt',
+      AExtensionId,
+      AReservedCommands,
+      LCommands
+    );
+    if ASchemaVersion >= 2 then
     begin
-      if not (LArray[LIndex] is TJSONObject) then
-        raise EArgumentException.Create(
-          'Each command must be a JSON object.'
-        );
-      LCommands.Add(
-        ParseCommand(
-          TJSONObject(LArray[LIndex]),
-          AExtensionId,
-          AReservedCommands,
-          LCommands.ToArray
-        )
+      ParseCapabilityArray(
+        AJson,
+        'templates',
+        'template',
+        'prompt',
+        AExtensionId,
+        AReservedCommands,
+        LCommands
+      );
+      ParseCapabilityArray(
+        AJson,
+        'skills',
+        'skill',
+        'instructions',
+        AExtensionId,
+        AReservedCommands,
+        LCommands
       );
     end;
+    if (LCommands.Count = 0) or
+      (LCommands.Count > CMaximumCommandsPerExtension) then
+      raise EArgumentException.Create(
+        'Manifest must contain between 1 and 100 capabilities.'
+      );
     Result := LCommands.ToArray;
   finally
     LCommands.Free;

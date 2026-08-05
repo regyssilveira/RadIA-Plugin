@@ -19,8 +19,8 @@ if ([IO.Path]::GetExtension($resolvedManifest) -ne ".json") {
 $utf8 = [Text.UTF8Encoding]::new($false)
 $manifestText = [IO.File]::ReadAllText($resolvedManifest, [Text.Encoding]::UTF8)
 $manifest = $manifestText | ConvertFrom-Json
-if ($manifest.schemaVersion -ne 1) {
-    throw "Only declarative extension schema version 1 can be packaged."
+if ($manifest.schemaVersion -notin @(1, 2)) {
+    throw "Only declarative extension schema versions 1 and 2 can be packaged."
 }
 if ([string]$manifest.id -notmatch "^[A-Z][A-Za-z0-9]*$") {
     throw "Extension ID must use alphanumeric PascalCase."

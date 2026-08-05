@@ -25,6 +25,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Export Conversation** | Chat UX | Save current active chats to Markdown (.md) or standalone rich HTML formats. | ✅ Completed |
 | **Prompt Templates** | Chat UX | Quick prompt template library with token replacement and the `/template` command. | ✅ Completed |
 | **Dynamic Slash Commands** | Chat UX | Dynamic mapping of templates to slash commands (e.g. `/createprojectarch`), synced and autocompleted in WebView2. | ✅ Completed |
+| **Declarative Skills and Templates** | Extensibility | Schema 2 manifest with hot reload, autocomplete, and minimal `chat.prompt` permission. | ✅ Completed |
 | **Editor Code Rendering in Chat** | Chat UX | Prompts sent from the editor menu preserve fenced Markdown code blocks with Pascal highlighting also in user messages. | ✅ Completed |
 | **Template Backup & Restore** | Chat UX | Transactional JSON import and export with schema validations and merge/overwrite UI options. | ✅ Completed |
 | **Google Gemini** | Provider | Native BYOK integration for Gemini 1.5 Pro and Gemini 1.5 Flash models. | ✅ Completed |

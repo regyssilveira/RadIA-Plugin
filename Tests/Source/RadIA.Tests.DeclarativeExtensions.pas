@@ -41,6 +41,12 @@ type
     procedure EnablesDisablesAndRemovesWithoutRestart;
     [Test]
     procedure RemovesRejectedManifestByDiagnosticFile;
+    [Test]
+    procedure LoadsSchemaTwoTemplatesAndSkills;
+    [Test]
+    procedure RejectsDuplicateCommandsAcrossCapabilityKinds;
+    [Test]
+    procedure SchemaOneDoesNotEnableSkills;
   end;
 
 implementation
@@ -168,6 +174,66 @@ begin
   Assert.Contains(LMessage, 'collides');
   FManager.Reload([]);
   Assert.IsTrue(FManager.TryResolve('/team-review', LCommand));
+end;
+
+procedure TRadIADeclarativeExtensionTests.LoadsSchemaTwoTemplatesAndSkills;
+const
+  CManifest =
+    '{"schemaVersion":2,"id":"TeamWorkflow","version":"2.0.0",' +
+    '"permissions":["chat.prompt"],"templates":[{"name":"Fix plan",' +
+    '"description":"Create a reviewed fix plan.","command":"/team-plan",' +
+    '"prompt":"Plan a fix for: {argument}"}],"skills":[{"name":"Team style",' +
+    '"description":"Apply the team coding style.","command":"/team-style",' +
+    '"instructions":"Follow the team style while reviewing: {code}"}]}';
+var
+  LCapability: TRadIADeclarativeCommand;
+  LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
+begin
+  WriteManifest('workflow.radia.json', CManifest);
+  FManager.Reload([]);
+  Assert.IsTrue(FManager.TryResolve('/team-plan', LCapability));
+  Assert.AreEqual('template', LCapability.Kind);
+  Assert.Contains(LCapability.Prompt, '{argument}');
+  Assert.IsTrue(FManager.TryResolve('/team-style', LCapability));
+  Assert.AreEqual('skill', LCapability.Kind);
+  Assert.Contains(LCapability.Prompt, '{code}');
+  LDiagnostics := FManager.GetDiagnostics;
+  Assert.AreEqual<Integer>(1, Length(LDiagnostics));
+  Assert.AreEqual('loaded', LDiagnostics[0].Status);
+  Assert.Contains(LDiagnostics[0].Message, '2 capability');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  RejectsDuplicateCommandsAcrossCapabilityKinds;
+const
+  CManifest =
+    '{"schemaVersion":2,"id":"DuplicateKinds","version":"1.0.0",' +
+    '"permissions":["chat.prompt"],"commands":[{"name":"Command",' +
+    '"description":"Command entry.","command":"/same-entry",' +
+    '"prompt":"Command prompt"}],"skills":[{"name":"Skill",' +
+    '"description":"Skill entry.","command":"/same-entry",' +
+    '"instructions":"Skill instructions"}]}';
+begin
+  WriteManifest('duplicate.radia.json', CManifest);
+  FManager.Reload([]);
+  Assert.AreEqual<Integer>(0, Length(FManager.GetCommands));
+  Assert.AreEqual('rejected', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, 'duplicate');
+end;
+
+procedure TRadIADeclarativeExtensionTests.SchemaOneDoesNotEnableSkills;
+const
+  CManifest =
+    '{"schemaVersion":1,"id":"LegacySkill","version":"1.0.0",' +
+    '"permissions":["chat.prompt"],"skills":[{"name":"Legacy skill",' +
+    '"description":"Must not load in schema one.","command":"/legacy-skill",' +
+    '"instructions":"Instructions"}]}';
+begin
+  WriteManifest('legacy-skill.radia.json', CManifest);
+  FManager.Reload([]);
+  Assert.AreEqual<Integer>(0, Length(FManager.GetCommands));
+  Assert.AreEqual('rejected', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, 'capabilities');
 end;
 
 { TRadIADeclarativeExtensionTests }

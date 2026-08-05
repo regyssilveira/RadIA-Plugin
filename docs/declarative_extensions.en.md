@@ -1,7 +1,7 @@
 # Declarative extensions
 
-RadIA 2.0 can load chat commands without recompiling the plugin or restarting Delphi. Each extension
-is a `*.radia.json` manifest stored under:
+RadIA 2.0 can load chat commands, templates, and skills without rebuilding the plugin or restarting
+Delphi. Each extension is a `*.radia.json` manifest stored under:
 
 ```text
 %USERPROFILE%\RadIA\extensions
@@ -19,14 +19,20 @@ and status changes use an atomic write. RadIA validates the candidate first, rel
 installed set, and restores the previous file if validation or activation fails. An open chat
 refreshes its catalog, while chats opened later load the current state directly.
 
-The version 1 loader requires a unique PascalCase ID, semantic version, the single `chat.prompt`
-permission, and between 1 and 100 valid commands. It rejects the complete manifest on collision or
-invalid data. Diagnostics report `loaded`, `disabled`, or `rejected`.
+Schema 2 supports `commands` and `templates` with a `prompt` field, plus `skills` with an
+`instructions` field. Every item has a name, description, unique slash command, and prompt content.
+The total is limited to 100 items. Schema 1 command manifests remain compatible without migration.
+Both schemas require a unique PascalCase ID, semantic version, and only the `chat.prompt`
+permission. Any collision or invalid item rejects the complete manifest. Diagnostics report
+`loaded`, `disabled`, or `rejected`.
 
-Prompts may use `{code}`, `{argument}`, `{specification}`, and `{stacktrace}`. Version 1 does not run
-scripts, tools, processes, writes, or OTA operations. Advanced tools remain available through the
+Prompts and skill instructions may use `{code}`, `{argument}`, `{specification}`, and
+`{stacktrace}`. Declarative prompt capabilities do not run scripts, tools, processes, writes, or OTA
+operations. Advanced tools remain available through the
 BPL API documented in the [extension guide](tool_extension_guide.md) and remain subject to central
 risk and consent policies.
+
+See `Examples/DeclarativeExtension/team-workflow.radia.json` for a complete schema 2 extension.
 
 The visual manager completes the local install, update, activation, diagnostics, and removal cycle.
 

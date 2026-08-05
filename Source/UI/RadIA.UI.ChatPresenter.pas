@@ -846,7 +846,8 @@ begin
     LSlashObj.AddPair('description', LCommand.Description);
     LSlashObj.AddPair(
       'name',
-      LCommand.Name + ' (' + LCommand.ExtensionId + ')'
+      LCommand.Name + ' (' + LCommand.Kind + ': ' +
+      LCommand.ExtensionId + ')'
     );
     LSlashObj.AddPair(
       'isProjectGenerator',
