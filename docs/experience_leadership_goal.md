@@ -284,8 +284,8 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
-A primeira prova reproduzível do M8 está em `release_evidence_2.0.0.json`: os quatro pacotes foram
-gerados do commit `ef52eb931d0e63c8372298250bebed46c8d8fb4f`, com árvore rastreada limpa, validação
+A prova reproduzível atual do M8 está em `release_evidence_2.0.0.json`: os quatro pacotes foram
+gerados do commit `16cafab825449474cf96a0d3954f6dec4582dc3f`, com árvore rastreada limpa, validação
 positiva e negativa por target e SHA-256 independente. Validação visual na IDE, ciclos e jornada
 contínua permanecem abertos e não são inferidos dessa evidência automatizada.
 

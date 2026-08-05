@@ -277,8 +277,8 @@ Credential fields are rejected recursively and never enter extension packages.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
 
-The first reproducible M8 proof is stored in `release_evidence_2.0.0.json`: all four packages were
-built from commit `ef52eb931d0e63c8372298250bebed46c8d8fb4f`, with a clean tracked worktree,
+The current reproducible M8 proof is stored in `release_evidence_2.0.0.json`: all four packages were
+built from commit `16cafab825449474cf96a0d3954f6dec4582dc3f`, with a clean tracked worktree,
 positive and negative validation per target, and independent SHA-256 hashes. Visual IDE
 validation, cycles, and the continuous journey remain open and are not inferred from automation.
 
