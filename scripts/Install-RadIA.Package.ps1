@@ -209,8 +209,25 @@ if ($PlanOnly) {
     exit 0
 }
 
-if (Get-Process bds -ErrorAction SilentlyContinue) {
-    throw "Close all Delphi IDE instances before changing RadIA."
+$targetBds = Join-Path $ideBin "bds.exe"
+$runningTargetIDEs = @(
+    Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object {
+            try {
+                [IO.Path]::GetFullPath($_.Path).Equals(
+                    [IO.Path]::GetFullPath($targetBds),
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+            } catch {
+                $false
+            }
+        }
+)
+if ($runningTargetIDEs.Count -gt 0) {
+    throw (
+        "Close all instances of the target Delphi IDE before changing " +
+        "RadIA: $targetBds"
+    )
 }
 
 if ($Mode -eq "Uninstall") {
