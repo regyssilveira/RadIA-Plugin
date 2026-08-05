@@ -12,6 +12,8 @@ do Delphi.
 - captura incremental e simultânea de stdout e stderr;
 - interpretação incremental de ANSI SGR, inclusive quando a sequência é dividida entre chunks;
 - cores ANSI normais e brilhantes, texto em negrito e reset de estilo em uma saída rica;
+- buffer de tela com sobrescrita por retorno de carro, posição e movimento de cursor CSI;
+- limpeza ANSI de linha ou tela e save/restore da posição do cursor;
 - entrada contínua para responder prompts enquanto o processo permanece ativo;
 - sessão Windows ConPTY com canais UTF-8 e fallback para pipes em sistemas sem a API;
 - resize automático da pseudo-console em colunas e linhas quando o painel muda de tamanho;
@@ -24,10 +26,11 @@ do Delphi.
 - saída monoespaçada com código de saída e estado final.
 
 Sequências ANSI de estilo (`0`, `1`, `22`, `30–37`, `39` e `90–97`) são interpretadas e não
-aparecem como texto bruto. Outros comandos CSI, como limpeza e movimentação de cursor, são removidos
-da saída estática com segurança. Em Windows 10 1809 ou superior, a execução usa ConPTY, mantém
-entrada contínua e atualiza as dimensões do console conforme o painel. Emulação visual completa do
-cursor e múltiplas sessões ainda estão pendentes.
+aparecem como texto bruto. O buffer visual aplica movimentação relativa e absoluta de cursor,
+retorno de carro, backspace, tabulação, limpeza de linha/tela e save/restore de posição. Isso permite
+que barras de progresso e ferramentas interativas atualizem o conteúdo existente sem produzir
+linhas duplicadas. Em Windows 10 1809 ou superior, a execução usa ConPTY, mantém entrada contínua e
+atualiza as dimensões do console conforme o painel. Múltiplas sessões em abas ainda estão pendentes.
 
 ## Fluxo de uso
 

@@ -32,6 +32,10 @@ type
     FForeground: TRadIATerminalColor;
     FBold: Boolean;
   public
+    constructor Create(
+      const AForeground: TRadIATerminalColor;
+      const ABold: Boolean
+    );
     class function Default: TRadIATerminalTextStyle; static;
     property Foreground: TRadIATerminalColor read FForeground;
     property Bold: Boolean read FBold;
@@ -162,6 +166,15 @@ uses
   System.SysUtils;
 
 { TRadIATerminalTextStyle }
+
+constructor TRadIATerminalTextStyle.Create(
+  const AForeground: TRadIATerminalColor;
+  const ABold: Boolean
+);
+begin
+  FForeground := AForeground;
+  FBold := ABold;
+end;
 
 class function TRadIATerminalTextStyle.Default:
   TRadIATerminalTextStyle;

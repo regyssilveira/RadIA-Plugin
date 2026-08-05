@@ -106,6 +106,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.CliProcess.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.PseudoTerminal.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Terminal.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.TerminalScreen.pas"/>
         <DCCReference Include="..\Source\UI\RadIA.UI.TerminalFrame.pas">
             <Form>RadIATerminalFrame</Form>
         </DCCReference>

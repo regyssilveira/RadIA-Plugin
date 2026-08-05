@@ -37,6 +37,16 @@ type
     [Test]
     procedure AnsiParserResetsStyleAndIgnoresCursorCommand;
     [Test]
+    procedure ScreenOverwritesProgressWithCarriageReturn;
+    [Test]
+    procedure ScreenAppliesCursorMovementAndEraseLine;
+    [Test]
+    procedure ScreenPreservesStyleAcrossFragmentedCsi;
+    [Test]
+    procedure ScreenSuppressesOscWindowTitles;
+    [Test]
+    procedure ScreenResizesAndRejectsInvalidWidth;
+    [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
   end;
 
@@ -49,7 +59,19 @@ uses
   Vcl.Forms,
   RadIA.Core.AgentExecutors,
   RadIA.Core.Terminal,
+  RadIA.Core.TerminalScreen,
   RadIA.UI.TerminalFrame;
+
+function SegmentsText(
+  const ASegments: TArray<TRadIATerminalTextSegment>
+): string;
+var
+  LSegment: TRadIATerminalTextSegment;
+begin
+  Result := '';
+  for LSegment in ASegments do
+    Result := Result + LSegment.Text;
+end;
 
 procedure TRadIATerminalTests.AnsiParserHandlesSplitEscapeSequence;
 var
@@ -266,6 +288,106 @@ begin
   );
   TDirectory.CreateDirectory(FDirectory);
   FFileName := TPath.Combine(FDirectory, 'history.json');
+end;
+
+procedure TRadIATerminalTests.ScreenAppliesCursorMovementAndEraseLine;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('first' + sLineBreak + 'second');
+    LScreen.Feed(#27'[1A'#13#27'[2Kreplacement');
+    Assert.AreEqual(
+      'replacement' + sLineBreak + 'second',
+      SegmentsText(LScreen.RenderSegments)
+    );
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenOverwritesProgressWithCarriageReturn;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('progress 10%'#13'progress 90%'#27'[K');
+    Assert.AreEqual(
+      'progress 90%',
+      SegmentsText(LScreen.RenderSegments)
+    );
+    Assert.AreEqual<Integer>(12, LScreen.CursorColumn);
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenPreservesStyleAcrossFragmentedCsi;
+var
+  LScreen: TRadIATerminalScreen;
+  LSegments: TArray<TRadIATerminalTextSegment>;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed(#27'[1;3');
+    LScreen.Feed('1mred'#27'[0m plain');
+    LSegments := LScreen.RenderSegments;
+    Assert.AreEqual<Integer>(2, Length(LSegments));
+    Assert.AreEqual('red', LSegments[0].Text);
+    Assert.AreEqual(tcRed, LSegments[0].Style.Foreground);
+    Assert.IsTrue(LSegments[0].Style.Bold);
+    Assert.AreEqual(' plain', LSegments[1].Text);
+    Assert.AreEqual(tcDefault, LSegments[1].Style.Foreground);
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenResizesAndRejectsInvalidWidth;
+var
+  LScreen: TRadIATerminalScreen;
+  LTestMethod: TTestLocalMethod;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('content');
+    LScreen.Resize(80);
+    Assert.AreEqual<Integer>(80, LScreen.Columns);
+    Assert.AreEqual('content', SegmentsText(LScreen.RenderSegments));
+    LTestMethod :=
+      procedure
+      begin
+        LScreen.Resize(10);
+      end;
+    Assert.WillRaise(LTestMethod, EArgumentOutOfRangeException);
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenSuppressesOscWindowTitles;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('before'#27']0;hidden title');
+    LScreen.Feed(#7'after');
+    Assert.AreEqual(
+      'beforeafter',
+      SegmentsText(LScreen.RenderSegments)
+    );
+    LScreen.Clear;
+    LScreen.Feed(#27']2;hidden'#27'\visible');
+    Assert.AreEqual(
+      'visible',
+      SegmentsText(LScreen.RenderSegments)
+    );
+  finally
+    LScreen.Free;
+  end;
 end;
 
 procedure TRadIATerminalTests.TearDown;

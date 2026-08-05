@@ -77,10 +77,10 @@ buffer, cursor position, and current symbol. All five shortcuts are configurable
 validated and reloaded without restarting the IDE. Multiline virtual rows and visual acceptance
 across the complete IDE matrix remain mandatory before the milestone can be marked complete.
 
-M2 now includes an incremental ANSI SGR parser, rich output, continuous stdin, ConPTY execution,
-character-dimension resize, and reverse history search through `Ctrl+R`. Styling remains intact
-even when an escape sequence is split across chunks. Visual cursor emulation and multiple sessions
-are still required to complete the milestone.
+M2 now includes a visual ANSI/CSI buffer with cursor overwrite, rich output, continuous stdin,
+ConPTY execution, character-dimension resize, and reverse history search through `Ctrl+R`. Styling
+and parser state remain intact even when an escape sequence is split across chunks. Multiple tabbed
+sessions are still required to complete the milestone.
 
 ## Milestone transition rules
 

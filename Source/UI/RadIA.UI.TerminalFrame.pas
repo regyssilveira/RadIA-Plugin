@@ -9,7 +9,8 @@ uses
   Vcl.Forms,
   Vcl.StdCtrls,
   RadIA.Core.CliProcess,
-  RadIA.Core.Terminal;
+  RadIA.Core.Terminal,
+  RadIA.Core.TerminalScreen;
 
 type
   IRadIATerminalLifecycleGuard = interface
@@ -30,7 +31,7 @@ type
     FClearButton: TButton;
     FOutputEditor: TRichEdit;
     FStatusLabel: TLabel;
-    FAnsiParser: TRadIATerminalAnsiParser;
+    FScreen: TRadIATerminalScreen;
     FHistory: TRadIATerminalHistory;
     FHistorySearchIndex: Integer;
     FHistorySearchQuery: string;
@@ -95,6 +96,8 @@ uses
   System.Math,
   System.SyncObjs,
   System.SysUtils,
+  Winapi.Messages,
+  Winapi.Windows,
   Vcl.Controls,
   Vcl.Graphics,
   RadIA.Core.AgentExecutors,
@@ -141,7 +144,7 @@ begin
   inherited Create(AOwner);
   Align := alClient;
   FLifecycleGuard := TRadIATerminalLifecycleGuard.Create;
-  FAnsiParser := TRadIATerminalAnsiParser.Create;
+  FScreen := TRadIATerminalScreen.Create;
 
   LAppData := GetEnvironmentVariable('APPDATA');
   if LAppData = '' then
@@ -167,7 +170,7 @@ begin
     FSession.Cancel;
     FSession := nil;
   end;
-  FAnsiParser.Free;
+  FScreen.Free;
   FHistory.Free;
   inherited Destroy;
 end;
@@ -264,8 +267,16 @@ var
 begin
   if AText = '' then
     Exit;
-  for LSegment in FAnsiParser.Feed(AText) do
-    AppendSegment(LSegment);
+  FScreen.Feed(AText);
+  SendMessage(FOutputEditor.Handle, WM_SETREDRAW, 0, 0);
+  try
+    FOutputEditor.Clear;
+    for LSegment in FScreen.RenderSegments do
+      AppendSegment(LSegment);
+  finally
+    SendMessage(FOutputEditor.Handle, WM_SETREDRAW, 1, 0);
+    FOutputEditor.Invalidate;
+  end;
 end;
 
 procedure TRadIATerminalFrame.AppendSegment(
@@ -314,7 +325,7 @@ end;
 procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
 begin
   FOutputEditor.Clear;
-  FAnsiParser.Reset;
+  FScreen.Clear;
 end;
 
 procedure TRadIATerminalFrame.CommandChange(Sender: TObject);
@@ -557,6 +568,7 @@ begin
   FStatusLabel.Caption := 'Running in ' + LInvocation.WorkingDirectory;
   LGuard := FLifecycleGuard as IRadIATerminalLifecycleGuard;
   GetTerminalSize(LColumns, LRows);
+  FScreen.Resize(LColumns);
   if TRadIAPseudoTerminalRunner.IsSupported then
     FSession := TRadIAPseudoTerminalRunner.Start(
       LInvocation,
@@ -613,6 +625,7 @@ begin
     not FSession.IsPseudoTerminal then
     Exit;
   GetTerminalSize(LColumns, LRows);
+  FScreen.Resize(LColumns);
   FSession.Resize(LColumns, LRows);
 end;
 

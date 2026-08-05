@@ -18,6 +18,7 @@ uses
   RadIA.Core.CliProcess in '..\Source\Core\RadIA.Core.CliProcess.pas',
   RadIA.Core.PseudoTerminal in '..\Source\Core\RadIA.Core.PseudoTerminal.pas',
   RadIA.Core.Terminal in '..\Source\Core\RadIA.Core.Terminal.pas',
+  RadIA.Core.TerminalScreen in '..\Source\Core\RadIA.Core.TerminalScreen.pas',
   RadIA.UI.TerminalFrame in '..\Source\UI\RadIA.UI.TerminalFrame.pas',
   RadIA.Core.Onboarding in '..\Source\Core\RadIA.Core.Onboarding.pas',
   RadIA.UI.OnboardingForm in '..\Source\UI\RadIA.UI.OnboardingForm.pas',
