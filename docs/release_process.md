@@ -210,6 +210,17 @@ O resumo versionado da matriz 2.0.0 está em `ide_smoke_evidence_2.0.0.json`. El
 dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 90 tools,
 docking nativo, restauração do desktop e ausência de processos órfãos.
 
+Depois de gerar os quatro arquivos em `Output\Validation`, consolide a prova oficial com:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.IDESmokeEvidence.ps1
+```
+
+O consolidador falha se qualquer target, ciclo, upgrade, modo do lifecycle, hash, commit, docking ou
+contagem de tools divergir dos pacotes e da evidência de release. O JSON versionado nunca deve ser
+montado ou ajustado manualmente.
+
 ---
 
 ## Checklist Final

@@ -62,7 +62,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 
 | Marco | Estado | Gate para avançar |
 |---|---|---|
-| M0 — Qualidade | Em execução | Gate Sonar verde ou classificação administrativa dos falsos positivos comprovados |
+| M0 — Qualidade | Em execução | Gate Sonar verde ou falsos positivos comprovados e classificados |
 | M1 — Assistência inline | Em execução | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Em execução | Jornada observável, pausável, retomável e persistente |
@@ -277,7 +277,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 - [x] Executar a matriz completa de build e 100% dos testes.
 - Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
 - [x] Executar dez ciclos de desinstalação, instalação, reparo, uso e shutdown por combinação.
-- Validar upgrade real entre versões diferentes do pacote em cada combinação suportada.
+- [x] Validar upgrade real entre versões diferentes do pacote em cada combinação suportada.
 - Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
 - [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
 - [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
@@ -286,17 +286,18 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
 A prova reproduzível dos pacotes está em `release_evidence_2.0.0.json`: os quatro ZIPs foram
-gerados do commit `d50ad9f7ddd4f00fb9536b3b373d912d00b34558`, com árvore rastreada limpa,
+gerados do commit `4693d9757e99fd9ca3f0c4b6b3abede404bf23c3`, com árvore rastreada limpa,
 validação positiva e negativa por target e SHA-256 independente.
 
 A matriz real consolidada está em `ide_smoke_evidence_2.0.0.json`. Delphi 11 Win32, Delphi 12
 Win32, Delphi 13 Win32 e Delphi 13 IDE64 completaram 10/10 ciclos cada, totalizando 40 ciclos
 ligados ao ZIP publicado, ao commit de origem e à BPL instalada. Todos expuseram 90 tools,
 exercitaram o docking nativo `TOTADockForm`, restauraram o estado do desktop e terminaram sem
-processos órfãos. Cada ciclo também executou `Uninstall`, `Install` e `Repair`, preservando dados do
-usuário e revalidando manifesto, hashes, registro e arquivos instalados antes de abrir a IDE. O
-upgrade entre versões diferentes e a jornada visual contínua completa permanecem abertos e não são
-inferidos do smoke.
+processos órfãos. Cada ciclo executou `Uninstall`, instalou a versão 1.0.0, atualizou para 2.0.0 e
+executou `Repair`, preservando dados do usuário e revalidando manifesto, hashes, registro e arquivos
+instalados antes de abrir a IDE. O consolidador fail-closed deriva a prova oficial dos quatro JSONs
+de execução e rejeita divergências de target, ciclo, upgrade, lifecycle, hash, commit, docking, BPL
+ou catálogo. A jornada visual contínua completa permanece aberta e não é inferida do smoke.
 
 A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
 silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e

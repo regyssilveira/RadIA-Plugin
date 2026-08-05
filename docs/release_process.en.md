@@ -210,6 +210,17 @@ The versioned 2.0.0 matrix summary is stored in `ide_smoke_evidence_2.0.0.json`.
 BPL hashes, 10 passing cycles per target, duration range, the 90-tool catalog, native docking,
 desktop restoration, and the absence of orphan processes.
 
+After generating all four files under `Output\Validation`, consolidate the official proof with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.IDESmokeEvidence.ps1
+```
+
+The consolidator fails when any target, cycle, upgrade, lifecycle mode, hash, commit, docking result,
+or tool count diverges from the packages and release evidence. Never assemble or adjust the
+versioned JSON manually.
+
 ---
 
 ## Final Checklist
