@@ -101,6 +101,9 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M4 delivered in this increment: v2 packages use RSA-SHA256 verified by Windows CNG, public
         key fingerprints, first-use consent, an atomic trust store, and visual publisher revocation;
         v1 packages remain compatible through an explicit per-use warning.
+    *   M4 in progress: the remote catalog has a bounded schema, HTTPS without redirects,
+        transactional downloads, and package size, hash, identity, and publisher binding; its
+        asynchronous visual browser still needs to be connected to the manager.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 

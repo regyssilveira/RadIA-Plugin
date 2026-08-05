@@ -101,6 +101,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M4 entregue nesta etapa: pacotes v2 usam RSA-SHA256 validado pelo Windows CNG, fingerprint
         de chave pública, consentimento no primeiro uso, trust store atômica e gestão visual para
         consultar ou revogar publicadores; pacotes v1 permanecem compatíveis com aviso por uso.
+    *   M4 em execução: catálogo remoto possui schema limitado, transporte HTTPS sem redirects,
+        download transacional e vínculo de tamanho, hash, identidade e publicador ao pacote assinado;
+        o navegador visual assíncrono ainda será conectado ao gerenciador.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

@@ -145,4 +145,6 @@ O arquivo de confiança tem schema versionado, limite de tamanho, validação de
 rejeição de duplicidades e gravação atômica. Reparse points são recusados para evitar redirecionar
 leitura ou substituição do arquivo. Assinatura comprova posse da chave privada correspondente, mas
 o usuário continua responsável por validar o fingerprint em um canal confiável. Um catálogo remoto
-com cadeia de publicação e revogação distribuída continua sendo uma etapa posterior do M4.
+com cadeia de publicação e revogação distribuída continua sendo uma etapa posterior do M4. A
+fundação segura de schema, HTTPS, download transacional e verificação de pacotes está descrita em
+[Catálogo remoto de extensões](extension_catalog.md); o navegador visual ainda está em integração.

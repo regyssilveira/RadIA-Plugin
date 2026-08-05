@@ -38,6 +38,7 @@ uses
   RadIA.Core.DeclarativeExtensionPackages in '..\Source\Core\RadIA.Core.DeclarativeExtensionPackages.pas',
   RadIA.Core.RsaSignature in '..\Source\Core\RadIA.Core.RsaSignature.pas',
   RadIA.Core.ExtensionPublisherTrust in '..\Source\Core\RadIA.Core.ExtensionPublisherTrust.pas',
+  RadIA.Core.ExtensionCatalog in '..\Source\Core\RadIA.Core.ExtensionCatalog.pas',
   RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
   RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',
   RadIA.Core.PatchTools in '..\Source\Core\RadIA.Core.PatchTools.pas',
@@ -232,6 +233,7 @@ uses
   RadIA.Tests.Extensions in 'Source\RadIA.Tests.Extensions.pas',
   RadIA.Tests.DeclarativeExtensions in 'Source\RadIA.Tests.DeclarativeExtensions.pas',
   RadIA.Tests.DeclarativeExtensionPackages in 'Source\RadIA.Tests.DeclarativeExtensionPackages.pas',
+  RadIA.Tests.ExtensionCatalog in 'Source\RadIA.Tests.ExtensionCatalog.pas',
   RadIA.Tests.DesignerComponents in 'Source\RadIA.Tests.DesignerComponents.pas',
   RadIA.Tests.DesignerEvents in 'Source\RadIA.Tests.DesignerEvents.pas',
   RadIA.Tests.ToolSecurity in 'Source\RadIA.Tests.ToolSecurity.pas';
