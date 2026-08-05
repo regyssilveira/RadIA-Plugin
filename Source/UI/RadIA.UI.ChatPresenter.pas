@@ -157,6 +157,7 @@ type
     );
     procedure PauseAgentRun;
     procedure ResumeAgentRun;
+    procedure ReplayAgentStep(const AStepIndex: Integer);
     procedure UpdateAgentPlan(const APlanJson: string);
     procedure PostAgentHistoryToWeb(const AQuery: string);
     procedure PostAgentStateToWeb(const ASnapshotJson: string);
@@ -184,6 +185,10 @@ type
       const ACommandText: string
     ): Boolean;
     function TryHandleAgentPreparationCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentReplayCommand(
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
@@ -658,6 +663,16 @@ begin
     'Replaces the pending plan with a validated JSON step array.'
   );
   LSlashObj.AddPair('name', 'Edit Agent Plan');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent replay');
+  LSlashObj.AddPair(
+    'description',
+    'Replays one audited tool step while the agent run is paused.'
+  );
+  LSlashObj.AddPair('name', 'Replay Agent Step');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
@@ -1914,6 +1929,8 @@ begin
     else
       UpdateAgentPlan('');
   end
+  else if AAction = 'replay_agent_step' then
+    ReplayAgentStep(AJson.GetValue<Integer>('stepIndex', 0))
   else
     Result := False;
 end;
@@ -2001,6 +2018,8 @@ begin
   Result := TryHandleAgentHistoryCommand(APromptText, ACommandText);
   if not Result then
     Result := TryHandleAgentPlanCommand(APromptText, ACommandText);
+  if not Result then
+    Result := TryHandleAgentReplayCommand(APromptText, ACommandText);
 end;
 
 function TRadIAChatPresenter.TryHandleAgentPlanCommand(
@@ -2015,6 +2034,35 @@ begin
   UpdateAgentPlan(
     Trim(Copy(ACommandText, Length('/agent plan ') + 1, MaxInt))
   );
+end;
+
+function TRadIAChatPresenter.TryHandleAgentReplayCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LStepIndex: Integer;
+  LValue: string;
+begin
+  Result := ACommandText.StartsWith('/agent replay ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  LValue := Trim(Copy(
+    ACommandText,
+    Length('/agent replay ') + 1,
+    MaxInt
+  ));
+  if not TryStrToInt(LValue, LStepIndex) then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent replay requires a numeric step index.'
+    );
+    Exit;
+  end;
+  ReplayAgentStep(LStepIndex);
 end;
 
 function TRadIAChatPresenter.TryHandleCatalogCommand(
@@ -2433,6 +2481,37 @@ begin
   FCancelledByUser := False;
   FView.SetRequestState(True);
   FAgentController.Resume(FSessionManager.ActiveSessionId);
+end;
+
+procedure TRadIAChatPresenter.ReplayAgentStep(
+  const AStepIndex: Integer
+);
+begin
+  if AStepIndex < 1 then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent replay requires a positive step index.'
+    );
+    Exit;
+  end;
+  if not Assigned(FAgentController) or FAgentController.IsRunning then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Pause an active agent run before replaying one of its steps.'
+    );
+    Exit;
+  end;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  FAgentController.ReplayStep(
+    FSessionManager.ActiveSessionId,
+    AStepIndex
+  );
 end;
 
 procedure TRadIAChatPresenter.UpdateAgentPlan(

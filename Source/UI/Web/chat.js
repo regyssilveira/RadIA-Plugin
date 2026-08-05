@@ -221,7 +221,7 @@ function createAgentControl(label, action, disabled = false) {
   return button;
 }
 
-function createAgentStep(step) {
+function createAgentStep(step, status) {
   const item = document.createElement('li');
   item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
   if (step.mutation) item.classList.add('is-mutation');
@@ -232,7 +232,8 @@ function createAgentStep(step) {
   const duration = Math.max(0, step.durationMilliseconds || 0);
   summary.textContent =
     `${step.index}. ${step.toolName} — ${outcome} · ${duration} ms` +
-    (step.mutation ? ' · mutation' : '');
+    (step.mutation ? ' · mutation' : '') +
+    (step.replayOfStepIndex ? ` · replay of ${step.replayOfStepIndex}` : '');
   details.appendChild(summary);
 
   const metadata = document.createElement('div');
@@ -257,6 +258,23 @@ function createAgentStep(step) {
     step.success ? step.result : step.errorMessage
   );
   details.appendChild(resultBlock);
+  const replay = document.createElement('button');
+  replay.className = 'agent-step-replay';
+  replay.textContent = 'Replay step';
+  replay.disabled = status !== 'paused';
+  replay.title = status === 'paused'
+    ? 'Replay this exact audited tool call'
+    : 'Pause the agent run before replaying a step';
+  replay.addEventListener('click', () => {
+    const warning =
+      `Replay mutating step ${step.index} (${step.toolName}) with the same arguments?`;
+    if (step.mutation && !confirm(warning)) return;
+    postMessageToDelphi({
+      action: 'replay_agent_step',
+      stepIndex: step.index
+    });
+  });
+  details.appendChild(replay);
   item.appendChild(details);
   return item;
 }
@@ -465,7 +483,7 @@ function renderAgentState(data) {
   const stepsElement = card.querySelector('.agent-run-steps');
   stepsElement.replaceChildren();
   steps.forEach(step => {
-    stepsElement.appendChild(createAgentStep(step));
+    stepsElement.appendChild(createAgentStep(step, status));
   });
 
   const controls = card.querySelector('.agent-run-controls');

@@ -1899,6 +1899,10 @@ body.light-theme .message-avatar.provider-avatar-badge {
   background: var(--bg-secondary);
 }
 
+.agent-step-replay {
+  margin-top: 8px;
+}
+
 .agent-history-panel {
   margin: 12px 16px;
   padding: 14px;

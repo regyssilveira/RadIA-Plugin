@@ -70,6 +70,10 @@ correlation, duration, and whether it mutated the workspace. Use its controls or
 While a plan awaits approval, use **Edit plan** to revise titles and descriptions before any tool
 runs. The keyboard equivalent is `/agent plan [{"title":"Inspect","description":"..."}]`. RadIA
 accepts 1–50 steps, validates field limits, and blocks edits after execution starts.
+While a run is paused, every timeline item offers **Replay step**. The command equivalent is
+`/agent replay <step>`. Replay uses the same audited tool and arguments, passes through central
+consent again, asks for extra confirmation on mutations, records `replayOfStepIndex`, and remains
+paused for review before resuming.
 Use the **Runs** button or `/agent history [query]` to find runs by objective, status, or session ID.
 The index exposes metadata only; tool arguments and results are excluded from search results.
 To enable monetary estimates and enforcement, configure the

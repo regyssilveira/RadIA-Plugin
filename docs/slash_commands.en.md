@@ -17,6 +17,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/agent [on\|off]` | Toggles or sets Agent Mode and synchronizes the visual button. | Active chat. |
 | `/agent run <objective>` | Starts an observable agent loop with the current catalog. | Active session and workspace. |
 | `/agent plan <JSON>` | Replaces the pending plan with a validated JSON array. | Plan awaiting approval. |
+| `/agent replay <step>` | Replays the audited tool call for one step. | Paused agent run. |
 | `/agent pause` | Safely interrupts the current decision and pauses the loop. | Active agent run. |
 | `/agent resume` | Resumes the latest checkpoint for the session. | Paused agent run. |
 | `/agent cancel` | Cancels the current decision and agent run. | Active agent run. |

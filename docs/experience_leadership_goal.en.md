@@ -130,8 +130,9 @@ limits, tokens, cost, duration, correlation, arguments, results, errors, mutatio
 test indicators. The **Runs** button and `/agent history` search checkpoints by objective, status,
 or session without exposing tool payloads.
 The **Edit plan** editor and `/agent plan` revise 1–50 steps while execution awaits approval,
-preserving the checkpoint and blocking changes after the first tool. Safe step replay remains
-pending.
+preserving the checkpoint and blocking changes after the first tool. Safe step replay is available
+as well: **Replay step** and `/agent replay` repeat a call only in a paused run, pass
+through consent again, record the source step, and remain paused for review.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

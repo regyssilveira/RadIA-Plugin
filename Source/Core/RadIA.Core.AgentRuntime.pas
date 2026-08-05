@@ -211,6 +211,7 @@ type
       StartedElapsedMilliseconds: Int64;
       DurationMilliseconds: Int64;
       Mutation: Boolean;
+      ReplayOfStepIndex: Integer;
     end;
     TRadIAAgentValidationState = record
       MutationPending: Boolean;
@@ -244,6 +245,7 @@ type
     FCompletionTokensBeforeRun: Integer;
     FEstimatedCostMicrosBeforeRun: Int64;
     FValidationRejectionCount: Integer;
+    FReplayOfStepIndex: Integer;
     function ExecuteLoop: TRadIAAgentRunResult;
     function ExecuteDecision(
       const ADecision: TRadIAAgentDecision
@@ -314,6 +316,10 @@ type
     ): TRadIAAgentRunResult;
     function Resume(
       const ASessionId: string
+    ): TRadIAAgentRunResult;
+    function ReplayStep(
+      const ASessionId: string;
+      const AStepIndex: Integer
     ): TRadIAAgentRunResult;
     procedure RequestPause;
     procedure RequestCancel;
@@ -871,6 +877,7 @@ begin
   LStep.StartedElapsedMilliseconds := AStartedElapsedMilliseconds;
   LStep.DurationMilliseconds := Max(0, ADurationMilliseconds);
   LStep.Mutation := IsMutationTool(ADecision.ToolName);
+  LStep.ReplayOfStepIndex := FReplayOfStepIndex;
   FSteps.Add(LStep);
 end;
 
@@ -1029,6 +1036,10 @@ begin
       LStepJson.AddPair(
         'mutation',
         TJSONBool.Create(LStep.Mutation)
+      );
+      LStepJson.AddPair(
+        'replayOfStepIndex',
+        TJSONNumber.Create(LStep.ReplayOfStepIndex)
       );
       LStepArray.AddElement(LStepJson);
     end;
@@ -1447,6 +1458,10 @@ begin
           'mutation',
           IsMutationTool(LStep.ToolName)
         );
+        LStep.ReplayOfStepIndex := LStepJson.GetValue<Integer>(
+          'replayOfStepIndex',
+          0
+        );
         FSteps.Add(LStep);
       end;
     end;
@@ -1497,6 +1512,7 @@ begin
   FCompletionTokensBeforeRun := 0;
   FEstimatedCostMicrosBeforeRun := 0;
   FValidationRejectionCount := 0;
+  FReplayOfStepIndex := 0;
   FCancellationToken := TRadIAAgentCancellationToken.Create;
 end;
 
@@ -1554,6 +1570,95 @@ begin
   FStatus := asRunning;
   FRunStartedTimestamp := TStopwatch.GetTimeStamp;
   Result := ExecuteLoop;
+end;
+
+function TRadIAAgentRuntime.ReplayStep(
+  const ASessionId: string;
+  const AStepIndex: Integer
+): TRadIAAgentRunResult;
+var
+  LDecision: TRadIAAgentDecision;
+  LFound: Boolean;
+  LOriginalStep: TRadIAAgentStep;
+  LRoot: TJSONObject;
+  LSnapshot: string;
+  LStep: TRadIAAgentStep;
+  LValue: TJSONValue;
+begin
+  ResetRun;
+  if not FCheckpointStore.TryLoad(ASessionId, LSnapshot) then
+    raise EArgumentException.Create(
+      'Agent checkpoint was not found for the requested session.'
+    );
+  LValue := TJSONObject.ParseJSONValue(LSnapshot);
+  if not (LValue is TJSONObject) then
+  begin
+    LValue.Free;
+    raise EArgumentException.Create('Agent checkpoint is not valid JSON.');
+  end;
+  LRoot := TJSONObject(LValue);
+  try
+    if not SameText(LRoot.GetValue<string>('status', ''), 'paused') then
+      raise EInvalidOp.Create(
+        'Agent steps can only be replayed while the run is paused.'
+      );
+  finally
+    LRoot.Free;
+  end;
+  LoadSnapshot(LSnapshot);
+  if FSessionId <> ASessionId then
+    raise EArgumentException.Create(
+      'Agent checkpoint session does not match the requested session.'
+    );
+  if FSteps.Count >= FLimits.MaxSteps then
+    raise EInvalidOp.Create(
+      'Agent step replay would exceed the configured step limit.'
+    );
+  LFound := False;
+  for LStep in FSteps do
+  begin
+    if LStep.Index = AStepIndex then
+    begin
+      LOriginalStep := LStep;
+      LFound := True;
+      Break;
+    end;
+  end;
+  if not LFound then
+    raise EArgumentException.Create(
+      'The requested agent step was not found.'
+    );
+  FStatus := asPaused;
+  FRunStartedTimestamp := TStopwatch.GetTimeStamp;
+  FReplayOfStepIndex := AStepIndex;
+  try
+    LDecision := TRadIAAgentDecision.CallTool(
+      LOriginalStep.ToolName,
+      LOriginalStep.ArgumentsJson
+    );
+    ExecuteToolDecision(LDecision);
+  finally
+    FReplayOfStepIndex := 0;
+  end;
+  if FSteps.Last.Success then
+    ChangeStatus(
+      asPaused,
+      Format('Step %d replayed successfully; review before resuming.', [
+        AStepIndex
+      ])
+    )
+  else
+    ChangeStatus(
+      asPaused,
+      Format('Step %d replay failed; review the result before resuming.', [
+        AStepIndex
+      ])
+    );
+  Result := TRadIAAgentRunResult.Create(
+    FStatus,
+    FMessage,
+    FSteps.Count
+  );
 end;
 
 function TRadIAAgentRuntime.HasValidPlan: Boolean;

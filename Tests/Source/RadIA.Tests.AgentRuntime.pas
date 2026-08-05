@@ -151,6 +151,8 @@ type
     [Test]
     procedure TestPauseAndResumeFromCheckpoint;
     [Test]
+    procedure TestReplayStepAppendsAuditedPausedResult;
+    [Test]
     procedure TestCancelRequestedByExecutingTool;
     [Test]
     procedure TestFileStoreRejectsUnsafeSessionId;
@@ -900,6 +902,66 @@ begin
     Assert.AreEqual(1, LResult.StepCount);
   finally
     LObserverObject.Runtime := nil;
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestReplayStepAppendsAuditedPausedResult;
+var
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LExecutor: IRadIAToolExecutor;
+  LInvalidStateRejected: Boolean;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LSnapshot: string;
+  LStoreObject: TRadIAMemoryAgentCheckpointStore;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"value":"fresh"}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([]);
+  LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
+  LStore := LStoreObject;
+  LStore.Save(
+    'replay-session',
+    '{"schemaVersion":1,"sessionId":"replay-session",' +
+    '"projectId":"project","objective":"Inspect","status":"paused",' +
+    '"message":"Paused","planApproved":true,' +
+    '"plan":[{"title":"Inspect"}],"maxSteps":20,' +
+    '"maxRepeatedCalls":3,"maxDurationMilliseconds":900000,' +
+    '"maxTotalTokens":100000,"maxEstimatedCostMicros":0,' +
+    '"elapsedMilliseconds":10,"promptTokens":0,' +
+    '"completionTokens":0,"estimatedCostMicros":0,' +
+    '"steps":[{"index":1,"toolName":"ReadFile","arguments":"{}",' +
+    '"correlationId":"original","success":true,"result":"{}",' +
+    '"errorCode":"","errorMessage":"","mutation":false}]}'
+  );
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.ReplayStep('replay-session', 1);
+
+    Assert.AreEqual(asPaused, LResult.Status);
+    Assert.AreEqual(2, LResult.StepCount);
+    Assert.AreEqual(1, LExecutorObject.CallCount);
+    Assert.IsTrue(LStoreObject.TryLoad('replay-session', LSnapshot));
+    Assert.Contains(LSnapshot, '"replayOfStepIndex":1');
+    Assert.Contains(LSnapshot, 'replayed successfully');
+    LStore.Save(
+      'replay-session',
+      LSnapshot.Replace('"status":"paused"', '"status":"running"')
+    );
+    LInvalidStateRejected := False;
+    try
+      LRuntime.ReplayStep('replay-session', 1);
+    except
+      on EInvalidOp do
+        LInvalidStateRejected := True;
+    end;
+    Assert.IsTrue(LInvalidStateRejected);
+  finally
     LRuntime.Free;
   end;
 end;

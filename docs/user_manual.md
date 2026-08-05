@@ -98,6 +98,10 @@ persistida em `RadIA\agent-checkpoints`, permitindo retomar a sessão depois de 
 Enquanto o plano aguarda aprovação, use **Edit plan** para revisar títulos e descrições antes de
 qualquer tool. O equivalente digitável é `/agent plan [{"title":"Inspecionar","description":"..."}]`.
 O RadIA aceita de 1 a 50 etapas, valida os limites e bloqueia edições depois do início da execução.
+Quando a execução estiver pausada, cada item da timeline oferece **Replay step**. O comando
+equivalente é `/agent replay <etapa>`. O replay usa a mesma tool e os mesmos argumentos auditados,
+passa novamente pelo consentimento central, solicita confirmação adicional para mutações, registra
+`replayOfStepIndex` e permanece pausado para revisão antes da retomada.
 Use o botão **Runs** ou `/agent history [filtro]` para localizar execuções por objetivo, estado ou
 ID da sessão. O índice mostra somente metadados; argumentos e resultados das tools não são expostos
 pela pesquisa.

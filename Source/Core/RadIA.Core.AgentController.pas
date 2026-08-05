@@ -26,6 +26,10 @@ type
       const ALimits: TRadIAAgentLimits
     );
     procedure Resume(const ASessionId: string);
+    procedure ReplayStep(
+      const ASessionId: string;
+      const AStepIndex: Integer
+    );
     procedure Pause;
     procedure Cancel;
     function IsRunning: Boolean;
@@ -63,6 +67,10 @@ type
       const ALimits: TRadIAAgentLimits
     );
     procedure Resume(const ASessionId: string);
+    procedure ReplayStep(
+      const ASessionId: string;
+      const AStepIndex: Integer
+    );
     procedure Pause;
     procedure Cancel;
     function IsRunning: Boolean;
@@ -230,6 +238,21 @@ begin
     ): TRadIAAgentRunResult
     begin
       Result := ARuntime.Resume(ASessionId);
+    end
+  );
+end;
+
+procedure TRadIAAgentRunController.ReplayStep(
+  const ASessionId: string;
+  const AStepIndex: Integer
+);
+begin
+  BeginRun(
+    function(
+      ARuntime: TRadIAAgentRuntime
+    ): TRadIAAgentRunResult
+    begin
+      Result := ARuntime.ReplayStep(ASessionId, AStepIndex);
     end
   );
 end;

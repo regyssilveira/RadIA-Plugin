@@ -77,6 +77,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         `/agent history`, without exposing tool arguments and results.
     *   M3 delivered in this increment: **Edit plan** and `/agent plan` revise the validated plan
         before approval and block changes after execution starts.
+    *   M3 delivered in this increment: **Replay step** and `/agent replay` repeat an audited call
+        only while paused, reusing consent and recording the source step.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

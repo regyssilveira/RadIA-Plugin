@@ -135,7 +135,9 @@ build e testes. O botão **Runs** e `/agent history` pesquisam checkpoints por o
 sessão sem expor payloads das tools.
 O editor **Edit plan** e `/agent plan` permitem revisar de 1 a 50 etapas enquanto a execução aguarda
 aprovação, preservando o checkpoint e bloqueando alterações após a primeira tool. A repetição
-segura de etapa segue pendente.
+segura também foi entregue: **Replay step** e `/agent replay` repetem a chamada somente em uma
+execução pausada, passam novamente por consentimento, registram a etapa de origem e permanecem
+pausados para revisão.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

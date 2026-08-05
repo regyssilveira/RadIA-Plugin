@@ -17,6 +17,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/agent [on\|off]` | Alterna ou define o modo agente e sincroniza o botão visual. | Chat ativo. |
 | `/agent run <objetivo>` | Inicia um loop agentivo observável usando o catálogo atual. | Sessão e workspace ativos. |
 | `/agent plan <JSON>` | Substitui o plano pendente por um array JSON validado. | Plano aguardando aprovação. |
+| `/agent replay <etapa>` | Repete a chamada auditada de uma etapa. | Execução agentiva pausada. |
 | `/agent pause` | Pausa o loop após interromper com segurança a decisão atual. | Execução agentiva ativa. |
 | `/agent resume` | Retoma o último checkpoint da sessão. | Execução agentiva pausada. |
 | `/agent cancel` | Cancela a decisão e a execução agentiva atuais. | Execução agentiva ativa. |
