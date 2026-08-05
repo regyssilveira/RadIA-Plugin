@@ -66,9 +66,10 @@ As alterações passam a valer sem reiniciar a IDE. O menu contextual também of
 **Pause/Resume Inline Completion for Session**. A pausa de sessão não altera a preferência
 persistida e volta ao estado normal quando a IDE é reiniciada.
 
-No modo contínuo, o RadIA usa `INTAEditViewNotifier.EditorIdle`; não existe polling de conteúdo. Um
-snapshot só é solicitado quando arquivo, revisão ou posição do cursor mudam. Contextos bloqueados
-pela política não chegam ao provider.
+No modo contínuo, o RadIA usa a API moderna `INTACodeEditorEvents` para observar o ciclo de pintura
+e detectar revisões do editor; não existe polling periódico de conteúdo. Um snapshot só é
+solicitado quando arquivo, revisão ou posição do cursor mudam. Contextos bloqueados pela política
+não chegam ao provider.
 
 ## Segurança e privacidade
 

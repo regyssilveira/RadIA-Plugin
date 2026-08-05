@@ -65,9 +65,9 @@ Changes take effect without restarting the IDE. The context menu also provides
 **Pause/Resume Inline Completion for Session**. Session pause does not modify the persisted
 preference and returns to its normal state when the IDE restarts.
 
-Continuous mode uses `INTAEditViewNotifier.EditorIdle`; it does not poll editor content. A snapshot
-is requested only when the file, revision, or cursor position changes. Policy-blocked contexts
-never reach the provider.
+Continuous mode uses the modern `INTACodeEditorEvents` API to observe paint cycles and editor
+revisions; it does not periodically poll content. A snapshot is requested only when the file,
+revision, or cursor position changes. Policy-blocked contexts never reach the provider.
 
 ## Security and privacy
 

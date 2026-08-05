@@ -84,7 +84,7 @@ Usa as APIs de extensão da IDE Delphi (**Open Tools API - OTA**) para acoplar o
 | `RadIA.OTA.Build` | Adapter do build e captura estruturada de resultados. |
 | `RadIA.OTA.Designer` | Adapter do Form Designer vivo na thread principal. |
 | `RadIA.OTA.Debugger` | Adapter de estado e controle do debugger. |
-| `RadIA.OTA.InlineReviews` | Apresentação e ciclo das revisões inline. |
+| `RadIA.OTA.InlineReviews` | Apresentação e ciclo das revisões inline pela API moderna `INTACodeEditorEvents`. |
 | `RadIA.OTA.Knowledge*` | Índice local e notificações de edit, save, rename e close. |
 | `RadIA.MCP.NamedPipe` | Servidor local, ACL, discovery por PID e transporte. |
 

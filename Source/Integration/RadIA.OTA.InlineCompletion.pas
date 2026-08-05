@@ -34,20 +34,14 @@ type
     FContinuousEnabled: Boolean;
     FIdleHandler: TRadIAInlineCompletionIdleHandler;
     FSuggestion: string;
-    FView: IOTAEditView;
-    FViewNotifierIndex: Integer;
     function CurrentView: IOTAEditView;
     function FirstSuggestionLine: string;
     function LanguageForFile(const AFileName: string): string;
-    procedure RegisterView(const AView: IOTAEditView);
-    procedure UnregisterView;
   protected
     procedure PaintOverlay(
       const APaintContext: TRadIAEditPaintContext
     ); override;
   public
-    constructor Create;
-    destructor Destroy; override;
     function Apply(
       const AContext: TRadIAInlineCompletionContext;
       const AText: string;
@@ -65,7 +59,6 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
-    procedure Destroyed; override;
     procedure Modified; override;
     procedure EditorIdle(const View: IOTAEditView); override;
     procedure WatchCurrentView;
@@ -82,8 +75,6 @@ uses
   RadIA.Core.Container,
   RadIA.Core.IDENavigation,
   RadIA.Core.Interfaces,
-  RadIA.Core.Logger,
-  RadIA.Core.Types,
   RadIA.OTA.TextReader;
 
 function TRadIAOTAInlineCompletionSession.Apply(
@@ -195,11 +186,14 @@ begin
 end;
 
 procedure TRadIAOTAInlineCompletionSession.Clear;
+var
+  LView: IOTAEditView;
 begin
   FSuggestion := '';
   FContext := Default(TRadIAInlineCompletionContext);
-  if Assigned(FView) then
-    FView.Paint;
+  LView := CurrentView;
+  if Assigned(LView) then
+    LView.Paint;
   if not FContinuousEnabled then
     UnregisterView;
 end;
@@ -223,12 +217,6 @@ begin
   end;
 end;
 
-constructor TRadIAOTAInlineCompletionSession.Create;
-begin
-  inherited Create;
-  FViewNotifierIndex := -1;
-end;
-
 function TRadIAOTAInlineCompletionSession.CurrentView: IOTAEditView;
 var
   LEditorServices: IOTAEditorServices;
@@ -240,19 +228,6 @@ begin
     LEditorServices
   ) then
     Result := LEditorServices.TopView;
-end;
-
-destructor TRadIAOTAInlineCompletionSession.Destroy;
-begin
-  UnregisterView;
-  inherited Destroy;
-end;
-
-procedure TRadIAOTAInlineCompletionSession.Destroyed;
-begin
-  inherited;
-  FViewNotifierIndex := -1;
-  FView := nil;
 end;
 
 procedure TRadIAOTAInlineCompletionSession.EditorIdle(
@@ -336,18 +311,6 @@ begin
   end;
 end;
 
-procedure TRadIAOTAInlineCompletionSession.RegisterView(
-  const AView: IOTAEditView
-);
-begin
-  if Assigned(FView) and FView.SameView(AView) then
-    Exit;
-  UnregisterView;
-  FView := AView;
-  if Assigned(FView) then
-    FViewNotifierIndex := FView.AddNotifier(Self);
-end;
-
 procedure TRadIAOTAInlineCompletionSession.Show(
   const AContext: TRadIAInlineCompletionContext;
   const ASuggestion: string
@@ -361,27 +324,8 @@ begin
     Exit;
   FContext := AContext;
   FSuggestion := ASuggestion;
-  RegisterView(LView);
+  RegisterCurrentView;
   LView.Paint;
-end;
-
-procedure TRadIAOTAInlineCompletionSession.UnregisterView;
-begin
-  if Assigned(FView) and (FViewNotifierIndex >= 0) and
-    not GIsShuttingDown then
-  begin
-    try
-      FView.RemoveNotifier(FViewNotifierIndex);
-    except
-      on E: Exception do
-        TLogger.Log(
-          'Inline completion notifier removal failed: ' + E.Message,
-          'Warning'
-        );
-    end;
-  end;
-  FViewNotifierIndex := -1;
-  FView := nil;
 end;
 
 procedure TRadIAOTAInlineCompletionSession.WatchCurrentView;
@@ -392,7 +336,7 @@ begin
     Exit;
   LView := CurrentView;
   if Assigned(LView) then
-    RegisterView(LView);
+    RegisterCurrentView;
 end;
 
 end.

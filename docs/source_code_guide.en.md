@@ -83,7 +83,7 @@ Uses Delphi's extension APIs (**Open Tools API - OTA**) to dock visual panels an
 | `RadIA.OTA.Build` | Build adapter and structured result capture. |
 | `RadIA.OTA.Designer` | Live Form Designer adapter on the IDE main thread. |
 | `RadIA.OTA.Debugger` | IDE debugger state and control adapter. |
-| `RadIA.OTA.InlineReviews` | Inline review presentation and lifecycle. |
+| `RadIA.OTA.InlineReviews` | Inline review presentation and lifecycle through modern `INTACodeEditorEvents`. |
 | `RadIA.OTA.Knowledge*` | Local index and edit, save, rename, and close notifications. |
 | `RadIA.MCP.NamedPipe` | Local server, ACL, per-PID discovery, and transport. |
 
