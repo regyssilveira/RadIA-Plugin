@@ -1,7 +1,8 @@
 # Declarative extensions
 
-RadIA 2.0 can load chat commands, templates, skills, and safe tool aliases without rebuilding the
-plugin or restarting Delphi. Each extension is a `*.radia.json` manifest stored under:
+RadIA 2.0 can load chat commands, templates, skills, journeys, policies, and safe tool aliases
+without rebuilding the plugin or restarting Delphi. Each extension is a `*.radia.json` manifest
+stored under:
 
 ```text
 %USERPROFILE%\RadIA\extensions
@@ -20,21 +21,30 @@ installed set, and restores the previous file if validation or activation fails.
 refreshes its catalog, while chats opened later load the current state directly.
 
 Schema 2 supports templates and skills. Schema 3 adds `tools`, which publish safe aliases for
-existing internal tools. Permissions must exactly match the capabilities present: `chat.prompt`
-for prompt capabilities and `tool.alias` for aliases. Schema 1 and 2 manifests remain compatible.
-The combined total is limited to 100 capabilities.
+existing internal tools. Schema 4 adds team journeys and policies. Permissions must exactly match
+the capabilities present: `chat.prompt` for prompt capabilities and `tool.alias` for aliases.
+Schema 1, 2, and 3 manifests remain compatible. The combined total is limited to 100 capabilities.
 
 ```json
 {
-  "schemaVersion": 3,
-  "id": "TeamTools",
-  "version": "3.0.0",
-  "permissions": ["tool.alias"],
-  "tools": [
+  "schemaVersion": 4,
+  "id": "TeamDelivery",
+  "version": "4.0.0",
+  "permissions": ["chat.prompt"],
+  "journeys": [
     {
-      "name": "TeamToolsProjectHealth",
-      "description": "Inspect project health under the team namespace.",
-      "targetTool": "GetProjectHealth"
+      "name": "Team release",
+      "description": "Run the team's release gates.",
+      "command": "/team-release",
+      "objective": "Inspect health, validate targets, review the diff, and prepare a local commit preview."
+    }
+  ],
+  "policies": [
+    {
+      "name": "Team architecture",
+      "description": "Review using the shared architecture policy.",
+      "command": "/team-architecture",
+      "instructions": "Review API stability, ownership, thread safety, testability, and Delphi compatibility."
     }
   ]
 }
@@ -53,8 +63,18 @@ Advanced tools with custom implementations remain available through the
 BPL API documented in the [extension guide](tool_extension_guide.md) and remain subject to central
 risk and consent policies.
 
-See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2 and
-`Examples/DeclarativeExtension/team-tools.radia.json` for a complete schema 3 tool alias.
+Schema 4 journeys start Agent Runtime with mandatory RadIA workspace inspection, plan review,
+central consent, audit, preview, rollback, build, and test gates appended after the shared
+objective. Policies expand only when the user explicitly selects their command. Optional
+arguments are limited to 4,000 characters.
+
+Schema 4 rejects fields named `apiKey`, `credential`, `password`, `secret`, or `token` at any
+manifest depth. Credentials remain in each installation's protected settings and must never be
+included in shared manifests or packages.
+
+See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2,
+`Examples/DeclarativeExtension/team-tools.radia.json` for schema 3, and
+`Examples/DeclarativeExtension/team-journeys.radia.json` for schema 4.
 
 The visual manager completes the local install, update, activation, diagnostics, and removal cycle.
 

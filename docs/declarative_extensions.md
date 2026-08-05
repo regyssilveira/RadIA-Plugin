@@ -1,7 +1,8 @@
 # Extensões declarativas
 
-O RadIA 2.0 pode carregar comandos, templates, skills e aliases seguros de tools sem recompilar o
-plugin ou reiniciar o Delphi. Cada extensão é um manifesto `*.radia.json` armazenado em:
+O RadIA 2.0 pode carregar comandos, templates, skills, jornadas, políticas e aliases seguros de
+tools sem recompilar o plugin ou reiniciar o Delphi. Cada extensão é um manifesto `*.radia.json`
+armazenado em:
 
 ```text
 %USERPROFILE%\RadIA\extensions
@@ -27,11 +28,11 @@ da ativação e o conjunto completo é recarregado depois da troca. Se houver co
 inválido ou falha de escrita, o RadIA restaura automaticamente a versão anterior. Um chat aberto
 atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estado.
 
-## Manifesto versão 3
+## Manifesto versão 4
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "id": "TeamWorkflow",
   "version": "3.0.0",
   "enabled": true,
@@ -52,6 +53,22 @@ atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estad
       "instructions": "Review this code using the team conventions:\n\n```pascal\n{code}\n```"
     }
   ],
+  "journeys": [
+    {
+      "name": "Team release",
+      "description": "Run the team's release gates.",
+      "command": "/team-release",
+      "objective": "Inspect health, validate targets, review the diff, and prepare a local commit preview."
+    }
+  ],
+  "policies": [
+    {
+      "name": "Team architecture",
+      "description": "Review using the shared architecture policy.",
+      "command": "/team-architecture",
+      "instructions": "Review API stability, ownership, thread safety, testability, and Delphi compatibility."
+    }
+  ],
   "tools": [
     {
       "name": "TeamWorkflowProjectHealth",
@@ -62,15 +79,16 @@ atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estad
 }
 ```
 
-Os exemplos completos estão em `Examples/DeclarativeExtension/team-workflow.radia.json` e
-`Examples/DeclarativeExtension/team-tools.radia.json`. Manifestos schema 1 e 2 continuam
+Os exemplos completos estão em `Examples/DeclarativeExtension/team-workflow.radia.json`,
+`Examples/DeclarativeExtension/team-tools.radia.json` e
+`Examples/DeclarativeExtension/team-journeys.radia.json`. Manifestos schema 1, 2 e 3 continuam
 compatíveis sem migração.
 
 ## Campos e validação
 
 | Campo | Regra |
 |---|---|
-| `schemaVersion` | `1` para comandos, `2` para templates/skills e `3` para aliases de tools. |
+| `schemaVersion` | `1` para comandos, `2` para templates/skills, `3` para tools e `4` para jornadas/políticas. |
 | `id` | Identificador PascalCase alfanumérico e exclusivo. |
 | `version` | Versão semântica `major.minor.patch`. |
 | `enabled` | Opcional; `false` mantém o manifesto instalado, mas inativo. |
@@ -78,8 +96,10 @@ compatíveis sem migração.
 | `commands` | Comandos de prompt; usa o campo `prompt`. |
 | `templates` | Templates reutilizáveis; usa o campo `prompt` e requer schema 2. |
 | `skills` | Instruções especializadas; usa `instructions` e requer schema 2. |
+| `journeys` | Receitas agentivas; usa `objective`, ativa o Agent Runtime e requer schema 4. |
+| `policies` | Políticas explícitas de prompt; usa `instructions` e requer schema 4. |
 | `tools` | Aliases de tools internas; requer schema 3, `tool.alias`, `name`, `description` e `targetTool`. |
-| limite total | Entre 1 e 100 itens somando commands, templates, skills e tools. |
+| limite total | Entre 1 e 100 itens somando todas as capacidades. |
 | `command` | `/` seguido de letras, números ou hífens; máximo de 32 caracteres após a barra. |
 | `prompt` | Texto não vazio com até 32.768 caracteres. |
 
@@ -108,6 +128,18 @@ seu comando. O schema 3 também pode publicar um alias para uma tool interna já
 Targets inexistentes, colisões ou falhas de registro produzem o diagnóstico `runtime-rejected` e
 preservam o conjunto anterior de aliases. Tools avançadas com implementação própria continuam
 disponíveis pela API BPL descrita no [guia de extensões](tool_extension_guide.md).
+
+## Jornadas, políticas e credenciais
+
+Uma entrada de `journeys` inicia uma execução real no Agent Runtime. O RadIA acrescenta ao objetivo
+os gates obrigatórios de inspeção, plano revisável, consentimento central, auditoria, preview,
+rollback, build e testes. A receita compartilhada não consegue conceder permissões adicionais nem
+desativar esses gates.
+
+Uma entrada de `policies` expande as instruções somente quando o usuário escolhe seu comando.
+Argumentos opcionais são limitados a 4.000 caracteres. O schema 4 rejeita, em qualquer nível,
+campos chamados `apiKey`, `credential`, `password`, `secret` ou `token`. Credenciais continuam nas
+configurações protegidas de cada instalação e nunca devem fazer parte de manifestos ou pacotes.
 
 O gerenciador visual conclui o ciclo local de instalação, atualização, ativação, diagnóstico e
 remoção de manifestos.

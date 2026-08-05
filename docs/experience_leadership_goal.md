@@ -69,7 +69,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M4 — Extensões | Em execução | Instalação declarativa segura sem recompilar ou reiniciar |
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
 | M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
-| M7 — Jornadas | Planejado | Receitas Delphi ponta a ponta aprovadas |
+| M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |
 | M8 — Prova e release | Bloqueado pelos anteriores | Matriz, dez ciclos e auditorias aprovados |
 
 O M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache, limites, provider
@@ -256,7 +256,7 @@ possui plano somente leitura, preserva dados e componentes compartilhados por pa
 - [x] Adicionar modernização orientada a Delphi, incluindo units, forms, packages e dependências.
 - [x] Integrar migração segura de padrões legados com preview e gates de compilação.
 - [x] Criar cartão de saúde do projeto com score, riscos e jornadas priorizadas revisáveis.
-- Permitir compartilhar receitas e políticas entre equipes sem compartilhar credenciais.
+- [x] Permitir compartilhar receitas e políticas entre equipes sem compartilhar credenciais.
 
 **Saída:** o RadIA resolve fluxos completos de Delphi, não apenas solicitações isoladas.
 
@@ -267,6 +267,10 @@ mantido separado e não substitui consentimento, revisão de plano nem gates de 
 O catálogo agora possui sete receitas. `/journey modernize` inventaria units, forms, packages,
 dependências e targets antes de aplicar lotes coerentes. `/journey migrate` exige baseline, escopo
 fechado, transação reversível e comparação de build, testes e saúde antes de aceitar cada lote.
+
+O schema declarativo 4 publica jornadas e políticas com hot reload. Jornadas compartilhadas entram
+no Agent Runtime com gates obrigatórios acrescentados pelo RadIA; políticas só expandem mediante
+comando explícito. Campos de credenciais são rejeitados recursivamente e não entram nos pacotes.
 
 ### M8 — Prova de liderança e release
 

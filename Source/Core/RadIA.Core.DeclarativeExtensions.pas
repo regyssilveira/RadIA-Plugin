@@ -7,7 +7,7 @@ uses
   System.JSON;
 
 const
-  CRadIADeclarativeExtensionSchemaVersion = 3;
+  CRadIADeclarativeExtensionSchemaVersion = 4;
 
 type
   TRadIADeclarativeCommand = record
@@ -154,6 +154,7 @@ type
       const AExtensionId: string;
       const AVersion: string
     );
+    procedure ValidateNoSensitiveFields(const AValue: TJSONValue);
     procedure ValidatePermissions(
       const AJson: TJSONObject;
       const AHasPromptCapabilities: Boolean;
@@ -194,6 +195,11 @@ type
       const ASlashCommand: string;
       out ACommand: TRadIADeclarativeCommand
     ): Boolean;
+    function TryResolveInput(
+      const AInput: string;
+      out ACommand: TRadIADeclarativeCommand;
+      out AArgument: string
+    ): Boolean;
   end;
 
 implementation
@@ -211,6 +217,7 @@ const
   CMaximumDescriptionLength = 500;
   CMaximumManifestBytes = 1048576;
   CMaximumPromptLength = 32768;
+  CMaximumCommandArgumentLength = 4000;
 
 procedure TRadIADeclarativeExtensionManager.AtomicWrite(
   const AFileName: string;
@@ -629,6 +636,8 @@ begin
       raise EArgumentException.Create(
         'Unsupported declarative extension schema version.'
       );
+    if LSchemaVersion >= 4 then
+      ValidateNoSensitiveFields(LJson);
     LExtensionId := Trim(LJson.GetValue<string>('id', ''));
     LVersion := Trim(LJson.GetValue<string>('version', ''));
     ValidateManifestIdentity(LExtensionId, LVersion);
@@ -641,7 +650,9 @@ begin
     LHasPromptCapabilities :=
       Assigned(LJson.GetValue('commands')) or
       Assigned(LJson.GetValue('templates')) or
-      Assigned(LJson.GetValue('skills'));
+      Assigned(LJson.GetValue('skills')) or
+      Assigned(LJson.GetValue('journeys')) or
+      Assigned(LJson.GetValue('policies'));
     LHasTools := Assigned(LJson.GetValue('tools'));
     ValidatePermissions(
       LJson,
@@ -816,6 +827,27 @@ begin
         AJson,
         'skills',
         'skill',
+        'instructions',
+        AExtensionId,
+        AReservedCommands,
+        LCommands
+      );
+    end;
+    if ASchemaVersion >= 4 then
+    begin
+      ParseCapabilityArray(
+        AJson,
+        'journeys',
+        'journey',
+        'objective',
+        AExtensionId,
+        AReservedCommands,
+        LCommands
+      );
+      ParseCapabilityArray(
+        AJson,
+        'policies',
+        'policy',
         'instructions',
         AExtensionId,
         AReservedCommands,
@@ -1140,6 +1172,41 @@ begin
   Result := False;
 end;
 
+function TRadIADeclarativeExtensionManager.TryResolveInput(
+  const AInput: string;
+  out ACommand: TRadIADeclarativeCommand;
+  out AArgument: string
+): Boolean;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LInput: string;
+begin
+  AArgument := '';
+  ACommand := Default(TRadIADeclarativeCommand);
+  LInput := Trim(AInput);
+  for LCommand in FCommands do
+  begin
+    if SameText(LInput, LCommand.SlashCommand) then
+    begin
+      ACommand := LCommand;
+      Exit(True);
+    end;
+    if LInput.StartsWith(LCommand.SlashCommand + ' ', True) then
+    begin
+      AArgument := Trim(
+        Copy(LInput, Length(LCommand.SlashCommand) + 1, MaxInt)
+      );
+      if Length(AArgument) > CMaximumCommandArgumentLength then
+        raise EArgumentException.Create(
+          'Declarative command context must not exceed 4000 characters.'
+        );
+      ACommand := LCommand;
+      Exit(True);
+    end;
+  end;
+  Result := False;
+end;
+
 procedure TRadIADeclarativeExtensionManager.ValidateManifestIdentity(
   const AExtensionId: string;
   const AVersion: string
@@ -1153,6 +1220,45 @@ begin
     raise EArgumentException.Create(
       'Extension version must use semantic major.minor.patch format.'
     );
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidateNoSensitiveFields(
+  const AValue: TJSONValue
+);
+const
+  CSensitiveNames: array[0..4] of string = (
+    'apiKey',
+    'credential',
+    'password',
+    'secret',
+    'token'
+  );
+var
+  LArray: TJSONArray;
+  LIndex: Integer;
+  LName: string;
+  LObject: TJSONObject;
+  LPair: TJSONPair;
+begin
+  if AValue is TJSONObject then
+  begin
+    LObject := TJSONObject(AValue);
+    for LPair in LObject do
+    begin
+      for LName in CSensitiveNames do
+        if SameText(LPair.JsonString.Value, LName) then
+          raise EArgumentException.Create(
+            'Schema 4 manifests must not contain credential fields.'
+          );
+      ValidateNoSensitiveFields(LPair.JsonValue);
+    end;
+  end
+  else if AValue is TJSONArray then
+  begin
+    LArray := TJSONArray(AValue);
+    for LIndex := 0 to LArray.Count - 1 do
+      ValidateNoSensitiveFields(LArray[LIndex]);
+  end;
 end;
 
 end.

@@ -68,7 +68,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M4 — Extensions | In progress | Safe declarative installation without recompilation or restart |
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
 | M6 — Installation | Planned | First value and diagnostics without manual file editing |
-| M7 — Journeys | Planned | End-to-end Delphi recipes approved |
+| M7 — Journeys | Completed | End-to-end Delphi recipes approved |
 | M8 — Proof and release | Blocked by previous milestones | Matrix, ten cycles, and audits approved |
 
 M1 now includes a Fill-in-the-Middle engine, debounce, cancellation, cache, limits, a decoupled
@@ -249,6 +249,7 @@ provides a read-only plan, preserves data and shared components by default, and 
 - [x] Add Delphi-specific modernization for units, forms, packages, and dependencies.
 - [x] Migrate legacy patterns with preview and compile gates.
 - [x] Add a project-health card with a score, risks, and reviewable prioritized journeys.
+- [x] Allow teams to share recipes and policies without sharing credentials.
 
 **Outcome:** complete Delphi workflows rather than isolated requests.
 
@@ -259,6 +260,10 @@ cannot replace consent, plan review, or completion gates.
 The catalog now contains seven recipes. `/journey modernize` inventories units, forms, packages,
 dependencies, and targets before applying coherent batches. `/journey migrate` requires a
 baseline, bounded scope, reversible transaction, and build, test, and health comparison per batch.
+
+Declarative schema 4 publishes journeys and policies with hot reload. Shared journeys enter Agent
+Runtime with mandatory RadIA gates appended; policies expand only through an explicit command.
+Credential fields are rejected recursively and never enter extension packages.
 
 ### M8 — Leadership proof and release
 

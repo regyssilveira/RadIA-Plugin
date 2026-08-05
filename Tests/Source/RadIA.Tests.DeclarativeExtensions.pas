@@ -50,6 +50,10 @@ type
     [Test]
     procedure LoadsSchemaThreeDeclarativeToolContract;
     [Test]
+    procedure LoadsSchemaFourTeamJourneysAndPolicies;
+    [Test]
+    procedure RejectsSchemaFourCredentialFields;
+    [Test]
     procedure RejectsDeclarativeToolWithoutExplicitPermission;
     [Test]
     procedure RejectsDeclarativeToolOutsideExtensionNamespace;
@@ -364,6 +368,57 @@ begin
   Assert.AreEqual('TeamToolsProjectHealth', LTools[0].Name);
   Assert.AreEqual('GetProjectHealth', LTools[0].TargetTool);
   Assert.AreEqual('loaded', FManager.GetDiagnostics[0].Status);
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  LoadsSchemaFourTeamJourneysAndPolicies;
+const
+  CManifest =
+    '{"schemaVersion":4,"id":"TeamDelivery","version":"4.0.0",' +
+    '"permissions":["chat.prompt"],"journeys":[{"name":"Team release",' +
+    '"description":"Run the team release journey.","command":"/team-release",' +
+    '"objective":"Inspect, validate, review, and prepare the team release."}],' +
+    '"policies":[{"name":"Team architecture","description":"Review architecture.",' +
+    '"command":"/team-architecture","instructions":"Apply the published architecture policy."}]}';
+var
+  LArgument: string;
+  LCapability: TRadIADeclarativeCommand;
+begin
+  WriteManifest('team-delivery.radia.json', CManifest);
+  FManager.Reload([]);
+
+  Assert.IsTrue(
+    FManager.TryResolveInput(
+      '/team-release release only the billing package',
+      LCapability,
+      LArgument
+    )
+  );
+  Assert.AreEqual('journey', LCapability.Kind);
+  Assert.AreEqual('release only the billing package', LArgument);
+  Assert.Contains(LCapability.Prompt, 'Inspect, validate');
+
+  Assert.IsTrue(FManager.TryResolve('/team-architecture', LCapability));
+  Assert.AreEqual('policy', LCapability.Kind);
+  Assert.AreEqual('loaded', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, '2 capability');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  RejectsSchemaFourCredentialFields;
+const
+  CManifest =
+    '{"schemaVersion":4,"id":"UnsafeTeam","version":"4.0.0",' +
+    '"permissions":["chat.prompt"],"policies":[{"name":"Unsafe policy",' +
+    '"description":"Contains a forbidden field.","command":"/unsafe-policy",' +
+    '"instructions":"Review code.","settings":{"apiKey":"must-not-load"}}]}';
+begin
+  WriteManifest('unsafe-team.radia.json', CManifest);
+  FManager.Reload([]);
+
+  Assert.AreEqual<Integer>(0, Length(FManager.GetCommands));
+  Assert.AreEqual('rejected', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, 'credential fields');
 end;
 
 procedure TRadIADeclarativeExtensionTests.

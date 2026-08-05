@@ -2368,7 +2368,9 @@ function TRadIAChatPresenter.TryHandleJourneyCommand(
 ): Boolean;
 var
   LContext: string;
+  LDeclarative: TRadIADeclarativeCommand;
   LDefinition: TRadIAJourneyDefinition;
+  LIsNativeJourney: Boolean;
   LObjective: string;
 begin
   Result := True;
@@ -2383,12 +2385,21 @@ begin
     Exit;
   end;
   try
-    if not TRadIAJourneyCatalog.Resolve(
+    LIsNativeJourney := TRadIAJourneyCatalog.Resolve(
       ACommandText,
       LDefinition,
       LContext
-    ) then
-      Exit(False);
+    );
+    if not LIsNativeJourney then
+    begin
+      ReloadDeclarativeExtensions;
+      if not FDeclarativeExtensionManager.TryResolveInput(
+        ACommandText,
+        LDeclarative,
+        LContext
+      ) or not SameText(LDeclarative.Kind, 'journey') then
+        Exit(False);
+    end;
   except
     on E: EArgumentException do
     begin
@@ -2400,7 +2411,21 @@ begin
   PostToWebView('add_message', 'user', APromptText);
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
-  LObjective := LDefinition.BuildAgentObjective(LContext);
+  if LIsNativeJourney then
+    LObjective := LDefinition.BuildAgentObjective(LContext)
+  else
+  begin
+    LObjective := LDeclarative.Prompt + sLineBreak + sLineBreak +
+      'Mandatory RadIA safety gates:' + sLineBreak +
+      '- Inspect the active workspace before proposing changes.' + sLineBreak +
+      '- Present a reviewable plan before the first tool call.' + sLineBreak +
+      '- Use only registered tools through central consent and auditing.' + sLineBreak +
+      '- Preview mutations and preserve independent rollback evidence.' + sLineBreak +
+      '- Build and run focused tests before claiming completion.';
+    if not LContext.IsEmpty then
+      LObjective := LObjective + sLineBreak + sLineBreak +
+        'User-provided context: ' + LContext;
+  end;
   StartAgentRun(LObjective);
 end;
 

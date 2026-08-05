@@ -176,6 +176,8 @@ type
     [Test]
     procedure TestDeclarativeExtensionAppearsInSlashCatalog;
     [Test]
+    procedure TestDeclarativeJourneyStartsGuardedAgentRun;
+    [Test]
     procedure TestSlashCommandUsesProvidedCodeBlock;
     [Test]
     procedure TestClearChatResetsState;
@@ -1030,6 +1032,45 @@ begin
   LProcessed := FPresenter.TestPreProcessPrompt('/team-review');
   Assert.Contains(LProcessed, 'Use the team policy:');
   Assert.Contains(LProcessed, 'procedure TeamCode; begin end;');
+end;
+
+procedure TTestChatPresenter.
+  TestDeclarativeJourneyStartsGuardedAgentRun;
+var
+  LAttempt: Integer;
+  LDirectory: string;
+  LManifest: string;
+begin
+  LDirectory := TPath.Combine(FTempDir, 'extensions');
+  TDirectory.CreateDirectory(LDirectory);
+  LManifest :=
+    '{"schemaVersion":4,"id":"TeamDelivery","version":"4.0.0",' +
+    '"permissions":["chat.prompt"],"journeys":[{"name":"Team release",' +
+    '"description":"Run team release gates.","command":"/team-release",' +
+    '"objective":"Validate the team delivery checklist."}]}';
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'team-delivery.radia.json'),
+    LManifest,
+    TEncoding.UTF8
+  );
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/team-release billing package');
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'Validate the team delivery checklist.');
+  Assert.Contains(FMockView.PostedMessages.Text, 'Mandatory RadIA safety gates:');
+  Assert.Contains(FMockView.PostedMessages.Text, 'User-provided context: billing package');
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
 end;
 
 procedure TTestChatPresenter.TestWebMessageOpenTerminal;
