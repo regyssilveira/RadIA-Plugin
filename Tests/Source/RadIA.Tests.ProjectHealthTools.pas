@@ -116,6 +116,7 @@ type
 implementation
 
 uses
+  System.SysUtils,
   RadIA.Core.ProjectHealthTools,
   RadIA.Core.ToolRegistry;
 
@@ -354,6 +355,7 @@ end;
 
 procedure TTestRadIAProjectHealthTools.HealthyProjectHasNoRisks;
 var
+  LContent: string;
   LResult: TRadIAToolResult;
 begin
   LResult := ExecuteHealth(
@@ -362,13 +364,20 @@ begin
     TRadIAProjectHealthTestRunner.Create(drsSucceeded),
     TRadIAProjectHealthTestKnowledge.Create(True)
   );
+  LContent := StringReplace(LResult.ContentJson, '\/', '/', [rfReplaceAll]);
   Assert.IsTrue(LResult.Success);
-  Assert.Contains(LResult.ContentJson, '"health":"healthy"');
-  Assert.Contains(LResult.ContentJson, '"risks":[]');
+  Assert.Contains(LContent, '"health":"healthy"');
+  Assert.Contains(LContent, '"score":100');
+  Assert.Contains(
+    LContent,
+    '"nextAction":"/agent run Review project health"'
+  );
+  Assert.Contains(LContent, '"risks":[]');
 end;
 
 procedure TTestRadIAProjectHealthTools.CriticalSignalsArePrioritized;
 var
+  LContent: string;
   LResult: TRadIAToolResult;
 begin
   LResult := ExecuteHealth(
@@ -377,13 +386,18 @@ begin
     TRadIAProjectHealthTestRunner.Create(drsFailed),
     TRadIAProjectHealthTestKnowledge.Create(False)
   );
+  LContent := StringReplace(LResult.ContentJson, '\/', '/', [rfReplaceAll]);
   Assert.IsTrue(LResult.Success);
-  Assert.Contains(LResult.ContentJson, '"health":"attention"');
-  Assert.Contains(LResult.ContentJson, '"code":"ide_shutting_down"');
-  Assert.Contains(LResult.ContentJson, '"code":"no_active_project"');
-  Assert.Contains(LResult.ContentJson, '"code":"compiler_errors"');
-  Assert.Contains(LResult.ContentJson, '"code":"build_unhealthy"');
-  Assert.Contains(LResult.ContentJson, '"code":"tests_unhealthy"');
+  Assert.Contains(LContent, '"health":"attention"');
+  Assert.Contains(LContent, '"code":"ide_shutting_down"');
+  Assert.Contains(LContent, '"code":"no_active_project"');
+  Assert.Contains(LContent, '"code":"compiler_errors"');
+  Assert.Contains(LContent, '"code":"build_unhealthy"');
+  Assert.Contains(LContent, '"code":"tests_unhealthy"');
+  Assert.Contains(LContent, '"score":0');
+  Assert.Contains(LContent, '"recommendedCommand":"/journey create"');
+  Assert.Contains(LContent, '"recommendedCommand":"/journey fix-build"');
+  Assert.Contains(LContent, '"recommendedCommand":"/journey tests"');
 end;
 
 initialization

@@ -1068,6 +1068,67 @@ function renderKnowledgeDocumentResult(card, result) {
   });
 }
 
+function createHealthActionButton(command) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'tool-action-button project-health-action';
+  button.textContent = 'Prepare action';
+  button.title = command;
+  button.addEventListener('click', () => setPromptText(command));
+  return button;
+}
+
+function renderProjectHealth(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const risks = Array.isArray(result.risks) ? result.risks : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'project-health-summary';
+
+  const score = document.createElement('strong');
+  score.className = `project-health-score project-health-${result.health || 'attention'}`;
+  score.textContent = `${Math.max(0, result.score ?? 0)}/100`;
+
+  const project = document.createElement('span');
+  project.textContent = result.projectName || 'No active project';
+  summary.appendChild(score);
+  summary.appendChild(project);
+  content.appendChild(summary);
+
+  if (risks.length === 0) {
+    const healthy = document.createElement('div');
+    healthy.className = 'project-health-empty';
+    healthy.textContent = 'No project health risks were detected.';
+    content.appendChild(healthy);
+    return;
+  }
+
+  risks.forEach(risk => {
+    const item = document.createElement('section');
+    item.className = 'project-health-risk';
+
+    const header = document.createElement('div');
+    header.className = 'project-health-risk-header';
+
+    const severity = document.createElement('span');
+    severity.className = `project-health-severity severity-${risk.severity || 'medium'}`;
+    severity.textContent = risk.severity || 'medium';
+    header.appendChild(severity);
+    header.append(risk.code || 'project_risk');
+    item.appendChild(header);
+
+    const message = document.createElement('div');
+    message.textContent = risk.message || '';
+    item.appendChild(message);
+
+    if (risk.recommendedCommand) {
+      item.appendChild(createHealthActionButton(risk.recommendedCommand));
+    }
+    content.appendChild(item);
+  });
+}
+
 function renderPatchPreview(card, result, actionName) {
   const content = card.querySelector('.tool-card-content');
   content.replaceChildren();
@@ -1186,6 +1247,7 @@ function renderComponentPropertyPreview(card, result, actionName) {
 }
 
 const TOOL_RESULT_RENDERERS = {
+  GetProjectHealth: [renderProjectHealth, ''],
   SearchProjectKnowledge: [renderKnowledgeSearchResult, ''],
   GetKnowledgeDocument: [renderKnowledgeDocumentResult, ''],
   PreparePatch: [renderPatchPreview, 'ApplyPatch'],

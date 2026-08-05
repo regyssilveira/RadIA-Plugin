@@ -248,7 +248,7 @@ provides a read-only plan, preserves data and shared components by default, and 
 - Deliver auditable recipes for application creation, build repair, testing, and debugging.
 - Add Delphi-specific modernization for units, forms, packages, and dependencies.
 - Migrate legacy patterns with preview and compile gates.
-- Add a project-health panel and shareable team recipes and policies.
+- [x] Add a project-health card with a score, risks, and reviewable prioritized journeys.
 
 **Outcome:** complete Delphi workflows rather than isolated requests.
 

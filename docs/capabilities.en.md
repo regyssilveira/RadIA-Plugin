@@ -18,7 +18,7 @@ This page is the functional map of RadIA 2.0.
 | Debugger | Start, stop, pause, continue, step, manage breakpoints and watches, evaluate expressions, inspect call stacks and read the timeline. |
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
-| Project health | Summarize IDE, compiler, build, tests, and local knowledge risks without running mutations. |
+| Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
 | Installation doctor | Score provider, executor, conditional MCP, terminal, chat, and first-tool readiness with a next action. |
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints and resource limits. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |

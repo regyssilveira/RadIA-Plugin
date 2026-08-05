@@ -1752,6 +1752,70 @@ body.light-theme .message-avatar.provider-avatar-badge {
   color: var(--text-muted);
 }
 
+.project-health-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.project-health-score {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #ffffff;
+}
+
+.project-health-healthy {
+  background-color: #15803d;
+}
+
+.project-health-attention {
+  background-color: #b45309;
+}
+
+.project-health-empty {
+  color: var(--text-muted);
+}
+
+.project-health-risk {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.project-health-risk-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+
+.project-health-severity {
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.severity-critical {
+  background-color: #b91c1c;
+}
+
+.severity-high {
+  background-color: #c2410c;
+}
+
+.severity-medium {
+  background-color: #a16207;
+}
+
+.project-health-action {
+  align-self: flex-start;
+}
+
 .knowledge-result-source {
   display: grid;
   gap: 6px;

@@ -4,6 +4,13 @@ Este guia detalha como utilizar as ferramentas avançadas do **Rad IA** para loc
 
 ---
 
+## Saúde consolidada do projeto
+
+Digite `/health` para abrir um cartão com score de 0 a 100 e riscos priorizados da IDE, compilador,
+último build, última execução DUnitX e conhecimento local. Quando houver uma correção conhecida,
+**Preparar ação** coloca a jornada recomendada no campo do chat. O RadIA não executa a jornada
+automaticamente: você pode revisar, complementar ou apagar o comando antes de enviá-lo.
+
 ## 1. Depurador de Compilação (Smart Build Debugger)
 
 Muitas vezes, erros apontados pelo compilador do Delphi (DCC) são enigmáticos ou difíceis de rastrear na primeira leitura (por exemplo, erros de sintaxe decorrentes de declarações incorretas de tipos ou literais de string que violam o limite de 255 caracteres). O Rad IA integra-se à janela de mensagens da IDE para ajudar.

@@ -255,7 +255,7 @@ possui plano somente leitura, preserva dados e componentes compartilhados por pa
 - Entregar receitas auditáveis para criar aplicação, corrigir build, ampliar testes e depurar.
 - Adicionar modernização orientada a Delphi, incluindo units, forms, packages e dependências.
 - Integrar migração segura de padrões legados com preview e gates de compilação.
-- Criar painel de saúde do projeto com riscos, testes, dívida e sugestões priorizadas.
+- [x] Criar cartão de saúde do projeto com score, riscos e jornadas priorizadas revisáveis.
 - Permitir compartilhar receitas e políticas entre equipes sem compartilhar credenciais.
 
 **Saída:** o RadIA resolve fluxos completos de Delphi, não apenas solicitações isoladas.

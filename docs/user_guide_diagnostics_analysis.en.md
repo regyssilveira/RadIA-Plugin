@@ -4,6 +4,13 @@ This guide details how to use **Rad IA**'s advanced tools to locate and debug co
 
 ---
 
+## Consolidated project health
+
+Type `/health` to open a card with a 0–100 score and prioritized IDE, compiler, latest build,
+latest DUnitX run, and local knowledge risks. When a known remediation exists, **Prepare action**
+places the recommended journey in the chat input. RadIA does not start that journey automatically:
+you can review, extend, or remove the command before sending it.
+
 ## 1. Compilation Debugger (Smart Build Debugger)
 
 Often, errors flagged by the Delphi Compiler (DCC) are cryptic or hard to debug at first glance (such as syntax errors resulting from incorrect type declarations or string literals violating the 255-character limit). Rad IA integrates with the IDE's message window to help.

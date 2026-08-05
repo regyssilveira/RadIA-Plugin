@@ -34,8 +34,12 @@ type
       const ARisks: TJSONArray;
       const ASeverity: string;
       const ACode: string;
-      const AMessage: string
+      const AMessage: string;
+      const ARecommendedCommand: string
     );
+    function CalculateScore(const ARisks: TJSONArray): Integer;
+    function HealthName(const ARisks: TJSONArray): string;
+    function NextAction(const ARisks: TJSONArray): string;
     function BuildStatusName: string;
     function TestStatusName: string;
   public
@@ -81,7 +85,8 @@ procedure TRadIAProjectHealthTool.AddRisk(
   const ARisks: TJSONArray;
   const ASeverity: string;
   const ACode: string;
-  const AMessage: string
+  const AMessage: string;
+  const ARecommendedCommand: string
 );
 var
   LRisk: TJSONObject;
@@ -90,7 +95,54 @@ begin
   LRisk.AddPair('severity', ASeverity);
   LRisk.AddPair('code', ACode);
   LRisk.AddPair('message', AMessage);
+  LRisk.AddPair('recommendedCommand', ARecommendedCommand);
   ARisks.AddElement(LRisk);
+end;
+
+function TRadIAProjectHealthTool.CalculateScore(
+  const ARisks: TJSONArray
+): Integer;
+var
+  LIndex: Integer;
+  LRisk: TJSONObject;
+  LSeverity: string;
+begin
+  Result := 100;
+  for LIndex := 0 to ARisks.Count - 1 do
+  begin
+    LRisk := ARisks[LIndex] as TJSONObject;
+    LSeverity := LRisk.GetValue<string>('severity', '');
+    if SameText(LSeverity, 'critical') then
+      Dec(Result, 50)
+    else if SameText(LSeverity, 'high') then
+      Dec(Result, 25)
+    else if SameText(LSeverity, 'medium') then
+      Dec(Result, 10);
+  end;
+  if Result < 0 then
+    Result := 0;
+end;
+
+function TRadIAProjectHealthTool.HealthName(
+  const ARisks: TJSONArray
+): string;
+begin
+  if ARisks.Count = 0 then
+    Result := 'healthy'
+  else
+    Result := 'attention';
+end;
+
+function TRadIAProjectHealthTool.NextAction(
+  const ARisks: TJSONArray
+): string;
+begin
+  if ARisks.Count = 0 then
+    Exit('/agent run Review project health');
+  Result := (ARisks[0] as TJSONObject).GetValue<string>(
+    'recommendedCommand',
+    ''
+  );
 end;
 
 function TRadIAProjectHealthTool.BuildStatusName: string;
@@ -148,6 +200,7 @@ var
   LProject: TRadIAProjectSnapshot;
   LRoot: TJSONObject;
   LRisks: TJSONArray;
+  LScore: Integer;
   LTestStatus: string;
 begin
   LIDE := FWorkspace.GetIDEState;
@@ -165,32 +218,58 @@ begin
     LRisks := TJSONArray.Create;
     LRoot.AddPair('risks', LRisks);
     if LIDE.ShuttingDown then
-      AddRisk(LRisks, 'critical', 'ide_shutting_down', 'The IDE is shutting down.');
+      AddRisk(
+        LRisks,
+        'critical',
+        'ide_shutting_down',
+        'The IDE is shutting down.',
+        ''
+      );
     if LProject.FileName.Trim.IsEmpty then
-      AddRisk(LRisks, 'critical', 'no_active_project', 'No active Delphi project was found.');
+      AddRisk(
+        LRisks,
+        'critical',
+        'no_active_project',
+        'No active Delphi project was found.',
+        '/journey create'
+      );
     if LErrorCount > 0 then
       AddRisk(
         LRisks,
         'high',
         'compiler_errors',
-        Format('%d compiler error messages require attention.', [LErrorCount])
+        Format('%d compiler error messages require attention.', [LErrorCount]),
+        '/journey fix-build'
       );
     if SameText(LBuildStatus, 'failed') or SameText(LBuildStatus, 'timedOut') then
-      AddRisk(LRisks, 'high', 'build_unhealthy', 'The latest build did not succeed.');
+      AddRisk(
+        LRisks,
+        'high',
+        'build_unhealthy',
+        'The latest build did not succeed.',
+        '/journey fix-build'
+      );
     if SameText(LTestStatus, 'failed') or SameText(LTestStatus, 'timedOut') then
-      AddRisk(LRisks, 'high', 'tests_unhealthy', 'The latest test run did not succeed.');
+      AddRisk(
+        LRisks,
+        'high',
+        'tests_unhealthy',
+        'The latest test run did not succeed.',
+        '/journey tests'
+      );
     if not LKnowledge.Loaded and not LProject.FileName.Trim.IsEmpty then
       AddRisk(
         LRisks,
         'medium',
         'knowledge_not_indexed',
-        'Local project knowledge has not been indexed.'
+        'Local project knowledge has not been indexed.',
+        '/tool RebuildProjectKnowledge {}'
       );
-    if LRisks.Count = 0 then
-      LHealth := 'healthy'
-    else
-      LHealth := 'attention';
+    LHealth := HealthName(LRisks);
+    LScore := CalculateScore(LRisks);
     LRoot.AddPair('health', LHealth);
+    LRoot.AddPair('score', TJSONNumber.Create(LScore));
+    LRoot.AddPair('nextAction', NextAction(LRisks));
     LRoot.AddPair('projectName', LProject.Name);
     LRoot.AddPair('projectFile', LProject.FileName);
     LRoot.AddPair('configuration', LProject.Configuration);
@@ -213,8 +292,8 @@ function TRadIAProjectHealthTool.GetDescriptor: TRadIAToolDescriptor;
 begin
   Result := TRadIAToolDescriptor.Create(
     'GetProjectHealth',
-    '1.0.0',
-    'Summarizes project, compiler, build, tests, and local knowledge health.',
+    '1.1.0',
+    'Scores project health and recommends prioritized Delphi journeys.',
     CEmptyInputSchema,
     '{"type":"object"}',
     trReadOnly
