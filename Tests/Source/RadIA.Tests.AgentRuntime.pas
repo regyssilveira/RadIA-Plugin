@@ -157,6 +157,8 @@ type
     [Test]
     procedure TestFileStoreSearchesSafeCheckpointSummaries;
     [Test]
+    procedure TestFileStoreUpdatesOnlyPendingValidatedPlan;
+    [Test]
     procedure TestProviderParsesToolDecision;
     [Test]
     procedure TestProviderParsesFencedCompletion;
@@ -185,6 +187,7 @@ implementation
 uses
   System.Classes,
   System.IOUtils,
+  System.JSON,
   System.SyncObjs,
   RadIA.Core.AgentController,
   RadIA.Core.AgentPricing,
@@ -480,6 +483,62 @@ begin
     Assert.AreEqual('completed', LRuns[0].Status);
     Assert.AreEqual(1, LRuns[0].StepCount);
     Assert.IsNotEmpty(LRuns[0].UpdatedAtUtc);
+  finally
+    LStore.Free;
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestFileStoreUpdatesOnlyPendingValidatedPlan;
+var
+  LDirectory: string;
+  LInvalidRejected: Boolean;
+  LRoot: TJSONObject;
+  LSnapshot: string;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-agent-plan-' + TGUID.NewGuid.ToString
+  );
+  LStore := TRadIAAgentFileCheckpointStore.Create(LDirectory);
+  try
+    LStore.Save(
+      'plan-session',
+      '{"schemaVersion":1,"sessionId":"plan-session",' +
+      '"status":"awaitingApproval","planApproved":false,' +
+      '"message":"Approve","plan":[{"title":"Old"}],"steps":[]}'
+    );
+
+    LSnapshot := LStore.UpdatePlan(
+      'plan-session',
+      '[{"title":"Inspect","description":"Read active project"},' +
+      '{"title":"Validate","description":"Build and test"}]'
+    );
+    LRoot := TJSONObject.ParseJSONValue(LSnapshot) as TJSONObject;
+    try
+      Assert.AreEqual(
+        'Plan updated and awaiting approval.',
+        LRoot.GetValue<string>('message')
+      );
+      Assert.AreEqual<Integer>(
+        2,
+        LRoot.GetValue<TJSONArray>('plan').Count
+      );
+      Assert.IsFalse(LRoot.GetValue<Boolean>('planApproved'));
+    finally
+      LRoot.Free;
+    end;
+
+    LInvalidRejected := False;
+    try
+      LStore.UpdatePlan('plan-session', '[{"title":""}]');
+    except
+      on EArgumentException do
+        LInvalidRejected := True;
+    end;
+    Assert.IsTrue(LInvalidRejected);
   finally
     LStore.Free;
     if TDirectory.Exists(LDirectory) then

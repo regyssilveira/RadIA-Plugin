@@ -4,6 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
+  System.JSON,
   RadIA.Core.Tools;
 
 type
@@ -174,6 +175,7 @@ type
   private
     FDirectory: string;
     function CheckpointPath(const ASessionId: string): string;
+    function ParseEditablePlan(const APlanJson: string): TJSONArray;
     procedure ValidateSessionId(const ASessionId: string);
   public
     constructor Create(const ADirectory: string);
@@ -188,6 +190,10 @@ type
     function Search(
       const AQuery: string
     ): TArray<TRadIAAgentCheckpointSummary>;
+    function UpdatePlan(
+      const ASessionId: string;
+      const APlanJson: string
+    ): string;
     procedure Delete(const ASessionId: string);
   end;
 
@@ -325,7 +331,6 @@ uses
   System.Diagnostics,
   System.Generics.Defaults,
   System.IOUtils,
-  System.JSON,
   System.Math,
   System.StrUtils,
   System.SyncObjs,
@@ -546,6 +551,60 @@ begin
     TFile.Delete(LPath);
 end;
 
+function TRadIAAgentFileCheckpointStore.ParseEditablePlan(
+  const APlanJson: string
+): TJSONArray;
+const
+  MAX_DESCRIPTION_LENGTH = 2000;
+  MAX_PLAN_STEPS = 50;
+  MAX_TITLE_LENGTH = 200;
+var
+  LDescription: string;
+  LIndex: Integer;
+  LPlan: TJSONArray;
+  LStep: TJSONObject;
+  LTitle: string;
+  LValue: TJSONValue;
+begin
+  LValue := TJSONObject.ParseJSONValue(APlanJson);
+  if not (LValue is TJSONArray) then
+  begin
+    LValue.Free;
+    raise EArgumentException.Create(
+      'Agent plan must be a JSON array.'
+    );
+  end;
+  LPlan := TJSONArray(LValue);
+  try
+    if (LPlan.Count < 1) or (LPlan.Count > MAX_PLAN_STEPS) then
+      raise EArgumentException.Create(
+        'Agent plan must contain between 1 and 50 steps.'
+      );
+    for LIndex := 0 to LPlan.Count - 1 do
+    begin
+      if not (LPlan[LIndex] is TJSONObject) then
+        raise EArgumentException.Create(
+          'Every agent plan step must be a JSON object.'
+        );
+      LStep := TJSONObject(LPlan[LIndex]);
+      LTitle := Trim(LStep.GetValue<string>('title', ''));
+      LDescription := LStep.GetValue<string>('description', '');
+      if (LTitle = '') or (Length(LTitle) > MAX_TITLE_LENGTH) then
+        raise EArgumentException.Create(
+          'Agent plan step titles must contain between 1 and 200 characters.'
+        );
+      if Length(LDescription) > MAX_DESCRIPTION_LENGTH then
+        raise EArgumentException.Create(
+          'Agent plan step descriptions must not exceed 2000 characters.'
+        );
+    end;
+  except
+    LPlan.Free;
+    raise;
+  end;
+  Result := LPlan;
+end;
+
 procedure TRadIAAgentFileCheckpointStore.Save(
   const ASessionId: string;
   const ASnapshotJson: string
@@ -644,6 +703,67 @@ begin
     Result := LList.ToArray;
   finally
     LList.Free;
+  end;
+end;
+
+function TRadIAAgentFileCheckpointStore.UpdatePlan(
+  const ASessionId: string;
+  const APlanJson: string
+): string;
+var
+  LPair: TJSONPair;
+  LPlan: TJSONArray;
+  LRoot: TJSONObject;
+  LSnapshot: string;
+  LSteps: TJSONArray;
+  LValue: TJSONValue;
+begin
+  if not TryLoad(ASessionId, LSnapshot) then
+    raise EArgumentException.Create(
+      'Agent checkpoint was not found for the requested session.'
+    );
+  LValue := TJSONObject.ParseJSONValue(LSnapshot);
+  if not (LValue is TJSONObject) then
+  begin
+    LValue.Free;
+    raise EArgumentException.Create('Agent checkpoint is not valid JSON.');
+  end;
+  LRoot := TJSONObject(LValue);
+  LPlan := nil;
+  try
+    if LRoot.GetValue<Integer>('schemaVersion', 0) <> 1 then
+      raise EArgumentException.Create(
+        'Agent checkpoint schema is not supported.'
+      );
+    if LRoot.GetValue<string>('sessionId', '') <> ASessionId then
+      raise EArgumentException.Create(
+        'Agent checkpoint session does not match the requested session.'
+      );
+    if not SameText(
+      LRoot.GetValue<string>('status', ''),
+      'awaitingApproval'
+    ) or LRoot.GetValue<Boolean>('planApproved', False) then
+      raise EInvalidOp.Create(
+        'Agent plan can only be edited while awaiting approval.'
+      );
+    LSteps := LRoot.GetValue('steps') as TJSONArray;
+    if Assigned(LSteps) and (LSteps.Count > 0) then
+      raise EInvalidOp.Create(
+        'Agent plan cannot be edited after tool execution has started.'
+      );
+    LPlan := ParseEditablePlan(APlanJson);
+    LPair := LRoot.RemovePair('plan');
+    LPair.Free;
+    LRoot.AddPair('plan', LPlan);
+    LPlan := nil;
+    LPair := LRoot.RemovePair('message');
+    LPair.Free;
+    LRoot.AddPair('message', 'Plan updated and awaiting approval.');
+    Result := LRoot.ToJSON;
+    Save(ASessionId, Result);
+  finally
+    LPlan.Free;
+    LRoot.Free;
   end;
 end;
 

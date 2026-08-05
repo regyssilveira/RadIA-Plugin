@@ -95,6 +95,9 @@ build e testes. Cada etapa da timeline pode ser expandida para inspecionar argum
 erro, correlação, duração e se a operação foi uma mutação. Seus botões ou os comandos
 `/agent pause`, `/agent resume` e `/agent cancel` controlam a execução. Cada mudança de estado é
 persistida em `RadIA\agent-checkpoints`, permitindo retomar a sessão depois de uma pausa.
+Enquanto o plano aguarda aprovação, use **Edit plan** para revisar títulos e descrições antes de
+qualquer tool. O equivalente digitável é `/agent plan [{"title":"Inspecionar","description":"..."}]`.
+O RadIA aceita de 1 a 50 etapas, valida os limites e bloqueia edições depois do início da execução.
 Use o botão **Runs** ou `/agent history [filtro]` para localizar execuções por objetivo, estado ou
 ID da sessão. O índice mostra somente metadados; argumentos e resultados das tools não são expostos
 pela pesquisa.

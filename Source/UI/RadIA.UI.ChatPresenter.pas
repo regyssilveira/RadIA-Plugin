@@ -122,6 +122,10 @@ type
     procedure DispatchSystemMessage(const AAction: string; const AJson: TJSONObject; var AHandled: Boolean);
     procedure DispatchSessionMessage(const AAction: string; const AJson: TJSONObject; var AHandled: Boolean);
     procedure DispatchInteractionMessage(const AAction: string; const AJson: TJSONObject; var AHandled: Boolean);
+    function TryDispatchAgentInteraction(
+      const AAction: string;
+      const AJson: TJSONObject
+    ): Boolean;
     procedure DispatchWebMessage(const AAction: string; const AJson: TJSONObject);
     function CheckQuotaAvailability: Boolean;
     function DetermineRequestProfile(const APromptText: string): TAIRequestProfile;
@@ -153,6 +157,7 @@ type
     );
     procedure PauseAgentRun;
     procedure ResumeAgentRun;
+    procedure UpdateAgentPlan(const APlanJson: string);
     procedure PostAgentHistoryToWeb(const AQuery: string);
     procedure PostAgentStateToWeb(const ASnapshotJson: string);
     procedure HandleAgentFinished(
@@ -171,6 +176,14 @@ type
       const ACommandText: string
     ): Boolean;
     function TryHandleAgentHistoryCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentPlanCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentPreparationCommand(
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
@@ -635,6 +648,16 @@ begin
     'Starts an observable agent run for an explicit objective.'
   );
   LSlashObj.AddPair('name', 'Run Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent plan');
+  LSlashObj.AddPair(
+    'description',
+    'Replaces the pending plan with a validated JSON step array.'
+  );
+  LSlashObj.AddPair('name', 'Edit Agent Plan');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
@@ -1858,23 +1881,41 @@ begin
       LArgumentsJson
     );
   end
-  else if AAction = 'set_agent_mode' then
-    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
-  else if AAction = 'pause_agent' then
-    PauseAgentRun
-  else if AAction = 'resume_agent' then
-    ResumeAgentRun
-  else if AAction = 'approve_agent' then
-    ResumeAgentRun
-  else if AAction = 'search_agent_history' then
-    PostAgentHistoryToWeb(AJson.GetValue<string>('query', ''))
   else if AAction = 'stream_chunk' then
     HandleStreamChunkMessage(
       AJson.GetValue<string>('text', ''),
       AJson.GetValue<Boolean>('isDone', False),
       AJson.GetValue<string>('error', ''))
-  else
+  else if not TryDispatchAgentInteraction(AAction, AJson) then
     AHandled := False;
+end;
+
+function TRadIAChatPresenter.TryDispatchAgentInteraction(
+  const AAction: string;
+  const AJson: TJSONObject
+): Boolean;
+var
+  LPlan: TJSONValue;
+begin
+  Result := True;
+  if AAction = 'set_agent_mode' then
+    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
+  else if AAction = 'pause_agent' then
+    PauseAgentRun
+  else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
+    ResumeAgentRun
+  else if AAction = 'search_agent_history' then
+    PostAgentHistoryToWeb(AJson.GetValue<string>('query', ''))
+  else if AAction = 'update_agent_plan' then
+  begin
+    LPlan := AJson.GetValue('plan');
+    if Assigned(LPlan) then
+      UpdateAgentPlan(LPlan.ToJSON)
+    else
+      UpdateAgentPlan('');
+  end
+  else
+    Result := False;
 end;
 
 function TRadIAChatPresenter.TryHandleAgentCommand(
@@ -1883,7 +1924,7 @@ function TRadIAChatPresenter.TryHandleAgentCommand(
 ): Boolean;
 begin
   Result := True;
-  if TryHandleAgentHistoryCommand(APromptText, ACommandText) then
+  if TryHandleAgentPreparationCommand(APromptText, ACommandText) then
     Exit;
   if ACommandText.StartsWith('/agent run ', True) then
   begin
@@ -1949,6 +1990,30 @@ begin
   PostToWebView('add_message', 'user', APromptText);
   PostAgentHistoryToWeb(
     Trim(Copy(ACommandText, Length('/agent history') + 1, MaxInt))
+  );
+end;
+
+function TRadIAChatPresenter.TryHandleAgentPreparationCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := TryHandleAgentHistoryCommand(APromptText, ACommandText);
+  if not Result then
+    Result := TryHandleAgentPlanCommand(APromptText, ACommandText);
+end;
+
+function TRadIAChatPresenter.TryHandleAgentPlanCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := ACommandText.StartsWith('/agent plan ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  UpdateAgentPlan(
+    Trim(Copy(ACommandText, Length('/agent plan ') + 1, MaxInt))
   );
 end;
 
@@ -2368,6 +2433,44 @@ begin
   FCancelledByUser := False;
   FView.SetRequestState(True);
   FAgentController.Resume(FSessionManager.ActiveSessionId);
+end;
+
+procedure TRadIAChatPresenter.UpdateAgentPlan(
+  const APlanJson: string
+);
+var
+  LCheckpointDirectory: string;
+  LSessionId: string;
+  LSnapshot: string;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LSessionId := FSessionManager.ActiveSessionId;
+  if LSessionId = '' then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'There is no active chat session whose agent plan can be edited.'
+    );
+    Exit;
+  end;
+  LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  try
+    try
+      LSnapshot := LStore.UpdatePlan(LSessionId, APlanJson);
+      PostAgentStateToWeb(LSnapshot);
+    except
+      on E: Exception do
+        PostToWebView(
+          'add_message',
+          'assistant',
+          'The agent plan was not updated: ' + E.Message
+        );
+    end;
+  finally
+    LStore.Free;
+  end;
 end;
 
 procedure TRadIAChatPresenter.StartAgentRun(

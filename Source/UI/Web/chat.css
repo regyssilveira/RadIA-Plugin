@@ -1825,6 +1825,37 @@ body.light-theme .message-avatar.provider-avatar-badge {
   color: var(--fg-secondary);
 }
 
+.agent-plan-editor {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+}
+
+.agent-plan-editor-row {
+  display: grid;
+  gap: 6px;
+}
+
+.agent-plan-editor-row input,
+.agent-plan-editor-row textarea {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-primary);
+  background: var(--bg-input);
+  font: inherit;
+}
+
+.agent-plan-editor-row textarea {
+  resize: vertical;
+}
+
+.agent-plan-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .agent-run-plan:empty,
 .agent-run-steps:empty {
   display: none;

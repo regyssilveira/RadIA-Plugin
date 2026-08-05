@@ -282,6 +282,85 @@ function renderAgentValidation(card, state) {
   });
 }
 
+function renderAgentPlanItems(planElement, plan) {
+  planElement.replaceChildren();
+  plan.forEach(planStep => {
+    const item = document.createElement('li');
+    const title = planStep?.title || 'Planned step';
+    const description = planStep?.description || '';
+    item.textContent = description ? `${title} — ${description}` : title;
+    planElement.appendChild(item);
+  });
+}
+
+function openAgentPlanEditor(planElement, plan) {
+  planElement.replaceChildren();
+  const editor = document.createElement('div');
+  editor.className = 'agent-plan-editor';
+  const rows = [];
+  const addRow = planStep => {
+    const index = rows.length;
+    const row = document.createElement('div');
+    row.className = 'agent-plan-editor-row';
+    const title = document.createElement('input');
+    title.type = 'text';
+    title.maxLength = 200;
+    title.required = true;
+    title.value = planStep?.title || `Step ${index + 1}`;
+    title.setAttribute('aria-label', `Step ${index + 1} title`);
+    const description = document.createElement('textarea');
+    description.maxLength = 2000;
+    description.rows = 2;
+    description.value = planStep?.description || '';
+    description.setAttribute('aria-label', `Step ${index + 1} description`);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Remove step';
+    const entry = { row, title, description };
+    remove.addEventListener('click', () => {
+      if (rows.length <= 1) return;
+      rows.splice(rows.indexOf(entry), 1);
+      row.remove();
+    });
+    row.append(title, description, remove);
+    editor.appendChild(row);
+    rows.push(entry);
+  };
+  plan.forEach(addRow);
+  const actions = document.createElement('div');
+  actions.className = 'agent-plan-editor-actions';
+  const add = document.createElement('button');
+  add.textContent = 'Add step';
+  add.addEventListener('click', () => {
+    if (rows.length >= 50) return;
+    addRow({ title: `Step ${rows.length + 1}`, description: '' });
+    editor.appendChild(actions);
+    rows.at(-1).title.focus();
+  });
+  const save = document.createElement('button');
+  save.textContent = 'Save plan';
+  save.addEventListener('click', () => {
+    const updatedPlan = rows.map(row => ({
+      title: row.title.value.trim(),
+      description: row.description.value.trim()
+    }));
+    const invalidRow = rows.find(row => !row.title.value.trim());
+    if (invalidRow) {
+      invalidRow.title.focus();
+      invalidRow.title.reportValidity();
+      return;
+    }
+    postMessageToDelphi({ action: 'update_agent_plan', plan: updatedPlan });
+  });
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancel edit';
+  cancel.addEventListener('click', () => renderAgentPlanItems(planElement, plan));
+  actions.append(add, save, cancel);
+  editor.appendChild(actions);
+  planElement.appendChild(editor);
+  rows[0]?.title.focus();
+}
+
 function renderAgentHistory(data) {
   const panel = document.createElement('section');
   panel.className = 'agent-history-panel';
@@ -380,15 +459,8 @@ function renderAgentState(data) {
   renderAgentValidation(card, state);
 
   const planElement = card.querySelector('.agent-run-plan');
-  planElement.replaceChildren();
   const plan = Array.isArray(state.plan) ? state.plan : [];
-  plan.forEach(planStep => {
-    const item = document.createElement('li');
-    const title = planStep?.title || 'Planned step';
-    const description = planStep?.description || '';
-    item.textContent = description ? `${title} — ${description}` : title;
-    planElement.appendChild(item);
-  });
+  renderAgentPlanItems(planElement, plan);
 
   const stepsElement = card.querySelector('.agent-run-steps');
   stepsElement.replaceChildren();
@@ -403,6 +475,12 @@ function renderAgentState(data) {
     'approve_agent',
     status !== 'awaitingApproval'
   ));
+  const editPlan = document.createElement('button');
+  editPlan.className = 'agent-control-button';
+  editPlan.textContent = 'Edit plan';
+  editPlan.disabled = status !== 'awaitingApproval' || plan.length === 0;
+  editPlan.addEventListener('click', () => openAgentPlanEditor(planElement, plan));
+  controls.appendChild(editPlan);
   controls.appendChild(createAgentControl('Pause', 'pause_agent', status !== 'running'));
   controls.appendChild(createAgentControl('Resume', 'resume_agent', status !== 'paused'));
   controls.appendChild(createAgentControl(

@@ -67,6 +67,9 @@ change, build, and test indicators. Each timeline step expands to show arguments
 correlation, duration, and whether it mutated the workspace. Use its controls or `/agent pause`,
 `/agent resume`, and `/agent cancel`. Every state transition is persisted under
 `RadIA\agent-checkpoints`, so a paused session can be resumed.
+While a plan awaits approval, use **Edit plan** to revise titles and descriptions before any tool
+runs. The keyboard equivalent is `/agent plan [{"title":"Inspect","description":"..."}]`. RadIA
+accepts 1–50 steps, validates field limits, and blocks edits after execution starts.
 Use the **Runs** button or `/agent history [query]` to find runs by objective, status, or session ID.
 The index exposes metadata only; tool arguments and results are excluded from search results.
 To enable monetary estimates and enforcement, configure the

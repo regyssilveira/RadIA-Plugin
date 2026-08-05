@@ -75,6 +75,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         resultado, erro, correlação, duração, mutação e indicadores de validação.
     *   M3 entregue nesta etapa: o índice de execuções pesquisa checkpoints pelo botão **Runs** ou
         `/agent history`, sem expor argumentos e resultados das tools.
+    *   M3 entregue nesta etapa: **Edit plan** e `/agent plan` revisam o plano validado antes da
+        aprovação e bloqueiam alterações depois que a execução começa.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

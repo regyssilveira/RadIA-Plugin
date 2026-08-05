@@ -200,6 +200,8 @@ type
     [Test]
     procedure TestAgentHistoryCommandPublishesSafeIndex;
     [Test]
+    procedure TestAgentPlanWebMessageUpdatesPendingCheckpoint;
+    [Test]
     procedure TestTerminalCommandOpensTerminal;
     [Test]
     procedure TestDisabledAgentModeBlocksToolExecution;
@@ -210,7 +212,8 @@ type
 implementation
 
 uses
-  RadIA.Core.Config, RadIA.Core.SettingsStorage, System.IOUtils, RadIA.Core.Mediator,
+  RadIA.Core.AgentRuntime, RadIA.Core.Config, RadIA.Core.SettingsStorage,
+  System.IOUtils, RadIA.Core.Mediator,
   RadIA.Core.TokenUsage, RadIA.Core.ToolRegistry;
 
 { TMockChatView }
@@ -607,6 +610,39 @@ begin
 
   Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_history"');
   Assert.Contains(FMockView.PostedMessages.Text, '"query":"build"');
+end;
+
+procedure TTestChatPresenter.TestAgentPlanWebMessageUpdatesPendingCheckpoint;
+var
+  LCheckpointDirectory: string;
+  LSessionId: string;
+  LSnapshot: string;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  LSessionId := FMockView.ActiveSessionId;
+  Assert.IsNotEmpty(LSessionId);
+  LCheckpointDirectory := TPath.Combine(FTempDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  try
+    LStore.Save(
+      LSessionId,
+      '{"schemaVersion":1,"sessionId":"' + LSessionId + '",' +
+      '"status":"awaitingApproval","planApproved":false,' +
+      '"message":"Approve","plan":[{"title":"Old"}],"steps":[]}'
+    );
+    FPresenter.ProcessWebMessage(
+      '{"action":"update_agent_plan",' +
+      '"plan":[{"title":"Inspect","description":"Read project"}]}'
+    );
+
+    Assert.IsTrue(LStore.TryLoad(LSessionId, LSnapshot));
+    Assert.Contains(LSnapshot, '"title":"Inspect"');
+    Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  finally
+    LStore.Free;
+  end;
 end;
 
 procedure TTestChatPresenter.TestTerminalCommandOpensTerminal;
