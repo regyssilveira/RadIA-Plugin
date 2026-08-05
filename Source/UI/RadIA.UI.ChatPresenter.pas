@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections, RadIA.Core.Interfaces,
   RadIA.Core.Sessions, RadIA.Core.PromptTemplates,
+  RadIA.Core.DeclarativeExtensions,
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
   RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
@@ -57,6 +58,8 @@ type
     FSessionManager: TRadIASessionManager;
     FPromptHistoryManager: TPromptHistoryManager;
     FTemplateManager: TPromptTemplateManager;
+    FDeclarativeExtensionManager:
+      TRadIADeclarativeExtensionManager;
     FAccumulatedUsage: TTokenUsage;
     FHistory: TArray<IRadIAChatMessage>;
     FRequestInProgress: Boolean;
@@ -93,6 +96,9 @@ type
    out AActiveModel: string): TJSONArray;
 
     function BuildSlashCommandsJsonArray: TJSONArray;
+    function BuildReservedSlashCommands: TArray<string>;
+    function BuildDeclarativeExtensionStatus: string;
+    procedure ReloadDeclarativeExtensions;
     function BuildToolsJsonArray: TJSONArray;
     function ToolRiskName(const ARisk: TRadIAToolRisk): string;
 
@@ -415,6 +421,11 @@ begin
 
   FTemplateManager := TPromptTemplateManager.Create(FDataDir);
   FTemplateManager.Load;
+  FDeclarativeExtensionManager :=
+    TRadIADeclarativeExtensionManager.Create(
+      TPath.Combine(FDataDir, 'extensions')
+    );
+  ReloadDeclarativeExtensions;
 
   FSessionManager := TRadIASessionManager.Create(TPath.Combine(FDataDir, 'sessions'));
   FSessionManager.ActiveSessionId := FConfig.ActiveSessionId;
@@ -451,6 +462,7 @@ begin
     FAIService.CancelCurrentRequest;
 
   FPromptHistoryManager.Free;
+  FDeclarativeExtensionManager.Free;
   FTemplateManager.Free;
   FSessionManager.Free;
   FPendingWebMessages.Free;
@@ -630,11 +642,75 @@ begin
   end;
 end;
 
+function TRadIAChatPresenter.BuildDeclarativeExtensionStatus: string;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
+begin
+  LDiagnostics := FDeclarativeExtensionManager.GetDiagnostics;
+  if Length(LDiagnostics) = 0 then
+    Exit('No declarative extension manifests were found.');
+  Result := '';
+  for LDiagnostic in LDiagnostics do
+  begin
+    if Result <> '' then
+      Result := Result + sLineBreak;
+    Result := Result + '[' + LDiagnostic.Status + '] ' +
+      ExtractFileName(LDiagnostic.FileName) + ': ' +
+      LDiagnostic.Message;
+  end;
+end;
+
+function TRadIAChatPresenter.BuildReservedSlashCommands:
+  TArray<string>;
+const
+  CNativeCommands: array[0..10] of string = (
+    '/agent',
+    '/agent run',
+    '/agent plan',
+    '/agent replay',
+    '/agent pause',
+    '/agent resume',
+    '/agent cancel',
+    '/agent history',
+    '/terminal',
+    '/tools',
+    '/revoke-tools'
+  );
+var
+  LCommand: string;
+  LCommands: TList<string>;
+  LTemplate: TPromptTemplate;
+begin
+  LCommands := TList<string>.Create;
+  try
+    for LCommand in CNativeCommands do
+      LCommands.Add(LCommand);
+    LCommands.Add('/tool');
+    LCommands.Add('/extensions reload');
+    for LTemplate in FTemplateManager.GetTemplates do
+      if not LTemplate.SlashCommand.IsEmpty then
+        LCommands.Add(LTemplate.SlashCommand);
+    Result := LCommands.ToArray;
+  finally
+    LCommands.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.ReloadDeclarativeExtensions;
+begin
+  FDeclarativeExtensionManager.Reload(
+    BuildReservedSlashCommands
+  );
+end;
+
 function TRadIAChatPresenter.BuildSlashCommandsJsonArray: TJSONArray;
 var
+  LCommand: TRadIADeclarativeCommand;
   LTemplate: TPromptTemplate;
   LSlashObj: TJSONObject;
 begin
+  ReloadDeclarativeExtensions;
   Result := TJSONArray.Create;
   LSlashObj := TJSONObject.Create;
   LSlashObj.AddPair('command', '/agent');
@@ -741,6 +817,16 @@ begin
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/extensions reload');
+  LSlashObj.AddPair(
+    'description',
+    'Reloads and diagnoses declarative command extensions.'
+  );
+  LSlashObj.AddPair('name', 'Reload Extensions');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
   for LTemplate in FTemplateManager.GetTemplates do
   begin
     if not LTemplate.SlashCommand.IsEmpty then
@@ -752,6 +838,21 @@ begin
       LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(LTemplate.IsProjectGenerator));
       Result.AddElement(LSlashObj);
     end;
+  end;
+  for LCommand in FDeclarativeExtensionManager.GetCommands do
+  begin
+    LSlashObj := TJSONObject.Create;
+    LSlashObj.AddPair('command', LCommand.SlashCommand);
+    LSlashObj.AddPair('description', LCommand.Description);
+    LSlashObj.AddPair(
+      'name',
+      LCommand.Name + ' (' + LCommand.ExtensionId + ')'
+    );
+    LSlashObj.AddPair(
+      'isProjectGenerator',
+      TJSONBool.Create(False)
+    );
+    Result.AddElement(LSlashObj);
   end;
 end;
 
@@ -2097,6 +2198,19 @@ begin
     );
     Exit;
   end;
+
+  if SameText(ACommandText, '/extensions reload') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    ReloadDeclarativeExtensions;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      BuildDeclarativeExtensionStatus
+    );
+    SendInitialConfigToWeb;
+    Exit;
+  end;
   Result := False;
 end;
 
@@ -2943,6 +3057,7 @@ end;
 function TRadIAChatPresenter.FindTemplateForCommand(const ACommand, AArgument: string;
   out ATemplate: TPromptTemplate): Boolean;
 var
+  LDeclarativeCommand: TRadIADeclarativeCommand;
   LTemp: TPromptTemplate;
   LFallbackNames: TArray<string>;
   LFallbackCommands: TArray<string>;
@@ -2965,6 +3080,22 @@ begin
       ATemplate := LTemp;
       Exit(True);
     end;
+  end;
+
+  ReloadDeclarativeExtensions;
+  if FDeclarativeExtensionManager.TryResolve(
+    ACommand,
+    LDeclarativeCommand
+  ) then
+  begin
+    ATemplate := Default(TPromptTemplate);
+    ATemplate.Name := LDeclarativeCommand.Name;
+    ATemplate.Description := LDeclarativeCommand.Description;
+    ATemplate.Template := LDeclarativeCommand.Prompt;
+    ATemplate.SlashCommand := LDeclarativeCommand.SlashCommand;
+    ATemplate.IsSystem := False;
+    ATemplate.IsCustomized := False;
+    Exit(True);
   end;
 
   LFallbackCommands := ['/review', '/explain', '/refactor', '/optimize'];

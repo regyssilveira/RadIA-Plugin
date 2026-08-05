@@ -40,6 +40,7 @@ This index brings together the functional, operational, and technical documentat
 | Local knowledge | [Project knowledge](user_guide_project_knowledge.en.md) |
 | Form Designer and debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
 | Tool extensions | [Extensions](tool_extension_guide.md) |
+| Declarative extensions | [Commands without recompiling](declarative_extensions.en.md) |
 | Migration to 1.0 | [Migration guide](agentic_migration_0_1.md) |
 
 ## Architecture and development

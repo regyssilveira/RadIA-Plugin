@@ -26,6 +26,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/tools` | Shows the tool catalog for the current IDE instance. | IDE state and extensions. |
 | `/tool <name> {JSON}` | Runs a tool with optional JSON arguments. | Workspace and session. |
 | `/revoke-tools` | Revokes permissions granted in the session. | Active chat session. |
+| `/extensions reload` | Reloads declarative extensions and shows diagnostics. | Local extension directory. |
 | `/explain` | Analyzes and explains the logic of the selected code block in the editor. | Sends the selected code snippet. |
 | `/refactor` | Optimizes performance, readability, and applies SOLID/Clean Code best practices. | Sends the selected code snippet. |
 | `/optimize` | Alias for code optimization and refactoring. | Sends the selected code snippet. |
@@ -47,9 +48,13 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 
 Rad IA allows you to edit, delete, or add new commands and prompt templates directly from the plugin options inside the IDE (`Tools -> Options -> Rad IA -> Templates`).
 
-The `/agent` command family, `/terminal`, `/tools`, `/tool`, and `/revoke-tools` are internal
+The `/agent` command family, `/terminal`, `/tools`, `/tool`, `/revoke-tools`, and
+`/extensions reload` are internal
 commands and cannot be replaced by templates.
 See the [Complete RadIA User Manual](user_manual.en.md) for examples.
+
+Declarative extensions can add commands without recompiling or restarting the IDE. See
+[Declarative extensions](declarative_extensions.en.md).
 
 The remaining commands come from installed templates. Because templates can be edited, restored,
 imported, or removed, typing `/` in chat is authoritative for the current profile.

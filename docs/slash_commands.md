@@ -26,6 +26,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
 | `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |
 | `/revoke-tools` | Revoga permissões concedidas na sessão. | Sessão de chat ativa. |
+| `/extensions reload` | Recarrega extensões declarativas e mostra diagnósticos. | Diretório local de extensões. |
 | `/explain` | Analisa e explica didaticamente a lógica do código selecionado no editor. | Envia o trecho de código selecionado. |
 | `/refactor` | Otimiza a performance, legibilidade e aplica boas práticas (Clean Code/SOLID) no código selecionado. | Envia o trecho de código selecionado. |
 | `/optimize` | Alias de otimização e refatoração de código. | Envia o trecho de código selecionado. |
@@ -47,9 +48,13 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
 
-Os comandos da família `/agent`, além de `/terminal`, `/tools`, `/tool` e `/revoke-tools`, são
+Os comandos da família `/agent`, além de `/terminal`, `/tools`, `/tool`, `/revoke-tools` e
+`/extensions reload`, são
 internos e não podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para
 exemplos.
+
+Extensões declarativas podem acrescentar comandos próprios sem recompilar ou reiniciar a IDE.
+Consulte [Extensões declarativas](declarative_extensions.md).
 
 Os demais comandos são fornecidos pelos templates instalados. Como esses templates podem ser
 editados, restaurados, importados ou removidos, digitar `/` no chat é a fonte de verdade para a

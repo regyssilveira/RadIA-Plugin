@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "TeamCommands",
+  "version": "1.0.0",
+  "enabled": true,
+  "permissions": [
+    "chat.prompt"
+  ],
+  "commands": [
+    {
+      "name": "Team review",
+      "description": "Review selected Delphi code using the team policy.",
+      "command": "/team-review",
+      "prompt": "Review this Delphi code using the team policy. Return actionable findings only:\n\n```pascal\n{code}\n```"
+    },
+    {
+      "name": "Explain architecture",
+      "description": "Explain how the supplied code participates in the architecture.",
+      "command": "/team-architecture",
+      "prompt": "Explain the architectural role of this Delphi code. Additional context: {argument}\n\n```pascal\n{code}\n```"
+    }
+  ]
+}

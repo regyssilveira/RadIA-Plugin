@@ -1,0 +1,509 @@
+unit RadIA.Core.DeclarativeExtensions;
+
+interface
+
+uses
+  System.Generics.Collections,
+  System.JSON;
+
+const
+  CRadIADeclarativeExtensionSchemaVersion = 1;
+
+type
+  TRadIADeclarativeCommand = record
+  private
+    FExtensionId: string;
+    FName: string;
+    FDescription: string;
+    FSlashCommand: string;
+    FPrompt: string;
+  public
+    constructor Create(
+      const AExtensionId: string;
+      const AName: string;
+      const ADescription: string;
+      const ASlashCommand: string;
+      const APrompt: string
+    );
+    property ExtensionId: string read FExtensionId;
+    property Name: string read FName;
+    property Description: string read FDescription;
+    property SlashCommand: string read FSlashCommand;
+    property Prompt: string read FPrompt;
+  end;
+
+  TRadIADeclarativeExtensionDiagnostic = record
+  private
+    FFileName: string;
+    FExtensionId: string;
+    FStatus: string;
+    FMessage: string;
+  public
+    constructor Create(
+      const AFileName: string;
+      const AExtensionId: string;
+      const AStatus: string;
+      const AMessage: string
+    );
+    property FileName: string read FFileName;
+    property ExtensionId: string read FExtensionId;
+    property Status: string read FStatus;
+    property Message: string read FMessage;
+  end;
+
+  TRadIADeclarativeExtensionManager = class
+  private
+    FDirectory: string;
+    FCommands: TList<TRadIADeclarativeCommand>;
+    FDiagnostics: TList<TRadIADeclarativeExtensionDiagnostic>;
+    function IsReserved(
+      const ACommand: string;
+      const AReservedCommands: TArray<string>
+    ): Boolean;
+    procedure LoadManifest(
+      const AFileName: string;
+      const AReservedCommands: TArray<string>
+    );
+    function ParseCommand(
+      const AJson: TJSONObject;
+      const AExtensionId: string;
+      const AReservedCommands: TArray<string>;
+      const AExistingCommands: TArray<TRadIADeclarativeCommand>
+    ): TRadIADeclarativeCommand;
+    function ParseCommands(
+      const AJson: TJSONObject;
+      const AExtensionId: string;
+      const AReservedCommands: TArray<string>
+    ): TArray<TRadIADeclarativeCommand>;
+    procedure ValidateCommandFields(
+      const AName: string;
+      const ADescription: string;
+      const ASlashCommand: string;
+      const APrompt: string
+    );
+    procedure ValidateManifestIdentity(
+      const AExtensionId: string;
+      const AVersion: string
+    );
+    procedure ValidatePermissions(const AJson: TJSONObject);
+  public
+    constructor Create(const ADirectory: string);
+    destructor Destroy; override;
+    procedure Reload(const AReservedCommands: TArray<string>);
+    function GetCommands: TArray<TRadIADeclarativeCommand>;
+    function GetDiagnostics:
+      TArray<TRadIADeclarativeExtensionDiagnostic>;
+    function TryResolve(
+      const ASlashCommand: string;
+      out ACommand: TRadIADeclarativeCommand
+    ): Boolean;
+  end;
+
+implementation
+
+uses
+  System.IOUtils,
+  System.RegularExpressions,
+  System.SysUtils,
+  Winapi.Windows;
+
+const
+  CCommandPermission = 'chat.prompt';
+  CMaximumCommandsPerExtension = 100;
+  CMaximumDescriptionLength = 500;
+  CMaximumManifestBytes = 1048576;
+  CMaximumPromptLength = 32768;
+
+function IsPascalIdentifier(const AValue: string): Boolean;
+var
+  LCharacter: Char;
+  LIndex: Integer;
+begin
+  Result := False;
+  if (AValue = '') or
+    not CharInSet(AValue[Low(AValue)], ['A'..'Z']) then
+    Exit;
+  for LIndex := Low(AValue) to High(AValue) do
+  begin
+    LCharacter := AValue[LIndex];
+    if not CharInSet(
+      LCharacter,
+      ['A'..'Z', 'a'..'z', '0'..'9']
+    ) then
+      Exit;
+  end;
+  Result := True;
+end;
+
+function IsValidSlashCommand(const AValue: string): Boolean;
+begin
+  Result := TRegEx.IsMatch(
+    AValue,
+    '^/[a-z][a-z0-9-]{1,31}$',
+    [roIgnoreCase]
+  );
+end;
+
+{ TRadIADeclarativeCommand }
+
+constructor TRadIADeclarativeCommand.Create(
+  const AExtensionId: string;
+  const AName: string;
+  const ADescription: string;
+  const ASlashCommand: string;
+  const APrompt: string
+);
+begin
+  FExtensionId := AExtensionId;
+  FName := AName;
+  FDescription := ADescription;
+  FSlashCommand := ASlashCommand;
+  FPrompt := APrompt;
+end;
+
+{ TRadIADeclarativeExtensionDiagnostic }
+
+constructor TRadIADeclarativeExtensionDiagnostic.Create(
+  const AFileName: string;
+  const AExtensionId: string;
+  const AStatus: string;
+  const AMessage: string
+);
+begin
+  FFileName := AFileName;
+  FExtensionId := AExtensionId;
+  FStatus := AStatus;
+  FMessage := AMessage;
+end;
+
+{ TRadIADeclarativeExtensionManager }
+
+constructor TRadIADeclarativeExtensionManager.Create(
+  const ADirectory: string
+);
+begin
+  inherited Create;
+  if Trim(ADirectory) = '' then
+    raise EArgumentException.Create(
+      'Declarative extension directory cannot be empty.'
+    );
+  FDirectory := TPath.GetFullPath(ADirectory);
+  FCommands := TList<TRadIADeclarativeCommand>.Create;
+  FDiagnostics := TList<TRadIADeclarativeExtensionDiagnostic>.Create;
+end;
+
+destructor TRadIADeclarativeExtensionManager.Destroy;
+begin
+  FDiagnostics.Free;
+  FCommands.Free;
+  inherited Destroy;
+end;
+
+function TRadIADeclarativeExtensionManager.GetCommands:
+  TArray<TRadIADeclarativeCommand>;
+begin
+  Result := FCommands.ToArray;
+end;
+
+function TRadIADeclarativeExtensionManager.GetDiagnostics:
+  TArray<TRadIADeclarativeExtensionDiagnostic>;
+begin
+  Result := FDiagnostics.ToArray;
+end;
+
+function TRadIADeclarativeExtensionManager.IsReserved(
+  const ACommand: string;
+  const AReservedCommands: TArray<string>
+): Boolean;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LReservedCommand: string;
+begin
+  for LReservedCommand in AReservedCommands do
+    if SameText(LReservedCommand, ACommand) then
+      Exit(True);
+  for LCommand in FCommands do
+    if SameText(LCommand.SlashCommand, ACommand) then
+      Exit(True);
+  Result := False;
+end;
+
+procedure TRadIADeclarativeExtensionManager.LoadManifest(
+  const AFileName: string;
+  const AReservedCommands: TArray<string>
+);
+var
+  LCommands: TArray<TRadIADeclarativeCommand>;
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LEnabled: Boolean;
+  LExtensionId: string;
+  LJson: TJSONObject;
+  LSchemaVersion: Integer;
+  LVersion: string;
+begin
+  if TFile.GetSize(AFileName) > CMaximumManifestBytes then
+    raise EArgumentException.Create(
+      'Manifest exceeds the 1 MiB size limit.'
+    );
+  if (GetFileAttributes(PChar(AFileName)) and
+    FILE_ATTRIBUTE_REPARSE_POINT) <> 0 then
+    raise EArgumentException.Create(
+      'Manifest reparse points are not allowed.'
+    );
+  LJson := TJSONObject.ParseJSONValue(
+    TFile.ReadAllText(AFileName, TEncoding.UTF8)
+  ) as TJSONObject;
+  if not Assigned(LJson) then
+    raise EArgumentException.Create('Manifest root must be a JSON object.');
+  try
+    LSchemaVersion := LJson.GetValue<Integer>('schemaVersion', 0);
+    if LSchemaVersion <> CRadIADeclarativeExtensionSchemaVersion then
+      raise EArgumentException.Create(
+        'Unsupported declarative extension schema version.'
+      );
+    LExtensionId := Trim(LJson.GetValue<string>('id', ''));
+    LVersion := Trim(LJson.GetValue<string>('version', ''));
+    ValidateManifestIdentity(LExtensionId, LVersion);
+    for LDiagnostic in FDiagnostics do
+      if SameText(LDiagnostic.ExtensionId, LExtensionId) then
+        raise EArgumentException.Create(
+          'Extension ID is already loaded from another manifest.'
+        );
+    LEnabled := LJson.GetValue<Boolean>('enabled', True);
+    ValidatePermissions(LJson);
+    if not LEnabled then
+    begin
+      FDiagnostics.Add(
+        TRadIADeclarativeExtensionDiagnostic.Create(
+          AFileName,
+          LExtensionId,
+          'disabled',
+          'Extension is disabled by its manifest.'
+        )
+      );
+      Exit;
+    end;
+    LCommands := ParseCommands(
+      LJson,
+      LExtensionId,
+      AReservedCommands
+    );
+    FCommands.AddRange(LCommands);
+    FDiagnostics.Add(
+      TRadIADeclarativeExtensionDiagnostic.Create(
+        AFileName,
+        LExtensionId,
+        'loaded',
+        Format('%d command(s) loaded.', [Length(LCommands)])
+      )
+    );
+  finally
+    LJson.Free;
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.ParseCommand(
+  const AJson: TJSONObject;
+  const AExtensionId: string;
+  const AReservedCommands: TArray<string>;
+  const AExistingCommands: TArray<TRadIADeclarativeCommand>
+): TRadIADeclarativeCommand;
+var
+  LDescription: string;
+  LExistingCommand: TRadIADeclarativeCommand;
+  LName: string;
+  LPrompt: string;
+  LSlashCommand: string;
+begin
+  LName := Trim(AJson.GetValue<string>('name', ''));
+  LDescription := Trim(AJson.GetValue<string>('description', ''));
+  LSlashCommand := LowerCase(
+    Trim(AJson.GetValue<string>('command', ''))
+  );
+  LPrompt := Trim(AJson.GetValue<string>('prompt', ''));
+  ValidateCommandFields(
+    LName,
+    LDescription,
+    LSlashCommand,
+    LPrompt
+  );
+  if IsReserved(LSlashCommand, AReservedCommands) then
+    raise EArgumentException.Create(
+      'Command collides with an existing slash command.'
+    );
+  for LExistingCommand in AExistingCommands do
+    if SameText(
+      LExistingCommand.SlashCommand,
+      LSlashCommand
+    ) then
+      raise EArgumentException.Create(
+        'Manifest contains duplicate slash commands.'
+      );
+  Result := TRadIADeclarativeCommand.Create(
+    AExtensionId,
+    LName,
+    LDescription,
+    LSlashCommand,
+    LPrompt
+  );
+end;
+
+function TRadIADeclarativeExtensionManager.ParseCommands(
+  const AJson: TJSONObject;
+  const AExtensionId: string;
+  const AReservedCommands: TArray<string>
+): TArray<TRadIADeclarativeCommand>;
+var
+  LArray: TJSONArray;
+  LCommands: TList<TRadIADeclarativeCommand>;
+  LIndex: Integer;
+  LValue: TJSONValue;
+begin
+  LValue := AJson.GetValue('commands');
+  if not (LValue is TJSONArray) then
+    raise EArgumentException.Create('Manifest commands must be an array.');
+  LArray := TJSONArray(LValue);
+  if (LArray.Count = 0) or
+    (LArray.Count > CMaximumCommandsPerExtension) then
+    raise EArgumentException.Create(
+      'Manifest must contain between 1 and 100 commands.'
+    );
+  LCommands := TList<TRadIADeclarativeCommand>.Create;
+  try
+    for LIndex := 0 to LArray.Count - 1 do
+    begin
+      if not (LArray[LIndex] is TJSONObject) then
+        raise EArgumentException.Create(
+          'Each command must be a JSON object.'
+        );
+      LCommands.Add(
+        ParseCommand(
+          TJSONObject(LArray[LIndex]),
+          AExtensionId,
+          AReservedCommands,
+          LCommands.ToArray
+        )
+      );
+    end;
+    Result := LCommands.ToArray;
+  finally
+    LCommands.Free;
+  end;
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidateCommandFields(
+  const AName: string;
+  const ADescription: string;
+  const ASlashCommand: string;
+  const APrompt: string
+);
+begin
+  if (AName = '') or (Length(AName) > 100) then
+    raise EArgumentException.Create(
+      'Command name must contain between 1 and 100 characters.'
+    );
+  if (ADescription = '') or
+    (Length(ADescription) > CMaximumDescriptionLength) then
+    raise EArgumentException.Create(
+      'Command description must contain between 1 and 500 characters.'
+    );
+  if not IsValidSlashCommand(ASlashCommand) then
+    raise EArgumentException.Create(
+      'Command must match /name using letters, numbers, or hyphens.'
+    );
+  if (APrompt = '') or (Length(APrompt) > CMaximumPromptLength) then
+    raise EArgumentException.Create(
+      'Command prompt must contain between 1 and 32768 characters.'
+    );
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidatePermissions(
+  const AJson: TJSONObject
+);
+var
+  LArray: TJSONArray;
+  LValue: TJSONValue;
+begin
+  LValue := AJson.GetValue('permissions');
+  if not (LValue is TJSONArray) then
+    raise EArgumentException.Create(
+      'Manifest permissions must be an array.'
+    );
+  LArray := TJSONArray(LValue);
+  if (LArray.Count <> 1) or
+    not SameText(LArray[0].Value, CCommandPermission) then
+    raise EArgumentException.Create(
+      'Command extensions require only the chat.prompt permission.'
+    );
+end;
+
+procedure TRadIADeclarativeExtensionManager.Reload(
+  const AReservedCommands: TArray<string>
+);
+var
+  LFileName: string;
+  LFileNames: TArray<string>;
+begin
+  FCommands.Clear;
+  FDiagnostics.Clear;
+  if not TDirectory.Exists(FDirectory) then
+    TDirectory.CreateDirectory(FDirectory);
+  LFileNames := TDirectory.GetFiles(
+    FDirectory,
+    '*.radia.json',
+    TSearchOption.soTopDirectoryOnly
+  );
+  TArray.Sort<string>(LFileNames);
+  for LFileName in LFileNames do
+  begin
+    try
+      LoadManifest(LFileName, AReservedCommands);
+    except
+      on E: Exception do
+        FDiagnostics.Add(
+          TRadIADeclarativeExtensionDiagnostic.Create(
+            LFileName,
+            '',
+            'rejected',
+            E.Message
+          )
+        );
+    end;
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.TryResolve(
+  const ASlashCommand: string;
+  out ACommand: TRadIADeclarativeCommand
+): Boolean;
+var
+  LCommand: TRadIADeclarativeCommand;
+begin
+  ACommand := Default(TRadIADeclarativeCommand);
+  for LCommand in FCommands do
+  begin
+    if SameText(LCommand.SlashCommand, ASlashCommand) then
+    begin
+      ACommand := LCommand;
+      Exit(True);
+    end;
+  end;
+  Result := False;
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidateManifestIdentity(
+  const AExtensionId: string;
+  const AVersion: string
+);
+begin
+  if not IsPascalIdentifier(AExtensionId) then
+    raise EArgumentException.Create(
+      'Extension ID must use alphanumeric PascalCase.'
+    );
+  if not TRegEx.IsMatch(AVersion, '^\d+\.\d+\.\d+$') then
+    raise EArgumentException.Create(
+      'Extension version must use semantic major.minor.patch format.'
+    );
+end;
+
+end.

@@ -44,6 +44,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Conhecimento local | [Conhecimento do projeto](user_guide_project_knowledge.md) |
 | Form Designer e debugger | [Designer e debugger](user_guide_designer_debugger.md) |
 | Extensões de ferramentas | [Extensões](tool_extension_guide.md) |
+| Extensões declarativas | [Comandos sem recompilar](declarative_extensions.md) |
 | Migração para 1.0 | [Guia de migração](agentic_migration_0_1.md) |
 
 ## Arquitetura e desenvolvimento

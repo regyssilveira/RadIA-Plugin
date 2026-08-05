@@ -34,6 +34,7 @@ uses
   RadIA.Core.ToolRegistry in '..\Source\Core\RadIA.Core.ToolRegistry.pas',
   RadIA.Core.ToolViews in '..\Source\Core\RadIA.Core.ToolViews.pas',
   RadIA.Core.Extensions in '..\Source\Core\RadIA.Core.Extensions.pas',
+  RadIA.Core.DeclarativeExtensions in '..\Source\Core\RadIA.Core.DeclarativeExtensions.pas',
   RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
   RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',
   RadIA.Core.PatchTools in '..\Source\Core\RadIA.Core.PatchTools.pas',
@@ -226,6 +227,7 @@ uses
   RadIA.Tests.KnowledgeScheduler in 'Source\RadIA.Tests.KnowledgeScheduler.pas',
   RadIA.Tests.KnowledgeNotifier in 'Source\RadIA.Tests.KnowledgeNotifier.pas',
   RadIA.Tests.Extensions in 'Source\RadIA.Tests.Extensions.pas',
+  RadIA.Tests.DeclarativeExtensions in 'Source\RadIA.Tests.DeclarativeExtensions.pas',
   RadIA.Tests.DesignerComponents in 'Source\RadIA.Tests.DesignerComponents.pas',
   RadIA.Tests.DesignerEvents in 'Source\RadIA.Tests.DesignerEvents.pas',
   RadIA.Tests.ToolSecurity in 'Source\RadIA.Tests.ToolSecurity.pas';

@@ -152,6 +152,10 @@ type
     [Test]
     procedure TestGlobalPromptWithCommandLineBreakUsesTemplate;
     [Test]
+    procedure TestDeclarativeExtensionCommandReloadsWithoutRestart;
+    [Test]
+    procedure TestDeclarativeExtensionAppearsInSlashCatalog;
+    [Test]
     procedure TestSlashCommandUsesProvidedCodeBlock;
     [Test]
     procedure TestClearChatResetsState;
@@ -848,6 +852,59 @@ begin
   DrainQueuedCalls;
 
   Assert.IsTrue(FMockView.OpenSettingsDialogCalled);
+end;
+
+procedure TTestChatPresenter.
+  TestDeclarativeExtensionAppearsInSlashCatalog;
+var
+  LDirectory: string;
+  LManifest: string;
+begin
+  LDirectory := TPath.Combine(FTempDir, 'extensions');
+  TDirectory.CreateDirectory(LDirectory);
+  LManifest :=
+    '{"schemaVersion":1,"id":"TeamCommands","version":"1.0.0",' +
+    '"permissions":["chat.prompt"],"commands":[{"name":"Team review",' +
+    '"description":"Apply the team review policy.",' +
+    '"command":"/team-review","prompt":"Use the team policy: {code}"}]}';
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'team.radia.json'),
+    LManifest,
+    TEncoding.UTF8
+  );
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.OnWebViewReady;
+  Assert.Contains(
+    FMockView.LastPostedJson.Replace('\/', '/'),
+    '"command":"/team-review"'
+  );
+  Assert.Contains(FMockView.LastPostedJson, 'TeamCommands');
+end;
+
+procedure TTestChatPresenter.
+  TestDeclarativeExtensionCommandReloadsWithoutRestart;
+var
+  LDirectory: string;
+  LManifest: string;
+  LProcessed: string;
+begin
+  LDirectory := TPath.Combine(FTempDir, 'extensions');
+  TDirectory.CreateDirectory(LDirectory);
+  LManifest :=
+    '{"schemaVersion":1,"id":"TeamCommands","version":"1.0.0",' +
+    '"permissions":["chat.prompt"],"commands":[{"name":"Team review",' +
+    '"description":"Apply the team review policy.",' +
+    '"command":"/team-review","prompt":"Use the team policy: {code}"}]}';
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'team.radia.json'),
+    LManifest,
+    TEncoding.UTF8
+  );
+  FMockView.ActiveEditorText := 'procedure TeamCode; begin end;';
+  LProcessed := FPresenter.TestPreProcessPrompt('/team-review');
+  Assert.Contains(LProcessed, 'Use the team policy:');
+  Assert.Contains(LProcessed, 'procedure TeamCode; begin end;');
 end;
 
 procedure TTestChatPresenter.TestWebMessageOpenTerminal;

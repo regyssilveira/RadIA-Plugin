@@ -90,6 +90,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M3 entregue nesta etapa: estado, breakpoints, call stack, ações, valores, watches e eventos
         aparecem como evidências de debug somente leitura dentro da timeline.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
+    *   M4 em execução: manifestos `*.radia.json` adicionam comandos de chat com schema versionado,
+        permissão mínima, validação atômica, diagnóstico e recarga sem reiniciar a IDE.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 
