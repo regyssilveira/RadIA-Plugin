@@ -123,10 +123,7 @@ public static class RadIADockingSmokeNative
         string propertyName
     );
 
-    public static IntPtr FindDockWindow(
-        int processId,
-        IntPtr mainWindow
-    )
+    public static IntPtr FindDockWindow(int processId)
     {
         IntPtr result = IntPtr.Zero;
         EnumCallback callback = delegate(IntPtr handle, IntPtr parameter)
@@ -142,9 +139,21 @@ public static class RadIADockingSmokeNative
             return true;
         };
         EnumWindows(callback, IntPtr.Zero);
-        if (result == IntPtr.Zero && mainWindow != IntPtr.Zero)
+        if (result == IntPtr.Zero)
         {
-            EnumChildWindows(mainWindow, callback, IntPtr.Zero);
+            EnumWindows(
+                delegate(IntPtr handle, IntPtr parameter)
+                {
+                    uint ownerProcessId;
+                    GetWindowThreadProcessId(handle, out ownerProcessId);
+                    if (ownerProcessId == processId)
+                    {
+                        EnumChildWindows(handle, callback, IntPtr.Zero);
+                    }
+                    return result == IntPtr.Zero;
+                },
+                IntPtr.Zero
+            );
         }
         return result;
     }
@@ -159,10 +168,7 @@ function Get-RadIADockInfo {
         [Diagnostics.Process]$Process
     )
 
-    $handle = [RadIADockingSmokeNative]::FindDockWindow(
-        $Process.Id,
-        $Process.MainWindowHandle
-    )
+    $handle = [RadIADockingSmokeNative]::FindDockWindow($Process.Id)
     if ($handle -eq [IntPtr]::Zero) {
         return $null
     }

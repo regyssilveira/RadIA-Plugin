@@ -778,8 +778,17 @@ begin
 
   if LVisible then
   begin
-    LogDebug('Restoring window visibility from registry');
-    ShowRadIAChat;
+    LogDebug('Queueing window visibility restoration from registry');
+    TThread.ForceQueue(
+      nil,
+      procedure
+      begin
+        if GIsShuttingDown then
+          Exit;
+        LogDebug('Applying deferred window visibility restoration');
+        ShowRadIAChat;
+      end
+    );
   end;
 end;
 
