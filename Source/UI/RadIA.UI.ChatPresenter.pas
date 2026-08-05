@@ -204,6 +204,10 @@ type
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
+    function TryHandleJourneyCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
     procedure HandleExplicitToolCommand(
       const APromptText: string;
       const ACommandText: string
@@ -313,6 +317,7 @@ uses
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
   RadIA.Core.AgentPricing, RadIA.Core.AgentProvider,
   RadIA.Core.CliManager, RadIA.Core.CliMcpSettings,
+  RadIA.Core.Journeys,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -686,6 +691,7 @@ const
 var
   LCommand: string;
   LCommands: TList<string>;
+  LJourney: TRadIAJourneyDefinition;
   LTemplate: TPromptTemplate;
 begin
   LCommands := TList<string>.Create;
@@ -694,6 +700,9 @@ begin
       LCommands.Add(LCommand);
     LCommands.Add('/tool');
     LCommands.Add('/extensions reload');
+    LCommands.Add('/journey');
+    for LJourney in TRadIAJourneyCatalog.All do
+      LCommands.Add(LJourney.Command);
     for LTemplate in FTemplateManager.GetTemplates do
       if not LTemplate.SlashCommand.IsEmpty then
         LCommands.Add(LTemplate.SlashCommand);
@@ -713,6 +722,7 @@ end;
 function TRadIAChatPresenter.BuildSlashCommandsJsonArray: TJSONArray;
 var
   LCommand: TRadIADeclarativeCommand;
+  LJourney: TRadIAJourneyDefinition;
   LTemplate: TPromptTemplate;
   LSlashObj: TJSONObject;
 begin
@@ -790,6 +800,19 @@ begin
   Result.AddElement(LSlashObj);
 
   AddUtilitySlashCommands(Result);
+
+  for LJourney in TRadIAJourneyCatalog.All do
+  begin
+    LSlashObj := TJSONObject.Create;
+    LSlashObj.AddPair('command', LJourney.Command);
+    LSlashObj.AddPair('description', LJourney.Description);
+    LSlashObj.AddPair('name', LJourney.Name);
+    LSlashObj.AddPair(
+      'isProjectGenerator',
+      TJSONBool.Create(False)
+    );
+    Result.AddElement(LSlashObj);
+  end;
 
   for LTemplate in FTemplateManager.GetTemplates do
   begin
@@ -2300,6 +2323,8 @@ var
   LText: string;
 begin
   LText := Trim(APromptText);
+  if TryHandleJourneyCommand(APromptText, LText) then
+    Exit(True);
   if TryHandleAgentCommand(APromptText, LText) then
     Exit(True);
   if TryHandleCatalogCommand(APromptText, LText) then
@@ -2308,6 +2333,32 @@ begin
     LText.StartsWith('/tool ', True);
   if Result then
     HandleExplicitToolCommand(APromptText, LText);
+end;
+
+function TRadIAChatPresenter.TryHandleJourneyCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LDefinition: TRadIAJourneyDefinition;
+begin
+  Result := True;
+  if SameText(ACommandText, '/journey') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView(
+      'add_message',
+      'assistant',
+      TRadIAJourneyCatalog.HelpText
+    );
+    Exit;
+  end;
+  if not TRadIAJourneyCatalog.Find(ACommandText, LDefinition) then
+    Exit(False);
+  PostToWebView('add_message', 'user', APromptText);
+  if not FAgentModeEnabled then
+    SetAgentModeEnabled(True);
+  StartAgentRun(LDefinition.Objective);
 end;
 
 procedure TRadIAChatPresenter.ExecuteRegisteredTool(

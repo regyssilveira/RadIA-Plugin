@@ -42,6 +42,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Terminal acoplável | [Terminal](terminal.md) |
 | Primeira execução e jornada guiada | [Onboarding](onboarding.md) |
 | Conhecimento local | [Conhecimento do projeto](user_guide_project_knowledge.md) |
+| Jornadas Delphi | [Jornadas ponta a ponta](user_guide_journeys.md) |
 | Form Designer e debugger | [Designer e debugger](user_guide_designer_debugger.md) |
 | Extensões de ferramentas | [Extensões](tool_extension_guide.md) |
 | Extensões declarativas | [Comandos sem recompilar](declarative_extensions.md) |

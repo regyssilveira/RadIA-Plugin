@@ -200,6 +200,8 @@ type
     [Test]
     procedure TestDoctorCommandExecutesInstallationHealth;
     [Test]
+    procedure TestJourneyCommandListsEndToEndRecipes;
+    [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
     procedure TestWebMessageInsertCode;
@@ -762,6 +764,17 @@ begin
   DrainQueuedCalls;
 
   Assert.Contains(FMockView.PostedMessages.Text, '"status":"ready"');
+end;
+
+procedure TTestChatPresenter.TestJourneyCommandListsEndToEndRecipes;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/journey');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey create');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey fix-build');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey debug');
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

@@ -113,6 +113,7 @@ contains
   RadIA.Core.KnowledgeHistory in 'Source\Core\RadIA.Core.KnowledgeHistory.pas',
   RadIA.Core.ProjectHealthTools in 'Source\Core\RadIA.Core.ProjectHealthTools.pas',
   RadIA.Core.InstallationHealthTools in 'Source\Core\RadIA.Core.InstallationHealthTools.pas',
+  RadIA.Core.Journeys in 'Source\Core\RadIA.Core.Journeys.pas',
   RadIA.Core.KnowledgeTools in 'Source\Core\RadIA.Core.KnowledgeTools.pas',
   RadIA.Core.KnowledgeStore in 'Source\Core\RadIA.Core.KnowledgeStore.pas',
   RadIA.Core.KnowledgeScheduler in 'Source\Core\RadIA.Core.KnowledgeScheduler.pas',

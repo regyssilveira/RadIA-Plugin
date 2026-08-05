@@ -27,6 +27,12 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/doctor` | Diagnostica a instalação e recomenda correções de primeiro uso. | Provider, CLI, MCP, terminal e recursos web. |
+| `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
+| `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |
+| `/journey fix-build` | Diagnostica e corrige um build com alterações mínimas. | Compilador, patches e build. |
+| `/journey tests` | Amplia testes DUnitX e executa validação. | Projeto, patches e DUnitX. |
+| `/journey debug` | Conduz reprodução, diagnóstico, correção e validação. | Debugger, patches e build. |
+| `/journey release` | Reúne gates e prepara preview de commit local. | Saúde, build, testes e Git. |
 | `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
 | `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |
 | `/revoke-tools` | Revoga permissões concedidas na sessão. | Sessão de chat ativa. |

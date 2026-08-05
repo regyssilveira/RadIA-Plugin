@@ -27,6 +27,12 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/extensions` | Opens the visual extension manager. | Local extensions and publishers. |
 | `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
 | `/doctor` | Diagnoses installation and recommends first-run fixes. | Provider, CLI, MCP, terminal, and web assets. |
+| `/journey` | Lists end-to-end Delphi recipes. | Native journey catalog. |
+| `/journey create` | Creates, opens, builds, and explains a new project. | Agent Runtime and project tools. |
+| `/journey fix-build` | Diagnoses and repairs a build with minimal changes. | Compiler, patches, and build. |
+| `/journey tests` | Expands DUnitX tests and runs validation. | Project, patches, and DUnitX. |
+| `/journey debug` | Guides reproduction, diagnosis, correction, and validation. | Debugger, patches, and build. |
+| `/journey release` | Runs gates and prepares a local commit preview. | Health, build, tests, and Git. |
 | `/tools` | Shows the tool catalog for the current IDE instance. | IDE state and extensions. |
 | `/tool <name> {JSON}` | Runs a tool with optional JSON arguments. | Workspace and session. |
 | `/revoke-tools` | Revokes permissions granted in the session. | Active chat session. |

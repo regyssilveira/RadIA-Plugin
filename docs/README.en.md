@@ -38,6 +38,7 @@ This index brings together the functional, operational, and technical documentat
 | Consent, risk, and audit | [Security model](tool_security_model.md) |
 | MCP and external clients | [MCP integration](mcp_integration_guide.en.md) |
 | Local knowledge | [Project knowledge](user_guide_project_knowledge.en.md) |
+| Delphi journeys | [End-to-end journeys](user_guide_journeys.en.md) |
 | Form Designer and debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
 | Tool extensions | [Extensions](tool_extension_guide.md) |
 | Declarative extensions | [Commands without recompiling](declarative_extensions.en.md) |
