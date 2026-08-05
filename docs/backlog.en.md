@@ -59,6 +59,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         directly from the live buffer and cursor line, without depending on the saved file.
     *   M1 delivered in this increment: five configurable shortcuts use native OTA partial
         bindings with persistence, profile validation, duplicate rejection, and conflict detection.
+    *   M1 delivered in this increment: multiline Ghost Text uses per-line virtual overlays, a
+        continuation lane that avoids real code, and EOF overflow while preserving the buffer.
     *   M2 delivered in this increment: an incremental ANSI SGR parser and rich output preserve
         colors and bold styling even when escape sequences arrive split across chunks.
     *   M2 delivered in this increment: continuous stdin keeps the input channel open and accepts

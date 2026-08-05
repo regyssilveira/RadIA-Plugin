@@ -88,13 +88,16 @@ revision, or cursor position changes. Policy-blocked contexts never reach the pr
 - `IRadIAInlineCompletionProvider`: abstraction for local and remote models.
 - `TRadIAServiceInlineCompletionProvider`: adapter for the active RadIA provider.
 - `TRadIAInlineCompletionController`: cache, cancellation, sanitization, and acceptance actions.
+- `TRadIAInlineGhostLayout`: deterministic multiline virtual-overlay layout.
 - `IRadIAInlineCompletionView`: boundary preventing the engine from writing directly to the editor.
 - `TRadIAOTAInlineCompletionSession`: OTA capture, optimistic validation, insertion, and Ghost Text.
 
 ## Integration status
 
 The manual OTA flow and opt-in continuous capture are connected. Both capture only the active
-buffer, resolve the current symbol from the cursor line, and include basic project metadata. They
-display the first line as Ghost Text and never change the buffer before acceptance. Multiline
-virtual rows remain pending. The feature is only complete after visual validation across the
-supported IDE matrix.
+buffer, resolve the current symbol from the cursor line, and include basic project metadata.
+Multiline suggestions are split into virtual overlays without changing the buffer. The first line
+starts at the cursor; visible continuation lines use a lane after real text to avoid covering code,
+and rows beyond end-of-file render below the final logical line. Full acceptance preserves every
+line break, while partial acceptance refreshes the snapshot before keeping the remainder. The
+milestone is only complete after visual validation across the supported IDE matrix.

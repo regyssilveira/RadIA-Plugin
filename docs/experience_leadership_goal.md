@@ -75,8 +75,9 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 O M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache, limites, provider
 desacoplado, captura contínua opt-in, controles de escopo e Ghost Text OTA. A captura usa o buffer
 vivo, a posição do cursor e o símbolo vigente. Os cinco atalhos são bindings OTA configuráveis,
-validados e recarregados sem reiniciar a IDE. Sugestões multilinha com linhas virtuais e o aceite
-visual em toda a matriz de IDEs continuam obrigatórios antes de marcar o marco como concluído.
+validados e recarregados sem reiniciar a IDE. Sugestões multilinha agora usam overlays virtuais por
+linha, preservam quebras no aceite e mantêm continuações separadas do código real. O aceite visual
+em toda a matriz de IDEs continua obrigatório antes de marcar o marco como concluído.
 
 O M2 possui buffer visual ANSI/CSI com cursor e sobrescrita, saída rica, stdin contínuo, execução
 por ConPTY, resize em dimensões de caracteres, busca reversa por `Ctrl+R` e múltiplas sessões em

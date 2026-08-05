@@ -7,6 +7,31 @@ uses
   RadIA.Core.Interfaces;
 
 type
+  TRadIAInlineGhostLine = record
+  private
+    FLineOffset: Integer;
+    FText: string;
+  public
+    constructor Create(
+      const ALineOffset: Integer;
+      const AText: string
+    );
+    property LineOffset: Integer read FLineOffset;
+    property Text: string read FText;
+  end;
+
+  TRadIAInlineGhostLayout = class
+  public
+    class function Build(
+      const ASuggestion: string
+    ): TArray<TRadIAInlineGhostLine>; static;
+    class function TryGetLine(
+      const ALines: TArray<TRadIAInlineGhostLine>;
+      const ALineOffset: Integer;
+      out ALine: TRadIAInlineGhostLine
+    ): Boolean; static;
+  end;
+
   TRadIAInlineCompletionContext = record
   private
     FFileName: string;
@@ -292,6 +317,59 @@ type
     procedure Put(const AKey: string; const AValue: string);
     procedure Remove(const AKey: string);
   end;
+
+{ TRadIAInlineGhostLine }
+
+constructor TRadIAInlineGhostLine.Create(
+  const ALineOffset: Integer;
+  const AText: string
+);
+begin
+  FLineOffset := ALineOffset;
+  FText := AText;
+end;
+
+{ TRadIAInlineGhostLayout }
+
+class function TRadIAInlineGhostLayout.Build(
+  const ASuggestion: string
+): TArray<TRadIAInlineGhostLine>;
+var
+  LIndex: Integer;
+  LLines: TStringList;
+  LNormalized: string;
+begin
+  Result := [];
+  if ASuggestion.IsEmpty then
+    Exit;
+  LNormalized := ASuggestion.Replace(#13#10, #10).Replace(#13, #10);
+  LLines := TStringList.Create;
+  try
+    LLines.LineBreak := #10;
+    LLines.Text := LNormalized;
+    SetLength(Result, LLines.Count);
+    for LIndex := 0 to LLines.Count - 1 do
+      Result[LIndex] := TRadIAInlineGhostLine.Create(
+        LIndex,
+        LLines[LIndex]
+      );
+  finally
+    LLines.Free;
+  end;
+end;
+
+class function TRadIAInlineGhostLayout.TryGetLine(
+  const ALines: TArray<TRadIAInlineGhostLine>;
+  const ALineOffset: Integer;
+  out ALine: TRadIAInlineGhostLine
+): Boolean;
+begin
+  ALine := Default(TRadIAInlineGhostLine);
+  Result := (ALineOffset >= 0) and
+    (ALineOffset < Length(ALines));
+  if Result then
+    ALine := ALines[ALineOffset];
+end;
 
 { TRadIAInlineCompletionContext }
 

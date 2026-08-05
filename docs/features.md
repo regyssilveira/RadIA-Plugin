@@ -74,6 +74,7 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Designer Agentivo** | Integração | Componentes, propriedades, eventos e layout revisáveis. | ✅ Concluído |
 | **Debugger Agentivo** | Integração | Estado, controle, breakpoints, avaliação de expressões e watches. | ✅ Concluído |
 | **Revisão Inline** | Editor | Ciclo visual com aplicação e reversão controladas no editor. | ✅ Concluído |
+| **Ghost Text Multilinha** | Editor | Overlays virtuais por linha, aceite total ou por palavra e atalhos configuráveis sem alterar o buffer antes do aceite. | 🚧 Validação visual |
 | **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
 | **Extensões Declarativas Assinadas** | Segurança | Pacotes RSA-SHA256 com fingerprint, confiança no primeiro uso e revogação visual. | ✅ Concluído |

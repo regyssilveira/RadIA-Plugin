@@ -90,6 +90,7 @@ não chegam ao provider.
 - `IRadIAInlineCompletionProvider`: abstração para modelos locais e remotos.
 - `TRadIAServiceInlineCompletionProvider`: adaptador para o provider ativo do RadIA.
 - `TRadIAInlineCompletionController`: cache, cancelamento, saneamento e ações de aceite.
+- `TRadIAInlineGhostLayout`: separação determinística de sugestões em linhas virtuais.
 - `IRadIAInlineCompletionView`: fronteira que impede o motor de escrever diretamente no editor.
 - `TRadIAOTAInlineCompletionSession`: captura OTA, validação otimista, inserção e Ghost Text.
 
@@ -97,6 +98,9 @@ não chegam ao provider.
 
 O fluxo OTA manual e a captura contínua opt-in estão conectados. Ambos capturam somente o buffer
 ativo, resolvem o símbolo vigente a partir da linha do cursor e incluem metadados básicos do projeto.
-A primeira linha é apresentada como Ghost Text e o buffer nunca é modificado antes do aceite.
-Sugestões multilinha com linhas virtuais permanecem pendentes. O recurso só será considerado
-concluído depois da validação visual na matriz de IDEs suportada.
+Sugestões multilinha são separadas em overlays virtuais sem modificar o buffer. A primeira linha
+começa na coluna do cursor; continuações visíveis usam uma faixa após o texto real para não
+encobrir código existente. Linhas que ultrapassam o fim do arquivo são desenhadas abaixo da última
+linha lógica. O aceite total preserva todas as quebras, e o aceite parcial atualiza o snapshot antes
+de manter o restante. O marco só será considerado concluído depois da validação visual na matriz
+de IDEs suportada.

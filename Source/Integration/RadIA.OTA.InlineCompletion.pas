@@ -32,11 +32,25 @@ type
   private
     FContext: TRadIAInlineCompletionContext;
     FContinuousEnabled: Boolean;
+    FGhostLines: TArray<TRadIAInlineGhostLine>;
     FIdleHandler: TRadIAInlineCompletionIdleHandler;
     FSuggestion: string;
     function CurrentView: IOTAEditView;
-    function FirstSuggestionLine: string;
+    function GhostHorizontalPosition(
+      const APaintContext: TRadIAEditPaintContext;
+      const ALineOffset: Integer
+    ): Integer;
     function LanguageForFile(const AFileName: string): string;
+    procedure PaintGhostText(
+      const APaintContext: TRadIAEditPaintContext;
+      const AText: string;
+      const AHorizontalPosition: Integer;
+      const ATop: Integer;
+      const AClipToLine: Boolean
+    );
+    procedure PaintOverflowLines(
+      const APaintContext: TRadIAEditPaintContext
+    );
   protected
     procedure PaintOverlay(
       const APaintContext: TRadIAEditPaintContext
@@ -190,6 +204,7 @@ var
   LView: IOTAEditView;
 begin
   FSuggestion := '';
+  FGhostLines := nil;
   FContext := Default(TRadIAInlineCompletionContext);
   LView := CurrentView;
   if Assigned(LView) then
@@ -238,21 +253,31 @@ begin
     Exit;
   if FSuggestion <> '' then
     View.SetTempMsg(
-      'RadIA Ghost Text: accept, reject, or request an alternative ' +
-      'from the RadIA editor menu.'
+      Format(
+        'RadIA Ghost Text: %d line(s). Accept, reject, or request ' +
+        'an alternative from the RadIA editor menu.',
+        [Length(FGhostLines)]
+      )
     )
   else if FContinuousEnabled and Assigned(FIdleHandler) then
     FIdleHandler();
 end;
 
-function TRadIAOTAInlineCompletionSession.FirstSuggestionLine: string;
-var
-  LBreakIndex: Integer;
+function TRadIAOTAInlineCompletionSession.GhostHorizontalPosition(
+  const APaintContext: TRadIAEditPaintContext;
+  const ALineOffset: Integer
+): Integer;
 begin
-  Result := FSuggestion;
-  LBreakIndex := Result.IndexOfAny([#13, #10]);
-  if LBreakIndex >= 0 then
-    Result := Result.Substring(0, LBreakIndex);
+  if ALineOffset = 0 then
+    Exit(
+      APaintContext.TextRect.Left +
+      (Max(1, FContext.CursorColumn) - 1) *
+      APaintContext.CellSize.cx
+    );
+  Result := Max(
+    APaintContext.TextRect.Left,
+    APaintContext.TextRect.Right + APaintContext.CellSize.cx
+  );
 end;
 
 function TRadIAOTAInlineCompletionSession.LanguageForFile(
@@ -270,44 +295,104 @@ procedure TRadIAOTAInlineCompletionSession.Modified;
 begin
   inherited;
   FSuggestion := '';
+  FGhostLines := nil;
   FContext := Default(TRadIAInlineCompletionContext);
+end;
+
+procedure TRadIAOTAInlineCompletionSession.PaintGhostText(
+  const APaintContext: TRadIAEditPaintContext;
+  const AText: string;
+  const AHorizontalPosition: Integer;
+  const ATop: Integer;
+  const AClipToLine: Boolean
+);
+var
+  LBrushStyle: TBrushStyle;
+  LColor: TColor;
+begin
+  if AText.IsEmpty or
+    (AHorizontalPosition >= APaintContext.LineRect.Right) then
+    Exit;
+  LColor := APaintContext.Canvas.Font.Color;
+  LBrushStyle := APaintContext.Canvas.Brush.Style;
+  try
+    APaintContext.Canvas.Font.Color := clGrayText;
+    APaintContext.Canvas.Brush.Style := bsClear;
+    if AClipToLine then
+      APaintContext.Canvas.TextRect(
+        APaintContext.LineRect,
+        AHorizontalPosition,
+        ATop,
+        AText
+      )
+    else
+      APaintContext.Canvas.TextOut(
+        AHorizontalPosition,
+        ATop,
+        AText
+      );
+  finally
+    APaintContext.Canvas.Brush.Style := LBrushStyle;
+    APaintContext.Canvas.Font.Color := LColor;
+  end;
 end;
 
 procedure TRadIAOTAInlineCompletionSession.PaintOverlay(
   const APaintContext: TRadIAEditPaintContext
 );
 var
-  LBrushStyle: TBrushStyle;
-  LColor: TColor;
   LHorizontalPosition: Integer;
-  LSuggestionLine: string;
+  LLine: TRadIAInlineGhostLine;
+  LLineOffset: Integer;
 begin
-  if (FSuggestion = '') or
-    (APaintContext.LineNumber <> FContext.CursorLine) then
+  if FSuggestion.IsEmpty then
     Exit;
-  LSuggestionLine := FirstSuggestionLine;
-  if LSuggestionLine = '' then
+  LLineOffset := APaintContext.LineNumber - FContext.CursorLine;
+  if not TRadIAInlineGhostLayout.TryGetLine(
+    FGhostLines,
+    LLineOffset,
+    LLine
+  ) then
     Exit;
-  LHorizontalPosition := APaintContext.TextRect.Left +
-    (Max(1, FContext.CursorColumn) - 1) *
-    APaintContext.CellSize.cx;
-  if LHorizontalPosition >= APaintContext.LineRect.Right then
-    Exit;
+  LHorizontalPosition := GhostHorizontalPosition(
+    APaintContext,
+    LLineOffset
+  );
+  PaintGhostText(
+    APaintContext,
+    LLine.Text,
+    LHorizontalPosition,
+    APaintContext.TextRect.Top,
+    True
+  );
+  if LLineOffset = 0 then
+    PaintOverflowLines(APaintContext);
+end;
 
-  LColor := APaintContext.Canvas.Font.Color;
-  LBrushStyle := APaintContext.Canvas.Brush.Style;
-  try
-    APaintContext.Canvas.Font.Color := clGrayText;
-    APaintContext.Canvas.Brush.Style := bsClear;
-    APaintContext.Canvas.TextRect(
-      APaintContext.LineRect,
+procedure TRadIAOTAInlineCompletionSession.PaintOverflowLines(
+  const APaintContext: TRadIAEditPaintContext
+);
+var
+  LHorizontalPosition: Integer;
+  LIndex: Integer;
+  LLastEditorLine: Integer;
+begin
+  if not Assigned(APaintContext.View.Position) then
+    Exit;
+  LLastEditorLine := APaintContext.View.Position.LastRow;
+  for LIndex := 1 to Length(FGhostLines) - 1 do
+  begin
+    if FContext.CursorLine + LIndex <= LLastEditorLine then
+      Continue;
+    LHorizontalPosition := APaintContext.TextRect.Left;
+    PaintGhostText(
+      APaintContext,
+      FGhostLines[LIndex].Text,
       LHorizontalPosition,
-      APaintContext.TextRect.Top,
-      LSuggestionLine
+      APaintContext.TextRect.Top +
+        LIndex * APaintContext.CellSize.cy,
+      False
     );
-  finally
-    APaintContext.Canvas.Brush.Style := LBrushStyle;
-    APaintContext.Canvas.Font.Color := LColor;
   end;
 end;
 
@@ -324,6 +409,7 @@ begin
     Exit;
   FContext := AContext;
   FSuggestion := ASuggestion;
+  FGhostLines := TRadIAInlineGhostLayout.Build(ASuggestion);
   RegisterCurrentView;
   LView.Paint;
 end;

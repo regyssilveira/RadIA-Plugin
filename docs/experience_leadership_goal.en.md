@@ -74,8 +74,9 @@ decision requires `leader` on every axis together with the M8 evidence.
 M1 now includes a Fill-in-the-Middle engine, debounce, cancellation, cache, limits, a decoupled
 provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture uses the live
 buffer, cursor position, and current symbol. All five shortcuts are configurable OTA bindings,
-validated and reloaded without restarting the IDE. Multiline virtual rows and visual acceptance
-across the complete IDE matrix remain mandatory before the milestone can be marked complete.
+validated and reloaded without restarting the IDE. Multiline suggestions now use per-line virtual
+overlays, preserve line breaks on acceptance, and keep continuations separate from real code.
+Visual acceptance across the complete IDE matrix remains mandatory before completion.
 
 M2 includes a visual ANSI/CSI buffer with cursor overwrite, rich output, continuous stdin, ConPTY
 execution, character-dimension resize, reverse history search through `Ctrl+R`, and multiple tabbed

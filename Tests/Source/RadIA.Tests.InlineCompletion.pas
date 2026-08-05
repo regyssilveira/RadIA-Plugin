@@ -98,6 +98,14 @@ type
     procedure ShortcutProfileRejectsDuplicateKeys;
     [Test]
     procedure ShortcutProfileRejectsMissingActions;
+    [Test]
+    procedure BuildsMultilineGhostLayoutWithoutChangingSuggestion;
+    [Test]
+    procedure ResolvesGhostLinesByRelativeOffset;
+    [Test]
+    procedure AcceptsMultilineSuggestionExactly;
+    [Test]
+    procedure AcceptsNextWordAcrossLineBreak;
   end;
 
 implementation
@@ -158,6 +166,17 @@ begin
   Assert.AreEqual('WriteLn(''Hello'');', FView.AppliedText);
 end;
 
+procedure TRadIAInlineCompletionTests.AcceptsMultilineSuggestionExactly;
+const
+  CSuggestion = 'if Ready then'#13#10'begin'#13#10'  Run;';
+begin
+  FProvider.Response := CSuggestion;
+  FController.Request(Context('multiline-all'));
+  Assert.IsTrue(FController.AcceptAll);
+  Assert.AreEqual(CSuggestion, FView.AppliedText);
+  Assert.AreEqual('', FView.ShownText);
+end;
+
 procedure TRadIAInlineCompletionTests.AcceptsNextWordAndKeepsRemainder;
 begin
   FProvider.Response := 'FirstWord secondWord';
@@ -165,6 +184,21 @@ begin
   Assert.IsTrue(FController.AcceptNextWord);
   Assert.AreEqual('FirstWord ', FView.AppliedText);
   Assert.AreEqual('secondWord', FView.ShownText);
+end;
+
+procedure TRadIAInlineCompletionTests.AcceptsNextWordAcrossLineBreak;
+begin
+  FProvider.Response := 'First'#13#10'Second value';
+  FController.Request(Context('multiline-next-word'));
+  Assert.IsTrue(FController.AcceptNextWord);
+  Assert.AreEqual('First'#13, FView.AppliedText);
+  Assert.AreEqual(#10'Second value', FView.ShownText);
+  Assert.IsTrue(FController.AcceptNextWord);
+  Assert.AreEqual(
+    'First'#13#10'Second ',
+    FView.AppliedText
+  );
+  Assert.AreEqual('value', FView.ShownText);
 end;
 
 procedure TRadIAInlineCompletionTests.AlternativeRequestsCompletionAgain;
@@ -188,6 +222,31 @@ begin
   Assert.Contains(LPrompt, '<SUFFIX>');
   Assert.Contains(LPrompt, '<PROJECT_CONTEXT>');
   Assert.Contains(LPrompt, 'Revision: prompt-revision');
+end;
+
+procedure TRadIAInlineCompletionTests.
+  BuildsMultilineGhostLayoutWithoutChangingSuggestion;
+const
+  CSuggestion = 'if Ready then'#13#10'begin'#13#10'  Run;'#13#10'end;';
+var
+  LLines: TArray<TRadIAInlineGhostLine>;
+begin
+  LLines := TRadIAInlineGhostLayout.Build(CSuggestion);
+  Assert.AreEqual<Integer>(4, Length(LLines));
+  Assert.AreEqual('if Ready then', LLines[0].Text);
+  Assert.AreEqual('begin', LLines[1].Text);
+  Assert.AreEqual('  Run;', LLines[2].Text);
+  Assert.AreEqual('end;', LLines[3].Text);
+  Assert.AreEqual(3, LLines[3].LineOffset);
+  Assert.AreEqual(
+    CSuggestion,
+    string.Join(sLineBreak, [
+      LLines[0].Text,
+      LLines[1].Text,
+      LLines[2].Text,
+      LLines[3].Text
+    ])
+  );
 end;
 
 function TRadIAInlineCompletionTests.Context(
@@ -301,6 +360,27 @@ begin
   FView.ApplyAllowed := False;
   Assert.IsFalse(FController.AcceptAll);
   Assert.AreEqual('', FView.AppliedText);
+end;
+
+procedure TRadIAInlineCompletionTests.
+  ResolvesGhostLinesByRelativeOffset;
+var
+  LLine: TRadIAInlineGhostLine;
+  LLines: TArray<TRadIAInlineGhostLine>;
+begin
+  LLines := TRadIAInlineGhostLayout.Build(
+    'first'#10'second'#10'third'
+  );
+  Assert.IsTrue(
+    TRadIAInlineGhostLayout.TryGetLine(LLines, 1, LLine)
+  );
+  Assert.AreEqual('second', LLine.Text);
+  Assert.IsFalse(
+    TRadIAInlineGhostLayout.TryGetLine(LLines, -1, LLine)
+  );
+  Assert.IsFalse(
+    TRadIAInlineGhostLayout.TryGetLine(LLines, 3, LLine)
+  );
 end;
 
 procedure TRadIAInlineCompletionTests.RejectClearsSuggestion;
