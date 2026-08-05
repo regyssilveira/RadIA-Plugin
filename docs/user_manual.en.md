@@ -254,8 +254,13 @@ the same consent and workspace policies.
 Trusted packages can add tools through the versioned `IRadIAToolExtension` API without bypassing
 policy, audit, or cancellation.
 
+Declarative commands can be installed from **Tools > Rad IA Extensions...** as a
+`*.radia.json` manifest or integrity-checked `*.radiaext` package. The manager updates, enables,
+disables, diagnoses, and removes them without restarting the IDE.
+
 See the [MCP guide](mcp_integration_guide.en.md) and
-[extension guide](tool_extension_guide.md).
+[extension guide](tool_extension_guide.md), plus
+[declarative extensions](declarative_extensions.en.md).
 
 ## 5. Slash commands
 

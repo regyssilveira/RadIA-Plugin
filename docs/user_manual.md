@@ -376,7 +376,12 @@ Consulte o [guia de integração MCP](mcp_integration_guide.md).
 Packages confiáveis podem registrar novas ferramentas pela API versionada
 `IRadIAToolExtension`. Extensões não contornam política, consentimento, auditoria ou cancelamento.
 
-Consulte o [guia de extensões](tool_extension_guide.md).
+Comandos declarativos podem ser instalados em **Tools > Rad IA Extensions...** como manifesto
+`*.radia.json` ou pacote íntegro `*.radiaext`. O gerenciador permite atualizar, habilitar,
+desabilitar, diagnosticar e remover sem reiniciar a IDE.
+
+Consulte o [guia de extensões](tool_extension_guide.md) e
+[extensões declarativas](declarative_extensions.md).
 
 ## 5. Comandos de barra
 

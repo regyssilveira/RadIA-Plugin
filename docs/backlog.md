@@ -95,6 +95,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M4 entregue nesta etapa: **Tools > Rad IA Extensions...** instala, atualiza, habilita,
         desabilita, diagnostica e remove manifestos; escrita atômica e rollback preservam a versão
         funcional quando o candidato ou o conjunto instalado é rejeitado.
+    *   M4 entregue nesta etapa: pacotes `.radiaext` possuem envelope versionado, lista fechada,
+        tamanho e SHA-256; o importador bloqueia adulteração, entradas extras, duplicidade, ZIP bomb,
+        path traversal e divergência de identidade antes da ativação transacional.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

@@ -79,5 +79,32 @@ adicionais são recusadas. Tools avançadas continuam disponíveis pela API BPL 
 [guia de extensões](tool_extension_guide.md) e passam pela política central de risco e consentimento.
 
 O gerenciador visual conclui o ciclo local de instalação, atualização, ativação, diagnóstico e
-remoção de manifestos. Assinatura, distribuição e atualização de pacotes vindos de catálogos
-remotos permanecem nas próximas etapas do M4.
+remoção de manifestos.
+
+## Pacote distribuível `.radiaext`
+
+Para distribuir uma extensão como artefato único, gere um pacote:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.DeclarativeExtensionPackage.ps1 `
+  -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json
+```
+
+O resultado usa a extensão `.radiaext` e contém exatamente:
+
+- `package.json`, com schema, ID, versão e lista fechada de arquivos;
+- `<ExtensionId>.radia.json`, com tamanho e SHA-256 registrados nos metadados.
+
+O gerenciador visual aceita o pacote no mesmo botão **Install / Update...**. Antes de ativar, ele
+recusa arquivos extras, nomes duplicados, paths com diretórios ou traversal, entradas acima dos
+limites, divergência de ID/versão, tamanho incorreto e SHA-256 inválido. A descompressão também
+verifica o tamanho declarado no cabeçalho antes de alocar o conteúdo, reduzindo risco de ZIP bomb.
+Depois dessa verificação, o manifesto ainda passa por toda a validação e pelo rollback transacional.
+
+### Integridade e identidade
+
+SHA-256 comprova que o conteúdo recebido corresponde aos metadados do pacote, mas não identifica
+quem o publicou. Portanto, `.radiaext` versão 1 não deve ser descrito como “assinado”. Assinatura
+assimétrica, trust store de publicadores e catálogo remoto confiável permanecem nas próximas etapas
+do M4.

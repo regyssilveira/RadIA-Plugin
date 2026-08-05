@@ -95,6 +95,9 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M4 delivered in this increment: **Tools > Rad IA Extensions...** installs, updates, enables,
         disables, diagnoses, and removes manifests; atomic writes and rollback preserve the working
         version when a candidate or the installed set is rejected.
+    *   M4 delivered in this increment: `.radiaext` packages provide a versioned envelope, closed
+        file list, size, and SHA-256; import blocks tampering, extra or duplicate entries, ZIP bombs,
+        path traversal, and identity mismatches before transactional activation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 

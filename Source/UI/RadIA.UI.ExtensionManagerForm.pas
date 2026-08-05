@@ -61,6 +61,7 @@ uses
   System.SysUtils,
   ToolsAPI,
   Vcl.Controls,
+  RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.Mediator,
   RadIA.Core.PromptTemplates;
 
@@ -155,7 +156,8 @@ begin
   FStatusLabel.AutoSize := False;
 
   FOpenDialog := TOpenDialog.Create(Self);
-  FOpenDialog.Filter := 'Rad IA extension (*.radia.json)|*.radia.json|' +
+  FOpenDialog.Filter := 'Rad IA extension package (*.radiaext)|*.radiaext|' +
+    'Rad IA manifest (*.radia.json)|*.radia.json|' +
     'JSON manifest (*.json)|*.json';
   FOpenDialog.Options := [ofFileMustExist, ofPathMustExist, ofEnableSizing];
   FOpenDialog.Title := 'Install or update a declarative extension';
@@ -286,12 +288,21 @@ var
 begin
   if not FOpenDialog.Execute then
     Exit;
-  FManager.InstallOrUpdate(
-    FOpenDialog.FileName,
-    FReservedCommands,
-    LExtensionId,
-    LMessage
-  );
+  if SameText(ExtractFileExt(FOpenDialog.FileName), '.radiaext') then
+    TRadIADeclarativeExtensionPackageInstaller.Install(
+      FOpenDialog.FileName,
+      FManager,
+      FReservedCommands,
+      LExtensionId,
+      LMessage
+    )
+  else
+    FManager.InstallOrUpdate(
+      FOpenDialog.FileName,
+      FReservedCommands,
+      LExtensionId,
+      LMessage
+    );
   SetStatus(LMessage);
   RefreshList;
   NotifyChat;

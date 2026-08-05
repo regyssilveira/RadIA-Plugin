@@ -165,8 +165,8 @@ confinamento de paths. Operações destrutivas ou sensíveis não recebem autori
 Packages confiáveis podem registrar tools pela API `IRadIAToolExtension`, mas continuam sujeitos
 às mesmas políticas.
 
-Manifestos locais `*.radia.json` podem adicionar comandos de chat com permissão `chat.prompt`,
-validação atômica e recarga sem reiniciar. Consulte
+Manifestos locais `*.radia.json` e pacotes íntegros `*.radiaext` podem adicionar comandos de chat
+com permissão `chat.prompt`, validação atômica e recarga sem reiniciar. Consulte
 [Extensões declarativas](declarative_extensions.md).
 
 Consulte [Modelo de segurança](tool_security_model.md) e
