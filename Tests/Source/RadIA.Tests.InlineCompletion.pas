@@ -83,6 +83,8 @@ type
     [Test]
     procedure PreservesCursorThroughContextLimit;
     [Test]
+    procedure PreviewsLocalSuggestionWithoutProvider;
+    [Test]
     procedure RefusesAcceptanceWhenViewRevisionChanged;
     [Test]
     procedure PolicyAllowsContextOutsideExclusions;
@@ -308,6 +310,17 @@ begin
   LContext := Context('cursor').WithCursor(12, 7).Limited(256);
   Assert.AreEqual(12, LContext.CursorLine);
   Assert.AreEqual(7, LContext.CursorColumn);
+end;
+
+procedure TRadIAInlineCompletionTests.PreviewsLocalSuggestionWithoutProvider;
+const
+  CLocalSuggestion = 'LocalPreview'#13#10'SecondLine';
+begin
+  FController.Preview(Context('local-preview'), CLocalSuggestion);
+  Assert.AreEqual(0, FProvider.CallCount);
+  Assert.AreEqual(CLocalSuggestion, FView.ShownText);
+  Assert.IsTrue(FController.AcceptAll);
+  Assert.AreEqual(CLocalSuggestion, FView.AppliedText);
 end;
 
 procedure TRadIAInlineCompletionTests.PolicyAllowsContextOutsideExclusions;

@@ -49,6 +49,22 @@ salva perfis incompletos, teclas inválidas ou atalhos duplicados. A configuraç
 voltar ao editor, sem reiniciar a IDE. Se o keymap ativo do Delphi já possuir o mesmo atalho, o
 comando existente permanece prioritário e o conflito é registrado no log do RadIA.
 
+## Diagnóstico visual local
+
+O menu **Tools** e o submenu **Rad IA** do editor oferecem **Preview Rad IA Ghost Text
+Diagnostic**. A ação:
+
+- usa o buffer e a posição reais do editor;
+- apresenta duas linhas locais pelo mesmo controller e overlay da sugestão normal;
+- não chama provider, não envia contexto e não exige conexão;
+- não altera o buffer antes do aceite;
+- pode ser rejeitada ou aceita pelos mesmos atalhos configurados pelo usuário.
+
+O log registra separadamente a preparação e a pintura efetiva, incluindo apenas quantidade de
+linhas e nome do arquivo. O conteúdo do buffer e da sugestão nunca entra nessa evidência. Assim, o
+diagnóstico diferencia uma ação apenas disparada de um overlay realmente processado pela pintura
+OTA.
+
 ## Assistência contínua e escopo
 
 A assistência contínua nasce desligada. Para ativá-la, abra **Rad IA > Settings > Security &

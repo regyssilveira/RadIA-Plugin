@@ -129,6 +129,7 @@ type
     procedure OnInlineCompletionAlternativeExecute(Sender: TObject);
     procedure OnInlineCompletionNextWordExecute(Sender: TObject);
     procedure OnInlineCompletionRejectExecute(Sender: TObject);
+    procedure OnInlineCompletionPreviewDiagnosticExecute(Sender: TObject);
     procedure OnInlineCompletionRequestExecute(Sender: TObject);
     procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
     procedure RequestContinuousInlineCompletion;
@@ -1020,6 +1021,11 @@ begin
   LSubItem.OnClick := OnInlineCompletionSessionToggleExecute;
   LRootItem.Add(LSubItem);
 
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Preview Local Ghost Text Diagnostic';
+  LSubItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
+  LRootItem.Add(LSubItem);
+
   // Separator visual
   LSubItem := TMenuItem.Create(APopupMenu);
   LSubItem.Caption := '-';
@@ -1064,6 +1070,11 @@ begin
   LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Rad IA Getting Started';
   LItem.OnClick := OnGettingStartedExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Preview Rad IA Ghost Text Diagnostic';
+  LItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
@@ -1181,6 +1192,30 @@ procedure TRadIAEditorHook.OnInlineCompletionRejectExecute(
 begin
   if Assigned(FInlineCompletionController) then
     FInlineCompletionController.Reject;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionPreviewDiagnosticExecute(
+  Sender: TObject
+);
+const
+  CDiagnosticSuggestion =
+    'RadIAGhostTextDiagnostic' + sLineBreak +
+    '// Local multiline preview; no context was sent.';
+var
+  LContext: TRadIAInlineCompletionContext;
+begin
+  if not Assigned(FInlineCompletionController) or
+    not Assigned(FInlineCompletionSession) then
+    Exit;
+  if not FInlineCompletionSession.Capture(LContext) then
+  begin
+    ShowMessage('No supported active code buffer was found.');
+    Exit;
+  end;
+  FInlineCompletionController.Preview(
+    LContext,
+    CDiagnosticSuggestion
+  );
 end;
 
 procedure TRadIAEditorHook.OnInlineCompletionRequestExecute(

@@ -174,6 +174,10 @@ type
     procedure Request(
       const AContext: TRadIAInlineCompletionContext
     );
+    procedure Preview(
+      const AContext: TRadIAInlineCompletionContext;
+      const ASuggestion: string
+    );
     procedure RequestAlternative;
     procedure Configure(
       const AOptions: TRadIAInlineCompletionOptions
@@ -247,6 +251,10 @@ type
     destructor Destroy; override;
     procedure Request(
       const AContext: TRadIAInlineCompletionContext
+    );
+    procedure Preview(
+      const AContext: TRadIAInlineCompletionContext;
+      const ASuggestion: string
     );
     procedure RequestAlternative;
     procedure Configure(
@@ -945,6 +953,37 @@ begin
     TMonitor.Exit(FLock);
   end;
   FView.Clear;
+end;
+
+procedure TRadIAInlineCompletionController.Preview(
+  const AContext: TRadIAInlineCompletionContext;
+  const ASuggestion: string
+);
+var
+  LSuggestion: string;
+begin
+  if not AContext.IsValid then
+  begin
+    Reject;
+    Exit;
+  end;
+  LSuggestion := SanitizeSuggestion(AContext, ASuggestion);
+  TMonitor.Enter(FLock);
+  try
+    FStopped := False;
+    Inc(FGeneration);
+    if Assigned(FCancellation) then
+      FCancellation.Cancel;
+    FCancellation := nil;
+    FContext := AContext;
+    FSuggestion := LSuggestion;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if LSuggestion = '' then
+    FView.Clear
+  else
+    FView.Show(AContext, LSuggestion);
 end;
 
 procedure TRadIAInlineCompletionController.Request(

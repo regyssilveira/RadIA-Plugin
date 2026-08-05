@@ -48,6 +48,21 @@ not save incomplete profiles, invalid keys, or duplicate shortcuts. The profile 
 returning to the editor, without restarting the IDE. If the active Delphi keymap already owns a
 shortcut, the existing command keeps priority and RadIA records the conflict in its log.
 
+## Local visual diagnostic
+
+The **Tools** menu and the editor **Rad IA** submenu provide **Preview Rad IA Ghost Text
+Diagnostic**. The action:
+
+- uses the real editor buffer and cursor position;
+- presents two local lines through the same controller and overlay as a regular suggestion;
+- does not call a provider, transmit context, or require a connection;
+- does not mutate the buffer before acceptance;
+- can be rejected or accepted through the same user-configured shortcuts.
+
+The log records preparation and actual painting separately, including only the line count and file
+name. Buffer and suggestion contents never enter this evidence. The diagnostic can therefore
+distinguish an invoked action from an overlay actually processed by the OTA paint cycle.
+
 ## Continuous assistance and scope
 
 Continuous assistance is disabled by default. To enable it, open **Rad IA > Settings > Security &

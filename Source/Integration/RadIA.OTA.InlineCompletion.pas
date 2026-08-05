@@ -34,6 +34,7 @@ type
     FContinuousEnabled: Boolean;
     FGhostLines: TArray<TRadIAInlineGhostLine>;
     FIdleHandler: TRadIAInlineCompletionIdleHandler;
+    FPaintEvidenceLogged: Boolean;
     FSuggestion: string;
     function CurrentView: IOTAEditView;
     function GhostHorizontalPosition(
@@ -41,13 +42,13 @@ type
       const ALineOffset: Integer
     ): Integer;
     function LanguageForFile(const AFileName: string): string;
-    procedure PaintGhostText(
+    function PaintGhostText(
       const APaintContext: TRadIAEditPaintContext;
       const AText: string;
       const AHorizontalPosition: Integer;
       const ATop: Integer;
       const AClipToLine: Boolean
-    );
+    ): Boolean;
     procedure PaintOverflowLines(
       const APaintContext: TRadIAEditPaintContext
     );
@@ -89,6 +90,7 @@ uses
   RadIA.Core.Container,
   RadIA.Core.IDENavigation,
   RadIA.Core.Interfaces,
+  RadIA.Core.Logger,
   RadIA.OTA.TextReader;
 
 function TRadIAOTAInlineCompletionSession.Apply(
@@ -205,6 +207,7 @@ var
 begin
   FSuggestion := '';
   FGhostLines := nil;
+  FPaintEvidenceLogged := False;
   FContext := Default(TRadIAInlineCompletionContext);
   LView := CurrentView;
   if Assigned(LView) then
@@ -296,20 +299,22 @@ begin
   inherited;
   FSuggestion := '';
   FGhostLines := nil;
+  FPaintEvidenceLogged := False;
   FContext := Default(TRadIAInlineCompletionContext);
 end;
 
-procedure TRadIAOTAInlineCompletionSession.PaintGhostText(
+function TRadIAOTAInlineCompletionSession.PaintGhostText(
   const APaintContext: TRadIAEditPaintContext;
   const AText: string;
   const AHorizontalPosition: Integer;
   const ATop: Integer;
   const AClipToLine: Boolean
-);
+): Boolean;
 var
   LBrushStyle: TBrushStyle;
   LColor: TColor;
 begin
+  Result := False;
   if AText.IsEmpty or
     (AHorizontalPosition >= APaintContext.LineRect.Right) then
     Exit;
@@ -331,6 +336,7 @@ begin
         ATop,
         AText
       );
+    Result := True;
   finally
     APaintContext.Canvas.Brush.Style := LBrushStyle;
     APaintContext.Canvas.Font.Color := LColor;
@@ -341,6 +347,7 @@ procedure TRadIAOTAInlineCompletionSession.PaintOverlay(
   const APaintContext: TRadIAEditPaintContext
 );
 var
+  LDrawn: Boolean;
   LHorizontalPosition: Integer;
   LLine: TRadIAInlineGhostLine;
   LLineOffset: Integer;
@@ -358,13 +365,24 @@ begin
     APaintContext,
     LLineOffset
   );
-  PaintGhostText(
+  LDrawn := PaintGhostText(
     APaintContext,
     LLine.Text,
     LHorizontalPosition,
     APaintContext.TextRect.Top,
     True
   );
+  if LDrawn and not FPaintEvidenceLogged then
+  begin
+    FPaintEvidenceLogged := True;
+    TLogger.Log(
+      Format(
+        'Ghost text painted: lines=%d, file=%s',
+        [Length(FGhostLines), TPath.GetFileName(FContext.FileName)]
+      ),
+      'InlineCompletion'
+    );
+  end;
   if LLineOffset = 0 then
     PaintOverflowLines(APaintContext);
 end;
@@ -410,6 +428,14 @@ begin
   FContext := AContext;
   FSuggestion := ASuggestion;
   FGhostLines := TRadIAInlineGhostLayout.Build(ASuggestion);
+  FPaintEvidenceLogged := False;
+  TLogger.Log(
+    Format(
+      'Ghost text prepared: lines=%d, file=%s',
+      [Length(FGhostLines), TPath.GetFileName(FContext.FileName)]
+    ),
+    'InlineCompletion'
+  );
   RegisterCurrentView;
   LView.Paint;
 end;
