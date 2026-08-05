@@ -56,6 +56,25 @@ type
     FDirectory: string;
     FCommands: TList<TRadIADeclarativeCommand>;
     FDiagnostics: TList<TRadIADeclarativeExtensionDiagnostic>;
+    procedure AtomicWrite(
+      const AFileName: string;
+      const AContent: TArray<Byte>
+    );
+    function FindDiagnostic(
+      const AExtensionId: string;
+      out ADiagnostic: TRadIADeclarativeExtensionDiagnostic
+    ): Boolean;
+    function IsAcceptedFile(
+      const AFileName: string;
+      const AExtensionId: string;
+      out AMessage: string
+    ): Boolean;
+    function ValidateCandidate(
+      const ASourceFileName: string;
+      const AReservedCommands: TArray<string>;
+      out AExtensionId: string;
+      out AMessage: string
+    ): Boolean;
     function IsReserved(
       const ACommand: string;
       const AReservedCommands: TArray<string>
@@ -89,7 +108,29 @@ type
   public
     constructor Create(const ADirectory: string);
     destructor Destroy; override;
+    function InstallOrUpdate(
+      const ASourceFileName: string;
+      const AReservedCommands: TArray<string>;
+      out AExtensionId: string;
+      out AMessage: string
+    ): Boolean;
+    function Remove(
+      const AExtensionId: string;
+      const AReservedCommands: TArray<string>;
+      out AMessage: string
+    ): Boolean;
+    function RemoveManifest(
+      const AFileName: string;
+      const AReservedCommands: TArray<string>;
+      out AMessage: string
+    ): Boolean;
     procedure Reload(const AReservedCommands: TArray<string>);
+    function SetEnabled(
+      const AExtensionId: string;
+      const AEnabled: Boolean;
+      const AReservedCommands: TArray<string>;
+      out AMessage: string
+    ): Boolean;
     function GetCommands: TArray<TRadIADeclarativeCommand>;
     function GetDiagnostics:
       TArray<TRadIADeclarativeExtensionDiagnostic>;
@@ -113,6 +154,30 @@ const
   CMaximumDescriptionLength = 500;
   CMaximumManifestBytes = 1048576;
   CMaximumPromptLength = 32768;
+
+procedure TRadIADeclarativeExtensionManager.AtomicWrite(
+  const AFileName: string;
+  const AContent: TArray<Byte>
+);
+var
+  LTemporaryFileName: string;
+begin
+  TDirectory.CreateDirectory(ExtractFilePath(AFileName));
+  LTemporaryFileName := AFileName + '.' +
+    TGUID.NewGuid.ToString.Replace('{', '').Replace('}', '') + '.tmp';
+  try
+    TFile.WriteAllBytes(LTemporaryFileName, AContent);
+    if not MoveFileEx(
+      PChar(LTemporaryFileName),
+      PChar(AFileName),
+      MOVEFILE_REPLACE_EXISTING or MOVEFILE_WRITE_THROUGH
+    ) then
+      RaiseLastOSError;
+  finally
+    if TFile.Exists(LTemporaryFileName) then
+      TFile.Delete(LTemporaryFileName);
+  end;
+end;
 
 function IsPascalIdentifier(const AValue: string): Boolean;
 var
@@ -199,6 +264,23 @@ begin
   inherited Destroy;
 end;
 
+function TRadIADeclarativeExtensionManager.FindDiagnostic(
+  const AExtensionId: string;
+  out ADiagnostic: TRadIADeclarativeExtensionDiagnostic
+): Boolean;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+begin
+  ADiagnostic := Default(TRadIADeclarativeExtensionDiagnostic);
+  for LDiagnostic in FDiagnostics do
+    if SameText(LDiagnostic.ExtensionId, AExtensionId) then
+    begin
+      ADiagnostic := LDiagnostic;
+      Exit(True);
+    end;
+  Result := False;
+end;
+
 function TRadIADeclarativeExtensionManager.GetCommands:
   TArray<TRadIADeclarativeCommand>;
 begin
@@ -209,6 +291,150 @@ function TRadIADeclarativeExtensionManager.GetDiagnostics:
   TArray<TRadIADeclarativeExtensionDiagnostic>;
 begin
   Result := FDiagnostics.ToArray;
+end;
+
+function TRadIADeclarativeExtensionManager.InstallOrUpdate(
+  const ASourceFileName: string;
+  const AReservedCommands: TArray<string>;
+  out AExtensionId: string;
+  out AMessage: string
+): Boolean;
+var
+  LBackup: TArray<Byte>;
+  LContent: TArray<Byte>;
+  LExistingDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LHadExistingFile: Boolean;
+  LTargetFileName: string;
+begin
+  Result := False;
+  AExtensionId := '';
+  AMessage := '';
+  if not ValidateCandidate(
+    ASourceFileName,
+    AReservedCommands,
+    AExtensionId,
+    AMessage
+  ) then
+    Exit;
+
+  Reload(AReservedCommands);
+  if FindDiagnostic(AExtensionId, LExistingDiagnostic) then
+    LTargetFileName := LExistingDiagnostic.FileName
+  else
+    LTargetFileName := TPath.Combine(
+      FDirectory,
+      AExtensionId + '.radia.json'
+    );
+  LHadExistingFile := TFile.Exists(LTargetFileName);
+  if LHadExistingFile then
+    LBackup := TFile.ReadAllBytes(LTargetFileName);
+  LContent := TFile.ReadAllBytes(ASourceFileName);
+  try
+    AtomicWrite(LTargetFileName, LContent);
+    Reload(AReservedCommands);
+    if not IsAcceptedFile(
+      LTargetFileName,
+      AExtensionId,
+      AMessage
+    ) then
+      raise EInvalidOpException.Create(AMessage);
+    AMessage := 'Extension installed and activated without restarting the IDE.';
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      if LHadExistingFile then
+        AtomicWrite(LTargetFileName, LBackup)
+      else if TFile.Exists(LTargetFileName) then
+        TFile.Delete(LTargetFileName);
+      Reload(AReservedCommands);
+      AMessage := 'Install rolled back: ' + E.Message;
+    end;
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.ValidateCandidate(
+  const ASourceFileName: string;
+  const AReservedCommands: TArray<string>;
+  out AExtensionId: string;
+  out AMessage: string
+): Boolean;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LFileName: string;
+  LManager: TRadIADeclarativeExtensionManager;
+  LTemporaryDirectory: string;
+begin
+  Result := False;
+  AExtensionId := '';
+  AMessage := '';
+  if not TFile.Exists(ASourceFileName) then
+  begin
+    AMessage := 'The selected manifest does not exist.';
+    Exit;
+  end;
+  if (GetFileAttributes(PChar(ASourceFileName)) and
+    FILE_ATTRIBUTE_REPARSE_POINT) <> 0 then
+  begin
+    AMessage := 'Manifest reparse points are not allowed.';
+    Exit;
+  end;
+  LTemporaryDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-ExtensionValidation-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LTemporaryDirectory);
+  try
+    LFileName := TPath.Combine(
+      LTemporaryDirectory,
+      'candidate.radia.json'
+    );
+    TFile.Copy(ASourceFileName, LFileName);
+    LManager := TRadIADeclarativeExtensionManager.Create(
+      LTemporaryDirectory
+    );
+    try
+      LManager.Reload(AReservedCommands);
+      if Length(LManager.GetDiagnostics) <> 1 then
+      begin
+        AMessage := 'The selected manifest could not be validated.';
+        Exit;
+      end;
+      LDiagnostic := LManager.GetDiagnostics[0];
+      AMessage := LDiagnostic.Message;
+      if SameText(LDiagnostic.Status, 'rejected') then
+        Exit;
+      AExtensionId := LDiagnostic.ExtensionId;
+      Result := True;
+    finally
+      LManager.Free;
+    end;
+  finally
+    if TDirectory.Exists(LTemporaryDirectory) then
+      TDirectory.Delete(LTemporaryDirectory, True);
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.IsAcceptedFile(
+  const AFileName: string;
+  const AExtensionId: string;
+  out AMessage: string
+): Boolean;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+begin
+  for LDiagnostic in FDiagnostics do
+    if SameFileName(LDiagnostic.FileName, AFileName) then
+    begin
+      AMessage := LDiagnostic.Message;
+      Exit(
+        SameText(LDiagnostic.ExtensionId, AExtensionId) and
+        (SameText(LDiagnostic.Status, 'loaded') or
+        SameText(LDiagnostic.Status, 'disabled'))
+      );
+    end;
+  AMessage := 'The installed manifest was not found after reload.';
+  Result := False;
 end;
 
 function TRadIADeclarativeExtensionManager.IsReserved(
@@ -226,6 +452,62 @@ begin
     if SameText(LCommand.SlashCommand, ACommand) then
       Exit(True);
   Result := False;
+end;
+
+function TRadIADeclarativeExtensionManager.Remove(
+  const AExtensionId: string;
+  const AReservedCommands: TArray<string>;
+  out AMessage: string
+): Boolean;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+begin
+  Result := False;
+  Reload(AReservedCommands);
+  if not FindDiagnostic(AExtensionId, LDiagnostic) then
+  begin
+    AMessage := 'The extension was not found.';
+    Exit;
+  end;
+  Result := RemoveManifest(
+    LDiagnostic.FileName,
+    AReservedCommands,
+    AMessage
+  );
+end;
+
+function TRadIADeclarativeExtensionManager.RemoveManifest(
+  const AFileName: string;
+  const AReservedCommands: TArray<string>;
+  out AMessage: string
+): Boolean;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LKnownManifest: Boolean;
+begin
+  Result := False;
+  LKnownManifest := False;
+  Reload(AReservedCommands);
+  for LDiagnostic in FDiagnostics do
+    if SameFileName(LDiagnostic.FileName, AFileName) then
+    begin
+      LKnownManifest := True;
+      Break;
+    end;
+  if not LKnownManifest then
+  begin
+    AMessage := 'The manifest is not managed by Rad IA.';
+    Exit;
+  end;
+  try
+    TFile.Delete(AFileName);
+    Reload(AReservedCommands);
+    AMessage := 'Extension removed.';
+    Result := True;
+  except
+    on E: Exception do
+      AMessage := 'Unable to remove extension: ' + E.Message;
+  end;
 end;
 
 procedure TRadIADeclarativeExtensionManager.LoadManifest(
@@ -469,6 +751,68 @@ begin
           )
         );
     end;
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.SetEnabled(
+  const AExtensionId: string;
+  const AEnabled: Boolean;
+  const AReservedCommands: TArray<string>;
+  out AMessage: string
+): Boolean;
+var
+  LBackup: TArray<Byte>;
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LEnabledPair: TJSONPair;
+  LJson: TJSONObject;
+begin
+  Result := False;
+  Reload(AReservedCommands);
+  if not FindDiagnostic(AExtensionId, LDiagnostic) then
+  begin
+    AMessage := 'The extension was not found.';
+    Exit;
+  end;
+  LBackup := TFile.ReadAllBytes(LDiagnostic.FileName);
+  LJson := TJSONObject.ParseJSONValue(
+    TEncoding.UTF8.GetString(LBackup)
+  ) as TJSONObject;
+  if not Assigned(LJson) then
+  begin
+    AMessage := 'Manifest root must be a JSON object.';
+    Exit;
+  end;
+  try
+    LEnabledPair := LJson.RemovePair('enabled');
+    LEnabledPair.Free;
+    LJson.AddPair('enabled', TJSONBool.Create(AEnabled));
+    try
+      AtomicWrite(
+        LDiagnostic.FileName,
+        TEncoding.UTF8.GetBytes(LJson.ToJSON)
+      );
+      Reload(AReservedCommands);
+      if not IsAcceptedFile(
+        LDiagnostic.FileName,
+        AExtensionId,
+        AMessage
+      ) then
+        raise EInvalidOpException.Create(AMessage);
+      if AEnabled then
+        AMessage := 'Extension enabled without restarting the IDE.'
+      else
+        AMessage := 'Extension disabled without restarting the IDE.';
+      Result := True;
+    except
+      on E: Exception do
+      begin
+        AtomicWrite(LDiagnostic.FileName, LBackup);
+        Reload(AReservedCommands);
+        AMessage := 'Status change rolled back: ' + E.Message;
+      end;
+    end;
+  finally
+    LJson.Free;
   end;
 end;
 

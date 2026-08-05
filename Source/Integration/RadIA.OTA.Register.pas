@@ -18,6 +18,7 @@ type
     procedure UnregisterMenus;
     procedure RegisterOptions;
     procedure UnregisterOptions;
+    procedure OnExtensionManagerClick(Sender: TObject);
     procedure OnRequestDiff(const AOriginalCode: string; const AReplaceWholeBuffer: Boolean);
     procedure OnProjectWizardClick(Sender: TObject);
     procedure OnTimerEvent(Sender: TObject);
@@ -52,6 +53,7 @@ uses
   System.Win.Registry, Winapi.Windows,
   RadIA.OTA.EditorHook, RadIA.UI.DiffForm, RadIA.UI.ConfigForm,
   RadIA.UI.ProjectWizard, RadIA.UI.OnboardingForm,
+  RadIA.UI.ExtensionManagerForm,
   RadIA.OTA.Helper, RadIA.OTA.Onboarding, RadIA.Core.Types,
   RadIA.Core.Mediator,
   RadIA.Core.Config, RadIA.OTA.DockableForm, RadIA.Core.Interfaces, RadIA.Core.Logger, RadIA.OTA.Options,
@@ -247,6 +249,7 @@ begin
     LThemingServices.RegisterFormClass(TRadIAFormAIConfig);
     LThemingServices.RegisterFormClass(TRadIAProjectWizardForm);
     LThemingServices.RegisterFormClass(TRadIAOnboardingForm);
+    LThemingServices.RegisterFormClass(TRadIAExtensionManagerForm);
   end;
 
   FEditorHook := TRadIAEditorHook.Create(nil);
@@ -491,6 +494,11 @@ begin
   end;
 end;
 
+procedure TRadIAWizard.OnExtensionManagerClick(Sender: TObject);
+begin
+  ShowRadIAExtensionManager;
+end;
+
 procedure TRadIAWizard.OnRequestDiff(const AOriginalCode: string; const AReplaceWholeBuffer: Boolean);
 var
   LForm: TRadIAFormAIDiff;
@@ -577,6 +585,7 @@ var
   I: Integer;
   LToolsAlreadyPopulated: Boolean;
   LHook: TRadIAEditorHook;
+  LExtensionManagerItem: TMenuItem;
   LProjectWizardItem: TMenuItem;
 begin
   LogDebug('RegisterMenus called');
@@ -612,6 +621,10 @@ begin
         LProjectWizardItem.Caption := 'RadIA New Project...';
         LProjectWizardItem.OnClick := OnProjectWizardClick;
         LToolsMenu.Add(LProjectWizardItem);
+        LExtensionManagerItem := TMenuItem.Create(LToolsMenu);
+        LExtensionManagerItem.Caption := 'Rad IA Extensions...';
+        LExtensionManagerItem.OnClick := OnExtensionManagerClick;
+        LToolsMenu.Add(LExtensionManagerItem);
         LogDebug('Tools menu populated');
       end;
     end
@@ -686,6 +699,7 @@ procedure TRadIAWizard.UnregisterMenus;
            SameText(LItem.Caption, 'Rad IA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Terminal') or
            SameText(LItem.Caption, 'Rad IA Getting Started') or
+           SameText(LItem.Caption, 'Rad IA Extensions...') or
            SameText(LItem.Caption, 'Fix Last Compiler Error') or
            SameText(LItem.Caption, 'RadIA New Project...') then
         begin

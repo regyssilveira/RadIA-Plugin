@@ -92,6 +92,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M4 em execução: manifestos `*.radia.json` adicionam comandos de chat com schema versionado,
         permissão mínima, validação atômica, diagnóstico e recarga sem reiniciar a IDE.
+    *   M4 entregue nesta etapa: **Tools > Rad IA Extensions...** instala, atualiza, habilita,
+        desabilita, diagnostica e remove manifestos; escrita atômica e rollback preservam a versão
+        funcional quando o candidato ou o conjunto instalado é rejeitado.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

@@ -33,6 +33,14 @@ type
     procedure ReportsDisabledManifest;
     [Test]
     procedure RejectsOversizedManifestBeforeParsing;
+    [Test]
+    procedure InstallsUpdatesAndActivatesManifestAtomically;
+    [Test]
+    procedure InvalidUpdateRollsBackWorkingManifest;
+    [Test]
+    procedure EnablesDisablesAndRemovesWithoutRestart;
+    [Test]
+    procedure RemovesRejectedManifestByDiagnosticFile;
   end;
 
 implementation
@@ -48,6 +56,119 @@ const
     '"name":"Team review","description":"Apply the team review policy.",' +
     '"command":"/team-review","prompt":"Review using the team policy: {code}"' +
     '}]}';
+
+procedure TRadIADeclarativeExtensionTests.
+  EnablesDisablesAndRemovesWithoutRestart;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LExtensionId: string;
+  LMessage: string;
+  LSourceFileName: string;
+begin
+  LSourceFileName := TPath.Combine(FDirectory, 'source.json');
+  TFile.WriteAllText(LSourceFileName, CValidManifest, TEncoding.UTF8);
+  Assert.IsTrue(
+    FManager.InstallOrUpdate(
+      LSourceFileName,
+      [],
+      LExtensionId,
+      LMessage
+    ),
+    LMessage
+  );
+  Assert.IsTrue(
+    FManager.SetEnabled(LExtensionId, False, [], LMessage),
+    LMessage
+  );
+  Assert.IsFalse(FManager.TryResolve('/team-review', LCommand));
+  Assert.AreEqual('disabled', FManager.GetDiagnostics[0].Status);
+  Assert.IsTrue(
+    FManager.SetEnabled(LExtensionId, True, [], LMessage),
+    LMessage
+  );
+  Assert.IsTrue(FManager.TryResolve('/team-review', LCommand));
+  Assert.IsTrue(FManager.Remove(LExtensionId, [], LMessage), LMessage);
+  Assert.IsFalse(FManager.TryResolve('/team-review', LCommand));
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  InstallsUpdatesAndActivatesManifestAtomically;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LExtensionId: string;
+  LMessage: string;
+  LSourceFileName: string;
+begin
+  LSourceFileName := TPath.Combine(FDirectory, 'source.json');
+  TFile.WriteAllText(LSourceFileName, CValidManifest, TEncoding.UTF8);
+  Assert.IsTrue(
+    FManager.InstallOrUpdate(
+      LSourceFileName,
+      [],
+      LExtensionId,
+      LMessage
+    ),
+    LMessage
+  );
+  Assert.AreEqual('TeamCommands', LExtensionId);
+  Assert.IsTrue(FManager.TryResolve('/team-review', LCommand));
+  TFile.WriteAllText(
+    LSourceFileName,
+    CValidManifest.Replace('1.0.0', '1.1.0').Replace(
+      'team policy: {code}',
+      'updated policy: {code}'
+    ),
+    TEncoding.UTF8
+  );
+  Assert.IsTrue(
+    FManager.InstallOrUpdate(
+      LSourceFileName,
+      [],
+      LExtensionId,
+      LMessage
+    ),
+    LMessage
+  );
+  Assert.IsTrue(FManager.TryResolve('/team-review', LCommand));
+  Assert.Contains(LCommand.Prompt, 'updated policy');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  InvalidUpdateRollsBackWorkingManifest;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LExtensionId: string;
+  LMessage: string;
+  LSourceFileName: string;
+begin
+  LSourceFileName := TPath.Combine(FDirectory, 'source.json');
+  TFile.WriteAllText(LSourceFileName, CValidManifest, TEncoding.UTF8);
+  Assert.IsTrue(
+    FManager.InstallOrUpdate(
+      LSourceFileName,
+      [],
+      LExtensionId,
+      LMessage
+    ),
+    LMessage
+  );
+  TFile.WriteAllText(
+    LSourceFileName,
+    CValidManifest.Replace('/team-review', '/agent'),
+    TEncoding.UTF8
+  );
+  Assert.IsFalse(
+    FManager.InstallOrUpdate(
+      LSourceFileName,
+      ['/agent'],
+      LExtensionId,
+      LMessage
+    )
+  );
+  Assert.Contains(LMessage, 'collides');
+  FManager.Reload([]);
+  Assert.IsTrue(FManager.TryResolve('/team-review', LCommand));
+end;
 
 { TRadIADeclarativeExtensionTests }
 
@@ -80,6 +201,28 @@ begin
   FManager.Reload([]);
   Assert.IsFalse(FManager.TryResolve('/team-review', LCommand));
   Assert.AreEqual<Integer>(0, Length(FManager.GetCommands));
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  RemovesRejectedManifestByDiagnosticFile;
+var
+  LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
+  LMessage: string;
+begin
+  WriteManifest('rejected.radia.json', '{invalid');
+  FManager.Reload([]);
+  LDiagnostics := FManager.GetDiagnostics;
+  Assert.AreEqual<Integer>(1, Length(LDiagnostics));
+  Assert.AreEqual('rejected', LDiagnostics[0].Status);
+  Assert.IsTrue(
+    FManager.RemoveManifest(
+      LDiagnostics[0].FileName,
+      [],
+      LMessage
+    ),
+    LMessage
+  );
+  Assert.AreEqual<Integer>(0, Length(FManager.GetDiagnostics));
 end;
 
 procedure TRadIADeclarativeExtensionTests.ReportsDisabledManifest;

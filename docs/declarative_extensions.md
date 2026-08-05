@@ -12,6 +12,20 @@ Digite `/extensions reload` para recarregar os arquivos, atualizar o autocomplet
 diagnóstico de cada manifesto. O RadIA também recarrega antes de resolver um comando, portanto um
 arquivo adicionado ou removido entra em vigor na própria sessão.
 
+## Gerenciador visual
+
+Abra **Tools > Rad IA Extensions...** para:
+
+- instalar um novo manifesto ou atualizar uma extensão existente;
+- habilitar ou desabilitar sem apagar o arquivo;
+- recarregar e consultar o diagnóstico de todos os manifestos;
+- remover uma extensão com confirmação explícita.
+
+Instalações, atualizações e mudanças de estado usam gravação atômica. O candidato é validado antes
+da ativação e o conjunto completo é recarregado depois da troca. Se houver colisão, manifesto
+inválido ou falha de escrita, o RadIA restaura automaticamente a versão anterior. Um chat aberto
+atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estado.
+
 ## Manifesto versão 1
 
 ```json
@@ -64,5 +78,6 @@ comando. Ela não executa scripts, tools, processos, escrita ou operações da O
 adicionais são recusadas. Tools avançadas continuam disponíveis pela API BPL descrita no
 [guia de extensões](tool_extension_guide.md) e passam pela política central de risco e consentimento.
 
-Esta é a primeira entrega do M4. Instalação visual, assinatura de pacotes, atualização e remoção
-guiadas ainda fazem parte das próximas etapas do gerenciador de extensões.
+O gerenciador visual conclui o ciclo local de instalação, atualização, ativação, diagnóstico e
+remoção de manifestos. Assinatura, distribuição e atualização de pacotes vindos de catálogos
+remotos permanecem nas próximas etapas do M4.

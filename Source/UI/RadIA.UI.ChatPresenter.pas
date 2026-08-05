@@ -1165,12 +1165,8 @@ begin
 end;
 
 procedure TRadIAChatPresenter.HandleGlobalPromptRequest(const APrompt: string; const AOpenChat: Boolean);
-var
-  LProcessed: string;
 begin
-  LProcessed := PreProcessPrompt(APrompt);
-  PostToWebView('add_message', 'user', APrompt);
-  SendPromptToAI(LProcessed);
+  SendPromptText(APrompt);
 end;
 
 procedure TRadIAChatPresenter.SendPrompt;

@@ -110,7 +110,7 @@ Referências rápidas:
 | **Conhecimento local** | Indexar projetos, pesquisar símbolos e acompanhar edit, save, rename e close. |
 | **MCP** | Expor tools a clientes locais por bridge stdio, named pipe e discovery por processo. |
 | **Segurança** | Confinar paths, classificar risco, solicitar consentimento e manter auditoria sanitizada. |
-| **Extensões** | Registrar ferramentas externas pela API pública versionada. |
+| **Extensões** | Instalar e gerenciar comandos declarativos visualmente ou registrar tools pela API pública. |
 | **Providers** | Integrar Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama e outros backends. |
 | **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
 
