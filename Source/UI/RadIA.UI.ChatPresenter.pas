@@ -2400,10 +2400,7 @@ begin
   PostToWebView('add_message', 'user', APromptText);
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
-  LObjective := LDefinition.Objective;
-  if not LContext.IsEmpty then
-    LObjective := LObjective + sLineBreak +
-      'User-provided context: ' + LContext;
+  LObjective := LDefinition.BuildAgentObjective(LContext);
   StartAgentRun(LObjective);
 end;
 

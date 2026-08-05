@@ -17,6 +17,10 @@ Cada receita aceita contexto opcional depois do comando, por exemplo:
 O contexto é limitado a 4.000 caracteres e anexado ao objetivo estruturado. Ele não altera as
 regras de consentimento nem substitui a revisão do plano.
 
+Cada receita possui quatro fases obrigatórias. Cada fase define o trabalho esperado e a evidência
+que deve aparecer na timeline. A execução também recebe três critérios de conclusão; o agente não
+deve declarar sucesso apenas porque produziu uma resposta textual.
+
 | Comando | Objetivo |
 |---|---|
 | `/journey create [requisitos]` | Criar, abrir, compilar e explicar um novo projeto Delphi. |
@@ -33,6 +37,10 @@ regras de consentimento nem substitui a revisão do plano.
 4. Cada operação passa por risco, consentimento, workspace boundary, sanitização e auditoria.
 5. O usuário pode pausar, editar o plano, repetir uma etapa, retomar ou cancelar.
 6. O resultado mostra evidências e riscos restantes, não apenas uma resposta textual.
+
+O catálogo `/journey` informa a quantidade de fases e critérios. No início da execução, o objetivo
+enviado ao Agent Runtime enumera as fases na ordem, a evidência exigida em cada uma e os critérios
+finais. O contexto digitado pelo usuário aparece separado e não consegue remover esses gates.
 
 As receitas não concedem permissões extras. A jornada de release prepara um preview local, mas não
 faz push nem publica artefatos sem uma instrução explícita do usuário.

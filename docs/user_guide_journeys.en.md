@@ -17,6 +17,10 @@ Every recipe accepts optional context after the command, for example:
 Context is limited to 4,000 characters and appended to the structured objective. It never changes
 consent rules or replaces plan review.
 
+Every recipe has four required phases. Each phase defines the expected work and the evidence that
+must appear in the timeline. The run also receives three completion criteria, so the agent cannot
+claim success merely because it produced a text response.
+
 | Command | Objective |
 |---|---|
 | `/journey create [requirements]` | Create, open, build, and explain a new Delphi project. |
@@ -33,6 +37,10 @@ consent rules or replaces plan review.
 4. Every operation passes through risk, consent, workspace boundary, sanitization, and auditing.
 5. Users can pause, edit the plan, replay a step, resume, or cancel.
 6. The result presents evidence and remaining risks instead of only a text response.
+
+The `/journey` catalog reports phase and criterion counts. At run start, the objective sent to the
+Agent Runtime enumerates ordered phases, required evidence, and final completion criteria. User
+context remains separate and cannot remove these gates.
 
 Recipes grant no additional permission. The release journey prepares a local preview but never
 pushes or publishes artifacts without an explicit user instruction.

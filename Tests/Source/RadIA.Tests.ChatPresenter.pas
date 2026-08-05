@@ -775,6 +775,8 @@ begin
   Assert.Contains(FMockView.PostedMessages.Text, '/journey create');
   Assert.Contains(FMockView.PostedMessages.Text, '/journey fix-build');
   Assert.Contains(FMockView.PostedMessages.Text, '/journey debug');
+  Assert.Contains(FMockView.PostedMessages.Text, '4 phases');
+  Assert.Contains(FMockView.PostedMessages.Text, '3 completion criteria');
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

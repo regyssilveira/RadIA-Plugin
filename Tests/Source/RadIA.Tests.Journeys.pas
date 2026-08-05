@@ -14,6 +14,8 @@ type
     [Test]
     procedure JourneyObjectivesPreserveSafetyGates;
     [Test]
+    procedure JourneysExposeAuditablePhasesAndEvidence;
+    [Test]
     procedure ResolvesOptionalUserContext;
     [Test]
     procedure RejectsOversizedUserContext;
@@ -56,6 +58,31 @@ begin
   );
   Assert.Contains(LDefinition.Objective, 'Never push or publish');
   Assert.Contains(LDefinition.Objective, 'explicit user instruction');
+end;
+
+procedure TTestRadIAJourneys.JourneysExposeAuditablePhasesAndEvidence;
+var
+  LDefinition: TRadIAJourneyDefinition;
+  LObjective: string;
+begin
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey debug', LDefinition)
+  );
+  Assert.AreEqual(NativeInt(4), Length(LDefinition.Phases));
+  Assert.AreEqual('Reproduce', LDefinition.Phases[0].Name);
+  Assert.Contains(LDefinition.Phases[1].Evidence, 'debugger observations');
+  Assert.AreEqual(NativeInt(3), Length(LDefinition.SuccessCriteria));
+
+  LObjective := LDefinition.BuildAgentObjective(
+    'Access violation after saving an invoice'
+  );
+  Assert.Contains(LObjective, 'Required journey phases:');
+  Assert.Contains(LObjective, 'Evidence:');
+  Assert.Contains(LObjective, 'Completion criteria:');
+  Assert.Contains(
+    LObjective,
+    'User-provided context: Access violation after saving an invoice'
+  );
 end;
 
 procedure TTestRadIAJourneys.ResolvesOptionalUserContext;
