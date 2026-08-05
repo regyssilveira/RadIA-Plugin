@@ -57,7 +57,6 @@ type
 implementation
 
 uses
-  System.Classes,
   System.Diagnostics,
   System.IOUtils,
   System.SyncObjs,

@@ -12,7 +12,7 @@ uses
 
 type
   IRadIAChatView = interface
-    ['{8A5FC9BC-0D5C-4F7F-9ED6-9D7CC5EF5E18}']
+    ['{479812B4-9226-4D20-8867-0A6F05C947D7}']
     procedure SetRequestState(const AInProgress: Boolean);
     procedure UpdateTokensStats(const AStats: string);
     procedure PostMessageToWeb(const AJson: string);
@@ -37,6 +37,7 @@ type
     function SaveDialogExecute(out AFileName: string): Boolean;
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
+    procedure OpenTerminal;
   end;
 
   TStreamChunkCtx = record
@@ -650,6 +651,13 @@ begin
   LSlashObj.AddPair('command', '/agent cancel');
   LSlashObj.AddPair('description', 'Cancels the active agent run.');
   LSlashObj.AddPair('name', 'Cancel Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/terminal');
+  LSlashObj.AddPair('description', 'Opens the integrated terminal.');
+  LSlashObj.AddPair('name', 'Open Terminal');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
@@ -1914,6 +1922,13 @@ function TRadIAChatPresenter.TryHandleCatalogCommand(
 ): Boolean;
 begin
   Result := True;
+  if SameText(ACommandText, '/terminal') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FView.OpenTerminal;
+    Exit;
+  end;
+
   if SameText(ACommandText, '/tools') then
   begin
     PostToWebView('add_message', 'user', APromptText);

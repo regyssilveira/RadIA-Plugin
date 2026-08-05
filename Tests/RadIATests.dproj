@@ -104,6 +104,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.Tools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentExecutors.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.CliProcess.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.PseudoTerminal.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Terminal.pas"/>
         <DCCReference Include="..\Source\UI\RadIA.UI.TerminalFrame.pas">
             <Form>RadIATerminalFrame</Form>

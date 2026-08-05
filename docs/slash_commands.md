@@ -19,6 +19,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/agent pause` | Pausa o loop após interromper com segurança a decisão atual. | Execução agentiva ativa. |
 | `/agent resume` | Retoma o último checkpoint da sessão. | Execução agentiva pausada. |
 | `/agent cancel` | Cancela a decisão e a execução agentiva atuais. | Execução agentiva ativa. |
+| `/terminal` | Abre o terminal integrado acoplável. | Projeto e desktop atuais da IDE. |
 | `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
 | `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |
 | `/revoke-tools` | Revoga permissões concedidas na sessão. | Sessão de chat ativa. |
@@ -43,8 +44,8 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
 
-Os comandos da família `/agent`, além de `/tools`, `/tool` e `/revoke-tools`, são internos e não
-podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para
+Os comandos da família `/agent`, além de `/terminal`, `/tools`, `/tool` e `/revoke-tools`, são
+internos e não podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para
 exemplos.
 
 Os demais comandos são fornecidos pelos templates instalados. Como esses templates podem ser

@@ -147,6 +147,26 @@ object FrameAIChat: TRadIAFrameAIChat
       ShowHint = True
       OnClick = btnTemplatesClick
     end
+    object btnTerminal: TSpeedButton
+      AlignWithMargins = True
+      Left = 727
+      Top = 3
+      Width = 32
+      Height = 38
+      Hint = 'Open Terminal'
+      Align = alRight
+      Caption = '>_'
+      Flat = True
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -12
+      Font.Name = 'Consolas'
+      Font.Style = [fsBold]
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = btnTerminalClick
+    end
   end
   object pnlInput: TPanel
     AlignWithMargins = True

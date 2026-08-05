@@ -23,6 +23,7 @@ type
     btnClear: TSpeedButton;
     btnExport: TSpeedButton;
     btnTemplates: TSpeedButton;
+    btnTerminal: TSpeedButton;
     SaveDialog: TSaveDialog;
     pnlInput: TPanel;
     shpInputBg: TShape;
@@ -45,6 +46,7 @@ type
     procedure btnTemplatesClick(Sender: TObject);
     procedure btnExportClick(Sender: TObject);
     procedure btnSettingsClick(Sender: TObject);
+    procedure btnTerminalClick(Sender: TObject);
     procedure EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdgeBrowser; AResult: HRESULT);
     procedure EdgeBrowserWebMessageReceived(Sender: TCustomEdgeBrowser; Args: TWebMessageReceivedEventArgs);
     procedure memPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -117,6 +119,7 @@ type
     function SaveDialogExecute(out AFileName: string): Boolean;
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
+    procedure OpenTerminal;
   end;
 
 implementation
@@ -125,7 +128,7 @@ uses
   System.IOUtils, System.JSON, ToolsAPI, RadIA.OTA.Helper, RadIA.UI.ConfigForm,
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
-  RadIA.Core.Interfaces, Winapi.WebView2;
+  RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm;
 
 {$R *.dfm}
 
@@ -527,6 +530,11 @@ end;
 procedure TRadIAFrameAIChat.btnSettingsClick(Sender: TObject);
 begin
   FPresenter.OpenSettings;
+end;
+
+procedure TRadIAFrameAIChat.btnTerminalClick(Sender: TObject);
+begin
+  OpenTerminal;
 end;
 
 procedure TRadIAFrameAIChat.memPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1018,6 +1026,11 @@ begin
   finally
     LForm.Free;
   end;
+end;
+
+procedure TRadIAFrameAIChat.OpenTerminal;
+begin
+  ShowRadIATerminal;
 end;
 
 end.

@@ -19,6 +19,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/agent pause` | Safely interrupts the current decision and pauses the loop. | Active agent run. |
 | `/agent resume` | Resumes the latest checkpoint for the session. | Paused agent run. |
 | `/agent cancel` | Cancels the current decision and agent run. | Active agent run. |
+| `/terminal` | Opens the integrated dockable terminal. | Current IDE project and desktop. |
 | `/tools` | Shows the tool catalog for the current IDE instance. | IDE state and extensions. |
 | `/tool <name> {JSON}` | Runs a tool with optional JSON arguments. | Workspace and session. |
 | `/revoke-tools` | Revokes permissions granted in the session. | Active chat session. |
@@ -43,8 +44,8 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 
 Rad IA allows you to edit, delete, or add new commands and prompt templates directly from the plugin options inside the IDE (`Tools -> Options -> Rad IA -> Templates`).
 
-The `/agent` command family, `/tools`, `/tool`, and `/revoke-tools` are internal commands and cannot
-be replaced by templates.
+The `/agent` command family, `/terminal`, `/tools`, `/tool`, and `/revoke-tools` are internal
+commands and cannot be replaced by templates.
 See the [Complete RadIA User Manual](user_manual.en.md) for examples.
 
 The remaining commands come from installed templates. Because templates can be edited, restored,

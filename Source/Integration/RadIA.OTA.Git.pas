@@ -91,7 +91,6 @@ type
 implementation
 
 uses
-  System.Classes,
   System.Hash,
   System.IOUtils,
   System.JSON,

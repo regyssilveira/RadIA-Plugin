@@ -38,6 +38,7 @@ type
     FSaveDialogSelectedFileName: string;
     FToggleSessionsPanelCalled: Boolean;
     FOpenSettingsDialogCalled: Boolean;
+    FOpenTerminalCalled: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -63,6 +64,7 @@ type
     function SaveDialogExecute(out AFileName: string): Boolean;
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
+    procedure OpenTerminal;
 
     property RequestStateInProgress: Boolean read FRequestStateInProgress write FRequestStateInProgress;
     property RequestStateSetCalled: Boolean read FRequestStateSetCalled write FRequestStateSetCalled;
@@ -93,6 +95,7 @@ type
     property SaveDialogSelectedFileName: string read FSaveDialogSelectedFileName write FSaveDialogSelectedFileName;
     property ToggleSessionsPanelCalled: Boolean read FToggleSessionsPanelCalled write FToggleSessionsPanelCalled;
     property OpenSettingsDialogCalled: Boolean read FOpenSettingsDialogCalled write FOpenSettingsDialogCalled;
+    property OpenTerminalCalled: Boolean read FOpenTerminalCalled write FOpenTerminalCalled;
   end;
 
   TMockIAProvider = class(TInterfacedObject, IRadIAProvider)
@@ -193,6 +196,8 @@ type
     [Test]
     procedure TestAgentCommandSynchronizesState;
     [Test]
+    procedure TestTerminalCommandOpensTerminal;
+    [Test]
     procedure TestDisabledAgentModeBlocksToolExecution;
     [Test]
     procedure TestAgentRunPublishesObservableState;
@@ -218,6 +223,7 @@ begin
   SaveDialogResult := True;
   ToggleSessionsPanelCalled := False;
   OpenSettingsDialogCalled := False;
+  OpenTerminalCalled := False;
   ActiveEditorText := 'procedure Test; begin end;';
   PostedMessages := TStringList.Create;
 end;
@@ -335,6 +341,11 @@ end;
 procedure TMockChatView.OpenSettingsDialog;
 begin
   OpenSettingsDialogCalled := True;
+end;
+
+procedure TMockChatView.OpenTerminal;
+begin
+  OpenTerminalCalled := True;
 end;
 
 { TMockIAProvider }
@@ -581,6 +592,13 @@ begin
   Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_mode_changed"');
   Assert.Contains(FMockView.PostedMessages.Text, '"enabled":false');
   Assert.Contains(FMockView.LastPostedJson, 'Agent mode is disabled.');
+end;
+
+procedure TTestChatPresenter.TestTerminalCommandOpensTerminal;
+begin
+  FPresenter.SendPromptText('/terminal');
+
+  Assert.IsTrue(FMockView.OpenTerminalCalled);
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

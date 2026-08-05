@@ -31,9 +31,14 @@ type
   end;
 
   IRadIACliProcessSession = interface
-    ['{1D64664F-B40B-409D-85F2-C5E612A13F00}']
+    ['{DBDE9871-A66E-49E4-9D70-FD63863B721C}']
     procedure Cancel;
+    function IsPseudoTerminal: Boolean;
     function IsRunning: Boolean;
+    function Resize(
+      const AColumns: SmallInt;
+      const ARows: SmallInt
+    ): Boolean;
     function WriteInput(const AText: string): Boolean;
   end;
 
@@ -138,7 +143,12 @@ type
     );
     destructor Destroy; override;
     procedure Cancel;
+    function IsPseudoTerminal: Boolean;
     function IsRunning: Boolean;
+    function Resize(
+      const AColumns: SmallInt;
+      const ARows: SmallInt
+    ): Boolean;
     function WriteInput(const AText: string): Boolean;
   end;
 
@@ -493,6 +503,19 @@ begin
   finally
     TMonitor.Exit(FLock);
   end;
+end;
+
+function TRadIACliProcessSession.IsPseudoTerminal: Boolean;
+begin
+  Result := False;
+end;
+
+function TRadIACliProcessSession.Resize(
+  const AColumns: SmallInt;
+  const ARows: SmallInt
+): Boolean;
+begin
+  Result := False;
 end;
 
 procedure TRadIACliProcessSession.PrepareStandardInput(

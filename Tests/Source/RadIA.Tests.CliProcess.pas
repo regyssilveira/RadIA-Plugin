@@ -21,6 +21,17 @@ type
     procedure WritesStandardInputAndClosesPipe;
     [Test]
     procedure WritesContinuousInteractiveInput;
+    [Test]
+    procedure PipeSessionReportsTerminalCapabilities;
+    [Test]
+    procedure PseudoTerminalStartupCompletes;
+    [Test]
+    [Category('ExternalProcess')]
+    procedure PseudoTerminalStreamsInputAndResizes;
+    [Test]
+    procedure PseudoTerminalRejectsInvalidDimensions;
+    [Test]
+    procedure PseudoTerminalAvailabilityMatchesRuntimeExports;
   end;
 
 implementation
@@ -30,7 +41,8 @@ uses
   System.SysUtils,
   Winapi.Windows,
   RadIA.Core.AgentExecutors,
-  RadIA.Core.CliProcess;
+  RadIA.Core.CliProcess,
+  RadIA.Core.PseudoTerminal;
 
 function NewCommandInvocation(
   const ACommand: string
@@ -131,6 +143,31 @@ begin
   end;
 end;
 
+procedure TRadIACliProcessTests.PipeSessionReportsTerminalCapabilities;
+var
+  LCompleted: TEvent;
+  LSession: IRadIACliProcessSession;
+begin
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    LSession := TRadIACliProcessRunner.Start(
+      NewCommandInvocation('echo pipe-session'),
+      5000,
+      nil,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LCompleted.SetEvent;
+      end
+    );
+    Assert.IsFalse(LSession.IsPseudoTerminal);
+    Assert.IsFalse(LSession.Resize(100, 30));
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
+  finally
+    LCompleted.Free;
+  end;
+end;
+
 procedure TRadIACliProcessTests.TimeoutTerminatesProcessTree;
 var
   LCompleted: TEvent;
@@ -225,6 +262,131 @@ begin
     Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
     Assert.IsTrue(LResult.Succeeded);
     Assert.Contains(LResult.StdOut, 'received-radia-live-input');
+  finally
+    LCompleted.Free;
+  end;
+end;
+
+procedure TRadIACliProcessTests.PseudoTerminalRejectsInvalidDimensions;
+var
+  LTestMethod: TTestLocalMethod;
+begin
+  LTestMethod :=
+    procedure
+    begin
+      TRadIAPseudoTerminalRunner.Start(
+        NewCommandInvocation('echo invalid'),
+        0,
+        24,
+        5000,
+        nil,
+        nil
+      );
+    end;
+  Assert.WillRaise(LTestMethod, EArgumentOutOfRangeException);
+end;
+
+procedure TRadIACliProcessTests.PseudoTerminalStartupCompletes;
+var
+  LCompleted: TEvent;
+  LResult: TRadIACliProcessResult;
+begin
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    TRadIAPseudoTerminalRunner.Start(
+      NewCommandInvocation('exit'),
+      80,
+      24,
+      5000,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LResult := AResult;
+        LCompleted.SetEvent;
+      end
+    );
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(7000));
+    Assert.IsTrue(
+      LResult.Succeeded or
+      LResult.StdOut.Contains('pseudo-terminal')
+    );
+  finally
+    LCompleted.Free;
+  end;
+end;
+
+procedure TRadIACliProcessTests.
+  PseudoTerminalAvailabilityMatchesRuntimeExports;
+begin
+  Assert.IsTrue(
+    TRadIAPseudoTerminalRunner.IsSupported,
+    'The supported Windows runtime must expose ConPTY.'
+  );
+end;
+
+procedure TRadIACliProcessTests.PseudoTerminalStreamsInputAndResizes;
+var
+  LCompleted: TEvent;
+  LDeadline: UInt64;
+  LInputWritten: Boolean;
+  LResized: Boolean;
+  LResult: TRadIACliProcessResult;
+  LSession: IRadIACliProcessSession;
+begin
+  Assert.IsTrue(
+    TRadIAPseudoTerminalRunner.IsSupported,
+    'Windows ConPTY is required by the supported runtime.'
+  );
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    LSession := TRadIAPseudoTerminalRunner.Start(
+      TRadIACliInvocation.Create(
+        GetEnvironmentVariable('ComSpec'),
+        ['/D', '/Q'],
+        GetCurrentDir,
+        'text'
+      ),
+      80,
+      24,
+      5000,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LResult := AResult;
+        LCompleted.SetEvent;
+      end
+    );
+    Assert.IsTrue(LSession.IsPseudoTerminal);
+    LDeadline := GetTickCount64 + 2000;
+    repeat
+      LResized := LSession.Resize(100, 30);
+      if not LResized then
+        Sleep(10);
+    until LResized or (GetTickCount64 >= LDeadline);
+    if not LResized then
+    begin
+      LCompleted.WaitFor(1000);
+      Assert.Fail(
+        'ConPTY resize did not become ready. Output: ' +
+          LResult.StdOut
+      );
+    end;
+    LInputWritten := LSession.WriteInput(
+      'echo radia-conpty-input' + #13 + 'exit' + #13
+    );
+    Assert.IsTrue(LInputWritten, 'ConPTY input was not accepted.');
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
+    Assert.IsTrue(
+      LResult.Succeeded,
+      Format(
+        'ConPTY exited with %d. Output: %s',
+        [LResult.ExitCode, LResult.StdOut]
+      )
+    );
+    Assert.Contains(
+      LResult.StdOut,
+      'radia-conpty-input'
+    );
   finally
     LCompleted.Free;
   end;

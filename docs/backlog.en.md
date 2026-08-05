@@ -63,6 +63,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         colors and bold styling even when escape sequences arrive split across chunks.
     *   M2 delivered in this increment: continuous stdin keeps the input channel open and accepts
         prompt responses through **Send**, with thread-safe writes and tree cancellation preserved.
+    *   M2 delivered in this increment: native ConPTY sessions use UTF-8 channels, character resize,
+        dynamic fallback, and a real shell test covering input and shutdown.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

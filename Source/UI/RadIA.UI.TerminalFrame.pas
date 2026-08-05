@@ -12,6 +12,12 @@ uses
   RadIA.Core.Terminal;
 
 type
+  IRadIATerminalLifecycleGuard = interface
+    ['{81E20293-FA87-486D-BD47-75E0589DDDBC}']
+    function IsAlive: Boolean;
+    procedure Invalidate;
+  end;
+
   TRadIATerminalFrame = class(TFrame)
   private
     FTopPanel: TPanel;
@@ -40,14 +46,29 @@ type
       const AResult: TRadIACliProcessResult
     );
     function GetWorkingDirectory: string;
+    procedure GetTerminalSize(
+      out AColumns: SmallInt;
+      out ARows: SmallInt
+    );
     procedure HandleRunningInput;
     procedure HistoryChange(Sender: TObject);
     procedure LoadHistory;
+    procedure QueueCompletion(
+      const AGuard: IRadIATerminalLifecycleGuard;
+      const ACommand: string;
+      const AProfileId: string;
+      const AResult: TRadIACliProcessResult
+    );
+    procedure QueueOutput(
+      const AGuard: IRadIATerminalLifecycleGuard;
+      const AChunk: string
+    );
     procedure RunClick(Sender: TObject);
     procedure SnippetChange(Sender: TObject);
     procedure StopClick(Sender: TObject);
   protected
     procedure CreateWnd; override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -62,20 +83,16 @@ implementation
 uses
   System.DateUtils,
   System.IOUtils,
+  System.Math,
   System.SyncObjs,
   System.SysUtils,
   Vcl.Controls,
   Vcl.Graphics,
   RadIA.Core.AgentExecutors,
+  RadIA.Core.PseudoTerminal,
   RadIA.OTA.Helper;
 
 type
-  IRadIATerminalLifecycleGuard = interface
-    ['{81E20293-FA87-486D-BD47-75E0589DDDBC}']
-    function IsAlive: Boolean;
-    procedure Invalidate;
-  end;
-
   TRadIATerminalLifecycleGuard = class(
     TInterfacedObject,
     IRadIATerminalLifecycleGuard
@@ -290,6 +307,11 @@ end;
 
 procedure TRadIATerminalFrame.EnsureVisibleContent;
 begin
+  if not Assigned(FCommandEdit) or
+    not Assigned(FCommandEdit.Parent) or
+    (FCommandEdit.ParentWindow = 0) or
+    not FCommandEdit.CanFocus then
+    Exit;
   FCommandEdit.SetFocus;
 end;
 
@@ -328,6 +350,41 @@ begin
     Result := GetCurrentDir;
 end;
 
+procedure TRadIATerminalFrame.GetTerminalSize(
+  out AColumns: SmallInt;
+  out ARows: SmallInt
+);
+const
+  CMinimumColumns = 20;
+  CMinimumRows = 5;
+var
+  LCanvas: TControlCanvas;
+  LCharacterHeight: Integer;
+  LCharacterWidth: Integer;
+begin
+  LCanvas := TControlCanvas.Create;
+  try
+    LCanvas.Control := FOutputEditor;
+    LCanvas.Font.Assign(FOutputEditor.Font);
+    LCharacterWidth := Max(1, LCanvas.TextWidth('W'));
+    LCharacterHeight := Max(1, LCanvas.TextHeight('W'));
+  finally
+    LCanvas.Free;
+  end;
+  AColumns := SmallInt(
+    Min(
+      High(SmallInt),
+      Max(CMinimumColumns, FOutputEditor.ClientWidth div LCharacterWidth)
+    )
+  );
+  ARows := SmallInt(
+    Min(
+      High(SmallInt),
+      Max(CMinimumRows, FOutputEditor.ClientHeight div LCharacterHeight)
+    )
+  );
+end;
+
 procedure TRadIATerminalFrame.HistoryChange(Sender: TObject);
 var
   LEntries: TArray<TRadIATerminalHistoryEntry>;
@@ -340,10 +397,16 @@ begin
 end;
 
 procedure TRadIATerminalFrame.HandleRunningInput;
+var
+  LLineEnding: string;
 begin
   if Trim(FCommandEdit.Text) = '' then
     Exit;
-  if FSession.WriteInput(FCommandEdit.Text + sLineBreak) then
+  if FSession.IsPseudoTerminal then
+    LLineEnding := #13
+  else
+    LLineEnding := sLineBreak;
+  if FSession.WriteInput(FCommandEdit.Text + LLineEnding) then
   begin
     AppendOutput('> ' + FCommandEdit.Text + sLineBreak);
     FCommandEdit.Clear;
@@ -372,13 +435,51 @@ begin
   end;
 end;
 
+procedure TRadIATerminalFrame.QueueCompletion(
+  const AGuard: IRadIATerminalLifecycleGuard;
+  const ACommand: string;
+  const AProfileId: string;
+  const AResult: TRadIACliProcessResult
+);
+begin
+  TThread.Queue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if AGuard.IsAlive then
+          Self.FinishCommand(ACommand, AProfileId, AResult);
+      end
+    )
+  );
+end;
+
+procedure TRadIATerminalFrame.QueueOutput(
+  const AGuard: IRadIATerminalLifecycleGuard;
+  const AChunk: string
+);
+begin
+  TThread.Queue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if AGuard.IsAlive then
+          Self.AppendOutput(AChunk);
+      end
+    )
+  );
+end;
+
 procedure TRadIATerminalFrame.RunClick(Sender: TObject);
 var
+  LColumns: SmallInt;
   LCommand: string;
   LGuard: IRadIATerminalLifecycleGuard;
   LInvocation: TRadIACliInvocation;
   LProfile: TRadIATerminalProfile;
   LProfiles: TArray<TRadIATerminalProfile>;
+  LRows: SmallInt;
 begin
   if Assigned(FSession) and FSession.IsRunning then
   begin
@@ -400,51 +501,64 @@ begin
   FStopButton.Enabled := True;
   FStatusLabel.Caption := 'Running in ' + LInvocation.WorkingDirectory;
   LGuard := FLifecycleGuard as IRadIATerminalLifecycleGuard;
-  FSession := TRadIACliProcessRunner.StartInteractive(
-    LInvocation,
-    30 * 60 * 1000,
-    procedure(AChunk: string)
-    begin
-      TThread.Queue(
-        nil,
-        TThreadProcedure(
-          procedure
-          begin
-            if LGuard.IsAlive then
-              Self.AppendOutput(AChunk);
-          end
-        )
-      );
-    end,
-    procedure(AChunk: string)
-    begin
-      TThread.Queue(
-        nil,
-        TThreadProcedure(
-          procedure
-          begin
-            if LGuard.IsAlive then
-              Self.AppendOutput(AChunk);
-          end
-        )
-      );
-    end,
-    procedure(AResult: TRadIACliProcessResult)
-    begin
-      TThread.Queue(
-        nil,
-        TThreadProcedure(
-          procedure
-          begin
-            if LGuard.IsAlive then
-              Self.FinishCommand(LCommand, LProfile.Id, AResult);
-          end
-        )
-      );
-    end
-  );
+  GetTerminalSize(LColumns, LRows);
+  if TRadIAPseudoTerminalRunner.IsSupported then
+    FSession := TRadIAPseudoTerminalRunner.Start(
+      LInvocation,
+      LColumns,
+      LRows,
+      30 * 60 * 1000,
+      procedure(AChunk: string)
+      begin
+        Self.QueueOutput(LGuard, AChunk);
+      end,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        Self.QueueCompletion(
+          LGuard,
+          LCommand,
+          LProfile.Id,
+          AResult
+        );
+      end
+    )
+  else
+    FSession := TRadIACliProcessRunner.StartInteractive(
+      LInvocation,
+      30 * 60 * 1000,
+      procedure(AChunk: string)
+      begin
+        Self.QueueOutput(LGuard, AChunk);
+      end,
+      procedure(AChunk: string)
+      begin
+        Self.QueueOutput(LGuard, AChunk);
+      end,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        Self.QueueCompletion(
+          LGuard,
+          LCommand,
+          LProfile.Id,
+          AResult
+        );
+      end
+    );
   FRunButton.Enabled := True;
   FCommandEdit.Clear;
+end;
+
+procedure TRadIATerminalFrame.Resize;
+var
+  LColumns: SmallInt;
+  LRows: SmallInt;
+begin
+  inherited;
+  if not Assigned(FOutputEditor) or not Assigned(FSession) or
+    not FSession.IsPseudoTerminal then
+    Exit;
+  GetTerminalSize(LColumns, LRows);
+  FSession.Resize(LColumns, LRows);
 end;
 
 procedure TRadIATerminalFrame.SnippetChange(Sender: TObject);
