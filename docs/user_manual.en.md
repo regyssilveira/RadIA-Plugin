@@ -103,6 +103,10 @@ reverting remains an audited tool call subject to configured consent.
 Git steps present **Git evidence**. Status is readable; diffs color added and removed lines while
 showing files and totals; commit previews show their message, selected path count, and fingerprint;
 and completed commits show the local SHA. RadIA does not push automatically through this flow.
+Debugger tools present **Debug evidence** with state and location, breakpoints, stack frames, state
+transitions, evaluations, watches, and recent events. The UI does not poll or execute additional
+actions: it shows only the already authorized and audited step result, bounding lists to a safe
+WebView size.
 
 ### 3.2 Consent
 

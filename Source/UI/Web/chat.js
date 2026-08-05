@@ -358,6 +358,140 @@ function appendAgentGitEvidence(details, step) {
   details.appendChild(evidence);
 }
 
+function appendAgentDebugList(evidence, items, formatter, ordered = false) {
+  const list = document.createElement(ordered ? 'ol' : 'ul');
+  RadIAAgentDebug.boundedItems(items).forEach(item => {
+    const row = document.createElement('li');
+    row.textContent = formatter(item);
+    list.appendChild(row);
+  });
+  evidence.appendChild(list);
+}
+
+function appendAgentDebugState(evidence, result) {
+  const state = document.createElement('div');
+  state.className = 'agent-step-debug-metadata';
+  state.textContent =
+    `State: ${result.state || 'unavailable'} · ` +
+    `Process: ${result.osProcessId || result.processId || 0} · ` +
+    `Threads: ${result.threadCount || 0} · ` +
+    `Breakpoints: ${result.breakpointCount || 0}`;
+  evidence.appendChild(state);
+  if (result.location || result.executableName) {
+    const location = document.createElement('code');
+    location.textContent =
+      `${result.executableName || 'process'} · ${result.location || 'no source location'}`;
+    evidence.appendChild(location);
+  }
+}
+
+function appendAgentDebugBreakpoints(evidence, result) {
+  if (Array.isArray(result.breakpoints)) {
+    appendAgentDebugList(evidence, result.breakpoints, breakpoint =>
+      `${breakpoint.enabled ? 'Enabled' : 'Disabled'} · ` +
+      `${breakpoint.valid ? 'valid' : 'pending'} · ` +
+      `${breakpoint.fileName || 'unknown'}:${breakpoint.lineNumber || 0}`
+    );
+    return;
+  }
+  const action = document.createElement('div');
+  action.className = 'agent-step-debug-metadata';
+  action.textContent =
+    `${result.action || 'Breakpoint update'} · ` +
+    `${result.fileName || 'unknown'}:${result.lineNumber || 0} · ` +
+    `Undo with ${result.inverseTool || 'the inverse tool'}`;
+  evidence.appendChild(action);
+}
+
+function appendAgentDebugCallStack(evidence, result) {
+  const status = document.createElement('div');
+  status.className = 'agent-step-debug-metadata';
+  status.textContent =
+    `${result.accessible ? 'Accessible' : 'Unavailable'} · ` +
+    `${result.status || 'unknown'} · ${result.count || 0} frame(s)`;
+  evidence.appendChild(status);
+  appendAgentDebugList(evidence, result.frames, frame =>
+    `${frame.index ?? '?'} · ${frame.header || 'frame'} · ` +
+    `${frame.fileName || 'no source'}:${frame.lineNumber || 0}`,
+  true);
+}
+
+function appendAgentDebugAction(evidence, result) {
+  const action = document.createElement('div');
+  action.className = 'agent-step-debug-metadata';
+  action.textContent =
+    `${result.stateBefore || 'unknown'} → ${result.stateAfter || 'unknown'} · ` +
+    `${result.message || (result.accepted ? 'Accepted' : 'Completed')}`;
+  evidence.appendChild(action);
+}
+
+function appendAgentDebugValue(evidence, result) {
+  const value = document.createElement('dl');
+  const expression = document.createElement('dt');
+  expression.textContent = result.expression || 'Expression';
+  const output = document.createElement('dd');
+  output.textContent =
+    `${result.result ?? 'unavailable'} · ${result.status || 'unknown'} · ` +
+    `${result.canModify ? 'modifiable' : 'read-only'}`;
+  value.appendChild(expression);
+  value.appendChild(output);
+  evidence.appendChild(value);
+}
+
+function appendAgentDebugWatches(evidence, result) {
+  if (Array.isArray(result.watches)) {
+    appendAgentDebugList(evidence, result.watches, watch => {
+      if (typeof watch === 'string') {
+        return watch;
+      }
+      return `${watch.expression || 'expression'} = ${watch.result ?? 'unavailable'} · ` +
+        `${watch.status || 'unknown'}`;
+    });
+    return;
+  }
+  const watch = document.createElement('div');
+  watch.className = 'agent-step-debug-metadata';
+  watch.textContent = `${result.expression || 'Watch'} · updated`;
+  evidence.appendChild(watch);
+}
+
+function appendAgentDebugTimeline(evidence, result) {
+  appendAgentDebugList(evidence, result.events, event =>
+    `#${event.sequence || 0} · ${event.timestampUtc || 'unknown time'} · ` +
+    `${event.kind || 'event'} · ${event.state || 'unknown'} · ` +
+    `${event.details || ''}`,
+  true);
+}
+
+const AGENT_DEBUG_RENDERERS = {
+  state: appendAgentDebugState,
+  breakpoints: appendAgentDebugBreakpoints,
+  callStack: appendAgentDebugCallStack,
+  action: appendAgentDebugAction,
+  value: appendAgentDebugValue,
+  watches: appendAgentDebugWatches,
+  timeline: appendAgentDebugTimeline
+};
+
+function appendAgentDebugEvidence(details, step) {
+  const kind = RadIAAgentDebug.evidenceKind(step.toolName);
+  const renderer = AGENT_DEBUG_RENDERERS[kind];
+  if (!renderer) {
+    return;
+  }
+  const result = parseAgentStepResult(step);
+  if (!result) {
+    return;
+  }
+  const evidence = document.createElement('section');
+  evidence.className = 'agent-step-debug';
+  const title = document.createElement('strong');
+  title.textContent = 'Debug evidence';
+  evidence.appendChild(title);
+  renderer(evidence, result);
+  details.appendChild(evidence);
+}
+
 function createAgentStep(step, status) {
   const item = document.createElement('li');
   item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
@@ -398,6 +532,7 @@ function createAgentStep(step, status) {
   details.appendChild(resultBlock);
   appendAgentPatchReview(details, step);
   appendAgentGitEvidence(details, step);
+  appendAgentDebugEvidence(details, step);
   const replay = document.createElement('button');
   replay.className = 'agent-step-replay';
   replay.textContent = 'Replay step';

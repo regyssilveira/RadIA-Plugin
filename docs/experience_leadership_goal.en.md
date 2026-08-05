@@ -147,6 +147,10 @@ The Git journey is integrated as well: `GetGitStatus` shows repository status, `
 `PreviewGitCommit` present a colored unified diff with file and line counts, and `CommitChanges`
 records the resulting local SHA. The preview keeps its message, paths, and fingerprint visible
 without offering an automatic push.
+The debugging journey now has dedicated evidence as well: process state, source location, threads,
+breakpoints, call stack, execution transitions, evaluated values, watches, and timeline events
+appear inside their corresponding step. The visual layer consumes only the audited tool result and
+bounds long lists, without introducing polling or controlling a session on its own.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

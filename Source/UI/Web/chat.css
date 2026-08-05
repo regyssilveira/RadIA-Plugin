@@ -1905,6 +1905,54 @@ body.light-theme .agent-step-git-diff .is-removal {
   color: var(--accent);
 }
 
+.agent-step-debug {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.agent-step-debug-metadata {
+  margin-top: 5px;
+  color: var(--fg-secondary);
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.agent-step-debug > code {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.agent-step-debug ul,
+.agent-step-debug ol {
+  max-height: 320px;
+  margin: 6px 0 0;
+  padding-left: 24px;
+  overflow: auto;
+  color: var(--fg-secondary);
+  font-family: Consolas, monospace;
+  font-size: 11px;
+}
+
+.agent-step-debug dl {
+  margin: 6px 0 0;
+}
+
+.agent-step-debug dt {
+  font-family: Consolas, monospace;
+  font-weight: 600;
+}
+
+.agent-step-debug dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--fg-secondary);
+  font-family: Consolas, monospace;
+}
+
 .agent-validation-indicator {
   padding: 2px 7px;
   border: 1px solid var(--border);

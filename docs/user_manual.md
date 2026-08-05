@@ -135,6 +135,10 @@ As etapas Git apresentam **Git evidence**. O status aparece como saída legível
 adicionadas e removidas com cores, arquivos e totais; o preview de commit mostra mensagem,
 quantidade de caminhos e fingerprint; e o commit concluído mostra o SHA local. O RadIA não faz
 push automático por esse fluxo.
+As tools de depuração apresentam **Debug evidence** com estado e localização, breakpoints, frames
+da pilha, transições entre estados, avaliações, watches e eventos recentes. A interface não inicia
+polling nem executa ações adicionais: ela mostra somente o resultado já autorizado e auditado da
+etapa, limitando listas a um tamanho seguro para o WebView.
 
 ### 3.2 Consentimento
 

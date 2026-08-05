@@ -152,6 +152,10 @@ A jornada Git também está integrada: `GetGitStatus` mostra o estado textual do
 `GetGitDiff` e `PreviewGitCommit` apresentam diff unificado colorido com arquivos e contagens,
 e `CommitChanges` registra o SHA local criado. O preview mantém mensagem, caminhos e fingerprint
 visíveis, sem oferecer push automático.
+A jornada de debug também ganhou evidências próprias: estado do processo, localização, threads,
+breakpoints, call stack, transições de execução, valores avaliados, watches e eventos da timeline
+aparecem dentro da etapa correspondente. A camada visual consome somente o resultado auditado da
+tool e limita listas extensas, sem criar polling ou controlar uma sessão por conta própria.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

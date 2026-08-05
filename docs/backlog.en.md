@@ -87,6 +87,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         inside the timeline while apply and revert remain in the central consent flow.
     *   M3 delivered in this increment: status, diff, fingerprinted preview, and local commit SHA
         appear as reviewable Git evidence in the timeline, without automatic push.
+    *   M3 delivered in this increment: state, breakpoints, call stack, actions, values, watches,
+        and events appear as read-only debug evidence inside the timeline.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

@@ -30,7 +30,8 @@ module.exports = [
         module: "readonly",
         require: "readonly",
         RadIAAgentDiff: "readonly",
-        RadIAAgentGit: "readonly"
+        RadIAAgentGit: "readonly",
+        RadIAAgentDebug: "readonly"
       }
     },
     rules: {
