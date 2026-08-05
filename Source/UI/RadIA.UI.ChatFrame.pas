@@ -94,6 +94,7 @@ type
 
     procedure SetTheme(const AThemeName: string);
     procedure EnsureVisibleContent;
+    procedure ExecutePrompt(const APrompt: string);
 
     { IRadIAChatView Implementation }
     procedure SetRequestState(const AInProgress: Boolean);
@@ -136,6 +137,11 @@ uses
 
 const
   CWebViewScrollbarStyleId = 'radia-scrollbar-style';
+
+procedure TRadIAFrameAIChat.ExecutePrompt(const APrompt: string);
+begin
+  FPresenter.SendPromptText(APrompt);
+end;
 
 function BuildWebViewScrollbarScript: string;
 begin

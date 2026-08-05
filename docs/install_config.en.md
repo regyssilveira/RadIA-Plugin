@@ -16,9 +16,10 @@ This option compiles the plugin, copies the binaries to the official public Delp
 
 During installation, the script also updates the HTML/CSS/JS assets used by WebView2 under `%APPDATA%\RadIA\Web` and clears the local `%APPDATA%\RadIA\WebView2` cache while the IDE is closed. This prevents different Delphi versions from loading stale JavaScript files after an update.
 
-After opening the IDE, type `/doctor` in chat to verify the provider, selected CLI, MCP bridge and
-configuration, interactive terminal, and web assets. This read-only diagnostic recommends the
-appropriate settings or repair action without displaying tokens or credentials.
+After opening the IDE, use **Tools > Rad IA Getting Started > Run installation doctor** or type
+`/doctor` in chat. The diagnostic verifies the provider, executor, MCP when required, terminal,
+web assets, and the first read-only tool. It returns a score, checks, and next action without
+displaying tokens or credentials.
 
 1. Open the Windows PowerShell console.
 2. Make sure the Delphi installation `bin` folder containing `dcc32` is present in your system PATH.

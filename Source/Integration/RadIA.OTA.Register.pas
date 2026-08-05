@@ -1161,7 +1161,8 @@ initialization
       TPath.Combine(
         TPath.Combine(TPath.GetHomePath, 'RadIA'),
         'Web'
-      )
+      ),
+      TRadIAContainer.Resolve<IRadIAToolRegistry>
     )
   );
   TRadIAContainer.Register<IRadIAMcpProtocol>(

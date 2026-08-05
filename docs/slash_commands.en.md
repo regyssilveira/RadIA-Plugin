@@ -26,7 +26,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/settings` | Opens RadIA settings; equivalent to the chat gear button. | Local user configuration. |
 | `/extensions` | Opens the visual extension manager. | Local extensions and publishers. |
 | `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
-| `/doctor` | Diagnoses installation and recommends first-run fixes. | Provider, CLI, MCP, terminal, and web assets. |
+| `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP, terminal, chat, and first tool. |
 | `/journey` | Lists end-to-end Delphi recipes. | Native journey catalog. |
 | `/journey create` | Creates, opens, builds, and explains a new project. | Agent Runtime and project tools. |
 | `/journey fix-build` | Diagnoses and repairs a build with minimal changes. | Compiler, patches, and build. |

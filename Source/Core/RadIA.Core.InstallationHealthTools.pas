@@ -3,10 +3,27 @@ unit RadIA.Core.InstallationHealthTools;
 interface
 
 uses
+  System.JSON,
   RadIA.Core.Interfaces,
   RadIA.Core.Tools;
 
 type
+  TRadIAInstallationReadiness = record
+  private
+    FCliDetected: Boolean;
+    FExecutorId: string;
+    FFirstToolReady: Boolean;
+    FMcpBridgeAvailable: Boolean;
+    FMcpConfigured: Boolean;
+    FMcpReady: Boolean;
+    FMcpRequired: Boolean;
+    FProviderId: string;
+    FProviderReady: Boolean;
+    FTerminalReady: Boolean;
+    FToolCount: Integer;
+    FWebReady: Boolean;
+  end;
+
   IRadIAInstallationHealthProbe = interface
     ['{8188E3A4-B0B1-4708-B310-060E9E961635}']
     function Diagnose: string;
@@ -19,14 +36,35 @@ type
   private
     FBridgePath: string;
     FConfig: IRadIAConfig;
+    FRegistry: IRadIAToolRegistry;
     FWebDirectory: string;
+    procedure AddIssues(
+      const AReadiness: TRadIAInstallationReadiness;
+      const AIssues: TJSONArray;
+      const ARecommendations: TJSONArray
+    );
+    procedure AddReadiness(
+      const ARoot: TJSONObject;
+      const AReadiness: TRadIAInstallationReadiness
+    );
+    function CollectReadiness: TRadIAInstallationReadiness;
     function IsProviderConfigured(const AProviderId: string): Boolean;
+    function IsFirstToolReady: Boolean;
+    function NextAction(
+      const AReadiness: TRadIAInstallationReadiness
+    ): string;
   public
     constructor Create(
       const AConfig: IRadIAConfig;
       const ABridgePath: string;
       const AWebDirectory: string
-    );
+    ); overload;
+    constructor Create(
+      const AConfig: IRadIAConfig;
+      const ABridgePath: string;
+      const AWebDirectory: string;
+      const ARegistry: IRadIAToolRegistry
+    ); overload;
     function Diagnose: string;
   end;
 
@@ -39,7 +77,6 @@ implementation
 
 uses
   System.IOUtils,
-  System.JSON,
   System.SysUtils,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliManager,
@@ -71,12 +108,31 @@ constructor TRadIAInstallationHealthProbe.Create(
   const AWebDirectory: string
 );
 begin
+  Create(AConfig, ABridgePath, AWebDirectory, nil);
+end;
+
+constructor TRadIAInstallationHealthProbe.Create(
+  const AConfig: IRadIAConfig;
+  const ABridgePath: string;
+  const AWebDirectory: string;
+  const ARegistry: IRadIAToolRegistry
+);
+begin
   inherited Create;
   if not Assigned(AConfig) then
     raise EArgumentNilException.Create('AConfig');
   FConfig := AConfig;
   FBridgePath := TPath.GetFullPath(ABridgePath);
   FWebDirectory := TPath.GetFullPath(AWebDirectory);
+  FRegistry := ARegistry;
+end;
+
+function TRadIAInstallationHealthProbe.IsFirstToolReady: Boolean;
+var
+  LTool: IRadIATool;
+begin
+  Result := Assigned(FRegistry) and
+    FRegistry.TryResolve('GetIDEState', LTool);
 end;
 
 function TRadIAInstallationHealthProbe.IsProviderConfigured(
@@ -98,42 +154,53 @@ end;
 
 function TRadIAInstallationHealthProbe.Diagnose: string;
 var
+  LIssues: TJSONArray;
+  LReadiness: TRadIAInstallationReadiness;
+  LRecommendations: TJSONArray;
+  LRoot: TJSONObject;
+begin
+  LReadiness := CollectReadiness;
+  LRoot := TJSONObject.Create;
+  try
+    LIssues := TJSONArray.Create;
+    LRecommendations := TJSONArray.Create;
+    LRoot.AddPair('issues', LIssues);
+    LRoot.AddPair('recommendations', LRecommendations);
+    AddIssues(LReadiness, LIssues, LRecommendations);
+    if LIssues.Count = 0 then
+      LRoot.AddPair('status', 'ready')
+    else
+      LRoot.AddPair('status', 'attention');
+    AddReadiness(LRoot, LReadiness);
+    LRoot.AddPair('nextAction', NextAction(LReadiness));
+    Result := LRoot.ToJSON;
+  finally
+    LRoot.Free;
+  end;
+end;
+
+function TRadIAInstallationHealthProbe.CollectReadiness:
+  TRadIAInstallationReadiness;
+var
   LCliDefinition: TRadIACliDefinition;
   LCliDetection: TRadIACliDetection;
   LCliDetector: TRadIACliDetector;
-  LCliInstalled: Boolean;
   LExecutorSettings: TRadIAAgentExecutorSettings;
   LExecutorStore: TRadIAAgentExecutorSettingsStore;
-  LIssues: TJSONArray;
-  LMcpConfigured: Boolean;
   LMcpSettings: TRadIACliMcpClientSettings;
   LMcpStore: TRadIACliMcpSettings;
-  LProviderId: string;
-  LProviderReady: Boolean;
-  LRecommendations: TJSONArray;
-  LRoot: TJSONObject;
-  LTerminalReady: Boolean;
-  LWebReady: Boolean;
-  procedure AddIssue(
-    const ACode: string;
-    const AMessage: string;
-    const ARecommendation: string
-  );
-  begin
-    LIssues.Add(ACode + ': ' + AMessage);
-    LRecommendations.Add(ARecommendation);
-  end;
 begin
-  LProviderId := FConfig.GetActiveProvider;
-  LProviderReady := IsProviderConfigured(LProviderId);
+  Result.FProviderId := FConfig.GetActiveProvider;
+  Result.FProviderReady := IsProviderConfigured(Result.FProviderId);
   LExecutorStore := TRadIAAgentExecutorSettingsStore.Create;
   try
     LExecutorSettings := LExecutorStore.Load;
   finally
     LExecutorStore.Free;
   end;
-  LCliInstalled := LExecutorSettings.Kind = aekNative;
-  LMcpConfigured := False;
+  Result.FExecutorId := LExecutorSettings.CliClientId;
+  Result.FCliDetected := LExecutorSettings.Kind = aekNative;
+  Result.FMcpConfigured := False;
   if TRadIACliCatalog.FindById(
     LExecutorSettings.CliClientId,
     LCliDefinition
@@ -157,83 +224,186 @@ begin
           LCliDefinition,
           LMcpSettings.CliExecutablePath
         );
-        LCliInstalled := LCliDetection.Installed;
+        Result.FCliDetected := LCliDetection.Installed;
       finally
         LCliDetector.Free;
       end;
     end;
-    LMcpConfigured := TFile.Exists(LMcpSettings.McpConfigPath);
+    Result.FMcpConfigured := TFile.Exists(
+      LMcpSettings.McpConfigPath
+    );
   end;
-  LTerminalReady := TRadIAPseudoTerminalRunner.IsSupported;
-  LWebReady :=
+  Result.FTerminalReady := TRadIAPseudoTerminalRunner.IsSupported;
+  Result.FWebReady :=
     TFile.Exists(TPath.Combine(FWebDirectory, 'chat.html')) and
     TFile.Exists(TPath.Combine(FWebDirectory, 'chat.js')) and
     TFile.Exists(TPath.Combine(FWebDirectory, 'chat.css'));
+  Result.FFirstToolReady := IsFirstToolReady;
+  if Assigned(FRegistry) then
+    Result.FToolCount := FRegistry.GetCount
+  else
+    Result.FToolCount := 0;
+  Result.FMcpBridgeAvailable := TFile.Exists(FBridgePath);
+  Result.FMcpRequired := LExecutorSettings.Kind = aekCli;
+  Result.FMcpReady := not Result.FMcpRequired or
+    (Result.FMcpBridgeAvailable and Result.FMcpConfigured);
+end;
 
-  LRoot := TJSONObject.Create;
-  try
-    LIssues := TJSONArray.Create;
-    LRecommendations := TJSONArray.Create;
-    LRoot.AddPair('issues', LIssues);
-    LRoot.AddPair('recommendations', LRecommendations);
-    if not LProviderReady then
-      AddIssue(
+procedure TRadIAInstallationHealthProbe.AddIssues(
+  const AReadiness: TRadIAInstallationReadiness;
+  const AIssues: TJSONArray;
+  const ARecommendations: TJSONArray
+);
+  procedure AddIssue(
+    const ACode: string;
+    const AMessage: string;
+    const ARecommendation: string
+  );
+  begin
+    AIssues.Add(ACode + ': ' + AMessage);
+    ARecommendations.Add(ARecommendation);
+  end;
+begin
+  if not AReadiness.FProviderReady then
+    AddIssue(
         'provider_not_configured',
         'The active provider is not ready.',
         'Open /settings and configure or authenticate the active provider.'
-      );
-    if not LCliInstalled then
-      AddIssue(
+    );
+  if not AReadiness.FCliDetected then
+    AddIssue(
         'cli_not_detected',
         'The selected CLI executable was not detected.',
         'Use Settings > CLI & MCP to diagnose or install the selected CLI.'
-      );
-    if not TFile.Exists(FBridgePath) then
-      AddIssue(
+    );
+  if AReadiness.FMcpRequired and
+    not AReadiness.FMcpBridgeAvailable then
+    AddIssue(
         'mcp_bridge_missing',
         'The MCP bridge executable is missing.',
         'Repair the RadIA installation for the current IDE architecture.'
-      )
-    else if not LMcpConfigured then
-      AddIssue(
+    )
+  else if AReadiness.FMcpRequired and
+    not AReadiness.FMcpConfigured then
+    AddIssue(
         'mcp_not_configured',
         'The selected MCP client configuration was not found.',
         'Use Settings > CLI & MCP to preview and provision MCP.'
-      );
-    if not LTerminalReady then
-      AddIssue(
+    );
+  if not AReadiness.FTerminalReady then
+    AddIssue(
         'interactive_terminal_unavailable',
         'Windows ConPTY is unavailable.',
         'Update Windows or use the non-interactive terminal fallback.'
-      );
-    if not LWebReady then
-      AddIssue(
+    );
+  if not AReadiness.FWebReady then
+    AddIssue(
         'web_assets_missing',
         'Chat web assets are incomplete.',
         'Repair the RadIA installation to restore WebView resources.'
-      );
-    if LIssues.Count = 0 then
-      LRoot.AddPair('status', 'ready')
-    else
-      LRoot.AddPair('status', 'attention');
-    LRoot.AddPair('activeProvider', LProviderId);
-    LRoot.AddPair('providerConfigured', TJSONBool.Create(LProviderReady));
-    LRoot.AddPair('executor', LExecutorSettings.CliClientId);
-    LRoot.AddPair('cliRequired', TJSONBool.Create(
-      LExecutorSettings.Kind = aekCli
-    ));
-    LRoot.AddPair('cliDetected', TJSONBool.Create(LCliInstalled));
-    LRoot.AddPair(
-      'mcpBridgeAvailable',
-      TJSONBool.Create(TFile.Exists(FBridgePath))
     );
-    LRoot.AddPair('mcpConfigured', TJSONBool.Create(LMcpConfigured));
-    LRoot.AddPair('interactiveTerminal', TJSONBool.Create(LTerminalReady));
-    LRoot.AddPair('webAssetsAvailable', TJSONBool.Create(LWebReady));
-    Result := LRoot.ToJSON;
-  finally
-    LRoot.Free;
-  end;
+  if not AReadiness.FFirstToolReady then
+    AddIssue(
+        'first_tool_unavailable',
+        'The read-only GetIDEState tool is unavailable.',
+        'Repair the RadIA package and restart the IDE.'
+    );
+end;
+
+procedure TRadIAInstallationHealthProbe.AddReadiness(
+  const ARoot: TJSONObject;
+  const AReadiness: TRadIAInstallationReadiness
+);
+var
+  LChecks: TJSONObject;
+  LReadyCount: Integer;
+begin
+  ARoot.AddPair('activeProvider', AReadiness.FProviderId);
+  ARoot.AddPair(
+    'providerConfigured',
+    TJSONBool.Create(AReadiness.FProviderReady)
+  );
+  ARoot.AddPair('executor', AReadiness.FExecutorId);
+  ARoot.AddPair(
+    'cliRequired',
+    TJSONBool.Create(AReadiness.FMcpRequired)
+  );
+  ARoot.AddPair(
+    'cliDetected',
+    TJSONBool.Create(AReadiness.FCliDetected)
+  );
+  ARoot.AddPair(
+    'mcpBridgeAvailable',
+    TJSONBool.Create(AReadiness.FMcpBridgeAvailable)
+  );
+  ARoot.AddPair(
+    'mcpConfigured',
+    TJSONBool.Create(AReadiness.FMcpConfigured)
+  );
+  ARoot.AddPair(
+    'mcpRequired',
+    TJSONBool.Create(AReadiness.FMcpRequired)
+  );
+  ARoot.AddPair(
+    'interactiveTerminal',
+    TJSONBool.Create(AReadiness.FTerminalReady)
+  );
+  ARoot.AddPair(
+    'webAssetsAvailable',
+    TJSONBool.Create(AReadiness.FWebReady)
+  );
+  ARoot.AddPair(
+    'firstToolReady',
+    TJSONBool.Create(AReadiness.FFirstToolReady)
+  );
+  ARoot.AddPair('toolCount', AReadiness.FToolCount);
+  LChecks := TJSONObject.Create;
+  ARoot.AddPair('checks', LChecks);
+  LChecks.AddPair(
+    'provider',
+    TJSONBool.Create(AReadiness.FProviderReady)
+  );
+  LChecks.AddPair(
+    'executor',
+    TJSONBool.Create(AReadiness.FCliDetected)
+  );
+  LChecks.AddPair('mcp', TJSONBool.Create(AReadiness.FMcpReady));
+  LChecks.AddPair(
+    'terminal',
+    TJSONBool.Create(AReadiness.FTerminalReady)
+  );
+  LChecks.AddPair('chat', TJSONBool.Create(AReadiness.FWebReady));
+  LChecks.AddPair(
+    'firstTool',
+    TJSONBool.Create(AReadiness.FFirstToolReady)
+  );
+  LReadyCount := Ord(AReadiness.FProviderReady) +
+    Ord(AReadiness.FCliDetected) + Ord(AReadiness.FMcpReady) +
+    Ord(AReadiness.FTerminalReady) + Ord(AReadiness.FWebReady) +
+    Ord(AReadiness.FFirstToolReady);
+  ARoot.AddPair(
+    'readinessScore',
+    TJSONNumber.Create((LReadyCount * 100) div 6)
+  );
+end;
+
+function TRadIAInstallationHealthProbe.NextAction(
+  const AReadiness: TRadIAInstallationReadiness
+): string;
+begin
+  if not AReadiness.FProviderReady then
+    Exit('open_provider_settings');
+  if not AReadiness.FWebReady then
+    Exit('repair_web_assets');
+  if not AReadiness.FCliDetected then
+    Exit('configure_cli');
+  if not AReadiness.FMcpReady then
+    Exit('provision_mcp');
+  if not AReadiness.FTerminalReady then
+    Exit('open_terminal_fallback');
+  if not AReadiness.FFirstToolReady then
+    Exit('repair_package');
+  Result := 'run_first_read_only_tool';
 end;
 
 constructor TRadIAInstallationHealthTool.Create(
@@ -258,8 +428,8 @@ function TRadIAInstallationHealthTool.GetDescriptor:
 begin
   Result := TRadIAToolDescriptor.Create(
     'GetInstallationHealth',
-    '1.0.0',
-    'Diagnoses provider, CLI, MCP, terminal, and local web assets.',
+    '1.1.0',
+    'Scores provider, executor, MCP, terminal, chat, and first-tool readiness.',
     CEmptyInputSchema,
     '{"type":"object"}',
     trReadOnly

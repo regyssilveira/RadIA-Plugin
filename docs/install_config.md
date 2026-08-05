@@ -16,9 +16,10 @@ Esta opção compila o plugin, copia os binários para os diretórios públicos 
 
 Durante a instalação, o script também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em `%APPDATA%\RadIA\Web` e limpa o cache local `%APPDATA%\RadIA\WebView2` quando a IDE está fechada. Isso evita que versões diferentes do Delphi carreguem arquivos JavaScript antigos após uma atualização.
 
-Depois de abrir a IDE, digite `/doctor` no chat para verificar provider, CLI selecionada, bridge e
-configuração MCP, terminal interativo e recursos web. O diagnóstico é somente leitura e indica a
-tela ou ação de reparo apropriada sem mostrar tokens ou credenciais.
+Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation doctor** ou digite
+`/doctor` no chat. O diagnóstico verifica provider, executor, MCP quando necessário, terminal,
+recursos web e a primeira tool somente leitura. Ele retorna score, checks e próxima ação sem
+mostrar tokens ou credenciais.
 
 1. Abra o console do Windows PowerShell.
 2. Certifique-se de que a pasta `bin` da instalação do Delphi contendo o `dcc32` está presente no PATH do sistema.

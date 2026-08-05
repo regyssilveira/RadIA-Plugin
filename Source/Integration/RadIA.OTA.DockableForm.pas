@@ -3,6 +3,7 @@ unit RadIA.OTA.DockableForm;
 interface
 
 procedure ShowRadIAChat;
+procedure ShowRadIAChatCommand(const ACommand: string);
 procedure ShowRadIATerminal;
 procedure RegisterDockableForm;
 procedure UnregisterDockableForm;
@@ -95,6 +96,16 @@ begin
     Exit;
 
   GRadIADockableFormHost.Show;
+end;
+
+procedure ShowRadIAChatCommand(const ACommand: string);
+begin
+  ShowRadIAChat;
+  if Assigned(GRadIADockableFormHost) and
+    (GRadIADockableFormHost.FFrame is TRadIAFrameAIChat) then
+    TRadIAFrameAIChat(GRadIADockableFormHost.FFrame).ExecutePrompt(
+      ACommand
+    );
 end;
 
 procedure ShowRadIATerminal;

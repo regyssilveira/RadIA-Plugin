@@ -126,6 +126,9 @@ The board below summarizes the current status of mapped short and medium-term fe
         and limits before applying dynamic selection to the index.
     *   M5 delivered in this stage: completed and approved histories can feed the index after
         explicit consent, isolated by project and without tool payloads.
+    *   M6 delivered in this stage: onboarding v2 runs `/doctor` directly; the first-value
+        diagnostic returns a score, checks, and next action, verifies `GetIDEState`, and requires
+        MCP only for a CLI executor.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 

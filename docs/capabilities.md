@@ -140,10 +140,10 @@ somente leitura e prioriza riscos críticos, altos e médios sem iniciar build, 
 
 ### Diagnóstico da instalação
 
-`GetInstallationHealth` e `/doctor` verificam localmente se o provider ativo está configurado, se
-a CLI selecionada está disponível quando necessária, se a bridge e a configuração MCP existem, se
-o terminal interativo está disponível e se os recursos web do chat estão completos. O resultado
-não expõe credenciais e inclui recomendações de configuração, provisionamento ou reparo.
+`GetInstallationHealth` e `/doctor` verificam localmente provider, executor, MCP somente quando
+exigido pela CLI, terminal, recursos web e disponibilidade de `GetIDEState` como primeira tool
+somente leitura. O resultado não expõe credenciais e inclui score, checks, próxima ação e
+recomendações de configuração, provisionamento ou reparo.
 
 ## Modo agente
 

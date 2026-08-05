@@ -235,6 +235,10 @@ results. Opt-in ingestion of these summaries into the index remains pending.
 
 **Outcome:** first reviewed change without manual configuration-file editing.
 
+Onboarding version 2 runs `/doctor` from a dedicated button. The diagnostic returns structured
+checks, a score, and the next action, verifies `GetIDEState` as the first read-only tool, and does
+not require MCP when the native executor is selected.
+
 ### M7 — Specialized journeys
 
 - Deliver auditable recipes for application creation, build repair, testing, and debugging.

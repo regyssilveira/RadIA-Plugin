@@ -17,6 +17,7 @@ para não exibir novamente a janela automaticamente. Ao reabrir pelo menu, a jor
 | Segurança | Revisar consentimento antes de leitura, alteração, build, debug ou commit | **Open consent settings** |
 | CLI e MCP | Diagnosticar CLIs e conectar, reparar ou remover o bridge MCP | **Open CLI and MCP settings** |
 | Terminal | Executar comandos com streaming, histórico, snippets e cancelamento | **Open terminal** |
+| Prontidão | Executar `/doctor` no chat e obter score, checks e próxima ação | **Run installation doctor** |
 | Novo projeto | Criar um projeto Delphi determinístico e continuar no Agent Mode | **Create a project** |
 
 As ações abrem as telas reais do produto. O onboarding permanece disponível ao fundo para que o
@@ -29,7 +30,10 @@ usuário retorne ao roteiro depois de salvar ou fechar a superfície aberta.
 3. Em **CLI & MCP**, mantenha o agente nativo ou selecione uma CLI já instalada e execute o
    diagnóstico.
 4. Conecte o MCP somente aos clientes desejados, depois de revisar o preview da configuração.
-5. Abra o chat e habilite visualmente o **Agent Mode** quando quiser que o Rad IA planeje e use
+5. Execute **Run installation doctor**. Com o executor nativo, MCP não é requisito; com uma CLI,
+   bridge e configuração MCP passam a fazer parte do aceite.
+6. Confirme que `firstToolReady` está ativo e execute a primeira tool somente leitura.
+7. Abra o chat e habilite visualmente o **Agent Mode** quando quiser que o Rad IA planeje e use
    ferramentas internas.
 
 O onboarding não instala CLIs, não modifica arquivos MCP e não ativa consentimentos sozinho. Toda

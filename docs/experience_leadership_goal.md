@@ -242,6 +242,10 @@ imediatamente antes da remoção física na atualização seguinte.
 
 **Saída:** da instalação à primeira alteração revisada sem configuração manual de arquivos.
 
+O onboarding versão 2 executa `/doctor` por um botão próprio. O diagnóstico retorna checks
+estruturados, score e próxima ação, confirma `GetIDEState` como primeira tool somente leitura e não
+exige MCP quando o executor nativo está selecionado.
+
 ### M7 — Jornadas especializadas
 
 - Entregar receitas auditáveis para criar aplicação, corrigir build, ampliar testes e depurar.

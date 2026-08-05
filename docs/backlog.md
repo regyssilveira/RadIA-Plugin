@@ -128,6 +128,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
     *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas
         telas visuais de configuração e gerenciamento já acessíveis por clique.
+    *   M6 entregue nesta etapa: onboarding v2 executa `/doctor` diretamente; o diagnóstico de
+        primeiro valor retorna score, checks e próxima ação, valida `GetIDEState` e torna MCP
+        obrigatório somente para executor CLI.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

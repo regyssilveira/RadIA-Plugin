@@ -66,6 +66,8 @@ begin
       OpenSettings('CLI & MCP');
     oaOpenTerminal:
       ShowRadIATerminal;
+    oaRunDoctor:
+      ShowRadIAChatCommand('/doctor');
     oaCreateProject:
       begin
         LProjectWizard := TRadIAProjectWizardForm.Create(

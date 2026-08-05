@@ -13,7 +13,8 @@ type
     oaOpenSecuritySettings,
     oaOpenCliMcpSettings,
     oaOpenTerminal,
-    oaCreateProject
+    oaCreateProject,
+    oaRunDoctor
   );
 
   TRadIAOnboardingStep = record
@@ -62,7 +63,7 @@ type
     FSettingsPath: string;
     procedure WriteState(const AState: TRadIAOnboardingState);
   public
-    const CurrentFlowVersion = 1;
+    const CurrentFlowVersion = 2;
     constructor Create(
       const AStorage: IRadIASettingsStorage = nil;
       const ASettingsPath: string = ''
@@ -135,6 +136,12 @@ begin
       'Run project commands with streaming output, history, snippets, timeout, and process-tree cancellation.',
       'Open terminal',
       oaOpenTerminal
+    ),
+    TRadIAOnboardingStep.Create(
+      'Verify first-value readiness',
+      'Run the local doctor for provider, chat, terminal, MCP, and the first read-only IDE tool.',
+      'Run installation doctor',
+      oaRunDoctor
     ),
     TRadIAOnboardingStep.Create(
       'Create your first project',
