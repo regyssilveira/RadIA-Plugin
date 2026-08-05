@@ -79,9 +79,9 @@ function CreateRadIAKnowledgeModuleNotifier(
 implementation
 
 uses
-  System.IOUtils,
   System.SyncObjs,
   System.SysUtils,
+  RadIA.Core.Knowledge,
   RadIA.Core.Logger,
   RadIA.Core.Types;
 
@@ -245,14 +245,8 @@ end;
 class function TRadIAOTAKnowledgeNotifier.SupportsSourceFile(
   const AFileName: string
 ): Boolean;
-var
-  LExtension: string;
 begin
-  LExtension := LowerCase(TPath.GetExtension(AFileName));
-  Result := (LExtension = '.pas') or
-    (LExtension = '.dpr') or
-    (LExtension = '.dpk') or
-    (LExtension = '.inc');
+  Result := TRadIAKnowledgeFilePolicy.IsSupported(AFileName);
 end;
 
 procedure TRadIAOTAKnowledgeNotifier.RefreshAttachments;

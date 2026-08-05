@@ -201,6 +201,11 @@ estimated index size, and every response preserves the project identity. With ex
 direct navigation, and independent workspace tests, relevance, latency, size, rebuild, and
 isolation now have observable evidence without telemetry.
 
+Incremental indexing now covers Pascal, textual DFM/FMX companions, DPROJ/GROUPPROJ files, and
+Markdown, text, AsciiDoc, and reStructuredText documentation. Documentation discovery is confined
+to the root and `docs/doc` folders with file-count, size, and workspace-boundary limits; the OTA
+notifier uses the same centralized format policy.
+
 ### M6 — Installation and first value
 
 - Create a signed visual installer and prepare an IDE package-manager channel.

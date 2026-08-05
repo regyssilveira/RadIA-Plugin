@@ -29,7 +29,7 @@ type
     [Test]
     procedure ModuleEventsMarkKnowledgeDirty;
     [Test]
-    procedure SourceFilterAcceptsOnlyIndexableDelphiFiles;
+    procedure SourceFilterAcceptsIndexableKnowledgeFiles;
   end;
 
 implementation
@@ -122,7 +122,7 @@ begin
   Assert.AreEqual(4, LScheduler.DirtyCount);
 end;
 
-procedure TTestRadIAKnowledgeNotifier.SourceFilterAcceptsOnlyIndexableDelphiFiles;
+procedure TTestRadIAKnowledgeNotifier.SourceFilterAcceptsIndexableKnowledgeFiles;
 begin
   Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('Unit.One.pas')
@@ -136,11 +136,17 @@ begin
   Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('Shared.inc')
   );
-  Assert.IsFalse(
+  Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('FormOne.dfm')
   );
-  Assert.IsFalse(
+  Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('ProjectOne.dproj')
+  );
+  Assert.IsTrue(
+    TRadIAOTAKnowledgeNotifier.SupportsSourceFile('Architecture.md')
+  );
+  Assert.IsFalse(
+    TRadIAOTAKnowledgeNotifier.SupportsSourceFile('CompiledUnit.dcu')
   );
 end;
 

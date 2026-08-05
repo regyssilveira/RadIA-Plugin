@@ -6,6 +6,13 @@ uses
   System.Generics.Collections;
 
 type
+  TRadIAKnowledgeFilePolicy = record
+  public
+    class function IsSupported(
+      const AFileName: string
+    ): Boolean; static;
+  end;
+
   TRadIAKnowledgeDocument = record
   private
     FContent: string;
@@ -372,6 +379,29 @@ const
   CMaxChunkCharacters = 12000;
   CMaxDocumentCharacters = 2 * 1024 * 1024;
   CMaxProjectFiles = 5000;
+
+{ TRadIAKnowledgeFilePolicy }
+
+class function TRadIAKnowledgeFilePolicy.IsSupported(
+  const AFileName: string
+): Boolean;
+var
+  LExtension: string;
+begin
+  LExtension := LowerCase(TPath.GetExtension(AFileName));
+  Result := (LExtension = '.pas') or
+    (LExtension = '.dpr') or
+    (LExtension = '.dpk') or
+    (LExtension = '.inc') or
+    (LExtension = '.dfm') or
+    (LExtension = '.fmx') or
+    (LExtension = '.dproj') or
+    (LExtension = '.groupproj') or
+    (LExtension = '.md') or
+    (LExtension = '.txt') or
+    (LExtension = '.adoc') or
+    (LExtension = '.rst');
+end;
 
 { TRadIAKnowledgeDocument }
 

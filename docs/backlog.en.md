@@ -108,6 +108,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         preserves schema 1 commands, and keeps every capability restricted to `chat.prompt`.
     *   M5 delivered in this stage: search and rebuild expose local latency, status reports the
         estimated size, and every response retains the isolated workspace identity without telemetry.
+    *   M5 delivered in this stage: incremental indexing covers Pascal, textual DFM/FMX, projects,
+        and documentation with confined discovery, limits, and one shared OTA policy.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 

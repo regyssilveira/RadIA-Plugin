@@ -4,6 +4,7 @@ interface
 
 uses
   System.Classes,
+  System.Generics.Collections,
   RadIA.Core.Knowledge,
   RadIA.Core.Workspace,
   RadIA.Core.WorkspaceBoundary;
@@ -16,7 +17,33 @@ type
   private
     FBoundary: IRadIAWorkspaceBoundary;
     FWorkspace: IRadIAWorkspaceFacade;
+    procedure AddCompanionFiles(
+      const AFileName: string;
+      const AFiles: TList<string>;
+      const ASeen: TDictionary<string, Boolean>
+    );
+    procedure AddDocumentationFiles(
+      const ARootPath: string;
+      const AFiles: TList<string>;
+      const ASeen: TDictionary<string, Boolean>
+    );
+    procedure AddDocumentationTree(
+      const ARootPath: string;
+      const AFiles: TList<string>;
+      const ASeen: TDictionary<string, Boolean>
+    );
+    procedure AddUniqueFile(
+      const AFileName: string;
+      const AFiles: TList<string>;
+      const ASeen: TDictionary<string, Boolean>;
+      const ARequireExists: Boolean
+    );
     function IsSupportedSourceFile(const AFileName: string): Boolean;
+    function IsReparseDirectory(const ADirectory: string): Boolean;
+    function ReadDiskContent(
+      const AFileName: string;
+      out AContent: string
+    ): Boolean;
     function ReadOpenBuffer(
       const AFileName: string;
       out AContent: string
@@ -38,7 +65,6 @@ type
 implementation
 
 uses
-  System.Generics.Collections,
   System.Hash,
   System.IOUtils,
   System.SysUtils,
@@ -50,6 +76,121 @@ uses
 const
   CKnowledgeUnavailable = 'The knowledge source is shutting down.';
   CMaxKnowledgeFileBytes = 2 * 1024 * 1024;
+  CMaxKnowledgeFiles = 5000;
+  CMaxKnowledgeDirectories = 1000;
+
+procedure TRadIAOTAKnowledgeSource.AddCompanionFiles(
+  const AFileName: string;
+  const AFiles: TList<string>;
+  const ASeen: TDictionary<string, Boolean>
+);
+var
+  LBaseName: string;
+begin
+  if not SameText(TPath.GetExtension(AFileName), '.pas') then
+    Exit;
+  LBaseName := TPath.Combine(
+    TPath.GetDirectoryName(AFileName),
+    TPath.GetFileNameWithoutExtension(AFileName)
+  );
+  AddUniqueFile(LBaseName + '.dfm', AFiles, ASeen, True);
+  AddUniqueFile(LBaseName + '.fmx', AFiles, ASeen, True);
+end;
+
+procedure TRadIAOTAKnowledgeSource.AddDocumentationFiles(
+  const ARootPath: string;
+  const AFiles: TList<string>;
+  const ASeen: TDictionary<string, Boolean>
+);
+var
+  LDirectory: string;
+  LDirectories: TArray<string>;
+  LFileName: string;
+begin
+  if not TDirectory.Exists(ARootPath) or
+    IsReparseDirectory(ARootPath) then
+    Exit;
+  try
+    for LFileName in TDirectory.GetFiles(
+      ARootPath,
+      '*',
+      TSearchOption.soTopDirectoryOnly
+    ) do
+      AddUniqueFile(LFileName, AFiles, ASeen, True);
+  except
+    on Exception do
+      Exit;
+  end;
+  LDirectories := [
+    TPath.Combine(ARootPath, 'docs'),
+    TPath.Combine(ARootPath, 'doc')
+  ];
+  for LDirectory in LDirectories do
+    AddDocumentationTree(LDirectory, AFiles, ASeen);
+end;
+
+procedure TRadIAOTAKnowledgeSource.AddDocumentationTree(
+  const ARootPath: string;
+  const AFiles: TList<string>;
+  const ASeen: TDictionary<string, Boolean>
+);
+var
+  LCurrent: string;
+  LDirectory: string;
+  LDirectoryCount: Integer;
+  LFileName: string;
+  LQueue: TQueue<string>;
+begin
+  if not TDirectory.Exists(ARootPath) or
+    IsReparseDirectory(ARootPath) then
+    Exit;
+  LQueue := TQueue<string>.Create;
+  try
+    LQueue.Enqueue(ARootPath);
+    LDirectoryCount := 0;
+    while (LQueue.Count > 0) and
+      (LDirectoryCount < CMaxKnowledgeDirectories) and
+      (AFiles.Count < CMaxKnowledgeFiles) do
+    begin
+      LCurrent := LQueue.Dequeue;
+      Inc(LDirectoryCount);
+      try
+        for LFileName in TDirectory.GetFiles(
+          LCurrent,
+          '*',
+          TSearchOption.soTopDirectoryOnly
+        ) do
+          AddUniqueFile(LFileName, AFiles, ASeen, True);
+        for LDirectory in TDirectory.GetDirectories(LCurrent) do
+          if not IsReparseDirectory(LDirectory) then
+            LQueue.Enqueue(LDirectory);
+      except
+        on E: Exception do
+          OutputDebugString(PChar(
+            'RadIA knowledge documentation scan skipped: ' + E.Message
+          ));
+      end;
+    end;
+  finally
+    LQueue.Free;
+  end;
+end;
+
+procedure TRadIAOTAKnowledgeSource.AddUniqueFile(
+  const AFileName: string;
+  const AFiles: TList<string>;
+  const ASeen: TDictionary<string, Boolean>;
+  const ARequireExists: Boolean
+);
+begin
+  if (AFiles.Count >= CMaxKnowledgeFiles) or
+    not IsSupportedSourceFile(AFileName) or
+    (ARequireExists and not TFile.Exists(AFileName)) or
+    ASeen.ContainsKey(AFileName) then
+    Exit;
+  ASeen.Add(AFileName, True);
+  AFiles.Add(AFileName);
+end;
 
 { TRadIAOTAKnowledgeSource }
 
@@ -75,14 +216,19 @@ end;
 function TRadIAOTAKnowledgeSource.IsSupportedSourceFile(
   const AFileName: string
 ): Boolean;
-var
-  LExtension: string;
 begin
-  LExtension := LowerCase(TPath.GetExtension(AFileName));
-  Result := (LExtension = '.pas') or
-    (LExtension = '.dpr') or
-    (LExtension = '.dpk') or
-    (LExtension = '.inc');
+  Result := TRadIAKnowledgeFilePolicy.IsSupported(AFileName);
+end;
+
+function TRadIAOTAKnowledgeSource.IsReparseDirectory(
+  const ADirectory: string
+): Boolean;
+var
+  LAttributes: Cardinal;
+begin
+  LAttributes := GetFileAttributes(PChar(ADirectory));
+  Result := (LAttributes <> INVALID_FILE_ATTRIBUTES) and
+    ((LAttributes and FILE_ATTRIBUTE_REPARSE_POINT) <> 0);
 end;
 
 function TRadIAOTAKnowledgeSource.ListSourceFiles:
@@ -90,17 +236,52 @@ function TRadIAOTAKnowledgeSource.ListSourceFiles:
 var
   LFileName: string;
   LFiles: TList<string>;
+  LProject: TRadIAProjectSnapshot;
+  LSeen: TDictionary<string, Boolean>;
 begin
   LFiles := TList<string>.Create;
+  LSeen := TDictionary<string, Boolean>.Create;
   try
+    LProject := FWorkspace.GetActiveProject;
     for LFileName in FWorkspace.ListProjectUnits do
     begin
-      if IsSupportedSourceFile(LFileName) then
-        LFiles.Add(LFileName);
+      AddUniqueFile(LFileName, LFiles, LSeen, False);
+      AddCompanionFiles(LFileName, LFiles, LSeen);
     end;
+    AddUniqueFile(LProject.FileName, LFiles, LSeen, True);
+    AddDocumentationFiles(LProject.RootPath, LFiles, LSeen);
     Result := LFiles.ToArray;
   finally
+    LSeen.Free;
     LFiles.Free;
+  end;
+end;
+
+function TRadIAOTAKnowledgeSource.ReadDiskContent(
+  const AFileName: string;
+  out AContent: string
+): Boolean;
+var
+  LBytes: TBytes;
+begin
+  Result := False;
+  AContent := '';
+  if not TFile.Exists(AFileName) or
+    (TFile.GetSize(AFileName) > CMaxKnowledgeFileBytes) then
+    Exit;
+  try
+    LBytes := TFile.ReadAllBytes(AFileName);
+    if (Length(LBytes) >= 4) and
+      (LBytes[0] = Ord('T')) and
+      (LBytes[1] = Ord('P')) and
+      (LBytes[2] = Ord('F')) and
+      (LBytes[3] = Ord('0')) then
+      Exit;
+    AContent := TEncoding.UTF8.GetString(LBytes);
+    Result := True;
+  except
+    on Exception do
+      Result := False;
   end;
 end;
 
@@ -187,18 +368,8 @@ begin
     Exit;
 
   if not ReadOpenBuffer(AFileName, LContent) then
-  begin
-    if not TFile.Exists(AFileName) then
+    if not ReadDiskContent(AFileName, LContent) then
       Exit;
-    if TFile.GetSize(AFileName) > CMaxKnowledgeFileBytes then
-      Exit;
-    try
-      LContent := TFile.ReadAllText(AFileName);
-    except
-      on Exception do
-        Exit;
-    end;
-  end;
 
   ADocument := TRadIAKnowledgeDocument.Create(
     AFileName,

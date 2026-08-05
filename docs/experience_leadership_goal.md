@@ -208,6 +208,11 @@ estimado do índice e todas as respostas preservam a identidade do projeto. Com 
 navegação direta e testes independentes por workspace, relevância, latência, tamanho, reconstrução
 e isolamento passaram a possuir evidência observável sem telemetria.
 
+A indexação incremental agora cobre Pascal, companions DFM/FMX textuais, arquivos DPROJ/GROUPPROJ
+e documentação Markdown, texto, AsciiDoc e reStructuredText. A descoberta documental é confinada
+à raiz e às pastas `docs/doc`, com limites de quantidade, tamanho e workspace boundary; o notifier
+OTA usa a mesma política central de formatos.
+
 ### M6 — Instalação e primeiro valor
 
 - Criar instalador visual assinado e preparar um canal compatível com o gerenciador da IDE.

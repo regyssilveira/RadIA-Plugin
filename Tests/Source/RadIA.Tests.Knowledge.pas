@@ -99,6 +99,8 @@ type
     procedure ClearProjectDeletesPersistedIndex;
     [Test]
     procedure RebuildsCorruptedPersistedIndex;
+    [Test]
+    procedure OTASourceIndexesFormsProjectsAndDocumentation;
   end;
 
 implementation
@@ -110,7 +112,38 @@ uses
   RadIA.Core.KnowledgeStore,
   RadIA.Core.KnowledgeEmbeddings,
   RadIA.Core.KnowledgeTools,
-  RadIA.Core.ToolRegistry;
+  RadIA.Core.ToolRegistry,
+  RadIA.Core.Workspace,
+  RadIA.Core.WorkspaceBoundary,
+  RadIA.OTA.Knowledge;
+
+type
+  TRadIAKnowledgeWorkspaceStub = class(
+    TInterfacedObject,
+    IRadIAWorkspaceFacade
+  )
+  private
+    FProject: TRadIAProjectSnapshot;
+    FUnits: TArray<string>;
+  public
+    constructor Create(
+      const AProject: TRadIAProjectSnapshot;
+      const AUnits: TArray<string>
+    );
+    function GetIDEState: TRadIAIDEState;
+    function GetActiveProject: TRadIAProjectSnapshot;
+    function GetActiveUnit: string;
+    function ListOpenFiles: TArray<string>;
+    function ListProjectUnits: TArray<string>;
+    function GetEditorContent(
+      const AMaxCharacters: Integer
+    ): TRadIAEditorContent;
+    function GetEditorSelection: TRadIAEditorSelection;
+    function GetCursorPosition: TRadIAEditorPosition;
+    function GetCompilerMessages(
+      const AMaxCount: Integer
+    ): TArray<TRadIACompilerMessage>;
+  end;
 
 const
   CFirstFile = 'C:\Sample\Sample.Service.pas';
@@ -138,6 +171,71 @@ const
     '  end;' + sLineBreak +
     'implementation' + sLineBreak +
     'end.';
+
+{ TRadIAKnowledgeWorkspaceStub }
+
+constructor TRadIAKnowledgeWorkspaceStub.Create(
+  const AProject: TRadIAProjectSnapshot;
+  const AUnits: TArray<string>
+);
+begin
+  inherited Create;
+  FProject := AProject;
+  FUnits := Copy(AUnits);
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetActiveProject:
+  TRadIAProjectSnapshot;
+begin
+  Result := FProject;
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetActiveUnit: string;
+begin
+  Result := '';
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetCompilerMessages(
+  const AMaxCount: Integer
+): TArray<TRadIACompilerMessage>;
+begin
+  Result := nil;
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetCursorPosition:
+  TRadIAEditorPosition;
+begin
+  Result := Default(TRadIAEditorPosition);
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetEditorContent(
+  const AMaxCharacters: Integer
+): TRadIAEditorContent;
+begin
+  Result := Default(TRadIAEditorContent);
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetEditorSelection:
+  TRadIAEditorSelection;
+begin
+  Result := Default(TRadIAEditorSelection);
+end;
+
+function TRadIAKnowledgeWorkspaceStub.GetIDEState: TRadIAIDEState;
+begin
+  Result := Default(TRadIAIDEState);
+end;
+
+function TRadIAKnowledgeWorkspaceStub.ListOpenFiles: TArray<string>;
+begin
+  Result := nil;
+end;
+
+function TRadIAKnowledgeWorkspaceStub.ListProjectUnits:
+  TArray<string>;
+begin
+  Result := Copy(FUnits);
+end;
 
 { TRadIAFakeEmbeddingProvider }
 
@@ -631,6 +729,93 @@ begin
   finally
     LService := nil;
     LStore := nil;
+    if TDirectory.Exists(LRootPath) then
+      TDirectory.Delete(LRootPath, True);
+  end;
+end;
+
+procedure TTestRadIALocalKnowledge.
+  OTASourceIndexesFormsProjectsAndDocumentation;
+var
+  LDocsPath: string;
+  LFiles: TArray<string>;
+  LFormPath: string;
+  LHits: TArray<TRadIAKnowledgeSearchHit>;
+  LProjectPath: string;
+  LRootPath: string;
+  LService: IRadIAKnowledgeService;
+  LSource: IRadIAKnowledgeSource;
+  LUnitPath: string;
+  LWorkspace: IRadIAWorkspaceFacade;
+begin
+  LRootPath := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-ota-knowledge-' + TGUID.NewGuid.ToString
+  );
+  LDocsPath := TPath.Combine(LRootPath, 'docs');
+  LUnitPath := TPath.Combine(LRootPath, 'MainForm.pas');
+  LFormPath := TPath.Combine(LRootPath, 'MainForm.dfm');
+  LProjectPath := TPath.Combine(LRootPath, 'Sample.dproj');
+  try
+    TDirectory.CreateDirectory(LDocsPath);
+    TFile.WriteAllText(LUnitPath, 'unit MainForm; interface end.');
+    TFile.WriteAllText(
+      LFormPath,
+      'object CustomerPanel: TPanel' + sLineBreak + 'end'
+    );
+    TFile.WriteAllText(
+      LProjectPath,
+      '<Project><PropertyGroup><DCC_UnitSearchPath>Source</DCC_UnitSearchPath>' +
+        '</PropertyGroup></Project>'
+    );
+    TFile.WriteAllText(
+      TPath.Combine(LRootPath, 'README.md'),
+      '# Sample' + sLineBreak + 'private workspace guide'
+    );
+    TFile.WriteAllText(
+      TPath.Combine(LDocsPath, 'architecture.adoc'),
+      '= Architecture' + sLineBreak + 'bounded semantic context'
+    );
+    TFile.WriteAllText(
+      TPath.Combine(LRootPath, 'ignored.json'),
+      '{"mustNotBeIndexed":true}'
+    );
+    LWorkspace := TRadIAKnowledgeWorkspaceStub.Create(
+      TRadIAProjectSnapshot.Create(
+        'Sample',
+        LProjectPath,
+        LRootPath,
+        'Debug',
+        'Win32'
+      ),
+      [LUnitPath]
+    );
+    LSource := TRadIAOTAKnowledgeSource.Create(
+      LWorkspace,
+      TRadIAWorkspaceBoundary.Create
+    );
+    LFiles := LSource.ListSourceFiles;
+    Assert.IsTrue(MatchText(LFormPath, LFiles));
+    Assert.IsTrue(MatchText(LProjectPath, LFiles));
+    Assert.IsTrue(
+      MatchText(TPath.Combine(LRootPath, 'README.md'), LFiles)
+    );
+    Assert.IsFalse(
+      MatchText(TPath.Combine(LRootPath, 'ignored.json'), LFiles)
+    );
+
+    LService := TRadIALocalKnowledgeService.Create(LSource);
+    Assert.IsTrue(LService.RefreshProject.Success);
+    LHits := LService.Search(LProjectPath, 'CustomerPanel', 5);
+    Assert.IsTrue(Length(LHits) > 0);
+    Assert.AreEqual(LFormPath, LHits[0].Chunk.FileName);
+    LHits := LService.Search(LProjectPath, 'semantic context', 5);
+    Assert.IsTrue(Length(LHits) > 0);
+    Assert.Contains(LHits[0].Chunk.FileName, 'architecture.adoc');
+  finally
+    LService := nil;
+    LSource := nil;
+    LWorkspace := nil;
     if TDirectory.Exists(LRootPath) then
       TDirectory.Delete(LRootPath, True);
   end;

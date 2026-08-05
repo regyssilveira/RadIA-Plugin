@@ -6,6 +6,12 @@ Local knowledge lets RadIA search project symbols and excerpts without depending
 service. The index is derived from the workspace, can be rebuilt, and combines lexical retrieval
 with local vector similarity.
 
+Indexed formats include Pascal (`.pas`, `.dpr`, `.dpk`, `.inc`), text forms (`.dfm`, `.fmx`),
+projects (`.dproj`, `.groupproj`), and documentation (`.md`, `.txt`, `.adoc`, `.rst`). Form
+companions are discovered with their units. Documentation is discovered at the root and under
+`docs` and `doc`, including nested folders. Binary DFM data is never interpreted as text and is
+safely skipped.
+
 ## Index lifecycle
 
 RadIA maintains an independent index for each project. OTA notifications update a document when it
@@ -67,5 +73,6 @@ implicitly. Content is sent to an AI provider only when an authorized request in
 - Files outside the authorized workspace are not indexed.
 - Use exclusions for generated folders, third-party code, or projects that must not enter the index.
 - Generated files, binaries, and unsupported formats may be ignored.
+- Discovery is limited to 5,000 files and every file is limited to 2 MiB.
 
 See also the [agentic tools guide](user_guide_agentic_tools.en.md).

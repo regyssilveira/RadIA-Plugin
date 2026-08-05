@@ -6,6 +6,12 @@ O conhecimento local permite pesquisar símbolos e trechos do projeto sem depend
 externo. O índice é derivado do workspace, pode ser reconstruído e combina busca lexical com
 similaridade vetorial local.
 
+São indexados arquivos Pascal (`.pas`, `.dpr`, `.dpk`, `.inc`), formulários textuais (`.dfm`,
+`.fmx`), projetos (`.dproj`, `.groupproj`) e documentação (`.md`, `.txt`, `.adoc`, `.rst`).
+Companions de formulário são descobertos junto às units. A documentação é descoberta na raiz e
+nas pastas `docs` e `doc`, inclusive em subpastas. DFM binário não é interpretado como texto e é
+ignorado com segurança.
+
 ## Ciclo do índice
 
 Ao abrir ou trocar de projeto, o RadIA mantém um índice independente por projeto. Notificações da
@@ -71,5 +77,6 @@ inclui no contexto de uma solicitação.
 - Arquivos fora do workspace autorizado não são indexados.
 - Use exclusões para pastas geradas, código de terceiros ou projetos que não devem entrar no índice.
 - Arquivos gerados, binários e formatos não suportados podem ser ignorados.
+- A descoberta é limitada a 5.000 arquivos e cada arquivo é limitado a 2 MiB.
 
 Consulte também o [guia de ferramentas agentivas](user_guide_agentic_tools.md).
