@@ -276,7 +276,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 
 - [x] Executar a matriz completa de build e 100% dos testes.
 - Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
-- [x] Executar dez ciclos de instalação, uso, atualização e shutdown por combinação suportada.
+- Executar dez ciclos de instalação, uso, atualização e shutdown por combinação suportada.
 - Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
 - [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
 - [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
@@ -292,7 +292,9 @@ A matriz real consolidada está em `ide_smoke_evidence_2.0.0.json`. Delphi 11 Wi
 Win32, Delphi 13 Win32 e Delphi 13 IDE64 completaram 10/10 ciclos cada, totalizando 40 ciclos
 ligados ao ZIP publicado, ao commit de origem e à BPL instalada. Todos expuseram 90 tools,
 exercitaram o docking nativo `TOTADockForm`, restauraram o estado do desktop e terminaram sem
-processos órfãos. A jornada visual contínua completa permanece aberta e não é inferida do smoke.
+processos órfãos. Esses ciclos comprovam inicialização, uso e shutdown, mas não repetem instalação
+e atualização em cada ciclo. Essa parte do gate e a jornada visual contínua completa permanecem
+abertas e não são inferidas do smoke.
 
 A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
 silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e
