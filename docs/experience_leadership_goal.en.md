@@ -196,6 +196,11 @@ and applied immediately without restarting the IDE. Configurable file and projec
 queries immediately and remove persisted content on the next refresh. Remote providers remain
 pending.
 
+Search and rebuild operations now publish local latency in milliseconds, status reports the
+estimated index size, and every response preserves the project identity. With explained scores,
+direct navigation, and independent workspace tests, relevance, latency, size, rebuild, and
+isolation now have observable evidence without telemetry.
+
 ### M6 — Installation and first value
 
 - Create a signed visual installer and prepare an IDE package-manager channel.

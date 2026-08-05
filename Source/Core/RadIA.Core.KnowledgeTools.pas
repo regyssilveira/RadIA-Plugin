@@ -14,6 +14,7 @@ procedure RegisterRadIAKnowledgeTools(
 implementation
 
 uses
+  System.Diagnostics,
   System.JSON,
   System.SysUtils;
 
@@ -285,10 +286,13 @@ end;
 
 function TRadIAKnowledgeTool.ExecuteIndex: TRadIAToolResult;
 var
+  LDuration: TStopwatch;
   LJson: TJSONObject;
   LRefresh: TRadIAKnowledgeRefreshResult;
 begin
+  LDuration := TStopwatch.StartNew;
   LRefresh := FKnowledge.RefreshProject;
+  LDuration.Stop;
   if not LRefresh.Success then
     Exit(TRadIAToolResult.Failed(
       LRefresh.ErrorCode,
@@ -314,6 +318,10 @@ begin
       'removedFiles',
       TJSONNumber.Create(LRefresh.RemovedFiles)
     );
+    LJson.AddPair(
+      'durationMs',
+      TJSONNumber.Create(LDuration.ElapsedMilliseconds)
+    );
     Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
   finally
     LJson.Free;
@@ -334,6 +342,7 @@ var
   LProjectId: string;
   LQuery: string;
   LRoot: TJSONObject;
+  LDuration: TStopwatch;
 begin
   LJson := TJSONObject.ParseJSONValue(
     ARequest.ArgumentsJson
@@ -362,11 +371,13 @@ begin
   end;
 
   LProjectId := FKnowledge.GetCurrentProjectId;
+  LDuration := TStopwatch.StartNew;
   LHits := FKnowledge.Search(
     LProjectId,
     LQuery,
     LMaxResults
   );
+  LDuration.Stop;
   LRoot := TJSONObject.Create;
   try
     LRoot.AddPair('projectId', LProjectId);
@@ -417,6 +428,10 @@ begin
       LArray.AddElement(LItem);
     end;
     LRoot.AddPair('count', TJSONNumber.Create(Length(LHits)));
+    LRoot.AddPair(
+      'durationMs',
+      TJSONNumber.Create(LDuration.ElapsedMilliseconds)
+    );
     Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
   finally
     LRoot.Free;
@@ -447,6 +462,10 @@ begin
     LJson.AddPair(
       'chunkCount',
       TJSONNumber.Create(LStatus.ChunkCount)
+    );
+    LJson.AddPair(
+      'estimatedIndexBytes',
+      TJSONNumber.Create(LStatus.EstimatedIndexBytes)
     );
     Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
   finally

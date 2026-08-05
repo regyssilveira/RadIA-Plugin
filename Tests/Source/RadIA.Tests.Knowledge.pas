@@ -411,6 +411,8 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, '"fileCount":2');
   Assert.Contains(LResult.ContentJson, '"chunkCount":');
+  Assert.Contains(LResult.ContentJson, '"estimatedIndexBytes":');
+  Assert.IsTrue(FService.GetStatus(FSource.ProjectId).EstimatedIndexBytes > 0);
 
   LResult := ExecuteTool(
     'GetKnowledgeDocument',
@@ -431,6 +433,7 @@ begin
   LResult := ExecuteTool('IndexProjectKnowledge', '{}');
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, '"indexedFiles":2');
+  Assert.Contains(LResult.ContentJson, '"durationMs":');
 
   LResult := ExecuteTool(
     'SearchProjectKnowledge',
@@ -444,6 +447,7 @@ begin
   Assert.Contains(LResult.ContentJson, '"explanation":');
   Assert.Contains(LResult.ContentJson, '"navigation":');
   Assert.Contains(LResult.ContentJson, '"tool":"NavigateToFile"');
+  Assert.Contains(LResult.ContentJson, '"durationMs":');
 
   LResult := ExecuteTool('ClearProjectKnowledge', '{}');
   Assert.IsTrue(LResult.Success);

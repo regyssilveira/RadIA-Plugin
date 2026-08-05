@@ -983,7 +983,10 @@ function renderKnowledgeSearchResult(card, result) {
 
   const summary = document.createElement('div');
   summary.className = 'knowledge-result-summary';
-  summary.textContent = `${results.length} result(s) for “${result.query || ''}”`;
+  summary.textContent = [
+    `${results.length} result(s) for “${result.query || ''}”`,
+    `${Math.max(0, result.durationMs || 0)} ms`
+  ].join(' · ');
   content.appendChild(summary);
 
   results.forEach(item => {

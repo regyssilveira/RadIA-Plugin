@@ -32,6 +32,12 @@ Search results and document chunks show an **Open source** action in chat. It us
 to open the file at the first line of the excerpt. Navigation is read-only and remains subject to
 the active workspace boundary and the normal tool policy.
 
+The tools also expose local metrics without telemetry: indexing and search report `durationMs`,
+each result retains its relevance scores, and `GetKnowledgeStatus` reports
+`estimatedIndexBytes`. Every response includes the project identifier so workspace isolation can
+be verified. The size is an estimate of indexed content, metadata, and vectors in memory, not the
+exact persisted JSON file size.
+
 ## Storage and privacy
 
 Snapshots are stored under `%APPDATA%\RadIA\Knowledge`, separated by a derived project identity.

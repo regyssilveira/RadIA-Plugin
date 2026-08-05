@@ -128,6 +128,7 @@ type
   TRadIAKnowledgeStatus = record
   private
     FChunkCount: Integer;
+    FEstimatedIndexBytes: Int64;
     FFileCount: Integer;
     FLoaded: Boolean;
     FProjectId: string;
@@ -138,10 +139,14 @@ type
       const AFileCount: Integer;
       const AChunkCount: Integer
     );
+    function WithEstimatedIndexBytes(
+      const AEstimatedIndexBytes: Int64
+    ): TRadIAKnowledgeStatus;
     property ProjectId: string read FProjectId;
     property Loaded: Boolean read FLoaded;
     property FileCount: Integer read FFileCount;
     property ChunkCount: Integer read FChunkCount;
+    property EstimatedIndexBytes: Int64 read FEstimatedIndexBytes;
   end;
 
   TRadIAIndexedKnowledgeDocument = record
@@ -515,6 +520,17 @@ begin
   FLoaded := ALoaded;
   FFileCount := AFileCount;
   FChunkCount := AChunkCount;
+end;
+
+function TRadIAKnowledgeStatus.WithEstimatedIndexBytes(
+  const AEstimatedIndexBytes: Int64
+): TRadIAKnowledgeStatus;
+begin
+  Result := Self;
+  if AEstimatedIndexBytes < 0 then
+    Result.FEstimatedIndexBytes := 0
+  else
+    Result.FEstimatedIndexBytes := AEstimatedIndexBytes;
 end;
 
 { TRadIAIndexedKnowledgeDocument }
@@ -955,7 +971,9 @@ function TRadIALocalKnowledgeService.GetStatus(
   const AProjectId: string
 ): TRadIAKnowledgeStatus;
 var
+  LChunk: TRadIAKnowledgeChunkEntry;
   LChunkCount: Integer;
+  LEstimatedIndexBytes: Int64;
   LFile: TRadIAKnowledgeFileEntry;
   LFileCount: Integer;
   LIndex: TRadIAKnowledgeProjectIndex;
@@ -965,6 +983,7 @@ begin
     Exit(TRadIAKnowledgeStatus.Create('', False, 0, 0));
   EnsureProjectLoaded(AProjectId);
   LChunkCount := 0;
+  LEstimatedIndexBytes := 0;
   LFileCount := 0;
   TMonitor.Enter(FProjects);
   try
@@ -973,7 +992,32 @@ begin
     begin
       LFileCount := LIndex.Files.Count;
       for LFile in LIndex.Files.Values do
+      begin
         Inc(LChunkCount, LFile.Chunks.Count);
+        Inc(
+          LEstimatedIndexBytes,
+          Length(LFile.Revision) * SizeOf(Char)
+        );
+        for LChunk in LFile.Chunks do
+        begin
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.Content) * SizeOf(Char)
+          );
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.Symbol) * SizeOf(Char)
+          );
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.FileName) * SizeOf(Char)
+          );
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.Embedding) * SizeOf(Single)
+          );
+        end;
+      end;
     end;
   finally
     TMonitor.Exit(FProjects);
@@ -983,7 +1027,7 @@ begin
     LLoaded,
     LFileCount,
     LChunkCount
-  );
+  ).WithEstimatedIndexBytes(LEstimatedIndexBytes);
 end;
 
 function TRadIALocalKnowledgeService.IsValidEmbedding(

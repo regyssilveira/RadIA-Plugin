@@ -106,6 +106,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         tamanho, hash, identidade e publicador ao pacote assinado.
     *   M4 entregue nesta etapa: manifesto schema 2 adiciona templates e skills declarativas,
         preserva commands schema 1 e mantém todas as capacidades restritas a `chat.prompt`.
+    *   M5 entregue nesta etapa: busca e reconstrução expõem latência local, o status informa
+        tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

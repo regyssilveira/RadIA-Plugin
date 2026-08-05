@@ -35,6 +35,12 @@ Os resultados de busca e os chunks de um documento exibem a ação **Open source
 `NavigateToFile` para abrir o arquivo diretamente na linha inicial do trecho. A navegação é somente
 leitura e continua sujeita ao limite do workspace ativo e à política normal de ferramentas.
 
+As ferramentas também expõem métricas locais, sem telemetria: a indexação e a busca informam
+`durationMs`, cada resultado mantém seus scores de relevância e `GetKnowledgeStatus` informa
+`estimatedIndexBytes`. O identificador do projeto acompanha todas as respostas para tornar o
+isolamento entre workspaces verificável. O tamanho é uma estimativa da memória ocupada pelo
+conteúdo, metadados e vetores indexados, não o tamanho exato do JSON persistido.
+
 ## Armazenamento e privacidade
 
 Snapshots ficam em `%APPDATA%\RadIA\Knowledge`, separados por identidade derivada do projeto. O

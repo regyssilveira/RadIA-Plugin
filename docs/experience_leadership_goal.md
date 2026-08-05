@@ -203,6 +203,11 @@ por padrão e aplicado imediatamente sem reiniciar a IDE. Exclusões configuráv
 projeto bloqueiam consultas imediatamente e removem o conteúdo persistido na atualização seguinte.
 Providers remotos continuam pendentes.
 
+Busca e reconstrução agora publicam latência local em milissegundos, o status informa o tamanho
+estimado do índice e todas as respostas preservam a identidade do projeto. Com scores explicados,
+navegação direta e testes independentes por workspace, relevância, latência, tamanho, reconstrução
+e isolamento passaram a possuir evidência observável sem telemetria.
+
 ### M6 — Instalação e primeiro valor
 
 - Criar instalador visual assinado e preparar um canal compatível com o gerenciador da IDE.
