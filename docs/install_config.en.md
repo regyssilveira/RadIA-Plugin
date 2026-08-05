@@ -14,7 +14,10 @@ The plugin can be installed in two ways:
 
 This option compiles the plugin, copies the binaries to the official public Delphi directories, and registers the plugin in the Windows Registry. If you need to compile and run the unit test suite (**DUnitX**), simply add the `-Test` switch to the command.
 
-During installation, the script also updates the HTML/CSS/JS assets used by WebView2 under `%APPDATA%\RadIA\Web` and clears the local `%APPDATA%\RadIA\WebView2` cache while the IDE is closed. This prevents different Delphi versions from loading stale JavaScript files after an update.
+During installation, the script also updates the HTML/CSS/JS assets used by WebView2 under
+`%APPDATA%\RadIA\Web`. It clears the local `%APPDATA%\RadIA\WebView2` cache when no Delphi IDE is
+open. If another Delphi version is in use, cache cleanup is deferred and installation continues
+without interrupting that work; the refreshed assets take full effect after that IDE restarts.
 
 After opening the IDE, use **Tools > Rad IA Getting Started > Run installation doctor** or type
 `/doctor` in chat. The diagnostic verifies the provider, executor, MCP when required, terminal,

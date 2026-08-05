@@ -210,8 +210,9 @@ if ($PlanOnly) {
 }
 
 $targetBds = Join-Path $ideBin "bds.exe"
+$runningIDEs = @(Get-Process bds -ErrorAction SilentlyContinue)
 $runningTargetIDEs = @(
-    Get-Process bds -ErrorAction SilentlyContinue |
+    $runningIDEs |
         Where-Object {
             try {
                 [IO.Path]::GetFullPath($_.Path).Equals(
@@ -354,7 +355,14 @@ if (-not $webViewCache.StartsWith(
     throw "Unexpected WebView2 cache target."
 }
 if (Test-Path -LiteralPath $webViewCache) {
-    Remove-Item -LiteralPath $webViewCache -Recurse -Force
+    if ($runningIDEs.Count -eq 0) {
+        Remove-Item -LiteralPath $webViewCache -Recurse -Force
+    } else {
+        Write-Warning (
+            "WebView2 cache cleanup was skipped because another Delphi " +
+            "IDE is running. Refreshed assets will load after its restart."
+        )
+    }
 }
 
 if (-not (Test-Path -LiteralPath $loaderTarget)) {

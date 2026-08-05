@@ -14,7 +14,10 @@ O plugin pode ser instalado de duas formas:
 
 Esta opção compila o plugin, copia os binários para os diretórios públicos oficiais do Delphi e registra o plugin no Registro do Windows automaticamente. Se for necessário rodar a suíte de testes unitários (**DUnitX**), basta adicionar o parâmetro `-Test` ao comando.
 
-Durante a instalação, o script também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em `%APPDATA%\RadIA\Web` e limpa o cache local `%APPDATA%\RadIA\WebView2` quando a IDE está fechada. Isso evita que versões diferentes do Delphi carreguem arquivos JavaScript antigos após uma atualização.
+Durante a instalação, o script também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em
+`%APPDATA%\RadIA\Web`. O cache local `%APPDATA%\RadIA\WebView2` é limpo quando nenhuma IDE Delphi
+está aberta. Se outra versão do Delphi estiver em uso, a limpeza é adiada e o instalador continua sem
+interromper o trabalho; os recursos atualizados passam a valer integralmente após reiniciar essa IDE.
 
 Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation doctor** ou digite
 `/doctor` no chat. O diagnóstico verifica provider, executor, MCP quando necessário, terminal,
