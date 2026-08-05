@@ -2,36 +2,36 @@
     "schemaVersion":  1,
     "product":  "RadIA",
     "productVersion":  "2.0.0",
-    "sourceCommit":  "d50ad9f7ddd4f00fb9536b3b373d912d00b34558",
-    "generatedAtUtc":  "2026-08-05T19:49:57.4572845Z",
+    "sourceCommit":  "4693d9757e99fd9ca3f0c4b6b3abede404bf23c3",
+    "generatedAtUtc":  "2026-08-05T22:32:32.2273733Z",
     "artifacts":  [
                       {
                           "fileName":  "RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip",
                           "delphiVersion":  "22.0",
                           "platform":  "Win32",
-                          "size":  3929859,
-                          "sha256":  "3C0ABEBEC83508269FC2E8A376F5AB54FCF18055BE43F70B278BD0596D5FA194"
+                          "size":  3930891,
+                          "sha256":  "FCD055BE2D5AE8BAE22E56190CDC6AE1CC29B7CC729AA43F8525C4015E1FA1C1"
                       },
                       {
                           "fileName":  "RadIA-v2.0.0-Delphi-23.0-Win32-Release.zip",
                           "delphiVersion":  "23.0",
                           "platform":  "Win32",
-                          "size":  4011653,
-                          "sha256":  "E2DB4EBF2BE8D66BC7589731180D44B395BF3376BB830A1F38F33B03B3C89805"
+                          "size":  4012709,
+                          "sha256":  "A0632C14820F18C831B470843828A65EE48417ACA137656E0B401E95FB1D9310"
                       },
                       {
                           "fileName":  "RadIA-v2.0.0-Delphi-37.0-Win32-Release.zip",
                           "delphiVersion":  "37.0",
                           "platform":  "Win32",
-                          "size":  4002842,
-                          "sha256":  "73170D6A1A3F7BD7F8294AEDFCC9A1E240E76DB7C8A6911416F095F3C03740C6"
+                          "size":  4003848,
+                          "sha256":  "DB164BF1C8C571B1B519491EA2F5402DA261C8AAE1A5BD491BE1E3D178BFFA66"
                       },
                       {
                           "fileName":  "RadIA-v2.0.0-Delphi-37.0-Win64-Release.zip",
                           "delphiVersion":  "37.0",
                           "platform":  "Win64",
-                          "size":  4852471,
-                          "sha256":  "21F1DE2E6E38242C96FA15A2752138F9ADE417C4572CD75AD2C5DE9F6E43F868"
+                          "size":  4853541,
+                          "sha256":  "1FD8ED25D3F1047F414B220E5A566069BB9629ACC98257E2318516D6B7DBB403"
                       }
                   ]
 }
