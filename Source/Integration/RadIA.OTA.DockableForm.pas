@@ -14,6 +14,7 @@ uses
   System.Classes,
   System.IniFiles,
   System.SysUtils,
+  Winapi.Windows,
   DesignIntf,
   Vcl.ActnList,
   Vcl.ComCtrls,
@@ -48,6 +49,7 @@ type
     FDefaultWidth: Integer;
     FDefaultHeight: Integer;
     procedure ApplyIDETheme;
+    procedure ApplyWindowIdentity;
     procedure EnsureFrameContent;
     procedure FormRemoved;
   public
@@ -252,6 +254,17 @@ begin
   end;
 end;
 
+procedure TRadIACustomDockableForm.ApplyWindowIdentity;
+begin
+  if not Assigned(FForm) or not FForm.HandleAllocated then
+    Exit;
+  SetProp(
+    FForm.Handle,
+    PChar(FIdentifier),
+    THandle(1)
+  );
+end;
+
 procedure TRadIACustomDockableForm.EnsureFrameContent;
 begin
   if FFrame is TRadIAFrameAIChat then
@@ -368,6 +381,7 @@ begin
 
   ApplyIDETheme;
   FForm.Show;
+  ApplyWindowIdentity;
   FForm.BringToFront;
   EnsureFrameContent;
 end;

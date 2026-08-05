@@ -78,7 +78,6 @@ if ($ExerciseDocking) {
     Add-Type @"
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 public static class RadIADockingSmokeNative
 {
@@ -112,24 +111,16 @@ public static class RadIADockingSmokeNative
         out uint processId
     );
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int GetClassName(
-        IntPtr handle,
-        StringBuilder value,
-        int maximumCount
-    );
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int GetWindowText(
-        IntPtr handle,
-        StringBuilder value,
-        int maximumCount
-    );
-
     [DllImport("user32.dll")]
     public static extern bool GetWindowRect(
         IntPtr handle,
         out Rect rectangle
+    );
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern IntPtr GetProp(
+        IntPtr handle,
+        string propertyName
     );
 
     public static IntPtr FindDockWindow(
@@ -142,11 +133,8 @@ public static class RadIADockingSmokeNative
         {
             uint ownerProcessId;
             GetWindowThreadProcessId(handle, out ownerProcessId);
-            string className = ReadClassName(handle);
-            string caption = ReadCaption(handle);
             if (ownerProcessId == processId &&
-                (className == "TOTADockForm" ||
-                 caption.StartsWith("Rad IA Chat")))
+                GetProp(handle, "RadIADockableForm") != IntPtr.Zero)
             {
                 result = handle;
                 return false;
@@ -159,20 +147,6 @@ public static class RadIADockingSmokeNative
             EnumChildWindows(mainWindow, callback, IntPtr.Zero);
         }
         return result;
-    }
-
-    private static string ReadClassName(IntPtr handle)
-    {
-        StringBuilder value = new StringBuilder(256);
-        GetClassName(handle, value, value.Capacity);
-        return value.ToString();
-    }
-
-    private static string ReadCaption(IntPtr handle)
-    {
-        StringBuilder value = new StringBuilder(512);
-        GetWindowText(handle, value, value.Capacity);
-        return value.ToString();
     }
 
 }
