@@ -131,6 +131,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M6 entregue nesta etapa: onboarding v2 executa `/doctor` diretamente; o diagnóstico de
         primeiro valor retorna score, checks e próxima ação, valida `GetIDEState` e torna MCP
         obrigatório somente para executor CLI.
+    *   M6 entregue nesta etapa: o instalador manifestado do release instala, repara e desinstala
+        com `-PlanOnly`, preserva loader e dados por padrão e só remove `%APPDATA%\RadIA` mediante
+        `-RemoveUserData` explícito.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

@@ -3,7 +3,11 @@ param(
     [ValidateSet("22.0", "23.0", "37.0")]
     [string]$DelphiVersion,
     [switch]$IDE64,
-    [switch]$ValidateOnly
+    [switch]$ValidateOnly,
+    [ValidateSet("Install", "Repair", "Uninstall")]
+    [string]$Mode = "Install",
+    [switch]$RemoveUserData,
+    [switch]$PlanOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -110,6 +114,27 @@ if ($ValidateOnly) {
     exit 0
 }
 
+function Assert-InstalledFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [Parameter(Mandatory = $true)]
+        [string]$Target
+    )
+
+    if (-not (Test-Path -LiteralPath $Target -PathType Leaf)) {
+        throw "Installed file is missing: $Target"
+    }
+    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash
+    $targetHash = (Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash
+    if ($sourceHash -ne $targetHash) {
+        throw "Installed file verification failed: $Target"
+    }
+}
+if ($RemoveUserData -and $Mode -ne "Uninstall") {
+    throw "RemoveUserData is available only in Uninstall mode."
+}
+
 $rootDirectory = "C:\Program Files (x86)\Embarcadero\Studio\$DelphiVersion"
 $bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
 if (Test-Path $bdsRegistry) {
@@ -130,11 +155,101 @@ if ($IDE64) {
 if (-not (Test-Path -LiteralPath $ideBin)) {
     throw "Delphi IDE binary directory was not found: $ideBin"
 }
-if (Get-Process bds -ErrorAction SilentlyContinue) {
-    throw "Close all Delphi IDE instances before installing RadIA."
-}
 $loaderTarget = Join-Path $ideBin "WebView2Loader.dll"
 $loaderSource = Resolve-PackageFile "Redist\WebView2Loader.dll"
+
+$publicStudio = "C:\Users\Public\Documents\Embarcadero\Studio\$DelphiVersion"
+$publicBpl = Join-Path $publicStudio "Bpl"
+$publicDcp = Join-Path $publicStudio "Dcp"
+$targetBplDirectory = $publicBpl
+$targetDcpDirectory = $publicDcp
+if ($IDE64) {
+    $targetBplDirectory = Join-Path $publicBpl "Win64"
+    $targetDcpDirectory = Join-Path $publicDcp "Win64"
+}
+
+$targetBpl = Join-Path $targetBplDirectory "RadIA.bpl"
+$targetBridge = Join-Path $targetBplDirectory "RadIA.MCP.Bridge.exe"
+$targetDcp = Join-Path $targetDcpDirectory "RadIA.dcp"
+$targetWeb = Join-Path $publicBpl "Web"
+$userRadIA = Join-Path (
+    [Environment]::GetFolderPath("ApplicationData")
+) "RadIA"
+$userWeb = Join-Path $userRadIA "Web"
+$webViewCache = Join-Path $userRadIA "WebView2"
+$registryPath =
+    "HKCU:\Software\Embarcadero\BDS\$DelphiVersion\Known Packages"
+if ($IDE64) {
+    $registryPath = (
+        "HKCU:\Software\Embarcadero\BDS\$DelphiVersion\" +
+        "Known Packages x64"
+    )
+}
+$plan = [PSCustomObject]@{
+    mode = $Mode
+    delphiVersion = $DelphiVersion
+    platform = $platform
+    package = $targetBpl
+    bridge = $targetBridge
+    dcp = $targetDcp
+    publicWeb = $targetWeb
+    registryPath = $registryPath
+    userData = $userRadIA
+    removeUserData = $RemoveUserData.IsPresent
+    sharedLoaderPreserved = $loaderTarget
+}
+if ($PlanOnly) {
+    $plan | ConvertTo-Json -Depth 3
+    exit 0
+}
+
+if (Get-Process bds -ErrorAction SilentlyContinue) {
+    throw "Close all Delphi IDE instances before changing RadIA."
+}
+
+if ($Mode -eq "Uninstall") {
+    if (Test-Path -LiteralPath $registryPath) {
+        Remove-ItemProperty `
+            -LiteralPath $registryPath `
+            -Name $targetBpl `
+            -ErrorAction SilentlyContinue
+    }
+    foreach ($targetFile in @($targetBpl, $targetBridge, $targetDcp)) {
+        if (Test-Path -LiteralPath $targetFile -PathType Leaf) {
+            Remove-Item -LiteralPath $targetFile -Force
+        }
+    }
+    $win32Package = Join-Path $publicBpl "RadIA.bpl"
+    $win64Package = Join-Path (Join-Path $publicBpl "Win64") "RadIA.bpl"
+    if (
+        -not (Test-Path -LiteralPath $win32Package) -and
+        -not (Test-Path -LiteralPath $win64Package) -and
+        (Test-Path -LiteralPath $targetWeb)
+    ) {
+        Remove-Item -LiteralPath $targetWeb -Recurse -Force
+    }
+    if ($RemoveUserData -and (Test-Path -LiteralPath $userRadIA)) {
+        $resolvedUserData = [IO.Path]::GetFullPath($userRadIA)
+        $expectedUserData = [IO.Path]::GetFullPath(
+            (Join-Path (
+                [Environment]::GetFolderPath("ApplicationData")
+            ) "RadIA")
+        )
+        if (-not $resolvedUserData.Equals(
+            $expectedUserData,
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "Unexpected RadIA user data target."
+        }
+        Remove-Item -LiteralPath $resolvedUserData -Recurse -Force
+    }
+    Write-Host (
+        "RadIA was uninstalled from Delphi $DelphiVersion $platform. " +
+        "User data removed: $($RemoveUserData.IsPresent)."
+    )
+    exit 0
+}
+
 if (-not (Test-Path -LiteralPath $loaderTarget)) {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
@@ -146,16 +261,6 @@ if (-not (Test-Path -LiteralPath $loaderTarget)) {
             "from an elevated PowerShell session."
         )
     }
-}
-
-$publicStudio = "C:\Users\Public\Documents\Embarcadero\Studio\$DelphiVersion"
-$publicBpl = Join-Path $publicStudio "Bpl"
-$publicDcp = Join-Path $publicStudio "Dcp"
-$targetBplDirectory = $publicBpl
-$targetDcpDirectory = $publicDcp
-if ($IDE64) {
-    $targetBplDirectory = Join-Path $publicBpl "Win64"
-    $targetDcpDirectory = Join-Path $publicDcp "Win64"
 }
 
 New-Item `
@@ -178,7 +283,6 @@ Copy-Item `
     -Force
 
 $sourceWeb = Resolve-PackageFile "Web"
-$targetWeb = Join-Path $publicBpl "Web"
 $resolvedWeb = [IO.Path]::GetFullPath($targetWeb)
 $resolvedBpl = [IO.Path]::GetFullPath($publicBpl)
 if (-not $resolvedWeb.StartsWith(
@@ -197,9 +301,6 @@ Copy-Item `
     -Recurse `
     -Force
 
-$userRadIA = Join-Path (
-    [Environment]::GetFolderPath("ApplicationData")
-) "RadIA"
 $userWeb = [IO.Path]::GetFullPath(
     (Join-Path $userRadIA "Web")
 )
@@ -247,18 +348,9 @@ if (-not (Test-Path -LiteralPath $loaderTarget)) {
     }
 }
 
-$registryPath =
-    "HKCU:\Software\Embarcadero\BDS\$DelphiVersion\Known Packages"
-if ($IDE64) {
-    $registryPath = (
-        "HKCU:\Software\Embarcadero\BDS\$DelphiVersion\" +
-        "Known Packages x64"
-    )
-}
 if (-not (Test-Path $registryPath)) {
     New-Item -Path $registryPath -Force | Out-Null
 }
-$targetBpl = Join-Path $targetBplDirectory "RadIA.bpl"
 New-ItemProperty `
     -Path $registryPath `
     -Name $targetBpl `
@@ -267,4 +359,26 @@ New-ItemProperty `
     -Force |
     Out-Null
 
-Write-Host "RadIA was installed successfully for Delphi $DelphiVersion $platform."
+Assert-InstalledFile `
+    -Source (Resolve-PackageFile "Bpl\RadIA.bpl") `
+    -Target $targetBpl
+Assert-InstalledFile `
+    -Source (Resolve-PackageFile "Bin\RadIA.MCP.Bridge.exe") `
+    -Target $targetBridge
+Assert-InstalledFile `
+    -Source (Resolve-PackageFile "Dcp\RadIA.dcp") `
+    -Target $targetDcp
+foreach ($webFile in @("chat.html", "chat.js", "chat.css")) {
+    Assert-InstalledFile `
+        -Source (Join-Path $sourceWeb $webFile) `
+        -Target (Join-Path $resolvedWeb $webFile)
+    Assert-InstalledFile `
+        -Source (Join-Path $sourceWeb $webFile) `
+        -Target (Join-Path $userWeb $webFile)
+}
+
+if ($Mode -eq "Repair") {
+    Write-Host "RadIA was repaired successfully for Delphi $DelphiVersion $platform."
+} else {
+    Write-Host "RadIA was installed successfully for Delphi $DelphiVersion $platform."
+}

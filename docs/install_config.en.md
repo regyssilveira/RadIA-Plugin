@@ -140,4 +140,31 @@ The `.\build.ps1` script supports the following switches:
 > [!NOTE]
 > **DUnitX Auto-Detection:** If the `-Test` parameter is provided, the installer automatically detects if the DUnitX framework is present in your selected Delphi installation. If DUnitX is missing, the script will display a warning, automatically disable tests execution, and proceed normally with compiling and installing the main plugin.
 
+### Package repair and removal
+
+The installer bundled in the release ZIP supports `Install`, `Repair`, and `Uninstall`. Use
+`-PlanOnly` to inspect every target without changing files or the Registry:
+
+```powershell
+# Repair binaries, bridge, and assets while preserving settings and data
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Repair
+
+# Preview removal; user data is preserved
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall -PlanOnly
+
+# Remove this architecture while preserving user data
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall
+```
+
+Add `-RemoveUserData` only when settings, sessions, audit, knowledge, and caches under
+`%APPDATA%\RadIA` must also be removed. The shared IDE `WebView2Loader.dll` is always preserved.
+Public web assets are removed only when no RadIA architecture remains installed for that Delphi
+version. Every mutating operation requires the IDE to be closed.
+
 

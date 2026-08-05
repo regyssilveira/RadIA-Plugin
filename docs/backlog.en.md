@@ -129,6 +129,9 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M6 delivered in this stage: onboarding v2 runs `/doctor` directly; the first-value
         diagnostic returns a score, checks, and next action, verifies `GetIDEState`, and requires
         MCP only for a CLI executor.
+    *   M6 delivered in this stage: the manifested release installer installs, repairs, and
+        uninstalls with `-PlanOnly`, preserves the loader and user data by default, and removes
+        `%APPDATA%\RadIA` only after explicit `-RemoveUserData`.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 

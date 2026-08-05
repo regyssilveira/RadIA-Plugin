@@ -239,6 +239,10 @@ Onboarding version 2 runs `/doctor` from a dedicated button. The diagnostic retu
 checks, a score, and the next action, verifies `GetIDEState` as the first read-only tool, and does
 not require MCP when the native executor is selected.
 
+The release package now uses the same validated installer for `Install`, `Repair`, and `Uninstall`,
+provides a read-only plan, preserves data and shared components by default, and requires
+`-RemoveUserData` before deleting settings, audit, sessions, and knowledge.
+
 ### M7 — Specialized journeys
 
 - Deliver auditable recipes for application creation, build repair, testing, and debugging.

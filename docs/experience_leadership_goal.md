@@ -246,6 +246,10 @@ O onboarding versão 2 executa `/doctor` por um botão próprio. O diagnóstico 
 estruturados, score e próxima ação, confirma `GetIDEState` como primeira tool somente leitura e não
 exige MCP quando o executor nativo está selecionado.
 
+O pacote de release agora usa o mesmo instalador validado para `Install`, `Repair` e `Uninstall`,
+possui plano somente leitura, preserva dados e componentes compartilhados por padrão e exige
+`-RemoveUserData` para apagar configurações, auditoria, sessões e conhecimento.
+
 ### M7 — Jornadas especializadas
 
 - Entregar receitas auditáveis para criar aplicação, corrigir build, ampliar testes e depurar.

@@ -185,6 +185,34 @@ Para o pacote IDE64 do Delphi 13, acrescente `-IDE64`. A suíte confirma a valid
 também exige rejeição de arquivos extras, conteúdo corrompido, versão ou plataforma incompatível,
 path traversal e caminhos duplicados no manifesto.
 
+### Reparação e desinstalação do pacote
+
+O instalador incluído no ZIP também executa manutenção reproduzível. Use `-PlanOnly` para revisar
+todos os alvos sem alterar arquivos ou Registro:
+
+```powershell
+# Reparar binários, bridge e recursos mantendo configurações e dados
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Repair
+
+# Ver o plano de desinstalação; dados do usuário ficam preservados
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall -PlanOnly
+
+# Desinstalar esta arquitetura, preservando dados
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall
+```
+
+Somente acrescente `-RemoveUserData` ao modo `Uninstall` quando também quiser remover
+configurações, sessões, auditoria, conhecimento e caches em `%APPDATA%\RadIA`. O loader
+`WebView2Loader.dll` da IDE é sempre preservado. Recursos web públicos só são removidos quando
+nenhuma arquitetura do RadIA permanece instalada naquela versão do Delphi. Toda operação que
+altera o sistema exige a IDE fechada.
+
 A bridge MCP é instalada ao lado da BPL como `RadIA.MCP.Bridge.exe`. Clientes externos podem usar
 esse executável sem depender da árvore de fontes ou do diretório `Output`.
 

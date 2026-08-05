@@ -85,6 +85,42 @@ function Invoke-PackageValidation {
     }
 }
 
+function Read-PackagePlan {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackageRoot,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet("Install", "Repair", "Uninstall")]
+        [string]$Mode,
+        [switch]$RemoveUserData
+    )
+
+    $installer = Join-Path $PackageRoot "Scripts\Install-RadIA.Package.ps1"
+    $arguments = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        $installer,
+        "-DelphiVersion",
+        $DelphiVersion,
+        "-Mode",
+        $Mode,
+        "-PlanOnly"
+    )
+    if ($IDE64) {
+        $arguments += "-IDE64"
+    }
+    if ($RemoveUserData) {
+        $arguments += "-RemoveUserData"
+    }
+    $output = & powershell.exe @arguments | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        throw "Package plan failed: $output"
+    }
+    return $output | ConvertFrom-Json
+}
+
 function Read-Manifest {
     param(
         [Parameter(Mandatory = $true)]
@@ -119,6 +155,35 @@ try {
             "Package validation succeeded for Delphi " +
             "$DelphiVersion $expectedPlatform."
         )
+
+    $repairPlan = Read-PackagePlan `
+        -PackageRoot $positiveRoot `
+        -Mode "Repair"
+    if (
+        $repairPlan.mode -ne "Repair" -or
+        $repairPlan.removeUserData -or
+        -not $repairPlan.sharedLoaderPreserved
+    ) {
+        throw "Repair plan does not preserve shared components and user data."
+    }
+
+    $uninstallPlan = Read-PackagePlan `
+        -PackageRoot $positiveRoot `
+        -Mode "Uninstall"
+    if (
+        $uninstallPlan.mode -ne "Uninstall" -or
+        $uninstallPlan.removeUserData
+    ) {
+        throw "Default uninstall plan must preserve user data."
+    }
+
+    $purgePlan = Read-PackagePlan `
+        -PackageRoot $positiveRoot `
+        -Mode "Uninstall" `
+        -RemoveUserData
+    if (-not $purgePlan.removeUserData) {
+        throw "Explicit user-data removal is absent from the plan."
+    }
 
     $extraFileRoot = New-TestPackage -Name "extra-file"
     Set-Content `
