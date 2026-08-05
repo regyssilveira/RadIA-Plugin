@@ -199,6 +199,11 @@ and applied immediately without restarting the IDE. Configurable file and projec
 queries immediately and remove persisted content on the next refresh. Remote providers remain
 pending.
 
+The remote foundation now includes an injectable OpenAI-compatible transport, HTTPS or loopback
+endpoints, disabled redirects, timeouts, input and response limits, validated dimensions, and API
+keys kept outside JSON. Failures continue to fall back to lexical search. Activation remains
+pending until separate remote consent and explicit visual configuration are available.
+
 Search and rebuild operations now publish local latency in milliseconds, status reports the
 estimated index size, and every response preserves the project identity. With explained scores,
 direct navigation, and independent workspace tests, relevance, latency, size, rebuild, and

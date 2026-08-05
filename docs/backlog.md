@@ -115,6 +115,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
     *   M5 entregue nesta etapa: o índice incremental cobre Pascal, DFM/FMX textual, projetos e
         documentação, com descoberta confinada, limites e política única para a OTA.
+    *   M5 entregue nesta etapa: a fundação remota OpenAI-compatible valida HTTPS/loopback,
+        timeout, limites, dimensões e resposta sem incluir a API key no payload; ativação visual
+        permanece bloqueada até consentimento remoto separado.
     *   M5 entregue nesta etapa: históricos concluídos e aprovados podem alimentar o índice
         mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
     *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas

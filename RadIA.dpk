@@ -110,6 +110,7 @@ contains
   RadIA.Core.IDENavigationTools in 'Source\Core\RadIA.Core.IDENavigationTools.pas',
   RadIA.Core.Knowledge in 'Source\Core\RadIA.Core.Knowledge.pas',
   RadIA.Core.KnowledgeEmbeddings in 'Source\Core\RadIA.Core.KnowledgeEmbeddings.pas',
+  RadIA.Core.RemoteKnowledgeEmbeddings in 'Source\Core\RadIA.Core.RemoteKnowledgeEmbeddings.pas',
   RadIA.Core.KnowledgePrivacy in 'Source\Core\RadIA.Core.KnowledgePrivacy.pas',
   RadIA.Core.KnowledgeHistory in 'Source\Core\RadIA.Core.KnowledgeHistory.pas',
   RadIA.Core.ProjectHealthTools in 'Source\Core\RadIA.Core.ProjectHealthTools.pas',

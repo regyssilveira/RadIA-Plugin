@@ -206,6 +206,11 @@ por padrão e aplicado imediatamente sem reiniciar a IDE. Exclusões configuráv
 projeto bloqueiam consultas imediatamente e removem o conteúdo persistido na atualização seguinte.
 Providers remotos continuam pendentes.
 
+A fundação remota agora inclui transporte OpenAI-compatible injetável, endpoint HTTPS ou loopback,
+redirects desabilitados, timeout, limites de entrada e resposta, dimensões validadas e API key fora
+do JSON. Falhas continuam retornando à busca lexical. A ativação permanece pendente até existir
+consentimento remoto separado e configuração visual explícita.
+
 Busca e reconstrução agora publicam latência local em milissegundos, o status informa o tamanho
 estimado do índice e todas as respostas preservam a identidade do projeto. Com scores explicados,
 navegação direta e testes independentes por workspace, relevância, latência, tamanho, reconstrução
