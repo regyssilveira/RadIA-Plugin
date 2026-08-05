@@ -188,6 +188,8 @@ powershell.exe -ExecutionPolicy Bypass `
   -Cycles 10 `
   -ExerciseDocking `
   -ExercisePackageLifecycle `
+  -UpgradeFromPackagePath `
+    "Output\Packages\RadIA-v1.0.0-Delphi-37.0-Win32-Release.zip" `
   -EvidencePath "Output\Validation\Delphi13-Win32.json"
 ```
 
@@ -199,6 +201,10 @@ installation and smoke testing; the script also refuses to run when the target i
 `-ExercisePackageLifecycle` runs `Uninstall`, `Install`, and `Repair` from the proven ZIP before
 each IDE launch while preserving user data. A cycle proceeds only after the installer revalidates
 the manifest, hashes, registry, BPL, DCP, bridge, and Web assets.
+
+`-UpgradeFromPackagePath` adds a real cross-version migration. The smoke validates the source
+package, installs the previous version, applies the current ZIP, repairs it, and records the source
+version and SHA-256 in evidence. The parameter requires `-ExercisePackageLifecycle`.
 
 The versioned 2.0.0 matrix summary is stored in `ide_smoke_evidence_2.0.0.json`. It records ZIP and
 BPL hashes, 10 passing cycles per target, duration range, the 90-tool catalog, native docking,

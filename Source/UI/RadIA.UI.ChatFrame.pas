@@ -301,7 +301,11 @@ begin
   else
   begin
     if Assigned(FEdgeBrowser) then
-      FEdgeBrowser.Parent := nil;
+    begin
+      FEdgeBrowser.OnCreateWebViewCompleted := nil;
+      FEdgeBrowser.OnWebMessageReceived := nil;
+      FEdgeBrowser := nil;
+    end;
   end;
 end;
 
@@ -414,9 +418,14 @@ begin
   begin
     LEdgeToFree := FEdgeBrowser;
     FEdgeBrowser := nil;
-    LEdgeToFree.Parent := nil;
-    if not GIsShuttingDown then
+    if GIsShuttingDown then
     begin
+      LEdgeToFree.OnCreateWebViewCompleted := nil;
+      LEdgeToFree.OnWebMessageReceived := nil;
+    end
+    else
+    begin
+      LEdgeToFree.Parent := nil;
       LEdgeToFree.Free;
     end;
   end;

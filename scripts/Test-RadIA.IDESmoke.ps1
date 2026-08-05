@@ -10,6 +10,7 @@ param(
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
     [switch]$ExercisePackageLifecycle,
+    [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = ""
 )
 
@@ -23,6 +24,12 @@ if ($ExercisePackageLifecycle -and -not $EvidencePath) {
     throw (
         "Package lifecycle validation requires -EvidencePath so every " +
         "cycle is bound to a proven release package."
+    )
+}
+if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
+    throw (
+        "Cross-version upgrade validation requires " +
+        "-ExercisePackageLifecycle."
     )
 }
 
@@ -122,15 +129,117 @@ function Invoke-RadIAPackageCommand {
     }
 }
 
-function Invoke-RadIAPackageLifecycle {
+function Invoke-RadIALegacyPackageInstall {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$InstallerPath
+    )
+
+    $arguments = @(
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        $InstallerPath,
+        "-DelphiVersion",
+        $script:DelphiVersion
+    )
+    if ($script:IDE64) {
+        $arguments += "-IDE64"
+    }
+
+    $previousErrorAction = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+    if ($exitCode -ne 0) {
+        throw (
+            "Legacy package installation failed for Delphi " +
+            "$($script:DelphiVersion) $script:platform. Output: $output"
+        )
+    }
+}
+
+function Get-RadIAUpgradePackageEvidence {
     param(
         [Parameter(Mandatory = $true)]
         [string]$PackagePath
     )
 
+    $resolvedPackage = [IO.Path]::GetFullPath($PackagePath)
+    if (-not (Test-Path -LiteralPath $resolvedPackage -PathType Leaf)) {
+        throw "Upgrade source package was not found: $resolvedPackage"
+    }
+    $packageRoot = Join-Path (
+        [IO.Path]::GetTempPath()
+    ) ("RadIA-IDESmoke-UpgradeEvidence-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        Expand-Archive `
+            -LiteralPath $resolvedPackage `
+            -DestinationPath $packageRoot
+        $manifestPath = Join-Path $packageRoot "manifest.json"
+        $manifest = Get-Content `
+            -LiteralPath $manifestPath `
+            -Raw |
+            ConvertFrom-Json
+        $installer = Join-Path `
+            $packageRoot `
+            "scripts\Install-RadIA.Package.ps1"
+        $arguments = @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            $installer,
+            "-DelphiVersion",
+            $script:DelphiVersion,
+            "-ValidateOnly"
+        )
+        if ($script:IDE64) {
+            $arguments += "-IDE64"
+        }
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        if ($LASTEXITCODE -ne 0) {
+            throw "Upgrade source validation failed. Output: $output"
+        }
+        if (
+            $manifest.product -ne "RadIA" -or
+            -not $manifest.productVersion -or
+            $manifest.productVersion -eq $script:expectedVersion
+        ) {
+            throw "Upgrade source must be a different valid RadIA version."
+        }
+        return [pscustomobject]@{
+            Path = $resolvedPackage
+            Version = [string]$manifest.productVersion
+            Sha256 = (
+                Get-FileHash `
+                    -LiteralPath $resolvedPackage `
+                    -Algorithm SHA256
+            ).Hash
+        }
+    } finally {
+        if (Test-Path -LiteralPath $packageRoot) {
+            Remove-Item -LiteralPath $packageRoot -Recurse -Force
+        }
+    }
+}
+
+function Invoke-RadIAPackageLifecycle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackagePath,
+        [string]$UpgradePackagePath = ""
+    )
+
     $packageRoot = Join-Path (
         [IO.Path]::GetTempPath()
     ) ("RadIA-IDESmoke-Lifecycle-" + [Guid]::NewGuid().ToString("N"))
+    $upgradeRoot = ""
     try {
         Expand-Archive `
             -LiteralPath $PackagePath `
@@ -141,6 +250,23 @@ function Invoke-RadIAPackageLifecycle {
         Invoke-RadIAPackageCommand `
             -InstallerPath $installer `
             -Mode "Uninstall"
+        if ($UpgradePackagePath) {
+            $upgradeRoot = Join-Path (
+                [IO.Path]::GetTempPath()
+            ) (
+                "RadIA-IDESmoke-UpgradeSource-" +
+                [Guid]::NewGuid().ToString("N")
+            )
+            Expand-Archive `
+                -LiteralPath $UpgradePackagePath `
+                -DestinationPath $upgradeRoot
+            Invoke-RadIALegacyPackageInstall `
+                -InstallerPath (
+                    Join-Path `
+                        $upgradeRoot `
+                        "scripts\Install-RadIA.Package.ps1"
+                )
+        }
         Invoke-RadIAPackageCommand `
             -InstallerPath $installer `
             -Mode "Install"
@@ -148,6 +274,9 @@ function Invoke-RadIAPackageLifecycle {
             -InstallerPath $installer `
             -Mode "Repair"
     } finally {
+        if ($upgradeRoot -and (Test-Path -LiteralPath $upgradeRoot)) {
+            Remove-Item -LiteralPath $upgradeRoot -Recurse -Force
+        }
         if (Test-Path -LiteralPath $packageRoot) {
             Remove-Item -LiteralPath $packageRoot -Recurse -Force
         }
@@ -346,6 +475,10 @@ $shutdownTimeoutMs = 30000
 $releasePackageHash = ""
 $releasePackageName = ""
 $releaseSourceCommit = ""
+$upgradePackageEvidence = $null
+$upgradePackagePath = ""
+$upgradeFromVersion = ""
+$upgradeFromPackageSha256 = ""
 
 if ($ExerciseDocking) {
     $script:DockingRegistryPath = (
@@ -513,6 +646,14 @@ $targetProcesses = @(Get-RadIATargetIDEProcesses -ExecutablePath $bdsPath)
 if ($targetProcesses.Count -gt 0) {
     throw "Close all instances of the target Delphi IDE: $bdsPath"
 }
+if ($UpgradeFromPackagePath) {
+    $script:expectedVersion = $expectedVersion
+    $upgradePackageEvidence = Get-RadIAUpgradePackageEvidence `
+        -PackagePath $UpgradeFromPackagePath
+    $upgradePackagePath = $upgradePackageEvidence.Path
+    $upgradeFromVersion = $upgradePackageEvidence.Version
+    $upgradeFromPackageSha256 = $upgradePackageEvidence.Sha256
+}
 
 $results = @()
 $dockedGeometry = $null
@@ -521,13 +662,24 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     $packageLifecycleSeconds = 0
     $packageLifecycleModes = @()
     if ($ExercisePackageLifecycle) {
-        $packageLifecycleModes = @(
-            "Uninstall",
-            "Install",
-            "Repair"
-        )
+        if ($upgradePackageEvidence) {
+            $packageLifecycleModes = @(
+                "Uninstall",
+                "InstallPreviousVersion",
+                "UpgradeToCurrentVersion",
+                "Repair"
+            )
+        } else {
+            $packageLifecycleModes = @(
+                "Uninstall",
+                "Install",
+                "Repair"
+            )
+        }
         $packageLifecycleStartedAt = [DateTime]::UtcNow
-        Invoke-RadIAPackageLifecycle -PackagePath $releasePackagePath
+        Invoke-RadIAPackageLifecycle `
+            -PackagePath $releasePackagePath `
+            -UpgradePackagePath $upgradePackagePath
         $packageLifecycleSeconds = [Math]::Round(
             (
                 [DateTime]::UtcNow -
@@ -752,6 +904,8 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             PackageLifecycleExercised = [bool]$ExercisePackageLifecycle
             PackageLifecycleModes = $packageLifecycleModes
             PackageLifecycleSeconds = $packageLifecycleSeconds
+            UpgradeExercised = [bool]$upgradePackageEvidence
+            UpgradeFromVersion = $upgradeFromVersion
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -805,6 +959,9 @@ if ($EvidencePath) {
         cyclesPassed = $results.Count
         dockingExercised = [bool]$ExerciseDocking
         packageLifecycleExercised = [bool]$ExercisePackageLifecycle
+        upgradeExercised = [bool]$upgradePackageEvidence
+        upgradeFromVersion = $upgradeFromVersion
+        upgradeFromPackageSha256 = $upgradeFromPackageSha256
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
         cycles = $results
     } |
