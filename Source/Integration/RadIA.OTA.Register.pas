@@ -91,6 +91,7 @@ uses
   RadIA.Core.KnowledgePrivacy,
   RadIA.Core.KnowledgeHistory,
   RadIA.Core.KnowledgeTools,
+  RadIA.Core.ProjectHealthTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.DebugTimelineStore,
@@ -1121,6 +1122,13 @@ initialization
   );
   RegisterRadIAKnowledgeTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAKnowledgeService>
+  );
+  RegisterRadIAProjectHealthTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIABuildFacade>,
+    TRadIAContainer.Resolve<IRadIADUnitXRunner>,
     TRadIAContainer.Resolve<IRadIAKnowledgeService>
   );
   TRadIAContainer.Register<IRadIAMcpProtocol>(

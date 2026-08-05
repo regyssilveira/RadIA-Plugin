@@ -25,6 +25,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/terminal` | Abre o terminal integrado acoplável; equivale ao botão `>_` do chat. | Projeto e desktop atuais da IDE. |
 | `/settings` | Abre as configurações do RadIA; equivale ao botão de engrenagem do chat. | Configuração local do usuário. |
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
+| `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
 | `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |
 | `/revoke-tools` | Revoga permissões concedidas na sessão. | Sessão de chat ativa. |
@@ -50,7 +51,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
 
-Os comandos da família `/agent`, além de `/terminal`, `/settings`, `/extensions`, `/tools`,
+Os comandos da família `/agent`, além de `/terminal`, `/settings`, `/extensions`, `/health`, `/tools`,
 `/tool`, `/revoke-tools` e
 `/extensions reload`, são
 internos e não podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para

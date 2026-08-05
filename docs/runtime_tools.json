@@ -18,6 +18,13 @@
       ]
     },
     {
+      "name": "Project health",
+      "source": "Source/Core/RadIA.Core.ProjectHealthTools.pas",
+      "tools": [
+        "GetProjectHealth"
+      ]
+    },
+    {
       "name": "IDE navigation and project graph",
       "source": "Source/Core/RadIA.Core.IDENavigationTools.pas",
       "tools": [

@@ -128,6 +128,14 @@ type
     ): TRadIAToolResult;
   end;
 
+  TMockProjectHealthTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
   [TestFixture]
   TTestChatPresenter = class
   strict private
@@ -179,6 +187,8 @@ type
     procedure TestSettingsCommandOpensSettings;
     [Test]
     procedure TestExtensionsCommandOpensManager;
+    [Test]
+    procedure TestHealthCommandExecutesProjectHealth;
     [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
@@ -451,6 +461,27 @@ begin
   );
 end;
 
+function TMockProjectHealthTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"health":"healthy","risks":[]}'
+  );
+end;
+
+function TMockProjectHealthTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetProjectHealth',
+    '1.0.0',
+    'Returns mock project health.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  );
+end;
+
 { TTestChatPresenter }
 
 procedure TTestChatPresenter.DrainQueuedCalls;
@@ -502,6 +533,7 @@ begin
 
   FToolRegistry := TRadIAToolRegistry.Create;
   FToolRegistry.RegisterTool(TMockReadOnlyTool.Create);
+  FToolRegistry.RegisterTool(TMockProjectHealthTool.Create);
   FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
   FMockView := TMockChatView.Create;
   FPresenter := TRadIAChatPresenter.Create(
@@ -681,6 +713,14 @@ begin
   FPresenter.SendPromptText('/extensions');
 
   Assert.IsTrue(FMockView.OpenExtensionManagerCalled);
+end;
+
+procedure TTestChatPresenter.TestHealthCommandExecutesProjectHealth;
+begin
+  FPresenter.SendPromptText('/health');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"health":"healthy"');
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

@@ -132,6 +132,12 @@ fechamento mantêm o conhecimento sincronizado.
 
 Consulte [Conhecimento do projeto](user_guide_project_knowledge.md).
 
+### Saúde do projeto
+
+`GetProjectHealth` e o comando `/health` consolidam projeto ativo, encerramento da IDE, erros do
+compilador, último build, última execução DUnitX e estado do conhecimento local. O relatório é
+somente leitura e prioriza riscos críticos, altos e médios sem iniciar build, testes ou indexação.
+
 ## Modo agente
 
 O modo agente oferece:

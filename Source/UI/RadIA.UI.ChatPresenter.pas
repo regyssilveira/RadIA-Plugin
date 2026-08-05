@@ -666,7 +666,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..12] of string = (
+  CNativeCommands: array[0..13] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -678,6 +678,7 @@ const
     '/terminal',
     '/settings',
     '/extensions',
+    '/health',
     '/tools',
     '/revoke-tools'
   );
@@ -847,6 +848,11 @@ begin
     '/extensions',
     'Opens the extension manager.',
     'Manage Extensions'
+  );
+  AddCommand(
+    '/health',
+    'Summarizes project health and prioritized risks.',
+    'Project Health'
   );
   AddCommand('/tools', 'Lists available read-only IDE tools.', 'IDE Tools');
   AddCommand(
@@ -2196,6 +2202,15 @@ begin
   begin
     PostToWebView('add_message', 'user', APromptText);
     FView.OpenExtensionManager;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/health') then
+  begin
+    HandleExplicitToolCommand(
+      APromptText,
+      '/tool GetProjectHealth {}'
+    );
     Exit;
   end;
 
