@@ -168,6 +168,11 @@ bounds long lists, without introducing polling or controlling a session on its o
 - Isolate execution and route every mutation through central policy.
 - Add a visual manager and publish an SDK, examples, and package validator.
 
+**Delivered so far:** hot-reload command manifests, transactional installation, closed packages
+with limits and SHA-256, RSA-SHA256 through Windows CNG, fingerprints, first-use consent, a local
+trust store, and visual publisher revocation. Remote catalogs plus declarative skills, templates,
+and tools remain pending.
+
 **Outcome:** simple capabilities can be added without rebuilding RadIA or restarting the IDE.
 
 ### M5 — Private semantic knowledge

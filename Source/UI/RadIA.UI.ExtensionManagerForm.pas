@@ -9,7 +9,8 @@ uses
   Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.StdCtrls,
-  RadIA.Core.DeclarativeExtensions;
+  RadIA.Core.DeclarativeExtensions,
+  RadIA.Core.ExtensionPublisherTrust;
 
 type
   TRadIAExtensionManagerForm = class(TForm)
@@ -21,13 +22,20 @@ type
     FListView: TListView;
     FManager: TRadIADeclarativeExtensionManager;
     FOpenDialog: TOpenDialog;
+    FPublishersButton: TButton;
     FReloadButton: TButton;
     FRemoveButton: TButton;
     FReservedCommands: TArray<string>;
     FStatusLabel: TLabel;
+    FTrustStore: TRadIAExtensionPublisherTrustStore;
+    FTrustStoreAvailable: Boolean;
     procedure ApplyCurrentTheme;
     function BuildReservedCommands: TArray<string>;
     procedure CloseClick(Sender: TObject);
+    function ConfirmPackageTrust(
+      const APackageFileName: string;
+      out ADecision: TRadIAExtensionPackageTrustDecision
+    ): Boolean;
     procedure EnableClick(Sender: TObject);
     function GetSelectedDiagnostic(
       out ADiagnostic: TRadIADeclarativeExtensionDiagnostic
@@ -39,6 +47,7 @@ type
       Selected: Boolean
     );
     procedure NotifyChat;
+    procedure PublishersClick(Sender: TObject);
     procedure RefreshList;
     procedure ReloadClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
@@ -57,6 +66,7 @@ implementation
 
 uses
   System.Generics.Collections,
+  System.Hash,
   System.IOUtils,
   System.SysUtils,
   ToolsAPI,
@@ -64,6 +74,28 @@ uses
   RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.Mediator,
   RadIA.Core.PromptTemplates;
+
+type
+  TRadIATrustedPublishersForm = class(TForm)
+  private
+    FCloseButton: TButton;
+    FFooterPanel: TPanel;
+    FListView: TListView;
+    FRevokeButton: TButton;
+    FTrustStore: TRadIAExtensionPublisherTrustStore;
+    procedure RefreshList;
+    procedure RevokeClick(Sender: TObject);
+    procedure SelectItem(
+      Sender: TObject;
+      Item: TListItem;
+      Selected: Boolean
+    );
+  public
+    constructor Create(
+      AOwner: TComponent;
+      const ATrustStore: TRadIAExtensionPublisherTrustStore
+    ); reintroduce;
+  end;
 
 procedure ShowRadIAExtensionManager;
 var
@@ -77,7 +109,113 @@ begin
   end;
 end;
 
+{ TRadIATrustedPublishersForm }
+
+constructor TRadIATrustedPublishersForm.Create(
+  AOwner: TComponent;
+  const ATrustStore: TRadIAExtensionPublisherTrustStore
+);
+begin
+  inherited CreateNew(AOwner);
+  FTrustStore := ATrustStore;
+  Caption := 'Rad IA - Trusted Extension Publishers';
+  Position := poOwnerFormCenter;
+  BorderStyle := bsSizeable;
+  ClientWidth := 760;
+  ClientHeight := 360;
+  Constraints.MinWidth := 600;
+  Constraints.MinHeight := 280;
+
+  FListView := TListView.Create(Self);
+  FListView.Parent := Self;
+  FListView.Align := alClient;
+  FListView.ViewStyle := vsReport;
+  FListView.ReadOnly := True;
+  FListView.RowSelect := True;
+  FListView.HideSelection := False;
+  FListView.OnSelectItem := SelectItem;
+  FListView.Columns.Add.Caption := 'Publisher';
+  FListView.Columns.Add.Caption := 'ID';
+  FListView.Columns.Add.Caption := 'SHA-256 fingerprint';
+  FListView.Columns[0].Width := 190;
+  FListView.Columns[1].Width := 170;
+  FListView.Columns[2].Width := 380;
+
+  FFooterPanel := TPanel.Create(Self);
+  FFooterPanel.Parent := Self;
+  FFooterPanel.Align := alBottom;
+  FFooterPanel.Height := 48;
+  FFooterPanel.BevelOuter := bvNone;
+  FFooterPanel.ShowCaption := False;
+
+  FRevokeButton := TButton.Create(Self);
+  FRevokeButton.Parent := FFooterPanel;
+  FRevokeButton.SetBounds(8, 10, 120, 27);
+  FRevokeButton.Caption := 'Revoke trust';
+  FRevokeButton.Enabled := False;
+  FRevokeButton.OnClick := RevokeClick;
+
+  FCloseButton := TButton.Create(Self);
+  FCloseButton.Parent := FFooterPanel;
+  FCloseButton.SetBounds(662, 10, 90, 27);
+  FCloseButton.Anchors := [akTop, akRight];
+  FCloseButton.Caption := 'Close';
+  FCloseButton.ModalResult := mrClose;
+
+  RefreshList;
+end;
+
+procedure TRadIATrustedPublishersForm.RefreshList;
+var
+  LItem: TListItem;
+  LPublisher: TRadIATrustedExtensionPublisher;
+begin
+  FListView.Items.BeginUpdate;
+  try
+    FListView.Items.Clear;
+    for LPublisher in FTrustStore.GetPublishers do
+    begin
+      LItem := FListView.Items.Add;
+      LItem.Caption := LPublisher.Name;
+      LItem.SubItems.Add(LPublisher.Id);
+      LItem.SubItems.Add(LPublisher.Fingerprint);
+    end;
+  finally
+    FListView.Items.EndUpdate;
+  end;
+  FRevokeButton.Enabled := False;
+end;
+
+procedure TRadIATrustedPublishersForm.RevokeClick(Sender: TObject);
+var
+  LPublisherId: string;
+begin
+  if not Assigned(FListView.Selected) then
+    Exit;
+  LPublisherId := FListView.Selected.SubItems[0];
+  if MessageDlg(
+    'Revoke trust for publisher "' + LPublisherId + '"?',
+    mtConfirmation,
+    [mbYes, mbNo],
+    0
+  ) <> mrYes then
+    Exit;
+  FTrustStore.Revoke(LPublisherId);
+  RefreshList;
+end;
+
+procedure TRadIATrustedPublishersForm.SelectItem(
+  Sender: TObject;
+  Item: TListItem;
+  Selected: Boolean
+);
+begin
+  FRevokeButton.Enabled := Selected;
+end;
+
 constructor TRadIAExtensionManagerForm.Create(AOwner: TComponent);
+var
+  LTrustStoreMessage: string;
 begin
   inherited CreateNew(AOwner);
   Caption := 'Rad IA - Declarative Extensions';
@@ -91,6 +229,19 @@ begin
   FManager := TRadIADeclarativeExtensionManager.Create(
     TPath.Combine(TPath.Combine(TPath.GetHomePath, 'RadIA'), 'extensions')
   );
+  FTrustStore := TRadIAExtensionPublisherTrustStore.Create(
+    TPath.Combine(
+      TPath.Combine(TPath.GetHomePath, 'RadIA'),
+      'trusted-extension-publishers.json'
+    )
+  );
+  try
+    FTrustStore.Load;
+    FTrustStoreAvailable := True;
+  except
+    on E: Exception do
+      LTrustStoreMessage := 'Trust store unavailable: ' + E.Message;
+  end;
   FReservedCommands := BuildReservedCommands;
 
   FListView := TListView.Create(Self);
@@ -141,6 +292,13 @@ begin
   FRemoveButton.Caption := 'Remove';
   FRemoveButton.OnClick := RemoveClick;
 
+  FPublishersButton := TButton.Create(Self);
+  FPublishersButton.Parent := FFooterPanel;
+  FPublishersButton.SetBounds(490, 8, 150, 27);
+  FPublishersButton.Caption := 'Trusted publishers...';
+  FPublishersButton.Enabled := FTrustStoreAvailable;
+  FPublishersButton.OnClick := PublishersClick;
+
   FCloseButton := TButton.Create(Self);
   FCloseButton.Parent := FFooterPanel;
   FCloseButton.SetBounds(822, 8, 90, 27);
@@ -163,10 +321,13 @@ begin
   FOpenDialog.Title := 'Install or update a declarative extension';
 
   RefreshList;
+  if LTrustStoreMessage <> '' then
+    SetStatus(LTrustStoreMessage);
 end;
 
 destructor TRadIAExtensionManagerForm.Destroy;
 begin
+  FTrustStore.Free;
   FManager.Free;
   inherited Destroy;
 end;
@@ -233,6 +394,79 @@ begin
   ModalResult := mrClose;
 end;
 
+function TRadIAExtensionManagerForm.ConfirmPackageTrust(
+  const APackageFileName: string;
+  out ADecision: TRadIAExtensionPackageTrustDecision
+): Boolean;
+var
+  LExisting: TRadIATrustedExtensionPublisher;
+  LKeyChanged: Boolean;
+  LMessage: string;
+  LPackage: TRadIADeclarativeExtensionPackage;
+  LPackageHash: string;
+begin
+  Result := False;
+  ADecision := Default(TRadIAExtensionPackageTrustDecision);
+  LPackage := TRadIADeclarativeExtensionPackageReader.Read(
+    APackageFileName
+  );
+  if not LPackage.IsSigned then
+  begin
+    LPackageHash := LowerCase(
+      THashSHA2.GetHashStringFromFile(APackageFileName)
+    );
+    LMessage := 'This package has SHA-256 integrity but no publisher ' +
+      'signature.' + sLineBreak + 'Extension: ' +
+      LPackage.ExtensionId + ' ' + LPackage.Version + sLineBreak +
+      'Package SHA-256: ' + LPackageHash + sLineBreak + sLineBreak +
+      'Install it once without trusting a publisher?';
+    Result := MessageDlg(
+      LMessage,
+      mtWarning,
+      [mbYes, mbNo],
+      0
+    ) = mrYes;
+    if Result then
+      ADecision := TRadIAExtensionPackageTrustDecision.Create(
+        True,
+        LPackageHash
+      );
+    Exit;
+  end;
+  if not FTrustStoreAvailable then
+    raise EInvalidOpException.Create(
+      'Signed packages require an available publisher trust store.'
+    );
+  if FTrustStore.IsTrusted(LPackage.Publisher) then
+    Exit(True);
+  LKeyChanged := False;
+  for LExisting in FTrustStore.GetPublishers do
+    if SameText(LExisting.Id, LPackage.Publisher.Id) then
+    begin
+      LKeyChanged := True;
+      Break;
+    end;
+  LMessage := 'Publisher: ' + LPackage.Publisher.Name + sLineBreak +
+    'ID: ' + LPackage.Publisher.Id + sLineBreak +
+    'Fingerprint: ' + LPackage.Publisher.Fingerprint + sLineBreak +
+    sLineBreak;
+  if LKeyChanged then
+    LMessage := LMessage +
+      'WARNING: this publisher ID was previously trusted with a ' +
+      'different key.' + sLineBreak + sLineBreak;
+  LMessage := LMessage +
+    'The RSA-SHA256 signature is valid. Trust this publisher and install?';
+  if MessageDlg(
+    LMessage,
+    mtConfirmation,
+    [mbYes, mbNo],
+    0
+  ) <> mrYes then
+    Exit;
+  FTrustStore.Trust(LPackage.Publisher);
+  Result := True;
+end;
+
 procedure TRadIAExtensionManagerForm.CreateWnd;
 begin
   inherited CreateWnd;
@@ -283,19 +517,37 @@ end;
 
 procedure TRadIAExtensionManagerForm.InstallClick(Sender: TObject);
 var
+  LDecision: TRadIAExtensionPackageTrustDecision;
   LExtensionId: string;
   LMessage: string;
 begin
   if not FOpenDialog.Execute then
     Exit;
   if SameText(ExtractFileExt(FOpenDialog.FileName), '.radiaext') then
-    TRadIADeclarativeExtensionPackageInstaller.Install(
-      FOpenDialog.FileName,
-      FManager,
-      FReservedCommands,
-      LExtensionId,
-      LMessage
-    )
+  begin
+    try
+      if not ConfirmPackageTrust(
+        FOpenDialog.FileName,
+        LDecision
+      ) then
+      begin
+        SetStatus('Package installation cancelled.');
+        Exit;
+      end;
+      TRadIATrustedExtensionPackageInstaller.Install(
+        FOpenDialog.FileName,
+        FManager,
+        FReservedCommands,
+        FTrustStore,
+        LDecision,
+        LExtensionId,
+        LMessage
+      );
+    except
+      on E: Exception do
+        LMessage := 'Package rejected: ' + E.Message;
+    end;
+  end
   else
     FManager.InstallOrUpdate(
       FOpenDialog.FileName,
@@ -320,6 +572,18 @@ end;
 procedure TRadIAExtensionManagerForm.NotifyChat;
 begin
   TRadIAMediator.Instance.RequestPrompt('/extensions reload', False);
+end;
+
+procedure TRadIAExtensionManagerForm.PublishersClick(Sender: TObject);
+var
+  LForm: TRadIATrustedPublishersForm;
+begin
+  LForm := TRadIATrustedPublishersForm.Create(Self, FTrustStore);
+  try
+    LForm.ShowModal;
+  finally
+    LForm.Free;
+  end;
 end;
 
 procedure TRadIAExtensionManagerForm.RefreshList;

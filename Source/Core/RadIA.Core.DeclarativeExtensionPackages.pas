@@ -3,42 +3,107 @@ unit RadIA.Core.DeclarativeExtensionPackages;
 interface
 
 uses
+  System.JSON,
   RadIA.Core.DeclarativeExtensions;
 
 const
-  CRadIADeclarativeExtensionPackageSchemaVersion = 1;
+  CRadIADeclarativeExtensionPackageSchemaVersion = 2;
 
 type
+  TRadIADeclarativeExtensionPublisher = record
+  private
+    FExponent: string;
+    FFingerprint: string;
+    FId: string;
+    FModulus: string;
+    FName: string;
+    FSignature: string;
+  public
+    constructor Create(
+      const AId: string;
+      const AName: string;
+      const AModulus: string;
+      const AExponent: string;
+      const ASignature: string
+    );
+    property Exponent: string read FExponent;
+    property Fingerprint: string read FFingerprint;
+    property Id: string read FId;
+    property Modulus: string read FModulus;
+    property Name: string read FName;
+    property Signature: string read FSignature;
+  end;
+
   TRadIADeclarativeExtensionPackage = record
   private
     FExtensionId: string;
     FManifestContent: TArray<Byte>;
     FManifestName: string;
+    FPublisher: TRadIADeclarativeExtensionPublisher;
+    FSchemaVersion: Integer;
     FVersion: string;
+    function GetIsSigned: Boolean;
   public
     constructor Create(
+      const ASchemaVersion: Integer;
       const AExtensionId: string;
       const AVersion: string;
       const AManifestName: string;
-      const AManifestContent: TArray<Byte>
+      const AManifestContent: TArray<Byte>;
+      const APublisher: TRadIADeclarativeExtensionPublisher
     );
     property ExtensionId: string read FExtensionId;
+    property IsSigned: Boolean read GetIsSigned;
     property ManifestContent: TArray<Byte> read FManifestContent;
     property ManifestName: string read FManifestName;
+    property Publisher: TRadIADeclarativeExtensionPublisher read FPublisher;
+    property SchemaVersion: Integer read FSchemaVersion;
+    property Version: string read FVersion;
+  end;
+
+  TRadIADeclarativeExtensionPackageMetadata = record
+  private
+    FExtensionId: string;
+    FHash: string;
+    FManifestName: string;
+    FPublisher: TRadIADeclarativeExtensionPublisher;
+    FSchemaVersion: Integer;
+    FSize: Int64;
+    FVersion: string;
+  public
+    constructor Create(
+      const ASchemaVersion: Integer;
+      const AExtensionId: string;
+      const AVersion: string;
+      const AManifestName: string;
+      const ASize: Int64;
+      const AHash: string
+    );
+    function WithPublisher(
+      const APublisher: TRadIADeclarativeExtensionPublisher
+    ): TRadIADeclarativeExtensionPackageMetadata;
+    property ExtensionId: string read FExtensionId;
+    property Hash: string read FHash;
+    property ManifestName: string read FManifestName;
+    property Publisher: TRadIADeclarativeExtensionPublisher read FPublisher;
+    property SchemaVersion: Integer read FSchemaVersion;
+    property Size: Int64 read FSize;
     property Version: string read FVersion;
   end;
 
   TRadIADeclarativeExtensionPackageReader = class
   private
     class function IsSafeRootFileName(const AFileName: string): Boolean; static;
-    class procedure ParseMetadata(
-      const AContent: TArray<Byte>;
-      out AExtensionId: string;
-      out AVersion: string;
-      out AManifestName: string;
-      out ASize: Int64;
-      out AHash: string
-    ); static;
+    class function BuildSignaturePayload(
+      const AMetadata: TRadIADeclarativeExtensionPackageMetadata
+    ): string; static;
+    class function ParseMetadata(
+      const AContent: TArray<Byte>
+    ): TRadIADeclarativeExtensionPackageMetadata; static;
+    class function ParsePublisher(
+      const AJson: TJSONObject;
+      const ASchemaVersion: Integer
+    ): TRadIADeclarativeExtensionPublisher; static;
     class function ReadArchiveEntry(
       const APackageFileName: string;
       const AEntryName: string
@@ -53,6 +118,9 @@ type
     ); static;
     class procedure ValidateEmbeddedManifest(
       const APackage: TRadIADeclarativeExtensionPackage
+    ); static;
+    class procedure ValidatePublisher(
+      const AMetadata: TRadIADeclarativeExtensionPackageMetadata
     ); static;
   public
     class function Read(
@@ -77,9 +145,10 @@ uses
   System.Generics.Collections,
   System.Hash,
   System.IOUtils,
-  System.JSON,
+  System.RegularExpressions,
   System.SysUtils,
-  System.Zip;
+  System.Zip,
+  RadIA.Core.RsaSignature;
 
 const
   CMaximumArchiveBytes = 4 * 1024 * 1024;
@@ -87,22 +156,98 @@ const
   CMaximumEntryCount = 2;
   CMetadataFileName = 'package.json';
 
+{ TRadIADeclarativeExtensionPublisher }
+
+constructor TRadIADeclarativeExtensionPublisher.Create(
+  const AId: string;
+  const AName: string;
+  const AModulus: string;
+  const AExponent: string;
+  const ASignature: string
+);
+begin
+  FId := AId;
+  FName := AName;
+  FModulus := AModulus;
+  FExponent := AExponent;
+  FSignature := ASignature;
+  if (AModulus <> '') and (AExponent <> '') then
+    FFingerprint := TRadIARsaSignature.Fingerprint(
+      AModulus,
+      AExponent
+    );
+end;
+
 { TRadIADeclarativeExtensionPackage }
 
 constructor TRadIADeclarativeExtensionPackage.Create(
+  const ASchemaVersion: Integer;
   const AExtensionId: string;
   const AVersion: string;
   const AManifestName: string;
-  const AManifestContent: TArray<Byte>
+  const AManifestContent: TArray<Byte>;
+  const APublisher: TRadIADeclarativeExtensionPublisher
 );
 begin
+  FSchemaVersion := ASchemaVersion;
   FExtensionId := AExtensionId;
   FVersion := AVersion;
   FManifestName := AManifestName;
   FManifestContent := Copy(AManifestContent);
+  FPublisher := APublisher;
+end;
+
+function TRadIADeclarativeExtensionPackage.GetIsSigned: Boolean;
+begin
+  Result := FSchemaVersion >= 2;
+end;
+
+{ TRadIADeclarativeExtensionPackageMetadata }
+
+constructor TRadIADeclarativeExtensionPackageMetadata.Create(
+  const ASchemaVersion: Integer;
+  const AExtensionId: string;
+  const AVersion: string;
+  const AManifestName: string;
+  const ASize: Int64;
+  const AHash: string
+);
+begin
+  FSchemaVersion := ASchemaVersion;
+  FExtensionId := AExtensionId;
+  FVersion := AVersion;
+  FManifestName := AManifestName;
+  FSize := ASize;
+  FHash := AHash;
+end;
+
+function TRadIADeclarativeExtensionPackageMetadata.WithPublisher(
+  const APublisher: TRadIADeclarativeExtensionPublisher
+): TRadIADeclarativeExtensionPackageMetadata;
+begin
+  Result := Self;
+  Result.FPublisher := APublisher;
 end;
 
 { TRadIADeclarativeExtensionPackageReader }
+
+class function
+  TRadIADeclarativeExtensionPackageReader.BuildSignaturePayload(
+  const AMetadata: TRadIADeclarativeExtensionPackageMetadata
+): string;
+begin
+  Result :=
+    'schemaVersion=' + AMetadata.SchemaVersion.ToString + #10 +
+    'id=' + AMetadata.ExtensionId + #10 +
+    'version=' + AMetadata.Version + #10 +
+    'manifest=' + AMetadata.ManifestName + #10 +
+    'size=' + AMetadata.Size.ToString + #10 +
+    'sha256=' + LowerCase(AMetadata.Hash) + #10 +
+    'publisherId=' + AMetadata.Publisher.Id + #10 +
+    'publisherName=' + AMetadata.Publisher.Name + #10 +
+    'modulus=' + AMetadata.Publisher.Modulus + #10 +
+    'exponent=' + AMetadata.Publisher.Exponent;
+end;
 
 class function TRadIADeclarativeExtensionPackageReader.IsSafeRootFileName(
   const AFileName: string
@@ -121,13 +266,9 @@ class function TRadIADeclarativeExtensionPackageReader.Read(
   const AFileName: string
 ): TRadIADeclarativeExtensionPackage;
 var
-  LExtensionId: string;
-  LHash: string;
   LManifestContent: TArray<Byte>;
-  LManifestName: string;
+  LMetadata: TRadIADeclarativeExtensionPackageMetadata;
   LMetadataContent: TArray<Byte>;
-  LSize: Int64;
-  LVersion: string;
 begin
   if not TFile.Exists(AFileName) then
     raise EFileNotFoundException.Create('The extension package does not exist.');
@@ -136,41 +277,42 @@ begin
       'The extension package exceeds the 4 MiB size limit.'
     );
   LMetadataContent := ReadMetadata(AFileName);
-  ParseMetadata(
-    LMetadataContent,
-    LExtensionId,
-    LVersion,
-    LManifestName,
-    LSize,
-    LHash
-  );
+  LMetadata := ParseMetadata(LMetadataContent);
   LManifestContent := ReadArchiveEntry(
     AFileName,
-    LManifestName
+    LMetadata.ManifestName
   );
-  ValidateIntegrity(LManifestContent, LSize, LHash);
+  ValidateIntegrity(
+    LManifestContent,
+    LMetadata.Size,
+    LMetadata.Hash
+  );
   Result := TRadIADeclarativeExtensionPackage.Create(
-    LExtensionId,
-    LVersion,
-    LManifestName,
-    LManifestContent
+    LMetadata.SchemaVersion,
+    LMetadata.ExtensionId,
+    LMetadata.Version,
+    LMetadata.ManifestName,
+    LManifestContent,
+    LMetadata.Publisher
   );
   ValidateEmbeddedManifest(Result);
+  ValidatePublisher(LMetadata);
 end;
 
-class procedure TRadIADeclarativeExtensionPackageReader.ParseMetadata(
-  const AContent: TArray<Byte>;
-  out AExtensionId: string;
-  out AVersion: string;
-  out AManifestName: string;
-  out ASize: Int64;
-  out AHash: string
-);
+class function TRadIADeclarativeExtensionPackageReader.ParseMetadata(
+  const AContent: TArray<Byte>
+): TRadIADeclarativeExtensionPackageMetadata;
 var
   LDeclaredFile: TJSONObject;
   LDeclaredFiles: TJSONArray;
+  LExtensionId: string;
+  LHash: string;
+  LManifestName: string;
   LMetadata: TJSONObject;
+  LPublisher: TRadIADeclarativeExtensionPublisher;
   LSchemaVersion: Integer;
+  LSize: Int64;
+  LVersion: string;
 begin
   LMetadata := TJSONObject.ParseJSONValue(
     TEncoding.UTF8.GetString(AContent)
@@ -179,15 +321,16 @@ begin
     raise EArgumentException.Create('Package metadata must be a JSON object.');
   try
     LSchemaVersion := LMetadata.GetValue<Integer>('schemaVersion', 0);
-    if LSchemaVersion <> CRadIADeclarativeExtensionPackageSchemaVersion then
+    if (LSchemaVersion < 1) or
+      (LSchemaVersion > CRadIADeclarativeExtensionPackageSchemaVersion) then
       raise EArgumentException.Create(
         'Unsupported extension package schema version.'
       );
-    AExtensionId := Trim(LMetadata.GetValue<string>('id', ''));
-    AVersion := Trim(LMetadata.GetValue<string>('version', ''));
-    AManifestName := Trim(LMetadata.GetValue<string>('manifest', ''));
-    if not IsSafeRootFileName(AManifestName) or
-      not AManifestName.EndsWith('.radia.json', True) then
+    LExtensionId := Trim(LMetadata.GetValue<string>('id', ''));
+    LVersion := Trim(LMetadata.GetValue<string>('version', ''));
+    LManifestName := Trim(LMetadata.GetValue<string>('manifest', ''));
+    if not IsSafeRootFileName(LManifestName) or
+      not LManifestName.EndsWith('.radia.json', True) then
       raise EArgumentException.Create('Package manifest name is invalid.');
     LDeclaredFiles := LMetadata.GetValue('files') as TJSONArray;
     if not Assigned(LDeclaredFiles) or (LDeclaredFiles.Count <> 1) or
@@ -198,18 +341,58 @@ begin
     LDeclaredFile := TJSONObject(LDeclaredFiles[0]);
     if not SameText(
       LDeclaredFile.GetValue<string>('path', ''),
-      AManifestName
+      LManifestName
     ) then
       raise EArgumentException.Create(
         'Declared package path does not match the manifest.'
       );
-    ASize := LDeclaredFile.GetValue<Int64>('size', -1);
-    AHash := LowerCase(
+    LSize := LDeclaredFile.GetValue<Int64>('size', -1);
+    LHash := LowerCase(
       Trim(LDeclaredFile.GetValue<string>('sha256', ''))
     );
+    LPublisher := ParsePublisher(LMetadata, LSchemaVersion);
+    Result := TRadIADeclarativeExtensionPackageMetadata.Create(
+      LSchemaVersion,
+      LExtensionId,
+      LVersion,
+      LManifestName,
+      LSize,
+      LHash
+    ).WithPublisher(LPublisher);
   finally
     LMetadata.Free;
   end;
+end;
+
+class function TRadIADeclarativeExtensionPackageReader.ParsePublisher(
+  const AJson: TJSONObject;
+  const ASchemaVersion: Integer
+): TRadIADeclarativeExtensionPublisher;
+var
+  LPublisher: TJSONObject;
+begin
+  Result := Default(TRadIADeclarativeExtensionPublisher);
+  if ASchemaVersion < 2 then
+    Exit;
+  LPublisher := AJson.GetValue('publisher') as TJSONObject;
+  if not Assigned(LPublisher) then
+    raise EArgumentException.Create(
+      'Signed package publisher metadata is missing.'
+    );
+  if not SameText(
+    LPublisher.GetValue<string>('algorithm', ''),
+    'RSA-SHA256'
+  ) then
+    raise EArgumentException.Create(
+      'Signed package algorithm must be RSA-SHA256.'
+    );
+  Result := TRadIADeclarativeExtensionPublisher.Create(
+    Trim(LPublisher.GetValue<string>('id', '')),
+    Trim(LPublisher.GetValue<string>('name', '')),
+    Trim(LPublisher.GetValue<string>('modulus', '')),
+    Trim(LPublisher.GetValue<string>('exponent', '')),
+    Trim(LPublisher.GetValue<string>('signature', ''))
+  );
 end;
 
 class function
@@ -313,6 +496,33 @@ begin
   ) then
     raise EArgumentException.Create(
       'Manifest SHA-256 does not match package metadata.'
+    );
+end;
+
+class procedure TRadIADeclarativeExtensionPackageReader.ValidatePublisher(
+  const AMetadata: TRadIADeclarativeExtensionPackageMetadata
+);
+begin
+  if AMetadata.SchemaVersion < 2 then
+    Exit;
+  if not TRegEx.IsMatch(
+    AMetadata.Publisher.Id,
+    '^[A-Za-z0-9][A-Za-z0-9.-]{1,63}$'
+  ) then
+    raise EArgumentException.Create('Package publisher ID is invalid.');
+  if (AMetadata.Publisher.Name = '') or
+    (Length(AMetadata.Publisher.Name) > 100) then
+    raise EArgumentException.Create('Package publisher name is invalid.');
+  if AMetadata.Publisher.Signature = '' then
+    raise EArgumentException.Create('Package publisher signature is missing.');
+  if not TRadIARsaSignature.VerifySha256(
+    BuildSignaturePayload(AMetadata),
+    AMetadata.Publisher.Modulus,
+    AMetadata.Publisher.Exponent,
+    AMetadata.Publisher.Signature
+  ) then
+    raise EArgumentException.Create(
+      'Package publisher signature is invalid.'
     );
 end;
 

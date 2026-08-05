@@ -19,6 +19,7 @@ Abra **Tools > Rad IA Extensions...** para:
 - instalar um novo manifesto ou atualizar uma extensão existente;
 - habilitar ou desabilitar sem apagar o arquivo;
 - recarregar e consultar o diagnóstico de todos os manifestos;
+- consultar e revogar publicadores confiáveis;
 - remover uma extensão com confirmação explícita.
 
 Instalações, atualizações e mudanças de estado usam gravação atômica. O candidato é validado antes
@@ -91,6 +92,23 @@ powershell.exe -ExecutionPolicy Bypass `
   -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json
 ```
 
+Esse comando gera um pacote versão 1 sem assinatura. Para produzir um pacote versão 2 assinado,
+use um certificado RSA de pelo menos 2.048 bits, com chave privada disponível em
+`Cert:\CurrentUser\My`:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.DeclarativeExtensionPackage.ps1 `
+  -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json `
+  -SigningCertificateThumbprint "THUMBPRINT_DO_CERTIFICADO" `
+  -PublisherId "empresa.produto" `
+  -PublisherName "Nome verificável do publicador"
+```
+
+O script não exporta nem grava a chave privada: a assinatura RSA-SHA256 é produzida diretamente pelo
+provedor criptográfico do Windows. O terminal exibe o fingerprint SHA-256 da chave pública; o
+publicador deve divulgá-lo por um canal independente para que o usuário possa compará-lo.
+
 O resultado usa a extensão `.radiaext` e contém exatamente:
 
 - `package.json`, com schema, ID, versão e lista fechada de arquivos;
@@ -105,6 +123,26 @@ Depois dessa verificação, o manifesto ainda passa por toda a validação e pel
 ### Integridade e identidade
 
 SHA-256 comprova que o conteúdo recebido corresponde aos metadados do pacote, mas não identifica
-quem o publicou. Portanto, `.radiaext` versão 1 não deve ser descrito como “assinado”. Assinatura
-assimétrica, trust store de publicadores e catálogo remoto confiável permanecem nas próximas etapas
-do M4.
+quem o publicou. Portanto, `.radiaext` versão 1 não deve ser descrito como “assinado”. Na instalação,
+o RadIA mostra um aviso explícito e permite somente aquela instalação, sem criar confiança
+persistente.
+
+O pacote versão 2 assina schema, identidade e versão da extensão, nome e hash do manifesto e
+identidade, nome e chave RSA do publicador. O RadIA valida a assinatura com Windows CNG antes de
+mostrar qualquer consentimento. Na primeira instalação, exibe nome, ID e fingerprint SHA-256 da
+chave. Se o usuário confirmar, a confiança é persistida em:
+
+```text
+%USERPROFILE%\RadIA\trusted-extension-publishers.json
+```
+
+Instalações posteriores do mesmo ID e da mesma chave são reconhecidas automaticamente. A troca de
+chave para um ID já conhecido produz um alerta destacado e exige nova decisão. Use
+**Tools > Rad IA Extensions... > Trusted publishers...** para consultar fingerprints e revogar
+confiança. A revogação impede novas instalações; ela não remove extensões que já foram instaladas.
+
+O arquivo de confiança tem schema versionado, limite de tamanho, validação de IDs e fingerprints,
+rejeição de duplicidades e gravação atômica. Reparse points são recusados para evitar redirecionar
+leitura ou substituição do arquivo. Assinatura comprova posse da chave privada correspondente, mas
+o usuário continua responsável por validar o fingerprint em um canal confiável. Um catálogo remoto
+com cadeia de publicação e revogação distribuída continua sendo uma etapa posterior do M4.

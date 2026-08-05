@@ -1,7 +1,10 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$ManifestPath,
-    [string]$OutputPath
+    [string]$OutputPath,
+    [string]$SigningCertificateThumbprint,
+    [string]$PublisherId,
+    [string]$PublisherName
 )
 
 $ErrorActionPreference = "Stop"
@@ -57,8 +60,95 @@ if ([IO.Path]::GetExtension($resolvedOutput) -ne ".radiaext") {
 $resolvedOutputDirectory = [IO.Path]::GetDirectoryName($resolvedOutput)
 [IO.Directory]::CreateDirectory($resolvedOutputDirectory) | Out-Null
 
+$packageSchemaVersion = 1
+$publisher = $null
+if (-not [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
+    if ($PublisherId -notmatch "^[A-Za-z0-9][A-Za-z0-9.-]{1,63}$") {
+        throw "PublisherId must contain 2-64 letters, digits, dots, or hyphens."
+    }
+    if (
+        [string]::IsNullOrWhiteSpace($PublisherName) -or
+        $PublisherName.Length -gt 100
+    ) {
+        throw "PublisherName must contain 1-100 characters."
+    }
+    $normalizedThumbprint = $SigningCertificateThumbprint -replace "\s", ""
+    $certificatePath = "Cert:\CurrentUser\My\$normalizedThumbprint"
+    $certificate = Get-Item -LiteralPath $certificatePath -ErrorAction Stop
+    if (-not $certificate.HasPrivateKey) {
+        throw "The signing certificate does not have a private key."
+    }
+    $rsa = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey(
+        $certificate
+    )
+    if ($null -eq $rsa) {
+        throw "The signing certificate does not contain an RSA key."
+    }
+    try {
+        if ($rsa.KeySize -lt 2048) {
+            throw "The signing certificate must use RSA with at least 2048 bits."
+        }
+        $parameters = $rsa.ExportParameters($false)
+        $modulus = [Convert]::ToBase64String($parameters.Modulus)
+        $exponent = [Convert]::ToBase64String($parameters.Exponent)
+        $keyMaterial = "$modulus`:$exponent"
+        $keyMaterialBytes = $utf8.GetBytes($keyMaterial)
+        $fingerprintHash = [Security.Cryptography.SHA256]::Create()
+        try {
+            $fingerprint = (
+                [BitConverter]::ToString(
+                    $fingerprintHash.ComputeHash($keyMaterialBytes)
+                ) -replace "-", ""
+            ).ToLowerInvariant()
+        }
+        finally {
+            $fingerprintHash.Dispose()
+        }
+        $signaturePayload = [string]::Join(
+            "`n",
+            @(
+                "schemaVersion=2",
+                "id=$([string]$manifest.id)",
+                "version=$([string]$manifest.version)",
+                "manifest=$manifestName",
+                "size=$($manifestBytes.Length)",
+                "sha256=$hash",
+                "publisherId=$PublisherId",
+                "publisherName=$PublisherName",
+                "modulus=$modulus",
+                "exponent=$exponent"
+            )
+        )
+        $signature = [Convert]::ToBase64String(
+            $rsa.SignData(
+                $utf8.GetBytes($signaturePayload),
+                [Security.Cryptography.HashAlgorithmName]::SHA256,
+                [Security.Cryptography.RSASignaturePadding]::Pkcs1
+            )
+        )
+        $publisher = [ordered]@{
+            algorithm = "RSA-SHA256"
+            id = $PublisherId
+            name = $PublisherName
+            modulus = $modulus
+            exponent = $exponent
+            signature = $signature
+        }
+        $packageSchemaVersion = 2
+    }
+    finally {
+        $rsa.Dispose()
+    }
+}
+elseif (
+    -not [string]::IsNullOrWhiteSpace($PublisherId) -or
+    -not [string]::IsNullOrWhiteSpace($PublisherName)
+) {
+    throw "Publisher metadata requires SigningCertificateThumbprint."
+}
+
 $package = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = $packageSchemaVersion
     id = [string]$manifest.id
     version = [string]$manifest.version
     manifest = $manifestName
@@ -69,6 +159,9 @@ $package = [ordered]@{
             sha256 = $hash
         }
     )
+}
+if ($null -ne $publisher) {
+    $package.publisher = $publisher
 }
 
 $temporaryDirectory = [IO.Path]::Combine(
@@ -107,3 +200,9 @@ finally {
 
 Write-Host "Extension package created: $resolvedOutput" -ForegroundColor Green
 Write-Host "Manifest SHA-256: $hash" -ForegroundColor Green
+if ($packageSchemaVersion -eq 2) {
+    Write-Host "Publisher fingerprint: $fingerprint" -ForegroundColor Green
+}
+else {
+    Write-Warning "Package is unsigned and provides integrity only."
+}

@@ -36,6 +36,8 @@ uses
   RadIA.Core.Extensions in '..\Source\Core\RadIA.Core.Extensions.pas',
   RadIA.Core.DeclarativeExtensions in '..\Source\Core\RadIA.Core.DeclarativeExtensions.pas',
   RadIA.Core.DeclarativeExtensionPackages in '..\Source\Core\RadIA.Core.DeclarativeExtensionPackages.pas',
+  RadIA.Core.RsaSignature in '..\Source\Core\RadIA.Core.RsaSignature.pas',
+  RadIA.Core.ExtensionPublisherTrust in '..\Source\Core\RadIA.Core.ExtensionPublisherTrust.pas',
   RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
   RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',
   RadIA.Core.PatchTools in '..\Source\Core\RadIA.Core.PatchTools.pas',

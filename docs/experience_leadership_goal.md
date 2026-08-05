@@ -174,6 +174,11 @@ tool e limita listas extensas, sem criar polling ou controlar uma sessão por co
 - Criar gerenciador visual para instalar, atualizar, desabilitar, diagnosticar e remover extensões.
 - Publicar SDK, exemplos e validador de pacote.
 
+**Entregue até aqui:** manifestos de comandos com hot reload, instalação transacional, pacote
+fechado com limites e SHA-256, assinatura RSA-SHA256 via Windows CNG, fingerprint, consentimento no
+primeiro uso, trust store local e revogação visual de publicadores. Catálogo remoto, skills,
+templates e tools declarativas continuam pendentes.
+
 **Saída:** uma capacidade simples pode ser adicionada sem recompilar o RadIA ou reiniciar a IDE.
 
 ### M5 — Conhecimento semântico privado

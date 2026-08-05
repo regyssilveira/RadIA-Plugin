@@ -98,6 +98,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M4 entregue nesta etapa: pacotes `.radiaext` possuem envelope versionado, lista fechada,
         tamanho e SHA-256; o importador bloqueia adulteração, entradas extras, duplicidade, ZIP bomb,
         path traversal e divergência de identidade antes da ativação transacional.
+    *   M4 entregue nesta etapa: pacotes v2 usam RSA-SHA256 validado pelo Windows CNG, fingerprint
+        de chave pública, consentimento no primeiro uso, trust store atômica e gestão visual para
+        consultar ou revogar publicadores; pacotes v1 permanecem compatíveis com aviso por uso.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

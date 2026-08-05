@@ -98,6 +98,9 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M4 delivered in this increment: `.radiaext` packages provide a versioned envelope, closed
         file list, size, and SHA-256; import blocks tampering, extra or duplicate entries, ZIP bombs,
         path traversal, and identity mismatches before transactional activation.
+    *   M4 delivered in this increment: v2 packages use RSA-SHA256 verified by Windows CNG, public
+        key fingerprints, first-use consent, an atomic trust store, and visual publisher revocation;
+        v1 packages remain compatible through an explicit per-use warning.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 
