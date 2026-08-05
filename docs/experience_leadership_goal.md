@@ -213,11 +213,10 @@ e documentação Markdown, texto, AsciiDoc e reStructuredText. A descoberta docu
 à raiz e às pastas `docs/doc`, com limites de quantidade, tamanho e workspace boundary; o notifier
 OTA usa a mesma política central de formatos.
 
-Como base para histórico aprovado, o catálogo sanitizado de checkpoints agora preserva
-`projectId` e `planApproved` e oferece uma consulta limitada que retorna somente execuções
-concluídas, com plano aprovado e pertencentes exatamente ao projeto solicitado. A consulta não
-expõe argumentos nem resultados das ferramentas. A ligação opt-in desses resumos ao índice ainda
-permanece pendente.
+O histórico aprovado está integrado ao índice mediante consentimento explícito, desligado por
+padrão. Somente execuções concluídas, com plano aprovado e do projeto atual viram documentos
+virtuais. Argumentos e resultados de tools não são copiados, e a revogação bloqueia consultas
+imediatamente antes da remoção física na atualização seguinte.
 
 ### M6 — Instalação e primeiro valor
 

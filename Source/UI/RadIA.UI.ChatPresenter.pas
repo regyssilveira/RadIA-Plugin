@@ -39,6 +39,7 @@ type
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
     procedure OpenTerminal;
+    procedure OpenExtensionManager;
   end;
 
   TStreamChunkCtx = record
@@ -96,6 +97,7 @@ type
    out AActiveModel: string): TJSONArray;
 
     function BuildSlashCommandsJsonArray: TJSONArray;
+    procedure AddUtilitySlashCommands(const ACommands: TJSONArray);
     function BuildReservedSlashCommands: TArray<string>;
     function BuildDeclarativeExtensionStatus: string;
     procedure ReloadDeclarativeExtensions;
@@ -664,7 +666,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..10] of string = (
+  CNativeCommands: array[0..12] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -674,6 +676,8 @@ const
     '/agent cancel',
     '/agent history',
     '/terminal',
+    '/settings',
+    '/extensions',
     '/tools',
     '/revoke-tools'
   );
@@ -783,49 +787,7 @@ begin
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
-  LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/terminal');
-  LSlashObj.AddPair('description', 'Opens the integrated terminal.');
-  LSlashObj.AddPair('name', 'Open Terminal');
-  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
-  Result.AddElement(LSlashObj);
-
-  LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/tools');
-  LSlashObj.AddPair('description', 'Lists available read-only IDE tools.');
-  LSlashObj.AddPair('name', 'IDE Tools');
-  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
-  Result.AddElement(LSlashObj);
-
-  LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/revoke-tools');
-  LSlashObj.AddPair(
-    'description',
-    'Revokes all IDE tool permissions granted for this session.'
-  );
-  LSlashObj.AddPair('name', 'Revoke Tool Permissions');
-  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
-  Result.AddElement(LSlashObj);
-
-  LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/tool');
-  LSlashObj.AddPair(
-    'description',
-    'Runs a read-only IDE tool with optional JSON arguments.'
-  );
-  LSlashObj.AddPair('name', 'Run IDE Tool');
-  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
-  Result.AddElement(LSlashObj);
-
-  LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/extensions reload');
-  LSlashObj.AddPair(
-    'description',
-    'Reloads and diagnoses declarative command extensions.'
-  );
-  LSlashObj.AddPair('name', 'Reload Extensions');
-  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
-  Result.AddElement(LSlashObj);
+  AddUtilitySlashCommands(Result);
 
   for LTemplate in FTemplateManager.GetTemplates do
   begin
@@ -855,6 +817,53 @@ begin
     );
     Result.AddElement(LSlashObj);
   end;
+end;
+
+procedure TRadIAChatPresenter.AddUtilitySlashCommands(
+  const ACommands: TJSONArray
+);
+  procedure AddCommand(
+    const ACommand: string;
+    const ADescription: string;
+    const AName: string
+  );
+  var
+    LSlashObj: TJSONObject;
+  begin
+    LSlashObj := TJSONObject.Create;
+    LSlashObj.AddPair('command', ACommand);
+    LSlashObj.AddPair('description', ADescription);
+    LSlashObj.AddPair('name', AName);
+    LSlashObj.AddPair(
+      'isProjectGenerator',
+      TJSONBool.Create(False)
+    );
+    ACommands.AddElement(LSlashObj);
+  end;
+begin
+  AddCommand('/terminal', 'Opens the integrated terminal.', 'Open Terminal');
+  AddCommand('/settings', 'Opens RadIA settings.', 'Open Settings');
+  AddCommand(
+    '/extensions',
+    'Opens the extension manager.',
+    'Manage Extensions'
+  );
+  AddCommand('/tools', 'Lists available read-only IDE tools.', 'IDE Tools');
+  AddCommand(
+    '/revoke-tools',
+    'Revokes all IDE tool permissions granted for this session.',
+    'Revoke Tool Permissions'
+  );
+  AddCommand(
+    '/tool',
+    'Runs a read-only IDE tool with optional JSON arguments.',
+    'Run IDE Tool'
+  );
+  AddCommand(
+    '/extensions reload',
+    'Reloads and diagnoses declarative command extensions.',
+    'Reload Extensions'
+  );
 end;
 
 function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;
@@ -2173,6 +2182,20 @@ begin
   begin
     PostToWebView('add_message', 'user', APromptText);
     FView.OpenTerminal;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/settings') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FView.OpenSettingsDialog;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/extensions') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FView.OpenExtensionManager;
     Exit;
   end;
 

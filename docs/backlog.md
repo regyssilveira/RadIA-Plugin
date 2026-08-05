@@ -110,8 +110,10 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
     *   M5 entregue nesta etapa: o índice incremental cobre Pascal, DFM/FMX textual, projetos e
         documentação, com descoberta confinada, limites e política única para a OTA.
-    *   M5 em execução: o catálogo de históricos aprovados filtra checkpoints concluídos por
-        projeto sem expor payloads; a ingestão opt-in no índice será a próxima integração.
+    *   M5 entregue nesta etapa: históricos concluídos e aprovados podem alimentar o índice
+        mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
+    *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas
+        telas visuais de configuração e gerenciamento já acessíveis por clique.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

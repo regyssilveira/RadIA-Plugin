@@ -39,6 +39,7 @@ type
     FToggleSessionsPanelCalled: Boolean;
     FOpenSettingsDialogCalled: Boolean;
     FOpenTerminalCalled: Boolean;
+    FOpenExtensionManagerCalled: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -65,6 +66,7 @@ type
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
     procedure OpenTerminal;
+    procedure OpenExtensionManager;
 
     property RequestStateInProgress: Boolean read FRequestStateInProgress write FRequestStateInProgress;
     property RequestStateSetCalled: Boolean read FRequestStateSetCalled write FRequestStateSetCalled;
@@ -96,6 +98,8 @@ type
     property ToggleSessionsPanelCalled: Boolean read FToggleSessionsPanelCalled write FToggleSessionsPanelCalled;
     property OpenSettingsDialogCalled: Boolean read FOpenSettingsDialogCalled write FOpenSettingsDialogCalled;
     property OpenTerminalCalled: Boolean read FOpenTerminalCalled write FOpenTerminalCalled;
+    property OpenExtensionManagerCalled: Boolean
+      read FOpenExtensionManagerCalled write FOpenExtensionManagerCalled;
   end;
 
   TMockIAProvider = class(TInterfacedObject, IRadIAProvider)
@@ -171,6 +175,10 @@ type
     procedure TestWebMessageOpenSettings;
     [Test]
     procedure TestWebMessageOpenTerminal;
+    [Test]
+    procedure TestSettingsCommandOpensSettings;
+    [Test]
+    procedure TestExtensionsCommandOpensManager;
     [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
@@ -357,6 +365,11 @@ end;
 procedure TMockChatView.OpenTerminal;
 begin
   OpenTerminalCalled := True;
+end;
+
+procedure TMockChatView.OpenExtensionManager;
+begin
+  OpenExtensionManagerCalled := True;
 end;
 
 { TMockIAProvider }
@@ -654,6 +667,20 @@ begin
   FPresenter.SendPromptText('/terminal');
 
   Assert.IsTrue(FMockView.OpenTerminalCalled);
+end;
+
+procedure TTestChatPresenter.TestSettingsCommandOpensSettings;
+begin
+  FPresenter.SendPromptText('/settings');
+
+  Assert.IsTrue(FMockView.OpenSettingsDialogCalled);
+end;
+
+procedure TTestChatPresenter.TestExtensionsCommandOpensManager;
+begin
+  FPresenter.SendPromptText('/extensions');
+
+  Assert.IsTrue(FMockView.OpenExtensionManagerCalled);
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

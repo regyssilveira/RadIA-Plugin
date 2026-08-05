@@ -120,6 +120,7 @@ type
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
     procedure OpenTerminal;
+    procedure OpenExtensionManager;
   end;
 
 implementation
@@ -128,7 +129,8 @@ uses
   System.IOUtils, System.JSON, ToolsAPI, RadIA.OTA.Helper, RadIA.UI.ConfigForm,
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
-  RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm;
+  RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm,
+  RadIA.UI.ExtensionManagerForm;
 
 {$R *.dfm}
 
@@ -1031,6 +1033,11 @@ end;
 procedure TRadIAFrameAIChat.OpenTerminal;
 begin
   ShowRadIATerminal;
+end;
+
+procedure TRadIAFrameAIChat.OpenExtensionManager;
+begin
+  ShowRadIAExtensionManager;
 end;
 
 end.
