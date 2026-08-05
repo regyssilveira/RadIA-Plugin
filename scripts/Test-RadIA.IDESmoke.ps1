@@ -8,8 +8,16 @@ param(
     [int]$StartupTimeoutSeconds = 180,
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
-    [switch]$ExerciseDocking
+    [switch]$ExerciseDocking,
+    [string]$EvidencePath = ""
 )
+
+if ($EvidencePath -and $SkipPackageHashCheck) {
+    throw (
+        "Evidence output requires package provenance validation. " +
+        "Remove -SkipPackageHashCheck."
+    )
+}
 
 function Get-RadIAProcessDescendants {
     param(
@@ -270,6 +278,9 @@ $expectedToolNames = @(
 $platform = "Win32"
 $binName = "bin"
 $shutdownTimeoutMs = 30000
+$releasePackageHash = ""
+$releasePackageName = ""
+$releaseSourceCommit = ""
 
 if ($ExerciseDocking) {
     $script:DockingRegistryPath = (
@@ -336,24 +347,101 @@ if (-not (Test-Path -LiteralPath $bridgePath -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $radIABpl -PathType Leaf)) {
     throw "Installed RadIA package was not found: $radIABpl"
 }
+$installedPackageHash = (
+    Get-FileHash -LiteralPath $radIABpl -Algorithm SHA256
+).Hash
 if (-not $SkipPackageHashCheck) {
-    $builtPackagePath = Join-Path (
-        "$repositoryRoot\Output\$DelphiVersion\bpl\$platform"
-    ) "RadIA.bpl"
-    if (-not (Test-Path -LiteralPath $builtPackagePath -PathType Leaf)) {
-        throw "Built RadIA package was not found: $builtPackagePath"
-    }
-    $installedPackageHash = (
-        Get-FileHash -LiteralPath $radIABpl -Algorithm SHA256
-    ).Hash
-    $builtPackageHash = (
-        Get-FileHash -LiteralPath $builtPackagePath -Algorithm SHA256
-    ).Hash
-    if ($installedPackageHash -ne $builtPackageHash) {
-        throw (
-            "Installed RadIA package does not match the current build. " +
-            "Close Delphi and reinstall before running the IDE smoke."
+    if (-not $EvidencePath) {
+        $builtPackagePath = Join-Path (
+            "$repositoryRoot\Output\$DelphiVersion\bpl\$platform"
+        ) "RadIA.bpl"
+        if (-not (Test-Path -LiteralPath $builtPackagePath -PathType Leaf)) {
+            throw "Built RadIA package was not found: $builtPackagePath"
+        }
+        $builtPackageHash = (
+            Get-FileHash -LiteralPath $builtPackagePath -Algorithm SHA256
+        ).Hash
+        if ($installedPackageHash -ne $builtPackageHash) {
+            throw (
+                "Installed RadIA package does not match the current build. " +
+                "Close Delphi and reinstall before running the IDE smoke."
+            )
+        }
+    } else {
+        $releaseEvidencePath = Join-Path (
+            $repositoryRoot
+        ) "docs\release_evidence_$expectedVersion.json"
+        if (-not (Test-Path -LiteralPath $releaseEvidencePath -PathType Leaf)) {
+            throw "Release evidence was not found: $releaseEvidencePath"
+        }
+        $releaseEvidence = Get-Content `
+            -LiteralPath $releaseEvidencePath `
+            -Raw |
+            ConvertFrom-Json
+        $releaseArtifact = @(
+            $releaseEvidence.artifacts |
+                Where-Object {
+                    $_.delphiVersion -eq $DelphiVersion -and
+                    $_.platform -eq $platform
+                }
         )
+        if ($releaseArtifact.Count -ne 1) {
+            throw "Release evidence does not contain exactly one target artifact."
+        }
+        $releasePackageName = $releaseArtifact[0].fileName
+        $releasePackagePath = Join-Path (
+            "$repositoryRoot\Output\Packages"
+        ) $releasePackageName
+        if (-not (Test-Path -LiteralPath $releasePackagePath -PathType Leaf)) {
+            throw "Proven release package was not found: $releasePackagePath"
+        }
+        $releasePackageHash = (
+            Get-FileHash -LiteralPath $releasePackagePath -Algorithm SHA256
+        ).Hash
+        if ($releasePackageHash -ne $releaseArtifact[0].sha256) {
+            throw "Release package hash does not match published evidence."
+        }
+        $releaseExtractPath = Join-Path (
+            [IO.Path]::GetTempPath()
+        ) ("RadIA-IDESmoke-Provenance-" + [Guid]::NewGuid().ToString("N"))
+        try {
+            Expand-Archive `
+                -LiteralPath $releasePackagePath `
+                -DestinationPath $releaseExtractPath
+            $releaseManifest = Get-Content `
+                -LiteralPath (Join-Path $releaseExtractPath "manifest.json") `
+                -Raw |
+                ConvertFrom-Json
+            $releaseBplEntry = @(
+                $releaseManifest.files |
+                    Where-Object { $_.path -eq "Bpl/RadIA.bpl" }
+            )
+            if ($releaseBplEntry.Count -ne 1) {
+                throw "Release manifest does not contain exactly one RadIA BPL."
+            }
+            if (
+                $releaseManifest.sourceCommit -ne $releaseEvidence.sourceCommit -or
+                $releaseManifest.sourceDirty -ne $false
+            ) {
+                throw "Release package source does not match published evidence."
+            }
+            $releaseBplHash = (
+                Get-FileHash `
+                    -LiteralPath (Join-Path $releaseExtractPath "Bpl\RadIA.bpl") `
+                    -Algorithm SHA256
+            ).Hash
+            if (
+                $releaseBplHash -ne $releaseBplEntry[0].sha256 -or
+                $installedPackageHash -ne $releaseBplHash
+            ) {
+                throw "Installed RadIA BPL does not match the proven release package."
+            }
+            $releaseSourceCommit = $releaseManifest.sourceCommit
+        } finally {
+            if (Test-Path -LiteralPath $releaseExtractPath) {
+                Remove-Item -LiteralPath $releaseExtractPath -Recurse -Force
+            }
+        }
     }
 }
 $targetProcesses = @(Get-RadIATargetIDEProcesses -ExecutablePath $bdsPath)
@@ -607,4 +695,31 @@ if ($ExerciseDocking) {
         "restoration passed."
     )
     Restore-RadIADockingVisibility
+}
+if ($EvidencePath) {
+    $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
+    $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
+    if ($evidenceDirectory) {
+        New-Item -ItemType Directory -Force -Path $evidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        productVersion = $expectedVersion
+        sourceCommit = $releaseSourceCommit
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        releasePackage = $releasePackageName
+        releasePackageSha256 = $releasePackageHash
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        dockingExercised = [bool]$ExerciseDocking
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
+    Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
 }

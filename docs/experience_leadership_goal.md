@@ -279,6 +279,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 - Executar dez ciclos de instalação, uso, atualização e shutdown por combinação suportada.
 - Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
 - [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
+- [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
 - Realizar auditoria final de segurança, privacidade, acessibilidade e documentação.
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
@@ -287,6 +288,10 @@ A primeira prova reproduzível do M8 está em `release_evidence_2.0.0.json`: os 
 gerados do commit `ef52eb931d0e63c8372298250bebed46c8d8fb4f`, com árvore rastreada limpa, validação
 positiva e negativa por target e SHA-256 independente. Validação visual na IDE, ciclos e jornada
 contínua permanecem abertos e não são inferidos dessa evidência automatizada.
+
+O smoke da IDE agora pode gerar evidência JSON ligada ao pacote publicado, commit de origem e BPL
+instalada. O modo de evidência recusa qualquer bypass de hash. A execução dos ciclos com a build
+comprovada permanece aberta enquanto houver IDE em uso impedindo a atualização segura das BPLs.
 
 ## Ordem de execução
 

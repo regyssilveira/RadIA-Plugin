@@ -176,6 +176,25 @@ The command requires the four packages for the version in `package.json`, expand
 each archive, confirms one version and source commit, checks clean-source evidence, computes
 independent SHA-256 hashes, and writes `Output\ReleaseEvidence.json`.
 
+## IDE smoke evidence
+
+Run every smoke with `-EvidencePath` to bind real cycles to the published ZIP, its `sourceCommit`,
+and the installed BPL:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 10 `
+  -ExerciseDocking `
+  -EvidencePath "Output\Validation\Delphi13-Win32.json"
+```
+
+Add `-IDE64` for Delphi 13 IDE64. Evidence generation is fail-closed: it rejects
+`-SkipPackageHashCheck`, a missing package, a hash mismatch, dirty-source manifest evidence, or an
+installed BPL that differs from the BPL in the proven ZIP. Close every IDE instance before
+installation and smoke testing; the script also refuses to run when the target is already open.
+
 ---
 
 ## Final Checklist
@@ -188,6 +207,7 @@ independent SHA-256 hashes, and writes `Output\ReleaseEvidence.json`.
 * Release packages generated for Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
 * Positive and negative validation completed for every package.
 * `SHA256SUMS.txt` published with the four ZIPs generated from the same commit.
+* JSON evidence for ten real cycles generated for every supported combination.
 * No MCP process or discovery file left after smoke tests.
 * Working branch published.
 * `develop` updated and published.

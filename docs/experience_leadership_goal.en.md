@@ -272,6 +272,7 @@ Credential fields are rejected recursively and never enter extension packages.
 - Complete ten installation, usage, update, and shutdown cycles per supported combination.
 - Pass the create, edit, design, test, debug, fix, and commit continuous journey.
 - [x] Regenerate four packages from one commit and publish independent hashes.
+- [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
 - Complete security, privacy, accessibility, and documentation audits.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
@@ -280,6 +281,10 @@ The first reproducible M8 proof is stored in `release_evidence_2.0.0.json`: all 
 built from commit `ef52eb931d0e63c8372298250bebed46c8d8fb4f`, with a clean tracked worktree,
 positive and negative validation per target, and independent SHA-256 hashes. Visual IDE
 validation, cycles, and the continuous journey remain open and are not inferred from automation.
+
+The IDE smoke can now emit JSON evidence bound to the published package, source commit, and
+installed BPL. Evidence mode rejects every hash bypass. Running the cycles with the proven build
+remains open while an active IDE session prevents safe BPL replacement.
 
 ## Execution order
 
