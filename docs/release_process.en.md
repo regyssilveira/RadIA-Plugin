@@ -221,6 +221,32 @@ The consolidator fails when any target, cycle, upgrade, lifecycle mode, hash, co
 or tool count diverges from the packages and release evidence. Never assemble or adjust the
 versioned JSON manually.
 
+### Ghost Text visual evidence
+
+Use `-InlineCompletionEvidencePath` with `-ExerciseInlineCompletion` to prove real-unit capture,
+local preparation, and OTA painting separately. This evidence requires clean tracked source but
+may use `-SkipPackageHashCheck`, because it does not replace package provenance:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseInlineCompletion `
+  -SkipPackageHashCheck `
+  -InlineCompletionEvidencePath `
+    "Output\Validation\InlineCompletion\Delphi13-Win32.json"
+```
+
+After all four targets, consolidate the fail-closed visual matrix:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.InlineCompletionEvidence.ps1
+```
+
+The versioned result is stored in `inline_completion_smoke_evidence_2.0.0.json`.
+
 ---
 
 ## Final Checklist

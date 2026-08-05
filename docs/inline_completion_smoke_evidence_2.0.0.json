@@ -1,0 +1,66 @@
+﻿{
+    "schemaVersion":  1,
+    "evidenceKind":  "inlineCompletionVisualMatrix",
+    "product":  "RadIA",
+    "productVersion":  "2.0.0",
+    "sourceCommit":  "991cf400ea12d17b7cb2bec00d63a085fcff66ae",
+    "requiredToolCount":  90,
+    "requiredLineCount":  2,
+    "targetCount":  4,
+    "status":  "passed",
+    "generatedAtUtc":  "2026-08-05T23:55:40.3665850Z",
+    "targets":  [
+                    {
+                        "delphiVersion":  "22.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "3209CBF6D551155B49BD743838B17E7CD6813A005D9987B4C5818C8A98FEEF96",
+                        "toolCount":  90,
+                        "cyclesPassed":  1,
+                        "minimumSeconds":  21.51,
+                        "maximumSeconds":  21.51,
+                        "prepared":  true,
+                        "painted":  true,
+                        "lineCount":  2,
+                        "generatedAtUtc":  "2026-08-05T23:53:10.1287094Z"
+                    },
+                    {
+                        "delphiVersion":  "23.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "D98DDEF95C6714C6FC4AE32433ADDF745EDB87CBDEEF6CD27AF32C75CBF5BFD1",
+                        "toolCount":  90,
+                        "cyclesPassed":  1,
+                        "minimumSeconds":  27.24,
+                        "maximumSeconds":  27.24,
+                        "prepared":  true,
+                        "painted":  true,
+                        "lineCount":  2,
+                        "generatedAtUtc":  "2026-08-05T23:53:40.0369313Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "D1655898B9DFFE8C04E72DDB6A53B27ACE656DB40863DF3B50788E1E93DDA387",
+                        "toolCount":  90,
+                        "cyclesPassed":  1,
+                        "minimumSeconds":  33.36,
+                        "maximumSeconds":  33.36,
+                        "prepared":  true,
+                        "painted":  true,
+                        "lineCount":  2,
+                        "generatedAtUtc":  "2026-08-05T23:54:16.2625435Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win64",
+                        "installedBplSha256":  "7B819EA3B73C50FC6065F036AFF425C9951C0B7BBB8FF837C843CDAA2F1219A7",
+                        "toolCount":  90,
+                        "cyclesPassed":  1,
+                        "minimumSeconds":  27.77,
+                        "maximumSeconds":  27.77,
+                        "prepared":  true,
+                        "painted":  true,
+                        "lineCount":  2,
+                        "generatedAtUtc":  "2026-08-05T23:54:48.6878465Z"
+                    }
+                ]
+}
