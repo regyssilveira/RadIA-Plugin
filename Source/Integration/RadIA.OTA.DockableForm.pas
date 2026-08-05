@@ -120,14 +120,14 @@ end;
 
 procedure RegisterDockableForm;
 var
-  LServices: INTAServices270;
+  LServices: INTAServices;
 begin
   if GRadIADockableFormRegistered then
     Exit;
-  if not Supports(BorlandIDEServices, INTAServices270, LServices) then
+  if not Supports(BorlandIDEServices, INTAServices, LServices) then
   begin
     TLogger.Log(
-      'INTAServices270 is unavailable; native dock registration was skipped.',
+      'INTAServices is unavailable; native dock registration was skipped.',
       'DockableForm'
     );
     Exit;
@@ -165,7 +165,7 @@ end;
 
 procedure UnregisterDockableForm;
 var
-  LServices: INTAServices270;
+  LServices: INTAServices;
 begin
   if GIsShuttingDown then
   begin
@@ -179,13 +179,13 @@ begin
   end;
 
   if GRadIADockableFormRegistered and
-    Supports(BorlandIDEServices, INTAServices270, LServices) then
+    Supports(BorlandIDEServices, INTAServices, LServices) then
     LServices.UnregisterDockableForm(GRadIADockableForm);
 
   if Assigned(GRadIADockableFormHost) then
     GRadIADockableFormHost.ReleaseForm;
   if GRadIATerminalDockableFormRegistered and
-    Supports(BorlandIDEServices, INTAServices270, LServices) then
+    Supports(BorlandIDEServices, INTAServices, LServices) then
     LServices.UnregisterDockableForm(GRadIATerminalDockableForm);
   if Assigned(GRadIATerminalDockableFormHost) then
     GRadIATerminalDockableFormHost.ReleaseForm;
@@ -374,13 +374,13 @@ end;
 
 procedure TRadIACustomDockableForm.Show;
 var
-  LServices: INTAServices270;
+  LServices: INTAServices;
 begin
   TLogger.Log('Show requested for ' + FIdentifier + '.', 'DockableForm');
-  if not Supports(BorlandIDEServices, INTAServices270, LServices) then
+  if not Supports(BorlandIDEServices, INTAServices, LServices) then
   begin
     TLogger.Log(
-      'INTAServices270 is unavailable while showing ' + FIdentifier + '.',
+      'INTAServices is unavailable while showing ' + FIdentifier + '.',
       'DockableForm'
     );
     Exit;
