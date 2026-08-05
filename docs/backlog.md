@@ -65,6 +65,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         prompts pelo botão **Send**, com escrita thread-safe e cancelamento da árvore preservado.
     *   M2 entregue nesta etapa: sessão ConPTY nativa usa canais UTF-8, resize por caracteres,
         fallback dinâmico e teste real de shell com entrada e encerramento.
+    *   M2 entregue nesta etapa: busca reversa incremental por `Ctrl+R` filtra o histórico e
+        percorre ocorrências anteriores sem exigir o mouse.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

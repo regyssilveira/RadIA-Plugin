@@ -32,6 +32,9 @@ type
     FStatusLabel: TLabel;
     FAnsiParser: TRadIATerminalAnsiParser;
     FHistory: TRadIATerminalHistory;
+    FHistorySearchIndex: Integer;
+    FHistorySearchQuery: string;
+    FUpdatingHistorySearch: Boolean;
     FSession: IRadIACliProcessSession;
     FLifecycleGuard: IInterface;
     procedure AppendOutput(const AText: string);
@@ -40,6 +43,12 @@ type
     );
     procedure BuildControls;
     procedure ClearClick(Sender: TObject);
+    procedure CommandChange(Sender: TObject);
+    procedure CommandKeyDown(
+      Sender: TObject;
+      var Key: Word;
+      Shift: TShiftState
+    );
     procedure FinishCommand(
       const ACommand: string;
       const AProfileId: string;
@@ -140,6 +149,7 @@ begin
   FHistory := TRadIATerminalHistory.Create(
     TPath.Combine(LAppData, 'RadIA\terminal-history.json')
   );
+  FHistorySearchIndex := -1;
 end;
 
 destructor TRadIATerminalFrame.Destroy;
@@ -209,6 +219,8 @@ begin
   FCommandEdit := TEdit.Create(Self);
   FCommandEdit.Parent := FTopPanel;
   FCommandEdit.SetBounds(8, 42, 596, 25);
+  FCommandEdit.OnChange := CommandChange;
+  FCommandEdit.OnKeyDown := CommandKeyDown;
 
   FRunButton := TButton.Create(Self);
   FRunButton.Parent := FTopPanel;
@@ -303,6 +315,49 @@ procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
 begin
   FOutputEditor.Clear;
   FAnsiParser.Reset;
+end;
+
+procedure TRadIATerminalFrame.CommandChange(Sender: TObject);
+begin
+  if FUpdatingHistorySearch then
+    Exit;
+  FHistorySearchIndex := -1;
+  FHistorySearchQuery := '';
+end;
+
+procedure TRadIATerminalFrame.CommandKeyDown(
+  Sender: TObject;
+  var Key: Word;
+  Shift: TShiftState
+);
+var
+  LCommand: string;
+  LNextIndex: Integer;
+begin
+  if (Key <> Ord('R')) or not (ssCtrl in Shift) then
+    Exit;
+  Key := 0;
+  if FHistorySearchQuery = '' then
+    FHistorySearchQuery := FCommandEdit.Text;
+  if FHistory.FindPrevious(
+    FHistorySearchQuery,
+    FHistorySearchIndex,
+    LCommand,
+    LNextIndex
+  ) then
+  begin
+    FUpdatingHistorySearch := True;
+    try
+      FCommandEdit.Text := LCommand;
+      FCommandEdit.SelStart := Length(LCommand);
+    finally
+      FUpdatingHistorySearch := False;
+    end;
+    FHistorySearchIndex := LNextIndex;
+    FStatusLabel.Caption := 'Reverse search: ' + FHistorySearchQuery;
+  end
+  else
+    FStatusLabel.Caption := 'No earlier history match';
 end;
 
 procedure TRadIATerminalFrame.EnsureVisibleContent;

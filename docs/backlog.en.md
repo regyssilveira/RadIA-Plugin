@@ -65,6 +65,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         prompt responses through **Send**, with thread-safe writes and tree cancellation preserved.
     *   M2 delivered in this increment: native ConPTY sessions use UTF-8 channels, character resize,
         dynamic fallback, and a real shell test covering input and shutdown.
+    *   M2 delivered in this increment: incremental reverse search through `Ctrl+R` filters history
+        and walks older matches without requiring the mouse.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).

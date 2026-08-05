@@ -78,8 +78,9 @@ validated and reloaded without restarting the IDE. Multiline virtual rows and vi
 across the complete IDE matrix remain mandatory before the milestone can be marked complete.
 
 M2 now includes an incremental ANSI SGR parser, rich output, continuous stdin, ConPTY execution,
-and character-dimension resize, preserving style even when an escape sequence is split across
-chunks. Visual cursor emulation and multiple sessions are still required to complete the milestone.
+character-dimension resize, and reverse history search through `Ctrl+R`. Styling remains intact
+even when an escape sequence is split across chunks. Visual cursor emulation and multiple sessions
+are still required to complete the milestone.
 
 ## Milestone transition rules
 

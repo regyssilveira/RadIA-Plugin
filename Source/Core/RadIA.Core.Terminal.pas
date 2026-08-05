@@ -145,6 +145,12 @@ type
     procedure Load;
     procedure Save;
     function Entries: TArray<TRadIATerminalHistoryEntry>;
+    function FindPrevious(
+      const AQuery: string;
+      const AStartIndex: Integer;
+      out ACommand: string;
+      out ANextIndex: Integer
+    ): Boolean;
   end;
 
 implementation
@@ -465,6 +471,44 @@ function TRadIATerminalHistory.Entries:
   TArray<TRadIATerminalHistoryEntry>;
 begin
   Result := FEntries.ToArray;
+end;
+
+function TRadIATerminalHistory.FindPrevious(
+  const AQuery: string;
+  const AStartIndex: Integer;
+  out ACommand: string;
+  out ANextIndex: Integer
+): Boolean;
+var
+  LIndex: Integer;
+  LQuery: string;
+begin
+  ACommand := '';
+  ANextIndex := -1;
+  Result := False;
+  if FEntries.Count = 0 then
+    Exit;
+  if AStartIndex < -1 then
+    Exit;
+
+  LIndex := AStartIndex;
+  if (LIndex = -1) or (LIndex >= FEntries.Count) then
+    LIndex := FEntries.Count - 1;
+  LQuery := Trim(AQuery).ToLower;
+  while LIndex >= 0 do
+  begin
+    if (LQuery = '') or
+      FEntries[LIndex].Command.ToLower.Contains(LQuery) then
+    begin
+      ACommand := FEntries[LIndex].Command;
+      if LIndex = 0 then
+        ANextIndex := -2
+      else
+        ANextIndex := LIndex - 1;
+      Exit(True);
+    end;
+    Dec(LIndex);
+  end;
 end;
 
 procedure TRadIATerminalHistory.Load;

@@ -78,10 +78,10 @@ vivo, a posição do cursor e o símbolo vigente. Os cinco atalhos são bindings
 validados e recarregados sem reiniciar a IDE. Sugestões multilinha com linhas virtuais e o aceite
 visual em toda a matriz de IDEs continuam obrigatórios antes de marcar o marco como concluído.
 
-O M2 agora possui parser ANSI SGR incremental, saída rica, stdin contínuo, execução por ConPTY e
-resize em dimensões de caracteres, preservando estilo mesmo quando uma sequência chega dividida
-entre chunks. Emulação visual de cursor e múltiplas sessões ainda são necessárias para concluir o
-marco.
+O M2 agora possui parser ANSI SGR incremental, saída rica, stdin contínuo, execução por ConPTY,
+resize em dimensões de caracteres e busca reversa por `Ctrl+R`. O estilo permanece íntegro mesmo
+quando uma sequência chega dividida entre chunks. Emulação visual de cursor e múltiplas sessões
+ainda são necessárias para concluir o marco.
 
 ## Regras de passagem entre marcos
 

@@ -27,6 +27,8 @@ type
     [Test]
     procedure HistoryEnforcesLimit;
     [Test]
+    procedure HistoryFindsPreviousMatchingCommands;
+    [Test]
     procedure CorruptedHistoryIsIgnored;
     [Test]
     procedure AnsiParserPreservesStyleAcrossChunks;
@@ -169,6 +171,40 @@ begin
     );
     Assert.AreEqual<Integer>(2, Length(LHistory.Entries));
     Assert.AreEqual('second', LHistory.Entries[0].Command);
+  finally
+    LHistory.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.HistoryFindsPreviousMatchingCommands;
+var
+  LCommand: string;
+  LHistory: TRadIATerminalHistory;
+  LNextIndex: Integer;
+begin
+  LHistory := TRadIATerminalHistory.Create(FFileName);
+  try
+    LHistory.Add(
+      TRadIATerminalHistoryEntry.Create(Now, 'cmd', 'git status', 0)
+    );
+    LHistory.Add(
+      TRadIATerminalHistoryEntry.Create(Now, 'cmd', 'build project', 0)
+    );
+    LHistory.Add(
+      TRadIATerminalHistoryEntry.Create(Now, 'cmd', 'git diff', 0)
+    );
+
+    Assert.IsTrue(
+      LHistory.FindPrevious('GIT', -1, LCommand, LNextIndex)
+    );
+    Assert.AreEqual('git diff', LCommand);
+    Assert.IsTrue(
+      LHistory.FindPrevious('git', LNextIndex, LCommand, LNextIndex)
+    );
+    Assert.AreEqual('git status', LCommand);
+    Assert.IsFalse(
+      LHistory.FindPrevious('missing', -1, LCommand, LNextIndex)
+    );
   finally
     LHistory.Free;
   end;

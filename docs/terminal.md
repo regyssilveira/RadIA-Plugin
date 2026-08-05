@@ -19,6 +19,7 @@ do Delphi.
 - timeout máximo de 30 minutos por comando;
 - histórico persistente dos últimos 200 comandos;
 - reutilização de comandos pelo seletor de histórico;
+- busca reversa incremental por `Ctrl+R`; pressione novamente para encontrar a ocorrência anterior;
 - snippets para build do Delphi 13, testes, `git status` e `git diff --check`;
 - saída monoespaçada com código de saída e estado final.
 
@@ -37,6 +38,10 @@ cursor e múltiplas sessões ainda estão pendentes.
 5. Clique em **Run**.
 6. Se o processo solicitar entrada, digite a resposta e clique em **Send**.
 7. Use **Stop** para cancelar o processo e seus subprocessos.
+
+Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Cada novo
+acionamento percorre os resultados anteriores, do mais recente para o mais antigo. Alterar
+manualmente o texto reinicia a busca.
 
 O terminal executa exatamente o comando informado pelo usuário. Ele não habilita automaticamente
 permissões de agente ou opções autônomas dos CLIs. O histórico é salvo localmente em
