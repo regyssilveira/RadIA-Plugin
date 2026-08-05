@@ -566,6 +566,21 @@ if ($runTests) {
 
 # 9. Criar pacote de distribuicao reproduzivel
 if ($Package) {
+    $sourceCommit = (& git rev-parse HEAD).Trim()
+    if (($LASTEXITCODE -ne 0) -or
+        ($sourceCommit -notmatch '^[0-9a-f]{40}$')) {
+        throw "Unable to resolve the source Git commit for packaging."
+    }
+    $trackedChanges = @(& git status --porcelain --untracked-files=no)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to inspect the tracked Git worktree for packaging."
+    }
+    if ($trackedChanges.Count -gt 0) {
+        throw (
+            "Release packaging requires a clean tracked Git worktree. " +
+            "Commit or restore tracked changes first."
+        )
+    }
     $productVersion = (
         Get-Content -LiteralPath ".\package.json" -Raw |
         ConvertFrom-Json
@@ -652,6 +667,8 @@ if ($Package) {
         delphiVersion = $delphiVer
         platform = $platform
         configuration = $configName
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
         files = $manifestFiles
     }
     $manifest |

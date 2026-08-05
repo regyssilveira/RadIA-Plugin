@@ -221,6 +221,28 @@ try {
         -ExpectedMessage "This package targets $expectedPlatform" `
         -UseOppositePlatform
 
+    $dirtySourceRoot = New-TestPackage -Name "dirty-source"
+    $dirtySourceManifest = Read-Manifest -PackageRoot $dirtySourceRoot
+    $dirtySourceManifest.sourceDirty = $true
+    Write-Manifest `
+        -PackageRoot $dirtySourceRoot `
+        -Manifest $dirtySourceManifest
+    Invoke-PackageValidation `
+        -PackageRoot $dirtySourceRoot `
+        -ShouldSucceed $false `
+        -ExpectedMessage "Package source revision evidence is invalid"
+
+    $invalidCommitRoot = New-TestPackage -Name "invalid-commit"
+    $invalidCommitManifest = Read-Manifest -PackageRoot $invalidCommitRoot
+    $invalidCommitManifest.sourceCommit = "not-a-commit"
+    Write-Manifest `
+        -PackageRoot $invalidCommitRoot `
+        -Manifest $invalidCommitManifest
+    Invoke-PackageValidation `
+        -PackageRoot $invalidCommitRoot `
+        -ShouldSucceed $false `
+        -ExpectedMessage "Package source revision evidence is invalid"
+
     $traversalRoot = New-TestPackage -Name "path-traversal"
     $traversalManifest = Read-Manifest -PackageRoot $traversalRoot
     $traversalManifest.files[0].path = "../outside.bin"

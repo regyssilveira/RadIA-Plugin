@@ -159,6 +159,25 @@ git checkout develop
 
 ---
 
+## Evidência reproduzível dos pacotes
+
+Cada pacote registra no `manifest.json` o `sourceCommit` Git de 40 caracteres e
+`sourceDirty: false`. O build com `-Package` falha se houver alteração rastreada ainda não
+commitada. Isso impede atribuir um artefato a um commit diferente do código empacotado.
+
+Depois de gerar os quatro ZIPs, execute:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.ReleaseEvidence.ps1
+```
+
+O comando exige os quatro pacotes da versão declarada em `package.json`, expande e valida cada um,
+confirma versão, configuração, plataforma, commit comum e árvore limpa, calcula hashes SHA-256
+independentes e grava `Output\ReleaseEvidence.json`.
+
+---
+
 ## Checklist Final
 
 * Versão atualizada em código, metadados e documentação.

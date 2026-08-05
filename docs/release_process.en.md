@@ -159,6 +159,25 @@ git checkout develop
 
 ---
 
+## Reproducible package evidence
+
+Every package records a 40-character Git `sourceCommit` and `sourceDirty: false` in its
+`manifest.json`. Packaging fails while tracked worktree changes exist, preventing an artifact from
+claiming a source revision different from the code that was packaged.
+
+After generating all four ZIPs, run:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.ReleaseEvidence.ps1
+```
+
+The command requires the four packages for the version in `package.json`, expands and validates
+each archive, confirms one version and source commit, checks clean-source evidence, computes
+independent SHA-256 hashes, and writes `Output\ReleaseEvidence.json`.
+
+---
+
 ## Final Checklist
 
 * Version updated in code, metadata, and documentation.

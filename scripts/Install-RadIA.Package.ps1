@@ -45,6 +45,12 @@ $manifest = Get-Content -LiteralPath $manifestFile -Raw | ConvertFrom-Json
 if ($manifest.schemaVersion -ne 1 -or $manifest.product -ne "RadIA") {
     throw "Package manifest identity is invalid."
 }
+if (
+    $manifest.sourceCommit -notmatch "^[0-9a-f]{40}$" -or
+    $manifest.sourceDirty -ne $false
+) {
+    throw "Package source revision evidence is invalid."
+}
 $platform = "Win32"
 if ($IDE64) {
     $platform = "Win64"
