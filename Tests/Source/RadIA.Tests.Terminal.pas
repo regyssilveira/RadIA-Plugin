@@ -49,6 +49,8 @@ type
     [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
     [Test]
+    procedure HiddenDockHostDoesNotFocusTerminalDuringEmbedding;
+    [Test]
     procedure TerminalTabsCreateAndCloseIndependentSessions;
   end;
 
@@ -396,6 +398,29 @@ procedure TRadIATerminalTests.TearDown;
 begin
   if TDirectory.Exists(FDirectory) then
     TDirectory.Delete(FDirectory, True);
+end;
+
+procedure TRadIATerminalTests.
+  HiddenDockHostDoesNotFocusTerminalDuringEmbedding;
+var
+  LFrame: TRadIATerminalTabsFrame;
+  LHost: TForm;
+begin
+  LHost := TForm.CreateNew(nil);
+  try
+    LFrame := TRadIATerminalTabsFrame.Create(LHost);
+    try
+      LFrame.Parent := LHost;
+      LFrame.HandleNeeded;
+      LFrame.EnsureVisibleContent;
+      Assert.IsFalse(LHost.Showing);
+      Assert.AreEqual<Integer>(1, LFrame.TestSessionCount);
+    finally
+      LFrame.Free;
+    end;
+  finally
+    LHost.Free;
+  end;
 end;
 
 procedure TRadIATerminalTests.

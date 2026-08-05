@@ -399,11 +399,14 @@ begin
 end;
 
 procedure TRadIATerminalFrame.EnsureVisibleContent;
+var
+  LParentForm: TCustomForm;
 begin
-  if not Assigned(FCommandEdit) or
-    not Assigned(FCommandEdit.Parent) or
-    not Assigned(GetParentForm(FCommandEdit)) or
-    (FCommandEdit.ParentWindow = 0) or
+  if not Assigned(FCommandEdit) or not Assigned(FCommandEdit.Parent) then
+    Exit;
+  LParentForm := GetParentForm(FCommandEdit);
+  if not Assigned(LParentForm) or not LParentForm.Showing or
+    not LParentForm.HandleAllocated or not FCommandEdit.HandleAllocated or
     not FCommandEdit.CanFocus then
     Exit;
   FCommandEdit.SetFocus;
@@ -701,7 +704,8 @@ begin
   Result.Align := alClient;
   Result.ApplyCurrentTheme;
   FPageControl.ActivePage := LTab;
-  Result.EnsureVisibleContent;
+  if Showing then
+    Result.EnsureVisibleContent;
 end;
 
 procedure TRadIATerminalTabsFrame.ApplyCurrentTheme;

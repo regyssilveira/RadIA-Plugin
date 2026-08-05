@@ -22,7 +22,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/agent resume` | Resumes the latest checkpoint for the session. | Paused agent run. |
 | `/agent cancel` | Cancels the current decision and agent run. | Active agent run. |
 | `/agent history [query]` | Searches runs by objective, status, or ID. | Local checkpoints. |
-| `/terminal` | Opens the integrated dockable terminal. | Current IDE project and desktop. |
+| `/terminal` | Opens the integrated dockable terminal; equivalent to the chat `>_` button. | Current IDE project and desktop. |
 | `/tools` | Shows the tool catalog for the current IDE instance. | IDE state and extensions. |
 | `/tool <name> {JSON}` | Runs a tool with optional JSON arguments. | Workspace and session. |
 | `/revoke-tools` | Revokes permissions granted in the session. | Active chat session. |

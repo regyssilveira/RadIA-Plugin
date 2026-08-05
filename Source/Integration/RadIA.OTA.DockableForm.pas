@@ -274,7 +274,6 @@ procedure TRadIACustomDockableForm.FrameCreated(AFrame: TCustomFrame);
 begin
   FFrame := AFrame;
   ApplyIDETheme;
-  EnsureFrameContent;
 end;
 
 function TRadIACustomDockableForm.GetCaption: string;
