@@ -201,6 +201,7 @@ instalação e do smoke; o script também recusa executar quando o target já es
 
 * Versão atualizada em código, metadados e documentação.
 * `npx eslint` executado.
+* `npm run test:web` e `npm run test:docs` executados.
 * Build Delphi executado com sucesso.
 * Análise exata aprovada pelo SonarQube Quality Gate.
 * Status check `Build, analyze, and enforce Quality Gate` obrigatório e aprovado.

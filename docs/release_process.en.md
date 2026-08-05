@@ -201,6 +201,7 @@ installation and smoke testing; the script also refuses to run when the target i
 
 * Version updated in code, metadata, and documentation.
 * `npx eslint` executed.
+* `npm run test:web` and `npm run test:docs` executed.
 * Delphi build executed successfully.
 * The exact analysis passed the SonarQube Quality Gate.
 * Required `Build, analyze, and enforce Quality Gate` status check passed.

@@ -52,6 +52,25 @@
   color: var(--accent-hover);
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="combobox"]:focus-visible,
+[role="option"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--accent, #007acc);
+  outline-offset: 2px;
+}
+
+.custom-dropdown-options,
+#sessions-list,
+#slash-commands-popup {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .header-action-btn.agent-mode-enabled {
   color: var(--accent);
 }
@@ -1152,6 +1171,8 @@ body.light-theme .session-action-btn:disabled:hover {
 
 .custom-dropdown-trigger {
   width: 100%;
+  font: inherit;
+  text-align: left;
   background-color: transparent;
   border: none;
   border-radius: 0;
@@ -1244,6 +1265,11 @@ body.light-theme .session-action-btn:disabled:hover {
 }
 
 .custom-dropdown-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
   padding: 8px 12px;
   cursor: pointer;
   color: var(--fg-primary); /* Use primary text color for proper contrast */

@@ -273,7 +273,7 @@ Credential fields are rejected recursively and never enter extension packages.
 - Pass the create, edit, design, test, debug, fix, and commit continuous journey.
 - [x] Regenerate four packages from one commit and publish independent hashes.
 - [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
-- Complete security, privacy, accessibility, and documentation audits.
+- [x] Automate the final security, privacy, accessibility, and documentation audit.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
 
@@ -285,6 +285,10 @@ validation, cycles, and the continuous journey remain open and are not inferred 
 The IDE smoke can now emit JSON evidence bound to the published package, source commit, and
 installed BPL. Evidence mode rejects every hash bypass. Running the cycles with the proven build
 remains open while an active IDE session prevents safe BPL replacement.
+
+The reproducible audit is stored in `release_audit_2.0.0.en.md`. It removed the only silent Web
+connection at startup, added semantics and keyboard operation to Web surfaces, and created a local
+link and mojibake gate. Visual assistive-technology acceptance remains part of the open real cycles.
 
 ## Execution order
 

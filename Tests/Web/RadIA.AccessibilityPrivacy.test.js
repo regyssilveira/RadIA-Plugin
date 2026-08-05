@@ -1,0 +1,38 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+
+const repositoryRoot = path.resolve('.');
+const webRoot = path.join(repositoryRoot, 'Source', 'UI', 'Web');
+const chatHtml = fs.readFileSync(path.join(webRoot, 'chat.html'), 'utf8');
+const chatJs = fs.readFileSync(path.join(webRoot, 'chat.js'), 'utf8');
+const diffHtml = fs.readFileSync(path.join(webRoot, 'diff.html'), 'utf8');
+
+test('web surfaces do not contact external origins during startup', () => {
+  assert.doesNotMatch(chatHtml, /(?:src|href)="https?:\/\//i);
+  assert.doesNotMatch(diffHtml, /(?:src|href)="https?:\/\//i);
+});
+
+test('chat exposes its primary controls and live regions to assistive technology', () => {
+  assert.match(chatHtml, /id="chat-container"[^>]*role="log"/);
+  assert.match(chatHtml, /<output id="status-bar"/);
+  assert.match(chatHtml, /id="prompt-textarea"[^>]*aria-label="Message Rad IA"/);
+  assert.match(chatHtml, /id="btn-send-prompt"[^>]*aria-label="Send message"/);
+  assert.match(chatHtml, /id="btn-agent-mode"[\s\S]*?aria-pressed="true"/);
+  assert.match(chatHtml, /<button[^>]*id="provider-dropdown-trigger"/);
+  assert.match(chatHtml, /<button[^>]*id="model-dropdown-trigger"/);
+});
+
+test('custom selectors support keyboard activation and synchronized ARIA state', () => {
+  assert.match(chatJs, /modelDropdownTrigger\.addEventListener\('keydown'/);
+  assert.match(chatJs, /providerDropdownTrigger\.addEventListener\('keydown'/);
+  assert.match(chatJs, /trigger\.setAttribute\('aria-expanded', String\(open\)\)/);
+  assert.match(chatJs, /div\.setAttribute\('aria-pressed'/);
+});
+
+test('diff review announces selection state and errors', () => {
+  assert.match(diffHtml, /<output id="selection-summary" aria-live="polite"/);
+  assert.match(diffHtml, /id="selection-error" role="alert" aria-live="assertive"/);
+  assert.match(diffHtml, /setAttribute\(\s*'aria-pressed'/);
+});

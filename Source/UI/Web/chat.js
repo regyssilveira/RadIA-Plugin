@@ -212,6 +212,8 @@ function setAgentMode(enabled) {
   btnAgentMode.classList.toggle('agent-mode-enabled', agentModeEnabled);
   btnAgentMode.classList.toggle('agent-mode-disabled', !agentModeEnabled);
   btnAgentMode.title = `Agent Mode: ${agentModeEnabled ? 'On' : 'Off'}`;
+  btnAgentMode.setAttribute('aria-label', btnAgentMode.title);
+  btnAgentMode.setAttribute('aria-pressed', String(agentModeEnabled));
   btnAgentMode.querySelector('.btn-label').textContent =
     agentModeEnabled ? 'Agent On' : 'Agent Off';
 }
@@ -2005,6 +2007,10 @@ btnHistory.addEventListener('click', () => {
     requestHistoryLoad();
   }
   sessionsSidebar.classList.toggle('collapsed');
+  btnHistory.setAttribute(
+    'aria-expanded',
+    String(!sessionsSidebar.classList.contains('collapsed'))
+  );
 });
 
 btnSettings.addEventListener('click', () => {
@@ -2074,16 +2080,38 @@ selectModel.addEventListener('change', () => {
   postMessageToDelphi({ action: 'change_model', model: selectModel.value });
 });
 
-modelDropdownTrigger.addEventListener('click', (e) => {
+function setDropdownOpen(wrapper, trigger, open) {
+  wrapper.classList.toggle('open', open);
+  trigger.setAttribute('aria-expanded', String(open));
+}
+
+function closeDropdowns() {
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+}
+
+function toggleModelDropdown() {
   if (modelDropdownWrapper.classList.contains('disabled')) return;
-  e.stopPropagation();
-  providerDropdownWrapper.classList.remove('open');
-  modelDropdownWrapper.classList.toggle('open');
-  if (modelDropdownWrapper.classList.contains('open')) {
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+  const open = !modelDropdownWrapper.classList.contains('open');
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, open);
+  if (open) {
     modelSearchInput.value = '';
     filterModels('');
     modelSearchInput.focus();
   }
+}
+
+modelDropdownTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleModelDropdown();
+});
+
+modelDropdownTrigger.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleModelDropdown();
 });
 
 modelSearchInput.addEventListener('click', (e) => {
@@ -2106,16 +2134,38 @@ function filterModels(query) {
   }
 }
 
-providerDropdownTrigger.addEventListener('click', (e) => {
+function toggleProviderDropdown() {
   if (providerDropdownWrapper.classList.contains('disabled')) return;
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
+  const open = !providerDropdownWrapper.classList.contains('open');
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, open);
+  if (open) {
+    const selected = providerOptionsList.querySelector('[aria-pressed="true"]');
+    const first = providerOptionsList.querySelector('button');
+    (selected || first)?.focus();
+  }
+}
+
+providerDropdownTrigger.addEventListener('click', (e) => {
   e.stopPropagation();
-  modelDropdownWrapper.classList.remove('open');
-  providerDropdownWrapper.classList.toggle('open');
+  toggleProviderDropdown();
+});
+
+providerDropdownTrigger.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleProviderDropdown();
 });
 
 document.addEventListener('click', () => {
-  modelDropdownWrapper.classList.remove('open');
-  providerDropdownWrapper.classList.remove('open');
+  closeDropdowns();
+  hideSlashPopup();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  closeDropdowns();
   hideSlashPopup();
 });
 
@@ -2152,7 +2202,7 @@ function renderSlashCommands() {
   }
 
   filteredSlashCommands.forEach((cmd, idx) => {
-    const item = document.createElement('div');
+    const item = document.createElement('li');
     item.classList.add('slash-command-item');
     if (idx === slashPopupSelectedIndex) {
       item.classList.add('selected');
@@ -2675,8 +2725,10 @@ function initializeConfig(data) {
     }
     selectProvider.appendChild(opt);
 
-    const div = document.createElement('div');
+    const div = document.createElement('button');
+    div.type = 'button';
     div.classList.add('custom-dropdown-option');
+    div.setAttribute('aria-pressed', String(p.value === data.activeProvider));
     if (p.value === data.activeProvider) {
       div.classList.add('selected');
     }
@@ -2694,16 +2746,26 @@ function initializeConfig(data) {
     div.addEventListener('click', () => {
       const prevSelected = providerOptionsList.querySelector('.custom-dropdown-option.selected');
       if (prevSelected) prevSelected.classList.remove('selected');
+      if (prevSelected) prevSelected.setAttribute('aria-pressed', 'false');
 
       div.classList.add('selected');
+      div.setAttribute('aria-pressed', 'true');
       selectProvider.value = p.value;
       selectProvider.dispatchEvent(new Event('change'));
 
       providerDropdownValue.innerHTML = `${getProviderIcon(p.value)}<span>${p.name}</span>`;
-      providerDropdownWrapper.classList.remove('open');
+      setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+      providerDropdownTrigger.focus();
+    });
+    div.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      div.click();
     });
 
-    providerOptionsList.appendChild(div);
+    const listItem = document.createElement('li');
+    listItem.appendChild(div);
+    providerOptionsList.appendChild(listItem);
   });
 
   providerDropdownValue.innerHTML = activeIcon
@@ -2748,7 +2810,7 @@ function updateModelsList(models, activeModel) {
     selectModel.appendChild(opt);
 
     modelDropdownValue.textContent = 'No models available';
-    modelOptionsList.innerHTML = '<div class="no-sessions">No models available</div>';
+    modelOptionsList.innerHTML = '<li class="no-sessions">No models available</li>';
     return;
   }
 
@@ -2763,8 +2825,10 @@ function updateModelsList(models, activeModel) {
     }
     selectModel.appendChild(opt);
 
-    const div = document.createElement('div');
+    const div = document.createElement('button');
+    div.type = 'button';
     div.classList.add('custom-dropdown-option');
+    div.setAttribute('aria-pressed', String(m === activeModel));
     if (m === activeModel) {
       div.classList.add('selected');
       modelDropdownValue.textContent = m;
@@ -2776,16 +2840,26 @@ function updateModelsList(models, activeModel) {
 
       const selectedOpt = modelOptionsList.querySelector('.custom-dropdown-option.selected');
       if (selectedOpt) selectedOpt.classList.remove('selected');
+      if (selectedOpt) selectedOpt.setAttribute('aria-pressed', 'false');
       div.classList.add('selected');
+      div.setAttribute('aria-pressed', 'true');
 
       modelDropdownValue.textContent = m;
       selectModel.value = m;
-      modelDropdownWrapper.classList.remove('open');
+      setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
 
       selectModel.dispatchEvent(new Event('change'));
     });
+    div.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      div.click();
+      modelDropdownTrigger.focus();
+    });
 
-    modelOptionsList.appendChild(div);
+    const listItem = document.createElement('li');
+    listItem.appendChild(div);
+    modelOptionsList.appendChild(listItem);
   });
 
   if (!activeModel && models.length > 0) {
@@ -2800,17 +2874,23 @@ function setRequestState(inProgress) {
   if (inProgress) {
     btnSendPrompt.classList.add('stop-btn');
     btnSendPrompt.title = 'Cancel request';
+    btnSendPrompt.setAttribute('aria-label', 'Cancel request');
     selectProvider.disabled = true;
     providerDropdownWrapper.classList.add('disabled');
+    providerDropdownTrigger.setAttribute('aria-disabled', 'true');
     selectModel.disabled = true;
     modelDropdownWrapper.classList.add('disabled');
+    modelDropdownTrigger.setAttribute('aria-disabled', 'true');
   } else {
     btnSendPrompt.classList.remove('stop-btn');
     btnSendPrompt.title = 'Send message';
+    btnSendPrompt.setAttribute('aria-label', 'Send message');
     selectProvider.disabled = false;
     providerDropdownWrapper.classList.remove('disabled');
+    providerDropdownTrigger.setAttribute('aria-disabled', 'false');
     selectModel.disabled = false;
     modelDropdownWrapper.classList.remove('disabled');
+    modelDropdownTrigger.setAttribute('aria-disabled', 'false');
   }
 }
 
@@ -2827,12 +2907,12 @@ function updateSessions(sessions, activeSessionId) {
   sessionsList.innerHTML = '';
 
   if (!sessions || sessions.length === 0) {
-    sessionsList.innerHTML = `<div class="no-sessions">No conversations active</div>`;
+    sessionsList.innerHTML = `<li class="no-sessions">No conversations active</li>`;
     return;
   }
 
   sessions.forEach(session => {
-    const item = document.createElement('div');
+    const item = document.createElement('li');
     item.classList.add('session-item');
     if (session.id === activeSessionId) {
       item.classList.add('active');
@@ -2851,6 +2931,7 @@ function updateSessions(sessions, activeSessionId) {
     btnRename.classList.add('session-action-btn');
     btnRename.disabled = requestInProgress;
     btnRename.title = "Rename Conversation";
+    btnRename.setAttribute('aria-label', `Rename conversation ${session.name}`);
     btnRename.innerHTML = SVG_ICONS.edit;
     btnRename.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2865,6 +2946,7 @@ function updateSessions(sessions, activeSessionId) {
     btnDelete.classList.add('session-action-btn', 'delete-btn');
     btnDelete.disabled = requestInProgress;
     btnDelete.title = "Delete Conversation";
+    btnDelete.setAttribute('aria-label', `Delete conversation ${session.name}`);
     btnDelete.innerHTML = SVG_ICONS.trash;
     btnDelete.addEventListener('click', (e) => {
       e.stopPropagation();

@@ -129,12 +129,16 @@
   </style>
 </head>
 <body class="dark-theme">
-  <div id="selection-panel">
-    <div id="selection-summary">Waiting for diff blocks...</div>
-    <div id="hunk-controls"></div>
-    <div id="selection-error"></div>
+  <div id="selection-panel" aria-label="Diff block selection">
+    <output id="selection-summary" aria-live="polite">
+      Waiting for diff blocks...
+    </output>
+    <div id="hunk-controls" aria-label="Diff blocks"></div>
+    <div id="selection-error" role="alert" aria-live="assertive"></div>
   </div>
-  <div id="diff-output">Generating code comparison... Please wait.</div>
+  <main id="diff-output" aria-label="Code comparison">
+    Generating code comparison... Please wait.
+  </main>
 
   <script>
     let currentHunkIndex = 0;
@@ -206,9 +210,17 @@
         'active',
         hunkSelections[index]
       );
+      control.querySelector('.accept-hunk').setAttribute(
+        'aria-pressed',
+        String(hunkSelections[index])
+      );
       control.querySelector('.reject-hunk').classList.toggle(
         'active',
         !hunkSelections[index]
+      );
+      control.querySelector('.reject-hunk').setAttribute(
+        'aria-pressed',
+        String(!hunkSelections[index])
       );
     }
 
@@ -229,6 +241,7 @@
         const control = document.createElement('div');
         control.className = 'hunk-control';
         control.dataset.hunkIndex = String(index);
+        control.setAttribute('aria-label', `Diff block ${index + 1}`);
 
         const label = document.createElement('span');
         label.textContent =
@@ -238,6 +251,7 @@
         const acceptButton = document.createElement('button');
         acceptButton.className = 'accept-hunk active';
         acceptButton.textContent = 'Accept';
+        acceptButton.setAttribute('aria-pressed', 'true');
         acceptButton.addEventListener('click', () => {
           setHunkSelection(index, true);
         });
@@ -245,6 +259,7 @@
         const rejectButton = document.createElement('button');
         rejectButton.className = 'reject-hunk';
         rejectButton.textContent = 'Reject';
+        rejectButton.setAttribute('aria-pressed', 'false');
         rejectButton.addEventListener('click', () => {
           setHunkSelection(index, false);
         });

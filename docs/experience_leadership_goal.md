@@ -280,7 +280,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 - Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
 - [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
 - [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
-- Realizar auditoria final de segurança, privacidade, acessibilidade e documentação.
+- [x] Automatizar a auditoria final de segurança, privacidade, acessibilidade e documentação.
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
@@ -292,6 +292,10 @@ contínua permanecem abertos e não são inferidos dessa evidência automatizada
 O smoke da IDE agora pode gerar evidência JSON ligada ao pacote publicado, commit de origem e BPL
 instalada. O modo de evidência recusa qualquer bypass de hash. A execução dos ciclos com a build
 comprovada permanece aberta enquanto houver IDE em uso impedindo a atualização segura das BPLs.
+
+A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
+silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e
+mojibake. O aceite visual com tecnologia assistiva continua incluído nos ciclos reais ainda abertos.
 
 ## Ordem de execução
 
