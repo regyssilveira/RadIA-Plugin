@@ -22,12 +22,18 @@ if ($EvidencePath -and $SkipPackageHashCheck) {
 function Get-RadIAProcessDescendants {
     param(
         [Parameter(Mandatory = $true)]
-        [int]$ParentProcessId
+        [int]$ParentProcessId,
+        [Parameter(Mandatory = $true)]
+        [DateTime]$ParentStartedAt
     )
 
+    $earliestChildStart = $ParentStartedAt.AddSeconds(-1)
     $processes = @(
         Get-CimInstance Win32_Process |
-            Select-Object ProcessId, ParentProcessId, Name
+            Where-Object {
+                $_.CreationDate -ge $earliestChildStart
+            } |
+            Select-Object ProcessId, ParentProcessId, Name, CreationDate
     )
     $pendingParents = [Collections.Generic.Queue[int]]::new()
     $pendingParents.Enqueue($ParentProcessId)
@@ -552,7 +558,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
 
         $descendants = @(
-            Get-RadIAProcessDescendants -ParentProcessId $process.Id
+            Get-RadIAProcessDescendants `
+                -ParentProcessId $process.Id `
+                -ParentStartedAt $process.StartTime
         )
         $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
         if (-not $currentProcess.CloseMainWindow()) {
