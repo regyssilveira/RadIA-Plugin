@@ -264,6 +264,78 @@ begin
       ]
     ),
     TRadIAJourneyDefinition.Create(
+      '/journey modernize',
+      'Modernize Delphi Project',
+      'Modernizes units, forms, packages, and dependencies with compile gates.',
+      'Modernize the active Delphi project without changing its intended behavior. Inspect units, ' +
+      'forms, packages, project dependencies, and supported targets before proposing changes. Use ' +
+      'reviewable transactions, preserve public contracts unless approved, and validate each ' +
+      'coherent batch with build and focused tests.',
+      [
+        TRadIAJourneyPhase.Create(
+          'Inventory',
+          'Inspect project health, units, symbols, forms, packages, dependencies, and target platforms.',
+          'Record GetProjectHealth, ListProjectUnits, GetUnitSymbols, GetActiveForm, and dependency evidence.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Prioritize',
+          'Rank modernization candidates by user value, compatibility risk, and migration cost.',
+          'Present independent batches with affected files, contracts, and rollback boundaries.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Modernize',
+          'Preview one coherent multi-file or designer transaction at a time before applying it.',
+          'Record approved previews, applied transaction IDs, and untouched public contracts.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Prove',
+          'Build every requested target and run focused tests after each accepted batch.',
+          'Provide build, compiler, DUnitX, project-health, and rollback evidence.'
+        )
+      ],
+      [
+        'Every applied batch has preview, consent, validation, and rollback evidence.',
+        'Requested Delphi targets build or a target-specific external blocker is proven.',
+        'Behavioral and public-contract changes are explicitly approved and documented.'
+      ]
+    ),
+    TRadIAJourneyDefinition.Create(
+      '/journey migrate',
+      'Migrate Legacy Delphi Code',
+      'Migrates a bounded legacy pattern through reversible multi-file transactions.',
+      'Migrate the user-selected legacy Delphi pattern while preserving observable behavior. ' +
+      'Establish a baseline first, map all affected Pascal, DFM or FMX, project, package, and ' +
+      'dependency files, then execute reversible batches through the central transaction flow. ' +
+      'Never perform a broad rewrite without an approved boundary and validation evidence.',
+      [
+        TRadIAJourneyPhase.Create(
+          'Baseline',
+          'Build, run focused tests, and capture project health before editing.',
+          'Record baseline build, compiler messages, DUnitX result, and health score.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Map',
+          'Trace the selected legacy pattern across code, forms, projects, packages, and dependencies.',
+          'List affected files, symbols, runtime contracts, data boundaries, and migration exclusions.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Migrate',
+          'Preview and apply the smallest reversible development transaction for one migration batch.',
+          'Record transaction preview, consent, fingerprint, affected files, and revert capability.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Compare',
+          'Rebuild, rerun focused tests, compare health, and revert the batch on regression.',
+          'Provide before-and-after build, tests, health, diff, and rollback decision evidence.'
+        )
+      ],
+      [
+        'The selected legacy pattern is removed only inside the approved boundary.',
+        'Baseline behavior remains verified by build and focused tests.',
+        'Every batch can be reverted independently and leaves unrelated files untouched.'
+      ]
+    ),
+    TRadIAJourneyDefinition.Create(
       '/journey release',
       'Prepare Delivery',
       'Runs project health, validation, and a reviewable Git delivery flow.',

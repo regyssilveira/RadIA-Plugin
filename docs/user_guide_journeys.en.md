@@ -12,6 +12,8 @@ Every recipe accepts optional context after the command, for example:
 /journey create VCL inventory application with FireDAC and SQLite
 /journey fix-build preserve the public API of CustomerService
 /journey debug Access Violation while closing the orders form
+/journey modernize reduce coupling without changing public interfaces
+/journey migrate replace an ADO layer with FireDAC in reversible batches
 ```
 
 Context is limited to 4,000 characters and appended to the structured objective. It never changes
@@ -27,6 +29,8 @@ claim success merely because it produced a text response.
 | `/journey fix-build [constraints]` | Diagnose errors, apply a minimal repair, and rebuild. |
 | `/journey tests [focus]` | Identify gaps, add DUnitX tests, and run validation. |
 | `/journey debug [symptom]` | Reproduce a failure, collect evidence, fix, and validate. |
+| `/journey modernize [scope]` | Modernize units, forms, packages, and dependencies in validated batches. |
+| `/journey migrate [legacy pattern]` | Migrate a bounded pattern with a baseline, transaction, and rollback. |
 | `/journey release [scope]` | Check gates and diff, then prepare a commit preview. |
 
 ## Execution model
@@ -44,3 +48,7 @@ context remains separate and cannot remove these gates.
 
 Recipes grant no additional permission. The release journey prepares a local preview but never
 pushes or publishes artifacts without an explicit user instruction.
+
+Use **modernize** when structure and practices should evolve while behavior and public contracts
+remain stable. Use **migrate** when replacing a bounded legacy technology in independently
+reversible batches.

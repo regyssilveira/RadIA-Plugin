@@ -12,6 +12,8 @@ Cada receita aceita contexto opcional depois do comando, por exemplo:
 /journey create aplicativo VCL de estoque com FireDAC e SQLite
 /journey fix-build preserve a API pública da unit CustomerService
 /journey debug Access Violation ao fechar o formulário de pedidos
+/journey modernize reduzir acoplamento sem alterar as interfaces públicas
+/journey migrate substituir uma camada ADO por FireDAC em lotes reversíveis
 ```
 
 O contexto é limitado a 4.000 caracteres e anexado ao objetivo estruturado. Ele não altera as
@@ -27,6 +29,8 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 | `/journey fix-build [restrições]` | Diagnosticar erros, aplicar correção mínima e recompilar. |
 | `/journey tests [foco]` | Identificar lacunas, criar testes DUnitX e executar a validação. |
 | `/journey debug [sintoma]` | Reproduzir uma falha, coletar evidências, corrigir e validar. |
+| `/journey modernize [escopo]` | Modernizar units, forms, packages e dependências em lotes validados. |
+| `/journey migrate [padrão legado]` | Migrar um padrão delimitado com baseline, transação e rollback. |
 | `/journey release [escopo]` | Verificar gates, diff e preparar preview de commit. |
 
 ## Como a execução funciona
@@ -51,4 +55,6 @@ faz push nem publica artefatos sem uma instrução explícita do usuário.
 - Use **fix-build** quando há mensagens reais do compilador e a correção precisa ser mínima.
 - Use **tests** para ampliar cobertura sem misturar refatorações não relacionadas.
 - Use **debug** quando a causa exige estado de execução, breakpoints, stack, watches ou avaliação.
+- Use **modernize** para evoluir estrutura e práticas preservando comportamento e contratos públicos.
+- Use **migrate** para substituir tecnologia legada em lotes independentes e reversíveis.
 - Use **release** antes de uma entrega para reunir gates técnicos e revisar o escopo do commit.

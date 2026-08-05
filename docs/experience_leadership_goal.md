@@ -253,16 +253,20 @@ possui plano somente leitura, preserva dados e componentes compartilhados por pa
 ### M7 — Jornadas especializadas
 
 - [x] Entregar receitas auditáveis para criar aplicação, corrigir build, ampliar testes e depurar.
-- Adicionar modernização orientada a Delphi, incluindo units, forms, packages e dependências.
-- Integrar migração segura de padrões legados com preview e gates de compilação.
+- [x] Adicionar modernização orientada a Delphi, incluindo units, forms, packages e dependências.
+- [x] Integrar migração segura de padrões legados com preview e gates de compilação.
 - [x] Criar cartão de saúde do projeto com score, riscos e jornadas priorizadas revisáveis.
 - Permitir compartilhar receitas e políticas entre equipes sem compartilhar credenciais.
 
 **Saída:** o RadIA resolve fluxos completos de Delphi, não apenas solicitações isoladas.
 
-As cinco receitas nativas agora possuem quatro fases ordenadas, evidência obrigatória por fase e
+As sete receitas nativas agora possuem quatro fases ordenadas, evidência obrigatória por fase e
 três critérios de conclusão incorporados ao objetivo do Agent Runtime. O contexto do usuário é
 mantido separado e não substitui consentimento, revisão de plano nem gates de conclusão.
+
+O catálogo agora possui sete receitas. `/journey modernize` inventaria units, forms, packages,
+dependências e targets antes de aplicar lotes coerentes. `/journey migrate` exige baseline, escopo
+fechado, transação reversível e comparação de build, testes e saúde antes de aceitar cada lote.
 
 ### M8 — Prova de liderança e release
 

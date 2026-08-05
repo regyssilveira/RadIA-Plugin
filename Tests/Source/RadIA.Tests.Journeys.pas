@@ -33,7 +33,7 @@ var
   LDefinition: TRadIAJourneyDefinition;
 begin
   LCount := Length(TRadIAJourneyCatalog.All);
-  Assert.AreEqual(5, LCount);
+  Assert.AreEqual(7, LCount);
   Assert.IsTrue(
     TRadIAJourneyCatalog.Find('/journey create', LDefinition)
   );
@@ -42,6 +42,14 @@ begin
     TRadIAJourneyCatalog.Find('/JOURNEY DEBUG', LDefinition)
   );
   Assert.AreEqual('Debug Failure', LDefinition.Name);
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey modernize', LDefinition)
+  );
+  Assert.AreEqual('Modernize Delphi Project', LDefinition.Name);
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey migrate', LDefinition)
+  );
+  Assert.AreEqual('Migrate Legacy Delphi Code', LDefinition.Name);
 end;
 
 procedure TTestRadIAJourneys.JourneyObjectivesPreserveSafetyGates;
@@ -58,6 +66,11 @@ begin
   );
   Assert.Contains(LDefinition.Objective, 'Never push or publish');
   Assert.Contains(LDefinition.Objective, 'explicit user instruction');
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey migrate', LDefinition)
+  );
+  Assert.Contains(LDefinition.Objective, 'central transaction flow');
+  Assert.Contains(LDefinition.Phases[3].Evidence, 'rollback decision');
 end;
 
 procedure TTestRadIAJourneys.JourneysExposeAuditablePhasesAndEvidence;

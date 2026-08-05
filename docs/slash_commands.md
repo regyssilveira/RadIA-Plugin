@@ -32,6 +32,8 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/journey fix-build` | Diagnostica e corrige um build com alterações mínimas. | Compilador, patches e build. |
 | `/journey tests` | Amplia testes DUnitX e executa validação. | Projeto, patches e DUnitX. |
 | `/journey debug` | Conduz reprodução, diagnóstico, correção e validação. | Debugger, patches e build. |
+| `/journey modernize` | Moderniza estrutura e práticas em lotes revisáveis. | Grafo, Designer, transações, build e testes. |
+| `/journey migrate` | Migra um padrão legado com baseline e rollback. | Grafo, transações, diff, build e testes. |
 | `/journey release` | Reúne gates e prepara preview de commit local. | Saúde, build, testes e Git. |
 | `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
 | `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |

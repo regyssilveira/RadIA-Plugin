@@ -246,15 +246,19 @@ provides a read-only plan, preserves data and shared components by default, and 
 ### M7 — Specialized journeys
 
 - [x] Deliver auditable recipes for application creation, build repair, testing, and debugging.
-- Add Delphi-specific modernization for units, forms, packages, and dependencies.
-- Migrate legacy patterns with preview and compile gates.
+- [x] Add Delphi-specific modernization for units, forms, packages, and dependencies.
+- [x] Migrate legacy patterns with preview and compile gates.
 - [x] Add a project-health card with a score, risks, and reviewable prioritized journeys.
 
 **Outcome:** complete Delphi workflows rather than isolated requests.
 
-The five native recipes now contain four ordered phases, required evidence per phase, and three
+The seven native recipes now contain four ordered phases, required evidence per phase, and three
 completion criteria embedded in the Agent Runtime objective. User context remains separate and
 cannot replace consent, plan review, or completion gates.
+
+The catalog now contains seven recipes. `/journey modernize` inventories units, forms, packages,
+dependencies, and targets before applying coherent batches. `/journey migrate` requires a
+baseline, bounded scope, reversible transaction, and build, test, and health comparison per batch.
 
 ### M8 — Leadership proof and release
 
