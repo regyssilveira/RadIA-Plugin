@@ -61,12 +61,18 @@ Start an autonomous run with an explicit objective:
 /agent run inspect the active project, fix the compiler error, and validate the build
 ```
 
-Before the first tool, chat displays the proposed plan and waits for **Approve plan**. The live card
-also shows the objective, status, token usage, elapsed time, and completed tools. Use its controls
-or `/agent pause`, `/agent resume`, and `/agent cancel`. Every state transition is persisted under
+Before the first tool, chat displays the proposed plan and waits for **Approve plan**. The live
+execution center shows the objective, current message, steps and limits, tokens, time, cost, and
+change, build, and test indicators. Each timeline step expands to show arguments, result or error,
+correlation, duration, and whether it mutated the workspace. Use its controls or `/agent pause`,
+`/agent resume`, and `/agent cancel`. Every state transition is persisted under
 `RadIA\agent-checkpoints`, so a paused session can be resumed.
 To enable monetary estimates and enforcement, configure the
 [local pricing catalog](agent_pricing.en.md).
+
+Open the integrated terminal with the **Terminal** (`>_`) button in the chat header or with the
+`/terminal` command. Both paths open the same dockable terminal, supporting visual and
+keyboard-driven workflows.
 
 The **Agent On/Off** header button and `/agent`, `/agent on`, and `/agent off` commands control the
 same state. When disabled, the catalog remains available, but chat tool calls are rejected until

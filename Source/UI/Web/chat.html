@@ -52,8 +52,18 @@
         </svg>
         <span class="btn-label">Agent On</span>
       </button>
+      <button class="header-action-btn" id="btn-terminal" title="Open Terminal (/terminal)">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+          <path d="m7 9 3 3-3 3"></path>
+          <path d="M13 15h4"></path>
+        </svg>
+        <span class="btn-label">Terminal</span>
+      </button>
       <button class="header-action-btn" id="btn-clear-chat" title="Clear Chat">
-        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 6h18"></path>
           <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
@@ -182,7 +192,8 @@
         <div class="generator-card">
           <div class="generator-form-group">
             <label for="generator-input">Input (JSON or SQL DDL)</label>
-            <textarea id="generator-input" placeholder="Paste your raw JSON payload or SQL DDL statements here..." rows="8"></textarea>
+            <textarea id="generator-input"
+              placeholder="Paste your raw JSON payload or SQL DDL statements here..." rows="8"></textarea>
           </div>
 
           <div class="generator-options-row">

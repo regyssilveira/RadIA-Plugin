@@ -125,6 +125,10 @@ state remain intact even when an escape sequence is split across chunks.
 
 ### M3 — Unified execution center
 
+Delivered in this increment: the live card is now an auditable timeline with the current message,
+limits, tokens, cost, duration, correlation, arguments, results, errors, mutations, and build and
+test indicators. Plan editing, step replay, and searchable persistence remain pending.
+
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.
 - Support pause, cancellation, plan editing, step replay, and checkpoint resume.

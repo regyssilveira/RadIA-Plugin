@@ -166,6 +166,8 @@ type
     [Test]
     procedure TestWebMessageOpenSettings;
     [Test]
+    procedure TestWebMessageOpenTerminal;
+    [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
     procedure TestWebMessageInsertCode;
@@ -797,6 +799,15 @@ begin
   DrainQueuedCalls;
 
   Assert.IsTrue(FMockView.OpenSettingsDialogCalled);
+end;
+
+procedure TTestChatPresenter.TestWebMessageOpenTerminal;
+begin
+  FMockView.OpenTerminalCalled := False;
+
+  FPresenter.ProcessWebMessage('{"action":"open_terminal"}');
+
+  Assert.IsTrue(FMockView.OpenTerminalCalled);
 end;
 
 procedure TTestChatPresenter.TestWebMessageToggleHistory;

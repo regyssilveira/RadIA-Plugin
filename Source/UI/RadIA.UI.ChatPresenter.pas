@@ -1769,6 +1769,8 @@ begin
     HandleReadyMessage
   else if AAction = 'open_settings' then
     HandleOpenSettingsMessage
+  else if AAction = 'open_terminal' then
+    FView.OpenTerminal
   else if AAction = 'change_provider' then
     HandleChangeProviderMessage(AJson.GetValue<string>('provider', ''))
   else if AAction = 'change_model' then

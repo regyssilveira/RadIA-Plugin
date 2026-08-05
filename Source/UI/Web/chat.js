@@ -161,6 +161,7 @@ const btnClearChat    = document.getElementById('btn-clear-chat');
 const btnHistory      = document.getElementById('btn-history');
 const btnSettings     = document.getElementById('btn-settings');
 const btnAgentMode    = document.getElementById('btn-agent-mode');
+const btnTerminal     = document.getElementById('btn-terminal');
 
 const promptTextarea  = document.getElementById('prompt-textarea');
 const btnSendPrompt   = document.getElementById('btn-send-prompt');
@@ -219,6 +220,67 @@ function createAgentControl(label, action, disabled = false) {
   return button;
 }
 
+function createAgentStep(step) {
+  const item = document.createElement('li');
+  item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
+  if (step.mutation) item.classList.add('is-mutation');
+
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  const outcome = step.success ? 'completed' : (step.errorCode || 'failed');
+  const duration = Math.max(0, step.durationMilliseconds || 0);
+  summary.textContent =
+    `${step.index}. ${step.toolName} — ${outcome} · ${duration} ms` +
+    (step.mutation ? ' · mutation' : '');
+  details.appendChild(summary);
+
+  const metadata = document.createElement('div');
+  metadata.className = 'agent-run-step-metadata';
+  metadata.textContent =
+    `Correlation: ${step.correlationId || 'unavailable'} · ` +
+    `Started: ${Math.max(0, step.startedElapsedMilliseconds || 0)} ms`;
+  details.appendChild(metadata);
+
+  const argumentsTitle = document.createElement('strong');
+  argumentsTitle.textContent = 'Arguments';
+  details.appendChild(argumentsTitle);
+  const argumentsBlock = document.createElement('pre');
+  argumentsBlock.textContent = formatToolPayload(step.arguments);
+  details.appendChild(argumentsBlock);
+
+  const resultTitle = document.createElement('strong');
+  resultTitle.textContent = step.success ? 'Result' : 'Error';
+  details.appendChild(resultTitle);
+  const resultBlock = document.createElement('pre');
+  resultBlock.textContent = formatToolPayload(
+    step.success ? step.result : step.errorMessage
+  );
+  details.appendChild(resultBlock);
+  item.appendChild(details);
+  return item;
+}
+
+function renderAgentValidation(card, state) {
+  const validation = state.validation || {};
+  const validationElement = card.querySelector('.agent-run-validation');
+  let testStatus = 'not-run';
+  if (validation.testsRun) {
+    testStatus = validation.testsPassed ? 'passed' : 'failed';
+  }
+  validationElement.replaceChildren();
+  const indicators = [
+    ['Changes', validation.mutationPending ? 'pending' : 'clean'],
+    ['Build', validation.buildPassed ? 'passed' : 'not-passed'],
+    ['Tests', testStatus]
+  ];
+  indicators.forEach(([label, value]) => {
+    const indicator = document.createElement('span');
+    indicator.className = `agent-validation-indicator is-${value}`;
+    indicator.textContent = `${label}: ${value.replace('-', ' ')}`;
+    validationElement.appendChild(indicator);
+  });
+}
+
 function renderAgentState(data) {
   const state = data?.state;
   if (!state || typeof state !== 'object') return;
@@ -232,7 +294,9 @@ function renderAgentState(data) {
       '<div class="agent-run-header">' +
       '<strong>Agent run</strong><span class="agent-run-status"></span>' +
       '</div><div class="agent-run-objective"></div>' +
+      '<div class="agent-run-message"></div>' +
       '<div class="agent-run-metrics"></div>' +
+      '<div class="agent-run-validation"></div>' +
       '<ol class="agent-run-plan"></ol><ol class="agent-run-steps"></ol>' +
       '<div class="agent-run-controls"></div>';
     AGENT_CARDS.set(sessionId, card);
@@ -243,8 +307,11 @@ function renderAgentState(data) {
   card.dataset.status = status;
   card.querySelector('.agent-run-status').textContent = status;
   card.querySelector('.agent-run-objective').textContent = state.objective || '';
+  card.querySelector('.agent-run-message').textContent = state.message || '';
+  const steps = Array.isArray(state.steps) ? state.steps : [];
   const elapsedSeconds = Math.round((state.elapsedMilliseconds || 0) / 1000);
   let metricsText =
+    `${steps.length}/${state.maxSteps || 0} steps · ` +
     `${state.totalTokens || 0}/${state.maxTotalTokens || 0} tokens · ` +
     `${elapsedSeconds}s/${Math.round((state.maxDurationMilliseconds || 0) / 1000)}s`;
   if (state.pricingConfigured) {
@@ -255,6 +322,7 @@ function renderAgentState(data) {
     metricsText += ' · cost pricing not configured';
   }
   card.querySelector('.agent-run-metrics').textContent = metricsText;
+  renderAgentValidation(card, state);
 
   const planElement = card.querySelector('.agent-run-plan');
   planElement.replaceChildren();
@@ -269,15 +337,8 @@ function renderAgentState(data) {
 
   const stepsElement = card.querySelector('.agent-run-steps');
   stepsElement.replaceChildren();
-  const steps = Array.isArray(state.steps) ? state.steps : [];
   steps.forEach(step => {
-    const item = document.createElement('li');
-    const outcome = step.success ? 'completed' : (step.errorCode || 'failed');
-    item.textContent = `${step.index}. ${step.toolName} — ${outcome}`;
-    item.title = formatToolPayload(
-      step.success ? step.result : step.errorMessage
-    );
-    stepsElement.appendChild(item);
+    stepsElement.appendChild(createAgentStep(step));
   });
 
   const controls = card.querySelector('.agent-run-controls');
@@ -1275,6 +1336,10 @@ btnSettings.addEventListener('click', () => {
     return;
   }
   postMessageToDelphi({ action: 'open_settings' });
+});
+
+btnTerminal.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'open_terminal' });
 });
 
 

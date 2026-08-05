@@ -129,6 +129,10 @@ do parser permanecem íntegros mesmo quando uma sequência chega dividida entre 
 
 ### M3 — Central unificada de execução
 
+Entregue nesta etapa: o cartão vivo tornou-se uma timeline auditável com mensagem atual, limites,
+tokens, custo, duração, correlação, argumentos, resultados, erros, mutações e indicadores de
+build e testes. Edição de plano, repetição de etapa e persistência pesquisável seguem pendentes.
+
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.
 - Permitir pausar, cancelar, editar o plano, repetir uma etapa e retomar de checkpoint.

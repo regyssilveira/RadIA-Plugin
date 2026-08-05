@@ -995,6 +995,12 @@ begin
     Assert.AreEqual('Objective completed.', LResult.Message);
     Assert.AreEqual(1, LExecutorObject.CallCount);
     Assert.Contains(LStoreObject.SnapshotJson, '"status":"completed"');
+    Assert.Contains(
+      LStoreObject.SnapshotJson,
+      '"startedElapsedMilliseconds":'
+    );
+    Assert.Contains(LStoreObject.SnapshotJson, '"durationMilliseconds":');
+    Assert.Contains(LStoreObject.SnapshotJson, '"mutation":false');
   finally
     LRuntime.Free;
   end;

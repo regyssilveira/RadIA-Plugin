@@ -177,6 +177,9 @@ type
       ResultJson: string;
       ErrorCode: string;
       ErrorMessage: string;
+      StartedElapsedMilliseconds: Int64;
+      DurationMilliseconds: Int64;
+      Mutation: Boolean;
     end;
     TRadIAAgentValidationState = record
       MutationPending: Boolean;
@@ -237,7 +240,9 @@ type
     procedure AddToolStep(
       const ADecision: TRadIAAgentDecision;
       const ACorrelationId: string;
-      const AResult: TRadIAToolResult
+      const AResult: TRadIAToolResult;
+      const AStartedElapsedMilliseconds: Int64;
+      const ADurationMilliseconds: Int64
     );
     procedure ChangeStatus(
       const AStatus: TRadIAAgentStatus;
@@ -597,7 +602,9 @@ end;
 procedure TRadIAAgentRuntime.AddToolStep(
   const ADecision: TRadIAAgentDecision;
   const ACorrelationId: string;
-  const AResult: TRadIAToolResult
+  const AResult: TRadIAToolResult;
+  const AStartedElapsedMilliseconds: Int64;
+  const ADurationMilliseconds: Int64
 );
 var
   LStep: TRadIAAgentStep;
@@ -611,6 +618,9 @@ begin
   LStep.ResultJson := AResult.ContentJson;
   LStep.ErrorCode := AResult.ErrorCode;
   LStep.ErrorMessage := AResult.ErrorMessage;
+  LStep.StartedElapsedMilliseconds := AStartedElapsedMilliseconds;
+  LStep.DurationMilliseconds := Max(0, ADurationMilliseconds);
+  LStep.Mutation := IsMutationTool(ADecision.ToolName);
   FSteps.Add(LStep);
 end;
 
@@ -758,6 +768,18 @@ begin
       LStepJson.AddPair('result', LStep.ResultJson);
       LStepJson.AddPair('errorCode', LStep.ErrorCode);
       LStepJson.AddPair('errorMessage', LStep.ErrorMessage);
+      LStepJson.AddPair(
+        'startedElapsedMilliseconds',
+        TJSONNumber.Create(LStep.StartedElapsedMilliseconds)
+      );
+      LStepJson.AddPair(
+        'durationMilliseconds',
+        TJSONNumber.Create(LStep.DurationMilliseconds)
+      );
+      LStepJson.AddPair(
+        'mutation',
+        TJSONBool.Create(LStep.Mutation)
+      );
       LStepArray.AddElement(LStepJson);
     end;
     Result := LRoot.ToJSON;
@@ -1017,8 +1039,10 @@ function TRadIAAgentRuntime.ExecuteToolDecision(
 ): Boolean;
 var
   LCorrelationId: string;
+  LDurationMilliseconds: Int64;
   LRequest: TRadIAToolRequest;
   LResult: TRadIAToolResult;
+  LStartedElapsedMilliseconds: Int64;
 begin
   Result := False;
   if Trim(ADecision.ToolName) = '' then
@@ -1045,8 +1069,17 @@ begin
     FProjectId,
     'workspace'
   ).WithCancellation(FCancellationToken);
+  LStartedElapsedMilliseconds := ElapsedMilliseconds;
   LResult := FToolExecutor.Execute(LRequest);
-  AddToolStep(ADecision, LCorrelationId, LResult);
+  LDurationMilliseconds := ElapsedMilliseconds -
+    LStartedElapsedMilliseconds;
+  AddToolStep(
+    ADecision,
+    LCorrelationId,
+    LResult,
+    LStartedElapsedMilliseconds,
+    LDurationMilliseconds
+  );
   NotifyAndCheckpoint;
   Result := True;
 end;
@@ -1151,6 +1184,18 @@ begin
         LStep.ErrorMessage := LStepJson.GetValue<string>(
           'errorMessage',
           ''
+        );
+        LStep.StartedElapsedMilliseconds := LStepJson.GetValue<Int64>(
+          'startedElapsedMilliseconds',
+          0
+        );
+        LStep.DurationMilliseconds := LStepJson.GetValue<Int64>(
+          'durationMilliseconds',
+          0
+        );
+        LStep.Mutation := LStepJson.GetValue<Boolean>(
+          'mutation',
+          IsMutationTool(LStep.ToolName)
         );
         FSteps.Add(LStep);
       end;

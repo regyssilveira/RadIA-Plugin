@@ -71,6 +71,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         retorno de carro, sobrescrita, movimento, posição, limpeza e save/restore de cursor.
     *   M2 concluído: múltiplas sessões em abas mantêm processos, buffers e entrada independentes;
         fechar uma aba cancela apenas sua própria árvore e preserva pelo menos uma sessão aberta.
+    *   M3 entregue nesta etapa: a central mostra uma timeline expansível com argumentos,
+        resultado, erro, correlação, duração, mutação e indicadores de validação.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).

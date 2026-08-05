@@ -89,12 +89,18 @@ Para iniciar uma execução autônoma, descreva um objetivo explícito:
 /agent run analise o projeto ativo, corrija o erro de compilação e valide o build
 ```
 
-Antes da primeira tool, o chat exibe o plano proposto e aguarda **Approve plan**. O cartão vivo
-também mostra objetivo, estado, consumo de tokens, tempo e tools concluídas. Seus botões ou os
-comandos `/agent pause`, `/agent resume` e `/agent cancel` controlam a execução. Cada mudança de
-estado é persistida em `RadIA\agent-checkpoints`, permitindo retomar a sessão depois de uma pausa.
+Antes da primeira tool, o chat exibe o plano proposto e aguarda **Approve plan**. A central viva
+mostra objetivo, mensagem atual, passos e limites, tokens, tempo, custo e indicadores de mudanças,
+build e testes. Cada etapa da timeline pode ser expandida para inspecionar argumentos, resultado ou
+erro, correlação, duração e se a operação foi uma mutação. Seus botões ou os comandos
+`/agent pause`, `/agent resume` e `/agent cancel` controlam a execução. Cada mudança de estado é
+persistida em `RadIA\agent-checkpoints`, permitindo retomar a sessão depois de uma pausa.
 Para habilitar a estimativa e o limite monetário, configure o
 [catálogo local de custos](agent_pricing.md).
+
+O terminal integrado pode ser aberto pelo botão **Terminal** (`>_`) no cabeçalho do chat ou pelo
+comando `/terminal`. Os dois caminhos abrem o mesmo terminal acoplável e preservam a preferência
+entre interação visual e comandos digitados.
 
 O botão **Agent On/Off** no cabeçalho e os comandos `/agent`, `/agent on` e `/agent off` controlam o
 mesmo estado. Com o modo desligado, o catálogo continua disponível, mas chamadas de tools pelo chat

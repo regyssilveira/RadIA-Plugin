@@ -1780,10 +1780,42 @@ body.light-theme .message-avatar.provider-avatar-badge {
   color: var(--fg-primary);
 }
 
+.agent-run-message {
+  margin-top: 5px;
+  color: var(--fg-secondary);
+  font-size: 12px;
+}
+
 .agent-run-metrics {
   margin-top: 5px;
   color: var(--fg-secondary);
   font-size: 12px;
+}
+
+.agent-run-validation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.agent-validation-indicator {
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-secondary);
+  background: var(--bg-secondary);
+  font-size: 11px;
+}
+
+.agent-validation-indicator.is-passed,
+.agent-validation-indicator.is-clean {
+  border-color: #22c55e;
+}
+
+.agent-validation-indicator.is-failed,
+.agent-validation-indicator.is-pending {
+  border-color: #ef4444;
 }
 
 .agent-run-plan,
@@ -1800,6 +1832,40 @@ body.light-theme .message-avatar.provider-avatar-badge {
 
 .agent-run-plan {
   color: var(--fg-primary);
+}
+
+.agent-run-step {
+  margin: 6px 0;
+}
+
+.agent-run-step summary {
+  cursor: pointer;
+  color: var(--fg-primary);
+}
+
+.agent-run-step.is-mutation summary {
+  color: #f59e0b;
+}
+
+.agent-run-step.is-failure summary {
+  color: #ef4444;
+}
+
+.agent-run-step-metadata {
+  margin: 5px 0;
+  color: var(--fg-secondary);
+  font-size: 11px;
+}
+
+.agent-run-step pre {
+  max-height: 180px;
+  margin: 4px 0 8px;
+  padding: 7px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-radius: 5px;
+  background: var(--bg-secondary);
 }
 
 .agent-control-button {
