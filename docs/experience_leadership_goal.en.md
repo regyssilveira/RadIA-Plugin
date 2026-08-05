@@ -69,7 +69,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
 | M6 — Installation | Planned | First value and diagnostics without manual file editing |
 | M7 — Journeys | Completed | End-to-end Delphi recipes approved |
-| M8 — Proof and release | Blocked by previous milestones | Matrix, ten cycles, and audits approved |
+| M8 — Proof and release | In progress | Matrix, ten cycles, and audits approved |
 
 M1 now includes a Fill-in-the-Middle engine, debounce, cancellation, cache, limits, a decoupled
 provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture uses the live
@@ -267,14 +267,19 @@ Credential fields are rejected recursively and never enter extension packages.
 
 ### M8 — Leadership proof and release
 
-- Run the complete build and test matrix.
+- [x] Run the complete build and test matrix.
 - Validate inline assistance, terminal, execution center, extensions, and knowledge in a real IDE.
 - Complete ten installation, usage, update, and shutdown cycles per supported combination.
 - Pass the create, edit, design, test, debug, fix, and commit continuous journey.
-- Regenerate four packages from one commit and publish independent hashes.
+- [x] Regenerate four packages from one commit and publish independent hashes.
 - Complete security, privacy, accessibility, and documentation audits.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
+
+The first reproducible M8 proof is stored in `release_evidence_2.0.0.json`: all four packages were
+built from commit `ef52eb931d0e63c8372298250bebed46c8d8fb4f`, with a clean tracked worktree,
+positive and negative validation per target, and independent SHA-256 hashes. Visual IDE
+validation, cycles, and the continuous journey remain open and are not inferred from automation.
 
 ## Execution order
 

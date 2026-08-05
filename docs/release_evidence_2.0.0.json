@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "product": "RadIA",
+  "productVersion": "2.0.0",
+  "sourceCommit": "ef52eb931d0e63c8372298250bebed46c8d8fb4f",
+  "generatedAtUtc": "2026-08-05T17:59:51.2406432Z",
+  "artifacts": [
+    {
+      "fileName": "RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip",
+      "delphiVersion": "22.0",
+      "platform": "Win32",
+      "size": 3923934,
+      "sha256": "4B0121E139EF5B33BBA720157BF9A6FA0E00EA25B7C14E61F1EEDC3A894B0F99"
+    },
+    {
+      "fileName": "RadIA-v2.0.0-Delphi-23.0-Win32-Release.zip",
+      "delphiVersion": "23.0",
+      "platform": "Win32",
+      "size": 4005752,
+      "sha256": "CBC180F79501E890DF7A7A8616BBD083386098F744CDF5082A07BF50E21512DD"
+    },
+    {
+      "fileName": "RadIA-v2.0.0-Delphi-37.0-Win32-Release.zip",
+      "delphiVersion": "37.0",
+      "platform": "Win32",
+      "size": 3997142,
+      "sha256": "115F9736B0564ADF44526CBD44AA2C839262C04BBD957780F807B360B959B0ED"
+    },
+    {
+      "fileName": "RadIA-v2.0.0-Delphi-37.0-Win64-Release.zip",
+      "delphiVersion": "37.0",
+      "platform": "Win64",
+      "size": 4845927,
+      "sha256": "56DBF60EF9ACF6533D405C5419B9B69BEEE3EE80736FDAD76D0892CC872D9BC0"
+    }
+  ]
+}

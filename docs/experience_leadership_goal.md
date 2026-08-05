@@ -70,7 +70,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
 | M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
 | M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |
-| M8 — Prova e release | Bloqueado pelos anteriores | Matriz, dez ciclos e auditorias aprovados |
+| M8 — Prova e release | Em execução | Matriz, dez ciclos e auditorias aprovados |
 
 O M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache, limites, provider
 desacoplado, captura contínua opt-in, controles de escopo e Ghost Text OTA. A captura usa o buffer
@@ -274,14 +274,19 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 
 ### M8 — Prova de liderança e release
 
-- Executar a matriz completa de build e 100% dos testes.
+- [x] Executar a matriz completa de build e 100% dos testes.
 - Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
 - Executar dez ciclos de instalação, uso, atualização e shutdown por combinação suportada.
 - Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
-- Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
+- [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
 - Realizar auditoria final de segurança, privacidade, acessibilidade e documentação.
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
+
+A primeira prova reproduzível do M8 está em `release_evidence_2.0.0.json`: os quatro pacotes foram
+gerados do commit `ef52eb931d0e63c8372298250bebed46c8d8fb4f`, com árvore rastreada limpa, validação
+positiva e negativa por target e SHA-256 independente. Validação visual na IDE, ciclos e jornada
+contínua permanecem abertos e não são inferidos dessa evidência automatizada.
 
 ## Ordem de execução
 
