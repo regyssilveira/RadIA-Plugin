@@ -69,6 +69,8 @@ contains
   RadIA.Core.BuildTools in 'Source\Core\RadIA.Core.BuildTools.pas',
   RadIA.Core.DUnitX in 'Source\Core\RadIA.Core.DUnitX.pas',
   RadIA.Core.DUnitXTools in 'Source\Core\RadIA.Core.DUnitXTools.pas',
+  RadIA.Core.Coverage in 'Source\Core\RadIA.Core.Coverage.pas',
+  RadIA.Core.CoverageTools in 'Source\Core\RadIA.Core.CoverageTools.pas',
   RadIA.Core.Git in 'Source\Core\RadIA.Core.Git.pas',
   RadIA.Core.GitTools in 'Source\Core\RadIA.Core.GitTools.pas',
   RadIA.OTA.DUnitX in 'Source\Integration\RadIA.OTA.DUnitX.pas',

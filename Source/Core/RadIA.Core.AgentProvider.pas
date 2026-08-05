@@ -238,7 +238,9 @@ begin
     'project, or Designer mutation, inspect structured diagnostics and run ' +
     'BuildProject. Never complete while CURRENT_STATE.validation.buildPassed ' +
     'is false. When DUnitX tests are available, run RunDUnitXTests after a ' +
-    'successful build. If build or tests fail, inspect their structured ' +
+    'successful build. When an authoritative Delphi Code Coverage report is ' +
+    'available, run GetCoverageSummary after tests. If build or tests fail, ' +
+    'inspect their structured ' +
     'result, prepare the smallest reviewable correction, request consent, ' +
     'apply it, and repeat. Do not repeat an unchanged patch or tool call.' +
     sLineBreak +

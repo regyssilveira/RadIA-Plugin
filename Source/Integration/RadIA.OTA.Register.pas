@@ -70,6 +70,7 @@ uses
   RadIA.Core.DevelopmentTransactionTools,
   RadIA.Core.Build, RadIA.Core.BuildTools, RadIA.OTA.Workspace,
   RadIA.Core.DUnitX, RadIA.Core.DUnitXTools, RadIA.OTA.DUnitX,
+  RadIA.Core.CoverageTools,
   RadIA.Core.Git, RadIA.Core.GitTools, RadIA.OTA.Git,
   RadIA.Core.Mcp, RadIA.OTA.Consent, RadIA.OTA.Build,
   RadIA.Core.Designer, RadIA.Core.DesignerTools,
@@ -1030,6 +1031,11 @@ initialization
   RegisterRadIADUnitXTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIADUnitXRunner>
+  );
+  RegisterRadIACoverageTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
   );
   RegisterRadIAGitTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

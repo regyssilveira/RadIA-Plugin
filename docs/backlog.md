@@ -82,7 +82,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M3 entregue nesta etapa: cada etapa mostra o risco formal da tool e agrega arquivos
         afetados somente a partir de campos de caminho reconhecidos.
     *   M3 entregue nesta etapa: evidências estruturadas exibem duração e mensagens do build,
-        além das contagens completas da última execução DUnitX.
+        além das contagens completas da última execução DUnitX e do resumo oficial de cobertura.
     *   M3 entregue nesta etapa: patches simples e multiarquivo exibem blocos de diff por arquivo
         dentro da timeline, mantendo aplicação e reversão no consentimento central.
     *   M3 entregue nesta etapa: status, diff, preview com fingerprint e SHA do commit local

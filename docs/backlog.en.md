@@ -82,7 +82,7 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M3 delivered in this increment: each step shows the tool's formal risk and aggregates
         affected files only from recognized path fields.
     *   M3 delivered in this increment: structured evidence shows build duration and messages,
-        plus the complete counts from the latest DUnitX run.
+        plus the complete counts from the latest DUnitX run and authoritative coverage summary.
     *   M3 delivered in this increment: simple and multi-file patches show per-file diff blocks
         inside the timeline while apply and revert remain in the central consent flow.
     *   M3 delivered in this increment: status, diff, fingerprinted preview, and local commit SHA

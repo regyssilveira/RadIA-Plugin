@@ -50,7 +50,7 @@ The original target gaps are now registered as built-in tools:
 - Git operations;
 - a native agent loop.
 
-The generated catalog contains 87 tools. The flows have tests proportional to their risk and remain
+The generated catalog contains 88 tools. The flows have tests proportional to their risk and remain
 subject to in-IDE E2E validation before the 2.0 release.
 
 ## Milestones

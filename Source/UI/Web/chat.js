@@ -609,7 +609,13 @@ function renderAgentValidation(card, state) {
   const indicators = [
     ['Changes', validation.mutationPending ? 'pending' : 'clean'],
     ['Build', buildStatus === 'succeeded' ? 'passed' : 'not-passed'],
-    ['Tests', testStatus]
+    ['Tests', testStatus],
+    [
+      validation.coverageAvailable ?
+        `Coverage ${Math.max(0, validation.coveragePercent || 0)}%` :
+        'Coverage',
+      validation.coverageAvailable ? 'available' : 'not-run'
+    ]
   ];
   indicators.forEach(([label, value]) => {
     const indicator = document.createElement('span');
@@ -634,6 +640,15 @@ function renderAgentValidation(card, state) {
       `${Math.max(0, validation.testFailed || 0)} failed · ` +
       `${Math.max(0, validation.testErrors || 0)} error(s) · ` +
       `${Math.max(0, validation.testIgnored || 0)} ignored`
+    );
+  }
+  if (validation.coverageAvailable) {
+    evidenceLines.push(
+      `Coverage: ${Math.max(0, validation.coveragePercent || 0)}% · ` +
+      `${Math.max(0, validation.coverageCoveredLines || 0)}/` +
+      `${Math.max(0, validation.coverageSourceLines || 0)} line(s) · ` +
+      `${Math.max(0, validation.coverageSourceFiles || 0)} source file(s) · ` +
+      `${validation.coverageReportPath || 'authoritative report'}`
     );
   }
   if (evidenceLines.length > 0) {

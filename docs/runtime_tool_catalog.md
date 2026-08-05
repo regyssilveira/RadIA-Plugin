@@ -186,6 +186,12 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CancelDUnitXTests` | `RadIA.Core.DUnitXTools.pas` |
 | `GetDUnitXStatus` | `RadIA.Core.DUnitXTools.pas` |
 
+## Code coverage evidence
+
+| Tool | Source unit |
+|---|---|
+| `GetCoverageSummary` | `RadIA.Core.CoverageTools.pas` |
+
 ## Debugger event timeline
 
 | Tool | Source unit |
@@ -203,7 +209,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Resumo
 
-- Registered groups: 22
-- Registered built-in tools: 87
+- Registered groups: 23
+- Registered built-in tools: 88
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

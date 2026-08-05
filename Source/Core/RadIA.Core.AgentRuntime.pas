@@ -230,6 +230,12 @@ type
       TestFailed: Integer;
       TestErrors: Integer;
       TestIgnored: Integer;
+      CoverageAvailable: Boolean;
+      CoverageReportPath: string;
+      CoverageSourceFiles: Integer;
+      CoverageSourceLines: Integer;
+      CoverageCoveredLines: Integer;
+      CoveragePercent: Integer;
     end;
   private
     FToolExecutor: IRadIAToolExecutor;
@@ -321,6 +327,10 @@ type
       var AValidation: TRadIAAgentValidationState
     );
     procedure ApplyTestEvidence(
+      const AStep: TRadIAAgentStep;
+      var AValidation: TRadIAAgentValidationState
+    );
+    procedure ApplyCoverageEvidence(
       const AStep: TRadIAAgentStep;
       var AValidation: TRadIAAgentValidationState
     );
@@ -963,6 +973,12 @@ begin
       Result.TestFailed := 0;
       Result.TestErrors := 0;
       Result.TestIgnored := 0;
+      Result.CoverageAvailable := False;
+      Result.CoverageReportPath := '';
+      Result.CoverageSourceFiles := 0;
+      Result.CoverageSourceLines := 0;
+      Result.CoverageCoveredLines := 0;
+      Result.CoveragePercent := 0;
       Continue;
     end;
     if not Result.MutationPending then
@@ -971,6 +987,53 @@ begin
       ApplyBuildEvidence(LStep, Result);
     if SameText(LStep.ToolName, 'RunDUnitXTests') then
       ApplyTestEvidence(LStep, Result);
+    if SameText(LStep.ToolName, 'GetCoverageSummary') then
+      ApplyCoverageEvidence(LStep, Result);
+  end;
+end;
+
+procedure TRadIAAgentRuntime.ApplyCoverageEvidence(
+  const AStep: TRadIAAgentStep;
+  var AValidation: TRadIAAgentValidationState
+);
+var
+  LRoot: TJSONObject;
+  LSummary: TJSONObject;
+  LValue: TJSONValue;
+begin
+  if not AStep.Success then
+    Exit;
+  LRoot := TJSONObject.ParseJSONValue(AStep.ResultJson) as TJSONObject;
+  if not Assigned(LRoot) then
+    Exit;
+  try
+    LValue := LRoot.GetValue('summary');
+    if not (LValue is TJSONObject) then
+      Exit;
+    LSummary := TJSONObject(LValue);
+    AValidation.CoverageAvailable := True;
+    AValidation.CoverageReportPath := LRoot.GetValue<string>(
+      'reportPath',
+      ''
+    );
+    AValidation.CoverageSourceFiles := LSummary.GetValue<Integer>(
+      'sourceFiles',
+      0
+    );
+    AValidation.CoverageSourceLines := LSummary.GetValue<Integer>(
+      'sourceLines',
+      0
+    );
+    AValidation.CoverageCoveredLines := LSummary.GetValue<Integer>(
+      'coveredLines',
+      0
+    );
+    AValidation.CoveragePercent := LSummary.GetValue<Integer>(
+      'coveredPercent',
+      0
+    );
+  finally
+    LRoot.Free;
   end;
 end;
 
@@ -1187,6 +1250,30 @@ begin
     LValidationJson.AddPair(
       'testIgnored',
       TJSONNumber.Create(LValidation.TestIgnored)
+    );
+    LValidationJson.AddPair(
+      'coverageAvailable',
+      TJSONBool.Create(LValidation.CoverageAvailable)
+    );
+    LValidationJson.AddPair(
+      'coverageReportPath',
+      LValidation.CoverageReportPath
+    );
+    LValidationJson.AddPair(
+      'coverageSourceFiles',
+      TJSONNumber.Create(LValidation.CoverageSourceFiles)
+    );
+    LValidationJson.AddPair(
+      'coverageSourceLines',
+      TJSONNumber.Create(LValidation.CoverageSourceLines)
+    );
+    LValidationJson.AddPair(
+      'coverageCoveredLines',
+      TJSONNumber.Create(LValidation.CoverageCoveredLines)
+    );
+    LValidationJson.AddPair(
+      'coveragePercent',
+      TJSONNumber.Create(LValidation.CoveragePercent)
     );
     LRoot.AddPair('validation', LValidationJson);
     LStepArray := TJSONArray.Create;

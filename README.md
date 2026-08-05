@@ -91,7 +91,7 @@ Referências rápidas:
 
 - [Tudo que o RadIA pode fazer](docs/capabilities.md)
 - [O que faz e quando usar cada ferramenta](docs/internal_tools_reference.md)
-- [Todas as 87 ferramentas internas](docs/runtime_tool_catalog.md)
+- [Todas as 88 ferramentas internas](docs/runtime_tool_catalog.md)
 - [Todos os comandos de barra](docs/slash_commands.md)
 
 ### 2.2 Capacidades do RadIA em um relance
@@ -115,7 +115,7 @@ Referências rápidas:
 | **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
 
 As ferramentas implementadas estão no
-[Catálogo das 87 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
+[Catálogo das 88 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
 planejadas permanecem no [Catálogo Arquitetural](docs/tool_catalog.md).
 
 ### 3. Como Funciona e Arquitetura

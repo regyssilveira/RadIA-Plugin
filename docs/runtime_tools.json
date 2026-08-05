@@ -205,6 +205,13 @@
       ]
     },
     {
+      "name": "Code coverage evidence",
+      "source": "Source/Core/RadIA.Core.CoverageTools.pas",
+      "tools": [
+        "GetCoverageSummary"
+      ]
+    },
+    {
       "name": "Debugger event timeline",
       "source": "Source/Core/RadIA.Core.DebugTimelineTools.pas",
       "tools": [

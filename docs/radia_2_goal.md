@@ -25,7 +25,7 @@ auditoria e confinamento ao workspace. A entrega final será validada no Delphi 
 
 | Capacidade | Evidência atual | Estado para o goal |
 |---|---|---|
-| Registry e segurança | 87 tools internas, política, consentimento e auditoria | Pronto |
+| Registry e segurança | 88 tools internas, política, consentimento e auditoria | Pronto |
 | Chat | Providers, streaming, sessões, Agent Mode e loop observável | Pronto |
 | Projeto novo | Wizard visual e seis templates determinísticos | Pronto |
 | Projeto vivo | Leitura e operações estruturais transacionais | Pronto |
@@ -50,7 +50,7 @@ As lacunas originais agora aparecem no catálogo interno registrado:
 - operações Git;
 - loop agentivo nativo.
 
-O catálogo gerado contém 87 tools. Os fluxos possuem testes proporcionais ao risco e permanecem
+O catálogo gerado contém 88 tools. Os fluxos possuem testes proporcionais ao risco e permanecem
 sujeitos à validação E2E na IDE antes da release 2.0.
 
 ## Marcos

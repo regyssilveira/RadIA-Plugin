@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 87 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
+Esta página explica as 88 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -208,6 +208,12 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `RunDUnitXTests` | Executa o runner autorizado e interpreta o relatório NUnit XML. | Depois do build ou quando o objetivo exige validar testes. |
 | `CancelDUnitXTests` | Solicita o encerramento da execução de testes. | Pelo usuário, agente ou timeout. |
 | `GetDUnitXStatus` | Retorna progresso, resultado e artefatos da execução. | Enquanto o agente acompanha os testes ou coleta falhas. |
+
+## Cobertura de código
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetCoverageSummary` | Lê o bloco `stats` do relatório oficial do Delphi Code Coverage, confinado ao projeto ativo. | Depois dos testes, quando `CodeCoverage_Summary.xml` está disponível para registrar percentual, linhas e arquivos cobertos. |
 
 ## Timeline de debug
 

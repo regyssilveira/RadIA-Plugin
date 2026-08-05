@@ -126,7 +126,9 @@ de campos de caminho reconhecidos em chamadas mutáveis concluídas com sucesso;
 tratado como caminho.
 Quando a jornada inclui validação, a seção **Validation evidence** apresenta status e duração do
 build, quantidade de mensagens do compilador e contagens DUnitX de total, aprovados, falhas, erros
-e ignorados. Esses dados permanecem no checkpoint e voltam a aparecer ao abrir o histórico.
+e ignorados. Quando existe um relatório oficial do Delphi Code Coverage, a mesma seção mostra o
+percentual, as linhas cobertas e totais, a quantidade de arquivos-fonte e o caminho da evidência.
+Esses dados permanecem no checkpoint e voltam a aparecer ao abrir o histórico.
 Etapas de patch bem-sucedidas apresentam **Reviewed changes** dentro de seus detalhes. Cada arquivo
 mostra apenas o bloco alterado, três linhas de contexto e os totais removidos/adicionados. Essa
 visualização é somente para revisão; aplicar ou reverter continua sendo uma tool auditada e sujeita
@@ -283,6 +285,8 @@ consentimento próprios.
 - `RunDUnitXTests`: executa um runner `.exe` localizado dentro do projeto ativo.
 - `GetDUnitXStatus`: informa se a execução está ociosa, em andamento ou concluída.
 - `CancelDUnitXTests`: solicita o encerramento da execução ativa.
+- `GetCoverageSummary`: lê o relatório oficial `Output/Coverage/CodeCoverage_Summary.xml` ou outro
+  caminho informado dentro do projeto ativo, sem interpretar texto livre do console.
 
 O RadIA solicita ao runner um relatório XML NUnit e devolve JSON estruturado com fixtures, testes,
 status, duração, falhas e stack traces. É possível filtrar testes pelo nome e definir timeout entre
@@ -418,7 +422,7 @@ Use sempre o ZIP correspondente à versão e arquitetura da IDE.
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 87 tools internas registradas.
+- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 88 tools internas registradas.
 - Algumas ideias do catálogo arquitetural são roadmap e podem não aparecer em `/tools`.
 - Debugger e Designer dependem de contexto e estado válidos da IDE.
 - Patches são recusados quando o buffer muda depois do preview.

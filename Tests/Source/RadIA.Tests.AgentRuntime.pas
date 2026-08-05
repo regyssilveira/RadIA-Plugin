@@ -146,7 +146,7 @@ type
     [Test]
     procedure TestMutationRequiresSuccessfulBuildBeforeCompletion;
     [Test]
-    procedure TestValidationSnapshotIncludesBuildAndDUnitXEvidence;
+    procedure TestValidationSnapshotIncludesBuildDUnitXAndCoverageEvidence;
     [Test]
     procedure TestFailedBuildRequiresCorrectionAndSuccessfulRebuild;
     [Test]
@@ -1264,7 +1264,7 @@ begin
 end;
 
 procedure TTestRadIAAgentRuntime.
-  TestValidationSnapshotIncludesBuildAndDUnitXEvidence;
+  TestValidationSnapshotIncludesBuildDUnitXAndCoverageEvidence;
 var
   LExecutorObject: TRadIAMockAgentToolExecutor;
   LExecutor: IRadIAToolExecutor;
@@ -1292,6 +1292,12 @@ begin
             '"total":12,"passed":11,"failed":0,"errors":0,' +
             '"ignored":1}}'
           );
+        4:
+          LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+            '{"reportPath":"Output/Coverage/CodeCoverage_Summary.xml",' +
+            '"summary":{"sourceFiles":16,"sourceLines":1000,' +
+            '"coveredLines":815,"coveredPercent":81}}'
+          );
       else
         LExecutorObject.ToolResult := TRadIAToolResult.Succeeded('{}');
       end;
@@ -1308,6 +1314,7 @@ begin
       'RunDUnitXTests',
       '{"executablePath":"tests.exe"}'
     ),
+    TRadIAAgentDecision.CallTool('GetCoverageSummary', '{}'),
     TRadIAAgentDecision.Complete('Validation evidence captured.')
   ]);
   LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
@@ -1330,6 +1337,10 @@ begin
     Assert.Contains(LStoreObject.SnapshotJson, '"testTotal":12');
     Assert.Contains(LStoreObject.SnapshotJson, '"testPassed":11');
     Assert.Contains(LStoreObject.SnapshotJson, '"testIgnored":1');
+    Assert.Contains(LStoreObject.SnapshotJson, '"coverageAvailable":true');
+    Assert.Contains(LStoreObject.SnapshotJson, '"coverageSourceFiles":16');
+    Assert.Contains(LStoreObject.SnapshotJson, '"coverageCoveredLines":815');
+    Assert.Contains(LStoreObject.SnapshotJson, '"coveragePercent":81');
   finally
     LRuntime.Free;
   end;
