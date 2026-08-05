@@ -204,6 +204,10 @@ endpoints, disabled redirects, timeouts, input and response limits, validated di
 keys kept outside JSON. Failures continue to fall back to lexical search. Activation remains
 pending until separate remote consent and explicit visual configuration are available.
 
+Remote embedding selection is now fail-closed: semantic search and network authorization are
+independent decisions. Without remote enablement, separate consent, and a valid provider, the index
+keeps using only the local provider. The settings screen still needs to expose this configuration.
+
 Search and rebuild operations now publish local latency in milliseconds, status reports the
 estimated index size, and every response preserves the project identity. With explained scores,
 direct navigation, and independent workspace tests, relevance, latency, size, rebuild, and

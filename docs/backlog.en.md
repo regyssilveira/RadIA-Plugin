@@ -118,8 +118,11 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M5 delivered in this stage: the OpenAI-compatible remote foundation validates
         HTTPS/loopback, timeouts, limits, dimensions, and responses without putting the API key in
         the payload; visual activation remains blocked on separate remote consent.
-    *   M5 in progress: the approved-history catalog filters completed checkpoints by project
-        without exposing payloads; opt-in index ingestion is the next integration.
+    *   M5 delivered in this stage: embedding selection is fail-closed and keeps the local
+        provider when remote use is disabled, lacks separate consent, or has invalid settings;
+        enabling semantic search alone never authorizes source code transmission.
+    *   M5 delivered in this stage: completed and approved histories can feed the index after
+        explicit consent, isolated by project and without tool payloads.
     *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 

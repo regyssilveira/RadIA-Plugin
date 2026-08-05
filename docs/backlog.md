@@ -118,6 +118,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M5 entregue nesta etapa: a fundação remota OpenAI-compatible valida HTTPS/loopback,
         timeout, limites, dimensões e resposta sem incluir a API key no payload; ativação visual
         permanece bloqueada até consentimento remoto separado.
+    *   M5 entregue nesta etapa: o seletor de embeddings é fail-closed e mantém o provider local
+        quando o remoto está desligado, sem consentimento separado ou com configuração inválida;
+        habilitar busca semântica, isoladamente, nunca autoriza envio de código à rede.
     *   M5 entregue nesta etapa: históricos concluídos e aprovados podem alimentar o índice
         mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
     *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas

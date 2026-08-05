@@ -211,6 +211,10 @@ redirects desabilitados, timeout, limites de entrada e resposta, dimensões vali
 do JSON. Falhas continuam retornando à busca lexical. A ativação permanece pendente até existir
 consentimento remoto separado e configuração visual explícita.
 
+O seletor de embeddings remotos agora falha de forma fechada: busca semântica e autorização de rede
+são decisões independentes. Sem habilitação remota, consentimento separado e provider válido, o
+índice continua usando apenas o provider local. A tela ainda precisa expor essa configuração.
+
 Busca e reconstrução agora publicam latência local em milissegundos, o status informa o tamanho
 estimado do índice e todas as respostas preservam a identidade do projeto. Com scores explicados,
 navegação direta e testes independentes por workspace, relevância, latência, tamanho, reconstrução
