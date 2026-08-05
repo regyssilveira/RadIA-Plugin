@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 4,
+  "id": "TeamDelivery",
+  "version": "4.0.0",
+  "enabled": true,
+  "permissions": [
+    "chat.prompt"
+  ],
+  "journeys": [
+    {
+      "name": "Team release",
+      "description": "Prepare a release using the team's required validation gates.",
+      "command": "/team-release",
+      "objective": "Inspect project health and Git scope. Build every supported target, run the relevant tests, review the final diff, and prepare a local commit preview. Stop when a required gate fails. Never push or publish without explicit user authorization."
+    }
+  ],
+  "policies": [
+    {
+      "name": "Team architecture",
+      "description": "Review code using the team's shared architecture policy.",
+      "command": "/team-architecture",
+      "instructions": "Review the selected Delphi code for dependency direction, public API stability, memory ownership, thread safety, testability, and compatibility with the supported Delphi versions. Return evidence and concrete corrections."
+    }
+  ]
+}
