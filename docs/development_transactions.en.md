@@ -41,6 +41,12 @@ During the journey, `NavigateToDevelopmentSurface` explicitly activates the code
 Form Designer for a project-owned file. The tool rejects external files and fails when the requested
 surface is unavailable.
 
+After the latest mutation, the timeline combines evidence from `BuildProject`, `RunDUnitXTests`,
+`GetCoverageSummary`, `StartDebugging`, `GetDebuggerState`, and `GetDebugTimeline`. The journey card
+shows separate change, build, test, coverage, execution, and debug states, including durations,
+counts, and the latest observed sequence. A new mutation invalidates that evidence and starts a new
+validation cycle.
+
 ## Safety
 
 - at most 32 operations and 16 active composite previews;

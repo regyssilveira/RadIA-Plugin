@@ -1401,6 +1401,19 @@ begin
             '"summary":{"sourceFiles":16,"sourceLines":1000,' +
             '"coveredLines":815,"coveredPercent":81}}'
           );
+        5:
+          LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+            '{"accepted":true,"stateBefore":"stopped",' +
+            '"stateAfter":"running"}'
+          );
+        6:
+          LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+            '{"state":"paused","processId":1234}'
+          );
+        7:
+          LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+            '{"lastSequence":42,"events":[]}'
+          );
       else
         LExecutorObject.ToolResult := TRadIAToolResult.Succeeded('{}');
       end;
@@ -1418,6 +1431,9 @@ begin
       '{"executablePath":"tests.exe"}'
     ),
     TRadIAAgentDecision.CallTool('GetCoverageSummary', '{}'),
+    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
+    TRadIAAgentDecision.CallTool('GetDebuggerState', '{}'),
+    TRadIAAgentDecision.CallTool('GetDebugTimeline', '{}'),
     TRadIAAgentDecision.Complete('Validation evidence captured.')
   ]);
   LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
@@ -1444,6 +1460,12 @@ begin
     Assert.Contains(LStoreObject.SnapshotJson, '"coverageSourceFiles":16');
     Assert.Contains(LStoreObject.SnapshotJson, '"coverageCoveredLines":815');
     Assert.Contains(LStoreObject.SnapshotJson, '"coveragePercent":81');
+    Assert.Contains(LStoreObject.SnapshotJson, '"executionRun":true');
+    Assert.Contains(LStoreObject.SnapshotJson, '"executionPassed":true');
+    Assert.Contains(LStoreObject.SnapshotJson, '"executionTool":"StartDebugging"');
+    Assert.Contains(LStoreObject.SnapshotJson, '"debugObserved":true');
+    Assert.Contains(LStoreObject.SnapshotJson, '"debugState":"paused"');
+    Assert.Contains(LStoreObject.SnapshotJson, '"debugLastSequence":42');
   finally
     LRuntime.Free;
   end;

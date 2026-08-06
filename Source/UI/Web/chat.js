@@ -639,24 +639,54 @@ function renderAgentImpact(card, steps) {
   impact.appendChild(details);
 }
 
-function renderAgentValidation(card, state) {
-  const validation = state.validation || {};
-  const validationElement = card.querySelector('.agent-run-validation');
+function getAgentValidationStatuses(validation) {
   const buildStatus = validation.buildStatus ||
     (validation.buildPassed ? 'succeeded' : 'notRun');
   let testStatus = 'not-run';
+  let executionStatus = 'not-run';
+  let debugStatus = 'not-run';
+  let coverageLabel = 'Coverage';
   if (validation.testsRun) {
     testStatus = validation.testsPassed ? 'passed' : 'failed';
   }
+  if (validation.executionRun) {
+    executionStatus = validation.executionPassed ? 'passed' : 'failed';
+  }
+  if (validation.debugObserved) {
+    debugStatus = 'observed';
+  }
+  if (validation.coverageAvailable) {
+    coverageLabel = `Coverage ${Math.max(0, validation.coveragePercent || 0)}%`;
+  }
+  return {
+    buildStatus,
+    testStatus,
+    executionStatus,
+    debugStatus,
+    coverageLabel
+  };
+}
+
+function renderAgentValidation(card, state) {
+  const validation = state.validation || {};
+  const validationElement = card.querySelector('.agent-run-validation');
+  const statuses = getAgentValidationStatuses(validation);
+  const {
+    buildStatus,
+    testStatus,
+    executionStatus,
+    debugStatus,
+    coverageLabel
+  } = statuses;
   validationElement.replaceChildren();
   const indicators = [
     ['Changes', validation.mutationPending ? 'pending' : 'clean'],
     ['Build', buildStatus === 'succeeded' ? 'passed' : 'not-passed'],
     ['Tests', testStatus],
+    ['Execution', executionStatus],
+    ['Debug', debugStatus],
     [
-      validation.coverageAvailable ?
-        `Coverage ${Math.max(0, validation.coveragePercent || 0)}%` :
-        'Coverage',
+      coverageLabel,
       validation.coverageAvailable ? 'available' : 'not-run'
     ]
   ];
@@ -692,6 +722,19 @@ function renderAgentValidation(card, state) {
       `${Math.max(0, validation.coverageSourceLines || 0)} line(s) · ` +
       `${Math.max(0, validation.coverageSourceFiles || 0)} source file(s) · ` +
       `${validation.coverageReportPath || 'authoritative report'}`
+    );
+  }
+  if (validation.executionRun) {
+    evidenceLines.push(
+      `Execution: ${validation.executionTool || 'unknown'} · ` +
+      `${validation.executionPassed ? 'succeeded' : 'failed'} · ` +
+      `${Math.max(0, validation.executionDurationMilliseconds || 0)} ms`
+    );
+  }
+  if (validation.debugObserved) {
+    evidenceLines.push(
+      `Debug: ${validation.debugState || 'observed'} · ` +
+      `timeline sequence ${Math.max(0, validation.debugLastSequence || 0)}`
     );
   }
   if (evidenceLines.length > 0) {

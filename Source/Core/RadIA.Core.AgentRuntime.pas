@@ -246,6 +246,13 @@ type
       CoverageSourceLines: Integer;
       CoverageCoveredLines: Integer;
       CoveragePercent: Integer;
+      ExecutionRun: Boolean;
+      ExecutionPassed: Boolean;
+      ExecutionTool: string;
+      ExecutionDurationMilliseconds: Int64;
+      DebugObserved: Boolean;
+      DebugState: string;
+      DebugLastSequence: Int64;
     end;
   private
     FToolExecutor: IRadIAToolExecutor;
@@ -332,11 +339,26 @@ type
     function EffectiveTotalTokens: Integer;
     function EffectiveEstimatedCostMicros: Int64;
     function AnalyzeValidationState: TRadIAAgentValidationState;
+    procedure ResetValidationForMutation(
+      var AValidation: TRadIAAgentValidationState
+    );
+    procedure ApplyValidationEvidence(
+      const AStep: TRadIAAgentStep;
+      var AValidation: TRadIAAgentValidationState
+    );
     procedure ApplyBuildEvidence(
       const AStep: TRadIAAgentStep;
       var AValidation: TRadIAAgentValidationState
     );
     procedure ApplyTestEvidence(
+      const AStep: TRadIAAgentStep;
+      var AValidation: TRadIAAgentValidationState
+    );
+    procedure ApplyExecutionEvidence(
+      const AStep: TRadIAAgentStep;
+      var AValidation: TRadIAAgentValidationState
+    );
+    procedure ApplyDebugEvidence(
       const AStep: TRadIAAgentStep;
       var AValidation: TRadIAAgentValidationState
     );
@@ -1011,37 +1033,78 @@ begin
   begin
     if IsMutationTool(LStep.ToolName) and LStep.Success then
     begin
-      Result.MutationPending := True;
-      Result.BuildPassed := False;
-      Result.BuildStatus := 'notRun';
-      Result.BuildDurationMilliseconds := 0;
-      Result.BuildMessageCount := 0;
-      Result.TestsRun := False;
-      Result.TestsPassed := False;
-      Result.TestStatus := 'notRun';
-      Result.TestDurationMilliseconds := 0;
-      Result.TestTotal := 0;
-      Result.TestPassed := 0;
-      Result.TestFailed := 0;
-      Result.TestErrors := 0;
-      Result.TestIgnored := 0;
-      Result.CoverageAvailable := False;
-      Result.CoverageReportPath := '';
-      Result.CoverageSourceFiles := 0;
-      Result.CoverageSourceLines := 0;
-      Result.CoverageCoveredLines := 0;
-      Result.CoveragePercent := 0;
+      ResetValidationForMutation(Result);
       Continue;
     end;
     if not Result.MutationPending then
       Continue;
-    if SameText(LStep.ToolName, 'BuildProject') then
-      ApplyBuildEvidence(LStep, Result);
-    if SameText(LStep.ToolName, 'RunDUnitXTests') then
-      ApplyTestEvidence(LStep, Result);
-    if SameText(LStep.ToolName, 'GetCoverageSummary') then
-      ApplyCoverageEvidence(LStep, Result);
+    ApplyValidationEvidence(LStep, Result);
   end;
+end;
+
+procedure TRadIAAgentRuntime.ResetValidationForMutation(
+  var AValidation: TRadIAAgentValidationState
+);
+begin
+  AValidation := Default(TRadIAAgentValidationState);
+  AValidation.MutationPending := True;
+  AValidation.BuildStatus := 'notRun';
+  AValidation.TestStatus := 'notRun';
+end;
+
+procedure TRadIAAgentRuntime.ApplyValidationEvidence(
+  const AStep: TRadIAAgentStep;
+  var AValidation: TRadIAAgentValidationState
+);
+begin
+  if SameText(AStep.ToolName, 'BuildProject') then
+    ApplyBuildEvidence(AStep, AValidation)
+  else if SameText(AStep.ToolName, 'RunDUnitXTests') then
+    ApplyTestEvidence(AStep, AValidation)
+  else if SameText(AStep.ToolName, 'GetCoverageSummary') then
+    ApplyCoverageEvidence(AStep, AValidation)
+  else if SameText(AStep.ToolName, 'StartDebugging') then
+    ApplyExecutionEvidence(AStep, AValidation)
+  else if SameText(AStep.ToolName, 'GetDebuggerState') or
+    SameText(AStep.ToolName, 'GetDebugTimeline') then
+    ApplyDebugEvidence(AStep, AValidation);
+end;
+
+procedure TRadIAAgentRuntime.ApplyDebugEvidence(
+  const AStep: TRadIAAgentStep;
+  var AValidation: TRadIAAgentValidationState
+);
+var
+  LRoot: TJSONObject;
+begin
+  if not AStep.Success then
+    Exit;
+  LRoot := TJSONObject.ParseJSONValue(AStep.ResultJson) as TJSONObject;
+  if not Assigned(LRoot) then
+    Exit;
+  try
+    AValidation.DebugObserved := True;
+    if SameText(AStep.ToolName, 'GetDebuggerState') then
+      AValidation.DebugState := LRoot.GetValue<string>('state', 'unknown')
+    else
+      AValidation.DebugLastSequence := LRoot.GetValue<Int64>(
+        'lastSequence',
+        0
+      );
+  finally
+    LRoot.Free;
+  end;
+end;
+
+procedure TRadIAAgentRuntime.ApplyExecutionEvidence(
+  const AStep: TRadIAAgentStep;
+  var AValidation: TRadIAAgentValidationState
+);
+begin
+  AValidation.ExecutionRun := True;
+  AValidation.ExecutionPassed := AStep.Success;
+  AValidation.ExecutionTool := AStep.ToolName;
+  AValidation.ExecutionDurationMilliseconds := AStep.DurationMilliseconds;
 end;
 
 procedure TRadIAAgentRuntime.ApplyCoverageEvidence(
@@ -1326,6 +1389,31 @@ begin
     LValidationJson.AddPair(
       'coveragePercent',
       TJSONNumber.Create(LValidation.CoveragePercent)
+    );
+    LValidationJson.AddPair(
+      'executionRun',
+      TJSONBool.Create(LValidation.ExecutionRun)
+    );
+    LValidationJson.AddPair(
+      'executionPassed',
+      TJSONBool.Create(LValidation.ExecutionPassed)
+    );
+    LValidationJson.AddPair(
+      'executionTool',
+      LValidation.ExecutionTool
+    );
+    LValidationJson.AddPair(
+      'executionDurationMilliseconds',
+      TJSONNumber.Create(LValidation.ExecutionDurationMilliseconds)
+    );
+    LValidationJson.AddPair(
+      'debugObserved',
+      TJSONBool.Create(LValidation.DebugObserved)
+    );
+    LValidationJson.AddPair('debugState', LValidation.DebugState);
+    LValidationJson.AddPair(
+      'debugLastSequence',
+      TJSONNumber.Create(LValidation.DebugLastSequence)
     );
     LRoot.AddPair('validation', LValidationJson);
     LStepArray := TJSONArray.Create;

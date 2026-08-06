@@ -42,6 +42,12 @@ Durante a jornada, `NavigateToDevelopmentSurface` ativa explicitamente o editor 
 Designer vivo para um arquivo do projeto. A tool recusa arquivos externos e falha quando a
 superfície solicitada não existe.
 
+Depois da última mutação, a timeline reúne as evidências de `BuildProject`, `RunDUnitXTests`,
+`GetCoverageSummary`, `StartDebugging`, `GetDebuggerState` e `GetDebugTimeline`. O card da jornada
+mostra estados separados para mudanças, build, testes, cobertura, execução e debug, além de duração,
+contagens e última sequência observada. Uma nova mutação invalida essas evidências e inicia outro
+ciclo de validação.
+
 ## Segurança
 
 - máximo de 32 operações e 16 previews compostos ativos;
