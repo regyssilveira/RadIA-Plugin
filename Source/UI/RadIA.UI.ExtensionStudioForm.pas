@@ -21,7 +21,8 @@ uses
   Vcl.Dialogs,
   Vcl.ExtCtrls,
   Vcl.StdCtrls,
-  RadIA.Core.ExtensionStudio;
+  RadIA.Core.ExtensionStudio,
+  RadIA.UI.ExtensionSigningForm;
 
 type
   TRadIAExtensionStudioForm = class(TForm)
@@ -37,6 +38,7 @@ type
     FExportButton: TButton;
     FReservedCommands: TArray<string>;
     FSaveDialog: TSaveDialog;
+    FSignButton: TButton;
     FStatusLabel: TLabel;
     FTestButton: TButton;
     FTriggerEdit: TEdit;
@@ -54,6 +56,7 @@ type
     procedure ExportClick(Sender: TObject);
     procedure KindChanged(Sender: TObject);
     procedure RefreshPreview;
+    procedure SignClick(Sender: TObject);
     procedure TestClick(Sender: TObject);
   protected
     procedure CreateWnd; override;
@@ -236,35 +239,42 @@ var
 begin
   FInstallButton := TButton.Create(Self);
   FInstallButton.Parent := AParent;
-  FInstallButton.SetBounds(252, 574, 76, 28);
+  FInstallButton.SetBounds(272, 574, 60, 28);
   FInstallButton.Anchors := [akRight, akBottom];
   FInstallButton.Caption := 'Install';
   FInstallButton.ModalResult := mrOk;
 
   FAuditButton := TButton.Create(Self);
   FAuditButton.Parent := AParent;
-  FAuditButton.SetBounds(8, 574, 70, 28);
+  FAuditButton.SetBounds(8, 574, 58, 28);
   FAuditButton.Anchors := [akLeft, akBottom];
   FAuditButton.Caption := 'Audit';
   FAuditButton.OnClick := AuditClick;
 
   FTestButton := TButton.Create(Self);
   FTestButton.Parent := AParent;
-  FTestButton.SetBounds(86, 574, 70, 28);
+  FTestButton.SetBounds(74, 574, 58, 28);
   FTestButton.Anchors := [akLeft, akBottom];
   FTestButton.Caption := 'Test';
   FTestButton.OnClick := TestClick;
 
   FExportButton := TButton.Create(Self);
   FExportButton.Parent := AParent;
-  FExportButton.SetBounds(164, 574, 80, 28);
+  FExportButton.SetBounds(140, 574, 58, 28);
   FExportButton.Anchors := [akLeft, akBottom];
   FExportButton.Caption := 'Export...';
   FExportButton.OnClick := ExportClick;
 
+  FSignButton := TButton.Create(Self);
+  FSignButton.Parent := AParent;
+  FSignButton.SetBounds(206, 574, 58, 28);
+  FSignButton.Anchors := [akLeft, akBottom];
+  FSignButton.Caption := 'Sign...';
+  FSignButton.OnClick := SignClick;
+
   LCancelButton := TButton.Create(Self);
   LCancelButton.Parent := AParent;
-  LCancelButton.SetBounds(336, 574, 78, 28);
+  LCancelButton.SetBounds(340, 574, 74, 28);
   LCancelButton.Anchors := [akRight, akBottom];
   LCancelButton.Caption := 'Cancel';
   LCancelButton.ModalResult := mrCancel;
@@ -340,6 +350,7 @@ begin
     FInstallButton.Enabled := True;
     FAuditButton.Enabled := True;
     FExportButton.Enabled := True;
+    FSignButton.Enabled := True;
     FTestButton.Enabled := True;
   except
     on E: Exception do
@@ -349,8 +360,23 @@ begin
       FInstallButton.Enabled := False;
       FAuditButton.Enabled := False;
       FExportButton.Enabled := False;
+      FSignButton.Enabled := False;
       FTestButton.Enabled := False;
     end;
+  end;
+end;
+
+procedure TRadIAExtensionStudioForm.SignClick(Sender: TObject);
+begin
+  try
+    ShowRadIAExtensionSigning(
+      Self,
+      Manifest,
+      FExtensionIdEdit.Text + '-' + FVersionEdit.Text + '-signed.radiaext'
+    );
+  except
+    on E: Exception do
+      FStatusLabel.Caption := 'Unable to open signing: ' + E.Message;
   end;
 end;
 

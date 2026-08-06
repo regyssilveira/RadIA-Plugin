@@ -32,9 +32,18 @@ reload path.
 consent policy before installation. **Export...** creates an unsigned `.radiaext`, calculates its
 SHA-256, and reads the finished artifact through the same package verifier used during installation.
 If verification fails, the partial output is removed. Unsigned packages still require explicit
-install-time confirmation. RSA signing through the Windows Certificate Store remains available
-through the packaging command documented below. The RadIA installer deploys that packager beside
-the BPL, verifies its hash during `Install` and `Repair`, and removes it during `Uninstall`.
+install-time confirmation.
+
+Use **Sign...** to create a signed package without leaving the IDE. RadIA visually lists only
+unexpired RSA certificates with a private key in `Cert:\CurrentUser\My`, including display name,
+expiration, and thumbprint. After entering the publisher ID and public name, choose the destination.
+Packaging runs in the background and the private key remains in the Windows cryptographic provider.
+RadIA then reads the result, requires a valid signature, and displays the SHA-256 public-key
+fingerprint. When no eligible certificate exists, unsigned creation, testing, and export remain
+available.
+
+The RadIA installer deploys the visual flow's packager beside the BPL, verifies its hash during
+`Install` and `Repair`, and removes it during `Uninstall`.
 
 Use **Test** before installation to activate the manifest in an isolated temporary directory. The
 sandbox runs the complete parser, permission rules, reserved-command collision checks, and
@@ -103,8 +112,8 @@ results to 1 MiB UTF-16. No manifest text is executed as PowerShell, shell code,
 
 The versioned functional matrix is available in
 [`declarative_workflow_smoke_evidence_2.0.0.json`](declarative_workflow_smoke_evidence_2.0.0.json).
-It proves hot-load, shared catalog registration, and audited two-step execution on Delphi 11, 12,
-13 Win32, and Delphi 13 IDE64.
+It proves hot-load, shared catalog registration, and audited two-step execution on Delphi 12
+Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 
 See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2,
 `Examples/DeclarativeExtension/team-tools.radia.json` for schema 3, and

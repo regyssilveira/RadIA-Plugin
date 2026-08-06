@@ -42,6 +42,7 @@ uses
   RadIA.Core.ExtensionPublisherTrust in '..\Source\Core\RadIA.Core.ExtensionPublisherTrust.pas',
   RadIA.Core.ExtensionCatalog in '..\Source\Core\RadIA.Core.ExtensionCatalog.pas',
   RadIA.Core.ExtensionStudio in '..\Source\Core\RadIA.Core.ExtensionStudio.pas',
+  RadIA.Core.ExtensionSigning in '..\Source\Core\RadIA.Core.ExtensionSigning.pas',
   RadIA.UI.ExtensionCatalogForm in '..\Source\UI\RadIA.UI.ExtensionCatalogForm.pas',
   RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
   RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',

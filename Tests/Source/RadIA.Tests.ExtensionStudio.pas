@@ -25,6 +25,10 @@ type
     procedure RejectsInvalidDrafts;
     [Test]
     procedure GeneratedManifestsPassManagerValidation;
+    [Test]
+    procedure ParsesSigningCertificateCatalog;
+    [Test]
+    procedure BuildsSafeSigningInvocation;
   end;
 
 implementation
@@ -32,9 +36,54 @@ implementation
 uses
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.AgentExecutors,
   RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.DeclarativeExtensions,
-  RadIA.Core.ExtensionStudio;
+  RadIA.Core.ExtensionStudio,
+  RadIA.Core.ExtensionSigning;
+
+procedure TRadIAExtensionStudioTests.BuildsSafeSigningInvocation;
+var
+  LInvocation: TRadIACliInvocation;
+  LManifestPath: string;
+  LPackagerPath: string;
+begin
+  LManifestPath := TPath.GetTempFileName;
+  LPackagerPath := TPath.GetTempFileName;
+  try
+    LInvocation := TRadIAExtensionSigningService.BuildSigningInvocation(
+      TRadIAExtensionSigningRequest.Create(
+        LManifestPath,
+        TPath.Combine(TPath.GetTempPath, 'signed.radiaext'),
+        LPackagerPath,
+        'publisher-id',
+        'Publisher Name',
+        'AABBCC'
+      )
+    );
+    Assert.AreEqual('powershell.exe', LInvocation.ExecutablePath);
+    Assert.AreEqual('AABBCC', LInvocation.Arguments[11]);
+    Assert.AreEqual('publisher-id', LInvocation.Arguments[13]);
+    Assert.AreEqual('Publisher Name', LInvocation.Arguments[15]);
+  finally
+    TFile.Delete(LManifestPath);
+    TFile.Delete(LPackagerPath);
+  end;
+end;
+
+procedure TRadIAExtensionStudioTests.ParsesSigningCertificateCatalog;
+var
+  LCertificates: TArray<TRadIAExtensionSigningCertificate>;
+begin
+  LCertificates := TRadIAExtensionSigningService.ParseCertificates(
+    '[{"displayName":"Rad IA Publisher",' +
+    '"expiresAt":"2028-01-02 03:04:05","thumbprint":"aabbcc"}]'
+  );
+  Assert.AreEqual<Integer>(1, Length(LCertificates));
+  Assert.AreEqual('Rad IA Publisher', LCertificates[0].DisplayName);
+  Assert.AreEqual('2028-01-02 03:04:05', LCertificates[0].ExpiresAt);
+  Assert.AreEqual('AABBCC', LCertificates[0].Thumbprint);
+end;
 
 procedure TRadIAExtensionStudioTests.BuildsAliasManifest;
 var

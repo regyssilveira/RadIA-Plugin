@@ -39,9 +39,18 @@ O botão **Audit** apresenta os limites de execução, a permissão solicitada e
 do consentimento e da auditoria centrais. **Export...** cria um pacote `.radiaext` sem assinatura,
 calcula seu SHA-256 e relê o artefato pelo mesmo verificador usado durante a instalação. Se a
 verificação falhar, o pacote parcial é removido. Pacotes sem assinatura continuam exigindo
-confirmação explícita na instalação. A assinatura RSA pelo Windows Certificate Store ainda usa o
-empacotador descrito na seção de distribuição. O instalador do RadIA entrega esse empacotador ao
-lado da BPL, valida seu hash durante `Install` e `Repair` e o remove durante `Uninstall`.
+confirmação explícita na instalação.
+
+Use **Sign...** para produzir o pacote assinado sem sair da IDE. O RadIA lista visualmente somente
+certificados RSA não expirados que tenham chave privada em `Cert:\CurrentUser\My`, exibindo nome,
+validade e thumbprint. Após informar o ID e o nome público do publicador, escolha o destino. O
+empacotamento ocorre em background e a chave privada permanece no provedor criptográfico do
+Windows. Ao concluir, o RadIA relê o pacote, exige uma assinatura válida e exibe o fingerprint
+SHA-256 da chave pública. Se nenhum certificado elegível existir, a tela informa isso sem bloquear
+a criação, teste ou exportação sem assinatura.
+
+O instalador entrega o empacotador usado pelo fluxo visual ao lado da BPL, valida seu hash durante
+`Install` e `Repair` e o remove durante `Uninstall`.
 
 Antes de instalar, use **Test** para ativar o manifesto em um diretório temporário isolado. O teste
 executa o parser completo, as regras de permissões, colisões com comandos reservados e o reload
@@ -182,7 +191,7 @@ executáveis ou uma segunda política de permissões.
 A matriz funcional versionada está em
 [`declarative_workflow_smoke_evidence_2.0.0.json`](declarative_workflow_smoke_evidence_2.0.0.json).
 Ela comprova hot-load, registro no catálogo compartilhado e execução auditada de duas etapas no
-Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 
 ## Jornadas, políticas e credenciais
 
