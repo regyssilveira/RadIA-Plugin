@@ -729,6 +729,24 @@ $projectContent = $projectContent.Replace(
     $DelphiVersion
 )
 Set-Content -LiteralPath $projectPath -Value $projectContent -Encoding UTF8
+$groupPath = Join-Path $smokeDirectory "Tests\RadIAJourney.groupproj"
+$groupContent = @"
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{15B352FD-3069-4A91-A775-5A16B2D660EA}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <Projects Include="RadIATests.dproj">
+      <Dependencies/>
+    </Projects>
+  </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Default.Personality</Borland.Personality>
+    <Borland.ProjectType/>
+  </ProjectExtensions>
+</Project>
+"@
+Set-Content -LiteralPath $groupPath -Value $groupContent -Encoding UTF8
 $gitRoot = Split-Path -Parent $projectPath
 if ($ExerciseGit) {
     & git -C $gitRoot init --quiet
@@ -752,18 +770,21 @@ $generatedProjectDirectory = Join-Path $smokeDirectory (
 $generatedProjectPath = Join-Path $generatedProjectDirectory (
     "RadIAJourneyApp.dproj"
 )
+$generatedProjectSourcePath = Join-Path $generatedProjectDirectory (
+    "RadIAJourneyApp.dpr"
+)
 $testExecutableCandidates = @(
     (Join-Path $smokeDirectory (
-        "Tests\Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+        "Tests\Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
     )),
     (Join-Path $smokeDirectory (
-        "Tests\Output\bin\Win32\Debug\RadIATests.exe"
+        "Tests\Output\bin\$idePlatform\Debug\RadIATests.exe"
     )),
     (Join-Path $smokeDirectory (
-        "Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+        "Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
     )),
     (Join-Path $smokeDirectory (
-        "Output\bin\Win32\Debug\RadIATests.exe"
+        "Output\bin\$idePlatform\Debug\RadIATests.exe"
     ))
 )
 $process = Start-Process -FilePath $bdsPath -PassThru
@@ -792,7 +813,7 @@ try {
             (Test-Path -LiteralPath $instanceFile)
     } -FailureMessage "Delphi did not become ready for the smoke test."
 
-    Open-RadIAPath -Process $process -Path $projectPath
+    Open-RadIAPath -Process $process -Path $groupPath
     Wait-RadIACondition -TimeoutSeconds 60 -Condition {
         try {
             $activeProject = Invoke-RadIATool `
@@ -1000,6 +1021,92 @@ try {
     }
     Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
     Start-Sleep -Seconds 2
+
+    if ($IDE64 -and $ExerciseDebugger) {
+        $breakpoint = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "AddBreakpoint" `
+            -Arguments @{
+                fileName = $generatedProjectSourcePath
+                lineNumber = 8
+            }
+        if ($breakpoint.action -ne "added") {
+            throw "The generated-project breakpoint was not added."
+        }
+        $debugStart = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "StartDebugging"
+        if (-not $debugStart.accepted) {
+            throw "The generated project did not start under the debugger."
+        }
+        Wait-RadIACondition -TimeoutSeconds 90 -Condition {
+            try {
+                $currentDebugState = Invoke-RadIATool `
+                    -BridgePath $bridgePath `
+                    -InstanceFile $instanceFile `
+                    -Name "GetDebuggerState"
+                $currentDebugState.state -in @("stopped", "exception")
+            } catch {
+                $false
+            }
+        } -FailureMessage (
+            "The generated project did not stop at the breakpoint."
+        )
+        $debugState = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetDebuggerState"
+        $callStack = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetCallStack" `
+            -Arguments @{
+                maxCount = 50
+            }
+        if (-not $callStack.accessible -or
+            $callStack.frames.Count -lt 1) {
+            throw "The generated-project call stack was unavailable."
+        }
+        $timeline = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetDebugTimeline" `
+            -Arguments @{
+                sinceSequence = 0
+                maxCount = 100
+            }
+        if ($timeline.events.Count -lt 1) {
+            throw "The generated-project debug timeline was empty."
+        }
+        [void](Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "StopDebugging"
+        )
+        [void](Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "RemoveBreakpoint" `
+            -Arguments @{
+                fileName = $generatedProjectSourcePath
+                lineNumber = 8
+            }
+        )
+        $debugPassed = $true
+        $debugSummary = [PSCustomObject]@{
+            target = "generated-vcl-win32"
+            state = $debugState.state
+            callStackAccessible = $callStack.accessible
+            callStackFrameCount = $callStack.frames.Count
+            timelineEventCount = $timeline.events.Count
+        }
+    }
 
     $templateRollback = Invoke-RadIAToolWithConsent `
         -BridgePath $bridgePath `
@@ -1233,7 +1340,7 @@ try {
             ignored = $testResult.report.ignored
             allPassed = $testResult.report.allPassed
         }
-        if ($ExerciseDebugger) {
+        if ($ExerciseDebugger -and -not $debugPassed) {
             $breakpoint = Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
@@ -1293,6 +1400,7 @@ try {
             }
             $debugPassed = $true
             $debugSummary = [PSCustomObject]@{
+                target = "test-suite"
                 state = $debugState.state
                 callStackAccessible = $callStack.accessible
                 callStackFrameCount = $callStack.frames.Count

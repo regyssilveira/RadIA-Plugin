@@ -39,6 +39,9 @@ type
     function ParseBuildMessages(
       const AOutputPath: string
     ): TArray<TRadIACompilerMessage>;
+    function ReadBuildFailureMessage(
+      const AOutputPath: string
+    ): string;
     function TargetName(const AMode: TRadIABuildMode): string;
     procedure SetStatus(const AStatus: TRadIABuildStatus);
   public
@@ -232,7 +235,8 @@ begin
       LCommandProcessor := 'cmd.exe';
     LCommandLine := Format(
       '"%s" /S /C ""%s" && msbuild "%s" /t:%s ' +
-      '/p:Config="%s" /p:Platform="%s" /nologo /verbosity:minimal"',
+      '/p:Config="%s" /p:Platform="%s" /p:DCC_ForceExecute=true ' +
+      '/nologo /verbosity:minimal"',
       [
         LCommandProcessor,
         TPath.Combine(LIDERoot, 'bin\rsvars.bat'),
@@ -252,6 +256,21 @@ begin
     if (LStatus = bsSucceeded) and (LExitCode <> 0) then
       LStatus := bsFailed;
     LMessages := ParseBuildMessages(LOutputPath);
+    if (LStatus = bsFailed) and (Length(LMessages) = 0) then
+    begin
+      LCommandLine := ReadBuildFailureMessage(LOutputPath);
+      if LCommandLine <> '' then
+      begin
+        SetLength(LMessages, 1);
+        LMessages[0] := TRadIACompilerMessage.Create(
+          cmsError,
+          LCommandLine,
+          LProjectFile,
+          0,
+          0
+        );
+      end;
+    end;
     System.SysUtils.DeleteFile(LOutputPath);
     if Length(LMessages) = 0 then
       LMessages := FWorkspace.GetCompilerMessages(200);
@@ -412,6 +431,23 @@ begin
   finally
     LList.Free;
   end;
+end;
+
+function TRadIAOTABuildFacade.ReadBuildFailureMessage(
+  const AOutputPath: string
+): string;
+const
+  CMaximumFailureCharacters = 4096;
+var
+  LOutput: string;
+begin
+  Result := '';
+  if not TFile.Exists(AOutputPath) then
+    Exit;
+  LOutput := Trim(TFile.ReadAllText(AOutputPath));
+  if Length(LOutput) > CMaximumFailureCharacters then
+    Delete(LOutput, 1, Length(LOutput) - CMaximumFailureCharacters);
+  Result := LOutput;
 end;
 
 procedure TRadIAOTABuildFacade.SetStatus(

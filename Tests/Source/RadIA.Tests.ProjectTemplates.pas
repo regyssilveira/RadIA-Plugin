@@ -68,6 +68,18 @@ begin
             Assert.Contains(LFile.Content, '<TargetedPlatforms>3');
             Assert.Contains(
               LFile.Content,
+              '<DCC_ForceExecute>true</DCC_ForceExecute>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_UnitSearchPath>$(BDSLIB)\$(Platform)\release'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DelphiLibraryPath>$(BDSLIB)\$(Platform)\release'
+            );
+            Assert.Contains(
+              LFile.Content,
               '<PropertyGroup Condition="&apos;$(Config)&apos;==&apos;Base&apos;'
             );
             Assert.Contains(

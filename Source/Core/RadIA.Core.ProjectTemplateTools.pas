@@ -18,7 +18,8 @@ implementation
 uses
   System.JSON,
   System.SysUtils,
-  RadIA.Core.ProjectTemplates;
+  RadIA.Core.ProjectTemplates,
+  RadIA.Core.Workspace;
 
 type
   TRadIAProjectTemplateToolBase = class abstract(
@@ -145,6 +146,7 @@ const
     '{"type":"object","required":["buildSucceeded","status",' +
     '"rolledBack"],"properties":{"buildSucceeded":{"type":"boolean"},' +
     '"status":{"type":"string"},"rolledBack":{"type":"boolean"},' +
+    '"messages":{"type":"array","items":{"type":"string"}},' +
     '"errorCode":{"type":"string"},"errorMessage":{"type":"string"}}}';
 
 { TRadIAProjectTemplateToolBase }
@@ -262,6 +264,8 @@ function TRadIAValidateCreatedProjectTool.Execute(
 var
   LBuildResult: TRadIABuildResult;
   LJson: TJSONObject;
+  LMessage: TRadIACompilerMessage;
+  LMessages: TJSONArray;
   LPreviewId: string;
   LRequestJson: TJSONObject;
   LRollbackResult: TRadIAProjectTemplateOperationResult;
@@ -310,6 +314,10 @@ begin
       );
       LJson.AddPair('errorCode', LBuildResult.ErrorCode);
       LJson.AddPair('errorMessage', LBuildResult.ErrorMessage);
+      LMessages := TJSONArray.Create;
+      for LMessage in LBuildResult.Messages do
+        LMessages.Add(LMessage.Text);
+      LJson.AddPair('messages', LMessages);
       if not LBuildResult.Success and
         not LRollbackResult.Success then
       begin

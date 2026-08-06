@@ -584,6 +584,11 @@ begin
     sLineBreak +
     '    <DCC_ExeOutput>.\bin\$(Platform)\$(Config)</DCC_ExeOutput>' +
     sLineBreak +
+    '    <DCC_ForceExecute>true</DCC_ForceExecute>' + sLineBreak +
+    '    <DelphiLibraryPath>$(BDSLIB)\$(Platform)\release' +
+    '</DelphiLibraryPath>' + sLineBreak +
+    '    <DCC_UnitSearchPath>$(BDSLIB)\$(Platform)\release' +
+    '</DCC_UnitSearchPath>' + sLineBreak +
     '    <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;' +
     'FMX</DCC_Namespace>' + sLineBreak +
     '  </PropertyGroup>' + sLineBreak +
