@@ -270,7 +270,7 @@ a signature and timestamp, publishes the distribution, and removes cryptographic
 the runner even after failure.
 
 The post-install diagnostic passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The
-evidence calls the doctor through the installed bridge, requires chat, terminal, the 90-tool
+evidence calls the doctor through the installed bridge, requires chat, terminal, the 95-tool
 catalog, and `GetIDEState`, and preserves an actionable next step when the provider is not yet
 configured. The versioned matrix is stored in `first_value_smoke_evidence_2.0.0.json`.
 

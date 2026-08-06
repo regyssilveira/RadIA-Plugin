@@ -277,7 +277,7 @@ job, exige assinatura e timestamp, publica a distribuição e remove o material 
 runner mesmo em caso de falha.
 
 O diagnóstico pós-instalação é aprovado no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. A
-prova consulta o doctor pelo bridge instalado, exige chat, terminal, catálogo de 90 tools e
+prova consulta o doctor pelo bridge instalado, exige chat, terminal, catálogo de 95 tools e
 `GetIDEState`, e preserva uma próxima ação útil quando o provider ainda não está configurado.
 A matriz versionada está em `first_value_smoke_evidence_2.0.0.json`.
 

@@ -3,41 +3,17 @@
     "evidenceKind":  "installationFirstValueMatrix",
     "product":  "RadIA",
     "productVersion":  "2.0.0",
-    "sourceCommit":  "f63ac1f0fbb844cdae86c6d7550eda50cfab700b",
-    "requiredToolCount":  90,
-    "targetCount":  4,
+    "sourceCommit":  "ff083f372bf09e1b1ef263367eb3bf271881195a",
+    "requiredToolCount":  95,
+    "targetCount":  3,
     "status":  "passed",
-    "generatedAtUtc":  "2026-08-06T01:12:12.0417353Z",
+    "generatedAtUtc":  "2026-08-06T17:10:18.6847098Z",
     "targets":  [
-                    {
-                        "delphiVersion":  "22.0",
-                        "platform":  "Win32",
-                        "installedBplSha256":  "9CB68FD406F262ACB6516377CD8EDBB88FE291B876CDE00C929349842DBA959E",
-                        "toolCount":  90,
-                        "cyclesPassed":  1,
-                        "status":  "attention",
-                        "readinessScore":  83,
-                        "providerConfigured":  false,
-                        "executor":  "codex",
-                        "cliRequired":  false,
-                        "cliDetected":  true,
-                        "mcpBridgeAvailable":  true,
-                        "mcpConfigured":  false,
-                        "mcpRequired":  false,
-                        "terminalReady":  true,
-                        "chatReady":  true,
-                        "firstToolReady":  true,
-                        "nextAction":  "open_provider_settings",
-                        "firstToolName":  "GetIDEState",
-                        "ideVersion":  "Delphi 11 Alexandria",
-                        "idePlatform":  "Win32",
-                        "generatedAtUtc":  "2026-08-06T01:10:18.9132744Z"
-                    },
                     {
                         "delphiVersion":  "23.0",
                         "platform":  "Win32",
-                        "installedBplSha256":  "A9B8F3F59925881D0EB45A6617008FF51975EE841DBE4FD27018CE9824A25E30",
-                        "toolCount":  90,
+                        "installedBplSha256":  "9D6A80F4D84B23C190A9DE1064C8D0D8B64F02AE81E58924506BE9A16B2A80DD",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
                         "status":  "ready",
                         "readinessScore":  100,
@@ -55,13 +31,13 @@
                         "firstToolName":  "GetIDEState",
                         "ideVersion":  "Delphi 12 Athens",
                         "idePlatform":  "Win32",
-                        "generatedAtUtc":  "2026-08-06T01:10:37.0067860Z"
+                        "generatedAtUtc":  "2026-08-06T17:09:18.5567976Z"
                     },
                     {
                         "delphiVersion":  "37.0",
                         "platform":  "Win32",
-                        "installedBplSha256":  "B442259DE0EE4C03FD80B5A4784D0BE92C56C9C517CC0551DF60C204A9A9A9C9",
-                        "toolCount":  90,
+                        "installedBplSha256":  "95E92526F46E242DC1DB2A7D1DA280A3D896438CB53C3DC5FC187DA91AA437F0",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
                         "status":  "ready",
                         "readinessScore":  100,
@@ -79,13 +55,13 @@
                         "firstToolName":  "GetIDEState",
                         "ideVersion":  "Delphi 13 Florence",
                         "idePlatform":  "Win32",
-                        "generatedAtUtc":  "2026-08-06T01:10:59.5654945Z"
+                        "generatedAtUtc":  "2026-08-06T17:09:48.1426719Z"
                     },
                     {
                         "delphiVersion":  "37.0",
                         "platform":  "Win64",
-                        "installedBplSha256":  "4D25C319DE341C536B1E9F79861E317258FB028E063F4E504D55AAB5DA0298C1",
-                        "toolCount":  90,
+                        "installedBplSha256":  "E0C0C3E93BA8C84ACE956B2A45F55909847D5AE38934F3E59A3EF5ABC8926F95",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
                         "status":  "ready",
                         "readinessScore":  100,
@@ -103,7 +79,7 @@
                         "firstToolName":  "GetIDEState",
                         "ideVersion":  "Delphi 13 Florence",
                         "idePlatform":  "Win64",
-                        "generatedAtUtc":  "2026-08-06T01:11:17.5473465Z"
+                        "generatedAtUtc":  "2026-08-06T17:10:09.9981981Z"
                     }
                 ]
 }
