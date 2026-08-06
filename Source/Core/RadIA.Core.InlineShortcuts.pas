@@ -9,7 +9,9 @@ type
     isaAcceptNextWord,
     isaAlternative,
     isaReject,
-    isaTerminal
+    isaTerminal,
+    isaReviewAccept,
+    isaReviewReject
   );
 
   TRadIAInlineShortcutProfile = record
@@ -130,7 +132,11 @@ begin
     High(TRadIAInlineShortcutAction) do
     if not ASeen[LAction] then
     begin
-      if LAction <> isaTerminal then
+      if not (LAction in [
+        isaTerminal,
+        isaReviewAccept,
+        isaReviewReject
+      ]) then
       begin
         AError := 'Missing RadIA shortcut action: ' +
           TRadIAInlineShortcutProfile.ActionName(LAction);
@@ -167,6 +173,10 @@ begin
       Result := 'reject';
     isaTerminal:
       Result := 'terminal';
+    isaReviewAccept:
+      Result := 'reviewAccept';
+    isaReviewReject:
+      Result := 'reviewReject';
   else
     Result := '';
   end;
@@ -183,6 +193,10 @@ begin
     ShortCut(VK_OEM_6, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaReject] := ShortCut(VK_BACK, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaTerminal] := ShortCut(Ord('T'), [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewAccept] :=
+    ShortCut(VK_RETURN, [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewReject] :=
+    ShortCut(Ord('R'), [ssCtrl, ssAlt]);
 end;
 
 class function TRadIAInlineShortcutProfile.DefaultText: string;

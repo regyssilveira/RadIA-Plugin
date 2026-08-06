@@ -32,6 +32,8 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 | Aceitar somente a próxima palavra | `Ctrl+Alt+Baixo` |
 | Solicitar uma alternativa | `Ctrl+Alt+]` |
 | Rejeitar a sugestão | `Ctrl+Alt+Backspace` |
+| Aceitar revisão na linha atual | `Ctrl+Alt+Enter` |
+| Rejeitar revisão na linha atual | `Ctrl+Alt+R` |
 
 Os atalhos aparecem no submenu **Rad IA** do menu contextual do editor. O primeiro pedido de cada
 sessão informa qual contexto será enviado e exige consentimento explícito.
@@ -41,10 +43,15 @@ abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Security &
 **Inline shortcuts** usando o formato:
 
 ```text
-request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; reject=Ctrl+Alt+Backspace
+request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
+nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
+reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
+reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R
 ```
 
-As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. O RadIA não
+As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. Terminal e
+decisões de revisão usam `terminal`, `reviewAccept` e `reviewReject`; perfis antigos recebem os
+atalhos padrão automaticamente. O RadIA não
 salva perfis incompletos, teclas inválidas ou atalhos duplicados. A configuração é recarregada ao
 voltar ao editor, sem reiniciar a IDE. Se o keymap ativo do Delphi já possuir o mesmo atalho, o
 comando existente permanece prioritário e o conflito é registrado no log do RadIA.

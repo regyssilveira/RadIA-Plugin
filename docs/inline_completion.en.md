@@ -31,6 +31,8 @@ accepts the whole suggestion or the next word.
 | Accept only the next word | `Ctrl+Alt+Down` |
 | Request an alternative | `Ctrl+Alt+]` |
 | Reject the suggestion | `Ctrl+Alt+Backspace` |
+| Accept review at the current line | `Ctrl+Alt+Enter` |
+| Reject review at the current line | `Ctrl+Alt+R` |
 
 The shortcuts appear in the **Rad IA** submenu of the editor context menu. The first request in
 each session explains which context will be sent and requires explicit consent.
@@ -40,10 +42,15 @@ opening the context menu. To change them, open **Rad IA > Settings > Security & 
 **Inline shortcuts** using this format:
 
 ```text
-request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; reject=Ctrl+Alt+Backspace
+request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
+nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
+reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
+reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R
 ```
 
-The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. RadIA does
+The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. Terminal and
+review decisions use `terminal`, `reviewAccept`, and `reviewReject`; legacy profiles receive the
+default shortcuts automatically. RadIA does
 not save incomplete profiles, invalid keys, or duplicate shortcuts. The profile reloads after
 returning to the editor, without restarting the IDE. If the active Delphi keymap already owns a
 shortcut, the existing command keeps priority and RadIA records the conflict in its log.

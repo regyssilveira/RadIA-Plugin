@@ -7,6 +7,7 @@ uses
   ToolsAPI,
   RadIA.Core.Interfaces,
   RadIA.Core.InlineCompletion,
+  RadIA.Core.InlineReviews,
   RadIA.OTA.ContextParser,
   RadIA.OTA.InlineCompletion;
 
@@ -41,6 +42,16 @@ type
       var AResult: TKeyBindingResult
     );
     procedure Reject(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewAccept(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewReject(
       const AContext: IOTAKeyContext;
       AKeyCode: TShortCut;
       var AResult: TKeyBindingResult
@@ -133,6 +144,12 @@ type
     procedure OnInlineCompletionPreviewDiagnosticExecute(Sender: TObject);
     procedure OnInlineCompletionRequestExecute(Sender: TObject);
     procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
+    procedure OnInlineReviewAcceptExecute(Sender: TObject);
+    procedure OnInlineReviewRejectExecute(Sender: TObject);
+    function TryGetInlineReviewAtCursor(
+      out AService: IRadIAInlineReviewService;
+      out AReview: TRadIAInlineReview
+    ): Boolean;
     function TryPreviewInlineCompletionDiagnostic: Boolean;
     procedure RequestContinuousInlineCompletion;
     procedure RefreshInlineCompletionWatch;
@@ -162,6 +179,7 @@ implementation
 
 uses
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.Patches,
   System.Generics.Collections,
   System.SysUtils,
   System.UITypes,
@@ -311,6 +329,18 @@ begin
     Reject,
     'reject'
   );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaReviewAccept),
+    ReviewAccept,
+    'reviewAccept'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaReviewReject),
+    ReviewReject,
+    'reviewReject'
+  );
 end;
 
 constructor TRadIAInlineCompletionKeyboardBinding.Create(
@@ -367,6 +397,28 @@ begin
   AResult := krHandled;
   if Assigned(FOwner) then
     FOwner.OnInlineCompletionRequestExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewAccept(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineReviewAcceptExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewReject(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineReviewRejectExecute(nil);
 end;
 
 { TRadIAEditorHook }
@@ -1023,6 +1075,22 @@ begin
   LRootItem.Add(LSubItem);
 
   LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := '-';
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Accept Review at Cursor';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaReviewAccept);
+  LSubItem.OnClick := OnInlineReviewAcceptExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Reject Review at Cursor';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaReviewReject);
+  LSubItem.OnClick := OnInlineReviewRejectExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
   LSubItem.Caption := 'Pause/Resume Inline Completion for Session';
   LSubItem.OnClick := OnInlineCompletionSessionToggleExecute;
   LRootItem.Add(LSubItem);
@@ -1279,6 +1347,101 @@ begin
     Assigned(FInlineCompletionController) then
     FInlineCompletionController.Stop;
   RefreshInlineCompletionWatch;
+end;
+
+procedure TRadIAEditorHook.OnInlineReviewAcceptExecute(
+  Sender: TObject
+);
+var
+  LResult: TRadIAPatchResult;
+  LReview: TRadIAInlineReview;
+  LService: IRadIAInlineReviewService;
+begin
+  if not TryGetInlineReviewAtCursor(LService, LReview) then
+  begin
+    ShowMessage('No inline review is available at the current line.');
+    Exit;
+  end;
+  if MessageDlg(
+    'Apply this inline review suggestion?' + sLineBreak + sLineBreak +
+    LReview.Message,
+    mtConfirmation,
+    [mbYes, mbNo],
+    0
+  ) <> mrYes then
+    Exit;
+  LResult := LService.ApplyFix(LReview.Id);
+  if not LResult.Success then
+  begin
+    ShowMessage(
+      'The inline review could not be applied: ' +
+      LResult.ErrorMessage
+    );
+    Exit;
+  end;
+  TLogger.Log(
+    'Inline review applied from the editor: ' + LReview.Id,
+    'InlineReview'
+  );
+end;
+
+procedure TRadIAEditorHook.OnInlineReviewRejectExecute(
+  Sender: TObject
+);
+var
+  LReview: TRadIAInlineReview;
+  LService: IRadIAInlineReviewService;
+begin
+  if not TryGetInlineReviewAtCursor(LService, LReview) then
+  begin
+    ShowMessage('No inline review is available at the current line.');
+    Exit;
+  end;
+  if not LService.Reject(LReview.Id) then
+  begin
+    ShowMessage('The inline review is no longer available.');
+    Exit;
+  end;
+  TLogger.Log(
+    'Inline review rejected from the editor: ' + LReview.Id,
+    'InlineReview'
+  );
+end;
+
+function TRadIAEditorHook.TryGetInlineReviewAtCursor(
+  out AService: IRadIAInlineReviewService;
+  out AReview: TRadIAInlineReview
+): Boolean;
+var
+  LEditorServices: IOTAEditorServices;
+  LReview: TRadIAInlineReview;
+  LReviews: TArray<TRadIAInlineReview>;
+  LRow: Integer;
+  LView: IOTAEditView;
+begin
+  Result := False;
+  AService := nil;
+  AReview := Default(TRadIAInlineReview);
+  if not TRadIAContainer.TryResolve<IRadIAInlineReviewService>(
+    AService
+  ) or not Supports(
+    BorlandIDEServices,
+    IOTAEditorServices,
+    LEditorServices
+  ) then
+    Exit;
+  LView := LEditorServices.TopView;
+  if not Assigned(LView) or not Assigned(LView.Position) then
+    Exit;
+  LRow := LView.Position.Row;
+  LReviews := AService.ListCurrent;
+  for LReview in LReviews do
+    if (LRow >= LReview.StartLine) and
+      (LRow <= LReview.EndLine) then
+    begin
+      AReview := LReview;
+      Exit(True);
+    end;
 end;
 
 procedure TRadIAEditorHook.RefreshKeyboardBinding;

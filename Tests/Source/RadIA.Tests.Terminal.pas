@@ -627,6 +627,14 @@ begin
     Integer(TextToShortCut('Ctrl+Alt+T')),
     Integer(LProfile.ShortcutFor(isaTerminal))
   );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+Enter')),
+    Integer(LProfile.ShortcutFor(isaReviewAccept))
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+R')),
+    Integer(LProfile.ShortcutFor(isaReviewReject))
+  );
   Assert.IsTrue(
     TRadIAInlineShortcutProfile.TryParse(
       'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +

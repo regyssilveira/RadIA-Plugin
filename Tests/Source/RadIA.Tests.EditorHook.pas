@@ -29,6 +29,8 @@ type
     [Test]
     procedure TestRadIAMenuSurvivesOriginalPopupRebuild;
     [Test]
+    procedure TestRadIAMenuExposesInlineReviewDecisions;
+    [Test]
     procedure TestUnhooking;
     [Test]
     procedure TestCleanCreateExampleResponseWithPascalFence;
@@ -41,7 +43,9 @@ type
 implementation
 
 uses
-  System.Classes, RadIA.OTA.Helper;
+  System.Classes,
+  System.SysUtils,
+  RadIA.OTA.Helper;
 
 { TTestEditorHook }
 
@@ -138,6 +142,35 @@ begin
   Assert.IsTrue(FOnPopupCalled, 'The original IDE popup handler should run before RadIA injection');
   Assert.IsNotNull(FPopupMenu.Items.Find('Rad IA'), 'Rad IA menu should be present after the original ' +
       'popup rebuilds the menu');
+end;
+
+procedure TTestEditorHook.TestRadIAMenuExposesInlineReviewDecisions;
+  function HasCaption(
+    const AParent: TMenuItem;
+    const ACaption: string
+  ): Boolean;
+  var
+    LIndex: Integer;
+  begin
+    Result := False;
+    for LIndex := 0 to AParent.Count - 1 do
+      if SameText(AParent[LIndex].Caption, ACaption) then
+        Exit(True);
+  end;
+var
+  LCut: TMenuItem;
+  LRoot: TMenuItem;
+begin
+  LCut := TMenuItem.Create(FPopupMenu);
+  LCut.Caption := 'Cut';
+  FPopupMenu.Items.Add(LCut);
+  FHook.HookMenuDirectly(FPopupMenu);
+  if Assigned(FPopupMenu.OnPopup) then
+    FPopupMenu.OnPopup(FPopupMenu);
+  LRoot := FPopupMenu.Items.Find('Rad IA');
+  Assert.IsNotNull(LRoot);
+  Assert.IsTrue(HasCaption(LRoot, 'Accept Review at Cursor'));
+  Assert.IsTrue(HasCaption(LRoot, 'Reject Review at Cursor'));
 end;
 
 procedure TTestEditorHook.TestUnhooking;

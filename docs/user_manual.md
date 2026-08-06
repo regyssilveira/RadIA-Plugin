@@ -345,8 +345,10 @@ recentes permanecem disponíveis em memória, enquanto uma trilha JSON Lines é 
 ### 4.12 Revisão inline
 
 O RadIA pode publicar observações ancoradas a arquivo, hash e linhas do editor. Sugestões são
-visuais e não alteram o código diretamente. Uma correção cria um preview de patch sujeito às mesmas
-precondições, consentimento e reversão.
+visuais e não alteram o código diretamente. Na linha marcada, use o submenu **Rad IA** do editor ou
+`Ctrl+Alt+Enter` para aceitar e `Ctrl+Alt+R` para rejeitar. O aceite pede confirmação, valida o
+hash-base e aplica um patch transacional; a rejeição remove a marca sem alterar o buffer. Também é
+possível preparar o preview pelo chat, agente ou MCP antes da decisão.
 
 ### 4.13 Conhecimento local
 

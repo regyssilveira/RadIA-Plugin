@@ -238,7 +238,10 @@ See the [Designer and debugger guide](user_guide_designer_debugger.en.md).
 ### 4.11 Inline review
 
 Review findings are anchored to a file, hash, and line range. Suggestions remain visual until the
-user prepares and approves a patch. Stale reviews are not silently applied.
+user decides. On the marked line, use the editor **Rad IA** submenu, `Ctrl+Alt+Enter` to accept, or
+`Ctrl+Alt+R` to reject. Acceptance asks for confirmation, validates the base hash, and applies a
+transactional patch; rejection removes the decoration without changing the buffer. Chat, agent
+mode, and MCP can also prepare the preview before the decision. Stale reviews are never applied.
 
 ### 4.12 Local knowledge
 
