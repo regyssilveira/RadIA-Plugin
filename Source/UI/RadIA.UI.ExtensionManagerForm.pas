@@ -710,7 +710,11 @@ var
   LMessage: string;
   LTempFileName: string;
 begin
-  if not CreateRadIAExtensionManifest(Self, LManifest) then
+  if not CreateRadIAExtensionManifest(
+    Self,
+    FReservedCommands,
+    LManifest
+  ) then
     Exit;
   LTempFileName := TPath.GetTempFileName;
   try

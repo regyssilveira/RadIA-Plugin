@@ -20,6 +20,8 @@ type
     [Test]
     procedure ExportsVerifiedUnsignedPackage;
     [Test]
+    procedure TestsManifestInIsolatedSandbox;
+    [Test]
     procedure RejectsInvalidDrafts;
     [Test]
     procedure GeneratedManifestsPassManagerValidation;
@@ -253,6 +255,34 @@ begin
     LManager.Free;
     TDirectory.Delete(LRoot, True);
   end;
+end;
+
+procedure TRadIAExtensionStudioTests.TestsManifestInIsolatedSandbox;
+var
+  LManifest: string;
+  LResult: string;
+begin
+  LManifest := TRadIAExtensionStudioBuilder.BuildManifest(
+    TRadIAExtensionStudioDraft.Create(
+      eskCommand,
+      'SandboxCommand',
+      '1.0.0',
+      'Sandbox command',
+      'Validate isolated activation.',
+      '/sandbox-command',
+      'Inspect {argument}'
+    )
+  );
+  LResult := TRadIAExtensionStudioSandbox.TestManifest(LManifest, []);
+  Assert.Contains(LResult, 'Sandbox result: activated');
+  Assert.Contains(LResult, 'Commands and journeys: 1');
+  Assert.Contains(LResult, 'Persistent changes: none');
+  LResult := TRadIAExtensionStudioSandbox.TestManifest(
+    LManifest,
+    ['/sandbox-command']
+  );
+  Assert.Contains(LResult, 'Sandbox result: rejected');
+  Assert.Contains(LResult, 'collides with an existing slash command');
 end;
 
 initialization

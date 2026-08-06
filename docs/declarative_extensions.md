@@ -42,6 +42,12 @@ verificação falhar, o pacote parcial é removido. Pacotes sem assinatura conti
 confirmação explícita na instalação. A assinatura RSA pelo Windows Certificate Store ainda usa o
 empacotador descrito na seção de distribuição.
 
+Antes de instalar, use **Test** para ativar o manifesto em um diretório temporário isolado. O teste
+executa o parser completo, as regras de permissões, colisões com comandos reservados e o reload
+transacional. O relatório mostra quantos comandos, aliases e workflows foram ativados. Nenhuma
+extensão instalada é alterada e o diretório temporário é removido ao final. O sandbox valida a
+ativação; ele não executa prompts nem ferramentas com efeitos colaterais.
+
 ## Manifesto versão 5
 
 ```json

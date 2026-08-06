@@ -78,6 +78,14 @@ type
     ): string; static;
   end;
 
+  TRadIAExtensionStudioSandbox = class
+  public
+    class function TestManifest(
+      const AManifest: string;
+      const AReservedCommands: TArray<string>
+    ): string; static;
+  end;
+
 implementation
 
 uses
@@ -87,7 +95,8 @@ uses
   System.RegularExpressions,
   System.SysUtils,
   System.Zip,
-  RadIA.Core.DeclarativeExtensionPackages;
+  RadIA.Core.DeclarativeExtensionPackages,
+  RadIA.Core.DeclarativeExtensions;
 
 { TRadIAExtensionStudioDraft }
 
@@ -382,6 +391,58 @@ begin
     raise EArgumentException.Create(
       'Package output file must use the .radiaext extension.'
     );
+end;
+
+{ TRadIAExtensionStudioSandbox }
+
+class function TRadIAExtensionStudioSandbox.TestManifest(
+  const AManifest: string;
+  const AReservedCommands: TArray<string>
+): string;
+var
+  LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
+  LExtensionId: string;
+  LManager: TRadIADeclarativeExtensionManager;
+  LMessage: string;
+  LRoot: string;
+  LSourceFileName: string;
+begin
+  LRoot := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-ExtensionSandbox-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LRoot);
+  LManager := TRadIADeclarativeExtensionManager.Create(
+    TPath.Combine(LRoot, 'installed')
+  );
+  try
+    LSourceFileName := TPath.Combine(LRoot, 'draft.radia.json');
+    TFile.WriteAllText(LSourceFileName, AManifest, TEncoding.UTF8);
+    if not LManager.InstallOrUpdate(
+      LSourceFileName,
+      AReservedCommands,
+      LExtensionId,
+      LMessage
+    ) then
+      Exit(
+        'Sandbox result: rejected' + sLineBreak +
+        'Diagnostic: ' + LMessage
+      );
+    LDiagnostics := LManager.GetDiagnostics;
+    Result :=
+      'Sandbox result: activated' + sLineBreak +
+      'Extension: ' + LExtensionId + sLineBreak +
+      'Commands and journeys: ' +
+      Length(LManager.GetCommands).ToString + sLineBreak +
+      'Tool aliases: ' + Length(LManager.GetTools).ToString + sLineBreak +
+      'Audited workflows: ' +
+      Length(LManager.GetWorkflows).ToString + sLineBreak +
+      'Diagnostics: ' + Length(LDiagnostics).ToString + sLineBreak +
+      'Persistent changes: none';
+  finally
+    LManager.Free;
+    TDirectory.Delete(LRoot, True);
+  end;
 end;
 
 end.

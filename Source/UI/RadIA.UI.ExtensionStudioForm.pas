@@ -7,6 +7,7 @@ uses
 
 function CreateRadIAExtensionManifest(
   AOwner: TForm;
+  const AReservedCommands: TArray<string>;
   out AManifest: string
 ): Boolean;
 
@@ -34,8 +35,10 @@ type
     FNameEdit: TEdit;
     FPreviewEdit: TMemo;
     FExportButton: TButton;
+    FReservedCommands: TArray<string>;
     FSaveDialog: TSaveDialog;
     FStatusLabel: TLabel;
+    FTestButton: TButton;
     FTriggerEdit: TEdit;
     FTriggerLabel: TLabel;
     FVersionEdit: TEdit;
@@ -46,26 +49,32 @@ type
       const ATop: Integer;
       out AEdit: TEdit
     ): TLabel;
+    procedure CreateActionControls(const AParent: TWinControl);
     procedure InputChanged(Sender: TObject);
     procedure ExportClick(Sender: TObject);
     procedure KindChanged(Sender: TObject);
     procedure RefreshPreview;
+    procedure TestClick(Sender: TObject);
   protected
     procedure CreateWnd; override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(
+      AOwner: TComponent;
+      const AReservedCommands: TArray<string>
+    ); reintroduce;
     function Manifest: string;
   end;
 
 function CreateRadIAExtensionManifest(
   AOwner: TForm;
+  const AReservedCommands: TArray<string>;
   out AManifest: string
 ): Boolean;
 var
   LForm: TRadIAExtensionStudioForm;
 begin
   AManifest := '';
-  LForm := TRadIAExtensionStudioForm.Create(AOwner);
+  LForm := TRadIAExtensionStudioForm.Create(AOwner, AReservedCommands);
   try
     Result := LForm.ShowModal = mrOk;
     if Result then
@@ -75,13 +84,16 @@ begin
   end;
 end;
 
-constructor TRadIAExtensionStudioForm.Create(AOwner: TComponent);
+constructor TRadIAExtensionStudioForm.Create(
+  AOwner: TComponent;
+  const AReservedCommands: TArray<string>
+);
 var
-  LCancelButton: TButton;
   LLabel: TLabel;
   LLeftPanel: TPanel;
 begin
   inherited CreateNew(AOwner);
+  FReservedCommands := Copy(AReservedCommands);
   Caption := 'Rad IA - Addon Studio';
   Position := poOwnerFormCenter;
   BorderStyle := bsSizeable;
@@ -144,33 +156,7 @@ begin
   FStatusLabel.AutoSize := False;
   FStatusLabel.WordWrap := True;
 
-  FInstallButton := TButton.Create(Self);
-  FInstallButton.Parent := LLeftPanel;
-  FInstallButton.SetBounds(218, 574, 96, 28);
-  FInstallButton.Anchors := [akRight, akBottom];
-  FInstallButton.Caption := 'Install';
-  FInstallButton.ModalResult := mrOk;
-
-  FAuditButton := TButton.Create(Self);
-  FAuditButton.Parent := LLeftPanel;
-  FAuditButton.SetBounds(8, 574, 92, 28);
-  FAuditButton.Anchors := [akLeft, akBottom];
-  FAuditButton.Caption := 'Audit';
-  FAuditButton.OnClick := AuditClick;
-
-  FExportButton := TButton.Create(Self);
-  FExportButton.Parent := LLeftPanel;
-  FExportButton.SetBounds(108, 574, 102, 28);
-  FExportButton.Anchors := [akLeft, akBottom];
-  FExportButton.Caption := 'Export...';
-  FExportButton.OnClick := ExportClick;
-
-  LCancelButton := TButton.Create(Self);
-  LCancelButton.Parent := LLeftPanel;
-  LCancelButton.SetBounds(322, 574, 92, 28);
-  LCancelButton.Anchors := [akRight, akBottom];
-  LCancelButton.Caption := 'Cancel';
-  LCancelButton.ModalResult := mrCancel;
+  CreateActionControls(LLeftPanel);
 
   LLabel := TLabel.Create(Self);
   LLabel.Parent := Self;
@@ -183,12 +169,6 @@ begin
   FPreviewEdit.ReadOnly := True;
   FPreviewEdit.ScrollBars := ssBoth;
   FPreviewEdit.WordWrap := False;
-
-  FSaveDialog := TSaveDialog.Create(Self);
-  FSaveDialog.DefaultExt := 'radiaext';
-  FSaveDialog.Filter := 'Rad IA extension package (*.radiaext)|*.radiaext';
-  FSaveDialog.Options := [ofOverwritePrompt, ofPathMustExist, ofEnableSizing];
-  FSaveDialog.Title := 'Export unsigned Rad IA extension package';
 
   RefreshPreview;
 end;
@@ -246,6 +226,54 @@ begin
   AEdit.SetBounds(140, ATop, 274, 25);
   AEdit.Anchors := [akLeft, akTop, akRight];
   AEdit.OnChange := InputChanged;
+end;
+
+procedure TRadIAExtensionStudioForm.CreateActionControls(
+  const AParent: TWinControl
+);
+var
+  LCancelButton: TButton;
+begin
+  FInstallButton := TButton.Create(Self);
+  FInstallButton.Parent := AParent;
+  FInstallButton.SetBounds(252, 574, 76, 28);
+  FInstallButton.Anchors := [akRight, akBottom];
+  FInstallButton.Caption := 'Install';
+  FInstallButton.ModalResult := mrOk;
+
+  FAuditButton := TButton.Create(Self);
+  FAuditButton.Parent := AParent;
+  FAuditButton.SetBounds(8, 574, 70, 28);
+  FAuditButton.Anchors := [akLeft, akBottom];
+  FAuditButton.Caption := 'Audit';
+  FAuditButton.OnClick := AuditClick;
+
+  FTestButton := TButton.Create(Self);
+  FTestButton.Parent := AParent;
+  FTestButton.SetBounds(86, 574, 70, 28);
+  FTestButton.Anchors := [akLeft, akBottom];
+  FTestButton.Caption := 'Test';
+  FTestButton.OnClick := TestClick;
+
+  FExportButton := TButton.Create(Self);
+  FExportButton.Parent := AParent;
+  FExportButton.SetBounds(164, 574, 80, 28);
+  FExportButton.Anchors := [akLeft, akBottom];
+  FExportButton.Caption := 'Export...';
+  FExportButton.OnClick := ExportClick;
+
+  LCancelButton := TButton.Create(Self);
+  LCancelButton.Parent := AParent;
+  LCancelButton.SetBounds(336, 574, 78, 28);
+  LCancelButton.Anchors := [akRight, akBottom];
+  LCancelButton.Caption := 'Cancel';
+  LCancelButton.ModalResult := mrCancel;
+
+  FSaveDialog := TSaveDialog.Create(Self);
+  FSaveDialog.DefaultExt := 'radiaext';
+  FSaveDialog.Filter := 'Rad IA extension package (*.radiaext)|*.radiaext';
+  FSaveDialog.Options := [ofOverwritePrompt, ofPathMustExist, ofEnableSizing];
+  FSaveDialog.Title := 'Export unsigned Rad IA extension package';
 end;
 
 procedure TRadIAExtensionStudioForm.InputChanged(Sender: TObject);
@@ -312,6 +340,7 @@ begin
     FInstallButton.Enabled := True;
     FAuditButton.Enabled := True;
     FExportButton.Enabled := True;
+    FTestButton.Enabled := True;
   except
     on E: Exception do
     begin
@@ -320,7 +349,23 @@ begin
       FInstallButton.Enabled := False;
       FAuditButton.Enabled := False;
       FExportButton.Enabled := False;
+      FTestButton.Enabled := False;
     end;
+  end;
+end;
+
+procedure TRadIAExtensionStudioForm.TestClick(Sender: TObject);
+begin
+  try
+    FPreviewEdit.Text := TRadIAExtensionStudioSandbox.TestManifest(
+      Manifest,
+      FReservedCommands
+    );
+    FStatusLabel.Caption :=
+      'Sandbox completed. Installed extensions were not changed.';
+  except
+    on E: Exception do
+      FStatusLabel.Caption := 'Sandbox failed: ' + E.Message;
   end;
 end;
 

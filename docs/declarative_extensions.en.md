@@ -35,6 +35,12 @@ If verification fails, the partial output is removed. Unsigned packages still re
 install-time confirmation. RSA signing through the Windows Certificate Store remains available
 through the packaging command documented below.
 
+Use **Test** before installation to activate the manifest in an isolated temporary directory. The
+sandbox runs the complete parser, permission rules, reserved-command collision checks, and
+transactional reload. Its report shows the activated commands, aliases, and workflows. It never
+changes installed extensions and removes the temporary directory afterward. The sandbox validates
+activation; it does not execute prompts or side-effecting tools.
+
 Schema 2 supports templates and skills. Schema 3 adds safe aliases, schema 4 adds team journeys and
 policies, and schema 5 adds audited workflows of internal tools. Permissions must exactly match the
 capabilities present: `chat.prompt`, `tool.alias`, and `tool.workflow`. Schemas 1–4 remain
