@@ -347,6 +347,9 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 The versioned result is stored in `knowledge_smoke_evidence_2.0.0.json`.
+The gate requires exactly Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, all with 95 tools,
+the `local-hash-v1` provider, a vector hit, provenance, navigation, document retrieval, index
+metrics, and workspace isolation.
 
 ### Installation and first-value evidence
 

@@ -82,8 +82,9 @@ ativo. A chave é armazenada com Windows DPAPI, nunca entra no JSON e o transpor
 redirecionamentos. O limite de entrada restringe cada trecho enviado; falhas de rede preservam o
 fallback lexical determinístico.
 
-Alterar provider, modelo ou dimensões pode exigir **Rebuild knowledge** para que os vetores
-persistidos usem uma configuração uniforme.
+Ao alterar provider, modelo, dimensões ou habilitar a busca semântica, o RadIA detecta vetores
+incompatíveis e reconstrói automaticamente os arquivos afetados. **Rebuild knowledge** continua
+disponível para uma reconstrução completa solicitada pelo usuário.
 
 ## Reconstrução e problemas comuns
 
@@ -96,7 +97,7 @@ persistidos usem uma configuração uniforme.
 - A descoberta é limitada a 5.000 arquivos e cada arquivo é limitado a 2 MiB.
 
 Consulte também o [guia de ferramentas agentivas](user_guide_agentic_tools.md).
-A validação reproduzível nas quatro IDEs suportadas está registrada em
+A validação reproduzível nos três targets suportados está registrada em
 [`knowledge_smoke_evidence_2.0.0.json`](knowledge_smoke_evidence_2.0.0.json).
 
 ## Memória de execuções agentivas aprovadas

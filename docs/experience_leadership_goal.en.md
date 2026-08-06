@@ -246,6 +246,9 @@ The real semantic journey passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64. T
 indexes the test project, searches semantically with `local-hash-v1`, and verifies provenance,
 navigation, metrics, document retrieval, and workspace isolation. The versioned matrix is stored
 in `knowledge_smoke_evidence_2.0.0.json`.
+All three targets publish 95 tools and automatically rebuilt the persisted index after detecting
+the transition from lexical mode to the semantic provider. Enabling or changing embeddings
+therefore does not require the user to discover and run a manual cleanup.
 
 ### M6 — Installation and first value
 

@@ -253,6 +253,9 @@ A jornada semântica real é aprovada no Delphi 12 Win32 e no Delphi 13 Win32/ID
 indexa o projeto de testes, pesquisa semanticamente com `local-hash-v1`, valida origem, navegação,
 métricas, leitura do documento e isolamento do workspace. A matriz versionada está em
 `knowledge_smoke_evidence_2.0.0.json`.
+Os três targets publicam 95 ferramentas e reconstruíram automaticamente o índice persistido ao
+detectar a transição do modo lexical para o provider semântico. Assim, ativar ou trocar embeddings
+não exige que o usuário descubra e execute uma limpeza manual.
 
 ### M6 — Instalação e primeiro valor
 

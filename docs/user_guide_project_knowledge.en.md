@@ -78,8 +78,9 @@ or when settings are invalid, `local-hash-v1` remains active. Windows DPAPI prot
 the key never enters JSON, and the transport does not follow redirects. The input limit bounds each
 submitted excerpt; network failures preserve deterministic lexical fallback.
 
-Changing the provider, model, or dimensions may require **Rebuild knowledge** so persisted vectors
-use a uniform configuration.
+When the provider, model, dimensions, or semantic-search setting changes, RadIA detects
+incompatible vectors and automatically rebuilds the affected files. **Rebuild knowledge** remains
+available when the user requests a complete rebuild.
 
 ## Rebuild and troubleshooting
 
@@ -92,7 +93,7 @@ use a uniform configuration.
 - Discovery is limited to 5,000 files and every file is limited to 2 MiB.
 
 See also the [agentic tools guide](user_guide_agentic_tools.en.md).
-The reproducible validation across all four supported IDE targets is recorded in
+The reproducible validation across all three supported IDE targets is recorded in
 [`knowledge_smoke_evidence_2.0.0.json`](knowledge_smoke_evidence_2.0.0.json).
 
 ## Approved agent run memory
