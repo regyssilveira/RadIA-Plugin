@@ -272,6 +272,31 @@ powershell.exe -ExecutionPolicy Bypass `
 
 O resultado versionado fica em `agent_runtime_smoke_evidence_2.0.0.json`.
 
+### Evidência de workflows declarativos
+
+Use `-ExerciseDeclarativeWorkflow` para carregar um manifesto schema 5 dentro da IDE, registrar o
+workflow no catálogo compartilhado e executar duas etapas pelo policy executor:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseDeclarativeWorkflow `
+  -SkipPackageHashCheck `
+  -DeclarativeWorkflowEvidencePath `
+    "Output\Validation\DeclarativeWorkflow\Delphi13-Win32.json"
+```
+
+Depois dos quatro targets, consolide a matriz fail-closed:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.DeclarativeWorkflowEvidence.ps1
+```
+
+O resultado versionado fica em `declarative_workflow_smoke_evidence_2.0.0.json`.
+
 ---
 
 ## Checklist Final

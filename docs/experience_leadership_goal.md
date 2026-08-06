@@ -66,7 +66,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M1 — Assistência inline | Concluído | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Concluído | Jornada observável, pausável, retomável e persistente |
-| M4 — Extensões | Em execução | Instalação declarativa segura sem recompilar ou reiniciar |
+| M4 — Extensões | Concluído | Instalação e workflows declarativos comprovados na matriz real |
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
 | M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
 | M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |

@@ -118,6 +118,8 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M4 delivered in this stage: schema 5 provides audited workflows of up to 16 internal tools
         without arbitrary shells, with inherited maximum risk, bounds, fail-fast, and per-step
         policy enforcement.
+    *   M4 validated in real IDEs: hot-load, shared registration, and audited two-step execution
+        passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
     *   M5 delivered in this stage: search and rebuild expose local latency, status reports the
         estimated size, and every response retains the isolated workspace identity without telemetry.
     *   M5 delivered in this stage: incremental indexing covers Pascal, textual DFM/FMX, projects,

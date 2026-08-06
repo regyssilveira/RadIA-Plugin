@@ -117,6 +117,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         cadeias e rollback do catálogo quando o target ou o registro é inválido.
     *   M4 entregue nesta etapa: schema 5 oferece workflows auditados de até 16 tools internas,
         sem shell arbitrário, com risco máximo herdado, limites, fail-fast e policy por etapa.
+    *   M4 validado em IDE real: hot-load, registro compartilhado e execução auditada de duas
+        etapas passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
     *   M5 entregue nesta etapa: busca e reconstrução expõem latência local, o status informa
         tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
     *   M5 entregue nesta etapa: o índice incremental cobre Pascal, DFM/FMX textual, projetos e

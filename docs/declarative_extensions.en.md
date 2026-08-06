@@ -80,6 +80,11 @@ idempotency from its steps. Every step re-enters the central policy executor, co
 flow; execution stops on the first failure, propagates cancellation and scope, and bounds aggregate
 results to 1 MiB UTF-16. No manifest text is executed as PowerShell, shell code, or a binary.
 
+The versioned functional matrix is available in
+[`declarative_workflow_smoke_evidence_2.0.0.json`](declarative_workflow_smoke_evidence_2.0.0.json).
+It proves hot-load, shared catalog registration, and audited two-step execution on Delphi 11, 12,
+13 Win32, and Delphi 13 IDE64.
+
 See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2,
 `Examples/DeclarativeExtension/team-tools.radia.json` for schema 3, and
 `Examples/DeclarativeExtension/team-journeys.radia.json` for schema 4. See

@@ -159,6 +159,11 @@ código: cada etapa referencia uma tool interna existente e um objeto JSON fixo 
 Assim, equipes podem publicar automações repetíveis sem conceder acesso a shell, PowerShell,
 executáveis ou uma segunda política de permissões.
 
+A matriz funcional versionada está em
+[`declarative_workflow_smoke_evidence_2.0.0.json`](declarative_workflow_smoke_evidence_2.0.0.json).
+Ela comprova hot-load, registro no catálogo compartilhado e execução auditada de duas etapas no
+Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+
 ## Jornadas, políticas e credenciais
 
 Uma entrada de `journeys` inicia uma execução real no Agent Runtime. O RadIA acrescenta ao objetivo

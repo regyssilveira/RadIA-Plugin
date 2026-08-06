@@ -65,7 +65,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M1 — Inline assistance | Completed | OTA Ghost Text, shortcuts, consent, and real matrix approved |
 | M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
 | M3 — Unified center | Completed | Observable, pausable, resumable, and persistent journey |
-| M4 — Extensions | In progress | Safe declarative installation without recompilation or restart |
+| M4 — Extensions | Completed | Declarative installation and workflows proven in the real matrix |
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
 | M6 — Installation | Planned | First value and diagnostics without manual file editing |
 | M7 — Journeys | Completed | End-to-end Delphi recipes approved |
