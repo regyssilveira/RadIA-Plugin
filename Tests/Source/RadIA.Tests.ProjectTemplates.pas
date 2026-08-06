@@ -22,6 +22,8 @@ type
     [Test]
     procedure TestRejectsUnsupportedPlatform;
     [Test]
+    procedure TestServiceTemplateContainsServiceContract;
+    [Test]
     procedure TestTransactionStagesCommitsAndRollsBack;
     [Test]
     procedure TestPreparedTransactionCleansStagingOnDestroy;
@@ -274,6 +276,43 @@ begin
       end;
     finally
       LFirstPlan.Free;
+    end;
+  finally
+    LEngine.Free;
+  end;
+end;
+
+procedure TTestRadIAProjectTemplates.TestServiceTemplateContainsServiceContract;
+var
+  LEngine: TRadIAProjectTemplateEngine;
+  LFile: TRadIAProjectTemplateFile;
+  LFoundServiceUnit: Boolean;
+  LPlan: TRadIAProjectTemplatePlan;
+begin
+  LEngine := TRadIAProjectTemplateEngine.Create;
+  try
+    LPlan := LEngine.BuildPlan(
+      TRadIAProjectTemplateRequest.Create(
+        'BackgroundWorker',
+        ptkService,
+        '37.0',
+        ['Win64']
+      )
+    );
+    try
+      LFoundServiceUnit := False;
+      for LFile in LPlan.Files do
+      begin
+        if not SameText(LFile.RelativePath, 'MainService.pas') then
+          Continue;
+        LFoundServiceUnit := True;
+        Assert.Contains(LFile.Content, 'TRadIAService = class(TService)');
+        Assert.Contains(LFile.Content, 'GetServiceController');
+      end;
+      Assert.IsTrue(LFoundServiceUnit);
+      Assert.Contains(LPlan.PreviewJson, '"template":"service"');
+    finally
+      LPlan.Free;
     end;
   finally
     LEngine.Free;

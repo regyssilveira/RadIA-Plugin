@@ -68,6 +68,7 @@ begin
   GenerateProject(LRootPath, LDelphiVersion, 'LibraryApp', ptkLibrary);
   GenerateProject(LRootPath, LDelphiVersion, 'PackageApp', ptkPackage);
   GenerateProject(LRootPath, LDelphiVersion, 'DUnitXApp', ptkDUnitX);
+  GenerateProject(LRootPath, LDelphiVersion, 'ServiceApp', ptkService);
 end;
 
 begin

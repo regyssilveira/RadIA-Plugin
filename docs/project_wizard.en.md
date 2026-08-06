@@ -14,9 +14,10 @@ The current engine includes templates for:
 - FireMonkey;
 - Library;
 - Package;
-- DUnitX.
+- DUnitX;
+- Windows Service.
 
-Each request contains a valid Pascal name, Delphi version (`22.0`, `23.0`, or `37.0`), and Windows
+Each request contains a valid Pascal name, Delphi version (`23.0` or `37.0`), and Windows
 platforms (`Win32`, `Win64`, or both). Platform order, casing, and duplicates are normalized. The
 same request always produces identical paths, content, hashes, template ID, and project GUID.
 
@@ -72,5 +73,5 @@ Non-empty destinations, filesystem roots, existing files, and paths escaping sta
 The engine, preview, transaction, visual UI, option selection, and no-project authorized root
 selection are implemented. Visual authorization does not broaden agent or MCP tool permissions.
 
-Beyond unit tests, `scripts/Test-RadIA.GeneratedProjects.ps1` generates all six kinds through the
-real engine and builds every `.dproj`. The matrix passes on Delphi 11, 12, and 13.
+Beyond unit tests, `scripts/Test-RadIA.GeneratedProjects.ps1` generates all seven kinds through the
+real engine and builds every `.dproj`. The current matrix covers Delphi 12 and 13.

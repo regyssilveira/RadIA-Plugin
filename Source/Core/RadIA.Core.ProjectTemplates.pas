@@ -9,7 +9,8 @@ type
     ptkFmx,
     ptkLibrary,
     ptkPackage,
-    ptkDUnitX
+    ptkDUnitX,
+    ptkService
   );
 
   TRadIAProjectTemplateRequest = record
@@ -136,6 +137,8 @@ begin
       Result := 'package';
     ptkDUnitX:
       Result := 'dunitx';
+    ptkService:
+      Result := 'service';
   else
     Result := 'unknown';
   end;
@@ -439,6 +442,64 @@ begin
           'end.' + sLineBreak
         )
       ];
+    ptkService:
+      Result := [
+        TRadIAProjectTemplateFile.Create(
+          LMainSource,
+          'program ' + LProjectName + ';' + sLineBreak + sLineBreak +
+          'uses' + sLineBreak +
+          '  Vcl.SvcMgr,' + sLineBreak +
+          '  MainService in ''MainService.pas'' ' +
+          '{RadIAService: TService};' + sLineBreak + sLineBreak +
+          '{$R *.RES}' + sLineBreak + sLineBreak +
+          'begin' + sLineBreak +
+          '  if not Application.DelayInitialize or ' +
+          'Application.Installing then' + sLineBreak +
+          '    Application.Initialize;' + sLineBreak +
+          '  Application.CreateForm(TRadIAService, RadIAService);' +
+          sLineBreak +
+          '  Application.Run;' + sLineBreak +
+          'end.' + sLineBreak
+        ),
+        TRadIAProjectTemplateFile.Create(
+          'MainService.pas',
+          'unit MainService;' + sLineBreak + sLineBreak +
+          'interface' + sLineBreak + sLineBreak +
+          'uses' + sLineBreak +
+          '  System.Classes,' + sLineBreak +
+          '  Winapi.Windows,' + sLineBreak +
+          '  Vcl.SvcMgr;' + sLineBreak + sLineBreak +
+          'type' + sLineBreak +
+          '  TRadIAService = class(TService)' + sLineBreak +
+          '  public' + sLineBreak +
+          '    function GetServiceController: TServiceController; override;' +
+          sLineBreak +
+          '  end;' + sLineBreak + sLineBreak +
+          'var' + sLineBreak +
+          '  RadIAService: TRadIAService;' + sLineBreak + sLineBreak +
+          'implementation' + sLineBreak + sLineBreak +
+          '{$R *.dfm}' + sLineBreak + sLineBreak +
+          'procedure ServiceController(CtrlCode: DWord); stdcall;' +
+          sLineBreak +
+          'begin' + sLineBreak +
+          '  RadIAService.Controller(CtrlCode);' + sLineBreak +
+          'end;' + sLineBreak + sLineBreak +
+          'function TRadIAService.GetServiceController: ' +
+          'TServiceController;' + sLineBreak +
+          'begin' + sLineBreak +
+          '  Result := ServiceController;' + sLineBreak +
+          'end;' + sLineBreak + sLineBreak +
+          'end.' + sLineBreak
+        ),
+        TRadIAProjectTemplateFile.Create(
+          'MainService.dfm',
+          'object RadIAService: TRadIAService' + sLineBreak +
+          '  DisplayName = ''' + LProjectName + '''' + sLineBreak +
+          '  Height = 150' + sLineBreak +
+          '  Width = 215' + sLineBreak +
+          'end' + sLineBreak
+        )
+      ];
   else
     Result := [];
   end;
@@ -540,6 +601,8 @@ begin
   LAppType := 'Application';
   if ARequest.Kind = ptkVcl then
     LFrameworkType := 'VCL'
+  else if ARequest.Kind = ptkService then
+    LFrameworkType := 'VCL'
   else if ARequest.Kind = ptkFmx then
     LFrameworkType := 'FMX'
   else if ARequest.Kind = ptkLibrary then
@@ -557,7 +620,8 @@ begin
   end;
 
   Result :=
-    '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">' +
+    '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ' +
+    'InitialTargets="RadIACreateOutputDirectories">' +
     sLineBreak +
     '  <PropertyGroup>' + sLineBreak +
     '    <ProjectGuid>' + BuildProjectGuid(ATemplateId) +
@@ -594,6 +658,10 @@ begin
     '  </PropertyGroup>' + sLineBreak +
     BuildProjectItems(ARequest, AMainSource) +
     BuildProjectExtensions(ARequest, AMainSource) +
+    '  <Target Name="RadIACreateOutputDirectories">' + sLineBreak +
+    '    <MakeDir Directories="$(DCC_DcuOutput);$(DCC_ExeOutput)" />' +
+    sLineBreak +
+    '  </Target>' + sLineBreak +
     '  <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" ' +
     'Condition="Exists(''$(BDS)\Bin\CodeGear.Delphi.Targets'')" />' +
     sLineBreak +
@@ -610,12 +678,17 @@ begin
     '    <DelphiCompile Include="' + AMainSource + '">' + sLineBreak +
     '      <MainSource>MainSource</MainSource>' + sLineBreak +
     '    </DelphiCompile>' + sLineBreak;
-  if ARequest.Kind in [ptkVcl, ptkFmx] then
+  if ARequest.Kind in [ptkVcl, ptkFmx, ptkService] then
   begin
-    Result := Result +
-      '    <DCCReference Include="MainForm.pas">' + sLineBreak +
-      '      <Form>RadIAMainForm</Form>' + sLineBreak;
-    if ARequest.Kind = ptkVcl then
+    if ARequest.Kind = ptkService then
+      Result := Result +
+        '    <DCCReference Include="MainService.pas">' + sLineBreak +
+        '      <Form>RadIAService</Form>' + sLineBreak
+    else
+      Result := Result +
+        '    <DCCReference Include="MainForm.pas">' + sLineBreak +
+        '      <Form>RadIAMainForm</Form>' + sLineBreak;
+    if ARequest.Kind in [ptkVcl, ptkService] then
       Result := Result + '      <FormType>dfm</FormType>' + sLineBreak;
     Result := Result + '    </DCCReference>' + sLineBreak;
   end

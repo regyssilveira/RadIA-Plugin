@@ -67,8 +67,8 @@ try {
             -Recurse `
             -Filter "*.dproj"
     )
-    if ($projects.Count -ne 6) {
-        throw "Expected six generated projects, found $($projects.Count)."
+    if ($projects.Count -ne 7) {
+        throw "Expected seven generated projects, found $($projects.Count)."
     }
 
     foreach ($project in $projects) {
@@ -88,7 +88,7 @@ try {
     }
 
     Write-Host (
-        "All six generated projects passed on Delphi $DelphiVersion."
+        "All seven generated projects passed on Delphi $DelphiVersion."
     ) -ForegroundColor Green
 }
 finally {

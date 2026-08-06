@@ -14,9 +14,10 @@ O engine atual possui templates para:
 - FireMonkey;
 - Library;
 - Package;
-- DUnitX.
+- DUnitX;
+- Windows Service.
 
-Cada solicitação contém nome Pascal válido, versão Delphi (`22.0`, `23.0` ou `37.0`) e plataformas
+Cada solicitação contém nome Pascal válido, versão Delphi (`23.0` ou `37.0`) e plataformas
 Windows (`Win32`, `Win64` ou ambas). A ordem, caixa e repetição das plataformas são normalizadas.
 Para a mesma solicitação, paths, conteúdo, hashes, ID do template e GUID do projeto são idênticos.
 
@@ -79,5 +80,5 @@ recusados.
 Engine, preview, transação, tela visual, opções e seleção autorizada sem projeto ativo estão
 implementados. A concessão visual não amplia a autorização das tools.
 
-Além dos testes unitários, `scripts/Test-RadIA.GeneratedProjects.ps1` gera os seis tipos usando o
-engine real e compila cada `.dproj`. A matriz foi aprovada no Delphi 11, 12 e 13.
+Além dos testes unitários, `scripts/Test-RadIA.GeneratedProjects.ps1` gera os sete tipos usando o
+engine real e compila cada `.dproj`. A matriz vigente abrange Delphi 12 e 13.

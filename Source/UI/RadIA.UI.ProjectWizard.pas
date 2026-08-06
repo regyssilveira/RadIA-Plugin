@@ -123,7 +123,8 @@ begin
     'FMX',
     'Library',
     'Package',
-    'DUnitX'
+    'DUnitX',
+    'Windows Service'
   ]);
   FTemplateCombo.ItemIndex := 1;
   FTemplateCombo.OnChange := FieldChanged;
@@ -337,8 +338,9 @@ begin
     2: Result := ptkFmx;
     3: Result := ptkLibrary;
     4: Result := ptkPackage;
+    5: Result := ptkDUnitX;
   else
-    Result := ptkDUnitX;
+    Result := ptkService;
   end;
 end;
 

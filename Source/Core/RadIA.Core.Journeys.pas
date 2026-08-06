@@ -128,34 +128,36 @@ begin
       'Create Delphi Project',
       'Creates, validates, opens, and explains a new Delphi project.',
       'Create a Delphi project from the user requirements. Inspect the current workspace first, ' +
-      'present a reviewable plan, preview every structural change, create and open the project, ' +
-      'then build it and summarize the generated architecture and any remaining risks.',
+      'inspect authorized reference implementations and their licenses when requested, present a ' +
+      'reviewable plan, preview every structural change, create and open the project, organize ' +
+      'reusable code, update project references, document applicable provenance, then build it ' +
+      'and iterate from compiler evidence until completion or a proven external blocker.',
       [
         TRadIAJourneyPhase.Create(
           'Discover',
-          'Inspect the workspace and clarify project type, targets, and constraints.',
-          'Record the active workspace state and the agreed requirements.'
+          'Inspect the workspace and clarify project type, targets, constraints, references, and licenses.',
+          'Record workspace state, agreed requirements, and authorized reference provenance.'
         ),
         TRadIAJourneyPhase.Create(
           'Design',
-          'Propose project structure, dependencies, forms, and units before mutation.',
-          'Present an approved plan and reviewable file list.'
+          'Prefer suitable Delphi RTL capabilities and propose structure, dependencies, forms, and units.',
+          'Present an approved plan, dependency rationale, and reviewable file list.'
         ),
         TRadIAJourneyPhase.Create(
           'Create',
-          'Generate and open the project through reviewed structural operations.',
-          'Report created files and the active project identity.'
+          'Generate, organize, document, and open the project through reviewed structural operations.',
+          'Report created or moved files, updated project references, documentation, and project identity.'
         ),
         TRadIAJourneyPhase.Create(
           'Verify',
-          'Build the requested target and inspect project health.',
-          'Provide build status, compiler messages, and remaining risks.'
+          'Build the target, inspect diagnostics, repair reviewed defects, and repeat until resolved.',
+          'Provide build iterations, compiler messages, project health, and remaining risks.'
         )
       ],
       [
         'The requested project is open in the IDE.',
         'The selected target builds or a specific external blocker is proven.',
-        'Created architecture and remaining risks are summarized.'
+        'Architecture, usage, dependencies, and third-party provenance are documented when applicable.'
       ]
     ),
     TRadIAJourneyDefinition.Create(

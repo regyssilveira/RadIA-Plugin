@@ -126,7 +126,8 @@ const
     '{"type":"object","required":["projectName","template",' +
     '"delphiVersion","platforms","destinationPath"],"properties":{' +
     '"projectName":{"type":"string"},"template":{"type":"string",' +
-    '"enum":["console","vcl","fmx","library","package","dunitx"]},' +
+    '"enum":["console","vcl","fmx","library","package","dunitx",' +
+    '"service"]},' +
     '"delphiVersion":{"type":"string","enum":["23.0","37.0"]},' +
     '"platforms":{"type":"array","items":{"type":"string",' +
     '"enum":["Win32","Win64"]},"minItems":1},' +
@@ -488,6 +489,8 @@ begin
     Exit(ptkPackage);
   if SameText(AValue, 'dunitx') then
     Exit(ptkDUnitX);
+  if SameText(AValue, 'service') then
+    Exit(ptkService);
   raise EArgumentException.Create(
     'Argument "template" contains an unsupported template kind.'
   );

@@ -51,7 +51,10 @@ BDS 23.0 e BDS 37.0 nas arquiteturas suportadas.
 - Adicionar serviços Windows e aplicações multicamadas.
 - Mostrar arquivos, plataformas e dependências antes da criação.
 - Criar o projeto em transação reversível.
-- Abrir o projeto, compilar e apresentar a primeira ação recomendada.
+- Permitir analisar implementações de referência autorizadas com registro de licença e proveniência.
+- Preferir recursos adequados da RTL antes de introduzir dependências externas.
+- Organizar units reutilizáveis, atualizar referências e produzir README/NOTICE quando aplicável.
+- Abrir o projeto, compilar, ler diagnósticos e repetir correções revisadas até estabilizar.
 - Permitir templates declarativos instalados pelo catálogo.
 
 **Critério de conclusão:** um usuário cria, abre, compila e executa cada tipo de projeto suportado

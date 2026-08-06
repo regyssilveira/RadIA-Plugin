@@ -25,7 +25,7 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 
 | Comando | Objetivo |
 |---|---|
-| `/journey create [requisitos]` | Criar, abrir, compilar e explicar um novo projeto Delphi. |
+| `/journey create [requisitos]` | Criar, organizar, documentar, compilar e explicar um projeto Delphi. |
 | `/journey fix-build [restrições]` | Diagnosticar erros, aplicar correção mínima e recompilar. |
 | `/journey tests [foco]` | Identificar lacunas, criar testes DUnitX e executar a validação. |
 | `/journey debug [sintoma]` | Reproduzir uma falha, coletar evidências, corrigir e validar. |
@@ -45,6 +45,11 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 O catálogo `/journey` informa a quantidade de fases e critérios. No início da execução, o objetivo
 enviado ao Agent Runtime enumera as fases na ordem, a evidência exigida em cada uma e os critérios
 finais. O contexto digitado pelo usuário aparece separado e não consegue remover esses gates.
+
+Na jornada de criação, referências externas só são analisadas quando o usuário autoriza o path ou
+URL. O plano registra licença e proveniência, justifica dependências, prefere recursos adequados da
+RTL, organiza units reutilizáveis, atualiza o `.dproj`, produz documentação aplicável e usa os
+diagnósticos reais do compilador como feedback para a próxima correção revisada.
 
 As receitas não concedem permissões extras. A jornada de release prepara um preview local, mas não
 faz push nem publica artefatos sem uma instrução explícita do usuário.

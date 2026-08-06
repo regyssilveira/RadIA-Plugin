@@ -25,7 +25,7 @@ claim success merely because it produced a text response.
 
 | Command | Objective |
 |---|---|
-| `/journey create [requirements]` | Create, open, build, and explain a new Delphi project. |
+| `/journey create [requirements]` | Create, organize, document, build, and explain a Delphi project. |
 | `/journey fix-build [constraints]` | Diagnose errors, apply a minimal repair, and rebuild. |
 | `/journey tests [focus]` | Identify gaps, add DUnitX tests, and run validation. |
 | `/journey debug [symptom]` | Reproduce a failure, collect evidence, fix, and validate. |
@@ -45,6 +45,11 @@ claim success merely because it produced a text response.
 The `/journey` catalog reports phase and criterion counts. At run start, the objective sent to the
 Agent Runtime enumerates ordered phases, required evidence, and final completion criteria. User
 context remains separate and cannot remove these gates.
+
+During project creation, external references are inspected only after the user authorizes the path
+or URL. The plan records license provenance, explains dependencies, prefers suitable RTL
+capabilities, organizes reusable units, updates the `.dproj`, writes applicable documentation,
+and uses actual compiler diagnostics as feedback for the next reviewed correction.
 
 Recipes grant no additional permission. The release journey prepares a local preview but never
 pushes or publishes artifacts without an explicit user instruction.
