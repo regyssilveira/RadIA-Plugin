@@ -221,8 +221,9 @@ exige consentimento e auditoria antes de alcançar o adapter. Pausa, continuaç�
 risco `Execution`; encerramento possui risco `Destructive` e nunca reutiliza permissão de sessão.
 `AddBreakpoint` aceita somente fontes Pascal dentro do workspace, rejeita duplicatas e informa
 `RemoveBreakpoint` como operação inversa. `RemoveBreakpoint` exige confirmação destrutiva em toda
-chamada. `StartDebugging` executa `Make` no projeto ativo e inicia somente o `TargetName` produzido
-por esse build, sem aceitar caminho de executável arbitrário. A lista de watches é estado interno
+chamada. `StartDebugging` usa a ação oficial **Run** da IDE, que recompila quando necessário, e
+inicia somente o `TargetName` produzido, sem aceitar caminho de executável arbitrário. A lista de
+watches é estado interno
 limitado e suas alterações usam consentimento estrutural.
 
 ## 7. Form Designer

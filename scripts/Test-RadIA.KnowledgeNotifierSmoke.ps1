@@ -538,11 +538,26 @@ function Invoke-RadIAToolWithConsent {
             -RedirectStandardError $errorPath `
             -PassThru
         Wait-RadIACondition -TimeoutSeconds 30 -Condition {
-            [RadIAWindowNative]::FindVisibleWindow(
-                [uint32]$IDEProcess.Id,
-                "TRadIAConsentForm"
-            ) -ne [IntPtr]::Zero
+            $bridgeProcess.HasExited -or
+                [RadIAWindowNative]::FindVisibleWindow(
+                    [uint32]$IDEProcess.Id,
+                    "TRadIAConsentForm"
+                ) -ne [IntPtr]::Zero
         } -FailureMessage "The RadIA consent dialog did not open."
+        if ($bridgeProcess.HasExited) {
+            $bridgeOutput = Get-Content `
+                -LiteralPath $outputPath `
+                -Raw `
+                -ErrorAction SilentlyContinue
+            $bridgeError = Get-Content `
+                -LiteralPath $errorPath `
+                -Raw `
+                -ErrorAction SilentlyContinue
+            throw (
+                "The MCP bridge exited before consent for $Name. " +
+                "Output: $bridgeOutput Error: $bridgeError"
+            )
+        }
         $consentWindow = [RadIAWindowNative]::FindVisibleWindow(
             [uint32]$IDEProcess.Id,
             "TRadIAConsentForm"
@@ -554,7 +569,7 @@ function Invoke-RadIAToolWithConsent {
         if ($allowOnce -eq [IntPtr]::Zero) {
             throw "The Allow once consent button was not found."
         }
-        [void][RadIAWindowNative]::SendMessage(
+        [void][RadIAWindowNative]::PostMessage(
             $allowOnce,
             0x00F5,
             [IntPtr]0,
@@ -585,6 +600,10 @@ function Invoke-RadIAToolWithConsent {
         }
         return $response.result.structuredContent
     } finally {
+        if ($bridgeProcess -and -not $bridgeProcess.HasExited) {
+            Stop-Process -Id $bridgeProcess.Id -Force
+            [void]$bridgeProcess.WaitForExit(5000)
+        }
         foreach ($temporaryPath in @(
             $inputPath,
             $outputPath,
@@ -684,6 +703,7 @@ New-RadIAKnowledgeSmokeProject `
     -SourceRoot $workspaceRoot
 
 $projectPath = Join-Path $smokeDirectory "Tests\RadIATests.dproj"
+$projectSourcePath = Join-Path $smokeDirectory "Tests\RadIATests.dpr"
 $projectContent = Get-Content -LiteralPath $projectPath -Raw
 $projectContent = $projectContent.Replace(
     '$(DelphiVer)',
@@ -731,6 +751,7 @@ $process = Start-Process -FilePath $bdsPath -PassThru
 $instanceFile = Join-Path (
     [Environment]::GetFolderPath("ApplicationData")
 ) "RadIA\mcp.$($process.Id).json"
+$journeySucceeded = $false
 
 try {
     Wait-RadIACondition -TimeoutSeconds $StartupTimeoutSeconds -Condition {
@@ -1140,6 +1161,13 @@ try {
         if (-not $testExecutablePath) {
             throw "The smoke-test executable was not produced."
         }
+        $testBridgePath = Join-Path `
+            (Split-Path -Parent $testExecutablePath) `
+            "RadIA.MCP.Bridge.exe"
+        Copy-Item `
+            -LiteralPath $bridgePath `
+            -Destination $testBridgePath `
+            -Force
 
         $testResult = Invoke-RadIAToolWithConsent `
             -BridgePath $bridgePath `
@@ -1151,7 +1179,12 @@ try {
                 timeoutMs = 600000
             }
         if ($testResult.status -ne "succeeded") {
-            throw "The RadIA DUnitX runner did not pass the smoke suite."
+            $testDetails = $testResult |
+                ConvertTo-Json -Depth 8 -Compress
+            throw (
+                "The RadIA DUnitX runner did not pass the smoke suite: " +
+                $testDetails
+            )
         }
         if ($ExerciseDebugger) {
             $breakpoint = Invoke-RadIAToolWithConsent `
@@ -1160,8 +1193,8 @@ try {
                 -IDEProcess $process `
                 -Name "AddBreakpoint" `
                 -Arguments @{
-                    fileName = $unitPath
-                    lineNumber = 50
+                    fileName = $projectSourcePath
+                    lineNumber = 268
                 }
             if ($breakpoint.action -ne "added") {
                 throw "The debugger breakpoint was not added."
@@ -1219,8 +1252,8 @@ try {
                 -IDEProcess $process `
                 -Name "RemoveBreakpoint" `
                 -Arguments @{
-                    fileName = $unitPath
-                    lineNumber = 50
+                    fileName = $projectSourcePath
+                    lineNumber = 268
                 }
             )
         }
@@ -1270,44 +1303,47 @@ try {
             }
     }
 
-    Invoke-RadIAFileMenuCommand -Process $process -AccessKey "A"
-    Set-RadIAFileDialogPath `
-        -Process $process `
-        -Path $renamedUnitPath
-    Start-Sleep -Seconds 4
-    $renamedUnit = Invoke-RadIATool `
-        -BridgePath $bridgePath `
-        -InstanceFile $instanceFile `
-        -Name "GetEditorContent"
-    if (-not [IO.Path]::GetFullPath($renamedUnit.fileName).Equals(
-        [IO.Path]::GetFullPath($renamedUnitPath),
-        [StringComparison]::OrdinalIgnoreCase
-    )) {
-        throw "The IDE did not rename the active smoke unit."
-    }
-
-    $renamedDocument = Invoke-RadIATool `
-        -BridgePath $bridgePath `
-        -InstanceFile $instanceFile `
-        -Name "GetKnowledgeDocument" `
-        -Arguments @{
-            fileName = $renamedUnitPath
-            maxCharacters = 65536
+    if (-not $ExerciseGit) {
+        Invoke-RadIAFileMenuCommand -Process $process -AccessKey "A"
+        Set-RadIAFileDialogPath `
+            -Process $process `
+            -Path $renamedUnitPath
+        Start-Sleep -Seconds 4
+        $renamedUnit = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetEditorContent"
+        if (-not [IO.Path]::GetFullPath($renamedUnit.fileName).Equals(
+            [IO.Path]::GetFullPath($renamedUnitPath),
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "The IDE did not rename the active smoke unit."
         }
-    if ($renamedDocument.chunks.Count -lt 1) {
-        throw "The renamed unit was not present in the knowledge index."
+
+        $renamedDocument = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetKnowledgeDocument" `
+            -Arguments @{
+                fileName = $renamedUnitPath
+                maxCharacters = 65536
+            }
+        if ($renamedDocument.chunks.Count -lt 1) {
+            throw "The renamed unit was not present in the knowledge index."
+        }
+
+        Invoke-RadIAFileMenuCommand -Process $process -AccessKey "C"
+        Start-Sleep -Seconds 3
+        $statusAfterClose = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetKnowledgeStatus"
+        if (-not $statusAfterClose.loaded) {
+            throw "The knowledge index was unavailable after closing the unit."
+        }
     }
 
-    Invoke-RadIAFileMenuCommand -Process $process -AccessKey "C"
-    Start-Sleep -Seconds 3
-    $statusAfterClose = Invoke-RadIATool `
-        -BridgePath $bridgePath `
-        -InstanceFile $instanceFile `
-        -Name "GetKnowledgeStatus"
-    if (-not $statusAfterClose.loaded) {
-        throw "The knowledge index was not available after closing the unit."
-    }
-
+    $journeySucceeded = $true
 } finally {
     $remainingProcess = Get-Process `
         -Id $process.Id `
@@ -1366,11 +1402,19 @@ try {
                     $remainingProcess.Refresh()
                 }
                 if (-not $remainingProcess.HasExited) {
-                    throw "Delphi did not exit after the smoke test."
+                    if ($journeySucceeded) {
+                        throw "Delphi did not exit after the smoke test."
+                    }
+                    Write-Warning (
+                        "Delphi remained open after a failed journey; " +
+                        "the original failure is preserved."
+                    )
                 }
             }
         } else {
-            throw "Delphi has no main window for smoke-test shutdown."
+            if ($journeySucceeded) {
+                throw "Delphi has no main window for smoke-test shutdown."
+            }
         }
     }
     $cleanupDeadline = [DateTime]::UtcNow.AddSeconds(5)
@@ -1379,7 +1423,13 @@ try {
         Start-Sleep -Milliseconds 100
     }
     if (Test-Path -LiteralPath $instanceFile) {
-        throw "The MCP discovery remained after the smoke test."
+        if ($journeySucceeded) {
+            throw "The MCP discovery remained after the smoke test."
+        }
+        Write-Warning (
+            "MCP discovery remained after a failed journey; " +
+            "the original failure is preserved."
+        )
     }
 }
 

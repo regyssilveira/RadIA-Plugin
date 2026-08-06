@@ -326,7 +326,7 @@ begin
     );
 end;
 
-function BuildAndStartDebugProject(
+function StartDebugProject(
   const AProject: IOTAProject;
   const ADebugger: IOTADebuggerServices
 ): TRadIADebuggerActionResult;
@@ -334,12 +334,6 @@ var
   LAction: TBasicAction;
 begin
   try
-    if not AProject.ProjectBuilder.BuildProject(cmOTAMake, True, True) then
-      Exit(TRadIADebuggerActionResult.Failed(
-        'build_failed',
-        'The active project did not build successfully.',
-        'no_process'
-      ));
     LAction := FindIDEAction([
       'RunRunCommand',
       'ProjectRunCommand',
@@ -351,6 +345,12 @@ begin
       Exit(TRadIADebuggerActionResult.Failed(
         'debugger_action_unavailable',
         'The IDE Run action is unavailable.',
+        'no_process'
+      ));
+    if not Assigned(AProject.ProjectBuilder) then
+      Exit(TRadIADebuggerActionResult.Failed(
+        'project_builder_unavailable',
+        'The active project cannot be run by the IDE.',
         'no_process'
       ));
     LAction.Execute;
@@ -833,7 +833,7 @@ begin
       LProject: IOTAProject;
     begin
       if TryGetDebugProject(LDebugger, LProject, LResult) then
-        LResult := BuildAndStartDebugProject(LProject, LDebugger);
+        LResult := StartDebugProject(LProject, LDebugger);
     end
   );
   Result := LResult;
