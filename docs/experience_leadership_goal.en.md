@@ -314,10 +314,9 @@ The reproducible proof in `release_evidence_2.0.0.json` contains the three ZIP f
 matrix. All were built from commit `ad0b5a250cb9e7f7de8d390d84db1e15d8a43b10`, with internal
 validation, independent SHA-256 hashes, and a clean tracked worktree.
 
-The matrix in `ide_smoke_evidence_2.0.0.json` records the previous historical validation. The new
-release proof must cover Delphi 12 Win32 and Delphi 13 Win32/IDE64, complete 10/10 cycles per target,
-and validate the current 95-tool catalog. Every target must exercise native `TOTADockForm`
-docking, restore the desktop state, and exit without
+The matrix in `ide_smoke_evidence_2.0.0.json` proves Delphi 12 Win32 and Delphi 13 Win32/IDE64 with
+10/10 cycles per target and the current 95-tool catalog. Every target exercised native
+`TOTADockForm` docking, restored the desktop state, and exited without
 orphan processes. Every cycle ran `Uninstall`, installed version 1.0.0, upgraded to 2.0.0, and ran
 `Repair`, while preserving user data and revalidating the manifest, hashes, registry, and installed
 files before launching the IDE. The fail-closed consolidator derives the official proof from all
