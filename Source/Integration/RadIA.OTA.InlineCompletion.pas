@@ -82,18 +82,15 @@ type
 implementation
 
 uses
-  System.Classes,
   System.Hash,
   System.IOUtils,
   System.Math,
   System.SysUtils,
-  ToolsAPI.Editor,
   Vcl.Graphics,
   RadIA.Core.Container,
   RadIA.Core.IDENavigation,
   RadIA.Core.Interfaces,
   RadIA.Core.Logger,
-  RadIA.Core.Types,
   RadIA.OTA.TextReader;
 
 function TRadIAOTAInlineCompletionSession.Apply(
@@ -425,7 +422,6 @@ procedure TRadIAOTAInlineCompletionSession.Show(
   const ASuggestion: string
 );
 var
-  LCodeEditorServices: INTACodeEditorServices;
   LView: IOTAEditView;
 begin
   LView := CurrentView;
@@ -444,29 +440,12 @@ begin
     'InlineCompletion'
   );
   RegisterCurrentView;
+  if Assigned(LView.Position) then
+    LView.Position.Move(
+      LView.Position.Row,
+      LView.Position.Column
+    );
   LView.Paint;
-  if Supports(
-    BorlandIDEServices,
-    INTACodeEditorServices,
-    LCodeEditorServices
-  ) then
-    LCodeEditorServices.InvalidateTopEditor;
-  TThread.ForceQueue(
-    nil,
-    procedure
-    var
-      LQueuedEditorServices: INTACodeEditorServices;
-    begin
-      if GIsShuttingDown then
-        Exit;
-      if Supports(
-        BorlandIDEServices,
-        INTACodeEditorServices,
-        LQueuedEditorServices
-      ) then
-        LQueuedEditorServices.InvalidateTopEditor;
-    end
-  );
 end;
 
 procedure TRadIAOTAInlineCompletionSession.WatchCurrentView;
