@@ -17,6 +17,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Plataforma Agentiva Segura para Delphi 11/12/13** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.0.0 |
 | **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Goal RadIA 2.0 — Liderança da Experiência Delphi** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Goal RadIA 2.0 — Continuidade CLI e Integração Avançada** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -153,12 +154,10 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64, inclusive com orientação quando
         o provider ainda não está configurado.
     *   M6 entregue nesta etapa: instalador visual único detecta e seleciona os três targets,
-        valida os pacotes antes de compilar e oferece assinatura SHA-256 com timestamp. O catálogo
-        estável recusa URL sem HTTPS e executável sem Authenticode válido; certificado e URL final
-        permanecem gates externos de publicação.
-    *   M6 automatizado nesta etapa: workflow de tag recompila os três pacotes do commit exato,
-        importa o PFX temporariamente, exige assinatura e timestamp, publica evidências e remove o
-        material criptográfico do runner em qualquer resultado.
+        valida os pacotes antes de compilar e registra hash SHA-256 e estado Authenticode.
+        Assinatura de código e marketplace não bloqueiam a publicação do projeto aberto.
+    *   M6 automatizado nesta etapa: o workflow de tag recompila os três pacotes do commit exato,
+        publica hashes e evidências e mantém instruções reproduzíveis para compilação manual.
     *   M7–M8 concluídos: jornadas especializadas e candidato 2.0.0 comprovados na matriz completa.
     *   M8 entregue: terminal comprovado na matriz completa com janela nativa, controles
         essenciais, entrada, saída, geometria útil, cinco rótulos associados e 11 pontos

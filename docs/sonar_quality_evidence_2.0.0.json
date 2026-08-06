@@ -3,7 +3,7 @@
     "evidenceKind":  "sonarGlobalQuality",
     "product":  "RadIA",
     "productVersion":  "2.0.0",
-    "sourceCommit":  "85d4a4877332cd30ff9ba6832059e2feb0f29f05",
+    "sourceCommit":  "521638244acd3b5de9c36338ae39208528e9dd2b",
     "sourceDirty":  false,
     "analysisId":  "5bd38c29-9186-4ee1-95f0-3ce71390551a",
     "qualityGate":  "OK",
@@ -17,6 +17,6 @@
     "reliabilityRating":  1.0,
     "securityRating":  1.0,
     "maintainabilityRating":  1.0,
-    "generatedAtUtc":  "2026-08-06T19:11:22.7179883Z",
+    "generatedAtUtc":  "2026-08-06T19:31:35.5095890Z",
     "status":  "passed"
 }

@@ -67,7 +67,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M3 — Unified center | Completed | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | Completed | Declarative installation and workflows proven in the real matrix |
 | M5 — Knowledge | Completed | Private hybrid search proven in the real matrix |
-| M6 — Installation | In progress | First value proven; signed channel remains pending |
+| M6 — Installation | Completed | First value proven; optional installer and reproducible build |
 | M7 — Journeys | Completed | End-to-end Delphi recipes approved |
 | M8 — Proof and release | Completed | Matrix, ten cycles, and audits approved |
 
@@ -252,7 +252,7 @@ therefore does not require the user to discover and run a manual cleanup.
 
 ### M6 — Installation and first value
 
-- Create a signed visual installer and prepare an IDE package-manager channel.
+- Maintain an optional visual installer and reproducible instructions for user builds.
 - Detect Delphi, architecture, WebView2, CLIs, authentication, and incompatible settings.
 - Delegate third-party CLI installation to official channels with consent.
 - Guide login without collecting credentials.
@@ -270,13 +270,10 @@ provides a read-only plan, preserves data and shared components by default, and 
 `-RemoveUserData` before deleting settings, audit, sessions, and knowledge.
 
 The single visual installer detects and selects Delphi 12 Win32 and Delphi 13 Win32/IDE64.
-Generation validates all three packages before compilation, records
-SHA-256 and Authenticode state, and can sign with a certificate and timestamp. The `stable`
-catalog is fail-closed: it rejects HTTP and any executable without a valid signature. Publication
-remains pending only on a trusted external code-signing certificate and the final HTTPS URL. The
-release workflow rebuilds all three targets from the tag, imports the PFX only for the job, requires
-a signature and timestamp, publishes the distribution, and removes cryptographic material from
-the runner even after failure.
+Generation validates all three packages before compilation and records SHA-256 and Authenticode
+state. Because RadIA is open source and users can build it themselves, code signing and marketplace
+distribution are not version 2.0 gates. Distribution must retain a verifiable hash, versioned
+source, and reproducible build and installation instructions.
 
 The post-install diagnostic passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The
 evidence calls the doctor through the installed bridge, requires chat, terminal, the 95-tool

@@ -68,7 +68,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M3 — Central unificada | Concluído | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Concluído | Instalação e workflows declarativos comprovados na matriz real |
 | M5 — Conhecimento | Concluído | Busca híbrida privada comprovada na matriz real |
-| M6 — Instalação | Em execução | Primeiro valor provado; canal assinado ainda pendente |
+| M6 — Instalação | Concluído | Primeiro valor provado; instalador opcional e build reproduzível |
 | M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |
 | M8 — Prova e release | Concluído | Matriz, dez ciclos e auditorias aprovados |
 
@@ -259,7 +259,7 @@ não exige que o usuário descubra e execute uma limpeza manual.
 
 ### M6 — Instalação e primeiro valor
 
-- Criar instalador visual assinado e preparar um canal compatível com o gerenciador da IDE.
+- Manter um instalador visual opcional e instruções reproduzíveis para compilação pelo usuário.
 - Detectar Delphi, arquitetura, WebView2, CLIs, autenticação e configurações incompatíveis.
 - Manter CLIs de terceiros fora do pacote e delegar instalação aos canais oficiais com consentimento.
 - Guiar login sem capturar tokens ou credenciais.
@@ -277,13 +277,10 @@ possui plano somente leitura, preserva dados e componentes compartilhados por pa
 `-RemoveUserData` para apagar configurações, auditoria, sessões e conhecimento.
 
 O instalador visual único foi implementado com detecção e seleção de Delphi 12 Win32 e Delphi 13
-Win32/IDE64. A geração valida os três pacotes antes de compilar, registra SHA-256 e estado
-Authenticode e pode assinar com certificado e timestamp. O catálogo `stable` é fail-closed:
-recusa HTTP e qualquer executável sem assinatura válida. A publicação continua pendente apenas
-pela disponibilidade externa de um certificado de code signing confiável e da URL HTTPS final. O
-workflow de release reconstrói os três targets a partir da tag, importa o PFX apenas durante o
-job, exige assinatura e timestamp, publica a distribuição e remove o material criptográfico do
-runner mesmo em caso de falha.
+Win32/IDE64. A geração valida os três pacotes antes de compilar e registra SHA-256 e o estado
+Authenticode. Como o RadIA é aberto e pode ser compilado pelo usuário, assinatura de código e
+marketplace não são gates da versão 2.0. A distribuição deve manter hash verificável, origem
+versionada e instruções reproduzíveis de build e instalação.
 
 O diagnóstico pós-instalação é aprovado no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. A
 prova consulta o doctor pelo bridge instalado, exige chat, terminal, catálogo de 95 tools e

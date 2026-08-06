@@ -16,6 +16,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
 | **RadIA 2.0 Goal — Complete Development Journey** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **RadIA 2.0 Goal — Leading the Delphi Experience** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **RadIA 2.0 Goal — CLI Continuity and Advanced Integration** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -151,12 +152,10 @@ The board below summarizes the current status of mapped short and medium-term fe
         on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64, including guidance when a provider is
         not configured yet.
     *   M6 delivered in this stage: one visual installer detects and selects all three targets,
-        validates packages before compilation, and supports SHA-256 signing with timestamp. The
-        stable catalog rejects non-HTTPS URLs and executables without valid Authenticode; the
-        certificate and final URL remain external publication gates.
+        validates packages before compilation, and records SHA-256 hashes and Authenticode state.
+        Code signing and marketplace distribution do not block publication of the open project.
     *   M6 automated in this stage: the tag workflow rebuilds all three packages from the exact
-        commit, imports the PFX temporarily, requires signature and timestamp, publishes evidence,
-        and removes cryptographic material from the runner under every outcome.
+        commit, publishes hashes and evidence, and retains reproducible manual build instructions.
     *   M7–M8 completed: specialized journeys and the 2.0.0 candidate proven across the full matrix.
     *   M8 delivered: terminal proven across the full matrix with a native window, required
         controls, input, output, usable geometry, five associated labels, and 11 keyboard tab

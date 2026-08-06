@@ -76,6 +76,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Backlog | [Backlog](backlog.md) |
 | Goal RadIA 2.0 | [Jornada completa](radia_2_goal.md) |
 | Goal de liderança | [Experiência Delphi completa](experience_leadership_goal.md) |
+| Próximo goal técnico | [Continuidade CLI e integração avançada](competitive_leadership_plan.md) |
 | Estratégia Delphi 12/13 | [Plataforma e plano de liderança](delphi_12_13_strategy.md) |
 
 ## Segurança e compliance
