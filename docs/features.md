@@ -79,4 +79,5 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
 | **Extensões Declarativas Assinadas** | Segurança | Pacotes RSA-SHA256 com fingerprint, confiança no primeiro uso e revogação visual. | ✅ Concluído |
-| **Delphi 11/12/13 e IDE64** | Compatibilidade | Matriz validada em Win32 e Delphi 13 IDE64. | ✅ Concluído |
+| **Addon Studio** | Extensibilidade | Criação visual com preview validado para comandos, skills, aliases, journeys e workflows auditados. | ✅ Concluído |
+| **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |

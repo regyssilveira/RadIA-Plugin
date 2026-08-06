@@ -28,6 +28,7 @@ type
     FRemoveButton: TButton;
     FReservedCommands: TArray<string>;
     FStatusLabel: TLabel;
+    FStudioButton: TButton;
     FTrustStore: TRadIAExtensionPublisherTrustStore;
     FTrustStoreAvailable: Boolean;
     procedure ApplyCurrentTheme;
@@ -55,6 +56,7 @@ type
     procedure ReloadClick(Sender: TObject);
     procedure RemoveClick(Sender: TObject);
     procedure SetStatus(const AMessage: string);
+    procedure StudioClick(Sender: TObject);
     procedure UpdateActionStates;
   protected
     procedure CreateWnd; override;
@@ -77,7 +79,8 @@ uses
   RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.Mediator,
   RadIA.Core.PromptTemplates,
-  RadIA.UI.ExtensionCatalogForm;
+  RadIA.UI.ExtensionCatalogForm,
+  RadIA.UI.ExtensionStudioForm;
 
 type
   TRadIATrustedPublishersForm = class(TForm)
@@ -268,7 +271,7 @@ begin
   FFooterPanel := TPanel.Create(Self);
   FFooterPanel.Parent := Self;
   FFooterPanel.Align := alBottom;
-  FFooterPanel.Height := 76;
+  FFooterPanel.Height := 108;
   FFooterPanel.BevelOuter := bvNone;
   FFooterPanel.ShowCaption := False;
 
@@ -305,9 +308,15 @@ begin
 
   FCatalogButton := TButton.Create(Self);
   FCatalogButton.Parent := FFooterPanel;
-  FCatalogButton.SetBounds(648, 8, 132, 27);
+  FCatalogButton.SetBounds(648, 42, 132, 27);
   FCatalogButton.Caption := 'Browse catalog...';
   FCatalogButton.OnClick := CatalogClick;
+
+  FStudioButton := TButton.Create(Self);
+  FStudioButton.Parent := FFooterPanel;
+  FStudioButton.SetBounds(648, 8, 132, 27);
+  FStudioButton.Caption := 'Addon Studio...';
+  FStudioButton.OnClick := StudioClick;
 
   FCloseButton := TButton.Create(Self);
   FCloseButton.Parent := FFooterPanel;
@@ -319,7 +328,7 @@ begin
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := FFooterPanel;
-  FStatusLabel.SetBounds(8, 44, 904, 22);
+  FStatusLabel.SetBounds(8, 78, 904, 22);
   FStatusLabel.Anchors := [akLeft, akTop, akRight];
   FStatusLabel.AutoSize := False;
 
@@ -692,6 +701,33 @@ end;
 procedure TRadIAExtensionManagerForm.SetStatus(const AMessage: string);
 begin
   FStatusLabel.Caption := AMessage;
+end;
+
+procedure TRadIAExtensionManagerForm.StudioClick(Sender: TObject);
+var
+  LExtensionId: string;
+  LManifest: string;
+  LMessage: string;
+  LTempFileName: string;
+begin
+  if not CreateRadIAExtensionManifest(Self, LManifest) then
+    Exit;
+  LTempFileName := TPath.GetTempFileName;
+  try
+    TFile.WriteAllText(LTempFileName, LManifest, TEncoding.UTF8);
+    FManager.InstallOrUpdate(
+      LTempFileName,
+      FReservedCommands,
+      LExtensionId,
+      LMessage
+    );
+  finally
+    if TFile.Exists(LTempFileName) then
+      TFile.Delete(LTempFileName);
+  end;
+  SetStatus(LMessage);
+  RefreshList;
+  NotifyChat;
 end;
 
 procedure TRadIAExtensionManagerForm.UpdateActionStates;

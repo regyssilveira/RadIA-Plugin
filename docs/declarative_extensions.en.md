@@ -21,6 +21,13 @@ and status changes use an atomic write. RadIA validates the candidate first, rel
 installed set, and restores the previous file if validation or activation fails. An open chat
 refreshes its catalog, while chats opened later load the current state directly.
 
+Use **Addon Studio...** in the same manager to create a command, skill, safe tool alias, journey,
+or audited workflow without editing JSON. The form continuously validates the extension identity,
+semantic version, names, slash commands, permissions, namespace rules, and workflow step JSON. It
+shows the exact schema 5 manifest before installation. **Install** then sends that manifest through
+the regular transactional validator, reserved-command checks, activation, diagnostics, and chat
+reload path.
+
 Schema 2 supports templates and skills. Schema 3 adds safe aliases, schema 4 adds team journeys and
 policies, and schema 5 adds audited workflows of internal tools. Permissions must exactly match the
 capabilities present: `chat.prompt`, `tool.alias`, and `tool.workflow`. Schemas 1–4 remain

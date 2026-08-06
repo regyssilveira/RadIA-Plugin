@@ -110,7 +110,7 @@ Referências rápidas:
 | **Conhecimento local** | Indexar projetos, pesquisar símbolos e acompanhar edit, save, rename e close. |
 | **MCP** | Expor tools a clientes locais por bridge stdio, named pipe e discovery por processo. |
 | **Segurança** | Confinar paths, classificar risco, solicitar consentimento e manter auditoria sanitizada. |
-| **Extensões** | Instalar e gerenciar comandos declarativos visualmente ou registrar tools pela API pública. |
+| **Extensões** | Criar comandos, skills, aliases, journeys e workflows no Addon Studio, instalar pacotes e registrar tools pela API pública. |
 | **Providers** | Integrar Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama e outros backends. |
 | **Compatibilidade** | Operar no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. |
 
