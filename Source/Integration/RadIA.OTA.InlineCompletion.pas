@@ -86,6 +86,7 @@ uses
   System.IOUtils,
   System.Math,
   System.SysUtils,
+  ToolsAPI.Editor,
   Vcl.Graphics,
   RadIA.Core.Container,
   RadIA.Core.IDENavigation,
@@ -422,6 +423,7 @@ procedure TRadIAOTAInlineCompletionSession.Show(
   const ASuggestion: string
 );
 var
+  LCodeEditorServices: INTACodeEditorServices;
   LView: IOTAEditView;
 begin
   LView := CurrentView;
@@ -441,6 +443,12 @@ begin
   );
   RegisterCurrentView;
   LView.Paint;
+  if Supports(
+    BorlandIDEServices,
+    INTACodeEditorServices,
+    LCodeEditorServices
+  ) then
+    LCodeEditorServices.InvalidateTopEditor;
 end;
 
 procedure TRadIAOTAInlineCompletionSession.WatchCurrentView;
