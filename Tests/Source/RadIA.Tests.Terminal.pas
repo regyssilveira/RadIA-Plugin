@@ -31,6 +31,8 @@ type
     [Test]
     procedure HistoryFindsPreviousMatchingCommands;
     [Test]
+    procedure PaletteSearchCombinesSnippetsAndDeduplicatedHistory;
+    [Test]
     procedure CorruptedHistoryIsIgnored;
     [Test]
     procedure AnsiParserPreservesStyleAcrossChunks;
@@ -543,6 +545,38 @@ begin
   finally
     LHost.Free;
   end;
+end;
+
+procedure TRadIATerminalTests.
+  PaletteSearchCombinesSnippetsAndDeduplicatedHistory;
+var
+  LHistory: TArray<TRadIATerminalHistoryEntry>;
+  LItems: TArray<TRadIATerminalPaletteItem>;
+begin
+  LHistory := [
+    TRadIATerminalHistoryEntry.Create(
+      Now,
+      'powershell',
+      'git status --short',
+      0
+    ),
+    TRadIATerminalHistoryEntry.Create(
+      Now,
+      'powershell',
+      'git branch --show-current',
+      0
+    )
+  ];
+  LItems := TRadIATerminalCatalog.SearchPalette('git', LHistory);
+  Assert.AreEqual<Integer>(3, Length(LItems));
+  Assert.AreEqual('snippet', LItems[0].Source);
+  Assert.AreEqual('history', LItems[High(LItems)].Source);
+  Assert.AreEqual(
+    'git branch --show-current',
+    LItems[High(LItems)].Command
+  );
+  LItems := TRadIATerminalCatalog.SearchPalette('missing', LHistory);
+  Assert.AreEqual<Integer>(0, Length(LItems));
 end;
 
 procedure TRadIATerminalTests.

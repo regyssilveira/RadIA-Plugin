@@ -111,6 +111,22 @@ type
     property Command: string read FCommand;
   end;
 
+  TRadIATerminalPaletteItem = record
+  private
+    FName: string;
+    FCommand: string;
+    FSource: string;
+  public
+    constructor Create(
+      const AName: string;
+      const ACommand: string;
+      const ASource: string
+    );
+    property Name: string read FName;
+    property Command: string read FCommand;
+    property Source: string read FSource;
+  end;
+
   TRadIATerminalHistoryEntry = record
   private
     FTimestampUtc: TDateTime;
@@ -143,6 +159,10 @@ type
       const AEnvironment: IRadIACliEnvironment = nil
     ): TArray<TRadIATerminalProfile>; static;
     class function Snippets: TArray<TRadIATerminalSnippet>; static;
+    class function SearchPalette(
+      const AQuery: string;
+      const AHistory: TArray<TRadIATerminalHistoryEntry>
+    ): TArray<TRadIATerminalPaletteItem>; static;
   end;
 
   TRadIATerminalHistory = class
@@ -172,6 +192,7 @@ type
 implementation
 
 uses
+  System.Classes,
   System.DateUtils,
   System.IOUtils,
   System.JSON,
@@ -419,6 +440,19 @@ begin
   FExitCode := AExitCode;
 end;
 
+{ TRadIATerminalPaletteItem }
+
+constructor TRadIATerminalPaletteItem.Create(
+  const AName: string;
+  const ACommand: string;
+  const ASource: string
+);
+begin
+  FName := AName;
+  FCommand := ACommand;
+  FSource := ASource;
+end;
+
 { TRadIATerminalCatalog }
 
 class function TRadIATerminalCatalog.FindGitBash(
@@ -534,6 +568,56 @@ begin
     TRadIATerminalSnippet.Create('Git status', 'git status --short'),
     TRadIATerminalSnippet.Create('Git diff check', 'git diff --check')
   ];
+end;
+
+class function TRadIATerminalCatalog.SearchPalette(
+  const AQuery: string;
+  const AHistory: TArray<TRadIATerminalHistoryEntry>
+): TArray<TRadIATerminalPaletteItem>;
+var
+  LCommands: TStringList;
+  LHistoryIndex: Integer;
+  LItem: TRadIATerminalPaletteItem;
+  LItems: TList<TRadIATerminalPaletteItem>;
+  LQuery: string;
+  LSnippet: TRadIATerminalSnippet;
+
+  procedure AddItem(const AName, ACommand, ASource: string);
+  begin
+    if (LQuery <> '') and
+      not AName.ToLower.Contains(LQuery) and
+      not ACommand.ToLower.Contains(LQuery) then
+      Exit;
+    if LCommands.IndexOf(ACommand) >= 0 then
+      Exit;
+    LCommands.Add(ACommand);
+    LItem := TRadIATerminalPaletteItem.Create(
+      AName,
+      ACommand,
+      ASource
+    );
+    LItems.Add(LItem);
+  end;
+
+begin
+  LQuery := Trim(AQuery).ToLower;
+  LCommands := TStringList.Create;
+  LItems := TList<TRadIATerminalPaletteItem>.Create;
+  try
+    LCommands.CaseSensitive := False;
+    for LSnippet in Snippets do
+      AddItem(LSnippet.Name, LSnippet.Command, 'snippet');
+    for LHistoryIndex := High(AHistory) downto Low(AHistory) do
+      AddItem(
+        AHistory[LHistoryIndex].Command,
+        AHistory[LHistoryIndex].Command,
+        'history'
+      );
+    Result := LItems.ToArray;
+  finally
+    LItems.Free;
+    LCommands.Free;
+  end;
 end;
 
 { TRadIATerminalHistory }

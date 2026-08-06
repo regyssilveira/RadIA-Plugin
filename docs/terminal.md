@@ -48,6 +48,7 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - histórico persistente dos últimos 200 comandos;
 - busca reversa incremental com `Ctrl+R`;
 - snippets para build, testes e Git;
+- paleta pesquisável e deduplicada sobre snippets e histórico, aberta com `Ctrl+P`;
 - cancelamento da árvore completa de processos;
 - timeout máximo de 30 minutos por comando;
 - encerramento isolado de cada aba.
@@ -66,6 +67,11 @@ automaticamente o padrão `Ctrl+Alt+T`.
 
 Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Pressione
 novamente para percorrer ocorrências mais antigas. Uma edição manual reinicia a busca.
+
+Para procurar por finalidade ou pelo próprio texto do comando, pressione `Ctrl+P` no campo de
+comando. Digite na caixa **Command palette** e selecione um resultado identificado como
+`[snippet]` ou `[history]`. A paleta elimina duplicidades: quando um snippet e o histórico possuem
+o mesmo comando, a versão documentada do snippet aparece uma única vez.
 
 ## Segurança e privacidade
 

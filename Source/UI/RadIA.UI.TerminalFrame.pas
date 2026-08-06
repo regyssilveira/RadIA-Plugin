@@ -31,6 +31,10 @@ type
     FHistoryCombo: TComboBox;
     FCommandLabel: TLabel;
     FCommandEdit: TEdit;
+    FPaletteLabel: TLabel;
+    FPaletteEdit: TEdit;
+    FPaletteCombo: TComboBox;
+    FPaletteItems: TArray<TRadIATerminalPaletteItem>;
     FRunButton: TButton;
     FStopButton: TButton;
     FClearButton: TButton;
@@ -53,6 +57,7 @@ type
       const ASegment: TRadIATerminalTextSegment
     );
     procedure BuildControls;
+    procedure BuildPaletteControls;
     procedure ClearClick(Sender: TObject);
     procedure CommandChange(Sender: TObject);
     procedure CommandKeyDown(
@@ -73,6 +78,13 @@ type
     procedure HandleRunningInput;
     procedure HistoryChange(Sender: TObject);
     procedure LoadHistory;
+    procedure PaletteChange(Sender: TObject);
+    procedure PaletteKeyDown(
+      Sender: TObject;
+      var Key: Word;
+      Shift: TShiftState
+    );
+    procedure PaletteQueryChange(Sender: TObject);
     procedure QueueCompletion(
       const AGuard: IRadIATerminalLifecycleGuard;
       const ACommand: string;
@@ -83,6 +95,7 @@ type
       const AGuard: IRadIATerminalLifecycleGuard;
       const AChunk: string
     );
+    procedure RefreshPalette;
     procedure RunClick(Sender: TObject);
     procedure SnippetChange(Sender: TObject);
     procedure StopClick(Sender: TObject);
@@ -247,7 +260,7 @@ begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 146;
+  FTopPanel.Height := 200;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.ShowCaption := False;
 
@@ -325,14 +338,16 @@ begin
   FClearButton.Caption := 'Clear';
   FClearButton.OnClick := ClearClick;
 
+  BuildPaletteControls;
+
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := FTopPanel;
-  FStatusLabel.SetBounds(8, 104, 820, 17);
+  FStatusLabel.SetBounds(8, 153, 820, 17);
   FStatusLabel.Caption := 'Ready';
 
   FOutputLabel := TLabel.Create(Self);
   FOutputLabel.Parent := FTopPanel;
-  FOutputLabel.SetBounds(8, 124, 820, 17);
+  FOutputLabel.SetBounds(8, 175, 820, 17);
   FOutputLabel.Caption := 'Terminal output';
 
   FOutputEditor := TRichEdit.Create(Self);
@@ -345,6 +360,28 @@ begin
   FOutputEditor.Font.Size := 10;
   FOutputLabel.FocusControl := FOutputEditor;
   LoadHistory;
+end;
+
+procedure TRadIATerminalFrame.BuildPaletteControls;
+begin
+  FPaletteLabel := TLabel.Create(Self);
+  FPaletteLabel.Parent := FTopPanel;
+  FPaletteLabel.SetBounds(8, 104, 280, 17);
+  FPaletteLabel.Caption := 'Command palette (Ctrl+P)';
+
+  FPaletteEdit := TEdit.Create(Self);
+  FPaletteEdit.Parent := FTopPanel;
+  FPaletteEdit.SetBounds(8, 122, 280, 25);
+  FPaletteEdit.TextHint := 'Search snippets and history';
+  FPaletteEdit.OnChange := PaletteQueryChange;
+  FPaletteEdit.OnKeyDown := PaletteKeyDown;
+  FPaletteLabel.FocusControl := FPaletteEdit;
+
+  FPaletteCombo := TComboBox.Create(Self);
+  FPaletteCombo.Parent := FTopPanel;
+  FPaletteCombo.SetBounds(296, 122, 548, 25);
+  FPaletteCombo.Style := csDropDownList;
+  FPaletteCombo.OnChange := PaletteChange;
 end;
 
 procedure TRadIATerminalFrame.AppendOutput(const AText: string);
@@ -457,6 +494,12 @@ var
   LCommand: string;
   LNextIndex: Integer;
 begin
+  if (Key = Ord('P')) and (ssCtrl in Shift) then
+  begin
+    Key := 0;
+    FPaletteEdit.SetFocus;
+    Exit;
+  end;
   if (Key <> Ord('R')) or not (ssCtrl in Shift) then
     Exit;
   Key := 0;
@@ -622,6 +665,44 @@ begin
   finally
     FHistoryCombo.Items.EndUpdate;
   end;
+  RefreshPalette;
+end;
+
+procedure TRadIATerminalFrame.PaletteChange(Sender: TObject);
+var
+  LIndex: Integer;
+begin
+  LIndex := FPaletteCombo.ItemIndex;
+  if (LIndex < Low(FPaletteItems)) or (LIndex > High(FPaletteItems)) then
+    Exit;
+  FCommandEdit.Text := FPaletteItems[LIndex].Command;
+  FCommandEdit.SetFocus;
+  FCommandEdit.SelStart := Length(FCommandEdit.Text);
+end;
+
+procedure TRadIATerminalFrame.PaletteKeyDown(
+  Sender: TObject;
+  var Key: Word;
+  Shift: TShiftState
+);
+begin
+  if (Key = VK_DOWN) and (FPaletteCombo.Items.Count > 0) then
+  begin
+    Key := 0;
+    FPaletteCombo.SetFocus;
+    Exit;
+  end;
+  if (Key = VK_RETURN) and (Length(FPaletteItems) > 0) then
+  begin
+    Key := 0;
+    FPaletteCombo.ItemIndex := 0;
+    PaletteChange(FPaletteCombo);
+  end;
+end;
+
+procedure TRadIATerminalFrame.PaletteQueryChange(Sender: TObject);
+begin
+  RefreshPalette;
 end;
 
 procedure TRadIATerminalFrame.QueueCompletion(
@@ -658,6 +739,28 @@ begin
       end
     )
   );
+end;
+
+procedure TRadIATerminalFrame.RefreshPalette;
+var
+  LItem: TRadIATerminalPaletteItem;
+begin
+  FPaletteItems := TRadIATerminalCatalog.SearchPalette(
+    FPaletteEdit.Text,
+    FHistory.Entries
+  );
+  FPaletteCombo.Items.BeginUpdate;
+  try
+    FPaletteCombo.Items.Clear;
+    for LItem in FPaletteItems do
+      FPaletteCombo.Items.Add(
+        '[' + LItem.Source + '] ' + LItem.Name
+      );
+    if FPaletteCombo.Items.Count > 0 then
+      FPaletteCombo.ItemIndex := 0;
+  finally
+    FPaletteCombo.Items.EndUpdate;
+  end;
 end;
 
 procedure TRadIATerminalFrame.RunClick(Sender: TObject);
@@ -894,6 +997,8 @@ begin
     (ASession.FSnippetLabel.FocusControl = ASession.FSnippetCombo) and
     (ASession.FHistoryLabel.Caption <> '') and
     (ASession.FHistoryLabel.FocusControl = ASession.FHistoryCombo) and
+    (ASession.FPaletteLabel.Caption <> '') and
+    (ASession.FPaletteLabel.FocusControl = ASession.FPaletteEdit) and
     (ASession.FCommandLabel.Caption <> '') and
     (ASession.FCommandLabel.FocusControl = ASession.FCommandEdit) and
     (ASession.FOutputLabel.Caption <> '') and
@@ -948,6 +1053,10 @@ begin
   if IsAvailableTabStop(ASession.FSnippetCombo) then
     Inc(Result);
   if IsAvailableTabStop(ASession.FHistoryCombo) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FPaletteEdit) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FPaletteCombo) then
     Inc(Result);
   if IsAvailableTabStop(ASession.FCommandEdit) then
     Inc(Result);
