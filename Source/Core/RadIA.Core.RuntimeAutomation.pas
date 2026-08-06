@@ -39,6 +39,11 @@ type
       const AParentPath: string
     );
     function HasStableIdentity: Boolean;
+    property AutomationId: string read FAutomationId;
+    property ClassName: string read FClassName;
+    property ControlName: string read FControlName;
+    property Text: string read FText;
+    property ParentPath: string read FParentPath;
   end;
 
   TRadIARuntimeSessionIdentity = record
@@ -81,6 +86,7 @@ type
     function IsValid: Boolean;
     property MaxActions: Integer read FMaxActions;
     property MaxDurationMs: Cardinal read FMaxDurationMs;
+    property MaxRepetitions: Integer read FMaxRepetitions;
   end;
 
   TRadIARuntimeScenarioAction = record
@@ -98,6 +104,7 @@ type
     );
     property Kind: TRadIARuntimeActionKind read FKind;
     property Selector: TRadIARuntimeSelector read FSelector;
+    property Value: string read FValue;
     property TimeoutMs: Cardinal read FTimeoutMs;
   end;
 
@@ -115,6 +122,10 @@ type
       const AActions: TArray<TRadIARuntimeScenarioAction>
     );
     function IsExecutable: Boolean;
+    property Name: string read FName;
+    property Session: TRadIARuntimeSessionIdentity read FSession;
+    property Limits: TRadIARuntimeScenarioLimits read FLimits;
+    property Actions: TArray<TRadIARuntimeScenarioAction> read FActions;
   end;
 
   TRadIARuntimeElementState = record
@@ -137,6 +148,7 @@ type
   TRadIARuntimeWindowSnapshot = record
   private
     FClassName: string;
+    FModal: Boolean;
     FOwnerId: string;
     FProcessId: LongWord;
     FState: TRadIARuntimeElementState;
@@ -149,6 +161,7 @@ type
       const AClassName: string;
       const AText: string;
       const AOwnerId: string;
+      const AModal: Boolean;
       const AState: TRadIARuntimeElementState
     );
     property WindowId: string read FWindowId;
@@ -156,6 +169,7 @@ type
     property ClassName: string read FClassName;
     property Text: string read FText;
     property OwnerId: string read FOwnerId;
+    property Modal: Boolean read FModal;
     property State: TRadIARuntimeElementState read FState;
   end;
 
@@ -184,6 +198,38 @@ type
     property State: TRadIARuntimeElementState read FState;
   end;
 
+  TRadIARuntimeActionResult = record
+  private
+    FErrorCode: string;
+    FMessage: string;
+    FObservedValue: string;
+    FSuccess: Boolean;
+  public
+    class function Failed(
+      const AErrorCode: string;
+      const AMessage: string
+    ): TRadIARuntimeActionResult; static;
+    class function Succeeded(
+      const AObservedValue: string = ''
+    ): TRadIARuntimeActionResult; static;
+    property Success: Boolean read FSuccess;
+    property ErrorCode: string read FErrorCode;
+    property Message: string read FMessage;
+    property ObservedValue: string read FObservedValue;
+  end;
+
+  IRadIARuntimeActionFacade = interface
+    ['{F4EDB4F9-26B2-4868-9778-C3C808CA5792}']
+    function ExecuteAction(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AAction: TRadIARuntimeScenarioAction
+    ): TRadIARuntimeActionResult;
+    function ValidateAction(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AAction: TRadIARuntimeScenarioAction
+    ): TRadIARuntimeActionResult;
+  end;
+
   IRadIARuntimeDiscoveryFacade = interface
     ['{0A8C3464-B8C8-4DF3-8417-D2310EC1A23F}']
     function GetWindows(
@@ -199,6 +245,29 @@ implementation
 
 uses
   System.SysUtils;
+
+{ TRadIARuntimeActionResult }
+
+class function TRadIARuntimeActionResult.Failed(
+  const AErrorCode: string;
+  const AMessage: string
+): TRadIARuntimeActionResult;
+begin
+  Result.FSuccess := False;
+  Result.FErrorCode := AErrorCode;
+  Result.FMessage := AMessage;
+  Result.FObservedValue := '';
+end;
+
+class function TRadIARuntimeActionResult.Succeeded(
+  const AObservedValue: string
+): TRadIARuntimeActionResult;
+begin
+  Result.FSuccess := True;
+  Result.FErrorCode := '';
+  Result.FMessage := '';
+  Result.FObservedValue := AObservedValue;
+end;
 
 { TRadIARuntimeElementState }
 
@@ -221,6 +290,7 @@ constructor TRadIARuntimeWindowSnapshot.Create(
   const AClassName: string;
   const AText: string;
   const AOwnerId: string;
+  const AModal: Boolean;
   const AState: TRadIARuntimeElementState
 );
 begin
@@ -229,6 +299,7 @@ begin
   FClassName := AClassName;
   FText := AText;
   FOwnerId := AOwnerId;
+  FModal := AModal;
   FState := AState;
 end;
 
@@ -381,7 +452,8 @@ begin
     if (LAction.Kind in [rakSetValue, rakSelect, rakAssert]) and
       (Trim(LAction.FValue) = '') then
       Exit(False);
-    if LAction.TimeoutMs > FLimits.MaxDurationMs then
+    if (LAction.TimeoutMs < 100) or
+      (LAction.TimeoutMs > FLimits.MaxDurationMs) then
       Exit(False);
   end;
 end;

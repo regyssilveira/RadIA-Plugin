@@ -6,8 +6,10 @@ uses
   DUnitX.TestFramework,
   RadIA.Core.RuntimeAutomation,
   RadIA.Core.RuntimeDebugSession,
+  RadIA.Core.RuntimeScenario,
   RadIA.Core.Tools,
-  Vcl.Forms;
+  Vcl.Forms,
+  Vcl.StdCtrls;
 
 type
   [TestFixture]
@@ -15,13 +17,19 @@ type
   private
     FCoordinator: IRadIARuntimeDebugSessionCoordinator;
     FDiscovery: IRadIARuntimeDiscoveryFacade;
+    FActionFacade: IRadIARuntimeActionFacade;
+    FButton: TButton;
+    FClickCount: Integer;
+    FEdit: TEdit;
     FForm: TForm;
     FOwnedForm: TForm;
     FRegistry: IRadIAToolRegistry;
+    FScenarioCoordinator: IRadIARuntimeScenarioCoordinator;
     FSession: TRadIARuntimeSessionIdentity;
     function FindLaboratoryWindow(
       out AWindow: TRadIARuntimeWindowSnapshot
     ): Boolean;
+    procedure HandleButtonClick(Sender: TObject);
   public
     [Setup]
     procedure Setup;
@@ -30,9 +38,15 @@ type
     [Test]
     procedure DiscoversAuthorizedFormAndControl;
     [Test]
+    procedure ExecutesOnlyAuthorizedRuntimeActions;
+    [Test]
+    procedure RejectsPasswordRuntimeAction;
+    [Test]
     procedure RejectsUnknownOpaqueWindowId;
     [Test]
     procedure ReportsOwnerRelationshipAndExcludesExternalProcesses;
+    [Test]
+    procedure ScenarioToolsPrepareAndRunReviewedAction;
     [Test]
     procedure ToolsReturnOnlyOpaqueIdentifiers;
   end;
@@ -40,10 +54,11 @@ type
 implementation
 
 uses
+  System.JSON,
   System.SysUtils,
-  Vcl.StdCtrls,
   Winapi.Windows,
   RadIA.Core.RuntimeDiscoveryTools,
+  RadIA.Core.RuntimeScenarioTools,
   RadIA.Core.ToolRegistry,
   RadIA.OTA.RuntimeDiscovery,
   RadIA.OTA.RuntimeProcess;
@@ -53,6 +68,8 @@ const
   CTestButtonCaption = 'Authorized runtime action';
   CTestOwnedFormCaption = 'RadIA owned runtime test form';
   CTestPasswordValue = 'must-not-be-disclosed';
+  CTestEditableValue = 'editable runtime value';
+  CTestUpdatedValue = 'updated runtime value';
 
 function TTestRadIARuntimeDiscovery.FindLaboratoryWindow(
   out AWindow: TRadIARuntimeWindowSnapshot
@@ -103,6 +120,57 @@ begin
   Assert.IsTrue(LFoundPassword);
 end;
 
+procedure TTestRadIARuntimeDiscovery.ExecutesOnlyAuthorizedRuntimeActions;
+var
+  LAction: TRadIARuntimeScenarioAction;
+  LButtonId: string;
+  LControl: TRadIARuntimeControlSnapshot;
+  LEditId: string;
+  LResult: TRadIARuntimeActionResult;
+  LWindow: TRadIARuntimeWindowSnapshot;
+begin
+  Assert.IsTrue(FindLaboratoryWindow(LWindow));
+  LButtonId := '';
+  LEditId := '';
+  for LControl in FDiscovery.GetControlTree(
+    FSession,
+    LWindow.WindowId
+  ) do
+  begin
+    if SameText(LControl.Text, CTestButtonCaption) then
+      LButtonId := LControl.ControlId;
+    if SameText(LControl.Text, CTestEditableValue) then
+      LEditId := LControl.ControlId;
+  end;
+  Assert.AreEqual(64, Length(LButtonId));
+  Assert.AreEqual(64, Length(LEditId));
+
+  LAction := TRadIARuntimeScenarioAction.Create(
+    rakInvoke,
+    TRadIARuntimeSelector.Create(LButtonId, '', '', '', ''),
+    '',
+    1000
+  );
+  LResult := FActionFacade.ExecuteAction(FSession, LAction);
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(1, FClickCount);
+
+  LAction := TRadIARuntimeScenarioAction.Create(
+    rakSetValue,
+    TRadIARuntimeSelector.Create(LEditId, '', '', '', ''),
+    CTestUpdatedValue,
+    1000
+  );
+  LResult := FActionFacade.ExecuteAction(FSession, LAction);
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(CTestUpdatedValue, FEdit.Text);
+end;
+
+procedure TTestRadIARuntimeDiscovery.HandleButtonClick(Sender: TObject);
+begin
+  Inc(FClickCount);
+end;
+
 procedure TTestRadIARuntimeDiscovery.RejectsUnknownOpaqueWindowId;
 begin
   Assert.WillRaise(
@@ -117,6 +185,34 @@ begin
   );
 end;
 
+procedure TTestRadIARuntimeDiscovery.RejectsPasswordRuntimeAction;
+var
+  LAction: TRadIARuntimeScenarioAction;
+  LControl: TRadIARuntimeControlSnapshot;
+  LPasswordId: string;
+  LResult: TRadIARuntimeActionResult;
+  LWindow: TRadIARuntimeWindowSnapshot;
+begin
+  Assert.IsTrue(FindLaboratoryWindow(LWindow));
+  LPasswordId := '';
+  for LControl in FDiscovery.GetControlTree(
+    FSession,
+    LWindow.WindowId
+  ) do
+    if SameText(LControl.Text, '[redacted]') then
+      LPasswordId := LControl.ControlId;
+  Assert.AreEqual(64, Length(LPasswordId));
+  LAction := TRadIARuntimeScenarioAction.Create(
+    rakSetValue,
+    TRadIARuntimeSelector.Create(LPasswordId, '', '', '', ''),
+    'new-secret',
+    1000
+  );
+  LResult := FActionFacade.ValidateAction(FSession, LAction);
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('sensitive_runtime_target', LResult.ErrorCode);
+end;
+
 procedure TTestRadIARuntimeDiscovery.
   ReportsOwnerRelationshipAndExcludesExternalProcesses;
 var
@@ -126,26 +222,83 @@ var
 begin
   LMainWindow := Default(TRadIARuntimeWindowSnapshot);
   LOwnedWindow := Default(TRadIARuntimeWindowSnapshot);
-  for LWindow in FDiscovery.GetWindows(FSession) do
-  begin
-    Assert.AreEqual(GetCurrentProcessId, LWindow.ProcessId);
-    if SameText(LWindow.Text, CTestFormCaption) then
-      LMainWindow := LWindow;
-    if SameText(LWindow.Text, CTestOwnedFormCaption) then
-      LOwnedWindow := LWindow;
+  FForm.Enabled := False;
+  try
+    for LWindow in FDiscovery.GetWindows(FSession) do
+    begin
+      Assert.AreEqual(GetCurrentProcessId, LWindow.ProcessId);
+      if SameText(LWindow.Text, CTestFormCaption) then
+        LMainWindow := LWindow;
+      if SameText(LWindow.Text, CTestOwnedFormCaption) then
+        LOwnedWindow := LWindow;
+    end;
+  finally
+    FForm.Enabled := True;
   end;
 
   Assert.AreEqual(64, Length(LMainWindow.WindowId));
   Assert.AreEqual(64, Length(LOwnedWindow.WindowId));
   Assert.AreEqual(LMainWindow.WindowId, LOwnedWindow.OwnerId);
+  Assert.IsTrue(LOwnedWindow.Modal);
+end;
+
+procedure TTestRadIARuntimeDiscovery.
+  ScenarioToolsPrepareAndRunReviewedAction;
+var
+  LButtonId: string;
+  LControl: TRadIARuntimeControlSnapshot;
+  LJson: TJSONObject;
+  LPrepare: TRadIAToolResult;
+  LPreviewId: string;
+  LRun: TRadIAToolResult;
+  LWindow: TRadIARuntimeWindowSnapshot;
+begin
+  Assert.IsTrue(FindLaboratoryWindow(LWindow));
+  LButtonId := '';
+  for LControl in FDiscovery.GetControlTree(
+    FSession,
+    LWindow.WindowId
+  ) do
+    if SameText(LControl.Text, CTestButtonCaption) then
+      LButtonId := LControl.ControlId;
+  Assert.AreEqual(64, Length(LButtonId));
+  LPrepare := FRegistry.Resolve('PrepareRuntimeScenario').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareRuntimeScenario',
+      '{"name":"Invoke authorized test button",' +
+      '"limits":{"maxActions":1,"maxDurationMs":5000,' +
+      '"maxRepetitions":1},"actions":[{"kind":"invoke",' +
+      '"targetId":"' + LButtonId + '","timeoutMs":1000}]}',
+      'runtime-scenario-prepare-test'
+    )
+  );
+  Assert.IsTrue(LPrepare.Success);
+  LJson := TJSONObject.ParseJSONValue(
+    LPrepare.ContentJson
+  ) as TJSONObject;
+  try
+    Assert.IsNotNull(LJson);
+    LPreviewId := LJson.GetValue<string>('previewId', '');
+  finally
+    LJson.Free;
+  end;
+  LRun := FRegistry.Resolve('RunRuntimeScenario').Execute(
+    TRadIAToolRequest.Create(
+      'RunRuntimeScenario',
+      '{"previewId":"' + LPreviewId + '"}',
+      'runtime-scenario-run-test'
+    )
+  );
+  Assert.IsTrue(LRun.Success);
+  Assert.AreEqual(1, FClickCount);
+  Assert.Contains(LRun.ContentJson, '"state":"succeeded"');
 end;
 
 procedure TTestRadIARuntimeDiscovery.Setup;
 var
   LBuildId: string;
-  LButton: TButton;
   LCreatedAtUtc: TDateTime;
-  LEdit: TEdit;
+  LPasswordEdit: TEdit;
   LExecutablePath: string;
   LSessionId: string;
 begin
@@ -172,30 +325,51 @@ begin
   );
   FSession := FCoordinator.GetCurrentSession;
   FDiscovery := TRadIAWindowsRuntimeDiscoveryFacade.Create;
+  Assert.IsTrue(Supports(
+    FDiscovery,
+    IRadIARuntimeActionFacade,
+    FActionFacade
+  ));
   FRegistry := TRadIAToolRegistry.Create;
+  FScenarioCoordinator := TRadIARuntimeScenarioCoordinator.Create(
+    FActionFacade
+  );
   RegisterRadIARuntimeDiscoveryTools(
     FRegistry,
     FCoordinator,
     FDiscovery
+  );
+  RegisterRadIARuntimeScenarioTools(
+    FRegistry,
+    FCoordinator,
+    FScenarioCoordinator
   );
 
   FForm := TForm.Create(nil);
   FForm.Caption := CTestFormCaption;
   FForm.Width := 420;
   FForm.Height := 180;
-  LButton := TButton.Create(FForm);
-  LButton.Parent := FForm;
-  LButton.Caption := CTestButtonCaption;
-  LButton.Left := 40;
-  LButton.Top := 40;
-  LButton.Width := 240;
-  LEdit := TEdit.Create(FForm);
-  LEdit.Parent := FForm;
-  LEdit.PasswordChar := '*';
-  LEdit.Text := CTestPasswordValue;
-  LEdit.Left := 40;
-  LEdit.Top := 80;
-  LEdit.Width := 240;
+  FClickCount := 0;
+  FButton := TButton.Create(FForm);
+  FButton.Parent := FForm;
+  FButton.Caption := CTestButtonCaption;
+  FButton.Left := 40;
+  FButton.Top := 20;
+  FButton.Width := 240;
+  FButton.OnClick := HandleButtonClick;
+  FEdit := TEdit.Create(FForm);
+  FEdit.Parent := FForm;
+  FEdit.Text := CTestEditableValue;
+  FEdit.Left := 40;
+  FEdit.Top := 60;
+  FEdit.Width := 240;
+  LPasswordEdit := TEdit.Create(FForm);
+  LPasswordEdit.Parent := FForm;
+  LPasswordEdit.PasswordChar := '*';
+  LPasswordEdit.Text := CTestPasswordValue;
+  LPasswordEdit.Left := 40;
+  LPasswordEdit.Top := 100;
+  LPasswordEdit.Width := 240;
   FForm.Show;
   FOwnedForm := TForm.Create(nil);
   FOwnedForm.Caption := CTestOwnedFormCaption;
@@ -214,9 +388,13 @@ procedure TTestRadIARuntimeDiscovery.TearDown;
 begin
   FOwnedForm.Free;
   FRegistry := nil;
+  FScenarioCoordinator := nil;
+  FActionFacade := nil;
   FDiscovery := nil;
   FCoordinator := nil;
   FForm.Free;
+  FButton := nil;
+  FEdit := nil;
 end;
 
 procedure TTestRadIARuntimeDiscovery.ToolsReturnOnlyOpaqueIdentifiers;

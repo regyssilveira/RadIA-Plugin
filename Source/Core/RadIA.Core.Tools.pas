@@ -41,6 +41,7 @@ type
     FRisk: TRadIAToolRisk;
     FTimeoutMs: Cardinal;
     FIdempotent: Boolean;
+    FConsentEveryTime: Boolean;
   public
     constructor Create(
       const AName: string;
@@ -54,6 +55,7 @@ type
       const ATimeoutMs: Cardinal;
       const AIdempotent: Boolean
     ): TRadIAToolDescriptor;
+    function WithConsentEveryTime: TRadIAToolDescriptor;
     property Name: string read FName;
     property Version: string read FVersion;
     property Description: string read FDescription;
@@ -62,6 +64,7 @@ type
     property Risk: TRadIAToolRisk read FRisk;
     property TimeoutMs: Cardinal read FTimeoutMs;
     property Idempotent: Boolean read FIdempotent;
+    property ConsentEveryTime: Boolean read FConsentEveryTime;
   end;
 
   TRadIAToolRequest = record
@@ -209,6 +212,14 @@ begin
   FRisk := ARisk;
   FTimeoutMs := 10000;
   FIdempotent := ARisk = trReadOnly;
+  FConsentEveryTime := False;
+end;
+
+function TRadIAToolDescriptor.WithConsentEveryTime:
+  TRadIAToolDescriptor;
+begin
+  Result := Self;
+  Result.FConsentEveryTime := True;
 end;
 
 function TRadIAToolDescriptor.WithExecutionOptions(

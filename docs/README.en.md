@@ -33,7 +33,7 @@ This index brings together the functional, operational, and technical documentat
 | DUnitX test execution and analysis | [DUnitX runner](dunitx_runner.en.md) |
 | Reviewable local Git commit | [Git workflow](git_workflow.en.md) |
 | What each tool does and when to use it | [Operational reference](internal_tools_reference.md) |
-| All 98 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
+| All 104 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
 | Target architecture and contracts | [Architectural catalog](tool_catalog.md) |
 | Consent, risk, and audit | [Security model](tool_security_model.md) |
 | MCP and external clients | [MCP integration](mcp_integration_guide.en.md) |
@@ -76,6 +76,7 @@ This index brings together the functional, operational, and technical documentat
 | Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
 | Runtime M1 execution | [Debugger correlation and waiting](runtime_debug_automation_m1.en.md) |
 | Runtime M2 execution | [Safe window and control discovery](runtime_debug_automation_m2.en.md) |
+| Runtime M3 execution | [Bounded declarative execution](runtime_debug_automation_m3.en.md) |
 | Frozen plan to resume | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
 
 ## Security and compliance

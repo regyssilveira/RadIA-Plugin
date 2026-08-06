@@ -212,6 +212,7 @@ begin
       LItem.AddPair('className', LWindow.ClassName);
       LItem.AddPair('text', LWindow.Text);
       LItem.AddPair('ownerId', LWindow.OwnerId);
+      LItem.AddPair('modal', TJSONBool.Create(LWindow.Modal));
       AddElementState(LWindow.State, LItem);
       LArray.AddElement(LItem);
     end;

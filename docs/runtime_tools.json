@@ -255,6 +255,16 @@
       ]
     },
     {
+      "name": "Bounded runtime scenarios",
+      "source": "Source/Core/RadIA.Core.RuntimeScenarioTools.pas",
+      "tools": [
+        "PrepareRuntimeScenario",
+        "RunRuntimeScenario",
+        "CancelRuntimeScenario",
+        "GetRuntimeScenarioStatus"
+      ]
+    },
+    {
       "name": "Reviewable local Git commits",
       "source": "Source/Core/RadIA.Core.GitTools.pas",
       "tools": [

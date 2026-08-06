@@ -15,7 +15,8 @@ type
   public
     constructor Create(
       const AName: string;
-      const ARisk: TRadIAToolRisk
+      const ARisk: TRadIAToolRisk;
+      const AConsentEveryTime: Boolean = False
     );
     function Execute(
       const ARequest: TRadIAToolRequest
@@ -61,6 +62,8 @@ type
     [Test]
     procedure SessionConsentIsScopedAndRevocable;
     [Test]
+    procedure PerExecutionConsentIsNeverCached;
+    [Test]
     procedure TerminalAuthorizationSharesSessionConsentAndAudit;
     [Test]
     procedure SensitiveToolIsDeniedWithoutPrompt;
@@ -92,7 +95,8 @@ uses
 
 constructor TTestRadIATool.Create(
   const AName: string;
-  const ARisk: TRadIAToolRisk
+  const ARisk: TRadIAToolRisk;
+  const AConsentEveryTime: Boolean
 );
 begin
   inherited Create;
@@ -104,6 +108,8 @@ begin
     '{"type":"object"}',
     ARisk
   );
+  if AConsentEveryTime then
+    FDescriptor := FDescriptor.WithConsentEveryTime;
 end;
 
 function TTestRadIATool.Execute(
@@ -468,6 +474,44 @@ begin
   Assert.AreEqual(1, LTool.ExecutionCount);
   Assert.AreEqual(0, LConsent.RequestCount);
   Assert.AreEqual(aoSucceeded, LAudit.GetEvents[0].Outcome);
+end;
+
+procedure TTestRadIAToolSecurity.PerExecutionConsentIsNeverCached;
+var
+  LAudit: IRadIAToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create(
+      'RunReviewedScenario',
+      trExecution,
+      True
+    )
+  );
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowSession);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  Assert.IsTrue(
+    LExecutor.Execute(
+      CreateRequest('RunReviewedScenario')
+    ).Success
+  );
+  Assert.IsTrue(
+    LExecutor.Execute(
+      CreateRequest('RunReviewedScenario')
+    ).Success
+  );
+  Assert.AreEqual(2, LConsent.RequestCount);
 end;
 
 procedure TTestRadIAToolSecurity.SensitiveToolIsDeniedWithoutPrompt;

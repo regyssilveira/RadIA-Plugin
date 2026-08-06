@@ -1,6 +1,6 @@
 # Goal pós-2.0 — Reprodução autônoma de falhas runtime
 
-> **Estado:** em execução; M0–M2 implementados com validação na IDE pendente, M3 é a próxima etapa.
+> **Estado:** em execução; M0–M3 implementados com validação na IDE pendente, M4 é a próxima etapa.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Plano pausado durante este goal:** [Continuidade CLI e integração avançada](competitive_leadership_plan.md).
@@ -116,6 +116,8 @@ comprovar a rejeição de uma janela externa.
 **Ainda faltará:** executar ações, integrar a correção e gerar regressão.
 
 ### M3 — Execução declarativa limitada
+
+Implementação e evidências: [Execução declarativa M3](runtime_debug_automation_m3.md).
 
 - suportar invocar, clicar, preencher, selecionar, fechar, cancelar, aguardar e verificar;
 - exigir prévia e consentimento antes de executar o cenário;

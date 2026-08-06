@@ -8,13 +8,18 @@ uses
 type
   TRadIAWindowsRuntimeDiscoveryFacade = class(
     TInterfacedObject,
-    IRadIARuntimeDiscoveryFacade
+    IRadIARuntimeDiscoveryFacade,
+    IRadIARuntimeActionFacade
   )
   private
     function ValidateSession(
       const ASession: TRadIARuntimeSessionIdentity
     ): Boolean;
   public
+    function ExecuteAction(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AAction: TRadIARuntimeScenarioAction
+    ): TRadIARuntimeActionResult;
     function GetWindows(
       const ASession: TRadIARuntimeSessionIdentity
     ): TArray<TRadIARuntimeWindowSnapshot>;
@@ -22,6 +27,10 @@ type
       const ASession: TRadIARuntimeSessionIdentity;
       const AWindowId: string
     ): TArray<TRadIARuntimeControlSnapshot>;
+    function ValidateAction(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AAction: TRadIARuntimeScenarioAction
+    ): TRadIARuntimeActionResult;
   end;
 
 implementation
@@ -39,7 +48,9 @@ uses
 
 const
   CMaxWindowTextLength = 4096;
+  CMaxRuntimeMessageTimeoutMs = 1000;
   CPasswordStyle = $0020;
+  CMessageTimeoutError = 'runtime_action_timeout';
 
 type
   TRadIAWindowEnumerationContext = class
@@ -69,6 +80,14 @@ type
       AContext: LPARAM
     ): BOOL; static; stdcall;
     property Handles: TList<HWND> read FHandles;
+  end;
+
+  TRadIARuntimeTarget = record
+    ClassName: string;
+    Handle: HWND;
+    IsWindow: Boolean;
+    State: TRadIARuntimeElementState;
+    Text: string;
   end;
 
 function WindowProcessId(const AWindow: HWND): LongWord;
@@ -347,6 +366,168 @@ begin
   end;
 end;
 
+function FindControlById(
+  const ASessionId: string;
+  const AControlId: string;
+  const AAllowedProcessIds: TDictionary<LongWord, Boolean>;
+  out ARootWindow: HWND
+): HWND;
+var
+  LControl: HWND;
+  LControlContext: TRadIAControlEnumerationContext;
+  LRootContext: TRadIAWindowEnumerationContext;
+  LRootId: string;
+  LRootWindow: HWND;
+begin
+  Result := 0;
+  ARootWindow := 0;
+  LRootContext := TRadIAWindowEnumerationContext.Create(
+    AAllowedProcessIds
+  );
+  try
+    EnumWindows(
+      @TRadIAWindowEnumerationContext.EnumerateWindow,
+      LPARAM(LRootContext)
+    );
+    for LRootWindow in LRootContext.Handles do
+    begin
+      LRootId := WindowOpaqueId(ASessionId, LRootWindow);
+      LControlContext := TRadIAControlEnumerationContext.Create;
+      try
+        EnumChildWindows(
+          LRootWindow,
+          @TRadIAControlEnumerationContext.EnumerateControl,
+          LPARAM(LControlContext)
+        );
+        for LControl in LControlContext.Handles do
+          if AAllowedProcessIds.ContainsKey(
+            WindowProcessId(LControl)
+          ) and SameText(
+            ControlOpaqueId(
+              ASessionId,
+              LRootId,
+              LControl,
+              LRootWindow
+            ),
+            AControlId
+          ) then
+          begin
+            ARootWindow := LRootWindow;
+            Exit(LControl);
+          end;
+      finally
+        LControlContext.Free;
+      end;
+    end;
+  finally
+    LRootContext.Free;
+  end;
+end;
+
+function SendRuntimeMessage(
+  const AWindow: HWND;
+  const AMessage: Cardinal;
+  const AWParam: WPARAM;
+  const ALParam: LPARAM;
+  const ATimeoutMs: Cardinal;
+  out AMessageResult: DWORD_PTR
+): Boolean;
+var
+  LTimeoutMs: Cardinal;
+begin
+  AMessageResult := 0;
+  LTimeoutMs := ATimeoutMs;
+  if LTimeoutMs > CMaxRuntimeMessageTimeoutMs then
+    LTimeoutMs := CMaxRuntimeMessageTimeoutMs;
+  Result := SendMessageTimeout(
+    AWindow,
+    AMessage,
+    AWParam,
+    ALParam,
+    SMTO_ABORTIFHUNG or SMTO_BLOCK,
+    LTimeoutMs,
+    @AMessageResult
+  ) <> 0;
+end;
+
+function RequiredCapability(
+  const AKind: TRadIARuntimeActionKind;
+  const ATargetIsWindow: Boolean
+): TRadIARuntimeAutomationCapabilities;
+begin
+  case AKind of
+    rakInvoke:
+      Result := [racInvoke];
+    rakSetValue:
+      Result := [racSetValue];
+    rakSelect:
+      Result := [racSelect];
+    rakClose:
+      Result := [racClose];
+    rakCancel:
+      if ATargetIsWindow then
+        Result := [racClose]
+      else
+        Result := [racInvoke];
+  else
+    Result := [];
+  end;
+end;
+
+function ResolveRuntimeTarget(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const ATargetId: string;
+  out ATarget: TRadIARuntimeTarget
+): Boolean;
+var
+  LAllowedProcessIds: TDictionary<LongWord, Boolean>;
+  LCapabilities: TRadIARuntimeAutomationCapabilities;
+  LRootWindow: HWND;
+begin
+  ATarget := Default(TRadIARuntimeTarget);
+  Result := False;
+  if Length(ATargetId) <> 64 then
+    Exit;
+  LAllowedProcessIds := BuildAllowedProcessIds(
+    ASession.ProcessId,
+    ASession.CreatedAtUtc
+  );
+  try
+    ATarget.Handle := FindWindowById(
+      ASession.SessionId,
+      ATargetId,
+      LAllowedProcessIds
+    );
+    ATarget.IsWindow := ATarget.Handle <> 0;
+    if not ATarget.IsWindow then
+      ATarget.Handle := FindControlById(
+        ASession.SessionId,
+        ATargetId,
+        LAllowedProcessIds,
+        LRootWindow
+      );
+    if ATarget.Handle = 0 then
+      Exit;
+    ATarget.ClassName := WindowClassName(ATarget.Handle);
+    if ATarget.IsWindow then
+      LCapabilities := [racClose]
+    else
+      LCapabilities := ControlCapabilities(ATarget.ClassName);
+    ATarget.Text := WindowText(
+      ATarget.Handle,
+      ATarget.ClassName
+    );
+    ATarget.State := TRadIARuntimeElementState.Create(
+      IsWindowVisible(ATarget.Handle),
+      IsWindowEnabled(ATarget.Handle),
+      LCapabilities
+    );
+    Result := True;
+  finally
+    LAllowedProcessIds.Free;
+  end;
+end;
+
 { TRadIAWindowEnumerationContext }
 
 constructor TRadIAWindowEnumerationContext.Create(
@@ -402,7 +583,203 @@ begin
   Result := True;
 end;
 
+function InvokeRuntimeTarget(
+  const ATarget: TRadIARuntimeTarget;
+  const ATimeoutMs: Cardinal
+): TRadIARuntimeActionResult;
+var
+  LMessageResult: DWORD_PTR;
+begin
+  if SendRuntimeMessage(
+    ATarget.Handle,
+    BM_CLICK,
+    0,
+    0,
+    ATimeoutMs,
+    LMessageResult
+  ) then
+    Result := TRadIARuntimeActionResult.Succeeded
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      CMessageTimeoutError,
+      'Invoking the runtime control timed out.'
+    );
+end;
+
+function SetRuntimeValue(
+  const ATarget: TRadIARuntimeTarget;
+  const AValue: string;
+  const ATimeoutMs: Cardinal
+): TRadIARuntimeActionResult;
+var
+  LMessageResult: DWORD_PTR;
+begin
+  if SendRuntimeMessage(
+    ATarget.Handle,
+    WM_SETTEXT,
+    0,
+    LPARAM(PChar(AValue)),
+    ATimeoutMs,
+    LMessageResult
+  ) then
+    Result := TRadIARuntimeActionResult.Succeeded
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      CMessageTimeoutError,
+      'Setting the runtime control value timed out.'
+    );
+end;
+
+function SelectRuntimeValue(
+  const ATarget: TRadIARuntimeTarget;
+  const AValue: string;
+  const ATimeoutMs: Cardinal
+): TRadIARuntimeActionResult;
+var
+  LMessage: Cardinal;
+  LMessageResult: DWORD_PTR;
+begin
+  if ContainsText(ATarget.ClassName, 'Combo') then
+    LMessage := CB_SELECTSTRING
+  else
+    LMessage := LB_SELECTSTRING;
+  if SendRuntimeMessage(
+    ATarget.Handle,
+    LMessage,
+    High(WPARAM),
+    LPARAM(PChar(AValue)),
+    ATimeoutMs,
+    LMessageResult
+  ) and (LMessageResult <> High(NativeUInt)) then
+    Result := TRadIARuntimeActionResult.Succeeded
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      'runtime_value_not_found',
+      'Requested runtime selection was not found.'
+    );
+end;
+
+function CloseRuntimeTarget(
+  const ATarget: TRadIARuntimeTarget;
+  const ATimeoutMs: Cardinal
+): TRadIARuntimeActionResult;
+var
+  LMessageResult: DWORD_PTR;
+begin
+  if SendRuntimeMessage(
+    ATarget.Handle,
+    WM_CLOSE,
+    0,
+    0,
+    ATimeoutMs,
+    LMessageResult
+  ) then
+    Result := TRadIARuntimeActionResult.Succeeded
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      CMessageTimeoutError,
+      'Closing the runtime window timed out.'
+    );
+end;
+
+function CancelRuntimeTarget(
+  const ATarget: TRadIARuntimeTarget;
+  const ATimeoutMs: Cardinal
+): TRadIARuntimeActionResult;
+var
+  LMessageResult: DWORD_PTR;
+begin
+  if not ATarget.IsWindow then
+    Exit(InvokeRuntimeTarget(ATarget, ATimeoutMs));
+  if SendRuntimeMessage(
+    ATarget.Handle,
+    WM_COMMAND,
+    IDCANCEL,
+    0,
+    ATimeoutMs,
+    LMessageResult
+  ) then
+    Result := TRadIARuntimeActionResult.Succeeded
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      CMessageTimeoutError,
+      'Cancelling the runtime window timed out.'
+    );
+end;
+
+function AssertRuntimeValue(
+  const ATarget: TRadIARuntimeTarget;
+  const AExpectedValue: string
+): TRadIARuntimeActionResult;
+begin
+  if SameText(ATarget.Text, AExpectedValue) then
+    Result := TRadIARuntimeActionResult.Succeeded(ATarget.Text)
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      'runtime_assertion_failed',
+      'Runtime target text did not match the expected value.'
+    );
+end;
+
 { TRadIAWindowsRuntimeDiscoveryFacade }
+
+function TRadIAWindowsRuntimeDiscoveryFacade.ExecuteAction(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AAction: TRadIARuntimeScenarioAction
+): TRadIARuntimeActionResult;
+var
+  LTarget: TRadIARuntimeTarget;
+begin
+  Result := ValidateAction(ASession, AAction);
+  if not Result.Success then
+    Exit;
+  if not ResolveRuntimeTarget(
+    ASession,
+    AAction.Selector.AutomationId,
+    LTarget
+  ) then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_target_changed',
+      'Runtime target disappeared after validation.'
+    ));
+
+  case AAction.Kind of
+    rakInvoke:
+      Result := InvokeRuntimeTarget(
+        LTarget,
+        AAction.TimeoutMs
+      );
+    rakSetValue:
+      Result := SetRuntimeValue(
+        LTarget,
+        AAction.Value,
+        AAction.TimeoutMs
+      );
+    rakSelect:
+      Result := SelectRuntimeValue(
+        LTarget,
+        AAction.Value,
+        AAction.TimeoutMs
+      );
+    rakClose:
+      Result := CloseRuntimeTarget(
+        LTarget,
+        AAction.TimeoutMs
+      );
+    rakCancel:
+      Result := CancelRuntimeTarget(
+        LTarget,
+        AAction.TimeoutMs
+      );
+    rakAssert:
+      Result := AssertRuntimeValue(LTarget, AAction.Value);
+  else
+    Result := TRadIARuntimeActionResult.Failed(
+      'unsupported_runtime_action',
+      'Runtime action kind is not supported by this adapter.'
+    );
+  end;
+end;
 
 function TRadIAWindowsRuntimeDiscoveryFacade.GetControlTree(
   const ASession: TRadIARuntimeSessionIdentity;
@@ -539,6 +916,7 @@ begin
               LClassName,
               WindowText(LWindow, LClassName),
               LOwnerId,
+              (LOwner <> 0) and not IsWindowEnabled(LOwner),
               TRadIARuntimeElementState.Create(
                 IsWindowVisible(LWindow),
                 IsWindowEnabled(LWindow),
@@ -557,6 +935,61 @@ begin
   finally
     LAllowedProcessIds.Free;
   end;
+end;
+
+function TRadIAWindowsRuntimeDiscoveryFacade.ValidateAction(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AAction: TRadIARuntimeScenarioAction
+): TRadIARuntimeActionResult;
+var
+  LRequired: TRadIARuntimeAutomationCapabilities;
+  LTarget: TRadIARuntimeTarget;
+begin
+  if not ValidateSession(ASession) then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_session_changed',
+      'Runtime debug session identity changed.'
+    ));
+  if not ResolveRuntimeTarget(
+    ASession,
+    AAction.Selector.AutomationId,
+    LTarget
+  ) then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_target_not_found',
+      'Runtime target does not belong to the active debug session.'
+    ));
+  if SameText(LTarget.Text, '[redacted]') then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'sensitive_runtime_target',
+      'Password controls cannot be used in runtime scenarios.'
+    ));
+  if not LTarget.State.Visible then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_target_not_visible',
+      'Runtime target is not visible.'
+    ));
+  if (AAction.Kind <> rakAssert) and
+    not LTarget.State.Enabled then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_target_not_enabled',
+      'Runtime target is not enabled.'
+    ));
+  if (AAction.Kind = rakClose) and not LTarget.IsWindow then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_capability_unavailable',
+      'Close is available only for an authorized top-level window.'
+    ));
+  LRequired := RequiredCapability(
+    AAction.Kind,
+    LTarget.IsWindow
+  );
+  if (LRequired - LTarget.State.Capabilities) <> [] then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_capability_unavailable',
+      'Runtime target does not support the requested action.'
+    ));
+  Result := TRadIARuntimeActionResult.Succeeded(LTarget.Text);
 end;
 
 function TRadIAWindowsRuntimeDiscoveryFacade.ValidateSession(

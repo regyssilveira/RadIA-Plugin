@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 100 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 104 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -240,6 +240,15 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 |---|---|---|
 | `GetRuntimeWindows` | Lista janelas autorizadas com ID opaco, processo, classe, texto sanitizado, proprietário, estado e capacidades. | Depois de confirmar a sessão runtime e antes de preparar um cenário visual. |
 | `GetRuntimeControlTree` | Retorna a hierarquia sanitizada dos controles com janela própria, sem aceitar ou expor `HWND`. | Para localizar ações possíveis em uma janela retornada por `GetRuntimeWindows`. |
+
+## Cenários runtime limitados
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareRuntimeScenario` | Valida ações, alvos, capacidades, duração, repetições e cria um preview com fingerprint. | Depois da descoberta e antes de solicitar consentimento para interagir com a aplicação. |
+| `RunRuntimeScenario` | Revalida a sessão e executa exatamente o preview aprovado. | Após o usuário revisar o roteiro; exige novo consentimento em toda execução. |
+| `CancelRuntimeScenario` | Interrompe a execução ou uma espera ativa sem solicitar consentimento. | Pelo botão ou comando de parada de emergência, pelo agente ou pelo MCP. |
+| `GetRuntimeScenarioStatus` | Retorna estado, repetição, ação atual, total concluído e eventual falha. | Para acompanhar o roteiro e coletar seu resultado estruturado. |
 
 ## Git local
 
