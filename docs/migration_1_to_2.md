@@ -29,14 +29,14 @@ Use `23.0` para Delphi 12 ou `37.0` para Delphi 13. Para a IDE64 do Delphi
 - Tools mutáveis exigem preview e consentimento conforme a política configurada.
 - Operações permanecem confinadas ao workspace e são registradas na auditoria local.
 - A jornada inclui templates, código, Form Designer, build, DUnitX, debugger e commit Git revisável.
-- O catálogo MCP público contém 88 tools e negocia a versão pública `2.0.0`.
+- O catálogo MCP público contém 95 tools e negocia a versão pública `2.0.0`.
 
 ## Verificação
 
 1. Abra o Delphi e confirme `Tools > Rad IA Chat Panel`.
 2. Confirme que o painel renderiza chat, status e controle do modo agente.
 3. Execute `initialize` e `tools/list` na bridge MCP; a versão deve ser `2.0.0` e o catálogo deve
-   conter 88 tools.
+   conter 95 tools.
 4. Faça um build e um teste simples antes de retomar uma execução agentiva antiga.
 
 Checkpoints incompatíveis ou incompletos devem ser descartados e recriados. O RadIA nunca converte

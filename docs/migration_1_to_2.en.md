@@ -30,14 +30,14 @@ Delphi 13 64-bit IDE.
 - Operations remain workspace-confined and are recorded in the local audit log.
 - The journey covers templates, code, Form Designer, build, DUnitX, debugger, and reviewable Git
   commits.
-- The public MCP catalog contains 88 tools and negotiates public version `2.0.0`.
+- The public MCP catalog contains 95 tools and negotiates public version `2.0.0`.
 
 ## Verification
 
 1. Open Delphi and confirm `Tools > Rad IA Chat Panel`.
 2. Confirm that the panel renders chat, status, and the agent-mode control.
 3. Run `initialize` and `tools/list` through the MCP bridge; the version must be `2.0.0` and the
-   catalog must contain 88 tools.
+   catalog must contain 95 tools.
 4. Run a simple build and test before resuming an older agent run.
 
 Incompatible or incomplete checkpoints must be discarded and recreated. RadIA never converts or

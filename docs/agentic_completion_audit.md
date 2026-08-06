@@ -26,25 +26,24 @@ um smoke único não comprova estabilidade prolongada.
 | Revisão inline | `RadIA.Core.InlineReviews`, adapter OTA | Ciclo visual/aplicar/reverter validado no Delphi 13 | Comprovado |
 | Conhecimento local | `Knowledge*`, adapter e notifier OTA | Parser, persistência, busca, status, documento e ciclo notifier real | Comprovado |
 | Extensibilidade | `RadIA.Core.Extensions` | BPL real adicionou e removeu `SampleProjectInfo` no Delphi 13 | Comprovado |
-| Delphi 11 | pacote Win32 | 590 testes e dez ciclos reais consecutivos | Comprovado |
-| Delphi 12 | pacote Win32 | 590 testes, cobertura e dez ciclos reais consecutivos | Comprovado |
-| Delphi 13 Win32 | pacote Win32 | 590 testes e dez ciclos reais consecutivos | Comprovado |
-| Delphi 13 IDE64 | pacote Win64 | 590 testes e dez ciclos reais consecutivos | Comprovado |
-| Shutdown seguro | guards, worker, watchdog e ordem de finalização | Dez ciclos D11/D12/D13 e IDE64 | Comprovado |
+| Delphi 12 | pacote Win32 | 762 testes e dez ciclos reais consecutivos | Comprovado |
+| Delphi 13 Win32 | pacote Win32 | 762 testes e dez ciclos reais consecutivos | Comprovado |
+| Delphi 13 IDE64 | pacote Win64 | 762 testes e dez ciclos reais consecutivos | Comprovado |
+| Shutdown seguro | guards, worker, watchdog e ordem de finalização | Dez ciclos D12/D13 e IDE64 | Comprovado |
 | Independência da implementação | arquitetura e ADRs | Código, testes, exemplos e scripts autocontidos | Comprovado |
-| Distribuição | `build.ps1`, instalador e manifesto | Quatro ZIPs finais e `SHA256SUMS` publicados juntos | Comprovado |
+| Distribuição | `build.ps1`, instalador e manifesto | Três ZIPs finais e `SHA256SUMS` publicados juntos | Comprovado |
 
 ## Evidência automatizada consolidada
 
-- Delphi 11, 12 e 13 Win32: 590/590 testes, zero falha, erro, ignore ou vazamento.
-- Delphi 13 IDE64: 590/590 testes, zero falha, erro, ignore ou vazamento.
-- Delphi 12 instrumentado: 9.390 de 11.940 linhas, 78%.
-- Pacote principal, bridge MCP e extensão de exemplo compilam nas quatro combinações.
+- Delphi 12 Win32 e Delphi 13 Win32/IDE64: 762/762 testes por target, zero falha, erro, ignore ou
+  vazamento.
+- Sonar global: 82,9% de cobertura, 2,2% de duplicação e zero issue.
+- Pacote principal, bridge MCP e extensão de exemplo compilam nas três combinações.
 - ESLint, limite de 120 caracteres, trailing whitespace, `NOSONAR` e `git diff --check` aprovados.
 - Cada ZIP de smoke possui manifesto íntegro e instalador executável em `-ValidateOnly`.
-- Os quatro ZIPs passam testes positivos e negativos de integridade, identidade e confinamento de paths.
+- Os três ZIPs passam testes positivos e negativos de integridade, identidade e confinamento de
+  paths.
 - Delphi 13 Win32 concluiu dez ciclos reais entre 27,99 s e 31,48 s, sem processo ou discovery órfão.
-- Delphi 11 concluiu dez ciclos reais entre 5,97 s e 9,51 s, sem processo ou discovery órfão.
 - Delphi 13 IDE64 concluiu dez ciclos reais entre 37,77 s e 74,08 s, sem discovery órfão.
 - Delphi 12 concluiu dez ciclos reais entre 45,76 s e 74,18 s, sem processo ou discovery órfão.
 - O smoke isolado no Delphi 12 confirmou edição viva, atualização incremental automática, save,

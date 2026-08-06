@@ -163,15 +163,16 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 
 *   In-IDE E2E hardening and RadIA 2.0 release preparation.
-    *   Completed: Delphi 11/12/13 matrix, Delphi 13 Win32/IDE64 installation, three smoke cycles per
-        architecture, 87 tools, rendered WebView2, real MCP editing, tool-driven build, 590 direct
-        tests, VCL template creation/open/build/rollback, real Form Designer editing with consent,
+    *   Historical record: the matrix current at that time, Delphi 13 Win32/IDE64 installation,
+        and three smoke cycles per architecture proved that milestone's catalog, rendered WebView2,
+        real MCP editing, tool-driven build, that milestone's direct suite, VCL template
+        creation/open/build/rollback, real Form Designer editing with consent,
         and a
         real debug flow with breakpoint, call stack, and timeline, plus the compiler-error,
         diagnostics, correction, rebuild, DUnitX, and a reviewable Git commit with selected paths.
-    *   Real compatibility completed: Delphi 11 and 12 passed BPL loading, the 87-tool MCP catalog,
-        and clean shutdown; Delphi 13 passed three consecutive cycles while checking for any
-        remaining root process.
+    *   Historical compatibility record: Delphi 11 and 12 passed BPL loading, the MCP catalog
+        current at that time, and clean shutdown; Delphi 13 passed three consecutive cycles while
+        checking for any remaining root process.
     *   Visually completed: the panel is now created through OTA's native
         `INTACustomDockableForm` API as a `TOTADockForm`, with rendered WebView2, theme, chat, and
         agent-mode button, without the former blank screen. The IDE now owns the host, docking
@@ -185,8 +186,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         covered by the automated smoke.
     *   Shutdown completed: editor and debugger OTA hooks are now unregistered before their objects
         are abandoned during shutdown, without freeing VCL/WebView2. The installed build passed
-        three consecutive Delphi 13 load and shutdown cycles with 87 tools and no `bds.exe`
-        retention.
+        three consecutive Delphi 13 load and shutdown cycles with the catalog current at that time
+        and no `bds.exe` retention.
     *   Continuous matrix E2E completed: Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64
         autonomously passed template creation, Form Designer, live editing, failure and correction,
         build, 736 tests, debugging with call stack/timeline, a reviewable Git commit, and shutdown

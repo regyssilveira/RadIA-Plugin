@@ -50,8 +50,8 @@ The original target gaps are now registered as built-in tools:
 - Git operations;
 - a native agent loop.
 
-The generated catalog contains 88 tools. The flows have tests proportional to their risk and remain
-subject to in-IDE E2E validation before the 2.0 release.
+The generated catalog contains 95 tools. The flows have tests proportional to their risk and passed
+the in-IDE E2E validation for the 2.0 release.
 
 ## Milestones
 
@@ -148,9 +148,10 @@ reset, or discard tools are exposed, and commit remains subject to consent and a
 - Validate docking, WebView2, shutdown, resume, and orphan cleanup.
 - Publish installer, migration guide, user manual, and release evidence.
 
-Status: pre-release baseline validated. The current build was installed on Delphi 13 Win32 and IDE64. Smoke tests
-confirmed the installed BPL SHA-256, version, 87-tool catalog, discovery cleanup, and the absence of
-descendant processes after shutdown. The chat panel was also created as a `TOTADockForm` through
+Status: release 2.0.0 published and validated. The current build was installed on Delphi 12 Win32
+and Delphi 13 Win32/IDE64. Smoke tests confirmed the installed BPL SHA-256, version, 95-tool
+catalog, discovery cleanup, and the absence of descendant processes after shutdown. The chat panel
+was also created as a `TOTADockForm` through
 the native `INTACustomDockableForm` API and rendered in a real IDE without a blank screen.
 Additional shutdown hardening removed late access to already destroyed VCL objects. `bds.exe`
 retention was eliminated by unregistering editor and debugger OTA hooks before abandoning their
@@ -165,16 +166,19 @@ The results below record the previous matrix. Current evidence must use only Del
 Delphi 13 Win32/IDE64.
 
 - Delphi 11, 12, and 13 Win32: 590 direct tests per version, with no failures, ignored tests, or leaks.
-- Real Win32 smoke: Delphi 11 and 12 passed one load cycle, the 87-tool MCP catalog, and clean
+- Real Win32 smoke: Delphi 11 and 12 passed one load cycle, the MCP catalog current at that time,
+  and clean
   shutdown; Delphi 13 passed three consecutive cycles under the hardened root-process assertion.
 - Delphi 13 IDE64: 590 direct tests, with no failures, ignored tests, or leaks.
 - 2.0.0 candidates: validated packages for Delphi 11/12/13 Win32 and Delphi 13 IDE64, with the complete
   manual and 1.x-to-2.0 migration guide published in the documentation.
-- Delphi 13 Win32: three real load and shutdown cycles with 87 tools and no orphan process.
+- Delphi 13 Win32: three real load and shutdown cycles with the catalog current at that time and no
+  orphan process.
 - Delphi 13 Form Designer: a `TButton` was created, listed, and reverted in the live designer with
   preview and consent.
 - Delphi 13 template build: the modal prompt for an unpersisted project group was eliminated.
-- Delphi 13 IDE64: three real load and shutdown cycles with 87 tools and no orphan process.
+- Delphi 13 IDE64: three real load and shutdown cycles with the catalog current at that time and no
+  orphan process.
 - Chat/WebView2: native `TOTADockForm` host and panel rendered in a real IDE without a blank screen,
   with the agent-mode visual control present.
 - IDE desktop: two real cycles confirmed `TOTADockForm` visibility and geometry restoration; the

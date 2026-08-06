@@ -436,7 +436,7 @@ Use sempre o ZIP correspondente à versão e arquitetura da IDE.
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 88 tools internas registradas.
+- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 95 tools internas registradas.
 - Algumas ideias do catálogo arquitetural são roadmap e podem não aparecer em `/tools`.
 - Debugger e Designer dependem de contexto e estado válidos da IDE.
 - Patches são recusados quando o buffer muda depois do preview.

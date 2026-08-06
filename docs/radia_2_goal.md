@@ -25,7 +25,7 @@ auditoria e confinamento ao workspace. A entrega final será validada no Delphi 
 
 | Capacidade | Evidência atual | Estado para o goal |
 |---|---|---|
-| Registry e segurança | 88 tools internas, política, consentimento e auditoria | Pronto |
+| Registry e segurança | 95 tools internas, política, consentimento e auditoria | Pronto |
 | Chat | Providers, streaming, sessões, Agent Mode e loop observável | Pronto |
 | Projeto novo | Wizard visual e seis templates determinísticos | Pronto |
 | Projeto vivo | Leitura e operações estruturais transacionais | Pronto |
@@ -50,8 +50,8 @@ As lacunas originais agora aparecem no catálogo interno registrado:
 - operações Git;
 - loop agentivo nativo.
 
-O catálogo gerado contém 88 tools. Os fluxos possuem testes proporcionais ao risco e permanecem
-sujeitos à validação E2E na IDE antes da release 2.0.
+O catálogo gerado contém 95 tools. Os fluxos possuem testes proporcionais ao risco e foram
+aprovados na validação E2E do release 2.0.
 
 ## Marcos
 
@@ -150,9 +150,10 @@ auditoria.
 - Validar dock, WebView2, shutdown, retomada e ausência de processos órfãos.
 - Publicar instalador, migração, manual e evidências de release.
 
-Estado: baseline pré-release validado. A build atual foi instalada no Delphi 13 Win32 e IDE64. O smoke
-confirmou o SHA-256 da BPL instalada, versão, catálogo de 87 tools, remoção do discovery e ausência de processos
-descendentes após o shutdown. O painel de chat também foi criado como `TOTADockForm` pela API nativa
+Estado: release 2.0.0 publicado e validado. A build atual foi instalada no Delphi 12 Win32 e no
+Delphi 13 Win32/IDE64. O smoke confirmou o SHA-256 da BPL instalada, versão, catálogo de 95 tools,
+remoção do discovery e ausência de processos descendentes após o shutdown. O painel de chat também
+foi criado como `TOTADockForm` pela API nativa
 `INTACustomDockableForm` e renderizado em uma IDE real sem a tela em branco. O hardening adicional
 eliminou acesso tardio a objetos VCL já destruídos. A retenção do `bds.exe` foi eliminada ao
 desregistrar os hooks OTA de editor e debug antes de abandonar seus objetos no shutdown, sem liberar
@@ -167,16 +168,18 @@ Os resultados abaixo registram a matriz anterior. A evidência vigente deve usar
 Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 
 - Delphi 11, 12 e 13 Win32: 590 testes diretos por versão, sem falhas, testes ignorados ou leaks.
-- Smoke real Win32: Delphi 11 e 12 passaram um ciclo de carga, catálogo MCP com 87 tools e shutdown
+- Smoke real Win32: Delphi 11 e 12 passaram um ciclo de carga, catálogo MCP vigente à época e shutdown
   limpo; Delphi 13 passou três ciclos consecutivos sob a asserção endurecida de processo raiz.
 - Delphi 13 IDE64: 590 testes diretos, sem falhas, testes ignorados ou leaks.
 - Candidatos 2.0.0: pacotes validados para Delphi 11/12/13 Win32 e Delphi 13 IDE64, manual completo e
   guia de migração 1.x→2.0 publicados na documentação.
-- Delphi 13 Win32: três ciclos reais de carga e shutdown com 87 tools e nenhum processo órfão.
+- Delphi 13 Win32: três ciclos reais de carga e shutdown com o catálogo vigente à época e nenhum
+  processo órfão.
 - Delphi 13 Form Designer: `TButton` criado, listado e revertido no designer vivo com preview e
   consentimento.
 - Delphi 13 build de template: removido o diálogo modal de grupo de projeto não persistido.
-- Delphi 13 IDE64: três ciclos reais de carga e shutdown com 87 tools e nenhum processo órfão.
+- Delphi 13 IDE64: três ciclos reais de carga e shutdown com o catálogo vigente à época e nenhum
+  processo órfão.
 - Chat/WebView2: host nativo `TOTADockForm` e painel renderizados em uma IDE real, sem tela branca,
   com o controle visual do modo agente presente.
 - Desktop da IDE: dois ciclos reais confirmaram visibilidade e restauração da geometria do

@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 88 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
+Esta página explica as 95 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.

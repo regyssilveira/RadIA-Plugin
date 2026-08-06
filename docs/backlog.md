@@ -165,15 +165,16 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 
 *   Hardening E2E dentro da IDE e preparação da release RadIA 2.0.
-    *   Concluído: matriz Delphi 11/12/13, instalação Delphi 13 Win32/IDE64, três ciclos de smoke por
-        arquitetura, 87 tools, WebView2 renderizado, edição real via MCP, build pela tool, 590 testes
-        diretos, template VCL criado/aberto/compilado/revertido, edição real do Form Designer com
+    *   Registro histórico: a matriz então vigente, a instalação Delphi 13 Win32/IDE64 e três
+        ciclos de smoke por arquitetura comprovaram o catálogo da época, WebView2 renderizado,
+        edição real via MCP, build pela tool, a suíte direta daquele marco, template VCL
+        criado/aberto/compilado/revertido e edição real do Form Designer com
         consentimento, fluxo real de debug com breakpoint, call stack e timeline, além do ciclo de
         erro de compilação, diagnóstico, correção, rebuild, DUnitX e commit Git revisável com paths
         selecionados.
-    *   Concluído na compatibilidade real: Delphi 11 e 12 passaram carga da BPL, catálogo MCP de 87
-        tools e shutdown limpo; Delphi 13 passou três ciclos consecutivos com verificação de qualquer
-        processo raiz remanescente.
+    *   Registro histórico de compatibilidade: Delphi 11 e 12 passaram carga da BPL, catálogo MCP
+        vigente à época e shutdown limpo; Delphi 13 passou três ciclos consecutivos com verificação
+        de qualquer processo raiz remanescente.
     *   Concluído visualmente: o painel agora é criado pela API nativa `INTACustomDockableForm` da
         OTA como `TOTADockForm`, com WebView2, tema, chat e botão do modo agente renderizados, sem a
         antiga tela branca. A IDE passa a ser responsável pelo host, comandos de docking e estado
@@ -187,8 +188,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         persistência do host são cobertas pelo smoke automatizado.
     *   Concluído no shutdown: os hooks OTA de editor e debug agora são desregistrados antes de
         abandonar seus objetos durante o encerramento, sem liberar VCL/WebView2. A build instalada
-        passou em três ciclos consecutivos de carga e shutdown do Delphi 13, com 87 tools e sem
-        retenção do `bds.exe`.
+        passou em três ciclos consecutivos de carga e shutdown do Delphi 13, com o catálogo vigente
+        à época e sem retenção do `bds.exe`.
     *   Concluído no E2E contínuo da matriz: Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 aprovaram
         autonomamente template, Form Designer, edição viva, falha e correção, build, 736 testes,
         debug com call stack/timeline, commit Git revisável e shutdown na mesma jornada. A prova
