@@ -1,6 +1,6 @@
 # Goal pós-2.0 — Reprodução autônoma de falhas runtime
 
-> **Estado:** planejado e prioritário.
+> **Estado:** em execução; M0 em andamento.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Plano pausado durante este goal:** [Continuidade CLI e integração avançada](competitive_leadership_plan.md).
@@ -76,6 +76,8 @@ As ferramentas de alto nível previstas são:
 ## Marcos
 
 ### M0 — Baseline, contratos e aplicação-laboratório
+
+Detalhes e matriz: [Baseline M0](runtime_debug_automation_m0.md).
 
 - mapear o ciclo atual de build, depuração, consentimento e cancelamento;
 - criar uma aplicação VCL de teste com falha determinística ao abrir e cancelar um formulário;

@@ -1,6 +1,6 @@
 # Post-2.0 goal — Autonomous runtime failure reproduction
 
-> **Status:** planned and prioritized.
+> **Status:** in execution; M0 in progress.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Plan paused during this goal:** [CLI continuity and advanced integration](competitive_leadership_plan.en.md).
@@ -76,6 +76,8 @@ The planned high-level tools are:
 ## Milestones
 
 ### M0 — Baseline, contracts, and laboratory application
+
+Details and matrix: [M0 baseline](runtime_debug_automation_m0.en.md).
 
 - map the existing build, debug, consent, and cancellation lifecycle;
 - create a VCL test application with deterministic failure on form open and cancellation;
