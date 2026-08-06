@@ -144,6 +144,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M6 entregue nesta etapa: o instalador manifestado do release instala, repara e desinstala
         com `-PlanOnly`, preserva loader e dados por padrão e só remove `%APPDATA%\RadIA` mediante
         `-RemoveUserData` explícito.
+    *   M6 validado em IDEs reais: doctor, chat, terminal, bridge, catálogo e primeira tool
+        passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64, inclusive com orientação quando
+        o provider ainda não está configurado.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 

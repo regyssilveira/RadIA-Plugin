@@ -68,7 +68,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M3 — Central unificada | Concluído | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Concluído | Instalação e workflows declarativos comprovados na matriz real |
 | M5 — Conhecimento | Concluído | Busca híbrida privada comprovada na matriz real |
-| M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
+| M6 — Instalação | Em execução | Primeiro valor provado; canal assinado ainda pendente |
 | M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |
 | M8 — Prova e release | Em execução | Matriz, dez ciclos e auditorias aprovados |
 
@@ -261,6 +261,11 @@ exige MCP quando o executor nativo está selecionado.
 O pacote de release agora usa o mesmo instalador validado para `Install`, `Repair` e `Uninstall`,
 possui plano somente leitura, preserva dados e componentes compartilhados por padrão e exige
 `-RemoveUserData` para apagar configurações, auditoria, sessões e conhecimento.
+
+O diagnóstico pós-instalação foi aprovado no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. A
+prova consulta o doctor pelo bridge instalado, exige chat, terminal, catálogo de 90 tools e
+`GetIDEState`, e preserva uma próxima ação útil quando o provider ainda não está configurado.
+A matriz versionada está em `first_value_smoke_evidence_2.0.0.json`.
 
 ### M7 — Jornadas especializadas
 

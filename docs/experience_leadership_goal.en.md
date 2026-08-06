@@ -67,7 +67,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M3 — Unified center | Completed | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | Completed | Declarative installation and workflows proven in the real matrix |
 | M5 — Knowledge | Completed | Private hybrid search proven in the real matrix |
-| M6 — Installation | Planned | First value and diagnostics without manual file editing |
+| M6 — Installation | In progress | First value proven; signed channel remains pending |
 | M7 — Journeys | Completed | End-to-end Delphi recipes approved |
 | M8 — Proof and release | In progress | Matrix, ten cycles, and audits approved |
 
@@ -254,6 +254,11 @@ not require MCP when the native executor is selected.
 The release package now uses the same validated installer for `Install`, `Repair`, and `Uninstall`,
 provides a read-only plan, preserves data and shared components by default, and requires
 `-RemoveUserData` before deleting settings, audit, sessions, and knowledge.
+
+The post-install diagnostic passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The
+evidence calls the doctor through the installed bridge, requires chat, terminal, the 90-tool
+catalog, and `GetIDEState`, and preserves an actionable next step when the provider is not yet
+configured. The versioned matrix is stored in `first_value_smoke_evidence_2.0.0.json`.
 
 ### M7 — Specialized journeys
 

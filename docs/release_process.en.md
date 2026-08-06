@@ -321,6 +321,29 @@ powershell.exe -ExecutionPolicy Bypass `
 
 The versioned result is stored in `knowledge_smoke_evidence_2.0.0.json`.
 
+### Installation and first-value evidence
+
+Use `-ExerciseFirstValue` to query the post-install diagnostic and execute the first tool:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseFirstValue `
+  -SkipPackageHashCheck `
+  -FirstValueEvidencePath "Output\Validation\FirstValue\Delphi13-Win32.json"
+```
+
+After all four targets, consolidate the fail-closed matrix:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.FirstValueEvidence.ps1
+```
+
+The versioned result is stored in `first_value_smoke_evidence_2.0.0.json`.
+
 ---
 
 ## Final Checklist
