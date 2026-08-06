@@ -142,7 +142,10 @@ To understand the physical file structure, unit responsibilities mapping, and st
 
 ### 5. Installation and Configuration
 
-Rad IA can be installed in two ways: **Automated via PowerShell** (recommended, supporting autodetect of multiple installed Delphi environments and interactive selection menu) or **manually through the IDE**. For detailed compilation, registry registration, and API key acquisition instructions for all providers or local Ollama usage, please refer to our:
+RadIA 2.0 provides a **single visual installer** that detects Delphi 11, 12, 13 Win32, and Delphi 13
+IDE64 and allows target selection. PowerShell automation and manual installation remain available.
+See the [visual installer guide](docs/visual_installer.en.md) for signing and channel publication.
+For compilation, registration, and provider configuration, see:
 
 The automated installer also synchronizes local WebView2 assets into `%APPDATA%\RadIA\Web` and clears the local cache while the IDE is closed, preventing Delphi 12/13 from loading stale JavaScript after updates.
 

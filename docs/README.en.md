@@ -62,6 +62,7 @@ This index brings together the functional, operational, and technical documentat
 | Topic | Document |
 |---|---|
 | Release process | [Release finalization](release_process.en.md) |
+| Visual installer and channel | [Signable distribution](visual_installer.en.md) |
 | Migration from 1.x to 2.0 | [Migration to RadIA 2.0](migration_1_to_2.en.md) |
 | Agentic checklist | [Checklist](agentic_release_checklist.md) |
 | Plan and evidence | [Validation](agentic_validation_plan.md) |

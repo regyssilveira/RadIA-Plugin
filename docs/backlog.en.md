@@ -147,6 +147,10 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M6 validated in real IDEs: doctor, chat, terminal, bridge, catalog, and first tool passed
         on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64, including guidance when a provider is
         not configured yet.
+    *   M6 delivered in this stage: one visual installer detects and selects all four targets,
+        validates packages before compilation, and supports SHA-256 signing with timestamp. The
+        stable catalog rejects non-HTTPS URLs and executables without valid Authenticode; the
+        certificate and final URL remain external publication gates.
     *   M7–M8 completed: specialized journeys and the 2.0.0 candidate proven across the full matrix.
     *   M8 delivered: terminal proven across the full matrix with a native window, required
         controls, input, output, usable geometry, five associated labels, and nine keyboard tab

@@ -368,6 +368,32 @@ powershell.exe -ExecutionPolicy Bypass `
 
 The versioned result is stored in `first_value_smoke_evidence_2.0.0.json`.
 
+### Visual installer and signed channel
+
+After all four ZIP files pass validation, build the single installer:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.VisualInstaller.ps1 `
+  -CertificateThumbprint "<THUMBPRINT>"
+
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.VisualInstaller.ps1 `
+  -RequireSignature
+```
+
+Publish the catalog only after the signed executable is available through HTTPS:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.ReleaseChannel.ps1 `
+  -InstallerPath Output\Installer\RadIA-v2.0.0-Setup.exe `
+  -DownloadUrl "https://downloads.example.com/RadIA-v2.0.0-Setup.exe"
+```
+
+The `stable` catalog rejects missing or invalid signatures. See
+[Visual installer and release channel](visual_installer.en.md) for the complete flow.
+
 ---
 
 ## Final Checklist
@@ -379,6 +405,7 @@ The versioned result is stored in `first_value_smoke_evidence_2.0.0.json`.
 * The exact analysis passed the SonarQube Quality Gate.
 * Required `Build, analyze, and enforce Quality Gate` status check passed.
 * Release packages generated for Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+* Signed visual installer, validated timestamp, and stable HTTPS catalog published.
 * Positive and negative validation completed for every package.
 * `SHA256SUMS.txt` published with the four ZIPs generated from the same commit.
 * JSON evidence for ten real cycles generated for every supported combination.

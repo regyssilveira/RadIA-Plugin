@@ -267,6 +267,12 @@ O pacote de release agora usa o mesmo instalador validado para `Install`, `Repai
 possui plano somente leitura, preserva dados e componentes compartilhados por padrão e exige
 `-RemoveUserData` para apagar configurações, auditoria, sessões e conhecimento.
 
+O instalador visual único foi implementado com detecção e seleção de Delphi 11, 12, 13 Win32 e
+Delphi 13 IDE64. A geração valida os quatro pacotes antes de compilar, registra SHA-256 e estado
+Authenticode e pode assinar com certificado e timestamp. O catálogo `stable` é fail-closed:
+recusa HTTP e qualquer executável sem assinatura válida. A publicação continua pendente apenas
+pela disponibilidade externa de um certificado de code signing confiável e da URL HTTPS final.
+
 O diagnóstico pós-instalação foi aprovado no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. A
 prova consulta o doctor pelo bridge instalado, exige chat, terminal, catálogo de 90 tools e
 `GetIDEState`, e preserva uma próxima ação útil quando o provider ainda não está configurado.

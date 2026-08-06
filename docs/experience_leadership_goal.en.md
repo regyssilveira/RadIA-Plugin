@@ -260,6 +260,12 @@ The release package now uses the same validated installer for `Install`, `Repair
 provides a read-only plan, preserves data and shared components by default, and requires
 `-RemoveUserData` before deleting settings, audit, sessions, and knowledge.
 
+The single visual installer is implemented with detection and selection for Delphi 11, 12, 13
+Win32, and Delphi 13 IDE64. Generation validates all four packages before compilation, records
+SHA-256 and Authenticode state, and can sign with a certificate and timestamp. The `stable`
+catalog is fail-closed: it rejects HTTP and any executable without a valid signature. Publication
+remains pending only on a trusted external code-signing certificate and the final HTTPS URL.
+
 The post-install diagnostic passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The
 evidence calls the doctor through the installed bridge, requires chat, terminal, the 90-tool
 catalog, and `GetIDEState`, and preserves an actionable next step when the provider is not yet

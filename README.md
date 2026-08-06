@@ -142,7 +142,11 @@ Para entender a estrutura física dos arquivos de código-fonte, mapeamento de r
 *   **Web Engine:** *Microsoft Edge WebView2 Runtime* instalado no sistema Windows (pré-instalado em versões modernas do Windows). **Importante:** A DLL `WebView2Loader.dll` correspondente à arquitetura da IDE deve estar presente na pasta `bin` da instalação do Delphi (ex: `C:\Program Files (x86)\Embarcadero\Studio\<versao>\bin`) ou no PATH do sistema.
 ### 5. Instalação e Configuração
 
-O Rad IA pode ser instalado de maneira **automatizada via PowerShell** (recomendado, com suporte a autodetecção de múltiplos ambientes Delphi e seleção interativa) ou **manualmente através da IDE**. Para instruções detalhadas de compilação, registro e configuração de chaves de API para todos os provedores ou uso local com o Ollama, consulte o nosso:
+O Rad IA 2.0 possui um **instalador visual único** que detecta Delphi 11, 12, 13 Win32 e Delphi 13
+IDE64 e permite selecionar os targets. A automação via PowerShell e a instalação manual continuam
+disponíveis. Para o fluxo visual, assinatura e canal, consulte o
+[guia do instalador](docs/visual_installer.md). Para compilação, registro e configuração de
+providers, consulte:
 
 O instalador automatizado também sincroniza os recursos locais do WebView2 em `%APPDATA%\RadIA\Web` e limpa o cache local quando a IDE está fechada, evitando que Delphi 12/13 carreguem JavaScript antigo após atualizações.
 
