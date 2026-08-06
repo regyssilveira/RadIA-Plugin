@@ -224,7 +224,7 @@ montado ou ajustado manualmente.
 ### Evidência visual do terminal
 
 Use `-TerminalEvidencePath` com `-ExerciseTerminal` para abrir a superfície VCL real e validar
-geometria, controles essenciais, entrada, saída e navegação por Tab:
+geometria, controles essenciais, perfis, paleta de comandos, entrada, saída e navegação por Tab:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -236,7 +236,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -TerminalEvidencePath "Output\Validation\Terminal\Delphi13-Win32.json"
 ```
 
-Depois dos quatro targets, consolide a matriz fail-closed:
+Depois dos três targets suportados, consolide a matriz fail-closed:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -262,7 +262,7 @@ powershell.exe -ExecutionPolicy Bypass `
     "Output\Validation\InlineCompletion\Delphi13-Win32.json"
 ```
 
-Depois dos quatro targets, consolide a matriz visual fail-closed:
+Depois dos três targets suportados, consolide a matriz visual fail-closed:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -287,7 +287,7 @@ powershell.exe -ExecutionPolicy Bypass `
     "Output\Validation\AgentRuntime\Delphi13-Win32.json"
 ```
 
-Consolide os quatro targets com:
+Consolide os três targets suportados com:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -312,7 +312,7 @@ powershell.exe -ExecutionPolicy Bypass `
     "Output\Validation\DeclarativeWorkflow\Delphi13-Win32.json"
 ```
 
-Depois dos quatro targets, consolide a matriz fail-closed:
+Depois dos três targets suportados, consolide a matriz fail-closed:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -336,7 +336,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -KnowledgeEvidencePath "Output\Validation\Knowledge\Delphi13-Win32.json"
 ```
 
-Depois dos quatro targets, consolide a matriz fail-closed:
+Depois dos três targets suportados, consolide a matriz fail-closed:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -359,7 +359,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -FirstValueEvidencePath "Output\Validation\FirstValue\Delphi13-Win32.json"
 ```
 
-Depois dos quatro targets, consolide a matriz fail-closed:
+Depois dos três targets suportados, consolide a matriz fail-closed:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `

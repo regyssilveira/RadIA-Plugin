@@ -1185,6 +1185,23 @@ begin
       TJSONBool.Create(HasOutput(ASession))
     );
     LJson.AddPair(
+      'paletteAvailable',
+      TJSONBool.Create(
+        ASession.FPaletteEdit.Visible and
+        ASession.FPaletteEdit.Enabled and
+        ASession.FPaletteCombo.Visible and
+        ASession.FPaletteCombo.Enabled
+      )
+    );
+    LJson.AddPair(
+      'paletteItemCount',
+      TJSONNumber.Create(ASession.FPaletteCombo.Items.Count)
+    );
+    LJson.AddPair(
+      'profileCount',
+      TJSONNumber.Create(ASession.FProfileCombo.Items.Count)
+    );
+    LJson.AddPair(
       'tabStopCount',
       TJSONNumber.Create(LTabStopCount)
     );

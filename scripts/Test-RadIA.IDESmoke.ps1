@@ -2019,6 +2019,12 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [bool]$ExerciseTerminal -and
                 $terminalDiagnostic.OutputAvailable
             )
+            TerminalPaletteAvailable = (
+                [bool]$ExerciseTerminal -and
+                $terminalDiagnostic.PaletteAvailable
+            )
+            TerminalPaletteItemCount = $terminalDiagnostic.PaletteItemCount
+            TerminalProfileCount = $terminalDiagnostic.ProfileCount
             TerminalAccessibleLabelsAvailable = (
                 [bool]$ExerciseTerminal -and
                 $terminalDiagnostic.AccessibleLabelsAvailable

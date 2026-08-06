@@ -3,8 +3,10 @@ param(
     [string]$OutputPath = (
         ".\docs\terminal_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 90,
-    [int]$MinimumTabStopCount = 6
+    [int]$RequiredToolCount = 93,
+    [int]$MinimumTabStopCount = 11,
+    [int]$MinimumPaletteItemCount = 1,
+    [int]$MinimumProfileCount = 2
 )
 
 $ErrorActionPreference = "Stop"
@@ -112,6 +114,7 @@ foreach ($target in $targets) {
                 $cycle.TerminalRequiredControlsVisible -eq $true -and
                 $cycle.TerminalCommandInputAvailable -eq $true -and
                 $cycle.TerminalOutputAvailable -eq $true -and
+                $cycle.TerminalPaletteAvailable -eq $true -and
                 $cycle.TerminalAccessibleLabelsAvailable -eq $true
             ) `
             -Message (
@@ -129,6 +132,16 @@ foreach ($target in $targets) {
                 $cycle.TerminalTabStopCount -ge $MinimumTabStopCount
             ) `
             -Message "$($target.evidenceFile) has too few tab stops."
+        Assert-RadIACondition `
+            -Condition (
+                $cycle.TerminalPaletteItemCount -ge $MinimumPaletteItemCount
+            ) `
+            -Message "$($target.evidenceFile) has an empty command palette."
+        Assert-RadIACondition `
+            -Condition (
+                $cycle.TerminalProfileCount -ge $MinimumProfileCount
+            ) `
+            -Message "$($target.evidenceFile) has too few terminal profiles."
     }
 
     $seconds = @($evidence.cycles | ForEach-Object { $_.Seconds })
@@ -151,6 +164,21 @@ foreach ($target in $targets) {
         requiredControlsVisible = $true
         commandInputAvailable = $true
         outputAvailable = $true
+        paletteAvailable = $true
+        minimumPaletteItemCount = (
+            @(
+                $evidence.cycles |
+                    ForEach-Object { $_.TerminalPaletteItemCount }
+            ) |
+                Measure-Object -Minimum
+        ).Minimum
+        minimumProfileCount = (
+            @(
+                $evidence.cycles |
+                    ForEach-Object { $_.TerminalProfileCount }
+            ) |
+                Measure-Object -Minimum
+        ).Minimum
         accessibleLabelsAvailable = $true
         minimumTabStopCount = $minimumTabStops
         generatedAtUtc = $evidence.generatedAtUtc
@@ -170,6 +198,8 @@ if ($outputDirectory) {
     sourceCommit = $sourceCommit
     requiredToolCount = $RequiredToolCount
     minimumTabStopCount = $MinimumTabStopCount
+    minimumPaletteItemCount = $MinimumPaletteItemCount
+    minimumProfileCount = $MinimumProfileCount
     targetCount = $summaries.Count
     status = "passed"
     generatedAtUtc = [DateTime]::UtcNow.ToString("o")
