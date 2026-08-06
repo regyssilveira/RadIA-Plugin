@@ -451,7 +451,7 @@ begin
     LCodeEditorServices
   ) then
     LCodeEditorServices.InvalidateTopEditor;
-  TThread.Queue(
+  TThread.ForceQueue(
     nil,
     procedure
     var
