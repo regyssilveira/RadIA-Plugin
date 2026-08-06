@@ -1,5 +1,7 @@
 # Checklist da release agentiva
 
+> **Checklist histórico da linha 1.x.** Delphi 11 não pertence ao release 2.0 vigente.
+
 A avaliação requisito por requisito está em `agentic_completion_audit.md`.
 
 ## Escopo técnico

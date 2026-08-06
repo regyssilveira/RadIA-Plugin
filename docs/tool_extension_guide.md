@@ -72,5 +72,5 @@ servidor MCP.
 ## Compatibilidade
 
 A extensão deve declarar o menor e o maior nível da API que suporta. O registro é recusado quando a
-versão corrente não pertence ao intervalo informado. A API de nível 1 é suportada no Delphi 11,
-Delphi 12 e Delphi 13, tanto para a IDE Win32 quanto para a IDE64 disponível no Delphi 13.
+versão corrente não pertence ao intervalo informado. A API de nível 1 é suportada no Delphi 12
+e Delphi 13, tanto para a IDE Win32 quanto para a IDE64 disponível no Delphi 13.

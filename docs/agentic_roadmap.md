@@ -1,9 +1,12 @@
 # Roadmap da Evolução Agentiva
 
+> **Documento histórico da linha 1.x.** A matriz vigente da linha 2.0 contém somente Delphi 12
+> Win32 e Delphi 13 Win32/IDE64. Referências ao Delphi 11 abaixo registram validações antigas.
+
 ## Goal
 
 Evoluir o RadIA de assistente de chat multi-provider para uma plataforma agentiva segura e
-integrada ao Delphi, mantendo compatibilidade com Delphi 11, 12 e 13, estabilidade no shutdown
+integrada ao Delphi, preservando a estabilidade no shutdown
 da IDE e implementação independente.
 
 ## Estado

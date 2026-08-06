@@ -23,7 +23,7 @@ O RadIA evoluiu do chat multi-provider para uma plataforma integrada à IDE com 
 ferramentas, workspace OTA, consentimento, auditoria, patches reversíveis, build, MCP, Form
 Designer, debugger, revisão inline, conhecimento local e extensões versionadas.
 
-A matriz foi validada no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. Consulte o
+A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Consulte o
 [roadmap agentivo](agentic_roadmap.md) e a [auditoria de conclusão](agentic_completion_audit.md).
 
 <details>

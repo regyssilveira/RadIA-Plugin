@@ -1,5 +1,8 @@
 # Rad IA - Evolution Backlog
 
+> **Active matrix:** Delphi 12 Win32 and Delphi 13 Win32/IDE64. Delphi 11 references in completed
+> items describe only the historical matrix of that release and do not represent current support.
+
 This document registers the development status, future planning, and technical implementation history of **Rad IA** plugin tasks.
 
 ---

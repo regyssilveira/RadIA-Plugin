@@ -1,5 +1,8 @@
 # Plano de Validação da Evolução Agentiva
 
+> **Registro histórico da matriz 1.x.** Os comandos e resultados de Delphi 11 abaixo não pertencem
+> à matriz vigente. A validação atual usa Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+
 ## 1. Objetivo
 
 Este documento define as evidências mínimas para considerar cada fase concluída. Uma fase não é

@@ -1,5 +1,7 @@
 # Auditoria de conclusão do goal agentivo
 
+> **Auditoria histórica da linha 1.x.** A matriz atual é Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+
 ## Critério
 
 Um requisito só é considerado comprovado quando existe implementação atual e evidência compatível

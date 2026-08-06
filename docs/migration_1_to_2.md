@@ -19,7 +19,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 `
   -DelphiVersion "37.0" -Release -Install
 ```
 
-Use `22.0` para Delphi 11, `23.0` para Delphi 12 ou `37.0` para Delphi 13. Para a IDE64 do Delphi
+Use `23.0` para Delphi 12 ou `37.0` para Delphi 13. Para a IDE64 do Delphi
 13, acrescente `-IDE64`.
 
 ## Mudanças relevantes

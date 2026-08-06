@@ -1,5 +1,8 @@
 # Migração para a plataforma agentiva
 
+> **Documento histórico.** A compatibilidade descrita abaixo corresponde à linha 1.x; Delphi 11 não
+> integra a matriz vigente da linha 2.0.
+
 > A plataforma agentiva é promovida à versão pública `1.0.0` após a aprovação dos gates
 > automatizados e dos smokes reais da matriz Delphi.
 

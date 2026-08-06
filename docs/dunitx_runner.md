@@ -51,5 +51,5 @@ O template DUnitX do RadIA já gera esse contrato.
 
 ## Compatibilidade validada
 
-O parser, as tools e o executor compilam e passam pela suíte do RadIA no Delphi 11, 12 e 13. O
+O parser, as tools e o executor compilam e passam pela suíte do RadIA no Delphi 12 e 13. O
 package e os testes também foram validados para a IDE Win64 do Delphi 13.

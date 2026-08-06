@@ -19,7 +19,7 @@ capability must be discoverable, observable, cancellable, and proven in a real I
 3. Require preview, consent, and rollback in proportion to risk.
 4. Work with the native agent, API providers, CLIs, and local models.
 5. Make extensions simple without weakening confinement or auditability.
-6. Preserve Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+6. Concentrate compatibility on Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 7. Do not publish while objective gates remain open.
 
 ## Measurable outcomes
@@ -52,7 +52,7 @@ Matching one isolated capability is not sufficient:
 | Extensibility | Commands, skills, templates, and tools can be installed with explicit permissions |
 | Knowledge | Incremental lexical and semantic retrieval is private, citable, and workspace-isolated |
 | Operations | Installation, diagnostics, updates, repair, and removal are guided and reproducible |
-| Compatibility | The same experience passes on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64 |
+| Compatibility | The same experience passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64 |
 
 Each axis receives one of these states: `missing`, `partial`, `equivalent`, or `leader`. The release
 decision requires `leader` on every axis together with the M8 evidence.
@@ -76,7 +76,7 @@ provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture
 buffer, cursor position, and current symbol. All five shortcuts are configurable OTA bindings,
 validated and reloaded without restarting the IDE. Multiline suggestions now use per-line virtual
 overlays, preserve line breaks on acceptance, and keep continuations separate from real code.
-Visual acceptance passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. Evidence records
+Visual acceptance passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64. Evidence records
 two-line preparation and OTA painting separately without persisting editor content.
 
 M2 includes a visual ANSI/CSI buffer with cursor overwrite, rich output, continuous stdin, ConPTY
@@ -92,7 +92,7 @@ state remain intact even when an escape sequence is split across chunks.
 4. A mutation only finishes after preview, consent, concurrent conflict, and rollback are tested.
 5. Every round queries Sonar; no new issue may be incorporated into the baseline.
 6. Every completed increment is committed and pushed from the working branch.
-7. Release gates always use Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+7. Release gates always use Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 
 ## Milestones
 
@@ -159,7 +159,7 @@ breakpoints, call stack, execution transitions, evaluated values, watches, and t
 appear inside their corresponding step. The visual layer consumes only the audited tool result and
 bounds long lists, without introducing polling or controlling a session on its own.
 
-The runtime journey passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The smoke uses a
+The runtime journey is proven on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The smoke uses a
 deterministic local provider, executes `GetIDEState` through the real registry and policy, pauses
 after the step, persists the checkpoint, destroys the runtime, and resumes in another instance
 until completion. The versioned matrix is stored in `agent_runtime_smoke_evidence_2.0.0.json`.
@@ -236,7 +236,7 @@ Its bounded query returns only completed runs with an approved plan belonging ex
 requested project. Opt-in ingestion adds these summaries to the index without exposing tool
 arguments or results, and revocation blocks queries before physical removal on the next refresh.
 
-The real semantic journey passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The evidence
+The real semantic journey passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The evidence
 indexes the test project, searches semantically with `local-hash-v1`, and verifies provenance,
 navigation, metrics, document retrieval, and workspace isolation. The versioned matrix is stored
 in `knowledge_smoke_evidence_2.0.0.json`.
@@ -260,16 +260,16 @@ The release package now uses the same validated installer for `Install`, `Repair
 provides a read-only plan, preserves data and shared components by default, and requires
 `-RemoveUserData` before deleting settings, audit, sessions, and knowledge.
 
-The single visual installer is implemented with detection and selection for Delphi 11, 12, 13
-Win32, and Delphi 13 IDE64. Generation validates all four packages before compilation, records
+The single visual installer detects and selects Delphi 12 Win32 and Delphi 13 Win32/IDE64.
+Generation validates all three packages before compilation, records
 SHA-256 and Authenticode state, and can sign with a certificate and timestamp. The `stable`
 catalog is fail-closed: it rejects HTTP and any executable without a valid signature. Publication
 remains pending only on a trusted external code-signing certificate and the final HTTPS URL. The
-release workflow rebuilds all four targets from the tag, imports the PFX only for the job, requires
+release workflow rebuilds all three targets from the tag, imports the PFX only for the job, requires
 a signature and timestamp, publishes the distribution, and removes cryptographic material from
 the runner even after failure.
 
-The post-install diagnostic passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The
+The post-install diagnostic passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The
 evidence calls the doctor through the installed bridge, requires chat, terminal, the 90-tool
 catalog, and `GetIDEState`, and preserves an actionable next step when the provider is not yet
 configured. The versioned matrix is stored in `first_value_smoke_evidence_2.0.0.json`.
@@ -300,36 +300,35 @@ Credential fields are rejected recursively and never enter extension packages.
 
 - [x] Run the complete build and test matrix.
 - [x] Validate inline assistance, terminal, execution center, extensions, and knowledge in real IDEs.
-- [x] Approve complete keyboard and assistive-technology navigation in all four combinations.
+- [x] Approve complete keyboard and assistive-technology navigation in all three combinations.
 - [x] Complete ten uninstall, install, repair, usage, and shutdown cycles per supported combination.
 - [x] Validate a real upgrade between different package versions on every supported combination.
 - [x] Pass the create, edit, design, test, debug, fix, and commit continuous journey.
-- [x] Regenerate four packages from one commit and publish independent hashes.
+- [ ] Regenerate three packages from one commit and publish independent hashes.
 - [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
 - [x] Automate the final security, privacy, accessibility, and documentation audit.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
 
-The reproducible package proof is stored in `release_evidence_2.0.0.json`: all four ZIP files were
-built from commit `4693d9757e99fd9ca3f0c4b6b3abede404bf23c3`, with a clean tracked worktree,
-positive and negative validation per target, and independent SHA-256 hashes.
+The proof in `release_evidence_2.0.0.json` is historical and still includes the discontinued
+matrix. It must be regenerated with three ZIP files from one commit before publication.
 
-The consolidated real-IDE matrix is stored in `ide_smoke_evidence_2.0.0.json`. Delphi 11 Win32,
-Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 completed 10/10 cycles each, totaling 40
-cycles bound to the published ZIP, source commit, and installed BPL. Every target exposed 90
-tools, exercised native `TOTADockForm` docking, restored the desktop state, and exited without
+The matrix in `ide_smoke_evidence_2.0.0.json` records the previous historical validation. The new
+release proof must cover Delphi 12 Win32 and Delphi 13 Win32/IDE64, complete 10/10 cycles per target,
+and validate the current 95-tool catalog. Every target must exercise native `TOTADockForm`
+docking, restore the desktop state, and exit without
 orphan processes. Every cycle ran `Uninstall`, installed version 1.0.0, upgraded to 2.0.0, and ran
 `Repair`, while preserving user data and revalidating the manifest, hashes, registry, and installed
 files before launching the IDE. The fail-closed consolidator derives the official proof from all
-four execution JSON files and rejects target, cycle, upgrade, lifecycle, hash, commit, docking, BPL,
+three execution JSON files and rejects target, cycle, upgrade, lifecycle, hash, commit, docking, BPL,
 or catalog divergence.
 
 The complete continuous journey is proven in
 `continuous_journey_smoke_evidence_2.0.0.json`. In one flow from the same commit, every target
 created and built a VCL project, changed and reverted the Form Designer, edited and saved the live
-buffer, observed an intentional compiler failure, reverted the correction, rebuilt, passed 736
+buffer, observed an intentional compiler failure, reverted the correction, rebuilt, passed 761
 tests, stopped at a breakpoint with call stack and timeline evidence, created a reviewed Git
-commit, and shut down without orphan processes. Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64
+commit, and shut down without orphan processes. Delphi 12 Win32 and Delphi 13 Win32/IDE64
 passed autonomously. The consolidator rejects dirty source, divergent SHAs, invalid installed-BPL
 hashes, missing phases, incomplete tests, debugging without evidence, or a commit without a
 reviewed diff.
@@ -337,7 +336,7 @@ reviewed diff.
 Functional validation of all five surfaces in real IDEs is also complete. The terminal has
 dedicated proof in `terminal_smoke_evidence_2.0.0.json`: its native window, required controls,
 input, output, usable geometry, five associated labels, and nine keyboard tab stops passed on
-Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The Delphi 13 IDE64 UI Automation tree confirmed
+Delphi 12 Win32 and Delphi 13 Win32/IDE64. The Delphi 13 IDE64 UI Automation tree confirmed
 chat names, states, and descriptions, including Agent Mode, terminal, run history, settings,
 conversation, and prompt. Inline assistance, the agent center, extensions, and knowledge remain
 bound to their versioned matrices and the native-control or shared Web semantics used by all
@@ -374,4 +373,4 @@ policy, audit, and observability consolidated in M3. Publication depends on ever
 - Installation, updates, repair, and removal are guided.
 - Logs, telemetry, persisted prompts, and artifacts contain no secrets.
 - Sonar, lint, tests, packages, and the IDE matrix remain green.
-- The full journey passes on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+- The full journey passes on Delphi 12 Win32 and Delphi 13 Win32/IDE64.

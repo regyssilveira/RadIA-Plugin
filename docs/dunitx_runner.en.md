@@ -18,5 +18,5 @@ The executable must call `TDUnitX.CheckCommandLine` and register
 `TDUnitXXMLNUnitFileLogger` with `TDUnitX.Options.XMLOutputFile`. RadIA-generated DUnitX projects
 include this contract by default.
 
-The parser, tools, and executor are validated on Delphi 11, 12, and 13, including the Delphi 13
+The parser, tools, and executor are validated on Delphi 12 and 13, including the Delphi 13
 Win64 IDE package and test suite.

@@ -11,7 +11,7 @@ project creation, safe code and Form Designer changes, builds, DUnitX tests, deb
 fixes, and a reviewable commit.
 
 The workflow must be observable, cancellable, persistent, and protected by previews, consent,
-auditing, and workspace confinement. The final delivery will be validated on Delphi 11, 12, and 13.
+auditing, and workspace confinement. The final delivery will be validated on Delphi 12 and 13.
 
 ## Sources of truth
 
@@ -35,7 +35,7 @@ auditing, and workspace confinement. The final delivery will be validated on Del
 | Tests | Structured and cancellable DUnitX runner | Ready |
 | Debugger | State, control, and event-driven timeline | Ready |
 | Git and delivery | Preview, diff, and reviewable local commit | Ready |
-| Compatibility | Delphi 11/12/13 Win32 and Delphi 13 IDE64 | Keep the matrix green |
+| Compatibility | Delphi 12 Win32 and Delphi 13 Win32/IDE64 | Keep the matrix green |
 
 ## Capabilities incorporated into the runtime
 
@@ -85,7 +85,7 @@ locally configured provider/model rates and never assumes unknown prices.
 Status: completed. The deterministic six-template engine, SHA-256 preview,
 staging/commit/rollback transaction, OTA opening, and initial build with automatic rollback are
 implemented and exposed as tools. The visual wizard supports authorized folder selection without
-an active project. All six generated projects compile through `.dproj` on Delphi 11, 12, and 13.
+an active project. All six generated projects compile through `.dproj` on Delphi 12 and 13.
 
 ### M3 — Transactional editing and Designer
 
@@ -159,7 +159,10 @@ build ended without an orphan process. Lateral dropping remains a manual visual 
 the elevated IDE blocks synthetic cross-process input; host creation, visibility, and persistence
 are automated. The continuous E2E journey below passed on Delphi 13.
 
-## Validation evidence — August 4, 2026
+## Historical validation evidence — August 4, 2026
+
+The results below record the previous matrix. Current evidence must use only Delphi 12 Win32 and
+Delphi 13 Win32/IDE64.
 
 - Delphi 11, 12, and 13 Win32: 590 direct tests per version, with no failures, ignored tests, or leaks.
 - Real Win32 smoke: Delphi 11 and 12 passed one load cycle, the 87-tool MCP catalog, and clean
@@ -209,7 +212,7 @@ The following items belong to version 2.0.0 and reopen its release gate:
 6. integrate a dockable terminal with profiles, history, snippets, and process-tree shutdown;
 7. allow switching between the native agent and CLI executors without restarting the IDE;
 8. provide optional official-channel installation, diagnostics, and onboarding;
-9. validate Delphi 11, 12, and 13 again before publishing the final artifacts.
+9. validate Delphi 12 Win32 and Delphi 13 Win32/IDE64 before publishing the final artifacts.
 
 OTA expansion delivered on this branch: seven tools now cover project groups, native dependencies,
 live-buffer symbols, confined file or symbol navigation, and IDE actions protected by an allowlist
@@ -272,4 +275,4 @@ reproducible artifacts remain preparation gates, without publishing a tag or rel
 - The final diff matches the proposed commit.
 - Audit records contain no secrets.
 - There are no leaks, deadlocks, orphan discovery files, or orphan processes.
-- Evidence covers Delphi 11, 12, and 13 according to the official matrix.
+- Evidence covers Delphi 12 Win32 and Delphi 13 Win32/IDE64 according to the official matrix.
