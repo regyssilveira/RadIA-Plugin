@@ -13,13 +13,15 @@ param(
     [switch]$ExerciseAgentRuntime,
     [switch]$ExerciseDeclarativeWorkflow,
     [switch]$ExerciseKnowledge,
+    [switch]$ExerciseFirstValue,
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = "",
     [string]$InlineCompletionEvidencePath = "",
     [string]$AgentRuntimeEvidencePath = "",
     [string]$DeclarativeWorkflowEvidencePath = "",
-    [string]$KnowledgeEvidencePath = ""
+    [string]$KnowledgeEvidencePath = "",
+    [string]$FirstValueEvidencePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -54,6 +56,9 @@ if ($DeclarativeWorkflowEvidencePath -and
 }
 if ($KnowledgeEvidencePath -and -not $ExerciseKnowledge) {
     throw "Knowledge evidence requires -ExerciseKnowledge."
+}
+if ($FirstValueEvidencePath -and -not $ExerciseFirstValue) {
+    throw "First-value evidence requires -ExerciseFirstValue."
 }
 if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
     throw (
@@ -790,7 +795,7 @@ function Invoke-RadIASmokeTool {
         Where-Object { $_.id -eq 2 }
     if ($response.error) {
         throw (
-            "Knowledge tool $Name failed: " +
+            "Smoke tool $Name failed: " +
             ($response.error | ConvertTo-Json -Compress)
         )
     }
@@ -922,6 +927,70 @@ function Invoke-RadIAKnowledgeDiagnostic {
         ChunkCount = $status.chunkCount
         DocumentRetrieved = $true
         WorkspaceIsolated = $true
+    }
+}
+
+function Invoke-RadIAFirstValueDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$BridgePath,
+        [Parameter(Mandatory)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory)]
+        [int]$ExpectedToolCount
+    )
+
+    $health = Invoke-RadIASmokeTool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "GetInstallationHealth"
+    if (
+        -not $health.status -or
+        $null -eq $health.readinessScore -or
+        $health.readinessScore -lt 0 -or
+        $health.readinessScore -gt 100 -or
+        $health.toolCount -ne $ExpectedToolCount
+    ) {
+        throw "The installation health summary is incomplete."
+    }
+    if (
+        $health.mcpBridgeAvailable -ne $true -or
+        $health.interactiveTerminal -ne $true -or
+        $health.webAssetsAvailable -ne $true -or
+        $health.firstToolReady -ne $true -or
+        $health.checks.terminal -ne $true -or
+        $health.checks.chat -ne $true -or
+        $health.checks.firstTool -ne $true
+    ) {
+        throw "The installed first-value infrastructure is not ready."
+    }
+    if (-not $health.executor -or -not $health.nextAction) {
+        throw "The installation doctor did not provide a next action."
+    }
+    $ideState = Invoke-RadIASmokeTool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "GetIDEState"
+    if (-not $ideState.versionName -or -not $ideState.platform) {
+        throw "The first read-only IDE tool did not return IDE state."
+    }
+    return [PSCustomObject]@{
+        Status = $health.status
+        ReadinessScore = $health.readinessScore
+        ProviderConfigured = $health.providerConfigured
+        Executor = $health.executor
+        CliRequired = $health.cliRequired
+        CliDetected = $health.cliDetected
+        McpBridgeAvailable = $health.mcpBridgeAvailable
+        McpConfigured = $health.mcpConfigured
+        McpRequired = $health.mcpRequired
+        TerminalReady = $health.interactiveTerminal
+        ChatReady = $health.webAssetsAvailable
+        FirstToolReady = $health.firstToolReady
+        NextAction = $health.nextAction
+        FirstToolName = "GetIDEState"
+        IDEVersion = $ideState.versionName
+        IDEPlatform = $ideState.platform
     }
 }
 
@@ -1688,6 +1757,13 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -InstanceFile $instanceFile `
                 -ProjectPath $knowledgeSmokeProjectPath
         }
+        $firstValueDiagnostic = $null
+        if ($ExerciseFirstValue) {
+            $firstValueDiagnostic = Invoke-RadIAFirstValueDiagnostic `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ExpectedToolCount $expectedToolNames.Count
+        }
 
         $descendants = @(
             Get-RadIAProcessDescendants `
@@ -1926,6 +2002,35 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [bool]$ExerciseKnowledge -and
                 $knowledgeDiagnostic.WorkspaceIsolated
             )
+            FirstValueExercised = [bool]$ExerciseFirstValue
+            FirstValueStatus = $firstValueDiagnostic.Status
+            FirstValueReadinessScore = (
+                $firstValueDiagnostic.ReadinessScore
+            )
+            FirstValueProviderConfigured = (
+                $firstValueDiagnostic.ProviderConfigured
+            )
+            FirstValueExecutor = $firstValueDiagnostic.Executor
+            FirstValueCliRequired = $firstValueDiagnostic.CliRequired
+            FirstValueCliDetected = $firstValueDiagnostic.CliDetected
+            FirstValueMcpBridgeAvailable = (
+                $firstValueDiagnostic.McpBridgeAvailable
+            )
+            FirstValueMcpConfigured = (
+                $firstValueDiagnostic.McpConfigured
+            )
+            FirstValueMcpRequired = $firstValueDiagnostic.McpRequired
+            FirstValueTerminalReady = $firstValueDiagnostic.TerminalReady
+            FirstValueChatReady = $firstValueDiagnostic.ChatReady
+            FirstValueFirstToolReady = (
+                $firstValueDiagnostic.FirstToolReady
+            )
+            FirstValueNextAction = $firstValueDiagnostic.NextAction
+            FirstValueFirstToolName = (
+                $firstValueDiagnostic.FirstToolName
+            )
+            FirstValueIDEVersion = $firstValueDiagnostic.IDEVersion
+            FirstValueIDEPlatform = $firstValueDiagnostic.IDEPlatform
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -2011,6 +2116,7 @@ if ($EvidencePath) {
             [bool]$ExerciseDeclarativeWorkflow
         )
         knowledgeExercised = [bool]$ExerciseKnowledge
+        firstValueExercised = [bool]$ExerciseFirstValue
         packageLifecycleExercised = [bool]$ExercisePackageLifecycle
         upgradeExercised = [bool]$upgradePackageEvidence
         upgradeFromVersion = $upgradeFromVersion
@@ -2061,6 +2167,47 @@ if ($KnowledgeEvidencePath) {
     Write-Host (
         "Knowledge evidence created: " +
         $resolvedKnowledgeEvidencePath
+    )
+}
+if ($FirstValueEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "First value"
+    $resolvedFirstValueEvidencePath = [IO.Path]::GetFullPath(
+        $FirstValueEvidencePath
+    )
+    $firstValueEvidenceDirectory = Split-Path -Parent (
+        $resolvedFirstValueEvidencePath
+    )
+    if ($firstValueEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $firstValueEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "installationFirstValueSmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedFirstValueEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "First-value evidence created: " +
+        $resolvedFirstValueEvidencePath
     )
 }
 if ($DeclarativeWorkflowEvidencePath) {
