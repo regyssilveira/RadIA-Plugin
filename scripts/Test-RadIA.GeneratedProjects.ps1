@@ -2,7 +2,9 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet("23.0", "37.0")]
-    [string]$DelphiVersion
+    [string]$DelphiVersion,
+
+    [string]$EvidencePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,6 +27,16 @@ $validationRoot = Join-Path `
     ("RadIA-Generated-$DelphiVersion-" + [Guid]::NewGuid().ToString("N"))
 $previousBds = $env:BDS
 $previousBdsBin = $env:BDSBIN
+$templateResults = @()
+$expectedTemplates = @(
+    "ConsoleApp",
+    "DUnitXApp",
+    "FmxApp",
+    "LibraryApp",
+    "PackageApp",
+    "ServiceApp",
+    "VclApp"
+)
 
 if (-not (Test-Path -LiteralPath $compilerPath -PathType Leaf)) {
     throw "Delphi compiler not found: $compilerPath"
@@ -70,9 +82,16 @@ try {
     if ($projects.Count -ne 7) {
         throw "Expected seven generated projects, found $($projects.Count)."
     }
+    $projectNames = @($projects | ForEach-Object { $_.BaseName })
+    foreach ($expectedTemplate in $expectedTemplates) {
+        if ($projectNames -notcontains $expectedTemplate) {
+            throw "Generated project is missing: $expectedTemplate"
+        }
+    }
 
     foreach ($project in $projects) {
         Write-Host "Building generated project: $($project.BaseName)"
+        $stopwatch = [Diagnostics.Stopwatch]::StartNew()
         & $msBuildPath `
             $project.FullName `
             "/t:Build" `
@@ -82,9 +101,63 @@ try {
             "/p:DelphiLibraryPath=$isolatedLibraryPath" `
             "/v:minimal" `
             "/nologo"
+        $stopwatch.Stop()
         if ($LASTEXITCODE -ne 0) {
             throw "Generated project failed: $($project.FullName)"
         }
+        $templateResults += [PSCustomObject]@{
+            template = $project.BaseName
+            projectFile = $project.Name
+            platform = "Win32"
+            configuration = "Debug"
+            durationMs = $stopwatch.ElapsedMilliseconds
+            status = "passed"
+        }
+    }
+
+    if ($EvidencePath) {
+        $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
+        $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
+        if ($evidenceDirectory) {
+            New-Item `
+                -ItemType Directory `
+                -Path $evidenceDirectory `
+                -Force |
+                Out-Null
+        }
+        $sourceCommit = (& git -C $repositoryRoot rev-parse HEAD).Trim()
+        if (
+            $LASTEXITCODE -ne 0 -or
+            $sourceCommit -notmatch "^[0-9a-f]{40}$"
+        ) {
+            throw "Unable to resolve the source commit."
+        }
+        $productVersion = (
+            Get-Content `
+                -LiteralPath (Join-Path $repositoryRoot "package.json") `
+                -Raw |
+                ConvertFrom-Json
+        ).version
+        [PSCustomObject]@{
+            schemaVersion = 1
+            evidenceKind = "generatedProjectTemplateTarget"
+            product = "RadIA"
+            productVersion = $productVersion
+            sourceCommit = $sourceCommit
+            delphiVersion = $DelphiVersion
+            compilerProductVersion = (
+                Get-Item -LiteralPath $compilerPath
+            ).VersionInfo.ProductVersion
+            platform = "Win32"
+            templateCount = $templateResults.Count
+            status = "passed"
+            generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+            templates = $templateResults
+        } |
+            ConvertTo-Json -Depth 5 |
+            Set-Content `
+                -LiteralPath $resolvedEvidencePath `
+                -Encoding UTF8
     }
 
     Write-Host (
