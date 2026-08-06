@@ -842,6 +842,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolExecutor> as
       IRadIAToolPolicyExecutor
   );
+  TRadIAContainer.Register<IRadIAToolAuthorizationPolicy>(
+    TRadIAContainer.Resolve<IRadIAToolExecutor> as
+      IRadIAToolAuthorizationPolicy
+  );
   TRadIAContainer.Register<IRadIAWorkspaceFacade>(
     TRadIAOTAWorkspaceFacade.Create(
       TRadIAContainer.Resolve<IRadIAIDEAdapter>,

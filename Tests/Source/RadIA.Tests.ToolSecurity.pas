@@ -61,6 +61,8 @@ type
     [Test]
     procedure SessionConsentIsScopedAndRevocable;
     [Test]
+    procedure TerminalAuthorizationSharesSessionConsentAndAudit;
+    [Test]
     procedure SensitiveToolIsDeniedWithoutPrompt;
     [Test]
     procedure AuditRedactsSecrets;
@@ -554,6 +556,62 @@ begin
   Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.AreEqual('MissingTool', LEvents[0].ToolName);
   Assert.AreEqual(aoUnsupported, LEvents[0].Outcome);
+end;
+
+procedure TTestRadIAToolSecurity.
+  TerminalAuthorizationSharesSessionConsentAndAudit;
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LDescriptor: TRadIAToolDescriptor;
+  LExecutor: TRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+  LRequest: TRadIAToolRequest;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowSession);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+  try
+    LDescriptor := TRadIAToolDescriptor.Create(
+      'RunTerminalCommand',
+      '1.0.0',
+      'Authorizes terminal execution.',
+      '{}',
+      '{}',
+      trExecution
+    );
+    LRequest := TRadIAToolRequest.Create(
+      'RunTerminalCommand',
+      '{"command":"build"}',
+      'terminal-correlation',
+      'terminal',
+      'terminal',
+      'project',
+      'scope'
+    );
+    Assert.AreEqual(
+      cdAllowSession,
+      LExecutor.Authorize(LRequest, LDescriptor)
+    );
+    Assert.AreEqual(
+      cdAllowSession,
+      LExecutor.Authorize(LRequest, LDescriptor)
+    );
+    Assert.AreEqual(1, LConsent.RequestCount);
+    Assert.AreEqual<Integer>(2, Length(LAudit.GetEvents));
+    LExecutor.RevokeSessionPermissions;
+    LExecutor.Authorize(LRequest, LDescriptor);
+    Assert.AreEqual(2, LConsent.RequestCount);
+  finally
+    LExecutor.Free;
+  end;
 end;
 
 initialization

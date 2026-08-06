@@ -96,6 +96,14 @@ type
     procedure RevokeSessionPermissions;
   end;
 
+  IRadIAToolAuthorizationPolicy = interface
+    ['{B895A352-F58E-427C-B6DB-4EFA6EA1D29D}']
+    function Authorize(
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor
+    ): TRadIAConsentDecision;
+  end;
+
   TRadIADenyConsentProvider = class(
     TInterfacedObject,
     IRadIAConsentProvider
@@ -151,6 +159,7 @@ type
   TRadIAToolPolicyExecutor = class(
     TInterfacedObject,
     IRadIAToolPolicyExecutor,
+    IRadIAToolAuthorizationPolicy,
     IRadIAToolExecutor,
     IRadIAToolDescriptorProvider
   )
@@ -183,6 +192,10 @@ type
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
+    function Authorize(
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor
+    ): TRadIAConsentDecision;
     function TryGetToolDescriptor(
       const AName: string;
       out ADescriptor: TRadIAToolDescriptor
@@ -455,6 +468,34 @@ begin
 end;
 
 { TRadIAToolPolicyExecutor }
+
+function TRadIAToolPolicyExecutor.Authorize(
+  const ARequest: TRadIAToolRequest;
+  const ADescriptor: TRadIAToolDescriptor
+): TRadIAConsentDecision;
+var
+  LAuditEvent: TRadIAToolAuditEvent;
+  LOutcome: TRadIAAuditOutcome;
+begin
+  LAuditEvent := TRadIAToolAuditEvent.CreateStarted(
+    ARequest,
+    ADescriptor,
+    FRedactor.Redact(ARequest.ArgumentsJson)
+  );
+  Result := Decide(ARequest, ADescriptor);
+  case Result of
+    cdAllowOnce,
+    cdAllowSession:
+      LOutcome := aoSucceeded;
+    cdCancel:
+      LOutcome := aoCancelled;
+  else
+    LOutcome := aoDenied;
+  end;
+  FAuditSink.Write(
+    LAuditEvent.Complete(Result, LOutcome, 0, '')
+  );
+end;
 
 function TRadIAToolPolicyExecutor.BuildPermissionKey(
   const ARequest: TRadIAToolRequest

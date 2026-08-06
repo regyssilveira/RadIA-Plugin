@@ -80,6 +80,16 @@ adiciona opções autônomas aos CLIs. O histórico é salvo em
 `%APPDATA%\RadIA\terminal-history.json` e contém somente perfil, comando, horário e código de saída.
 Stdout, stderr, tokens e credenciais não são persistidos pelo histórico.
 
+Antes de iniciar um processo, o terminal solicita autorização à mesma política de execução usada
+pelo chat, MCP e modo agente. **Allow once**, **Allow for session**, **Deny** e **Cancel** possuem a
+mesma semântica em todas essas superfícies. Uma permissão de sessão é limitada ao projeto e pode
+ser removida em **Security & Consent > Revoke session permissions**. Autorizações são registradas
+no mesmo log auditável das ferramentas, com remoção de segredos antes da persistência.
+
+O diretório de trabalho e o identificador do projeto ativo compõem o escopo da autorização. Em um
+perfil de IA, os caminhos MCP configurados para aquele cliente também entram no contexto auditado;
+o terminal não lê nem grava o conteúdo dos arquivos MCP durante essa etapa.
+
 Os perfis de IA reutilizam o catálogo do CLI Manager. Assim, o terminal não mantém uma segunda
 lista de nomes ou caminhos: somente CLIs realmente detectados são apresentados. Executáveis
 `.cmd` e `.bat` são iniciados com segurança pelo Command Prompt; executáveis nativos são chamados

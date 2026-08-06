@@ -11,7 +11,8 @@ uses
   Vcl.StdCtrls,
   RadIA.Core.CliProcess,
   RadIA.Core.Terminal,
-  RadIA.Core.TerminalScreen;
+  RadIA.Core.TerminalScreen,
+  RadIA.Core.ToolSecurity;
 
 type
   IRadIATerminalLifecycleGuard = interface
@@ -48,6 +49,7 @@ type
     FUpdatingHistorySearch: Boolean;
     FFocusQueued: Boolean;
     FSession: IRadIACliProcessSession;
+    FAuthorizationPolicy: IRadIAToolAuthorizationPolicy;
     FLifecycleGuard: IInterface;
     procedure ApplyDeferredFocus(
       const AGuard: IRadIATerminalLifecycleGuard
@@ -58,6 +60,11 @@ type
     );
     procedure BuildControls;
     procedure BuildPaletteControls;
+    function CanRunCommand(
+      const AProfile: TRadIATerminalProfile;
+      const ACommand: string;
+      const AWorkingDirectory: string
+    ): Boolean;
     procedure ClearClick(Sender: TObject);
     procedure CommandChange(Sender: TObject);
     procedure CommandKeyDown(
@@ -170,7 +177,10 @@ uses
   Winapi.Windows,
   Vcl.Graphics,
   RadIA.Core.AgentExecutors,
+  RadIA.Core.CliMcpSettings,
+  RadIA.Core.Container,
   RadIA.Core.PseudoTerminal,
+  RadIA.Core.Tools,
   RadIA.OTA.Helper;
 
 type
@@ -222,6 +232,9 @@ begin
     TPath.Combine(LAppData, 'RadIA\terminal-history.json')
   );
   FHistorySearchIndex := -1;
+  TRadIAContainer.TryResolve<IRadIAToolAuthorizationPolicy>(
+    FAuthorizationPolicy
+  );
 end;
 
 destructor TRadIATerminalFrame.Destroy;
@@ -475,6 +488,72 @@ procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
 begin
   FOutputEditor.Clear;
   FScreen.Clear;
+end;
+
+function TRadIATerminalFrame.CanRunCommand(
+  const AProfile: TRadIATerminalProfile;
+  const ACommand: string;
+  const AWorkingDirectory: string
+): Boolean;
+var
+  LClientId: string;
+  LDecision: TRadIAConsentDecision;
+  LDescriptor: TRadIAToolDescriptor;
+  LJson: TJSONObject;
+  LMcpSettings: TRadIACliMcpClientSettings;
+  LMcpStore: TRadIACliMcpSettings;
+  LRequest: TRadIAToolRequest;
+begin
+  Result := False;
+  if not Assigned(FAuthorizationPolicy) then
+  begin
+    FStatusLabel.Caption := 'Execution policy is unavailable';
+    Exit;
+  end;
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('command', ACommand);
+    LJson.AddPair('profileId', AProfile.Id);
+    LJson.AddPair('workingDirectory', AWorkingDirectory);
+    if AProfile.Id.StartsWith('ai-') then
+    begin
+      LClientId := AProfile.Id.Substring(3);
+      LMcpStore := TRadIACliMcpSettings.Create;
+      try
+        LMcpSettings := LMcpStore.Load(LClientId, '', '');
+        LJson.AddPair('mcpConfigPath', LMcpSettings.McpConfigPath);
+        LJson.AddPair('mcpBridgePath', LMcpSettings.McpBridgePath);
+      finally
+        LMcpStore.Free;
+      end;
+    end;
+    LRequest := TRadIAToolRequest.Create(
+      'RunTerminalCommand',
+      LJson.ToJSON,
+      TGUID.NewGuid.ToString,
+      'terminal',
+      'terminal',
+      AWorkingDirectory,
+      AWorkingDirectory
+    );
+    LDescriptor := TRadIAToolDescriptor.Create(
+      'RunTerminalCommand',
+      '1.0.0',
+      'Authorizes an interactive terminal command.',
+      '{"type":"object"}',
+      '{"type":"object"}',
+      trExecution
+    );
+    LDecision := FAuthorizationPolicy.Authorize(
+      LRequest,
+      LDescriptor
+    );
+    Result := LDecision in [cdAllowOnce, cdAllowSession];
+    if not Result then
+      FStatusLabel.Caption := 'Terminal command was not authorized';
+  finally
+    LJson.Free;
+  end;
 end;
 
 procedure TRadIATerminalFrame.CommandChange(Sender: TObject);
@@ -772,6 +851,7 @@ var
   LProfile: TRadIATerminalProfile;
   LProfiles: TArray<TRadIATerminalProfile>;
   LRows: SmallInt;
+  LWorkingDirectory: string;
 begin
   if Assigned(FSession) and FSession.IsRunning then
   begin
@@ -786,7 +866,10 @@ begin
     (FProfileCombo.ItemIndex > High(LProfiles)) then
     Exit;
   LProfile := LProfiles[FProfileCombo.ItemIndex];
-  LInvocation := LProfile.BuildInvocation(LCommand, GetWorkingDirectory);
+  LWorkingDirectory := GetWorkingDirectory;
+  if not CanRunCommand(LProfile, LCommand, LWorkingDirectory) then
+    Exit;
+  LInvocation := LProfile.BuildInvocation(LCommand, LWorkingDirectory);
   AppendOutput(sLineBreak + '> ' + LCommand + sLineBreak);
   FRunButton.Enabled := False;
   FRunButton.Caption := 'Send';
