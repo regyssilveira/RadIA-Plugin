@@ -101,6 +101,9 @@ type
     function AddSession: TRadIATerminalFrame;
     procedure CloseClick(Sender: TObject);
     function GetActiveSession: TRadIATerminalFrame;
+    procedure WriteSmokeEvidence(
+      const ASession: TRadIATerminalFrame
+    );
   protected
     procedure CreateWnd; override;
   public
@@ -123,6 +126,7 @@ implementation
 uses
   System.DateUtils,
   System.IOUtils,
+  System.JSON,
   System.Math,
   System.SyncObjs,
   System.SysUtils,
@@ -808,7 +812,10 @@ var
 begin
   LSession := GetActiveSession;
   if Assigned(LSession) then
+  begin
     LSession.EnsureVisibleContent;
+    WriteSmokeEvidence(LSession);
+  end;
 end;
 
 function TRadIATerminalTabsFrame.GetActiveSession:
@@ -821,6 +828,97 @@ begin
   if Assigned(LPage) and (LPage.ControlCount > 0) and
     (LPage.Controls[0] is TRadIATerminalFrame) then
     Result := TRadIATerminalFrame(LPage.Controls[0]);
+end;
+
+procedure TRadIATerminalTabsFrame.WriteSmokeEvidence(
+  const ASession: TRadIATerminalFrame
+);
+var
+  LEvidencePath: string;
+  LJson: TJSONObject;
+  LTabStopCount: Integer;
+begin
+  LEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_TERMINAL')
+  );
+  if (LEvidencePath = '') or SameText(LEvidencePath, '1') then
+    Exit;
+
+  LTabStopCount := 0;
+  if FAddButton.Visible and FAddButton.Enabled and FAddButton.TabStop then
+    Inc(LTabStopCount);
+  if FCloseButton.Visible and FCloseButton.Enabled and
+    FCloseButton.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FProfileCombo.Visible and
+    ASession.FProfileCombo.Enabled and
+    ASession.FProfileCombo.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FSnippetCombo.Visible and
+    ASession.FSnippetCombo.Enabled and
+    ASession.FSnippetCombo.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FHistoryCombo.Visible and
+    ASession.FHistoryCombo.Enabled and
+    ASession.FHistoryCombo.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FCommandEdit.Visible and
+    ASession.FCommandEdit.Enabled and
+    ASession.FCommandEdit.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FRunButton.Visible and
+    ASession.FRunButton.Enabled and
+    ASession.FRunButton.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FClearButton.Visible and
+    ASession.FClearButton.Enabled and
+    ASession.FClearButton.TabStop then
+    Inc(LTabStopCount);
+  if ASession.FOutputEditor.Visible and
+    ASession.FOutputEditor.Enabled and
+    ASession.FOutputEditor.TabStop then
+    Inc(LTabStopCount);
+
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('opened', TJSONBool.Create(Showing));
+    LJson.AddPair('width', TJSONNumber.Create(Width));
+    LJson.AddPair('height', TJSONNumber.Create(Height));
+    LJson.AddPair(
+      'requiredControlsVisible',
+      TJSONBool.Create(
+        FAddButton.Visible and
+        FCloseButton.Visible and
+        ASession.FRunButton.Visible and
+        ASession.FStopButton.Visible and
+        ASession.FClearButton.Visible
+      )
+    );
+    LJson.AddPair(
+      'commandInputAvailable',
+      TJSONBool.Create(
+        ASession.FCommandEdit.Visible and
+        ASession.FCommandEdit.Enabled
+      )
+    );
+    LJson.AddPair(
+      'outputAvailable',
+      TJSONBool.Create(
+        ASession.FOutputEditor.Visible and
+        ASession.FOutputEditor.Enabled
+      )
+    );
+    LJson.AddPair(
+      'tabStopCount',
+      TJSONNumber.Create(LTabStopCount)
+    );
+    TDirectory.CreateDirectory(
+      TPath.GetDirectoryName(LEvidencePath)
+    );
+    TFile.WriteAllText(LEvidencePath, LJson.ToJSON, TEncoding.UTF8);
+  finally
+    LJson.Free;
+  end;
 end;
 
 {$IFDEF TESTS}

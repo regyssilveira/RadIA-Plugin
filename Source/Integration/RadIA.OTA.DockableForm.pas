@@ -160,6 +160,10 @@ begin
   end;
   LServices.RegisterDockableForm(GRadIATerminalDockableForm);
   GRadIATerminalDockableFormRegistered := True;
+  if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_TERMINAL')
+  ) <> '' then
+    GRadIATerminalDockableFormHost.Show;
   TLogger.Log('Native chat and terminal docks registered.', 'DockableForm');
 end;
 

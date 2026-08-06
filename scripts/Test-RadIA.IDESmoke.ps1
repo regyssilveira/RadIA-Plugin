@@ -9,6 +9,7 @@ param(
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
+    [switch]$ExerciseTerminal,
     [switch]$ExerciseInlineCompletion,
     [switch]$ExerciseAgentRuntime,
     [switch]$ExerciseDeclarativeWorkflow,
@@ -17,6 +18,7 @@ param(
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = "",
+    [string]$TerminalEvidencePath = "",
     [string]$InlineCompletionEvidencePath = "",
     [string]$AgentRuntimeEvidencePath = "",
     [string]$DeclarativeWorkflowEvidencePath = "",
@@ -41,6 +43,9 @@ if ($InlineCompletionEvidencePath -and -not $ExerciseInlineCompletion) {
         "Inline completion evidence requires " +
         "-ExerciseInlineCompletion."
     )
+}
+if ($TerminalEvidencePath -and -not $ExerciseTerminal) {
+    throw "Terminal evidence requires -ExerciseTerminal."
 }
 if ($AgentRuntimeEvidencePath -and -not $ExerciseAgentRuntime) {
     throw (
@@ -566,6 +571,58 @@ function Wait-RadIADockInfo {
         Start-Sleep -Milliseconds 250
     } while ([DateTime]::UtcNow -lt $deadline)
     throw "The RadIA native dockable form did not open."
+}
+
+function Wait-RadIATerminalDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$EvidencePath,
+        [Parameter(Mandatory)]
+        [int]$TimeoutSeconds
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        if (Test-Path -LiteralPath $EvidencePath -PathType Leaf) {
+            break
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    if (-not (Test-Path -LiteralPath $EvidencePath -PathType Leaf)) {
+        throw "The RadIA terminal did not publish visual evidence."
+    }
+    $diagnostic = Get-Content `
+        -LiteralPath $EvidencePath `
+        -Raw `
+        -Encoding UTF8 |
+        ConvertFrom-Json
+    if (
+        $diagnostic.opened -ne $true -or
+        $diagnostic.requiredControlsVisible -ne $true -or
+        $diagnostic.commandInputAvailable -ne $true -or
+        $diagnostic.outputAvailable -ne $true
+    ) {
+        throw "The terminal visual surface is incomplete."
+    }
+    if ($diagnostic.tabStopCount -lt 6) {
+        throw (
+            "The terminal exposes only $($diagnostic.tabStopCount) " +
+            "keyboard tab stops; " +
+            "at least 6 are required."
+        )
+    }
+    if ($diagnostic.width -lt 300 -or $diagnostic.height -lt 200) {
+        throw "The terminal opened with unusable geometry."
+    }
+    return [PSCustomObject]@{
+        Opened = $diagnostic.opened
+        Width = $diagnostic.width
+        Height = $diagnostic.height
+        RequiredControlsVisible = $diagnostic.requiredControlsVisible
+        CommandInputAvailable = $diagnostic.commandInputAvailable
+        OutputAvailable = $diagnostic.outputAvailable
+        TabStopCount = $diagnostic.tabStopCount
+    }
 }
 
 function Wait-RadIAInlineCompletionDiagnostic {
@@ -1142,6 +1199,7 @@ $upgradeFromVersion = ""
 $upgradeFromPackageSha256 = ""
 $inlineSmokeUnitPath = ""
 $inlineSmokeLogPath = ""
+$terminalSmokeRoot = ""
 $agentSmokeCheckpointDirectory = ""
 $script:InlineLogSettingsInitialized = $false
 $script:KnowledgeSettingsInitialized = $false
@@ -1268,6 +1326,19 @@ if ($ExerciseKnowledge) {
     )) {
         throw "The knowledge smoke project was not found."
     }
+}
+if ($ExerciseTerminal) {
+    $terminalSmokeRoot = Join-Path (
+        "$repositoryRoot\Output\Validation\IDESmokeDiagnostics"
+    ) (
+        "Terminal-$DelphiVersion-$platform-" +
+        [Guid]::NewGuid().ToString("N")
+    )
+    New-Item `
+        -ItemType Directory `
+        -Path $terminalSmokeRoot `
+        -Force |
+        Out-Null
 }
 if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
     $ExerciseDeclarativeWorkflow) {
@@ -1536,7 +1607,14 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     if ($ExerciseKnowledge) {
         $launchArguments = @($knowledgeSmokeProjectPath)
     }
+    $terminalSmokePath = ""
+    if ($ExerciseTerminal) {
+        $terminalSmokePath = Join-Path `
+            $terminalSmokeRoot `
+            "cycle-$cycle.json"
+    }
     $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
+    $terminalSmokeEnvironment = $env:RADIA_IDE_SMOKE_TERMINAL
     $agentSmokeEnvironment = $env:RADIA_IDE_SMOKE_AGENT_RUNTIME
     $workflowSmokeEnvironment = (
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW
@@ -1544,6 +1622,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     try {
         if ($ExerciseInlineCompletion) {
             $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = "1"
+        }
+        if ($ExerciseTerminal) {
+            $env:RADIA_IDE_SMOKE_TERMINAL = $terminalSmokePath
         }
         if ($ExerciseAgentRuntime) {
             $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = (
@@ -1567,6 +1648,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
     } finally {
         $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = $inlineSmokeEnvironment
+        $env:RADIA_IDE_SMOKE_TERMINAL = $terminalSmokeEnvironment
         $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = $agentSmokeEnvironment
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW = (
             $workflowSmokeEnvironment
@@ -1687,6 +1769,12 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         if (-not $ideState.versionName) {
             throw "IDE version name was empty in cycle $cycle."
+        }
+        $terminalDiagnostic = $null
+        if ($ExerciseTerminal) {
+            $terminalDiagnostic = Wait-RadIATerminalDiagnostic `
+                -EvidencePath $terminalSmokePath `
+                -TimeoutSeconds 60
         }
         $inlineDiagnostic = $null
         if ($ExerciseInlineCompletion) {
@@ -1908,6 +1996,26 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [bool]$ExerciseDocking -and
                 $cycle -ge 2
             )
+            TerminalExercised = [bool]$ExerciseTerminal
+            TerminalOpened = (
+                [bool]$ExerciseTerminal -and
+                $terminalDiagnostic.Opened
+            )
+            TerminalWidth = $terminalDiagnostic.Width
+            TerminalHeight = $terminalDiagnostic.Height
+            TerminalRequiredControlsVisible = (
+                [bool]$ExerciseTerminal -and
+                $terminalDiagnostic.RequiredControlsVisible
+            )
+            TerminalCommandInputAvailable = (
+                [bool]$ExerciseTerminal -and
+                $terminalDiagnostic.CommandInputAvailable
+            )
+            TerminalOutputAvailable = (
+                [bool]$ExerciseTerminal -and
+                $terminalDiagnostic.OutputAvailable
+            )
+            TerminalTabStopCount = $terminalDiagnostic.TabStopCount
             PackageLifecycleExercised = [bool]$ExercisePackageLifecycle
             PackageLifecycleModes = $packageLifecycleModes
             PackageLifecycleSeconds = $packageLifecycleSeconds
@@ -2068,6 +2176,12 @@ if ($ExerciseInlineCompletion) {
         "Local multiline Ghost Text preparation and OTA painting passed."
     )
 }
+if ($ExerciseTerminal) {
+    Write-Host (
+        "Native terminal window, controls, input, output, and keyboard " +
+        "tab stops passed."
+    )
+}
 if ($ExerciseAgentRuntime) {
     Write-Host (
         "Agent runtime pause, persistence, resume, and completion passed."
@@ -2110,6 +2224,7 @@ if ($EvidencePath) {
         cyclesRequested = $Cycles
         cyclesPassed = $results.Count
         dockingExercised = [bool]$ExerciseDocking
+        terminalExercised = [bool]$ExerciseTerminal
         inlineCompletionExercised = [bool]$ExerciseInlineCompletion
         agentRuntimeExercised = [bool]$ExerciseAgentRuntime
         declarativeWorkflowExercised = (
@@ -2127,6 +2242,47 @@ if ($EvidencePath) {
         ConvertTo-Json -Depth 6 |
         Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
     Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
+}
+if ($TerminalEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "Terminal"
+    $resolvedTerminalEvidencePath = [IO.Path]::GetFullPath(
+        $TerminalEvidencePath
+    )
+    $terminalEvidenceDirectory = Split-Path -Parent (
+        $resolvedTerminalEvidencePath
+    )
+    if ($terminalEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $terminalEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "interactiveTerminalVisualSmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedTerminalEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "Terminal evidence created: " +
+        $resolvedTerminalEvidencePath
+    )
 }
 if ($KnowledgeEvidencePath) {
     $sourceCommit = Get-RadIACleanSourceCommit `
