@@ -134,6 +134,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         antes de aplicar a seleção dinâmica ao índice.
     *   M5 entregue nesta etapa: históricos concluídos e aprovados podem alimentar o índice
         mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
+    *   M5 validado em IDEs reais: indexação e busca semântica local, origem, navegação, métricas,
+        leitura e isolamento passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
     *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas
         telas visuais de configuração e gerenciamento já acessíveis por clique.
     *   M6 entregue nesta etapa: onboarding v2 executa `/doctor` diretamente; o diagnóstico de

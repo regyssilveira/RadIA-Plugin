@@ -92,6 +92,8 @@ use a uniform configuration.
 - Discovery is limited to 5,000 files and every file is limited to 2 MiB.
 
 See also the [agentic tools guide](user_guide_agentic_tools.en.md).
+The reproducible validation across all four supported IDE targets is recorded in
+[`knowledge_smoke_evidence_2.0.0.json`](knowledge_smoke_evidence_2.0.0.json).
 
 ## Approved agent run memory
 

@@ -297,6 +297,30 @@ powershell.exe -ExecutionPolicy Bypass `
 
 O resultado versionado fica em `declarative_workflow_smoke_evidence_2.0.0.json`.
 
+### Evidência do conhecimento semântico
+
+Use `-ExerciseKnowledge` para abrir um projeto real, indexá-lo com o provider local e validar busca,
+origem, navegação, métricas, leitura e isolamento:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseKnowledge `
+  -SkipPackageHashCheck `
+  -KnowledgeEvidencePath "Output\Validation\Knowledge\Delphi13-Win32.json"
+```
+
+Depois dos quatro targets, consolide a matriz fail-closed:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.KnowledgeEvidence.ps1
+```
+
+O resultado versionado fica em `knowledge_smoke_evidence_2.0.0.json`.
+
 ---
 
 ## Checklist Final

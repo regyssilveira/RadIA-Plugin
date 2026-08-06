@@ -135,6 +135,8 @@ The board below summarizes the current status of mapped short and medium-term fe
         and limits before applying dynamic selection to the index.
     *   M5 delivered in this stage: completed and approved histories can feed the index after
         explicit consent, isolated by project and without tool payloads.
+    *   M5 validated in real IDEs: local semantic indexing and search, provenance, navigation,
+        metrics, retrieval, and isolation passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
     *   M6 delivered in this stage: onboarding v2 runs `/doctor` directly; the first-value
         diagnostic returns a score, checks, and next action, verifies `GetIDEState`, and requires
         MCP only for a CLI executor.

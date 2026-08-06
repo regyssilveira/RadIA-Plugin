@@ -96,6 +96,8 @@ persistidos usem uma configuração uniforme.
 - A descoberta é limitada a 5.000 arquivos e cada arquivo é limitado a 2 MiB.
 
 Consulte também o [guia de ferramentas agentivas](user_guide_agentic_tools.md).
+A validação reproduzível nas quatro IDEs suportadas está registrada em
+[`knowledge_smoke_evidence_2.0.0.json`](knowledge_smoke_evidence_2.0.0.json).
 
 ## Memória de execuções agentivas aprovadas
 

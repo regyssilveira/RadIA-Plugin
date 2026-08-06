@@ -66,7 +66,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
 | M3 — Unified center | Completed | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | Completed | Declarative installation and workflows proven in the real matrix |
-| M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
+| M5 — Knowledge | Completed | Private hybrid search proven in the real matrix |
 | M6 — Installation | Planned | First value and diagnostics without manual file editing |
 | M7 — Journeys | Completed | End-to-end Delphi recipes approved |
 | M8 — Proof and release | In progress | Matrix, ten cycles, and audits approved |
@@ -197,19 +197,19 @@ are derived, and every step re-enters consent and auditing.
 
 **Outcome:** relevant large-solution context with privacy and traceability.
 
-**Delivered so far:** hybrid retrieval with deterministic lexical fallback, an optional embedding
+**Delivered:** hybrid retrieval with deterministic lexical fallback, an optional embedding
 contract, a network-free local vector provider, versioned per-workspace persistence, and lexical
-plus vector explanations for every result. A remote provider remains pending.
+plus vector explanations for every result.
 
 Local visual consent is now available under **Settings > Security & Consent**, disabled by default
 and applied immediately without restarting the IDE. Configurable file and project exclusions block
-queries immediately and remove persisted content on the next refresh. Remote providers remain
-pending.
+queries immediately and remove persisted content on the next refresh. The optional
+OpenAI-compatible remote provider remains inactive until the user explicitly authorizes it.
 
-The remote foundation now includes an injectable OpenAI-compatible transport, HTTPS or loopback
+The remote integration includes an injectable OpenAI-compatible transport, HTTPS or loopback
 endpoints, disabled redirects, timeouts, input and response limits, validated dimensions, and API
-keys kept outside JSON. Failures continue to fall back to lexical search. Activation remains
-pending until separate remote consent and explicit visual configuration are available.
+keys kept outside JSON. Failures continue to fall back to lexical search. Activation requires
+separate remote consent and explicit visual configuration.
 
 Remote embedding selection is now fail-closed: semantic search and network authorization are
 independent decisions. Without remote enablement, separate consent, and a valid provider, the index
@@ -226,10 +226,15 @@ Markdown, text, AsciiDoc, and reStructuredText documentation. Documentation disc
 to the root and `docs/doc` folders with file-count, size, and workspace-boundary limits; the OTA
 notifier uses the same centralized format policy.
 
-As a foundation for approved history, the sanitized checkpoint catalog now preserves `projectId`
-and `planApproved` and provides a bounded query that returns only completed runs with an approved
-plan belonging exactly to the requested project. The query does not expose tool arguments or
-results. Opt-in ingestion of these summaries into the index remains pending.
+For approved history, the sanitized checkpoint catalog preserves `projectId` and `planApproved`.
+Its bounded query returns only completed runs with an approved plan belonging exactly to the
+requested project. Opt-in ingestion adds these summaries to the index without exposing tool
+arguments or results, and revocation blocks queries before physical removal on the next refresh.
+
+The real semantic journey passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The evidence
+indexes the test project, searches semantically with `local-hash-v1`, and verifies provenance,
+navigation, metrics, document retrieval, and workspace isolation. The versioned matrix is stored
+in `knowledge_smoke_evidence_2.0.0.json`.
 
 ### M6 — Installation and first value
 

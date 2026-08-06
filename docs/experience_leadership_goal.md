@@ -67,7 +67,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Concluído | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Concluído | Instalação e workflows declarativos comprovados na matriz real |
-| M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
+| M5 — Conhecimento | Concluído | Busca híbrida privada comprovada na matriz real |
 | M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
 | M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |
 | M8 — Prova e release | Em execução | Matriz, dez ciclos e auditorias aprovados |
@@ -204,19 +204,19 @@ timeout e idempotência são derivados, e cada etapa atravessa novamente consent
 
 **Saída:** contexto relevante de grandes soluções sem perder privacidade ou rastreabilidade.
 
-**Entregue até aqui:** busca híbrida com fallback lexical determinístico, contrato opcional de
-embeddings, provider vetorial local sem rede, persistência versionada por workspace e explicação
-dos componentes lexical e vetorial de cada resultado. Provider remoto continua pendente.
+**Entregue:** busca híbrida com fallback lexical determinístico, contrato opcional de embeddings,
+provider vetorial local sem rede, persistência versionada por workspace e explicação dos
+componentes lexical e vetorial de cada resultado.
 
 O consentimento visual local agora está disponível em **Settings > Security & Consent**, desativado
 por padrão e aplicado imediatamente sem reiniciar a IDE. Exclusões configuráveis por arquivo e
 projeto bloqueiam consultas imediatamente e removem o conteúdo persistido na atualização seguinte.
-Providers remotos continuam pendentes.
+O provider remoto OpenAI-compatible é opcional e permanece inativo até autorização explícita.
 
-A fundação remota agora inclui transporte OpenAI-compatible injetável, endpoint HTTPS ou loopback,
+A integração remota inclui transporte OpenAI-compatible injetável, endpoint HTTPS ou loopback,
 redirects desabilitados, timeout, limites de entrada e resposta, dimensões validadas e API key fora
-do JSON. Falhas continuam retornando à busca lexical. A ativação permanece pendente até existir
-consentimento remoto separado e configuração visual explícita.
+do JSON. Falhas continuam retornando à busca lexical. A ativação exige consentimento remoto
+separado e configuração visual explícita.
 
 O seletor de embeddings remotos agora falha de forma fechada: busca semântica e autorização de rede
 são decisões independentes. Sem habilitação remota, consentimento separado e provider válido, o
@@ -237,6 +237,11 @@ O histórico aprovado está integrado ao índice mediante consentimento explíci
 padrão. Somente execuções concluídas, com plano aprovado e do projeto atual viram documentos
 virtuais. Argumentos e resultados de tools não são copiados, e a revogação bloqueia consultas
 imediatamente antes da remoção física na atualização seguinte.
+
+A jornada semântica real foi aprovada no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. A prova
+indexa o projeto de testes, pesquisa semanticamente com `local-hash-v1`, valida origem, navegação,
+métricas, leitura do documento e isolamento do workspace. A matriz versionada está em
+`knowledge_smoke_evidence_2.0.0.json`.
 
 ### M6 — Instalação e primeiro valor
 
