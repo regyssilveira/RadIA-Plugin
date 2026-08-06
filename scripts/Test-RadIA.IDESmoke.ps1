@@ -1933,12 +1933,24 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                     '"arguments":' + $publishArguments + '}}'
                 )
             )
-            $publishResponses = @(
-                $publishRequests |
-                    & $bridgePath $instanceFile |
-                    ForEach-Object { $_ | ConvertFrom-Json }
-            )
-            if ($LASTEXITCODE -ne 0) {
+            $publishResponses = @()
+            $publishSucceeded = $false
+            for ($attempt = 1; $attempt -le 10; $attempt++) {
+                $publishResponseLines = @(
+                    $publishRequests |
+                        & $bridgePath $instanceFile 2>$null
+                )
+                if ($LASTEXITCODE -eq 0) {
+                    $publishResponses = @(
+                        $publishResponseLines |
+                            ForEach-Object { $_ | ConvertFrom-Json }
+                    )
+                    $publishSucceeded = $true
+                    break
+                }
+                Start-Sleep -Milliseconds 250
+            }
+            if (-not $publishSucceeded) {
                 throw "Inline review publication failed in cycle $cycle."
             }
             $publishResponse = $publishResponses |
@@ -1984,12 +1996,24 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                     '"arguments":' + $staleArguments + '}}'
                 )
             )
-            $reviewLifecycleResponses = @(
-                $reviewLifecycleRequests |
-                    & $bridgePath $instanceFile |
-                    ForEach-Object { $_ | ConvertFrom-Json }
-            )
-            if ($LASTEXITCODE -ne 0) {
+            $reviewLifecycleResponses = @()
+            $reviewLifecycleSucceeded = $false
+            for ($attempt = 1; $attempt -le 10; $attempt++) {
+                $reviewLifecycleResponseLines = @(
+                    $reviewLifecycleRequests |
+                        & $bridgePath $instanceFile 2>$null
+                )
+                if ($LASTEXITCODE -eq 0) {
+                    $reviewLifecycleResponses = @(
+                        $reviewLifecycleResponseLines |
+                            ForEach-Object { $_ | ConvertFrom-Json }
+                    )
+                    $reviewLifecycleSucceeded = $true
+                    break
+                }
+                Start-Sleep -Milliseconds 250
+            }
+            if (-not $reviewLifecycleSucceeded) {
                 throw "Inline review lifecycle failed in cycle $cycle."
             }
             $rejectResponse = $reviewLifecycleResponses |
