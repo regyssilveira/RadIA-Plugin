@@ -1058,10 +1058,18 @@ end;
 
 procedure TRadIAEditorHook.PopulateToolsMenu(const AMenuItem: TMenuItem);
 var
+  LError: string;
   LItem: TMenuItem;
+  LProfile: TRadIAInlineShortcutProfile;
 begin
   if not Assigned(AMenuItem) then
     Exit;
+  if not TRadIAInlineShortcutProfile.TryParse(
+    FInlineShortcutProfile,
+    LProfile,
+    LError
+  ) then
+    LProfile := TRadIAInlineShortcutProfile.Default;
 
   LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Rad IA Chat Panel';
@@ -1070,6 +1078,7 @@ begin
 
   LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Rad IA Terminal';
+  LItem.ShortCut := LProfile.ShortcutFor(isaTerminal);
   LItem.OnClick := OnShowTerminalExecute;
   AMenuItem.Add(LItem);
 

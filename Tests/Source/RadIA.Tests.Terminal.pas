@@ -54,6 +54,8 @@ type
     procedure TerminalTabsCreateAndCloseIndependentSessions;
     [Test]
     procedure TerminalControlsExposeAccessibleLabels;
+    [Test]
+    procedure TerminalShortcutIsConfigurableAndBackwardCompatible;
   end;
 
 implementation
@@ -62,8 +64,10 @@ uses
   System.DateUtils,
   System.IOUtils,
   System.SysUtils,
+  Vcl.Menus,
   Vcl.Forms,
   RadIA.Core.AgentExecutors,
+  RadIA.Core.InlineShortcuts,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalScreen,
   RadIA.UI.TerminalFrame;
@@ -495,6 +499,52 @@ begin
   finally
     LHost.Free;
   end;
+end;
+
+procedure TRadIATerminalTests.
+  TerminalShortcutIsConfigurableAndBackwardCompatible;
+var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
+begin
+  Assert.IsTrue(
+    TRadIAInlineShortcutProfile.TryParse(
+      'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +
+      'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+      'reject=Ctrl+Alt+Backspace',
+      LProfile,
+      LError
+    ),
+    LError
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+T')),
+    Integer(LProfile.ShortcutFor(isaTerminal))
+  );
+  Assert.IsTrue(
+    TRadIAInlineShortcutProfile.TryParse(
+      'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +
+      'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+      'reject=Ctrl+Alt+Backspace; terminal=Ctrl+Shift+T',
+      LProfile,
+      LError
+    ),
+    LError
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Shift+T')),
+    Integer(LProfile.ShortcutFor(isaTerminal))
+  );
+  Assert.IsFalse(
+    TRadIAInlineShortcutProfile.TryParse(
+      'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +
+      'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+      'reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+Space',
+      LProfile,
+      LError
+    )
+  );
+  Assert.Contains(LError, 'must be unique');
 end;
 
 initialization

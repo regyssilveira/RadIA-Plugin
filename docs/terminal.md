@@ -1,80 +1,99 @@
 # Terminal acoplável
 
-O RadIA 2.0 inclui um terminal nativo acoplável à IDE. Abra-o pelo botão **>_** do chat, digitando
-`/terminal`, pelo atalho configurado ou em **Tools/Ferramentas > Rad IA Terminal**. A janela usa o
-mesmo mecanismo de docking do chat, portanto posição, tamanho e visibilidade acompanham o desktop
-do Delphi.
+O RadIA 2.0 inclui um terminal nativo acoplável à IDE. Ele está disponível nos três targets
+oficiais: Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 
-O botão e o comando são equivalentes: quem prefere interação visual pode clicar em **Terminal** no
-cabeçalho do chat, enquanto quem prefere teclado pode digitar `/terminal`. O foco inicial só é
-aplicado depois que toda a hierarquia visual do painel acoplável estiver conectada à janela da IDE.
+## Como abrir
+
+Existem quatro formas equivalentes:
+
+1. Clique no botão **>_ Terminal** no cabeçalho do chat.
+2. Digite `/terminal` no chat e envie o comando.
+3. Use **Tools/Ferramentas > Rad IA Terminal**.
+4. Pressione o atalho configurado. O padrão é `Ctrl+Alt+T`.
+
+O botão e o comando chamam a mesma ação nativa. O terminal não é inserido dentro do WebView2:
+ele usa um painel VCL próprio, registrado pela Open Tools API como janela acoplável.
+
+## Configuração do atalho
+
+Abra **Rad IA > Settings > Security & Privacy** e localize **RadIA shortcuts**. O perfil contém
+pares `ação=atalho` separados por ponto e vírgula:
+
+```text
+request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T
+```
+
+Altere somente o valor de `terminal` para escolher outro binding. Os atalhos precisam ser válidos
+e únicos dentro do perfil. A configuração é validada antes de ser salva, evitando que o terminal
+conflite com aceitar, rejeitar ou solicitar uma sugestão inline.
+
+Perfis salvos por versões anteriores, ainda sem a entrada `terminal`, continuam válidos e recebem
+automaticamente o padrão `Ctrl+Alt+T`.
 
 ## Recursos
 
+- sessões simultâneas em abas independentes;
 - perfis para Windows PowerShell e Command Prompt;
-- diretório de trabalho automático na pasta do projeto Delphi ativo;
-- captura incremental e simultânea de stdout e stderr;
-- interpretação incremental de ANSI SGR, inclusive quando a sequência é dividida entre chunks;
-- cores ANSI normais e brilhantes, texto em negrito e reset de estilo em uma saída rica;
-- buffer de tela com sobrescrita por retorno de carro, posição e movimento de cursor CSI;
-- limpeza ANSI de linha ou tela e save/restore da posição do cursor;
-- múltiplas sessões simultâneas em abas, cada uma com processo, entrada e saída independentes;
-- fechamento isolado de aba com cancelamento seguro apenas da árvore de processos correspondente;
-- entrada contínua para responder prompts enquanto o processo permanece ativo;
-- sessão Windows ConPTY com canais UTF-8 e fallback para pipes em sistemas sem a API;
-- resize automático da pseudo-console em colunas e linhas quando o painel muda de tamanho;
-- botão **Stop** que encerra toda a árvore de processos;
-- timeout máximo de 30 minutos por comando;
+- diretório de trabalho baseado na pasta do projeto Delphi ativo;
+- execução interativa por ConPTY, com fallback para pipes;
+- entrada contínua para responder prompts de processos ativos;
+- captura incremental de stdout e stderr;
+- ANSI SGR, cores normais e brilhantes, negrito e reset;
+- movimentação de cursor, retorno de carro, limpeza de linha e tela;
+- redimensionamento automático da pseudo-console;
+- Unicode por canais UTF-8;
 - histórico persistente dos últimos 200 comandos;
-- reutilização de comandos pelo seletor de histórico;
-- busca reversa incremental por `Ctrl+R`; pressione novamente para encontrar a ocorrência anterior;
-- snippets para build do Delphi 13, testes, `git status` e `git diff --check`;
-- saída monoespaçada com código de saída e estado final.
-
-Sequências ANSI de estilo (`0`, `1`, `22`, `30–37`, `39` e `90–97`) são interpretadas e não
-aparecem como texto bruto. O buffer visual aplica movimentação relativa e absoluta de cursor,
-retorno de carro, backspace, tabulação, limpeza de linha/tela e save/restore de posição. Isso permite
-que barras de progresso e ferramentas interativas atualizem o conteúdo existente sem produzir
-linhas duplicadas. Em Windows 10 1809 ou superior, a execução usa ConPTY, mantém entrada contínua e
-atualiza as dimensões do console conforme o painel.
+- busca reversa incremental com `Ctrl+R`;
+- snippets para build, testes e Git;
+- cancelamento da árvore completa de processos;
+- timeout máximo de 30 minutos por comando;
+- encerramento isolado de cada aba.
 
 ## Fluxo de uso
 
 1. Abra um projeto na IDE.
-2. Abra **Rad IA Terminal**.
-3. Use **New terminal** quando precisar de outra sessão simultânea.
-4. Escolha PowerShell ou Command Prompt na aba ativa.
+2. Abra o terminal por botão, `/terminal`, menu ou atalho.
+3. Use **New terminal** para criar outra sessão.
+4. Escolha o shell da aba ativa.
 5. Digite um comando ou selecione um snippet.
-6. Clique em **Run**.
-7. Se o processo solicitar entrada, digite a resposta e clique em **Send**.
+6. Clique em **Run** ou pressione Enter.
+7. Quando o processo solicitar entrada, digite a resposta e use **Send**.
 8. Use **Stop** para cancelar o processo e seus subprocessos.
-9. Use **Close terminal** para cancelar e remover somente a aba ativa.
+9. Use **Close terminal** para remover somente a aba ativa.
 
-Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Cada novo
-acionamento percorre os resultados anteriores, do mais recente para o mais antigo. Alterar
-manualmente o texto reinicia a busca.
+Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Pressione
+novamente para percorrer ocorrências mais antigas. Uma edição manual reinicia a busca.
 
-O terminal executa exatamente o comando informado pelo usuário. Ele não habilita automaticamente
-permissões de agente ou opções autônomas dos CLIs. O histórico é salvo localmente em
-`%APPDATA%\RadIA\terminal-history.json` e não contém stdout, stderr, tokens ou credenciais — apenas
-perfil, comando, horário e código de saída.
+## Segurança e privacidade
 
-## Encerramento seguro
+O terminal executa exatamente o comando informado pelo usuário. Ele não ativa modo agente nem
+adiciona opções autônomas aos CLIs. O histórico é salvo em
+`%APPDATA%\RadIA\terminal-history.json` e contém somente perfil, comando, horário e código de saída.
+Stdout, stderr, tokens e credenciais não são persistidos pelo histórico.
 
-Cada execução recebe um Job Object do Windows com encerramento em cascata. Ao cancelar, fechar o
-painel, descarregar o plugin ou encerrar a IDE, o RadIA finaliza o processo principal e todos os
-filhos. Atualizações da interface são enfileiradas na thread principal e descartadas se o painel já
-tiver sido destruído.
+Cada execução recebe um Job Object do Windows. Cancelar a execução, fechar a aba, descarregar o
+plugin ou encerrar a IDE finaliza o processo principal e seus filhos. Atualizações visuais são
+enfileiradas na thread principal e ignoradas quando o painel já não existe.
 
-A camada ConPTY carrega as APIs do Windows dinamicamente. Em versões antigas do sistema, o terminal
-continua funcional pelo executor de pipes, mas sem resize ou semântica completa de pseudo-console.
+## Docking e foco
 
-## Evidência na IDE real
+O host nativo cria o frame e conecta toda a hierarquia de parents antes de solicitar foco. Isso
+evita o erro `Control TEdit has no parent window` observado ao abrir o terminal durante a criação
+do painel no Delphi 13. O foco é aplicado de forma adiada apenas quando:
 
-A matriz versionada está em
-[`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json). O smoke abre o terminal
-pela própria BPL, exige geometria útil, confirma os controles **New terminal**, **Close terminal**,
-**Run**, **Stop** e **Clear**, valida entrada e saída e rejeita qualquer target sem os cinco rótulos
-associados — **Shell profile**, **Command snippet**, **Command history**, **Terminal command** e
-**Terminal output** — ou com menos de nove pontos navegáveis por Tab. Delphi 11, 12 e 13 Win32 e
-Delphi 13 IDE64 passaram todos os critérios.
+- o formulário está visível e possui handle;
+- o campo de comando possui parent e handle válidos;
+- a janela do campo está visível e habilitada.
+
+A própria IDE persiste posição, tamanho, visibilidade e estado acoplado.
+
+## Evidência
+
+A matriz automatizada está em
+[`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json). O smoke exige geometria
+útil, entrada e saída, os controles **New terminal**, **Close terminal**, **Run**, **Stop** e
+**Clear**, os cinco rótulos acessíveis e pelo menos nove pontos navegáveis por Tab.
+
+Evidências de versões antigas do Delphi presentes no arquivo são históricas. A matriz vigente e
+obrigatória do RadIA é exclusivamente Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.

@@ -853,7 +853,7 @@ begin
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
-    'Inline shortcuts (request, accept, nextWord, alternative, reject):',
+    'RadIA shortcuts (request, accept, nextWord, alternative, reject, terminal):',
     16,
     1028
   );

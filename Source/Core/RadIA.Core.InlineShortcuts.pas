@@ -8,7 +8,8 @@ type
     isaAcceptAll,
     isaAcceptNextWord,
     isaAlternative,
-    isaReject
+    isaReject,
+    isaTerminal
   );
 
   TRadIAInlineShortcutProfile = record
@@ -95,7 +96,7 @@ begin
   LValue := Trim(Copy(APair, LIndex + 1, MaxInt));
   if not TryResolveInlineShortcutAction(LName, LAction) then
   begin
-    AError := 'Unknown inline shortcut action: ' + LName;
+    AError := 'Unknown RadIA shortcut action: ' + LName;
     Exit(False);
   end;
   if ASeen[LAction] then
@@ -129,9 +130,12 @@ begin
     High(TRadIAInlineShortcutAction) do
     if not ASeen[LAction] then
     begin
-      AError := 'Missing inline shortcut action: ' +
-        TRadIAInlineShortcutProfile.ActionName(LAction);
-      Exit(False);
+      if LAction <> isaTerminal then
+      begin
+        AError := 'Missing RadIA shortcut action: ' +
+          TRadIAInlineShortcutProfile.ActionName(LAction);
+        Exit(False);
+      end;
     end;
   for LAction := Low(TRadIAInlineShortcutAction) to
     High(TRadIAInlineShortcutAction) do
@@ -140,7 +144,7 @@ begin
       if AProfile.FShortcuts[LAction] =
         AProfile.FShortcuts[TRadIAInlineShortcutAction(LIndex)] then
       begin
-        AError := 'Inline shortcuts must be unique.';
+        AError := 'RadIA shortcuts must be unique.';
         Exit(False);
       end;
   Result := True;
@@ -161,6 +165,8 @@ begin
       Result := 'alternative';
     isaReject:
       Result := 'reject';
+    isaTerminal:
+      Result := 'terminal';
   else
     Result := '';
   end;
@@ -176,6 +182,7 @@ begin
   Result.FShortcuts[isaAlternative] :=
     ShortCut(VK_OEM_6, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaReject] := ShortCut(VK_BACK, [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaTerminal] := ShortCut(Ord('T'), [ssCtrl, ssAlt]);
 end;
 
 class function TRadIAInlineShortcutProfile.DefaultText: string;
