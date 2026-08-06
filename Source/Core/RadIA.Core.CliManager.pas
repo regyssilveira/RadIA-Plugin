@@ -144,6 +144,14 @@ type
     ): TRadIACliInstallPlan; static;
   end;
 
+  TRadIACliHealth = class
+  public
+    class function NormalizeVersionOutput(
+      const AStdOut: string;
+      const AStdErr: string
+    ): string; static;
+  end;
+
 implementation
 
 uses
@@ -151,6 +159,30 @@ uses
   System.Generics.Collections,
   System.IOUtils,
   System.SysUtils;
+
+{ TRadIACliHealth }
+
+class function TRadIACliHealth.NormalizeVersionOutput(
+  const AStdOut: string;
+  const AStdErr: string
+): string;
+var
+  LLines: TStringList;
+  LOutput: string;
+begin
+  LOutput := Trim(AStdOut);
+  if LOutput = '' then
+    LOutput := Trim(AStdErr);
+  LLines := TStringList.Create;
+  try
+    LLines.Text := LOutput;
+    if LLines.Count = 0 then
+      Exit('');
+    Result := Trim(LLines[0]);
+  finally
+    LLines.Free;
+  end;
+end;
 
 { TRadIACliDefinition }
 

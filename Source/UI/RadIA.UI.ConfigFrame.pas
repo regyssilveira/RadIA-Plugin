@@ -100,6 +100,8 @@ type
     FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
     FCliMcpSettings: TRadIACliMcpSettings;
     FCliInstallSession: IRadIACliProcessSession;
+    FCliVersionSession: IRadIACliProcessSession;
+    FCliVersionRequestId: Integer;
     FMcpHandshakeSession: IRadIACliProcessSession;
     FCliInstallGuard: IInterface;
 
@@ -115,6 +117,12 @@ type
     procedure BtnMcpRemoveClick(Sender: TObject);
     procedure CliClientChange(Sender: TObject);
     procedure CompleteCliInstall(
+      const AResult: TRadIACliProcessResult
+    );
+    procedure CompleteCliVersionProbe(
+      const ACliId: string;
+      const AExecutablePath: string;
+      const ARequestId: Integer;
       const AResult: TRadIACliProcessResult
     );
     procedure CompleteMcpHandshake(
@@ -150,6 +158,10 @@ type
     procedure RefreshCliMcpDiagnostics;
     procedure RefreshMcpPreview;
     procedure SetCliInstallRunning(const ARunning: Boolean);
+    procedure StartCliVersionProbe(
+      const ADefinition: TRadIACliDefinition;
+      const AExecutablePath: string
+    );
     procedure SaveCliMcpSettings;
     procedure SaveAgentExecutorSettings;
   public
@@ -1024,9 +1036,12 @@ begin
   (FCliInstallGuard as IRadIAConfigLifecycleGuard).Invalidate;
   if Assigned(FCliInstallSession) then
     FCliInstallSession.Cancel;
+  if Assigned(FCliVersionSession) then
+    FCliVersionSession.Cancel;
   if Assigned(FMcpHandshakeSession) then
     FMcpHandshakeSession.Cancel;
   FCliInstallSession := nil;
+  FCliVersionSession := nil;
   FMcpHandshakeSession := nil;
   FCliInstallGuard := nil;
   FAgentExecutorSettings.Free;
@@ -1872,10 +1887,14 @@ begin
   if LDetection.Installed then
   begin
     FLblCliStatus.Caption := Format(
-      'CLI status: detected via %s at %s',
+      'CLI status: detected via %s at %s; reading version...',
       [LDetection.Source, LDetection.ExecutablePath]
     );
     FBtnCliInstall.Caption := 'Update';
+    StartCliVersionProbe(
+      LDefinition,
+      LDetection.ExecutablePath
+    );
   end
   else
   begin
@@ -1885,6 +1904,39 @@ begin
   end;
   FBtnCliInstall.Enabled := not Assigned(FCliInstallSession);
   RefreshMcpPreview;
+end;
+
+procedure TRadIAFrameAIConfig.CompleteCliVersionProbe(
+  const ACliId: string;
+  const AExecutablePath: string;
+  const ARequestId: Integer;
+  const AResult: TRadIACliProcessResult
+);
+var
+  LDefinition: TRadIACliDefinition;
+  LVersion: string;
+begin
+  if ARequestId <> FCliVersionRequestId then
+    Exit;
+  FCliVersionSession := nil;
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  if not SameText(LDefinition.Id, ACliId) then
+    Exit;
+  LVersion := TRadIACliHealth.NormalizeVersionOutput(
+    AResult.StdOut,
+    AResult.StdErr
+  );
+  if AResult.Succeeded and (LVersion <> '') then
+    FLblCliStatus.Caption := Format(
+      'CLI status: %s detected at %s (%s)',
+      [LDefinition.DisplayName, AExecutablePath, LVersion]
+    )
+  else
+    FLblCliStatus.Caption := Format(
+      'CLI status: detected at %s, but the version check failed.',
+      [AExecutablePath]
+    );
 end;
 
 procedure TRadIAFrameAIConfig.RefreshMcpPreview;
@@ -1952,6 +2004,52 @@ begin
   FBtnCliInstall.Enabled := not ARunning;
   if ARunning then
     FLblCliStatus.Caption := 'CLI status: installing through the official channel...';
+end;
+
+procedure TRadIAFrameAIConfig.StartCliVersionProbe(
+  const ADefinition: TRadIACliDefinition;
+  const AExecutablePath: string
+);
+var
+  LGuard: IRadIAConfigLifecycleGuard;
+  LInvocation: TRadIACliInvocation;
+  LRequestId: Integer;
+begin
+  if Assigned(FCliVersionSession) then
+    FCliVersionSession.Cancel;
+  Inc(FCliVersionRequestId);
+  LRequestId := FCliVersionRequestId;
+  LInvocation := TRadIACliInvocation.Create(
+    AExecutablePath,
+    ['--version'],
+    GetCurrentDir,
+    'text'
+  );
+  LGuard := FCliInstallGuard as IRadIAConfigLifecycleGuard;
+  FCliVersionSession := TRadIACliProcessRunner.Start(
+    LInvocation,
+    10000,
+    nil,
+    nil,
+    procedure(AResult: TRadIACliProcessResult)
+    begin
+      TThread.Queue(
+        nil,
+        TThreadProcedure(
+          procedure
+          begin
+            if LGuard.IsAlive then
+              CompleteCliVersionProbe(
+                ADefinition.Id,
+                AExecutablePath,
+                LRequestId,
+                AResult
+              );
+          end
+        )
+      );
+    end
+  );
 end;
 
 procedure TRadIAFrameAIConfig.LoadAgentExecutorSettings;

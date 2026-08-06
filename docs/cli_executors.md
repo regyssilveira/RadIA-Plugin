@@ -34,6 +34,20 @@ Os identificadores vêm de um catálogo interno e são validados contra metacara
 execução. O Rad IA não baixa, empacota ou redistribui binários desses fornecedores. A autenticação
 continua sendo feita pelo próprio CLI depois da instalação.
 
+## Detecção e versão instalada
+
+Ao abrir o painel **CLI & MCP**, trocar o cliente ou usar **Refresh**, o RadIA procura primeiro o
+caminho configurado e depois o `PATH` do Windows. Quando encontra o executável, chama
+`--version` em segundo plano, com timeout de dez segundos, e apresenta na própria tela:
+
+- nome e versão informados pelo CLI;
+- caminho efetivamente usado;
+- falha do diagnóstico, sem impedir a configuração ou atualização.
+
+Uma resposta atrasada é descartada se o usuário trocar de cliente durante a verificação. Esse
+diagnóstico não autentica, não altera arquivos e não inicia uma sessão de agente. O login continua
+sendo controlado pelo próprio CLI.
+
 ## Seleção e segurança
 
 - **RadIA native agent** permanece como padrão e usa as ferramentas, consentimentos e checkpoints

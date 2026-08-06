@@ -48,6 +48,8 @@ type
     procedure FindByIdRejectsUnknownExecutor;
     [Test]
     procedure MissingConfiguredPathFallsBackToEnvironmentPath;
+    [Test]
+    procedure NormalizesCliVersionOutput;
   end;
 
 implementation
@@ -266,6 +268,22 @@ begin
   Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
   LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
   Assert.Contains(LPlan.Preview, '@google/gemini-cli@latest');
+end;
+
+procedure TRadIACliManagerTests.NormalizesCliVersionOutput;
+begin
+  Assert.AreEqual(
+    'codex-cli 1.2.3',
+    TRadIACliHealth.NormalizeVersionOutput(
+      'codex-cli 1.2.3' + sLineBreak + 'details',
+      ''
+    )
+  );
+  Assert.AreEqual(
+    'claude 4.5.0',
+    TRadIACliHealth.NormalizeVersionOutput('', 'claude 4.5.0')
+  );
+  Assert.AreEqual('', TRadIACliHealth.NormalizeVersionOutput('', ''));
 end;
 
 procedure TRadIACliManagerTests.InstallPlanRejectsShellMetacharacters;
