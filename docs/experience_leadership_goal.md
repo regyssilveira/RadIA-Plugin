@@ -311,14 +311,15 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 - [x] Executar dez ciclos de desinstalação, instalação, reparo, uso e shutdown por combinação.
 - [x] Validar upgrade real entre versões diferentes do pacote em cada combinação suportada.
 - [x] Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
-- [ ] Regenerar os três pacotes do mesmo commit e publicar hashes independentes.
+- [x] Regenerar os três pacotes do mesmo commit e publicar hashes independentes.
 - [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
 - [x] Automatizar a auditoria final de segurança, privacidade, acessibilidade e documentação.
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
-A prova anterior em `release_evidence_2.0.0.json` é histórica e ainda inclui a matriz descontinuada.
-Ela deve ser regenerada com três ZIPs do mesmo commit antes da publicação.
+A prova reproduzível em `release_evidence_2.0.0.json` contém os três ZIPs da matriz vigente, todos
+gerados do commit `ad0b5a250cb9e7f7de8d390d84db1e15d8a43b10`, com validação interna,
+SHA-256 independente e árvore rastreada limpa.
 
 A matriz em `ide_smoke_evidence_2.0.0.json` registra a validação histórica anterior. A nova prova
 de release deve cobrir Delphi 12 Win32 e Delphi 13 Win32/IDE64, completar 10/10 ciclos por target

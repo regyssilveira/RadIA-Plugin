@@ -304,14 +304,15 @@ Credential fields are rejected recursively and never enter extension packages.
 - [x] Complete ten uninstall, install, repair, usage, and shutdown cycles per supported combination.
 - [x] Validate a real upgrade between different package versions on every supported combination.
 - [x] Pass the create, edit, design, test, debug, fix, and commit continuous journey.
-- [ ] Regenerate three packages from one commit and publish independent hashes.
+- [x] Regenerate three packages from one commit and publish independent hashes.
 - [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
 - [x] Automate the final security, privacy, accessibility, and documentation audit.
 
 **Outcome:** a proven, reproducible 2.0.0 candidate ready for a publication decision.
 
-The proof in `release_evidence_2.0.0.json` is historical and still includes the discontinued
-matrix. It must be regenerated with three ZIP files from one commit before publication.
+The reproducible proof in `release_evidence_2.0.0.json` contains the three ZIP files in the active
+matrix. All were built from commit `ad0b5a250cb9e7f7de8d390d84db1e15d8a43b10`, with internal
+validation, independent SHA-256 hashes, and a clean tracked worktree.
 
 The matrix in `ide_smoke_evidence_2.0.0.json` records the previous historical validation. The new
 release proof must cover Delphi 12 Win32 and Delphi 13 Win32/IDE64, complete 10/10 cycles per target,
