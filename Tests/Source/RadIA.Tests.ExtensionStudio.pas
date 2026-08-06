@@ -16,6 +16,10 @@ type
     [Test]
     procedure BuildsWorkflowManifest;
     [Test]
+    procedure BuildsCapabilityAudit;
+    [Test]
+    procedure ExportsVerifiedUnsignedPackage;
+    [Test]
     procedure RejectsInvalidDrafts;
     [Test]
     procedure GeneratedManifestsPassManagerValidation;
@@ -26,6 +30,7 @@ implementation
 uses
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.DeclarativeExtensions,
   RadIA.Core.ExtensionStudio;
 
@@ -46,6 +51,26 @@ begin
   );
   Assert.Contains(LManifest, '"tool.alias"');
   Assert.Contains(LManifest, '"targetTool": "GetProjectHealth"');
+end;
+
+procedure TRadIAExtensionStudioTests.BuildsCapabilityAudit;
+var
+  LAudit: string;
+begin
+  LAudit := TRadIAExtensionStudioBuilder.BuildAudit(
+    TRadIAExtensionStudioDraft.Create(
+      eskWorkflow,
+      'TeamFlow',
+      '1.0.0',
+      'TeamFlowInspect',
+      'Inspect IDE state.',
+      '',
+      '[{"tool":"GetIDEState","arguments":{}}]'
+    )
+  );
+  Assert.Contains(LAudit, 'Permission: tool.workflow');
+  Assert.Contains(LAudit, 'Arbitrary process execution: no');
+  Assert.Contains(LAudit, 'central consent and audit apply');
 end;
 
 procedure TRadIAExtensionStudioTests.BuildsCommandManifest;
@@ -123,6 +148,46 @@ begin
       );
     end;
   Assert.WillRaise(LTestMethod, EArgumentException);
+end;
+
+procedure TRadIAExtensionStudioTests.ExportsVerifiedUnsignedPackage;
+var
+  LDraft: TRadIAExtensionStudioDraft;
+  LHash: string;
+  LManifest: string;
+  LPackage: TRadIADeclarativeExtensionPackage;
+  LPackageFileName: string;
+begin
+  LDraft := TRadIAExtensionStudioDraft.Create(
+    eskCommand,
+    'StudioPackage',
+    '1.2.3',
+    'Package command',
+    'Create a verified package.',
+    '/package-command',
+    'Review {argument}'
+  );
+  LManifest := TRadIAExtensionStudioBuilder.BuildManifest(LDraft);
+  LPackageFileName := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-Studio-' + TGUID.NewGuid.ToString + '.radiaext'
+  );
+  try
+    LHash := TRadIAExtensionStudioPackager.ExportUnsigned(
+      LManifest,
+      LPackageFileName
+    );
+    Assert.AreEqual<Integer>(64, Length(LHash));
+    LPackage := TRadIADeclarativeExtensionPackageReader.Read(
+      LPackageFileName
+    );
+    Assert.AreEqual('StudioPackage', LPackage.ExtensionId);
+    Assert.AreEqual('1.2.3', LPackage.Version);
+    Assert.IsFalse(LPackage.IsSigned);
+  finally
+    if TFile.Exists(LPackageFileName) then
+      TFile.Delete(LPackageFileName);
+  end;
 end;
 
 procedure TRadIAExtensionStudioTests.GeneratedManifestsPassManagerValidation;

@@ -17,6 +17,7 @@ uses
   System.SysUtils,
   ToolsAPI,
   Vcl.Controls,
+  Vcl.Dialogs,
   Vcl.ExtCtrls,
   Vcl.StdCtrls,
   RadIA.Core.ExtensionStudio;
@@ -25,23 +26,28 @@ type
   TRadIAExtensionStudioForm = class(TForm)
   private
     FContentEdit: TMemo;
+    FAuditButton: TButton;
     FDescriptionEdit: TEdit;
     FExtensionIdEdit: TEdit;
     FInstallButton: TButton;
     FKindCombo: TComboBox;
     FNameEdit: TEdit;
     FPreviewEdit: TMemo;
+    FExportButton: TButton;
+    FSaveDialog: TSaveDialog;
     FStatusLabel: TLabel;
     FTriggerEdit: TEdit;
     FTriggerLabel: TLabel;
     FVersionEdit: TEdit;
     function BuildDraft: TRadIAExtensionStudioDraft;
+    procedure AuditClick(Sender: TObject);
     function CreateEdit(
       const ACaption: string;
       const ATop: Integer;
       out AEdit: TEdit
     ): TLabel;
     procedure InputChanged(Sender: TObject);
+    procedure ExportClick(Sender: TObject);
     procedure KindChanged(Sender: TObject);
     procedure RefreshPreview;
   protected
@@ -145,6 +151,20 @@ begin
   FInstallButton.Caption := 'Install';
   FInstallButton.ModalResult := mrOk;
 
+  FAuditButton := TButton.Create(Self);
+  FAuditButton.Parent := LLeftPanel;
+  FAuditButton.SetBounds(8, 574, 92, 28);
+  FAuditButton.Anchors := [akLeft, akBottom];
+  FAuditButton.Caption := 'Audit';
+  FAuditButton.OnClick := AuditClick;
+
+  FExportButton := TButton.Create(Self);
+  FExportButton.Parent := LLeftPanel;
+  FExportButton.SetBounds(108, 574, 102, 28);
+  FExportButton.Anchors := [akLeft, akBottom];
+  FExportButton.Caption := 'Export...';
+  FExportButton.OnClick := ExportClick;
+
   LCancelButton := TButton.Create(Self);
   LCancelButton.Parent := LLeftPanel;
   LCancelButton.SetBounds(322, 574, 92, 28);
@@ -164,7 +184,24 @@ begin
   FPreviewEdit.ScrollBars := ssBoth;
   FPreviewEdit.WordWrap := False;
 
+  FSaveDialog := TSaveDialog.Create(Self);
+  FSaveDialog.DefaultExt := 'radiaext';
+  FSaveDialog.Filter := 'Rad IA extension package (*.radiaext)|*.radiaext';
+  FSaveDialog.Options := [ofOverwritePrompt, ofPathMustExist, ofEnableSizing];
+  FSaveDialog.Title := 'Export unsigned Rad IA extension package';
+
   RefreshPreview;
+end;
+
+procedure TRadIAExtensionStudioForm.AuditClick(Sender: TObject);
+begin
+  try
+    FPreviewEdit.Text := TRadIAExtensionStudioBuilder.BuildAudit(BuildDraft);
+    FStatusLabel.Caption := 'Audit completed. No package or installation was changed.';
+  except
+    on E: Exception do
+      FStatusLabel.Caption := E.Message;
+  end;
 end;
 
 function TRadIAExtensionStudioForm.BuildDraft:
@@ -216,6 +253,26 @@ begin
   RefreshPreview;
 end;
 
+procedure TRadIAExtensionStudioForm.ExportClick(Sender: TObject);
+var
+  LHash: string;
+begin
+  FSaveDialog.FileName := FExtensionIdEdit.Text + '-' +
+    FVersionEdit.Text + '.radiaext';
+  if not FSaveDialog.Execute then
+    Exit;
+  try
+    LHash := TRadIAExtensionStudioPackager.ExportUnsigned(
+      Manifest,
+      FSaveDialog.FileName
+    );
+    FStatusLabel.Caption := 'Package exported and verified. SHA-256: ' + LHash;
+  except
+    on E: Exception do
+      FStatusLabel.Caption := 'Package export failed: ' + E.Message;
+  end;
+end;
+
 procedure TRadIAExtensionStudioForm.KindChanged(Sender: TObject);
 begin
   FContentEdit.Enabled := True;
@@ -253,12 +310,16 @@ begin
     FPreviewEdit.Text := Manifest;
     FStatusLabel.Caption := 'Draft is structurally valid and ready for full installation checks.';
     FInstallButton.Enabled := True;
+    FAuditButton.Enabled := True;
+    FExportButton.Enabled := True;
   except
     on E: Exception do
     begin
       FPreviewEdit.Clear;
       FStatusLabel.Caption := E.Message;
       FInstallButton.Enabled := False;
+      FAuditButton.Enabled := False;
+      FExportButton.Enabled := False;
     end;
   end;
 end;

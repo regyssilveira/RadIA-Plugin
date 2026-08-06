@@ -29,6 +29,19 @@ da ativação e o conjunto completo é recarregado depois da troca. Se houver co
 inválido ou falha de escrita, o RadIA restaura automaticamente a versão anterior. Um chat aberto
 atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estado.
 
+### Addon Studio
+
+Use **Addon Studio...** no gerenciador para criar visualmente um comando, skill, alias seguro,
+journey ou workflow auditado. O preview valida continuamente a identidade, versão semântica,
+namespace, slash command, permissão mínima e JSON dos passos.
+
+O botão **Audit** apresenta os limites de execução, a permissão solicitada e a aplicação obrigatória
+do consentimento e da auditoria centrais. **Export...** cria um pacote `.radiaext` sem assinatura,
+calcula seu SHA-256 e relê o artefato pelo mesmo verificador usado durante a instalação. Se a
+verificação falhar, o pacote parcial é removido. Pacotes sem assinatura continuam exigindo
+confirmação explícita na instalação. A assinatura RSA pelo Windows Certificate Store ainda usa o
+empacotador descrito na seção de distribuição.
+
 ## Manifesto versão 5
 
 ```json

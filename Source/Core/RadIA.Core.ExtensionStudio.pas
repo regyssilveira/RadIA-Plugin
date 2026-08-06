@@ -61,14 +61,33 @@ type
     class function BuildManifest(
       const ADraft: TRadIAExtensionStudioDraft
     ): string; static;
+    class function BuildAudit(
+      const ADraft: TRadIAExtensionStudioDraft
+    ): string; static;
+  end;
+
+  TRadIAExtensionStudioPackager = class
+  private
+    class procedure ValidateOutputFileName(
+      const AOutputFileName: string
+    ); static;
+  public
+    class function ExportUnsigned(
+      const AManifest: string;
+      const AOutputFileName: string
+    ): string; static;
   end;
 
 implementation
 
 uses
+  System.Hash,
+  System.IOUtils,
   System.JSON,
   System.RegularExpressions,
-  System.SysUtils;
+  System.SysUtils,
+  System.Zip,
+  RadIA.Core.DeclarativeExtensionPackages;
 
 { TRadIAExtensionStudioDraft }
 
@@ -92,6 +111,37 @@ begin
 end;
 
 { TRadIAExtensionStudioBuilder }
+
+class function TRadIAExtensionStudioBuilder.BuildAudit(
+  const ADraft: TRadIAExtensionStudioDraft
+): string;
+const
+  CKindNames: array[TRadIAExtensionStudioKind] of string = (
+    'chat command',
+    'skill',
+    'tool alias',
+    'journey',
+    'audited workflow'
+  );
+  CPermissions: array[TRadIAExtensionStudioKind] of string = (
+    'chat.prompt',
+    'chat.prompt',
+    'tool.alias',
+    'chat.prompt',
+    'tool.workflow'
+  );
+begin
+  Validate(ADraft);
+  Result :=
+    'Extension: ' + ADraft.ExtensionId + ' ' + ADraft.Version + sLineBreak +
+    'Capability: ' + CKindNames[ADraft.Kind] + sLineBreak +
+    'Permission: ' + CPermissions[ADraft.Kind] + sLineBreak +
+    'Enabled after install: yes' + sLineBreak +
+    'Arbitrary process execution: no' + sLineBreak +
+    'Credential fields allowed: no' + sLineBreak +
+    'Runtime policy: central consent and audit apply' + sLineBreak +
+    'Package signature: unsigned export requires install-time confirmation';
+end;
 
 class procedure TRadIAExtensionStudioBuilder.AddCapability(
   const ARoot: TObject;
@@ -229,6 +279,109 @@ begin
     );
   if ADraft.Content = '' then
     raise EArgumentException.Create('Capability content cannot be empty.');
+end;
+
+{ TRadIAExtensionStudioPackager }
+
+class function TRadIAExtensionStudioPackager.ExportUnsigned(
+  const AManifest: string;
+  const AOutputFileName: string
+): string;
+var
+  LArchive: TZipFile;
+  LFile: TJSONObject;
+  LFiles: TJSONArray;
+  LId: string;
+  LManifestBytes: TArray<Byte>;
+  LManifestFileName: string;
+  LManifestJson: TJSONObject;
+  LMetadata: TJSONObject;
+  LMetadataFileName: string;
+  LRoot: string;
+  LVersion: string;
+begin
+  ValidateOutputFileName(AOutputFileName);
+  LManifestJson := TJSONObject.ParseJSONValue(AManifest) as TJSONObject;
+  if not Assigned(LManifestJson) then
+    raise EArgumentException.Create('Manifest must be a JSON object.');
+  try
+    LId := LManifestJson.GetValue<string>('id', '');
+    LVersion := LManifestJson.GetValue<string>('version', '');
+  finally
+    LManifestJson.Free;
+  end;
+  LManifestBytes := TEncoding.UTF8.GetBytes(AManifest);
+  if Length(LManifestBytes) > 1024 * 1024 then
+    raise EArgumentException.Create('Manifest exceeds the 1 MiB size limit.');
+  Result := LowerCase(THashSHA2.GetHashString(AManifest));
+  LManifestFileName := LId + '.radia.json';
+  LRoot := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-ExtensionStudio-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LRoot);
+  try
+    TFile.WriteAllBytes(
+      TPath.Combine(LRoot, LManifestFileName),
+      LManifestBytes
+    );
+    LMetadata := TJSONObject.Create;
+    try
+      LMetadata.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LMetadata.AddPair('id', LId);
+      LMetadata.AddPair('version', LVersion);
+      LMetadata.AddPair('manifest', LManifestFileName);
+      LFiles := TJSONArray.Create;
+      LFile := TJSONObject.Create;
+      LFile.AddPair('path', LManifestFileName);
+      LFile.AddPair('size', TJSONNumber.Create(Length(LManifestBytes)));
+      LFile.AddPair('sha256', Result);
+      LFiles.AddElement(LFile);
+      LMetadata.AddPair('files', LFiles);
+      LMetadataFileName := TPath.Combine(LRoot, 'package.json');
+      TFile.WriteAllText(
+        LMetadataFileName,
+        LMetadata.Format(2),
+        TEncoding.UTF8
+      );
+    finally
+      LMetadata.Free;
+    end;
+    try
+      if TFile.Exists(AOutputFileName) then
+        TFile.Delete(AOutputFileName);
+      LArchive := TZipFile.Create;
+      try
+        LArchive.Open(AOutputFileName, zmWrite);
+        LArchive.Add(LMetadataFileName, 'package.json');
+        LArchive.Add(
+          TPath.Combine(LRoot, LManifestFileName),
+          LManifestFileName
+        );
+      finally
+        LArchive.Free;
+      end;
+      TRadIADeclarativeExtensionPackageReader.Read(AOutputFileName);
+    except
+      if TFile.Exists(AOutputFileName) then
+        TFile.Delete(AOutputFileName);
+      raise;
+    end;
+  finally
+    TDirectory.Delete(LRoot, True);
+  end;
+end;
+
+class procedure TRadIAExtensionStudioPackager.ValidateOutputFileName(
+  const AOutputFileName: string
+);
+begin
+  if Trim(AOutputFileName) = '' then
+    raise EArgumentException.Create('Package output file cannot be empty.');
+  if not SameText(ExtractFileExt(AOutputFileName), '.radiaext') then
+    raise EArgumentException.Create(
+      'Package output file must use the .radiaext extension.'
+    );
 end;
 
 end.

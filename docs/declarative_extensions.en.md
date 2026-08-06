@@ -28,6 +28,13 @@ shows the exact schema 5 manifest before installation. **Install** then sends th
 the regular transactional validator, reserved-command checks, activation, diagnostics, and chat
 reload path.
 
+**Audit** shows the minimum permission, execution boundaries, credential restrictions, and central
+consent policy before installation. **Export...** creates an unsigned `.radiaext`, calculates its
+SHA-256, and reads the finished artifact through the same package verifier used during installation.
+If verification fails, the partial output is removed. Unsigned packages still require explicit
+install-time confirmation. RSA signing through the Windows Certificate Store remains available
+through the packaging command documented below.
+
 Schema 2 supports templates and skills. Schema 3 adds safe aliases, schema 4 adds team journeys and
 policies, and schema 5 adds audited workflows of internal tools. Permissions must exactly match the
 capabilities present: `chat.prompt`, `tool.alias`, and `tool.workflow`. Schemas 1–4 remain
