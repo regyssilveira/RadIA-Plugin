@@ -39,6 +39,8 @@ type
     FFileName: string;
     FObservedRevision: string;
     FReviews: TArray<TRadIAInlineReview>;
+    FSmokeInvalidated: Boolean;
+    FSmokePainted: Boolean;
     FView: IOTAEditView;
     function ColorFor(
       const ASeverity: TRadIAInlineReviewSeverity
@@ -63,6 +65,7 @@ type
       const AContext: INTACodeEditorPaintContext
     );
     procedure RunOnMainThread(const AAction: TThreadProcedure);
+    procedure WriteSmokeEvidence;
   protected
     procedure PaintOverlay(
       const APaintContext: TRadIAEditPaintContext
@@ -86,6 +89,8 @@ implementation
 
 uses
   System.Hash,
+  System.IOUtils,
+  System.JSON,
   System.Math,
   System.SysUtils,
   Winapi.Windows,
@@ -109,6 +114,8 @@ constructor TRadIAOTAInlineReviewFacade.Create;
 begin
   inherited;
   FCodeEditorNotifierIndex := -1;
+  FSmokeInvalidated := False;
+  FSmokePainted := False;
   SetLength(FReviews, 0);
 end;
 
@@ -229,6 +236,8 @@ end;
 procedure TRadIAOTAInlineReviewFacade.Modified;
 begin
   FCurrentRevision := '';
+  FSmokeInvalidated := True;
+  WriteSmokeEvidence;
 end;
 
 procedure TRadIAOTAInlineReviewFacade.HandlePaintLine(
@@ -270,6 +279,11 @@ begin
       LUnderlineY
     );
     AContext.Canvas.LineTo(LRight, LUnderlineY);
+    if not FSmokePainted then
+    begin
+      FSmokePainted := True;
+      WriteSmokeEvidence;
+    end;
   end;
   LPaintContext.View := AContext.EditView;
   LPaintContext.LineNumber := AContext.LogicalLineNum;
@@ -351,7 +365,10 @@ begin
       FFileName := AFileName;
       FExpectedRevision := ARevision;
       FReviews := LReviews;
+      FSmokeInvalidated := False;
+      FSmokePainted := False;
       RegisterCurrentView;
+      WriteSmokeEvidence;
       if Assigned(FView) then
         FView.Paint;
     end
@@ -384,6 +401,42 @@ begin
   FCodeEditorNotifier := nil;
   FCodeEditorNotifierIndex := -1;
   FView := nil;
+end;
+
+procedure TRadIAOTAInlineReviewFacade.WriteSmokeEvidence;
+var
+  LEvidencePath: string;
+  LJson: TJSONObject;
+begin
+  LEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_INLINE_REVIEW')
+  );
+  if (LEvidencePath = '') or SameText(LEvidencePath, '1') then
+    Exit;
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('published', TJSONBool.Create(Length(FReviews) > 0));
+    LJson.AddPair('painted', TJSONBool.Create(FSmokePainted));
+    LJson.AddPair('invalidated', TJSONBool.Create(FSmokeInvalidated));
+    LJson.AddPair('reviewCount', TJSONNumber.Create(Length(FReviews)));
+    LJson.AddPair(
+      'revisionMatched',
+      TJSONBool.Create(
+        (FCurrentRevision <> '') and
+        SameText(FCurrentRevision, FExpectedRevision)
+      )
+    );
+    TDirectory.CreateDirectory(
+      ExtractFilePath(LEvidencePath)
+    );
+    TFile.WriteAllText(
+      LEvidencePath,
+      LJson.ToJSON,
+      TEncoding.UTF8
+    );
+  finally
+    LJson.Free;
+  end;
 end;
 
 end.

@@ -157,7 +157,7 @@ end;
 procedure TTestRadIAInlineReviews.RegistersExpectedRiskLevels;
 begin
   Assert.AreEqual(
-    trStructuralWrite,
+    trReadOnly,
     FRegistry.Resolve('PublishInlineReview').Descriptor.Risk
   );
   Assert.AreEqual(
@@ -173,11 +173,11 @@ begin
     FRegistry.Resolve('ApplyInlineReviewFix').Descriptor.Risk
   );
   Assert.AreEqual(
-    trStructuralWrite,
+    trReadOnly,
     FRegistry.Resolve('RejectInlineReview').Descriptor.Risk
   );
   Assert.AreEqual(
-    trStructuralWrite,
+    trReadOnly,
     FRegistry.Resolve('ClearInlineReviews').Descriptor.Risk
   );
 end;

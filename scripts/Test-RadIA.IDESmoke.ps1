@@ -11,6 +11,7 @@ param(
     [switch]$ExerciseDocking,
     [switch]$ExerciseTerminal,
     [switch]$ExerciseInlineCompletion,
+    [switch]$ExerciseInlineReview,
     [switch]$ExerciseAgentRuntime,
     [switch]$ExerciseDeclarativeWorkflow,
     [switch]$ExerciseKnowledge,
@@ -20,6 +21,7 @@ param(
     [string]$EvidencePath = "",
     [string]$TerminalEvidencePath = "",
     [string]$InlineCompletionEvidencePath = "",
+    [string]$InlineReviewEvidencePath = "",
     [string]$AgentRuntimeEvidencePath = "",
     [string]$DeclarativeWorkflowEvidencePath = "",
     [string]$KnowledgeEvidencePath = "",
@@ -43,6 +45,9 @@ if ($InlineCompletionEvidencePath -and -not $ExerciseInlineCompletion) {
         "Inline completion evidence requires " +
         "-ExerciseInlineCompletion."
     )
+}
+if ($InlineReviewEvidencePath -and -not $ExerciseInlineReview) {
+    throw "Inline review evidence requires -ExerciseInlineReview."
 }
 if ($TerminalEvidencePath -and -not $ExerciseTerminal) {
     throw "Terminal evidence requires -ExerciseTerminal."
@@ -679,6 +684,54 @@ function Wait-RadIAInlineCompletionDiagnostic {
         Painted = $true
         LineCount = 2
         FileName = $FileName
+    }
+}
+
+function Wait-RadIAInlineReviewDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$EvidencePath
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    do {
+        $diagnostic = $null
+        if (Test-Path -LiteralPath $EvidencePath -PathType Leaf) {
+            $diagnostic = Get-Content `
+                -LiteralPath $EvidencePath `
+                -Raw `
+                -Encoding UTF8 |
+                ConvertFrom-Json
+        }
+        if (-not (
+            $diagnostic.published -and
+            $diagnostic.painted -and
+            $diagnostic.revisionMatched
+        )) {
+            Start-Sleep -Milliseconds 100
+        }
+    } while (
+        -not (
+            $diagnostic.published -and
+            $diagnostic.painted -and
+            $diagnostic.revisionMatched
+        ) -and
+        [DateTime]::UtcNow -lt $deadline
+    )
+    if (-not $diagnostic.published) {
+        throw "The inline review was not published in the real editor."
+    }
+    if (-not $diagnostic.painted) {
+        throw "The inline review did not reach the OTA paint cycle."
+    }
+    if (-not $diagnostic.revisionMatched) {
+        throw "The inline review was not anchored to the active revision."
+    }
+    return [pscustomobject]@{
+        Published = $true
+        Painted = $true
+        RevisionMatched = $true
+        ReviewCount = $diagnostic.reviewCount
     }
 }
 
@@ -1354,7 +1407,8 @@ if ($ExerciseTerminal) {
         -Force |
         Out-Null
 }
-if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
+if ($ExerciseInlineCompletion -or $ExerciseInlineReview -or
+    $ExerciseAgentRuntime -or
     $ExerciseDeclarativeWorkflow) {
     $script:InlineLogRegistryPath = (
         "HKCU:\Software\Embarcadero\BDS\" +
@@ -1401,14 +1455,14 @@ if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
     $inlineSmokeLogPath = Join-Path `
         $inlineSmokeLogDirectory `
         "radia.log"
-    if ($ExerciseInlineCompletion) {
+    if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
         $inlineSmokeUnitPath = Join-Path `
             $repositoryRoot `
             "Tests\Source\RadIA.Tests.TextNormalizer.pas"
         if (-not (
             Test-Path -LiteralPath $inlineSmokeUnitPath -PathType Leaf
         )) {
-            throw "Inline completion smoke sources were not found."
+            throw "Inline editor smoke sources were not found."
         }
     }
     if ($ExerciseAgentRuntime) {
@@ -1615,7 +1669,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         )
     }
     $launchArguments = @()
-    if ($ExerciseInlineCompletion) {
+    if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
         $launchArguments = @($inlineSmokeUnitPath)
     }
     if ($ExerciseKnowledge) {
@@ -1628,14 +1682,24 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             "cycle-$cycle.json"
     }
     $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
+    $inlineReviewSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_REVIEW
+    $inlineReviewSmokePath = ""
+    if ($ExerciseInlineReview) {
+        $inlineReviewSmokePath = Join-Path `
+            $inlineSmokeRoot `
+            "review-cycle-$cycle.json"
+    }
     $terminalSmokeEnvironment = $env:RADIA_IDE_SMOKE_TERMINAL
     $agentSmokeEnvironment = $env:RADIA_IDE_SMOKE_AGENT_RUNTIME
     $workflowSmokeEnvironment = (
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW
     )
     try {
-        if ($ExerciseInlineCompletion) {
+        if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
             $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = "1"
+        }
+        if ($ExerciseInlineReview) {
+            $env:RADIA_IDE_SMOKE_INLINE_REVIEW = $inlineReviewSmokePath
         }
         if ($ExerciseTerminal) {
             $env:RADIA_IDE_SMOKE_TERMINAL = $terminalSmokePath
@@ -1662,6 +1726,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
     } finally {
         $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = $inlineSmokeEnvironment
+        $env:RADIA_IDE_SMOKE_INLINE_REVIEW = $inlineReviewSmokeEnvironment
         $env:RADIA_IDE_SMOKE_TERMINAL = $terminalSmokeEnvironment
         $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = $agentSmokeEnvironment
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW = (
@@ -1831,13 +1896,119 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [DateTime]::UtcNow -lt $editorDeadline
             )
             if (-not $editorContent.fileName) {
-                throw "No active editor was found for Ghost Text."
+                throw "No active editor was found for inline diagnostics."
             }
+        }
+        if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
             $inlineDiagnostic = Wait-RadIAInlineCompletionDiagnostic `
                 -LogPath $inlineSmokeLogPath `
                 -FileName (
                     [IO.Path]::GetFileName($editorContent.fileName)
                 )
+        }
+        $inlineReviewDiagnostic = $null
+        if ($ExerciseInlineReview) {
+            $publishArguments = @{
+                fileName = $editorContent.fileName
+                baseRevision = $editorContent.revision
+                startLine = 1
+                endLine = 1
+                severity = "warning"
+                message = "RadIA real IDE inline review smoke."
+            } | ConvertTo-Json -Compress
+            $publishRequests = @(
+                (
+                    '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
+                    '"params":{"protocolVersion":"2025-06-18",' +
+                    '"capabilities":{},"clientInfo":{' +
+                    '"name":"radia-review-smoke","version":"1"}}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","method":' +
+                    '"notifications/initialized","params":{}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","id":5,"method":"tools/call",' +
+                    '"params":{"name":"PublishInlineReview",' +
+                    '"arguments":' + $publishArguments + '}}'
+                )
+            )
+            $publishResponses = @(
+                $publishRequests |
+                    & $bridgePath $instanceFile |
+                    ForEach-Object { $_ | ConvertFrom-Json }
+            )
+            if ($LASTEXITCODE -ne 0) {
+                throw "Inline review publication failed in cycle $cycle."
+            }
+            $publishResponse = $publishResponses |
+                Where-Object { $_.id -eq 5 }
+            if (-not $publishResponse.result.structuredContent.reviewId) {
+                throw "The inline review tool returned no review identifier."
+            }
+            $inlineReviewDiagnostic = Wait-RadIAInlineReviewDiagnostic `
+                -EvidencePath $inlineReviewSmokePath
+            $reviewId = $publishResponse.result.structuredContent.reviewId
+            $rejectArguments = @{
+                reviewId = $reviewId
+                reason = "RadIA real IDE inline review smoke completed."
+            } | ConvertTo-Json -Compress
+            $staleArguments = @{
+                fileName = $editorContent.fileName
+                baseRevision = ("0" * 64)
+                startLine = 1
+                endLine = 1
+                severity = "warning"
+                message = "RadIA stale inline review smoke."
+            } | ConvertTo-Json -Compress
+            $reviewLifecycleRequests = @(
+                (
+                    '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
+                    '"params":{"protocolVersion":"2025-06-18",' +
+                    '"capabilities":{},"clientInfo":{' +
+                    '"name":"radia-review-lifecycle-smoke",' +
+                    '"version":"1"}}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","method":' +
+                    '"notifications/initialized","params":{}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","id":6,"method":"tools/call",' +
+                    '"params":{"name":"RejectInlineReview",' +
+                    '"arguments":' + $rejectArguments + '}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","id":7,"method":"tools/call",' +
+                    '"params":{"name":"PublishInlineReview",' +
+                    '"arguments":' + $staleArguments + '}}'
+                )
+            )
+            $reviewLifecycleResponses = @(
+                $reviewLifecycleRequests |
+                    & $bridgePath $instanceFile |
+                    ForEach-Object { $_ | ConvertFrom-Json }
+            )
+            if ($LASTEXITCODE -ne 0) {
+                throw "Inline review lifecycle failed in cycle $cycle."
+            }
+            $rejectResponse = $reviewLifecycleResponses |
+                Where-Object { $_.id -eq 6 }
+            $staleResponse = $reviewLifecycleResponses |
+                Where-Object { $_.id -eq 7 }
+            if ($rejectResponse.result.isError -or
+                -not $rejectResponse.result.structuredContent.success) {
+                throw "Inline review rejection failed in cycle $cycle."
+            }
+            if (-not $staleResponse.result.isError) {
+                throw "A stale inline review was accepted in cycle $cycle."
+            }
+            $inlineReviewDiagnostic |
+                Add-Member -NotePropertyName Rejected -NotePropertyValue $true
+            $inlineReviewDiagnostic |
+                Add-Member `
+                    -NotePropertyName StaleRevisionRejected `
+                    -NotePropertyValue $true
         }
         $agentRuntimeDiagnostic = $null
         if ($ExerciseAgentRuntime) {
@@ -2055,6 +2226,28 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 $inlineDiagnostic.Painted
             )
             InlineCompletionLineCount = $inlineLineCount
+            InlineReviewExercised = [bool]$ExerciseInlineReview
+            InlineReviewPublished = (
+                [bool]$ExerciseInlineReview -and
+                $inlineReviewDiagnostic.Published
+            )
+            InlineReviewPainted = (
+                [bool]$ExerciseInlineReview -and
+                $inlineReviewDiagnostic.Painted
+            )
+            InlineReviewRevisionMatched = (
+                [bool]$ExerciseInlineReview -and
+                $inlineReviewDiagnostic.RevisionMatched
+            )
+            InlineReviewCount = $inlineReviewDiagnostic.ReviewCount
+            InlineReviewRejected = (
+                [bool]$ExerciseInlineReview -and
+                $inlineReviewDiagnostic.Rejected
+            )
+            InlineReviewStaleRevisionRejected = (
+                [bool]$ExerciseInlineReview -and
+                $inlineReviewDiagnostic.StaleRevisionRejected
+            )
             AgentRuntimeExercised = [bool]$ExerciseAgentRuntime
             AgentRuntimeAwaitingApproval = (
                 [bool]$ExerciseAgentRuntime -and
@@ -2200,6 +2393,12 @@ if ($ExerciseInlineCompletion) {
         "Local multiline Ghost Text preparation and OTA painting passed."
     )
 }
+if ($ExerciseInlineReview) {
+    Write-Host (
+        "Inline review publication, OTA painting, rejection, and stale " +
+        "revision protection passed."
+    )
+}
 if ($ExerciseTerminal) {
     Write-Host (
         "Native terminal window, controls, input, output, and keyboard " +
@@ -2221,7 +2420,8 @@ if ($ExerciseKnowledge) {
         "Private local semantic knowledge and provenance passed."
     )
 }
-if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
+if ($ExerciseInlineCompletion -or $ExerciseInlineReview -or
+    $ExerciseAgentRuntime -or
     $ExerciseDeclarativeWorkflow) {
     Restore-RadIAInlineCompletionLogSettings
 }
@@ -2250,6 +2450,7 @@ if ($EvidencePath) {
         dockingExercised = [bool]$ExerciseDocking
         terminalExercised = [bool]$ExerciseTerminal
         inlineCompletionExercised = [bool]$ExerciseInlineCompletion
+        inlineReviewExercised = [bool]$ExerciseInlineReview
         agentRuntimeExercised = [bool]$ExerciseAgentRuntime
         declarativeWorkflowExercised = (
             [bool]$ExerciseDeclarativeWorkflow
@@ -2468,6 +2669,45 @@ if ($InlineCompletionEvidencePath) {
     Write-Host (
         "Inline completion evidence created: " +
         $resolvedInlineEvidencePath
+    )
+}
+if ($InlineReviewEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "Inline review"
+    $resolvedReviewEvidencePath = [IO.Path]::GetFullPath(
+        $InlineReviewEvidencePath
+    )
+    $reviewEvidenceDirectory = Split-Path -Parent $resolvedReviewEvidencePath
+    if ($reviewEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $reviewEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "inlineReviewVisualSmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedReviewEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "Inline review evidence created: " +
+        $resolvedReviewEvidencePath
     )
 }
 if ($AgentRuntimeEvidencePath) {

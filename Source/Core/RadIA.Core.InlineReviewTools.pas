@@ -262,7 +262,7 @@ var
   LRisk: TRadIAToolRisk;
 begin
   LInput := CEmptyInput;
-  LRisk := trStructuralWrite;
+  LRisk := trReadOnly;
   case FKind of
     irtkPublish:
       begin
@@ -288,6 +288,7 @@ begin
         LName := 'ApplyInlineReviewFix';
         LDescription := 'Applies one revision-anchored inline review suggestion.';
         LInput := CIdInput;
+        LRisk := trStructuralWrite;
       end;
     irtkReject:
       begin

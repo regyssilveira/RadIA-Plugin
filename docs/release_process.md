@@ -271,6 +271,33 @@ powershell.exe -ExecutionPolicy Bypass `
 
 O resultado versionado fica em `inline_completion_smoke_evidence_2.0.0.json`.
 
+### Evidência visual da revisão inline
+
+Use `-InlineReviewEvidencePath` com `-ExerciseInlineReview` para comprovar, em uma unit real,
+publicação pelo MCP, pintura OTA, correspondência da revisão, rejeição e bloqueio de uma revisão
+obsoleta:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseInlineReview `
+  -SkipPackageHashCheck `
+  -InlineReviewEvidencePath `
+    "Output\Validation\InlineReview\Delphi13-Win32.json"
+```
+
+Execute o smoke para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. Depois, consolide a
+matriz fail-closed:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.InlineReviewEvidence.ps1
+```
+
+O resultado versionado fica em `inline_review_smoke_evidence_2.0.0.json`.
+
 ### Evidência da jornada do runtime agentivo
 
 Use `-ExerciseAgentRuntime` para executar aprovação, tool somente leitura, pausa, persistência,
