@@ -9,10 +9,13 @@ param(
     [switch]$SkipTemplateBuild,
     [switch]$ExerciseDebugger,
     [switch]$ExerciseCorrection,
-    [switch]$ExerciseGit
+    [switch]$ExerciseGit,
+    [switch]$IDE64,
+    [string]$EvidencePath = ""
 )
 
 $ErrorActionPreference = "Stop"
+$journeyStartedAt = [DateTime]::UtcNow
 
 Add-Type @"
 using System;
@@ -649,12 +652,20 @@ function New-RadIAKnowledgeSmokeProject {
 }
 
 $bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
+if ($IDE64 -and $DelphiVersion -ne "37.0") {
+    throw "IDE64 is supported only for Delphi 13 (37.0)."
+}
 $rootDirectory = (
     Get-ItemProperty -Path $bdsRegistry -Name "RootDir"
 ).RootDir
-$bdsPath = Join-Path $rootDirectory "bin\bds.exe"
+$idePlatform = if ($IDE64) { "Win64" } else { "Win32" }
+$bdsRelativePath = if ($IDE64) { "bin64\bds.exe" } else { "bin\bds.exe" }
+$bdsPath = Join-Path $rootDirectory $bdsRelativePath
 $publicBpl = "C:\Users\Public\Documents\Embarcadero\Studio"
 $publicBpl = Join-Path $publicBpl "$DelphiVersion\Bpl"
+if ($IDE64) {
+    $publicBpl = Join-Path $publicBpl "Win64"
+}
 $bridgePath = Join-Path $publicBpl "RadIA.MCP.Bridge.exe"
 if (-not (Test-Path -LiteralPath $bdsPath -PathType Leaf)) {
     throw "Delphi executable was not found: $bdsPath"
@@ -683,6 +694,14 @@ if ($targetProcesses.Count -gt 0) {
 $workspaceRoot = [IO.Path]::GetFullPath(
     (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
+$sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch "^[0-9a-f]{40}$") {
+    throw "The source commit could not be determined."
+}
+$trackedChanges = @(
+    & git -C $workspaceRoot status --porcelain --untracked-files=no
+)
+$sourceDirty = $trackedChanges.Count -gt 0
 $smokeDirectory = Join-Path (
     $workspaceRoot
 ) "Output\Validation\KnowledgeNotifierSmoke"
@@ -752,6 +771,17 @@ $instanceFile = Join-Path (
     [Environment]::GetFolderPath("ApplicationData")
 ) "RadIA\mcp.$($process.Id).json"
 $journeySucceeded = $false
+$templateCreated = $false
+$designerChanged = $false
+$editorChanged = $false
+$buildPassed = $false
+$testsPassed = $false
+$correctionPassed = -not $ExerciseCorrection
+$debugPassed = -not $ExerciseDebugger
+$gitPassed = -not $ExerciseGit
+$testSummary = $null
+$debugSummary = $null
+$gitSummary = $null
 
 try {
     Wait-RadIACondition -TimeoutSeconds $StartupTimeoutSeconds -Condition {
@@ -812,6 +842,7 @@ try {
     if (-not $templateResult.committed) {
         throw "The reviewed VCL project was not committed."
     }
+    $templateCreated = $true
     if (-not (Test-Path -LiteralPath $generatedProjectPath)) {
         throw "The generated VCL project file was not published."
     }
@@ -953,6 +984,7 @@ try {
     if ($componentRevert.component.name -ne "RadIAJourneyButton") {
         throw "The reviewed TButton rollback was not completed."
     }
+    $designerChanged = $true
     $revertedComponents = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
@@ -1078,6 +1110,7 @@ try {
     )) {
         throw "The IDE did not save the modified smoke unit."
     }
+    $editorChanged = $true
 
     if (-not $SkipBuildAndTests) {
         if ($ExerciseCorrection) {
@@ -1125,6 +1158,7 @@ try {
             if ($failedBuild.messages.Count -lt 1) {
                 throw "The failed build did not return compiler diagnostics."
             }
+            $correctionPassed = $true
             [void](Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
@@ -1154,6 +1188,7 @@ try {
                 $buildDetails
             )
         }
+        $buildPassed = $true
         $testExecutablePath = @(
             $testExecutableCandidates |
                 Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }
@@ -1186,6 +1221,8 @@ try {
                 $testDetails
             )
         }
+        $testsPassed = $true
+        $testSummary = $testResult
         if ($ExerciseDebugger) {
             $breakpoint = Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
@@ -1239,6 +1276,13 @@ try {
                 }
             if ($timeline.events.Count -lt 1) {
                 throw "The event-driven debug timeline remained empty."
+            }
+            $debugPassed = $true
+            $debugSummary = [PSCustomObject]@{
+                state = $debugState.state
+                callStackAccessible = $callStack.accessible
+                callStackFrameCount = $callStack.frames.Count
+                timelineEventCount = $timeline.events.Count
             }
             [void](Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
@@ -1300,6 +1344,12 @@ try {
             $committedMessage = & git -C $gitRoot log -1 --pretty=%s
             if ($committedMessage -ne "test: validate RadIA reviewed commit") {
                 throw "The disposable repository has an unexpected commit."
+            }
+            $gitPassed = $true
+            $gitSummary = [PSCustomObject]@{
+                commit = $gitCommit.commit
+                message = $committedMessage
+                diffContainedMarker = $true
             }
     }
 
@@ -1433,7 +1483,54 @@ try {
     }
 }
 
+if ($EvidencePath) {
+    $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
+    $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
+    if ($evidenceDirectory) {
+        New-Item -ItemType Directory -Path $evidenceDirectory -Force |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "continuousDelphiJourney"
+        product = "RadIA"
+        productVersion = "2.0.0"
+        sourceCommit = $sourceCommit
+        sourceDirty = $sourceDirty
+        delphiVersion = $DelphiVersion
+        platform = $idePlatform
+        installedBplSha256 = (
+            Get-FileHash -LiteralPath (
+                Join-Path $publicBpl "RadIA.bpl"
+            ) -Algorithm SHA256
+        ).Hash
+        startedAtUtc = $journeyStartedAt.ToString("o")
+        completedAtUtc = [DateTime]::UtcNow.ToString("o")
+        durationMs = [int](
+            ([DateTime]::UtcNow - $journeyStartedAt).TotalMilliseconds
+        )
+        status = "passed"
+        phases = [PSCustomObject]@{
+            projectCreated = $templateCreated
+            formDesigned = $designerChanged
+            sourceEdited = $editorChanged
+            compilerFailureObservedAndFixed = $correctionPassed
+            buildPassed = $buildPassed
+            testsPassed = $testsPassed
+            debuggerPassed = $debugPassed
+            reviewedCommitCreated = $gitPassed
+            shutdownPassed = $journeySucceeded
+        }
+        tests = $testSummary
+        debugger = $debugSummary
+        git = $gitSummary
+    } |
+        ConvertTo-Json -Depth 10 |
+        Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
+}
+
 Write-Host (
-    "Knowledge notifier smoke passed for Delphi " +
-    "${DelphiVersion}: edit, save, build, tests, rename and close."
+    "Continuous Delphi journey passed for Delphi " +
+    "$DelphiVersion ${idePlatform}: create, design, edit, build, " +
+    "tests, debug, correction, Git and shutdown."
 )
