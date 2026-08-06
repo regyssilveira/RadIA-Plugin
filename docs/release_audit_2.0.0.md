@@ -20,10 +20,10 @@ documentação do candidato RadIA 2.0.0. Ela complementa, mas não substitui, os
 - A auditoria de documentação percorre o README e todos os Markdown em `docs` e falha para links locais
   ausentes ou marcadores comuns de mojibake.
 - O gate global do Sonar falha para qualquer issue, rating diferente de A, cobertura abaixo de 80%
-  ou duplicação acima de 3%. A evidência atual registra zero issues, 82,3% de cobertura e 2,3% de
+  ou duplicação acima de 3%. A análise atual registra zero issues, 82,9% de cobertura e 2,2% de
   duplicação.
-- O terminal nativo abriu com controles, entrada, saída e nove pontos de navegação por Tab nas
-  quatro combinações, conforme
+- O terminal nativo abriu com controles, entrada, saída e 11 pontos de navegação por Tab nas três
+  combinações suportadas, conforme
   [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json).
 - Os seletores, histórico, entrada e saída do terminal possuem cinco rótulos VCL associados. A
   árvore UI Automation do Delphi 13 IDE64 confirmou os nomes, estados e descrições das superfícies
@@ -40,5 +40,5 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.SonarQualityGate
 ```
 
 A navegação visual, por Tab e com tecnologia assistiva está comprovada. O contrato Web é validado
-automaticamente e inspecionado por UI Automation na IDE64; o terminal nativo é validado nas quatro
-combinações e exige rótulos associados e nove pontos navegáveis.
+automaticamente e inspecionado por UI Automation na IDE64; o terminal nativo é validado nas três
+combinações suportadas e exige rótulos associados e 11 pontos navegáveis.

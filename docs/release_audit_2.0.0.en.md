@@ -20,9 +20,9 @@ RadIA 2.0.0 candidate. It complements but does not replace real IDE cycles.
 - The documentation audit scans README and every Markdown file under `docs` and fails on missing local links or
   common mojibake markers.
 - The global Sonar gate fails on any issue, rating below A, coverage below 80%, or duplication above
-  3%. Current evidence records zero issues, 82.3% coverage, and 2.3% duplication.
-- The native terminal opened with controls, input, output, and nine keyboard tab stops in all four
-  combinations, as recorded in
+  3%. The current analysis records zero issues, 82.9% coverage, and 2.2% duplication.
+- The native terminal opened with controls, input, output, and 11 keyboard tab stops in all three
+  supported combinations, as recorded in
   [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json).
 - Terminal selectors, history, input, and output expose five associated VCL labels. The Delphi 13
   IDE64 UI Automation tree confirmed names, states, and descriptions for Web surfaces loaded by
@@ -40,4 +40,4 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.SonarQualityGate
 
 Visual, keyboard tab, and assistive-technology navigation are proven. The Web contract is
 automatically tested and inspected through UI Automation on IDE64; the native terminal is
-validated on all four combinations and requires associated labels plus nine tab stops.
+validated on all three supported combinations and requires associated labels plus 11 tab stops.

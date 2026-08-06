@@ -116,7 +116,6 @@ A própria IDE persiste posição, tamanho, visibilidade e estado acoplado.
 A matriz automatizada está em
 [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json). O smoke exige geometria
 útil, entrada e saída, os controles **New terminal**, **Close terminal**, **Run**, **Stop** e
-**Clear**, os cinco rótulos acessíveis e pelo menos nove pontos navegáveis por Tab.
-
-Evidências de versões antigas do Delphi presentes no arquivo são históricas. A matriz vigente e
-obrigatória do RadIA é exclusivamente Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+**Clear**, os cinco rótulos acessíveis, pelo menos 11 pontos navegáveis por Tab, dois perfis e uma
+paleta não vazia. A matriz vigente cobre exclusivamente Delphi 12 Win32, Delphi 13 Win32 e Delphi
+13 IDE64, todos com o catálogo de 95 ferramentas.

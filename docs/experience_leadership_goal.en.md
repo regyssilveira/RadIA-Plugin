@@ -346,7 +346,7 @@ This makes the create-from-zero promise broader than the VCL-only continuous jou
 
 Functional validation of all five surfaces in real IDEs is also complete. The terminal has
 dedicated proof in `terminal_smoke_evidence_2.0.0.json`: its native window, required controls,
-input, output, usable geometry, five associated labels, and nine keyboard tab stops passed on
+input, output, usable geometry, five associated labels, and 11 keyboard tab stops passed on
 Delphi 12 Win32 and Delphi 13 Win32/IDE64. The Delphi 13 IDE64 UI Automation tree confirmed
 chat names, states, and descriptions, including Agent Mode, terminal, run history, settings,
 conversation, and prompt. Inline assistance, the agent center, extensions, and knowledge remain

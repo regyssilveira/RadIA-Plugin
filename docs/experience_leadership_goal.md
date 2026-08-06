@@ -352,7 +352,7 @@ fora de Win32/Debug. Assim, a promessa de iniciar projetos do zero não depende 
 
 A validação funcional das cinco superfícies em IDE real também está completa. O terminal possui
 prova dedicada em `terminal_smoke_evidence_2.0.0.json`: a janela nativa, controles essenciais,
-entrada, saída, geometria útil, cinco rótulos associados e nove pontos navegáveis por Tab passaram
+entrada, saída, geometria útil, cinco rótulos associados e 11 pontos navegáveis por Tab passaram
 no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. A árvore UI Automation do Delphi 13 IDE64
 confirmou nomes, estados e descrições do chat, inclusive Agent Mode, terminal, histórico,
 configurações, conversa e prompt. Ghost Text, central agentiva, extensões e conhecimento

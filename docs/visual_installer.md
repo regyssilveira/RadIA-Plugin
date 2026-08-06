@@ -77,7 +77,7 @@ com Delphi:
 1. confirma que a tag é exatamente `v` mais a versão do `package.json`;
 2. executa lint, testes Web e auditoria da documentação;
 3. importa temporariamente o PFX e valida chave privada, EKU de code signing e validade;
-4. recompila os quatro pacotes Release a partir do commit da tag;
+4. recompila os três pacotes Release a partir do commit da tag;
 5. confirma que os pacotes compartilham versão, commit limpo e hashes válidos;
 6. gera e valida o instalador com Authenticode e timestamp obrigatórios;
 7. cria o catálogo `stable` com a URL HTTPS da GitHub Release;
