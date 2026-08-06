@@ -88,6 +88,28 @@ jobs:
           npm run test:docs
           .\scripts\Test-RadIA.SupportedTargets.ps1
 
+      - name: Prepare a clean distribution directory
+        shell: powershell
+        run: |
+          $distribution = [IO.Path]::GetFullPath(
+            (Join-Path $PWD "Output\Distribution")
+          )
+          $outputRoot = [IO.Path]::GetFullPath(
+            (Join-Path $PWD "Output")
+          )
+          if (-not $distribution.StartsWith(
+            $outputRoot,
+            [StringComparison]::OrdinalIgnoreCase
+          )) {
+            throw "Distribution directory escaped the output root."
+          }
+          if (Test-Path -LiteralPath $distribution) {
+            Get-ChildItem -LiteralPath $distribution -Force |
+              Remove-Item -Recurse -Force
+          } else {
+            New-Item -ItemType Directory -Path $distribution | Out-Null
+          }
+
       - name: Build Delphi 12 and 13 release packages
         shell: powershell
         run: |
@@ -126,10 +148,16 @@ jobs:
           Copy-Item `
             -LiteralPath ".\Output\Packages\SHA256SUMS.txt" `
             -Destination ".\Output\Distribution\SHA256SUMS.txt"
-          Get-ChildItem `
-            -LiteralPath ".\Output\Packages" `
-            -Filter "RadIA-v$env:RADIA_VERSION-*-Release.zip" |
-            Copy-Item -Destination ".\Output\Distribution"
+          $packages = @(
+            "RadIA-v$env:RADIA_VERSION-Delphi-23.0-Win32-Release.zip",
+            "RadIA-v$env:RADIA_VERSION-Delphi-37.0-Win32-Release.zip",
+            "RadIA-v$env:RADIA_VERSION-Delphi-37.0-Win64-Release.zip"
+          )
+          foreach ($package in $packages) {
+            Copy-Item `
+              -LiteralPath ".\Output\Packages\$package" `
+              -Destination ".\Output\Distribution\$package"
+          }
 
       - name: Upload distribution evidence
         uses: actions/upload-artifact@v4
