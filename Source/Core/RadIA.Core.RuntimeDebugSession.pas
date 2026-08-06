@@ -112,6 +112,9 @@ type
     ): Boolean;
     function GetCurrentSession: TRadIARuntimeSessionIdentity;
     function GetLastSequence: Int64;
+    function TryGetLastEvent(
+      out AEvent: TRadIARuntimeDebugEvent
+    ): Boolean;
     function RecordEvent(
       const ASessionId: string;
       const AKind: TRadIARuntimeDebugEventKind;
@@ -160,6 +163,9 @@ type
     ): Boolean;
     function GetCurrentSession: TRadIARuntimeSessionIdentity;
     function GetLastSequence: Int64;
+    function TryGetLastEvent(
+      out AEvent: TRadIARuntimeDebugEvent
+    ): Boolean;
     function RecordEvent(
       const ASessionId: string;
       const AKind: TRadIARuntimeDebugEventKind;
@@ -428,6 +434,21 @@ begin
   TMonitor.Enter(FLock);
   try
     Result := FLastSequence;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
+function TRadIARuntimeDebugSessionCoordinator.TryGetLastEvent(
+  out AEvent: TRadIARuntimeDebugEvent
+): Boolean;
+begin
+  AEvent := Default(TRadIARuntimeDebugEvent);
+  TMonitor.Enter(FLock);
+  try
+    Result := FEvents.Count > 0;
+    if Result then
+      AEvent := FEvents.Last;
   finally
     TMonitor.Exit(FLock);
   end;

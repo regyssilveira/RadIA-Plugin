@@ -311,7 +311,7 @@ See the [security model](tool_security_model.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.md) lists the 104 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.md) lists the 106 registered built-in tools.
 - Some architectural catalog entries remain roadmap items and may not appear in `/tools`.
 - Debugger and Designer tools require valid IDE context and state.
 - Patches are rejected after the buffer changes.

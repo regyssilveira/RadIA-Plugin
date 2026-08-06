@@ -94,6 +94,8 @@ contains
   RadIA.Core.RuntimeAutomation in 'Source\Core\RadIA.Core.RuntimeAutomation.pas',
   RadIA.Core.RuntimeScenario in 'Source\Core\RadIA.Core.RuntimeScenario.pas',
   RadIA.Core.RuntimeScenarioTools in 'Source\Core\RadIA.Core.RuntimeScenarioTools.pas',
+  RadIA.Core.RuntimeEvidence in 'Source\Core\RadIA.Core.RuntimeEvidence.pas',
+  RadIA.Core.RuntimeEvidenceTools in 'Source\Core\RadIA.Core.RuntimeEvidenceTools.pas',
   RadIA.Core.RuntimeDebugSession in 'Source\Core\RadIA.Core.RuntimeDebugSession.pas',
   RadIA.Core.RuntimeDebugTools in 'Source\Core\RadIA.Core.RuntimeDebugTools.pas',
   RadIA.Core.RuntimeDiscoveryTools in 'Source\Core\RadIA.Core.RuntimeDiscoveryTools.pas',

@@ -27,6 +27,8 @@ type
     [Test]
     procedure MatchesStructuredExceptionEvent;
     [Test]
+    procedure ReturnsLastRecordedEvent;
+    [Test]
     procedure TimesOutWithoutBusyWait;
     [Test]
     procedure CancelsWaitingOperation;
@@ -211,6 +213,26 @@ begin
     )
   );
   Assert.IsFalse(FCoordinator.GetCurrentSession.IsComplete);
+end;
+
+procedure TTestRadIARuntimeDebugSession.ReturnsLastRecordedEvent;
+var
+  LEvent: TRadIARuntimeDebugEvent;
+begin
+  Assert.IsFalse(FCoordinator.TryGetLastEvent(LEvent));
+  AttachProcess;
+  Assert.IsTrue(
+    FCoordinator.RecordEvent(
+      FSessionId,
+      rdekRunning,
+      'running',
+      'Application resumed'
+    )
+  );
+  Assert.IsTrue(FCoordinator.TryGetLastEvent(LEvent));
+  Assert.AreEqual(Int64(1), LEvent.Sequence);
+  Assert.AreEqual(rdekRunning, LEvent.Kind);
+  Assert.AreEqual('Application resumed', LEvent.Details);
 end;
 
 procedure TTestRadIARuntimeDebugSession.Setup;

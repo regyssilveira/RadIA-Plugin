@@ -265,6 +265,14 @@
       ]
     },
     {
+      "name": "Runtime diagnostic evidence",
+      "source": "Source/Core/RadIA.Core.RuntimeEvidenceTools.pas",
+      "tools": [
+        "CaptureRuntimeEvidence",
+        "CompareRuntimeEvidence"
+      ]
+    },
+    {
       "name": "Reviewable local Git commits",
       "source": "Source/Core/RadIA.Core.GitTools.pas",
       "tools": [

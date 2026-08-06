@@ -1,6 +1,6 @@
 # Post-2.0 goal — Autonomous runtime failure reproduction
 
-> **Status:** in execution; M0–M3 implemented with in-IDE validation pending, M4 is next.
+> **Status:** in execution; M0–M4 implemented with end-to-end IDE validation pending; M5 is next.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Plan paused during this goal:** [CLI continuity and advanced integration](competitive_leadership_plan.en.md).
@@ -23,15 +23,18 @@ RadIA can already:
 - start, pause, continue, and stop a debugging session;
 - step through code, manage breakpoints, and evaluate expressions;
 - inspect debugger state, call stack, and timeline;
+- correlate session, process, project, executable, and build;
+- discover authorized windows and controls in the debugged application;
+- prepare, authorize, execute, and cancel bounded visual scenarios;
+- capture and compare sanitized evidence between failure and verification;
 - prepare reviewable changes and rebuild after consent.
 
 It cannot yet:
 
-- discover forms and controls in the running application;
-- invoke buttons, fill fields, or cancel a modal window;
-- wait for visual events and correlate them with debugger events;
-- record and replay a visual scenario as regression evidence;
-- complete the reproduce, diagnose, fix, and verify loop end to end.
+- persist and version a visual scenario as regression evidence;
+- automatically generate a DUnitX test from every isolatable cause;
+- prove ten consecutive stable replays on every real target;
+- complete the end-to-end M5 gate on all three supported hosts.
 
 ## Security boundaries
 
@@ -72,6 +75,7 @@ The planned high-level tools are:
 | `GetRuntimeScenarioStatus` | Return script actions, waits, failures, and evidence. |
 | `WaitForDebuggerEvent` | Await exception, breakpoint, exit, or state changes without busy-wait. |
 | `CaptureRuntimeEvidence` | Record a sanitized diagnostic and regression result. |
+| `CompareRuntimeEvidence` | Compare failure reproduction with verification in a new session and build. |
 
 ## Milestones
 
@@ -130,6 +134,8 @@ an external window.
 **Still missing:** closing the correction loop and turning reproduction into regression.
 
 ### M4 — Diagnose, fix, and replay
+
+Implementation and evidence: [M4 correction cycle](runtime_debug_automation_m4.en.md).
 
 - integrate the scenario with `/journey debug`;
 - build, start, execute, await the exception, and collect state, stack, and expressions;

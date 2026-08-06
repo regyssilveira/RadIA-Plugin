@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 104 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 106 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -249,6 +249,13 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `RunRuntimeScenario` | Revalida a sessão e executa exatamente o preview aprovado. | Após o usuário revisar o roteiro; exige novo consentimento em toda execução. |
 | `CancelRuntimeScenario` | Interrompe a execução ou uma espera ativa sem solicitar consentimento. | Pelo botão ou comando de parada de emergência, pelo agente ou pelo MCP. |
 | `GetRuntimeScenarioStatus` | Retorna estado, repetição, ação atual, total concluído e eventual falha. | Para acompanhar o roteiro e coletar seu resultado estruturado. |
+
+## Evidências de diagnóstico runtime
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `CaptureRuntimeEvidence` | Registra sessão, build, cenário, último evento, pilha e até dez expressões em uma evidência sanitizada e identificada por fingerprint. | Uma vez na reprodução da falha e novamente, com `phase=verification`, após aplicar a correção e recompilar. |
+| `CompareRuntimeEvidence` | Compara uma evidência de falha com outra de verificação e informa se são comparáveis e se a falha foi removida. | Depois de repetir o mesmo cenário em uma nova sessão e em um build diferente; não altera código nem substitui a revisão humana. |
 
 ## Git local
 

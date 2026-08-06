@@ -1109,10 +1109,15 @@ begin
     ApplyTestEvidence(AStep, AValidation)
   else if SameText(AStep.ToolName, 'GetCoverageSummary') then
     ApplyCoverageEvidence(AStep, AValidation)
-  else if SameText(AStep.ToolName, 'StartDebugging') then
+  else if SameText(AStep.ToolName, 'StartDebugging') or
+    SameText(AStep.ToolName, 'RunRuntimeScenario') then
     ApplyExecutionEvidence(AStep, AValidation)
   else if SameText(AStep.ToolName, 'GetDebuggerState') or
-    SameText(AStep.ToolName, 'GetDebugTimeline') then
+    SameText(AStep.ToolName, 'GetDebugTimeline') or
+    SameText(AStep.ToolName, 'WaitForDebuggerEvent') or
+    SameText(AStep.ToolName, 'GetRuntimeScenarioStatus') or
+    SameText(AStep.ToolName, 'CaptureRuntimeEvidence') or
+    SameText(AStep.ToolName, 'CompareRuntimeEvidence') then
     ApplyDebugEvidence(AStep, AValidation);
 end;
 
@@ -1130,13 +1135,25 @@ begin
     Exit;
   try
     AValidation.DebugObserved := True;
-    if SameText(AStep.ToolName, 'GetDebuggerState') then
-      AValidation.DebugState := LRoot.GetValue<string>('state', 'unknown')
-    else
+    if SameText(AStep.ToolName, 'GetDebugTimeline') then
       AValidation.DebugLastSequence := LRoot.GetValue<Int64>(
         'lastSequence',
         0
+      )
+    else
+    begin
+      AValidation.DebugState := LRoot.GetValue<string>(
+        'state',
+        LRoot.GetValue<string>(
+          'debuggerState',
+          LRoot.GetValue<string>('outcome', 'observed')
+        )
       );
+      AValidation.DebugLastSequence := LRoot.GetValue<Int64>(
+        'eventSequence',
+        AValidation.DebugLastSequence
+      );
+    end;
   finally
     LRoot.Free;
   end;

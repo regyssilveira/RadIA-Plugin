@@ -89,6 +89,7 @@ uses
   RadIA.Core.RuntimeDebugTools,
   RadIA.Core.RuntimeAutomation, RadIA.Core.RuntimeDiscoveryTools,
   RadIA.Core.RuntimeScenario, RadIA.Core.RuntimeScenarioTools,
+  RadIA.Core.RuntimeEvidence, RadIA.Core.RuntimeEvidenceTools,
   RadIA.Core.DebuggerControlTools, RadIA.Core.DebuggerBreakpointTools,
   RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
@@ -956,6 +957,15 @@ initialization
       TRadIAContainer.Resolve<IRadIARuntimeActionFacade>
     )
   );
+  TRadIAContainer.Register<IRadIARuntimeEvidenceCoordinator>(
+    TRadIARuntimeEvidenceCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+      TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>,
+      TRadIAContainer.Resolve<IRadIADebuggerFacade>,
+      TRadIAContainer.Resolve<IRadIADebuggerEvaluationFacade>,
+      TRadIAContainer.Resolve<IRadIASecretRedactor>
+    )
+  );
   TRadIAContainer.Register<IRadIAKnowledgeSource>(
     TRadIAConfigurableKnowledgeSource.Create(
       TRadIAConfig.GetInstance,
@@ -1190,6 +1200,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
     TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>
+  );
+  RegisterRadIARuntimeEvidenceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeEvidenceCoordinator>
   );
   RegisterRadIAKnowledgeTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

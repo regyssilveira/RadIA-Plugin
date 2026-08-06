@@ -1,6 +1,6 @@
 # Goal pós-2.0 — Reprodução autônoma de falhas runtime
 
-> **Estado:** em execução; M0–M3 implementados com validação na IDE pendente, M4 é a próxima etapa.
+> **Estado:** em execução; M0–M4 implementados, com validação ponta a ponta na IDE pendente; M5 é a próxima etapa.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Plano pausado durante este goal:** [Continuidade CLI e integração avançada](competitive_leadership_plan.md).
@@ -23,15 +23,18 @@ O RadIA já consegue:
 - iniciar, pausar, continuar e encerrar uma sessão de depuração;
 - avançar por instruções, gerenciar breakpoints e avaliar expressões;
 - consultar estado, pilha de chamadas e linha do tempo do depurador;
+- correlacionar sessão, processo, projeto, executável e build;
+- descobrir janelas e controles autorizados da aplicação depurada;
+- preparar, autorizar, executar e cancelar cenários visuais limitados;
+- capturar e comparar evidências sanitizadas entre uma falha e sua verificação;
 - preparar alterações revisáveis e recompilar após o consentimento.
 
 Ainda não consegue:
 
-- descobrir formulários e controles da aplicação em execução;
-- acionar botões, preencher campos ou cancelar uma janela modal;
-- aguardar eventos visuais e correlacioná-los com eventos do depurador;
-- gravar e repetir um cenário visual como prova de regressão;
-- executar de ponta a ponta o ciclo reproduzir, diagnosticar, corrigir e validar.
+- persistir e versionar um cenário visual como prova de regressão;
+- gerar automaticamente um teste DUnitX a partir de toda causa isolável;
+- comprovar dez repetições consecutivas em cada alvo real sem flutuação;
+- concluir o gate ponta a ponta do M5 nos três hosts suportados.
 
 ## Limites de segurança
 
@@ -72,6 +75,7 @@ As ferramentas de alto nível previstas são:
 | `GetRuntimeScenarioStatus` | Consultar ações, esperas, falhas e evidências do roteiro. |
 | `WaitForDebuggerEvent` | Aguardar exceção, breakpoint, término ou mudança de estado sem busy-wait. |
 | `CaptureRuntimeEvidence` | Registrar resultado sanitizado para diagnóstico e regressão. |
+| `CompareRuntimeEvidence` | Comparar a reprodução da falha com a verificação em nova sessão e build. |
 
 ## Marcos
 
@@ -130,6 +134,8 @@ nenhuma janela externa.
 **Ainda faltará:** fechar o ciclo de correção e transformar a reprodução em regressão.
 
 ### M4 — Diagnóstico, correção e repetição
+
+Implementação e evidências: [Ciclo de correção M4](runtime_debug_automation_m4.md).
 
 - integrar o cenário ao `/journey debug`;
 - compilar, iniciar, executar, aguardar a exceção e coletar estado, pilha e expressões;

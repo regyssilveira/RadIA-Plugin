@@ -33,7 +33,7 @@ This index brings together the functional, operational, and technical documentat
 | DUnitX test execution and analysis | [DUnitX runner](dunitx_runner.en.md) |
 | Reviewable local Git commit | [Git workflow](git_workflow.en.md) |
 | What each tool does and when to use it | [Operational reference](internal_tools_reference.md) |
-| All 104 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
+| All 106 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
 | Target architecture and contracts | [Architectural catalog](tool_catalog.md) |
 | Consent, risk, and audit | [Security model](tool_security_model.md) |
 | MCP and external clients | [MCP integration](mcp_integration_guide.en.md) |

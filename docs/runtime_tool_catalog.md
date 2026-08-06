@@ -239,6 +239,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CancelRuntimeScenario` | `RadIA.Core.RuntimeScenarioTools.pas` |
 | `GetRuntimeScenarioStatus` | `RadIA.Core.RuntimeScenarioTools.pas` |
 
+## Runtime diagnostic evidence
+
+| Tool | Source unit |
+|---|---|
+| `CaptureRuntimeEvidence` | `RadIA.Core.RuntimeEvidenceTools.pas` |
+| `CompareRuntimeEvidence` | `RadIA.Core.RuntimeEvidenceTools.pas` |
+
 ## Reviewable local Git commits
 
 | Tool | Source unit |
@@ -250,7 +257,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Resumo
 
-- Registered groups: 28
-- Registered built-in tools: 104
+- Registered groups: 29
+- Registered built-in tools: 106
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.
