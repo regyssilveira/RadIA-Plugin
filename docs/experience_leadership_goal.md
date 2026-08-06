@@ -339,6 +339,12 @@ parou em breakpoint com call stack e timeline, criou um commit Git revisado e en
 fonte suja, SHA divergente, hash de BPL inválido, fase ausente, testes incompletos, debug sem
 evidência ou commit sem diff revisado.
 
+A matriz `generated_project_templates_evidence_2.0.0.json` comprova a criação e a compilação
+individuais dos sete templates nativos do RadIA nos compiladores do Delphi 12 e 13: Console, VCL,
+FMX, Library, Package, DUnitX e Service. A prova está vinculada ao commit de origem, registra a
+versão efetiva de cada compilador e rejeita template ausente, duplicado, não compilado ou executado
+fora de Win32/Debug. Assim, a promessa de iniciar projetos do zero não depende apenas da jornada VCL.
+
 A validação funcional das cinco superfícies em IDE real também está completa. O terminal possui
 prova dedicada em `terminal_smoke_evidence_2.0.0.json`: a janela nativa, controles essenciais,
 entrada, saída, geometria útil, cinco rótulos associados e nove pontos navegáveis por Tab passaram

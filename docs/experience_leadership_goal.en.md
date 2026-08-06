@@ -333,6 +333,12 @@ passed autonomously. The consolidator rejects dirty source, divergent SHAs, inva
 hashes, missing phases, incomplete tests, debugging without evidence, or a commit without a
 reviewed diff.
 
+The `generated_project_templates_evidence_2.0.0.json` matrix proves individual creation and
+compilation of all seven native RadIA templates with the Delphi 12 and 13 compilers: Console, VCL,
+FMX, Library, Package, DUnitX, and Service. The evidence is bound to its source commit, records the
+effective compiler version, and rejects missing, duplicated, unbuilt, or non-Win32/Debug templates.
+This makes the create-from-zero promise broader than the VCL-only continuous journey.
+
 Functional validation of all five surfaces in real IDEs is also complete. The terminal has
 dedicated proof in `terminal_smoke_evidence_2.0.0.json`: its native window, required controls,
 input, output, usable geometry, five associated labels, and nine keyboard tab stops passed on
