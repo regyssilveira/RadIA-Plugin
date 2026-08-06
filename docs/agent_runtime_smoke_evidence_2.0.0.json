@@ -3,37 +3,20 @@
     "evidenceKind":  "agentRuntimeJourneyMatrix",
     "product":  "RadIA",
     "productVersion":  "2.0.0",
-    "sourceCommit":  "36801ba9d222d2721915c9a8c2788537c6550cb6",
-    "requiredToolCount":  90,
-    "targetCount":  4,
+    "sourceCommit":  "5d24558238fdad3d4e7f4e2924b2a5186a5f6b42",
+    "requiredToolCount":  95,
+    "targetCount":  3,
     "status":  "passed",
-    "generatedAtUtc":  "2026-08-06T00:10:15.7423995Z",
+    "generatedAtUtc":  "2026-08-06T18:03:41.7695258Z",
     "targets":  [
-                    {
-                        "delphiVersion":  "22.0",
-                        "platform":  "Win32",
-                        "installedBplSha256":  "37EBF5967B44874018BD0D030D14A02460CFD3FBEF7F1E6485EBADACA44A5C84",
-                        "toolCount":  90,
-                        "cyclesPassed":  1,
-                        "minimumSeconds":  9.4,
-                        "maximumSeconds":  9.4,
-                        "awaitingApproval":  true,
-                        "paused":  true,
-                        "resumed":  true,
-                        "completed":  true,
-                        "persisted":  true,
-                        "toolName":  "GetIDEState",
-                        "stepCount":  1,
-                        "generatedAtUtc":  "2026-08-06T00:08:57.0636488Z"
-                    },
                     {
                         "delphiVersion":  "23.0",
                         "platform":  "Win32",
-                        "installedBplSha256":  "C6038B900B3E6995D28AD1FC4F3AB4A4BB53DF61F26A99244EC0AF0A7B5D706B",
-                        "toolCount":  90,
+                        "installedBplSha256":  "04A2A33D70939723E0EA98E5C77F6CE3AA6976A6404E1A989A34952BA237778D",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
-                        "minimumSeconds":  20.59,
-                        "maximumSeconds":  20.59,
+                        "minimumSeconds":  26.7,
+                        "maximumSeconds":  26.7,
                         "awaitingApproval":  true,
                         "paused":  true,
                         "resumed":  true,
@@ -41,16 +24,16 @@
                         "persisted":  true,
                         "toolName":  "GetIDEState",
                         "stepCount":  1,
-                        "generatedAtUtc":  "2026-08-06T00:09:20.2551892Z"
+                        "generatedAtUtc":  "2026-08-06T18:02:24.5352434Z"
                     },
                     {
                         "delphiVersion":  "37.0",
                         "platform":  "Win32",
-                        "installedBplSha256":  "FCDC267C7ED1EA63F8D08DB191FBEB65A7B1B2237002203C4207E6C781CCCA31",
-                        "toolCount":  90,
+                        "installedBplSha256":  "4C8A7EDE90F9337DB053401357719E38346AA183FFB4B9D9FFA149A1C2349733",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
-                        "minimumSeconds":  25.19,
-                        "maximumSeconds":  25.19,
+                        "minimumSeconds":  33.51,
+                        "maximumSeconds":  33.51,
                         "awaitingApproval":  true,
                         "paused":  true,
                         "resumed":  true,
@@ -58,16 +41,16 @@
                         "persisted":  true,
                         "toolName":  "GetIDEState",
                         "stepCount":  1,
-                        "generatedAtUtc":  "2026-08-06T00:09:47.8951782Z"
+                        "generatedAtUtc":  "2026-08-06T18:03:08.5699206Z"
                     },
                     {
                         "delphiVersion":  "37.0",
                         "platform":  "Win64",
-                        "installedBplSha256":  "7AF35F32EC898A89E2F3B8754281BEE0F09C74D3DA321E54EB60BFA2FC45CD97",
-                        "toolCount":  90,
+                        "installedBplSha256":  "564E9AA984DA8707B70DB875127ABEC30E7ED98C7582E17D28C7174392EAD9AB",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
-                        "minimumSeconds":  15.57,
-                        "maximumSeconds":  15.57,
+                        "minimumSeconds":  23.81,
+                        "maximumSeconds":  23.81,
                         "awaitingApproval":  true,
                         "paused":  true,
                         "resumed":  true,
@@ -75,7 +58,7 @@
                         "persisted":  true,
                         "toolName":  "GetIDEState",
                         "stepCount":  1,
-                        "generatedAtUtc":  "2026-08-06T00:10:07.5922638Z"
+                        "generatedAtUtc":  "2026-08-06T18:03:41.3308986Z"
                     }
                 ]
 }

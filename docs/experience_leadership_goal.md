@@ -172,7 +172,8 @@ tool e limita listas extensas, sem criar polling ou controlar uma sessão por co
 A jornada do runtime é comprovada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. O smoke usa
 um provider local determinístico, executa `GetIDEState` pelo registry e pela policy reais, pausa
 após a etapa, persiste o checkpoint, destrói o runtime e retoma em outra instância até a conclusão.
-A matriz versionada está em `agent_runtime_smoke_evidence_2.0.0.json`.
+A matriz versionada está em `agent_runtime_smoke_evidence_2.0.0.json` e vincula os três alvos ao
+catálogo vigente de 95 ferramentas.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

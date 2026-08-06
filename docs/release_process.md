@@ -207,10 +207,10 @@ origem, instala a versão anterior, aplica o ZIP atual, executa o reparo e regis
 de origem na evidência. O parâmetro exige `-ExercisePackageLifecycle`.
 
 O resumo versionado da matriz 2.0.0 está em `ide_smoke_evidence_2.0.0.json`. Ele registra os hashes
-dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 90 tools,
+dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 95 tools,
 docking nativo, restauração do desktop e ausência de processos órfãos.
 
-Depois de gerar os quatro arquivos em `Output\Validation`, consolide a prova oficial com:
+Depois de gerar os três arquivos em `Output\Validation`, consolide a prova oficial com:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `

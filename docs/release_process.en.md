@@ -207,10 +207,10 @@ package, installs the previous version, applies the current ZIP, repairs it, and
 version and SHA-256 in evidence. The parameter requires `-ExercisePackageLifecycle`.
 
 The versioned 2.0.0 matrix summary is stored in `ide_smoke_evidence_2.0.0.json`. It records ZIP and
-BPL hashes, 10 passing cycles per target, duration range, the 90-tool catalog, native docking,
+BPL hashes, 10 passing cycles per target, duration range, the 95-tool catalog, native docking,
 desktop restoration, and the absence of orphan processes.
 
-After generating all four files under `Output\Validation`, consolidate the official proof with:
+After generating all three files under `Output\Validation`, consolidate the official proof with:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `

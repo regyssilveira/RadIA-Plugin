@@ -167,7 +167,8 @@ bounds long lists, without introducing polling or controlling a session on its o
 The runtime journey is proven on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The smoke uses a
 deterministic local provider, executes `GetIDEState` through the real registry and policy, pauses
 after the step, persists the checkpoint, destroys the runtime, and resumes in another instance
-until completion. The versioned matrix is stored in `agent_runtime_smoke_evidence_2.0.0.json`.
+until completion. The versioned matrix is stored in `agent_runtime_smoke_evidence_2.0.0.json` and
+binds all three targets to the current 95-tool catalog.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.
