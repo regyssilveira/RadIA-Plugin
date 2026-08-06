@@ -104,6 +104,19 @@ foreach ($target in $targets) {
         -Message "$($target.evidenceFile) has an incomplete journey."
     Assert-RadIACondition `
         -Condition (
+            $evidence.tests.status -eq "succeeded" -and
+            $evidence.tests.exitCode -eq 0 -and
+            $evidence.tests.total -gt 0 -and
+            $evidence.tests.passed -eq $evidence.tests.total -and
+            $evidence.tests.failed -eq 0 -and
+            $evidence.tests.errors -eq 0 -and
+            $evidence.tests.ignored -eq 0 -and
+            $evidence.tests.allPassed -eq $true
+        ) `
+        -Message "$($target.evidenceFile) lacks passing test evidence."
+    Assert-RadIACondition `
+        -Condition (
+            $evidence.debugger.state -in @("stopped", "exception") -and
             $evidence.debugger.callStackAccessible -and
             $evidence.debugger.callStackFrameCount -gt 0 -and
             $evidence.debugger.timelineEventCount -gt 0

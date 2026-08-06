@@ -1222,7 +1222,17 @@ try {
             )
         }
         $testsPassed = $true
-        $testSummary = $testResult
+        $testSummary = [PSCustomObject]@{
+            status = $testResult.status
+            exitCode = $testResult.exitCode
+            durationMs = $testResult.durationMs
+            total = $testResult.report.total
+            passed = $testResult.report.passed
+            failed = $testResult.report.failed
+            errors = $testResult.report.errors
+            ignored = $testResult.report.ignored
+            allPassed = $testResult.report.allPassed
+        }
         if ($ExerciseDebugger) {
             $breakpoint = Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
@@ -1255,6 +1265,10 @@ try {
                     $false
                 }
             } -FailureMessage "The debugger did not stop at the breakpoint."
+            $debugState = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetDebuggerState"
             $callStack = Invoke-RadIATool `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
