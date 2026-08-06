@@ -165,14 +165,14 @@ Cada pacote registra no `manifest.json` o `sourceCommit` Git de 40 caracteres e
 `sourceDirty: false`. O build com `-Package` falha se houver alteração rastreada ainda não
 commitada. Isso impede atribuir um artefato a um commit diferente do código empacotado.
 
-Depois de gerar os quatro ZIPs, execute:
+Depois de gerar os três ZIPs, execute:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseEvidence.ps1
 ```
 
-O comando exige os quatro pacotes da versão declarada em `package.json`, expande e valida cada um,
+O comando exige os três pacotes da versão declarada em `package.json`, expande e valida cada um,
 confirma versão, configuração, plataforma, commit comum e árvore limpa, calcula hashes SHA-256
 independentes e grava `Output\ReleaseEvidence.json`.
 
@@ -397,7 +397,7 @@ O resultado versionado fica em `first_value_smoke_evidence_2.0.0.json`.
 
 ### Instalador visual e canal assinado
 
-Depois que os quatro ZIPs forem aprovados, gere o instalador único:
+Depois que os três ZIPs forem aprovados, gere o instalador único:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -438,7 +438,7 @@ a publicação, configure os secrets `RADIA_SIGNING_PFX_BASE64` e
 * Pacotes Release gerados para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 * Instalador visual assinado, timestamp validado e catálogo estável HTTPS publicado.
 * Validação positiva e negativa executada para cada pacote.
-* `SHA256SUMS.txt` publicado com os quatro ZIPs gerados pelo mesmo commit.
+* `SHA256SUMS.txt` publicado com os três ZIPs gerados pelo mesmo commit.
 * Evidência JSON de dez ciclos reais gerada para cada combinação suportada.
 * Nenhum processo ou discovery MCP órfão após os smokes.
 * Branch de trabalho publicada.

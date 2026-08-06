@@ -165,14 +165,14 @@ Every package records a 40-character Git `sourceCommit` and `sourceDirty: false`
 `manifest.json`. Packaging fails while tracked worktree changes exist, preventing an artifact from
 claiming a source revision different from the code that was packaged.
 
-After generating all four ZIPs, run:
+After generating all three ZIPs, run:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseEvidence.ps1
 ```
 
-The command requires the four packages for the version in `package.json`, expands and validates
+The command requires the three packages for the version in `package.json`, expands and validates
 each archive, confirms one version and source commit, checks clean-source evidence, computes
 independent SHA-256 hashes, and writes `Output\ReleaseEvidence.json`.
 
@@ -370,7 +370,7 @@ The versioned result is stored in `first_value_smoke_evidence_2.0.0.json`.
 
 ### Visual installer and signed channel
 
-After all four ZIP files pass validation, build the single installer:
+After all three ZIP files pass validation, build the single installer:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -411,7 +411,7 @@ Production environment approval is recommended.
 * Release packages generated for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 * Signed visual installer, validated timestamp, and stable HTTPS catalog published.
 * Positive and negative validation completed for every package.
-* `SHA256SUMS.txt` published with the four ZIPs generated from the same commit.
+* `SHA256SUMS.txt` published with the three ZIPs generated from the same commit.
 * JSON evidence for ten real cycles generated for every supported combination.
 * No MCP process or discovery file left after smoke tests.
 * Working branch published.
