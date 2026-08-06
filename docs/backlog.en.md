@@ -174,8 +174,10 @@ The board below summarizes the current status of mapped short and medium-term fe
         are abandoned during shutdown, without freeing VCL/WebView2. The installed build passed
         three consecutive Delphi 13 load and shutdown cycles with 87 tools and no `bds.exe`
         retention.
-    *   Delphi 13 continuous E2E completed: template, Form Designer, build, DUnitX, debugging,
-        validated correction, reviewable Git commit, and shutdown passed in the same journey.
+    *   Continuous matrix E2E completed: Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64
+        autonomously passed template creation, Form Designer, live editing, failure and correction,
+        build, 736 tests, debugging with call stack/timeline, a reviewable Git commit, and shutdown
+        in one journey. Consolidated proof is in `continuous_journey_smoke_evidence_2.0.0.json`.
     *   Native host completed: two real cycles proved `TOTADockForm` creation, visibility, IDE
         desktop geometry restoration, and clean shutdown. The lateral drop gesture remains a manual
         visual acceptance because the elevated IDE blocks synthetic cross-process input; this does

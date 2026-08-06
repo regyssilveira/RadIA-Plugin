@@ -175,8 +175,10 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         abandonar seus objetos durante o encerramento, sem liberar VCL/WebView2. A build instalada
         passou em três ciclos consecutivos de carga e shutdown do Delphi 13, com 87 tools e sem
         retenção do `bds.exe`.
-    *   Concluído no E2E contínuo do Delphi 13: template, Form Designer, build, DUnitX, debug,
-        correção validada, commit Git revisável e shutdown foram aprovados na mesma jornada.
+    *   Concluído no E2E contínuo da matriz: Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 aprovaram
+        autonomamente template, Form Designer, edição viva, falha e correção, build, 736 testes,
+        debug com call stack/timeline, commit Git revisável e shutdown na mesma jornada. A prova
+        consolidada está em `continuous_journey_smoke_evidence_2.0.0.json`.
     *   Concluído no host nativo: dois ciclos reais comprovaram a criação do `TOTADockForm`, sua
         visibilidade, restauração de geometria pelo desktop da IDE e shutdown limpo. O gesto de drop
         lateral permanece como aceite visual manual porque a IDE elevada bloqueia entrada sintética

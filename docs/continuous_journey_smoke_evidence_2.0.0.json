@@ -1,0 +1,176 @@
+﻿{
+    "schemaVersion":  1,
+    "evidenceKind":  "continuousDelphiJourneyMatrix",
+    "product":  "RadIA",
+    "productVersion":  "2.0.0",
+    "sourceCommit":  "58b02c78eadd024bfaaf5be5ddf984eeeb6e5e46",
+    "targetCount":  4,
+    "status":  "passed",
+    "generatedAtUtc":  "2026-08-06T03:30:44.6194773Z",
+    "targets":  [
+                    {
+                        "delphiVersion":  "22.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "4ABB546A6389AD4E20A59BDC1539B04FFB3607780442B12D412C066E7B2AC0C2",
+                        "durationMs":  129772,
+                        "phases":  {
+                                       "projectCreated":  true,
+                                       "formDesigned":  true,
+                                       "sourceEdited":  true,
+                                       "compilerFailureObservedAndFixed":  true,
+                                       "buildPassed":  true,
+                                       "testsPassed":  true,
+                                       "debuggerPassed":  true,
+                                       "reviewedCommitCreated":  true,
+                                       "shutdownPassed":  true
+                                   },
+                        "tests":  {
+                                      "status":  "succeeded",
+                                      "exitCode":  0,
+                                      "durationMs":  29163,
+                                      "total":  736,
+                                      "passed":  736,
+                                      "failed":  0,
+                                      "errors":  0,
+                                      "ignored":  0,
+                                      "allPassed":  true
+                                  },
+                        "debugger":  {
+                                         "target":  "test-suite",
+                                         "state":  "stopped",
+                                         "callStackAccessible":  true,
+                                         "callStackFrameCount":  4,
+                                         "timelineEventCount":  3
+                                     },
+                        "git":  {
+                                    "commit":  "1f1ce72d372a6e1d125c0495107fc2a0a712a942",
+                                    "message":  "test: validate RadIA reviewed commit",
+                                    "diffContainedMarker":  true
+                                },
+                        "completedAtUtc":  "2026-08-06T03:22:16.4361488Z"
+                    },
+                    {
+                        "delphiVersion":  "23.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "FA8F44A4FB3748D3CFF4A3DAA018BD38043E763896EA76AB62CDC1315030412B",
+                        "durationMs":  136090,
+                        "phases":  {
+                                       "projectCreated":  true,
+                                       "formDesigned":  true,
+                                       "sourceEdited":  true,
+                                       "compilerFailureObservedAndFixed":  true,
+                                       "buildPassed":  true,
+                                       "testsPassed":  true,
+                                       "debuggerPassed":  true,
+                                       "reviewedCommitCreated":  true,
+                                       "shutdownPassed":  true
+                                   },
+                        "tests":  {
+                                      "status":  "succeeded",
+                                      "exitCode":  0,
+                                      "durationMs":  28486,
+                                      "total":  736,
+                                      "passed":  736,
+                                      "failed":  0,
+                                      "errors":  0,
+                                      "ignored":  0,
+                                      "allPassed":  true
+                                  },
+                        "debugger":  {
+                                         "target":  "test-suite",
+                                         "state":  "stopped",
+                                         "callStackAccessible":  true,
+                                         "callStackFrameCount":  4,
+                                         "timelineEventCount":  3
+                                     },
+                        "git":  {
+                                    "commit":  "232a95417c92074967a3afeb07a90b81e6e12771",
+                                    "message":  "test: validate RadIA reviewed commit",
+                                    "diffContainedMarker":  true
+                                },
+                        "completedAtUtc":  "2026-08-06T03:24:39.7333908Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "C782BE610928CADF9592E30993C24723C5EF73E5570B67543EB6DCDF044F3EC1",
+                        "durationMs":  144704,
+                        "phases":  {
+                                       "projectCreated":  true,
+                                       "formDesigned":  true,
+                                       "sourceEdited":  true,
+                                       "compilerFailureObservedAndFixed":  true,
+                                       "buildPassed":  true,
+                                       "testsPassed":  true,
+                                       "debuggerPassed":  true,
+                                       "reviewedCommitCreated":  true,
+                                       "shutdownPassed":  true
+                                   },
+                        "tests":  {
+                                      "status":  "succeeded",
+                                      "exitCode":  0,
+                                      "durationMs":  28929,
+                                      "total":  736,
+                                      "passed":  736,
+                                      "failed":  0,
+                                      "errors":  0,
+                                      "ignored":  0,
+                                      "allPassed":  true
+                                  },
+                        "debugger":  {
+                                         "target":  "test-suite",
+                                         "state":  "stopped",
+                                         "callStackAccessible":  true,
+                                         "callStackFrameCount":  4,
+                                         "timelineEventCount":  3
+                                     },
+                        "git":  {
+                                    "commit":  "1afb3ddbe79c496d0137426deade3c31bb28e68d",
+                                    "message":  "test: validate RadIA reviewed commit",
+                                    "diffContainedMarker":  true
+                                },
+                        "completedAtUtc":  "2026-08-06T03:27:12.7510471Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win64",
+                        "installedBplSha256":  "6EB611C62ACFD5718D8414CC18FBDEDB8F8D556BA85A3CBB35787B7754D4DF06",
+                        "durationMs":  130888,
+                        "phases":  {
+                                       "projectCreated":  true,
+                                       "formDesigned":  true,
+                                       "sourceEdited":  true,
+                                       "compilerFailureObservedAndFixed":  true,
+                                       "buildPassed":  true,
+                                       "testsPassed":  true,
+                                       "debuggerPassed":  true,
+                                       "reviewedCommitCreated":  true,
+                                       "shutdownPassed":  true
+                                   },
+                        "tests":  {
+                                      "status":  "succeeded",
+                                      "exitCode":  0,
+                                      "durationMs":  27827,
+                                      "total":  736,
+                                      "passed":  736,
+                                      "failed":  0,
+                                      "errors":  0,
+                                      "ignored":  0,
+                                      "allPassed":  true
+                                  },
+                        "debugger":  {
+                                         "target":  "generated-vcl-win32",
+                                         "state":  "stopped",
+                                         "callStackAccessible":  true,
+                                         "callStackFrameCount":  3,
+                                         "timelineEventCount":  2
+                                     },
+                        "git":  {
+                                    "commit":  "29d49297383825c9e15ecb797170068b34a05406",
+                                    "message":  "test: validate RadIA reviewed commit",
+                                    "diffContainedMarker":  true
+                                },
+                        "completedAtUtc":  "2026-08-06T03:29:38.0247038Z"
+                    }
+                ]
+}

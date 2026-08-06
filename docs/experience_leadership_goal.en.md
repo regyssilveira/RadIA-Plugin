@@ -288,7 +288,7 @@ Credential fields are rejected recursively and never enter extension packages.
 - Validate inline assistance, terminal, execution center, extensions, and knowledge in a real IDE.
 - [x] Complete ten uninstall, install, repair, usage, and shutdown cycles per supported combination.
 - [x] Validate a real upgrade between different package versions on every supported combination.
-- Pass the create, edit, design, test, debug, fix, and commit continuous journey.
+- [x] Pass the create, edit, design, test, debug, fix, and commit continuous journey.
 - [x] Regenerate four packages from one commit and publish independent hashes.
 - [x] Bind real IDE smoke tests to the package, commit, and installed BPL with fail-closed JSON evidence.
 - [x] Automate the final security, privacy, accessibility, and documentation audit.
@@ -307,8 +307,17 @@ orphan processes. Every cycle ran `Uninstall`, installed version 1.0.0, upgraded
 `Repair`, while preserving user data and revalidating the manifest, hashes, registry, and installed
 files before launching the IDE. The fail-closed consolidator derives the official proof from all
 four execution JSON files and rejects target, cycle, upgrade, lifecycle, hash, commit, docking, BPL,
-or catalog divergence. The complete continuous visual journey remains open and is not inferred
-from the smoke test.
+or catalog divergence.
+
+The complete continuous journey is proven in
+`continuous_journey_smoke_evidence_2.0.0.json`. In one flow from the same commit, every target
+created and built a VCL project, changed and reverted the Form Designer, edited and saved the live
+buffer, observed an intentional compiler failure, reverted the correction, rebuilt, passed 736
+tests, stopped at a breakpoint with call stack and timeline evidence, created a reviewed Git
+commit, and shut down without orphan processes. Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64
+passed autonomously. The consolidator rejects dirty source, divergent SHAs, invalid installed-BPL
+hashes, missing phases, incomplete tests, debugging without evidence, or a commit without a
+reviewed diff.
 
 The reproducible audit is stored in `release_audit_2.0.0.en.md`. It removed the only silent Web
 connection at startup, added semantics and keyboard operation to Web surfaces, and created a local

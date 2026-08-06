@@ -295,7 +295,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 - Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
 - [x] Executar dez ciclos de desinstalação, instalação, reparo, uso e shutdown por combinação.
 - [x] Validar upgrade real entre versões diferentes do pacote em cada combinação suportada.
-- Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
+- [x] Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
 - [x] Regenerar os quatro pacotes do mesmo commit e publicar hashes independentes.
 - [x] Vincular o smoke real ao pacote, commit e BPL instalada com evidência JSON fail-closed.
 - [x] Automatizar a auditoria final de segurança, privacidade, acessibilidade e documentação.
@@ -314,7 +314,16 @@ processos órfãos. Cada ciclo executou `Uninstall`, instalou a versão 1.0.0, a
 executou `Repair`, preservando dados do usuário e revalidando manifesto, hashes, registro e arquivos
 instalados antes de abrir a IDE. O consolidador fail-closed deriva a prova oficial dos quatro JSONs
 de execução e rejeita divergências de target, ciclo, upgrade, lifecycle, hash, commit, docking, BPL
-ou catálogo. A jornada visual contínua completa permanece aberta e não é inferida do smoke.
+ou catálogo.
+
+A jornada contínua completa está comprovada em
+`continuous_journey_smoke_evidence_2.0.0.json`. No mesmo fluxo e pelo mesmo commit, cada combinação
+criou e compilou um projeto VCL, alterou e reverteu o Form Designer, editou e salvou o buffer vivo,
+observou uma falha intencional do compilador, reverteu a correção, recompilou, aprovou 736 testes,
+parou em breakpoint com call stack e timeline, criou um commit Git revisado e encerrou sem processo
+órfão. Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 passaram autonomamente. O consolidador rejeita
+fonte suja, SHA divergente, hash de BPL inválido, fase ausente, testes incompletos, debug sem
+evidência ou commit sem diff revisado.
 
 A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
 silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e
