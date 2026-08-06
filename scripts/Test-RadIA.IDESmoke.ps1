@@ -11,11 +11,13 @@ param(
     [switch]$ExerciseDocking,
     [switch]$ExerciseInlineCompletion,
     [switch]$ExerciseAgentRuntime,
+    [switch]$ExerciseDeclarativeWorkflow,
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = "",
     [string]$InlineCompletionEvidencePath = "",
-    [string]$AgentRuntimeEvidencePath = ""
+    [string]$AgentRuntimeEvidencePath = "",
+    [string]$DeclarativeWorkflowEvidencePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -39,6 +41,13 @@ if ($InlineCompletionEvidencePath -and -not $ExerciseInlineCompletion) {
 if ($AgentRuntimeEvidencePath -and -not $ExerciseAgentRuntime) {
     throw (
         "Agent runtime evidence requires -ExerciseAgentRuntime."
+    )
+}
+if ($DeclarativeWorkflowEvidencePath -and
+    -not $ExerciseDeclarativeWorkflow) {
+    throw (
+        "Declarative workflow evidence requires " +
+        "-ExerciseDeclarativeWorkflow."
     )
 }
 if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
@@ -553,6 +562,47 @@ function Wait-RadIAAgentRuntimeDiagnostic {
     }
 }
 
+function Wait-RadIADeclarativeWorkflowDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$OutputDirectory
+    )
+
+    $evidencePath = Join-Path `
+        $OutputDirectory `
+        "declarative-workflow.json"
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    while (
+        -not (Test-Path -LiteralPath $evidencePath -PathType Leaf) -and
+        [DateTime]::UtcNow -lt $deadline
+    ) {
+        Start-Sleep -Milliseconds 100
+    }
+    if (-not (Test-Path -LiteralPath $evidencePath -PathType Leaf)) {
+        throw "The declarative workflow diagnostic did not complete."
+    }
+    $evidence = Get-Content `
+        -LiteralPath $evidencePath `
+        -Raw `
+        -Encoding UTF8 |
+        ConvertFrom-Json
+    if (
+        $evidence.schemaVersion -ne 1 -or
+        $evidence.manifestLoaded -ne $true -or
+        $evidence.workflowRegistered -ne $true -or
+        $evidence.workflowExecuted -ne $true -or
+        $evidence.workflowName -ne "RadIADiagnosticInspection" -or
+        $evidence.risk -ne "readOnly" -or
+        $evidence.idempotent -ne $true -or
+        $evidence.stepCount -ne 2 -or
+        $evidence.firstStepPresent -ne $true -or
+        $evidence.secondStepPresent -ne $true
+    ) {
+        throw "The declarative workflow diagnostic is incomplete."
+    }
+    return $evidence
+}
+
 function Restore-RadIADockingVisibility {
     if (-not $script:ExerciseDocking) {
         return
@@ -725,7 +775,8 @@ if ($IDE64) {
     $binName = "bin64"
     $shutdownTimeoutMs = 60000
 }
-if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime) {
+if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
+    $ExerciseDeclarativeWorkflow) {
     $script:InlineLogRegistryPath = (
         "HKCU:\Software\Embarcadero\BDS\" +
         "$DelphiVersion\RadIA"
@@ -788,6 +839,16 @@ if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime) {
         New-Item `
             -ItemType Directory `
             -Path $agentSmokeCheckpointDirectory `
+            -Force |
+            Out-Null
+    }
+    if ($ExerciseDeclarativeWorkflow) {
+        $declarativeWorkflowOutputDirectory = Join-Path `
+            $inlineSmokeRoot `
+            "DeclarativeWorkflow"
+        New-Item `
+            -ItemType Directory `
+            -Path $declarativeWorkflowOutputDirectory `
             -Force |
             Out-Null
     }
@@ -980,6 +1041,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     }
     $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
     $agentSmokeEnvironment = $env:RADIA_IDE_SMOKE_AGENT_RUNTIME
+    $workflowSmokeEnvironment = (
+        $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW
+    )
     try {
         if ($ExerciseInlineCompletion) {
             $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = "1"
@@ -987,6 +1051,11 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if ($ExerciseAgentRuntime) {
             $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = (
                 $agentSmokeCheckpointDirectory
+            )
+        }
+        if ($ExerciseDeclarativeWorkflow) {
+            $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW = (
+                $declarativeWorkflowOutputDirectory
             )
         }
         if ($launchArguments.Count -gt 0) {
@@ -1002,6 +1071,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     } finally {
         $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = $inlineSmokeEnvironment
         $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = $agentSmokeEnvironment
+        $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW = (
+            $workflowSmokeEnvironment
+        )
     }
     $instanceFile = Join-Path (
         [Environment]::GetFolderPath("ApplicationData")
@@ -1174,6 +1246,13 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -LogPath $inlineSmokeLogPath `
                 -CheckpointDirectory $agentSmokeCheckpointDirectory
         }
+        $declarativeWorkflowDiagnostic = $null
+        if ($ExerciseDeclarativeWorkflow) {
+            $declarativeWorkflowDiagnostic = (
+                Wait-RadIADeclarativeWorkflowDiagnostic `
+                    -OutputDirectory $declarativeWorkflowOutputDirectory
+            )
+        }
 
         $descendants = @(
             Get-RadIAProcessDescendants `
@@ -1312,6 +1391,30 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             )
             AgentRuntimeToolName = $agentRuntimeDiagnostic.ToolName
             AgentRuntimeStepCount = $agentRuntimeDiagnostic.StepCount
+            DeclarativeWorkflowExercised = (
+                [bool]$ExerciseDeclarativeWorkflow
+            )
+            DeclarativeWorkflowManifestLoaded = (
+                [bool]$ExerciseDeclarativeWorkflow -and
+                $declarativeWorkflowDiagnostic.manifestLoaded
+            )
+            DeclarativeWorkflowRegistered = (
+                [bool]$ExerciseDeclarativeWorkflow -and
+                $declarativeWorkflowDiagnostic.workflowRegistered
+            )
+            DeclarativeWorkflowExecuted = (
+                [bool]$ExerciseDeclarativeWorkflow -and
+                $declarativeWorkflowDiagnostic.workflowExecuted
+            )
+            DeclarativeWorkflowName = (
+                $declarativeWorkflowDiagnostic.workflowName
+            )
+            DeclarativeWorkflowRisk = (
+                $declarativeWorkflowDiagnostic.risk
+            )
+            DeclarativeWorkflowStepCount = (
+                $declarativeWorkflowDiagnostic.stepCount
+            )
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -1354,7 +1457,13 @@ if ($ExerciseAgentRuntime) {
         "Agent runtime pause, persistence, resume, and completion passed."
     )
 }
-if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime) {
+if ($ExerciseDeclarativeWorkflow) {
+    Write-Host (
+        "Declarative workflow hot-load and audited execution passed."
+    )
+}
+if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
+    $ExerciseDeclarativeWorkflow) {
     Restore-RadIAInlineCompletionLogSettings
 }
 if ($EvidencePath) {
@@ -1379,6 +1488,9 @@ if ($EvidencePath) {
         dockingExercised = [bool]$ExerciseDocking
         inlineCompletionExercised = [bool]$ExerciseInlineCompletion
         agentRuntimeExercised = [bool]$ExerciseAgentRuntime
+        declarativeWorkflowExercised = (
+            [bool]$ExerciseDeclarativeWorkflow
+        )
         packageLifecycleExercised = [bool]$ExercisePackageLifecycle
         upgradeExercised = [bool]$upgradePackageEvidence
         upgradeFromVersion = $upgradeFromVersion
@@ -1389,6 +1501,47 @@ if ($EvidencePath) {
         ConvertTo-Json -Depth 6 |
         Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
     Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
+}
+if ($DeclarativeWorkflowEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "Declarative workflow"
+    $resolvedWorkflowEvidencePath = [IO.Path]::GetFullPath(
+        $DeclarativeWorkflowEvidencePath
+    )
+    $workflowEvidenceDirectory = Split-Path -Parent (
+        $resolvedWorkflowEvidencePath
+    )
+    if ($workflowEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $workflowEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "declarativeWorkflowSmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedWorkflowEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "Declarative workflow evidence created: " +
+        $resolvedWorkflowEvidencePath
+    )
 }
 if ($InlineCompletionEvidencePath) {
     $sourceCommit = Get-RadIACleanSourceCommit `
