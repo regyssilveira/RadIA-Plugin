@@ -24,19 +24,30 @@ type
   TRadIADevelopmentOperation = record
   private
     FKind: TRadIADevelopmentOperationKind;
+    FLabel: string;
     FPreviewId: string;
   public
     constructor Create(
       const AKind: TRadIADevelopmentOperationKind;
-      const APreviewId: string
+      const APreviewId: string;
+      const ALabel: string = ''
     );
     property Kind: TRadIADevelopmentOperationKind read FKind;
+    property LabelText: string read FLabel;
     property PreviewId: string read FPreviewId;
   end;
+
+  TRadIADevelopmentStepState = (
+    dssPending,
+    dssRejected,
+    dssApplied,
+    dssReverted
+  );
 
   TRadIADevelopmentTransactionState = (
     dtsPrepared,
     dtsApplied,
+    dtsPartiallyReverted,
     dtsReverted
   );
 
@@ -44,6 +55,7 @@ type
   private
     FId: string;
     FOperations: TArray<TRadIADevelopmentOperation>;
+    FStepStates: TArray<TRadIADevelopmentStepState>;
     FState: TRadIADevelopmentTransactionState;
     FExpiresAtUtc: TDateTime;
   public
@@ -55,6 +67,8 @@ type
     property Id: string read FId;
     property Operations: TArray<TRadIADevelopmentOperation>
       read FOperations;
+    property StepStates: TArray<TRadIADevelopmentStepState>
+      read FStepStates;
     property State: TRadIADevelopmentTransactionState
       read FState write FState;
     property ExpiresAtUtc: TDateTime read FExpiresAtUtc;
@@ -95,7 +109,7 @@ type
   end;
 
   IRadIADevelopmentTransactionService = interface
-    ['{7C48377F-F70A-4613-83AA-5F648E4E12D6}']
+    ['{BA226D6B-E4FC-49D0-B016-82541477B4B7}']
     function Prepare(
       const AOperations: TArray<TRadIADevelopmentOperation>
     ): TRadIADevelopmentTransactionResult;
@@ -104,6 +118,14 @@ type
     ): TRadIADevelopmentTransactionResult;
     function Revert(
       const APreviewId: string
+    ): TRadIADevelopmentTransactionResult;
+    function RejectStep(
+      const APreviewId: string;
+      const AStepIndex: Integer
+    ): TRadIADevelopmentTransactionResult;
+    function RevertStep(
+      const APreviewId: string;
+      const AStepIndex: Integer
     ): TRadIADevelopmentTransactionResult;
     procedure Clear;
   end;
@@ -152,12 +174,13 @@ type
     >;
     FExpirationMinutes: Integer;
     function CompensateApply(
-      const AOperations: TArray<TRadIADevelopmentOperation>;
+      const APreview: TRadIADevelopmentTransactionPreview;
       const ALastApplied: Integer
     ): Boolean;
     function CompensateRevert(
-      const AOperations: TArray<TRadIADevelopmentOperation>;
-      const AFirstReverted: Integer
+      const APreview: TRadIADevelopmentTransactionPreview;
+      const AFirstReverted: Integer;
+      const AOriginalStates: TArray<TRadIADevelopmentStepState>
     ): Boolean;
     function GetPreview(
       const APreviewId: string;
@@ -177,6 +200,14 @@ type
     ): TRadIADevelopmentTransactionResult;
     function Revert(
       const APreviewId: string
+    ): TRadIADevelopmentTransactionResult;
+    function RejectStep(
+      const APreviewId: string;
+      const AStepIndex: Integer
+    ): TRadIADevelopmentTransactionResult;
+    function RevertStep(
+      const APreviewId: string;
+      const AStepIndex: Integer
     ): TRadIADevelopmentTransactionResult;
     procedure Clear;
   end;
@@ -219,11 +250,15 @@ end;
 
 constructor TRadIADevelopmentOperation.Create(
   const AKind: TRadIADevelopmentOperationKind;
-  const APreviewId: string
+  const APreviewId: string;
+  const ALabel: string
 );
 begin
   FKind := AKind;
   FPreviewId := APreviewId;
+  FLabel := Trim(ALabel);
+  if FLabel = '' then
+    FLabel := RadIADevelopmentOperationKindName(AKind);
 end;
 
 { TRadIADevelopmentTransactionPreview }
@@ -237,6 +272,7 @@ begin
   inherited Create;
   FId := AId;
   FOperations := Copy(AOperations);
+  SetLength(FStepStates, Length(FOperations));
   FState := dtsPrepared;
   FExpiresAtUtc := AExpiresAtUtc;
 end;
@@ -431,13 +467,15 @@ begin
     for LIndex := Low(LPreview.Operations) to
       High(LPreview.Operations) do
     begin
+      if LPreview.FStepStates[LIndex] = dssRejected then
+        Continue;
       if not FAdapter.Apply(
         LPreview.Operations[LIndex],
         LErrorCode,
         LErrorMessage
       ) then
       begin
-        if not CompensateApply(LPreview.Operations, LIndex - 1) then
+        if not CompensateApply(LPreview, LIndex - 1) then
           Exit(TRadIADevelopmentTransactionResult.Failed(
             CCompensationFailed,
             'Development transaction compensation was incomplete.'
@@ -447,6 +485,7 @@ begin
           LErrorMessage
         ));
       end;
+      LPreview.FStepStates[LIndex] := dssApplied;
     end;
     LPreview.State := dtsApplied;
     Result := TRadIADevelopmentTransactionResult.Succeeded(LPreview);
@@ -466,7 +505,7 @@ begin
 end;
 
 function TRadIADevelopmentTransactionService.CompensateApply(
-  const AOperations: TArray<TRadIADevelopmentOperation>;
+  const APreview: TRadIADevelopmentTransactionPreview;
   const ALastApplied: Integer
 ): Boolean;
 var
@@ -475,17 +514,23 @@ var
   LIndex: Integer;
 begin
   Result := True;
-  for LIndex := ALastApplied downto Low(AOperations) do
-    Result := FAdapter.Revert(
-      AOperations[LIndex],
-      LErrorCode,
-      LErrorMessage
-    ) and Result;
+  for LIndex := ALastApplied downto Low(APreview.Operations) do
+    if APreview.FStepStates[LIndex] = dssApplied then
+    begin
+      Result := FAdapter.Revert(
+        APreview.Operations[LIndex],
+        LErrorCode,
+        LErrorMessage
+      ) and Result;
+      if Result then
+        APreview.FStepStates[LIndex] := dssPending;
+    end;
 end;
 
 function TRadIADevelopmentTransactionService.CompensateRevert(
-  const AOperations: TArray<TRadIADevelopmentOperation>;
-  const AFirstReverted: Integer
+  const APreview: TRadIADevelopmentTransactionPreview;
+  const AFirstReverted: Integer;
+  const AOriginalStates: TArray<TRadIADevelopmentStepState>
 ): Boolean;
 var
   LErrorCode: string;
@@ -493,12 +538,18 @@ var
   LIndex: Integer;
 begin
   Result := True;
-  for LIndex := AFirstReverted to High(AOperations) do
-    Result := FAdapter.Apply(
-      AOperations[LIndex],
-      LErrorCode,
-      LErrorMessage
-    ) and Result;
+  for LIndex := AFirstReverted to High(APreview.Operations) do
+    if (AOriginalStates[LIndex] = dssApplied) and
+      (APreview.FStepStates[LIndex] = dssReverted) then
+    begin
+      Result := FAdapter.Apply(
+        APreview.Operations[LIndex],
+        LErrorCode,
+        LErrorMessage
+      ) and Result;
+      if Result then
+        APreview.FStepStates[LIndex] := dssApplied;
+    end;
 end;
 
 constructor TRadIADevelopmentTransactionService.Create(
@@ -573,6 +624,11 @@ begin
           'invalid_operation',
           'Every development operation requires a preview ID.'
         ));
+      if Length(LOperation.LabelText) > 120 then
+        Exit(TRadIADevelopmentTransactionResult.Failed(
+          'invalid_operation',
+          'Development operation labels are limited to 120 characters.'
+        ));
       LKey := RadIADevelopmentOperationKindName(LOperation.Kind) +
         ':' + LowerCase(LOperation.PreviewId);
       if LSeen.ContainsKey(LKey) then
@@ -614,6 +670,7 @@ var
   LErrorCode: string;
   LErrorMessage: string;
   LIndex: Integer;
+  LOriginalStates: TArray<TRadIADevelopmentStepState>;
   LPreview: TRadIADevelopmentTransactionPreview;
 begin
   TMonitor.Enter(FPreviews);
@@ -621,14 +678,17 @@ begin
     Result := GetPreview(APreviewId, LPreview);
     if not Result.Success then
       Exit;
-    if LPreview.State <> dtsApplied then
+    if not (LPreview.State in [dtsApplied, dtsPartiallyReverted]) then
       Exit(TRadIADevelopmentTransactionResult.Failed(
         CPreconditionFailed,
         'Development transaction must be applied before revert.'
       ));
+    LOriginalStates := Copy(LPreview.FStepStates);
     for LIndex := High(LPreview.Operations) downto
       Low(LPreview.Operations) do
     begin
+      if LPreview.FStepStates[LIndex] <> dssApplied then
+        Continue;
       if not FAdapter.Revert(
         LPreview.Operations[LIndex],
         LErrorCode,
@@ -636,8 +696,9 @@ begin
       ) then
       begin
         if not CompensateRevert(
-          LPreview.Operations,
-          LIndex + 1
+          LPreview,
+          LIndex + 1,
+          LOriginalStates
         ) then
           Exit(TRadIADevelopmentTransactionResult.Failed(
             CCompensationFailed,
@@ -648,8 +709,122 @@ begin
           LErrorMessage
         ));
       end;
+      LPreview.FStepStates[LIndex] := dssReverted;
     end;
     LPreview.State := dtsReverted;
+    Result := TRadIADevelopmentTransactionResult.Succeeded(LPreview);
+  finally
+    TMonitor.Exit(FPreviews);
+  end;
+end;
+
+function TRadIADevelopmentTransactionService.RejectStep(
+  const APreviewId: string;
+  const AStepIndex: Integer
+): TRadIADevelopmentTransactionResult;
+var
+  LIndex: Integer;
+  LPendingCount: Integer;
+  LPreview: TRadIADevelopmentTransactionPreview;
+begin
+  TMonitor.Enter(FPreviews);
+  try
+    Result := GetPreview(APreviewId, LPreview);
+    if not Result.Success then
+      Exit;
+    if LPreview.State <> dtsPrepared then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        CPreconditionFailed,
+        'Only a prepared development step can be rejected.'
+      ));
+    if (AStepIndex < Low(LPreview.Operations)) or
+      (AStepIndex > High(LPreview.Operations)) then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        'invalid_step',
+        'Development transaction step index is outside the plan.'
+      ));
+    if LPreview.FStepStates[AStepIndex] <> dssPending then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        CPreconditionFailed,
+        'Development transaction step is not pending.'
+      ));
+    LPendingCount := 0;
+    for LIndex := Low(LPreview.FStepStates) to
+      High(LPreview.FStepStates) do
+      if LPreview.FStepStates[LIndex] = dssPending then
+        Inc(LPendingCount);
+    if LPendingCount = 1 then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        CPreconditionFailed,
+        'A development plan must retain at least one pending step.'
+      ));
+    LPreview.FStepStates[AStepIndex] := dssRejected;
+    Result := TRadIADevelopmentTransactionResult.Succeeded(LPreview);
+  finally
+    TMonitor.Exit(FPreviews);
+  end;
+end;
+
+function TRadIADevelopmentTransactionService.RevertStep(
+  const APreviewId: string;
+  const AStepIndex: Integer
+): TRadIADevelopmentTransactionResult;
+var
+  LErrorCode: string;
+  LErrorMessage: string;
+  LHasAppliedStep: Boolean;
+  LIndex: Integer;
+  LPreview: TRadIADevelopmentTransactionPreview;
+begin
+  TMonitor.Enter(FPreviews);
+  try
+    Result := GetPreview(APreviewId, LPreview);
+    if not Result.Success then
+      Exit;
+    if not (LPreview.State in [dtsApplied, dtsPartiallyReverted]) then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        CPreconditionFailed,
+        'Only an applied development step can be reverted.'
+      ));
+    if (AStepIndex < Low(LPreview.Operations)) or
+      (AStepIndex > High(LPreview.Operations)) then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        'invalid_step',
+        'Development transaction step index is outside the plan.'
+      ));
+    if LPreview.FStepStates[AStepIndex] <> dssApplied then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        CPreconditionFailed,
+        'Development transaction step is not applied.'
+      ));
+    for LIndex := AStepIndex + 1 to High(LPreview.Operations) do
+      if LPreview.FStepStates[LIndex] = dssApplied then
+        Exit(TRadIADevelopmentTransactionResult.Failed(
+          CPreconditionFailed,
+          'Revert later applied steps before reverting this step.'
+        ));
+    if not FAdapter.Revert(
+      LPreview.Operations[AStepIndex],
+      LErrorCode,
+      LErrorMessage
+    ) then
+      Exit(TRadIADevelopmentTransactionResult.Failed(
+        LErrorCode,
+        LErrorMessage
+      ));
+    LPreview.FStepStates[AStepIndex] := dssReverted;
+    LHasAppliedStep := False;
+    for LIndex := Low(LPreview.FStepStates) to
+      High(LPreview.FStepStates) do
+      if LPreview.FStepStates[LIndex] = dssApplied then
+      begin
+        LHasAppliedStep := True;
+        Break;
+      end;
+    if LHasAppliedStep then
+      LPreview.State := dtsPartiallyReverted
+    else
+      LPreview.State := dtsReverted;
     Result := TRadIADevelopmentTransactionResult.Succeeded(LPreview);
   finally
     TMonitor.Exit(FPreviews);

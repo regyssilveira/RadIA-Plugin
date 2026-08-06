@@ -494,6 +494,46 @@ function appendAgentDebugEvidence(details, step) {
   details.appendChild(evidence);
 }
 
+const AGENT_DEVELOPMENT_TRANSACTION_TOOLS = new Set([
+  'PrepareDevelopmentTransaction',
+  'ApplyDevelopmentTransaction',
+  'RevertDevelopmentTransaction',
+  'RejectDevelopmentTransactionStep',
+  'RevertDevelopmentTransactionStep'
+]);
+
+function appendAgentDevelopmentPlan(details, step) {
+  if (!AGENT_DEVELOPMENT_TRANSACTION_TOOLS.has(step.toolName)) {
+    return;
+  }
+  const result = parseAgentStepResult(step);
+  if (!result || !Array.isArray(result.operations)) {
+    return;
+  }
+  const plan = document.createElement('section');
+  plan.className = 'agent-development-plan';
+  const title = document.createElement('strong');
+  title.textContent = `Code/Design plan · ${result.state || 'unknown'}`;
+  plan.appendChild(title);
+  const list = document.createElement('ol');
+  result.operations.forEach(operation => {
+    const item = document.createElement('li');
+    const state = String(operation.state || 'pending');
+    item.className = `is-${state}`;
+    const label = document.createElement('strong');
+    label.textContent = operation.label || operation.kind || 'Development step';
+    const metadata = document.createElement('span');
+    metadata.textContent =
+      `${operation.kind || 'unknown'} · ${state} · ` +
+      `${operation.previewId || 'no preview'}`;
+    item.appendChild(label);
+    item.appendChild(metadata);
+    list.appendChild(item);
+  });
+  plan.appendChild(list);
+  details.appendChild(plan);
+}
+
 function createAgentStep(step, status) {
   const item = document.createElement('li');
   item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
@@ -535,6 +575,7 @@ function createAgentStep(step, status) {
   appendAgentPatchReview(details, step);
   appendAgentGitEvidence(details, step);
   appendAgentDebugEvidence(details, step);
+  appendAgentDevelopmentPlan(details, step);
   const replay = document.createElement('button');
   replay.className = 'agent-step-replay';
   replay.textContent = 'Replay step';

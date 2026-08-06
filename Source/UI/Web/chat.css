@@ -2074,6 +2074,48 @@ body.light-theme .agent-step-git-diff .is-removal {
   font-family: Consolas, monospace;
 }
 
+.agent-development-plan {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+}
+
+.agent-development-plan ol {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 28px;
+}
+
+.agent-development-plan li {
+  padding: 7px 9px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-input);
+}
+
+.agent-development-plan li > strong,
+.agent-development-plan li > span {
+  display: block;
+}
+
+.agent-development-plan li > span {
+  margin-top: 3px;
+  color: var(--fg-secondary);
+  font-size: 12px;
+}
+
+.agent-development-plan li.is-rejected,
+.agent-development-plan li.is-reverted {
+  border-left-color: var(--fg-muted);
+  opacity: 0.72;
+}
+
+.agent-development-plan li.is-applied {
+  border-left-color: var(--green-apply);
+}
+
 .agent-validation-indicator {
   padding: 2px 7px;
   border: 1px solid var(--border);

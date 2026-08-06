@@ -5,7 +5,10 @@ Form Designer. O RadIA pode agrupar previews já revisados em uma única transa�
 
 ## Operações aceitas
 
-`PrepareDevelopmentTransaction` recebe uma lista ordenada com `kind` e `previewId`. Os kinds aceitos são:
+`PrepareDevelopmentTransaction` recebe uma lista ordenada com `kind`, `previewId` e um `label`
+opcional de até 120 caracteres. O resultado é um plano visual: cada etapa contém índice, rótulo,
+tipo, preview de origem e estado (`pending`, `rejected`, `applied` ou `reverted`). Os kinds aceitos
+são:
 
 - `multiFilePatch`;
 - `projectFile`;
@@ -19,6 +22,9 @@ substitui os previews detalhados; ela preserva a decisão revisada em cada domí
 
 ## Aplicação
 
+Antes da aplicação, `RejectDevelopmentTransactionStep` permite rejeitar uma etapa específica. O
+plano precisa manter pelo menos uma etapa pendente, e uma etapa rejeitada nunca é executada.
+
 `ApplyDevelopmentTransaction` executa as operações na ordem informada. Se uma etapa falhar, todas as
 etapas anteriores são revertidas em ordem inversa. O resultado só é `applied` quando a lista inteira
 foi aplicada.
@@ -27,6 +33,10 @@ foi aplicada.
 
 `RevertDevelopmentTransaction` desfaz as operações da última para a primeira. Se uma reversão falhar,
 as etapas que já tinham sido desfeitas são reaplicadas, evitando um estado parcialmente revertido.
+
+`RevertDevelopmentTransactionStep` permite reversão gradual. Para preservar dependências, somente a
+última etapa ainda aplicada pode ser revertida; etapas anteriores ficam disponíveis depois que as
+posteriores forem desfeitas. O plano passa a `partiallyReverted` e continua mostrando cada estado.
 
 ## Segurança
 

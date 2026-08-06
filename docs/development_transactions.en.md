@@ -5,8 +5,10 @@ RadIA can group already reviewed previews into one compensating transaction.
 
 ## Supported operations
 
-`PrepareDevelopmentTransaction` accepts an ordered list containing `kind` and `previewId`. Supported
-kinds are:
+`PrepareDevelopmentTransaction` accepts an ordered list containing `kind`, `previewId`, and an
+optional `label` of up to 120 characters. Its result is a visual plan: every step includes its
+index, label, kind, source preview, and state (`pending`, `rejected`, `applied`, or `reverted`).
+Supported kinds are:
 
 - `multiFilePatch`;
 - `projectFile`;
@@ -20,6 +22,9 @@ replace detailed previews; it preserves the reviewed decision from every domain.
 
 ## Apply
 
+Before apply, `RejectDevelopmentTransactionStep` rejects one selected step. A plan must retain at
+least one pending step, and rejected steps are never executed.
+
 `ApplyDevelopmentTransaction` executes operations in the supplied order. If one step fails, every
 earlier step is reverted in reverse order. The result becomes `applied` only when the full list succeeds.
 
@@ -27,6 +32,10 @@ earlier step is reverted in reverse order. The result becomes `applied` only whe
 
 `RevertDevelopmentTransaction` undoes operations from last to first. If one revert fails, operations
 already reverted are applied again, avoiding a partially reverted state.
+
+`RevertDevelopmentTransactionStep` supports gradual rollback. To preserve dependencies, only the
+last operation still applied can be reverted. Earlier steps become eligible after later ones are
+undone. The plan enters `partiallyReverted` and keeps every step state visible.
 
 ## Safety
 

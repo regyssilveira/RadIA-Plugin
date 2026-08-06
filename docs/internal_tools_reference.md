@@ -75,6 +75,8 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 |---|---|---|
 | `PrepareDevelopmentTransaction` | Monta uma transação com mudanças de código, projeto e Designer. | Quando um objetivo precisa alterar diferentes superfícies como uma única unidade. |
 | `ApplyDevelopmentTransaction` | Executa as etapas da transação e preserva dados de reversão. | Depois da revisão da operação composta e das permissões necessárias. |
+| `RejectDevelopmentTransactionStep` | Rejeita uma etapa pendente. | Antes do apply seletivo. |
+| `RevertDevelopmentTransactionStep` | Reverte a última etapa aplicada. | No rollback gradual. |
 | `RevertDevelopmentTransaction` | Desfaz as etapas aplicadas em ordem segura. | Quando uma transação composta precisa ser revertida. |
 
 ## Templates de projetos

@@ -22,7 +22,9 @@ type
   TRadIADevelopmentTransactionToolKind = (
     dttPrepare,
     dttApply,
-    dttRevert
+    dttRevert,
+    dttRejectStep,
+    dttRevertStep
   );
 
   TRadIADevelopmentTransactionTool = class(
@@ -60,11 +62,16 @@ const
     '"properties":{"kind":{"type":"string","enum":[' +
     '"multiFilePatch","projectFile","designerComponent",' +
     '"designerLayout","designerProperty","designerEvent"]},' +
-    '"previewId":{"type":"string"}},"additionalProperties":false}}},' +
+    '"previewId":{"type":"string"},"label":{"type":"string",' +
+    '"maxLength":120}},"additionalProperties":false}}},' +
     '"additionalProperties":false}';
   CPreviewInputSchema =
     '{"type":"object","required":["previewId"],"properties":{' +
     '"previewId":{"type":"string"}},"additionalProperties":false}';
+  CStepInputSchema =
+    '{"type":"object","required":["previewId","stepIndex"],"properties":{' +
+    '"previewId":{"type":"string"},"stepIndex":{"type":"integer",' +
+    '"minimum":0,"maximum":31}},"additionalProperties":false}';
   COutputSchema =
     '{"type":"object","required":["previewId","state","operations"],' +
     '"properties":{"previewId":{"type":"string"},' +
@@ -89,6 +96,7 @@ var
   LJson: TJSONObject;
   LPreviewId: string;
   LResult: TRadIADevelopmentTransactionResult;
+  LStepIndex: Integer;
 begin
   LJson := TJSONObject.ParseJSONValue(
     ARequest.ArgumentsJson
@@ -109,10 +117,23 @@ begin
           'invalid_request',
           'Argument "previewId" must not be empty.'
         ));
-      if FKind = dttApply then
-        LResult := FService.Apply(LPreviewId)
+      case FKind of
+        dttApply:
+          LResult := FService.Apply(LPreviewId);
+        dttRevert:
+          LResult := FService.Revert(LPreviewId);
       else
-        LResult := FService.Revert(LPreviewId);
+        LStepIndex := LJson.GetValue<Integer>('stepIndex', -1);
+        if LStepIndex < 0 then
+          Exit(TRadIAToolResult.Failed(
+            'invalid_request',
+            'Argument "stepIndex" must identify a plan step.'
+          ));
+        if FKind = dttRejectStep then
+          LResult := FService.RejectStep(LPreviewId, LStepIndex)
+        else
+          LResult := FService.RevertStep(LPreviewId, LStepIndex);
+      end;
     end;
     Result := ResultToToolResult(LResult);
   finally
@@ -142,12 +163,30 @@ begin
         COutputSchema,
         trStructuralWrite
       );
+    dttRevert:
+      Result := TRadIAToolDescriptor.Create(
+        'RevertDevelopmentTransaction',
+        '1.0.0',
+        'Reverts all grouped operations with symmetric compensation.',
+        CPreviewInputSchema,
+        COutputSchema,
+        trReversibleWrite
+      );
+    dttRejectStep:
+      Result := TRadIAToolDescriptor.Create(
+        'RejectDevelopmentTransactionStep',
+        '1.0.0',
+        'Rejects one pending step before the reviewed plan is applied.',
+        CStepInputSchema,
+        COutputSchema,
+        trReadOnly
+      );
   else
     Result := TRadIAToolDescriptor.Create(
-      'RevertDevelopmentTransaction',
+      'RevertDevelopmentTransactionStep',
       '1.0.0',
-      'Reverts all grouped operations with symmetric compensation.',
-      CPreviewInputSchema,
+      'Reverts the latest applied step while preserving plan ordering.',
+      CStepInputSchema,
       COutputSchema,
       trReversibleWrite
     );
@@ -198,7 +237,8 @@ begin
     LOperationJson := TJSONObject(LArray[LIndex]);
     Result[LIndex] := TRadIADevelopmentOperation.Create(
       ParseKind(LOperationJson.GetValue<string>('kind', '')),
-      LOperationJson.GetValue<string>('previewId', '')
+      LOperationJson.GetValue<string>('previewId', ''),
+      LOperationJson.GetValue<string>('label', '')
     );
   end;
 end;
@@ -211,7 +251,9 @@ var
   LOperation: TRadIADevelopmentOperation;
   LOperationJson: TJSONObject;
   LOperations: TJSONArray;
+  LIndex: Integer;
   LState: string;
+  LStepState: string;
 begin
   if not AResult.Success then
     Exit(TRadIAToolResult.Failed(
@@ -221,6 +263,7 @@ begin
   case AResult.Preview.State of
     dtsPrepared: LState := 'prepared';
     dtsApplied: LState := 'applied';
+    dtsPartiallyReverted: LState := 'partiallyReverted';
   else
     LState := 'reverted';
   end;
@@ -234,14 +277,26 @@ begin
     );
     LOperations := TJSONArray.Create;
     LJson.AddPair('operations', LOperations);
-    for LOperation in AResult.Preview.Operations do
+    for LIndex := Low(AResult.Preview.Operations) to
+      High(AResult.Preview.Operations) do
     begin
+      LOperation := AResult.Preview.Operations[LIndex];
+      case AResult.Preview.StepStates[LIndex] of
+        dssPending: LStepState := 'pending';
+        dssRejected: LStepState := 'rejected';
+        dssApplied: LStepState := 'applied';
+      else
+        LStepState := 'reverted';
+      end;
       LOperationJson := TJSONObject.Create;
+      LOperationJson.AddPair('index', TJSONNumber.Create(LIndex));
+      LOperationJson.AddPair('label', LOperation.LabelText);
       LOperationJson.AddPair(
         'kind',
         RadIADevelopmentOperationKindName(LOperation.Kind)
       );
       LOperationJson.AddPair('previewId', LOperation.PreviewId);
+      LOperationJson.AddPair('state', LStepState);
       LOperations.AddElement(LOperationJson);
     end;
     Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
@@ -267,6 +322,12 @@ begin
   );
   ARegistry.RegisterTool(
     TRadIADevelopmentTransactionTool.Create(dttRevert, AService)
+  );
+  ARegistry.RegisterTool(
+    TRadIADevelopmentTransactionTool.Create(dttRejectStep, AService)
+  );
+  ARegistry.RegisterTool(
+    TRadIADevelopmentTransactionTool.Create(dttRevertStep, AService)
   );
 end;
 

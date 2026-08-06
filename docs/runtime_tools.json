@@ -68,7 +68,9 @@
       "tools": [
         "PrepareDevelopmentTransaction",
         "ApplyDevelopmentTransaction",
-        "RevertDevelopmentTransaction"
+        "RevertDevelopmentTransaction",
+        "RejectDevelopmentTransactionStep",
+        "RevertDevelopmentTransactionStep"
       ]
     },
     {

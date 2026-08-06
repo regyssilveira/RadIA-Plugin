@@ -65,6 +65,8 @@ This list contains only the built-in tools registered by the current package. Ar
 | `PrepareDevelopmentTransaction` | `RadIA.Core.DevelopmentTransactionTools.pas` |
 | `ApplyDevelopmentTransaction` | `RadIA.Core.DevelopmentTransactionTools.pas` |
 | `RevertDevelopmentTransaction` | `RadIA.Core.DevelopmentTransactionTools.pas` |
+| `RejectDevelopmentTransactionStep` | `RadIA.Core.DevelopmentTransactionTools.pas` |
+| `RevertDevelopmentTransactionStep` | `RadIA.Core.DevelopmentTransactionTools.pas` |
 
 ## Project templates
 
@@ -222,6 +224,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Resumo
 
 - Registered groups: 25
-- Registered built-in tools: 90
+- Registered built-in tools: 92
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

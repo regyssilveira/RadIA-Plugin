@@ -1784,6 +1784,8 @@ begin
     SameText(AToolName, 'ApplyPatch') or
     SameText(AToolName, 'ApplyMultiFilePatch') or
     SameText(AToolName, 'ApplyDevelopmentTransaction') or
+    SameText(AToolName, 'RevertDevelopmentTransaction') or
+    SameText(AToolName, 'RevertDevelopmentTransactionStep') or
     SameText(AToolName, 'CommitProjectFile') or
     SameText(AToolName, 'RemoveProjectFile') or
     SameText(AToolName, 'CommitProjectTemplate') or

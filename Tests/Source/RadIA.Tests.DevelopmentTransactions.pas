@@ -59,6 +59,12 @@ type
     [Test]
     procedure RejectsDuplicateOperation;
     [Test]
+    procedure RejectsOnePendingStepBeforeApply;
+    [Test]
+    procedure RevertsAppliedStepsInReverseOrder;
+    [Test]
+    procedure PlanToolsExposeLabelsAndStepStates;
+    [Test]
     procedure ToolsDeclareCompositeRiskLevels;
   end;
 
@@ -186,6 +192,64 @@ begin
   Assert.AreEqual('invalid_operation', LResult.ErrorCode);
 end;
 
+procedure TRadIADevelopmentTransactionTests.RejectsOnePendingStepBeforeApply;
+var
+  LPreview: TRadIADevelopmentTransactionResult;
+begin
+  LPreview := FService.Prepare(FOperations);
+  Assert.IsTrue(FService.RejectStep(LPreview.Preview.Id, 1).Success);
+  Assert.AreEqual(
+    dssRejected,
+    LPreview.Preview.StepStates[1]
+  );
+  Assert.IsTrue(FService.Apply(LPreview.Preview.Id).Success);
+  Assert.IsTrue(FAdapter.IsApplied(FOperations[0]));
+  Assert.IsFalse(FAdapter.IsApplied(FOperations[1]));
+  Assert.IsTrue(FAdapter.IsApplied(FOperations[2]));
+end;
+
+procedure TRadIADevelopmentTransactionTests.RevertsAppliedStepsInReverseOrder;
+var
+  LPreview: TRadIADevelopmentTransactionResult;
+  LResult: TRadIADevelopmentTransactionResult;
+begin
+  LPreview := FService.Prepare(FOperations);
+  Assert.IsTrue(FService.Apply(LPreview.Preview.Id).Success);
+
+  LResult := FService.RevertStep(LPreview.Preview.Id, 1);
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('precondition_failed', LResult.ErrorCode);
+
+  Assert.IsTrue(FService.RevertStep(LPreview.Preview.Id, 2).Success);
+  Assert.IsTrue(FService.RevertStep(LPreview.Preview.Id, 1).Success);
+  Assert.IsFalse(FAdapter.IsApplied(FOperations[1]));
+  Assert.IsTrue(FAdapter.IsApplied(FOperations[0]));
+  Assert.AreEqual(dtsPartiallyReverted, LPreview.Preview.State);
+end;
+
+procedure TRadIADevelopmentTransactionTests.PlanToolsExposeLabelsAndStepStates;
+var
+  LRegistry: IRadIAToolRegistry;
+  LRequest: TRadIAToolRequest;
+  LResult: TRadIAToolResult;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIADevelopmentTransactionTools(LRegistry, FService);
+  LRequest := TRadIAToolRequest.Create(
+    'PrepareDevelopmentTransaction',
+    '{"operations":[{"kind":"multiFilePatch",' +
+    '"previewId":"code-patch","label":"Create save handler"}]}',
+    ''
+  );
+  LResult := LRegistry.Resolve(
+    'PrepareDevelopmentTransaction'
+  ).Execute(LRequest);
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"index":0');
+  Assert.Contains(LResult.ContentJson, '"label":"Create save handler"');
+  Assert.Contains(LResult.ContentJson, '"state":"pending"');
+end;
+
 procedure TRadIADevelopmentTransactionTests.RevertFailureRestoresAlreadyRevertedOperations;
 var
   LPreview: TRadIADevelopmentTransactionResult;
@@ -247,6 +311,18 @@ begin
   Assert.AreEqual(
     trReversibleWrite,
     LRegistry.Resolve('RevertDevelopmentTransaction').Descriptor.Risk
+  );
+  Assert.AreEqual(
+    trReadOnly,
+    LRegistry.Resolve(
+      'RejectDevelopmentTransactionStep'
+    ).Descriptor.Risk
+  );
+  Assert.AreEqual(
+    trReversibleWrite,
+    LRegistry.Resolve(
+      'RevertDevelopmentTransactionStep'
+    ).Descriptor.Risk
   );
 end;
 
