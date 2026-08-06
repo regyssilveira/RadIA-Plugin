@@ -12,12 +12,14 @@ param(
     [switch]$ExerciseInlineCompletion,
     [switch]$ExerciseAgentRuntime,
     [switch]$ExerciseDeclarativeWorkflow,
+    [switch]$ExerciseKnowledge,
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = "",
     [string]$InlineCompletionEvidencePath = "",
     [string]$AgentRuntimeEvidencePath = "",
-    [string]$DeclarativeWorkflowEvidencePath = ""
+    [string]$DeclarativeWorkflowEvidencePath = "",
+    [string]$KnowledgeEvidencePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -49,6 +51,9 @@ if ($DeclarativeWorkflowEvidencePath -and
         "Declarative workflow evidence requires " +
         "-ExerciseDeclarativeWorkflow."
     )
+}
+if ($KnowledgeEvidencePath -and -not $ExerciseKnowledge) {
+    throw "Knowledge evidence requires -ExerciseKnowledge."
 }
 if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
     throw (
@@ -400,6 +405,117 @@ public static class RadIADockingSmokeNative
 "@
 }
 
+if ($ExerciseKnowledge) {
+    Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class RadIAKnowledgeSmokeNative
+{
+    public delegate bool EnumCallback(IntPtr handle, IntPtr parameter);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(
+        EnumCallback callback,
+        IntPtr parameter
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumChildWindows(
+        IntPtr parent,
+        EnumCallback callback,
+        IntPtr parameter
+    );
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetClassName(
+        IntPtr handle,
+        StringBuilder className,
+        int maximumCount
+    );
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(
+        IntPtr handle,
+        StringBuilder text,
+        int maximumCount
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(
+        IntPtr handle,
+        out uint processId
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool PostMessage(
+        IntPtr handle,
+        uint message,
+        IntPtr wordParameter,
+        IntPtr longParameter
+    );
+
+    public static IntPtr FindVisibleWindow(
+        uint processId,
+        string expectedClassName
+    )
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumWindows(
+            delegate(IntPtr handle, IntPtr parameter)
+            {
+                uint ownerProcessId;
+                GetWindowThreadProcessId(handle, out ownerProcessId);
+                if (ownerProcessId != processId ||
+                    !IsWindowVisible(handle))
+                {
+                    return true;
+                }
+                StringBuilder className = new StringBuilder(128);
+                GetClassName(handle, className, className.Capacity);
+                if (className.ToString() == expectedClassName)
+                {
+                    result = handle;
+                    return false;
+                }
+                return true;
+            },
+            IntPtr.Zero
+        );
+        return result;
+    }
+
+    public static IntPtr FindChildByText(
+        IntPtr parent,
+        string expectedText
+    )
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumChildWindows(
+            parent,
+            delegate(IntPtr handle, IntPtr parameter)
+            {
+                StringBuilder text = new StringBuilder(256);
+                GetWindowText(handle, text, text.Capacity);
+                if (text.ToString() == expectedText)
+                {
+                    result = handle;
+                    return false;
+                }
+                return true;
+            },
+            IntPtr.Zero
+        );
+        return result;
+    }
+}
+"@
+}
+
 function Get-RadIADockInfo {
     param(
         [Parameter(Mandatory)]
@@ -603,6 +719,212 @@ function Wait-RadIADeclarativeWorkflowDiagnostic {
     return $evidence
 }
 
+function Invoke-RadIASmokeTool {
+    param(
+        [Parameter(Mandatory)]
+        [string]$BridgePath,
+        [Parameter(Mandatory)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory)]
+        [string]$Name,
+        [hashtable]$Arguments = @{}
+    )
+
+    $requests = @(
+        @{
+            jsonrpc = "2.0"
+            id = 1
+            method = "initialize"
+            params = @{
+                protocolVersion = "2025-06-18"
+                capabilities = @{}
+                clientInfo = @{
+                    name = "radia-knowledge-smoke"
+                    version = "1"
+                }
+            }
+        },
+        @{
+            jsonrpc = "2.0"
+            method = "notifications/initialized"
+            params = @{}
+        },
+        @{
+            jsonrpc = "2.0"
+            id = 2
+            method = "tools/call"
+            params = @{
+                name = $Name
+                arguments = $Arguments
+            }
+        }
+    ) | ForEach-Object {
+        $_ | ConvertTo-Json -Depth 8 -Compress
+    }
+    $responses = @()
+    $bridgeSucceeded = $false
+    for ($attempt = 1; $attempt -le 10; $attempt++) {
+        $responseLines = @()
+        try {
+            $responseLines = @(
+                $requests |
+                    & $BridgePath $InstanceFile 2>$null
+            )
+        } catch {
+            $responseLines = @()
+        }
+        if ($LASTEXITCODE -eq 0) {
+            $responses = @(
+                $responseLines |
+                    ForEach-Object { $_ | ConvertFrom-Json }
+            )
+            $bridgeSucceeded = $true
+            break
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    if (-not $bridgeSucceeded) {
+        throw "MCP bridge failed while calling $Name after 10 attempts."
+    }
+    $response = $responses |
+        Where-Object { $_.id -eq 2 }
+    if ($response.error) {
+        throw (
+            "Knowledge tool $Name failed: " +
+            ($response.error | ConvertTo-Json -Compress)
+        )
+    }
+    return $response.result.structuredContent
+}
+
+function Invoke-RadIAKnowledgeDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$BridgePath,
+        [Parameter(Mandatory)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory)]
+        [string]$ProjectPath
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds(90)
+    $activeProject = $null
+    do {
+        try {
+            $activeProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+        } catch {
+            $activeProject = $null
+        }
+        if (-not $activeProject.fileName) {
+            Start-Sleep -Seconds 1
+        }
+    } while (
+        -not $activeProject.fileName -and
+        [DateTime]::UtcNow -lt $deadline
+    )
+    if (-not $activeProject.fileName) {
+        throw "No active project was found for the knowledge smoke."
+    }
+    if (-not [IO.Path]::GetFullPath($activeProject.fileName).Equals(
+        [IO.Path]::GetFullPath($ProjectPath),
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "The knowledge smoke project did not become active."
+    }
+
+    $index = Invoke-RadIASmokeTool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "IndexProjectKnowledge"
+    if (
+        $index.indexedFiles -lt 2 -or
+        $index.projectId -ne $activeProject.fileName -or
+        $null -eq $index.durationMs
+    ) {
+        throw "The semantic knowledge index is incomplete."
+    }
+    $search = Invoke-RadIASmokeTool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "SearchProjectKnowledge" `
+        -Arguments @{
+            query = "locate source declaration"
+            maxResults = 10
+        }
+    $semanticHits = @(
+        $search.results |
+            Where-Object {
+                $_.vectorScore -gt 0 -and
+                $_.embeddingProvider -eq "local-hash-v1"
+            }
+    )
+    if (
+        $search.count -lt 1 -or
+        $semanticHits.Count -lt 1 -or
+        $search.projectId -ne $index.projectId -or
+        $null -eq $search.durationMs
+    ) {
+        throw "The local semantic search did not return a vector hit."
+    }
+    $hit = $semanticHits[0]
+    if (
+        -not $hit.fileName -or
+        -not $hit.revision -or
+        -not $hit.explanation -or
+        $hit.startLine -lt 1 -or
+        $hit.navigation.tool -ne "NavigateToFile"
+    ) {
+        throw "The semantic result does not contain traceable provenance."
+    }
+    $status = Invoke-RadIASmokeTool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "GetKnowledgeStatus"
+    if (
+        $status.projectId -ne $index.projectId -or
+        $status.loaded -ne $true -or
+        $status.fileCount -lt 2 -or
+        $status.chunkCount -lt 2 -or
+        $status.estimatedIndexBytes -lt 1
+    ) {
+        throw "The knowledge status does not prove the isolated index."
+    }
+    $document = Invoke-RadIASmokeTool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "GetKnowledgeDocument" `
+        -Arguments @{
+            fileName = $hit.fileName
+            maxCharacters = 8192
+        }
+    if (
+        $document.projectId -ne $index.projectId -or
+        $document.chunks.Count -lt 1
+    ) {
+        throw "The cited knowledge document could not be retrieved."
+    }
+    return [PSCustomObject]@{
+        ProjectId = $index.projectId
+        IndexedFiles = $index.indexedFiles
+        IndexDurationMs = $index.durationMs
+        SearchDurationMs = $search.durationMs
+        ResultCount = $search.count
+        SemanticHitCount = $semanticHits.Count
+        Provider = "local-hash-v1"
+        FileName = $hit.fileName
+        StartLine = $hit.startLine
+        Explanation = $hit.explanation
+        NavigationTool = $hit.navigation.tool
+        EstimatedIndexBytes = $status.estimatedIndexBytes
+        ChunkCount = $status.chunkCount
+        DocumentRetrieved = $true
+        WorkspaceIsolated = $true
+    }
+}
+
 function Restore-RadIADockingVisibility {
     if (-not $script:ExerciseDocking) {
         return
@@ -654,6 +976,39 @@ function Restore-RadIAInlineCompletionLogSettings {
     if (-not $script:InlineLogHadRegistryKey) {
         Remove-Item `
             -LiteralPath $script:InlineLogRegistryPath `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+function Restore-RadIAKnowledgeSettings {
+    if (-not $script:KnowledgeSettingsInitialized) {
+        return
+    }
+    if ($script:KnowledgeHadSemanticEnabled) {
+        Set-ItemProperty `
+            -LiteralPath $script:KnowledgeRegistryPath `
+            -Name "KnowledgeSemanticEnabled" `
+            -Value $script:KnowledgeOriginalSemanticEnabled
+    } else {
+        Remove-ItemProperty `
+            -LiteralPath $script:KnowledgeRegistryPath `
+            -Name "KnowledgeSemanticEnabled" `
+            -ErrorAction SilentlyContinue
+    }
+    if ($script:KnowledgeHadWindowVisible) {
+        Set-ItemProperty `
+            -LiteralPath $script:KnowledgeRegistryPath `
+            -Name "WindowVisible" `
+            -Value $script:KnowledgeOriginalWindowVisible
+    } else {
+        Remove-ItemProperty `
+            -LiteralPath $script:KnowledgeRegistryPath `
+            -Name "WindowVisible" `
+            -ErrorAction SilentlyContinue
+    }
+    if (-not $script:KnowledgeHadRegistryKey) {
+        Remove-Item `
+            -LiteralPath $script:KnowledgeRegistryPath `
             -ErrorAction SilentlyContinue
     }
 }
@@ -720,6 +1075,7 @@ $inlineSmokeUnitPath = ""
 $inlineSmokeLogPath = ""
 $agentSmokeCheckpointDirectory = ""
 $script:InlineLogSettingsInitialized = $false
+$script:KnowledgeSettingsInitialized = $false
 
 trap {
     if (Get-Command `
@@ -731,6 +1087,11 @@ trap {
         Restore-RadIAInlineCompletionLogSettings `
         -ErrorAction SilentlyContinue) {
         Restore-RadIAInlineCompletionLogSettings
+    }
+    if (Get-Command `
+        Restore-RadIAKnowledgeSettings `
+        -ErrorAction SilentlyContinue) {
+        Restore-RadIAKnowledgeSettings
     }
     Write-Error (
         $_.Exception.Message + [Environment]::NewLine +
@@ -774,6 +1135,70 @@ if ($IDE64) {
     $platform = "Win64"
     $binName = "bin64"
     $shutdownTimeoutMs = 60000
+}
+if ($ExerciseKnowledge) {
+    $shutdownTimeoutMs = 60000
+}
+if ($ExerciseKnowledge) {
+    $script:KnowledgeRegistryPath = (
+        "HKCU:\Software\Embarcadero\BDS\" +
+        "$DelphiVersion\RadIA"
+    )
+    $script:KnowledgeHadRegistryKey = Test-Path `
+        -LiteralPath $script:KnowledgeRegistryPath
+    if (-not $script:KnowledgeHadRegistryKey) {
+        New-Item `
+            -Path $script:KnowledgeRegistryPath `
+            -Force |
+            Out-Null
+    }
+    $knowledgeProperties = Get-ItemProperty `
+        -LiteralPath $script:KnowledgeRegistryPath
+    $semanticProperty = $knowledgeProperties.PSObject.Properties[
+        "KnowledgeSemanticEnabled"
+    ]
+    $knowledgeWindowProperty = (
+        $knowledgeProperties.PSObject.Properties["WindowVisible"]
+    )
+    $script:KnowledgeHadSemanticEnabled = $null -ne $semanticProperty
+    $script:KnowledgeOriginalSemanticEnabled = $null
+    if ($script:KnowledgeHadSemanticEnabled) {
+        $script:KnowledgeOriginalSemanticEnabled = (
+            $semanticProperty.Value
+        )
+    }
+    $script:KnowledgeHadWindowVisible = (
+        $null -ne $knowledgeWindowProperty
+    )
+    $script:KnowledgeOriginalWindowVisible = $null
+    if ($script:KnowledgeHadWindowVisible) {
+        $script:KnowledgeOriginalWindowVisible = (
+            $knowledgeWindowProperty.Value
+        )
+    }
+    New-ItemProperty `
+        -LiteralPath $script:KnowledgeRegistryPath `
+        -Name "KnowledgeSemanticEnabled" `
+        -PropertyType DWord `
+        -Value 1 `
+        -Force |
+        Out-Null
+    New-ItemProperty `
+        -LiteralPath $script:KnowledgeRegistryPath `
+        -Name "WindowVisible" `
+        -PropertyType DWord `
+        -Value 0 `
+        -Force |
+        Out-Null
+    $script:KnowledgeSettingsInitialized = $true
+    $knowledgeSmokeProjectPath = Join-Path `
+        $repositoryRoot `
+        "Tests\RadIATests.dproj"
+    if (-not (
+        Test-Path -LiteralPath $knowledgeSmokeProjectPath -PathType Leaf
+    )) {
+        throw "The knowledge smoke project was not found."
+    }
 }
 if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
     $ExerciseDeclarativeWorkflow) {
@@ -1039,6 +1464,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     if ($ExerciseInlineCompletion) {
         $launchArguments = @($inlineSmokeUnitPath)
     }
+    if ($ExerciseKnowledge) {
+        $launchArguments = @($knowledgeSmokeProjectPath)
+    }
     $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
     $agentSmokeEnvironment = $env:RADIA_IDE_SMOKE_AGENT_RUNTIME
     $workflowSmokeEnvironment = (
@@ -1253,6 +1681,13 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                     -OutputDirectory $declarativeWorkflowOutputDirectory
             )
         }
+        $knowledgeDiagnostic = $null
+        if ($ExerciseKnowledge) {
+            $knowledgeDiagnostic = Invoke-RadIAKnowledgeDiagnostic `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ProjectPath $knowledgeSmokeProjectPath
+        }
 
         $descendants = @(
             Get-RadIAProcessDescendants `
@@ -1263,7 +1698,51 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
-        if (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
+        if ($ExerciseKnowledge) {
+            $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
+                $shutdownTimeoutMs
+            )
+            do {
+                $currentProcess.Refresh()
+                if ($currentProcess.HasExited) {
+                    break
+                }
+                $confirmWindow = (
+                    [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                        [uint32]$currentProcess.Id,
+                        "TMessageForm"
+                    )
+                )
+                if ($confirmWindow -ne [IntPtr]::Zero) {
+                    $noButton = (
+                        [RadIAKnowledgeSmokeNative]::FindChildByText(
+                            $confirmWindow,
+                            "&No"
+                        )
+                    )
+                    if ($noButton -eq [IntPtr]::Zero) {
+                        $noButton = (
+                            [RadIAKnowledgeSmokeNative]::FindChildByText(
+                                $confirmWindow,
+                                "&Não"
+                            )
+                        )
+                    }
+                    if ($noButton -ne [IntPtr]::Zero) {
+                        [void][RadIAKnowledgeSmokeNative]::PostMessage(
+                            $noButton,
+                            0x00F5,
+                            [IntPtr]0,
+                            [IntPtr]0
+                        )
+                    }
+                }
+                Start-Sleep -Milliseconds 200
+            } while ([DateTime]::UtcNow -lt $shutdownDeadline)
+            if (-not $currentProcess.HasExited) {
+                throw "Delphi did not exit cleanly in cycle $cycle."
+            }
+        } elseif (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
             throw "Delphi did not exit cleanly in cycle $cycle."
         }
         $rootDeadline = [DateTime]::UtcNow.AddSeconds(10)
@@ -1415,6 +1894,38 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             DeclarativeWorkflowStepCount = (
                 $declarativeWorkflowDiagnostic.stepCount
             )
+            KnowledgeExercised = [bool]$ExerciseKnowledge
+            KnowledgeProjectId = $knowledgeDiagnostic.ProjectId
+            KnowledgeIndexedFiles = $knowledgeDiagnostic.IndexedFiles
+            KnowledgeIndexDurationMs = (
+                $knowledgeDiagnostic.IndexDurationMs
+            )
+            KnowledgeSearchDurationMs = (
+                $knowledgeDiagnostic.SearchDurationMs
+            )
+            KnowledgeResultCount = $knowledgeDiagnostic.ResultCount
+            KnowledgeSemanticHitCount = (
+                $knowledgeDiagnostic.SemanticHitCount
+            )
+            KnowledgeProvider = $knowledgeDiagnostic.Provider
+            KnowledgeFileName = $knowledgeDiagnostic.FileName
+            KnowledgeStartLine = $knowledgeDiagnostic.StartLine
+            KnowledgeExplanation = $knowledgeDiagnostic.Explanation
+            KnowledgeNavigationTool = (
+                $knowledgeDiagnostic.NavigationTool
+            )
+            KnowledgeEstimatedIndexBytes = (
+                $knowledgeDiagnostic.EstimatedIndexBytes
+            )
+            KnowledgeChunkCount = $knowledgeDiagnostic.ChunkCount
+            KnowledgeDocumentRetrieved = (
+                [bool]$ExerciseKnowledge -and
+                $knowledgeDiagnostic.DocumentRetrieved
+            )
+            KnowledgeWorkspaceIsolated = (
+                [bool]$ExerciseKnowledge -and
+                $knowledgeDiagnostic.WorkspaceIsolated
+            )
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -1462,9 +1973,17 @@ if ($ExerciseDeclarativeWorkflow) {
         "Declarative workflow hot-load and audited execution passed."
     )
 }
+if ($ExerciseKnowledge) {
+    Write-Host (
+        "Private local semantic knowledge and provenance passed."
+    )
+}
 if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime -or
     $ExerciseDeclarativeWorkflow) {
     Restore-RadIAInlineCompletionLogSettings
+}
+if ($ExerciseKnowledge) {
+    Restore-RadIAKnowledgeSettings
 }
 if ($EvidencePath) {
     $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
@@ -1491,6 +2010,7 @@ if ($EvidencePath) {
         declarativeWorkflowExercised = (
             [bool]$ExerciseDeclarativeWorkflow
         )
+        knowledgeExercised = [bool]$ExerciseKnowledge
         packageLifecycleExercised = [bool]$ExercisePackageLifecycle
         upgradeExercised = [bool]$upgradePackageEvidence
         upgradeFromVersion = $upgradeFromVersion
@@ -1501,6 +2021,47 @@ if ($EvidencePath) {
         ConvertTo-Json -Depth 6 |
         Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
     Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
+}
+if ($KnowledgeEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "Knowledge"
+    $resolvedKnowledgeEvidencePath = [IO.Path]::GetFullPath(
+        $KnowledgeEvidencePath
+    )
+    $knowledgeEvidenceDirectory = Split-Path -Parent (
+        $resolvedKnowledgeEvidencePath
+    )
+    if ($knowledgeEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $knowledgeEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "privateSemanticKnowledgeSmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedKnowledgeEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "Knowledge evidence created: " +
+        $resolvedKnowledgeEvidencePath
+    )
 }
 if ($DeclarativeWorkflowEvidencePath) {
     $sourceCommit = Get-RadIACleanSourceCommit `
