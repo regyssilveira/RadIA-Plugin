@@ -601,16 +601,23 @@ function Wait-RadIATerminalDiagnostic {
         $diagnostic.requiredControlsVisible -ne $true -or
         $diagnostic.commandInputAvailable -ne $true -or
         $diagnostic.outputAvailable -ne $true -or
+        $diagnostic.paletteAvailable -ne $true -or
         $diagnostic.accessibleLabelsAvailable -ne $true
     ) {
         throw "The terminal visual surface is incomplete."
     }
-    if ($diagnostic.tabStopCount -lt 6) {
+    if ($diagnostic.tabStopCount -lt 11) {
         throw (
             "The terminal exposes only $($diagnostic.tabStopCount) " +
             "keyboard tab stops; " +
-            "at least 6 are required."
+            "at least 11 are required."
         )
+    }
+    if ($diagnostic.paletteItemCount -lt 1) {
+        throw "The terminal command palette is empty."
+    }
+    if ($diagnostic.profileCount -lt 2) {
+        throw "The terminal exposes fewer than two profiles."
     }
     if ($diagnostic.width -lt 300 -or $diagnostic.height -lt 200) {
         throw "The terminal opened with unusable geometry."
@@ -622,6 +629,9 @@ function Wait-RadIATerminalDiagnostic {
         RequiredControlsVisible = $diagnostic.requiredControlsVisible
         CommandInputAvailable = $diagnostic.commandInputAvailable
         OutputAvailable = $diagnostic.outputAvailable
+        PaletteAvailable = $diagnostic.paletteAvailable
+        PaletteItemCount = $diagnostic.paletteItemCount
+        ProfileCount = $diagnostic.profileCount
         AccessibleLabelsAvailable = (
             $diagnostic.accessibleLabelsAvailable
         )
