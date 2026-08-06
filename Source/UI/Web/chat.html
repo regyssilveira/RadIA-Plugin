@@ -5,18 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rad IA Chat</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="vendor/prism-tomorrow.min.css">
   <script>
     const initialTheme = new URLSearchParams(globalThis.location.search).get('theme');
     const safeInitialTheme = ['light', 'dark'].includes(initialTheme) ? initialTheme : 'light';
     document.documentElement.className = safeInitialTheme + '-theme';
 
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
-    document.head.appendChild(fontLink);
   </script>
   <link rel="stylesheet" href="chat-theme.css">
   <link rel="stylesheet" href="chat.css">
@@ -31,7 +25,7 @@
   </script>
   <header id="chat-header">
     <div class="header-left">
-      <div class="header-logo">
+      <div class="header-logo" aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="12" cy="12" r="12" fill="#007ACC" />
           <path d="M12 6L13.8 10.2L18 12L13.8 13.8L12 18L10.2 13.8L6 12L10.2 10.2L12 6Z" fill="#FFFFFF" />
@@ -40,15 +34,50 @@
       <span class="header-title">Rad IA - AI ASSISTANT</span>
     </div>
     <div class="header-right">
-      <button class="header-action-btn" id="btn-clear-chat" title="Clear Chat">
-        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button class="header-action-btn agent-mode-enabled" id="btn-agent-mode"
+        title="Agent Mode: On" aria-label="Agent Mode: On" aria-pressed="true">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="7" width="16" height="12" rx="3"></rect>
+          <path d="M9 3h6"></path>
+          <path d="M12 3v4"></path>
+          <circle cx="9" cy="13" r="1"></circle>
+          <circle cx="15" cy="13" r="1"></circle>
+        </svg>
+        <span class="btn-label">Agent On</span>
+      </button>
+      <button class="header-action-btn" id="btn-terminal" title="Open Terminal (/terminal)"
+        aria-label="Open Terminal">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+          <path d="m7 9 3 3-3 3"></path>
+          <path d="M13 15h4"></path>
+        </svg>
+        <span class="btn-label">Terminal</span>
+      </button>
+      <button class="header-action-btn" id="btn-agent-history" title="Agent Run History (/agent history)"
+        aria-label="Open Agent Run History">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 2"></path>
+          <path d="M7 4 4 7"></path>
+        </svg>
+        <span class="btn-label">Runs</span>
+      </button>
+      <button class="header-action-btn" id="btn-clear-chat" title="Clear Chat"
+        aria-label="Clear Chat">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 6h18"></path>
           <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
           <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
         </svg>
         <span class="btn-label">Clear</span>
       </button>
-      <button class="header-action-btn" id="btn-generators" title="Generators">
+      <button class="header-action-btn" id="btn-generators" title="Generators"
+        aria-label="Open Generators">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -56,7 +85,8 @@
         </svg>
         <span class="btn-label">Generators</span>
       </button>
-      <button class="header-action-btn" id="btn-history" title="Chats">
+      <button class="header-action-btn" id="btn-history" title="Chats"
+        aria-label="Toggle Chat Sessions" aria-expanded="false" aria-controls="sessions-sidebar">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
@@ -65,7 +95,8 @@
         </svg>
         <span class="btn-label">Chats</span>
       </button>
-      <button class="header-action-btn hidden" id="btn-web-login" title="Connect Web Login">
+      <button class="header-action-btn hidden" id="btn-web-login" title="Connect Web Login"
+        aria-label="Connect Web Login">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -73,7 +104,8 @@
         </svg>
         <span class="btn-label">Connect</span>
       </button>
-      <button class="header-action-btn" id="btn-settings" title="Settings">
+      <button class="header-action-btn" id="btn-settings" title="Settings"
+        aria-label="Open Settings">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -87,36 +119,38 @@
   </header>
 
   <div id="main-layout">
-    <aside id="sessions-sidebar" class="collapsed">
+    <aside id="sessions-sidebar" class="collapsed" aria-label="Chat sessions">
       <div class="sidebar-header">
         <span>CHATS</span>
-        <button id="btn-new-chat-sidebar" title="New Session">+</button>
+        <button id="btn-new-chat-sidebar" title="New Session"
+          aria-label="Create New Chat Session">+</button>
       </div>
-      <div id="sessions-list">
-      </div>
+      <ul id="sessions-list"></ul>
     </aside>
 
     <div id="chat-wrapper">
-      <main id="chat-container">
+      <main id="chat-container" role="log" aria-label="Conversation"
+        aria-live="polite" aria-relevant="additions text">
       </main>
       <div id="chat-scrollbar" aria-hidden="true">
         <div id="chat-scrollbar-thumb"></div>
       </div>
 
       <footer id="chat-footer">
-        <div id="context-bar" class="hidden">
+        <div id="context-bar" class="hidden" aria-live="polite">
           <span id="context-text"></span>
         </div>
 
-        <div id="status-bar" class="hidden">
+        <output id="status-bar" class="hidden" aria-live="polite">
           <span id="status-text"></span>
-        </div>
+        </output>
 
         <div id="composer-shell">
           <div id="prompt-wrapper">
             <div id="prompt-capsule">
-              <textarea id="prompt-textarea" placeholder="Ask Rad IA or type / for commands..." rows="1"></textarea>
-              <button id="btn-send-prompt" title="Send message">
+              <textarea id="prompt-textarea" aria-label="Message Rad IA"
+                placeholder="Ask Rad IA or type / for commands..." rows="1"></textarea>
+              <button id="btn-send-prompt" title="Send message" aria-label="Send message">
                 <svg class="send-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -128,40 +162,44 @@
 
           <div id="model-selectors">
             <div class="selector-wrapper">
-              <select id="select-provider" style="display: none;">
+              <select id="select-provider" aria-label="AI provider" style="display: none;">
                 <option value="">Provider...</option>
               </select>
               <div class="custom-dropdown-wrapper" id="provider-dropdown-wrapper">
-                <div class="custom-dropdown-trigger" id="provider-dropdown-trigger">
+                <button type="button" class="custom-dropdown-trigger" id="provider-dropdown-trigger"
+                  aria-label="AI provider" aria-expanded="false"
+                  aria-haspopup="listbox" aria-controls="provider-options-list">
                   <span id="provider-dropdown-value">Provider...</span>
-                </div>
+                </button>
                 <div class="custom-dropdown-content" id="provider-dropdown-content">
-                  <div class="custom-dropdown-options" id="provider-options-list">
-                  </div>
+                  <ul class="custom-dropdown-options" id="provider-options-list"></ul>
                 </div>
               </div>
             </div>
             <div class="selector-wrapper">
-              <select id="select-model" style="display: none;">
+              <select id="select-model" aria-label="AI model" style="display: none;">
                 <option value="">Model...</option>
               </select>
               <div class="custom-dropdown-wrapper" id="model-dropdown-wrapper">
-                <div class="custom-dropdown-trigger" id="model-dropdown-trigger">
+                <button type="button" class="custom-dropdown-trigger" id="model-dropdown-trigger"
+                  aria-label="AI model" aria-expanded="false"
+                  aria-haspopup="listbox" aria-controls="model-options-list">
                   <span id="model-dropdown-value">Model...</span>
-                </div>
+                </button>
                 <div class="custom-dropdown-content" id="model-dropdown-content">
                   <div class="custom-dropdown-search">
-                    <input type="text" id="model-search-input" placeholder="Search model..." autocomplete="off">
+                    <input type="text" id="model-search-input" aria-label="Search AI models"
+                      placeholder="Search model..." autocomplete="off">
                   </div>
-                  <div class="custom-dropdown-options" id="model-options-list">
-                  </div>
+                  <ul class="custom-dropdown-options" id="model-options-list"></ul>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div id="slash-commands-popup" class="hidden"></div>
+        <ul id="slash-commands-popup" class="hidden"
+          aria-label="Available slash commands"></ul>
       </footer>
     </div>
 
@@ -170,7 +208,8 @@
         <div class="generator-card">
           <div class="generator-form-group">
             <label for="generator-input">Input (JSON or SQL DDL)</label>
-            <textarea id="generator-input" placeholder="Paste your raw JSON payload or SQL DDL statements here..." rows="8"></textarea>
+            <textarea id="generator-input"
+              placeholder="Paste your raw JSON payload or SQL DDL statements here..." rows="8"></textarea>
           </div>
 
           <div class="generator-options-row">
@@ -202,13 +241,15 @@
             <div class="code-header">
               <span>Generated Delphi Unit</span>
               <div class="code-header-actions">
-                <button class="copy-btn" id="btn-copy-generator" title="Copy Code">
+                <button class="copy-btn" id="btn-copy-generator" title="Copy Code"
+                  aria-label="Copy Generated Code">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
                 </button>
-                <button class="apply-btn" id="btn-insert-generator" title="Insert into Editor">
+                <button class="apply-btn" id="btn-insert-generator" title="Insert into Editor"
+                  aria-label="Insert Generated Code into Editor">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="16 18 22 12 16 6"></polyline>
                     <polyline points="8 6 2 12 8 18"></polyline>
@@ -224,6 +265,9 @@
   </div>
 
   <script src="chat-bridge.js"></script>
+  <script src="RadIA.UI.AgentDiff.js"></script>
+  <script src="RadIA.UI.AgentGit.js"></script>
+  <script src="RadIA.UI.AgentDebug.js"></script>
   <script>
     const chatScript = document.createElement('script');
     chatScript.src = 'chat.js?v=' + Date.now();

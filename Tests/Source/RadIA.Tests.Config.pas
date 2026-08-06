@@ -31,6 +31,14 @@ type
     [Test]
     procedure TestConciseResponsesPersistence;
     [Test]
+    procedure TestConsentPreferencesPersistenceAndSafeDefaults;
+    [Test]
+    procedure TestConsentTimeoutIsClamped;
+    [Test]
+    procedure TestInlineCompletionSafeDefaultsAndPersistence;
+    [Test]
+    procedure TestSemanticKnowledgeConsentAndProvider;
+    [Test]
     procedure TestOllamaBaseUrlPersistence;
     [Test]
     procedure TestJsonNewlineHandling;
@@ -47,6 +55,9 @@ type
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
+  RadIA.Core.Knowledge,
+  RadIA.Core.KnowledgeEmbeddings,
   System.SysUtils, System.JSON, RadIA.Core.Config;
 
 { TTestRadIAConfig }
@@ -141,6 +152,126 @@ begin
 
   FConfig.Load;
   Assert.IsFalse(FConfig.ConciseResponses);
+end;
+
+procedure TTestRadIAConfig.
+  TestConsentPreferencesPersistenceAndSafeDefaults;
+begin
+  Assert.AreEqual(60, FConfig.ConsentTimeoutSeconds);
+  Assert.IsTrue(FConfig.ConsentShowArguments);
+  Assert.IsTrue(FConfig.ConsentRememberReversible);
+  Assert.IsFalse(FConfig.ConsentRememberStructural);
+  Assert.IsFalse(FConfig.ConsentRememberExecution);
+
+  FConfig.ConsentTimeoutSeconds := 120;
+  FConfig.ConsentShowArguments := False;
+  FConfig.ConsentRememberReversible := False;
+  FConfig.ConsentRememberStructural := True;
+  FConfig.ConsentRememberExecution := True;
+  FConfig.Save;
+  FConfig.Load;
+
+  Assert.AreEqual(120, FConfig.ConsentTimeoutSeconds);
+  Assert.IsFalse(FConfig.ConsentShowArguments);
+  Assert.IsFalse(FConfig.ConsentRememberReversible);
+  Assert.IsTrue(FConfig.ConsentRememberStructural);
+  Assert.IsTrue(FConfig.ConsentRememberExecution);
+end;
+
+procedure TTestRadIAConfig.TestConsentTimeoutIsClamped;
+begin
+  FConfig.ConsentTimeoutSeconds := 1;
+  Assert.AreEqual(15, FConfig.ConsentTimeoutSeconds);
+  FConfig.ConsentTimeoutSeconds := 900;
+  Assert.AreEqual(600, FConfig.ConsentTimeoutSeconds);
+end;
+
+procedure TTestRadIAConfig.
+  TestInlineCompletionSafeDefaultsAndPersistence;
+var
+  LShortcutConfig: IRadIAInlineShortcutConfig;
+begin
+  Assert.IsFalse(FConfig.AutocompleteEnabled);
+  Assert.IsTrue(
+    Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig)
+  );
+  FConfig.AutocompleteEnabled := True;
+  FConfig.AutocompleteDelay := 900;
+  FConfig.AutocompleteExcludedLanguages := 'sql;markdown';
+  FConfig.AutocompleteExcludedFiles := 'generated;vendor';
+  FConfig.AutocompleteExcludedProjects := 'legacy;archive';
+  LShortcutConfig.InlineShortcutProfile :=
+    'request=Ctrl+Shift+Space; accept=Ctrl+Alt+Right; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace';
+  FConfig.Save;
+  FConfig.Load;
+
+  Assert.IsTrue(FConfig.AutocompleteEnabled);
+  Assert.AreEqual(900, FConfig.AutocompleteDelay);
+  Assert.AreEqual(
+    'sql;markdown',
+    FConfig.AutocompleteExcludedLanguages
+  );
+  Assert.AreEqual(
+    'generated;vendor',
+    FConfig.AutocompleteExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy;archive',
+    FConfig.AutocompleteExcludedProjects
+  );
+  Assert.Contains(
+    LShortcutConfig.InlineShortcutProfile,
+    'request=Ctrl+Shift+Space'
+  );
+
+  FConfig.AutocompleteDelay := 1;
+  Assert.AreEqual(250, FConfig.AutocompleteDelay);
+  FConfig.AutocompleteDelay := 9000;
+  Assert.AreEqual(5000, FConfig.AutocompleteDelay);
+end;
+
+procedure TTestRadIAConfig.TestSemanticKnowledgeConsentAndProvider;
+var
+  LEmbedding: TArray<Single>;
+  LEmbeddingLength: Integer;
+  LProvider: IRadIAKnowledgeEmbeddingProvider;
+begin
+  Assert.IsFalse(FConfig.KnowledgeSemanticEnabled);
+  Assert.IsFalse(FConfig.KnowledgeApprovedHistoryEnabled);
+  LProvider := TRadIAConfigurableKnowledgeEmbeddingProvider.Create(
+    FConfig,
+    TRadIALocalHashEmbeddingProvider.Create
+  );
+  LEmbedding := LProvider.Embed('create a Delphi form');
+  LEmbeddingLength := Length(LEmbedding);
+  Assert.AreEqual(0, LEmbeddingLength);
+
+  FConfig.KnowledgeSemanticEnabled := True;
+  FConfig.KnowledgeApprovedHistoryEnabled := True;
+  FConfig.KnowledgeExcludedFiles := 'generated; secrets';
+  FConfig.KnowledgeExcludedProjects := 'legacy; archive';
+  FConfig.Save;
+  FConfig.Load;
+  Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  Assert.IsTrue(FConfig.KnowledgeApprovedHistoryEnabled);
+  Assert.AreEqual(
+    'generated; secrets',
+    FConfig.KnowledgeExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy; archive',
+    FConfig.KnowledgeExcludedProjects
+  );
+  LEmbedding := LProvider.Embed('create a Delphi form');
+  LEmbeddingLength := Length(LEmbedding);
+  Assert.AreEqual(LProvider.GetDimensions, LEmbeddingLength);
+
+  FConfig.KnowledgeSemanticEnabled := False;
+  LEmbedding := LProvider.Embed('create a Delphi form');
+  LEmbeddingLength := Length(LEmbedding);
+  Assert.AreEqual(0, LEmbeddingLength);
 end;
 
 procedure TTestRadIAConfig.TestOllamaBaseUrlPersistence;

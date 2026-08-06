@@ -44,6 +44,12 @@ if (
     throw "RadIA.rc does not match package.json."
 }
 
+# 0.1. Validar o catálogo documentado das tools realmente registradas
+& ".\scripts\Update-RadIA.RuntimeToolCatalog.ps1" -Check
+if ($LASTEXITCODE -ne 0) {
+    throw "Runtime tool catalog validation failed."
+}
+
 # 1. Detectar instalacoes do Delphi no Registro do Windows
 $installations = @()
 $regBDS = "HKCU:\Software\Embarcadero\BDS"
@@ -497,12 +503,20 @@ if ($runTests) {
                 "-xmllines",
                 "-xmlgenerics",
                 "-html",
-                "-tec"
+                "-tec",
+                "-a", "^--exclude:ExternalProcess"
             )
 
             & $codeCoverageExe $ccArgs
 
             if ($LASTEXITCODE -eq 0) {
+                Write-Host (
+                    "Executando testes de processos externos fora da instrumentacao..."
+                ) -ForegroundColor Yellow
+                & $testsExe "--include:ExternalProcess"
+                if ($LASTEXITCODE -ne 0) {
+                    throw "External-process tests returned failures."
+                }
                 Write-Host "=============================================" -ForegroundColor Green
                 Write-Host "    Build, Testes e Cobertura Concluidos!    " -ForegroundColor Green
                 Write-Host " Relatorios salvos em: $coverageOutputDir" -ForegroundColor Green
@@ -552,6 +566,21 @@ if ($runTests) {
 
 # 9. Criar pacote de distribuicao reproduzivel
 if ($Package) {
+    $sourceCommit = (& git rev-parse HEAD).Trim()
+    if (($LASTEXITCODE -ne 0) -or
+        ($sourceCommit -notmatch '^[0-9a-f]{40}$')) {
+        throw "Unable to resolve the source Git commit for packaging."
+    }
+    $trackedChanges = @(& git status --porcelain --untracked-files=no)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to inspect the tracked Git worktree for packaging."
+    }
+    if ($trackedChanges.Count -gt 0) {
+        throw (
+            "Release packaging requires a clean tracked Git worktree. " +
+            "Commit or restore tracked changes first."
+        )
+    }
     $productVersion = (
         Get-Content -LiteralPath ".\package.json" -Raw |
         ConvertFrom-Json
@@ -604,15 +633,8 @@ if ($Package) {
     Copy-Item `
         -LiteralPath ".\Redist\$platform\WebView2Loader.dll" `
         -Destination (Join-Path $stagingRoot "Redist\WebView2Loader.dll")
-    Copy-Item `
-        -LiteralPath ".\docs\install_config.md" `
-        -Destination (Join-Path $stagingRoot "Docs\install_config.md")
-    Copy-Item `
-        -LiteralPath ".\docs\tool_extension_guide.md" `
-        -Destination (Join-Path $stagingRoot "Docs\tool_extension_guide.md")
-    Copy-Item `
-        -LiteralPath ".\docs\agentic_migration_0_1.md" `
-        -Destination (Join-Path $stagingRoot "Docs\agentic_migration_0_1.md")
+    Get-ChildItem -LiteralPath ".\docs" -File -Filter "*.md" |
+        Copy-Item -Destination (Join-Path $stagingRoot "Docs")
     Copy-Item `
         -LiteralPath ".\scripts\Install-RadIA.Package.ps1" `
         -Destination (Join-Path $stagingRoot "Scripts\Install-RadIA.Package.ps1")
@@ -645,6 +667,8 @@ if ($Package) {
         delphiVersion = $delphiVer
         platform = $platform
         configuration = $configName
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
         files = $manifestFiles
     }
     $manifest |
@@ -683,7 +707,7 @@ if ($Package) {
     $checksumLines = @(
         Get-ChildItem `
             -LiteralPath $packagesRoot `
-            -Filter "RadIA-v*.zip" |
+            -Filter "RadIA-v$productVersion-*.zip" |
         Sort-Object Name |
         ForEach-Object {
             $hash = (

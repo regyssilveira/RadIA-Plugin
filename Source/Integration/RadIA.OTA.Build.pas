@@ -3,44 +3,47 @@ unit RadIA.OTA.Build;
 interface
 
 uses
-  System.Classes,
-  System.SyncObjs,
   RadIA.Core.Build,
   RadIA.Core.Workspace;
 
 type
-  IRadIACompileWaiter = interface
-    ['{ACB8C694-0644-461F-8F62-657DE7D07E02}']
-    function WaitFor(const ATimeoutMs: Cardinal): TWaitResult;
-    function GetCompileResult: Integer;
-  end;
-
   TRadIAOTABuildFacade = class(
     TInterfacedObject,
     IRadIABuildFacade
   )
   private
-    FWorkspace: IRadIAWorkspaceFacade;
+    FCancelRequested: Integer;
+    FProcessHandle: Pointer;
     FRunning: Integer;
     FStatus: Integer;
-    function BuildOnMainThread(
-      const ARequest: TRadIABuildRequest;
-      out ANotifier: IRadIACompileWaiter;
-      out ACompileResult: Integer;
-      out ANotifierIndex: Integer
+    FWorkspace: IRadIAWorkspaceFacade;
+    function CaptureBuildContext(
+      out AProjectFile: string;
+      out AConfiguration: string;
+      out APlatform: string;
+      out AIDERoot: string
     ): Boolean;
-    function CompileMode(
-      const AMode: TRadIABuildMode
-    ): Integer;
-    procedure RemoveNotifier(
-      const ANotifierIndex: Integer
+    procedure CaptureIDEContext(
+      out AProjectFile: string;
+      out AConfiguration: string;
+      out APlatform: string;
+      out AIDERoot: string
     );
-    procedure RunOnMainThread(const AAction: TThreadProcedure);
-    procedure SetStatus(const AStatus: TRadIABuildStatus);
-    function WaitForCompletion(
-      const ANotifier: IRadIACompileWaiter;
-      const ATimeoutMs: Cardinal
+    function ExecuteBuildProcess(
+      const ACommandLine: string;
+      const AWorkingDirectory: string;
+      const AOutputPath: string;
+      const ATimeoutMs: Cardinal;
+      out AExitCode: Cardinal
     ): TRadIABuildStatus;
+    function ParseBuildMessages(
+      const AOutputPath: string
+    ): TArray<TRadIACompilerMessage>;
+    function ReadBuildFailureMessage(
+      const AOutputPath: string
+    ): string;
+    function TargetName(const AMode: TRadIABuildMode): string;
+    procedure SetStatus(const AStatus: TRadIABuildStatus);
   public
     constructor Create(const AWorkspace: IRadIAWorkspaceFacade);
     function Execute(
@@ -53,213 +56,107 @@ type
 implementation
 
 uses
+  System.Classes,
   System.Diagnostics,
+  System.Generics.Collections,
+  System.IOUtils,
+  System.RegularExpressions,
   System.SysUtils,
+  System.SyncObjs,
   ToolsAPI,
-  Winapi.Windows,
-  RadIA.Core.Types;
+  Winapi.Windows;
 
 const
   CBuildBusy = 'build_busy';
-  CBuildTimeout = 'build_timeout';
   CNoActiveProject = 'no_active_project';
   CUnsupported = 'build_unsupported';
 
-type
-  TRadIACompileNotifier = class(
-    TInterfacedObject,
-    IOTACompileNotifier,
-    IRadIACompileWaiter
-  )
-  private
-    FEvent: TEvent;
-    FResult: TOTACompileResult;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure ProjectCompileStarted(
-      const Project: IOTAProject;
-      Mode: TOTACompileMode
-    );
-    procedure ProjectCompileFinished(
-      const Project: IOTAProject;
-      Result: TOTACompileResult
-    );
-    procedure ProjectGroupCompileStarted(Mode: TOTACompileMode);
-    procedure ProjectGroupCompileFinished(
-      Result: TOTACompileResult
-    );
-    function GetCompileResult: Integer;
-    function WaitFor(const ATimeoutMs: Cardinal): TWaitResult;
-  end;
-
-{ TRadIACompileNotifier }
-
-constructor TRadIACompileNotifier.Create;
-begin
-  inherited Create;
-  FEvent := TEvent.Create(nil, True, False, '');
-  FResult := crOTAFailed;
-end;
-
-destructor TRadIACompileNotifier.Destroy;
-begin
-  FEvent.Free;
-  inherited;
-end;
-
-procedure TRadIACompileNotifier.ProjectCompileFinished(
-  const Project: IOTAProject;
-  Result: TOTACompileResult
-);
-begin
-  FResult := Result;
-  FEvent.SetEvent;
-end;
-
-procedure TRadIACompileNotifier.ProjectCompileStarted(
-  const Project: IOTAProject;
-  Mode: TOTACompileMode
-);
-begin
-  FEvent.ResetEvent;
-end;
-
-procedure TRadIACompileNotifier.ProjectGroupCompileFinished(
-  Result: TOTACompileResult
-);
-begin
-  FResult := Result;
-  FEvent.SetEvent;
-end;
-
-procedure TRadIACompileNotifier.ProjectGroupCompileStarted(
-  Mode: TOTACompileMode
-);
-begin
-  FEvent.ResetEvent;
-end;
-
-function TRadIACompileNotifier.GetCompileResult: Integer;
-begin
-  Result := Ord(FResult);
-end;
-
-function TRadIACompileNotifier.WaitFor(
-  const ATimeoutMs: Cardinal
-): TWaitResult;
-begin
-  Result := FEvent.WaitFor(ATimeoutMs);
-end;
-
 { TRadIAOTABuildFacade }
-
-function TRadIAOTABuildFacade.BuildOnMainThread(
-  const ARequest: TRadIABuildRequest;
-  out ANotifier: IRadIACompileWaiter;
-  out ACompileResult: Integer;
-  out ANotifierIndex: Integer
-): Boolean;
-var
-  LCompileResult: TOTACompileResult;
-  LNotifier: TRadIACompileNotifier;
-  LNotifierInterface: IOTACompileNotifier;
-  LNotifierIndex: Integer;
-  LResult: Boolean;
-  LWaiter: IRadIACompileWaiter;
-begin
-  ANotifier := nil;
-  ACompileResult := Ord(crOTAFailed);
-  ANotifierIndex := -1;
-  LResult := False;
-  RunOnMainThread(
-    procedure
-    var
-      LCompileServices: IOTACompileServices;
-      LProject: IOTAProject;
-      LModuleServices: IOTAModuleServices;
-    begin
-      if not Supports(
-        BorlandIDEServices,
-        IOTACompileServices,
-        LCompileServices
-      ) then
-        Exit;
-      if not Supports(
-        BorlandIDEServices,
-        IOTAModuleServices,
-        LModuleServices
-      ) then
-        Exit;
-
-      LProject := LModuleServices.GetActiveProject;
-      if not Assigned(LProject) then
-        Exit;
-
-      LNotifier := TRadIACompileNotifier.Create;
-      LNotifierInterface := LNotifier;
-      LNotifierIndex := LCompileServices.AddNotifier(
-        LNotifierInterface
-      );
-      if LNotifierIndex < 0 then
-        Exit;
-
-      LCompileResult := LCompileServices.CompileProjects(
-        [LProject],
-        TOTACompileMode(CompileMode(ARequest.Mode)),
-        False,
-        ARequest.ClearMessages
-      );
-      LWaiter := LNotifier;
-      LResult := True;
-    end
-  );
-  if LResult then
-  begin
-    ANotifier := LWaiter;
-    ACompileResult := Ord(LCompileResult);
-    ANotifierIndex := LNotifierIndex;
-  end;
-  Result := LResult;
-end;
 
 function TRadIAOTABuildFacade.Cancel: Boolean;
 var
-  LResult: Boolean;
+  LProcessHandle: THandle;
 begin
-  LResult := False;
-  if GIsShuttingDown then
-    Exit(False);
-
-  RunOnMainThread(
-    procedure
-    var
-      LCompileServices: IOTACompileServices;
-    begin
-      if Supports(
-        BorlandIDEServices,
-        IOTACompileServices,
-        LCompileServices
-      ) and LCompileServices.IsBackgroundCompileActive then
-        LResult := LCompileServices.CancelBackgroundCompile(False);
-    end
+  Result := GetStatus = bsRunning;
+  if not Result then
+    Exit;
+  TInterlocked.Exchange(FCancelRequested, 1);
+  LProcessHandle := THandle(
+    TInterlocked.CompareExchange(FProcessHandle, nil, nil)
   );
-  if LResult then
-    SetStatus(bsCancelled);
-  Result := LResult;
+  if LProcessHandle <> 0 then
+    TerminateProcess(LProcessHandle, 2);
 end;
 
-function TRadIAOTABuildFacade.CompileMode(
-  const AMode: TRadIABuildMode
-): Integer;
+function TRadIAOTABuildFacade.CaptureBuildContext(
+  out AProjectFile: string;
+  out AConfiguration: string;
+  out APlatform: string;
+  out AIDERoot: string
+): Boolean;
+var
+  LAction: TThreadProcedure;
+  LConfiguration: string;
+  LIDERoot: string;
+  LPlatform: string;
+  LProjectFile: string;
 begin
-  case AMode of
-    bmMake: Result := Ord(cmOTAMake);
-    bmCheck: Result := Ord(cmOTACheck);
-    bmClean: Result := Ord(cmOTAClean);
-  else
-    Result := Ord(cmOTABuild);
+  AProjectFile := '';
+  AConfiguration := '';
+  APlatform := '';
+  AIDERoot := '';
+  LAction :=
+    procedure
+    begin
+      CaptureIDEContext(
+        LProjectFile,
+        LConfiguration,
+        LPlatform,
+        LIDERoot
+      );
+    end;
+  TThread.Synchronize(nil, LAction);
+  AProjectFile := LProjectFile;
+  AConfiguration := LConfiguration;
+  APlatform := LPlatform;
+  AIDERoot := LIDERoot;
+  Result := (AProjectFile <> '') and TFile.Exists(AProjectFile) and
+    (AIDERoot <> '');
+end;
+
+procedure TRadIAOTABuildFacade.CaptureIDEContext(
+  out AProjectFile: string;
+  out AConfiguration: string;
+  out APlatform: string;
+  out AIDERoot: string
+);
+var
+  LIndex: Integer;
+  LModule: IOTAModule;
+  LModuleServices: IOTAModuleServices;
+  LProject: IOTAProject;
+  LServices: IOTAServices;
+begin
+  if Supports(BorlandIDEServices, IOTAModuleServices, LModuleServices) then
+  begin
+    for LIndex := 0 to LModuleServices.ModuleCount - 1 do
+    begin
+      LModule := LModuleServices.Modules[LIndex];
+      if Assigned(LModule) and
+        (Trim(LModule.FileName) <> '') and
+        TFile.Exists(LModule.FileName) then
+        LModule.Save(False, True);
+    end;
+    LProject := LModuleServices.GetActiveProject;
+    if Assigned(LProject) then
+    begin
+      AProjectFile := LProject.FileName;
+      AConfiguration := LProject.CurrentConfiguration;
+      APlatform := LProject.CurrentPlatform;
+    end;
   end;
+  if Supports(BorlandIDEServices, IOTAServices, LServices) then
+    AIDERoot := LServices.GetRootDirectory;
 end;
 
 constructor TRadIAOTABuildFacade.Create(
@@ -270,6 +167,8 @@ begin
   if not Assigned(AWorkspace) then
     raise EArgumentNilException.Create('AWorkspace');
   FWorkspace := AWorkspace;
+  FCancelRequested := 0;
+  FProcessHandle := nil;
   FRunning := 0;
   FStatus := Ord(bsIdle);
 end;
@@ -278,12 +177,19 @@ function TRadIAOTABuildFacade.Execute(
   const ARequest: TRadIABuildRequest
 ): TRadIABuildResult;
 var
-  LCompileResult: Integer;
-  LNotifier: IRadIACompileWaiter;
-  LNotifierIndex: Integer;
+  LCommandLine: string;
+  LCommandProcessor: string;
+  LConfiguration: string;
+  LExitCode: Cardinal;
+  LIDERoot: string;
+  LMessages: TArray<TRadIACompilerMessage>;
+  LOutputPath: string;
+  LPlatform: string;
   LProject: TRadIAProjectSnapshot;
+  LProjectFile: string;
   LStatus: TRadIABuildStatus;
   LStopwatch: TStopwatch;
+  LWorkingDirectory: string;
 begin
   if GetCurrentThreadId = MainThreadID then
     Exit(TRadIABuildResult.Failed(
@@ -299,68 +205,170 @@ begin
     ));
 
   LStopwatch := TStopwatch.StartNew;
-  LNotifierIndex := -1;
+  TInterlocked.Exchange(FCancelRequested, 0);
   SetStatus(bsRunning);
   try
-    LProject := FWorkspace.GetActiveProject;
-    if LProject.FileName = '' then
+    if not CaptureBuildContext(
+      LProjectFile,
+      LConfiguration,
+      LPlatform,
+      LIDERoot
+    ) then
       Exit(TRadIABuildResult.Failed(
         bsFailed,
         CNoActiveProject,
-        'No active project is available.'
+        'No active buildable project is available.'
       ));
-    if not BuildOnMainThread(
-      ARequest,
-      LNotifier,
-      LCompileResult,
-      LNotifierIndex
-    ) then
-      Exit(TRadIABuildResult.Failed(
-        bsUnsupported,
-        CUnsupported,
-        'The IDE compile service is not available.'
-      ));
+    if LConfiguration = '' then
+      LConfiguration := 'Debug';
+    if LPlatform = '' then
+      LPlatform := 'Win32';
 
-    LStatus := bsFailed;
-    if TOTACompileResult(LCompileResult) = crOTABackground then
+    LProject := FWorkspace.GetActiveProject;
+    LWorkingDirectory := TPath.GetDirectoryName(LProjectFile);
+    LOutputPath := TPath.Combine(
+      LWorkingDirectory,
+      '.radia-build-output.log'
+    );
+    LCommandProcessor := GetEnvironmentVariable('ComSpec');
+    if LCommandProcessor = '' then
+      LCommandProcessor := 'cmd.exe';
+    LCommandLine := Format(
+      '"%s" /S /C ""%s" && msbuild "%s" /t:%s ' +
+      '/p:Config="%s" /p:Platform="%s" /p:DCC_ForceExecute=true ' +
+      '/nologo /verbosity:minimal"',
+      [
+        LCommandProcessor,
+        TPath.Combine(LIDERoot, 'bin\rsvars.bat'),
+        LProjectFile,
+        TargetName(ARequest.Mode),
+        LConfiguration,
+        LPlatform
+      ]
+    );
+    LStatus := ExecuteBuildProcess(
+      LCommandLine,
+      LWorkingDirectory,
+      LOutputPath,
+      ARequest.TimeoutMs,
+      LExitCode
+    );
+    if (LStatus = bsSucceeded) and (LExitCode <> 0) then
+      LStatus := bsFailed;
+    LMessages := ParseBuildMessages(LOutputPath);
+    if (LStatus = bsFailed) and (Length(LMessages) = 0) then
     begin
-      LStatus := WaitForCompletion(
-        LNotifier,
-        ARequest.TimeoutMs
-      );
-    end
-    else if TOTACompileResult(LCompileResult) = crOTASucceeded then
-      LStatus := bsSucceeded;
-
-    RemoveNotifier(LNotifierIndex);
-    LNotifierIndex := -1;
+      LCommandLine := ReadBuildFailureMessage(LOutputPath);
+      if LCommandLine <> '' then
+      begin
+        SetLength(LMessages, 1);
+        LMessages[0] := TRadIACompilerMessage.Create(
+          cmsError,
+          LCommandLine,
+          LProjectFile,
+          0,
+          0
+        );
+      end;
+    end;
+    System.SysUtils.DeleteFile(LOutputPath);
+    if Length(LMessages) = 0 then
+      LMessages := FWorkspace.GetCompilerMessages(200);
     LStopwatch.Stop;
+    SetStatus(LStatus);
     Result := TRadIABuildResult.Completed(
       LStatus,
       LProject,
       LStopwatch.ElapsedMilliseconds,
-      FWorkspace.GetCompilerMessages(200)
+      LMessages
     );
-    if LStatus = bsTimedOut then
-      Result := TRadIABuildResult.Failed(
-        bsTimedOut,
-        CBuildTimeout,
-        'Build timed out and cancellation was requested.'
-      )
-    else if LStatus = bsFailed then
-      Result := TRadIABuildResult.Completed(
-        bsFailed,
-        LProject,
-        LStopwatch.ElapsedMilliseconds,
-        FWorkspace.GetCompilerMessages(200)
-      );
-    SetStatus(LStatus);
   finally
-    if LNotifierIndex >= 0 then
-      RemoveNotifier(LNotifierIndex);
+    TInterlocked.Exchange(FProcessHandle, nil);
     if GetStatus = bsRunning then
       SetStatus(bsFailed);
     TInterlocked.Exchange(FRunning, 0);
+  end;
+end;
+
+function TRadIAOTABuildFacade.ExecuteBuildProcess(
+  const ACommandLine: string;
+  const AWorkingDirectory: string;
+  const AOutputPath: string;
+  const ATimeoutMs: Cardinal;
+  out AExitCode: Cardinal
+): TRadIABuildStatus;
+var
+  LCommandLine: string;
+  LOutputHandle: THandle;
+  LProcessInfo: TProcessInformation;
+  LSecurityAttributes: TSecurityAttributes;
+  LStartupInfo: TStartupInfo;
+  LStopwatch: TStopwatch;
+  LWaitResult: Cardinal;
+begin
+  AExitCode := Cardinal(-1);
+  ZeroMemory(@LSecurityAttributes, SizeOf(LSecurityAttributes));
+  LSecurityAttributes.nLength := SizeOf(LSecurityAttributes);
+  LSecurityAttributes.bInheritHandle := True;
+  LOutputHandle := CreateFile(
+    PChar(AOutputPath),
+    GENERIC_WRITE,
+    FILE_SHARE_READ,
+    @LSecurityAttributes,
+    CREATE_ALWAYS,
+    FILE_ATTRIBUTE_NORMAL,
+    0
+  );
+  if LOutputHandle = INVALID_HANDLE_VALUE then
+    RaiseLastOSError;
+  try
+    ZeroMemory(@LStartupInfo, SizeOf(LStartupInfo));
+    LStartupInfo.cb := SizeOf(LStartupInfo);
+    LStartupInfo.dwFlags := STARTF_USESTDHANDLES;
+    LStartupInfo.hStdOutput := LOutputHandle;
+    LStartupInfo.hStdError := LOutputHandle;
+    ZeroMemory(@LProcessInfo, SizeOf(LProcessInfo));
+    LCommandLine := ACommandLine;
+    if not CreateProcess(
+      nil,
+      PChar(LCommandLine),
+      nil,
+      nil,
+      True,
+      CREATE_NO_WINDOW,
+      nil,
+      PChar(AWorkingDirectory),
+      LStartupInfo,
+      LProcessInfo
+    ) then
+      RaiseLastOSError;
+    try
+      TInterlocked.Exchange(FProcessHandle, Pointer(LProcessInfo.hProcess));
+      LStopwatch := TStopwatch.StartNew;
+      repeat
+        LWaitResult := WaitForSingleObject(LProcessInfo.hProcess, 25);
+        if TInterlocked.CompareExchange(FCancelRequested, 0, 0) <> 0 then
+        begin
+          TerminateProcess(LProcessInfo.hProcess, 2);
+          Exit(bsCancelled);
+        end;
+        if LStopwatch.ElapsedMilliseconds >= ATimeoutMs then
+        begin
+          TerminateProcess(LProcessInfo.hProcess, 3);
+          Exit(bsTimedOut);
+        end;
+      until LWaitResult <> WAIT_TIMEOUT;
+      if LWaitResult <> WAIT_OBJECT_0 then
+        RaiseLastOSError;
+      GetExitCodeProcess(LProcessInfo.hProcess, AExitCode);
+      Result := bsSucceeded;
+    finally
+      TInterlocked.Exchange(FProcessHandle, nil);
+      CloseHandle(LProcessInfo.hThread);
+      CloseHandle(LProcessInfo.hProcess);
+    end;
+  finally
+    CloseHandle(LOutputHandle);
   end;
 end;
 
@@ -371,39 +379,75 @@ begin
   );
 end;
 
-procedure TRadIAOTABuildFacade.RemoveNotifier(
-  const ANotifierIndex: Integer
-);
+function TRadIAOTABuildFacade.ParseBuildMessages(
+  const AOutputPath: string
+): TArray<TRadIACompilerMessage>;
+const
+  CDiagnosticPattern =
+    '^(.+?)\((\d+)(?:,(\d+))?\)\s*:\s*' +
+    '(fatal error|error|warning|hint)\s+([A-Za-z]?\d+)\s*:\s*(.*?)(?:\s+\[.*\])?$';
+var
+  LColumn: Integer;
+  LFileName: string;
+  LLine: string;
+  LLineNumber: Integer;
+  LList: TList<TRadIACompilerMessage>;
+  LMatch: TMatch;
+  LRegex: TRegEx;
+  LSeverity: TRadIACompilerMessageSeverity;
+  LText: string;
 begin
-  if (ANotifierIndex < 0) or GIsShuttingDown then
+  SetLength(Result, 0);
+  if not TFile.Exists(AOutputPath) then
     Exit;
-  RunOnMainThread(
-    procedure
-    var
-      LCompileServices: IOTACompileServices;
+  LRegex := TRegEx.Create(CDiagnosticPattern, [roIgnoreCase]);
+  LList := TList<TRadIACompilerMessage>.Create;
+  try
+    for LLine in TFile.ReadAllLines(AOutputPath) do
     begin
-      if Supports(
-        BorlandIDEServices,
-        IOTACompileServices,
-        LCompileServices
-      ) then
-        LCompileServices.RemoveNotifier(ANotifierIndex);
-    end
-  );
+      LMatch := LRegex.Match(Trim(LLine));
+      if not LMatch.Success then
+        Continue;
+      LFileName := LMatch.Groups[1].Value;
+      LLineNumber := StrToIntDef(LMatch.Groups[2].Value, 0);
+      LColumn := StrToIntDef(LMatch.Groups[3].Value, 0);
+      if Pos('error', LowerCase(LMatch.Groups[4].Value)) > 0 then
+        LSeverity := cmsError
+      else if SameText(LMatch.Groups[4].Value, 'warning') then
+        LSeverity := cmsWarning
+      else
+        LSeverity := cmsInfo;
+      LText := LMatch.Groups[5].Value + ': ' +
+        LMatch.Groups[6].Value;
+      LList.Add(TRadIACompilerMessage.Create(
+        LSeverity,
+        LText,
+        LFileName,
+        LLineNumber,
+        LColumn
+      ));
+    end;
+    Result := LList.ToArray;
+  finally
+    LList.Free;
+  end;
 end;
 
-procedure TRadIAOTABuildFacade.RunOnMainThread(
-  const AAction: TThreadProcedure
-);
+function TRadIAOTABuildFacade.ReadBuildFailureMessage(
+  const AOutputPath: string
+): string;
+const
+  CMaximumFailureCharacters = 4096;
+var
+  LOutput: string;
 begin
-  if GIsShuttingDown then
-    raise EInvalidOperation.Create(
-      'The IDE workspace is shutting down.'
-    );
-  if GetCurrentThreadId = MainThreadID then
-    AAction()
-  else
-    TThread.Synchronize(nil, AAction);
+  Result := '';
+  if not TFile.Exists(AOutputPath) then
+    Exit;
+  LOutput := Trim(TFile.ReadAllText(AOutputPath));
+  if Length(LOutput) > CMaximumFailureCharacters then
+    Delete(LOutput, 1, Length(LOutput) - CMaximumFailureCharacters);
+  Result := LOutput;
 end;
 
 procedure TRadIAOTABuildFacade.SetStatus(
@@ -413,39 +457,17 @@ begin
   TInterlocked.Exchange(FStatus, Ord(AStatus));
 end;
 
-function TRadIAOTABuildFacade.WaitForCompletion(
-  const ANotifier: IRadIACompileWaiter;
-  const ATimeoutMs: Cardinal
-): TRadIABuildStatus;
-var
-  LElapsedMs: UInt64;
-  LStartedAt: UInt64;
-  LWaitMs: Cardinal;
+function TRadIAOTABuildFacade.TargetName(
+  const AMode: TRadIABuildMode
+): string;
 begin
-  LStartedAt := GetTickCount64;
-  repeat
-    if GIsShuttingDown then
-      Exit(bsCancelled);
-
-    LElapsedMs := GetTickCount64 - LStartedAt;
-    if LElapsedMs >= ATimeoutMs then
-    begin
-      Cancel;
-      Exit(bsTimedOut);
-    end;
-
-    LWaitMs := Cardinal(ATimeoutMs - LElapsedMs);
-    if LWaitMs > 250 then
-      LWaitMs := 250;
-    if ANotifier.WaitFor(LWaitMs) = wrSignaled then
-    begin
-      if TOTACompileResult(
-        ANotifier.GetCompileResult
-      ) = crOTASucceeded then
-        Exit(bsSucceeded);
-      Exit(bsFailed);
-    end;
-  until False;
+  case AMode of
+    bmMake: Result := 'Make';
+    bmCheck: Result := 'Build';
+    bmClean: Result := 'Clean';
+  else
+    Result := 'Build';
+  end;
 end;
 
 end.

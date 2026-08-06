@@ -94,10 +94,10 @@ var
 begin
   Assert.IsTrue(FWatches.Add('LCustomer.Id'));
   LExpressions := FWatches.List;
-  Assert.AreEqual(1, Integer(Length(LExpressions)));
+  Assert.AreEqual<Integer>(1, Length(LExpressions));
   Assert.AreEqual('LCustomer.Id', LExpressions[0]);
   Assert.IsTrue(FWatches.Remove('lcustomer.id'));
-  Assert.AreEqual(0, Integer(Length(FWatches.List)));
+  Assert.AreEqual<Integer>(0, Length(FWatches.List));
 end;
 
 procedure TTestRadIADebuggerInspectionTools.EnforcesWatchLimit;
@@ -130,7 +130,7 @@ begin
   FWatches.Add('LCount');
   FWatches.Add('LTotal');
   LValues := FWatches.Evaluate(32);
-  Assert.AreEqual(2, Integer(Length(LValues)));
+  Assert.AreEqual<Integer>(2, Length(LValues));
   Assert.AreEqual('42', LValues[0].ResultText);
   Assert.AreEqual('ok', LValues[1].Status);
 end;
@@ -182,15 +182,20 @@ begin
 end;
 
 procedure TTestRadIADebuggerInspectionTools.Setup;
+var
+  LEvaluator: IRadIADebuggerEvaluationFacade;
+  LSession: IRadIADebuggerSessionFacade;
 begin
   FEvaluator := TRadIAFakeDebuggerInspection.Create;
-  FWatches := TRadIADebuggerWatchService.Create(FEvaluator);
+  LEvaluator := FEvaluator;
+  LSession := FEvaluator;
+  FWatches := TRadIADebuggerWatchService.Create(LEvaluator);
   FRegistry := TRadIAToolRegistry.Create;
   RegisterRadIADebuggerInspectionTools(
     FRegistry,
-    FEvaluator,
+    LEvaluator,
     FWatches,
-    FEvaluator
+    LSession
   );
   FExecutor := TRadIAToolExecutor.Create(FRegistry);
 end;

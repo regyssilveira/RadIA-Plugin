@@ -1,5 +1,11 @@
 /* global postMessageToDelphi */
 
+const AGENT_GIT_TOOLS = new Set([
+  'GetGitStatus',
+  'GetGitDiff',
+  'PreviewGitCommit',
+  'CommitChanges'
+]);
 
 function looksLikePascalCode(code) {
   const text = String(code || '');
@@ -26,10 +32,10 @@ function normalizeCodeLanguage(language, code) {
     '',
     'code',
     'codigo',
-    'cÃ³digo',
+    'c\u00F3digo',
     'snippet',
     'snippet de codigo',
-    'snippet de cÃ³digo'
+    'snippet de c\u00F3digo'
   ];
 
   if (pascalAliases.includes(normalized) ||
@@ -160,6 +166,9 @@ const chatContainer   = document.getElementById('chat-container');
 const btnClearChat    = document.getElementById('btn-clear-chat');
 const btnHistory      = document.getElementById('btn-history');
 const btnSettings     = document.getElementById('btn-settings');
+const btnAgentMode    = document.getElementById('btn-agent-mode');
+const btnTerminal     = document.getElementById('btn-terminal');
+const btnAgentHistory = document.getElementById('btn-agent-history');
 
 const promptTextarea  = document.getElementById('prompt-textarea');
 const btnSendPrompt   = document.getElementById('btn-send-prompt');
@@ -184,17 +193,689 @@ const btnNewChatSidebar = document.getElementById('btn-new-chat-sidebar');
 const sessionsList    = document.getElementById('sessions-list');
 
 let SLASH_COMMANDS = [
-  { name: '/explain', desc: 'Explains the selected code in the editor', shortcut: 'Ctrl+Shift+E' },
-  { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: 'Ctrl+Shift+R' },
-  { name: '/bugs', desc: 'Finds bugs and memory leaks in the selected code', shortcut: 'Ctrl+Shift+B' },
-  { name: '/doc', desc: 'Generates XML documentation for the selected method', shortcut: 'Ctrl+Shift+D' },
-  { name: '/template', desc: 'Opens the prompt templates library', shortcut: 'Ctrl+Shift+T' },
+  { name: '/explain', desc: 'Explains the selected code in the editor', shortcut: '' },
+  { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: '' },
+  { name: '/bugs', desc: 'Finds bugs and memory leaks in the selected code', shortcut: '' },
+  { name: '/doc', desc: 'Generates XML documentation for the selected method', shortcut: '' },
+  { name: '/template', desc: 'Opens the prompt templates library', shortcut: '' },
   { name: '/stacktrace', desc: 'Analyzes an error log or stack trace and points out the root cause', shortcut: '' },
   { name: '/review', desc: 'Performs static analysis on the active unit (leaks/SOLID)', shortcut: '' },
   { name: '/createproject', desc: 'Generates a complete Delphi project from specification', shortcut: '' }
 ];
 let AVAILABLE_TOOLS = [];
+let agentModeEnabled = true;
 const TOOL_CARDS = new Map();
+const AGENT_CARDS = new Map();
+
+function setAgentMode(enabled) {
+  agentModeEnabled = enabled !== false;
+  btnAgentMode.classList.toggle('agent-mode-enabled', agentModeEnabled);
+  btnAgentMode.classList.toggle('agent-mode-disabled', !agentModeEnabled);
+  btnAgentMode.title = `Agent Mode: ${agentModeEnabled ? 'On' : 'Off'}`;
+  btnAgentMode.setAttribute('aria-label', btnAgentMode.title);
+  btnAgentMode.setAttribute('aria-pressed', String(agentModeEnabled));
+  btnAgentMode.querySelector('.btn-label').textContent =
+    agentModeEnabled ? 'Agent On' : 'Agent Off';
+}
+
+function createAgentControl(label, action, disabled = false) {
+  const button = document.createElement('button');
+  button.className = 'agent-control-button';
+  button.textContent = label;
+  button.disabled = disabled;
+  button.addEventListener('click', () => {
+    postMessageToDelphi({ action });
+  });
+  return button;
+}
+
+function parseAgentStepResult(step) {
+  if (!step.success || !step.result) {
+    return null;
+  }
+  if (typeof step.result === 'object') {
+    return step.result;
+  }
+  try {
+    return JSON.parse(step.result);
+  } catch {
+    return null;
+  }
+}
+
+function appendAgentPatchReview(details, step) {
+  const result = parseAgentStepResult(step);
+  if (!result) {
+    return;
+  }
+  const files = RadIAAgentDiff.extractFiles(step.toolName, result);
+  if (files.length === 0) {
+    return;
+  }
+  const review = document.createElement('section');
+  review.className = 'agent-step-diff';
+  const title = document.createElement('strong');
+  title.textContent = `Reviewed changes (${files.length} file(s))`;
+  const note = document.createElement('p');
+  note.textContent =
+    'Review-only snapshot. Applying or reverting still follows the agent consent flow.';
+  review.appendChild(title);
+  review.appendChild(note);
+  files.forEach(file => {
+    const hunk = RadIAAgentDiff.buildHunk(
+      file.originalContent,
+      file.proposedContent
+    );
+    const fileDetails = document.createElement('details');
+    fileDetails.open = files.length === 1;
+    const fileSummary = document.createElement('summary');
+    fileSummary.textContent = file.targetFile || 'Changed file';
+    const hunkMetadata = document.createElement('div');
+    hunkMetadata.className = 'agent-step-diff-metadata';
+    hunkMetadata.textContent =
+      `Starting at line ${hunk.originalStartLine} · ` +
+      `${hunk.originalChangedLines} removed · ` +
+      `${hunk.proposedChangedLines} added`;
+    const comparison = document.createElement('div');
+    comparison.className = 'patch-preview-comparison';
+    const before = document.createElement('pre');
+    before.className = 'patch-preview-before';
+    before.textContent = hunk.original;
+    const after = document.createElement('pre');
+    after.className = 'patch-preview-after';
+    after.textContent = hunk.proposed;
+    comparison.appendChild(before);
+    comparison.appendChild(after);
+    fileDetails.appendChild(fileSummary);
+    fileDetails.appendChild(hunkMetadata);
+    fileDetails.appendChild(comparison);
+    review.appendChild(fileDetails);
+  });
+  details.appendChild(review);
+}
+
+function appendAgentGitDiff(evidence, result) {
+  if (typeof result.diff !== 'string') {
+    return;
+  }
+  const summary = RadIAAgentGit.summarizeDiff(result.diff);
+  const metadata = document.createElement('div');
+  metadata.className = 'agent-step-git-metadata';
+  metadata.textContent =
+    `${summary.files.length} file(s) · ` +
+    `${summary.additions} addition(s) · ${summary.removals} removal(s)`;
+  const diff = document.createElement('pre');
+  diff.className = 'agent-step-git-diff';
+  const maximumVisibleLines = 2000;
+  summary.tokens.slice(0, maximumVisibleLines).forEach(token => {
+    const line = document.createElement('span');
+    line.className = `is-${token.kind}`;
+    line.textContent = token.text + '\n';
+    diff.appendChild(line);
+  });
+  if (summary.tokens.length > maximumVisibleLines) {
+    const truncated = document.createElement('span');
+    truncated.className = 'is-header';
+    truncated.textContent =
+      `… ${summary.tokens.length - maximumVisibleLines} additional line(s) hidden`;
+    diff.appendChild(truncated);
+  }
+  evidence.appendChild(metadata);
+  evidence.appendChild(diff);
+}
+
+function appendAgentGitEvidence(details, step) {
+  if (!AGENT_GIT_TOOLS.has(step.toolName)) {
+    return;
+  }
+  const result = parseAgentStepResult(step);
+  if (!result) {
+    return;
+  }
+  const evidence = document.createElement('section');
+  evidence.className = 'agent-step-git';
+  const title = document.createElement('strong');
+  title.textContent = 'Git evidence';
+  evidence.appendChild(title);
+  if (step.toolName === 'GetGitStatus' && typeof result.status === 'string') {
+    const status = document.createElement('pre');
+    status.textContent = result.status || 'Working tree clean';
+    evidence.appendChild(status);
+  }
+  if (step.toolName === 'PreviewGitCommit') {
+    const preview = document.createElement('div');
+    preview.className = 'agent-step-git-metadata';
+    const paths = Array.isArray(result.paths) ? result.paths.length : 0;
+    preview.textContent =
+      `Message: ${result.message || ''} · ${paths} selected path(s) · ` +
+      `Fingerprint: ${result.fingerprint || 'unavailable'}`;
+    evidence.appendChild(preview);
+  }
+  if (step.toolName === 'CommitChanges' && result.committed === true) {
+    const commit = document.createElement('code');
+    commit.textContent = `Local commit: ${result.commit || 'unavailable'}`;
+    evidence.appendChild(commit);
+  }
+  appendAgentGitDiff(evidence, result);
+  details.appendChild(evidence);
+}
+
+function appendAgentDebugList(evidence, items, formatter, ordered = false) {
+  const list = document.createElement(ordered ? 'ol' : 'ul');
+  RadIAAgentDebug.boundedItems(items).forEach(item => {
+    const row = document.createElement('li');
+    row.textContent = formatter(item);
+    list.appendChild(row);
+  });
+  evidence.appendChild(list);
+}
+
+function appendAgentDebugState(evidence, result) {
+  const state = document.createElement('div');
+  state.className = 'agent-step-debug-metadata';
+  state.textContent =
+    `State: ${result.state || 'unavailable'} · ` +
+    `Process: ${result.osProcessId || result.processId || 0} · ` +
+    `Threads: ${result.threadCount || 0} · ` +
+    `Breakpoints: ${result.breakpointCount || 0}`;
+  evidence.appendChild(state);
+  if (result.location || result.executableName) {
+    const location = document.createElement('code');
+    location.textContent =
+      `${result.executableName || 'process'} · ${result.location || 'no source location'}`;
+    evidence.appendChild(location);
+  }
+}
+
+function appendAgentDebugBreakpoints(evidence, result) {
+  if (Array.isArray(result.breakpoints)) {
+    appendAgentDebugList(evidence, result.breakpoints, breakpoint =>
+      `${breakpoint.enabled ? 'Enabled' : 'Disabled'} · ` +
+      `${breakpoint.valid ? 'valid' : 'pending'} · ` +
+      `${breakpoint.fileName || 'unknown'}:${breakpoint.lineNumber || 0}`
+    );
+    return;
+  }
+  const action = document.createElement('div');
+  action.className = 'agent-step-debug-metadata';
+  action.textContent =
+    `${result.action || 'Breakpoint update'} · ` +
+    `${result.fileName || 'unknown'}:${result.lineNumber || 0} · ` +
+    `Undo with ${result.inverseTool || 'the inverse tool'}`;
+  evidence.appendChild(action);
+}
+
+function appendAgentDebugCallStack(evidence, result) {
+  const status = document.createElement('div');
+  status.className = 'agent-step-debug-metadata';
+  status.textContent =
+    `${result.accessible ? 'Accessible' : 'Unavailable'} · ` +
+    `${result.status || 'unknown'} · ${result.count || 0} frame(s)`;
+  evidence.appendChild(status);
+  appendAgentDebugList(evidence, result.frames, frame =>
+    `${frame.index ?? '?'} · ${frame.header || 'frame'} · ` +
+    `${frame.fileName || 'no source'}:${frame.lineNumber || 0}`,
+  true);
+}
+
+function appendAgentDebugAction(evidence, result) {
+  const action = document.createElement('div');
+  action.className = 'agent-step-debug-metadata';
+  action.textContent =
+    `${result.stateBefore || 'unknown'} → ${result.stateAfter || 'unknown'} · ` +
+    `${result.message || (result.accepted ? 'Accepted' : 'Completed')}`;
+  evidence.appendChild(action);
+}
+
+function appendAgentDebugValue(evidence, result) {
+  const value = document.createElement('dl');
+  const expression = document.createElement('dt');
+  expression.textContent = result.expression || 'Expression';
+  const output = document.createElement('dd');
+  output.textContent =
+    `${result.result ?? 'unavailable'} · ${result.status || 'unknown'} · ` +
+    `${result.canModify ? 'modifiable' : 'read-only'}`;
+  value.appendChild(expression);
+  value.appendChild(output);
+  evidence.appendChild(value);
+}
+
+function appendAgentDebugWatches(evidence, result) {
+  if (Array.isArray(result.watches)) {
+    appendAgentDebugList(evidence, result.watches, watch => {
+      if (typeof watch === 'string') {
+        return watch;
+      }
+      return `${watch.expression || 'expression'} = ${watch.result ?? 'unavailable'} · ` +
+        `${watch.status || 'unknown'}`;
+    });
+    return;
+  }
+  const watch = document.createElement('div');
+  watch.className = 'agent-step-debug-metadata';
+  watch.textContent = `${result.expression || 'Watch'} · updated`;
+  evidence.appendChild(watch);
+}
+
+function appendAgentDebugTimeline(evidence, result) {
+  appendAgentDebugList(evidence, result.events, event =>
+    `#${event.sequence || 0} · ${event.timestampUtc || 'unknown time'} · ` +
+    `${event.kind || 'event'} · ${event.state || 'unknown'} · ` +
+    `${event.details || ''}`,
+  true);
+}
+
+const AGENT_DEBUG_RENDERERS = {
+  state: appendAgentDebugState,
+  breakpoints: appendAgentDebugBreakpoints,
+  callStack: appendAgentDebugCallStack,
+  action: appendAgentDebugAction,
+  value: appendAgentDebugValue,
+  watches: appendAgentDebugWatches,
+  timeline: appendAgentDebugTimeline
+};
+
+function appendAgentDebugEvidence(details, step) {
+  const kind = RadIAAgentDebug.evidenceKind(step.toolName);
+  const renderer = AGENT_DEBUG_RENDERERS[kind];
+  if (!renderer) {
+    return;
+  }
+  const result = parseAgentStepResult(step);
+  if (!result) {
+    return;
+  }
+  const evidence = document.createElement('section');
+  evidence.className = 'agent-step-debug';
+  const title = document.createElement('strong');
+  title.textContent = 'Debug evidence';
+  evidence.appendChild(title);
+  renderer(evidence, result);
+  details.appendChild(evidence);
+}
+
+function createAgentStep(step, status) {
+  const item = document.createElement('li');
+  item.className = `agent-run-step ${step.success ? 'is-success' : 'is-failure'}`;
+  if (step.mutation) item.classList.add('is-mutation');
+
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  const outcome = step.success ? 'completed' : (step.errorCode || 'failed');
+  const duration = Math.max(0, step.durationMilliseconds || 0);
+  summary.textContent =
+    `${step.index}. ${step.toolName} — ${outcome} · ${duration} ms` +
+    (step.mutation ? ' · mutation' : '') +
+    (step.replayOfStepIndex ? ` · replay of ${step.replayOfStepIndex}` : '');
+  details.appendChild(summary);
+
+  const metadata = document.createElement('div');
+  metadata.className = 'agent-run-step-metadata';
+  metadata.textContent =
+    `Correlation: ${step.correlationId || 'unavailable'} · ` +
+    `Started: ${Math.max(0, step.startedElapsedMilliseconds || 0)} ms · ` +
+    `Risk: ${step.risk || 'unknown'}`;
+  details.appendChild(metadata);
+
+  const argumentsTitle = document.createElement('strong');
+  argumentsTitle.textContent = 'Arguments';
+  details.appendChild(argumentsTitle);
+  const argumentsBlock = document.createElement('pre');
+  argumentsBlock.textContent = formatToolPayload(step.arguments);
+  details.appendChild(argumentsBlock);
+
+  const resultTitle = document.createElement('strong');
+  resultTitle.textContent = step.success ? 'Result' : 'Error';
+  details.appendChild(resultTitle);
+  const resultBlock = document.createElement('pre');
+  resultBlock.textContent = formatToolPayload(
+    step.success ? step.result : step.errorMessage
+  );
+  details.appendChild(resultBlock);
+  appendAgentPatchReview(details, step);
+  appendAgentGitEvidence(details, step);
+  appendAgentDebugEvidence(details, step);
+  const replay = document.createElement('button');
+  replay.className = 'agent-step-replay';
+  replay.textContent = 'Replay step';
+  replay.disabled = status !== 'paused';
+  replay.title = status === 'paused'
+    ? 'Replay this exact audited tool call'
+    : 'Pause the agent run before replaying a step';
+  replay.addEventListener('click', () => {
+    const warning =
+      `Replay mutating step ${step.index} (${step.toolName}) with the same arguments?`;
+    if (step.mutation && !confirm(warning)) return;
+    postMessageToDelphi({
+      action: 'replay_agent_step',
+      stepIndex: step.index
+    });
+  });
+  details.appendChild(replay);
+  item.appendChild(details);
+  return item;
+}
+
+function renderAgentImpact(card, steps) {
+  const impact = card.querySelector('.agent-run-impact');
+  impact.replaceChildren();
+  const riskOrder = {
+    unknown: 0,
+    readOnly: 1,
+    reversibleWrite: 2,
+    structuralWrite: 3,
+    execution: 4,
+    destructive: 5,
+    sensitive: 6
+  };
+  let highestRisk = 'unknown';
+  const files = [];
+  steps.forEach(step => {
+    const risk = step.risk || 'unknown';
+    if ((riskOrder[risk] || 0) > (riskOrder[highestRisk] || 0)) {
+      highestRisk = risk;
+    }
+    const affectedFiles = Array.isArray(step.affectedFiles) ? step.affectedFiles : [];
+    affectedFiles.forEach(file => {
+      if (!files.some(existing => existing.toLowerCase() === file.toLowerCase())) {
+        files.push(file);
+      }
+    });
+  });
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  summary.textContent = `Highest risk: ${highestRisk} · ${files.length} affected file(s)`;
+  details.appendChild(summary);
+  if (files.length > 0) {
+    const list = document.createElement('ul');
+    files.forEach(file => {
+      const item = document.createElement('li');
+      item.textContent = file;
+      list.appendChild(item);
+    });
+    details.appendChild(list);
+  }
+  impact.appendChild(details);
+}
+
+function renderAgentValidation(card, state) {
+  const validation = state.validation || {};
+  const validationElement = card.querySelector('.agent-run-validation');
+  const buildStatus = validation.buildStatus ||
+    (validation.buildPassed ? 'succeeded' : 'notRun');
+  let testStatus = 'not-run';
+  if (validation.testsRun) {
+    testStatus = validation.testsPassed ? 'passed' : 'failed';
+  }
+  validationElement.replaceChildren();
+  const indicators = [
+    ['Changes', validation.mutationPending ? 'pending' : 'clean'],
+    ['Build', buildStatus === 'succeeded' ? 'passed' : 'not-passed'],
+    ['Tests', testStatus],
+    [
+      validation.coverageAvailable ?
+        `Coverage ${Math.max(0, validation.coveragePercent || 0)}%` :
+        'Coverage',
+      validation.coverageAvailable ? 'available' : 'not-run'
+    ]
+  ];
+  indicators.forEach(([label, value]) => {
+    const indicator = document.createElement('span');
+    indicator.className = `agent-validation-indicator is-${value}`;
+    indicator.textContent = `${label}: ${value.replace('-', ' ')}`;
+    validationElement.appendChild(indicator);
+  });
+  const evidenceLines = [];
+  if (buildStatus !== 'notRun') {
+    evidenceLines.push(
+      `Build: ${buildStatus} · ` +
+      `${Math.max(0, validation.buildDurationMilliseconds || 0)} ms · ` +
+      `${Math.max(0, validation.buildMessageCount || 0)} compiler message(s)`
+    );
+  }
+  if (validation.testsRun) {
+    evidenceLines.push(
+      `DUnitX: ${validation.testStatus || testStatus} · ` +
+      `${Math.max(0, validation.testDurationMilliseconds || 0)} ms · ` +
+      `${Math.max(0, validation.testTotal || 0)} total · ` +
+      `${Math.max(0, validation.testPassed || 0)} passed · ` +
+      `${Math.max(0, validation.testFailed || 0)} failed · ` +
+      `${Math.max(0, validation.testErrors || 0)} error(s) · ` +
+      `${Math.max(0, validation.testIgnored || 0)} ignored`
+    );
+  }
+  if (validation.coverageAvailable) {
+    evidenceLines.push(
+      `Coverage: ${Math.max(0, validation.coveragePercent || 0)}% · ` +
+      `${Math.max(0, validation.coverageCoveredLines || 0)}/` +
+      `${Math.max(0, validation.coverageSourceLines || 0)} line(s) · ` +
+      `${Math.max(0, validation.coverageSourceFiles || 0)} source file(s) · ` +
+      `${validation.coverageReportPath || 'authoritative report'}`
+    );
+  }
+  if (evidenceLines.length > 0) {
+    const evidence = document.createElement('details');
+    evidence.className = 'agent-validation-evidence';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Validation evidence';
+    const content = document.createElement('pre');
+    content.textContent = evidenceLines.join('\n');
+    evidence.appendChild(summary);
+    evidence.appendChild(content);
+    validationElement.appendChild(evidence);
+  }
+}
+
+function renderAgentPlanItems(planElement, plan) {
+  planElement.replaceChildren();
+  plan.forEach(planStep => {
+    const item = document.createElement('li');
+    const title = planStep?.title || 'Planned step';
+    const description = planStep?.description || '';
+    item.textContent = description ? `${title} — ${description}` : title;
+    planElement.appendChild(item);
+  });
+}
+
+function openAgentPlanEditor(planElement, plan) {
+  planElement.replaceChildren();
+  const editor = document.createElement('div');
+  editor.className = 'agent-plan-editor';
+  const rows = [];
+  const addRow = planStep => {
+    const index = rows.length;
+    const row = document.createElement('div');
+    row.className = 'agent-plan-editor-row';
+    const title = document.createElement('input');
+    title.type = 'text';
+    title.maxLength = 200;
+    title.required = true;
+    title.value = planStep?.title || `Step ${index + 1}`;
+    title.setAttribute('aria-label', `Step ${index + 1} title`);
+    const description = document.createElement('textarea');
+    description.maxLength = 2000;
+    description.rows = 2;
+    description.value = planStep?.description || '';
+    description.setAttribute('aria-label', `Step ${index + 1} description`);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'Remove step';
+    const entry = { row, title, description };
+    remove.addEventListener('click', () => {
+      if (rows.length <= 1) return;
+      rows.splice(rows.indexOf(entry), 1);
+      row.remove();
+    });
+    row.append(title, description, remove);
+    editor.appendChild(row);
+    rows.push(entry);
+  };
+  plan.forEach(addRow);
+  const actions = document.createElement('div');
+  actions.className = 'agent-plan-editor-actions';
+  const add = document.createElement('button');
+  add.textContent = 'Add step';
+  add.addEventListener('click', () => {
+    if (rows.length >= 50) return;
+    addRow({ title: `Step ${rows.length + 1}`, description: '' });
+    editor.appendChild(actions);
+    rows.at(-1).title.focus();
+  });
+  const save = document.createElement('button');
+  save.textContent = 'Save plan';
+  save.addEventListener('click', () => {
+    const updatedPlan = rows.map(row => ({
+      title: row.title.value.trim(),
+      description: row.description.value.trim()
+    }));
+    const invalidRow = rows.find(row => !row.title.value.trim());
+    if (invalidRow) {
+      invalidRow.title.focus();
+      invalidRow.title.reportValidity();
+      return;
+    }
+    postMessageToDelphi({ action: 'update_agent_plan', plan: updatedPlan });
+  });
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancel edit';
+  cancel.addEventListener('click', () => renderAgentPlanItems(planElement, plan));
+  actions.append(add, save, cancel);
+  editor.appendChild(actions);
+  planElement.appendChild(editor);
+  rows[0]?.title.focus();
+}
+
+function renderAgentHistory(data) {
+  const panel = document.createElement('section');
+  panel.className = 'agent-history-panel';
+
+  const header = document.createElement('div');
+  header.className = 'agent-history-header';
+  const title = document.createElement('strong');
+  title.textContent = `Agent runs (${data.total || 0})`;
+  const search = document.createElement('input');
+  search.type = 'search';
+  search.placeholder = 'Search objective, status, or session ID';
+  search.value = data.query || '';
+  const submitSearch = () => {
+    postMessageToDelphi({
+      action: 'search_agent_history',
+      query: search.value.trim()
+    });
+  };
+  search.addEventListener('keydown', event => {
+    if (event.key === 'Enter') submitSearch();
+  });
+  const searchButton = document.createElement('button');
+  searchButton.textContent = 'Search';
+  searchButton.addEventListener('click', submitSearch);
+  header.append(title, search, searchButton);
+  panel.appendChild(header);
+
+  const runs = Array.isArray(data.runs) ? data.runs : [];
+  const list = document.createElement('ol');
+  list.className = 'agent-history-list';
+  runs.forEach(run => {
+    const item = document.createElement('li');
+    const runTitle = document.createElement('strong');
+    runTitle.textContent = run.objective || 'Untitled agent run';
+    const metadata = document.createElement('span');
+    metadata.textContent =
+      `${run.status || 'unknown'} · ${run.stepCount || 0} steps · ` +
+      `${run.updatedAtUtc || 'unknown time'} · ${run.sessionId || ''}`;
+    item.append(runTitle, metadata);
+    list.appendChild(item);
+  });
+  if (runs.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'agent-history-empty';
+    empty.textContent = 'No persisted agent runs match this search.';
+    panel.appendChild(empty);
+  } else {
+    panel.appendChild(list);
+  }
+  chatContainer.appendChild(panel);
+  search.focus();
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function renderAgentState(data) {
+  const state = data?.state;
+  if (!state || typeof state !== 'object') return;
+
+  const sessionId = state.sessionId || 'active';
+  let card = AGENT_CARDS.get(sessionId);
+  if (!card) {
+    card = document.createElement('section');
+    card.className = 'agent-run-card';
+    card.innerHTML =
+      '<div class="agent-run-header">' +
+      '<strong>Agent run</strong><span class="agent-run-status"></span>' +
+      '</div><div class="agent-run-objective"></div>' +
+      '<div class="agent-run-message"></div>' +
+      '<div class="agent-run-metrics"></div>' +
+      '<div class="agent-run-validation"></div>' +
+      '<div class="agent-run-impact"></div>' +
+      '<ol class="agent-run-plan"></ol><ol class="agent-run-steps"></ol>' +
+      '<div class="agent-run-controls"></div>';
+    AGENT_CARDS.set(sessionId, card);
+    chatContainer.appendChild(card);
+  }
+
+  const status = state.status || 'unknown';
+  card.dataset.status = status;
+  card.querySelector('.agent-run-status').textContent = status;
+  card.querySelector('.agent-run-objective').textContent = state.objective || '';
+  card.querySelector('.agent-run-message').textContent = state.message || '';
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const elapsedSeconds = Math.round((state.elapsedMilliseconds || 0) / 1000);
+  let metricsText =
+    `${steps.length}/${state.maxSteps || 0} steps · ` +
+    `${state.totalTokens || 0}/${state.maxTotalTokens || 0} tokens · ` +
+    `${elapsedSeconds}s/${Math.round((state.maxDurationMilliseconds || 0) / 1000)}s`;
+  if (state.pricingConfigured) {
+    const estimatedCost = (state.estimatedCostMicros || 0) / 1000000;
+    const costLimit = (state.maxEstimatedCostMicros || 0) / 1000000;
+    metricsText += ` · USD ${estimatedCost.toFixed(4)}/${costLimit.toFixed(2)}`;
+  } else {
+    metricsText += ' · cost pricing not configured';
+  }
+  card.querySelector('.agent-run-metrics').textContent = metricsText;
+  renderAgentValidation(card, state);
+  renderAgentImpact(card, steps);
+
+  const planElement = card.querySelector('.agent-run-plan');
+  const plan = Array.isArray(state.plan) ? state.plan : [];
+  renderAgentPlanItems(planElement, plan);
+
+  const stepsElement = card.querySelector('.agent-run-steps');
+  stepsElement.replaceChildren();
+  steps.forEach(step => {
+    stepsElement.appendChild(createAgentStep(step, status));
+  });
+
+  const controls = card.querySelector('.agent-run-controls');
+  controls.replaceChildren();
+  controls.appendChild(createAgentControl(
+    'Approve plan',
+    'approve_agent',
+    status !== 'awaitingApproval'
+  ));
+  const editPlan = document.createElement('button');
+  editPlan.className = 'agent-control-button';
+  editPlan.textContent = 'Edit plan';
+  editPlan.disabled = status !== 'awaitingApproval' || plan.length === 0;
+  editPlan.addEventListener('click', () => openAgentPlanEditor(planElement, plan));
+  controls.appendChild(editPlan);
+  controls.appendChild(createAgentControl('Pause', 'pause_agent', status !== 'running'));
+  controls.appendChild(createAgentControl('Resume', 'resume_agent', status !== 'paused'));
+  controls.appendChild(createAgentControl(
+    'Cancel',
+    'cancel_request',
+    status !== 'running'
+  ));
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
 function formatToolPayload(payload) {
   if (payload === undefined || payload === null) {
@@ -277,7 +958,7 @@ function renderToolCall(data) {
   TOOL_CARDS.set(data.correlationId, card);
 }
 
-function createToolActionButton(label, toolName, previewId) {
+function createToolArgumentsButton(label, toolName, args) {
   const button = document.createElement('button');
   button.className = 'tool-action-button';
   button.type = 'button';
@@ -287,10 +968,167 @@ function createToolActionButton(label, toolName, previewId) {
     postMessageToDelphi({
       action: 'execute_tool',
       name: toolName,
-      arguments: { previewId }
+      arguments: args
     });
   });
   return button;
+}
+
+function createToolActionButton(label, toolName, previewId) {
+  return createToolArgumentsButton(label, toolName, { previewId });
+}
+
+function renderKnowledgeSearchResult(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const results = Array.isArray(result.results) ? result.results : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'knowledge-result-summary';
+  summary.textContent = [
+    `${results.length} result(s) for “${result.query || ''}”`,
+    `${Math.max(0, result.durationMs || 0)} ms`
+  ].join(' · ');
+  content.appendChild(summary);
+
+  results.forEach(item => {
+    const source = document.createElement('section');
+    source.className = 'knowledge-result-source';
+
+    const title = document.createElement('strong');
+    title.textContent = `${item.fileName || ''}:${Math.max(1, item.startLine || 1)}`;
+    source.appendChild(title);
+
+    const detail = document.createElement('span');
+    detail.className = 'knowledge-result-detail';
+    detail.textContent = [
+      item.symbol || 'source chunk',
+      item.explanation || '',
+      `score ${Math.max(0, item.score || 0)}`
+    ].filter(Boolean).join(' · ');
+    source.appendChild(detail);
+
+    const excerpt = document.createElement('pre');
+    excerpt.textContent = item.content || '';
+    source.appendChild(excerpt);
+
+    const navigation = item.navigation || {};
+    if (navigation.tool && navigation.arguments) {
+      source.appendChild(
+        createToolArgumentsButton(
+          'Open source',
+          navigation.tool,
+          navigation.arguments
+        )
+      );
+    }
+    content.appendChild(source);
+  });
+}
+
+function renderKnowledgeDocumentResult(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const chunks = Array.isArray(result.chunks) ? result.chunks : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'knowledge-result-summary';
+  summary.textContent = `${chunks.length} chunk(s) from ${result.fileName || ''}`;
+  content.appendChild(summary);
+
+  chunks.forEach(item => {
+    const source = document.createElement('section');
+    source.className = 'knowledge-result-source';
+
+    const title = document.createElement('strong');
+    title.textContent = [
+      result.fileName || '',
+      Math.max(1, item.startLine || 1)
+    ].join(':');
+    source.appendChild(title);
+
+    const detail = document.createElement('span');
+    detail.className = 'knowledge-result-detail';
+    detail.textContent = item.symbol || 'source chunk';
+    source.appendChild(detail);
+
+    const excerpt = document.createElement('pre');
+    excerpt.textContent = item.content || '';
+    source.appendChild(excerpt);
+
+    const navigation = item.navigation || {};
+    if (navigation.tool && navigation.arguments) {
+      source.appendChild(
+        createToolArgumentsButton(
+          'Open source',
+          navigation.tool,
+          navigation.arguments
+        )
+      );
+    }
+    content.appendChild(source);
+  });
+}
+
+function createHealthActionButton(command) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'tool-action-button project-health-action';
+  button.textContent = 'Prepare action';
+  button.title = command;
+  button.addEventListener('click', () => setPromptText(command));
+  return button;
+}
+
+function renderProjectHealth(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const risks = Array.isArray(result.risks) ? result.risks : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'project-health-summary';
+
+  const score = document.createElement('strong');
+  score.className = `project-health-score project-health-${result.health || 'attention'}`;
+  score.textContent = `${Math.max(0, result.score ?? 0)}/100`;
+
+  const project = document.createElement('span');
+  project.textContent = result.projectName || 'No active project';
+  summary.appendChild(score);
+  summary.appendChild(project);
+  content.appendChild(summary);
+
+  if (risks.length === 0) {
+    const healthy = document.createElement('div');
+    healthy.className = 'project-health-empty';
+    healthy.textContent = 'No project health risks were detected.';
+    content.appendChild(healthy);
+    return;
+  }
+
+  risks.forEach(risk => {
+    const item = document.createElement('section');
+    item.className = 'project-health-risk';
+
+    const header = document.createElement('div');
+    header.className = 'project-health-risk-header';
+
+    const severity = document.createElement('span');
+    severity.className = `project-health-severity severity-${risk.severity || 'medium'}`;
+    severity.textContent = risk.severity || 'medium';
+    header.appendChild(severity);
+    header.append(risk.code || 'project_risk');
+    item.appendChild(header);
+
+    const message = document.createElement('div');
+    message.textContent = risk.message || '';
+    item.appendChild(message);
+
+    if (risk.recommendedCommand) {
+      item.appendChild(createHealthActionButton(risk.recommendedCommand));
+    }
+    content.appendChild(item);
+  });
 }
 
 function renderPatchPreview(card, result, actionName) {
@@ -410,82 +1248,59 @@ function renderComponentPropertyPreview(card, result, actionName) {
   );
 }
 
+const TOOL_RESULT_RENDERERS = {
+  GetProjectHealth: [renderProjectHealth, ''],
+  SearchProjectKnowledge: [renderKnowledgeSearchResult, ''],
+  GetKnowledgeDocument: [renderKnowledgeDocumentResult, ''],
+  PreparePatch: [renderPatchPreview, 'ApplyPatch'],
+  ApplyPatch: [renderPatchPreview, 'RevertPatch'],
+  PrepareComponentLayout: [
+    renderComponentLayoutPreview,
+    'ApplyComponentLayout'
+  ],
+  ApplyComponentLayout: [
+    renderComponentLayoutPreview,
+    'RevertComponentLayout'
+  ],
+  RevertComponentLayout: [
+    renderComponentLayoutPreview,
+    'ApplyComponentLayout'
+  ],
+  PrepareComponentProperty: [
+    renderComponentPropertyPreview,
+    'ApplyComponentProperty'
+  ],
+  ApplyComponentProperty: [
+    renderComponentPropertyPreview,
+    'RevertComponentProperty'
+  ],
+  RevertComponentProperty: [
+    renderComponentPropertyPreview,
+    'ApplyComponentProperty'
+  ]
+};
+
+function renderDefaultToolResult(content, data) {
+  content.textContent = data.success
+    ? formatToolPayload(data.result ?? data.resultText)
+    : `${data.errorCode || 'tool_error'}: ${data.errorMessage || 'Tool execution failed.'}`;
+}
+
 function renderToolResult(data) {
   const card = TOOL_CARDS.get(data.correlationId) ||
     createToolCard(data.name, data.correlationId);
   const status = card.querySelector('.tool-card-status');
   const content = card.querySelector('.tool-card-content');
+  const renderer = data.success && data.result
+    ? TOOL_RESULT_RENDERERS[data.name]
+    : undefined;
 
   card.classList.toggle('tool-card-error', !data.success);
   status.textContent = data.success ? 'Completed' : 'Failed';
-  if (data.success && data.name === 'PreparePatch' && data.result) {
-    renderPatchPreview(card, data.result, 'ApplyPatch');
-  } else if (data.success && data.name === 'ApplyPatch' && data.result) {
-    renderPatchPreview(card, data.result, 'RevertPatch');
-  } else if (
-    data.success &&
-    data.name === 'PrepareComponentLayout' &&
-    data.result
-  ) {
-    renderComponentLayoutPreview(
-      card,
-      data.result,
-      'ApplyComponentLayout'
-    );
-  } else if (
-    data.success &&
-    data.name === 'ApplyComponentLayout' &&
-    data.result
-  ) {
-    renderComponentLayoutPreview(
-      card,
-      data.result,
-      'RevertComponentLayout'
-    );
-  } else if (
-    data.success &&
-    data.name === 'RevertComponentLayout' &&
-    data.result
-  ) {
-    renderComponentLayoutPreview(
-      card,
-      data.result,
-      'ApplyComponentLayout'
-    );
-  } else if (
-    data.success &&
-    data.name === 'PrepareComponentProperty' &&
-    data.result
-  ) {
-    renderComponentPropertyPreview(
-      card,
-      data.result,
-      'ApplyComponentProperty'
-    );
-  } else if (
-    data.success &&
-    data.name === 'ApplyComponentProperty' &&
-    data.result
-  ) {
-    renderComponentPropertyPreview(
-      card,
-      data.result,
-      'RevertComponentProperty'
-    );
-  } else if (
-    data.success &&
-    data.name === 'RevertComponentProperty' &&
-    data.result
-  ) {
-    renderComponentPropertyPreview(
-      card,
-      data.result,
-      'ApplyComponentProperty'
-    );
+  if (renderer) {
+    renderer[0](card, data.result, renderer[1]);
   } else {
-    content.textContent = data.success
-      ? formatToolPayload(data.result ?? data.resultText)
-      : `${data.errorCode || 'tool_error'}: ${data.errorMessage || 'Tool execution failed.'}`;
+    renderDefaultToolResult(content, data);
   }
   TOOL_CARDS.delete(data.correlationId);
   chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1112,6 +1927,13 @@ promptTextarea.addEventListener('keydown', (e) => {
 
 btnSendPrompt.addEventListener('click', handleSend);
 
+btnAgentMode.addEventListener('click', () => {
+  postMessageToDelphi({
+    action: 'set_agent_mode',
+    enabled: !agentModeEnabled
+  });
+});
+
 function handleSend() {
   if (requestInProgress) {
     postMessageToDelphi({ action: 'cancel_request' });
@@ -1185,6 +2007,10 @@ btnHistory.addEventListener('click', () => {
     requestHistoryLoad();
   }
   sessionsSidebar.classList.toggle('collapsed');
+  btnHistory.setAttribute(
+    'aria-expanded',
+    String(!sessionsSidebar.classList.contains('collapsed'))
+  );
 });
 
 btnSettings.addEventListener('click', () => {
@@ -1193,6 +2019,14 @@ btnSettings.addEventListener('click', () => {
     return;
   }
   postMessageToDelphi({ action: 'open_settings' });
+});
+
+btnTerminal.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'open_terminal' });
+});
+
+btnAgentHistory.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'search_agent_history', query: '' });
 });
 
 
@@ -1246,16 +2080,38 @@ selectModel.addEventListener('change', () => {
   postMessageToDelphi({ action: 'change_model', model: selectModel.value });
 });
 
-modelDropdownTrigger.addEventListener('click', (e) => {
+function setDropdownOpen(wrapper, trigger, open) {
+  wrapper.classList.toggle('open', open);
+  trigger.setAttribute('aria-expanded', String(open));
+}
+
+function closeDropdowns() {
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+}
+
+function toggleModelDropdown() {
   if (modelDropdownWrapper.classList.contains('disabled')) return;
-  e.stopPropagation();
-  providerDropdownWrapper.classList.remove('open');
-  modelDropdownWrapper.classList.toggle('open');
-  if (modelDropdownWrapper.classList.contains('open')) {
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+  const open = !modelDropdownWrapper.classList.contains('open');
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, open);
+  if (open) {
     modelSearchInput.value = '';
     filterModels('');
     modelSearchInput.focus();
   }
+}
+
+modelDropdownTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleModelDropdown();
+});
+
+modelDropdownTrigger.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleModelDropdown();
 });
 
 modelSearchInput.addEventListener('click', (e) => {
@@ -1278,16 +2134,38 @@ function filterModels(query) {
   }
 }
 
-providerDropdownTrigger.addEventListener('click', (e) => {
+function toggleProviderDropdown() {
   if (providerDropdownWrapper.classList.contains('disabled')) return;
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
+  const open = !providerDropdownWrapper.classList.contains('open');
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, open);
+  if (open) {
+    const selected = providerOptionsList.querySelector('[aria-pressed="true"]');
+    const first = providerOptionsList.querySelector('button');
+    (selected || first)?.focus();
+  }
+}
+
+providerDropdownTrigger.addEventListener('click', (e) => {
   e.stopPropagation();
-  modelDropdownWrapper.classList.remove('open');
-  providerDropdownWrapper.classList.toggle('open');
+  toggleProviderDropdown();
+});
+
+providerDropdownTrigger.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleProviderDropdown();
 });
 
 document.addEventListener('click', () => {
-  modelDropdownWrapper.classList.remove('open');
-  providerDropdownWrapper.classList.remove('open');
+  closeDropdowns();
+  hideSlashPopup();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  closeDropdowns();
   hideSlashPopup();
 });
 
@@ -1324,7 +2202,7 @@ function renderSlashCommands() {
   }
 
   filteredSlashCommands.forEach((cmd, idx) => {
-    const item = document.createElement('div');
+    const item = document.createElement('li');
     item.classList.add('slash-command-item');
     if (idx === slashPopupSelectedIndex) {
       item.classList.add('selected');
@@ -1474,7 +2352,7 @@ function applyCode(id) {
 
 function renderTokenStats(text) {
   const parts = String(text || '')
-    .split('Â·')
+    .split('\u00B7')
     .map(part => part.trim())
     .filter(Boolean);
 
@@ -1514,7 +2392,7 @@ function renderTokenStats(text) {
     if (index > 0) {
       const separator = document.createElement('span');
       separator.className = 'token-stat-separator';
-      separator.textContent = 'Â·';
+      separator.textContent = '\u00B7';
       statusText.appendChild(separator);
     }
 
@@ -1847,8 +2725,10 @@ function initializeConfig(data) {
     }
     selectProvider.appendChild(opt);
 
-    const div = document.createElement('div');
+    const div = document.createElement('button');
+    div.type = 'button';
     div.classList.add('custom-dropdown-option');
+    div.setAttribute('aria-pressed', String(p.value === data.activeProvider));
     if (p.value === data.activeProvider) {
       div.classList.add('selected');
     }
@@ -1866,16 +2746,26 @@ function initializeConfig(data) {
     div.addEventListener('click', () => {
       const prevSelected = providerOptionsList.querySelector('.custom-dropdown-option.selected');
       if (prevSelected) prevSelected.classList.remove('selected');
+      if (prevSelected) prevSelected.setAttribute('aria-pressed', 'false');
 
       div.classList.add('selected');
+      div.setAttribute('aria-pressed', 'true');
       selectProvider.value = p.value;
       selectProvider.dispatchEvent(new Event('change'));
 
       providerDropdownValue.innerHTML = `${getProviderIcon(p.value)}<span>${p.name}</span>`;
-      providerDropdownWrapper.classList.remove('open');
+      setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+      providerDropdownTrigger.focus();
+    });
+    div.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      div.click();
     });
 
-    providerOptionsList.appendChild(div);
+    const listItem = document.createElement('li');
+    listItem.appendChild(div);
+    providerOptionsList.appendChild(listItem);
   });
 
   providerDropdownValue.innerHTML = activeIcon
@@ -1884,11 +2774,12 @@ function initializeConfig(data) {
 
   updateModelsList(data.models, data.activeModel);
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
+  setAgentMode(data.agentModeEnabled);
 
   if (data.slashCommands && Array.isArray(data.slashCommands)) {
     const baseCommands = [
-      { name: '/template', desc: 'Opens the prompt templates library', shortcut: 'Ctrl+Shift+T' },
-      { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: 'Ctrl+Shift+R' },
+      { name: '/template', desc: 'Opens the prompt templates library', shortcut: '' },
+      { name: '/refactor', desc: 'Optimizes and refactors the selected code', shortcut: '' },
       { name: '/optimize', desc: 'Performs performance analysis and optimizations', shortcut: '' },
       { name: '/review', desc: 'Performs static analysis on the active unit (leaks/SOLID)', shortcut: '' }
     ];
@@ -1898,15 +2789,10 @@ function initializeConfig(data) {
       const commandName = cmd.command.toLowerCase();
       SLASH_COMMANDS = SLASH_COMMANDS.filter(c => c.name.toLowerCase() !== commandName);
 
-      let shortcut = '';
-      if (cmd.command === '/explain') shortcut = 'Ctrl+Shift+E';
-      else if (cmd.command === '/bugs') shortcut = 'Ctrl+Shift+B';
-      else if (cmd.command === '/doc') shortcut = 'Ctrl+Shift+D';
-
       SLASH_COMMANDS.push({
         name: cmd.command,
         desc: cmd.description || cmd.name,
-        shortcut: shortcut
+        shortcut: ''
       });
     });
   }
@@ -1924,7 +2810,7 @@ function updateModelsList(models, activeModel) {
     selectModel.appendChild(opt);
 
     modelDropdownValue.textContent = 'No models available';
-    modelOptionsList.innerHTML = '<div class="no-sessions">No models available</div>';
+    modelOptionsList.innerHTML = '<li class="no-sessions">No models available</li>';
     return;
   }
 
@@ -1939,8 +2825,10 @@ function updateModelsList(models, activeModel) {
     }
     selectModel.appendChild(opt);
 
-    const div = document.createElement('div');
+    const div = document.createElement('button');
+    div.type = 'button';
     div.classList.add('custom-dropdown-option');
+    div.setAttribute('aria-pressed', String(m === activeModel));
     if (m === activeModel) {
       div.classList.add('selected');
       modelDropdownValue.textContent = m;
@@ -1952,16 +2840,26 @@ function updateModelsList(models, activeModel) {
 
       const selectedOpt = modelOptionsList.querySelector('.custom-dropdown-option.selected');
       if (selectedOpt) selectedOpt.classList.remove('selected');
+      if (selectedOpt) selectedOpt.setAttribute('aria-pressed', 'false');
       div.classList.add('selected');
+      div.setAttribute('aria-pressed', 'true');
 
       modelDropdownValue.textContent = m;
       selectModel.value = m;
-      modelDropdownWrapper.classList.remove('open');
+      setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
 
       selectModel.dispatchEvent(new Event('change'));
     });
+    div.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      div.click();
+      modelDropdownTrigger.focus();
+    });
 
-    modelOptionsList.appendChild(div);
+    const listItem = document.createElement('li');
+    listItem.appendChild(div);
+    modelOptionsList.appendChild(listItem);
   });
 
   if (!activeModel && models.length > 0) {
@@ -1976,17 +2874,23 @@ function setRequestState(inProgress) {
   if (inProgress) {
     btnSendPrompt.classList.add('stop-btn');
     btnSendPrompt.title = 'Cancel request';
+    btnSendPrompt.setAttribute('aria-label', 'Cancel request');
     selectProvider.disabled = true;
     providerDropdownWrapper.classList.add('disabled');
+    providerDropdownTrigger.setAttribute('aria-disabled', 'true');
     selectModel.disabled = true;
     modelDropdownWrapper.classList.add('disabled');
+    modelDropdownTrigger.setAttribute('aria-disabled', 'true');
   } else {
     btnSendPrompt.classList.remove('stop-btn');
     btnSendPrompt.title = 'Send message';
+    btnSendPrompt.setAttribute('aria-label', 'Send message');
     selectProvider.disabled = false;
     providerDropdownWrapper.classList.remove('disabled');
+    providerDropdownTrigger.setAttribute('aria-disabled', 'false');
     selectModel.disabled = false;
     modelDropdownWrapper.classList.remove('disabled');
+    modelDropdownTrigger.setAttribute('aria-disabled', 'false');
   }
 }
 
@@ -2003,12 +2907,12 @@ function updateSessions(sessions, activeSessionId) {
   sessionsList.innerHTML = '';
 
   if (!sessions || sessions.length === 0) {
-    sessionsList.innerHTML = `<div class="no-sessions">No conversations active</div>`;
+    sessionsList.innerHTML = `<li class="no-sessions">No conversations active</li>`;
     return;
   }
 
   sessions.forEach(session => {
-    const item = document.createElement('div');
+    const item = document.createElement('li');
     item.classList.add('session-item');
     if (session.id === activeSessionId) {
       item.classList.add('active');
@@ -2027,6 +2931,7 @@ function updateSessions(sessions, activeSessionId) {
     btnRename.classList.add('session-action-btn');
     btnRename.disabled = requestInProgress;
     btnRename.title = "Rename Conversation";
+    btnRename.setAttribute('aria-label', `Rename conversation ${session.name}`);
     btnRename.innerHTML = SVG_ICONS.edit;
     btnRename.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2041,6 +2946,7 @@ function updateSessions(sessions, activeSessionId) {
     btnDelete.classList.add('session-action-btn', 'delete-btn');
     btnDelete.disabled = requestInProgress;
     btnDelete.title = "Delete Conversation";
+    btnDelete.setAttribute('aria-label', `Delete conversation ${session.name}`);
     btnDelete.innerHTML = SVG_ICONS.trash;
     btnDelete.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2220,6 +3126,9 @@ if (globalThis.chrome?.webview) {
       case 'show_tools':            showTools(data.tools);                                       break;
       case 'tool_call':             renderToolCall(data);                                        break;
       case 'tool_result':           renderToolResult(data);                                      break;
+      case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
+      case 'agent_state':           renderAgentState(data);                                      break;
+      case 'agent_history':         renderAgentHistory(data);                                    break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

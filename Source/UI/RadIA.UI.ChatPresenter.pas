@@ -5,12 +5,16 @@ interface
 uses
   System.SysUtils, System.Classes, System.JSON, System.Generics.Collections, RadIA.Core.Interfaces,
   RadIA.Core.Sessions, RadIA.Core.PromptTemplates,
+  RadIA.Core.DeclarativeExtensions,
+  RadIA.Core.DeclarativeTools,
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
+  RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
+  RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
   RadIA.Core.Tools, RadIA.Core.ToolSecurity, RadIA.Core.Workspace;
 
 type
   IRadIAChatView = interface
-    ['{8A5FC9BC-0D5C-4F7F-9ED6-9D7CC5EF5E18}']
+    ['{479812B4-9226-4D20-8867-0A6F05C947D7}']
     procedure SetRequestState(const AInProgress: Boolean);
     procedure UpdateTokensStats(const AStats: string);
     procedure PostMessageToWeb(const AJson: string);
@@ -35,6 +39,8 @@ type
     function SaveDialogExecute(out AFileName: string): Boolean;
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
+    procedure OpenTerminal;
+    procedure OpenExtensionManager;
   end;
 
   TStreamChunkCtx = record
@@ -54,6 +60,9 @@ type
     FSessionManager: TRadIASessionManager;
     FPromptHistoryManager: TPromptHistoryManager;
     FTemplateManager: TPromptTemplateManager;
+    FDeclarativeExtensionManager:
+      TRadIADeclarativeExtensionManager;
+    FDeclarativeToolBinder: TRadIADeclarativeToolBinder;
     FAccumulatedUsage: TTokenUsage;
     FHistory: TArray<IRadIAChatMessage>;
     FRequestInProgress: Boolean;
@@ -75,6 +84,10 @@ type
     FToolExecutor: IRadIAToolExecutor;
     FToolPolicyExecutor: IRadIAToolPolicyExecutor;
     FWorkspace: IRadIAWorkspaceFacade;
+    FAgentModeEnabled: Boolean;
+    FAgentController: IRadIAAgentRunController;
+    FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
+    FCliProcessSession: IRadIACliProcessSession;
 
     procedure UpdateModelsCombo;
 
@@ -86,6 +99,10 @@ type
    out AActiveModel: string): TJSONArray;
 
     function BuildSlashCommandsJsonArray: TJSONArray;
+    procedure AddUtilitySlashCommands(const ACommands: TJSONArray);
+    function BuildReservedSlashCommands: TArray<string>;
+    function BuildDeclarativeExtensionStatus: string;
+    procedure ReloadDeclarativeExtensions;
     function BuildToolsJsonArray: TJSONArray;
     function ToolRiskName(const ARisk: TRadIAToolRisk): string;
 
@@ -115,6 +132,10 @@ type
     procedure DispatchSystemMessage(const AAction: string; const AJson: TJSONObject; var AHandled: Boolean);
     procedure DispatchSessionMessage(const AAction: string; const AJson: TJSONObject; var AHandled: Boolean);
     procedure DispatchInteractionMessage(const AAction: string; const AJson: TJSONObject; var AHandled: Boolean);
+    function TryDispatchAgentInteraction(
+      const AAction: string;
+      const AJson: TJSONObject
+    ): Boolean;
     procedure DispatchWebMessage(const AAction: string; const AJson: TJSONObject);
     function CheckQuotaAvailability: Boolean;
     function DetermineRequestProfile(const APromptText: string): TAIRequestProfile;
@@ -136,11 +157,63 @@ type
       const AName: string;
       const AArgumentsJson: string
     );
+    procedure SetAgentModeEnabled(const AEnabled: Boolean);
+    procedure PostAgentModeToWeb;
+    procedure StartAgentRun(const AObjective: string);
+    function TryStartCliAgentRun(const AObjective: string): Boolean;
+    procedure HandleCliAgentFinished(
+      const AResult: TRadIACliProcessResult;
+      const AClientName: string
+    );
+    procedure PauseAgentRun;
+    procedure ResumeAgentRun;
+    procedure ReplayAgentStep(const AStepIndex: Integer);
+    procedure UpdateAgentPlan(const APlanJson: string);
+    procedure PostAgentHistoryToWeb(const AQuery: string);
+    procedure PostAgentStateToWeb(const ASnapshotJson: string);
+    procedure HandleAgentFinished(
+      const AResult: TRadIAAgentRunResult;
+      const AProvider: string;
+      const AModel: string
+    );
+    function BuildAgentToolCatalogJson: string;
     procedure HandleGenerateDTOMessage(const AInput, AInputType, AOutputType: string);
     procedure HandleCreateProjectMessage(const AFilesJson: string);
     procedure HandleCancelRequestMessage;
     procedure HandleClearChatMessage;
     procedure HandleStreamChunkMessage(const AText: string; const AIsDone: Boolean; const AError: string);
+    function TryHandleAgentCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentHistoryCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentPlanCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentPreparationCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleAgentReplayCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleCatalogCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryHandleJourneyCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    procedure HandleExplicitToolCommand(
+      const APromptText: string;
+      const ACommandText: string
+    );
     function TryHandleToolPrompt(const APromptText: string): Boolean;
     procedure ExecuteRegisteredTool(
       const AName: string;
@@ -164,10 +237,20 @@ type
     procedure PostToolsCatalogToWeb(const AAction: string);
     procedure PostJsonToWeb(const AJson: TJSONObject);
   public
-    constructor Create(const AView: IRadIAChatView; const AConfig: IRadIAConfig;
-      const AService: IRadIAService = nil; const ADataDir: string = '';
-      const AToolRegistry: IRadIAToolRegistry = nil;
-      const AToolExecutor: IRadIAToolExecutor = nil);
+    constructor Create(
+      const AView: IRadIAChatView;
+      const AConfig: IRadIAConfig;
+      const AService: IRadIAService = nil;
+      const ADataDir: string = ''
+    ); overload;
+    constructor Create(
+      const AView: IRadIAChatView;
+      const AConfig: IRadIAConfig;
+      const AService: IRadIAService;
+      const ADataDir: string;
+      const AToolRegistry: IRadIAToolRegistry;
+      const AToolExecutor: IRadIAToolExecutor
+    ); overload;
     destructor Destroy; override;
 
     procedure Initialize(const AWebFilesDir: string);
@@ -234,6 +317,9 @@ uses
   RadIA.Core.ProviderRegistry, RadIA.Core.ConversationExporter,
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
+  RadIA.Core.AgentPricing, RadIA.Core.AgentProvider,
+  RadIA.Core.CliManager, RadIA.Core.CliMcpSettings,
+  RadIA.Core.Journeys,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -256,6 +342,23 @@ constructor TRadIAChatPresenter.Create(
   const AView: IRadIAChatView;
   const AConfig: IRadIAConfig;
   const AService: IRadIAService;
+  const ADataDir: string
+);
+begin
+  Create(
+    AView,
+    AConfig,
+    AService,
+    ADataDir,
+    nil,
+    nil
+  );
+end;
+
+constructor TRadIAChatPresenter.Create(
+  const AView: IRadIAChatView;
+  const AConfig: IRadIAConfig;
+  const AService: IRadIAService;
   const ADataDir: string;
   const AToolRegistry: IRadIAToolRegistry;
   const AToolExecutor: IRadIAToolExecutor
@@ -273,6 +376,8 @@ begin
   FActiveModels := [];
   FPendingPrompt := '';
   FLoginPopupOpen := False;
+  FAgentModeEnabled := True;
+  FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
 
   // WebViewBridge events removed
 
@@ -325,6 +430,16 @@ begin
 
   FTemplateManager := TPromptTemplateManager.Create(FDataDir);
   FTemplateManager.Load;
+  FDeclarativeExtensionManager :=
+    TRadIADeclarativeExtensionManager.Create(
+      TPath.Combine(FDataDir, 'extensions')
+    );
+  if Assigned(FToolRegistry) and Assigned(FToolExecutor) then
+    FDeclarativeToolBinder := TRadIADeclarativeToolBinder.Create(
+      FToolRegistry,
+      FToolExecutor
+    );
+  ReloadDeclarativeExtensions;
 
   FSessionManager := TRadIASessionManager.Create(TPath.Combine(FDataDir, 'sessions'));
   FSessionManager.ActiveSessionId := FConfig.ActiveSessionId;
@@ -332,6 +447,17 @@ end;
 
 destructor TRadIAChatPresenter.Destroy;
 begin
+  if Assigned(FCliProcessSession) then
+  begin
+    FCliProcessSession.Cancel;
+    FCliProcessSession := nil;
+  end;
+  if Assigned(FAgentController) then
+  begin
+    FAgentController.Cancel;
+    FAgentController := nil;
+  end;
+
   if Assigned(FModelsProvider) then
   begin
     try
@@ -350,9 +476,12 @@ begin
     FAIService.CancelCurrentRequest;
 
   FPromptHistoryManager.Free;
+  FDeclarativeToolBinder.Free;
+  FDeclarativeExtensionManager.Free;
   FTemplateManager.Free;
   FSessionManager.Free;
   FPendingWebMessages.Free;
+  FAgentExecutorSettings.Free;
 
   if FOwnsService and Assigned(FAIService) then
     FAIService := nil;
@@ -528,38 +657,191 @@ begin
   end;
 end;
 
+function TRadIAChatPresenter.BuildDeclarativeExtensionStatus: string;
+var
+  LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
+  LSourceName: string;
+begin
+  LDiagnostics := FDeclarativeExtensionManager.GetDiagnostics;
+  if Length(LDiagnostics) = 0 then
+    Exit('No declarative extension manifests were found.');
+  Result := '';
+  for LDiagnostic in LDiagnostics do
+  begin
+    if Result <> '' then
+      Result := Result + sLineBreak;
+    LSourceName := ExtractFileName(LDiagnostic.FileName);
+    if LSourceName.IsEmpty then
+      LSourceName := 'declarative tools';
+    Result := Result + '[' + LDiagnostic.Status + '] ' +
+      LSourceName + ': ' +
+      LDiagnostic.Message;
+  end;
+end;
+
+function TRadIAChatPresenter.BuildReservedSlashCommands:
+  TArray<string>;
+const
+  CNativeCommands: array[0..14] of string = (
+    '/agent',
+    '/agent run',
+    '/agent plan',
+    '/agent replay',
+    '/agent pause',
+    '/agent resume',
+    '/agent cancel',
+    '/agent history',
+    '/terminal',
+    '/settings',
+    '/extensions',
+    '/health',
+    '/doctor',
+    '/tools',
+    '/revoke-tools'
+  );
+var
+  LCommand: string;
+  LCommands: TList<string>;
+  LJourney: TRadIAJourneyDefinition;
+  LTemplate: TPromptTemplate;
+begin
+  LCommands := TList<string>.Create;
+  try
+    for LCommand in CNativeCommands do
+      LCommands.Add(LCommand);
+    LCommands.Add('/tool');
+    LCommands.Add('/extensions reload');
+    LCommands.Add('/journey');
+    for LJourney in TRadIAJourneyCatalog.All do
+      LCommands.Add(LJourney.Command);
+    for LTemplate in FTemplateManager.GetTemplates do
+      if not LTemplate.SlashCommand.IsEmpty then
+        LCommands.Add(LTemplate.SlashCommand);
+    Result := LCommands.ToArray;
+  finally
+    LCommands.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.ReloadDeclarativeExtensions;
+begin
+  FDeclarativeExtensionManager.Reload(
+    BuildReservedSlashCommands
+  );
+  if not Assigned(FDeclarativeToolBinder) then
+    Exit;
+  try
+    FDeclarativeToolBinder.Reload(
+      FDeclarativeExtensionManager.GetTools,
+      FDeclarativeExtensionManager.GetWorkflows
+    );
+  except
+    on E: Exception do
+    begin
+      FDeclarativeExtensionManager.ReportRuntimeError(E.Message);
+      TLogger.Log(
+        'Declarative tool reload rejected: ' + E.Message,
+        'Extensions'
+      );
+    end;
+  end;
+end;
+
 function TRadIAChatPresenter.BuildSlashCommandsJsonArray: TJSONArray;
 var
+  LCommand: TRadIADeclarativeCommand;
+  LJourney: TRadIAJourneyDefinition;
   LTemplate: TPromptTemplate;
   LSlashObj: TJSONObject;
 begin
+  ReloadDeclarativeExtensions;
   Result := TJSONArray.Create;
   LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/tools');
-  LSlashObj.AddPair('description', 'Lists available read-only IDE tools.');
-  LSlashObj.AddPair('name', 'IDE Tools');
+  LSlashObj.AddPair('command', '/agent');
+  LSlashObj.AddPair(
+    'description',
+    'Toggles agent mode or sets it with on/off.'
+  );
+  LSlashObj.AddPair('name', 'Agent Mode');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
   LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/revoke-tools');
+  LSlashObj.AddPair('command', '/agent run');
   LSlashObj.AddPair(
     'description',
-    'Revokes all IDE tool permissions granted for this session.'
+    'Starts an observable agent run for an explicit objective.'
   );
-  LSlashObj.AddPair('name', 'Revoke Tool Permissions');
+  LSlashObj.AddPair('name', 'Run Agent');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
 
   LSlashObj := TJSONObject.Create;
-  LSlashObj.AddPair('command', '/tool');
+  LSlashObj.AddPair('command', '/agent plan');
   LSlashObj.AddPair(
     'description',
-    'Runs a read-only IDE tool with optional JSON arguments.'
+    'Replaces the pending plan with a validated JSON step array.'
   );
-  LSlashObj.AddPair('name', 'Run IDE Tool');
+  LSlashObj.AddPair('name', 'Edit Agent Plan');
   LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
   Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent replay');
+  LSlashObj.AddPair(
+    'description',
+    'Replays one audited tool step while the agent run is paused.'
+  );
+  LSlashObj.AddPair('name', 'Replay Agent Step');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent pause');
+  LSlashObj.AddPair('description', 'Pauses the active agent run.');
+  LSlashObj.AddPair('name', 'Pause Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent resume');
+  LSlashObj.AddPair('description', 'Resumes the paused agent checkpoint.');
+  LSlashObj.AddPair('name', 'Resume Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent cancel');
+  LSlashObj.AddPair('description', 'Cancels the active agent run.');
+  LSlashObj.AddPair('name', 'Cancel Agent');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/agent history');
+  LSlashObj.AddPair(
+    'description',
+    'Searches persisted agent runs without exposing tool payloads.'
+  );
+  LSlashObj.AddPair('name', 'Agent Run History');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
+  AddUtilitySlashCommands(Result);
+
+  for LJourney in TRadIAJourneyCatalog.All do
+  begin
+    LSlashObj := TJSONObject.Create;
+    LSlashObj.AddPair('command', LJourney.Command);
+    LSlashObj.AddPair('description', LJourney.Description);
+    LSlashObj.AddPair('name', LJourney.Name);
+    LSlashObj.AddPair(
+      'isProjectGenerator',
+      TJSONBool.Create(False)
+    );
+    Result.AddElement(LSlashObj);
+  end;
 
   for LTemplate in FTemplateManager.GetTemplates do
   begin
@@ -573,6 +855,79 @@ begin
       Result.AddElement(LSlashObj);
     end;
   end;
+  for LCommand in FDeclarativeExtensionManager.GetCommands do
+  begin
+    LSlashObj := TJSONObject.Create;
+    LSlashObj.AddPair('command', LCommand.SlashCommand);
+    LSlashObj.AddPair('description', LCommand.Description);
+    LSlashObj.AddPair(
+      'name',
+      LCommand.Name + ' (' + LCommand.Kind + ': ' +
+      LCommand.ExtensionId + ')'
+    );
+    LSlashObj.AddPair(
+      'isProjectGenerator',
+      TJSONBool.Create(False)
+    );
+    Result.AddElement(LSlashObj);
+  end;
+end;
+
+procedure TRadIAChatPresenter.AddUtilitySlashCommands(
+  const ACommands: TJSONArray
+);
+  procedure AddCommand(
+    const ACommand: string;
+    const ADescription: string;
+    const AName: string
+  );
+  var
+    LSlashObj: TJSONObject;
+  begin
+    LSlashObj := TJSONObject.Create;
+    LSlashObj.AddPair('command', ACommand);
+    LSlashObj.AddPair('description', ADescription);
+    LSlashObj.AddPair('name', AName);
+    LSlashObj.AddPair(
+      'isProjectGenerator',
+      TJSONBool.Create(False)
+    );
+    ACommands.AddElement(LSlashObj);
+  end;
+begin
+  AddCommand('/terminal', 'Opens the integrated terminal.', 'Open Terminal');
+  AddCommand('/settings', 'Opens RadIA settings.', 'Open Settings');
+  AddCommand(
+    '/extensions',
+    'Opens the extension manager.',
+    'Manage Extensions'
+  );
+  AddCommand(
+    '/health',
+    'Summarizes project health and prioritized risks.',
+    'Project Health'
+  );
+  AddCommand(
+    '/doctor',
+    'Diagnoses the RadIA installation and first-run readiness.',
+    'Installation Doctor'
+  );
+  AddCommand('/tools', 'Lists available read-only IDE tools.', 'IDE Tools');
+  AddCommand(
+    '/revoke-tools',
+    'Revokes all IDE tool permissions granted for this session.',
+    'Revoke Tool Permissions'
+  );
+  AddCommand(
+    '/tool',
+    'Runs a read-only IDE tool with optional JSON arguments.',
+    'Run IDE Tool'
+  );
+  AddCommand(
+    '/extensions reload',
+    'Reloads and diagnoses declarative command extensions.',
+    'Reload Extensions'
+  );
 end;
 
 function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;
@@ -884,12 +1239,8 @@ begin
 end;
 
 procedure TRadIAChatPresenter.HandleGlobalPromptRequest(const APrompt: string; const AOpenChat: Boolean);
-var
-  LProcessed: string;
 begin
-  LProcessed := PreProcessPrompt(APrompt);
-  PostToWebView('add_message', 'user', APrompt);
-  SendPromptToAI(LProcessed);
+  SendPromptText(APrompt);
 end;
 
 procedure TRadIAChatPresenter.SendPrompt;
@@ -1036,7 +1387,7 @@ begin
     LStats := Self.FAccumulatedUsage.FormatStats;
     if Self.FConfig.QuotaEnabled and (not Self.FConfig.IsWebLoginProvider(AActiveProvider)) then
     begin
-      LStats := LStats + Format(' Â· Quota %d%%',
+      LStats := LStats + Format(' ' + #$00B7 + ' Quota %d%%',
         [Round((Self.FConfig.QuotaUsed / Self.FConfig.QuotaLimit) * 100)]);
     end;
 
@@ -1255,7 +1606,12 @@ begin
     FCancelledByUser := True;
     TLogger.Log('CancelRequest: User requested cancellation.', 'UI');
     FView.SetRequestState(False);
-    FAIService.CancelCurrentRequest;
+    if Assigned(FCliProcessSession) and FCliProcessSession.IsRunning then
+      FCliProcessSession.Cancel
+    else if Assigned(FAgentController) and FAgentController.IsRunning then
+      FAgentController.Cancel
+    else
+      FAIService.CancelCurrentRequest;
   end;
 end;
 
@@ -1292,7 +1648,7 @@ begin
       Self.FConfig.AddToQuotaUsage(LUsage);
     LStats := Self.FAccumulatedUsage.FormatStats;
     if Self.FConfig.QuotaEnabled and (not Self.FConfig.IsWebLoginProvider(AActiveProvider)) then
-      LStats := LStats + Format(' Â· Quota %d%%',
+      LStats := LStats + Format(' ' + #$00B7 + ' Quota %d%%',
         [Round((Self.FConfig.QuotaUsed / Self.FConfig.QuotaLimit) * 100)]);
     Self.PostToWebView('update_tokens', '', LStats);
   end;
@@ -1637,6 +1993,8 @@ begin
     HandleReadyMessage
   else if AAction = 'open_settings' then
     HandleOpenSettingsMessage
+  else if AAction = 'open_terminal' then
+    FView.OpenTerminal
   else if AAction = 'change_provider' then
     HandleChangeProviderMessage(AJson.GetValue<string>('provider', ''))
   else if AAction = 'change_model' then
@@ -1714,31 +2072,223 @@ begin
       AJson.GetValue<string>('text', ''),
       AJson.GetValue<Boolean>('isDone', False),
       AJson.GetValue<string>('error', ''))
-  else
+  else if not TryDispatchAgentInteraction(AAction, AJson) then
     AHandled := False;
 end;
 
-function TRadIAChatPresenter.TryHandleToolPrompt(
-  const APromptText: string
+function TRadIAChatPresenter.TryDispatchAgentInteraction(
+  const AAction: string;
+  const AJson: TJSONObject
 ): Boolean;
 var
-  LArgumentsJson: string;
-  LCommand: string;
-  LSeparator: Integer;
-  LText: string;
-  LToolName: string;
+  LPlan: TJSONValue;
 begin
-  Result := False;
-  LText := Trim(APromptText);
+  Result := True;
+  if AAction = 'set_agent_mode' then
+    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
+  else if AAction = 'pause_agent' then
+    PauseAgentRun
+  else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
+    ResumeAgentRun
+  else if AAction = 'search_agent_history' then
+    PostAgentHistoryToWeb(AJson.GetValue<string>('query', ''))
+  else if AAction = 'update_agent_plan' then
+  begin
+    LPlan := AJson.GetValue('plan');
+    if Assigned(LPlan) then
+      UpdateAgentPlan(LPlan.ToJSON)
+    else
+      UpdateAgentPlan('');
+  end
+  else if AAction = 'replay_agent_step' then
+    ReplayAgentStep(AJson.GetValue<Integer>('stepIndex', 0))
+  else
+    Result := False;
+end;
 
-  if SameText(LText, '/tools') then
+function TRadIAChatPresenter.TryHandleAgentCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := True;
+  if TryHandleAgentPreparationCommand(APromptText, ACommandText) then
+    Exit;
+  if ACommandText.StartsWith('/agent run ', True) then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    if not FAgentModeEnabled then
+    begin
+      PostToWebView(
+        'add_message',
+        'assistant',
+        'Agent mode is off. Enable it before starting an agent run.'
+      );
+      Exit(True);
+    end;
+    StartAgentRun(
+      Trim(Copy(ACommandText, Length('/agent run ') + 1, MaxInt))
+    );
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/agent pause') then
+  begin
+    PauseAgentRun;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/agent resume') then
+  begin
+    ResumeAgentRun;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/agent cancel') then
+  begin
+    CancelRequest;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/agent') or
+    SameText(ACommandText, '/agent on') or
+    SameText(ACommandText, '/agent off') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    if SameText(ACommandText, '/agent on') then
+      SetAgentModeEnabled(True)
+    else if SameText(ACommandText, '/agent off') then
+      SetAgentModeEnabled(False)
+    else
+      SetAgentModeEnabled(not FAgentModeEnabled);
+    Exit;
+  end;
+  Result := False;
+end;
+
+function TRadIAChatPresenter.TryHandleAgentHistoryCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := SameText(ACommandText, '/agent history') or
+    ACommandText.StartsWith('/agent history ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  PostAgentHistoryToWeb(
+    Trim(Copy(ACommandText, Length('/agent history') + 1, MaxInt))
+  );
+end;
+
+function TRadIAChatPresenter.TryHandleAgentPreparationCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := TryHandleAgentHistoryCommand(APromptText, ACommandText);
+  if not Result then
+    Result := TryHandleAgentPlanCommand(APromptText, ACommandText);
+  if not Result then
+    Result := TryHandleAgentReplayCommand(APromptText, ACommandText);
+end;
+
+function TRadIAChatPresenter.TryHandleAgentPlanCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := ACommandText.StartsWith('/agent plan ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  UpdateAgentPlan(
+    Trim(Copy(ACommandText, Length('/agent plan ') + 1, MaxInt))
+  );
+end;
+
+function TRadIAChatPresenter.TryHandleAgentReplayCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LStepIndex: Integer;
+  LValue: string;
+begin
+  Result := ACommandText.StartsWith('/agent replay ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  LValue := Trim(Copy(
+    ACommandText,
+    Length('/agent replay ') + 1,
+    MaxInt
+  ));
+  if not TryStrToInt(LValue, LStepIndex) then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent replay requires a numeric step index.'
+    );
+    Exit;
+  end;
+  ReplayAgentStep(LStepIndex);
+end;
+
+function TRadIAChatPresenter.TryHandleCatalogCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := True;
+  if SameText(ACommandText, '/terminal') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FView.OpenTerminal;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/settings') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FView.OpenSettingsDialog;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/extensions') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FView.OpenExtensionManager;
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/health') then
+  begin
+    HandleExplicitToolCommand(
+      APromptText,
+      '/tool GetProjectHealth {}'
+    );
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/doctor') then
+  begin
+    HandleExplicitToolCommand(
+      APromptText,
+      '/tool GetInstallationHealth {}'
+    );
+    Exit;
+  end;
+
+  if SameText(ACommandText, '/tools') then
   begin
     PostToWebView('add_message', 'user', APromptText);
     PostToolsCatalogToWeb('show_tools');
-    Exit(True);
+    Exit;
   end;
 
-  if SameText(LText, '/revoke-tools') then
+  if SameText(ACommandText, '/revoke-tools') then
   begin
     PostToWebView('add_message', 'user', APromptText);
     if Assigned(FToolPolicyExecutor) then
@@ -1748,15 +2298,36 @@ begin
       'assistant',
       'All session tool permissions were revoked.'
     );
-    Exit(True);
+    Exit;
   end;
 
-  if not SameText(LText, '/tool') and
-    not LText.StartsWith('/tool ', True) then
+  if SameText(ACommandText, '/extensions reload') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    ReloadDeclarativeExtensions;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      BuildDeclarativeExtensionStatus
+    );
+    SendInitialConfigToWeb;
     Exit;
+  end;
+  Result := False;
+end;
 
+procedure TRadIAChatPresenter.HandleExplicitToolCommand(
+  const APromptText: string;
+  const ACommandText: string
+);
+var
+  LArgumentsJson: string;
+  LCommand: string;
+  LSeparator: Integer;
+  LToolName: string;
+begin
   PostToWebView('add_message', 'user', APromptText);
-  LCommand := Trim(Copy(LText, Length('/tool') + 1, MaxInt));
+  LCommand := Trim(Copy(ACommandText, Length('/tool') + 1, MaxInt));
   LSeparator := Pos(' ', LCommand);
   if LSeparator > 0 then
   begin
@@ -1772,7 +2343,92 @@ begin
   if LArgumentsJson = '' then
     LArgumentsJson := '{}';
   ExecuteRegisteredTool(LToolName, LArgumentsJson);
+end;
+
+function TRadIAChatPresenter.TryHandleToolPrompt(
+  const APromptText: string
+): Boolean;
+var
+  LText: string;
+begin
+  LText := Trim(APromptText);
+  if TryHandleJourneyCommand(APromptText, LText) then
+    Exit(True);
+  if TryHandleAgentCommand(APromptText, LText) then
+    Exit(True);
+  if TryHandleCatalogCommand(APromptText, LText) then
+    Exit(True);
+  Result := SameText(LText, '/tool') or
+    LText.StartsWith('/tool ', True);
+  if Result then
+    HandleExplicitToolCommand(APromptText, LText);
+end;
+
+function TRadIAChatPresenter.TryHandleJourneyCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LContext: string;
+  LDeclarative: TRadIADeclarativeCommand;
+  LDefinition: TRadIAJourneyDefinition;
+  LIsNativeJourney: Boolean;
+  LObjective: string;
+begin
   Result := True;
+  if SameText(ACommandText, '/journey') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView(
+      'add_message',
+      'assistant',
+      TRadIAJourneyCatalog.HelpText
+    );
+    Exit;
+  end;
+  try
+    LIsNativeJourney := TRadIAJourneyCatalog.Resolve(
+      ACommandText,
+      LDefinition,
+      LContext
+    );
+    if not LIsNativeJourney then
+    begin
+      ReloadDeclarativeExtensions;
+      if not FDeclarativeExtensionManager.TryResolveInput(
+        ACommandText,
+        LDeclarative,
+        LContext
+      ) or not SameText(LDeclarative.Kind, 'journey') then
+        Exit(False);
+    end;
+  except
+    on E: EArgumentException do
+    begin
+      PostToWebView('add_message', 'user', APromptText);
+      PostToWebView('add_message', 'assistant', E.Message);
+      Exit;
+    end;
+  end;
+  PostToWebView('add_message', 'user', APromptText);
+  if not FAgentModeEnabled then
+    SetAgentModeEnabled(True);
+  if LIsNativeJourney then
+    LObjective := LDefinition.BuildAgentObjective(LContext)
+  else
+  begin
+    LObjective := LDeclarative.Prompt + sLineBreak + sLineBreak +
+      'Mandatory RadIA safety gates:' + sLineBreak +
+      '- Inspect the active workspace before proposing changes.' + sLineBreak +
+      '- Present a reviewable plan before the first tool call.' + sLineBreak +
+      '- Use only registered tools through central consent and auditing.' + sLineBreak +
+      '- Preview mutations and preserve independent rollback evidence.' + sLineBreak +
+      '- Build and run focused tests before claiming completion.';
+    if not LContext.IsEmpty then
+      LObjective := LObjective + sLineBreak + sLineBreak +
+        'User-provided context: ' + LContext;
+  end;
+  StartAgentRun(LObjective);
 end;
 
 procedure TRadIAChatPresenter.ExecuteRegisteredTool(
@@ -1788,6 +2444,16 @@ var
   LRequest: TRadIAToolRequest;
   LResult: TRadIAToolResult;
 begin
+  if not FAgentModeEnabled then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent mode is off. Enable it with the Agent button or /agent on.'
+    );
+    Exit;
+  end;
+
   LCorrelationId := TGUID.NewGuid.ToString;
   PostToolCallToWeb(AName, AArgumentsJson, LCorrelationId);
 
@@ -1937,6 +2603,535 @@ begin
   end;
 end;
 
+procedure TRadIAChatPresenter.SetAgentModeEnabled(const AEnabled: Boolean);
+begin
+  if not AEnabled and Assigned(FAgentController) and
+    FAgentController.IsRunning then
+    FAgentController.Cancel;
+  FAgentModeEnabled := AEnabled;
+  PostAgentModeToWeb;
+  if FAgentModeEnabled then
+    PostToWebView('add_message', 'assistant', 'Agent mode is enabled.')
+  else
+    PostToWebView('add_message', 'assistant', 'Agent mode is disabled.');
+end;
+
+function TRadIAChatPresenter.BuildAgentToolCatalogJson: string;
+var
+  LTools: TJSONArray;
+begin
+  LTools := BuildToolsJsonArray;
+  try
+    Result := LTools.ToJSON;
+  finally
+    LTools.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.HandleAgentFinished(
+  const AResult: TRadIAAgentRunResult;
+  const AProvider: string;
+  const AModel: string
+);
+var
+  LAssistantMessage: IRadIAChatMessage;
+  LGuard: IRadIALifecycleGuard;
+begin
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.Queue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if not LGuard.IsAlive then
+          Exit;
+        FRequestInProgress := False;
+        FCancelledByUser := AResult.Status = asCancelled;
+        FView.SetRequestState(False);
+        LAssistantMessage := TRadIAChatMessage.CreateMessage(
+          mrAssistant,
+          AResult.Message,
+          AProvider,
+          AModel
+        );
+        FHistory := FHistory + [LAssistantMessage];
+        SaveChatHistory;
+        PostToWebView(
+          'add_message',
+          'assistant',
+          AResult.Message,
+          AProvider,
+          AModel
+        );
+      end
+    )
+  );
+end;
+
+procedure TRadIAChatPresenter.PauseAgentRun;
+begin
+  if Assigned(FAgentController) and FAgentController.IsRunning then
+    FAgentController.Pause;
+end;
+
+procedure TRadIAChatPresenter.PostAgentStateToWeb(
+  const ASnapshotJson: string
+);
+var
+  LGuard: IRadIALifecycleGuard;
+begin
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.Queue(
+    nil,
+    TThreadProcedure(
+      procedure
+      var
+        LJson: TJSONObject;
+        LState: TJSONValue;
+      begin
+        if not LGuard.IsAlive then
+          Exit;
+        LState := TJSONObject.ParseJSONValue(ASnapshotJson);
+        if not Assigned(LState) then
+          Exit;
+        LJson := TJSONObject.Create;
+        try
+          LJson.AddPair('action', 'agent_state');
+          LJson.AddPair('state', LState);
+          PostJsonToWeb(LJson);
+        finally
+          LJson.Free;
+        end;
+      end
+    )
+  );
+end;
+
+procedure TRadIAChatPresenter.PostAgentHistoryToWeb(
+  const AQuery: string
+);
+const
+  MAX_VISIBLE_RUNS = 50;
+var
+  LArray: TJSONArray;
+  LCheckpointDirectory: string;
+  LIndex: Integer;
+  LJson: TJSONObject;
+  LLastVisibleIndex: Integer;
+  LRunJson: TJSONObject;
+  LRuns: TArray<TRadIAAgentCheckpointSummary>;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  try
+    LRuns := LStore.Search(AQuery);
+  finally
+    LStore.Free;
+  end;
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'agent_history');
+    LJson.AddPair('query', AQuery);
+    LJson.AddPair('total', TJSONNumber.Create(Length(LRuns)));
+    LArray := TJSONArray.Create;
+    LJson.AddPair('runs', LArray);
+    LLastVisibleIndex := High(LRuns);
+    if LLastVisibleIndex >= MAX_VISIBLE_RUNS then
+      LLastVisibleIndex := MAX_VISIBLE_RUNS - 1;
+    for LIndex := 0 to LLastVisibleIndex do
+    begin
+      LRunJson := TJSONObject.Create;
+      LRunJson.AddPair('sessionId', LRuns[LIndex].SessionId);
+      LRunJson.AddPair('objective', LRuns[LIndex].Objective);
+      LRunJson.AddPair('status', LRuns[LIndex].Status);
+      LRunJson.AddPair(
+        'stepCount',
+        TJSONNumber.Create(LRuns[LIndex].StepCount)
+      );
+      LRunJson.AddPair('updatedAtUtc', LRuns[LIndex].UpdatedAtUtc);
+      LArray.AddElement(LRunJson);
+    end;
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.ResumeAgentRun;
+begin
+  if not Assigned(FAgentController) or FAgentController.IsRunning then
+    Exit;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  FAgentController.Resume(FSessionManager.ActiveSessionId);
+end;
+
+procedure TRadIAChatPresenter.ReplayAgentStep(
+  const AStepIndex: Integer
+);
+begin
+  if AStepIndex < 1 then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent replay requires a positive step index.'
+    );
+    Exit;
+  end;
+  if not Assigned(FAgentController) or FAgentController.IsRunning then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Pause an active agent run before replaying one of its steps.'
+    );
+    Exit;
+  end;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  FAgentController.ReplayStep(
+    FSessionManager.ActiveSessionId,
+    AStepIndex
+  );
+end;
+
+procedure TRadIAChatPresenter.UpdateAgentPlan(
+  const APlanJson: string
+);
+var
+  LCheckpointDirectory: string;
+  LSessionId: string;
+  LSnapshot: string;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  LSessionId := FSessionManager.ActiveSessionId;
+  if LSessionId = '' then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'There is no active chat session whose agent plan can be edited.'
+    );
+    Exit;
+  end;
+  LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  try
+    try
+      LSnapshot := LStore.UpdatePlan(LSessionId, APlanJson);
+      PostAgentStateToWeb(LSnapshot);
+    except
+      on E: Exception do
+        PostToWebView(
+          'add_message',
+          'assistant',
+          'The agent plan was not updated: ' + E.Message
+        );
+    end;
+  finally
+    LStore.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.StartAgentRun(
+  const AObjective: string
+);
+var
+  LActiveModel: string;
+  LActiveProvider: string;
+  LCheckpointDirectory: string;
+  LDecisionProvider: IRadIAAgentDecisionProvider;
+  LGuard: IRadIALifecycleGuard;
+  LLimits: TRadIAAgentLimits;
+  LPricing: TRadIAAgentPricing;
+  LPricingCatalog: TRadIAAgentPricingCatalog;
+  LProviderSettings: TRadIAAgentProviderSettings;
+  LProject: TRadIAProjectSnapshot;
+  LProjectId: string;
+  LSessionId: string;
+  LStore: IRadIAAgentCheckpointStore;
+  LUserMessage: IRadIAChatMessage;
+begin
+  if TryStartCliAgentRun(AObjective) then
+    Exit;
+  if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Agent runtime is unavailable because the IDE tool service is not ready.'
+    );
+    Exit;
+  end;
+  if not CheckQuotaAvailability then
+    Exit;
+
+  LActiveProvider := FConfig.GetActiveProvider;
+  LActiveModel := FConfig.GetActiveModel(LActiveProvider);
+  if FConfig.IsWebLoginProvider(LActiveProvider) then
+    LActiveModel := 'Web Login';
+  LSessionId := FSessionManager.ActiveSessionId;
+  if LSessionId = '' then
+  begin
+    CreateNewSession;
+    LSessionId := FSessionManager.ActiveSessionId;
+  end;
+
+  LProjectId := '';
+  if Assigned(FWorkspace) then
+  begin
+    LProject := FWorkspace.GetActiveProject;
+    LProjectId := LProject.FileName;
+  end;
+  LPricingCatalog := TRadIAAgentPricingCatalog.Create(
+    TPath.Combine(FDataDir, 'agent-pricing.json')
+  );
+  try
+    if LPricingCatalog.TryResolve(
+      LActiveProvider,
+      LActiveModel,
+      LPricing
+    ) then
+    begin
+      LProviderSettings := TRadIAAgentProviderSettings.WithPricing(
+        BuildAgentToolCatalogJson,
+        LPricing
+      );
+      LLimits := TRadIAAgentLimits.Create(
+        20,
+        3,
+        15 * 60 * 1000,
+        100000,
+        LPricingCatalog.DefaultRunBudgetMicros
+      );
+    end
+    else
+    begin
+      LProviderSettings := TRadIAAgentProviderSettings.Default(
+        BuildAgentToolCatalogJson
+      );
+      LLimits := TRadIAAgentLimits.Default;
+    end;
+  finally
+    LPricingCatalog.Free;
+  end;
+  LDecisionProvider := TRadIAAgentServiceDecisionProvider.Create(
+    FAIService,
+    FHistory,
+    LProviderSettings
+  );
+  LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  FAgentController := TRadIAAgentRunController.Create(
+    FToolExecutor,
+    LDecisionProvider,
+    LStore,
+    procedure(const ASnapshotJson: string)
+    begin
+      if LGuard.IsAlive then
+        PostAgentStateToWeb(ASnapshotJson);
+    end,
+    procedure(const AResult: TRadIAAgentRunResult)
+    begin
+      if LGuard.IsAlive then
+        HandleAgentFinished(AResult, LActiveProvider, LActiveModel);
+    end
+  );
+
+  LUserMessage := TRadIAChatMessage.CreateMessage(
+    mrUser,
+    AObjective,
+    LActiveProvider,
+    LActiveModel
+  );
+  FHistory := FHistory + [LUserMessage];
+  SaveChatHistory;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  FAgentController.Start(
+    AObjective,
+    LSessionId,
+    LProjectId,
+    LLimits
+  );
+end;
+
+function TRadIAChatPresenter.TryStartCliAgentRun(
+  const AObjective: string
+): Boolean;
+var
+  LClientSettings: TRadIACliMcpClientSettings;
+  LClientStore: TRadIACliMcpSettings;
+  LDefinition: TRadIACliDefinition;
+  LDetection: TRadIACliDetection;
+  LDetector: TRadIACliDetector;
+  LGuard: IRadIALifecycleGuard;
+  LInvocation: TRadIACliInvocation;
+  LProject: TRadIAProjectSnapshot;
+  LSettings: TRadIAAgentExecutorSettings;
+  LUserMessage: IRadIAChatMessage;
+  LWorkingDirectory: string;
+begin
+  LSettings := FAgentExecutorSettings.Load;
+  Result := LSettings.Kind = aekCli;
+  if not Result then
+    Exit;
+  if not CheckQuotaAvailability then
+    Exit;
+  if not TRadIACliCatalog.FindById(LSettings.CliClientId, LDefinition) then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'The selected CLI executor is no longer supported.'
+    );
+    Exit;
+  end;
+  LProject := Default(TRadIAProjectSnapshot);
+  if Assigned(FWorkspace) then
+    LProject := FWorkspace.GetActiveProject;
+  LWorkingDirectory := ExtractFileDir(LProject.FileName);
+  if LWorkingDirectory = '' then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Open a Delphi project before starting an external CLI agent.'
+    );
+    Exit;
+  end;
+
+  LClientStore := TRadIACliMcpSettings.Create;
+  try
+    LClientSettings := LClientStore.Load(LDefinition.Id, '', '');
+  finally
+    LClientStore.Free;
+  end;
+  LDetector := TRadIACliDetector.Create;
+  try
+    LDetection := LDetector.Detect(
+      LDefinition,
+      LClientSettings.CliExecutablePath
+    );
+  finally
+    LDetector.Free;
+  end;
+  if not LDetection.Installed then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      LDefinition.DisplayName +
+        ' was not found. Open Settings > CLI & MCP to diagnose it.'
+    );
+    Exit;
+  end;
+
+  LInvocation := TRadIACliInvocationBuilder.Build(
+    LDefinition,
+    LDetection.ExecutablePath,
+    AObjective,
+    LWorkingDirectory
+  );
+  LUserMessage := TRadIAChatMessage.CreateMessage(
+    mrUser,
+    AObjective,
+    LDefinition.DisplayName,
+    'CLI'
+  );
+  FHistory := FHistory + [LUserMessage];
+  SaveChatHistory;
+  FRequestInProgress := True;
+  FCancelledByUser := False;
+  FView.SetRequestState(True);
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  FCliProcessSession := TRadIACliProcessRunner.Start(
+    LInvocation,
+    15 * 60 * 1000,
+    nil,
+    nil,
+    procedure(AResult: TRadIACliProcessResult)
+    begin
+      TThread.Queue(
+        nil,
+        procedure
+        begin
+          if LGuard.IsAlive then
+            Self.HandleCliAgentFinished(
+              AResult,
+              LDefinition.DisplayName
+            );
+        end
+      );
+    end
+  );
+end;
+
+procedure TRadIAChatPresenter.HandleCliAgentFinished(
+  const AResult: TRadIACliProcessResult;
+  const AClientName: string
+);
+var
+  LMessage: IRadIAChatMessage;
+  LResponse: string;
+begin
+  FCliProcessSession := nil;
+  FRequestInProgress := False;
+  FView.SetRequestState(False);
+  if AResult.Cancelled or FCancelledByUser then
+    LResponse := 'CLI agent execution was cancelled.'
+  else if AResult.TimedOut then
+    LResponse := 'CLI agent execution exceeded the 15-minute limit.'
+  else if not AResult.Succeeded then
+  begin
+    LResponse := Trim(AResult.StdErr);
+    if LResponse = '' then
+      LResponse := Trim(AResult.StdOut);
+    if LResponse = '' then
+      LResponse := Format(
+        'CLI agent failed with exit code %d.',
+        [AResult.ExitCode]
+      );
+  end
+  else
+    LResponse := TRadIACliOutputParser.ExtractFinalText(AResult.StdOut);
+  LMessage := TRadIAChatMessage.CreateMessage(
+    mrAssistant,
+    LResponse,
+    AClientName,
+    'CLI'
+  );
+  FHistory := FHistory + [LMessage];
+  SaveChatHistory;
+  PostToWebView(
+    'add_message',
+    'assistant',
+    LResponse,
+    AClientName,
+    'CLI'
+  );
+end;
+
+procedure TRadIAChatPresenter.PostAgentModeToWeb;
+var
+  LJson: TJSONObject;
+begin
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'agent_mode_changed');
+    LJson.AddPair('enabled', TJSONBool.Create(FAgentModeEnabled));
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
+end;
+
 procedure TRadIAChatPresenter.PostToolsCatalogToWeb(
   const AAction: string
 );
@@ -2033,6 +3228,7 @@ end;
 function TRadIAChatPresenter.FindTemplateForCommand(const ACommand, AArgument: string;
   out ATemplate: TPromptTemplate): Boolean;
 var
+  LDeclarativeCommand: TRadIADeclarativeCommand;
   LTemp: TPromptTemplate;
   LFallbackNames: TArray<string>;
   LFallbackCommands: TArray<string>;
@@ -2055,6 +3251,22 @@ begin
       ATemplate := LTemp;
       Exit(True);
     end;
+  end;
+
+  ReloadDeclarativeExtensions;
+  if FDeclarativeExtensionManager.TryResolve(
+    ACommand,
+    LDeclarativeCommand
+  ) then
+  begin
+    ATemplate := Default(TPromptTemplate);
+    ATemplate.Name := LDeclarativeCommand.Name;
+    ATemplate.Description := LDeclarativeCommand.Description;
+    ATemplate.Template := LDeclarativeCommand.Prompt;
+    ATemplate.SlashCommand := LDeclarativeCommand.SlashCommand;
+    ATemplate.IsSystem := False;
+    ATemplate.IsCustomized := False;
+    Exit(True);
   end;
 
   LFallbackCommands := ['/review', '/explain', '/refactor', '/optimize'];
@@ -2298,6 +3510,7 @@ begin
     LJson.AddPair('models', BuildModelsJsonArray(LActiveProvider, LIsWebLogin, LActiveModel));
     LJson.AddPair('slashCommands', BuildSlashCommandsJsonArray);
     LJson.AddPair('tools', BuildToolsJsonArray);
+    LJson.AddPair('agentModeEnabled', TJSONBool.Create(FAgentModeEnabled));
     LJson.AddPair('activeProvider', LActiveProvider);
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));

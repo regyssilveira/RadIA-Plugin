@@ -4,10 +4,14 @@ interface
 
 uses
   System.Classes, RadIA.Core.Interfaces, RadIA.Core.TokenUsage,
-  RadIA.Core.SettingsStorage;
+  RadIA.Core.SettingsStorage, RadIA.Core.InlineShortcuts;
 
 type
-  TRadIAConfig = class(TInterfacedObject, IRadIAConfig)
+  TRadIAConfig = class(
+    TInterfacedObject,
+    IRadIAConfig,
+    IRadIAInlineShortcutConfig
+  )
   private
     class var FBaseRegistryPath: string;
     class var FInstance: TRadIAConfig;
@@ -30,6 +34,14 @@ type
     FAutocompleteProvider: string;
     FAutocompleteModel: string;
     FAutocompleteDelay: Integer;
+    FAutocompleteExcludedFiles: string;
+    FAutocompleteExcludedLanguages: string;
+    FAutocompleteExcludedProjects: string;
+    FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeApprovedHistoryEnabled: Boolean;
+    FKnowledgeExcludedFiles: string;
+    FKnowledgeExcludedProjects: string;
+    FInlineShortcutProfile: string;
     FAzureApiVersion: string;
     FAwsAccessKeyId: string;
     FAwsSecretAccessKey: string;
@@ -37,6 +49,11 @@ type
     FAwsSessionToken: string;
     FInjectDelphiVersion: Boolean;
     FConciseResponses: Boolean;
+    FConsentTimeoutSeconds: Integer;
+    FConsentShowArguments: Boolean;
+    FConsentRememberReversible: Boolean;
+    FConsentRememberStructural: Boolean;
+    FConsentRememberExecution: Boolean;
 
     { Dynamic String-based settings (avoiding TDictionary generics due to BPL RTL unloading bugs) }
     FApiKeysList: TStringList;
@@ -124,6 +141,22 @@ type
     procedure SetAutocompleteModel(const AModel: string);
     function GetAutocompleteDelay: Integer;
     procedure SetAutocompleteDelay(const AValue: Integer);
+    function GetAutocompleteExcludedFiles: string;
+    procedure SetAutocompleteExcludedFiles(const AValue: string);
+    function GetAutocompleteExcludedLanguages: string;
+    procedure SetAutocompleteExcludedLanguages(const AValue: string);
+    function GetAutocompleteExcludedProjects: string;
+    procedure SetAutocompleteExcludedProjects(const AValue: string);
+    function GetInlineShortcutProfile: string;
+    procedure SetInlineShortcutProfile(const AValue: string);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -147,6 +180,16 @@ type
     procedure SetInjectDelphiVersion(const AValue: Boolean);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
+    function GetConsentTimeoutSeconds: Integer;
+    procedure SetConsentTimeoutSeconds(const AValue: Integer);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -215,12 +258,25 @@ begin
   FQuotaCycleStart := Now;
   FActiveSessionId := '';
 
-  FAutocompleteEnabled := True;
+  FAutocompleteEnabled := False;
   FAutocompleteProvider := TConfigDefaults.AutocompleteProvider;
   FAutocompleteModel := TConfigDefaults.AutocompleteModel;
   FAutocompleteDelay := TConfigDefaults.AutocompleteDelay;
+  FAutocompleteExcludedFiles := '';
+  FAutocompleteExcludedLanguages := '';
+  FAutocompleteExcludedProjects := '';
+  FKnowledgeSemanticEnabled := False;
+  FKnowledgeApprovedHistoryEnabled := False;
+  FKnowledgeExcludedFiles := '';
+  FKnowledgeExcludedProjects := '';
+  FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
   FInjectDelphiVersion := True;
   FConciseResponses := True;
+  FConsentTimeoutSeconds := 60;
+  FConsentShowArguments := True;
+  FConsentRememberReversible := True;
+  FConsentRememberStructural := False;
+  FConsentRememberExecution := False;
 
   Load;
 end;
@@ -362,12 +418,66 @@ begin
     FQuotaCycleStart := ReadRegDouble('QuotaCycleStart', Now);
     FActiveSessionId := ReadRegString('ActiveSessionId', '');
 
-    FAutocompleteEnabled := ReadRegInt('AutocompleteEnabled', 1) <> 0;
+    FAutocompleteEnabled := ReadRegInt(
+      'InlineCompletionEnabled',
+      0
+    ) <> 0;
     FAutocompleteProvider := FStorage.ReadString('AutocompleteProvider', TConfigDefaults.AutocompleteProvider);
     FAutocompleteModel := ReadRegString('AutocompleteModel', TConfigDefaults.AutocompleteModel);
-    FAutocompleteDelay := ReadRegInt('AutocompleteDelay', TConfigDefaults.AutocompleteDelay);
+    FAutocompleteDelay := EnsureRange(
+      ReadRegInt(
+        'AutocompleteDelay',
+        TConfigDefaults.AutocompleteDelay
+      ),
+      250,
+      5000
+    );
+    FAutocompleteExcludedFiles := ReadRegString(
+      'AutocompleteExcludedFiles',
+      ''
+    );
+    FAutocompleteExcludedLanguages := ReadRegString(
+      'AutocompleteExcludedLanguages',
+      ''
+    );
+    FAutocompleteExcludedProjects := ReadRegString(
+      'AutocompleteExcludedProjects',
+      ''
+    );
+    FKnowledgeSemanticEnabled := ReadRegInt(
+      'KnowledgeSemanticEnabled',
+      0
+    ) <> 0;
+    FKnowledgeApprovedHistoryEnabled := ReadRegInt(
+      'KnowledgeApprovedHistoryEnabled',
+      0
+    ) <> 0;
+    FKnowledgeExcludedFiles := ReadRegString(
+      'KnowledgeExcludedFiles',
+      ''
+    );
+    FKnowledgeExcludedProjects := ReadRegString(
+      'KnowledgeExcludedProjects',
+      ''
+    );
+    FInlineShortcutProfile := ReadRegString(
+      'InlineShortcutProfile',
+      TRadIAInlineShortcutProfile.DefaultText
+    );
     FInjectDelphiVersion := ReadRegInt('InjectDelphiVersion', 1) <> 0;
     FConciseResponses := ReadRegInt('ConciseResponses', 1) <> 0;
+    FConsentTimeoutSeconds := EnsureRange(
+      ReadRegInt('ConsentTimeoutSeconds', 60),
+      15,
+      600
+    );
+    FConsentShowArguments := ReadRegInt('ConsentShowArguments', 1) <> 0;
+    FConsentRememberReversible :=
+      ReadRegInt('ConsentRememberReversible', 1) <> 0;
+    FConsentRememberStructural :=
+      ReadRegInt('ConsentRememberStructural', 0) <> 0;
+    FConsentRememberExecution :=
+      ReadRegInt('ConsentRememberExecution', 0) <> 0;
 
     FStorage.CloseKey;
 
@@ -603,12 +713,64 @@ begin
     FStorage.WriteFloat('QuotaCycleStart', FQuotaCycleStart);
     FStorage.WriteString('ActiveSessionId', FActiveSessionId);
 
-    FStorage.WriteInteger('AutocompleteEnabled', IfThen(FAutocompleteEnabled, 1, 0));
+    FStorage.WriteInteger(
+      'InlineCompletionEnabled',
+      IfThen(FAutocompleteEnabled, 1, 0)
+    );
     FStorage.WriteString('AutocompleteProvider', FAutocompleteProvider);
     FStorage.WriteString('AutocompleteModel', FAutocompleteModel);
     FStorage.WriteInteger('AutocompleteDelay', FAutocompleteDelay);
+    FStorage.WriteString(
+      'AutocompleteExcludedFiles',
+      FAutocompleteExcludedFiles
+    );
+    FStorage.WriteString(
+      'AutocompleteExcludedLanguages',
+      FAutocompleteExcludedLanguages
+    );
+    FStorage.WriteString(
+      'AutocompleteExcludedProjects',
+      FAutocompleteExcludedProjects
+    );
+    FStorage.WriteInteger(
+      'KnowledgeSemanticEnabled',
+      IfThen(FKnowledgeSemanticEnabled, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'KnowledgeApprovedHistoryEnabled',
+      IfThen(FKnowledgeApprovedHistoryEnabled, 1, 0)
+    );
+    FStorage.WriteString(
+      'KnowledgeExcludedFiles',
+      FKnowledgeExcludedFiles
+    );
+    FStorage.WriteString(
+      'KnowledgeExcludedProjects',
+      FKnowledgeExcludedProjects
+    );
+    FStorage.WriteString(
+      'InlineShortcutProfile',
+      FInlineShortcutProfile
+    );
     FStorage.WriteInteger('InjectDelphiVersion', IfThen(FInjectDelphiVersion, 1, 0));
     FStorage.WriteInteger('ConciseResponses', IfThen(FConciseResponses, 1, 0));
+    FStorage.WriteInteger('ConsentTimeoutSeconds', FConsentTimeoutSeconds);
+    FStorage.WriteInteger(
+      'ConsentShowArguments',
+      IfThen(FConsentShowArguments, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'ConsentRememberReversible',
+      IfThen(FConsentRememberReversible, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'ConsentRememberStructural',
+      IfThen(FConsentRememberStructural, 1, 0)
+    );
+    FStorage.WriteInteger(
+      'ConsentRememberExecution',
+      IfThen(FConsentRememberExecution, 1, 0)
+    );
     FStorage.CloseKey;
 
     TLogger.Configure(FLogEnabled, FLogPath, FLogMaxSizeKB);
@@ -898,6 +1060,62 @@ begin
   FConciseResponses := AValue;
 end;
 
+function TRadIAConfig.GetConsentTimeoutSeconds: Integer;
+begin
+  Result := FConsentTimeoutSeconds;
+end;
+
+procedure TRadIAConfig.SetConsentTimeoutSeconds(const AValue: Integer);
+begin
+  FConsentTimeoutSeconds := EnsureRange(AValue, 15, 600);
+end;
+
+function TRadIAConfig.GetConsentShowArguments: Boolean;
+begin
+  Result := FConsentShowArguments;
+end;
+
+procedure TRadIAConfig.SetConsentShowArguments(const AValue: Boolean);
+begin
+  FConsentShowArguments := AValue;
+end;
+
+function TRadIAConfig.GetConsentRememberReversible: Boolean;
+begin
+  Result := FConsentRememberReversible;
+end;
+
+procedure TRadIAConfig.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberReversible := AValue;
+end;
+
+function TRadIAConfig.GetConsentRememberStructural: Boolean;
+begin
+  Result := FConsentRememberStructural;
+end;
+
+procedure TRadIAConfig.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberStructural := AValue;
+end;
+
+function TRadIAConfig.GetConsentRememberExecution: Boolean;
+begin
+  Result := FConsentRememberExecution;
+end;
+
+procedure TRadIAConfig.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberExecution := AValue;
+end;
+
 function TRadIAConfig.GetAutocompleteEnabled: Boolean;
 begin
   Result := FAutocompleteEnabled;
@@ -933,9 +1151,105 @@ begin
   Result := FAutocompleteDelay;
 end;
 
+function TRadIAConfig.GetAutocompleteExcludedFiles: string;
+begin
+  Result := FAutocompleteExcludedFiles;
+end;
+
+function TRadIAConfig.GetAutocompleteExcludedLanguages: string;
+begin
+  Result := FAutocompleteExcludedLanguages;
+end;
+
+function TRadIAConfig.GetAutocompleteExcludedProjects: string;
+begin
+  Result := FAutocompleteExcludedProjects;
+end;
+
+function TRadIAConfig.GetInlineShortcutProfile: string;
+begin
+  Result := FInlineShortcutProfile;
+end;
+
+function TRadIAConfig.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := FKnowledgeSemanticEnabled;
+end;
+
+function TRadIAConfig.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := FKnowledgeApprovedHistoryEnabled;
+end;
+
+function TRadIAConfig.GetKnowledgeExcludedFiles: string;
+begin
+  Result := FKnowledgeExcludedFiles;
+end;
+
+function TRadIAConfig.GetKnowledgeExcludedProjects: string;
+begin
+  Result := FKnowledgeExcludedProjects;
+end;
+
 procedure TRadIAConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
-  FAutocompleteDelay := AValue;
+  FAutocompleteDelay := EnsureRange(AValue, 250, 5000);
+end;
+
+procedure TRadIAConfig.SetAutocompleteExcludedFiles(
+  const AValue: string
+);
+begin
+  FAutocompleteExcludedFiles := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetAutocompleteExcludedLanguages(
+  const AValue: string
+);
+begin
+  FAutocompleteExcludedLanguages := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetAutocompleteExcludedProjects(
+  const AValue: string
+);
+begin
+  FAutocompleteExcludedProjects := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetInlineShortcutProfile(
+  const AValue: string
+);
+begin
+  FInlineShortcutProfile := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeSemanticEnabled := AValue;
+end;
+
+procedure TRadIAConfig.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeApprovedHistoryEnabled := AValue;
+end;
+
+procedure TRadIAConfig.SetKnowledgeExcludedFiles(
+  const AValue: string
+);
+begin
+  FKnowledgeExcludedFiles := AValue.Trim;
+end;
+
+procedure TRadIAConfig.SetKnowledgeExcludedProjects(
+  const AValue: string
+);
+begin
+  FKnowledgeExcludedProjects := AValue.Trim;
 end;
 
 function TRadIAConfig.GetSmartConfigEnabled: Boolean;

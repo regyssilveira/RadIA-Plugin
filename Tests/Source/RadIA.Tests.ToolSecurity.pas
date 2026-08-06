@@ -4,14 +4,8 @@ interface
 
 uses
   DUnitX.TestFramework,
-  System.Classes,
-  System.IOUtils,
-  System.SysUtils,
   RadIA.Core.Tools,
-  RadIA.Core.ToolRegistry,
-  RadIA.Core.ToolSecurity,
-  RadIA.Core.Types,
-  RadIA.OTA.Consent;
+  RadIA.Core.ToolSecurity;
 
 type
   TTestRadIATool = class(TInterfacedObject, IRadIATool)
@@ -75,10 +69,22 @@ type
     [Test]
     procedure ConsentProviderDeniesDuringShutdown;
     [Test]
+    procedure ConsentProviderHonorsSessionRiskPreferences;
+    [Test]
     procedure UnknownToolIsDeniedAndAudited;
   end;
 
 implementation
+
+uses
+  System.IOUtils,
+  System.SysUtils,
+  RadIA.Core.Config,
+  RadIA.Core.Interfaces,
+  RadIA.Core.SettingsStorage,
+  RadIA.Core.ToolRegistry,
+  RadIA.Core.Types,
+  RadIA.OTA.Consent;
 
 { TTestRadIATool }
 
@@ -160,7 +166,7 @@ begin
   );
   LEvents := LAudit.GetEvents;
 
-  Assert.AreEqual(1, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.Contains(LEvents[0].ArgumentsJson, '"apiKey":"[REDACTED]"');
   Assert.Contains(
     LEvents[0].ArgumentsJson,
@@ -216,6 +222,52 @@ begin
   end;
 end;
 
+procedure TTestRadIAToolSecurity.
+  ConsentProviderHonorsSessionRiskPreferences;
+var
+  LConfig: IRadIAConfig;
+  LProvider: TRadIAOTAConsentProvider;
+  LStorage: IRadIASettingsStorage;
+begin
+  LStorage := TRadIAMemorySettingsStorage.Create;
+  TRadIAConfig.SetStorage(LStorage);
+  LConfig := TRadIAConfig.Create;
+  LConfig.ConsentRememberReversible := True;
+  LConfig.ConsentRememberStructural := False;
+  LConfig.ConsentRememberExecution := False;
+  LProvider := TRadIAOTAConsentProvider.Create(1000, LConfig);
+  try
+    Assert.IsTrue(
+      LProvider.CanRememberForSession(trReversibleWrite)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trStructuralWrite)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trExecution)
+    );
+    LConfig.ConsentRememberStructural := True;
+    LConfig.ConsentRememberExecution := True;
+    Assert.IsTrue(
+      LProvider.CanRememberForSession(trStructuralWrite)
+    );
+    Assert.IsTrue(
+      LProvider.CanRememberForSession(trExecution)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trDestructive)
+    );
+    Assert.IsFalse(
+      LProvider.CanRememberForSession(trSensitive)
+    );
+  finally
+    LProvider.Free;
+    LConfig := nil;
+    LStorage := nil;
+    TRadIAConfig.SetStorage(nil);
+  end;
+end;
+
 procedure TTestRadIAToolSecurity.AllowOncePromptsAndAuditsEveryExecution;
 var
   LAudit: TRadIAInMemoryToolAuditSink;
@@ -244,7 +296,7 @@ begin
 
   Assert.AreEqual(2, LConsent.RequestCount);
   Assert.AreEqual(2, LTool.ExecutionCount);
-  Assert.AreEqual(2, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(2, Length(LEvents));
   Assert.AreEqual(cdAllowOnce, LEvents[0].Decision);
   Assert.AreEqual(aoSucceeded, LEvents[0].Outcome);
   Assert.AreEqual(cdAllowOnce, LEvents[1].Decision);
@@ -281,7 +333,7 @@ begin
   Assert.AreEqual('consent_cancelled', LResult.ErrorCode);
   Assert.AreEqual(0, LTool.ExecutionCount);
   Assert.AreEqual(1, LConsent.RequestCount);
-  Assert.AreEqual(1, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.AreEqual(cdCancel, LEvents[0].Decision);
   Assert.AreEqual(aoCancelled, LEvents[0].Outcome);
 end;
@@ -344,7 +396,7 @@ begin
 
   Assert.AreEqual(2, LConsent.RequestCount);
   Assert.AreEqual(2, LTool.ExecutionCount);
-  Assert.AreEqual(2, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(2, Length(LEvents));
   Assert.AreEqual(cdAllowSession, LEvents[0].Decision);
   Assert.AreEqual(cdAllowSession, LEvents[1].Decision);
 end;
@@ -499,7 +551,7 @@ begin
 
   Assert.IsFalse(LResult.Success);
   Assert.AreEqual('tool_not_found', LResult.ErrorCode);
-  Assert.AreEqual(1, Integer(Length(LEvents)));
+  Assert.AreEqual<Integer>(1, Length(LEvents));
   Assert.AreEqual('MissingTool', LEvents[0].ToolName);
   Assert.AreEqual(aoUnsupported, LEvents[0].Outcome);
 end;

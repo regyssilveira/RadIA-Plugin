@@ -5,6 +5,7 @@ interface
 uses
   DUnitX.TestFramework, System.Generics.Collections,
   Vcl.Graphics, RadIA.Core.Interfaces,
+  RadIA.Core.RemoteKnowledgeSettings,
   RadIA.UI.ConfigPresenter;
 
 type
@@ -29,6 +30,29 @@ type
     FLogEnabled: Boolean;
     FLogPath: string;
     FLogMaxSize: string;
+    FConsentTimeoutSeconds: string;
+    FConsentShowArguments: Boolean;
+    FConsentRememberReversible: Boolean;
+    FConsentRememberStructural: Boolean;
+    FConsentRememberExecution: Boolean;
+    FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeApprovedHistoryEnabled: Boolean;
+    FKnowledgeExcludedFiles: string;
+    FKnowledgeExcludedProjects: string;
+    FKnowledgeRemoteEnabled: Boolean;
+    FKnowledgeRemoteConsent: Boolean;
+    FKnowledgeRemoteEndpoint: string;
+    FKnowledgeRemoteModel: string;
+    FKnowledgeRemoteApiKey: string;
+    FKnowledgeRemoteDimensions: string;
+    FKnowledgeRemoteTimeout: string;
+    FKnowledgeRemoteInputLimit: string;
+    FInlineCompletionEnabled: Boolean;
+    FInlineCompletionDelay: string;
+    FInlineCompletionExcludedFiles: string;
+    FInlineCompletionExcludedLanguages: string;
+    FInlineCompletionExcludedProjects: string;
+    FInlineShortcutProfile: string;
     FQuotaEnabled: Boolean;
     FQuotaLimit: string;
     FQuotaUsedText: string;
@@ -103,6 +127,52 @@ type
     procedure SetLogPath(const AValue: string);
     function GetLogMaxSize: string;
     procedure SetLogMaxSize(const AValue: string);
+    function GetConsentTimeoutSeconds: string;
+    procedure SetConsentTimeoutSeconds(const AValue: string);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
+    function GetKnowledgeRemoteEnabled: Boolean;
+    procedure SetKnowledgeRemoteEnabled(const AValue: Boolean);
+    function GetKnowledgeRemoteConsent: Boolean;
+    procedure SetKnowledgeRemoteConsent(const AValue: Boolean);
+    function GetKnowledgeRemoteEndpoint: string;
+    procedure SetKnowledgeRemoteEndpoint(const AValue: string);
+    function GetKnowledgeRemoteModel: string;
+    procedure SetKnowledgeRemoteModel(const AValue: string);
+    function GetKnowledgeRemoteApiKey: string;
+    procedure SetKnowledgeRemoteApiKey(const AValue: string);
+    function GetKnowledgeRemoteDimensions: string;
+    procedure SetKnowledgeRemoteDimensions(const AValue: string);
+    function GetKnowledgeRemoteTimeout: string;
+    procedure SetKnowledgeRemoteTimeout(const AValue: string);
+    function GetKnowledgeRemoteInputLimit: string;
+    procedure SetKnowledgeRemoteInputLimit(const AValue: string);
+    function GetInlineCompletionEnabled: Boolean;
+    procedure SetInlineCompletionEnabled(const AValue: Boolean);
+    function GetInlineCompletionDelay: string;
+    procedure SetInlineCompletionDelay(const AValue: string);
+    function GetInlineCompletionExcludedFiles: string;
+    procedure SetInlineCompletionExcludedFiles(const AValue: string);
+    function GetInlineCompletionExcludedLanguages: string;
+    procedure SetInlineCompletionExcludedLanguages(const AValue: string);
+    function GetInlineCompletionExcludedProjects: string;
+    procedure SetInlineCompletionExcludedProjects(const AValue: string);
+    function GetInlineShortcutProfile: string;
+    procedure SetInlineShortcutProfile(const AValue: string);
 
     function GetQuotaEnabled: Boolean;
     procedure SetQuotaEnabled(const AValue: Boolean);
@@ -147,6 +217,25 @@ type
     property LogEnabled: Boolean read FLogEnabled write FLogEnabled;
     property LogPath: string read FLogPath write FLogPath;
     property LogMaxSize: string read FLogMaxSize write FLogMaxSize;
+    property ConsentTimeoutSeconds: string
+      read FConsentTimeoutSeconds write FConsentTimeoutSeconds;
+    property ConsentShowArguments: Boolean
+      read FConsentShowArguments write FConsentShowArguments;
+    property ConsentRememberReversible: Boolean
+      read FConsentRememberReversible write FConsentRememberReversible;
+    property ConsentRememberStructural: Boolean
+      read FConsentRememberStructural write FConsentRememberStructural;
+    property ConsentRememberExecution: Boolean
+      read FConsentRememberExecution write FConsentRememberExecution;
+    property KnowledgeSemanticEnabled: Boolean
+      read FKnowledgeSemanticEnabled write FKnowledgeSemanticEnabled;
+    property KnowledgeApprovedHistoryEnabled: Boolean
+      read FKnowledgeApprovedHistoryEnabled
+      write FKnowledgeApprovedHistoryEnabled;
+    property KnowledgeExcludedFiles: string
+      read FKnowledgeExcludedFiles write FKnowledgeExcludedFiles;
+    property KnowledgeExcludedProjects: string
+      read FKnowledgeExcludedProjects write FKnowledgeExcludedProjects;
     property QuotaEnabled: Boolean read FQuotaEnabled write FQuotaEnabled;
     property QuotaLimit: string read FQuotaLimit write FQuotaLimit;
     property QuotaUsedText: string read FQuotaUsedText write FQuotaUsedText;
@@ -183,6 +272,7 @@ type
     FMockView: TMockConfigView;
     FPresenter: TRadIAConfigPresenter;
     FConfig: IRadIAConfig;
+    FRemoteSettings: TRadIARemoteKnowledgeSettings;
   public
     [Setup]
     procedure Setup;
@@ -198,6 +288,14 @@ type
     [Test]
     procedure TestSaveConfigValidatesIntegersRobustly;
     [Test]
+    procedure TestConsentSettingsAreValidatedAndPersisted;
+    [Test]
+    procedure TestInlineCompletionSettingsAreValidatedAndPersisted;
+    [Test]
+    procedure TestSemanticKnowledgeConsentIsPersisted;
+    [Test]
+    procedure TestRemoteKnowledgeRequiresConsentAndValidEndpoint;
+    [Test]
     procedure TestTemplateCreationAndSelection;
     [Test]
     procedure TestResetQuotaUsage;
@@ -210,6 +308,7 @@ type
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
   RadIA.Core.Config, RadIA.Core.SettingsStorage, System.SysUtils;
 
 { TMockConfigView }
@@ -223,6 +322,9 @@ begin
   TempMap := TDictionary<string, string>.Create;
   MaxTokensMap := TDictionary<string, string>.Create;
   TimeoutMap := TDictionary<string, string>.Create;
+  FKnowledgeRemoteDimensions := '1536';
+  FKnowledgeRemoteTimeout := '30000';
+  FKnowledgeRemoteInputLimit := '12000';
   FOAuthLoggedInMap := TDictionary<string, Boolean>.Create;
 
   SaveDialogResult := True;
@@ -232,6 +334,14 @@ begin
   FocusTemplateNameCalled := False;
   InjectDelphiVersion := True;
   ConciseResponses := True;
+  ConsentTimeoutSeconds := '60';
+  ConsentShowArguments := True;
+  ConsentRememberReversible := True;
+  FInlineCompletionDelay := '700';
+  FInlineShortcutProfile :=
+    'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace';
 end;
 
 destructor TMockConfigView.Destroy;
@@ -339,6 +449,281 @@ function TMockConfigView.GetLogPath: string; begin Result := LogPath; end;
 procedure TMockConfigView.SetLogPath(const AValue: string); begin LogPath := AValue; end;
 function TMockConfigView.GetLogMaxSize: string; begin Result := LogMaxSize; end;
 procedure TMockConfigView.SetLogMaxSize(const AValue: string); begin LogMaxSize := AValue; end;
+function TMockConfigView.GetConsentTimeoutSeconds: string;
+begin
+  Result := ConsentTimeoutSeconds;
+end;
+
+procedure TMockConfigView.SetConsentTimeoutSeconds(
+  const AValue: string
+);
+begin
+  ConsentTimeoutSeconds := AValue;
+end;
+
+function TMockConfigView.GetConsentShowArguments: Boolean;
+begin
+  Result := ConsentShowArguments;
+end;
+
+procedure TMockConfigView.SetConsentShowArguments(
+  const AValue: Boolean
+);
+begin
+  ConsentShowArguments := AValue;
+end;
+
+function TMockConfigView.GetConsentRememberReversible: Boolean;
+begin
+  Result := ConsentRememberReversible;
+end;
+
+procedure TMockConfigView.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  ConsentRememberReversible := AValue;
+end;
+
+function TMockConfigView.GetConsentRememberStructural: Boolean;
+begin
+  Result := ConsentRememberStructural;
+end;
+
+procedure TMockConfigView.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  ConsentRememberStructural := AValue;
+end;
+
+function TMockConfigView.GetConsentRememberExecution: Boolean;
+begin
+  Result := ConsentRememberExecution;
+end;
+
+procedure TMockConfigView.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  ConsentRememberExecution := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := KnowledgeSemanticEnabled;
+end;
+
+procedure TMockConfigView.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  KnowledgeSemanticEnabled := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := KnowledgeApprovedHistoryEnabled;
+end;
+
+procedure TMockConfigView.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  KnowledgeApprovedHistoryEnabled := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeExcludedFiles: string;
+begin
+  Result := KnowledgeExcludedFiles;
+end;
+
+procedure TMockConfigView.SetKnowledgeExcludedFiles(
+  const AValue: string
+);
+begin
+  KnowledgeExcludedFiles := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeExcludedProjects: string;
+begin
+  Result := KnowledgeExcludedProjects;
+end;
+
+procedure TMockConfigView.SetKnowledgeExcludedProjects(
+  const AValue: string
+);
+begin
+  KnowledgeExcludedProjects := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteEnabled: Boolean;
+begin
+  Result := FKnowledgeRemoteEnabled;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeRemoteEnabled := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteConsent: Boolean;
+begin
+  Result := FKnowledgeRemoteConsent;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteConsent(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeRemoteConsent := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteEndpoint: string;
+begin
+  Result := FKnowledgeRemoteEndpoint;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteEndpoint(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteEndpoint := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteModel: string;
+begin
+  Result := FKnowledgeRemoteModel;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteModel(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteModel := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteApiKey: string;
+begin
+  Result := FKnowledgeRemoteApiKey;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteApiKey(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteApiKey := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteDimensions: string;
+begin
+  Result := FKnowledgeRemoteDimensions;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteDimensions(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteDimensions := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteTimeout: string;
+begin
+  Result := FKnowledgeRemoteTimeout;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteTimeout(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteTimeout := AValue;
+end;
+
+function TMockConfigView.GetKnowledgeRemoteInputLimit: string;
+begin
+  Result := FKnowledgeRemoteInputLimit;
+end;
+
+procedure TMockConfigView.SetKnowledgeRemoteInputLimit(
+  const AValue: string
+);
+begin
+  FKnowledgeRemoteInputLimit := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionEnabled: Boolean;
+begin
+  Result := FInlineCompletionEnabled;
+end;
+
+procedure TMockConfigView.SetInlineCompletionEnabled(
+  const AValue: Boolean
+);
+begin
+  FInlineCompletionEnabled := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionDelay: string;
+begin
+  Result := FInlineCompletionDelay;
+end;
+
+procedure TMockConfigView.SetInlineCompletionDelay(
+  const AValue: string
+);
+begin
+  FInlineCompletionDelay := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionExcludedFiles: string;
+begin
+  Result := FInlineCompletionExcludedFiles;
+end;
+
+procedure TMockConfigView.SetInlineCompletionExcludedFiles(
+  const AValue: string
+);
+begin
+  FInlineCompletionExcludedFiles := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionExcludedLanguages: string;
+begin
+  Result := FInlineCompletionExcludedLanguages;
+end;
+
+procedure TMockConfigView.SetInlineCompletionExcludedLanguages(
+  const AValue: string
+);
+begin
+  FInlineCompletionExcludedLanguages := AValue;
+end;
+
+function TMockConfigView.GetInlineCompletionExcludedProjects: string;
+begin
+  Result := FInlineCompletionExcludedProjects;
+end;
+
+function TMockConfigView.GetInlineShortcutProfile: string;
+begin
+  Result := FInlineShortcutProfile;
+end;
+
+procedure TMockConfigView.SetInlineCompletionExcludedProjects(
+  const AValue: string
+);
+begin
+  FInlineCompletionExcludedProjects := AValue;
+end;
+
+procedure TMockConfigView.SetInlineShortcutProfile(
+  const AValue: string
+);
+begin
+  FInlineShortcutProfile := AValue;
+end;
 
 function TMockConfigView.GetQuotaEnabled: Boolean; begin Result := QuotaEnabled; end;
 procedure TMockConfigView.SetQuotaEnabled(const AValue: Boolean); begin QuotaEnabled := AValue; end;
@@ -452,12 +837,22 @@ begin
   FConfig.Load;
 
   FMockView := TMockConfigView.Create;
-  FPresenter := TRadIAConfigPresenter.Create(FMockView, FConfig);
+  FRemoteSettings := TRadIARemoteKnowledgeSettings.Create(
+    LMemoryStorage,
+    'Software\RadIA\Tests\ConfigPresenter\RemoteKnowledge'
+  );
+  FPresenter := TRadIAConfigPresenter.Create(
+    FMockView,
+    FConfig,
+    nil,
+    FRemoteSettings
+  );
 end;
 
 procedure TTestConfigPresenter.TearDown;
 begin
   FPresenter.Free;
+  FRemoteSettings.Free;
   FConfig := nil;
   TRadIAConfig.SetStorage(nil);
 end;
@@ -511,6 +906,171 @@ begin
 
   Assert.IsFalse(FMockView.LastMessageDialogText.IsEmpty);
   Assert.IsFalse(FMockView.CloseViewCalled);
+end;
+
+procedure TTestConfigPresenter.
+  TestConsentSettingsAreValidatedAndPersisted;
+begin
+  FPresenter.LoadConfig;
+  FMockView.SetConsentTimeoutSeconds('10');
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'between 15 and 600'
+  );
+  Assert.IsFalse(FMockView.CloseViewCalled);
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetConsentTimeoutSeconds('90');
+  FMockView.SetConsentShowArguments(False);
+  FMockView.SetConsentRememberReversible(False);
+  FMockView.SetConsentRememberStructural(True);
+  FMockView.SetConsentRememberExecution(True);
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  Assert.AreEqual(90, FConfig.ConsentTimeoutSeconds);
+  Assert.IsFalse(FConfig.ConsentShowArguments);
+  Assert.IsFalse(FConfig.ConsentRememberReversible);
+  Assert.IsTrue(FConfig.ConsentRememberStructural);
+  Assert.IsTrue(FConfig.ConsentRememberExecution);
+end;
+
+procedure TTestConfigPresenter.
+  TestInlineCompletionSettingsAreValidatedAndPersisted;
+var
+  LShortcutConfig: IRadIAInlineShortcutConfig;
+begin
+  FPresenter.LoadConfig;
+  FMockView.SetInlineCompletionDelay('100');
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'between 250 and 5000'
+  );
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetInlineCompletionDelay('900');
+  FMockView.SetInlineShortcutProfile(
+    'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Space; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace'
+  );
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'must be unique'
+  );
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetInlineCompletionEnabled(True);
+  FMockView.SetInlineCompletionDelay('900');
+  FMockView.SetInlineCompletionExcludedLanguages('sql; markdown');
+  FMockView.SetInlineCompletionExcludedFiles('generated; vendor');
+  FMockView.SetInlineCompletionExcludedProjects('legacy; archive');
+  FMockView.SetInlineShortcutProfile(
+    'request=Ctrl+Shift+Space; accept=Ctrl+Alt+Right; ' +
+    'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+    'reject=Ctrl+Alt+Backspace'
+  );
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  Assert.IsTrue(FConfig.AutocompleteEnabled);
+  Assert.AreEqual(900, FConfig.AutocompleteDelay);
+  Assert.AreEqual(
+    'sql; markdown',
+    FConfig.AutocompleteExcludedLanguages
+  );
+  Assert.AreEqual(
+    'generated; vendor',
+    FConfig.AutocompleteExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy; archive',
+    FConfig.AutocompleteExcludedProjects
+  );
+  Assert.IsTrue(
+    Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig)
+  );
+  Assert.Contains(
+    LShortcutConfig.InlineShortcutProfile,
+    'request=Ctrl+Shift+Space'
+  );
+end;
+
+procedure TTestConfigPresenter.
+  TestRemoteKnowledgeRequiresConsentAndValidEndpoint;
+var
+  LConfiguration: TRadIARemoteKnowledgeConfiguration;
+begin
+  FPresenter.LoadConfig;
+  FMockView.SetKnowledgeRemoteEnabled(True);
+  FMockView.SetKnowledgeRemoteConsent(False);
+  FMockView.SetKnowledgeRemoteEndpoint(
+    'https://example.test/v1/embeddings'
+  );
+  FMockView.SetKnowledgeRemoteModel('embedding-model');
+  FPresenter.SaveConfig;
+
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'explicit network consent'
+  );
+  Assert.IsFalse(FMockView.CloseViewCalled);
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetKnowledgeRemoteConsent(True);
+  FMockView.SetKnowledgeRemoteEndpoint(
+    'http://remote.example/v1/embeddings'
+  );
+  FPresenter.SaveConfig;
+  Assert.Contains(
+    FMockView.LastMessageDialogText,
+    'HTTPS or loopback HTTP'
+  );
+
+  FMockView.LastMessageDialogText := '';
+  FMockView.SetKnowledgeRemoteEndpoint(
+    'https://example.test/v1/embeddings'
+  );
+  FMockView.SetKnowledgeRemoteApiKey('secret-key');
+  FMockView.SetKnowledgeRemoteDimensions('768');
+  FMockView.SetKnowledgeRemoteTimeout('15000');
+  FMockView.SetKnowledgeRemoteInputLimit('8000');
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  LConfiguration := FRemoteSettings.GetConfiguration;
+  Assert.IsTrue(LConfiguration.Enabled);
+  Assert.IsTrue(LConfiguration.ConsentGranted);
+  Assert.AreEqual('embedding-model', LConfiguration.Model);
+  Assert.AreEqual<Integer>(768, LConfiguration.Dimensions);
+end;
+
+procedure TTestConfigPresenter.TestSemanticKnowledgeConsentIsPersisted;
+begin
+  FPresenter.LoadConfig;
+  Assert.IsFalse(FMockView.GetKnowledgeSemanticEnabled);
+  Assert.IsFalse(FMockView.GetKnowledgeApprovedHistoryEnabled);
+
+  FMockView.SetKnowledgeSemanticEnabled(True);
+  FMockView.SetKnowledgeApprovedHistoryEnabled(True);
+  FMockView.SetKnowledgeExcludedFiles('generated; secret');
+  FMockView.SetKnowledgeExcludedProjects('legacy; archive');
+  FPresenter.SaveConfig;
+
+  Assert.IsTrue(FMockView.CloseViewCalled);
+  Assert.IsTrue(FConfig.KnowledgeSemanticEnabled);
+  Assert.IsTrue(FConfig.KnowledgeApprovedHistoryEnabled);
+  Assert.AreEqual(
+    'generated; secret',
+    FConfig.KnowledgeExcludedFiles
+  );
+  Assert.AreEqual(
+    'legacy; archive',
+    FConfig.KnowledgeExcludedProjects
+  );
 end;
 
 procedure TTestConfigPresenter.TestTemplateCreationAndSelection;

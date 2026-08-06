@@ -31,8 +31,16 @@ Quando você solicita refatorações ou otimizações de código, o Rad IA não 
 
 ### Funcionamento e Fluxo:
 * **Visualização Lado a Lado**: A janela do Smart Diff exibe o código original à esquerda (com destaque vermelho para deleções) e a proposta de código da IA à direita (com destaque verde para adições).
-* **Botão [Aplicar Alteração]**: Ao clicar neste botão presente na parte inferior do comparador, o Rad IA substitui cirurgicamente o trecho de código correspondente direto no editor da IDE do Delphi.
+* **Aceite por bloco**: Cada bloco alterado possui as ações **Aceitar** e **Rejeitar**. O contador
+  informa quantos blocos fazem parte da versão que será aplicada.
+* **Navegação**: Os botões **Anterior** e **Próximo** percorrem apenas os blocos modificados.
+* **Botão [Aplicar Selecionados]**: Aplica ao editor somente a combinação de blocos aceita. Se todos
+  forem rejeitados, o botão permanece desabilitado.
 * **Segurança**: Caso desista das alterações, basta fechar o painel de comparação. O arquivo original permanecerá intocado.
+
+O Smart Diff sempre inicia com todos os blocos aceitos. Rejeite os blocos que não deseja, revise o
+resultado e só então aplique. Se o conteúdo original tiver mudado enquanto a janela estava aberta,
+o Rad IA interrompe a aplicação para evitar sobrescrita ou duplicação.
 
 ---
 

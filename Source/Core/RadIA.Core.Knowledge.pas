@@ -6,6 +6,13 @@ uses
   System.Generics.Collections;
 
 type
+  TRadIAKnowledgeFilePolicy = record
+  public
+    class function IsSupported(
+      const AFileName: string
+    ): Boolean; static;
+  end;
+
   TRadIAKnowledgeDocument = record
   private
     FContent: string;
@@ -28,6 +35,8 @@ type
     FEndLine: Integer;
     FFileName: string;
     FId: string;
+    FEmbedding: TArray<Single>;
+    FEmbeddingProviderId: string;
     FRevision: string;
     FStartLine: Integer;
     FSymbol: string;
@@ -41,6 +50,10 @@ type
       const AEndLine: Integer;
       const AContent: string
     );
+    function WithEmbedding(
+      const AProviderId: string;
+      const AEmbedding: TArray<Single>
+    ): TRadIAKnowledgeChunk;
     property Id: string read FId;
     property FileName: string read FFileName;
     property Revision: string read FRevision;
@@ -48,19 +61,30 @@ type
     property StartLine: Integer read FStartLine;
     property EndLine: Integer read FEndLine;
     property Content: string read FContent;
+    property Embedding: TArray<Single> read FEmbedding;
+    property EmbeddingProviderId: string read FEmbeddingProviderId;
   end;
 
   TRadIAKnowledgeSearchHit = record
   private
     FChunk: TRadIAKnowledgeChunk;
+    FExplanation: string;
+    FLexicalScore: Integer;
     FScore: Integer;
+    FVectorScore: Integer;
   public
-    constructor Create(
+    constructor CreateHybrid(
       const AChunk: TRadIAKnowledgeChunk;
-      const AScore: Integer
+      const AScore: Integer;
+      const ALexicalScore: Integer;
+      const AVectorScore: Integer;
+      const AExplanation: string
     );
     property Chunk: TRadIAKnowledgeChunk read FChunk;
     property Score: Integer read FScore;
+    property LexicalScore: Integer read FLexicalScore;
+    property VectorScore: Integer read FVectorScore;
+    property Explanation: string read FExplanation;
   end;
 
   TRadIAKnowledgeRefreshResult = record
@@ -111,6 +135,7 @@ type
   TRadIAKnowledgeStatus = record
   private
     FChunkCount: Integer;
+    FEstimatedIndexBytes: Int64;
     FFileCount: Integer;
     FLoaded: Boolean;
     FProjectId: string;
@@ -121,10 +146,14 @@ type
       const AFileCount: Integer;
       const AChunkCount: Integer
     );
+    function WithEstimatedIndexBytes(
+      const AEstimatedIndexBytes: Int64
+    ): TRadIAKnowledgeStatus;
     property ProjectId: string read FProjectId;
     property Loaded: Boolean read FLoaded;
     property FileCount: Integer read FFileCount;
     property ChunkCount: Integer read FChunkCount;
+    property EstimatedIndexBytes: Int64 read FEstimatedIndexBytes;
   end;
 
   TRadIAIndexedKnowledgeDocument = record
@@ -166,6 +195,14 @@ type
     procedure Clear;
   end;
 
+  IRadIAKnowledgeEmbeddingProvider = interface
+    ['{D6BC11D6-A11C-469B-B1D4-BF513E334967}']
+    function GetId: string;
+    function GetDimensions: Integer;
+    function IsLocal: Boolean;
+    function Embed(const AText: string): TArray<Single>;
+  end;
+
   IRadIAKnowledgeService = interface
     ['{51473B23-E6D4-4DF6-A79F-7D003415D83B}']
     function GetCurrentProjectId: string;
@@ -192,6 +229,11 @@ type
     IRadIAKnowledgeService
   )
   private type
+    TRadIAKnowledgeFileRefresh = (
+      kfrSkipped,
+      kfrUpdated
+    );
+
     TRadIAKnowledgeChunkEntry = class
     private
       FChunk: TRadIAKnowledgeChunk;
@@ -199,7 +241,11 @@ type
     public
       constructor Create(const AChunk: TRadIAKnowledgeChunk);
       destructor Destroy; override;
-      function Score(const AQueryTokens: TArray<string>): Integer;
+      function LexicalScore(const AQueryTokens: TArray<string>): Integer;
+      function VectorScore(
+        const AProviderId: string;
+        const AQueryEmbedding: TArray<Single>
+      ): Integer;
       property Chunk: TRadIAKnowledgeChunk read FChunk;
     end;
 
@@ -230,10 +276,14 @@ type
   private
     FProjects: TObjectDictionary<string, TRadIAKnowledgeProjectIndex>;
     FLoadedProjects: TDictionary<string, Boolean>;
+    FEmbeddingProvider: IRadIAKnowledgeEmbeddingProvider;
     FSource: IRadIAKnowledgeSource;
     FStore: IRadIAKnowledgeStore;
     function BuildChunks(
       const ADocument: TRadIAKnowledgeDocument
+    ): TArray<TRadIAKnowledgeChunk>;
+    function AttachEmbeddings(
+      const AChunks: TArray<TRadIAKnowledgeChunk>
     ): TArray<TRadIAKnowledgeChunk>;
     function GetOrCreateProject(
       const AProjectId: string
@@ -242,10 +292,44 @@ type
       const ALine: string;
       out ASymbol: string
     ): Boolean;
+    function IsValidEmbedding(
+      const AEmbedding: TArray<Single>
+    ): Boolean;
+    function NeedsDocumentUpdate(
+      const AProjectId: string;
+      const AFileName: string;
+      const ARevision: string
+    ): Boolean;
+    function RefreshFile(
+      const AProjectId: string;
+      const AFileName: string
+    ): TRadIAKnowledgeFileRefresh;
+    procedure RemoveStaleFiles(
+      const AProjectId: string;
+      const AKnownFiles: TDictionary<string, Boolean>;
+      out AIndexedFiles: Integer;
+      out ARemovedFiles: Integer
+    );
     procedure EnsureProjectLoaded(const AProjectId: string);
     function CreateSnapshot(
       const AProjectId: string
     ): TRadIAKnowledgeIndexSnapshot;
+    function CreateQueryEmbedding(
+      const AQuery: string;
+      out AProviderId: string;
+      out AEmbedding: TArray<Single>
+    ): Boolean;
+    class function ExplainSearchMatch(
+      const ALexicalScore: Integer;
+      const AVectorScore: Integer
+    ): string; static;
+    procedure CollectSearchHits(
+      const AIndex: TRadIAKnowledgeProjectIndex;
+      const AQueryTokens: TArray<string>;
+      const AProviderId: string;
+      const AQueryEmbedding: TArray<Single>;
+      const AHits: TList<TRadIAKnowledgeSearchHit>
+    );
     procedure RestoreSnapshot(
       const ASnapshot: TRadIAKnowledgeIndexSnapshot
     );
@@ -255,7 +339,8 @@ type
   public
     constructor Create(
       const ASource: IRadIAKnowledgeSource;
-      const AStore: IRadIAKnowledgeStore = nil
+      const AStore: IRadIAKnowledgeStore = nil;
+      const AEmbeddingProvider: IRadIAKnowledgeEmbeddingProvider = nil
     );
     destructor Destroy; override;
     function GetCurrentProjectId: string;
@@ -295,6 +380,29 @@ const
   CMaxDocumentCharacters = 2 * 1024 * 1024;
   CMaxProjectFiles = 5000;
 
+{ TRadIAKnowledgeFilePolicy }
+
+class function TRadIAKnowledgeFilePolicy.IsSupported(
+  const AFileName: string
+): Boolean;
+var
+  LExtension: string;
+begin
+  LExtension := LowerCase(TPath.GetExtension(AFileName));
+  Result := (LExtension = '.pas') or
+    (LExtension = '.dpr') or
+    (LExtension = '.dpk') or
+    (LExtension = '.inc') or
+    (LExtension = '.dfm') or
+    (LExtension = '.fmx') or
+    (LExtension = '.dproj') or
+    (LExtension = '.groupproj') or
+    (LExtension = '.md') or
+    (LExtension = '.txt') or
+    (LExtension = '.adoc') or
+    (LExtension = '.rst');
+end;
+
 { TRadIAKnowledgeDocument }
 
 constructor TRadIAKnowledgeDocument.Create(
@@ -329,15 +437,81 @@ begin
   FContent := AContent;
 end;
 
-{ TRadIAKnowledgeSearchHit }
+function TRadIAKnowledgeChunk.WithEmbedding(
+  const AProviderId: string;
+  const AEmbedding: TArray<Single>
+): TRadIAKnowledgeChunk;
+begin
+  Result := Self;
+  Result.FEmbeddingProviderId := AProviderId;
+  Result.FEmbedding := Copy(AEmbedding);
+end;
 
-constructor TRadIAKnowledgeSearchHit.Create(
+constructor TRadIAKnowledgeSearchHit.CreateHybrid(
   const AChunk: TRadIAKnowledgeChunk;
-  const AScore: Integer
+  const AScore: Integer;
+  const ALexicalScore: Integer;
+  const AVectorScore: Integer;
+  const AExplanation: string
 );
 begin
   FChunk := AChunk;
   FScore := AScore;
+  FLexicalScore := ALexicalScore;
+  FVectorScore := AVectorScore;
+  FExplanation := AExplanation;
+end;
+
+procedure TRadIALocalKnowledgeService.CollectSearchHits(
+  const AIndex: TRadIAKnowledgeProjectIndex;
+  const AQueryTokens: TArray<string>;
+  const AProviderId: string;
+  const AQueryEmbedding: TArray<Single>;
+  const AHits: TList<TRadIAKnowledgeSearchHit>
+);
+var
+  LChunkEntry: TRadIAKnowledgeChunkEntry;
+  LExplanation: string;
+  LFileEntry: TRadIAKnowledgeFileEntry;
+  LLexicalScore: Integer;
+  LVectorScore: Integer;
+begin
+  for LFileEntry in AIndex.Files.Values do
+  begin
+    for LChunkEntry in LFileEntry.Chunks do
+    begin
+      LLexicalScore := LChunkEntry.LexicalScore(AQueryTokens);
+      LVectorScore := LChunkEntry.VectorScore(
+        AProviderId,
+        AQueryEmbedding
+      );
+      if (LLexicalScore <= 0) and (LVectorScore < 250) then
+        Continue;
+      LExplanation := ExplainSearchMatch(LLexicalScore, LVectorScore);
+      AHits.Add(
+        TRadIAKnowledgeSearchHit.CreateHybrid(
+          LChunkEntry.Chunk,
+          (LLexicalScore * 10) + LVectorScore,
+          LLexicalScore,
+          LVectorScore,
+          LExplanation
+        )
+      );
+    end;
+  end;
+end;
+
+class function TRadIALocalKnowledgeService.ExplainSearchMatch(
+  const ALexicalScore: Integer;
+  const AVectorScore: Integer
+): string;
+begin
+  if (ALexicalScore > 0) and (AVectorScore > 0) then
+    Result := 'hybrid lexical and vector match'
+  else if AVectorScore > 0 then
+    Result := 'vector similarity match'
+  else
+    Result := 'lexical fallback match';
 end;
 
 { TRadIAKnowledgeRefreshResult }
@@ -376,6 +550,17 @@ begin
   FLoaded := ALoaded;
   FFileCount := AFileCount;
   FChunkCount := AChunkCount;
+end;
+
+function TRadIAKnowledgeStatus.WithEstimatedIndexBytes(
+  const AEstimatedIndexBytes: Int64
+): TRadIAKnowledgeStatus;
+begin
+  Result := Self;
+  if AEstimatedIndexBytes < 0 then
+    Result.FEstimatedIndexBytes := 0
+  else
+    Result.FEstimatedIndexBytes := AEstimatedIndexBytes;
 end;
 
 { TRadIAIndexedKnowledgeDocument }
@@ -434,7 +619,7 @@ begin
   inherited;
 end;
 
-function TRadIALocalKnowledgeService.TRadIAKnowledgeChunkEntry.Score(
+function TRadIALocalKnowledgeService.TRadIAKnowledgeChunkEntry.LexicalScore(
   const AQueryTokens: TArray<string>
 ): Integer;
 var
@@ -572,6 +757,34 @@ begin
   end;
 end;
 
+function TRadIALocalKnowledgeService.AttachEmbeddings(
+  const AChunks: TArray<TRadIAKnowledgeChunk>
+): TArray<TRadIAKnowledgeChunk>;
+var
+  LEmbedding: TArray<Single>;
+  LIndex: Integer;
+begin
+  Result := Copy(AChunks);
+  if not Assigned(FEmbeddingProvider) then
+    Exit;
+  for LIndex := 0 to Length(Result) - 1 do
+  begin
+    try
+      LEmbedding := FEmbeddingProvider.Embed(
+        Result[LIndex].Symbol + sLineBreak + Result[LIndex].Content
+      );
+      if (Length(LEmbedding) = FEmbeddingProvider.GetDimensions) and
+        IsValidEmbedding(LEmbedding) then
+        Result[LIndex] := Result[LIndex].WithEmbedding(
+          FEmbeddingProvider.GetId,
+          LEmbedding
+        );
+    except
+      SetLength(LEmbedding, 0);
+    end;
+  end;
+end;
+
 procedure TRadIALocalKnowledgeService.Clear;
 begin
   TMonitor.Enter(FProjects);
@@ -602,7 +815,8 @@ end;
 
 constructor TRadIALocalKnowledgeService.Create(
   const ASource: IRadIAKnowledgeSource;
-  const AStore: IRadIAKnowledgeStore
+  const AStore: IRadIAKnowledgeStore;
+  const AEmbeddingProvider: IRadIAKnowledgeEmbeddingProvider
 );
 begin
   inherited Create;
@@ -610,6 +824,7 @@ begin
     raise EArgumentNilException.Create('ASource');
   FSource := ASource;
   FStore := AStore;
+  FEmbeddingProvider := AEmbeddingProvider;
   FLoadedProjects := TDictionary<string, Boolean>.Create;
   FProjects :=
     TObjectDictionary<string, TRadIAKnowledgeProjectIndex>.Create(
@@ -654,6 +869,32 @@ begin
     );
   finally
     LChunks.Free;
+  end;
+end;
+
+function TRadIALocalKnowledgeService.CreateQueryEmbedding(
+  const AQuery: string;
+  out AProviderId: string;
+  out AEmbedding: TArray<Single>
+): Boolean;
+begin
+  Result := False;
+  AProviderId := '';
+  SetLength(AEmbedding, 0);
+  if not Assigned(FEmbeddingProvider) then
+    Exit;
+  try
+    AEmbedding := FEmbeddingProvider.Embed(AQuery);
+    if (Length(AEmbedding) <> FEmbeddingProvider.GetDimensions) or
+      not IsValidEmbedding(AEmbedding) then
+    begin
+      SetLength(AEmbedding, 0);
+      Exit;
+    end;
+    AProviderId := FEmbeddingProvider.GetId;
+    Result := True;
+  except
+    SetLength(AEmbedding, 0);
   end;
 end;
 
@@ -760,7 +1001,9 @@ function TRadIALocalKnowledgeService.GetStatus(
   const AProjectId: string
 ): TRadIAKnowledgeStatus;
 var
+  LChunk: TRadIAKnowledgeChunkEntry;
   LChunkCount: Integer;
+  LEstimatedIndexBytes: Int64;
   LFile: TRadIAKnowledgeFileEntry;
   LFileCount: Integer;
   LIndex: TRadIAKnowledgeProjectIndex;
@@ -770,6 +1013,7 @@ begin
     Exit(TRadIAKnowledgeStatus.Create('', False, 0, 0));
   EnsureProjectLoaded(AProjectId);
   LChunkCount := 0;
+  LEstimatedIndexBytes := 0;
   LFileCount := 0;
   TMonitor.Enter(FProjects);
   try
@@ -778,7 +1022,32 @@ begin
     begin
       LFileCount := LIndex.Files.Count;
       for LFile in LIndex.Files.Values do
+      begin
         Inc(LChunkCount, LFile.Chunks.Count);
+        Inc(
+          LEstimatedIndexBytes,
+          Length(LFile.Revision) * SizeOf(Char)
+        );
+        for LChunk in LFile.Chunks do
+        begin
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.Content) * SizeOf(Char)
+          );
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.Symbol) * SizeOf(Char)
+          );
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.FileName) * SizeOf(Char)
+          );
+          Inc(
+            LEstimatedIndexBytes,
+            Length(LChunk.Chunk.Embedding) * SizeOf(Single)
+          );
+        end;
+      end;
     end;
   finally
     TMonitor.Exit(FProjects);
@@ -788,7 +1057,25 @@ begin
     LLoaded,
     LFileCount,
     LChunkCount
-  );
+  ).WithEstimatedIndexBytes(LEstimatedIndexBytes);
+end;
+
+function TRadIALocalKnowledgeService.IsValidEmbedding(
+  const AEmbedding: TArray<Single>
+): Boolean;
+var
+  LMagnitude: Double;
+  LValue: Single;
+begin
+  Result := False;
+  LMagnitude := 0;
+  for LValue in AEmbedding do
+  begin
+    if IsNan(LValue) or IsInfinite(LValue) then
+      Exit;
+    LMagnitude := LMagnitude + Sqr(LValue);
+  end;
+  Result := LMagnitude > 0;
 end;
 
 function TRadIALocalKnowledgeService.IsStructuralDeclaration(
@@ -818,24 +1105,69 @@ begin
     LLine.StartsWith('class function ');
 end;
 
+function TRadIALocalKnowledgeService.TRadIAKnowledgeChunkEntry.VectorScore(
+  const AProviderId: string;
+  const AQueryEmbedding: TArray<Single>
+): Integer;
+var
+  LChunkMagnitude: Double;
+  LDotProduct: Double;
+  LIndex: Integer;
+  LQueryMagnitude: Double;
+  LSimilarity: Double;
+begin
+  Result := 0;
+  if not SameText(FChunk.EmbeddingProviderId, AProviderId) or
+    (Length(FChunk.Embedding) = 0) or
+    (Length(FChunk.Embedding) <> Length(AQueryEmbedding)) then
+    Exit;
+  LDotProduct := 0;
+  LChunkMagnitude := 0;
+  LQueryMagnitude := 0;
+  for LIndex := 0 to Length(AQueryEmbedding) - 1 do
+  begin
+    LDotProduct := LDotProduct +
+      (FChunk.Embedding[LIndex] * AQueryEmbedding[LIndex]);
+    LChunkMagnitude := LChunkMagnitude +
+      Sqr(FChunk.Embedding[LIndex]);
+    LQueryMagnitude := LQueryMagnitude + Sqr(AQueryEmbedding[LIndex]);
+  end;
+  if (LChunkMagnitude <= 0) or (LQueryMagnitude <= 0) then
+    Exit;
+  LSimilarity := LDotProduct / Sqrt(LChunkMagnitude * LQueryMagnitude);
+  Result := Round(Max(0, Min(1, LSimilarity)) * 1000);
+end;
+
+function TRadIALocalKnowledgeService.NeedsDocumentUpdate(
+  const AProjectId: string;
+  const AFileName: string;
+  const ARevision: string
+): Boolean;
+var
+  LEntry: TRadIAKnowledgeFileEntry;
+  LIndex: TRadIAKnowledgeProjectIndex;
+begin
+  TMonitor.Enter(FProjects);
+  try
+    LIndex := GetOrCreateProject(AProjectId);
+    Result := not LIndex.Files.TryGetValue(AFileName, LEntry) or
+      not SameText(LEntry.Revision, ARevision);
+  finally
+    TMonitor.Exit(FProjects);
+  end;
+end;
+
 function TRadIALocalKnowledgeService.RefreshProject:
   TRadIAKnowledgeRefreshResult;
 var
-  LChunks: TArray<TRadIAKnowledgeChunk>;
-  LDocument: TRadIAKnowledgeDocument;
-  LEntry: TRadIAKnowledgeFileEntry;
   LFileName: string;
   LFiles: TArray<string>;
-  LIndex: TRadIAKnowledgeProjectIndex;
   LIndexedFiles: Integer;
   LKnownFiles: TDictionary<string, Boolean>;
-  LNeedsUpdate: Boolean;
   LProjectId: string;
   LRemovedFiles: Integer;
   LSkippedFiles: Integer;
   LSnapshot: TRadIAKnowledgeIndexSnapshot;
-  LStoredFile: string;
-  LToRemove: TList<string>;
   LUpdatedFiles: Integer;
 begin
   LProjectId := Trim(FSource.GetProjectId);
@@ -850,7 +1182,6 @@ begin
     SetLength(LFiles, CMaxProjectFiles);
 
   LKnownFiles := TDictionary<string, Boolean>.Create;
-  LToRemove := TList<string>.Create;
   try
     LUpdatedFiles := 0;
     LSkippedFiles := 0;
@@ -866,69 +1197,18 @@ begin
       if Trim(LFileName) = '' then
         Continue;
       LKnownFiles.AddOrSetValue(LFileName, True);
-      if not FSource.ReadSourceFile(LFileName, LDocument) or
-        (Length(LDocument.Content) > CMaxDocumentCharacters) then
-      begin
+      if RefreshFile(LProjectId, LFileName) = kfrUpdated then
+        Inc(LUpdatedFiles)
+      else
         Inc(LSkippedFiles);
-        Continue;
-      end;
-
-      TMonitor.Enter(FProjects);
-      try
-        LIndex := GetOrCreateProject(LProjectId);
-        LNeedsUpdate :=
-          not LIndex.Files.TryGetValue(LFileName, LEntry) or
-          not SameText(LEntry.Revision, LDocument.Revision);
-      finally
-        TMonitor.Exit(FProjects);
-      end;
-      if not LNeedsUpdate then
-      begin
-        Inc(LSkippedFiles);
-        Continue;
-      end;
-
-      LChunks := BuildChunks(LDocument);
-      TMonitor.Enter(FProjects);
-      try
-        LIndex := GetOrCreateProject(LProjectId);
-        LNeedsUpdate :=
-          not LIndex.Files.TryGetValue(LFileName, LEntry) or
-          not SameText(LEntry.Revision, LDocument.Revision);
-        if LNeedsUpdate then
-        begin
-          LEntry := TRadIAKnowledgeFileEntry.Create(
-            LDocument.Revision,
-            LChunks
-          );
-          LIndex.Files.AddOrSetValue(LFileName, LEntry);
-          Inc(LUpdatedFiles);
-        end
-        else
-          Inc(LSkippedFiles);
-      finally
-        TMonitor.Exit(FProjects);
-      end;
     end;
 
-    TMonitor.Enter(FProjects);
-    try
-      LIndex := GetOrCreateProject(LProjectId);
-      for LStoredFile in LIndex.Files.Keys do
-      begin
-        if not LKnownFiles.ContainsKey(LStoredFile) then
-          LToRemove.Add(LStoredFile);
-      end;
-      for LStoredFile in LToRemove do
-      begin
-        LIndex.Files.Remove(LStoredFile);
-        Inc(LRemovedFiles);
-      end;
-      LIndexedFiles := LIndex.Files.Count;
-      FLoadedProjects.AddOrSetValue(LProjectId, True);
-    finally
-      TMonitor.Exit(FProjects);
-    end;
+    RemoveStaleFiles(
+      LProjectId,
+      LKnownFiles,
+      LIndexedFiles,
+      LRemovedFiles
+    );
     if Assigned(FStore) then
     begin
       LSnapshot := CreateSnapshot(LProjectId);
@@ -942,8 +1222,80 @@ begin
       LRemovedFiles
     );
   finally
-    LToRemove.Free;
     LKnownFiles.Free;
+  end;
+end;
+
+function TRadIALocalKnowledgeService.RefreshFile(
+  const AProjectId: string;
+  const AFileName: string
+): TRadIAKnowledgeFileRefresh;
+var
+  LChunks: TArray<TRadIAKnowledgeChunk>;
+  LDocument: TRadIAKnowledgeDocument;
+  LEntry: TRadIAKnowledgeFileEntry;
+  LIndex: TRadIAKnowledgeProjectIndex;
+begin
+  Result := kfrSkipped;
+  if not FSource.ReadSourceFile(AFileName, LDocument) or
+    (Length(LDocument.Content) > CMaxDocumentCharacters) then
+    Exit;
+  if not NeedsDocumentUpdate(
+    AProjectId,
+    AFileName,
+    LDocument.Revision
+  ) then
+    Exit;
+  LChunks := AttachEmbeddings(BuildChunks(LDocument));
+  TMonitor.Enter(FProjects);
+  try
+    LIndex := GetOrCreateProject(AProjectId);
+    if LIndex.Files.TryGetValue(AFileName, LEntry) and
+      SameText(LEntry.Revision, LDocument.Revision) then
+      Exit;
+    LEntry := TRadIAKnowledgeFileEntry.Create(
+      LDocument.Revision,
+      LChunks
+    );
+    LIndex.Files.AddOrSetValue(AFileName, LEntry);
+    Result := kfrUpdated;
+  finally
+    TMonitor.Exit(FProjects);
+  end;
+end;
+
+procedure TRadIALocalKnowledgeService.RemoveStaleFiles(
+  const AProjectId: string;
+  const AKnownFiles: TDictionary<string, Boolean>;
+  out AIndexedFiles: Integer;
+  out ARemovedFiles: Integer
+);
+var
+  LIndex: TRadIAKnowledgeProjectIndex;
+  LStoredFile: string;
+  LToRemove: TList<string>;
+begin
+  ARemovedFiles := 0;
+  LToRemove := TList<string>.Create;
+  try
+    TMonitor.Enter(FProjects);
+    try
+      LIndex := GetOrCreateProject(AProjectId);
+      for LStoredFile in LIndex.Files.Keys do
+        if not AKnownFiles.ContainsKey(LStoredFile) then
+          LToRemove.Add(LStoredFile);
+      for LStoredFile in LToRemove do
+      begin
+        LIndex.Files.Remove(LStoredFile);
+        Inc(ARemovedFiles);
+      end;
+      AIndexedFiles := LIndex.Files.Count;
+      FLoadedProjects.AddOrSetValue(AProjectId, True);
+    finally
+      TMonitor.Exit(FProjects);
+    end;
+  finally
+    LToRemove.Free;
   end;
 end;
 
@@ -1008,12 +1360,11 @@ function TRadIALocalKnowledgeService.Search(
   const AMaxResults: Integer
 ): TArray<TRadIAKnowledgeSearchHit>;
 var
-  LChunkEntry: TRadIAKnowledgeChunkEntry;
-  LFileEntry: TRadIAKnowledgeFileEntry;
   LHits: TList<TRadIAKnowledgeSearchHit>;
   LIndex: TRadIAKnowledgeProjectIndex;
+  LProviderId: string;
+  LQueryEmbedding: TArray<Single>;
   LQueryTokens: TArray<string>;
-  LScore: Integer;
 begin
   if (Trim(AProjectId) = '') or
     (Trim(AQuery) = '') or
@@ -1022,6 +1373,7 @@ begin
   LQueryTokens := Tokenize(AQuery);
   if Length(LQueryTokens) = 0 then
     Exit(nil);
+  CreateQueryEmbedding(AQuery, LProviderId, LQueryEmbedding);
   EnsureProjectLoaded(AProjectId);
 
   LHits := TList<TRadIAKnowledgeSearchHit>.Create;
@@ -1030,20 +1382,13 @@ begin
     try
       if not FProjects.TryGetValue(AProjectId, LIndex) then
         Exit(nil);
-      for LFileEntry in LIndex.Files.Values do
-      begin
-        for LChunkEntry in LFileEntry.Chunks do
-        begin
-          LScore := LChunkEntry.Score(LQueryTokens);
-          if LScore > 0 then
-            LHits.Add(
-              TRadIAKnowledgeSearchHit.Create(
-                LChunkEntry.Chunk,
-                LScore
-              )
-            );
-        end;
-      end;
+      CollectSearchHits(
+        LIndex,
+        LQueryTokens,
+        LProviderId,
+        LQueryEmbedding,
+        LHits
+      );
     finally
       TMonitor.Exit(FProjects);
     end;

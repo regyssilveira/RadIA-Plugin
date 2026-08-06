@@ -49,14 +49,51 @@ type
 implementation
 
 uses
+  System.Actions,
   System.Math,
   System.SysUtils,
   ToolsAPI,
+  Vcl.ActnList,
+  Vcl.Forms,
   Winapi.Windows,
   RadIA.Core.Types;
 
 const
   CDebuggerUnavailable = 'The debugger is shutting down.';
+
+function FindIDEAction(
+  const AActionNames: array of string
+): TBasicAction;
+var
+  LAction: TContainedAction;
+  LActionIndex: Integer;
+  LActionList: TCustomActionList;
+  LNameIndex: Integer;
+  LServices: INTAServices;
+begin
+  Result := nil;
+  if not Supports(BorlandIDEServices, INTAServices, LServices) then
+    Exit;
+  LActionList := LServices.ActionList;
+  if not Assigned(LActionList) then
+    Exit;
+
+  for LNameIndex := Low(AActionNames) to High(AActionNames) do
+    for LActionIndex := 0 to LActionList.ActionCount - 1 do
+    begin
+      LAction := LActionList[LActionIndex];
+      if Assigned(LAction) and
+        SameText(LAction.Name, AActionNames[LNameIndex]) then
+        Exit(LAction);
+    end;
+end;
+
+function HasDebugProcess(
+  const ADebugger: IOTADebuggerServices
+): Boolean;
+begin
+  Result := Assigned(ADebugger) and (ADebugger.ProcessCount > 0);
+end;
 
 function ProcessStateToString(
   const AState: TOTAProcessState
@@ -126,6 +163,218 @@ begin
   Result := False;
 end;
 
+function DebuggerActionStateIsValid(
+  const AProcess: IOTAProcess;
+  const AAction: TRadIADebuggerAction;
+  const AStateBefore: string;
+  out AFailure: TRadIADebuggerActionResult
+): Boolean;
+begin
+  Result := False;
+  case AAction of
+    daPause:
+      if AProcess.ProcessState <> psRunning then
+      begin
+        AFailure := TRadIADebuggerActionResult.Failed(
+          'invalid_debugger_state',
+          'Pause requires a running debug process.',
+          AStateBefore
+        );
+        Exit;
+      end;
+    daContinue,
+    daStepInto,
+    daStepOver,
+    daStepOut:
+      if not (AProcess.ProcessState in [psStopped, psException]) then
+      begin
+        AFailure := TRadIADebuggerActionResult.Failed(
+          'invalid_debugger_state',
+          'Continue and step actions require a stopped debug process.',
+          AStateBefore
+        );
+        Exit;
+      end;
+    daStop:
+      if AProcess.ProcessState in [
+        psTerminated,
+        psNoProcess,
+        psNothing
+      ] then
+      begin
+        AFailure := TRadIADebuggerActionResult.Failed(
+          'invalid_debugger_state',
+          'The debug process is not active.',
+          AStateBefore
+        );
+        Exit;
+      end;
+  end;
+  Result := True;
+end;
+
+function ExecuteProcessAction(
+  const AProcess: IOTAProcess;
+  const AAction: TRadIADebuggerAction
+): TRadIADebuggerActionResult;
+var
+  LStateBefore: string;
+begin
+  LStateBefore := ProcessStateToString(AProcess.ProcessState);
+  if not DebuggerActionStateIsValid(
+    AProcess,
+    AAction,
+    LStateBefore,
+    Result
+  ) then
+    Exit;
+  try
+    case AAction of
+      daPause:
+        AProcess.Pause;
+      daContinue:
+        AProcess.Run(ormRun);
+      daStepInto:
+        AProcess.Run(ormStmtStepInto);
+      daStepOver:
+        AProcess.Run(ormStmtStepOver);
+      daStepOut:
+        AProcess.Run(ormRunUntilReturn);
+      daStop:
+        AProcess.Terminate;
+    end;
+    Result := TRadIADebuggerActionResult.Succeeded(
+      'The debugger accepted the requested action.',
+      LStateBefore,
+      ProcessStateToString(AProcess.ProcessState)
+    );
+  except
+    on E: Exception do
+      Result := TRadIADebuggerActionResult.Failed(
+        'debugger_action_failed',
+        E.Message,
+        LStateBefore
+      );
+  end;
+end;
+
+function WaitForDebugProcess(
+  const ADebugger: IOTADebuggerServices
+): Boolean;
+var
+  LWaitCount: Integer;
+begin
+  LWaitCount := 30;
+  while (LWaitCount > 0) and not HasDebugProcess(ADebugger) do
+  begin
+    Application.ProcessMessages;
+    Sleep(100);
+    Dec(LWaitCount);
+  end;
+  Result := HasDebugProcess(ADebugger);
+end;
+
+function TryGetDebugProject(
+  out ADebugger: IOTADebuggerServices;
+  out AProject: IOTAProject;
+  out AFailure: TRadIADebuggerActionResult
+): Boolean;
+var
+  LModuleServices: IOTAModuleServices;
+  LProcess: IOTAProcess;
+begin
+  AFailure := TRadIADebuggerActionResult.Failed(
+    'debugger_unavailable',
+    'The IDE debugger is unavailable.',
+    'unknown'
+  );
+  Result := Supports(
+    BorlandIDEServices,
+    IOTADebuggerServices,
+    ADebugger
+  ) and Supports(
+    BorlandIDEServices,
+    IOTAModuleServices,
+    LModuleServices
+  );
+  if not Result then
+    Exit;
+  LProcess := ADebugger.CurrentProcess;
+  if Assigned(LProcess) and
+    not (LProcess.ProcessState in [
+      psNothing,
+      psTerminated,
+      psNoProcess
+    ]) then
+  begin
+    AFailure := TRadIADebuggerActionResult.Failed(
+      'debug_process_active',
+      'A debug process is already active.',
+      ProcessStateToString(LProcess.ProcessState)
+    );
+    Exit(False);
+  end;
+  AProject := LModuleServices.GetActiveProject;
+  Result := Assigned(AProject) and
+    Assigned(AProject.ProjectBuilder) and
+    Assigned(AProject.ProjectOptions);
+  if not Result then
+    AFailure := TRadIADebuggerActionResult.Failed(
+      'project_unavailable',
+      'There is no buildable active project.',
+      'no_process'
+    );
+end;
+
+function StartDebugProject(
+  const AProject: IOTAProject;
+  const ADebugger: IOTADebuggerServices
+): TRadIADebuggerActionResult;
+var
+  LAction: TBasicAction;
+begin
+  try
+    LAction := FindIDEAction([
+      'RunRunCommand',
+      'ProjectRunCommand',
+      'DebuggerRunCommand',
+      'RunCommand',
+      'RunProjectCommand'
+    ]);
+    if not Assigned(LAction) then
+      Exit(TRadIADebuggerActionResult.Failed(
+        'debugger_action_unavailable',
+        'The IDE Run action is unavailable.',
+        'no_process'
+      ));
+    if not Assigned(AProject.ProjectBuilder) then
+      Exit(TRadIADebuggerActionResult.Failed(
+        'project_builder_unavailable',
+        'The active project cannot be run by the IDE.',
+        'no_process'
+      ));
+    LAction.Execute;
+    if not WaitForDebugProcess(ADebugger) then
+      Exit(TRadIADebuggerActionResult.Failed(
+        'debugger_start_not_confirmed',
+        'The IDE did not start a debug process.',
+        'no_process'
+      ));
+    Result := TRadIADebuggerActionResult.Succeeded(
+      'The IDE started the active project debug session.',
+      'no_process',
+      'starting'
+    );
+  except
+    on E: Exception do
+      Result := TRadIADebuggerActionResult.Failed(
+        'debugger_start_failed',
+        E.Message,
+        'no_process'
+      );
+  end;
+end;
+
 { TRadIAOTADebuggerFacade }
 
 function TRadIAOTADebuggerFacade.AddSourceBreakpoint(
@@ -184,7 +433,6 @@ begin
     var
       LDebugger: IOTADebuggerServices;
       LProcess: IOTAProcess;
-      LStateBefore: string;
     begin
       if not Supports(
         BorlandIDEServices,
@@ -202,82 +450,7 @@ begin
         );
         Exit;
       end;
-
-      LStateBefore := ProcessStateToString(LProcess.ProcessState);
-      try
-        case AAction of
-          daPause:
-          begin
-            if LProcess.ProcessState <> psRunning then
-            begin
-              LResult := TRadIADebuggerActionResult.Failed(
-                'invalid_debugger_state',
-                'Pause requires a running debug process.',
-                LStateBefore
-              );
-              Exit;
-            end;
-            LProcess.Pause;
-          end;
-          daContinue,
-          daStepInto,
-          daStepOver,
-          daStepOut:
-          begin
-            if not (LProcess.ProcessState in [
-              psStopped,
-              psException
-            ]) then
-            begin
-              LResult := TRadIADebuggerActionResult.Failed(
-                'invalid_debugger_state',
-                'Continue and step actions require a stopped debug process.',
-                LStateBefore
-              );
-              Exit;
-            end;
-            case AAction of
-              daContinue:
-                LProcess.Run(ormRun);
-              daStepInto:
-                LProcess.Run(ormStmtStepInto);
-              daStepOver:
-                LProcess.Run(ormStmtStepOver);
-              daStepOut:
-                LProcess.Run(ormRunUntilReturn);
-            end;
-          end;
-          daStop:
-          begin
-            if LProcess.ProcessState in [
-              psTerminated,
-              psNoProcess,
-              psNothing
-            ] then
-            begin
-              LResult := TRadIADebuggerActionResult.Failed(
-                'invalid_debugger_state',
-                'The debug process is not active.',
-                LStateBefore
-              );
-              Exit;
-            end;
-            LProcess.Terminate;
-          end;
-        end;
-        LResult := TRadIADebuggerActionResult.Succeeded(
-          'The debugger accepted the requested action.',
-          LStateBefore,
-          ProcessStateToString(LProcess.ProcessState)
-        );
-      except
-        on E: Exception do
-          LResult := TRadIADebuggerActionResult.Failed(
-            'debugger_action_failed',
-            E.Message,
-            LStateBefore
-          );
-      end;
+      LResult := ExecuteProcessAction(LProcess, AAction);
     end
   );
   Result := LResult;
@@ -657,87 +830,10 @@ begin
     procedure
     var
       LDebugger: IOTADebuggerServices;
-      LModuleServices: IOTAModuleServices;
-      LProcess: IOTAProcess;
       LProject: IOTAProject;
-      LTargetName: string;
     begin
-      if not Supports(
-        BorlandIDEServices,
-        IOTADebuggerServices,
-        LDebugger
-      ) or not Supports(
-        BorlandIDEServices,
-        IOTAModuleServices,
-        LModuleServices
-      ) then
-        Exit;
-      LProcess := LDebugger.CurrentProcess;
-      if Assigned(LProcess) and
-        not (LProcess.ProcessState in [
-          psNothing,
-          psTerminated,
-          psNoProcess
-        ]) then
-      begin
-        LResult := TRadIADebuggerActionResult.Failed(
-          'debug_process_active',
-          'A debug process is already active.',
-          ProcessStateToString(LProcess.ProcessState)
-        );
-        Exit;
-      end;
-      LProject := LModuleServices.GetActiveProject;
-      if not Assigned(LProject) or
-        not Assigned(LProject.ProjectBuilder) or
-        not Assigned(LProject.ProjectOptions) then
-      begin
-        LResult := TRadIADebuggerActionResult.Failed(
-          'project_unavailable',
-          'There is no buildable active project.',
-          'no_process'
-        );
-        Exit;
-      end;
-      try
-        if not LProject.ProjectBuilder.BuildProject(
-          cmOTAMake,
-          True,
-          True
-        ) then
-        begin
-          LResult := TRadIADebuggerActionResult.Failed(
-            'build_failed',
-            'The active project did not build successfully.',
-            'no_process'
-          );
-          Exit;
-        end;
-        LTargetName := LProject.ProjectOptions.TargetName;
-        if (Trim(LTargetName) = '') or
-          not FileExists(LTargetName) then
-        begin
-          LResult := TRadIADebuggerActionResult.Failed(
-            'target_unavailable',
-            'The active project target was not produced by the build.',
-            'no_process'
-          );
-          Exit;
-        end;
-        LDebugger.CreateProcess(LTargetName, '');
-        LResult := TRadIADebuggerActionResult.Succeeded(
-          'The IDE accepted the active project debug session.',
-          'no_process',
-          'starting'
-        );
-      except
-        on E: Exception do
-          LResult := TRadIADebuggerActionResult.Failed(
-            'debugger_start_failed',
-            E.Message,
-            'no_process'
-          );
-      end;
+      if TryGetDebugProject(LDebugger, LProject, LResult) then
+        LResult := StartDebugProject(LProject, LDebugger);
     end
   );
   Result := LResult;

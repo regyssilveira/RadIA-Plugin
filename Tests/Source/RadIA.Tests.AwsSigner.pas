@@ -30,8 +30,16 @@ var
   LDateStamp: string;
 begin
   TAwsSigV4Signer.GetAmzDateTimeStrings(LAmzDate, LDateStamp);
-  Assert.AreEqual(8, Integer(Length(LDateStamp)), 'DateStamp format should be YYYYMMDD');
-  Assert.AreEqual(16, Integer(Length(LAmzDate)), 'AmzDate format should be YYYYMMDDTHHMMSSZ');
+  Assert.AreEqual<Integer>(
+    8,
+    Length(LDateStamp),
+    'DateStamp format should be YYYYMMDD'
+  );
+  Assert.AreEqual<Integer>(
+    16,
+    Length(LAmzDate),
+    'AmzDate format should be YYYYMMDDTHHMMSSZ'
+  );
   Assert.IsTrue(LAmzDate.EndsWith('Z'), 'AmzDate must end with Z');
 end;
 

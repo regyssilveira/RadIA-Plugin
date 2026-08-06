@@ -76,7 +76,7 @@ Usa as APIs de extensão da IDE Delphi (**Open Tools API - OTA**) para acoplar o
 | [RadIA.OTA.Register.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Register.pas) | Ponto de entrada do plugin. Registra o Wizard principal na IDE (`TRadIAWizard`) e inicializa o container IoC. |
 | [RadIA.OTA.EditorHook.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.EditorHook.pas) | Hook interceptador de ações. Gerencia menus de contexto do botão direito do mouse no editor de código da IDE. |
 | [RadIA.OTA.ContextParser.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.ContextParser.pas) | Extrai e normaliza código-fonte do editor de texto para enviar como contexto em prompts da IA. |
-| [RadIA.OTA.DockableForm.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.DockableForm.pas) | Formulário base compatível com a IDE que permite que as telas do Rad IA se acoplem (docking) em abas laterais. |
+| [RadIA.OTA.DockableForm.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.DockableForm.pas) | Adaptador `INTACustomDockableForm` que entrega à OTA a criação do host, o docking e a persistência no desktop da IDE. |
 | [RadIA.OTA.Helper.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Helper.pas) | Encapsula funções utilitárias complexas para manipulação de texto no editor, consumindo o editor ativo via `IRadIAEditorAdapter`. |
 | [RadIA.OTA.MessageViewHook.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.MessageViewHook.pas) | Intercepta e gerencia os itens de erros e avisos da aba "Messages" para habilitar o Smart Build Debugger. |
 | `RadIA.OTA.Workspace` e `TextReader` | Fachada OTA de workspace e leitura segura de buffers. |
@@ -84,7 +84,7 @@ Usa as APIs de extensão da IDE Delphi (**Open Tools API - OTA**) para acoplar o
 | `RadIA.OTA.Build` | Adapter do build e captura estruturada de resultados. |
 | `RadIA.OTA.Designer` | Adapter do Form Designer vivo na thread principal. |
 | `RadIA.OTA.Debugger` | Adapter de estado e controle do debugger. |
-| `RadIA.OTA.InlineReviews` | Apresentação e ciclo das revisões inline. |
+| `RadIA.OTA.InlineReviews` | Apresentação e ciclo das revisões inline pela API moderna `INTACodeEditorEvents`. |
 | `RadIA.OTA.Knowledge*` | Índice local e notificações de edit, save, rename e close. |
 | `RadIA.MCP.NamedPipe` | Servidor local, ACL, discovery por PID e transporte. |
 

@@ -1,5 +1,10 @@
 # Catálogo Inicial de Ferramentas Agentivas
 
+> Este documento descreve a arquitetura alvo e inclui itens de roadmap. Para a lista verificável
+> das tools realmente registradas pelo package atual, consulte o
+> [catálogo gerado do runtime](runtime_tool_catalog.md). Na IDE, `/tools` permanece a fonte final,
+> pois extensões podem adicionar ferramentas dinamicamente.
+
 ## 1. Convenções
 
 Os nomes públicos das ferramentas são estáveis, em inglês e usam `PascalCase`. Uma alteração
@@ -15,6 +20,35 @@ Cada ferramenta deve declarar:
 - Idempotência.
 - Timeout.
 - Possíveis efeitos.
+
+### Contrato de intenção visual
+
+Toda execução bem-sucedida que retorna um objeto JSON recebe o campo reservado `_radiaView`. Esse
+campo permite que chat, MCP e futuras superfícies visuais escolham a mesma apresentação sem
+conhecer regras particulares de cada ferramenta:
+
+```json
+{
+  "_radiaView": {
+    "version": 1,
+    "kind": "explorer",
+    "action": "show_explorer",
+    "sourceTool": "ListProjectUnits"
+  }
+}
+```
+
+Os tipos atuais são `details`, `explorer`, `editor_navigation`, `diff` e `activity`. Resultados de
+erro, arrays e conteúdo truncado são preservados. Clientes que não implementam visualizações podem
+ignorar `_radiaView`; o restante do contrato continua compatível.
+
+| Família da ferramenta | Visualização sugerida |
+|---|---|
+| Navegação de arquivo ou símbolo | Editor |
+| Preview, patch e Git diff | Diff |
+| Build, teste, debug e timeline | Atividade |
+| Projeto, units, símbolos e estado da IDE | Explorer |
+| Demais ferramentas | Detalhes |
 
 ## 2. Slice inicial
 
@@ -47,6 +81,8 @@ O conteúdo retornado deve indicar truncamento, tamanho original e revisão/hash
 - `FindInEditor`
 - `FindInProject`
 - `GetUnitSymbols`
+- `NavigateToFile`
+- `NavigateToSymbol`
 
 ### Escrita reversível
 
@@ -96,6 +132,19 @@ patches, que continua sujeito a consentimento, precondições e reversão.
 - `GetConditionalDefines`
 - `GetProjectOutputPaths`
 - `GetProjectDependencies`
+- `ListProjectGroupProjects`
+
+As tools acima agora usam diretamente o project group e o grafo de dependências da OTA. A navegação
+por arquivo só aceita arquivos pertencentes a projetos abertos; a navegação por símbolo usa o buffer
+vivo da unit ativa.
+
+### Ações seguras da IDE
+
+- `ListIDEActions`
+- `ExecuteIDEAction`
+
+`ListIDEActions` retorna apenas ações presentes em uma allowlist de navegação e visualização.
+`ExecuteIDEAction` é classificada como execução, exige consentimento e recusa nomes fora dessa lista.
 
 ### Escrita estrutural
 
@@ -172,8 +221,9 @@ exige consentimento e auditoria antes de alcançar o adapter. Pausa, continuaç�
 risco `Execution`; encerramento possui risco `Destructive` e nunca reutiliza permissão de sessão.
 `AddBreakpoint` aceita somente fontes Pascal dentro do workspace, rejeita duplicatas e informa
 `RemoveBreakpoint` como operação inversa. `RemoveBreakpoint` exige confirmação destrutiva em toda
-chamada. `StartDebugging` executa `Make` no projeto ativo e inicia somente o `TargetName` produzido
-por esse build, sem aceitar caminho de executável arbitrário. A lista de watches é estado interno
+chamada. `StartDebugging` usa a ação oficial **Run** da IDE, que recompila quando necessário, e
+inicia somente o `TargetName` produzido, sem aceitar caminho de executável arbitrário. A lista de
+watches é estado interno
 limitado e suas alterações usam consentimento estrutural.
 
 ## 7. Form Designer
@@ -233,11 +283,13 @@ coincidam com o preview; código concorrente do usuário nunca é sobrescrito si
 
 ### Mutação
 
-- `StageFiles`
-- `CreateBranch`
+- `PreviewGitCommit`
 - `CommitChanges`
 
-Não serão oferecidas ferramentas de reset destrutivo ou descarte irrestrito.
+`GetGitStatus`, `GetGitDiff`, `PreviewGitCommit` e `CommitChanges` estão implementadas. O preview
+não altera o index e congela paths, mensagem, diff e fingerprint. O commit exige index inicialmente
+limpo, revalida o fingerprint e adiciona somente os paths revisados. Não são oferecidas ferramentas
+de reset destrutivo, descarte irrestrito ou push.
 
 ## 9. Conhecimento
 

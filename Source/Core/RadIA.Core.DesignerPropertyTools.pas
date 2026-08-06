@@ -16,8 +16,7 @@ implementation
 uses
   System.DateUtils,
   System.JSON,
-  System.SysUtils,
-  RadIA.Core.Designer;
+  System.SysUtils;
 
 type
   TRadIADesignerPropertyToolKind = (

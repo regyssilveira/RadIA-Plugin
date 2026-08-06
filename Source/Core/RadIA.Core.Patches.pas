@@ -74,6 +74,10 @@ type
 
   IRadIAEditorMutationFacade = interface
     ['{542F56BD-100D-4D20-9D3A-538BAE14BB56}']
+    function ReadContent(
+      const AFileName: string;
+      const AMaxCharacters: Integer
+    ): TRadIAEditorContent;
     function ApplyContent(
       const AFileName: string;
       const AExpectedRevision: string;
@@ -433,7 +437,7 @@ begin
   if not Result.Success then
     Exit;
 
-  LSnapshot := FWorkspace.GetEditorContent(-1);
+  LSnapshot := FMutation.ReadContent(ASpec.TargetFile, -1);
   if LSnapshot.OriginalLength > CMaxPatchCharacters then
     Exit(TRadIAPatchResult.Failed(
       CResourceLimit,

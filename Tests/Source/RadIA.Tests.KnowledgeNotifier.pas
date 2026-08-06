@@ -25,9 +25,11 @@ type
   TTestRadIAKnowledgeNotifier = class
   public
     [Test]
+    procedure DeactivatedModuleEventsDoNotScheduleRefresh;
+    [Test]
     procedure ModuleEventsMarkKnowledgeDirty;
     [Test]
-    procedure SourceFilterAcceptsOnlyIndexableDelphiFiles;
+    procedure SourceFilterAcceptsIndexableKnowledgeFiles;
   end;
 
 implementation
@@ -61,15 +63,50 @@ end;
 
 { TTestRadIAKnowledgeNotifier }
 
+procedure TTestRadIAKnowledgeNotifier.DeactivatedModuleEventsDoNotScheduleRefresh;
+var
+  LControl: IRadIAKnowledgeModuleNotifierControl;
+  LNotifier: IOTAModuleNotifier;
+  LNotifierReference: IInterface;
+  LSchedulerReference: IRadIAKnowledgeRefreshScheduler;
+  LScheduler: TRadIAFakeKnowledgeRefreshScheduler;
+begin
+  LScheduler := TRadIAFakeKnowledgeRefreshScheduler.Create;
+  LSchedulerReference := LScheduler;
+  LNotifierReference := CreateRadIAKnowledgeModuleNotifier(
+    LSchedulerReference
+  );
+  Assert.IsTrue(
+    Supports(LNotifierReference, IOTAModuleNotifier, LNotifier)
+  );
+  Assert.IsTrue(
+    Supports(
+      LNotifierReference,
+      IRadIAKnowledgeModuleNotifierControl,
+      LControl
+    )
+  );
+
+  LControl.Deactivate;
+  LNotifier.Modified;
+  LNotifier.AfterSave;
+  LNotifier.ModuleRenamed('Renamed.Unit.pas');
+  LNotifier.Destroyed;
+
+  Assert.AreEqual(0, LScheduler.DirtyCount);
+end;
+
 procedure TTestRadIAKnowledgeNotifier.ModuleEventsMarkKnowledgeDirty;
 var
   LNotifier: IOTAModuleNotifier;
   LNotifierReference: IInterface;
+  LSchedulerReference: IRadIAKnowledgeRefreshScheduler;
   LScheduler: TRadIAFakeKnowledgeRefreshScheduler;
 begin
   LScheduler := TRadIAFakeKnowledgeRefreshScheduler.Create;
+  LSchedulerReference := LScheduler;
   LNotifierReference := CreateRadIAKnowledgeModuleNotifier(
-    LScheduler
+    LSchedulerReference
   );
   Assert.IsTrue(
     Supports(LNotifierReference, IOTAModuleNotifier, LNotifier)
@@ -85,7 +122,7 @@ begin
   Assert.AreEqual(4, LScheduler.DirtyCount);
 end;
 
-procedure TTestRadIAKnowledgeNotifier.SourceFilterAcceptsOnlyIndexableDelphiFiles;
+procedure TTestRadIAKnowledgeNotifier.SourceFilterAcceptsIndexableKnowledgeFiles;
 begin
   Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('Unit.One.pas')
@@ -99,11 +136,17 @@ begin
   Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('Shared.inc')
   );
-  Assert.IsFalse(
+  Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('FormOne.dfm')
   );
-  Assert.IsFalse(
+  Assert.IsTrue(
     TRadIAOTAKnowledgeNotifier.SupportsSourceFile('ProjectOne.dproj')
+  );
+  Assert.IsTrue(
+    TRadIAOTAKnowledgeNotifier.SupportsSourceFile('Architecture.md')
+  );
+  Assert.IsFalse(
+    TRadIAOTAKnowledgeNotifier.SupportsSourceFile('CompiledUnit.dcu')
   );
 end;
 

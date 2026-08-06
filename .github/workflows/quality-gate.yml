@@ -1,0 +1,63 @@
+name: SonarQube release gate
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: radia-sonar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Build, analyze, and enforce Quality Gate
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+      - radia-delphi
+    timeout-minutes: 45
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate runner configuration
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_TOKEN)) {
+            throw "Repository secret SONAR_TOKEN is required."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SONAR_HOST_URL)) {
+            throw "Repository variable SONAR_HOST_URL is required."
+          }
+
+      - name: Install frontend dependencies
+        shell: powershell
+        run: npm ci
+
+      - name: Lint frontend
+        shell: powershell
+        run: npm run lint
+
+      - name: Build, test, analyze, and enforce the gate
+        shell: powershell
+        run: |
+          .\run-sonar-analysis.ps1 `
+            -Test `
+            -DelphiVersion "22.0" `
+            -HostUrl $env:SONAR_HOST_URL `
+            -QualityGate

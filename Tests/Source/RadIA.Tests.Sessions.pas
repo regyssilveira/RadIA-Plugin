@@ -57,11 +57,11 @@ procedure TTestRadIASessions.TestCreateSession;
 var
   LSession: TSessionInfo;
 begin
-  Assert.AreEqual(0, Integer(FManager.Sessions.Count));
+  Assert.AreEqual<Integer>(0, FManager.Sessions.Count);
 
   LSession := FManager.CreateSession('Test Session');
 
-  Assert.AreEqual(1, Integer(FManager.Sessions.Count));
+  Assert.AreEqual<Integer>(1, FManager.Sessions.Count);
   Assert.AreEqual('Test Session', FManager.Sessions[0].Name);
   Assert.IsFalse(LSession.Id.IsEmpty);
   Assert.IsTrue(TFile.Exists(TPath.Combine(FTempDir, 'sessions_index.json')));
@@ -97,7 +97,7 @@ begin
 
   FManager.DeleteSession(LSession.Id);
 
-  Assert.AreEqual(0, Integer(FManager.Sessions.Count));
+  Assert.AreEqual<Integer>(0, FManager.Sessions.Count);
   Assert.IsFalse(TFile.Exists(LFilePath));
 end;
 
@@ -117,7 +117,7 @@ begin
 
   LHistoryOut := FManager.LoadSessionHistory(LSession.Id);
 
-  Assert.AreEqual(2, Integer(Length(LHistoryOut)));
+  Assert.AreEqual<Integer>(2, Length(LHistoryOut));
   Assert.AreEqual(TAIMessageRole.mrUser, LHistoryOut[0].Role);
   Assert.AreEqual('Hello AI', LHistoryOut[0].Content);
   Assert.AreEqual('Gemini', LHistoryOut[0].Provider);

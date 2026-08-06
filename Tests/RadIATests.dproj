@@ -45,6 +45,12 @@
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell;Winapi;$(DCC_Namespace)</DCC_Namespace>
         <DCC_DcuOutput>..\Output\$(DelphiVer)\dcu\$(Platform)\$(Config)</DCC_DcuOutput>
         <DCC_ExeOutput>..\Output\$(DelphiVer)\bin\$(Platform)\$(Config)</DCC_ExeOutput>
+        <RadIATestSource>$(BDS)\source</RadIATestSource>
+        <RadIATestDUnitX>$(RadIATestSource)\DUnitX;$(RadIATestSource)\DUnitX\src</RadIATestDUnitX>
+        <RadIACoreSource>..\Source\Core;..\Source\Integration</RadIACoreSource>
+        <RadIAOtherSource>..\Source\MCP;..\Source\Providers;..\Source\UI</RadIAOtherSource>
+        <RadIAAllSource>$(RadIACoreSource);$(RadIAOtherSource)</RadIAAllSource>
+        <DCC_UnitSearchPath>$(RadIAAllSource);$(RadIATestDUnitX);$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_E>false</DCC_E>
         <DCC_N>false</DCC_N>
         <DCC_S>false</DCC_S>
@@ -57,15 +63,19 @@
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_Namespace>System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
+        <UsePackages>true</UsePackages>
+        <DCC_UsePackage>designide;vclie;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <DCC_Namespace>System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <UsePackages>true</UsePackages>
+        <DCC_UsePackage>designide;vclie;$(DCC_UsePackage)</DCC_UsePackage>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=2.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=2.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+        <DCC_Define>TESTS;DEBUG;$(DCC_Define)</DCC_Define>
         <DCC_DebugDCUs>true</DCC_DebugDCUs>
         <DCC_Optimize>false</DCC_Optimize>
         <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
@@ -81,7 +91,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
-        <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>
+        <DCC_Define>TESTS;RELEASE;$(DCC_Define)</DCC_Define>
         <DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
         <DCC_DebugInformation>0</DCC_DebugInformation>
     </PropertyGroup>
@@ -92,13 +102,35 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.Types.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Version.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Tools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.AgentExecutors.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.CliProcess.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.PseudoTerminal.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.Terminal.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.TerminalScreen.pas"/>
+        <DCCReference Include="..\Source\UI\RadIA.UI.TerminalFrame.pas">
+            <Form>RadIATerminalFrame</Form>
+        </DCCReference>
+        <DCCReference Include="..\Source\Core\RadIA.Core.Onboarding.pas"/>
+        <DCCReference Include="..\Source\UI\RadIA.UI.OnboardingForm.pas"/>
+        <DCCReference Include="..\Source\UI\RadIA.UI.Resources.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.OnboardingForm.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.CliManager.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.CliMcpSettings.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.McpProvisioning.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.McpHandshake.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolRegistry.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.ToolViews.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Extensions.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolSecurity.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Patches.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.PatchTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Build.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.BuildTools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.DUnitX.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.DUnitXTools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.Git.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.GitTools.pas"/>
+        <DCCReference Include="..\Source\Integration\RadIA.OTA.Git.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Mcp.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Designer.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DesignerTools.pas"/>
@@ -111,13 +143,19 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.DesignerEvents.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DesignerEventTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Debugger.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.DebugTimeline.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.DebugTimelineTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerControlTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerBreakpointTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerWatches.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviews.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.InlineCompletion.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.InlineShortcuts.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviewTools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigation.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigationTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Knowledge.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.KnowledgeTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.KnowledgeStore.pas"/>
@@ -155,6 +193,8 @@
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Knowledge.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.KnowledgeNotifier.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.InlineReviews.pas"/>
+        <DCCReference Include="..\Source\Integration\RadIA.OTA.InlineCompletion.pas"/>
+        <DCCReference Include="..\Source\Integration\RadIA.OTA.IDENavigation.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Consent.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.OTA.Build.pas"/>
         <DCCReference Include="..\Source\Integration\RadIA.MCP.NamedPipe.pas"/>
@@ -210,19 +250,33 @@
         <DCCReference Include="Source\RadIA.Tests.Infrastructure.pas"/>
         <DCCReference Include="Source\RadIA.Tests.OAuth.pas"/>
         <DCCReference Include="Source\RadIA.Tests.ToolRegistry.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.ToolViews.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.AgentExecutors.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.CliProcess.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.Terminal.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.Onboarding.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.CliManager.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.CliMcpSettings.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.McpProvisioning.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.McpHandshake.pas"/>
         <DCCReference Include="Source\RadIA.Tests.WorkspaceTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.WorkspaceBoundary.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Patches.pas"/>
         <DCCReference Include="Source\RadIA.Tests.BuildTools.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.DUnitX.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.Git.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Mcp.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DesignerTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DesignerMutations.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DesignerProperties.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DebuggerTools.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.DebugTimeline.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DebuggerControlTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DebuggerBreakpointTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DebuggerInspectionTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.InlineReviews.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.InlineCompletion.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.IDENavigation.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Knowledge.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeScheduler.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeNotifier.pas"/>

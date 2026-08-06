@@ -3,7 +3,6 @@ unit RadIA.Core.KnowledgeScheduler;
 interface
 
 uses
-  System.Classes,
   System.SysUtils,
   RadIA.Core.Knowledge;
 
@@ -39,11 +38,14 @@ type
     function GetCurrentTick: UInt64;
   public
     constructor Create(
+      const AKnowledge: IRadIAKnowledgeService
+    ); overload;
+    constructor Create(
       const AKnowledge: IRadIAKnowledgeService;
-      const ADelayMs: Cardinal = 1500;
-      const ARunner: TRadIAKnowledgeBackgroundRunner = nil;
-      const ATickProvider: TRadIAKnowledgeTickProvider = nil
-    );
+      const ADelayMs: Cardinal;
+      const ARunner: TRadIAKnowledgeBackgroundRunner;
+      const ATickProvider: TRadIAKnowledgeTickProvider
+    ); overload;
     procedure MarkDirty;
     procedure Poll;
     procedure Stop;
@@ -53,11 +55,19 @@ type
 implementation
 
 uses
+  System.Classes,
   System.SyncObjs,
   Winapi.Windows,
   RadIA.Core.Types;
 
 { TRadIAKnowledgeRefreshScheduler }
+
+constructor TRadIAKnowledgeRefreshScheduler.Create(
+  const AKnowledge: IRadIAKnowledgeService
+);
+begin
+  Create(AKnowledge, 1500, nil, nil);
+end;
 
 constructor TRadIAKnowledgeRefreshScheduler.Create(
   const AKnowledge: IRadIAKnowledgeService;

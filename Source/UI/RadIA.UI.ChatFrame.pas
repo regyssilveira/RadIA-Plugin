@@ -8,6 +8,11 @@ uses  Winapi.Messages, System.SysUtils, System.Classes,
   RadIA.UI.ChatPresenter;
 
 type
+  TRadIAEdgeBrowser = class(TEdgeBrowser)
+  public
+    procedure RefreshControllerBounds;
+  end;
+
   TRadIAFrameAIChat = class(TFrame, IRadIAChatView)
     pnlToolbar: TPanel;
     lblTitle: TLabel;
@@ -18,6 +23,7 @@ type
     btnClear: TSpeedButton;
     btnExport: TSpeedButton;
     btnTemplates: TSpeedButton;
+    btnTerminal: TSpeedButton;
     SaveDialog: TSaveDialog;
     pnlInput: TPanel;
     shpInputBg: TShape;
@@ -40,6 +46,7 @@ type
     procedure btnTemplatesClick(Sender: TObject);
     procedure btnExportClick(Sender: TObject);
     procedure btnSettingsClick(Sender: TObject);
+    procedure btnTerminalClick(Sender: TObject);
     procedure EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdgeBrowser; AResult: HRESULT);
     procedure EdgeBrowserWebMessageReceived(Sender: TCustomEdgeBrowser; Args: TWebMessageReceivedEventArgs);
     procedure memPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -55,10 +62,8 @@ type
     FWebViewInitialized: Boolean;
     FPopupMenuTemplates: TPopupMenu;
     FLifecycleGuard: IInterface;
-    FEdgeBrowser: TEdgeBrowser;
-
-
-
+    FEdgeBrowser: TRadIAEdgeBrowser;
+    FLayoutRefreshQueued: Boolean;
 
     procedure UpdateWebViewNavigation;
     procedure UpdateSendButtonVisual(const AInProgress: Boolean);
@@ -67,6 +72,7 @@ type
     function ColorToHex(AColor: TColor): string;
     procedure CreateEdgeBrowser;
     procedure EnsureMainWebView;
+    procedure RefreshBrowserLayout;
     procedure CMShowingChanged(var Message: TMessage); message CM_SHOWINGCHANGED;
     procedure InitializeWebView;
     procedure CopyWebFiles;
@@ -88,6 +94,7 @@ type
 
     procedure SetTheme(const AThemeName: string);
     procedure EnsureVisibleContent;
+    procedure ExecutePrompt(const APrompt: string);
 
     { IRadIAChatView Implementation }
     procedure SetRequestState(const AInProgress: Boolean);
@@ -113,6 +120,8 @@ type
     function SaveDialogExecute(out AFileName: string): Boolean;
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
+    procedure OpenTerminal;
+    procedure OpenExtensionManager;
   end;
 
 implementation
@@ -121,12 +130,18 @@ uses
   System.IOUtils, System.JSON, ToolsAPI, RadIA.OTA.Helper, RadIA.UI.ConfigForm,
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
-  RadIA.Core.Interfaces, Winapi.WebView2;
+  RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm,
+  RadIA.UI.ExtensionManagerForm;
 
 {$R *.dfm}
 
 const
   CWebViewScrollbarStyleId = 'radia-scrollbar-style';
+
+procedure TRadIAFrameAIChat.ExecutePrompt(const APrompt: string);
+begin
+  FPresenter.SendPromptText(APrompt);
+end;
 
 function BuildWebViewScrollbarScript: string;
 begin
@@ -189,6 +204,11 @@ end;
 
 { TRadIAFrameAIChat }
 
+procedure TRadIAEdgeBrowser.RefreshControllerBounds;
+begin
+  Resize;
+end;
+
 constructor TRadIAFrameAIChat.Create(AOwner: TComponent);
 var
   LThemingServices: IOTAIDEThemingServices;
@@ -196,6 +216,7 @@ begin
   inherited Create(AOwner);
   FBrowserInitialized := False;
   FWebViewInitialized := False;
+  FLayoutRefreshQueued := False;
 
   if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
   begin
@@ -280,7 +301,11 @@ begin
   else
   begin
     if Assigned(FEdgeBrowser) then
-      FEdgeBrowser.Parent := nil;
+    begin
+      FEdgeBrowser.OnCreateWebViewCompleted := nil;
+      FEdgeBrowser.OnWebMessageReceived := nil;
+      FEdgeBrowser := nil;
+    end;
   end;
 end;
 
@@ -298,14 +323,14 @@ procedure TRadIAFrameAIChat.CMShowingChanged(var Message: TMessage);
 begin
   inherited;
   if Showing then
-    EnsureMainWebView;
+    EnsureVisibleContent;
 end;
 
 procedure TRadIAFrameAIChat.CreateEdgeBrowser;
 begin
   if not Assigned(FEdgeBrowser) then
   begin
-    FEdgeBrowser := TEdgeBrowser.Create(nil);
+    FEdgeBrowser := TRadIAEdgeBrowser.Create(nil);
     FEdgeBrowser.Parent := pnlBrowser;
     FEdgeBrowser.Align := alClient;
     FEdgeBrowser.AlignWithMargins := True;
@@ -344,22 +369,63 @@ end;
 procedure TRadIAFrameAIChat.EnsureVisibleContent;
 begin
   EnsureMainWebView;
+  RefreshBrowserLayout;
+end;
+
+procedure TRadIAFrameAIChat.RefreshBrowserLayout;
+var
+  LGuard: IRadIALifecycleGuard;
+begin
+  if FLayoutRefreshQueued then
+    Exit;
+
+  FLayoutRefreshQueued := True;
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.ForceQueue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if not LGuard.IsAlive then
+          Exit;
+        FLayoutRefreshQueued := False;
+        if GIsShuttingDown or not Assigned(FEdgeBrowser) or
+          not Assigned(pnlBrowser) then
+          Exit;
+
+        pnlBrowser.Realign;
+        FEdgeBrowser.SetBounds(
+          0,
+          0,
+          pnlBrowser.ClientWidth,
+          pnlBrowser.ClientHeight
+        );
+        FEdgeBrowser.RefreshControllerBounds;
+      end
+    )
+  );
 end;
 
 procedure TRadIAFrameAIChat.DestroyWnd;
 var
-  LEdgeToFree: TEdgeBrowser;
+  LEdgeToFree: TRadIAEdgeBrowser;
 begin
   FBrowserInitialized := False;
   FWebViewInitialized := False;
+  FLayoutRefreshQueued := False;
 
   if Assigned(FEdgeBrowser) then
   begin
     LEdgeToFree := FEdgeBrowser;
     FEdgeBrowser := nil;
-    LEdgeToFree.Parent := nil;
-    if not GIsShuttingDown then
+    if GIsShuttingDown then
     begin
+      LEdgeToFree.OnCreateWebViewCompleted := nil;
+      LEdgeToFree.OnWebMessageReceived := nil;
+    end
+    else
+    begin
+      LEdgeToFree.Parent := nil;
       LEdgeToFree.Free;
     end;
   end;
@@ -481,6 +547,11 @@ end;
 procedure TRadIAFrameAIChat.btnSettingsClick(Sender: TObject);
 begin
   FPresenter.OpenSettings;
+end;
+
+procedure TRadIAFrameAIChat.btnTerminalClick(Sender: TObject);
+begin
+  OpenTerminal;
 end;
 
 procedure TRadIAFrameAIChat.memPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -972,6 +1043,16 @@ begin
   finally
     LForm.Free;
   end;
+end;
+
+procedure TRadIAFrameAIChat.OpenTerminal;
+begin
+  ShowRadIATerminal;
+end;
+
+procedure TRadIAFrameAIChat.OpenExtensionManager;
+begin
+  ShowRadIAExtensionManager;
 end;
 
 end.

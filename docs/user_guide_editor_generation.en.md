@@ -31,8 +31,16 @@ When you request refactorings or code optimizations, Rad IA does not modify your
 
 ### Workflow and How it Works:
 * **Side-by-Side View**: The Smart Diff window displays the original code on the left (highlighted in red for deletions) and the suggested AI code on the right (highlighted in green for additions).
-* **[Apply Changes] Button**: Clicking this button at the bottom of the Diff panel replaces the targeted code block directly inside the Delphi IDE editor.
+* **Per-block review**: Each changed block has **Accept** and **Reject** actions. The counter shows
+  how many blocks are included in the version that will be applied.
+* **Navigation**: **Previous** and **Next** move between changed blocks.
+* **[Apply Selected] Button**: Applies only the accepted combination to the Delphi editor. It stays
+  disabled when every block is rejected.
 * **Safety**: If you decide to discard the changes, simply close the Diff panel. Your original file remains untouched.
+
+Smart Diff starts with every block accepted. Reject unwanted blocks, review the composed result,
+and then apply it. If the original content changes while the window is open, Rad IA interrupts the
+operation to prevent overwrite or duplication.
 
 ---
 

@@ -14,8 +14,10 @@ procedure RegisterRadIAKnowledgeTools(
 implementation
 
 uses
+  System.Diagnostics,
   System.JSON,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.KnowledgeHistory;
 
 type
   TRadIAKnowledgeToolKind = (
@@ -40,6 +42,11 @@ type
     ): TRadIAToolResult;
     function ExecuteClear: TRadIAToolResult;
     function GetDescriptor: TRadIAToolDescriptor;
+    procedure AddNavigation(
+      const AJson: TJSONObject;
+      const AFileName: string;
+      const ALine: Integer
+    );
     function GetIntegerArgument(
       const AJson: TJSONObject;
       const AName: string;
@@ -106,6 +113,29 @@ begin
     raise EArgumentNilException.Create('AKnowledge');
   FKind := AKind;
   FKnowledge := AKnowledge;
+end;
+
+procedure TRadIAKnowledgeTool.AddNavigation(
+  const AJson: TJSONObject;
+  const AFileName: string;
+  const ALine: Integer
+);
+var
+  LArguments: TJSONObject;
+  LNavigation: TJSONObject;
+begin
+  if TRadIAApprovedHistoryKnowledgeSource.IsHistoryDocument(
+    AFileName
+  ) then
+    Exit;
+  LNavigation := TJSONObject.Create;
+  LNavigation.AddPair('tool', 'NavigateToFile');
+  LArguments := TJSONObject.Create;
+  LArguments.AddPair('fileName', AFileName);
+  LArguments.AddPair('line', TJSONNumber.Create(ALine));
+  LArguments.AddPair('column', TJSONNumber.Create(1));
+  LNavigation.AddPair('arguments', LArguments);
+  AJson.AddPair('navigation', LNavigation);
 end;
 
 function TRadIAKnowledgeTool.Execute(
@@ -219,6 +249,11 @@ begin
         'endLine',
         TJSONNumber.Create(LChunk.EndLine)
       );
+      AddNavigation(
+        LItem,
+        LDocument.FileName,
+        LChunk.StartLine
+      );
       LItem.AddPair('content', LContent);
       LArray.AddElement(LItem);
     end;
@@ -256,10 +291,13 @@ end;
 
 function TRadIAKnowledgeTool.ExecuteIndex: TRadIAToolResult;
 var
+  LDuration: TStopwatch;
   LJson: TJSONObject;
   LRefresh: TRadIAKnowledgeRefreshResult;
 begin
+  LDuration := TStopwatch.StartNew;
   LRefresh := FKnowledge.RefreshProject;
+  LDuration.Stop;
   if not LRefresh.Success then
     Exit(TRadIAToolResult.Failed(
       LRefresh.ErrorCode,
@@ -285,6 +323,10 @@ begin
       'removedFiles',
       TJSONNumber.Create(LRefresh.RemovedFiles)
     );
+    LJson.AddPair(
+      'durationMs',
+      TJSONNumber.Create(LDuration.ElapsedMilliseconds)
+    );
     Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
   finally
     LJson.Free;
@@ -305,6 +347,7 @@ var
   LProjectId: string;
   LQuery: string;
   LRoot: TJSONObject;
+  LDuration: TStopwatch;
 begin
   LJson := TJSONObject.ParseJSONValue(
     ARequest.ArgumentsJson
@@ -333,11 +376,13 @@ begin
   end;
 
   LProjectId := FKnowledge.GetCurrentProjectId;
+  LDuration := TStopwatch.StartNew;
   LHits := FKnowledge.Search(
     LProjectId,
     LQuery,
     LMaxResults
   );
+  LDuration.Stop;
   LRoot := TJSONObject.Create;
   try
     LRoot.AddPair('projectId', LProjectId);
@@ -358,7 +403,25 @@ begin
         'endLine',
         TJSONNumber.Create(LHit.Chunk.EndLine)
       );
+      AddNavigation(
+        LItem,
+        LHit.Chunk.FileName,
+        LHit.Chunk.StartLine
+      );
       LItem.AddPair('score', TJSONNumber.Create(LHit.Score));
+      LItem.AddPair(
+        'lexicalScore',
+        TJSONNumber.Create(LHit.LexicalScore)
+      );
+      LItem.AddPair(
+        'vectorScore',
+        TJSONNumber.Create(LHit.VectorScore)
+      );
+      LItem.AddPair('explanation', LHit.Explanation);
+      LItem.AddPair(
+        'embeddingProvider',
+        LHit.Chunk.EmbeddingProviderId
+      );
       LContent := LHit.Chunk.Content;
       if Length(LContent) > CMaxResultContentCharacters then
         LContent := Copy(
@@ -370,6 +433,10 @@ begin
       LArray.AddElement(LItem);
     end;
     LRoot.AddPair('count', TJSONNumber.Create(Length(LHits)));
+    LRoot.AddPair(
+      'durationMs',
+      TJSONNumber.Create(LDuration.ElapsedMilliseconds)
+    );
     Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
   finally
     LRoot.Free;
@@ -400,6 +467,10 @@ begin
     LJson.AddPair(
       'chunkCount',
       TJSONNumber.Create(LStatus.ChunkCount)
+    );
+    LJson.AddPair(
+      'estimatedIndexBytes',
+      TJSONNumber.Create(LStatus.EstimatedIndexBytes)
     );
     Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
   finally

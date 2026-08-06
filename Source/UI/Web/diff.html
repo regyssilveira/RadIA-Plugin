@@ -23,6 +23,62 @@
     #diff-output {
       padding: 5px;
     }
+    #selection-panel {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 8px;
+      background: #252526;
+      border-bottom: 1px solid #3c3c3c;
+    }
+    body.light-theme #selection-panel {
+      background: #ffffff;
+      border-bottom-color: #d0d0d0;
+    }
+    #selection-summary {
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    #hunk-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .hunk-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 6px;
+      border: 1px solid #555555;
+      border-radius: 4px;
+      background: #333333;
+    }
+    body.light-theme .hunk-control {
+      border-color: #c8c8c8;
+      background: #f2f2f2;
+    }
+    .hunk-control.current {
+      outline: 2px solid #4da3ff;
+    }
+    .hunk-control.rejected {
+      opacity: 0.58;
+    }
+    .hunk-control button {
+      min-width: 58px;
+      border: 1px solid #666666;
+      border-radius: 3px;
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+    .hunk-control button.active {
+      border-color: #4da3ff;
+      font-weight: 700;
+    }
+    #selection-error {
+      display: none;
+      margin-top: 6px;
+      color: #ff8080;
+    }
 
     /* Dark mode styling overrides for diff2html */
     body.dark-theme .d2h-wrapper {
@@ -73,15 +129,166 @@
   </style>
 </head>
 <body class="dark-theme">
-  <div id="diff-output">Generating code comparison... Please wait.</div>
+  <div id="selection-panel" aria-label="Diff block selection">
+    <output id="selection-summary" aria-live="polite">
+      Waiting for diff blocks...
+    </output>
+    <div id="hunk-controls" aria-label="Diff blocks"></div>
+    <div id="selection-error" role="alert" aria-live="assertive"></div>
+  </div>
+  <main id="diff-output" aria-label="Code comparison">
+    Generating code comparison... Please wait.
+  </main>
 
   <script>
-    function renderDiff(fileName, originalCode, modifiedCode) {
-      try {
-        // Generate patch via jsdiff
-        const patch = Diff.createPatch(fileName, originalCode, modifiedCode, 'Original', 'Suggested Refactoring');
+    let currentHunkIndex = 0;
+    let currentOriginal = '';
+    let currentRenderId = '';
+    let fullPatch = null;
+    let hunkSelections = [];
 
-        // Render side-by-side comparison using diff2html
+    function clonePatchWithSelectedHunks() {
+      const cloned = structuredClone(fullPatch);
+      cloned.hunks = cloned.hunks.filter((_, index) => hunkSelections[index]);
+      return cloned;
+    }
+
+    function postSelection() {
+      if (!fullPatch) {
+        return;
+      }
+      const acceptedCount = hunkSelections.filter(Boolean).length;
+      let selectedContent = currentOriginal;
+      if (acceptedCount > 0) {
+        selectedContent = Diff.applyPatch(
+          currentOriginal,
+          clonePatchWithSelectedHunks()
+        );
+      }
+      const errorElement = document.getElementById('selection-error');
+      if (selectedContent === false) {
+        errorElement.textContent = 'Unable to compose the selected diff blocks.';
+        errorElement.style.display = 'block';
+        return;
+      }
+      errorElement.style.display = 'none';
+      document.getElementById('selection-summary').textContent =
+        `${acceptedCount} of ${hunkSelections.length} blocks selected`;
+      if (globalThis.chrome && globalThis.chrome.webview) {
+        globalThis.chrome.webview.postMessage(JSON.stringify({
+          action: 'selection_changed',
+          renderId: currentRenderId,
+          modified: selectedContent,
+          acceptedCount,
+          totalCount: hunkSelections.length
+        }));
+      }
+    }
+
+    function focusHunk(index) {
+      const controls = Array.from(document.querySelectorAll('.hunk-control'));
+      if (controls.length === 0) {
+        return;
+      }
+      currentHunkIndex = (index + controls.length) % controls.length;
+      controls.forEach((control, controlIndex) => {
+        control.classList.toggle('current', controlIndex === currentHunkIndex);
+      });
+      controls[currentHunkIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+
+    function updateHunkControl(index) {
+      const control = document.querySelector(`[data-hunk-index="${index}"]`);
+      if (!control) {
+        return;
+      }
+      control.classList.toggle('rejected', !hunkSelections[index]);
+      control.querySelector('.accept-hunk').classList.toggle(
+        'active',
+        hunkSelections[index]
+      );
+      control.querySelector('.accept-hunk').setAttribute(
+        'aria-pressed',
+        String(hunkSelections[index])
+      );
+      control.querySelector('.reject-hunk').classList.toggle(
+        'active',
+        !hunkSelections[index]
+      );
+      control.querySelector('.reject-hunk').setAttribute(
+        'aria-pressed',
+        String(!hunkSelections[index])
+      );
+    }
+
+    function setHunkSelection(index, accepted) {
+      if (index < 0 || index >= hunkSelections.length) {
+        return;
+      }
+      hunkSelections[index] = accepted;
+      updateHunkControl(index);
+      focusHunk(index);
+      postSelection();
+    }
+
+    function renderHunkControls() {
+      const container = document.getElementById('hunk-controls');
+      container.replaceChildren();
+      fullPatch.hunks.forEach((hunk, index) => {
+        const control = document.createElement('div');
+        control.className = 'hunk-control';
+        control.dataset.hunkIndex = String(index);
+        control.setAttribute('aria-label', `Diff block ${index + 1}`);
+
+        const label = document.createElement('span');
+        label.textContent =
+          `Block ${index + 1}: -${hunk.oldStart},${hunk.oldLines} ` +
+          `+${hunk.newStart},${hunk.newLines}`;
+
+        const acceptButton = document.createElement('button');
+        acceptButton.className = 'accept-hunk active';
+        acceptButton.textContent = 'Accept';
+        acceptButton.setAttribute('aria-pressed', 'true');
+        acceptButton.addEventListener('click', () => {
+          setHunkSelection(index, true);
+        });
+
+        const rejectButton = document.createElement('button');
+        rejectButton.className = 'reject-hunk';
+        rejectButton.textContent = 'Reject';
+        rejectButton.setAttribute('aria-pressed', 'false');
+        rejectButton.addEventListener('click', () => {
+          setHunkSelection(index, false);
+        });
+
+        control.append(label, acceptButton, rejectButton);
+        container.appendChild(control);
+      });
+      if (fullPatch.hunks.length === 0) {
+        document.getElementById('selection-summary').textContent =
+          'No changed blocks were generated.';
+      } else {
+        focusHunk(0);
+      }
+    }
+
+    function renderDiff(renderId, fileName, originalCode, modifiedCode) {
+      try {
+        currentOriginal = originalCode;
+        currentRenderId = renderId;
+        const patch = Diff.createPatch(
+          fileName,
+          originalCode,
+          modifiedCode,
+          'Original',
+          'Suggested Refactoring'
+        );
+        fullPatch = Diff.parsePatch(patch)[0];
+        hunkSelections = fullPatch.hunks.map(() => true);
+
         const diffHtml = Diff2Html.html(patch, {
           drawFileList: false,
           matching: 'lines',
@@ -89,8 +296,12 @@
         });
 
         document.getElementById('diff-output').innerHTML = diffHtml;
+        renderHunkControls();
+        postSelection();
       } catch (err) {
-        document.getElementById('diff-output').innerHTML = '<div style="color: red; padding: 10px;">Error generating diff: ' + err.message + '</div>';
+        const output = document.getElementById('diff-output');
+        output.textContent = `Error generating diff: ${err.message}`;
+        output.style.color = 'red';
       }
     }
 
@@ -99,7 +310,6 @@
       document.body.classList.add(theme + '-theme');
     }
 
-    // Listen for messages from WebView2
     if (globalThis.chrome && globalThis.chrome.webview) {
       globalThis.chrome.webview.addEventListener('message', event => {
         if (event.origin && event.origin !== '' && !event.origin.startsWith('file://')) {
@@ -107,9 +317,17 @@
         }
         const data = event.data;
         if (data.action === 'render') {
-          renderDiff(data.fileName, data.original, data.modified);
+          renderDiff(
+            data.renderId,
+            data.fileName,
+            data.original,
+            data.modified
+          );
         } else if (data.action === 'set_theme') {
           setTheme(data.theme);
+        } else if (data.action === 'navigate') {
+          const delta = data.direction === 'prev' ? -1 : 1;
+          focusHunk(currentHunkIndex + delta);
         }
       });
     }

@@ -48,7 +48,9 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
     *   *Gerar Testes Unitários:* Gerar estruturas prontas de testes usando DUnitX.
     *   *Localizar Bugs:* Buscar memory leaks, exceptions soltas e falhas de lógica.
     *   Quando não houver seleção, o Rad IA envia a unit inteira como contexto, preservando blocos Pascal formatados no chat e mantendo `/explain` separado dos fluxos de review.
-*   **Comparador Visual Inteligente (Smart Diff):** Visualização de refatorações lado a lado (Original vs. Sugerido) com realce vermelho/verde e botão **[Aplicar Alteração]** direto no editor. A aplicação substitui o bloco original de forma segura e recusa a operação quando o trecho original não é encontrado, evitando duplicação de código.
+*   **Comparador Visual Inteligente (Smart Diff):** Visualização de refatorações lado a lado
+    (Original vs. Sugerido), com aceite ou rejeição por bloco. O botão **[Aplicar Selecionados]**
+    substitui o trecho original com segurança e recusa a operação quando ele não é encontrado.
 *   **Depurador de Compilação (Smart Build):** Integração com a aba *Messages* do Delphi. Clique com o botão direito nos erros de compilação da IDE para obter explicações e correções instantâneas.
 *   **Documentação XML Automática:** Geração de comentários XML estruturados (`/// <summary>`) acima do cabeçalho de métodos para alimentar o Help Insight.
 *   **Conversor de DTO e Modelos:** Geração automática e instantânea de classes (DTOs) e records Object Pascal a partir de JSON ou scripts de tabelas SQL (DDL), com suporte inteligente a DEXT ORM, TMS Aurelius, REST.Json e Vanilla Delphi.
@@ -60,6 +62,8 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
 *   **Respostas Concisas Configuráveis:** Opção geral para preferir respostas mais objetivas da IA, reduzindo explicações longas e economizando tokens sem impedir respostas detalhadas quando solicitadas explicitamente.
 *   **Ferramentas Agentivas Seguras:** O chat executa ferramentas estruturadas do editor, projeto,
     build, Form Designer e debugger, com consentimento por risco e confinamento ao workspace.
+*   **Loop Agentivo Observável:** `/agent run` executa objetivos em etapas com cartão de progresso,
+    pausa, cancelamento, checkpoint e retomada sem transformar perguntas comuns em ações.
 *   **Edição Revisável e Reversível:** Patches usam preview, hash-base e precondições, recusam
     conteúdo desatualizado e permitem reversão controlada.
 *   **Servidor MCP Local:** A bridge stdio conecta clientes MCP à instância correta da IDE por
@@ -72,6 +76,23 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
 Para conferir o status de desenvolvimento, atalhos de teclado, categorias e todos os provedores integrados em detalhes, consulte o nosso:
 
 👉 [**Catálogo Completo de Recursos (docs/features.md)**](docs/features.md)
+
+Para aprender desde a configuração inicial até tools, MCP, Designer, debugger e conhecimento local:
+
+👉 [**Tudo que o RadIA pode fazer**](docs/capabilities.md)
+
+👉 [**Manual Completo do RadIA 2.0**](docs/user_manual.md)
+
+Para navegar por toda a documentação funcional, operacional e técnica:
+
+👉 [**Centro de Documentação do RadIA**](docs/README.md)
+
+Referências rápidas:
+
+- [Tudo que o RadIA pode fazer](docs/capabilities.md)
+- [O que faz e quando usar cada ferramenta](docs/internal_tools_reference.md)
+- [Todas as 88 ferramentas internas](docs/runtime_tool_catalog.md)
+- [Todos os comandos de barra](docs/slash_commands.md)
 
 ### 2.2 Capacidades do RadIA em um relance
 
@@ -89,12 +110,13 @@ Para conferir o status de desenvolvimento, atalhos de teclado, categorias e todo
 | **Conhecimento local** | Indexar projetos, pesquisar símbolos e acompanhar edit, save, rename e close. |
 | **MCP** | Expor tools a clientes locais por bridge stdio, named pipe e discovery por processo. |
 | **Segurança** | Confinar paths, classificar risco, solicitar consentimento e manter auditoria sanitizada. |
-| **Extensões** | Registrar ferramentas externas pela API pública versionada. |
+| **Extensões** | Instalar e gerenciar comandos declarativos visualmente ou registrar tools pela API pública. |
 | **Providers** | Integrar Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama e outros backends. |
 | **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
 
-Os parâmetros, precondições e riscos estão no
-[Catálogo de Ferramentas Agentivas](docs/tool_catalog.md).
+As ferramentas implementadas estão no
+[Catálogo das 88 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
+planejadas permanecem no [Catálogo Arquitetural](docs/tool_catalog.md).
 
 ### 3. Como Funciona e Arquitetura
 O Rad IA é construído inteiramente em Object Pascal (Delphi) usando a **Open Tools API (OTA)** para interagir com o editor de código, gerenciamento de mensagens e detecção de temas da IDE.
@@ -120,7 +142,11 @@ Para entender a estrutura física dos arquivos de código-fonte, mapeamento de r
 *   **Web Engine:** *Microsoft Edge WebView2 Runtime* instalado no sistema Windows (pré-instalado em versões modernas do Windows). **Importante:** A DLL `WebView2Loader.dll` correspondente à arquitetura da IDE deve estar presente na pasta `bin` da instalação do Delphi (ex: `C:\Program Files (x86)\Embarcadero\Studio\<versao>\bin`) ou no PATH do sistema.
 ### 5. Instalação e Configuração
 
-O Rad IA pode ser instalado de maneira **automatizada via PowerShell** (recomendado, com suporte a autodetecção de múltiplos ambientes Delphi e seleção interativa) ou **manualmente através da IDE**. Para instruções detalhadas de compilação, registro e configuração de chaves de API para todos os provedores ou uso local com o Ollama, consulte o nosso:
+O Rad IA 2.0 possui um **instalador visual único** que detecta Delphi 11, 12, 13 Win32 e Delphi 13
+IDE64 e permite selecionar os targets. A automação via PowerShell e a instalação manual continuam
+disponíveis. Para o fluxo visual, assinatura e canal, consulte o
+[guia do instalador](docs/visual_installer.md). Para compilação, registro e configuração de
+providers, consulte:
 
 O instalador automatizado também sincroniza os recursos locais do WebView2 em `%APPDATA%\RadIA\Web` e limpa o cache local quando a IDE está fechada, evitando que Delphi 12/13 carreguem JavaScript antigo após atualizações.
 
@@ -146,6 +172,10 @@ Caso prefira rodar um proxy local compatível com a API da OpenAI (Fase 1), isso
 
 Para aprender a tirar o máximo proveito das funcionalidades do Rad IA no seu dia a dia de desenvolvimento, consulte os nossos manuais práticos e detalhados:
 
+*   👉 [**Tudo que o RadIA pode fazer**](docs/capabilities.md): Mapa funcional completo do chat,
+    editor, geração, agente, MCP, Designer, build, testes, debugger, Git e segurança.
+*   👉 [**Manual Completo do RadIA 2.0**](docs/user_manual.md): Ponto de entrada com ativação das
+    ferramentas agentivas, capacidades, exemplos, segurança, limitações e referências.
 *   👉 [**Guia de Integração com Editor & Geração de Código (docs/user_guide_editor_generation.md)**](docs/user_guide_editor_generation.md): Ações contextuais de editor, comparador visual Smart Diff, documentação XML e criação de DTOs e projetos do zero.
 *   👉 [**Guia de Diagnóstico de Erros & Análise de Código (docs/user_guide_diagnostics_analysis.md)**](docs/user_guide_diagnostics_analysis.md): Explicações e correções de erros com o Smart Build Debugger, decodificação de logs com o Assistente de Stack Trace e auditorias estáticas contra vazamento de memória.
 *   👉 [**Guia do Painel de Chat & Gerenciamento de Sessões (docs/user_guide_chat_sessions.md)**](docs/user_guide_chat_sessions.md): Atalhos de digitação, histórico de prompts, múltiplas sessões persistentes e backups de templates.

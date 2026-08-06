@@ -14,8 +14,36 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 | Comando | Descrição | Contexto Automático da IDE |
 | :--- | :--- | :--- |
+| `/agent [on\|off]` | Alterna ou define o modo agente e sincroniza o botão visual. | Chat ativo. |
+| `/agent run <objetivo>` | Inicia um loop agentivo observável usando o catálogo atual. | Sessão e workspace ativos. |
+| `/agent plan <JSON>` | Substitui o plano pendente por um array JSON validado. | Plano aguardando aprovação. |
+| `/agent replay <etapa>` | Repete a chamada auditada de uma etapa. | Execução agentiva pausada. |
+| `/agent pause` | Pausa o loop após interromper com segurança a decisão atual. | Execução agentiva ativa. |
+| `/agent resume` | Retoma o último checkpoint da sessão. | Execução agentiva pausada. |
+| `/agent cancel` | Cancela a decisão e a execução agentiva atuais. | Execução agentiva ativa. |
+| `/agent history [filtro]` | Pesquisa execuções por objetivo, estado ou ID. | Checkpoints locais. |
+| `/terminal` | Abre o terminal integrado acoplável; equivale ao botão `>_` do chat. | Projeto e desktop atuais da IDE. |
+| `/settings` | Abre as configurações do RadIA; equivale ao botão de engrenagem do chat. | Configuração local do usuário. |
+| `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
+| `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
+| `/doctor` | Diagnostica a instalação e recomenda a próxima ação. | Provider, executor, MCP condicional, terminal, chat e primeira tool. |
+| `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
+| `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |
+| `/journey fix-build` | Diagnostica e corrige um build com alterações mínimas. | Compilador, patches e build. |
+| `/journey tests` | Amplia testes DUnitX e executa validação. | Projeto, patches e DUnitX. |
+| `/journey debug` | Conduz reprodução, diagnóstico, correção e validação. | Debugger, patches e build. |
+| `/journey modernize` | Moderniza estrutura e práticas em lotes revisáveis. | Grafo, Designer, transações, build e testes. |
+| `/journey migrate` | Migra um padrão legado com baseline e rollback. | Grafo, transações, diff, build e testes. |
+| `/journey release` | Reúne gates e prepara preview de commit local. | Saúde, build, testes e Git. |
+| `/tools` | Mostra o catálogo de tools da instância atual. | Estado e extensões da IDE. |
+| `/tool <nome> {JSON}` | Executa uma tool com argumentos JSON opcionais. | Workspace e sessão. |
+| `/revoke-tools` | Revoga permissões concedidas na sessão. | Sessão de chat ativa. |
+| `/extensions reload` | Recarrega extensões declarativas e mostra diagnósticos. | Diretório local de extensões. |
 | `/explain` | Analisa e explica didaticamente a lógica do código selecionado no editor. | Envia o trecho de código selecionado. |
 | `/refactor` | Otimiza a performance, legibilidade e aplica boas práticas (Clean Code/SOLID) no código selecionado. | Envia o trecho de código selecionado. |
+| `/optimize` | Alias de otimização e refatoração de código. | Envia o trecho de código selecionado. |
+| `/performance` | Analisa gargalos e oportunidades de desempenho. | Envia o código selecionado. |
+| `/test` | Gera testes unitários DUnitX para o código selecionado. | Envia o trecho de código selecionado. |
 | `/bugs` | Varre o código selecionado em busca de memory leaks, tratamento incorreto de exceções e erros de lógica. | Envia o trecho de código selecionado. |
 | `/doc` | Gera comentários de documentação no formato XML (`/// <summary>`) compatível com o Delphi Help Insight. | Envia a assinatura do método selecionado. |
 | `/template` | Abre o menu flutuante de biblioteca de templates para escolha de prompts reutilizáveis. | — |
@@ -31,6 +59,20 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 ## Customização e Backups de Comandos
 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
+
+Os comandos da família `/agent`, além de `/terminal`, `/settings`, `/extensions`, `/health`,
+`/doctor`, `/tools`,
+`/tool`, `/revoke-tools` e
+`/extensions reload`, são
+internos e não podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para
+exemplos.
+
+Extensões declarativas podem acrescentar comandos próprios sem recompilar ou reiniciar a IDE.
+Consulte [Extensões declarativas](declarative_extensions.md).
+
+Os demais comandos são fornecidos pelos templates instalados. Como esses templates podem ser
+editados, restaurados, importados ou removidos, digitar `/` no chat é a fonte de verdade para a
+lista disponível no perfil atual.
 
 Cada template cadastrado pode especificar:
 - **Slash Command**: O comando que acionará o template diretamente no chat (ex: `/explain`).

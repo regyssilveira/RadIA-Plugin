@@ -14,7 +14,15 @@ O plugin pode ser instalado de duas formas:
 
 Esta opção compila o plugin, copia os binários para os diretórios públicos oficiais do Delphi e registra o plugin no Registro do Windows automaticamente. Se for necessário rodar a suíte de testes unitários (**DUnitX**), basta adicionar o parâmetro `-Test` ao comando.
 
-Durante a instalação, o script também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em `%APPDATA%\RadIA\Web` e limpa o cache local `%APPDATA%\RadIA\WebView2` quando a IDE está fechada. Isso evita que versões diferentes do Delphi carreguem arquivos JavaScript antigos após uma atualização.
+Durante a instalação, o script também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em
+`%APPDATA%\RadIA\Web`. O cache local `%APPDATA%\RadIA\WebView2` é limpo quando nenhuma IDE Delphi
+está aberta. Se outra versão do Delphi estiver em uso, a limpeza é adiada e o instalador continua sem
+interromper o trabalho; os recursos atualizados passam a valer integralmente após reiniciar essa IDE.
+
+Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation doctor** ou digite
+`/doctor` no chat. O diagnóstico verifica provider, executor, MCP quando necessário, terminal,
+recursos web e a primeira tool somente leitura. Ele retorna score, checks e próxima ação sem
+mostrar tokens ou credenciais.
 
 1. Abra o console do Windows PowerShell.
 2. Certifique-se de que a pasta `bin` da instalação do Delphi contendo o `dcc32` está presente no PATH do sistema.
@@ -172,13 +180,41 @@ Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File .\scripts\Test-RadIA.Package.ps1 `
-  -PackagePath .\Output\Packages\RadIA-v1.0.0-Delphi-22.0-Win32-Release.zip `
+  -PackagePath .\Output\Packages\RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip `
   -DelphiVersion "22.0"
 ```
 
 Para o pacote IDE64 do Delphi 13, acrescente `-IDE64`. A suíte confirma a validação íntegra e
 também exige rejeição de arquivos extras, conteúdo corrompido, versão ou plataforma incompatível,
 path traversal e caminhos duplicados no manifesto.
+
+### Reparação e desinstalação do pacote
+
+O instalador incluído no ZIP também executa manutenção reproduzível. Use `-PlanOnly` para revisar
+todos os alvos sem alterar arquivos ou Registro:
+
+```powershell
+# Reparar binários, bridge e recursos mantendo configurações e dados
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Repair
+
+# Ver o plano de desinstalação; dados do usuário ficam preservados
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall -PlanOnly
+
+# Desinstalar esta arquitetura, preservando dados
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall
+```
+
+Somente acrescente `-RemoveUserData` ao modo `Uninstall` quando também quiser remover
+configurações, sessões, auditoria, conhecimento e caches em `%APPDATA%\RadIA`. O loader
+`WebView2Loader.dll` da IDE é sempre preservado. Recursos web públicos só são removidos quando
+nenhuma arquitetura do RadIA permanece instalada naquela versão do Delphi. Toda operação que
+altera o sistema exige a IDE fechada.
 
 A bridge MCP é instalada ao lado da BPL como `RadIA.MCP.Bridge.exe`. Clientes externos podem usar
 esse executável sem depender da árvore de fontes ou do diretório `Output`.

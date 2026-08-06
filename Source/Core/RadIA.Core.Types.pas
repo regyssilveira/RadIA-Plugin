@@ -55,6 +55,7 @@ function StringToMessageRole(const AString: string): TAIMessageRole;
 var
   GIsShuttingDown: Boolean = False;
   GActiveThreadCount: Integer = 0;
+  GProjectTransitionCount: Integer = 0;
 
 implementation
 

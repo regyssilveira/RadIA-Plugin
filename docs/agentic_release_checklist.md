@@ -15,14 +15,14 @@ A avaliação requisito por requisito está em `agentic_completion_audit.md`.
 - [x] Conhecimento local incremental, persistente e reconstruível.
 - [x] Status e leitura limitada de documentos do índice.
 - [x] API versionada para extensões e pacote externo de exemplo.
-- [x] ADR clean-room registra fronteiras e controles de independência do AEFOS.
+- [x] ADRs registram as fronteiras do registry interno e do workspace OTA.
 
 ## Compatibilidade automatizada
 
-- [x] Delphi 11 Win32: pacote, bridge, extensão e 442 testes.
-- [x] Delphi 12 Win32: pacote, bridge, extensão e 442 testes.
-- [x] Delphi 13 Win32: pacote, bridge, extensão e 442 testes.
-- [x] Delphi 13 IDE64: pacote, bridge, extensão e 442 testes.
+- [x] Delphi 11 Win32: pacote, bridge, extensão e 590 testes.
+- [x] Delphi 12 Win32: pacote, bridge, extensão e 590 testes.
+- [x] Delphi 13 Win32: pacote, bridge, extensão e 590 testes.
+- [x] Delphi 13 IDE64: pacote, bridge, extensão e 590 testes.
 - [x] Zero teste ignorado, falha, erro ou vazamento.
 - [x] Cobertura instrumentada: 78% no Delphi 12.
 - [x] ESLint aprovado.

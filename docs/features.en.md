@@ -25,6 +25,9 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Export Conversation** | Chat UX | Save current active chats to Markdown (.md) or standalone rich HTML formats. | ✅ Completed |
 | **Prompt Templates** | Chat UX | Quick prompt template library with token replacement and the `/template` command. | ✅ Completed |
 | **Dynamic Slash Commands** | Chat UX | Dynamic mapping of templates to slash commands (e.g. `/createprojectarch`), synced and autocompleted in WebView2. | ✅ Completed |
+| **Declarative Skills and Templates** | Extensibility | Schema 2 manifest with hot reload, autocomplete, and minimal `chat.prompt` permission. | ✅ Completed |
+| **Declarative Tool Aliases** | Extensibility | Schema 3 registers safe chat/MCP aliases that inherit internal tool risk, schemas, and consent. | ✅ Completed |
+| **Declarative Workflows** | Extensibility | Schema 5 chains up to 16 internal tools with inherited risk, bounds, and per-step central policy, without arbitrary shells. | ✅ Completed |
 | **Editor Code Rendering in Chat** | Chat UX | Prompts sent from the editor menu preserve fenced Markdown code blocks with Pascal highlighting also in user messages. | ✅ Completed |
 | **Template Backup & Restore** | Chat UX | Transactional JSON import and export with schema validations and merge/overwrite UI options. | ✅ Completed |
 | **Google Gemini** | Provider | Native BYOK integration for Gemini 1.5 Pro and Gemini 1.5 Flash models. | ✅ Completed |
@@ -72,6 +75,8 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Agentic Designer** | Integration | Reviewable components, properties, events, and layout. | ✅ Completed |
 | **Agentic Debugger** | Integration | State, control, breakpoints, expression evaluation, and watches. | ✅ Completed |
 | **Inline Review** | Editor | Visual review with controlled apply and reversal in the editor. | ✅ Completed |
+| **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
+| **Signed Declarative Extensions** | Security | RSA-SHA256 packages with fingerprints, first-use trust, and visual revocation. | ✅ Completed |
 | **Delphi 11/12/13 and IDE64** | Compatibility | Validated Win32 matrix plus Delphi 13 IDE64. | ✅ Completed |

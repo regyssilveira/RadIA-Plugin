@@ -114,7 +114,7 @@ begin
     'StepOut',
     'StopDebugging'
   ];
-  Assert.AreEqual(Integer(Length(LNames)), FRegistry.Count);
+  Assert.AreEqual<Integer>(Length(LNames), FRegistry.Count);
   for LName in LNames do
   begin
     LDescriptor := FRegistry.Resolve(LName).Descriptor;
@@ -139,10 +139,13 @@ begin
 end;
 
 procedure TTestRadIADebuggerControlTools.Setup;
+var
+  LFacade: IRadIADebuggerControlFacade;
 begin
   FRegistry := TRadIAToolRegistry.Create;
   FFacade := TRadIAFakeDebuggerControlFacade.Create;
-  RegisterRadIADebuggerControlTools(FRegistry, FFacade);
+  LFacade := FFacade;
+  RegisterRadIADebuggerControlTools(FRegistry, LFacade);
   FExecutor := TRadIAToolExecutor.Create(FRegistry);
 end;
 

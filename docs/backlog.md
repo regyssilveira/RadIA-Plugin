@@ -11,6 +11,18 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
 | **Plataforma Agentiva Segura para Delphi 11/12/13** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.0.0 |
+| **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Goal RadIA 2.0 — Liderança da Experiência Delphi** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
+| **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
+| **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
+| **Edição Multi-Arquivo e Diff Transacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.3.0 |
+| **Fluxo Visual Design↔Code** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐ Alta | v1.4.0 |
+| **Build Autocorretivo e Runner DUnitX** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.5.0 |
+| **Debug Agent Orientado a Eventos** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.6.0 |
+| **Git Revisável e Pipeline de Entrega** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐ Alta | v1.7.0 |
+| **CLI Manager, Terminal e Experiência Híbrida** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Hardening E2E e Release RadIA 2.0** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Correção de Seleção do Editor e Bloqueio do Gemini OAuth** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.29 |
 | **Adapter da Open Tools API e Testes de Rede** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.0.28 |
 | **Resolução de Code Smells e Ampliação de Testes** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.27 |
@@ -32,7 +44,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Decompositor de Forms (Code-Behind)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Assistente de Threads e PPL** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
 | **Internacionalização Automática (i18n Wizard)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Autocompletar Inline (Ghost Text)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
+| **Autocompletar Inline (Ghost Text)** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Geração de Docs de Projeto (API.md)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐ Média | v0.3.0+ |
 | **Suporte Nativo macOS/Linux (Lazarus)** | 🔲 Planejado | 🔴 Alta | 🟢 Baixa | v0.3.0+ |
 
@@ -40,7 +52,154 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 
 ## ⏳ 1. Em Desenvolvimento (Work in Progress)
 
-*   *Nenhuma tarefa em andamento ativo nesta branch.*
+*   Goal de liderança da experiência Delphi.
+    *   M0 concluído: gate global do Sonar automatizado, zero issues, 82,3% de cobertura e 2,3% de
+        duplicação, com evidência reproduzível para o candidato 2.0.0.
+    *   M1–M3: entregar Ghost Text, terminal interativo e central unificada de execução.
+    *   M1 entregue nesta etapa: a captura OTA do Ghost Text agora resolve o símbolo vigente
+        diretamente do buffer vivo e da linha do cursor, sem depender do arquivo salvo.
+    *   M1 entregue nesta etapa: cinco atalhos configuráveis usam bindings parciais nativos da OTA,
+        com persistência, validação de perfil, bloqueio de duplicidade e detecção de conflito.
+    *   M1 entregue nesta etapa: Ghost Text multilinha usa overlays virtuais por linha, faixa de
+        continuação sem sobrepor código real e desenho após o EOF, preservando o buffer até o aceite.
+    *   M1 validado em IDE real: preparação local e pintura OTA aprovadas no Delphi 11, 12 e 13
+        Win32 e no Delphi 13 IDE64, com evidência reproduzível e sem enviar conteúdo ao provider.
+    *   M2 entregue nesta etapa: parser ANSI SGR incremental e saída rica preservam cores e negrito
+        mesmo quando sequências de escape chegam divididas entre chunks.
+    *   M2 entregue nesta etapa: stdin contínuo mantém o canal de entrada aberto e permite responder
+        prompts pelo botão **Send**, com escrita thread-safe e cancelamento da árvore preservado.
+    *   M2 entregue nesta etapa: sessão ConPTY nativa usa canais UTF-8, resize por caracteres,
+        fallback dinâmico e teste real de shell com entrada e encerramento.
+    *   M2 entregue nesta etapa: busca reversa incremental por `Ctrl+R` filtra o histórico e
+        percorre ocorrências anteriores sem exigir o mouse.
+    *   M2 entregue nesta etapa: buffer visual ANSI/CSI preserva estilo por célula e executa
+        retorno de carro, sobrescrita, movimento, posição, limpeza e save/restore de cursor.
+    *   M2 concluído: múltiplas sessões em abas mantêm processos, buffers e entrada independentes;
+        fechar uma aba cancela apenas sua própria árvore e preserva pelo menos uma sessão aberta.
+    *   M3 entregue nesta etapa: a central mostra uma timeline expansível com argumentos,
+        resultado, erro, correlação, duração, mutação e indicadores de validação.
+    *   M3 entregue nesta etapa: o índice de execuções pesquisa checkpoints pelo botão **Runs** ou
+        `/agent history`, sem expor argumentos e resultados das tools.
+    *   M3 entregue nesta etapa: **Edit plan** e `/agent plan` revisam o plano validado antes da
+        aprovação e bloqueiam alterações depois que a execução começa.
+    *   M3 entregue nesta etapa: **Replay step** e `/agent replay` repetem uma chamada auditada
+        somente em pausa, reutilizando consentimento e registrando a etapa de origem.
+    *   M3 entregue nesta etapa: cada etapa mostra o risco formal da tool e agrega arquivos
+        afetados somente a partir de campos de caminho reconhecidos.
+    *   M3 entregue nesta etapa: evidências estruturadas exibem duração e mensagens do build,
+        além das contagens completas da última execução DUnitX e do resumo oficial de cobertura.
+    *   M3 entregue nesta etapa: patches simples e multiarquivo exibem blocos de diff por arquivo
+        dentro da timeline, mantendo aplicação e reversão no consentimento central.
+    *   M3 entregue nesta etapa: status, diff, preview com fingerprint e SHA do commit local
+        aparecem como evidências Git revisáveis na timeline, sem push automático.
+    *   M3 entregue nesta etapa: estado, breakpoints, call stack, ações, valores, watches e eventos
+        aparecem como evidências de debug somente leitura dentro da timeline.
+    *   M3 validado em IDE real: aprovação, pausa, checkpoint persistido, retomada em nova instância
+        e conclusão com `GetIDEState` passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+    *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
+    *   M4 em execução: manifestos `*.radia.json` adicionam comandos de chat com schema versionado,
+        permissão mínima, validação atômica, diagnóstico e recarga sem reiniciar a IDE.
+    *   M4 entregue nesta etapa: **Tools > Rad IA Extensions...** instala, atualiza, habilita,
+        desabilita, diagnostica e remove manifestos; escrita atômica e rollback preservam a versão
+        funcional quando o candidato ou o conjunto instalado é rejeitado.
+    *   M4 entregue nesta etapa: pacotes `.radiaext` possuem envelope versionado, lista fechada,
+        tamanho e SHA-256; o importador bloqueia adulteração, entradas extras, duplicidade, ZIP bomb,
+        path traversal e divergência de identidade antes da ativação transacional.
+    *   M4 entregue nesta etapa: pacotes v2 usam RSA-SHA256 validado pelo Windows CNG, fingerprint
+        de chave pública, consentimento no primeiro uso, trust store atômica e gestão visual para
+        consultar ou revogar publicadores; pacotes v1 permanecem compatíveis com aviso por uso.
+    *   M4 entregue nesta etapa: catálogo remoto possui navegador visual assíncrono, busca, URL
+        persistente, schema limitado, HTTPS sem redirects, download transacional e vínculo de
+        tamanho, hash, identidade e publicador ao pacote assinado.
+    *   M4 entregue nesta etapa: manifesto schema 2 adiciona templates e skills declarativas,
+        preserva commands schema 1 e mantém todas as capacidades restritas a `chat.prompt`.
+    *   M4 entregue nesta etapa: schema 3 publica aliases de tools internas no registry comum ao
+        chat e MCP, com namespace da extensão, permissão `tool.alias`, risco herdado, bloqueio de
+        cadeias e rollback do catálogo quando o target ou o registro é inválido.
+    *   M4 entregue nesta etapa: schema 5 oferece workflows auditados de até 16 tools internas,
+        sem shell arbitrário, com risco máximo herdado, limites, fail-fast e policy por etapa.
+    *   M4 validado em IDE real: hot-load, registro compartilhado e execução auditada de duas
+        etapas passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+    *   M5 entregue nesta etapa: busca e reconstrução expõem latência local, o status informa
+        tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
+    *   M5 entregue nesta etapa: o índice incremental cobre Pascal, DFM/FMX textual, projetos e
+        documentação, com descoberta confinada, limites e política única para a OTA.
+    *   M5 entregue nesta etapa: a fundação remota OpenAI-compatible valida HTTPS/loopback,
+        timeout, limites, dimensões e resposta sem incluir a API key no payload; ativação visual
+        permanece bloqueada até consentimento remoto separado.
+    *   M5 entregue nesta etapa: o seletor de embeddings é fail-closed e mantém o provider local
+        quando o remoto está desligado, sem consentimento separado ou com configuração inválida;
+        habilitar busca semântica, isoladamente, nunca autoriza envio de código à rede.
+    *   M5 entregue nesta etapa: **Security & Consent** configura o provider remoto sem editar o
+        Registro, protege a API key com DPAPI e valida consentimento, endpoint, modelo e limites
+        antes de aplicar a seleção dinâmica ao índice.
+    *   M5 entregue nesta etapa: históricos concluídos e aprovados podem alimentar o índice
+        mediante consentimento explícito, com isolamento por projeto e sem payloads de tools.
+    *   M5 validado em IDEs reais: indexação e busca semântica local, origem, navegação, métricas,
+        leitura e isolamento passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+    *   UX entregue nesta etapa: `/settings` e `/extensions` oferecem acesso por teclado às mesmas
+        telas visuais de configuração e gerenciamento já acessíveis por clique.
+    *   M6 entregue nesta etapa: onboarding v2 executa `/doctor` diretamente; o diagnóstico de
+        primeiro valor retorna score, checks e próxima ação, valida `GetIDEState` e torna MCP
+        obrigatório somente para executor CLI.
+    *   M6 entregue nesta etapa: o instalador manifestado do release instala, repara e desinstala
+        com `-PlanOnly`, preserva loader e dados por padrão e só remove `%APPDATA%\RadIA` mediante
+        `-RemoveUserData` explícito.
+    *   M6 validado em IDEs reais: doctor, chat, terminal, bridge, catálogo e primeira tool
+        passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64, inclusive com orientação quando
+        o provider ainda não está configurado.
+    *   M6 entregue nesta etapa: instalador visual único detecta e seleciona os quatro targets,
+        valida os pacotes antes de compilar e oferece assinatura SHA-256 com timestamp. O catálogo
+        estável recusa URL sem HTTPS e executável sem Authenticode válido; certificado e URL final
+        permanecem gates externos de publicação.
+    *   M6 automatizado nesta etapa: workflow de tag recompila os quatro pacotes do commit exato,
+        importa o PFX temporariamente, exige assinatura e timestamp, publica evidências e remove o
+        material criptográfico do runner em qualquer resultado.
+    *   M7–M8 concluídos: jornadas especializadas e candidato 2.0.0 comprovados na matriz completa.
+    *   M8 entregue: terminal comprovado na matriz completa com janela nativa, controles
+        essenciais, entrada, saída, geometria útil, cinco rótulos associados e nove pontos
+        navegáveis por Tab; superfícies Web aprovadas por testes semânticos e UI Automation.
+    *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
+
+*   Hardening E2E dentro da IDE e preparação da release RadIA 2.0.
+    *   Concluído: matriz Delphi 11/12/13, instalação Delphi 13 Win32/IDE64, três ciclos de smoke por
+        arquitetura, 87 tools, WebView2 renderizado, edição real via MCP, build pela tool, 590 testes
+        diretos, template VCL criado/aberto/compilado/revertido, edição real do Form Designer com
+        consentimento, fluxo real de debug com breakpoint, call stack e timeline, além do ciclo de
+        erro de compilação, diagnóstico, correção, rebuild, DUnitX e commit Git revisável com paths
+        selecionados.
+    *   Concluído na compatibilidade real: Delphi 11 e 12 passaram carga da BPL, catálogo MCP de 87
+        tools e shutdown limpo; Delphi 13 passou três ciclos consecutivos com verificação de qualquer
+        processo raiz remanescente.
+    *   Concluído visualmente: o painel agora é criado pela API nativa `INTACustomDockableForm` da
+        OTA como `TOTADockForm`, com WebView2, tema, chat e botão do modo agente renderizados, sem a
+        antiga tela branca. A IDE passa a ser responsável pelo host, comandos de docking e estado
+        do desktop.
+    *   Concluído no Form Designer: criação real, listagem e rollback de `TButton` por preview e
+        consentimento, usando classes VCL nativas e bounds determinísticos.
+    *   Concluído no build: grupos de projeto ainda não persistidos deixaram de abrir diálogos
+        modais durante `ValidateCreatedProject`.
+    *   Aceite visual manual: o drop lateral continua sendo exercitado pelo usuário porque a IDE
+        elevada bloqueia entrada sintética entre processos. A criação nativa, visibilidade e
+        persistência do host são cobertas pelo smoke automatizado.
+    *   Concluído no shutdown: os hooks OTA de editor e debug agora são desregistrados antes de
+        abandonar seus objetos durante o encerramento, sem liberar VCL/WebView2. A build instalada
+        passou em três ciclos consecutivos de carga e shutdown do Delphi 13, com 87 tools e sem
+        retenção do `bds.exe`.
+    *   Concluído no E2E contínuo da matriz: Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 aprovaram
+        autonomamente template, Form Designer, edição viva, falha e correção, build, 736 testes,
+        debug com call stack/timeline, commit Git revisável e shutdown na mesma jornada. A prova
+        consolidada está em `continuous_journey_smoke_evidence_2.0.0.json`.
+    *   Concluído no host nativo: dois ciclos reais comprovaram a criação do `TOTADockForm`, sua
+        visibilidade, restauração de geometria pelo desktop da IDE e shutdown limpo. O gesto de drop
+        lateral permanece como aceite visual manual porque a IDE elevada bloqueia entrada sintética
+        entre processos; isso não altera a capacidade nativa de docking oferecida pela OTA.
+    *   Diagnóstico adicional com CDB: a retenção ocorre antes de `ExitProcess`; uma captura mostrou
+        a thread principal em `IdeservicesFileNotification`. A AV posterior consultava uma BPL do
+        DevExpress já descarregada por uma cadeia do MMX, mas um smoke com o MMX temporariamente
+        desabilitado também reteve o `bds.exe`, descartando-o como causa raiz. A correlação com
+        `IdeservicesFileNotification` levou à remoção explícita dos hooks OTA de editor e debug;
+        essa correção fechou o gate de retenção nos três ciclos consecutivos de smoke.
 
 ---
 
@@ -59,6 +218,7 @@ Consulte os detalhes de implementação de cada recurso agrupado por versão:
 - Registry interno compartilhado entre chat, MCP e extensões.
 - Fachada OTA de workspace, editor, projeto, build, Form Designer e debugger.
 - Consentimento por risco, auditoria sanitizada e workspace boundary.
+- Tela **Security & Consent** com timeout, argumentos, memória por risco e revogação imediata.
 - Patches revisáveis, reversíveis e protegidos por hash-base.
 - Bridge MCP local com discovery independente por processo da IDE.
 - Conhecimento incremental e reconstruível, isolado por projeto.

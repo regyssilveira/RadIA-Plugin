@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "id": "TeamWorkflow",
+  "version": "2.0.0",
+  "enabled": true,
+  "permissions": [
+    "chat.prompt"
+  ],
+  "templates": [
+    {
+      "name": "Team fix plan",
+      "description": "Create a fix plan using the team's review checkpoints.",
+      "command": "/team-plan",
+      "prompt": "Create a reviewed implementation plan for: {argument}"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Team Delphi style",
+      "description": "Apply the team's Delphi conventions to the active code.",
+      "command": "/team-style",
+      "instructions": "Review and improve this code using the team's Delphi conventions:\n\n```pascal\n{code}\n```"
+    }
+  ]
+}

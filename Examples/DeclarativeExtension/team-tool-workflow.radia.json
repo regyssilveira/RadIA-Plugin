@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 5,
+  "id": "TeamInspection",
+  "version": "5.0.0",
+  "enabled": true,
+  "permissions": [
+    "tool.workflow"
+  ],
+  "workflows": [
+    {
+      "name": "TeamInspectionSnapshot",
+      "description": "Collect the IDE, active project, and Git state through one audited workflow.",
+      "steps": [
+        {
+          "tool": "GetIDEState",
+          "arguments": {}
+        },
+        {
+          "tool": "GetActiveProject",
+          "arguments": {}
+        },
+        {
+          "tool": "GetGitStatus",
+          "arguments": {}
+        }
+      ]
+    }
+  ]
+}

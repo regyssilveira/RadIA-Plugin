@@ -209,7 +209,7 @@ begin
 
   LDescriptors := FRegistry.GetDescriptors;
 
-  Assert.AreEqual(2, Integer(Length(LDescriptors)));
+  Assert.AreEqual<Integer>(2, Length(LDescriptors));
   Assert.AreEqual('AlphaTool', LDescriptors[0].Name);
   Assert.AreEqual('ZuluTool', LDescriptors[1].Name);
 end;
@@ -339,7 +339,9 @@ begin
   LResult := FExecutor.Execute(LRequest);
 
   Assert.IsTrue(LResult.Success);
-  Assert.AreEqual('{"value":42}', LResult.ContentJson);
+  Assert.Contains(LResult.ContentJson, '"value":42');
+  Assert.Contains(LResult.ContentJson, '"_radiaView"');
+  Assert.Contains(LResult.ContentJson, '"sourceTool":"SampleTool"');
 end;
 
 procedure TTestRadIAToolExecutor.TestInvalidArgumentsReturnStructuredError;

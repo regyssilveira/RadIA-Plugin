@@ -6,22 +6,40 @@ uses
   System.Classes,
   System.Types,
   ToolsAPI,
+  ToolsAPI.Editor,
+  Vcl.Controls,
   Vcl.Graphics,
   RadIA.Core.InlineReviews;
 
 type
+  TRadIACodeEditorNotifier = class(TNTACodeEditorNotifier)
+  protected
+    function AllowedEvents: TCodeEditorEvents; override;
+    function AllowedLineStages: TPaintLineStages; override;
+  end;
+
+  TRadIAEditPaintContext = record
+    View: IOTAEditView;
+    LineNumber: Integer;
+    Canvas: TCanvas;
+    TextRect: TRect;
+    LineRect: TRect;
+    CellSize: TSize;
+  end;
+
   TRadIAOTAInlineReviewFacade = class(
     TInterfacedObject,
-    IRadIAInlineReviewVisualFacade,
-    INTAEditViewNotifier
+    IRadIAInlineReviewVisualFacade
   )
   private
+    FCodeEditorNotifier: INTACodeEditorEvents;
+    FCodeEditorNotifierIndex: Integer;
     FCurrentRevision: string;
     FExpectedRevision: string;
     FFileName: string;
+    FObservedRevision: string;
     FReviews: TArray<TRadIAInlineReview>;
     FView: IOTAEditView;
-    FViewNotifierIndex: Integer;
     function ColorFor(
       const ASeverity: TRadIAInlineReviewSeverity
     ): TColor;
@@ -29,8 +47,27 @@ type
       const ALineNumber: Integer;
       out AReview: TRadIAInlineReview
     ): Boolean;
-    procedure RegisterCurrentView;
+    function GetCellSize(
+      const AContext: INTACodeEditorPaintContext
+    ): TSize;
+    procedure HandleBeginPaint(
+      const AEditor: TWinControl;
+      const AForceFullRepaint: Boolean
+    );
+    procedure HandleEndPaint(const AEditor: TWinControl);
+    procedure HandlePaintLine(
+      const ARect: TRect;
+      const AStage: TPaintLineStage;
+      const ABeforeEvent: Boolean;
+      var AAllowDefaultPainting: Boolean;
+      const AContext: INTACodeEditorPaintContext
+    );
     procedure RunOnMainThread(const AAction: TThreadProcedure);
+  protected
+    procedure PaintOverlay(
+      const APaintContext: TRadIAEditPaintContext
+    ); virtual;
+    procedure RegisterCurrentView;
     procedure UnregisterView;
   public
     constructor Create;
@@ -41,27 +78,8 @@ type
       const AReviews: TArray<TRadIAInlineReview>
     );
     procedure ClearReviews;
-    procedure AfterSave;
-    procedure BeforeSave;
-    procedure Destroyed;
-    procedure Modified;
-    procedure EditorIdle(const View: IOTAEditView);
-    procedure BeginPaint(
-      const View: IOTAEditView;
-      var FullRepaint: Boolean
-    );
-    procedure PaintLine(
-      const View: IOTAEditView;
-      LineNumber: Integer;
-      const LineText: PAnsiChar;
-      const TextWidth: Word;
-      const LineAttributes: TOTAAttributeArray;
-      const Canvas: TCanvas;
-      const TextRect: TRect;
-      const LineRect: TRect;
-      const CellSize: TSize
-    );
-    procedure EndPaint(const View: IOTAEditView);
+    procedure Modified; virtual;
+    procedure EditorIdle(const View: IOTAEditView); virtual;
   end;
 
 implementation
@@ -71,13 +89,26 @@ uses
   System.Math,
   System.SysUtils,
   Winapi.Windows,
+  RadIA.Core.Logger,
   RadIA.Core.Types,
   RadIA.OTA.TextReader;
+
+{ TRadIACodeEditorNotifier }
+
+function TRadIACodeEditorNotifier.AllowedEvents: TCodeEditorEvents;
+begin
+  Result := [cevBeginEndPaintEvents, cevPaintLineEvents];
+end;
+
+function TRadIACodeEditorNotifier.AllowedLineStages: TPaintLineStages;
+begin
+  Result := [plsEndPaint];
+end;
 
 constructor TRadIAOTAInlineReviewFacade.Create;
 begin
   inherited;
-  FViewNotifierIndex := -1;
+  FCodeEditorNotifierIndex := -1;
   SetLength(FReviews, 0);
 end;
 
@@ -87,37 +118,31 @@ begin
   inherited;
 end;
 
-procedure TRadIAOTAInlineReviewFacade.Destroyed;
-begin
-  FViewNotifierIndex := -1;
-  FView := nil;
-end;
-
-procedure TRadIAOTAInlineReviewFacade.AfterSave;
-begin
-  // No action is required for edit view save notifications.
-end;
-
-procedure TRadIAOTAInlineReviewFacade.BeforeSave;
-begin
-  // No action is required before saving an edit view.
-end;
-
-procedure TRadIAOTAInlineReviewFacade.BeginPaint(
-  const View: IOTAEditView;
-  var FullRepaint: Boolean
+procedure TRadIAOTAInlineReviewFacade.HandleBeginPaint(
+  const AEditor: TWinControl;
+  const AForceFullRepaint: Boolean
 );
 var
   LContent: string;
+  LNewRevision: string;
 begin
-  FCurrentRevision := '';
-  if not Assigned(View) or not Assigned(View.Buffer) or
-    not SameFileName(View.Buffer.FileName, FFileName) then
+  if not Assigned(FView) or not Assigned(FView.Buffer) then
+  begin
+    FCurrentRevision := '';
     Exit;
+  end;
   LContent := ReadRadIAEditReaderText(
-    View.Buffer.CreateReader
+    FView.Buffer.CreateReader
   );
-  FCurrentRevision := THashSHA2.GetHashString(LContent);
+  LNewRevision := THashSHA2.GetHashString(LContent);
+  if (FObservedRevision <> '') and
+    not SameText(FObservedRevision, LNewRevision) then
+    Modified;
+  FObservedRevision := LNewRevision;
+  if SameFileName(FView.Buffer.FileName, FFileName) then
+    FCurrentRevision := LNewRevision
+  else
+    FCurrentRevision := '';
 end;
 
 procedure TRadIAOTAInlineReviewFacade.ClearReviews;
@@ -166,11 +191,11 @@ begin
   View.SetTempMsg(Copy(LMessage, 1, 240));
 end;
 
-procedure TRadIAOTAInlineReviewFacade.EndPaint(
-  const View: IOTAEditView
+procedure TRadIAOTAInlineReviewFacade.HandleEndPaint(
+  const AEditor: TWinControl
 );
 begin
-  // Paint state contains only scalar data and needs no cleanup.
+  EditorIdle(FView);
 end;
 
 function TRadIAOTAInlineReviewFacade.FindReview(
@@ -193,41 +218,79 @@ begin
   Result := False;
 end;
 
+function TRadIAOTAInlineReviewFacade.GetCellSize(
+  const AContext: INTACodeEditorPaintContext
+): TSize;
+begin
+  Result.cx := Max(1, AContext.Canvas.TextWidth('W'));
+  Result.cy := Max(1, AContext.Canvas.TextHeight('W'));
+end;
+
 procedure TRadIAOTAInlineReviewFacade.Modified;
 begin
   FCurrentRevision := '';
 end;
 
-procedure TRadIAOTAInlineReviewFacade.PaintLine(
-  const View: IOTAEditView;
-  LineNumber: Integer;
-  const LineText: PAnsiChar;
-  const TextWidth: Word;
-  const LineAttributes: TOTAAttributeArray;
-  const Canvas: TCanvas;
-  const TextRect: TRect;
-  const LineRect: TRect;
-  const CellSize: TSize
+procedure TRadIAOTAInlineReviewFacade.HandlePaintLine(
+  const ARect: TRect;
+  const AStage: TPaintLineStage;
+  const ABeforeEvent: Boolean;
+  var AAllowDefaultPainting: Boolean;
+  const AContext: INTACodeEditorPaintContext
 );
 var
+  LCellSize: TSize;
+  LPaintContext: TRadIAEditPaintContext;
   LReview: TRadIAInlineReview;
   LRight: Integer;
-  LY: Integer;
+  LUnderlineY: Integer;
 begin
-  if not SameText(FCurrentRevision, FExpectedRevision) or
-    not FindReview(LineNumber, LReview) then
+  if ABeforeEvent or (AStage <> plsEndPaint) or
+    not Assigned(AContext) or not Assigned(AContext.LineState) then
     Exit;
-  Canvas.Pen.Color := ColorFor(LReview.Severity);
-  Canvas.Pen.Width := 2;
-  LY := Min(TextRect.Bottom - 1, LineRect.Bottom - 1);
-  LRight := TextRect.Left + (TextWidth * CellSize.cx);
-  LRight := Min(Max(LRight, TextRect.Left + CellSize.cx), LineRect.Right);
-  Canvas.MoveTo(TextRect.Left, LY);
-  Canvas.LineTo(LRight, LY);
+  LCellSize := GetCellSize(AContext);
+  if SameText(FCurrentRevision, FExpectedRevision) and
+    FindReview(AContext.LogicalLineNum, LReview) then
+  begin
+    AContext.Canvas.Pen.Color := ColorFor(LReview.Severity);
+    AContext.Canvas.Pen.Width := 2;
+    LUnderlineY := Min(
+      AContext.LineState.VisibleTextRect.Bottom - 1,
+      AContext.LineState.WholeRect.Bottom - 1
+    );
+    LRight := Min(
+      Max(
+        AContext.LineState.VisibleTextRect.Right,
+        AContext.LineState.VisibleTextRect.Left + LCellSize.cx
+      ),
+      AContext.LineState.WholeRect.Right
+    );
+    AContext.Canvas.MoveTo(
+      AContext.LineState.VisibleTextRect.Left,
+      LUnderlineY
+    );
+    AContext.Canvas.LineTo(LRight, LUnderlineY);
+  end;
+  LPaintContext.View := AContext.EditView;
+  LPaintContext.LineNumber := AContext.LogicalLineNum;
+  LPaintContext.Canvas := AContext.Canvas;
+  LPaintContext.TextRect := AContext.LineState.VisibleTextRect;
+  LPaintContext.LineRect := AContext.LineState.WholeRect;
+  LPaintContext.CellSize := LCellSize;
+  PaintOverlay(LPaintContext);
+end;
+
+procedure TRadIAOTAInlineReviewFacade.PaintOverlay(
+  const APaintContext: TRadIAEditPaintContext
+);
+begin
+  // Descendants may add editor decorations through the compact paint context.
 end;
 
 procedure TRadIAOTAInlineReviewFacade.RegisterCurrentView;
 var
+  LCodeEditorServices: INTACodeEditorServices;
+  LNotifier: TRadIACodeEditorNotifier;
   LEditorServices: IOTAEditorServices;
   LView: IOTAEditView;
 begin
@@ -240,11 +303,25 @@ begin
   LView := LEditorServices.TopView;
   if not Assigned(LView) then
     Exit;
-  if Assigned(FView) and (FView = LView) then
-    Exit;
-  UnregisterView;
+  if not Assigned(FView) or not FView.SameView(LView) then
+    FObservedRevision := '';
   FView := LView;
-  FViewNotifierIndex := FView.AddNotifier(Self);
+  if Assigned(FCodeEditorNotifier) then
+    Exit;
+  if not Supports(
+    BorlandIDEServices,
+    INTACodeEditorServices,
+    LCodeEditorServices
+  ) then
+    Exit;
+  LNotifier := TRadIACodeEditorNotifier.Create;
+  LNotifier.OnEditorBeginPaint := HandleBeginPaint;
+  LNotifier.OnEditorEndPaint := HandleEndPaint;
+  LNotifier.OnEditorPaintLine := HandlePaintLine;
+  FCodeEditorNotifier := LNotifier;
+  FCodeEditorNotifierIndex := LCodeEditorServices.AddEditorEventsNotifier(
+    FCodeEditorNotifier
+  );
 end;
 
 procedure TRadIAOTAInlineReviewFacade.RunOnMainThread(
@@ -282,17 +359,30 @@ begin
 end;
 
 procedure TRadIAOTAInlineReviewFacade.UnregisterView;
+var
+  LCodeEditorServices: INTACodeEditorServices;
 begin
-  if Assigned(FView) and (FViewNotifierIndex >= 0) and
-    not GIsShuttingDown then
+  if (FCodeEditorNotifierIndex >= 0) and not GIsShuttingDown and
+    Supports(
+      BorlandIDEServices,
+      INTACodeEditorServices,
+      LCodeEditorServices
+    ) then
   begin
     try
-      FView.RemoveNotifier(FViewNotifierIndex);
+      LCodeEditorServices.RemoveEditorEventsNotifier(
+        FCodeEditorNotifierIndex
+      );
     except
-      // The IDE may already have destroyed the edit view during shutdown.
+      on E: Exception do
+        TLogger.Log(
+          'Inline review notifier removal failed: ' + E.Message,
+          'Warning'
+        );
     end;
   end;
-  FViewNotifierIndex := -1;
+  FCodeEditorNotifier := nil;
+  FCodeEditorNotifierIndex := -1;
   FView := nil;
 end;
 

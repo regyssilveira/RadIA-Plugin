@@ -4,9 +4,66 @@ interface
 
 uses
   System.Classes, Vcl.Menus, Vcl.Forms, Vcl.ExtCtrls,
-  RadIA.Core.Interfaces, RadIA.OTA.ContextParser;
+  ToolsAPI,
+  RadIA.Core.Interfaces,
+  RadIA.Core.InlineCompletion,
+  RadIA.OTA.ContextParser,
+  RadIA.OTA.InlineCompletion;
 
 type
+  TRadIAEditorHook = class;
+
+  TRadIAInlineCompletionKeyboardBinding = class(
+    TNotifierObject,
+    IOTAKeyboardBinding
+  )
+  private
+    FOwner: TRadIAEditorHook;
+    procedure AddBinding(
+      const ABindingServices: IOTAKeyBindingServices;
+      const AShortcut: TShortCut;
+      const AHandler: TKeyBindingProc;
+      const AActionName: string
+    );
+    procedure AcceptAll(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure AcceptNextWord(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure Alternative(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure Reject(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure Request(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+  public
+    constructor Create(const AOwner: TRadIAEditorHook);
+    procedure AfterSave;
+    procedure BeforeSave;
+    procedure BindKeyboard(
+      const ABindingServices: IOTAKeyBindingServices
+    );
+    procedure Destroyed;
+    function GetBindingType: TBindingType;
+    function GetDisplayName: string;
+    function GetName: string;
+    procedure Modified;
+  end;
+
   { Manager to create and handle RadIA IDE contextual actions }
   TRadIAEditorHook = class(TComponent)
   private
@@ -14,12 +71,22 @@ type
     FInstalled: Boolean;
     FIDENotifierIndex: Integer;
     FEditorNotifiers: TInterfaceList;
+    FConfig: IRadIAConfig;
     FIDEAdapter: IRadIAIDEAdapter;
+    FInlineCompletionConsentGranted: Boolean;
+    FInlineCompletionController: IRadIAInlineCompletionController;
+    FInlineCompletionLastKey: string;
+    FInlineCompletionSessionEnabled: Boolean;
+    FInlineCompletionSession: IRadIAOTAInlineCompletionSession;
+    FInlineShortcutBinding: IOTAKeyboardBinding;
+    FInlineShortcutBindingIndex: Integer;
+    FInlineShortcutProfile: string;
     FMediator: IRadIAMediator;
     {$IFNDEF TESTS}
     FTimer: TTimer;
     FHookPending: Boolean;
     FHookRequestedAt: UInt64;
+    FInlineCompletionSmokePending: Boolean;
     {$ENDIF}
 
     procedure ActiveFormChange(Sender: TObject);
@@ -56,7 +123,21 @@ type
     procedure OnReviewExecute(Sender: TObject);
     procedure OnCreateExampleExecute(Sender: TObject);
     procedure OnFixErrorExecute(Sender: TObject);
+    procedure OnGettingStartedExecute(Sender: TObject);
     procedure OnShowChatExecute(Sender: TObject);
+    procedure OnShowTerminalExecute(Sender: TObject);
+    procedure OnInlineCompletionAcceptExecute(Sender: TObject);
+    procedure OnInlineCompletionAlternativeExecute(Sender: TObject);
+    procedure OnInlineCompletionNextWordExecute(Sender: TObject);
+    procedure OnInlineCompletionRejectExecute(Sender: TObject);
+    procedure OnInlineCompletionPreviewDiagnosticExecute(Sender: TObject);
+    procedure OnInlineCompletionRequestExecute(Sender: TObject);
+    procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
+    function TryPreviewInlineCompletionDiagnostic: Boolean;
+    procedure RequestContinuousInlineCompletion;
+    procedure RefreshInlineCompletionWatch;
+    procedure RefreshKeyboardBinding;
+    procedure RemoveKeyboardBinding;
 
     function BuildCreateExamplePrompt(const ASourceCode: string; const AContext: TMethodExampleContext): string;
     function GetEditorCodeContext(out ACode: string; out AUsedSelection: Boolean): Boolean;
@@ -80,14 +161,17 @@ type
 implementation
 
 uses
+  RadIA.Core.InlineShortcuts,
   System.Generics.Collections,
   System.SysUtils,
+  System.UITypes,
   Vcl.Dialogs,
-  Winapi.Windows, ToolsAPI,
+  Winapi.Windows,
   RadIA.Core.Types,
   RadIA.Core.Mediator,
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm,
+  RadIA.OTA.Onboarding,
   {$ENDIF}
   RadIA.Core.Logger, RadIA.Core.Container, RadIA.OTA.Adapter, RadIA.OTA.Helper;
 
@@ -99,6 +183,16 @@ procedure ShowRadIAChat;
 begin
   // Stub for unit tests to avoid pulling VCL Forms/WebView2 components
 end;
+
+procedure ShowRadIATerminal;
+begin
+  // Stub for unit tests to avoid pulling native dockable forms.
+end;
+
+procedure ShowRadIAOnboarding(const AForce: Boolean);
+begin
+  // Stub for unit tests to avoid pulling the onboarding form.
+end;
 {$ENDIF}
 
 var
@@ -108,22 +202,244 @@ var
 threadvar
   GExecutingPopup: Boolean;
 
+{ TRadIAInlineCompletionKeyboardBinding }
+
+procedure TRadIAInlineCompletionKeyboardBinding.AddBinding(
+  const ABindingServices: IOTAKeyBindingServices;
+  const AShortcut: TShortCut;
+  const AHandler: TKeyBindingProc;
+  const AActionName: string
+);
+begin
+  if not ABindingServices.AddKeyBinding(
+    [AShortcut],
+    AHandler,
+    nil
+  ) then
+    TLogger.Log(
+      'Inline shortcut conflict for ' + AActionName + ': ' +
+      ShortCutToText(AShortcut),
+      'Warning'
+    );
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.AcceptAll(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionAcceptExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.AcceptNextWord(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionNextWordExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.AfterSave;
+begin
+  // No persisted state is owned by the OTA binding object.
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.Alternative(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionAlternativeExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.BeforeSave;
+begin
+  // No persisted state is owned by the OTA binding object.
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.BindKeyboard(
+  const ABindingServices: IOTAKeyBindingServices
+);
+var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
+begin
+  if not Assigned(ABindingServices) or not Assigned(FOwner) then
+    Exit;
+  if not TRadIAInlineShortcutProfile.TryParse(
+    FOwner.FInlineShortcutProfile,
+    LProfile,
+    LError
+  ) then
+    LProfile := TRadIAInlineShortcutProfile.Default;
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaRequest),
+    Request,
+    'request'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaAcceptAll),
+    AcceptAll,
+    'accept'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaAcceptNextWord),
+    AcceptNextWord,
+    'nextWord'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaAlternative),
+    Alternative,
+    'alternative'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaReject),
+    Reject,
+    'reject'
+  );
+end;
+
+constructor TRadIAInlineCompletionKeyboardBinding.Create(
+  const AOwner: TRadIAEditorHook
+);
+begin
+  inherited Create;
+  FOwner := AOwner;
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.Destroyed;
+begin
+  FOwner := nil;
+end;
+
+function TRadIAInlineCompletionKeyboardBinding.GetBindingType:
+  TBindingType;
+begin
+  Result := btPartial;
+end;
+
+function TRadIAInlineCompletionKeyboardBinding.GetDisplayName: string;
+begin
+  Result := 'RadIA Inline Completion';
+end;
+
+function TRadIAInlineCompletionKeyboardBinding.GetName: string;
+begin
+  Result := 'RadIA.InlineCompletion';
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.Modified;
+begin
+  // The binding is refreshed when the configured profile changes.
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.Reject(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionRejectExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.Request(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionRequestExecute(nil);
+end;
+
 { TRadIAEditorHook }
 
 constructor TRadIAEditorHook.Create(AOwner: TComponent);
+var
+  LDispatcher: TRadIAInlineCompletionDispatcher;
+  LOptions: TRadIAInlineCompletionOptions;
+  LProvider: IRadIAInlineCompletionProvider;
+  LRunner: TRadIAInlineCompletionRunner;
+  LView: IRadIAInlineCompletionView;
 begin
   inherited Create(AOwner);
   if not TRadIAContainer.TryResolve<IRadIAIDEAdapter>(FIDEAdapter) then
     FIDEAdapter := TRadIAConcreteIDEAdapter.Create;
   if not TRadIAContainer.TryResolve<IRadIAMediator>(FMediator) then
     FMediator := TRadIAMediator.Instance;
+  TRadIAContainer.TryResolve<IRadIAConfig>(FConfig);
   FOldActiveFormChange := nil;
+  FInlineCompletionConsentGranted := False;
+  FInlineCompletionSessionEnabled := True;
+  FInlineCompletionLastKey := '';
+  FInlineShortcutBindingIndex := -1;
+  FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
+  FInlineCompletionSession := TRadIAOTAInlineCompletionSession.Create;
+  if TRadIAContainer.TryResolve<IRadIAInlineCompletionProvider>(
+    LProvider
+  ) then
+  begin
+    LView := FInlineCompletionSession;
+    LRunner :=
+      procedure(const AAction: TProc)
+      begin
+        System.Classes.TThread.CreateAnonymousThread(AAction).Start;
+      end;
+    LDispatcher :=
+      procedure(const AAction: TProc)
+      begin
+        System.Classes.TThread.Queue(
+          nil,
+          procedure
+          begin
+            AAction();
+          end
+        );
+      end;
+    if Assigned(FConfig) then
+      LOptions := TRadIAInlineCompletionOptions.Create(
+        FConfig.AutocompleteDelay,
+        24000,
+        4000
+      )
+    else
+      LOptions := TRadIAInlineCompletionOptions.Default;
+    FInlineCompletionController := TRadIAInlineCompletionController.Create(
+      LProvider,
+      LView,
+      LOptions,
+      LRunner,
+      LDispatcher
+    );
+    RefreshInlineCompletionWatch;
+  end;
   FIDENotifierIndex := -1;
   FEditorNotifiers := TInterfaceList.Create;
   {$IFNDEF TESTS}
   FTimer := nil;
   FHookPending := False;
   FHookRequestedAt := 0;
+  FInlineCompletionSmokePending := SameText(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_INLINE_COMPLETION'),
+    '1'
+  );
   {$ENDIF}
   FInstalled := False;
 end;
@@ -131,6 +447,11 @@ end;
 destructor TRadIAEditorHook.Destroy;
 begin
   Uninstall;
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Stop;
+  FInlineCompletionController := nil;
+  FInlineCompletionSession.ConfigureContinuous(False, nil);
+  FInlineCompletionSession := nil;
   FEditorNotifiers.Free;
   inherited Destroy;
 end;
@@ -148,6 +469,7 @@ begin
   FOldActiveFormChange := Screen.OnActiveFormChange;
   Screen.OnActiveFormChange := ActiveFormChange;
   InstallEditorNotifiers;
+  RefreshKeyboardBinding;
 
 {$IFNDEF TESTS}
   FTimer := TTimer.Create(Self);
@@ -233,6 +555,7 @@ begin
   {$ENDIF}
 
   RestoreScreenOnActiveFormChange;
+  RemoveKeyboardBinding;
   FInstalled := False;
   RemoveEditorNotifiers;
   UnhookAllForms;
@@ -258,7 +581,11 @@ begin
     begin
       LActiveForm := Screen.ActiveForm;
       if Assigned(LActiveForm) and SameText(LActiveForm.ClassName, 'TEditWindow') then
+      begin
+        RefreshKeyboardBinding;
+        RefreshInlineCompletionWatch;
         QueueHookActiveEditor;
+      end;
     end;
   except
     on E: Exception do
@@ -565,6 +892,8 @@ end;
 
 procedure TRadIAEditorHook.InjectMenuIntoPopupMenu(APopupMenu: TPopupMenu);
 var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
   LRootItem: TMenuItem;
   LSubItem: TMenuItem;
   LComp: TComponent;
@@ -601,6 +930,12 @@ begin
   end;
 
   TLogger.Log('Injecting Rad IA menu items into EditorLocalMenu', 'EditorHook');
+  if not TRadIAInlineShortcutProfile.TryParse(
+    FInlineShortcutProfile,
+    LProfile,
+    LError
+  ) then
+    LProfile := TRadIAInlineShortcutProfile.Default;
 
   // Root Submenu Item
   LRootItem := TMenuItem.Create(APopupMenu);
@@ -653,6 +988,50 @@ begin
   LSubItem.OnClick := OnReviewExecute;
   LRootItem.Add(LSubItem);
 
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := '-';
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Request Inline Suggestion';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaRequest);
+  LSubItem.OnClick := OnInlineCompletionRequestExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Accept Inline Suggestion';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaAcceptAll);
+  LSubItem.OnClick := OnInlineCompletionAcceptExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Accept Next Inline Word';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaAcceptNextWord);
+  LSubItem.OnClick := OnInlineCompletionNextWordExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Request Alternative Inline Suggestion';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaAlternative);
+  LSubItem.OnClick := OnInlineCompletionAlternativeExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Reject Inline Suggestion';
+  LSubItem.ShortCut := LProfile.ShortcutFor(isaReject);
+  LSubItem.OnClick := OnInlineCompletionRejectExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Pause/Resume Inline Completion for Session';
+  LSubItem.OnClick := OnInlineCompletionSessionToggleExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Preview Local Ghost Text Diagnostic';
+  LSubItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
+  LRootItem.Add(LSubItem);
+
   // Separator visual
   LSubItem := TMenuItem.Create(APopupMenu);
   LSubItem.Caption := '-';
@@ -687,6 +1066,21 @@ begin
   LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Rad IA Chat Panel';
   LItem.OnClick := OnShowChatExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Terminal';
+  LItem.OnClick := OnShowTerminalExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Getting Started';
+  LItem.OnClick := OnGettingStartedExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Preview Rad IA Ghost Text Diagnostic';
+  LItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
@@ -762,6 +1156,235 @@ end;
 procedure TRadIAEditorHook.OnShowChatExecute(Sender: TObject);
 begin
   ShowRadIAChat;
+end;
+
+procedure TRadIAEditorHook.OnGettingStartedExecute(Sender: TObject);
+begin
+  ShowRadIAOnboarding(True);
+end;
+
+procedure TRadIAEditorHook.OnShowTerminalExecute(Sender: TObject);
+begin
+  ShowRadIATerminal;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionAcceptExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.AcceptAll;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionAlternativeExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.RequestAlternative;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionNextWordExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.AcceptNextWord;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionRejectExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Reject;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionPreviewDiagnosticExecute(
+  Sender: TObject
+);
+begin
+  if not TryPreviewInlineCompletionDiagnostic then
+    ShowMessage('No supported active code buffer was found.');
+end;
+
+function TRadIAEditorHook.TryPreviewInlineCompletionDiagnostic: Boolean;
+const
+  CDiagnosticSuggestion =
+    'RadIAGhostTextDiagnostic' + sLineBreak +
+    '// Local multiline preview; no context was sent.';
+var
+  LContext: TRadIAInlineCompletionContext;
+begin
+  Result := False;
+  if not Assigned(FInlineCompletionController) or
+    not Assigned(FInlineCompletionSession) then
+    Exit;
+  if not FInlineCompletionSession.Capture(LContext) then
+    Exit;
+  FInlineCompletionController.Preview(
+    LContext,
+    CDiagnosticSuggestion
+  );
+  Result := True;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionRequestExecute(
+  Sender: TObject
+);
+var
+  LContext: TRadIAInlineCompletionContext;
+begin
+  if not Assigned(FInlineCompletionController) or
+    not Assigned(FInlineCompletionSession) then
+    Exit;
+  if not FInlineCompletionConsentGranted then
+  begin
+    if MessageDlg(
+      'RadIA will send a bounded context from the active editor buffer ' +
+      'to the selected provider to generate an inline suggestion. ' +
+      'Continue for this IDE session?',
+      mtConfirmation,
+      [mbYes, mbNo],
+      0
+    ) <> mrYes then
+      Exit;
+    FInlineCompletionConsentGranted := True;
+  end;
+  if not FInlineCompletionSession.Capture(LContext) then
+  begin
+    ShowMessage('No supported active code buffer was found.');
+    Exit;
+  end;
+  FInlineCompletionController.Request(LContext);
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionSessionToggleExecute(
+  Sender: TObject
+);
+begin
+  FInlineCompletionSessionEnabled :=
+    not FInlineCompletionSessionEnabled;
+  FInlineCompletionLastKey := '';
+  if not FInlineCompletionSessionEnabled and
+    Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Stop;
+  RefreshInlineCompletionWatch;
+end;
+
+procedure TRadIAEditorHook.RefreshKeyboardBinding;
+var
+  LKeyboardServices: IOTAKeyboardServices;
+  LShortcutConfig: IRadIAInlineShortcutConfig;
+  LProfileText: string;
+begin
+  LProfileText := TRadIAInlineShortcutProfile.DefaultText;
+  if Supports(FConfig, IRadIAInlineShortcutConfig, LShortcutConfig) then
+    LProfileText := LShortcutConfig.InlineShortcutProfile;
+  if SameText(LProfileText, FInlineShortcutProfile) and
+    (FInlineShortcutBindingIndex >= 0) then
+    Exit;
+  RemoveKeyboardBinding;
+  FInlineShortcutProfile := LProfileText;
+  if not Supports(
+    BorlandIDEServices,
+    IOTAKeyboardServices,
+    LKeyboardServices
+  ) then
+    Exit;
+  FInlineShortcutBinding :=
+    TRadIAInlineCompletionKeyboardBinding.Create(Self);
+  FInlineShortcutBindingIndex := LKeyboardServices.AddKeyboardBinding(
+    FInlineShortcutBinding
+  );
+end;
+
+procedure TRadIAEditorHook.RefreshInlineCompletionWatch;
+var
+  LEnabled: Boolean;
+  LIdleHandler: TRadIAInlineCompletionIdleHandler;
+begin
+  if not Assigned(FInlineCompletionSession) or
+    not Assigned(FConfig) then
+    Exit;
+  LEnabled := FInlineCompletionSessionEnabled and
+    FConfig.AutocompleteEnabled;
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.Configure(
+      TRadIAInlineCompletionOptions.Create(
+        FConfig.AutocompleteDelay,
+        24000,
+        4000
+      )
+    );
+  if LEnabled then
+  begin
+    LIdleHandler :=
+      procedure
+      begin
+        RequestContinuousInlineCompletion;
+      end;
+  end
+  else
+    LIdleHandler := nil;
+  FInlineCompletionSession.ConfigureContinuous(
+    LEnabled,
+    LIdleHandler
+  );
+end;
+
+procedure TRadIAEditorHook.RemoveKeyboardBinding;
+var
+  LKeyboardServices: IOTAKeyboardServices;
+begin
+  if (FInlineShortcutBindingIndex >= 0) and Supports(
+    BorlandIDEServices,
+    IOTAKeyboardServices,
+    LKeyboardServices
+  ) then
+  begin
+    try
+      LKeyboardServices.RemoveKeyboardBinding(
+        FInlineShortcutBindingIndex
+      );
+    except
+      on E: Exception do
+        TLogger.Log(
+          'Inline shortcut binding removal failed: ' + E.Message,
+          'Warning'
+        );
+    end;
+  end;
+  FInlineShortcutBindingIndex := -1;
+  FInlineShortcutBinding := nil;
+end;
+
+procedure TRadIAEditorHook.RequestContinuousInlineCompletion;
+var
+  LContext: TRadIAInlineCompletionContext;
+  LRequestKey: string;
+begin
+  if not FInlineCompletionSessionEnabled or
+    not Assigned(FConfig) or
+    not FConfig.AutocompleteEnabled or
+    not Assigned(FInlineCompletionController) or
+    not FInlineCompletionSession.Capture(LContext) then
+    Exit;
+  if not TRadIAInlineCompletionPolicy.IsAllowed(
+    LContext,
+    FConfig.AutocompleteExcludedLanguages,
+    FConfig.AutocompleteExcludedFiles,
+    FConfig.AutocompleteExcludedProjects
+  ) then
+    Exit;
+  LRequestKey := LContext.FileName.ToLower + '|' +
+    LContext.Revision + '|' +
+    LContext.CursorLine.ToString + '|' +
+    LContext.CursorColumn.ToString;
+  if SameText(LRequestKey, FInlineCompletionLastKey) then
+    Exit;
+  FInlineCompletionLastKey := LRequestKey;
+  FInlineCompletionController.Request(LContext);
 end;
 
 procedure TRadIAEditorHook.OnOptimizeExecute(Sender: TObject);
@@ -961,6 +1584,10 @@ var
 begin
   if (not FInstalled) or GIsShuttingDown then
     Exit;
+
+  if FInlineCompletionSmokePending and
+    TryPreviewInlineCompletionDiagnostic then
+    FInlineCompletionSmokePending := False;
 
   if not FHookPending then
   begin

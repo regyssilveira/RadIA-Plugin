@@ -37,6 +37,12 @@ type
     FDebugger: IRadIADebuggerBreakpointFacade;
     FKind: TRadIADebuggerBreakpointToolKind;
     FWorkspace: IRadIAWorkspaceFacade;
+    function ApplyBreakpointAction(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      out AAction: string;
+      out AError: TRadIAToolResult
+    ): Boolean;
     function GetDescriptor: TRadIAToolDescriptor;
     function IsSupportedSourceFile(
       const AFileName: string
@@ -116,6 +122,65 @@ begin
   FBoundary := ABoundary;
 end;
 
+function TRadIADebuggerBreakpointTool.ApplyBreakpointAction(
+  const AFileName: string;
+  const ALineNumber: Integer;
+  out AAction: string;
+  out AError: TRadIAToolResult
+): Boolean;
+begin
+  Result := False;
+  case FKind of
+    dbptkAdd:
+    begin
+      if FDebugger.HasSourceBreakpoint(AFileName, ALineNumber) then
+      begin
+        AError := TRadIAToolResult.Failed(
+          'breakpoint_exists',
+          'A source breakpoint already exists at this location.'
+        );
+        Exit;
+      end;
+      if not FDebugger.AddSourceBreakpoint(AFileName, ALineNumber) then
+      begin
+        AError := TRadIAToolResult.Failed(
+          'breakpoint_add_failed',
+          'The IDE rejected the source breakpoint.'
+        );
+        Exit;
+      end;
+      AAction := 'added';
+    end;
+    dbptkRemove:
+    begin
+      if not FDebugger.HasSourceBreakpoint(AFileName, ALineNumber) then
+      begin
+        AError := TRadIAToolResult.Failed(
+          'breakpoint_not_found',
+          'No source breakpoint exists at this location.'
+        );
+        Exit;
+      end;
+      if not FDebugger.RemoveSourceBreakpoint(AFileName, ALineNumber) then
+      begin
+        AError := TRadIAToolResult.Failed(
+          'breakpoint_remove_failed',
+          'The IDE rejected removal of the source breakpoint.'
+        );
+        Exit;
+      end;
+      AAction := 'removed';
+    end;
+  else
+    AError := TRadIAToolResult.Failed(
+      'unsupported_tool',
+      'Debugger breakpoint tool kind is not supported.'
+    );
+    Exit;
+  end;
+  Result := True;
+end;
+
 function TRadIADebuggerBreakpointTool.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
@@ -126,6 +191,7 @@ var
   LLineNumber: Integer;
   LProject: TRadIAProjectSnapshot;
   LResultJson: TJSONObject;
+  LToolError: TRadIAToolResult;
   LValidation: TRadIAPathValidation;
 begin
   LJson := TJSONObject.ParseJSONValue(
@@ -170,53 +236,13 @@ begin
       'Breakpoints are limited to Pascal source files.'
     ));
 
-  case FKind of
-    dbptkAdd:
-    begin
-      if FDebugger.HasSourceBreakpoint(
-        LFileName,
-        LLineNumber
-      ) then
-        Exit(TRadIAToolResult.Failed(
-          'breakpoint_exists',
-          'A source breakpoint already exists at this location.'
-        ));
-      if not FDebugger.AddSourceBreakpoint(
-        LFileName,
-        LLineNumber
-      ) then
-        Exit(TRadIAToolResult.Failed(
-          'breakpoint_add_failed',
-          'The IDE rejected the source breakpoint.'
-        ));
-      LAction := 'added';
-    end;
-    dbptkRemove:
-    begin
-      if not FDebugger.HasSourceBreakpoint(
-        LFileName,
-        LLineNumber
-      ) then
-        Exit(TRadIAToolResult.Failed(
-          'breakpoint_not_found',
-          'No source breakpoint exists at this location.'
-        ));
-      if not FDebugger.RemoveSourceBreakpoint(
-        LFileName,
-        LLineNumber
-      ) then
-        Exit(TRadIAToolResult.Failed(
-          'breakpoint_remove_failed',
-          'The IDE rejected removal of the source breakpoint.'
-        ));
-      LAction := 'removed';
-    end;
-  else
-    Exit(TRadIAToolResult.Failed(
-      'unsupported_tool',
-      'Debugger breakpoint tool kind is not supported.'
-    ));
-  end;
+  if not ApplyBreakpointAction(
+    LFileName,
+    LLineNumber,
+    LAction,
+    LToolError
+  ) then
+    Exit(LToolError);
 
   LResultJson := TJSONObject.Create;
   try

@@ -1,0 +1,241 @@
+name: Signed RadIA release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to package
+        required: true
+        default: v2.0.0
+      publish:
+        description: Publish or update the GitHub release
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radia-signed-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-release:
+    name: Build, sign, verify, and publish
+    environment: production
+    runs-on:
+      - self-hosted
+      - Windows
+      - X64
+      - radia-delphi
+    timeout-minutes: 90
+    env:
+      SIGNING_PFX_BASE64: ${{ secrets.RADIA_SIGNING_PFX_BASE64 }}
+      SIGNING_PFX_PASSWORD: ${{ secrets.RADIA_SIGNING_PFX_PASSWORD }}
+      TIMESTAMP_URL: ${{ vars.RADIA_TIMESTAMP_URL }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the exact revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: >-
+            ${{ github.event_name == 'workflow_dispatch' &&
+                inputs.release_tag || github.ref }}
+
+      - name: Resolve and validate release identity
+        shell: powershell
+        run: |
+          $version = (
+            Get-Content -LiteralPath ".\package.json" -Raw |
+            ConvertFrom-Json
+          ).version
+          $tag = "${{ github.ref_name }}"
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.release_tag }}"
+          }
+          if ($tag -ne "v$version") {
+            throw "Release tag $tag does not match package version $version."
+          }
+          $tagCommit = git rev-list -n 1 $tag
+          if ($LASTEXITCODE -ne 0 -or -not $tagCommit) {
+            throw "Release tag does not exist: $tag"
+          }
+          $headCommit = git rev-parse HEAD
+          if ($headCommit -ne $tagCommit) {
+            throw "Checked-out revision does not match release tag $tag."
+          }
+          $installerName = "RadIA-v$version-Setup.exe"
+          $downloadUrl = (
+            "https://github.com/${{ github.repository }}/releases/" +
+            "download/$tag/$installerName"
+          )
+          "RADIA_VERSION=$version" >> $env:GITHUB_ENV
+          "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          "INSTALLER_NAME=$installerName" >> $env:GITHUB_ENV
+          "DOWNLOAD_URL=$downloadUrl" >> $env:GITHUB_ENV
+
+      - name: Validate signing configuration
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_BASE64)) {
+            throw "Secret RADIA_SIGNING_PFX_BASE64 is required."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
+            throw "Secret RADIA_SIGNING_PFX_PASSWORD is required."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:TIMESTAMP_URL)) {
+            $env:TIMESTAMP_URL = "http://timestamp.digicert.com"
+            "TIMESTAMP_URL=$env:TIMESTAMP_URL" >> $env:GITHUB_ENV
+          }
+
+      - name: Install frontend dependencies
+        shell: powershell
+        run: npm ci
+
+      - name: Run repository gates
+        shell: powershell
+        run: |
+          npm run lint
+          npm run test:web
+          npm run test:docs
+
+      - name: Import temporary code-signing certificate
+        shell: powershell
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP "radia-signing.pfx"
+          [IO.File]::WriteAllBytes(
+            $pfxPath,
+            [Convert]::FromBase64String($env:SIGNING_PFX_BASE64)
+          )
+          "SIGNING_PFX_PATH=$pfxPath" >> $env:GITHUB_ENV
+          $password = ConvertTo-SecureString `
+            $env:SIGNING_PFX_PASSWORD `
+            -AsPlainText `
+            -Force
+          $certificate = Import-PfxCertificate `
+            -FilePath $pfxPath `
+            -CertStoreLocation Cert:\CurrentUser\My `
+            -Password $password
+          "SIGNING_THUMBPRINT=$($certificate.Thumbprint)" >>
+            $env:GITHUB_ENV
+          if (-not $certificate.HasPrivateKey) {
+            throw "Imported certificate does not contain a private key."
+          }
+          $codeSigningEku = @(
+            $certificate.EnhancedKeyUsageList |
+            Where-Object {
+              $_.ObjectId.Value -eq "1.3.6.1.5.5.7.3.3"
+            }
+          )
+          if ($codeSigningEku.Count -ne 1) {
+            throw "Certificate is not valid for code signing."
+          }
+          if (
+            $certificate.NotBefore -gt (Get-Date) -or
+            $certificate.NotAfter -lt (Get-Date)
+          ) {
+            throw "Code-signing certificate is outside its validity period."
+          }
+
+      - name: Build four release packages
+        shell: powershell
+        run: |
+          .\build.ps1 -DelphiVersion "22.0" -Release -Package
+          .\build.ps1 -DelphiVersion "23.0" -Release -Package
+          .\build.ps1 -DelphiVersion "37.0" -Release -Package
+          .\build.ps1 -DelphiVersion "37.0" -IDE64 -Release -Package
+
+      - name: Validate package provenance
+        shell: powershell
+        run: |
+          .\scripts\New-RadIA.ReleaseEvidence.ps1 `
+            -OutputPath ".\Output\Distribution\ReleaseEvidence.json"
+
+      - name: Build and sign the visual installer
+        shell: powershell
+        run: |
+          .\scripts\New-RadIA.VisualInstaller.ps1 `
+            -CertificateThumbprint $env:SIGNING_THUMBPRINT `
+            -TimestampUrl $env:TIMESTAMP_URL `
+            -EvidencePath (
+              ".\Output\Distribution\VisualInstallerEvidence.json"
+            )
+          .\scripts\Test-RadIA.VisualInstaller.ps1 `
+            -RequireSignature `
+            -EvidencePath (
+              ".\Output\Distribution\VisualInstallerEvidence.json"
+            )
+
+      - name: Create stable release channel
+        shell: powershell
+        run: |
+          .\scripts\New-RadIA.ReleaseChannel.ps1 `
+            -InstallerPath ".\Output\Installer\$env:INSTALLER_NAME" `
+            -DownloadUrl $env:DOWNLOAD_URL `
+            -OutputPath ".\Output\Distribution\stable.json"
+          Copy-Item `
+            -LiteralPath ".\Output\Installer\$env:INSTALLER_NAME" `
+            -Destination ".\Output\Distribution\$env:INSTALLER_NAME"
+          Copy-Item `
+            -LiteralPath ".\Output\Packages\SHA256SUMS.txt" `
+            -Destination ".\Output\Distribution\SHA256SUMS.txt"
+          Get-ChildItem `
+            -LiteralPath ".\Output\Packages" `
+            -Filter "RadIA-v$env:RADIA_VERSION-*-Release.zip" |
+            Copy-Item -Destination ".\Output\Distribution"
+
+      - name: Upload signed distribution evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: RadIA-${{ env.RADIA_VERSION }}-signed-distribution
+          path: Output/Distribution/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub release
+        if: >-
+          github.event_name == 'push' ||
+          inputs.publish == true
+        shell: powershell
+        run: |
+          $releaseExists = $false
+          gh release view $env:RELEASE_TAG 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            $releaseExists = $true
+          }
+          if (-not $releaseExists) {
+            gh release create `
+              $env:RELEASE_TAG `
+              --verify-tag `
+              --title "RadIA $env:RADIA_VERSION" `
+              --generate-notes
+          }
+          gh release upload `
+            $env:RELEASE_TAG `
+            ".\Output\Distribution\*" `
+            --clobber
+
+      - name: Remove signing material from runner
+        if: always()
+        shell: powershell
+        run: |
+          if ($env:SIGNING_THUMBPRINT) {
+            $certificatePath = (
+              "Cert:\CurrentUser\My\" +
+              $env:SIGNING_THUMBPRINT
+            )
+            if (Test-Path -LiteralPath $certificatePath) {
+              Remove-Item -LiteralPath $certificatePath -Force
+            }
+          }
+          if (
+            $env:SIGNING_PFX_PATH -and
+            (Test-Path -LiteralPath $env:SIGNING_PFX_PATH)
+          ) {
+            Remove-Item -LiteralPath $env:SIGNING_PFX_PATH -Force
+          }

@@ -4,7 +4,7 @@ interface
 
 uses
   DUnitX.TestFramework, System.SysUtils, System.Classes, RadIA.Core.Interfaces, RadIA.Core.Sessions,
-  RadIA.Core.ProviderRegistry, RadIA.Core.Tools, RadIA.Core.ToolRegistry,
+  RadIA.Core.ProviderRegistry, RadIA.Core.Tools,
   RadIA.UI.ChatPresenter;
 
 type
@@ -38,6 +38,8 @@ type
     FSaveDialogSelectedFileName: string;
     FToggleSessionsPanelCalled: Boolean;
     FOpenSettingsDialogCalled: Boolean;
+    FOpenTerminalCalled: Boolean;
+    FOpenExtensionManagerCalled: Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -63,6 +65,8 @@ type
     function SaveDialogExecute(out AFileName: string): Boolean;
     procedure ToggleSessionsPanel;
     procedure OpenSettingsDialog;
+    procedure OpenTerminal;
+    procedure OpenExtensionManager;
 
     property RequestStateInProgress: Boolean read FRequestStateInProgress write FRequestStateInProgress;
     property RequestStateSetCalled: Boolean read FRequestStateSetCalled write FRequestStateSetCalled;
@@ -93,6 +97,9 @@ type
     property SaveDialogSelectedFileName: string read FSaveDialogSelectedFileName write FSaveDialogSelectedFileName;
     property ToggleSessionsPanelCalled: Boolean read FToggleSessionsPanelCalled write FToggleSessionsPanelCalled;
     property OpenSettingsDialogCalled: Boolean read FOpenSettingsDialogCalled write FOpenSettingsDialogCalled;
+    property OpenTerminalCalled: Boolean read FOpenTerminalCalled write FOpenTerminalCalled;
+    property OpenExtensionManagerCalled: Boolean
+      read FOpenExtensionManagerCalled write FOpenExtensionManagerCalled;
   end;
 
   TMockIAProvider = class(TInterfacedObject, IRadIAProvider)
@@ -114,6 +121,22 @@ type
   end;
 
   TMockReadOnlyTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
+  TMockProjectHealthTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
+  TMockInstallationHealthTool = class(TInterfacedObject, IRadIATool)
   public
     function GetDescriptor: TRadIAToolDescriptor;
     function Execute(
@@ -149,6 +172,12 @@ type
     [Test]
     procedure TestGlobalPromptWithCommandLineBreakUsesTemplate;
     [Test]
+    procedure TestDeclarativeExtensionCommandReloadsWithoutRestart;
+    [Test]
+    procedure TestDeclarativeExtensionAppearsInSlashCatalog;
+    [Test]
+    procedure TestDeclarativeJourneyStartsGuardedAgentRun;
+    [Test]
     procedure TestSlashCommandUsesProvidedCodeBlock;
     [Test]
     procedure TestClearChatResetsState;
@@ -162,6 +191,18 @@ type
     procedure TestChangeProviderUpdatesModels;
     [Test]
     procedure TestWebMessageOpenSettings;
+    [Test]
+    procedure TestWebMessageOpenTerminal;
+    [Test]
+    procedure TestSettingsCommandOpensSettings;
+    [Test]
+    procedure TestExtensionsCommandOpensManager;
+    [Test]
+    procedure TestHealthCommandExecutesProjectHealth;
+    [Test]
+    procedure TestDoctorCommandExecutesInstallationHealth;
+    [Test]
+    procedure TestJourneyCommandListsEndToEndRecipes;
     [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
@@ -190,12 +231,26 @@ type
     procedure TestExecuteToolPublishesCallAndResult;
     [Test]
     procedure TestRevokeToolsCommandConfirmsRevocation;
+    [Test]
+    procedure TestAgentCommandSynchronizesState;
+    [Test]
+    procedure TestAgentHistoryCommandPublishesSafeIndex;
+    [Test]
+    procedure TestAgentPlanWebMessageUpdatesPendingCheckpoint;
+    [Test]
+    procedure TestTerminalCommandOpensTerminal;
+    [Test]
+    procedure TestDisabledAgentModeBlocksToolExecution;
+    [Test]
+    procedure TestAgentRunPublishesObservableState;
   end;
 
 implementation
 
 uses
-  RadIA.Core.Config, RadIA.Core.SettingsStorage, System.IOUtils, RadIA.Core.Mediator;
+  RadIA.Core.AgentRuntime, RadIA.Core.Config, RadIA.Core.SettingsStorage,
+  System.IOUtils, RadIA.Core.Mediator,
+  RadIA.Core.TokenUsage, RadIA.Core.ToolRegistry;
 
 { TMockChatView }
 
@@ -211,6 +266,7 @@ begin
   SaveDialogResult := True;
   ToggleSessionsPanelCalled := False;
   OpenSettingsDialogCalled := False;
+  OpenTerminalCalled := False;
   ActiveEditorText := 'procedure Test; begin end;';
   PostedMessages := TStringList.Create;
 end;
@@ -330,6 +386,16 @@ begin
   OpenSettingsDialogCalled := True;
 end;
 
+procedure TMockChatView.OpenTerminal;
+begin
+  OpenTerminalCalled := True;
+end;
+
+procedure TMockChatView.OpenExtensionManager;
+begin
+  OpenExtensionManagerCalled := True;
+end;
+
 { TMockIAProvider }
 
 constructor TMockIAProvider.Create(const AId, AName: string; const AModels: TArray<string>);
@@ -343,8 +409,13 @@ end;
 procedure TMockIAProvider.SendPromptAsync(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
   const ACallback: TCompletionCallback; const ATemperature: Double; const AMaxTokens: Integer);
 begin
-  // Added harmless statement to satisfy SonarQube EmptyRoutine and RedundantJump rules in Delphi mock
-  if True then ;
+  ACallback(
+    '{"kind":"plan","message":"Approve mock plan.",' +
+    '"steps":[{"title":"Inspect project"}]}',
+    '',
+    False,
+    TTokenUsage.Empty
+  );
 end;
 
 procedure TMockIAProvider.SendPromptStreamAsync(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
@@ -404,6 +475,49 @@ begin
   );
 end;
 
+function TMockProjectHealthTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"health":"healthy","risks":[]}'
+  );
+end;
+
+function TMockProjectHealthTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetProjectHealth',
+    '1.0.0',
+    'Returns mock project health.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  );
+end;
+
+function TMockInstallationHealthTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"status":"ready","issues":[]}'
+  );
+end;
+
+function TMockInstallationHealthTool.GetDescriptor:
+  TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetInstallationHealth',
+    '1.0.0',
+    'Returns mock installation health.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  );
+end;
+
 { TTestChatPresenter }
 
 procedure TTestChatPresenter.DrainQueuedCalls;
@@ -455,6 +569,8 @@ begin
 
   FToolRegistry := TRadIAToolRegistry.Create;
   FToolRegistry.RegisterTool(TMockReadOnlyTool.Create);
+  FToolRegistry.RegisterTool(TMockProjectHealthTool.Create);
+  FToolRegistry.RegisterTool(TMockInstallationHealthTool.Create);
   FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
   FMockView := TMockChatView.Create;
   FPresenter := TRadIAChatPresenter.Create(
@@ -558,6 +674,157 @@ begin
     FMockView.LastPostedJson,
     'All session tool permissions were revoked.'
   );
+end;
+
+procedure TTestChatPresenter.TestAgentCommandSynchronizesState;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/agent off');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_mode_changed"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"enabled":false');
+  Assert.Contains(FMockView.LastPostedJson, 'Agent mode is disabled.');
+end;
+
+procedure TTestChatPresenter.TestAgentHistoryCommandPublishesSafeIndex;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/agent history build');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_history"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"query":"build"');
+end;
+
+procedure TTestChatPresenter.TestAgentPlanWebMessageUpdatesPendingCheckpoint;
+var
+  LCheckpointDirectory: string;
+  LSessionId: string;
+  LSnapshot: string;
+  LStore: TRadIAAgentFileCheckpointStore;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  LSessionId := FMockView.ActiveSessionId;
+  Assert.IsNotEmpty(LSessionId);
+  LCheckpointDirectory := TPath.Combine(FTempDir, 'agent-checkpoints');
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  try
+    LStore.Save(
+      LSessionId,
+      '{"schemaVersion":1,"sessionId":"' + LSessionId + '",' +
+      '"status":"awaitingApproval","planApproved":false,' +
+      '"message":"Approve","plan":[{"title":"Old"}],"steps":[]}'
+    );
+    FPresenter.ProcessWebMessage(
+      '{"action":"update_agent_plan",' +
+      '"plan":[{"title":"Inspect","description":"Read project"}]}'
+    );
+
+    Assert.IsTrue(LStore.TryLoad(LSessionId, LSnapshot));
+    Assert.Contains(LSnapshot, '"title":"Inspect"');
+    Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  finally
+    LStore.Free;
+  end;
+end;
+
+procedure TTestChatPresenter.TestTerminalCommandOpensTerminal;
+begin
+  FPresenter.SendPromptText('/terminal');
+
+  Assert.IsTrue(FMockView.OpenTerminalCalled);
+end;
+
+procedure TTestChatPresenter.TestSettingsCommandOpensSettings;
+begin
+  FPresenter.SendPromptText('/settings');
+
+  Assert.IsTrue(FMockView.OpenSettingsDialogCalled);
+end;
+
+procedure TTestChatPresenter.TestExtensionsCommandOpensManager;
+begin
+  FPresenter.SendPromptText('/extensions');
+
+  Assert.IsTrue(FMockView.OpenExtensionManagerCalled);
+end;
+
+procedure TTestChatPresenter.TestHealthCommandExecutesProjectHealth;
+begin
+  FPresenter.SendPromptText('/health');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"health":"healthy"');
+end;
+
+procedure TTestChatPresenter.TestDoctorCommandExecutesInstallationHealth;
+begin
+  FPresenter.SendPromptText('/doctor');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"ready"');
+end;
+
+procedure TTestChatPresenter.TestJourneyCommandListsEndToEndRecipes;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/journey');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey create');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey fix-build');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey debug');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey modernize');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey migrate');
+  Assert.Contains(FMockView.PostedMessages.Text, '4 phases');
+  Assert.Contains(FMockView.PostedMessages.Text, '3 completion criteria');
+end;
+
+procedure TTestChatPresenter.TestAgentRunPublishesObservableState;
+var
+  LAttempt: Integer;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/agent run inspect the active project');
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"title":"Inspect project"');
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'inspect the active project'
+  );
+
+  FPresenter.ProcessWebMessage('{"action":"cancel_request"}');
+  DrainQueuedCalls;
+end;
+
+procedure TTestChatPresenter.TestDisabledAgentModeBlocksToolExecution;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/agent off');
+  FPresenter.ProcessWebMessage(
+    '{"action":"execute_tool","name":"GetIDEState","arguments":{}}'
+  );
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.LastPostedJson, 'Agent mode is off.');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"action":"tool_call"');
 end;
 
 procedure TTestChatPresenter.TestSendPromptUserMessageIsPosted;
@@ -712,6 +979,107 @@ begin
   DrainQueuedCalls;
 
   Assert.IsTrue(FMockView.OpenSettingsDialogCalled);
+end;
+
+procedure TTestChatPresenter.
+  TestDeclarativeExtensionAppearsInSlashCatalog;
+var
+  LDirectory: string;
+  LManifest: string;
+begin
+  LDirectory := TPath.Combine(FTempDir, 'extensions');
+  TDirectory.CreateDirectory(LDirectory);
+  LManifest :=
+    '{"schemaVersion":1,"id":"TeamCommands","version":"1.0.0",' +
+    '"permissions":["chat.prompt"],"commands":[{"name":"Team review",' +
+    '"description":"Apply the team review policy.",' +
+    '"command":"/team-review","prompt":"Use the team policy: {code}"}]}';
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'team.radia.json'),
+    LManifest,
+    TEncoding.UTF8
+  );
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.OnWebViewReady;
+  Assert.Contains(
+    FMockView.LastPostedJson.Replace('\/', '/'),
+    '"command":"/team-review"'
+  );
+  Assert.Contains(FMockView.LastPostedJson, 'TeamCommands');
+end;
+
+procedure TTestChatPresenter.
+  TestDeclarativeExtensionCommandReloadsWithoutRestart;
+var
+  LDirectory: string;
+  LManifest: string;
+  LProcessed: string;
+begin
+  LDirectory := TPath.Combine(FTempDir, 'extensions');
+  TDirectory.CreateDirectory(LDirectory);
+  LManifest :=
+    '{"schemaVersion":1,"id":"TeamCommands","version":"1.0.0",' +
+    '"permissions":["chat.prompt"],"commands":[{"name":"Team review",' +
+    '"description":"Apply the team review policy.",' +
+    '"command":"/team-review","prompt":"Use the team policy: {code}"}]}';
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'team.radia.json'),
+    LManifest,
+    TEncoding.UTF8
+  );
+  FMockView.ActiveEditorText := 'procedure TeamCode; begin end;';
+  LProcessed := FPresenter.TestPreProcessPrompt('/team-review');
+  Assert.Contains(LProcessed, 'Use the team policy:');
+  Assert.Contains(LProcessed, 'procedure TeamCode; begin end;');
+end;
+
+procedure TTestChatPresenter.
+  TestDeclarativeJourneyStartsGuardedAgentRun;
+var
+  LAttempt: Integer;
+  LDirectory: string;
+  LManifest: string;
+begin
+  LDirectory := TPath.Combine(FTempDir, 'extensions');
+  TDirectory.CreateDirectory(LDirectory);
+  LManifest :=
+    '{"schemaVersion":4,"id":"TeamDelivery","version":"4.0.0",' +
+    '"permissions":["chat.prompt"],"journeys":[{"name":"Team release",' +
+    '"description":"Run team release gates.","command":"/team-release",' +
+    '"objective":"Validate the team delivery checklist."}]}';
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'team-delivery.radia.json'),
+    LManifest,
+    TEncoding.UTF8
+  );
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/team-release billing package');
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'Validate the team delivery checklist.');
+  Assert.Contains(FMockView.PostedMessages.Text, 'Mandatory RadIA safety gates:');
+  Assert.Contains(FMockView.PostedMessages.Text, 'User-provided context: billing package');
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+end;
+
+procedure TTestChatPresenter.TestWebMessageOpenTerminal;
+begin
+  FMockView.OpenTerminalCalled := False;
+
+  FPresenter.ProcessWebMessage('{"action":"open_terminal"}');
+
+  Assert.IsTrue(FMockView.OpenTerminalCalled);
 end;
 
 procedure TTestChatPresenter.TestWebMessageToggleHistory;

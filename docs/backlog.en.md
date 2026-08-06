@@ -11,6 +11,18 @@ The board below summarizes the current status of mapped short and medium-term fe
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
 | **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
+| **RadIA 2.0 Goal — Complete Development Journey** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **RadIA 2.0 Goal — Leading the Delphi Experience** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
+| **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
+| **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
+| **Multi-file Editing and Transactional Diff** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.3.0 |
+| **Visual Design↔Code Flow** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐ High | v1.4.0 |
+| **Self-correcting Build and DUnitX Runner** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.5.0 |
+| **Event-driven Debug Agent** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.6.0 |
+| **Reviewable Git and Delivery Pipeline** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐ High | v1.7.0 |
+| **CLI Manager, Terminal, and Hybrid Experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **E2E Hardening and RadIA 2.0 Release** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Editor Selection Fixes and Gemini OAuth Block** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.29 |
 | **Open Tools API Adapter and Network Testing** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐ High | v0.0.28 |
 | **Resolution of Code Smells and Test Coverage Expansion** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.27 |
@@ -32,7 +44,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Legacy Form Decomposer (Code-Behind)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Threads and PPL Assistant** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
 | **Automated Internationalization (i18n Wizard)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **Smart Inline Autocomplete (Ghost Text)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
+| **Smart Inline Autocomplete (Ghost Text)** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Project Docs Auto Generation (API.md)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐ Medium | v0.3.0+ |
 | **Native macOS/Linux Support (Lazarus)** | 🔲 Planned | 🔴 High | 🟢 Low | v0.3.0+ |
 
@@ -40,7 +52,153 @@ The board below summarizes the current status of mapped short and medium-term fe
 
 ## ⏳ 1. Work in Progress (WIP)
 
-*   *No active task currently in progress in this branch.*
+*   Goal for leading the Delphi development experience.
+    *   M0 completed: automated global Sonar gate with zero issues, 82.3% coverage, and 2.3%
+        duplication, with reproducible evidence for the 2.0.0 candidate.
+    *   M1–M3: deliver Ghost Text, an interactive terminal, and a unified execution center.
+    *   M1 delivered in this increment: OTA Ghost Text capture now resolves the current symbol
+        directly from the live buffer and cursor line, without depending on the saved file.
+    *   M1 delivered in this increment: five configurable shortcuts use native OTA partial
+        bindings with persistence, profile validation, duplicate rejection, and conflict detection.
+    *   M1 delivered in this increment: multiline Ghost Text uses per-line virtual overlays, a
+        continuation lane that avoids real code, and EOF overflow while preserving the buffer.
+    *   M1 validated in real IDEs: local preparation and OTA painting passed on Delphi 11, 12, and
+        13 Win32 plus Delphi 13 IDE64, with reproducible evidence and no provider content transfer.
+    *   M2 delivered in this increment: an incremental ANSI SGR parser and rich output preserve
+        colors and bold styling even when escape sequences arrive split across chunks.
+    *   M2 delivered in this increment: continuous stdin keeps the input channel open and accepts
+        prompt responses through **Send**, with thread-safe writes and tree cancellation preserved.
+    *   M2 delivered in this increment: native ConPTY sessions use UTF-8 channels, character resize,
+        dynamic fallback, and a real shell test covering input and shutdown.
+    *   M2 delivered in this increment: incremental reverse search through `Ctrl+R` filters history
+        and walks older matches without requiring the mouse.
+    *   M2 delivered in this increment: a visual ANSI/CSI buffer preserves per-cell styling and
+        applies carriage return, overwrite, movement, positioning, erase, and cursor save/restore.
+    *   M2 complete: multiple tabbed sessions keep independent processes, buffers, and input;
+        closing a tab cancels only its own tree and preserves at least one open session.
+    *   M3 delivered in this increment: the execution center shows an expandable timeline with
+        arguments, result, error, correlation, duration, mutation, and validation indicators.
+    *   M3 delivered in this increment: the run index searches checkpoints through **Runs** or
+        `/agent history`, without exposing tool arguments and results.
+    *   M3 delivered in this increment: **Edit plan** and `/agent plan` revise the validated plan
+        before approval and block changes after execution starts.
+    *   M3 delivered in this increment: **Replay step** and `/agent replay` repeat an audited call
+        only while paused, reusing consent and recording the source step.
+    *   M3 delivered in this increment: each step shows the tool's formal risk and aggregates
+        affected files only from recognized path fields.
+    *   M3 delivered in this increment: structured evidence shows build duration and messages,
+        plus the complete counts from the latest DUnitX run and authoritative coverage summary.
+    *   M3 delivered in this increment: simple and multi-file patches show per-file diff blocks
+        inside the timeline while apply and revert remain in the central consent flow.
+    *   M3 delivered in this increment: status, diff, fingerprinted preview, and local commit SHA
+        appear as reviewable Git evidence in the timeline, without automatic push.
+    *   M3 delivered in this increment: state, breakpoints, call stack, actions, values, watches,
+        and events appear as read-only debug evidence inside the timeline.
+    *   M3 validated in real IDEs: approval, pause, persisted checkpoint, new-instance resume, and
+        completion with `GetIDEState` passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+    *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
+    *   M4 in progress: `*.radia.json` manifests add chat commands with a versioned schema, minimal
+        permission, atomic validation, diagnostics, and reload without restarting the IDE.
+    *   M4 delivered in this increment: **Tools > Rad IA Extensions...** installs, updates, enables,
+        disables, diagnoses, and removes manifests; atomic writes and rollback preserve the working
+        version when a candidate or the installed set is rejected.
+    *   M4 delivered in this increment: `.radiaext` packages provide a versioned envelope, closed
+        file list, size, and SHA-256; import blocks tampering, extra or duplicate entries, ZIP bombs,
+        path traversal, and identity mismatches before transactional activation.
+    *   M4 delivered in this increment: v2 packages use RSA-SHA256 verified by Windows CNG, public
+        key fingerprints, first-use consent, an atomic trust store, and visual publisher revocation;
+        v1 packages remain compatible through an explicit per-use warning.
+    *   M4 delivered in this stage: the remote catalog has an asynchronous visual browser, search,
+        persisted URL, bounded schema, HTTPS without redirects, transactional downloads, and
+        package size, hash, identity, and publisher binding to signed packages.
+    *   M4 delivered in this stage: manifest schema 2 adds declarative templates and skills,
+        preserves schema 1 commands, and keeps every capability restricted to `chat.prompt`.
+    *   M4 delivered in this stage: schema 3 publishes internal tool aliases in the registry shared
+        by chat and MCP, with extension namespaces, explicit `tool.alias` permission, inherited
+        risk, chain blocking, and catalog rollback when a target or registration is invalid.
+    *   M4 delivered in this stage: schema 5 provides audited workflows of up to 16 internal tools
+        without arbitrary shells, with inherited maximum risk, bounds, fail-fast, and per-step
+        policy enforcement.
+    *   M4 validated in real IDEs: hot-load, shared registration, and audited two-step execution
+        passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+    *   M5 delivered in this stage: search and rebuild expose local latency, status reports the
+        estimated size, and every response retains the isolated workspace identity without telemetry.
+    *   M5 delivered in this stage: incremental indexing covers Pascal, textual DFM/FMX, projects,
+        and documentation with confined discovery, limits, and one shared OTA policy.
+    *   M5 delivered in this stage: the OpenAI-compatible remote foundation validates
+        HTTPS/loopback, timeouts, limits, dimensions, and responses without putting the API key in
+        the payload; visual activation remains blocked on separate remote consent.
+    *   M5 delivered in this stage: embedding selection is fail-closed and keeps the local
+        provider when remote use is disabled, lacks separate consent, or has invalid settings;
+        enabling semantic search alone never authorizes source code transmission.
+    *   M5 delivered in this stage: **Security & Consent** configures the remote provider without
+        registry editing, protects the API key with DPAPI, and validates consent, endpoint, model,
+        and limits before applying dynamic selection to the index.
+    *   M5 delivered in this stage: completed and approved histories can feed the index after
+        explicit consent, isolated by project and without tool payloads.
+    *   M5 validated in real IDEs: local semantic indexing and search, provenance, navigation,
+        metrics, retrieval, and isolation passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+    *   M6 delivered in this stage: onboarding v2 runs `/doctor` directly; the first-value
+        diagnostic returns a score, checks, and next action, verifies `GetIDEState`, and requires
+        MCP only for a CLI executor.
+    *   M6 delivered in this stage: the manifested release installer installs, repairs, and
+        uninstalls with `-PlanOnly`, preserves the loader and user data by default, and removes
+        `%APPDATA%\RadIA` only after explicit `-RemoveUserData`.
+    *   M6 validated in real IDEs: doctor, chat, terminal, bridge, catalog, and first tool passed
+        on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64, including guidance when a provider is
+        not configured yet.
+    *   M6 delivered in this stage: one visual installer detects and selects all four targets,
+        validates packages before compilation, and supports SHA-256 signing with timestamp. The
+        stable catalog rejects non-HTTPS URLs and executables without valid Authenticode; the
+        certificate and final URL remain external publication gates.
+    *   M6 automated in this stage: the tag workflow rebuilds all four packages from the exact
+        commit, imports the PFX temporarily, requires signature and timestamp, publishes evidence,
+        and removes cryptographic material from the runner under every outcome.
+    *   M7–M8 completed: specialized journeys and the 2.0.0 candidate proven across the full matrix.
+    *   M8 delivered: terminal proven across the full matrix with a native window, required
+        controls, input, output, usable geometry, five associated labels, and nine keyboard tab
+        stops; Web surfaces passed semantic tests and UI Automation inspection.
+    *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
+
+*   In-IDE E2E hardening and RadIA 2.0 release preparation.
+    *   Completed: Delphi 11/12/13 matrix, Delphi 13 Win32/IDE64 installation, three smoke cycles per
+        architecture, 87 tools, rendered WebView2, real MCP editing, tool-driven build, 590 direct
+        tests, VCL template creation/open/build/rollback, real Form Designer editing with consent,
+        and a
+        real debug flow with breakpoint, call stack, and timeline, plus the compiler-error,
+        diagnostics, correction, rebuild, DUnitX, and a reviewable Git commit with selected paths.
+    *   Real compatibility completed: Delphi 11 and 12 passed BPL loading, the 87-tool MCP catalog,
+        and clean shutdown; Delphi 13 passed three consecutive cycles while checking for any
+        remaining root process.
+    *   Visually completed: the panel is now created through OTA's native
+        `INTACustomDockableForm` API as a `TOTADockForm`, with rendered WebView2, theme, chat, and
+        agent-mode button, without the former blank screen. The IDE now owns the host, docking
+        commands, and desktop state.
+    *   Form Designer completed: real `TButton` creation, listing, and rollback through preview and
+        consent, using native VCL classes and deterministic bounds.
+    *   Build completed: unpersisted project groups no longer open modal dialogs during
+        `ValidateCreatedProject`.
+    *   Manual visual acceptance: lateral dropping remains user-driven because the elevated IDE
+        blocks synthetic cross-process input. Native creation, visibility, and host persistence are
+        covered by the automated smoke.
+    *   Shutdown completed: editor and debugger OTA hooks are now unregistered before their objects
+        are abandoned during shutdown, without freeing VCL/WebView2. The installed build passed
+        three consecutive Delphi 13 load and shutdown cycles with 87 tools and no `bds.exe`
+        retention.
+    *   Continuous matrix E2E completed: Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64
+        autonomously passed template creation, Form Designer, live editing, failure and correction,
+        build, 736 tests, debugging with call stack/timeline, a reviewable Git commit, and shutdown
+        in one journey. Consolidated proof is in `continuous_journey_smoke_evidence_2.0.0.json`.
+    *   Native host completed: two real cycles proved `TOTADockForm` creation, visibility, IDE
+        desktop geometry restoration, and clean shutdown. The lateral drop gesture remains a manual
+        visual acceptance because the elevated IDE blocks synthetic cross-process input; this does
+        not change the native docking capability supplied by OTA.
+    *   Additional CDB diagnosis: retention happens before `ExitProcess`; one capture placed the
+        main thread in `IdeservicesFileNotification`. A later AV inspected an already unloaded
+        DevExpress BPL through an MMX call chain, but a smoke run with MMX temporarily disabled also
+        retained `bds.exe`, ruling it out as the root cause. The correlation with
+        `IdeservicesFileNotification` led to explicitly removing the editor and debugger OTA hooks;
+        this fix closed the retention gate across three consecutive smoke cycles.
 
 ---
 
@@ -59,6 +217,7 @@ Check the implementation details of each completed feature grouped by target rel
 - Internal registry shared by chat, MCP, and extensions.
 - OTA facade for workspace, editor, project, build, Form Designer, and debugger.
 - Risk-based consent, sanitized audit, and workspace boundary.
+- **Security & Consent** settings with timeout, arguments, risk-based memory, and immediate revoke.
 - Reviewable and reversible patches protected by base hashes.
 - Local MCP bridge with independent discovery per IDE process.
 - Incremental and rebuildable knowledge isolated per project.

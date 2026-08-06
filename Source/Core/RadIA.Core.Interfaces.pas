@@ -127,6 +127,20 @@ type
     procedure SetAutocompleteModel(const AModel: string);
     function GetAutocompleteDelay: Integer;
     procedure SetAutocompleteDelay(const AValue: Integer);
+    function GetAutocompleteExcludedFiles: string;
+    procedure SetAutocompleteExcludedFiles(const AValue: string);
+    function GetAutocompleteExcludedLanguages: string;
+    procedure SetAutocompleteExcludedLanguages(const AValue: string);
+    function GetAutocompleteExcludedProjects: string;
+    procedure SetAutocompleteExcludedProjects(const AValue: string);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
 
     function GetSmartConfigEnabled: Boolean;
     procedure SetSmartConfigEnabled(const AValue: Boolean);
@@ -160,6 +174,16 @@ type
     procedure SetInjectDelphiVersion(const AValue: Boolean);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
+    function GetConsentTimeoutSeconds: Integer;
+    procedure SetConsentTimeoutSeconds(const AValue: Integer);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -184,6 +208,21 @@ type
     property AutocompleteProvider: string read GetAutocompleteProvider write SetAutocompleteProvider;
     property AutocompleteModel: string read GetAutocompleteModel write SetAutocompleteModel;
     property AutocompleteDelay: Integer read GetAutocompleteDelay write SetAutocompleteDelay;
+    property AutocompleteExcludedFiles: string
+      read GetAutocompleteExcludedFiles write SetAutocompleteExcludedFiles;
+    property AutocompleteExcludedLanguages: string
+      read GetAutocompleteExcludedLanguages write SetAutocompleteExcludedLanguages;
+    property AutocompleteExcludedProjects: string
+      read GetAutocompleteExcludedProjects write SetAutocompleteExcludedProjects;
+    property KnowledgeSemanticEnabled: Boolean
+      read GetKnowledgeSemanticEnabled write SetKnowledgeSemanticEnabled;
+    property KnowledgeApprovedHistoryEnabled: Boolean
+      read GetKnowledgeApprovedHistoryEnabled
+      write SetKnowledgeApprovedHistoryEnabled;
+    property KnowledgeExcludedFiles: string
+      read GetKnowledgeExcludedFiles write SetKnowledgeExcludedFiles;
+    property KnowledgeExcludedProjects: string
+      read GetKnowledgeExcludedProjects write SetKnowledgeExcludedProjects;
     property SmartConfigEnabled: Boolean read GetSmartConfigEnabled write SetSmartConfigEnabled;
     property LogEnabled: Boolean read GetLogEnabled write SetLogEnabled;
     property LogPath: string read GetLogPath write SetLogPath;
@@ -195,6 +234,16 @@ type
     property ActiveSessionId: string read GetActiveSessionId write SetActiveSessionId;
     property InjectDelphiVersion: Boolean read GetInjectDelphiVersion write SetInjectDelphiVersion;
     property ConciseResponses: Boolean read GetConciseResponses write SetConciseResponses;
+    property ConsentTimeoutSeconds: Integer
+      read GetConsentTimeoutSeconds write SetConsentTimeoutSeconds;
+    property ConsentShowArguments: Boolean
+      read GetConsentShowArguments write SetConsentShowArguments;
+    property ConsentRememberReversible: Boolean
+      read GetConsentRememberReversible write SetConsentRememberReversible;
+    property ConsentRememberStructural: Boolean
+      read GetConsentRememberStructural write SetConsentRememberStructural;
+    property ConsentRememberExecution: Boolean
+      read GetConsentRememberExecution write SetConsentRememberExecution;
   end;
 
   IRadIAService = interface

@@ -43,6 +43,15 @@ type
     FAwsSessionToken: string;
     FInjectDelphiVersion: Boolean;
     FConciseResponses: Boolean;
+    FConsentTimeoutSeconds: Integer;
+    FConsentShowArguments: Boolean;
+    FConsentRememberReversible: Boolean;
+    FConsentRememberStructural: Boolean;
+    FConsentRememberExecution: Boolean;
+    FKnowledgeSemanticEnabled: Boolean;
+    FKnowledgeApprovedHistoryEnabled: Boolean;
+    FKnowledgeExcludedFiles: string;
+    FKnowledgeExcludedProjects: string;
   public
     constructor Create(const AMaxHistory: Integer; const ASystemPrompt: string = '');
     destructor Destroy; override;
@@ -89,6 +98,24 @@ type
     procedure SetInjectDelphiVersion(const AValue: Boolean);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
+    function GetConsentTimeoutSeconds: Integer;
+    procedure SetConsentTimeoutSeconds(const AValue: Integer);
+    function GetConsentShowArguments: Boolean;
+    procedure SetConsentShowArguments(const AValue: Boolean);
+    function GetConsentRememberReversible: Boolean;
+    procedure SetConsentRememberReversible(const AValue: Boolean);
+    function GetConsentRememberStructural: Boolean;
+    procedure SetConsentRememberStructural(const AValue: Boolean);
+    function GetConsentRememberExecution: Boolean;
+    procedure SetConsentRememberExecution(const AValue: Boolean);
+    function GetKnowledgeSemanticEnabled: Boolean;
+    procedure SetKnowledgeSemanticEnabled(const AValue: Boolean);
+    function GetKnowledgeApprovedHistoryEnabled: Boolean;
+    procedure SetKnowledgeApprovedHistoryEnabled(const AValue: Boolean);
+    function GetKnowledgeExcludedFiles: string;
+    procedure SetKnowledgeExcludedFiles(const AValue: string);
+    function GetKnowledgeExcludedProjects: string;
+    procedure SetKnowledgeExcludedProjects(const AValue: string);
     procedure AddToQuotaUsage(const AUsage: TTokenUsage);
     procedure Save;
     procedure Load;
@@ -114,6 +141,12 @@ type
     procedure SetAutocompleteModel(const AModel: string);
     function GetAutocompleteDelay: Integer;
     procedure SetAutocompleteDelay(const AValue: Integer);
+    function GetAutocompleteExcludedFiles: string;
+    procedure SetAutocompleteExcludedFiles(const AValue: string);
+    function GetAutocompleteExcludedLanguages: string;
+    procedure SetAutocompleteExcludedLanguages(const AValue: string);
+    function GetAutocompleteExcludedProjects: string;
+    procedure SetAutocompleteExcludedProjects(const AValue: string);
     function GetProviderAuthType(const AProviderName: string): string;
     procedure SetProviderAuthType(const AProviderName: string; const AValue: string);
     function IsWebLoginProvider(const AProviderName: string): Boolean;
@@ -297,6 +330,11 @@ begin
   FAwsSessionToken := '';
   FInjectDelphiVersion := True;
   FConciseResponses := True;
+  FConsentTimeoutSeconds := 60;
+  FConsentShowArguments := True;
+  FConsentRememberReversible := True;
+  FConsentRememberStructural := False;
+  FConsentRememberExecution := False;
 end;
 
 destructor TMockConfig.Destroy;
@@ -550,6 +588,106 @@ begin
   FConciseResponses := AValue;
 end;
 
+function TMockConfig.GetConsentTimeoutSeconds: Integer;
+begin
+  Result := FConsentTimeoutSeconds;
+end;
+
+procedure TMockConfig.SetConsentTimeoutSeconds(const AValue: Integer);
+begin
+  FConsentTimeoutSeconds := AValue;
+end;
+
+function TMockConfig.GetConsentShowArguments: Boolean;
+begin
+  Result := FConsentShowArguments;
+end;
+
+procedure TMockConfig.SetConsentShowArguments(const AValue: Boolean);
+begin
+  FConsentShowArguments := AValue;
+end;
+
+function TMockConfig.GetConsentRememberReversible: Boolean;
+begin
+  Result := FConsentRememberReversible;
+end;
+
+procedure TMockConfig.SetConsentRememberReversible(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberReversible := AValue;
+end;
+
+function TMockConfig.GetConsentRememberStructural: Boolean;
+begin
+  Result := FConsentRememberStructural;
+end;
+
+procedure TMockConfig.SetConsentRememberStructural(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberStructural := AValue;
+end;
+
+function TMockConfig.GetConsentRememberExecution: Boolean;
+begin
+  Result := FConsentRememberExecution;
+end;
+
+procedure TMockConfig.SetConsentRememberExecution(
+  const AValue: Boolean
+);
+begin
+  FConsentRememberExecution := AValue;
+end;
+
+function TMockConfig.GetKnowledgeSemanticEnabled: Boolean;
+begin
+  Result := FKnowledgeSemanticEnabled;
+end;
+
+procedure TMockConfig.SetKnowledgeSemanticEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeSemanticEnabled := AValue;
+end;
+
+function TMockConfig.GetKnowledgeApprovedHistoryEnabled: Boolean;
+begin
+  Result := FKnowledgeApprovedHistoryEnabled;
+end;
+
+procedure TMockConfig.SetKnowledgeApprovedHistoryEnabled(
+  const AValue: Boolean
+);
+begin
+  FKnowledgeApprovedHistoryEnabled := AValue;
+end;
+
+function TMockConfig.GetKnowledgeExcludedFiles: string;
+begin
+  Result := FKnowledgeExcludedFiles;
+end;
+
+function TMockConfig.GetKnowledgeExcludedProjects: string;
+begin
+  Result := FKnowledgeExcludedProjects;
+end;
+
+procedure TMockConfig.SetKnowledgeExcludedFiles(const AValue: string);
+begin
+  FKnowledgeExcludedFiles := AValue;
+end;
+
+procedure TMockConfig.SetKnowledgeExcludedProjects(const AValue: string);
+begin
+  FKnowledgeExcludedProjects := AValue;
+end;
+
 function TMockConfig.GetApiKey(const AProviderName: string): string;
 begin
   if not FApiKeys.TryGetValue(AProviderName.ToLower, Result) then
@@ -655,9 +793,45 @@ begin
   Result := 300;
 end;
 
+function TMockConfig.GetAutocompleteExcludedFiles: string;
+begin
+  Result := '';
+end;
+
+function TMockConfig.GetAutocompleteExcludedLanguages: string;
+begin
+  Result := '';
+end;
+
+function TMockConfig.GetAutocompleteExcludedProjects: string;
+begin
+  Result := '';
+end;
+
 procedure TMockConfig.SetAutocompleteDelay(const AValue: Integer);
 begin
   // Added harmless statement to satisfy SonarQube EmptyRoutine and RedundantJump rules in Delphi mock
+  if True then ;
+end;
+
+procedure TMockConfig.SetAutocompleteExcludedFiles(
+  const AValue: string
+);
+begin
+  if True then ;
+end;
+
+procedure TMockConfig.SetAutocompleteExcludedLanguages(
+  const AValue: string
+);
+begin
+  if True then ;
+end;
+
+procedure TMockConfig.SetAutocompleteExcludedProjects(
+  const AValue: string
+);
+begin
   if True then ;
 end;
 
@@ -768,9 +942,9 @@ begin
   try
     LHistory := MakeHistory(6);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       6,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should NOT trim when under limit'
     );
   finally
@@ -791,9 +965,9 @@ begin
   try
     LHistory := MakeHistory(10);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       10,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should NOT trim at exact limit'
     );
   finally
@@ -814,9 +988,9 @@ begin
   try
     LHistory := MakeHistory(10);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       6,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should trim to MaxHistoryMessages*2 messages'
     );
   finally
@@ -837,9 +1011,9 @@ begin
   try
     LHistory := MakeHistory(8);
     LTrimmed := LService.TrimHistory(LHistory);
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       4,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'Should keep exactly MaxHistoryMessages*2 newest messages'
     );
     Assert.AreEqual('Message 4', LTrimmed[0].Content, 'First kept message should be index 4');
@@ -864,9 +1038,9 @@ begin
     LHistory := MakeHistoryWithSystem(4);
     LTrimmed := LService.TrimHistory(LHistory);
     { TrimHistory strips system messages from count; 4 user/assistant < 6 limit → no trim }
-    Assert.AreEqual(
+    Assert.AreEqual<Integer>(
       4,
-      Integer(Length(LTrimmed)),
+      Length(LTrimmed),
       'System messages must not be counted toward trim limit'
     );
     Assert.AreNotEqual(mrSystem, LTrimmed[0].Role, 'System messages should be stripped from trimmed result');

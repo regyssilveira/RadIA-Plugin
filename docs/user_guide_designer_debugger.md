@@ -1,5 +1,20 @@
 # Guia do Form Designer e debugger agentivos
 
+## Timeline orientada a eventos
+
+`GetDebugTimeline` registra notificações da Open Tools API em vez de consultar o debugger
+continuamente. Informe o último `sequence` recebido em `sinceSequence` para buscar apenas eventos
+novos. Cada item contém `timestampUtc`, `kind`, `processId`, `state` e `details`.
+
+```json
+{
+  "sinceSequence": 12,
+  "maxCount": 100
+}
+```
+
+A trilha persistente fica em `.radia/debug/timeline.jsonl` no projeto ativo.
+
 ## Form Designer
 
 As ferramentas do Designer operam sobre o formulário ativo na IDE. Elas podem consultar

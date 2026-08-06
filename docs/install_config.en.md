@@ -14,7 +14,15 @@ The plugin can be installed in two ways:
 
 This option compiles the plugin, copies the binaries to the official public Delphi directories, and registers the plugin in the Windows Registry. If you need to compile and run the unit test suite (**DUnitX**), simply add the `-Test` switch to the command.
 
-During installation, the script also updates the HTML/CSS/JS assets used by WebView2 under `%APPDATA%\RadIA\Web` and clears the local `%APPDATA%\RadIA\WebView2` cache while the IDE is closed. This prevents different Delphi versions from loading stale JavaScript files after an update.
+During installation, the script also updates the HTML/CSS/JS assets used by WebView2 under
+`%APPDATA%\RadIA\Web`. It clears the local `%APPDATA%\RadIA\WebView2` cache when no Delphi IDE is
+open. If another Delphi version is in use, cache cleanup is deferred and installation continues
+without interrupting that work; the refreshed assets take full effect after that IDE restarts.
+
+After opening the IDE, use **Tools > Rad IA Getting Started > Run installation doctor** or type
+`/doctor` in chat. The diagnostic verifies the provider, executor, MCP when required, terminal,
+web assets, and the first read-only tool. It returns a score, checks, and next action without
+displaying tokens or credentials.
 
 1. Open the Windows PowerShell console.
 2. Make sure the Delphi installation `bin` folder containing `dcc32` is present in your system PATH.
@@ -134,5 +142,32 @@ The `.\build.ps1` script supports the following switches:
 
 > [!NOTE]
 > **DUnitX Auto-Detection:** If the `-Test` parameter is provided, the installer automatically detects if the DUnitX framework is present in your selected Delphi installation. If DUnitX is missing, the script will display a warning, automatically disable tests execution, and proceed normally with compiling and installing the main plugin.
+
+### Package repair and removal
+
+The installer bundled in the release ZIP supports `Install`, `Repair`, and `Uninstall`. Use
+`-PlanOnly` to inspect every target without changing files or the Registry:
+
+```powershell
+# Repair binaries, bridge, and assets while preserving settings and data
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Repair
+
+# Preview removal; user data is preserved
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall -PlanOnly
+
+# Remove this architecture while preserving user data
+powershell -ExecutionPolicy Bypass `
+  -File .\Scripts\Install-RadIA.Package.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Mode Uninstall
+```
+
+Add `-RemoveUserData` only when settings, sessions, audit, knowledge, and caches under
+`%APPDATA%\RadIA` must also be removed. The shared IDE `WebView2Loader.dll` is always preserved.
+Public web assets are removed only when no RadIA architecture remains installed for that Delphi
+version. Every mutating operation requires the IDE to be closed.
 
 

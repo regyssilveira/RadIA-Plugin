@@ -15,6 +15,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     procedure LoadConfig;
+    procedure SelectCategory(const ACategory: string);
   published
     pnlSidebar: TPanel;
     tvCategories: TTreeView;
@@ -66,6 +67,8 @@ begin
   tvCategories.OnChange := tvCategoriesChange;
 
   LNodeGeneral := tvCategories.Items.Add(nil, 'General / Logs');
+  tvCategories.Items.Add(nil, 'Security & Consent');
+  tvCategories.Items.Add(nil, 'CLI & MCP');
   tvCategories.Items.Add(nil, 'System Prompt');
   tvCategories.Items.Add(nil, 'Templates');
   LNodeProviders := tvCategories.Items.Add(nil, 'AI Providers');
@@ -116,6 +119,21 @@ end;
 procedure TRadIAFormAIConfig.LoadConfig;
 begin
   FFrameConfig.LoadConfig;
+end;
+
+procedure TRadIAFormAIConfig.SelectCategory(const ACategory: string);
+var
+  I: Integer;
+begin
+  FFrameConfig.SelectCategoryByName(ACategory);
+  for I := 0 to tvCategories.Items.Count - 1 do
+  begin
+    if SameText(tvCategories.Items[I].Text, ACategory) then
+    begin
+      tvCategories.Selected := tvCategories.Items[I];
+      Exit;
+    end;
+  end;
 end;
 
 procedure TRadIAFormAIConfig.btnSaveClick(Sender: TObject);

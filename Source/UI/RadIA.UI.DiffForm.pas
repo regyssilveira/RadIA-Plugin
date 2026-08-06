@@ -21,6 +21,10 @@ type
     procedure EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdgeBrowser; AResult: HRESULT);
     procedure EdgeBrowserNavigationCompleted(Sender: TCustomEdgeBrowser; IsSuccess: Boolean;
         WebErrorStatus: COREWEBVIEW2_WEB_ERROR_STATUS);
+    procedure EdgeBrowserWebMessageReceived(
+      Sender: TCustomEdgeBrowser;
+      Args: TWebMessageReceivedEventArgs
+    );
     procedure btnPrevConflictClick(Sender: TObject);
     procedure btnNextConflictClick(Sender: TObject);
   protected
@@ -40,6 +44,9 @@ type
     FCanApply: Boolean;
     FRequestTimeoutTimer: TTimer;
     FLifecycleGuard: IInterface;
+    FRenderId: string;
+    FAcceptedBlockCount: Integer;
+    FTotalBlockCount: Integer;
 
     procedure FormShow(Sender: TObject);
     procedure LoadWindowPlacement;
@@ -50,6 +57,7 @@ type
     procedure TryStartRefactoring;
     function CleanSuggestedCode(const AResponse: string): string;
     procedure PostToWebView(const AAction, AText: string);
+    procedure ProcessWebMessage(const AMessage: string);
   public
     procedure InitializeDiff(const AUnitName, AOriginalCode: string; const AWebFilesDir: string = '');
 
@@ -71,6 +79,8 @@ uses
 const
   CDiffDefaultTimeoutMs = 60000;
   CDiffWebLoginTimeoutMs = 300000;
+  CMaxSelectedDiffCharacters = 2 * 1024 * 1024;
+  CMaxDiffBlocks = 5000;
 
 procedure TRadIAFormAIDiff.CreateWnd;
 var
@@ -104,6 +114,9 @@ begin
   FRequestFinished := False;
   FPendingRender := False;
   FCanApply := False;
+  FRenderId := '';
+  FAcceptedBlockCount := 0;
+  FTotalBlockCount := 0;
   FLifecycleGuard := TLifecycleGuard.Create;
   if not TRadIAContainer.TryResolve<IRadIAConfig>(FConfig) then
   begin
@@ -316,7 +329,9 @@ begin
 
   LJson := TJSONObject.Create;
   try
+    FRenderId := TGUID.NewGuid.ToString;
     LJson.AddPair('action', 'render');
+    LJson.AddPair('renderId', FRenderId);
     LJson.AddPair('fileName', FUnitName);
     LJson.AddPair('original', FOriginalCode);
     LJson.AddPair('modified', FSuggestedCode);
@@ -325,6 +340,86 @@ begin
       EdgeBrowser.DefaultInterface.PostWebMessageAsJson(PChar(LJson.ToJSON));
     FPendingRender := False;
     btnApply.Enabled := FCanApply and (not FSuggestedCode.Trim.IsEmpty);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFormAIDiff.EdgeBrowserWebMessageReceived(
+  Sender: TCustomEdgeBrowser;
+  Args: TWebMessageReceivedEventArgs
+);
+var
+  LJsonText: PWideChar;
+  LText: PWideChar;
+begin
+  if not Assigned(Args.ArgsInterface) then
+    Exit;
+  if Succeeded(Args.ArgsInterface.TryGetWebMessageAsString(LText)) then
+  begin
+    try
+      ProcessWebMessage(string(LText));
+    finally
+      CoTaskMemFree(LText);
+    end;
+    Exit;
+  end;
+  if Failed(Args.ArgsInterface.Get_webMessageAsJson(LJsonText)) then
+    Exit;
+  try
+    ProcessWebMessage(string(LJsonText));
+  finally
+    CoTaskMemFree(LJsonText);
+  end;
+end;
+
+procedure TRadIAFormAIDiff.ProcessWebMessage(
+  const AMessage: string
+);
+var
+  LAcceptedCount: Integer;
+  LJson: TJSONValue;
+  LModified: string;
+  LObject: TJSONObject;
+  LRenderId: string;
+  LTotalCount: Integer;
+begin
+  if Length(AMessage) > CMaxSelectedDiffCharacters + 4096 then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AMessage);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LObject := TJSONObject(LJson);
+    if not SameText(
+      LObject.GetValue<string>('action', ''),
+      'selection_changed'
+    ) then
+      Exit;
+    LRenderId := LObject.GetValue<string>('renderId', '');
+    if (LRenderId = '') or not SameText(LRenderId, FRenderId) then
+      Exit;
+    LModified := LObject.GetValue<string>('modified', '');
+    LAcceptedCount := LObject.GetValue<Integer>('acceptedCount', -1);
+    LTotalCount := LObject.GetValue<Integer>('totalCount', -1);
+    if (Length(LModified) > CMaxSelectedDiffCharacters) or
+      (LAcceptedCount < 0) or
+      (LTotalCount < 0) or
+      (LTotalCount > CMaxDiffBlocks) or
+      (LAcceptedCount > LTotalCount) then
+      Exit;
+
+    FSuggestedCode := LModified;
+    FAcceptedBlockCount := LAcceptedCount;
+    FTotalBlockCount := LTotalCount;
+    btnApply.Enabled :=
+      FCanApply and
+      (FAcceptedBlockCount > 0) and
+      (FSuggestedCode <> FOriginalCode);
+    btnApply.Caption := Format(
+      'Apply Selected (%d/%d)',
+      [FAcceptedBlockCount, FTotalBlockCount]
+    );
   finally
     LJson.Free;
   end;

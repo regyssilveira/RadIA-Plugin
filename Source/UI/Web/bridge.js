@@ -21,7 +21,7 @@
           !hasPageText([
             'you are using our basic model',
             'voce esta usando o nosso modelo basico',
-            'vocÃª estÃ¡ usando o nosso modelo bÃ¡sico'
+            'voc\u00EA est\u00E1 usando o nosso modelo b\u00E1sico'
           ]);
       },
       isGenerating: () => {
@@ -496,7 +496,10 @@
     btn.className = 'radia-insert-btn';
     btn.title = 'Insert this code directly into the Delphi editor';
     btn.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; width:12px; height:12px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+        stroke-linejoin="round"
+        style="display:inline-block; vertical-align:middle; width:12px; height:12px;">
         <polyline points="16 18 22 12 16 6"></polyline>
         <polyline points="8 6 2 12 8 18"></polyline>
       </svg>
@@ -580,7 +583,11 @@
             // Ignore mutations caused by our direct button injection
             let isOurBtn = false;
             mutation.addedNodes.forEach(node => {
-              if (node.classList && (node.classList.contains('radia-insert-btn') || node.classList.contains('radia-insert-btn-css'))) {
+              const isInsertButton = node.classList
+                ?.contains('radia-insert-btn');
+              const isInsertButtonStyle = node.classList
+                ?.contains('radia-insert-btn-css');
+              if (isInsertButton || isInsertButtonStyle) {
                 isOurBtn = true;
               }
             });

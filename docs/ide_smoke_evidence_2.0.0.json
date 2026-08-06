@@ -1,0 +1,78 @@
+﻿{
+    "schemaVersion":  1,
+    "product":  "RadIA",
+    "productVersion":  "2.0.0",
+    "sourceCommit":  "4693d9757e99fd9ca3f0c4b6b3abede404bf23c3",
+    "cyclesRequestedPerTarget":  10,
+    "toolCount":  90,
+    "dockingExercised":  true,
+    "packageLifecycleExercised":  true,
+    "packageLifecycleModes":  [
+                                  "Uninstall",
+                                  "InstallPreviousVersion",
+                                  "UpgradeToCurrentVersion",
+                                  "Repair"
+                              ],
+    "upgradeExercised":  true,
+    "upgradeFromVersion":  "1.0.0",
+    "desktopStateRestored":  true,
+    "orphanProcessesDetected":  false,
+    "targets":  [
+                    {
+                        "delphiVersion":  "22.0",
+                        "platform":  "Win32",
+                        "releasePackage":  "RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip",
+                        "releasePackageSha256":  "FCD055BE2D5AE8BAE22E56190CDC6AE1CC29B7CC729AA43F8525C4015E1FA1C1",
+                        "installedBplSha256":  "C64B6A8C314FD5FAE254B037E211C4806AEF6DEA33A6B4002CBE3C4D156C5F8E",
+                        "upgradeFromPackageSha256":  "6E963719D0031405ECD37EAE2BFBA3CDAC0B2B96F5FED9ECC5DEA5CBFA8AA306",
+                        "cyclesPassed":  10,
+                        "minimumSeconds":  18.22,
+                        "maximumSeconds":  20.16,
+                        "minimumPackageLifecycleSeconds":  8.77,
+                        "maximumPackageLifecycleSeconds":  10.48,
+                        "generatedAtUtc":  "2026-08-05T22:44:04.3199001Z"
+                    },
+                    {
+                        "delphiVersion":  "23.0",
+                        "platform":  "Win32",
+                        "releasePackage":  "RadIA-v2.0.0-Delphi-23.0-Win32-Release.zip",
+                        "releasePackageSha256":  "A0632C14820F18C831B470843828A65EE48417ACA137656E0B401E95FB1D9310",
+                        "installedBplSha256":  "BF2486D6136373018A2E2B4FE62E7C59F4FF6BE74D8430404CEEBB6D76DDD01F",
+                        "upgradeFromPackageSha256":  "5E114BDC6048BE051E016212D1B5AB91E5044050FA0D0C408CDF44A928D91DE7",
+                        "cyclesPassed":  10,
+                        "minimumSeconds":  29.02,
+                        "maximumSeconds":  31.1,
+                        "minimumPackageLifecycleSeconds":  9.07,
+                        "maximumPackageLifecycleSeconds":  11.27,
+                        "generatedAtUtc":  "2026-08-05T22:49:31.2035619Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win32",
+                        "releasePackage":  "RadIA-v2.0.0-Delphi-37.0-Win32-Release.zip",
+                        "releasePackageSha256":  "DB164BF1C8C571B1B519491EA2F5402DA261C8AAE1A5BD491BE1E3D178BFFA66",
+                        "installedBplSha256":  "C0946C5AE7D2B51EC43B4C25B44781A225677F869FDFD29681116F09C9BFC59D",
+                        "upgradeFromPackageSha256":  "9B68B62599093F381F1E77DC01BB67E41C20630A42B8F04754688C2D17B265C5",
+                        "cyclesPassed":  10,
+                        "minimumSeconds":  36.21,
+                        "maximumSeconds":  40.85,
+                        "minimumPackageLifecycleSeconds":  10.35,
+                        "maximumPackageLifecycleSeconds":  13.56,
+                        "generatedAtUtc":  "2026-08-05T22:40:28.7481148Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win64",
+                        "releasePackage":  "RadIA-v2.0.0-Delphi-37.0-Win64-Release.zip",
+                        "releasePackageSha256":  "1FD8ED25D3F1047F414B220E5A566069BB9629ACC98257E2318516D6B7DBB403",
+                        "installedBplSha256":  "61A6ACB931FF43E8BEB469FAA43FF3AE40B9EE5EE4A0B53CFE0C8804BE0D96E7",
+                        "upgradeFromPackageSha256":  "84BD5A96697A6D17631C442147837FFFC772929E28F2A16018065169326A5058",
+                        "cyclesPassed":  10,
+                        "minimumSeconds":  24.55,
+                        "maximumSeconds":  25.9,
+                        "minimumPackageLifecycleSeconds":  8.37,
+                        "maximumPackageLifecycleSeconds":  9.41,
+                        "generatedAtUtc":  "2026-08-05T22:54:03.1081371Z"
+                    }
+                ]
+}

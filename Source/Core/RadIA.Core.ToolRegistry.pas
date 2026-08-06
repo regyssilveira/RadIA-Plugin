@@ -5,7 +5,8 @@ interface
 uses
   System.Generics.Collections,
   System.SysUtils,
-  RadIA.Core.Tools;
+  RadIA.Core.Tools,
+  RadIA.Core.ToolViews;
 
 type
   ERadIAToolRegistry = class(Exception);
@@ -45,18 +46,27 @@ type
 
   TRadIAToolExecutor = class(
     TInterfacedObject,
-    IRadIAToolExecutor
+    IRadIAToolExecutor,
+    IRadIAToolDescriptorProvider
   )
   private
     FRegistry: IRadIAToolRegistry;
+    FViewResolver: IRadIAToolViewResolver;
     function ValidateRequest(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
   public
-    constructor Create(const ARegistry: IRadIAToolRegistry);
+    constructor Create(
+      const ARegistry: IRadIAToolRegistry;
+      const AViewResolver: IRadIAToolViewResolver = nil
+    );
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
+    function TryGetToolDescriptor(
+      const AName: string;
+      out ADescriptor: TRadIAToolDescriptor
+    ): Boolean;
   end;
 
 implementation
@@ -310,13 +320,18 @@ end;
 { TRadIAToolExecutor }
 
 constructor TRadIAToolExecutor.Create(
-  const ARegistry: IRadIAToolRegistry
+  const ARegistry: IRadIAToolRegistry;
+  const AViewResolver: IRadIAToolViewResolver
 );
 begin
   inherited Create;
   if not Assigned(ARegistry) then
     raise EArgumentNilException.Create('ARegistry');
   FRegistry := ARegistry;
+  if Assigned(AViewResolver) then
+    FViewResolver := AViewResolver
+  else
+    FViewResolver := TRadIAToolViewResolver.Create;
 end;
 
 function TRadIAToolExecutor.Execute(
@@ -348,6 +363,7 @@ begin
 
   try
     Result := LTool.Execute(ARequest);
+    Result := FViewResolver.Attach(ARequest.ToolName, Result);
   except
     on E: Exception do
       Result := TRadIAToolResult.Failed(
@@ -355,6 +371,20 @@ begin
         E.Message
       );
   end;
+end;
+
+function TRadIAToolExecutor.TryGetToolDescriptor(
+  const AName: string;
+  out ADescriptor: TRadIAToolDescriptor
+): Boolean;
+var
+  LTool: IRadIATool;
+begin
+  Result := FRegistry.TryResolve(AName, LTool);
+  if Result then
+    ADescriptor := LTool.Descriptor
+  else
+    ADescriptor := Default(TRadIAToolDescriptor);
 end;
 
 function TRadIAToolExecutor.ValidateRequest(

@@ -14,8 +14,36 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 
 | Command | Description | Automatic IDE Context |
 | :--- | :--- | :--- |
+| `/agent [on\|off]` | Toggles or sets Agent Mode and synchronizes the visual button. | Active chat. |
+| `/agent run <objective>` | Starts an observable agent loop with the current catalog. | Active session and workspace. |
+| `/agent plan <JSON>` | Replaces the pending plan with a validated JSON array. | Plan awaiting approval. |
+| `/agent replay <step>` | Replays the audited tool call for one step. | Paused agent run. |
+| `/agent pause` | Safely interrupts the current decision and pauses the loop. | Active agent run. |
+| `/agent resume` | Resumes the latest checkpoint for the session. | Paused agent run. |
+| `/agent cancel` | Cancels the current decision and agent run. | Active agent run. |
+| `/agent history [query]` | Searches runs by objective, status, or ID. | Local checkpoints. |
+| `/terminal` | Opens the integrated dockable terminal; equivalent to the chat `>_` button. | Current IDE project and desktop. |
+| `/settings` | Opens RadIA settings; equivalent to the chat gear button. | Local user configuration. |
+| `/extensions` | Opens the visual extension manager. | Local extensions and publishers. |
+| `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
+| `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP, terminal, chat, and first tool. |
+| `/journey` | Lists end-to-end Delphi recipes. | Native journey catalog. |
+| `/journey create` | Creates, opens, builds, and explains a new project. | Agent Runtime and project tools. |
+| `/journey fix-build` | Diagnoses and repairs a build with minimal changes. | Compiler, patches, and build. |
+| `/journey tests` | Expands DUnitX tests and runs validation. | Project, patches, and DUnitX. |
+| `/journey debug` | Guides reproduction, diagnosis, correction, and validation. | Debugger, patches, and build. |
+| `/journey modernize` | Modernizes structure and practices in reviewable batches. | Graph, Designer, transactions, build, and tests. |
+| `/journey migrate` | Migrates a legacy pattern with a baseline and rollback. | Graph, transactions, diff, build, and tests. |
+| `/journey release` | Runs gates and prepares a local commit preview. | Health, build, tests, and Git. |
+| `/tools` | Shows the tool catalog for the current IDE instance. | IDE state and extensions. |
+| `/tool <name> {JSON}` | Runs a tool with optional JSON arguments. | Workspace and session. |
+| `/revoke-tools` | Revokes permissions granted in the session. | Active chat session. |
+| `/extensions reload` | Reloads declarative extensions and shows diagnostics. | Local extension directory. |
 | `/explain` | Analyzes and explains the logic of the selected code block in the editor. | Sends the selected code snippet. |
 | `/refactor` | Optimizes performance, readability, and applies SOLID/Clean Code best practices. | Sends the selected code snippet. |
+| `/optimize` | Alias for code optimization and refactoring. | Sends the selected code snippet. |
+| `/performance` | Analyzes bottlenecks and performance opportunities. | Sends the selected code snippet. |
+| `/test` | Generates DUnitX unit tests for the selected code. | Sends the selected code snippet. |
 | `/bugs` | Scans selected code for memory leaks, unhandled exceptions, and logic bugs. | Sends the selected code snippet. |
 | `/doc` | Generates Delphi-compliant XML help documentation tags (`/// <summary>`) above methods. | Sends the selected method signature. |
 | `/template` | Opens the quick prompt template library selector. | — |
@@ -31,6 +59,19 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 ## Customization and Command Backups
 
 Rad IA allows you to edit, delete, or add new commands and prompt templates directly from the plugin options inside the IDE (`Tools -> Options -> Rad IA -> Templates`).
+
+The `/agent` command family, `/terminal`, `/settings`, `/extensions`, `/health`, `/doctor`,
+`/tools`, `/tool`,
+`/revoke-tools`, and
+`/extensions reload` are internal
+commands and cannot be replaced by templates.
+See the [Complete RadIA User Manual](user_manual.en.md) for examples.
+
+Declarative extensions can add commands without recompiling or restarting the IDE. See
+[Declarative extensions](declarative_extensions.en.md).
+
+The remaining commands come from installed templates. Because templates can be edited, restored,
+imported, or removed, typing `/` in chat is authoritative for the current profile.
 
 Each template registry can define:
 - **Slash Command**: The command string that triggers the template in chat (e.g., `/explain`).

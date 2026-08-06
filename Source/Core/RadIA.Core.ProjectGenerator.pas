@@ -20,6 +20,10 @@ type
 
   out AErrorMsg: string): Boolean;
     procedure ProcessFileJson(const AFolder: string; AObj: TJSONObject; AWrittenFiles: TStringList);
+    function ResolveTargetPath(
+      const AFolder: string;
+      const ARelativePath: string
+    ): string;
     procedure HandleWriteError(const AExceptionMsg: string; AWrittenFiles: TStringList; out AErrorMsg: string);
     function IdentifyProjectFile(AWrittenFiles: TStringList): string;
     procedure OpenProjectInIDE(const AProjectFile: string);
@@ -104,11 +108,19 @@ begin
   Result := False;
   AErrorMsg := '';
   try
+    if AJsonArr.Count > 1000 then
+      raise EArgumentOutOfRangeException.Create(
+        'Project generation supports at most 1000 files.'
+      );
     for I := 0 to AJsonArr.Count - 1 do
     begin
       LVal := AJsonArr[I];
-      if LVal is TJSONObject then
-        ProcessFileJson(AFolder, LVal as TJSONObject, AWrittenFiles);
+      if not (LVal is TJSONObject) then
+        raise EConvertError.CreateFmt(
+          'Project file entry %d must be a JSON object.',
+          [I]
+        );
+      ProcessFileJson(AFolder, LVal as TJSONObject, AWrittenFiles);
     end;
     Result := True;
   except
@@ -125,13 +137,19 @@ begin
   LContent := AObj.GetValue<string>('content', '');
 
   if LRelPath.IsEmpty then
-    Exit;
+    raise EArgumentException.Create(
+      'Project file path must not be empty.'
+    );
+  if Length(LContent) > 5 * 1024 * 1024 then
+    raise EArgumentOutOfRangeException.Create(
+      'Project file content exceeds the 5 MB limit.'
+    );
 
-  LRelPath := LRelPath.Replace('/', '\');
-  if LRelPath.StartsWith('\') then
-    LRelPath := LRelPath.Substring(1);
-
-  LAbsPath := TPath.Combine(AFolder, LRelPath);
+  LAbsPath := ResolveTargetPath(AFolder, LRelPath);
+  if AWrittenFiles.IndexOf(LAbsPath) >= 0 then
+    raise EArgumentException.Create(
+      'Project contains a duplicate file path: ' + LRelPath
+    );
   LSubFolder := TPath.GetDirectoryName(LAbsPath);
 
   if not LSubFolder.IsEmpty and not TDirectory.Exists(LSubFolder) then
@@ -139,6 +157,30 @@ begin
 
   TFile.WriteAllText(LAbsPath, LContent, TEncoding.UTF8);
   AWrittenFiles.Add(LAbsPath);
+end;
+
+function TRadIAProjectGenerator.ResolveTargetPath(
+  const AFolder: string;
+  const ARelativePath: string
+): string;
+var
+  LRelativePath: string;
+  LRootPath: string;
+  LRootPrefix: string;
+begin
+  LRelativePath := Trim(ARelativePath).Replace('/', '\');
+  if TPath.IsPathRooted(LRelativePath) or
+    LRelativePath.StartsWith('\') then
+    raise EArgumentException.Create(
+      'Project file path must be relative to the destination.'
+    );
+  LRootPath := TPath.GetFullPath(AFolder);
+  LRootPrefix := IncludeTrailingPathDelimiter(LRootPath);
+  Result := TPath.GetFullPath(TPath.Combine(LRootPath, LRelativePath));
+  if not Result.StartsWith(LRootPrefix, True) then
+    raise EArgumentException.Create(
+      'Project file path escapes the destination folder.'
+    );
 end;
 
 procedure TRadIAProjectGenerator.HandleWriteError(
