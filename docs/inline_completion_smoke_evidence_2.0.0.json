@@ -3,64 +3,51 @@
     "evidenceKind":  "inlineCompletionVisualMatrix",
     "product":  "RadIA",
     "productVersion":  "2.0.0",
-    "sourceCommit":  "991cf400ea12d17b7cb2bec00d63a085fcff66ae",
-    "requiredToolCount":  90,
+    "sourceCommit":  "28de489517e21e27b911c02bc660f50cfab04788",
+    "requiredToolCount":  95,
     "requiredLineCount":  2,
-    "targetCount":  4,
+    "targetCount":  3,
     "status":  "passed",
-    "generatedAtUtc":  "2026-08-05T23:55:40.3665850Z",
+    "generatedAtUtc":  "2026-08-06T17:50:25.5917321Z",
     "targets":  [
-                    {
-                        "delphiVersion":  "22.0",
-                        "platform":  "Win32",
-                        "installedBplSha256":  "3209CBF6D551155B49BD743838B17E7CD6813A005D9987B4C5818C8A98FEEF96",
-                        "toolCount":  90,
-                        "cyclesPassed":  1,
-                        "minimumSeconds":  21.51,
-                        "maximumSeconds":  21.51,
-                        "prepared":  true,
-                        "painted":  true,
-                        "lineCount":  2,
-                        "generatedAtUtc":  "2026-08-05T23:53:10.1287094Z"
-                    },
                     {
                         "delphiVersion":  "23.0",
                         "platform":  "Win32",
-                        "installedBplSha256":  "D98DDEF95C6714C6FC4AE32433ADDF745EDB87CBDEEF6CD27AF32C75CBF5BFD1",
-                        "toolCount":  90,
+                        "installedBplSha256":  "04A2A33D70939723E0EA98E5C77F6CE3AA6976A6404E1A989A34952BA237778D",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
-                        "minimumSeconds":  27.24,
-                        "maximumSeconds":  27.24,
+                        "minimumSeconds":  28.73,
+                        "maximumSeconds":  28.73,
                         "prepared":  true,
                         "painted":  true,
                         "lineCount":  2,
-                        "generatedAtUtc":  "2026-08-05T23:53:40.0369313Z"
+                        "generatedAtUtc":  "2026-08-06T17:49:04.9309405Z"
                     },
                     {
                         "delphiVersion":  "37.0",
                         "platform":  "Win32",
-                        "installedBplSha256":  "D1655898B9DFFE8C04E72DDB6A53B27ACE656DB40863DF3B50788E1E93DDA387",
-                        "toolCount":  90,
+                        "installedBplSha256":  "4C8A7EDE90F9337DB053401357719E38346AA183FFB4B9D9FFA149A1C2349733",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
-                        "minimumSeconds":  33.36,
-                        "maximumSeconds":  33.36,
+                        "minimumSeconds":  32.32,
+                        "maximumSeconds":  32.32,
                         "prepared":  true,
                         "painted":  true,
                         "lineCount":  2,
-                        "generatedAtUtc":  "2026-08-05T23:54:16.2625435Z"
+                        "generatedAtUtc":  "2026-08-06T17:49:48.7771981Z"
                     },
                     {
                         "delphiVersion":  "37.0",
                         "platform":  "Win64",
-                        "installedBplSha256":  "7B819EA3B73C50FC6065F036AFF425C9951C0B7BBB8FF837C843CDAA2F1219A7",
-                        "toolCount":  90,
+                        "installedBplSha256":  "564E9AA984DA8707B70DB875127ABEC30E7ED98C7582E17D28C7174392EAD9AB",
+                        "toolCount":  95,
                         "cyclesPassed":  1,
-                        "minimumSeconds":  27.77,
-                        "maximumSeconds":  27.77,
+                        "minimumSeconds":  28.01,
+                        "maximumSeconds":  28.01,
                         "prepared":  true,
                         "painted":  true,
                         "lineCount":  2,
-                        "generatedAtUtc":  "2026-08-05T23:54:48.6878465Z"
+                        "generatedAtUtc":  "2026-08-06T17:50:25.1206125Z"
                     }
                 ]
 }

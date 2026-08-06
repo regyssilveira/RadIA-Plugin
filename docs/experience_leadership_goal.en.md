@@ -120,6 +120,11 @@ bugs, vulnerabilities, security hotspots, code smells, and unresolved issues; 82
 
 **Outcome:** continuous, fast, reversible suggestions in the Delphi editor.
 
+The `inline_completion_smoke_evidence_2.0.0.json` matrix proves multiline Ghost Text preparation
+and OTA painting on Delphi 12 Win32 and Delphi 13 Win32/IDE64 with the current 95-tool catalog.
+Visual positioning accounts for the first visible column after horizontal scrolling, and the
+cursor is harmlessly reactivated to start the IDE64 paint cycle as well.
+
 ### M2 — First-class interactive terminal
 
 - Replace command execution with a Windows-compatible pseudo-terminal layer.

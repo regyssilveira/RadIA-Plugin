@@ -123,6 +123,11 @@ de 82,3%, duplicação de 2,3% e ratings A para confiabilidade, segurança e man
 
 **Saída:** sugestões contínuas, rápidas e reversíveis no editor Delphi.
 
+A matriz `inline_completion_smoke_evidence_2.0.0.json` comprova Ghost Text multilinha preparado e
+pintado pela OTA no Delphi 12 Win32 e no Delphi 13 Win32/IDE64, com o catálogo vigente de 95
+ferramentas. A posição visual considera a primeira coluna visível após rolagem horizontal e o
+cursor é reativado de forma inócua para iniciar o ciclo de pintura também na IDE64.
+
 ### M2 — Terminal interativo de primeira classe
 
 - Substituir o executor de comando por uma camada de pseudo terminal compatível com Windows.
