@@ -61,7 +61,7 @@ Execute também a análise e aguarde o resultado do Quality Gate da análise exa
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1 `
   -Test `
-  -DelphiVersion "22.0" `
+  -DelphiVersion "37.0" `
   -QualityGate
 ```
 
@@ -70,7 +70,7 @@ condição do Quality Gate estiver reprovada. Não prepare merge, tag ou pacote 
 
 O workflow `SonarQube release gate` repete essa barreira em pull requests para `develop` e `main`, nos
 pushes dessas branches e em toda tag `v*`. O runner Windows self-hosted deve possuir o label
-`radia-delphi`, Delphi 11 e `sonar-scanner`; configure `SONAR_TOKEN` como secret e `SONAR_HOST_URL`
+`radia-delphi`, Delphi 13 e `sonar-scanner`; configure `SONAR_TOKEN` como secret e `SONAR_HOST_URL`
 como variável do repositório. Configure o job como status check obrigatório nas regras de proteção de
 `develop` e `main`.
 
@@ -408,7 +408,7 @@ a publicação, configure os secrets `RADIA_SIGNING_PFX_BASE64` e
 * Build Delphi executado com sucesso.
 * Análise exata aprovada pelo SonarQube Quality Gate.
 * Status check `Build, analyze, and enforce Quality Gate` obrigatório e aprovado.
-* Pacotes Release gerados para Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
+* Pacotes Release gerados para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 * Instalador visual assinado, timestamp validado e catálogo estável HTTPS publicado.
 * Validação positiva e negativa executada para cada pacote.
 * `SHA256SUMS.txt` publicado com os quatro ZIPs gerados pelo mesmo commit.

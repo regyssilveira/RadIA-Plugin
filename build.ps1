@@ -178,7 +178,7 @@ if ($compilerVersion -notin @(36.0, 37.0)) {
     Write-Host "=========================================================================" -ForegroundColor Red
     Write-Host "ERRO: A versao do compilador Delphi detectada ($compilerVersion) nao e suportada." -ForegroundColor Red
     Write-Host "O RadIA exige Delphi 12 ou 13 (DCC32 36.0 ou 37.0)." -ForegroundColor Red
-    Write-Host "Delphi 11 e versoes anteriores nao fazem parte da matriz suportada." -ForegroundColor Red
+    Write-Host "Versoes anteriores nao fazem parte da matriz suportada." -ForegroundColor Red
     Write-Host "=========================================================================" -ForegroundColor Red
     Write-Host ""
     throw "Versao do Delphi nao suportada."

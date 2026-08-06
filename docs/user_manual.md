@@ -2,7 +2,7 @@
 
 ## 1. O que é o RadIA
 
-O RadIA é um assistente de IA integrado ao Delphi 11, 12 e 13. Ele combina:
+O RadIA é um assistente de IA integrado ao Delphi 12 e 13. Ele combina:
 
 - chat com múltiplos providers;
 - contexto vivo do editor e do projeto;
@@ -420,7 +420,6 @@ Consulte o [modelo de segurança](tool_security_model.md) e o
 
 | IDE | Arquitetura | Estado |
 |---|---|---|
-| Delphi 11 | Win32 | Suportado e validado |
 | Delphi 12 | Win32 | Suportado e validado |
 | Delphi 13 | Win32 | Suportado e validado |
 | Delphi 13 | IDE64 | Suportado e validado |

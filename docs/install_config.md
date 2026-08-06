@@ -27,7 +27,7 @@ mostrar tokens ou credenciais.
 1. Abra o console do Windows PowerShell.
 2. Certifique-se de que a pasta `bin` da instalação do Delphi contendo o `dcc32` está presente no PATH do sistema.
 3. Execute o comando na raiz do projeto de acordo com a arquitetura da sua IDE:
-   * **Para a IDE padrão de 32 bits (Delphi 11 e 12)**:
+   * **Para a IDE padrão de 32 bits (Delphi 12)**:
      ```powershell
      powershell -ExecutionPolicy Bypass -File .\build.ps1 -Install
      ```
@@ -180,8 +180,8 @@ Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File .\scripts\Test-RadIA.Package.ps1 `
-  -PackagePath .\Output\Packages\RadIA-v2.0.0-Delphi-22.0-Win32-Release.zip `
-  -DelphiVersion "22.0"
+  -PackagePath .\Output\Packages\RadIA-v2.0.0-Delphi-23.0-Win32-Release.zip `
+  -DelphiVersion "23.0"
 ```
 
 Para o pacote IDE64 do Delphi 13, acrescente `-IDE64`. A suíte confirma a validação íntegra e

@@ -2,7 +2,7 @@
 
 ## 1. What RadIA is
 
-RadIA is an AI assistant integrated with Delphi 11, 12, and 13. It combines multi-provider chat,
+RadIA is an AI assistant integrated with Delphi 12 and 13. It combines multi-provider chat,
 live IDE context, code generation and review, structured IDE tools, build, Form Designer, debugger,
 local project knowledge, MCP access, consent, auditing, and workspace protection.
 
@@ -296,7 +296,6 @@ See the [security model](tool_security_model.md) and
 
 | IDE | Architecture | Status |
 |---|---|---|
-| Delphi 11 | Win32 | Supported and validated |
 | Delphi 12 | Win32 | Supported and validated |
 | Delphi 13 | Win32 | Supported and validated |
 | Delphi 13 | IDE64 | Supported and validated |

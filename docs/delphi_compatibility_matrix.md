@@ -1,144 +1,70 @@
-# Matriz de Compatibilidade Agentiva
+# Matriz de Compatibilidade Delphi
 
-## 1. Versões-alvo
+## Matriz vigente
 
-| IDE | BDS | IDE principal | Estado atual do RadIA |
-|---|---:|---|---|
-| Delphi 11 Alexandria | 22.0 | Win32 | Build e DUnitX locais aprovados |
-| Delphi 12 Athens | 23.0 | Win32 | Build e DUnitX locais aprovados |
-| Delphi 13 Florence | 37.0 | Win32 e Win64 | Build e DUnitX aprovados em ambas as IDEs |
+| IDE | BDS | Arquitetura da IDE | Estado |
+| :--- | :--- | :--- | :--- |
+| Delphi 12 Athens | 23.0 | Win32 | Suportado |
+| Delphi 13 | 37.0 | Win32 | Suportado |
+| Delphi 13 | 37.0 | IDE64 | Suportado |
 
-O suporte de uma ferramenta deve ser determinado por capacidade, não apenas por número de versão.
+Delphi 11 e versões anteriores não fazem parte da matriz vigente. Não recebem novos pacotes,
+correções, testes de regressão ou suporte operacional.
 
-## 2. Níveis de suporte
+## Capacidades obrigatórias
 
-- `Supported`: implementação e testes disponíveis.
-- `Fallback`: comportamento alternativo seguro.
-- `Unavailable`: capacidade não exposta nessa configuração.
-- `Experimental`: requer opt-in e pode usar interfaces menos estáveis.
+| Capacidade | Delphi 12 Win32 | Delphi 13 Win32 | Delphi 13 IDE64 |
+| :--- | :---: | :---: | :---: |
+| Chat acoplável e WebView2 | Sim | Sim | Sim |
+| Modo agente e registry de tools | Sim | Sim | Sim |
+| MCP por bridge local | Sim | Sim | Sim |
+| Terminal integrado | Sim | Sim | Sim |
+| Ghost Text e revisão inline | Sim | Sim | Sim |
+| Workspace e editor OTA | Sim | Sim | Sim |
+| Form Designer | Sim | Sim | Sim |
+| Build e testes DUnitX | Sim | Sim | Sim |
+| Debugger e timeline | Sim | Sim | Sim |
+| Conhecimento do projeto | Sim | Sim | Sim |
+| Extensões declarativas | Sim | Sim | Sim |
+| Instalação, reparo e remoção | Sim | Sim | Sim |
 
-## 3. Matriz inicial planejada
+Uma funcionalidade compartilhada não pode ser declarada concluída enquanto houver regressão em
+qualquer um dos três targets.
 
-| Capacidade | D11 | D12 | D13 Win32 | D13 Win64 |
-|---|---|---|---|---|
-| Estado da IDE | Automatizado | Automatizado | Automatizado | Automatizado |
-| Projeto ativo | Automatizado | Automatizado | Automatizado | Automatizado |
-| Leitura do editor | Automatizado | Automatizado | Automatizado | Automatizado |
-| Seleção e cursor | Automatizado | Automatizado | Automatizado | Automatizado |
-| Mensagens do compilador | Automatizado | Automatizado | Automatizado | Automatizado |
-| Busca no projeto | Automatizado | Automatizado | Automatizado | Automatizado |
-| Patches revisáveis | Automatizado | Automatizado | Automatizado | Automatizado |
-| Build controlado | Automatizado | Automatizado | Automatizado | Automatizado |
-| MCP named pipe | Automatizado | Automatizado | Automatizado | Automatizado |
-| MCP HTTP loopback | Planejado | Planejado | Planejado | Planejado |
-| Form Designer vivo | Automatizado | Automatizado | Automatizado | Automatizado |
-| Captura do form | A validar | A validar | A validar | A validar |
-| Debugger read-only | Automatizado | Automatizado | Automatizado | Automatizado |
-| Controle do debugger | A validar | A validar | A validar | A validar |
-| Revisão no gutter | Automatizado | Automatizado | Automatizado | Automatizado |
-| Conhecimento local | Automatizado | Automatizado | Automatizado | A validar |
+## Comandos de validação
 
-Nenhuma célula `Planejado` representa funcionalidade concluída.
-
-## 4. Regras de implementação
-
-1. Não usar condicionais de versão espalhadas pelo Core.
-2. Centralizar detecção em um serviço de capacidades.
-3. Usar `Supports` antes de acessar interfaces opcionais.
-4. Não manter referências OTA além da operação.
-5. Oferecer fallback documentado quando possível.
-6. Retornar `Unsupported` quando não houver caminho seguro.
-7. Isolar integrações experimentais em units próprias.
-
-## 5. Capacidades propostas
-
-- `EditorRead`
-- `EditorWrite`
-- `ProjectRead`
-- `ProjectWrite`
-- `CompilerMessages`
-- `BuildControl`
-- `RunControl`
-- `DebuggerRead`
-- `DebuggerControl`
-- `LiveFormRead`
-- `LiveFormWrite`
-- `EditorGutterReview`
-- `MCPNamedPipe`
-- `MCPHttpLoopback`
-
-## 6. Gates por versão
-
-Cada capacidade deve passar por:
-
-1. Compilação do pacote.
-2. Compilação da suíte DUnitX.
-3. Testes unitários.
-4. Smoke test dentro da IDE.
-5. Teste de projeto aberto e fechado.
-6. Teste de shutdown.
-7. Teste com buffer modificado e não salvo.
-8. Teste de erro controlado quando a capacidade não estiver disponível.
-
-## 7. Atenções conhecidas
-
-### Delphi 11 e 12
-
-- IDE predominantemente Win32.
-- Validar limites de memória para indexação e respostas grandes.
-- Evitar pressupor interfaces introduzidas no Delphi 13.
-
-### Delphi 13
-
-- Validar separadamente Win32 e Win64.
-- Preservar as correções existentes de elision e criação de views.
-- Validar tamanho de ponteiros e interop com WebView2.
-- Não assumir equivalência comportamental entre as duas IDEs.
-
-### Todas as versões
-
-- Leitura de `IOTAEditReader` deve continuar em blocos.
-- Notifiers não devem interferir com a criação de editor views.
-- Operações WebView2 respeitam `GIsShuttingDown`.
-- Toda UI proveniente de background usa `TThread.Queue` ou `TThread.Synchronize`.
-
-## 8. Evidência de suporte
-
-Uma célula só poderá mudar para `Supported` quando houver:
-
-- Unit de implementação identificada.
-- Teste automatizado aplicável.
-- Comando de build registrado.
-- Resultado do smoke test.
-- Ausência de regressão no shutdown.
-
-### Baseline local de 2026-08-02
-
-| BDS | Plataforma validada | Resultado |
-|---:|---|---|
-| 22.0 | Win32 | Pacote compilado; 442/442 testes aprovados; zero vazamentos |
-| 23.0 | Win32 | Pacote compilado; 442/442 testes aprovados; zero vazamentos |
-| 37.0 | Win32 | Pacote compilado; 442/442 testes aprovados; zero vazamentos |
-
-Comando reproduzível:
+Delphi 12 Win32:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
-  -DelphiVersion "<BDS>" -Test -NoCoverage
+  -DelphiVersion "23.0" -Release -Test -NoCoverage
 ```
 
-Essa baseline comprova compatibilidade de compilação e testes automatizados. A BPL atual foi
-carregada automaticamente em três ciclos válidos por versão: Delphi 11 encerrou entre 0,80 s e
-0,86 s; Delphi 12, entre 1,52 s e 1,99 s; e Delphi 13, entre 1,98 s e 2,63 s. Não houve crash ou
-deadlock. O Delphi 13 também respondeu ao bridge MCP nas IDEs Win32 e Win64.
+Delphi 13 Win32:
 
-No Delphi 13 Win32, a revisão inline também foi validada visualmente em projeto ativo. O ciclo real
-publicou uma decoração, preparou e aplicou uma sugestão no buffer, reverteu ao SHA original, removeu
-e limpou as revisões com consentimento e auditoria. O arquivo em disco permaneceu inalterado. A
-validação visual completa do fluxo de revisão deixa de ser gate.
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -Release -Test -NoCoverage
+```
 
-No Delphi 13 IDE64, pacote, bridge e suíte foram compilados nativamente e 442/442 testes passaram
-sem falhas ou vazamentos. Em perfil limpo, a BPL Win64 carregou em três ciclos consecutivos no
-`bin64\bds.exe`; projeto, editor `.dpr` e plataforma Win64 foram confirmados pelo MCP. Após a
-confirmação de descarte do `.dproj` ajustado pela IDE64, os shutdowns concluíram entre 1,62 s e
-1,88 s, sem crash, deadlock, descoberta MCP ou processo órfão.
+Delphi 13 IDE64:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Release -Test -NoCoverage
+```
+
+## Gates de compatibilidade
+
+1. O build rejeita versões diferentes de BDS 23.0 e BDS 37.0.
+2. O instalador aceita somente os três targets da matriz.
+3. O release contém três pacotes com manifesto, hash e commit de origem.
+4. Cada target compila a BPL, a extensão de exemplo, a bridge MCP e a suíte DUnitX.
+5. Os testes não podem apresentar falha, erro, ignore ou vazamento.
+6. Os smokes em IDE real devem confirmar docking, catálogo de tools e shutdown sem processo órfão.
+
+## Evidência histórica
+
+Arquivos de evidência da versão 2.0 podem conter execuções do Delphi 11 realizadas antes da mudança
+de suporte. Esses registros são imutáveis e demonstram o estado daquela revisão; não ampliam a
+matriz atual. Geradores novos de evidência processam somente Delphi 12 e 13.

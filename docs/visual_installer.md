@@ -1,7 +1,7 @@
 # Instalador visual e canal de release
 
-O RadIA 2.0.0 possui um instalador visual único para Delphi 11 Win32, Delphi 12 Win32, Delphi 13
-Win32 e Delphi 13 IDE64. O assistente detecta as IDEs instaladas, pré-seleciona os targets
+O RadIA 2.0.0 possui um instalador visual único para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13
+IDE64. O assistente detecta as IDEs instaladas, pré-seleciona os targets
 encontrados e permite personalizar a seleção.
 
 Cada componente contém o pacote específico daquela combinação e reutiliza

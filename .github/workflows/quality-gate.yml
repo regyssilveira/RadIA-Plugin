@@ -53,6 +53,10 @@ jobs:
         shell: powershell
         run: npm run lint
 
+      - name: Validate supported Delphi targets
+        shell: powershell
+        run: .\scripts\Test-RadIA.SupportedTargets.ps1
+
       - name: Build, test, analyze, and enforce the gate
         shell: powershell
         run: |

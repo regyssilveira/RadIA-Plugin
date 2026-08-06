@@ -61,7 +61,7 @@ Run the analysis and wait for the Quality Gate of that exact analysis:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1 `
   -Test `
-  -DelphiVersion "22.0" `
+  -DelphiVersion "37.0" `
   -QualityGate
 ```
 
@@ -70,7 +70,7 @@ rejected. Do not prepare a merge, tag, or release package in that state.
 
 The `SonarQube release gate` workflow repeats this barrier for pull requests targeting `develop` and
 `main`, pushes to those branches, and every `v*` tag. The self-hosted Windows runner must have the
-`radia-delphi` label, Delphi 11, and `sonar-scanner`; configure `SONAR_TOKEN` as a repository secret
+`radia-delphi` label, Delphi 13, and `sonar-scanner`; configure `SONAR_TOKEN` as a repository secret
 and `SONAR_HOST_URL` as a repository variable. Require the job as a status check in the `develop`
 and `main` branch protection rules.
 
@@ -408,7 +408,7 @@ Production environment approval is recommended.
 * Delphi build executed successfully.
 * The exact analysis passed the SonarQube Quality Gate.
 * Required `Build, analyze, and enforce Quality Gate` status check passed.
-* Release packages generated for Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
+* Release packages generated for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 * Signed visual installer, validated timestamp, and stable HTTPS catalog published.
 * Positive and negative validation completed for every package.
 * `SHA256SUMS.txt` published with the four ZIPs generated from the same commit.
