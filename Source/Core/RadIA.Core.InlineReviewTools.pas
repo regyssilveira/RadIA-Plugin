@@ -24,6 +24,8 @@ type
     irtkPublish,
     irtkList,
     irtkPrepareFix,
+    irtkApplyFix,
+    irtkReject,
     irtkRemove,
     irtkClear
   );
@@ -128,6 +130,8 @@ begin
     irtkList:
       Result := ExecuteList;
     irtkPrepareFix,
+    irtkApplyFix,
+    irtkReject,
     irtkRemove:
       Result := ExecuteIdAction(ARequest);
     irtkClear:
@@ -162,7 +166,12 @@ begin
     LId := GetRequiredString(LJson, 'reviewId');
     if FKind = irtkPrepareFix then
       Result := PatchToToolResult(FService.PrepareFix(LId))
-    else if FService.Remove(LId) then
+    else if FKind = irtkApplyFix then
+      Result := PatchToToolResult(FService.ApplyFix(LId))
+    else if (
+      ((FKind = irtkReject) and FService.Reject(LId)) or
+      ((FKind = irtkRemove) and FService.Remove(LId))
+    ) then
       Result := TRadIAToolResult.Succeeded('{"success":true}')
     else
       Result := TRadIAToolResult.Failed(
@@ -273,6 +282,18 @@ begin
         LDescription := 'Creates a reversible patch preview from a review suggestion.';
         LInput := CIdInput;
         LRisk := trReadOnly;
+      end;
+    irtkApplyFix:
+      begin
+        LName := 'ApplyInlineReviewFix';
+        LDescription := 'Applies one revision-anchored inline review suggestion.';
+        LInput := CIdInput;
+      end;
+    irtkReject:
+      begin
+        LName := 'RejectInlineReview';
+        LDescription := 'Rejects one inline review without changing the buffer.';
+        LInput := CIdInput;
       end;
     irtkRemove:
       begin

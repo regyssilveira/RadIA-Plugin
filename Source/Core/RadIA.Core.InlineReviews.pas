@@ -91,6 +91,12 @@ type
     function PrepareFix(
       const AReviewId: string
     ): TRadIAPatchResult;
+    function ApplyFix(
+      const AReviewId: string
+    ): TRadIAPatchResult;
+    function Reject(
+      const AReviewId: string
+    ): Boolean;
     function Remove(
       const AReviewId: string
     ): Boolean;
@@ -134,6 +140,12 @@ type
     function PrepareFix(
       const AReviewId: string
     ): TRadIAPatchResult;
+    function ApplyFix(
+      const AReviewId: string
+    ): TRadIAPatchResult;
+    function Reject(
+      const AReviewId: string
+    ): Boolean;
     function Remove(
       const AReviewId: string
     ): Boolean;
@@ -205,6 +217,20 @@ begin
   Result.FErrorCode := '';
   Result.FErrorMessage := '';
   Result.FReview := AReview;
+end;
+
+function TRadIAInlineReviewService.ApplyFix(
+  const AReviewId: string
+): TRadIAPatchResult;
+var
+  LPrepared: TRadIAPatchResult;
+begin
+  LPrepared := PrepareFix(AReviewId);
+  if not LPrepared.Success then
+    Exit(LPrepared);
+  Result := FPatchService.Apply(LPrepared.Preview.Id);
+  if Result.Success then
+    Remove(AReviewId);
 end;
 
 procedure TRadIAInlineReviewService.Clear;
@@ -399,6 +425,13 @@ begin
     LSnapshot.Revision,
     LReviews
   );
+end;
+
+function TRadIAInlineReviewService.Reject(
+  const AReviewId: string
+): Boolean;
+begin
+  Result := Remove(AReviewId);
 end;
 
 function TRadIAInlineReviewService.Remove(

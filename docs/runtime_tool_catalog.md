@@ -95,6 +95,8 @@ This list contains only the built-in tools registered by the current package. Ar
 | `PublishInlineReview` | `RadIA.Core.InlineReviewTools.pas` |
 | `ListInlineReviews` | `RadIA.Core.InlineReviewTools.pas` |
 | `PrepareInlineReviewFix` | `RadIA.Core.InlineReviewTools.pas` |
+| `ApplyInlineReviewFix` | `RadIA.Core.InlineReviewTools.pas` |
+| `RejectInlineReview` | `RadIA.Core.InlineReviewTools.pas` |
 | `RemoveInlineReview` | `RadIA.Core.InlineReviewTools.pas` |
 | `ClearInlineReviews` | `RadIA.Core.InlineReviewTools.pas` |
 
@@ -225,6 +227,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Resumo
 
 - Registered groups: 25
-- Registered built-in tools: 93
+- Registered built-in tools: 95
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -56,6 +56,10 @@ type
     [Test]
     procedure PreparesSuggestionWithPatchService;
     [Test]
+    procedure AppliesSuggestionAndRemovesReview;
+    [Test]
+    procedure RejectsSuggestionWithoutChangingBuffer;
+    [Test]
     procedure RemovesAndClearsReviews;
     [Test]
     procedure RegistersExpectedRiskLevels;
@@ -113,6 +117,18 @@ begin
   Assert.AreEqual<Integer>(0, Length(FVisual.Reviews));
 end;
 
+procedure TTestRadIAInlineReviews.AppliesSuggestionAndRemovesReview;
+var
+  LApply: TRadIAPatchResult;
+  LPublish: TRadIAInlineReviewResult;
+begin
+  LPublish := FService.Publish(BuildReview(2, 2));
+  LApply := FService.ApplyFix(LPublish.Review.Id);
+  Assert.IsTrue(LApply.Success);
+  Assert.Contains(FWorkspace.Content, 'NewValue');
+  Assert.AreEqual<Integer>(0, Length(FService.ListCurrent));
+end;
+
 procedure TTestRadIAInlineReviews.PreparesSuggestionWithPatchService;
 var
   LPatch: TRadIAPatchResult;
@@ -152,6 +168,14 @@ begin
   );
   Assert.AreEqual(
     trStructuralWrite,
+    FRegistry.Resolve('ApplyInlineReviewFix').Descriptor.Risk
+  );
+  Assert.AreEqual(
+    trStructuralWrite,
+    FRegistry.Resolve('RejectInlineReview').Descriptor.Risk
+  );
+  Assert.AreEqual(
+    trStructuralWrite,
     FRegistry.Resolve('ClearInlineReviews').Descriptor.Risk
   );
 end;
@@ -163,6 +187,18 @@ begin
   LResult := FService.Publish(BuildReview(2, 10));
   Assert.IsFalse(LResult.Success);
   Assert.AreEqual('invalid_review', LResult.ErrorCode);
+end;
+
+procedure TTestRadIAInlineReviews.RejectsSuggestionWithoutChangingBuffer;
+var
+  LOriginalContent: string;
+  LPublish: TRadIAInlineReviewResult;
+begin
+  LOriginalContent := FWorkspace.Content;
+  LPublish := FService.Publish(BuildReview(2, 2));
+  Assert.IsTrue(FService.Reject(LPublish.Review.Id));
+  Assert.AreEqual(LOriginalContent, FWorkspace.Content);
+  Assert.AreEqual<Integer>(0, Length(FService.ListCurrent));
 end;
 
 procedure TTestRadIAInlineReviews.RemovesAndClearsReviews;

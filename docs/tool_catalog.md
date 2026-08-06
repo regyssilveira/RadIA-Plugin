@@ -109,6 +109,8 @@ para restaurar o conteúdo original quando a revisão produzida ainda estiver at
 - `PublishInlineReview`
 - `ListInlineReviews`
 - `PrepareInlineReviewFix`
+- `ApplyInlineReviewFix`
+- `RejectInlineReview`
 - `RemoveInlineReview`
 - `ClearInlineReviews`
 

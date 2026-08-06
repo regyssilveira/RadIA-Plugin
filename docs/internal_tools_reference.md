@@ -106,6 +106,8 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `PublishInlineReview` | Publica uma observação ancorada em arquivo, hash e linhas. | Quando uma revisão encontra um problema que deve aparecer no editor. |
 | `ListInlineReviews` | Lista as revisões inline atuais. | Para retomar uma análise ou consultar pendências antes de aplicar correções. |
 | `PrepareInlineReviewFix` | Converte a sugestão de uma revisão em preview de patch. | Quando o usuário decide corrigir uma observação publicada. |
+| `ApplyInlineReviewFix` | Aplica uma sugestão ancorada na revisão atual e remove a marca resolvida. | Após revisar o bloco e consentir com a alteração do buffer. |
+| `RejectInlineReview` | Rejeita uma sugestão e remove sua marca sem alterar o buffer. | Quando o usuário não deseja incorporar o bloco sugerido. |
 | `RemoveInlineReview` | Remove uma revisão específica sem alterar o código. | Depois de resolver, descartar ou considerar a observação inválida. |
 | `ClearInlineReviews` | Limpa as revisões do escopo solicitado. | Ao encerrar uma rodada de revisão ou reiniciar a análise. |
 
