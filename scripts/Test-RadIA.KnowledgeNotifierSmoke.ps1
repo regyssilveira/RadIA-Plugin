@@ -743,7 +743,35 @@ $groupContent = @"
   <ProjectExtensions>
     <Borland.Personality>Default.Personality</Borland.Personality>
     <Borland.ProjectType/>
+    <BorlandProject>
+      <BorlandProject>
+        <PersonalityInfo>
+          <Option Name="Personality">Default.Personality</Option>
+          <Option Name="ProjectType"/>
+          <Option Name="Version">1.0</Option>
+          <Option Name="GUID">{15B352FD-3069-4A91-A775-5A16B2D660EA}</Option>
+        </PersonalityInfo>
+      </BorlandProject>
+    </BorlandProject>
   </ProjectExtensions>
+  <Target Name="RadIATests">
+    <MSBuild Projects="RadIATests.dproj"/>
+  </Target>
+  <Target Name="RadIATests:Clean">
+    <MSBuild Projects="RadIATests.dproj" Targets="Clean"/>
+  </Target>
+  <Target Name="RadIATests:Make">
+    <MSBuild Projects="RadIATests.dproj" Targets="Make"/>
+  </Target>
+  <Target Name="Build">
+    <CallTarget Targets="RadIATests"/>
+  </Target>
+  <Target Name="Clean">
+    <CallTarget Targets="RadIATests:Clean"/>
+  </Target>
+  <Target Name="Make">
+    <CallTarget Targets="RadIATests:Make"/>
+  </Target>
 </Project>
 "@
 Set-Content -LiteralPath $groupPath -Value $groupContent -Encoding UTF8
