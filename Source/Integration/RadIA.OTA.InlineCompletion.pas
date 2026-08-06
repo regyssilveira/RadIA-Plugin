@@ -82,6 +82,7 @@ type
 implementation
 
 uses
+  System.Classes,
   System.Hash,
   System.IOUtils,
   System.Math,
@@ -92,6 +93,7 @@ uses
   RadIA.Core.IDENavigation,
   RadIA.Core.Interfaces,
   RadIA.Core.Logger,
+  RadIA.Core.Types,
   RadIA.OTA.TextReader;
 
 function TRadIAOTAInlineCompletionSession.Apply(
@@ -449,6 +451,22 @@ begin
     LCodeEditorServices
   ) then
     LCodeEditorServices.InvalidateTopEditor;
+  TThread.Queue(
+    nil,
+    procedure
+    var
+      LQueuedEditorServices: INTACodeEditorServices;
+    begin
+      if GIsShuttingDown then
+        Exit;
+      if Supports(
+        BorlandIDEServices,
+        INTACodeEditorServices,
+        LQueuedEditorServices
+      ) then
+        LQueuedEditorServices.InvalidateTopEditor;
+    end
+  );
 end;
 
 procedure TRadIAOTAInlineCompletionSession.WatchCurrentView;
