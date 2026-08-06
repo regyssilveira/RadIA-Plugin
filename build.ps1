@@ -647,6 +647,12 @@ if ($Package) {
         -LiteralPath ".\scripts\Install-RadIA.Package.ps1" `
         -Destination (Join-Path $stagingRoot "Scripts\Install-RadIA.Package.ps1")
     Copy-Item `
+        -LiteralPath ".\scripts\New-RadIA.DeclarativeExtensionPackage.ps1" `
+        -Destination (
+            Join-Path $stagingRoot `
+                "Scripts\New-RadIA.DeclarativeExtensionPackage.ps1"
+        )
+    Copy-Item `
         -Path ".\Examples\ToolExtension\*" `
         -Destination (Join-Path $stagingRoot "Examples\ToolExtension") `
         -Recurse

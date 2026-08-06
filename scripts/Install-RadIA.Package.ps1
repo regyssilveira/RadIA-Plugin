@@ -102,6 +102,7 @@ $requiredFiles = @(
     "Bin/RadIA.MCP.Bridge.exe",
     "Redist/WebView2Loader.dll",
     "Scripts/Install-RadIA.Package.ps1",
+    "Scripts/New-RadIA.DeclarativeExtensionPackage.ps1",
     "Web/chat.html",
     "Web/chat.js",
     "Web/chat.css"
@@ -176,6 +177,9 @@ if ($IDE64) {
 
 $targetBpl = Join-Path $targetBplDirectory "RadIA.bpl"
 $targetBridge = Join-Path $targetBplDirectory "RadIA.MCP.Bridge.exe"
+$targetExtensionPackager = Join-Path `
+    $targetBplDirectory `
+    "New-RadIA.DeclarativeExtensionPackage.ps1"
 $targetDcp = Join-Path $targetDcpDirectory "RadIA.dcp"
 $targetWeb = Join-Path $publicBpl "Web"
 $userRadIA = Join-Path (
@@ -197,6 +201,7 @@ $plan = [PSCustomObject]@{
     platform = $platform
     package = $targetBpl
     bridge = $targetBridge
+    extensionPackager = $targetExtensionPackager
     dcp = $targetDcp
     publicWeb = $targetWeb
     registryPath = $registryPath
@@ -238,7 +243,12 @@ if ($Mode -eq "Uninstall") {
             -Name $targetBpl `
             -ErrorAction SilentlyContinue
     }
-    foreach ($targetFile in @($targetBpl, $targetBridge, $targetDcp)) {
+    foreach ($targetFile in @(
+        $targetBpl,
+        $targetBridge,
+        $targetExtensionPackager,
+        $targetDcp
+    )) {
         if (Test-Path -LiteralPath $targetFile -PathType Leaf) {
             Remove-Item -LiteralPath $targetFile -Force
         }
@@ -300,6 +310,13 @@ Copy-Item `
 Copy-Item `
     -LiteralPath (Resolve-PackageFile "Bin\RadIA.MCP.Bridge.exe") `
     -Destination (Join-Path $targetBplDirectory "RadIA.MCP.Bridge.exe") `
+    -Force
+Copy-Item `
+    -LiteralPath (
+        Resolve-PackageFile `
+            "Scripts\New-RadIA.DeclarativeExtensionPackage.ps1"
+    ) `
+    -Destination $targetExtensionPackager `
     -Force
 Copy-Item `
     -LiteralPath (Resolve-PackageFile "Dcp\RadIA.dcp") `
@@ -396,6 +413,12 @@ Assert-InstalledFile `
 Assert-InstalledFile `
     -Source (Resolve-PackageFile "Bin\RadIA.MCP.Bridge.exe") `
     -Target $targetBridge
+Assert-InstalledFile `
+    -Source (
+        Resolve-PackageFile `
+            "Scripts\New-RadIA.DeclarativeExtensionPackage.ps1"
+    ) `
+    -Target $targetExtensionPackager
 Assert-InstalledFile `
     -Source (Resolve-PackageFile "Dcp\RadIA.dcp") `
     -Target $targetDcp

@@ -33,7 +33,8 @@ consent policy before installation. **Export...** creates an unsigned `.radiaext
 SHA-256, and reads the finished artifact through the same package verifier used during installation.
 If verification fails, the partial output is removed. Unsigned packages still require explicit
 install-time confirmation. RSA signing through the Windows Certificate Store remains available
-through the packaging command documented below.
+through the packaging command documented below. The RadIA installer deploys that packager beside
+the BPL, verifies its hash during `Install` and `Repair`, and removes it during `Uninstall`.
 
 Use **Test** before installation to activate the manifest in an isolated temporary directory. The
 sandbox runs the complete parser, permission rules, reserved-command collision checks, and

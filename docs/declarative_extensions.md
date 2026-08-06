@@ -40,7 +40,8 @@ do consentimento e da auditoria centrais. **Export...** cria um pacote `.radiaex
 calcula seu SHA-256 e relê o artefato pelo mesmo verificador usado durante a instalação. Se a
 verificação falhar, o pacote parcial é removido. Pacotes sem assinatura continuam exigindo
 confirmação explícita na instalação. A assinatura RSA pelo Windows Certificate Store ainda usa o
-empacotador descrito na seção de distribuição.
+empacotador descrito na seção de distribuição. O instalador do RadIA entrega esse empacotador ao
+lado da BPL, valida seu hash durante `Install` e `Repair` e o remove durante `Uninstall`.
 
 Antes de instalar, use **Test** para ativar o manifesto em um diretório temporário isolado. O teste
 executa o parser completo, as regras de permissões, colisões com comandos reservados e o reload
