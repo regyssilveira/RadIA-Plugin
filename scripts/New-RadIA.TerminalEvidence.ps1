@@ -116,7 +116,8 @@ foreach ($target in $targets) {
                 $cycle.TerminalOpened -eq $true -and
                 $cycle.TerminalRequiredControlsVisible -eq $true -and
                 $cycle.TerminalCommandInputAvailable -eq $true -and
-                $cycle.TerminalOutputAvailable -eq $true
+                $cycle.TerminalOutputAvailable -eq $true -and
+                $cycle.TerminalAccessibleLabelsAvailable -eq $true
             ) `
             -Message (
                 "$($target.evidenceFile) contains an incomplete " +
@@ -155,6 +156,7 @@ foreach ($target in $targets) {
         requiredControlsVisible = $true
         commandInputAvailable = $true
         outputAvailable = $true
+        accessibleLabelsAvailable = $true
         minimumTabStopCount = $minimumTabStops
         generatedAtUtc = $evidence.generatedAtUtc
     }

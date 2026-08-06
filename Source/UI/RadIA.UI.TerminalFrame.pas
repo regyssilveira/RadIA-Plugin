@@ -22,14 +22,19 @@ type
   TRadIATerminalFrame = class(TFrame)
   private
     FTopPanel: TPanel;
+    FProfileLabel: TLabel;
     FProfileCombo: TComboBox;
+    FSnippetLabel: TLabel;
     FSnippetCombo: TComboBox;
+    FHistoryLabel: TLabel;
     FHistoryCombo: TComboBox;
+    FCommandLabel: TLabel;
     FCommandEdit: TEdit;
     FRunButton: TButton;
     FStopButton: TButton;
     FClearButton: TButton;
     FOutputEditor: TRichEdit;
+    FOutputLabel: TLabel;
     FStatusLabel: TLabel;
     FScreen: TRadIATerminalScreen;
     FHistory: TRadIATerminalHistory;
@@ -101,6 +106,9 @@ type
     function AddSession: TRadIATerminalFrame;
     procedure CloseClick(Sender: TObject);
     function GetActiveSession: TRadIATerminalFrame;
+    function HasAccessibleLabels(
+      const ASession: TRadIATerminalFrame
+    ): Boolean;
     procedure WriteSmokeEvidence(
       const ASession: TRadIATerminalFrame
     );
@@ -115,6 +123,7 @@ type
     function TestActiveSession: TObject;
     procedure TestCloseSession;
     function TestSessionCount: Integer;
+    function TestAccessibilityReady: Boolean;
     {$ENDIF}
   end;
 
@@ -225,64 +234,93 @@ begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 112;
+  FTopPanel.Height := 146;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.ShowCaption := False;
 
+  FProfileLabel := TLabel.Create(Self);
+  FProfileLabel.Parent := FTopPanel;
+  FProfileLabel.SetBounds(8, 6, 180, 17);
+  FProfileLabel.Caption := 'Shell profile';
+
   FProfileCombo := TComboBox.Create(Self);
   FProfileCombo.Parent := FTopPanel;
-  FProfileCombo.SetBounds(8, 8, 180, 25);
+  FProfileCombo.SetBounds(8, 24, 180, 25);
   FProfileCombo.Style := csDropDownList;
+  FProfileLabel.FocusControl := FProfileCombo;
   for LProfile in TRadIATerminalCatalog.Profiles do
     FProfileCombo.Items.Add(LProfile.DisplayName);
   FProfileCombo.ItemIndex := 0;
 
+  FSnippetLabel := TLabel.Create(Self);
+  FSnippetLabel.Parent := FTopPanel;
+  FSnippetLabel.SetBounds(196, 6, 180, 17);
+  FSnippetLabel.Caption := 'Command snippet';
+
   FSnippetCombo := TComboBox.Create(Self);
   FSnippetCombo.Parent := FTopPanel;
-  FSnippetCombo.SetBounds(196, 8, 180, 25);
+  FSnippetCombo.SetBounds(196, 24, 180, 25);
   FSnippetCombo.Style := csDropDownList;
+  FSnippetLabel.FocusControl := FSnippetCombo;
   FSnippetCombo.Items.Add('Snippets...');
   for LSnippet in TRadIATerminalCatalog.Snippets do
     FSnippetCombo.Items.Add(LSnippet.Name);
   FSnippetCombo.ItemIndex := 0;
   FSnippetCombo.OnChange := SnippetChange;
 
+  FHistoryLabel := TLabel.Create(Self);
+  FHistoryLabel.Parent := FTopPanel;
+  FHistoryLabel.SetBounds(384, 6, 220, 17);
+  FHistoryLabel.Caption := 'Command history';
+
   FHistoryCombo := TComboBox.Create(Self);
   FHistoryCombo.Parent := FTopPanel;
-  FHistoryCombo.SetBounds(384, 8, 220, 25);
+  FHistoryCombo.SetBounds(384, 24, 220, 25);
   FHistoryCombo.Style := csDropDownList;
+  FHistoryLabel.FocusControl := FHistoryCombo;
   FHistoryCombo.OnChange := HistoryChange;
+
+  FCommandLabel := TLabel.Create(Self);
+  FCommandLabel.Parent := FTopPanel;
+  FCommandLabel.SetBounds(8, 55, 596, 17);
+  FCommandLabel.Caption := 'Terminal command';
 
   FCommandEdit := TEdit.Create(Self);
   FCommandEdit.Parent := FTopPanel;
-  FCommandEdit.SetBounds(8, 42, 596, 25);
+  FCommandEdit.SetBounds(8, 73, 596, 25);
+  FCommandLabel.FocusControl := FCommandEdit;
   FCommandEdit.OnChange := CommandChange;
   FCommandEdit.OnKeyDown := CommandKeyDown;
 
   FRunButton := TButton.Create(Self);
   FRunButton.Parent := FTopPanel;
-  FRunButton.SetBounds(612, 40, 72, 27);
+  FRunButton.SetBounds(612, 71, 72, 27);
   FRunButton.Caption := 'Run';
   FRunButton.Default := True;
   FRunButton.OnClick := RunClick;
 
   FStopButton := TButton.Create(Self);
   FStopButton.Parent := FTopPanel;
-  FStopButton.SetBounds(692, 40, 72, 27);
+  FStopButton.SetBounds(692, 71, 72, 27);
   FStopButton.Caption := 'Stop';
   FStopButton.Enabled := False;
   FStopButton.OnClick := StopClick;
 
   FClearButton := TButton.Create(Self);
   FClearButton.Parent := FTopPanel;
-  FClearButton.SetBounds(772, 40, 72, 27);
+  FClearButton.SetBounds(772, 71, 72, 27);
   FClearButton.Caption := 'Clear';
   FClearButton.OnClick := ClearClick;
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := FTopPanel;
-  FStatusLabel.SetBounds(8, 78, 820, 20);
+  FStatusLabel.SetBounds(8, 104, 820, 17);
   FStatusLabel.Caption := 'Ready';
+
+  FOutputLabel := TLabel.Create(Self);
+  FOutputLabel.Parent := FTopPanel;
+  FOutputLabel.SetBounds(8, 124, 820, 17);
+  FOutputLabel.Caption := 'Terminal output';
 
   FOutputEditor := TRichEdit.Create(Self);
   FOutputEditor.Parent := Self;
@@ -292,6 +330,7 @@ begin
   FOutputEditor.WordWrap := False;
   FOutputEditor.Font.Name := 'Consolas';
   FOutputEditor.Font.Size := 10;
+  FOutputLabel.FocusControl := FOutputEditor;
   LoadHistory;
 end;
 
@@ -830,6 +869,24 @@ begin
     Result := TRadIATerminalFrame(LPage.Controls[0]);
 end;
 
+function TRadIATerminalTabsFrame.HasAccessibleLabels(
+  const ASession: TRadIATerminalFrame
+): Boolean;
+begin
+  Result :=
+    Assigned(ASession) and
+    (ASession.FProfileLabel.Caption <> '') and
+    (ASession.FProfileLabel.FocusControl = ASession.FProfileCombo) and
+    (ASession.FSnippetLabel.Caption <> '') and
+    (ASession.FSnippetLabel.FocusControl = ASession.FSnippetCombo) and
+    (ASession.FHistoryLabel.Caption <> '') and
+    (ASession.FHistoryLabel.FocusControl = ASession.FHistoryCombo) and
+    (ASession.FCommandLabel.Caption <> '') and
+    (ASession.FCommandLabel.FocusControl = ASession.FCommandEdit) and
+    (ASession.FOutputLabel.Caption <> '') and
+    (ASession.FOutputLabel.FocusControl = ASession.FOutputEditor);
+end;
+
 procedure TRadIATerminalTabsFrame.WriteSmokeEvidence(
   const ASession: TRadIATerminalFrame
 );
@@ -912,6 +969,10 @@ begin
       'tabStopCount',
       TJSONNumber.Create(LTabStopCount)
     );
+    LJson.AddPair(
+      'accessibleLabelsAvailable',
+      TJSONBool.Create(HasAccessibleLabels(ASession))
+    );
     TDirectory.CreateDirectory(
       TPath.GetDirectoryName(LEvidencePath)
     );
@@ -940,6 +1001,11 @@ end;
 function TRadIATerminalTabsFrame.TestSessionCount: Integer;
 begin
   Result := FPageControl.PageCount;
+end;
+
+function TRadIATerminalTabsFrame.TestAccessibilityReady: Boolean;
+begin
+  Result := HasAccessibleLabels(GetActiveSession);
 end;
 {$ENDIF}
 

@@ -600,7 +600,8 @@ function Wait-RadIATerminalDiagnostic {
         $diagnostic.opened -ne $true -or
         $diagnostic.requiredControlsVisible -ne $true -or
         $diagnostic.commandInputAvailable -ne $true -or
-        $diagnostic.outputAvailable -ne $true
+        $diagnostic.outputAvailable -ne $true -or
+        $diagnostic.accessibleLabelsAvailable -ne $true
     ) {
         throw "The terminal visual surface is incomplete."
     }
@@ -621,6 +622,9 @@ function Wait-RadIATerminalDiagnostic {
         RequiredControlsVisible = $diagnostic.requiredControlsVisible
         CommandInputAvailable = $diagnostic.commandInputAvailable
         OutputAvailable = $diagnostic.outputAvailable
+        AccessibleLabelsAvailable = (
+            $diagnostic.accessibleLabelsAvailable
+        )
         TabStopCount = $diagnostic.tabStopCount
     }
 }
@@ -2014,6 +2018,10 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             TerminalOutputAvailable = (
                 [bool]$ExerciseTerminal -and
                 $terminalDiagnostic.OutputAvailable
+            )
+            TerminalAccessibleLabelsAvailable = (
+                [bool]$ExerciseTerminal -and
+                $terminalDiagnostic.AccessibleLabelsAvailable
             )
             TerminalTabStopCount = $terminalDiagnostic.TabStopCount
             PackageLifecycleExercised = [bool]$ExercisePackageLifecycle

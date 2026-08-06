@@ -52,6 +52,8 @@ type
     procedure HiddenDockHostDoesNotFocusTerminalDuringEmbedding;
     [Test]
     procedure TerminalTabsCreateAndCloseIndependentSessions;
+    [Test]
+    procedure TerminalControlsExposeAccessibleLabels;
   end;
 
 implementation
@@ -467,6 +469,26 @@ begin
       Assert.AreEqual<Integer>(1, LFrame.TestSessionCount);
       LFrame.TestCloseSession;
       Assert.AreEqual<Integer>(1, LFrame.TestSessionCount);
+    finally
+      LFrame.Free;
+    end;
+  finally
+    LHost.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.TerminalControlsExposeAccessibleLabels;
+var
+  LFrame: TRadIATerminalTabsFrame;
+  LHost: TForm;
+begin
+  LHost := TForm.CreateNew(nil);
+  try
+    LHost.Show;
+    LFrame := TRadIATerminalTabsFrame.Create(LHost);
+    try
+      LFrame.Parent := LHost;
+      Assert.IsTrue(LFrame.TestAccessibilityReady);
     finally
       LFrame.Free;
     end;
