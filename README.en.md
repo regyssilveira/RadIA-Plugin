@@ -110,7 +110,7 @@ Quick references:
 | **Security** | Confine paths, classify risk, request consent, and keep a sanitized audit trail. |
 | **Extensions** | Register external tools through the versioned public API. |
 | **Providers** | Integrate Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama, and others. |
-| **Compatibility** | Run on Delphi 11, 12, and 13 Win32 and Delphi 13 IDE64. |
+| **Compatibility** | Run on Delphi 12 Win32 and Delphi 13 Win32/IDE64. |
 
 Implemented tools are listed in the
 [80 Built-in Tool Catalog](docs/runtime_tool_catalog.md). Contracts and planned evolution remain
@@ -135,19 +135,20 @@ To understand the physical file structure, unit responsibilities mapping, and st
 👉 [**Developer Source Code Guide (docs/source_code_guide.en.md)**](docs/source_code_guide.en.md)
 
 ### 4. Prerequisites
-*   **IDE:** Embarcadero Delphi 11 Alexandria, 12 Athens, or 13 Florence.
+*   **IDE:** Embarcadero Delphi 12 Athens or Delphi 13, with the Win32 IDE or IDE64.
 *   **OS:** Windows 10 / 11 (64-bit).
 *   **Web Engine:** *Microsoft Edge WebView2 Runtime* installed on the Windows system.
 *   **API Keys:** Active developer keys or a local Ollama instance.
 
 ### 5. Installation and Configuration
 
-RadIA 2.0 provides a **single visual installer** that detects Delphi 11, 12, 13 Win32, and Delphi 13
-IDE64 and allows target selection. PowerShell automation and manual installation remain available.
+RadIA 2.0 provides a **single visual installer** for Delphi 12 Win32 and Delphi 13 Win32/IDE64.
+PowerShell automation and manual installation remain available.
 See the [visual installer guide](docs/visual_installer.en.md) for signing and channel publication.
 For compilation, registration, and provider configuration, see:
 
-The automated installer also synchronizes local WebView2 assets into `%APPDATA%\RadIA\Web` and clears the local cache while the IDE is closed, preventing Delphi 12/13 from loading stale JavaScript after updates.
+The automated installer also synchronizes local WebView2 assets into `%APPDATA%\RadIA\Web` and
+clears the local cache while the IDE is closed, preventing stale JavaScript after updates.
 
 👉 [**Complete Installation and Configuration Guide (docs/install_config.en.md)**](docs/install_config.en.md)
 

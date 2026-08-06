@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("22.0", "23.0", "37.0")]
+    [ValidateSet("23.0", "37.0")]
     [string]$DelphiVersion = "23.0",
     [ValidateRange(30, 600)]
     [int]$StartupTimeoutSeconds = 180,

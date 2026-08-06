@@ -11,11 +11,6 @@ $ErrorActionPreference = "Stop"
 
 $targets = @(
     @{
-        evidenceFile = "Delphi11-Win32.json"
-        delphiVersion = "22.0"
-        platform = "Win32"
-    },
-    @{
         evidenceFile = "Delphi12-Win32.json"
         delphiVersion = "23.0"
         platform = "Win32"

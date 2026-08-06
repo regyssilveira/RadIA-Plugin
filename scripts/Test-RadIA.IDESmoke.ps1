@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("22.0", "23.0", "37.0")]
+    [ValidateSet("23.0", "37.0")]
     [string]$DelphiVersion,
     [ValidateRange(1, 50)]
     [int]$Cycles = 10,

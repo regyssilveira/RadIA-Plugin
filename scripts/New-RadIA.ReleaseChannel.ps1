@@ -67,7 +67,6 @@ $channel = [PSCustomObject]@{
             }
         }
         targets = @(
-            "Delphi 11 Win32",
             "Delphi 12 Win32",
             "Delphi 13 Win32",
             "Delphi 13 IDE64"

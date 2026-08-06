@@ -127,7 +127,7 @@ const
     '"delphiVersion","platforms","destinationPath"],"properties":{' +
     '"projectName":{"type":"string"},"template":{"type":"string",' +
     '"enum":["console","vcl","fmx","library","package","dunitx"]},' +
-    '"delphiVersion":{"type":"string","enum":["22.0","23.0","37.0"]},' +
+    '"delphiVersion":{"type":"string","enum":["23.0","37.0"]},' +
     '"platforms":{"type":"array","items":{"type":"string",' +
     '"enum":["Win32","Win64"]},"minItems":1},' +
     '"destinationPath":{"type":"string"}},"additionalProperties":false}';

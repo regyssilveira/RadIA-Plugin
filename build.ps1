@@ -61,10 +61,9 @@ if (Test-Path $regBDS) {
         if ($rootDir -and (Test-Path $rootDir)) {
             $friendlyName = ""
             switch ($ver) {
-                "22.0" { $friendlyName = "Delphi 11 Alexandria" }
                 "23.0" { $friendlyName = "Delphi 12 Athens" }
                 "37.0" { $friendlyName = "Delphi 13" }
-                default { $friendlyName = "Delphi (BDS $ver)" }
+                default { continue }
             }
             $installations += [PSCustomObject]@{
                 Version  = $ver
@@ -80,6 +79,16 @@ if (Test-Path $regBDS) {
 $selectedInstall = $null
 
 if ($DelphiVersion) {
+    if (
+        $DelphiVersion -notin @("23.0", "37.0") -and
+        $DelphiVersion -notlike "*Delphi 12*" -and
+        $DelphiVersion -notlike "*Delphi 13*"
+    ) {
+        throw (
+            "Unsupported Delphi version '$DelphiVersion'. " +
+            "RadIA supports Delphi 12 (BDS 23.0) and Delphi 13 (BDS 37.0)."
+        )
+    }
     # Tentar encontrar a versao informada pelo usuario
     $selectedInstall = $installations | Where-Object {
         $_.Version -eq $DelphiVersion -or
@@ -164,12 +173,12 @@ if ($dccOut -match "version (\d+\.\d+)") {
 }
 
 # 4. Validar compatibilidade e mapear versao do compilador para a versao do Delphi (DelphiVer)
-if ($compilerVersion -lt 35.0) {
+if ($compilerVersion -notin @(36.0, 37.0)) {
     Write-Host ""
     Write-Host "=========================================================================" -ForegroundColor Red
     Write-Host "ERRO: A versao do compilador Delphi detectada ($compilerVersion) nao e suportada." -ForegroundColor Red
-    Write-Host "O Rad IA exige obrigatoriamente o Delphi 11 Alexandria ou superior (DCC32 >= 35.0)" -ForegroundColor Red
-    Write-Host "devido ao uso de recursos nativos da API de WebView2 (TEdgeBrowser)." -ForegroundColor Red
+    Write-Host "O RadIA exige Delphi 12 ou 13 (DCC32 36.0 ou 37.0)." -ForegroundColor Red
+    Write-Host "Delphi 11 e versoes anteriores nao fazem parte da matriz suportada." -ForegroundColor Red
     Write-Host "=========================================================================" -ForegroundColor Red
     Write-Host ""
     throw "Versao do Delphi nao suportada."
@@ -179,9 +188,8 @@ $delphiVer = ""
 switch ($compilerVersion) {
     37.0 { $delphiVer = "37.0" } # Delphi 13
     36.0 { $delphiVer = "23.0" } # Delphi 12 Athens
-    35.0 { $delphiVer = "22.0" } # Delphi 11 Alexandria
     default {
-        $delphiVer = "{0:N1}" -f $compilerVersion
+        throw "Unsupported Delphi compiler version: $compilerVersion"
     }
 }
 
@@ -768,7 +776,7 @@ if ($Install) {
     $ideBin64Dir = Join-Path $rootDir "bin64"
     $dllName = "WebView2Loader.dll"
 
-    # Copiar a DLL de 32-bit apenas se a IDE for de 32-bit (Delphi 12 ou anterior, sem flag IDE64)
+    # Copy the 32-bit DLL only for the Delphi 13 Win32 IDE target.
     if (-not $IDE64) {
         if (-not (Test-Path "$ideBinDir\$dllName")) {
             Write-Host "WebView2Loader.dll (32-bit) nao encontrada em $ideBinDir." -ForegroundColor Yellow

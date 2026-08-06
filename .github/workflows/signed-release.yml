@@ -142,10 +142,9 @@ jobs:
             throw "Code-signing certificate is outside its validity period."
           }
 
-      - name: Build four release packages
+      - name: Build Delphi 12 and 13 release packages
         shell: powershell
         run: |
-          .\build.ps1 -DelphiVersion "22.0" -Release -Package
           .\build.ps1 -DelphiVersion "23.0" -Release -Package
           .\build.ps1 -DelphiVersion "37.0" -Release -Package
           .\build.ps1 -DelphiVersion "37.0" -IDE64 -Release -Package

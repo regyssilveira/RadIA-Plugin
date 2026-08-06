@@ -717,9 +717,9 @@ procedure TRadIAProjectTemplateEngine.ValidateDelphiVersion(
   const ADelphiVersion: string
 );
 begin
-  if not MatchText(ADelphiVersion, ['22.0', '23.0', '37.0']) then
+  if not MatchText(ADelphiVersion, ['23.0', '37.0']) then
     raise EArgumentException.Create(
-      'Project template supports Delphi versions 22.0, 23.0, and 37.0.'
+      'Project template supports Delphi 12 (BDS 23.0) and Delphi 13 (BDS 37.0).'
     );
 end;
 

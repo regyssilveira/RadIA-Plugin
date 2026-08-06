@@ -20,7 +20,7 @@ Passos para reproduzir o comportamento:
 Uma descrição clara do que você esperava que acontecesse.
 
 **Ambiente e Versões**
-- Versão da IDE do Delphi: (ex: Delphi 11.3 Alexandria, Delphi 12 Athens)
+- Versão da IDE do Delphi: (Delphi 12 Athens ou Delphi 13)
 - Sistema Operacional: (ex: Windows 11 64-bit)
 - Provedor de IA Utilizado: (ex: Gemini, OpenAI, Claude, Ollama local)
 - Versão do Rad IA: (ex: v0.0.15)

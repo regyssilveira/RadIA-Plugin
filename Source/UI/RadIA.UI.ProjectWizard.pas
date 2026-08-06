@@ -58,10 +58,8 @@ function DefaultDelphiVersion: string;
 begin
 {$IF CompilerVersion >= 37.0}
   Result := '37.0';
-{$ELSEIF CompilerVersion >= 36.0}
-  Result := '23.0';
 {$ELSE}
-  Result := '22.0';
+  Result := '23.0';
 {$ENDIF}
 end;
 
@@ -138,7 +136,7 @@ begin
   FVersionCombo.Parent := Self;
   FVersionCombo.Style := csDropDownList;
   FVersionCombo.SetBounds(388, 50, 96, 25);
-  FVersionCombo.Items.AddStrings(['22.0', '23.0', '37.0']);
+  FVersionCombo.Items.AddStrings(['23.0', '37.0']);
   FVersionCombo.ItemIndex := FVersionCombo.Items.IndexOf(
     DefaultDelphiVersion
   );

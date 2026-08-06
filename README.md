@@ -112,7 +112,7 @@ Referências rápidas:
 | **Segurança** | Confinar paths, classificar risco, solicitar consentimento e manter auditoria sanitizada. |
 | **Extensões** | Instalar e gerenciar comandos declarativos visualmente ou registrar tools pela API pública. |
 | **Providers** | Integrar Gemini, OpenAI, Azure, Claude, Bedrock, Copilot, Ollama e outros backends. |
-| **Compatibilidade** | Operar no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. |
+| **Compatibilidade** | Operar no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. |
 
 As ferramentas implementadas estão no
 [Catálogo das 88 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
@@ -137,18 +137,20 @@ Para entender a estrutura física dos arquivos de código-fonte, mapeamento de r
 👉 [**Guia dos Arquivos Fontes para o Desenvolvedor (docs/source_code_guide.md)**](docs/source_code_guide.md)
 
 ### 4. Requisitos do Sistema
-*   **IDE:** Embarcadero Delphi 11 Alexandria, 12 Athens ou 13 Florence.
+*   **IDE:** Embarcadero Delphi 12 Athens ou Delphi 13, com IDE Win32 ou IDE64.
 *   **OS:** Windows 10 / 11 (64-bit).
 *   **Web Engine:** *Microsoft Edge WebView2 Runtime* instalado no sistema Windows (pré-instalado em versões modernas do Windows). **Importante:** A DLL `WebView2Loader.dll` correspondente à arquitetura da IDE deve estar presente na pasta `bin` da instalação do Delphi (ex: `C:\Program Files (x86)\Embarcadero\Studio\<versao>\bin`) ou no PATH do sistema.
 ### 5. Instalação e Configuração
 
-O Rad IA 2.0 possui um **instalador visual único** que detecta Delphi 11, 12, 13 Win32 e Delphi 13
-IDE64 e permite selecionar os targets. A automação via PowerShell e a instalação manual continuam
+O Rad IA 2.0 possui um **instalador visual único** para Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+A automação via PowerShell e a instalação manual continuam
 disponíveis. Para o fluxo visual, assinatura e canal, consulte o
 [guia do instalador](docs/visual_installer.md). Para compilação, registro e configuração de
 providers, consulte:
 
-O instalador automatizado também sincroniza os recursos locais do WebView2 em `%APPDATA%\RadIA\Web` e limpa o cache local quando a IDE está fechada, evitando que Delphi 12/13 carreguem JavaScript antigo após atualizações.
+O instalador automatizado também sincroniza os recursos locais do WebView2 em `%APPDATA%\RadIA\Web`
+e limpa o cache local quando a IDE está fechada, evitando recursos JavaScript obsoletos após
+atualizações.
 
 👉 [**Guia de Instalação e Configuração Completo (docs/install_config.md)**](docs/install_config.md)
 

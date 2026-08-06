@@ -192,10 +192,12 @@ Consulte [Modelo de segurança](tool_security_model.md) e
 
 | IDE | Arquitetura | Estado |
 |---|---|---|
-| Delphi 11 | Win32 | Suportado e validado |
 | Delphi 12 | Win32 | Suportado e validado |
 | Delphi 13 | Win32 | Suportado e validado |
 | Delphi 13 | IDE64 | Suportado e validado |
+
+Delphi 11 é referência histórica e não faz parte da matriz vigente de build, teste, instalação ou
+suporte.
 
 ## Referências rápidas
 

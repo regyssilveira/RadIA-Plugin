@@ -20,7 +20,7 @@ Steps to reproduce the behavior:
 A clear description of what you expected to happen.
 
 **Environment & Versions**
-- Delphi IDE Version: (e.g., Delphi 11.3 Alexandria, Delphi 12 Athens)
+- Delphi IDE Version: (Delphi 12 Athens or Delphi 13)
 - Operating System: (e.g., Windows 11 64-bit)
 - AI Provider Used: (e.g., Gemini, OpenAI, Claude, Local Ollama)
 - Rad IA Version: (e.g., v0.0.15)

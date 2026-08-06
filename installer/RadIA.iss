@@ -1,9 +1,6 @@
 #ifndef ProductVersion
   #error ProductVersion is required
 #endif
-#ifndef PackageRoot22
-  #error PackageRoot22 is required
-#endif
 #ifndef PackageRoot23
   #error PackageRoot23 is required
 #endif
@@ -44,14 +41,11 @@ Name: "auto"; Description: "Automatically detected Delphi installations"
 Name: "custom"; Description: "Custom target selection"; Flags: iscustom
 
 [Components]
-Name: "d11"; Description: "Delphi 11 Win32"; Types: auto
 Name: "d12"; Description: "Delphi 12 Win32"; Types: auto
 Name: "d13win32"; Description: "Delphi 13 Win32"; Types: auto
 Name: "d13win64"; Description: "Delphi 13 IDE64"; Types: auto
 
 [Files]
-Source: "{#PackageRoot22}\*"; DestDir: "{app}\Packages\22.0-Win32"; \
-  Flags: ignoreversion recursesubdirs createallsubdirs; Components: d11
 Source: "{#PackageRoot23}\*"; DestDir: "{app}\Packages\23.0-Win32"; \
   Flags: ignoreversion recursesubdirs createallsubdirs; Components: d12
 Source: "{#PackageRoot37Win32}\*"; DestDir: "{app}\Packages\37.0-Win32"; \
@@ -60,9 +54,6 @@ Source: "{#PackageRoot37Win64}\*"; DestDir: "{app}\Packages\37.0-Win64"; \
   Flags: ignoreversion recursesubdirs createallsubdirs; Components: d13win64
 
 [Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
-  Parameters: "{code:GetD11InstallParameters}"; \
-  StatusMsg: "Installing RadIA for Delphi 11..."; Flags: runhidden waituntilterminated; Components: d11
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
   Parameters: "{code:GetD12InstallParameters}"; \
   StatusMsg: "Installing RadIA for Delphi 12..."; Flags: runhidden waituntilterminated; Components: d12
@@ -74,9 +65,6 @@ Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
   StatusMsg: "Installing RadIA for Delphi 13 IDE64..."; Flags: runhidden waituntilterminated; Components: d13win64
 
 [UninstallRun]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
-  Parameters: "{code:GetD11UninstallParameters}"; \
-  Flags: runhidden waituntilterminated; Components: d11; RunOnceId: "RadIA-D11"
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
   Parameters: "{code:GetD12UninstallParameters}"; \
   Flags: runhidden waituntilterminated; Components: d12; RunOnceId: "RadIA-D12"
@@ -110,11 +98,6 @@ begin
   Result := Result + ' -Mode ' + Mode;
 end;
 
-function GetD11InstallParameters(Param: String): String;
-begin
-  Result := BuildPackageParameters('22.0-Win32', '22.0', 'Install', False);
-end;
-
 function GetD12InstallParameters(Param: String): String;
 begin
   Result := BuildPackageParameters('23.0-Win32', '23.0', 'Install', False);
@@ -128,11 +111,6 @@ end;
 function GetD13Win64InstallParameters(Param: String): String;
 begin
   Result := BuildPackageParameters('37.0-Win64', '37.0', 'Install', True);
-end;
-
-function GetD11UninstallParameters(Param: String): String;
-begin
-  Result := BuildPackageParameters('22.0-Win32', '22.0', 'Uninstall', False);
 end;
 
 function GetD12UninstallParameters(Param: String): String;
@@ -176,8 +154,6 @@ var
   SelectedComponents: String;
 begin
   SelectedComponents := '';
-  if IsDelphiInstalled('22.0', False) then
-    SelectedComponents := SelectedComponents + 'd11,';
   if IsDelphiInstalled('23.0', False) then
     SelectedComponents := SelectedComponents + 'd12,';
   if IsDelphiInstalled('37.0', False) then

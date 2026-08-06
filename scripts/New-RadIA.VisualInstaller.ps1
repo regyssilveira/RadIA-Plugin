@@ -23,12 +23,6 @@ $temporaryRoot = Join-Path (
 
 $targets = @(
     @{
-        Version = "22.0"
-        Platform = "Win32"
-        Define = "PackageRoot22"
-        IDE64 = $false
-    },
-    @{
         Version = "23.0"
         Platform = "Win32"
         Define = "PackageRoot23"

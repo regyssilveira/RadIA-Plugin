@@ -52,7 +52,7 @@ begin
       LRequest := TRadIAProjectTemplateRequest.Create(
         'SampleProject',
         LKind,
-        '22.0',
+        '37.0',
         ['Win32', 'Win64']
       );
       LPlan := LEngine.BuildPlan(LRequest);
@@ -126,7 +126,7 @@ begin
       TRadIAProjectTemplateRequest.Create(
         'ConsoleProject',
         ptkConsole,
-        '23.0',
+        '37.0',
         ['Win32']
       )
     );
@@ -158,7 +158,7 @@ begin
           TRadIAProjectTemplateRequest.Create(
             '..\Unsafe',
             ptkConsole,
-            '22.0',
+            '37.0',
             ['Win32']
           )
         );
@@ -186,7 +186,7 @@ begin
           TRadIAProjectTemplateRequest.Create(
             'UnsupportedVersion',
             ptkConsole,
-            '21.0',
+            '22.0',
             ['Win32']
           )
         );
@@ -214,7 +214,7 @@ begin
           TRadIAProjectTemplateRequest.Create(
             'UnsupportedPlatform',
             ptkConsole,
-            '22.0',
+            '37.0',
             ['Linux64']
           )
         );
@@ -301,7 +301,7 @@ begin
       TRadIAProjectTemplateRequest.Create(
         'PreparedProject',
         ptkConsole,
-        '22.0',
+        '37.0',
         ['Win32']
       )
     );

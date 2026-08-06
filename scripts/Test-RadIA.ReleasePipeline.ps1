@@ -37,8 +37,8 @@ $packageBuilds = [regex]::Matches(
     $workflow,
     "\\build\.ps1[^\r\n]+-Release -Package"
 )
-if ($packageBuilds.Count -ne 4) {
-    throw "Signed release workflow must build exactly four release packages."
+if ($packageBuilds.Count -ne 3) {
+    throw "Signed release workflow must build exactly three Delphi 12/13 packages."
 }
 if ($workflow.Contains("AllowUnsignedDevelopment")) {
     throw "Signed release workflow cannot allow unsigned development mode."
@@ -48,6 +48,6 @@ if ($workflow.Contains("http://github.com/")) {
 }
 
 Write-Host (
-    "Signed release workflow validation succeeded with four package " +
+    "Signed release workflow validation succeeded with three Delphi 12/13 package " +
     "targets and fail-closed signing."
 )

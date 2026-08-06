@@ -6,7 +6,6 @@ param(
 $ErrorActionPreference = "Stop"
 
 $expectedTargets = @(
-    @{ delphiVersion = "22.0"; platform = "Win32" },
     @{ delphiVersion = "23.0"; platform = "Win32" },
     @{ delphiVersion = "37.0"; platform = "Win32" },
     @{ delphiVersion = "37.0"; platform = "Win64" }
@@ -109,7 +108,7 @@ try {
             ).Hash
         }
     }
-    if (($artifacts.sha256 | Select-Object -Unique).Count -ne 4) {
+    if (($artifacts.sha256 | Select-Object -Unique).Count -ne 3) {
         throw "Release package hashes must be independently unique."
     }
     $evidence = [PSCustomObject]@{
