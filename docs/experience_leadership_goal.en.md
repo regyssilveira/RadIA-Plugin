@@ -64,7 +64,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
 | M1 — Inline assistance | Completed | OTA Ghost Text, shortcuts, consent, and real matrix approved |
 | M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
-| M3 — Unified center | In progress | Observable, pausable, resumable, and persistent journey |
+| M3 — Unified center | Completed | Observable, pausable, resumable, and persistent journey |
 | M4 — Extensions | In progress | Safe declarative installation without recompilation or restart |
 | M5 — Knowledge | Planned | Private hybrid search with provenance and metrics |
 | M6 — Installation | Planned | First value and diagnostics without manual file editing |
@@ -153,6 +153,11 @@ The debugging journey now has dedicated evidence as well: process state, source 
 breakpoints, call stack, execution transitions, evaluated values, watches, and timeline events
 appear inside their corresponding step. The visual layer consumes only the audited tool result and
 bounds long lists, without introducing polling or controlling a session on its own.
+
+The runtime journey passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The smoke uses a
+deterministic local provider, executes `GetIDEState` through the real registry and policy, pauses
+after the step, persists the checkpoint, destroys the runtime, and resumes in another instance
+until completion. The versioned matrix is stored in `agent_runtime_smoke_evidence_2.0.0.json`.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.

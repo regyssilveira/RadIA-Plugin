@@ -93,6 +93,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         aparecem como evidências Git revisáveis na timeline, sem push automático.
     *   M3 entregue nesta etapa: estado, breakpoints, call stack, ações, valores, watches e eventos
         aparecem como evidências de debug somente leitura dentro da timeline.
+    *   M3 validado em IDE real: aprovação, pausa, checkpoint persistido, retomada em nova instância
+        e conclusão com `GetIDEState` passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
     *   M4 em execução: manifestos `*.radia.json` adicionam comandos de chat com schema versionado,
         permissão mínima, validação atômica, diagnóstico e recarga sem reiniciar a IDE.

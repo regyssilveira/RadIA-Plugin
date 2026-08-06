@@ -65,7 +65,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M0 — Qualidade | Em execução | Gate Sonar verde ou falsos positivos comprovados e classificados |
 | M1 — Assistência inline | Concluído | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
-| M3 — Central unificada | Em execução | Jornada observável, pausável, retomável e persistente |
+| M3 — Central unificada | Concluído | Jornada observável, pausável, retomável e persistente |
 | M4 — Extensões | Em execução | Instalação declarativa segura sem recompilar ou reiniciar |
 | M5 — Conhecimento | Planejado | Busca híbrida privada com origem e métricas |
 | M6 — Instalação | Planejado | Primeiro valor e diagnóstico sem edição manual |
@@ -158,6 +158,11 @@ A jornada de debug também ganhou evidências próprias: estado do processo, loc
 breakpoints, call stack, transições de execução, valores avaliados, watches e eventos da timeline
 aparecem dentro da etapa correspondente. A camada visual consome somente o resultado auditado da
 tool e limita listas extensas, sem criar polling ou controlar uma sessão por conta própria.
+
+A jornada do runtime foi comprovada no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. O smoke usa
+um provider local determinístico, executa `GetIDEState` pelo registry e pela policy reais, pausa
+após a etapa, persiste o checkpoint, destrói o runtime e retoma em outra instância até a conclusão.
+A matriz versionada está em `agent_runtime_smoke_evidence_2.0.0.json`.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.

@@ -247,6 +247,31 @@ powershell.exe -ExecutionPolicy Bypass `
 
 The versioned result is stored in `inline_completion_smoke_evidence_2.0.0.json`.
 
+### Agent runtime journey evidence
+
+Use `-ExerciseAgentRuntime` to execute approval, a read-only tool, pause, persistence,
+new-instance resume, and completion without an external provider:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseAgentRuntime `
+  -SkipPackageHashCheck `
+  -AgentRuntimeEvidencePath `
+    "Output\Validation\AgentRuntime\Delphi13-Win32.json"
+```
+
+Consolidate all four targets with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.AgentRuntimeEvidence.ps1
+```
+
+The versioned result is stored in `agent_runtime_smoke_evidence_2.0.0.json`.
+
 ---
 
 ## Final Checklist
