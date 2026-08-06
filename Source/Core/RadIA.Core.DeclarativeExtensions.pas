@@ -69,18 +69,15 @@ type
 
   TRadIADeclarativeWorkflow = record
   private
-    FExtensionId: string;
     FName: string;
     FDescription: string;
     FSteps: TArray<TRadIADeclarativeWorkflowStep>;
   public
     constructor Create(
-      const AExtensionId: string;
       const AName: string;
       const ADescription: string;
       const ASteps: TArray<TRadIADeclarativeWorkflowStep>
     );
-    property ExtensionId: string read FExtensionId;
     property Name: string read FName;
     property Description: string read FDescription;
     property Steps: TArray<TRadIADeclarativeWorkflowStep> read FSteps;
@@ -180,6 +177,15 @@ type
       const AJson: TJSONObject;
       const AExtensionId: string
     ): TRadIADeclarativeWorkflow;
+    function ParseWorkflowStep(
+      const AValue: TJSONValue
+    ): TRadIADeclarativeWorkflowStep;
+    procedure ValidateWorkflowFields(
+      const AExtensionId: string;
+      const AName: string;
+      const ADescription: string;
+      const ASteps: TJSONArray
+    );
     procedure ValidateToolFields(
       const AExtensionId: string;
       const AName: string;
@@ -367,13 +373,11 @@ end;
 { TRadIADeclarativeWorkflow }
 
 constructor TRadIADeclarativeWorkflow.Create(
-  const AExtensionId: string;
   const AName: string;
   const ADescription: string;
   const ASteps: TArray<TRadIADeclarativeWorkflowStep>
 );
 begin
-  FExtensionId := AExtensionId;
   FName := AName;
   FDescription := ADescription;
   FSteps := Copy(ASteps);
@@ -1041,68 +1045,83 @@ function TRadIADeclarativeExtensionManager.ParseWorkflow(
   const AExtensionId: string
 ): TRadIADeclarativeWorkflow;
 var
-  LArguments: TJSONObject;
-  LArgumentsJson: string;
   LDescription: string;
   LIndex: Integer;
   LName: string;
-  LStepJson: TJSONObject;
   LSteps: TArray<TRadIADeclarativeWorkflowStep>;
   LStepsJson: TJSONArray;
-  LTargetTool: string;
 begin
   LName := Trim(AJson.GetValue<string>('name', ''));
   LDescription := Trim(AJson.GetValue<string>('description', ''));
-  if not IsPascalIdentifier(LName) or
-    not LName.StartsWith(AExtensionId, True) then
-    raise EArgumentException.Create(
-      'Workflow name must be PascalCase and start with the extension ID.'
-    );
-  if (LDescription = '') or
-    (Length(LDescription) > CMaximumDescriptionLength) then
-    raise EArgumentException.Create(
-      'Workflow description must contain between 1 and 500 characters.'
-    );
   LStepsJson := AJson.GetValue<TJSONArray>('steps');
-  if not Assigned(LStepsJson) or
-    (LStepsJson.Count < 1) or
-    (LStepsJson.Count > CMaximumWorkflowSteps) then
-    raise EArgumentException.Create(
-      'Workflow must contain between 1 and 16 steps.'
-    );
+  ValidateWorkflowFields(AExtensionId, LName, LDescription, LStepsJson);
   SetLength(LSteps, LStepsJson.Count);
   for LIndex := 0 to LStepsJson.Count - 1 do
-  begin
-    if not (LStepsJson[LIndex] is TJSONObject) then
-      raise EArgumentException.Create(
-        'Each workflow step must be a JSON object.'
-      );
-    LStepJson := TJSONObject(LStepsJson[LIndex]);
-    LTargetTool := Trim(LStepJson.GetValue<string>('tool', ''));
-    if not IsPascalIdentifier(LTargetTool) then
-      raise EArgumentException.Create(
-        'Workflow target tool must use alphanumeric PascalCase.'
-      );
-    LArguments := LStepJson.GetValue<TJSONObject>('arguments');
-    if Assigned(LArguments) then
-      LArgumentsJson := LArguments.ToJSON
-    else
-      LArgumentsJson := '{}';
-    if Length(LArgumentsJson) > CMaximumPromptLength then
-      raise EArgumentException.Create(
-        'Workflow step arguments exceed the 32768 character limit.'
-      );
-    LSteps[LIndex] := TRadIADeclarativeWorkflowStep.Create(
-      LTargetTool,
-      LArgumentsJson
-    );
-  end;
+    LSteps[LIndex] := ParseWorkflowStep(LStepsJson[LIndex]);
   Result := TRadIADeclarativeWorkflow.Create(
-    AExtensionId,
     LName,
     LDescription,
     LSteps
   );
+end;
+
+function TRadIADeclarativeExtensionManager.ParseWorkflowStep(
+  const AValue: TJSONValue
+): TRadIADeclarativeWorkflowStep;
+var
+  LArguments: TJSONObject;
+  LArgumentsJson: string;
+  LStepJson: TJSONObject;
+  LTargetTool: string;
+begin
+  if not (AValue is TJSONObject) then
+    raise EArgumentException.Create(
+      'Each workflow step must be a JSON object.'
+    );
+  LStepJson := TJSONObject(AValue);
+  LTargetTool := Trim(LStepJson.GetValue<string>('tool', ''));
+  if not IsPascalIdentifier(LTargetTool) then
+    raise EArgumentException.Create(
+      'Workflow target tool must use alphanumeric PascalCase.'
+    );
+  LArguments := LStepJson.GetValue<TJSONObject>('arguments');
+  if Assigned(LArguments) then
+    LArgumentsJson := LArguments.ToJSON
+  else
+    LArgumentsJson := '{}';
+  if Length(LArgumentsJson) > CMaximumPromptLength then
+    raise EArgumentException.Create(
+      'Workflow step arguments exceed the 32768 character limit.'
+    );
+  Result := TRadIADeclarativeWorkflowStep.Create(
+    LTargetTool,
+    LArgumentsJson
+  );
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidateWorkflowFields(
+  const AExtensionId: string;
+  const AName: string;
+  const ADescription: string;
+  const ASteps: TJSONArray
+);
+begin
+  if not IsPascalIdentifier(AName) or
+    not AName.StartsWith(AExtensionId, True) then
+    raise EArgumentException.Create(
+      'Workflow name must be PascalCase and start with the extension ID.'
+    );
+  if (ADescription = '') or
+    (Length(ADescription) > CMaximumDescriptionLength) then
+    raise EArgumentException.Create(
+      'Workflow description must contain between 1 and 500 characters.'
+    );
+  if not Assigned(ASteps) or
+    (ASteps.Count < 1) or
+    (ASteps.Count > CMaximumWorkflowSteps) then
+    raise EArgumentException.Create(
+      'Workflow must contain between 1 and 16 steps.'
+    );
 end;
 
 function TRadIADeclarativeExtensionManager.ParseWorkflows(

@@ -70,7 +70,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 | M5 — Conhecimento | Concluído | Busca híbrida privada comprovada na matriz real |
 | M6 — Instalação | Em execução | Primeiro valor provado; canal assinado ainda pendente |
 | M7 — Jornadas | Concluído | Receitas Delphi ponta a ponta aprovadas |
-| M8 — Prova e release | Em execução | Matriz, dez ciclos e auditorias aprovados |
+| M8 — Prova e release | Concluído | Matriz, dez ciclos e auditorias aprovados |
 
 O M1 já possui motor Fill-in-the-Middle, debounce, cancelamento, cache, limites, provider
 desacoplado, captura contínua opt-in, controles de escopo e Ghost Text OTA. A captura usa o buffer
@@ -298,7 +298,7 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 
 - [x] Executar a matriz completa de build e 100% dos testes.
 - [x] Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
-- [ ] Aprovar navegação completa por teclado e tecnologia assistiva nas quatro combinações.
+- [x] Aprovar navegação completa por teclado e tecnologia assistiva nas quatro combinações.
 - [x] Executar dez ciclos de desinstalação, instalação, reparo, uso e shutdown por combinação.
 - [x] Validar upgrade real entre versões diferentes do pacote em cada combinação suportada.
 - [x] Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
@@ -333,13 +333,16 @@ evidência ou commit sem diff revisado.
 
 A validação funcional das cinco superfícies em IDE real também está completa. O terminal possui
 prova dedicada em `terminal_smoke_evidence_2.0.0.json`: a janela nativa, controles essenciais,
-entrada, saída, geometria útil e nove pontos navegáveis por Tab passaram no Delphi 11, 12 e 13
-Win32 e no Delphi 13 IDE64. Ghost Text, central agentiva, extensões e conhecimento permanecem
-vinculados às suas respectivas matrizes versionadas.
+entrada, saída, geometria útil, cinco rótulos associados e nove pontos navegáveis por Tab passaram
+no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. A árvore UI Automation do Delphi 13 IDE64
+confirmou nomes, estados e descrições do chat, inclusive Agent Mode, terminal, histórico,
+configurações, conversa e prompt. Ghost Text, central agentiva, extensões e conhecimento
+permanecem vinculados às suas respectivas matrizes versionadas e aos controles nativos ou à
+semântica Web compartilhada entre os targets.
 
 A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
-silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e
-mojibake. O aceite visual com tecnologia assistiva continua incluído nos ciclos reais ainda abertos.
+silenciosa no startup, adicionou semântica e teclado às superfícies Web, criou um gate para links e
+mojibake e consolidou o aceite com tecnologia assistiva.
 
 ## Ordem de execução
 

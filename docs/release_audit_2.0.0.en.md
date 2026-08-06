@@ -24,6 +24,9 @@ RadIA 2.0.0 candidate. It complements but does not replace real IDE cycles.
 - The native terminal opened with controls, input, output, and nine keyboard tab stops in all four
   combinations, as recorded in
   [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json).
+- Terminal selectors, history, input, and output expose five associated VCL labels. The Delphi 13
+  IDE64 UI Automation tree confirmed names, states, and descriptions for Web surfaces loaded by
+  the same distributed BPL.
 
 ## Reproduce
 
@@ -35,5 +38,6 @@ powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1
 powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.SonarQualityGate.ps1
 ```
 
-Visual and keyboard tab navigation for the terminal is now proven. Explicit assistive-technology
-acceptance for every surface remains part of the M8 real cycles.
+Visual, keyboard tab, and assistive-technology navigation are proven. The Web contract is
+automatically tested and inspected through UI Automation on IDE64; the native terminal is
+validated on all four combinations and requires associated labels plus nine tab stops.

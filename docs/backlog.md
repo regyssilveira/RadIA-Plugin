@@ -148,9 +148,10 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M6 validado em IDEs reais: doctor, chat, terminal, bridge, catálogo e primeira tool
         passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64, inclusive com orientação quando
         o provider ainda não está configurado.
-    *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
-    *   M8 entregue nesta etapa: terminal visual comprovado na matriz completa com janela nativa,
-        controles essenciais, entrada, saída, geometria útil e nove pontos navegáveis por Tab.
+    *   M7–M8 concluídos: jornadas especializadas e candidato 2.0.0 comprovados na matriz completa.
+    *   M8 entregue: terminal comprovado na matriz completa com janela nativa, controles
+        essenciais, entrada, saída, geometria útil, cinco rótulos associados e nove pontos
+        navegáveis por Tab; superfícies Web aprovadas por testes semânticos e UI Automation.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 
 *   Hardening E2E dentro da IDE e preparação da release RadIA 2.0.

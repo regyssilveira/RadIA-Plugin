@@ -74,5 +74,7 @@ continua funcional pelo executor de pipes, mas sem resize ou semântica completa
 A matriz versionada está em
 [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json). O smoke abre o terminal
 pela própria BPL, exige geometria útil, confirma os controles **New terminal**, **Close terminal**,
-**Run**, **Stop** e **Clear**, valida entrada e saída e rejeita qualquer target com menos de seis
-pontos navegáveis por Tab. Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 passaram com nove pontos.
+**Run**, **Stop** e **Clear**, valida entrada e saída e rejeita qualquer target sem os cinco rótulos
+associados — **Shell profile**, **Command snippet**, **Command history**, **Terminal command** e
+**Terminal output** — ou com menos de nove pontos navegáveis por Tab. Delphi 11, 12 e 13 Win32 e
+Delphi 13 IDE64 passaram todos os critérios.

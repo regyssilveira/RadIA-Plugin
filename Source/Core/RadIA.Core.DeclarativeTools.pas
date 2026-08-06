@@ -4,7 +4,8 @@ interface
 
 uses
   RadIA.Core.DeclarativeExtensions,
-  RadIA.Core.Tools;
+  RadIA.Core.Tools,
+  System.Generics.Collections;
 
 type
   TRadIADeclarativeToolBinder = class
@@ -13,6 +14,23 @@ type
     FExecutor: IRadIAToolExecutor;
     FRegisteredNames: TArray<string>;
     FRegisteredTools: TArray<IRadIATool>;
+    procedure AddCapabilityNames(
+      const ADefinitions: TArray<TRadIADeclarativeTool>;
+      const AWorkflows: TArray<TRadIADeclarativeWorkflow>;
+      const ANames: TDictionary<string, Byte>
+    );
+    function BuildWorkflowDescriptors(
+      const AWorkflow: TRadIADeclarativeWorkflow;
+      const ADeclarativeNames: TDictionary<string, Byte>;
+      const ACurrentNames: TDictionary<string, Byte>
+    ): TArray<TRadIAToolDescriptor>;
+    procedure ValidateTarget(
+      const ATargetName: string;
+      const ADeclarativeNames: TDictionary<string, Byte>;
+      const ACurrentNames: TDictionary<string, Byte>;
+      const ACapabilityKind: string;
+      out ATarget: IRadIATool
+    );
     function BuildTools(
       const ADefinitions: TArray<TRadIADeclarativeTool>;
       const AWorkflows: TArray<TRadIADeclarativeWorkflow>
@@ -32,7 +50,6 @@ type
 implementation
 
 uses
-  System.Generics.Collections,
   System.Generics.Defaults,
   System.JSON,
   System.Math,
@@ -248,6 +265,56 @@ end;
 
 { TRadIADeclarativeToolBinder }
 
+procedure TRadIADeclarativeToolBinder.AddCapabilityNames(
+  const ADefinitions: TArray<TRadIADeclarativeTool>;
+  const AWorkflows: TArray<TRadIADeclarativeWorkflow>;
+  const ANames: TDictionary<string, Byte>
+);
+var
+  LDefinition: TRadIADeclarativeTool;
+  LWorkflow: TRadIADeclarativeWorkflow;
+begin
+  for LDefinition in ADefinitions do
+  begin
+    if ANames.ContainsKey(LDefinition.Name) then
+      raise EArgumentException.Create(
+        'Declarative tool name is duplicated across extensions.'
+      );
+    ANames.Add(LDefinition.Name, 0);
+  end;
+  for LWorkflow in AWorkflows do
+  begin
+    if ANames.ContainsKey(LWorkflow.Name) then
+      raise EArgumentException.Create(
+        'Declarative capability name is duplicated across extensions.'
+      );
+    ANames.Add(LWorkflow.Name, 0);
+  end;
+end;
+
+function TRadIADeclarativeToolBinder.BuildWorkflowDescriptors(
+  const AWorkflow: TRadIADeclarativeWorkflow;
+  const ADeclarativeNames: TDictionary<string, Byte>;
+  const ACurrentNames: TDictionary<string, Byte>
+): TArray<TRadIAToolDescriptor>;
+var
+  LIndex: Integer;
+  LTarget: IRadIATool;
+begin
+  SetLength(Result, Length(AWorkflow.Steps));
+  for LIndex := Low(AWorkflow.Steps) to High(AWorkflow.Steps) do
+  begin
+    ValidateTarget(
+      AWorkflow.Steps[LIndex].TargetTool,
+      ADeclarativeNames,
+      ACurrentNames,
+      'workflows',
+      LTarget
+    );
+    Result[LIndex] := LTarget.Descriptor;
+  end;
+end;
+
 function TRadIADeclarativeToolBinder.BuildTools(
   const ADefinitions: TArray<TRadIADeclarativeTool>;
   const AWorkflows: TArray<TRadIADeclarativeWorkflow>
@@ -259,7 +326,6 @@ var
   LDescriptors: TArray<TRadIAToolDescriptor>;
   LIndex: Integer;
   LRegisteredName: string;
-  LStepIndex: Integer;
   LTarget: IRadIATool;
   LWorkflow: TRadIADeclarativeWorkflow;
 begin
@@ -272,36 +338,18 @@ begin
   try
     for LRegisteredName in FRegisteredNames do
       LCurrentNames.AddOrSetValue(LRegisteredName, 0);
-    for LDefinition in ADefinitions do
-    begin
-      if LDefinitionsByName.ContainsKey(LDefinition.Name) then
-        raise EArgumentException.Create(
-          'Declarative tool name is duplicated across extensions.'
-        );
-      LDefinitionsByName.Add(LDefinition.Name, 0);
-    end;
-    for LWorkflow in AWorkflows do
-    begin
-      if LDefinitionsByName.ContainsKey(LWorkflow.Name) then
-        raise EArgumentException.Create(
-          'Declarative capability name is duplicated across extensions.'
-        );
-      LDefinitionsByName.Add(LWorkflow.Name, 0);
-    end;
+    AddCapabilityNames(ADefinitions, AWorkflows, LDefinitionsByName);
     SetLength(Result, Length(ADefinitions) + Length(AWorkflows));
     for LIndex := Low(ADefinitions) to High(ADefinitions) do
     begin
       LDefinition := ADefinitions[LIndex];
-      if LDefinitionsByName.ContainsKey(LDefinition.TargetTool) or
-        LCurrentNames.ContainsKey(LDefinition.TargetTool) then
-        raise EArgumentException.Create(
-          'Declarative tools cannot target another declarative tool.'
-        );
-      if not FRegistry.TryResolve(LDefinition.TargetTool, LTarget) then
-        raise EArgumentException.CreateFmt(
-          'Declarative target tool "%s" is not registered.',
-          [LDefinition.TargetTool]
-        );
+      ValidateTarget(
+        LDefinition.TargetTool,
+        LDefinitionsByName,
+        LCurrentNames,
+        'tools',
+        LTarget
+      );
       Result[LIndex] := TRadIADeclarativeAliasTool.Create(
         LDefinition,
         LTarget
@@ -310,28 +358,11 @@ begin
     for LIndex := Low(AWorkflows) to High(AWorkflows) do
     begin
       LWorkflow := AWorkflows[LIndex];
-      SetLength(LDescriptors, Length(LWorkflow.Steps));
-      for LStepIndex := Low(LWorkflow.Steps) to
-        High(LWorkflow.Steps) do
-      begin
-        if LDefinitionsByName.ContainsKey(
-          LWorkflow.Steps[LStepIndex].TargetTool
-        ) or LCurrentNames.ContainsKey(
-          LWorkflow.Steps[LStepIndex].TargetTool
-        ) then
-          raise EArgumentException.Create(
-            'Declarative workflows cannot target declarative tools.'
-          );
-        if not FRegistry.TryResolve(
-          LWorkflow.Steps[LStepIndex].TargetTool,
-          LTarget
-        ) then
-          raise EArgumentException.CreateFmt(
-            'Workflow target tool "%s" is not registered.',
-            [LWorkflow.Steps[LStepIndex].TargetTool]
-          );
-        LDescriptors[LStepIndex] := LTarget.Descriptor;
-      end;
+      LDescriptors := BuildWorkflowDescriptors(
+        LWorkflow,
+        LDefinitionsByName,
+        LCurrentNames
+      );
       Result[Length(ADefinitions) + LIndex] :=
         TRadIADeclarativeWorkflowTool.Create(
           LWorkflow,
@@ -343,6 +374,27 @@ begin
     LDefinitionsByName.Free;
     LCurrentNames.Free;
   end;
+end;
+
+procedure TRadIADeclarativeToolBinder.ValidateTarget(
+  const ATargetName: string;
+  const ADeclarativeNames: TDictionary<string, Byte>;
+  const ACurrentNames: TDictionary<string, Byte>;
+  const ACapabilityKind: string;
+  out ATarget: IRadIATool
+);
+begin
+  if ADeclarativeNames.ContainsKey(ATargetName) or
+    ACurrentNames.ContainsKey(ATargetName) then
+    raise EArgumentException.CreateFmt(
+      'Declarative %s cannot target declarative tools.',
+      [ACapabilityKind]
+    );
+  if not FRegistry.TryResolve(ATargetName, ATarget) then
+    raise EArgumentException.CreateFmt(
+      'Declarative target tool "%s" is not registered.',
+      [ATargetName]
+    );
 end;
 
 constructor TRadIADeclarativeToolBinder.Create(

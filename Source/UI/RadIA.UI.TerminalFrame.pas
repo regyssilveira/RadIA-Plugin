@@ -5,6 +5,7 @@ interface
 uses
   System.Classes,
   Vcl.ComCtrls,
+  Vcl.Controls,
   Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.StdCtrls,
@@ -109,6 +110,19 @@ type
     function HasAccessibleLabels(
       const ASession: TRadIATerminalFrame
     ): Boolean;
+    function HasCommandInput(
+      const ASession: TRadIATerminalFrame
+    ): Boolean;
+    function HasOutput(
+      const ASession: TRadIATerminalFrame
+    ): Boolean;
+    function HasRequiredControls(
+      const ASession: TRadIATerminalFrame
+    ): Boolean;
+    function IsAvailableTabStop(const AControl: TWinControl): Boolean;
+    function CountTabStops(
+      const ASession: TRadIATerminalFrame
+    ): Integer;
     procedure WriteSmokeEvidence(
       const ASession: TRadIATerminalFrame
     );
@@ -141,7 +155,6 @@ uses
   System.SysUtils,
   Winapi.Messages,
   Winapi.Windows,
-  Vcl.Controls,
   Vcl.Graphics,
   RadIA.Core.AgentExecutors,
   RadIA.Core.PseudoTerminal,
@@ -887,6 +900,65 @@ begin
     (ASession.FOutputLabel.FocusControl = ASession.FOutputEditor);
 end;
 
+function TRadIATerminalTabsFrame.HasCommandInput(
+  const ASession: TRadIATerminalFrame
+): Boolean;
+begin
+  Result := ASession.FCommandEdit.Visible and
+    ASession.FCommandEdit.Enabled;
+end;
+
+function TRadIATerminalTabsFrame.HasOutput(
+  const ASession: TRadIATerminalFrame
+): Boolean;
+begin
+  Result := ASession.FOutputEditor.Visible and
+    ASession.FOutputEditor.Enabled;
+end;
+
+function TRadIATerminalTabsFrame.HasRequiredControls(
+  const ASession: TRadIATerminalFrame
+): Boolean;
+begin
+  Result := FAddButton.Visible and
+    FCloseButton.Visible and
+    ASession.FRunButton.Visible and
+    ASession.FStopButton.Visible and
+    ASession.FClearButton.Visible;
+end;
+
+function TRadIATerminalTabsFrame.IsAvailableTabStop(
+  const AControl: TWinControl
+): Boolean;
+begin
+  Result := AControl.Visible and AControl.Enabled and AControl.TabStop;
+end;
+
+function TRadIATerminalTabsFrame.CountTabStops(
+  const ASession: TRadIATerminalFrame
+): Integer;
+begin
+  Result := 0;
+  if IsAvailableTabStop(FAddButton) then
+    Inc(Result);
+  if IsAvailableTabStop(FCloseButton) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FProfileCombo) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FSnippetCombo) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FHistoryCombo) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FCommandEdit) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FRunButton) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FClearButton) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FOutputEditor) then
+    Inc(Result);
+end;
+
 procedure TRadIATerminalTabsFrame.WriteSmokeEvidence(
   const ASession: TRadIATerminalFrame
 );
@@ -901,40 +973,7 @@ begin
   if (LEvidencePath = '') or SameText(LEvidencePath, '1') then
     Exit;
 
-  LTabStopCount := 0;
-  if FAddButton.Visible and FAddButton.Enabled and FAddButton.TabStop then
-    Inc(LTabStopCount);
-  if FCloseButton.Visible and FCloseButton.Enabled and
-    FCloseButton.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FProfileCombo.Visible and
-    ASession.FProfileCombo.Enabled and
-    ASession.FProfileCombo.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FSnippetCombo.Visible and
-    ASession.FSnippetCombo.Enabled and
-    ASession.FSnippetCombo.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FHistoryCombo.Visible and
-    ASession.FHistoryCombo.Enabled and
-    ASession.FHistoryCombo.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FCommandEdit.Visible and
-    ASession.FCommandEdit.Enabled and
-    ASession.FCommandEdit.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FRunButton.Visible and
-    ASession.FRunButton.Enabled and
-    ASession.FRunButton.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FClearButton.Visible and
-    ASession.FClearButton.Enabled and
-    ASession.FClearButton.TabStop then
-    Inc(LTabStopCount);
-  if ASession.FOutputEditor.Visible and
-    ASession.FOutputEditor.Enabled and
-    ASession.FOutputEditor.TabStop then
-    Inc(LTabStopCount);
+  LTabStopCount := CountTabStops(ASession);
 
   LJson := TJSONObject.Create;
   try
@@ -943,27 +982,15 @@ begin
     LJson.AddPair('height', TJSONNumber.Create(Height));
     LJson.AddPair(
       'requiredControlsVisible',
-      TJSONBool.Create(
-        FAddButton.Visible and
-        FCloseButton.Visible and
-        ASession.FRunButton.Visible and
-        ASession.FStopButton.Visible and
-        ASession.FClearButton.Visible
-      )
+      TJSONBool.Create(HasRequiredControls(ASession))
     );
     LJson.AddPair(
       'commandInputAvailable',
-      TJSONBool.Create(
-        ASession.FCommandEdit.Visible and
-        ASession.FCommandEdit.Enabled
-      )
+      TJSONBool.Create(HasCommandInput(ASession))
     );
     LJson.AddPair(
       'outputAvailable',
-      TJSONBool.Create(
-        ASession.FOutputEditor.Visible and
-        ASession.FOutputEditor.Enabled
-      )
+      TJSONBool.Create(HasOutput(ASession))
     );
     LJson.AddPair(
       'tabStopCount',

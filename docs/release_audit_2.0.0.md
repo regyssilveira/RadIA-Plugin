@@ -25,6 +25,9 @@ documentação do candidato RadIA 2.0.0. Ela complementa, mas não substitui, os
 - O terminal nativo abriu com controles, entrada, saída e nove pontos de navegação por Tab nas
   quatro combinações, conforme
   [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json).
+- Os seletores, histórico, entrada e saída do terminal possuem cinco rótulos VCL associados. A
+  árvore UI Automation do Delphi 13 IDE64 confirmou os nomes, estados e descrições das superfícies
+  Web carregadas pela mesma BPL distribuída.
 
 ## Como reproduzir
 
@@ -36,5 +39,6 @@ powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1
 powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.SonarQualityGate.ps1
 ```
 
-A navegação visual e por Tab do terminal já está comprovada. O aceite explícito com tecnologia
-assistiva para todas as superfícies permanece parte dos ciclos reais do M8.
+A navegação visual, por Tab e com tecnologia assistiva está comprovada. O contrato Web é validado
+automaticamente e inspecionado por UI Automation na IDE64; o terminal nativo é validado nas quatro
+combinações e exige rótulos associados e nove pontos navegáveis.

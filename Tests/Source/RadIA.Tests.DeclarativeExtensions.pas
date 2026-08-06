@@ -586,7 +586,6 @@ begin
     ];
     LWorkflows := [
       TRadIADeclarativeWorkflow.Create(
-        'TeamFlow',
         'TeamFlowInspect',
         'Invalid chained workflow.',
         LSteps

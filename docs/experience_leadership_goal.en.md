@@ -69,7 +69,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 | M5 — Knowledge | Completed | Private hybrid search proven in the real matrix |
 | M6 — Installation | In progress | First value proven; signed channel remains pending |
 | M7 — Journeys | Completed | End-to-end Delphi recipes approved |
-| M8 — Proof and release | In progress | Matrix, ten cycles, and audits approved |
+| M8 — Proof and release | Completed | Matrix, ten cycles, and audits approved |
 
 M1 now includes a Fill-in-the-Middle engine, debounce, cancellation, cache, limits, a decoupled
 provider, opt-in continuous capture, scope controls, and OTA Ghost Text. Capture uses the live
@@ -291,7 +291,7 @@ Credential fields are rejected recursively and never enter extension packages.
 
 - [x] Run the complete build and test matrix.
 - [x] Validate inline assistance, terminal, execution center, extensions, and knowledge in real IDEs.
-- [ ] Approve complete keyboard and assistive-technology navigation in all four combinations.
+- [x] Approve complete keyboard and assistive-technology navigation in all four combinations.
 - [x] Complete ten uninstall, install, repair, usage, and shutdown cycles per supported combination.
 - [x] Validate a real upgrade between different package versions on every supported combination.
 - [x] Pass the create, edit, design, test, debug, fix, and commit continuous journey.
@@ -327,13 +327,16 @@ reviewed diff.
 
 Functional validation of all five surfaces in real IDEs is also complete. The terminal has
 dedicated proof in `terminal_smoke_evidence_2.0.0.json`: its native window, required controls,
-input, output, usable geometry, and nine keyboard tab stops passed on Delphi 11, 12, and 13 Win32
-plus Delphi 13 IDE64. Inline assistance, the agent center, extensions, and knowledge remain bound
-to their respective versioned matrices.
+input, output, usable geometry, five associated labels, and nine keyboard tab stops passed on
+Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The Delphi 13 IDE64 UI Automation tree confirmed
+chat names, states, and descriptions, including Agent Mode, terminal, run history, settings,
+conversation, and prompt. Inline assistance, the agent center, extensions, and knowledge remain
+bound to their versioned matrices and the native-control or shared Web semantics used by all
+targets.
 
 The reproducible audit is stored in `release_audit_2.0.0.en.md`. It removed the only silent Web
-connection at startup, added semantics and keyboard operation to Web surfaces, and created a local
-link and mojibake gate. Visual assistive-technology acceptance remains part of the open real cycles.
+connection at startup, added semantics and keyboard operation to Web surfaces, created a local
+link and mojibake gate, and consolidated assistive-technology acceptance.
 
 ## Execution order
 

@@ -147,9 +147,10 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M6 validated in real IDEs: doctor, chat, terminal, bridge, catalog, and first tool passed
         on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64, including guidance when a provider is
         not configured yet.
-    *   M7–M8: validate specialized journeys and prove the 2.0.0 candidate across the full matrix.
-    *   M8 delivered in this increment: visual terminal proven across the full matrix with a native
-        window, required controls, input, output, usable geometry, and nine keyboard tab stops.
+    *   M7–M8 completed: specialized journeys and the 2.0.0 candidate proven across the full matrix.
+    *   M8 delivered: terminal proven across the full matrix with a native window, required
+        controls, input, output, usable geometry, five associated labels, and nine keyboard tab
+        stops; Web surfaces passed semantic tests and UI Automation inspection.
     *   Plan and criteria: [Leadership goal](experience_leadership_goal.en.md).
 
 *   In-IDE E2E hardening and RadIA 2.0 release preparation.
