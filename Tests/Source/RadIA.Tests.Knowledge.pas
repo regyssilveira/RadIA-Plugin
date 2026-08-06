@@ -94,6 +94,8 @@ type
     [Test]
     procedure LoadsLegacyLexicalSnapshot;
     [Test]
+    procedure RebuildsLexicalSnapshotWhenSemanticSearchIsEnabled;
+    [Test]
     procedure PersistsAndReloadsIndex;
     [Test]
     procedure ClearProjectDeletesPersistedIndex;
@@ -645,6 +647,46 @@ begin
     Assert.IsTrue(LStore.Load(FSource.ProjectId, LSnapshot));
     Assert.IsTrue(Length(LSnapshot.Chunks) > 0);
     Assert.AreEqual<Integer>(0, Length(LSnapshot.Chunks[0].Embedding));
+  finally
+    LService := nil;
+    LStore := nil;
+    if TDirectory.Exists(LRootPath) then
+      TDirectory.Delete(LRootPath, True);
+  end;
+end;
+
+procedure TTestRadIALocalKnowledge.
+  RebuildsLexicalSnapshotWhenSemanticSearchIsEnabled;
+var
+  LHits: TArray<TRadIAKnowledgeSearchHit>;
+  LRefresh: TRadIAKnowledgeRefreshResult;
+  LRootPath: string;
+  LService: IRadIAKnowledgeService;
+  LStore: IRadIAKnowledgeStore;
+begin
+  LRootPath := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-semantic-upgrade-' + TGUID.NewGuid.ToString
+  );
+  try
+    LStore := TRadIAJsonKnowledgeStore.Create(LRootPath);
+    LService := TRadIALocalKnowledgeService.Create(FSource, LStore);
+    Assert.IsTrue(LService.RefreshProject.Success);
+    LService := nil;
+    LStore := nil;
+
+    LStore := TRadIAJsonKnowledgeStore.Create(LRootPath);
+    LService := TRadIALocalKnowledgeService.Create(
+      FSource,
+      LStore,
+      TRadIAFakeEmbeddingProvider.Create
+    );
+    LRefresh := LService.RefreshProject;
+    Assert.IsTrue(LRefresh.Success);
+    Assert.AreEqual(2, LRefresh.UpdatedFiles);
+    LHits := LService.Search(FSource.ProjectId, 'money amount', 5);
+    Assert.IsTrue(Length(LHits) > 0);
+    Assert.IsTrue(LHits[0].VectorScore > 0);
   finally
     LService := nil;
     LStore := nil;

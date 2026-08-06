@@ -295,14 +295,21 @@ type
     function IsValidEmbedding(
       const AEmbedding: TArray<Single>
     ): Boolean;
+    function GetActiveEmbeddingProviderId: string;
+    function HasCompatibleEmbeddings(
+      const AEntry: TRadIAKnowledgeFileEntry;
+      const AProviderId: string
+    ): Boolean;
     function NeedsDocumentUpdate(
       const AProjectId: string;
       const AFileName: string;
-      const ARevision: string
+      const ARevision: string;
+      const AProviderId: string
     ): Boolean;
     function RefreshFile(
       const AProjectId: string;
-      const AFileName: string
+      const AFileName: string;
+      const AProviderId: string
     ): TRadIAKnowledgeFileRefresh;
     procedure RemoveStaleFiles(
       const AProjectId: string;
@@ -1105,6 +1112,50 @@ begin
     LLine.StartsWith('class function ');
 end;
 
+function TRadIALocalKnowledgeService.GetActiveEmbeddingProviderId: string;
+var
+  LEmbedding: TArray<Single>;
+begin
+  Result := '';
+  if not Assigned(FEmbeddingProvider) then
+    Exit;
+  try
+    LEmbedding := FEmbeddingProvider.Embed(
+      'RadIA semantic index compatibility'
+    );
+    if (Length(LEmbedding) = FEmbeddingProvider.GetDimensions) and
+      IsValidEmbedding(LEmbedding) then
+      Result := FEmbeddingProvider.GetId;
+  except
+    Result := '';
+  end;
+end;
+
+function TRadIALocalKnowledgeService.HasCompatibleEmbeddings(
+  const AEntry: TRadIAKnowledgeFileEntry;
+  const AProviderId: string
+): Boolean;
+var
+  LChunk: TRadIAKnowledgeChunkEntry;
+  LExpectedDimensions: Integer;
+begin
+  Result := Assigned(AEntry);
+  if not Result then
+    Exit;
+  LExpectedDimensions := 0;
+  if AProviderId <> '' then
+    LExpectedDimensions := FEmbeddingProvider.GetDimensions;
+  for LChunk in AEntry.Chunks do
+  begin
+    Result := SameText(
+      LChunk.Chunk.EmbeddingProviderId,
+      AProviderId
+    ) and (Length(LChunk.Chunk.Embedding) = LExpectedDimensions);
+    if not Result then
+      Exit;
+  end;
+end;
+
 function TRadIALocalKnowledgeService.TRadIAKnowledgeChunkEntry.VectorScore(
   const AProviderId: string;
   const AQueryEmbedding: TArray<Single>
@@ -1141,7 +1192,8 @@ end;
 function TRadIALocalKnowledgeService.NeedsDocumentUpdate(
   const AProjectId: string;
   const AFileName: string;
-  const ARevision: string
+  const ARevision: string;
+  const AProviderId: string
 ): Boolean;
 var
   LEntry: TRadIAKnowledgeFileEntry;
@@ -1151,7 +1203,8 @@ begin
   try
     LIndex := GetOrCreateProject(AProjectId);
     Result := not LIndex.Files.TryGetValue(AFileName, LEntry) or
-      not SameText(LEntry.Revision, ARevision);
+      not SameText(LEntry.Revision, ARevision) or
+      not HasCompatibleEmbeddings(LEntry, AProviderId);
   finally
     TMonitor.Exit(FProjects);
   end;
@@ -1160,6 +1213,7 @@ end;
 function TRadIALocalKnowledgeService.RefreshProject:
   TRadIAKnowledgeRefreshResult;
 var
+  LEmbeddingProviderId: string;
   LFileName: string;
   LFiles: TArray<string>;
   LIndexedFiles: Integer;
@@ -1177,6 +1231,7 @@ begin
       'No active project is available for indexing.'
     ));
   EnsureProjectLoaded(LProjectId);
+  LEmbeddingProviderId := GetActiveEmbeddingProviderId;
   LFiles := FSource.ListSourceFiles;
   if Length(LFiles) > CMaxProjectFiles then
     SetLength(LFiles, CMaxProjectFiles);
@@ -1197,7 +1252,11 @@ begin
       if Trim(LFileName) = '' then
         Continue;
       LKnownFiles.AddOrSetValue(LFileName, True);
-      if RefreshFile(LProjectId, LFileName) = kfrUpdated then
+      if RefreshFile(
+        LProjectId,
+        LFileName,
+        LEmbeddingProviderId
+      ) = kfrUpdated then
         Inc(LUpdatedFiles)
       else
         Inc(LSkippedFiles);
@@ -1228,7 +1287,8 @@ end;
 
 function TRadIALocalKnowledgeService.RefreshFile(
   const AProjectId: string;
-  const AFileName: string
+  const AFileName: string;
+  const AProviderId: string
 ): TRadIAKnowledgeFileRefresh;
 var
   LChunks: TArray<TRadIAKnowledgeChunk>;
@@ -1243,7 +1303,8 @@ begin
   if not NeedsDocumentUpdate(
     AProjectId,
     AFileName,
-    LDocument.Revision
+    LDocument.Revision,
+    AProviderId
   ) then
     Exit;
   LChunks := AttachEmbeddings(BuildChunks(LDocument));
@@ -1251,7 +1312,8 @@ begin
   try
     LIndex := GetOrCreateProject(AProjectId);
     if LIndex.Files.TryGetValue(AFileName, LEntry) and
-      SameText(LEntry.Revision, LDocument.Revision) then
+      SameText(LEntry.Revision, LDocument.Revision) and
+      HasCompatibleEmbeddings(LEntry, AProviderId) then
       Exit;
     LEntry := TRadIAKnowledgeFileEntry.Create(
       LDocument.Revision,
