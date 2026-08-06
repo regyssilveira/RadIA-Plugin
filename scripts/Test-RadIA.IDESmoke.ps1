@@ -420,7 +420,8 @@ public static class RadIADockingSmokeNative
 "@
 }
 
-if ($ExerciseKnowledge) {
+if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
+    $ExerciseInlineReview) {
     Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -1456,10 +1457,15 @@ if ($ExerciseInlineCompletion -or $ExerciseInlineReview -or
         $inlineSmokeLogDirectory `
         "radia.log"
     if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
+        $inlineSmokeProjectPath = Join-Path `
+            $repositoryRoot `
+            "Tests\RadIATests.dproj"
         $inlineSmokeUnitPath = Join-Path `
             $repositoryRoot `
             "Tests\Source\RadIA.Tests.TextNormalizer.pas"
         if (-not (
+            Test-Path -LiteralPath $inlineSmokeProjectPath -PathType Leaf
+        ) -or -not (
             Test-Path -LiteralPath $inlineSmokeUnitPath -PathType Leaf
         )) {
             throw "Inline editor smoke sources were not found."
@@ -1669,8 +1675,13 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         )
     }
     $launchArguments = @()
-    if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
-        $launchArguments = @($inlineSmokeUnitPath)
+    if ($ExerciseInlineCompletion) {
+        $launchArguments = @(
+            $inlineSmokeProjectPath,
+            $inlineSmokeUnitPath
+        )
+    } elseif ($ExerciseInlineReview) {
+        $launchArguments = @($inlineSmokeProjectPath)
     }
     if ($ExerciseKnowledge) {
         $launchArguments = @($knowledgeSmokeProjectPath)
@@ -1936,11 +1947,18 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $publishResponses = @()
             $publishSucceeded = $false
             for ($attempt = 1; $attempt -le 10; $attempt++) {
-                $publishResponseLines = @(
-                    $publishRequests |
-                        & $bridgePath $instanceFile 2>$null
-                )
-                if ($LASTEXITCODE -eq 0) {
+                $publishResponseLines = @()
+                $publishExitCode = 1
+                try {
+                    $publishResponseLines = @(
+                        $publishRequests |
+                            & $bridgePath $instanceFile 2>$null
+                    )
+                    $publishExitCode = $LASTEXITCODE
+                } catch {
+                    $publishResponseLines = @()
+                }
+                if ($publishExitCode -eq 0) {
                     $publishResponses = @(
                         $publishResponseLines |
                             ForEach-Object { $_ | ConvertFrom-Json }
@@ -1999,11 +2017,18 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $reviewLifecycleResponses = @()
             $reviewLifecycleSucceeded = $false
             for ($attempt = 1; $attempt -le 10; $attempt++) {
-                $reviewLifecycleResponseLines = @(
-                    $reviewLifecycleRequests |
-                        & $bridgePath $instanceFile 2>$null
-                )
-                if ($LASTEXITCODE -eq 0) {
+                $reviewLifecycleResponseLines = @()
+                $reviewLifecycleExitCode = 1
+                try {
+                    $reviewLifecycleResponseLines = @(
+                        $reviewLifecycleRequests |
+                            & $bridgePath $instanceFile 2>$null
+                    )
+                    $reviewLifecycleExitCode = $LASTEXITCODE
+                } catch {
+                    $reviewLifecycleResponseLines = @()
+                }
+                if ($reviewLifecycleExitCode -eq 0) {
                     $reviewLifecycleResponses = @(
                         $reviewLifecycleResponseLines |
                             ForEach-Object { $_ | ConvertFrom-Json }
@@ -2071,7 +2096,8 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
-        if ($ExerciseKnowledge) {
+        if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
+            $ExerciseInlineReview) {
             $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
                 $shutdownTimeoutMs
             )

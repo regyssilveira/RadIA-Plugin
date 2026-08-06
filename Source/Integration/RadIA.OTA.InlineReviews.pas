@@ -356,9 +356,12 @@ procedure TRadIAOTAInlineReviewFacade.ShowReviews(
   const AReviews: TArray<TRadIAInlineReview>
 );
 var
+  LContent: string;
+  LCurrentRevision: string;
   LReviews: TArray<TRadIAInlineReview>;
 begin
   LReviews := Copy(AReviews);
+  LCurrentRevision := '';
   RunOnMainThread(
     procedure
     begin
@@ -368,9 +371,26 @@ begin
       FSmokeInvalidated := False;
       FSmokePainted := False;
       RegisterCurrentView;
+      if Assigned(FView) and Assigned(FView.Buffer) and
+        SameFileName(FView.Buffer.FileName, FFileName) then
+      begin
+        LContent := ReadRadIAEditReaderText(
+          FView.Buffer.CreateReader
+        );
+        LCurrentRevision := THashSHA2.GetHashString(LContent);
+      end;
+      FCurrentRevision := LCurrentRevision;
+      FObservedRevision := LCurrentRevision;
       WriteSmokeEvidence;
       if Assigned(FView) then
+      begin
+        if Assigned(FView.Position) then
+          FView.Position.Move(
+            FView.Position.Row,
+            FView.Position.Column
+          );
         FView.Paint;
+      end;
     end
   );
 end;
@@ -419,6 +439,12 @@ begin
     LJson.AddPair('painted', TJSONBool.Create(FSmokePainted));
     LJson.AddPair('invalidated', TJSONBool.Create(FSmokeInvalidated));
     LJson.AddPair('reviewCount', TJSONNumber.Create(Length(FReviews)));
+    LJson.AddPair('expectedRevision', FExpectedRevision);
+    LJson.AddPair('currentRevision', FCurrentRevision);
+    if Assigned(FView) and Assigned(FView.Buffer) then
+      LJson.AddPair('viewFileName', FView.Buffer.FileName)
+    else
+      LJson.AddPair('viewFileName', '');
     LJson.AddPair(
       'revisionMatched',
       TJSONBool.Create(
