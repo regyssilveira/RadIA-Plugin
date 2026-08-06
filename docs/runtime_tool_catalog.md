@@ -215,6 +215,14 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|
 | `GetDebugTimeline` | `RadIA.Core.DebugTimelineTools.pas` |
 
+## Runtime debugger correlation
+
+| Tool | Source unit |
+|---|---|
+| `GetRuntimeDebugSession` | `RadIA.Core.RuntimeDebugTools.pas` |
+| `WaitForDebuggerEvent` | `RadIA.Core.RuntimeDebugTools.pas` |
+| `CancelDebuggerWait` | `RadIA.Core.RuntimeDebugTools.pas` |
+
 ## Reviewable local Git commits
 
 | Tool | Source unit |
@@ -226,7 +234,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Resumo
 
-- Registered groups: 25
-- Registered built-in tools: 95
+- Registered groups: 26
+- Registered built-in tools: 98
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

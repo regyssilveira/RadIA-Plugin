@@ -5,7 +5,7 @@
 
 ## Entregas implementadas
 
-- fachada neutra `IRadIARuntimeAutomationFacade`;
+- contratos neutros que antecedem a fachada de execução;
 - identidade obrigatória de sessão, processo, projeto, executável e build;
 - contratos de seletor, ação, limites, cenário e resultado;
 - validação de seletores estáveis e cenários limitados;
@@ -13,8 +13,8 @@
 - script reproduzível para compilar o laboratório com Delphi 12 ou 13;
 - testes unitários dos contratos de segurança.
 
-Esses contratos ainda não registram ferramentas no agente. Eles delimitam a futura implementação
-para impedir que os adaptadores de M1–M3 ampliem silenciosamente o acesso à área de trabalho.
+Os contratos de cenário ainda não registram ferramentas no agente. A fachada de execução será
+adicionada junto do adaptador M3, quando possuir uma implementação real e verificável.
 
 ## Aplicação-laboratório
 

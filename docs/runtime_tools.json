@@ -238,6 +238,15 @@
       ]
     },
     {
+      "name": "Runtime debugger correlation",
+      "source": "Source/Core/RadIA.Core.RuntimeDebugTools.pas",
+      "tools": [
+        "GetRuntimeDebugSession",
+        "WaitForDebuggerEvent",
+        "CancelDebuggerWait"
+      ]
+    },
+    {
       "name": "Reviewable local Git commits",
       "source": "Source/Core/RadIA.Core.GitTools.pas",
       "tools": [

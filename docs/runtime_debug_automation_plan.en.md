@@ -1,6 +1,6 @@
 # Post-2.0 goal — Autonomous runtime failure reproduction
 
-> **Status:** in execution; M0 in progress.
+> **Status:** in execution; M0/M1 implemented with in-IDE validation pending, M2 is next.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Plan paused during this goal:** [CLI continuity and advanced integration](competitive_leadership_plan.en.md).
@@ -89,6 +89,8 @@ Details and matrix: [M0 baseline](runtime_debug_automation_m0.en.md).
 **Still missing:** event correlation, visual discovery, execution, correction, and replay.
 
 ### M1 — Debugger correlation and waiting
+
+Implementation and evidence: [M1 correlation](runtime_debug_automation_m1.en.md).
 
 - assign stable identities to the debugging session and debugged process;
 - correlate exception, stack, module, project, build, and scenario;

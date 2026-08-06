@@ -141,7 +141,9 @@ type
     procedure Delete(const ASessionId: string);
   end;
 
-  IRadIAAgentCancellationControl = interface(IRadIAToolCancellationToken)
+  IRadIAAgentCancellationControl = interface(
+    IRadIAToolCancellationNotifier
+  )
     ['{8B64F959-1A49-4BB0-9424-8B2EE0AC4B27}']
     procedure Request;
   end;
@@ -430,13 +432,20 @@ uses
 type
   TRadIAAgentCancellationToken = class(
     TInterfacedObject,
-    IRadIAAgentCancellationControl
+    IRadIAAgentCancellationControl,
+    IRadIAToolCancellationToken,
+    IRadIAToolCancellationNotifier
   )
   private
+    FCancellationCallback: TRadIAToolCancellationCallback;
     FRequested: Integer;
   public
+    procedure ClearCancellationCallback;
     function GetCancellationRequested: Boolean;
     procedure Request;
+    procedure SetCancellationCallback(
+      const ACallback: TRadIAToolCancellationCallback
+    );
   end;
 
 function RadIAAgentStatusName(
@@ -945,8 +954,45 @@ begin
 end;
 
 procedure TRadIAAgentCancellationToken.Request;
+var
+  LCallback: TRadIAToolCancellationCallback;
 begin
   TInterlocked.Exchange(FRequested, 1);
+  TMonitor.Enter(Self);
+  try
+    LCallback := FCancellationCallback;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  if Assigned(LCallback) then
+    LCallback();
+end;
+
+procedure TRadIAAgentCancellationToken.ClearCancellationCallback;
+begin
+  TMonitor.Enter(Self);
+  try
+    FCancellationCallback := nil;
+  finally
+    TMonitor.Exit(Self);
+  end;
+end;
+
+procedure TRadIAAgentCancellationToken.SetCancellationCallback(
+  const ACallback: TRadIAToolCancellationCallback
+);
+var
+  LInvokeNow: Boolean;
+begin
+  TMonitor.Enter(Self);
+  try
+    FCancellationCallback := ACallback;
+    LInvokeNow := GetCancellationRequested;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  if LInvokeNow and Assigned(ACallback) then
+    ACallback();
 end;
 
 { TRadIAAgentRuntime }

@@ -85,6 +85,8 @@ uses
   RadIA.Core.DesignerEvents, RadIA.Core.DesignerEventTools,
   RadIA.Core.Debugger, RadIA.Core.DebuggerTools,
   RadIA.Core.DebugTimeline, RadIA.Core.DebugTimelineTools,
+  RadIA.Core.RuntimeDebugSession,
+  RadIA.Core.RuntimeDebugTools,
   RadIA.Core.DebuggerControlTools, RadIA.Core.DebuggerBreakpointTools,
   RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
@@ -283,7 +285,8 @@ begin
   );
   TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Install;
   FDebugTimelineNotifier := TRadIAOTADebugTimelineNotifier.Create(
-    TRadIAContainer.Resolve<IRadIADebugTimeline>
+    TRadIAContainer.Resolve<IRadIADebugTimeline>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>
   );
   TRadIAOTADebugTimelineNotifier(FDebugTimelineNotifier).Install;
   RegisterMenus;
@@ -935,6 +938,9 @@ initialization
       TRadIAContainer.Resolve<IRadIADebugTimelineStore>
     )
   );
+  TRadIAContainer.Register<IRadIARuntimeDebugSessionCoordinator>(
+    TRadIARuntimeDebugSessionCoordinator.Create
+  );
   TRadIAContainer.Register<IRadIAKnowledgeSource>(
     TRadIAConfigurableKnowledgeSource.Create(
       TRadIAConfig.GetInstance,
@@ -1154,6 +1160,11 @@ initialization
   RegisterRadIADebugTimelineTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIADebugTimeline>
+  );
+  RegisterRadIARuntimeDebugTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIADebuggerFacade>
   );
   RegisterRadIAKnowledgeTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

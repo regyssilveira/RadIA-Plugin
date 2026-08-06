@@ -1,6 +1,6 @@
 # Goal pós-2.0 — Reprodução autônoma de falhas runtime
 
-> **Estado:** em execução; M0 em andamento.
+> **Estado:** em execução; M0/M1 implementados com validação na IDE pendente, M2 é a próxima etapa.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Plano pausado durante este goal:** [Continuidade CLI e integração avançada](competitive_leadership_plan.md).
@@ -89,6 +89,8 @@ Detalhes e matriz: [Baseline M0](runtime_debug_automation_m0.md).
 **Ainda faltará:** correlação de eventos, descoberta visual, execução, correção e repetição.
 
 ### M1 — Correlação e espera do depurador
+
+Implementação e evidências: [Correlação M1](runtime_debug_automation_m1.md).
 
 - atribuir identidade estável à sessão e ao processo depurado;
 - correlacionar exceção, pilha, módulo, projeto, build e cenário;

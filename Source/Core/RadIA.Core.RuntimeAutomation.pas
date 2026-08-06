@@ -3,16 +3,6 @@ unit RadIA.Core.RuntimeAutomation;
 interface
 
 type
-  TRadIARuntimeAutomationCapability = (
-    racDiscoverWindows,
-    racDiscoverControls,
-    racInvoke,
-    racSetValue,
-    racSelect,
-    racClose,
-    racCaptureEvidence
-  );
-
   TRadIARuntimeActionKind = (
     rakInvoke,
     rakSetValue,
@@ -39,11 +29,6 @@ type
       const AParentPath: string
     );
     function HasStableIdentity: Boolean;
-    property AutomationId: string read FAutomationId;
-    property ClassName: string read FClassName;
-    property ControlName: string read FControlName;
-    property Text: string read FText;
-    property ParentPath: string read FParentPath;
   end;
 
   TRadIARuntimeSessionIdentity = record
@@ -86,7 +71,6 @@ type
     function IsValid: Boolean;
     property MaxActions: Integer read FMaxActions;
     property MaxDurationMs: Cardinal read FMaxDurationMs;
-    property MaxRepetitions: Integer read FMaxRepetitions;
   end;
 
   TRadIARuntimeScenarioAction = record
@@ -104,7 +88,6 @@ type
     );
     property Kind: TRadIARuntimeActionKind read FKind;
     property Selector: TRadIARuntimeSelector read FSelector;
-    property Value: string read FValue;
     property TimeoutMs: Cardinal read FTimeoutMs;
   end;
 
@@ -122,43 +105,6 @@ type
       const AActions: TArray<TRadIARuntimeScenarioAction>
     );
     function IsExecutable: Boolean;
-    property Name: string read FName;
-    property Session: TRadIARuntimeSessionIdentity read FSession;
-    property Limits: TRadIARuntimeScenarioLimits read FLimits;
-    property Actions: TArray<TRadIARuntimeScenarioAction> read FActions;
-  end;
-
-  TRadIARuntimeScenarioResult = record
-  private
-    FCompletedActions: Integer;
-    FEvidenceId: string;
-    FMessage: string;
-    FSucceeded: Boolean;
-  public
-    constructor Create(
-      const ASucceeded: Boolean;
-      const ACompletedActions: Integer;
-      const AMessage: string;
-      const AEvidenceId: string
-    );
-    property Succeeded: Boolean read FSucceeded;
-    property CompletedActions: Integer read FCompletedActions;
-    property Message: string read FMessage;
-    property EvidenceId: string read FEvidenceId;
-  end;
-
-  IRadIARuntimeAutomationFacade = interface
-    ['{39EA157E-E7A8-48C4-9D99-98F30156EB31}']
-    function CanAccessSession(
-      const ASession: TRadIARuntimeSessionIdentity
-    ): Boolean;
-    function PrepareScenario(
-      const AScenario: TRadIARuntimeScenario
-    ): TRadIARuntimeScenarioResult;
-    function RunScenario(
-      const AScenario: TRadIARuntimeScenario
-    ): TRadIARuntimeScenarioResult;
-    function CancelScenario: Boolean;
   end;
 
 implementation
@@ -293,24 +239,12 @@ begin
     if (LAction.Kind <> rakWait) and
       (not LAction.Selector.HasStableIdentity) then
       Exit(False);
+    if (LAction.Kind in [rakSetValue, rakSelect, rakAssert]) and
+      (Trim(LAction.FValue) = '') then
+      Exit(False);
     if LAction.TimeoutMs > FLimits.MaxDurationMs then
       Exit(False);
   end;
-end;
-
-{ TRadIARuntimeScenarioResult }
-
-constructor TRadIARuntimeScenarioResult.Create(
-  const ASucceeded: Boolean;
-  const ACompletedActions: Integer;
-  const AMessage: string;
-  const AEvidenceId: string
-);
-begin
-  FSucceeded := ASucceeded;
-  FCompletedActions := ACompletedActions;
-  FMessage := AMessage;
-  FEvidenceId := AEvidenceId;
 end;
 
 end.

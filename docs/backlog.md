@@ -17,7 +17,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Plataforma Agentiva Segura para Delphi 11/12/13** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.0.0 |
 | **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Goal RadIA 2.0 — Liderança da Experiência Delphi** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
-| **Goal pós-2.0 — Reprodução Autônoma de Falhas Runtime** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.1.0 |
+| **Goal pós-2.0 — Reprodução Autônoma de Falhas Runtime** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.1.0 |
 | **Goal — Continuidade CLI e Integração Avançada** | ⏸️ Congelado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Após v2.1.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |

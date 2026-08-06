@@ -5,7 +5,7 @@
 
 ## Implemented deliveries
 
-- neutral `IRadIARuntimeAutomationFacade`;
+- neutral contracts that precede the execution facade;
 - mandatory session, process, project, executable, and build identity;
 - selector, action, limits, scenario, and result contracts;
 - validation for stable selectors and bounded scenarios;
@@ -13,8 +13,8 @@
 - reproducible script to build the laboratory with Delphi 12 or 13;
 - unit tests for the security contracts.
 
-These contracts do not register agent tools yet. They bound the future implementation so the M1–M3
-adapters cannot silently expand access to the desktop.
+The scenario contracts do not register agent tools yet. The execution facade is added with the M3
+adapter when it has a real and verifiable implementation.
 
 ## Laboratory application
 

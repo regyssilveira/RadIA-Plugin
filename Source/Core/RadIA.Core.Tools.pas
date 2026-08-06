@@ -3,11 +3,23 @@ unit RadIA.Core.Tools;
 interface
 
 type
+  TRadIAToolCancellationCallback = reference to procedure;
+
   IRadIAToolCancellationToken = interface
     ['{28C282D6-ECC9-4CD1-BE2E-9AB26FBFDD99}']
     function GetCancellationRequested: Boolean;
     property CancellationRequested: Boolean
       read GetCancellationRequested;
+  end;
+
+  IRadIAToolCancellationNotifier = interface(
+    IRadIAToolCancellationToken
+  )
+    ['{D9558F1D-FAF8-4683-A26F-C0D336627976}']
+    procedure SetCancellationCallback(
+      const ACallback: TRadIAToolCancellationCallback
+    );
+    procedure ClearCancellationCallback;
   end;
 
   TRadIAToolRisk = (

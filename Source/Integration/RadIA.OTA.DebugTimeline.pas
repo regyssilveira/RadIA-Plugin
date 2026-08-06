@@ -4,7 +4,8 @@ interface
 
 uses
   ToolsAPI,
-  RadIA.Core.DebugTimeline;
+  RadIA.Core.DebugTimeline,
+  RadIA.Core.RuntimeDebugSession;
 
 type
   TRadIAOTADebugTimelineNotifier = class(
@@ -14,15 +15,22 @@ type
   )
   private
     FTimeline: IRadIADebugTimeline;
+    FRuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator;
+    FRuntimeSessionId: string;
     FNotifierIndex: Integer;
     function ProcessId(const AProcess: IOTAProcess): LongWord;
+    function RuntimeProcessId(const AProcess: IOTAProcess): LongWord;
     function ProcessState(const AProcess: IOTAProcess): string;
+    procedure RecordRuntimeState(const AProcess: IOTAProcess);
     procedure RecordBreakpoint(
       const AKind: TRadIADebugEventKind;
       const ABreakpoint: IOTABreakpoint
     );
   public
-    constructor Create(const ATimeline: IRadIADebugTimeline);
+    constructor Create(
+      const ATimeline: IRadIADebugTimeline;
+      const ARuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator = nil
+    );
     procedure Install;
     procedure Uninstall;
     procedure ProcessCreated(const Process: IOTAProcess);
@@ -41,16 +49,53 @@ type
 implementation
 
 uses
+  System.DateUtils,
+  System.IOUtils,
   System.SysUtils;
 
+function ResolveRuntimeExecutable(
+  const AProcess: IOTAProcess
+): string;
+begin
+  Result := '';
+  if not Assigned(AProcess) then
+    Exit;
+  if TPath.IsPathRooted(AProcess.ExeName) then
+    Exit(AProcess.ExeName);
+  if FileExists(AProcess.Location) then
+    Exit(AProcess.Location);
+  if DirectoryExists(AProcess.Location) then
+    Result := TPath.Combine(AProcess.Location, AProcess.ExeName)
+  else
+    Result := AProcess.ExeName;
+end;
+
+function RuntimeBuildId(const AExecutablePath: string): string;
+var
+  LModifiedUtc: TDateTime;
+  LSize: Int64;
+begin
+  Result := '';
+  if not FileExists(AExecutablePath) then
+    Exit;
+  LSize := TFile.GetSize(AExecutablePath);
+  LModifiedUtc := TFile.GetLastWriteTimeUtc(AExecutablePath);
+  Result := Format(
+    '%d:%s',
+    [LSize, DateToISO8601(LModifiedUtc, True)]
+  );
+end;
+
 constructor TRadIAOTADebugTimelineNotifier.Create(
-  const ATimeline: IRadIADebugTimeline
+  const ATimeline: IRadIADebugTimeline;
+  const ARuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator
 );
 begin
   inherited Create;
   if not Assigned(ATimeline) then
     raise EArgumentNilException.Create('ATimeline');
   FTimeline := ATimeline;
+  FRuntimeCoordinator := ARuntimeCoordinator;
   FNotifierIndex := -1;
 end;
 
@@ -64,6 +109,8 @@ begin
   if Assigned(Project) then
     LDetails := Project.FileName;
   FTimeline.RecordEvent(dekSessionStarting, 0, 'starting', LDetails);
+  if Assigned(FRuntimeCoordinator) and (LDetails <> '') then
+    FRuntimeSessionId := FRuntimeCoordinator.BeginSession(LDetails);
   Result := True;
 end;
 
@@ -131,6 +178,8 @@ end;
 procedure TRadIAOTADebugTimelineNotifier.ProcessCreated(
   const Process: IOTAProcess
 );
+var
+  LExecutablePath: string;
 begin
   FTimeline.RecordEvent(
     dekProcessCreated,
@@ -138,6 +187,22 @@ begin
     ProcessState(Process),
     ''
   );
+  if not Assigned(FRuntimeCoordinator) or (FRuntimeSessionId = '') then
+    Exit;
+  LExecutablePath := ResolveRuntimeExecutable(Process);
+  if FRuntimeCoordinator.AttachProcess(
+    FRuntimeSessionId,
+    RuntimeProcessId(Process),
+    TTimeZone.Local.ToUniversalTime(Now),
+    LExecutablePath,
+    RuntimeBuildId(LExecutablePath)
+  ) then
+    FRuntimeCoordinator.RecordEvent(
+      FRuntimeSessionId,
+      rdekProcessCreated,
+      ProcessState(Process),
+      LExecutablePath
+    );
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.ProcessDestroyed(
@@ -150,6 +215,13 @@ begin
     ProcessState(Process),
     ''
   );
+  if Assigned(FRuntimeCoordinator) and (FRuntimeSessionId <> '') then
+    FRuntimeCoordinator.RecordEvent(
+      FRuntimeSessionId,
+      rdekProcessExited,
+      ProcessState(Process),
+      ''
+    );
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.ProcessMemoryChanged;
@@ -190,6 +262,48 @@ begin
   end;
 end;
 
+procedure TRadIAOTADebugTimelineNotifier.RecordRuntimeState(
+  const AProcess: IOTAProcess
+);
+var
+  LKind: TRadIARuntimeDebugEventKind;
+begin
+  if not Assigned(FRuntimeCoordinator) or (FRuntimeSessionId = '') then
+    Exit;
+  if not Assigned(AProcess) then
+    Exit;
+  case AProcess.ProcessState of
+    psRunning:
+      LKind := rdekRunning;
+    psStopped:
+      LKind := rdekStopped;
+    psException,
+    psFault,
+    psResFault:
+      LKind := rdekException;
+    psTerminated,
+    psNoProcess:
+      LKind := rdekProcessExited;
+  else
+    Exit;
+  end;
+  FRuntimeCoordinator.RecordEvent(
+    FRuntimeSessionId,
+    LKind,
+    ProcessState(AProcess),
+    AProcess.Status
+  );
+end;
+
+function TRadIAOTADebugTimelineNotifier.RuntimeProcessId(
+  const AProcess: IOTAProcess
+): LongWord;
+begin
+  Result := 0;
+  if Assigned(AProcess) then
+    Result := AProcess.OSProcessId;
+end;
+
 procedure TRadIAOTADebugTimelineNotifier.ProcessStateChanged(
   const Process: IOTAProcess
 );
@@ -200,6 +314,7 @@ begin
     ProcessState(Process),
     ''
   );
+  RecordRuntimeState(Process);
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.RecordBreakpoint(

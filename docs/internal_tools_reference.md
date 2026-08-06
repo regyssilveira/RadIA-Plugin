@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 95 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
+Esta página explica as 98 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -225,6 +225,14 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `GetDebugTimeline` | Retorna eventos recentes de processo, estado, breakpoint e memória. | Para acompanhar a sessão sem polling destrutivo e explicar a sequência do debug. |
+
+## Correlação do depurador runtime
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetRuntimeDebugSession` | Retorna sessão, PID real, projeto, executável, build e última sequência correlacionados. | Depois de iniciar o debug e antes de observar ou automatizar a aplicação. |
+| `WaitForDebuggerEvent` | Aguarda estados do processo sem busy-wait e inclui a pilha quando ocorre parada ou exceção. | Para sincronizar o agente com exceção, parada, término ou futura descoberta de janela. |
+| `CancelDebuggerWait` | Interrompe imediatamente a espera ativa. | Ao cancelar o objetivo, trocar de projeto ou encerrar a depuração. |
 
 ## Git local
 
