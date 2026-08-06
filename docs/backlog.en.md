@@ -16,7 +16,8 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
 | **RadIA 2.0 Goal — Complete Development Journey** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **RadIA 2.0 Goal — Leading the Delphi Experience** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
-| **RadIA 2.0 Goal — CLI Continuity and Advanced Integration** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **Post-2.0 Goal — Autonomous Runtime Failure Reproduction** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.1.0 |
+| **Goal — CLI Continuity and Advanced Integration** | ⏸️ Frozen | 🔴 High | ⭐⭐⭐⭐⭐ Critical | After v2.1.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |

@@ -72,7 +72,8 @@ This index brings together the functional, operational, and technical documentat
 | Backlog | [Backlog](backlog.en.md) |
 | RadIA 2.0 goal | [Complete development journey](radia_2_goal.en.md) |
 | Leadership goal | [Complete Delphi experience](experience_leadership_goal.en.md) |
-| Next technical goal | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
+| Priority post-2.0 goal | [Autonomous runtime failure reproduction](runtime_debug_automation_plan.en.md) |
+| Frozen plan to resume | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
 
 ## Security and compliance
 

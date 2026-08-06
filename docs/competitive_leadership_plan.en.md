@@ -1,10 +1,12 @@
 # RadIA 2.0 technical leadership plan
 
-> **Status:** frozen until version 2.0.0 is published.
+> **Status:** frozen checkpoint after version 2.0.0 was published; no phase has started.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Out of scope:** C++Builder, marketplace distribution, mandatory Authenticode signing, and
 > replacement of the current WebView2 host.
-> **Resume point:** start at Phase 0 — Baseline and contracts, without reopening scope decisions.
+> **Current priority:** [Autonomous runtime failure reproduction](runtime_debug_automation_plan.en.md).
+> **Resume point:** after that goal is complete, start at Phase 0 — Baseline and contracts without
+> reopening scope decisions.
 
 ## Goal
 
