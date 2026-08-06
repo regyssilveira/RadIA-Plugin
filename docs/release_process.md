@@ -401,21 +401,19 @@ powershell.exe -ExecutionPolicy Bypass `
 
 O resultado versionado fica em `first_value_smoke_evidence_2.0.0.json`.
 
-### Instalador visual e canal assinado
+### Instalador visual e canal de release
 
 Depois que os três ZIPs forem aprovados, gere o instalador único:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
-  -File scripts\New-RadIA.VisualInstaller.ps1 `
-  -CertificateThumbprint "<THUMBPRINT>"
+  -File scripts\New-RadIA.VisualInstaller.ps1
 
 powershell.exe -ExecutionPolicy Bypass `
-  -File scripts\Test-RadIA.VisualInstaller.ps1 `
-  -RequireSignature
+  -File scripts\Test-RadIA.VisualInstaller.ps1
 ```
 
-Publique o catálogo somente depois que o executável assinado estiver disponível em HTTPS:
+Publique o catálogo depois que o executável e seu SHA-256 estiverem disponíveis em HTTPS:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -424,12 +422,11 @@ powershell.exe -ExecutionPolicy Bypass `
   -DownloadUrl "https://downloads.example.com/RadIA-v2.0.0-Setup.exe"
 ```
 
-O catálogo `stable` recusa assinatura ausente ou inválida. O fluxo completo está em
+O catálogo `stable` exige HTTPS e registra hash e estado Authenticode. O fluxo completo está em
 [Instalador visual e canal de release](visual_installer.md).
 
-O workflow `Signed RadIA release` automatiza a mesma sequência para tags `v*`. Antes de habilitar
-a publicação, configure os secrets `RADIA_SIGNING_PFX_BASE64` e
-`RADIA_SIGNING_PFX_PASSWORD`. Recomenda-se proteger a execução com aprovação de ambiente.
+O workflow `RadIA release` automatiza a mesma sequência para tags `v*`, sem dependência de
+certificado. Recomenda-se proteger a execução com aprovação de ambiente.
 
 ---
 
@@ -442,7 +439,7 @@ a publicação, configure os secrets `RADIA_SIGNING_PFX_BASE64` e
 * Análise exata aprovada pelo SonarQube Quality Gate.
 * Status check `Build, analyze, and enforce Quality Gate` obrigatório e aprovado.
 * Pacotes Release gerados para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
-* Instalador visual assinado, timestamp validado e catálogo estável HTTPS publicado.
+* Instalador visual, SHA-256 e catálogo estável HTTPS publicados.
 * Validação positiva e negativa executada para cada pacote.
 * `SHA256SUMS.txt` publicado com os três ZIPs gerados pelo mesmo commit.
 * Evidência JSON de dez ciclos reais gerada para cada combinação suportada.

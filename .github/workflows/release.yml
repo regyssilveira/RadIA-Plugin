@@ -1,4 +1,4 @@
-name: Signed RadIA release
+name: RadIA release
 
 on:
   push:
@@ -20,12 +20,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: radia-signed-release-${{ github.ref }}
+  group: radia-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  signed-release:
-    name: Build, sign, verify, and publish
+  release:
+    name: Build, verify, and publish
     environment: production
     runs-on:
       - self-hosted
@@ -34,9 +34,6 @@ jobs:
       - radia-delphi
     timeout-minutes: 90
     env:
-      SIGNING_PFX_BASE64: ${{ secrets.RADIA_SIGNING_PFX_BASE64 }}
-      SIGNING_PFX_PASSWORD: ${{ secrets.RADIA_SIGNING_PFX_PASSWORD }}
-      TIMESTAMP_URL: ${{ vars.RADIA_TIMESTAMP_URL }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out the exact revision
@@ -79,20 +76,6 @@ jobs:
           "INSTALLER_NAME=$installerName" >> $env:GITHUB_ENV
           "DOWNLOAD_URL=$downloadUrl" >> $env:GITHUB_ENV
 
-      - name: Validate signing configuration
-        shell: powershell
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_BASE64)) {
-            throw "Secret RADIA_SIGNING_PFX_BASE64 is required."
-          }
-          if ([string]::IsNullOrWhiteSpace($env:SIGNING_PFX_PASSWORD)) {
-            throw "Secret RADIA_SIGNING_PFX_PASSWORD is required."
-          }
-          if ([string]::IsNullOrWhiteSpace($env:TIMESTAMP_URL)) {
-            $env:TIMESTAMP_URL = "http://timestamp.digicert.com"
-            "TIMESTAMP_URL=$env:TIMESTAMP_URL" >> $env:GITHUB_ENV
-          }
-
       - name: Install frontend dependencies
         shell: powershell
         run: npm ci
@@ -104,44 +87,6 @@ jobs:
           npm run test:web
           npm run test:docs
           .\scripts\Test-RadIA.SupportedTargets.ps1
-
-      - name: Import temporary code-signing certificate
-        shell: powershell
-        run: |
-          $pfxPath = Join-Path $env:RUNNER_TEMP "radia-signing.pfx"
-          [IO.File]::WriteAllBytes(
-            $pfxPath,
-            [Convert]::FromBase64String($env:SIGNING_PFX_BASE64)
-          )
-          "SIGNING_PFX_PATH=$pfxPath" >> $env:GITHUB_ENV
-          $password = ConvertTo-SecureString `
-            $env:SIGNING_PFX_PASSWORD `
-            -AsPlainText `
-            -Force
-          $certificate = Import-PfxCertificate `
-            -FilePath $pfxPath `
-            -CertStoreLocation Cert:\CurrentUser\My `
-            -Password $password
-          "SIGNING_THUMBPRINT=$($certificate.Thumbprint)" >>
-            $env:GITHUB_ENV
-          if (-not $certificate.HasPrivateKey) {
-            throw "Imported certificate does not contain a private key."
-          }
-          $codeSigningEku = @(
-            $certificate.EnhancedKeyUsageList |
-            Where-Object {
-              $_.ObjectId.Value -eq "1.3.6.1.5.5.7.3.3"
-            }
-          )
-          if ($codeSigningEku.Count -ne 1) {
-            throw "Certificate is not valid for code signing."
-          }
-          if (
-            $certificate.NotBefore -gt (Get-Date) -or
-            $certificate.NotAfter -lt (Get-Date)
-          ) {
-            throw "Code-signing certificate is outside its validity period."
-          }
 
       - name: Build Delphi 12 and 13 release packages
         shell: powershell
@@ -156,17 +101,14 @@ jobs:
           .\scripts\New-RadIA.ReleaseEvidence.ps1 `
             -OutputPath ".\Output\Distribution\ReleaseEvidence.json"
 
-      - name: Build and sign the visual installer
+      - name: Build and verify the visual installer
         shell: powershell
         run: |
           .\scripts\New-RadIA.VisualInstaller.ps1 `
-            -CertificateThumbprint $env:SIGNING_THUMBPRINT `
-            -TimestampUrl $env:TIMESTAMP_URL `
             -EvidencePath (
               ".\Output\Distribution\VisualInstallerEvidence.json"
             )
           .\scripts\Test-RadIA.VisualInstaller.ps1 `
-            -RequireSignature `
             -EvidencePath (
               ".\Output\Distribution\VisualInstallerEvidence.json"
             )
@@ -189,10 +131,10 @@ jobs:
             -Filter "RadIA-v$env:RADIA_VERSION-*-Release.zip" |
             Copy-Item -Destination ".\Output\Distribution"
 
-      - name: Upload signed distribution evidence
+      - name: Upload distribution evidence
         uses: actions/upload-artifact@v4
         with:
-          name: RadIA-${{ env.RADIA_VERSION }}-signed-distribution
+          name: RadIA-${{ env.RADIA_VERSION }}-distribution
           path: Output/Distribution/*
           if-no-files-found: error
           retention-days: 30
@@ -220,22 +162,3 @@ jobs:
             ".\Output\Distribution\*" `
             --clobber
 
-      - name: Remove signing material from runner
-        if: always()
-        shell: powershell
-        run: |
-          if ($env:SIGNING_THUMBPRINT) {
-            $certificatePath = (
-              "Cert:\CurrentUser\My\" +
-              $env:SIGNING_THUMBPRINT
-            )
-            if (Test-Path -LiteralPath $certificatePath) {
-              Remove-Item -LiteralPath $certificatePath -Force
-            }
-          }
-          if (
-            $env:SIGNING_PFX_PATH -and
-            (Test-Path -LiteralPath $env:SIGNING_PFX_PATH)
-          ) {
-            Remove-Item -LiteralPath $env:SIGNING_PFX_PATH -Force
-          }

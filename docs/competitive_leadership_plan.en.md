@@ -1,9 +1,10 @@
 # RadIA 2.0 technical leadership plan
 
-> **Status:** planned.
+> **Status:** frozen until version 2.0.0 is published.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Out of scope:** C++Builder, marketplace distribution, mandatory Authenticode signing, and
 > replacement of the current WebView2 host.
+> **Resume point:** start at Phase 0 — Baseline and contracts, without reopening scope decisions.
 
 ## Goal
 

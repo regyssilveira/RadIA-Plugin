@@ -10,7 +10,7 @@ $activePaths = @(
     ".\scripts\New-RadIA.ReleaseEvidence.ps1",
     ".\scripts\New-RadIA.ReleaseChannel.ps1",
     ".\.github\workflows\quality-gate.yml",
-    ".\.github\workflows\signed-release.yml",
+    ".\.github\workflows\release.yml",
     ".\Source\Core\RadIA.Core.ProjectTemplates.pas",
     ".\Source\Core\RadIA.Core.ProjectTemplateTools.pas",
     ".\Source\UI\RadIA.UI.ProjectWizard.pas"
@@ -36,7 +36,7 @@ foreach ($path in $activePaths) {
 }
 
 $releaseWorkflow = Get-Content `
-    -LiteralPath ".\.github\workflows\signed-release.yml" `
+    -LiteralPath ".\.github\workflows\release.yml" `
     -Raw
 $packageBuilds = [regex]::Matches(
     $releaseWorkflow,

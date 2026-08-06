@@ -3,8 +3,7 @@ param(
     [string]$InstallerPath,
     [Parameter(Mandatory = $true)]
     [string]$DownloadUrl,
-    [string]$OutputPath = ".\Output\Channel\stable.json",
-    [switch]$AllowUnsignedDevelopment
+    [string]$OutputPath = ".\Output\Channel\stable.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,7 +18,6 @@ if (-not (Test-Path -LiteralPath $resolvedInstaller -PathType Leaf)) {
     throw "Visual installer was not found: $resolvedInstaller"
 }
 if (
-    -not $AllowUnsignedDevelopment -and
     -not $DownloadUrl.StartsWith(
         "https://",
         [StringComparison]::OrdinalIgnoreCase
@@ -29,21 +27,11 @@ if (
 }
 
 $signature = Get-AuthenticodeSignature -LiteralPath $resolvedInstaller
-if (-not $AllowUnsignedDevelopment -and $signature.Status -ne "Valid") {
-    throw (
-        "Production channel requires a valid Authenticode signature. " +
-        "Actual status: $($signature.Status)."
-    )
-}
 
 $channel = [PSCustomObject]@{
     schemaVersion = 1
     product = "RadIA"
-    channel = if ($AllowUnsignedDevelopment) {
-        "development"
-    } else {
-        "stable"
-    }
+    channel = "stable"
     generatedAtUtc = [DateTime]::UtcNow.ToString("o")
     release = [PSCustomObject]@{
         version = $productVersion

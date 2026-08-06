@@ -1,9 +1,10 @@
 # Plano de liderança técnica do RadIA 2.0
 
-> **Estado:** planejado.
+> **Estado:** congelado até a publicação da versão 2.0.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Fora do escopo:** C++Builder, marketplace, assinatura Authenticode obrigatória e substituição do
 > host WebView2 atual.
+> **Ponto de retomada:** iniciar pela Fase 0 — Baseline e contratos, sem reabrir decisões de escopo.
 
 ## Goal
 

@@ -374,21 +374,19 @@ powershell.exe -ExecutionPolicy Bypass `
 
 The versioned result is stored in `first_value_smoke_evidence_2.0.0.json`.
 
-### Visual installer and signed channel
+### Visual installer and release channel
 
 After all three ZIP files pass validation, build the single installer:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
-  -File scripts\New-RadIA.VisualInstaller.ps1 `
-  -CertificateThumbprint "<THUMBPRINT>"
+  -File scripts\New-RadIA.VisualInstaller.ps1
 
 powershell.exe -ExecutionPolicy Bypass `
-  -File scripts\Test-RadIA.VisualInstaller.ps1 `
-  -RequireSignature
+  -File scripts\Test-RadIA.VisualInstaller.ps1
 ```
 
-Publish the catalog only after the signed executable is available through HTTPS:
+Publish the catalog after the executable and its SHA-256 are available through HTTPS:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -397,12 +395,11 @@ powershell.exe -ExecutionPolicy Bypass `
   -DownloadUrl "https://downloads.example.com/RadIA-v2.0.0-Setup.exe"
 ```
 
-The `stable` catalog rejects missing or invalid signatures. See
+The `stable` catalog requires HTTPS and records hash and Authenticode state. See
 [Visual installer and release channel](visual_installer.en.md) for the complete flow.
 
-The `Signed RadIA release` workflow automates the same sequence for `v*` tags. Configure the
-`RADIA_SIGNING_PFX_BASE64` and `RADIA_SIGNING_PFX_PASSWORD` secrets before enabling publication.
-Production environment approval is recommended.
+The `RadIA release` workflow automates the same sequence for `v*` tags without a certificate
+dependency. Production environment approval is recommended.
 
 ---
 
@@ -415,7 +412,7 @@ Production environment approval is recommended.
 * The exact analysis passed the SonarQube Quality Gate.
 * Required `Build, analyze, and enforce Quality Gate` status check passed.
 * Release packages generated for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
-* Signed visual installer, validated timestamp, and stable HTTPS catalog published.
+* Visual installer, SHA-256, and stable HTTPS catalog published.
 * Positive and negative validation completed for every package.
 * `SHA256SUMS.txt` published with the three ZIPs generated from the same commit.
 * JSON evidence for ten real cycles generated for every supported combination.
