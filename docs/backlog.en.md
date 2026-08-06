@@ -151,6 +151,9 @@ The board below summarizes the current status of mapped short and medium-term fe
         validates packages before compilation, and supports SHA-256 signing with timestamp. The
         stable catalog rejects non-HTTPS URLs and executables without valid Authenticode; the
         certificate and final URL remain external publication gates.
+    *   M6 automated in this stage: the tag workflow rebuilds all four packages from the exact
+        commit, imports the PFX temporarily, requires signature and timestamp, publishes evidence,
+        and removes cryptographic material from the runner under every outcome.
     *   M7–M8 completed: specialized journeys and the 2.0.0 candidate proven across the full matrix.
     *   M8 delivered: terminal proven across the full matrix with a native window, required
         controls, input, output, usable geometry, five associated labels, and nine keyboard tab

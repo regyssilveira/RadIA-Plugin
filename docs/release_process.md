@@ -394,6 +394,10 @@ powershell.exe -ExecutionPolicy Bypass `
 O catálogo `stable` recusa assinatura ausente ou inválida. O fluxo completo está em
 [Instalador visual e canal de release](visual_installer.md).
 
+O workflow `Signed RadIA release` automatiza a mesma sequência para tags `v*`. Antes de habilitar
+a publicação, configure os secrets `RADIA_SIGNING_PFX_BASE64` e
+`RADIA_SIGNING_PFX_PASSWORD`. Recomenda-se proteger a execução com aprovação de ambiente.
+
 ---
 
 ## Checklist Final

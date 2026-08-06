@@ -152,6 +152,9 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         valida os pacotes antes de compilar e oferece assinatura SHA-256 com timestamp. O catálogo
         estável recusa URL sem HTTPS e executável sem Authenticode válido; certificado e URL final
         permanecem gates externos de publicação.
+    *   M6 automatizado nesta etapa: workflow de tag recompila os quatro pacotes do commit exato,
+        importa o PFX temporariamente, exige assinatura e timestamp, publica evidências e remove o
+        material criptográfico do runner em qualquer resultado.
     *   M7–M8 concluídos: jornadas especializadas e candidato 2.0.0 comprovados na matriz completa.
     *   M8 entregue: terminal comprovado na matriz completa com janela nativa, controles
         essenciais, entrada, saída, geometria útil, cinco rótulos associados e nove pontos

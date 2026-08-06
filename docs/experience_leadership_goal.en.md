@@ -264,7 +264,10 @@ The single visual installer is implemented with detection and selection for Delp
 Win32, and Delphi 13 IDE64. Generation validates all four packages before compilation, records
 SHA-256 and Authenticode state, and can sign with a certificate and timestamp. The `stable`
 catalog is fail-closed: it rejects HTTP and any executable without a valid signature. Publication
-remains pending only on a trusted external code-signing certificate and the final HTTPS URL.
+remains pending only on a trusted external code-signing certificate and the final HTTPS URL. The
+release workflow rebuilds all four targets from the tag, imports the PFX only for the job, requires
+a signature and timestamp, publishes the distribution, and removes cryptographic material from
+the runner even after failure.
 
 The post-install diagnostic passed on Delphi 11, 12, and 13 Win32 plus Delphi 13 IDE64. The
 evidence calls the doctor through the installed bridge, requires chat, terminal, the 90-tool

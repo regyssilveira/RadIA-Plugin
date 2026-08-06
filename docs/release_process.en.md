@@ -394,6 +394,10 @@ powershell.exe -ExecutionPolicy Bypass `
 The `stable` catalog rejects missing or invalid signatures. See
 [Visual installer and release channel](visual_installer.en.md) for the complete flow.
 
+The `Signed RadIA release` workflow automates the same sequence for `v*` tags. Configure the
+`RADIA_SIGNING_PFX_BASE64` and `RADIA_SIGNING_PFX_PASSWORD` secrets before enabling publication.
+Production environment approval is recommended.
+
 ---
 
 ## Final Checklist

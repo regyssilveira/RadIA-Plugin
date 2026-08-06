@@ -69,6 +69,35 @@ powershell.exe -ExecutionPolicy Bypass `
 Only local tests may use `-AllowUnsignedDevelopment`. That switch explicitly changes the channel
 name to `development`; it cannot produce a `stable` catalog.
 
+## Signed release pipeline
+
+The `.github/workflows/signed-release.yml` workflow runs the complete chain on a Windows Delphi
+runner:
+
+1. confirms that the tag is exactly `v` plus the `package.json` version;
+2. runs lint, Web tests, and the documentation audit;
+3. temporarily imports the PFX and validates its private key, code-signing EKU, and validity;
+4. rebuilds all four Release packages from the tag commit;
+5. confirms that packages share a clean version and commit with valid hashes;
+6. builds and validates the installer with mandatory Authenticode and timestamp;
+7. creates the `stable` catalog with the GitHub Release HTTPS URL;
+8. publishes artifacts and removes the certificate and PFX under `always()`.
+
+Configure these repository values:
+
+- `RADIA_SIGNING_PFX_BASE64` secret: Base64-encoded PFX;
+- `RADIA_SIGNING_PFX_PASSWORD` secret: PFX password;
+- optional `RADIA_TIMESTAMP_URL` variable: RFC 3161 server.
+
+Restrict secret access and require production-environment approval. The workflow can run manually
+without publication to validate the distribution; a `v*` tag publishes the release. Audit its
+fail-closed contract locally with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ReleasePipeline.ps1
+```
+
 ## Remaining external gate
 
 The code, installer, and catalog are prepared, but production publication can be approved only

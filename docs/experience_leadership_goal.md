@@ -271,7 +271,10 @@ O instalador visual único foi implementado com detecção e seleção de Delphi
 Delphi 13 IDE64. A geração valida os quatro pacotes antes de compilar, registra SHA-256 e estado
 Authenticode e pode assinar com certificado e timestamp. O catálogo `stable` é fail-closed:
 recusa HTTP e qualquer executável sem assinatura válida. A publicação continua pendente apenas
-pela disponibilidade externa de um certificado de code signing confiável e da URL HTTPS final.
+pela disponibilidade externa de um certificado de code signing confiável e da URL HTTPS final. O
+workflow de release reconstrói os quatro targets a partir da tag, importa o PFX apenas durante o
+job, exige assinatura e timestamp, publica a distribuição e remove o material criptográfico do
+runner mesmo em caso de falha.
 
 O diagnóstico pós-instalação foi aprovado no Delphi 11, 12 e 13 Win32 e no Delphi 13 IDE64. A
 prova consulta o doctor pelo bridge instalado, exige chat, terminal, catálogo de 90 tools e
