@@ -125,6 +125,12 @@ type
       const ARequestId: Integer;
       const AResult: TRadIACliProcessResult
     );
+    procedure CompleteCliAuthProbe(
+      const ACliId: string;
+      const AExecutablePath: string;
+      const ARequestId: Integer;
+      const AResult: TRadIACliProcessResult
+    );
     procedure CompleteMcpHandshake(
       const AResult: TRadIACliProcessResult
     );
@@ -161,6 +167,11 @@ type
     procedure StartCliVersionProbe(
       const ADefinition: TRadIACliDefinition;
       const AExecutablePath: string
+    );
+    procedure StartCliAuthProbe(
+      const ADefinition: TRadIACliDefinition;
+      const AExecutablePath: string;
+      const ARequestId: Integer
     );
     procedure SaveCliMcpSettings;
     procedure SaveAgentExecutorSettings;
@@ -1937,6 +1948,37 @@ begin
       'CLI status: detected at %s, but the version check failed.',
       [AExecutablePath]
     );
+  StartCliAuthProbe(
+    LDefinition,
+    AExecutablePath,
+    ARequestId
+  );
+end;
+
+procedure TRadIAFrameAIConfig.CompleteCliAuthProbe(
+  const ACliId: string;
+  const AExecutablePath: string;
+  const ARequestId: Integer;
+  const AResult: TRadIACliProcessResult
+);
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  if ARequestId <> FCliVersionRequestId then
+    Exit;
+  FCliVersionSession := nil;
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  if not SameText(LDefinition.Id, ACliId) then
+    Exit;
+  if AResult.Succeeded then
+    FLblCliStatus.Caption := FLblCliStatus.Caption +
+      '; authentication: ready'
+  else
+    FLblCliStatus.Caption := Format(
+      '%s; authentication: required (%s)',
+      [FLblCliStatus.Caption, LDefinition.AuthLoginHint]
+    );
 end;
 
 procedure TRadIAFrameAIConfig.RefreshMcpPreview;
@@ -2043,6 +2085,57 @@ begin
                 ADefinition.Id,
                 AExecutablePath,
                 LRequestId,
+                AResult
+              );
+          end
+        )
+      );
+    end
+  );
+end;
+
+procedure TRadIAFrameAIConfig.StartCliAuthProbe(
+  const ADefinition: TRadIACliDefinition;
+  const AExecutablePath: string;
+  const ARequestId: Integer
+);
+var
+  LGuard: IRadIAConfigLifecycleGuard;
+  LInvocation: TRadIACliInvocation;
+begin
+  if Length(ADefinition.AuthStatusArguments) = 0 then
+  begin
+    FCliVersionSession := nil;
+    FLblCliStatus.Caption := Format(
+      '%s; authentication: check with %s',
+      [FLblCliStatus.Caption, ADefinition.AuthLoginHint]
+    );
+    Exit;
+  end;
+  LInvocation := TRadIACliInvocation.Create(
+    AExecutablePath,
+    ADefinition.AuthStatusArguments,
+    GetCurrentDir,
+    'text'
+  );
+  LGuard := FCliInstallGuard as IRadIAConfigLifecycleGuard;
+  FCliVersionSession := TRadIACliProcessRunner.Start(
+    LInvocation,
+    10000,
+    nil,
+    nil,
+    procedure(AResult: TRadIACliProcessResult)
+    begin
+      TThread.Queue(
+        nil,
+        TThreadProcedure(
+          procedure
+          begin
+            if LGuard.IsAlive then
+              CompleteCliAuthProbe(
+                ADefinition.Id,
+                AExecutablePath,
+                ARequestId,
                 AResult
               );
           end

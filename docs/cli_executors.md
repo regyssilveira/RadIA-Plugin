@@ -48,6 +48,23 @@ Uma resposta atrasada é descartada se o usuário trocar de cliente durante a ve
 diagnóstico não autentica, não altera arquivos e não inicia uma sessão de agente. O login continua
 sendo controlado pelo próprio CLI.
 
+### Diagnóstico de autenticação
+
+Depois da versão, o RadIA executa um probe somente-leitura quando o fornecedor disponibiliza um
+comando não interativo estável:
+
+| Executor | Probe automático | Orientação de login |
+|---|---|---|
+| Codex CLI | `codex login status` | `codex login` |
+| Claude Code | `claude auth status` | `claude auth login` |
+| Gemini CLI | Não disponível | iniciar `gemini` e usar `/auth` |
+| GitHub Copilot CLI | Não disponível | `copilot login` |
+
+O painel mostra **authentication: ready** quando o probe termina com sucesso. Caso contrário,
+mostra **authentication: required** e o comando de correção. Para os clientes sem probe oficial,
+o estado é apresentado como verificação manual, sem tentar inferir login pela existência de
+arquivos ou variáveis de ambiente.
+
 ## Seleção e segurança
 
 - **RadIA native agent** permanece como padrão e usa as ferramentas, consentimentos e checkpoints

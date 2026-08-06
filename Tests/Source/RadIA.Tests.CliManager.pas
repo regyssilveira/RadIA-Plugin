@@ -103,10 +103,18 @@ begin
   Assert.AreEqual<Integer>(4, Length(TRadIACliCatalog.All));
   Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
   Assert.AreEqual('Codex CLI', LDefinition.DisplayName);
+  Assert.AreEqual<Integer>(2, Length(LDefinition.AuthStatusArguments));
+  Assert.AreEqual('login', LDefinition.AuthStatusArguments[0]);
+  Assert.AreEqual('codex login', LDefinition.AuthLoginHint);
   Assert.Contains(LDefinition.ToDiagnosticText, '@openai/codex');
   Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
+  Assert.AreEqual('auth', LDefinition.AuthStatusArguments[0]);
   Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
+  Assert.AreEqual<Integer>(0, Length(LDefinition.AuthStatusArguments));
+  Assert.AreEqual('Start gemini and use /auth', LDefinition.AuthLoginHint);
   Assert.IsTrue(TRadIACliCatalog.FindById('copilot', LDefinition));
+  Assert.AreEqual<Integer>(0, Length(LDefinition.AuthStatusArguments));
+  Assert.AreEqual('copilot login', LDefinition.AuthLoginHint);
 end;
 
 procedure TRadIACliManagerTests.DetectAllReturnsOneResultPerDefinition;

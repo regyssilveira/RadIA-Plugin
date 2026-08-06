@@ -26,6 +26,8 @@ type
     FPackageId: string;
     FDocumentationUrl: string;
     FPrerequisites: TArray<string>;
+    FAuthStatusArguments: TArray<string>;
+    FAuthLoginHint: string;
   public
     constructor Create(
       const AKind: TRadIACliKind;
@@ -39,6 +41,10 @@ type
     function WithPrerequisites(
       const APrerequisites: TArray<string>
     ): TRadIACliDefinition;
+    function WithAuthentication(
+      const AStatusArguments: TArray<string>;
+      const ALoginHint: string
+    ): TRadIACliDefinition;
     function ToDiagnosticText: string;
     property Kind: TRadIACliKind read FKind;
     property Id: string read FId;
@@ -48,6 +54,8 @@ type
     property PackageId: string read FPackageId;
     property DocumentationUrl: string read FDocumentationUrl;
     property Prerequisites: TArray<string> read FPrerequisites;
+    property AuthStatusArguments: TArray<string> read FAuthStatusArguments;
+    property AuthLoginHint: string read FAuthLoginHint;
   end;
 
   TRadIACliDetection = record
@@ -204,6 +212,18 @@ begin
   FPackageId := APackageId;
   FDocumentationUrl := ADocumentationUrl;
   FPrerequisites := [];
+  FAuthStatusArguments := [];
+  FAuthLoginHint := '';
+end;
+
+function TRadIACliDefinition.WithAuthentication(
+  const AStatusArguments: TArray<string>;
+  const ALoginHint: string
+): TRadIACliDefinition;
+begin
+  Result := Self;
+  Result.FAuthStatusArguments := AStatusArguments;
+  Result.FAuthLoginHint := ALoginHint;
 end;
 
 function TRadIACliDefinition.WithPrerequisites(
@@ -217,7 +237,7 @@ end;
 function TRadIACliDefinition.ToDiagnosticText: string;
 begin
   Result := Format(
-    '%d|%s|%s|%d|%d|%s|%s|%d',
+    '%d|%s|%s|%d|%d|%s|%s|%d|%d|%s',
     [
       Ord(Kind),
       Id,
@@ -226,7 +246,9 @@ begin
       Ord(PrimaryChannel),
       PackageId,
       DocumentationUrl,
-      Length(Prerequisites)
+      Length(Prerequisites),
+      Length(AuthStatusArguments),
+      AuthLoginHint
     ]
   );
 end;
@@ -309,7 +331,10 @@ begin
       cicNpm,
       '@openai/codex',
       'https://github.com/openai/codex'
-    ).WithPrerequisites(['Node.js 20 or later']),
+    ).WithPrerequisites(['Node.js 20 or later']).WithAuthentication(
+      ['login', 'status'],
+      'codex login'
+    ),
     TRadIACliDefinition.Create(
       ckClaude,
       'claude',
@@ -318,7 +343,12 @@ begin
       cicNpm,
       '@anthropic-ai/claude-code',
       'https://docs.anthropic.com/en/docs/claude-code'
-    ).WithPrerequisites(['Node.js 18 or later', 'Git Bash or WSL']),
+    ).WithPrerequisites(
+      ['Node.js 18 or later', 'Git Bash or WSL']
+    ).WithAuthentication(
+      ['auth', 'status'],
+      'claude auth login'
+    ),
     TRadIACliDefinition.Create(
       ckGemini,
       'gemini',
@@ -327,7 +357,10 @@ begin
       cicNpm,
       '@google/gemini-cli',
       'https://github.com/google-gemini/gemini-cli'
-    ).WithPrerequisites(['Node.js 20 or later']),
+    ).WithPrerequisites(['Node.js 20 or later']).WithAuthentication(
+      [],
+      'Start gemini and use /auth'
+    ),
     TRadIACliDefinition.Create(
       ckCopilot,
       'copilot',
@@ -336,7 +369,10 @@ begin
       cicWinget,
       'GitHub.Copilot',
       'https://docs.github.com/en/copilot/how-tos/copilot-cli'
-    ).WithPrerequisites(['PowerShell 7 or later'])
+    ).WithPrerequisites(['PowerShell 7 or later']).WithAuthentication(
+      [],
+      'copilot login'
+    )
   ];
 end;
 
