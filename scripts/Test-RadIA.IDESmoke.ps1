@@ -1167,6 +1167,17 @@ function Restore-RadIAInlineCompletionLogSettings {
             -Name "LogPath" `
             -ErrorAction SilentlyContinue
     }
+    if ($script:InlineLogHadWindowVisible) {
+        Set-ItemProperty `
+            -LiteralPath $script:InlineLogRegistryPath `
+            -Name "WindowVisible" `
+            -Value $script:InlineLogOriginalWindowVisible
+    } else {
+        Remove-ItemProperty `
+            -LiteralPath $script:InlineLogRegistryPath `
+            -Name "WindowVisible" `
+            -ErrorAction SilentlyContinue
+    }
     if (-not $script:InlineLogHadRegistryKey) {
         Remove-Item `
             -LiteralPath $script:InlineLogRegistryPath `
@@ -1431,15 +1442,27 @@ if ($ExerciseInlineCompletion -or $ExerciseInlineReview -or
     $inlineLogPath = $inlineLogProperties.PSObject.Properties[
         "LogPath"
     ]
+    $inlineLogWindowVisible = $inlineLogProperties.PSObject.Properties[
+        "WindowVisible"
+    ]
     $script:InlineLogHadEnabled = $null -ne $inlineLogEnabled
     $script:InlineLogHadPath = $null -ne $inlineLogPath
+    $script:InlineLogHadWindowVisible = (
+        $null -ne $inlineLogWindowVisible
+    )
     $script:InlineLogOriginalEnabled = $null
     $script:InlineLogOriginalPath = $null
+    $script:InlineLogOriginalWindowVisible = $null
     if ($script:InlineLogHadEnabled) {
         $script:InlineLogOriginalEnabled = $inlineLogEnabled.Value
     }
     if ($script:InlineLogHadPath) {
         $script:InlineLogOriginalPath = $inlineLogPath.Value
+    }
+    if ($script:InlineLogHadWindowVisible) {
+        $script:InlineLogOriginalWindowVisible = (
+            $inlineLogWindowVisible.Value
+        )
     }
     $inlineSmokeRoot = Join-Path (
         "$repositoryRoot\Output\Validation\IDESmokeDiagnostics"
@@ -1503,6 +1526,13 @@ if ($ExerciseInlineCompletion -or $ExerciseInlineReview -or
         -Name "LogPath" `
         -PropertyType String `
         -Value $inlineSmokeLogDirectory `
+        -Force |
+        Out-Null
+    New-ItemProperty `
+        -LiteralPath $script:InlineLogRegistryPath `
+        -Name "WindowVisible" `
+        -PropertyType DWord `
+        -Value 0 `
         -Force |
         Out-Null
     $script:InlineLogSettingsInitialized = $true
