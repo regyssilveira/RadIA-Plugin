@@ -25,6 +25,8 @@ type
     TextRect: TRect;
     LineRect: TRect;
     CellSize: TSize;
+    CodeLeftEdge: Integer;
+    LeftColumn: Integer;
   end;
 
   TRadIAOTAInlineReviewFacade = class(
@@ -291,6 +293,8 @@ begin
   LPaintContext.TextRect := AContext.LineState.VisibleTextRect;
   LPaintContext.LineRect := AContext.LineState.WholeRect;
   LPaintContext.CellSize := LCellSize;
+  LPaintContext.CodeLeftEdge := AContext.EditorState.CodeLeftEdge;
+  LPaintContext.LeftColumn := AContext.EditorState.LeftColumn;
   PaintOverlay(LPaintContext);
 end;
 

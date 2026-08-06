@@ -273,8 +273,11 @@ function TRadIAOTAInlineCompletionSession.GhostHorizontalPosition(
 begin
   if ALineOffset = 0 then
     Exit(
-      APaintContext.TextRect.Left +
-      (Max(1, FContext.CursorColumn) - 1) *
+      APaintContext.CodeLeftEdge +
+      Max(
+        0,
+        FContext.CursorColumn - Max(1, APaintContext.LeftColumn)
+      ) *
       APaintContext.CellSize.cx
     );
   Result := Max(
