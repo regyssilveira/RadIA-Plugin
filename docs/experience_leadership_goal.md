@@ -62,7 +62,7 @@ exige `líder` em todos os eixos, acompanhada das evidências do M8.
 
 | Marco | Estado | Gate para avançar |
 |---|---|---|
-| M0 — Qualidade | Em execução | Gate Sonar verde ou falsos positivos comprovados e classificados |
+| M0 — Qualidade | Concluído | Gate Sonar global verde e automatizado |
 | M1 — Assistência inline | Concluído | Ghost Text OTA, atalhos, consentimento e matriz real aprovados |
 | M2 — Terminal | Concluído | PTY, ANSI/CSI, abas, stdin, resize e encerramento de árvore validados |
 | M3 — Central unificada | Concluído | Jornada observável, pausável, retomável e persistente |
@@ -105,6 +105,11 @@ do parser permanecem íntegros mesmo quando uma sequência chega dividida entre 
 - Rejeitar a preparação de release quando qualquer gate obrigatório falhar.
 
 **Saída:** baseline global verde e pipeline local reproduzível.
+
+O M0 foi concluído com evidência reproduzível em
+[`sonar_quality_evidence_2.0.0.json`](sonar_quality_evidence_2.0.0.json): Quality Gate `OK`, zero
+bugs, vulnerabilidades, hotspots de segurança, code smells e issues não resolvidas; cobertura global
+de 82,3%, duplicação de 2,3% e ratings A para confiabilidade, segurança e manutenibilidade.
 
 ### M1 — Assistência inline e Ghost Text
 

@@ -5,7 +5,7 @@ RadIA 2.0.0 candidate. It complements but does not replace real IDE cycles.
 
 | Area | Verified control | Automated evidence | Status |
 |---|---|---|---|
-| Security | Consent, confinement, sanitization, protected credentials, and signed extensions | DUnitX suite and SonarQube | Passed |
+| Security | Consent, confinement, sanitization, protected credentials, and signed extensions | DUnitX suite and [Sonar evidence](sonar_quality_evidence_2.0.0.json) | Passed |
 | Privacy | Web surfaces initiate no external connection; remote providers remain explicit | `npm run test:web` | Passed |
 | Accessibility | Accessible names, live regions, ARIA state, visible focus, and keyboard activation | `npm run test:web` | Passed |
 | Documentation | Existing local links and no common mojibake markers | `npm run test:docs` | Passed |
@@ -19,6 +19,8 @@ RadIA 2.0.0 candidate. It complements but does not replace real IDE cycles.
 - Added keyboard activation, Escape handling, and visible focus to custom selectors.
 - The documentation audit scans README and every Markdown file under `docs` and fails on missing local links or
   common mojibake markers.
+- The global Sonar gate fails on any issue, rating below A, coverage below 80%, or duplication above
+  3%. Current evidence records zero issues, 82.3% coverage, and 2.3% duplication.
 
 ## Reproduce
 

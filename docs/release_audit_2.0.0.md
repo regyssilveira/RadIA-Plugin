@@ -5,7 +5,7 @@ documentação do candidato RadIA 2.0.0. Ela complementa, mas não substitui, os
 
 | Área | Controle verificado | Evidência automatizada | Estado |
 |---|---|---|---|
-| Segurança | Consentimento, confinamento, sanitização, credenciais protegidas e extensões assinadas | Suíte DUnitX e SonarQube | Aprovado |
+| Segurança | Consentimento, confinamento, sanitização, credenciais protegidas e extensões assinadas | Suíte DUnitX e [evidência Sonar](sonar_quality_evidence_2.0.0.json) | Aprovado |
 | Privacidade | Nenhuma conexão externa iniciada pelas superfícies Web; provider remoto continua explícito | `npm run test:web` | Aprovado |
 | Acessibilidade | Nomes acessíveis, regiões vivas, estado ARIA, foco visível e ativação por teclado | `npm run test:web` | Aprovado |
 | Documentação | Links locais existentes e ausência de marcadores comuns de mojibake | `npm run test:docs` | Aprovado |
@@ -19,6 +19,9 @@ documentação do candidato RadIA 2.0.0. Ela complementa, mas não substitui, os
 - Seletores customizados aceitam teclado, Escape e foco visível.
 - A auditoria de documentação percorre o README e todos os Markdown em `docs` e falha para links locais
   ausentes ou marcadores comuns de mojibake.
+- O gate global do Sonar falha para qualquer issue, rating diferente de A, cobertura abaixo de 80%
+  ou duplicação acima de 3%. A evidência atual registra zero issues, 82,3% de cobertura e 2,3% de
+  duplicação.
 
 ## Como reproduzir
 

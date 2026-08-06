@@ -53,7 +53,8 @@ The board below summarizes the current status of mapped short and medium-term fe
 ## ⏳ 1. Work in Progress (WIP)
 
 *   Goal for leading the Delphi development experience.
-    *   M0: clear the blocking Sonar baseline and automate every gate.
+    *   M0 completed: automated global Sonar gate with zero issues, 82.3% coverage, and 2.3%
+        duplication, with reproducible evidence for the 2.0.0 candidate.
     *   M1–M3: deliver Ghost Text, an interactive terminal, and a unified execution center.
     *   M1 delivered in this increment: OTA Ghost Text capture now resolves the current symbol
         directly from the live buffer and cursor line, without depending on the saved file.

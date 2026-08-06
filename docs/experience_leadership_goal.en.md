@@ -61,7 +61,7 @@ decision requires `leader` on every axis together with the M8 evidence.
 
 | Milestone | Status | Gate to advance |
 |---|---|---|
-| M0 — Quality | In progress | Green Sonar gate or administrative classification of proven false positives |
+| M0 — Quality | Completed | Automated green global Sonar gate |
 | M1 — Inline assistance | Completed | OTA Ghost Text, shortcuts, consent, and real matrix approved |
 | M2 — Terminal | Complete | PTY, ANSI/CSI, tabs, stdin, resize, and process-tree shutdown validated |
 | M3 — Unified center | Completed | Observable, pausable, resumable, and persistent journey |
@@ -103,6 +103,11 @@ state remain intact even when an escape sequence is split across chunks.
 - Block release preparation when a mandatory gate fails.
 
 **Outcome:** green global baseline and reproducible local pipeline.
+
+M0 is complete with reproducible evidence in
+[`sonar_quality_evidence_2.0.0.json`](sonar_quality_evidence_2.0.0.json): Quality Gate `OK`, zero
+bugs, vulnerabilities, security hotspots, code smells, and unresolved issues; 82.3% global coverage,
+2.3% duplication, and A ratings for reliability, security, and maintainability.
 
 ### M1 — Inline assistance and Ghost Text
 
