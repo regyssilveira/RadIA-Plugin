@@ -14,6 +14,7 @@ uses
   RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',
   RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in '..\Source\Core\RadIA.Core.AgentRuntime.pas',
+  RadIA.Core.AgentDiagnostic in '..\Source\Core\RadIA.Core.AgentDiagnostic.pas',
   RadIA.Core.AgentExecutors in '..\Source\Core\RadIA.Core.AgentExecutors.pas',
   RadIA.Core.CliProcess in '..\Source\Core\RadIA.Core.CliProcess.pas',
   RadIA.Core.PseudoTerminal in '..\Source\Core\RadIA.Core.PseudoTerminal.pas',

@@ -142,6 +142,8 @@ type
     ): TRadIAAgentRuntime;
   public
     [Test]
+    procedure TestLocalDiagnosticPersistsPauseAndResume;
+    [Test]
     procedure TestToolCallThenComplete;
     [Test]
     procedure TestMutationRequiresSuccessfulBuildBeforeCompletion;
@@ -200,6 +202,7 @@ uses
   System.IOUtils,
   System.JSON,
   System.SyncObjs,
+  RadIA.Core.AgentDiagnostic,
   RadIA.Core.AgentController,
   RadIA.Core.AgentPricing,
   RadIA.Core.AgentProvider;
@@ -407,6 +410,45 @@ begin
 end;
 
 { TTestRadIAAgentRuntime }
+
+procedure TTestRadIAAgentRuntime.TestLocalDiagnosticPersistsPauseAndResume;
+var
+  LCheckpointDirectory: string;
+  LCheckpointPath: string;
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LSnapshot: string;
+begin
+  LCheckpointDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-AgentDiagnostic-' + TGUID.NewGuid.ToString
+  );
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded(
+      '{"version":"Delphi Test","platform":"Win32"}'
+    )
+  );
+  LExecutor := LExecutorObject;
+  try
+    RunRadIAAgentRuntimeDiagnostic(
+      LExecutor,
+      LCheckpointDirectory
+    );
+    Assert.AreEqual(1, LExecutorObject.CallCount);
+    LCheckpointPath := TPath.Combine(
+      LCheckpointDirectory,
+      'radia-agent-runtime-smoke.json'
+    );
+    Assert.IsTrue(TFile.Exists(LCheckpointPath));
+    LSnapshot := TFile.ReadAllText(LCheckpointPath, TEncoding.UTF8);
+    Assert.Contains(LSnapshot, '"status":"completed"');
+    Assert.Contains(LSnapshot, '"toolName":"GetIDEState"');
+  finally
+    LExecutor := nil;
+    if TDirectory.Exists(LCheckpointDirectory) then
+      TDirectory.Delete(LCheckpointDirectory, True);
+  end;
+end;
 
 function TTestRadIAAgentRuntime.NewRuntime(
   const AExecutor: IRadIAToolExecutor;

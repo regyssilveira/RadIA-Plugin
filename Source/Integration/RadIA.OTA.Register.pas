@@ -51,7 +51,8 @@ implementation
 uses
   System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
   System.Win.Registry, Winapi.Windows,
-  RadIA.OTA.EditorHook, RadIA.UI.DiffForm, RadIA.UI.ConfigForm,
+  RadIA.OTA.AgentDiagnostic, RadIA.OTA.EditorHook,
+  RadIA.UI.DiffForm, RadIA.UI.ConfigForm,
   RadIA.UI.ProjectWizard, RadIA.UI.OnboardingForm,
   RadIA.UI.ExtensionManagerForm,
   RadIA.OTA.Helper, RadIA.OTA.Onboarding, RadIA.Core.Types,
@@ -1206,6 +1207,7 @@ initialization
   TRadIAContainer.Register<IRadIAHttpClient>(TRadIAConcreteHttpClient.Create);
   TRadIAContainer.Register<IRadIAErrorDecoder>(TRadIAErrorDecoder.Create);
   TRadIAContainer.Register<IRadIALocalizer>(TRadIALocalizer.Create);
+  StartRadIAAgentRuntimeDiagnosticIfRequested;
 
 finalization
   if not GIsShuttingDown then

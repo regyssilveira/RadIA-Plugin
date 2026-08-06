@@ -10,10 +10,12 @@ param(
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
     [switch]$ExerciseInlineCompletion,
+    [switch]$ExerciseAgentRuntime,
     [switch]$ExercisePackageLifecycle,
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = "",
-    [string]$InlineCompletionEvidencePath = ""
+    [string]$InlineCompletionEvidencePath = "",
+    [string]$AgentRuntimeEvidencePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -32,6 +34,11 @@ if ($InlineCompletionEvidencePath -and -not $ExerciseInlineCompletion) {
     throw (
         "Inline completion evidence requires " +
         "-ExerciseInlineCompletion."
+    )
+}
+if ($AgentRuntimeEvidencePath -and -not $ExerciseAgentRuntime) {
+    throw (
+        "Agent runtime evidence requires -ExerciseAgentRuntime."
     )
 }
 if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
@@ -474,6 +481,78 @@ function Wait-RadIAInlineCompletionDiagnostic {
     }
 }
 
+function Wait-RadIAAgentRuntimeDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$LogPath,
+        [Parameter(Mandatory)]
+        [string]$CheckpointDirectory
+    )
+
+    $requiredPatterns = @(
+        "Agent diagnostic checkpoint: status=awaitingApproval, steps=0",
+        "Agent diagnostic checkpoint: status=paused, steps=1",
+        "Agent diagnostic checkpoint: status=completed, steps=1",
+        (
+            "Agent runtime diagnostic passed: persisted=true, " +
+            "resumed=true, tool=GetIDEState"
+        )
+    )
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    do {
+        $logContent = ""
+        if (Test-Path -LiteralPath $LogPath -PathType Leaf) {
+            $logContent = Get-Content -LiteralPath $LogPath -Raw
+        }
+        $missingPatterns = @(
+            $requiredPatterns |
+                Where-Object { -not $logContent.Contains($_) }
+        )
+        if ($missingPatterns.Count -gt 0) {
+            Start-Sleep -Milliseconds 100
+        }
+    } while (
+        $missingPatterns.Count -gt 0 -and
+        [DateTime]::UtcNow -lt $deadline
+    )
+    if ($missingPatterns.Count -gt 0) {
+        throw (
+            "The agent runtime diagnostic did not complete: " +
+            ($missingPatterns -join "; ")
+        )
+    }
+    $checkpointPath = Join-Path `
+        $CheckpointDirectory `
+        "radia-agent-runtime-smoke.json"
+    if (-not (Test-Path -LiteralPath $checkpointPath -PathType Leaf)) {
+        throw "The persisted agent diagnostic checkpoint was not found."
+    }
+    $checkpoint = Get-Content `
+        -LiteralPath $checkpointPath `
+        -Raw `
+        -Encoding UTF8 |
+        ConvertFrom-Json
+    $steps = @($checkpoint.steps)
+    if (
+        $checkpoint.status -ne "completed" -or
+        $steps.Count -ne 1 -or
+        $steps[0].toolName -ne "GetIDEState" -or
+        $steps[0].success -ne $true -or
+        $steps[0].risk -ne "readOnly"
+    ) {
+        throw "The persisted agent diagnostic checkpoint is incomplete."
+    }
+    return [pscustomobject]@{
+        AwaitingApproval = $true
+        Paused = $true
+        Resumed = $true
+        Completed = $true
+        Persisted = $true
+        ToolName = "GetIDEState"
+        StepCount = 1
+    }
+}
+
 function Restore-RadIADockingVisibility {
     if (-not $script:ExerciseDocking) {
         return
@@ -529,6 +608,30 @@ function Restore-RadIAInlineCompletionLogSettings {
     }
 }
 
+function Get-RadIACleanSourceCommit {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RepositoryRoot,
+        [Parameter(Mandatory)]
+        [string]$EvidenceName
+    )
+
+    & git -C $RepositoryRoot diff --quiet
+    $sourceDirty = $LASTEXITCODE -ne 0
+    & git -C $RepositoryRoot diff --cached --quiet
+    $sourceDirty = $sourceDirty -or ($LASTEXITCODE -ne 0)
+    if ($sourceDirty) {
+        throw "$EvidenceName evidence requires a clean tracked source."
+    }
+    $sourceCommit = (
+        & git -C $RepositoryRoot rev-parse HEAD
+    ).Trim()
+    if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch "^[0-9a-f]{40}$") {
+        throw "The source commit could not be resolved."
+    }
+    return $sourceCommit
+}
+
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $versionUnitPath = Join-Path `
     $repositoryRoot `
@@ -565,6 +668,7 @@ $upgradeFromVersion = ""
 $upgradeFromPackageSha256 = ""
 $inlineSmokeUnitPath = ""
 $inlineSmokeLogPath = ""
+$agentSmokeCheckpointDirectory = ""
 $script:InlineLogSettingsInitialized = $false
 
 trap {
@@ -578,7 +682,10 @@ trap {
         -ErrorAction SilentlyContinue) {
         Restore-RadIAInlineCompletionLogSettings
     }
-    Write-Error $_
+    Write-Error (
+        $_.Exception.Message + [Environment]::NewLine +
+        $_.ScriptStackTrace
+    )
     exit 1
 }
 
@@ -618,7 +725,7 @@ if ($IDE64) {
     $binName = "bin64"
     $shutdownTimeoutMs = 60000
 }
-if ($ExerciseInlineCompletion) {
+if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime) {
     $script:InlineLogRegistryPath = (
         "HKCU:\Software\Embarcadero\BDS\" +
         "$DelphiVersion\RadIA"
@@ -650,7 +757,7 @@ if ($ExerciseInlineCompletion) {
         $script:InlineLogOriginalPath = $inlineLogPath.Value
     }
     $inlineSmokeRoot = Join-Path (
-        "$repositoryRoot\Output\Validation\InlineCompletionSmoke"
+        "$repositoryRoot\Output\Validation\IDESmokeDiagnostics"
     ) (
         "$DelphiVersion-$platform-" +
         [Guid]::NewGuid().ToString("N")
@@ -664,11 +771,25 @@ if ($ExerciseInlineCompletion) {
     $inlineSmokeLogPath = Join-Path `
         $inlineSmokeLogDirectory `
         "radia.log"
-    $inlineSmokeUnitPath = Join-Path `
-        $repositoryRoot `
-        "Tests\Source\RadIA.Tests.TextNormalizer.pas"
-    if (-not (Test-Path -LiteralPath $inlineSmokeUnitPath -PathType Leaf)) {
-        throw "Inline completion smoke sources were not found."
+    if ($ExerciseInlineCompletion) {
+        $inlineSmokeUnitPath = Join-Path `
+            $repositoryRoot `
+            "Tests\Source\RadIA.Tests.TextNormalizer.pas"
+        if (-not (
+            Test-Path -LiteralPath $inlineSmokeUnitPath -PathType Leaf
+        )) {
+            throw "Inline completion smoke sources were not found."
+        }
+    }
+    if ($ExerciseAgentRuntime) {
+        $agentSmokeCheckpointDirectory = Join-Path `
+            $inlineSmokeRoot `
+            "AgentCheckpoints"
+        New-Item `
+            -ItemType Directory `
+            -Path $agentSmokeCheckpointDirectory `
+            -Force |
+            Out-Null
     }
     New-ItemProperty `
         -LiteralPath $script:InlineLogRegistryPath `
@@ -858,16 +979,29 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         $launchArguments = @($inlineSmokeUnitPath)
     }
     $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
+    $agentSmokeEnvironment = $env:RADIA_IDE_SMOKE_AGENT_RUNTIME
     try {
         if ($ExerciseInlineCompletion) {
             $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = "1"
         }
-        $process = Start-Process `
-            -FilePath $bdsPath `
-            -ArgumentList $launchArguments `
-            -PassThru
+        if ($ExerciseAgentRuntime) {
+            $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = (
+                $agentSmokeCheckpointDirectory
+            )
+        }
+        if ($launchArguments.Count -gt 0) {
+            $process = Start-Process `
+                -FilePath $bdsPath `
+                -ArgumentList $launchArguments `
+                -PassThru
+        } else {
+            $process = Start-Process `
+                -FilePath $bdsPath `
+                -PassThru
+        }
     } finally {
         $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = $inlineSmokeEnvironment
+        $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = $agentSmokeEnvironment
     }
     $instanceFile = Join-Path (
         [Environment]::GetFolderPath("ApplicationData")
@@ -1034,6 +1168,12 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                     [IO.Path]::GetFileName($editorContent.fileName)
                 )
         }
+        $agentRuntimeDiagnostic = $null
+        if ($ExerciseAgentRuntime) {
+            $agentRuntimeDiagnostic = Wait-RadIAAgentRuntimeDiagnostic `
+                -LogPath $inlineSmokeLogPath `
+                -CheckpointDirectory $agentSmokeCheckpointDirectory
+        }
 
         $descendants = @(
             Get-RadIAProcessDescendants `
@@ -1149,6 +1289,29 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 $inlineDiagnostic.Painted
             )
             InlineCompletionLineCount = $inlineLineCount
+            AgentRuntimeExercised = [bool]$ExerciseAgentRuntime
+            AgentRuntimeAwaitingApproval = (
+                [bool]$ExerciseAgentRuntime -and
+                $agentRuntimeDiagnostic.AwaitingApproval
+            )
+            AgentRuntimePaused = (
+                [bool]$ExerciseAgentRuntime -and
+                $agentRuntimeDiagnostic.Paused
+            )
+            AgentRuntimeResumed = (
+                [bool]$ExerciseAgentRuntime -and
+                $agentRuntimeDiagnostic.Resumed
+            )
+            AgentRuntimeCompleted = (
+                [bool]$ExerciseAgentRuntime -and
+                $agentRuntimeDiagnostic.Completed
+            )
+            AgentRuntimePersisted = (
+                [bool]$ExerciseAgentRuntime -and
+                $agentRuntimeDiagnostic.Persisted
+            )
+            AgentRuntimeToolName = $agentRuntimeDiagnostic.ToolName
+            AgentRuntimeStepCount = $agentRuntimeDiagnostic.StepCount
         }
         Write-Host (
             "Cycle $cycle/$Cycles passed for Delphi " +
@@ -1185,6 +1348,13 @@ if ($ExerciseInlineCompletion) {
     Write-Host (
         "Local multiline Ghost Text preparation and OTA painting passed."
     )
+}
+if ($ExerciseAgentRuntime) {
+    Write-Host (
+        "Agent runtime pause, persistence, resume, and completion passed."
+    )
+}
+if ($ExerciseInlineCompletion -or $ExerciseAgentRuntime) {
     Restore-RadIAInlineCompletionLogSettings
 }
 if ($EvidencePath) {
@@ -1208,6 +1378,7 @@ if ($EvidencePath) {
         cyclesPassed = $results.Count
         dockingExercised = [bool]$ExerciseDocking
         inlineCompletionExercised = [bool]$ExerciseInlineCompletion
+        agentRuntimeExercised = [bool]$ExerciseAgentRuntime
         packageLifecycleExercised = [bool]$ExercisePackageLifecycle
         upgradeExercised = [bool]$upgradePackageEvidence
         upgradeFromVersion = $upgradeFromVersion
@@ -1220,19 +1391,9 @@ if ($EvidencePath) {
     Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
 }
 if ($InlineCompletionEvidencePath) {
-    & git -C $repositoryRoot diff --quiet
-    $sourceDirty = $LASTEXITCODE -ne 0
-    & git -C $repositoryRoot diff --cached --quiet
-    $sourceDirty = $sourceDirty -or ($LASTEXITCODE -ne 0)
-    if ($sourceDirty) {
-        throw "Inline completion evidence requires a clean tracked source."
-    }
-    $sourceCommit = (
-        & git -C $repositoryRoot rev-parse HEAD
-    ).Trim()
-    if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch "^[0-9a-f]{40}$") {
-        throw "The source commit could not be resolved."
-    }
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "Inline completion"
     $resolvedInlineEvidencePath = [IO.Path]::GetFullPath(
         $InlineCompletionEvidencePath
     )
@@ -1266,5 +1427,44 @@ if ($InlineCompletionEvidencePath) {
     Write-Host (
         "Inline completion evidence created: " +
         $resolvedInlineEvidencePath
+    )
+}
+if ($AgentRuntimeEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "Agent runtime"
+    $resolvedAgentEvidencePath = [IO.Path]::GetFullPath(
+        $AgentRuntimeEvidencePath
+    )
+    $agentEvidenceDirectory = Split-Path -Parent $resolvedAgentEvidencePath
+    if ($agentEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $agentEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "agentRuntimeJourneySmoke"
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        sourceDirty = $false
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        installedBplSha256 = $installedPackageHash
+        toolCount = $expectedToolNames.Count
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedAgentEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "Agent runtime evidence created: " +
+        $resolvedAgentEvidencePath
     )
 }
