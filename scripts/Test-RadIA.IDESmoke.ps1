@@ -1695,7 +1695,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW
     )
     try {
-        if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
+        if ($ExerciseInlineCompletion) {
             $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = "1"
         }
         if ($ExerciseInlineReview) {
@@ -1856,7 +1856,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -TimeoutSeconds 60
         }
         $inlineDiagnostic = $null
-        if ($ExerciseInlineCompletion) {
+        if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
             $editorRequests = @(
                 (
                     '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
@@ -1899,7 +1899,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 throw "No active editor was found for inline diagnostics."
             }
         }
-        if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
+        if ($ExerciseInlineCompletion) {
             $inlineDiagnostic = Wait-RadIAInlineCompletionDiagnostic `
                 -LogPath $inlineSmokeLogPath `
                 -FileName (
