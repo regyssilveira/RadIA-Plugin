@@ -40,6 +40,7 @@
         "GetUnitSymbols",
         "NavigateToFile",
         "NavigateToSymbol",
+        "NavigateToDevelopmentSurface",
         "ListIDEActions",
         "ExecuteIDEAction"
       ]

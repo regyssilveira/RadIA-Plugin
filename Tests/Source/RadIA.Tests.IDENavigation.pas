@@ -15,6 +15,7 @@ type
   private
     FExecutedAction: string;
     FNavigatedFile: string;
+    FNavigatedSurface: TRadIADevelopmentSurface;
     FNavigatedSymbol: string;
   public
     function ListProjectGroupProjects: TArray<string>;
@@ -30,12 +31,18 @@ type
     function NavigateToSymbol(
       const ASymbol: string
     ): TRadIANavigationResult;
+    function NavigateToDevelopmentSurface(
+      const AFileName: string;
+      const ASurface: TRadIADevelopmentSurface
+    ): TRadIANavigationResult;
     function ListIDEActions: TArray<TRadIAIDEAction>;
     function ExecuteIDEAction(
       const AActionName: string
     ): TRadIANavigationResult;
     property ExecutedAction: string read FExecutedAction;
     property NavigatedFile: string read FNavigatedFile;
+    property NavigatedSurface: TRadIADevelopmentSurface
+      read FNavigatedSurface;
     property NavigatedSymbol: string read FNavigatedSymbol;
   end;
 
@@ -62,6 +69,8 @@ type
     procedure ListsStructuredUnitSymbols;
     [Test]
     procedure NavigatesToFileAndSymbol;
+    [Test]
+    procedure NavigatesBetweenCodeAndDesign;
     [Test]
     procedure ListsAndExecutesSafeActions;
     [Test]
@@ -159,6 +168,21 @@ begin
   );
 end;
 
+function TRadIAFakeIDENavigationFacade.NavigateToDevelopmentSurface(
+  const AFileName: string;
+  const ASurface: TRadIADevelopmentSurface
+): TRadIANavigationResult;
+begin
+  FNavigatedFile := AFileName;
+  FNavigatedSurface := ASurface;
+  Result := TRadIANavigationResult.Succeeded(
+    AFileName,
+    0,
+    0,
+    'Development surface selected.'
+  );
+end;
+
 function TRadIAFakeIDENavigationFacade.NavigateToSymbol(
   const ASymbol: string
 ): TRadIANavigationResult;
@@ -247,6 +271,26 @@ begin
   Assert.AreEqual('TRadIAMainForm.Save', FFacade.NavigatedSymbol);
 end;
 
+procedure TRadIAIDENavigationTests.NavigatesBetweenCodeAndDesign;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := ExecuteTool(
+    'NavigateToDevelopmentSurface',
+    '{"fileName":"C:\\Work\\Main.pas","surface":"design"}'
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(dsDesign, FFacade.NavigatedSurface);
+  Assert.AreEqual('C:\Work\Main.pas', FFacade.NavigatedFile);
+
+  LResult := ExecuteTool(
+    'NavigateToDevelopmentSurface',
+    '{"fileName":"C:\\Work\\Main.pas","surface":"code"}'
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(dsCode, FFacade.NavigatedSurface);
+end;
+
 procedure TRadIAIDENavigationTests.NavigationFailureIsStructured;
 var
   LResult: TRadIAToolResult;
@@ -266,10 +310,14 @@ procedure TRadIAIDENavigationTests.RegistersCompleteNavigationCatalog;
 var
   LTool: IRadIATool;
 begin
-  Assert.AreEqual(7, FRegistry.Count);
+  Assert.AreEqual(8, FRegistry.Count);
   Assert.IsTrue(FRegistry.TryResolve('ListProjectGroupProjects', LTool));
   Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
   Assert.IsTrue(FRegistry.TryResolve('NavigateToFile', LTool));
+  Assert.AreEqual(trReversibleWrite, LTool.Descriptor.Risk);
+  Assert.IsTrue(
+    FRegistry.TryResolve('NavigateToDevelopmentSurface', LTool)
+  );
   Assert.AreEqual(trReversibleWrite, LTool.Descriptor.Risk);
   Assert.IsTrue(FRegistry.TryResolve('ExecuteIDEAction', LTool));
   Assert.AreEqual(trExecution, LTool.Descriptor.Risk);

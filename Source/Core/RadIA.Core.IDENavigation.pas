@@ -3,6 +3,11 @@ unit RadIA.Core.IDENavigation;
 interface
 
 type
+  TRadIADevelopmentSurface = (
+    dsCode,
+    dsDesign
+  );
+
   TRadIAUnitSymbol = record
   private
     FKind: string;
@@ -61,7 +66,7 @@ type
   end;
 
   IRadIAIDENavigationFacade = interface
-    ['{E11487A6-D8A5-45C7-AE2F-0219B672BC01}']
+    ['{41D296C9-D738-488D-8ECB-70D05AB1322F}']
     function ListProjectGroupProjects: TArray<string>;
     function GetProjectDependencies: TArray<string>;
     function GetUnitSymbols(
@@ -74,6 +79,10 @@ type
     ): TRadIANavigationResult;
     function NavigateToSymbol(
       const ASymbol: string
+    ): TRadIANavigationResult;
+    function NavigateToDevelopmentSurface(
+      const AFileName: string;
+      const ASurface: TRadIADevelopmentSurface
     ): TRadIANavigationResult;
     function ListIDEActions: TArray<TRadIAIDEAction>;
     function ExecuteIDEAction(

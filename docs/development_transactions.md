@@ -38,6 +38,10 @@ as etapas que já tinham sido desfeitas são reaplicadas, evitando um estado par
 última etapa ainda aplicada pode ser revertida; etapas anteriores ficam disponíveis depois que as
 posteriores forem desfeitas. O plano passa a `partiallyReverted` e continua mostrando cada estado.
 
+Durante a jornada, `NavigateToDevelopmentSurface` ativa explicitamente o editor de código ou o Form
+Designer vivo para um arquivo do projeto. A tool recusa arquivos externos e falha quando a
+superfície solicitada não existe.
+
 ## Segurança
 
 - máximo de 32 operações e 16 previews compostos ativos;

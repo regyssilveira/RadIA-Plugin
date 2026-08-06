@@ -39,6 +39,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `GetUnitSymbols` | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToFile` | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToSymbol` | `RadIA.Core.IDENavigationTools.pas` |
+| `NavigateToDevelopmentSurface` | `RadIA.Core.IDENavigationTools.pas` |
 | `ListIDEActions` | `RadIA.Core.IDENavigationTools.pas` |
 | `ExecuteIDEAction` | `RadIA.Core.IDENavigationTools.pas` |
 
@@ -224,6 +225,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Resumo
 
 - Registered groups: 25
-- Registered built-in tools: 92
+- Registered built-in tools: 93
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

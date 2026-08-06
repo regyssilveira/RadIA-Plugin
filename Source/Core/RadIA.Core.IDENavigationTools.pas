@@ -24,6 +24,7 @@ type
     intkGetUnitSymbols,
     intkNavigateToFile,
     intkNavigateToSymbol,
+    intkNavigateToDevelopmentSurface,
     intkListIDEActions,
     intkExecuteIDEAction
   );
@@ -51,6 +52,9 @@ type
       const AArguments: TJSONObject
     ): TRadIAToolResult;
     function ExecuteNavigateToSymbol(
+      const AArguments: TJSONObject
+    ): TRadIAToolResult;
+    function ExecuteNavigateToDevelopmentSurface(
       const AArguments: TJSONObject
     ): TRadIAToolResult;
     function ExecuteIDEAction(
@@ -100,6 +104,11 @@ const
   CSymbolInputSchema =
     '{"type":"object","required":["symbol"],"properties":{' +
     '"symbol":{"type":"string","minLength":1}},"additionalProperties":false}';
+  CDevelopmentSurfaceInputSchema =
+    '{"type":"object","required":["fileName","surface"],"properties":{' +
+    '"fileName":{"type":"string","minLength":1},' +
+    '"surface":{"type":"string","enum":["code","design"]}},' +
+    '"additionalProperties":false}';
   CActionInputSchema =
     '{"type":"object","required":["actionName"],"properties":{' +
     '"actionName":{"type":"string","minLength":1}},"additionalProperties":false}';
@@ -180,6 +189,10 @@ begin
           Result := ExecuteNavigateToFile(TJSONObject(LArguments));
         intkNavigateToSymbol:
           Result := ExecuteNavigateToSymbol(TJSONObject(LArguments));
+        intkNavigateToDevelopmentSurface:
+          Result := ExecuteNavigateToDevelopmentSurface(
+            TJSONObject(LArguments)
+          );
         intkListIDEActions:
           Result := ExecuteListIDEActions;
         intkExecuteIDEAction:
@@ -310,6 +323,30 @@ begin
   );
 end;
 
+function TRadIAIDENavigationTool.ExecuteNavigateToDevelopmentSurface(
+  const AArguments: TJSONObject
+): TRadIAToolResult;
+var
+  LSurface: string;
+  LSurfaceKind: TRadIADevelopmentSurface;
+begin
+  LSurface := GetRequiredString(AArguments, 'surface');
+  if SameText(LSurface, 'code') then
+    LSurfaceKind := dsCode
+  else if SameText(LSurface, 'design') then
+    LSurfaceKind := dsDesign
+  else
+    raise EArgumentException.Create(
+      'Argument "surface" must be "code" or "design".'
+    );
+  Result := NavigationResultToToolResult(
+    FNavigation.NavigateToDevelopmentSurface(
+      GetRequiredString(AArguments, 'fileName'),
+      LSurfaceKind
+    )
+  );
+end;
+
 function TRadIAIDENavigationTool.GetDescriptor:
   TRadIAToolDescriptor;
 begin
@@ -347,6 +384,13 @@ begin
         'NavigateToSymbol',
         'Moves the active editor to a declared symbol.',
         CSymbolInputSchema,
+        trReversibleWrite
+      );
+    intkNavigateToDevelopmentSurface:
+      Result := BuildDescriptor(
+        'NavigateToDevelopmentSurface',
+        'Activates the Code editor or live Form Designer for a project file.',
+        CDevelopmentSurfaceInputSchema,
         trReversibleWrite
       );
     intkListIDEActions:

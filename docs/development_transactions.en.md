@@ -37,6 +37,10 @@ already reverted are applied again, avoiding a partially reverted state.
 last operation still applied can be reverted. Earlier steps become eligible after later ones are
 undone. The plan enters `partiallyReverted` and keeps every step state visible.
 
+During the journey, `NavigateToDevelopmentSurface` explicitly activates the code editor or live
+Form Designer for a project-owned file. The tool rejects external files and fails when the requested
+surface is unavailable.
+
 ## Safety
 
 - at most 32 operations and 16 active composite previews;

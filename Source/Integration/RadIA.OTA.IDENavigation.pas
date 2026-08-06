@@ -32,6 +32,10 @@ type
     function NavigateToSymbol(
       const ASymbol: string
     ): TRadIANavigationResult;
+    function NavigateToDevelopmentSurface(
+      const AFileName: string;
+      const ASurface: TRadIADevelopmentSurface
+    ): TRadIANavigationResult;
     function ListIDEActions: TArray<TRadIAIDEAction>;
     function ExecuteIDEAction(
       const AActionName: string
@@ -116,6 +120,61 @@ begin
     if Assigned(LModuleInfo) and
       SameFileName(LModuleInfo.FileName, AFileName) then
       Exit(True);
+  end;
+end;
+
+function ResolveProjectModule(
+  const AFileName: string;
+  const AModuleServices: IOTAModuleServices;
+  out AErrorMessage: string
+): IOTAModule;
+var
+  LProject: IOTAProject;
+  LProjectGroup: IOTAProjectGroup;
+begin
+  Result := nil;
+  AErrorMessage := '';
+  LProjectGroup := AModuleServices.MainProjectGroup;
+  LProject := AModuleServices.GetActiveProject;
+  if Assigned(LProjectGroup) then
+    LProject := LProjectGroup.FindProject(AFileName);
+  if not Assigned(LProject) then
+    LProject := AModuleServices.GetActiveProject;
+  if not IsProjectFile(LProject, AFileName) then
+  begin
+    AErrorMessage :=
+      'Code/Design navigation is restricted to the active project.';
+    Exit;
+  end;
+  Result := AModuleServices.FindModule(AFileName);
+  if not Assigned(Result) then
+    Result := AModuleServices.OpenModule(AFileName);
+  if not Assigned(Result) then
+    AErrorMessage := 'The requested project module could not be opened.';
+end;
+
+function ShowDevelopmentSurface(
+  const AModule: IOTAModule;
+  const ASurface: TRadIADevelopmentSurface
+): Boolean;
+var
+  LEditor: IOTAEditor;
+  LIndex: Integer;
+begin
+  Result := False;
+  for LIndex := 0 to AModule.ModuleFileCount - 1 do
+  begin
+    LEditor := AModule.ModuleFileEditors[LIndex];
+    if not Assigned(LEditor) then
+      Continue;
+    Result :=
+      ((ASurface = dsCode) and Supports(LEditor, IOTASourceEditor)) or
+      ((ASurface = dsDesign) and Supports(LEditor, IOTAFormEditor));
+    if Result then
+    begin
+      LEditor.Show;
+      Exit;
+    end;
   end;
 end;
 
@@ -366,6 +425,63 @@ begin
         ALine,
         AColumn,
         'The source position is active in the editor.'
+      );
+    end
+  );
+  Result := LResult;
+end;
+
+function TRadIAOTAIDENavigationFacade.NavigateToDevelopmentSurface(
+  const AFileName: string;
+  const ASurface: TRadIADevelopmentSurface
+): TRadIANavigationResult;
+var
+  LResult: TRadIANavigationResult;
+begin
+  LResult := TRadIANavigationResult.Failed(
+    'The requested development surface is unavailable.'
+  );
+  RunOnMainThread(
+    procedure
+    var
+      LErrorMessage: string;
+      LModule: IOTAModule;
+      LModuleServices: IOTAModuleServices;
+      LResolvedFile: string;
+    begin
+      if Trim(AFileName) = '' then
+      begin
+        LResult := TRadIANavigationResult.Failed(
+          'A project file is required for Code/Design navigation.'
+        );
+        Exit;
+      end;
+      LResolvedFile := TPath.GetFullPath(AFileName);
+      if not Supports(
+        BorlandIDEServices,
+        IOTAModuleServices,
+        LModuleServices
+      ) then
+        Exit;
+      LModule := ResolveProjectModule(
+        LResolvedFile,
+        LModuleServices,
+        LErrorMessage
+      );
+      if not Assigned(LModule) then
+      begin
+        LResult := TRadIANavigationResult.Failed(
+          LErrorMessage
+        );
+        Exit;
+      end;
+      if not ShowDevelopmentSurface(LModule, ASurface) then
+        Exit;
+      LResult := TRadIANavigationResult.Succeeded(
+        LResolvedFile,
+        0,
+        0,
+        'The requested Code/Design surface is active.'
       );
     end
   );
