@@ -4,7 +4,8 @@ interface
 
 uses
   System.Generics.Collections,
-  RadIA.Core.AgentExecutors;
+  RadIA.Core.AgentExecutors,
+  RadIA.Core.CliManager;
 
 type
   TRadIATerminalColor = (
@@ -83,12 +84,14 @@ type
     FDisplayName: string;
     FExecutablePath: string;
     FArgumentsPrefix: TArray<string>;
+    FCommandPrefix: string;
   public
     constructor Create(
       const AId: string;
       const ADisplayName: string;
       const AExecutablePath: string;
-      const AArgumentsPrefix: TArray<string>
+      const AArgumentsPrefix: TArray<string>;
+      const ACommandPrefix: string = ''
     );
     function BuildInvocation(
       const ACommand: string;
@@ -128,8 +131,17 @@ type
   end;
 
   TRadIATerminalCatalog = class
+  private
+    class function FindGitBash(
+      const AEnvironment: IRadIACliEnvironment
+    ): string; static;
+    class function ProfileForDetection(
+      const ADetection: TRadIACliDetection
+    ): TRadIATerminalProfile; static;
   public
-    class function Profiles: TArray<TRadIATerminalProfile>; static;
+    class function Profiles(
+      const AEnvironment: IRadIACliEnvironment = nil
+    ): TArray<TRadIATerminalProfile>; static;
     class function Snippets: TArray<TRadIATerminalSnippet>; static;
   end;
 
@@ -351,13 +363,15 @@ constructor TRadIATerminalProfile.Create(
   const AId: string;
   const ADisplayName: string;
   const AExecutablePath: string;
-  const AArgumentsPrefix: TArray<string>
+  const AArgumentsPrefix: TArray<string>;
+  const ACommandPrefix: string
 );
 begin
   FId := AId;
   FDisplayName := ADisplayName;
   FExecutablePath := AExecutablePath;
   FArgumentsPrefix := AArgumentsPrefix;
+  FCommandPrefix := ACommandPrefix;
 end;
 
 function TRadIATerminalProfile.BuildInvocation(
@@ -370,7 +384,7 @@ begin
   if Trim(ACommand) = '' then
     raise EArgumentException.Create('The terminal command is required.');
   LArguments := Copy(FArgumentsPrefix);
-  LArguments := LArguments + [ACommand];
+  LArguments := LArguments + [FCommandPrefix + ACommand];
   Result := TRadIACliInvocation.Create(
     FExecutablePath,
     LArguments,
@@ -407,9 +421,68 @@ end;
 
 { TRadIATerminalCatalog }
 
-class function TRadIATerminalCatalog.Profiles:
-  TArray<TRadIATerminalProfile>;
+class function TRadIATerminalCatalog.FindGitBash(
+  const AEnvironment: IRadIACliEnvironment
+): string;
+var
+  LCandidate: string;
+  LDirectory: string;
 begin
+  for LDirectory in AEnvironment.GetPathEntries do
+  begin
+    LCandidate := TPath.Combine(LDirectory.Trim([' ', '"']), 'bash.exe');
+    if AEnvironment.FileExists(LCandidate) and
+      LDirectory.ToLower.Contains('git') then
+      Exit(LCandidate);
+  end;
+  Result := '';
+end;
+
+class function TRadIATerminalCatalog.ProfileForDetection(
+  const ADetection: TRadIACliDetection
+): TRadIATerminalProfile;
+var
+  LCommandPrefix: string;
+  LExtension: string;
+begin
+  LExtension := ExtractFileExt(ADetection.ExecutablePath).ToLower;
+  if (LExtension = '.cmd') or (LExtension = '.bat') then
+  begin
+    LCommandPrefix :=
+      TRadIACliInvocationBuilder.QuoteWindowsArgument(
+        ADetection.ExecutablePath
+      ) + ' ';
+    Exit(
+      TRadIATerminalProfile.Create(
+        'ai-' + ADetection.Definition.Id,
+        ADetection.Definition.DisplayName,
+        GetEnvironmentVariable('ComSpec'),
+        ['/D', '/S', '/C'],
+        LCommandPrefix
+      )
+    );
+  end;
+  Result := TRadIATerminalProfile.Create(
+    'ai-' + ADetection.Definition.Id,
+    ADetection.Definition.DisplayName,
+    ADetection.ExecutablePath,
+    []
+  );
+end;
+
+class function TRadIATerminalCatalog.Profiles(
+  const AEnvironment: IRadIACliEnvironment
+):
+  TArray<TRadIATerminalProfile>;
+var
+  LCliDetection: TRadIACliDetection;
+  LDetector: TRadIACliDetector;
+  LEnvironment: IRadIACliEnvironment;
+  LGitBash: string;
+begin
+  LEnvironment := AEnvironment;
+  if not Assigned(LEnvironment) then
+    LEnvironment := TRadIACliEnvironment.Create;
   Result := [
     TRadIATerminalProfile.Create(
       'powershell',
@@ -424,6 +497,24 @@ begin
       ['/D', '/S', '/C']
     )
   ];
+  LGitBash := FindGitBash(LEnvironment);
+  if LGitBash <> '' then
+    Result := Result + [
+      TRadIATerminalProfile.Create(
+        'git-bash',
+        'Git Bash',
+        LGitBash,
+        ['-l', '-c']
+      )
+    ];
+  LDetector := TRadIACliDetector.Create(LEnvironment);
+  try
+    for LCliDetection in LDetector.DetectAll do
+      if LCliDetection.Installed then
+        Result := Result + [ProfileForDetection(LCliDetection)];
+  finally
+    LDetector.Free;
+  end;
 end;
 
 class function TRadIATerminalCatalog.Snippets:

@@ -19,6 +19,8 @@ type
     [Test]
     procedure CatalogProvidesShellProfilesAndSnippets;
     [Test]
+    procedure CatalogAddsOnlyDetectedGitBashAndAiProfiles;
+    [Test]
     procedure ProfileBuildsInvocationWithCommandAsOneArgument;
     [Test]
     procedure EmptyCommandIsRejected;
@@ -67,10 +69,55 @@ uses
   Vcl.Menus,
   Vcl.Forms,
   RadIA.Core.AgentExecutors,
+  RadIA.Core.CliManager,
   RadIA.Core.InlineShortcuts,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalScreen,
   RadIA.UI.TerminalFrame;
+
+type
+  TRadIATerminalTestEnvironment = class(
+    TInterfacedObject,
+    IRadIACliEnvironment
+  )
+  private
+    FExistingFiles: TArray<string>;
+    FPathEntries: TArray<string>;
+  public
+    constructor Create(
+      const AExistingFiles: TArray<string>;
+      const APathEntries: TArray<string>
+    );
+    function FileExists(const AFileName: string): Boolean;
+    function GetPathEntries: TArray<string>;
+  end;
+
+constructor TRadIATerminalTestEnvironment.Create(
+  const AExistingFiles: TArray<string>;
+  const APathEntries: TArray<string>
+);
+begin
+  inherited Create;
+  FExistingFiles := AExistingFiles;
+  FPathEntries := APathEntries;
+end;
+
+function TRadIATerminalTestEnvironment.FileExists(
+  const AFileName: string
+): Boolean;
+var
+  LExistingFile: string;
+begin
+  for LExistingFile in FExistingFiles do
+    if SameText(LExistingFile, AFileName) then
+      Exit(True);
+  Result := False;
+end;
+
+function TRadIATerminalTestEnvironment.GetPathEntries: TArray<string>;
+begin
+  Result := Copy(FPathEntries);
+end;
 
 function SegmentsText(
   const ASegments: TArray<TRadIATerminalTextSegment>
@@ -144,10 +191,7 @@ end;
 
 procedure TRadIATerminalTests.CatalogProvidesShellProfilesAndSnippets;
 begin
-  Assert.AreEqual<Integer>(
-    2,
-    Length(TRadIATerminalCatalog.Profiles)
-  );
+  Assert.IsTrue(Length(TRadIATerminalCatalog.Profiles) >= 2);
   Assert.IsTrue(Length(TRadIATerminalCatalog.Snippets) >= 4);
   Assert.AreEqual(
     'powershell',
@@ -499,6 +543,34 @@ begin
   finally
     LHost.Free;
   end;
+end;
+
+procedure TRadIATerminalTests.
+  CatalogAddsOnlyDetectedGitBashAndAiProfiles;
+var
+  LEnvironment: IRadIACliEnvironment;
+  LInvocation: TRadIACliInvocation;
+  LProfiles: TArray<TRadIATerminalProfile>;
+begin
+  LEnvironment := TRadIATerminalTestEnvironment.Create(
+    [
+      'C:\Tools\Git\bin\bash.exe',
+      'C:\Tools\AI\codex.cmd',
+      'C:\Tools\AI\gemini.exe'
+    ],
+    ['C:\Tools\Git\bin', 'C:\Tools\AI']
+  );
+  LProfiles := TRadIATerminalCatalog.Profiles(LEnvironment);
+  Assert.AreEqual<Integer>(5, Length(LProfiles));
+  Assert.AreEqual('git-bash', LProfiles[2].Id);
+  Assert.AreEqual('ai-codex', LProfiles[3].Id);
+  Assert.AreEqual('ai-gemini', LProfiles[4].Id);
+  LInvocation := LProfiles[3].BuildInvocation('inspect this', FDirectory);
+  Assert.AreEqual(GetEnvironmentVariable('ComSpec'), LInvocation.ExecutablePath);
+  Assert.Contains(
+    LInvocation.Arguments[High(LInvocation.Arguments)],
+    'codex.cmd'
+  );
 end;
 
 procedure TRadIATerminalTests.

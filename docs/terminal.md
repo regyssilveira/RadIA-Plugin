@@ -34,7 +34,9 @@ automaticamente o padrão `Ctrl+Alt+T`.
 ## Recursos
 
 - sessões simultâneas em abas independentes;
-- perfis para Windows PowerShell e Command Prompt;
+- perfis fixos para Windows PowerShell e Command Prompt;
+- perfil para Git Bash quando a instalação do Git for Windows estiver no `PATH`;
+- perfis para Codex, Claude, Gemini e GitHub Copilot somente quando o executável for detectado;
 - diretório de trabalho baseado na pasta do projeto Delphi ativo;
 - execução interativa por ConPTY, com fallback para pipes;
 - entrada contínua para responder prompts de processos ativos;
@@ -71,6 +73,11 @@ O terminal executa exatamente o comando informado pelo usuário. Ele não ativa 
 adiciona opções autônomas aos CLIs. O histórico é salvo em
 `%APPDATA%\RadIA\terminal-history.json` e contém somente perfil, comando, horário e código de saída.
 Stdout, stderr, tokens e credenciais não são persistidos pelo histórico.
+
+Os perfis de IA reutilizam o catálogo do CLI Manager. Assim, o terminal não mantém uma segunda
+lista de nomes ou caminhos: somente CLIs realmente detectados são apresentados. Executáveis
+`.cmd` e `.bat` são iniciados com segurança pelo Command Prompt; executáveis nativos são chamados
+diretamente. O texto digitado torna-se o prompt ou comando inicial do CLI selecionado.
 
 Cada execução recebe um Job Object do Windows. Cancelar a execução, fechar a aba, descarregar o
 plugin ou encerrar a IDE finaliza o processo principal e seus filhos. Atualizações visuais são

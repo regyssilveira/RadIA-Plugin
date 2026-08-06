@@ -66,13 +66,15 @@ type
       const AKind: TRadIACliKind;
       const APrompt: string
     ): TArray<string>; static;
-    class function QuoteWindowsArgument(const AValue: string): string; static;
     class procedure ValidateInput(
       const AExecutablePath: string;
       const APrompt: string;
       const AWorkingDirectory: string
     ); static;
   public
+    class function QuoteWindowsArgument(
+      const AValue: string
+    ): string; static;
     class function Build(
       const ADefinition: TRadIACliDefinition;
       const AExecutablePath: string;
