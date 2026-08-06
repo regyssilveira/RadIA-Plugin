@@ -44,7 +44,7 @@ type
 implementation
 
 uses
-  System.SysUtils, System.Classes, Winapi.Windows, System.Win.Registry,
+  System.SysUtils, System.Classes, Winapi.Windows,
   System.Generics.Collections, RadIA.Core.ProviderRegistry, RadIA.Core.Types,
   RadIA.Core.TokenUsage, RadIA.Core.Logger, RadIA.Core.Container;
 
@@ -137,47 +137,9 @@ end;
 
 function TRadIAOpenAIProvider.GetCodexExecutablePath: string;
 var
-  LReg: TRegistry;
-  LKeys: TStringList;
-  LKey: string;
   LPath: string;
 begin
   Result := '';
-
-  LReg := TRegistry.Create;
-  try
-    LReg.RootKey := HKEY_CURRENT_USER;
-    if LReg.OpenKeyReadOnly('Software\Embarcadero\BDS') then
-    begin
-      LKeys := TStringList.Create;
-      try
-        LReg.GetKeyNames(LKeys);
-        for LKey in LKeys do
-        begin
-          if LReg.OpenKeyReadOnly('Software\Embarcadero\BDS\' + LKey + '\Kai') then
-          begin
-            LPath := LReg.ReadString('CodexCLIPath');
-            if not LPath.IsEmpty and FileExists(LPath) then
-            begin
-              Result := LPath;
-              Exit;
-            end;
-          end;
-        end;
-      finally
-        LKeys.Free;
-      end;
-    end;
-  finally
-    LReg.Free;
-  end;
-
-  LPath := 'C:\Program Files (x86)\Embarcadero\Kai\codex.exe';
-  if FileExists(LPath) then
-  begin
-    Result := LPath;
-    Exit;
-  end;
 
   LPath := IncludeTrailingPathDelimiter(GetHomePath) + 'AppData\Local\OpenAI\Codex\bin\codex.exe';
   if FileExists(LPath) then
