@@ -15,7 +15,12 @@ param(
     [string]$HostUrl = "",
     [string]$ReportTaskFile = "",
     [ValidateRange(10, 1800)]
-    [int]$TimeoutSeconds = 300
+    [int]$TimeoutSeconds = 300,
+    [ValidateRange(0, 100)]
+    [decimal]$MinimumCoverage = 80,
+    [ValidateRange(0, 100)]
+    [decimal]$MaximumDuplication = 3,
+    [string]$EvidencePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,6 +74,24 @@ function Invoke-RadIASonarApi {
         -Uri $Uri `
         -Headers $Headers `
         -TimeoutSec 30
+}
+
+function Get-RadIAMeasureValue {
+    param(
+        [Parameter(Mandatory)]
+        [object[]]$Measures,
+        [Parameter(Mandatory)]
+        [string]$Metric
+    )
+
+    $measure = @(
+        $Measures |
+            Where-Object { $_.metric -eq $Metric }
+    ) | Select-Object -First 1
+    if (-not $measure) {
+        throw "SonarQube did not return the global metric $Metric."
+    }
+    return $measure.value
 }
 
 if ([string]::IsNullOrWhiteSpace($ReportTaskFile)) {
@@ -155,4 +178,137 @@ if ($gate.status -ne "OK") {
     throw "SonarQube Quality Gate rejected analysis $($task.analysisId)."
 }
 
-Write-Host "The exact SonarQube analysis passed the Quality Gate." -ForegroundColor Green
+if (-not $report.ContainsKey("projectKey")) {
+    throw "The SonarScanner report does not contain projectKey."
+}
+$projectKey = $report["projectKey"]
+$metricKeys = @(
+    "bugs",
+    "vulnerabilities",
+    "security_hotspots",
+    "code_smells",
+    "coverage",
+    "duplicated_lines_density",
+    "reliability_rating",
+    "security_rating",
+    "sqale_rating"
+) -join ","
+$measureResponse = Invoke-RadIASonarApi `
+    -Uri (
+        "$HostUrl/api/measures/component?component=$projectKey" +
+        "&metricKeys=$metricKeys"
+    ) `
+    -Headers $headers
+$measures = @($measureResponse.component.measures)
+$issueResponse = Invoke-RadIASonarApi `
+    -Uri (
+        "$HostUrl/api/issues/search?componentKeys=$projectKey" +
+        "&resolved=false&ps=1"
+    ) `
+    -Headers $headers
+
+$bugs = [int](Get-RadIAMeasureValue $measures "bugs")
+$vulnerabilities = [int](
+    Get-RadIAMeasureValue $measures "vulnerabilities"
+)
+$securityHotspots = [int](
+    Get-RadIAMeasureValue $measures "security_hotspots"
+)
+$codeSmells = [int](Get-RadIAMeasureValue $measures "code_smells")
+$coverage = [decimal]::Parse(
+    (Get-RadIAMeasureValue $measures "coverage"),
+    [Globalization.CultureInfo]::InvariantCulture
+)
+$duplication = [decimal]::Parse(
+    (Get-RadIAMeasureValue $measures "duplicated_lines_density"),
+    [Globalization.CultureInfo]::InvariantCulture
+)
+$reliabilityRating = [decimal]::Parse(
+    (Get-RadIAMeasureValue $measures "reliability_rating"),
+    [Globalization.CultureInfo]::InvariantCulture
+)
+$securityRating = [decimal]::Parse(
+    (Get-RadIAMeasureValue $measures "security_rating"),
+    [Globalization.CultureInfo]::InvariantCulture
+)
+$maintainabilityRating = [decimal]::Parse(
+    (Get-RadIAMeasureValue $measures "sqale_rating"),
+    [Globalization.CultureInfo]::InvariantCulture
+)
+$unresolvedIssues = [int]$issueResponse.total
+
+if ($bugs -ne 0 -or
+    $vulnerabilities -ne 0 -or
+    $securityHotspots -ne 0 -or
+    $codeSmells -ne 0 -or
+    $unresolvedIssues -ne 0) {
+    throw (
+        "Global SonarQube debt is not zero: bugs=$bugs, " +
+        "vulnerabilities=$vulnerabilities, hotspots=$securityHotspots, " +
+        "smells=$codeSmells, issues=$unresolvedIssues."
+    )
+}
+if ($coverage -lt $MinimumCoverage) {
+    throw "Global coverage $coverage is below $MinimumCoverage."
+}
+if ($duplication -gt $MaximumDuplication) {
+    throw "Global duplication $duplication exceeds $MaximumDuplication."
+}
+if ($reliabilityRating -ne 1 -or
+    $securityRating -ne 1 -or
+    $maintainabilityRating -ne 1) {
+    throw (
+        "Global ratings must all be A (1.0): reliability=" +
+        "$reliabilityRating, security=$securityRating, " +
+        "maintainability=$maintainabilityRating."
+    )
+}
+
+Write-Host (
+    "Global metrics: coverage=$coverage%, duplication=$duplication%, " +
+    "issues=0, bugs=0, vulnerabilities=0, hotspots=0, smells=0, ratings=A."
+)
+
+if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
+    $workspaceRoot = [IO.Path]::GetFullPath(
+        (Join-Path $PSScriptRoot "..")
+    )
+    $sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
+    $sourceDirty = @(
+        & git -C $workspaceRoot status --porcelain --untracked-files=no
+    ).Count -gt 0
+    $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
+    $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
+    if ($evidenceDirectory) {
+        New-Item -ItemType Directory -Path $evidenceDirectory -Force |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "sonarGlobalQuality"
+        product = "RadIA"
+        productVersion = "2.0.0"
+        sourceCommit = $sourceCommit
+        sourceDirty = $sourceDirty
+        analysisId = $task.analysisId
+        qualityGate = $gate.status
+        bugs = $bugs
+        vulnerabilities = $vulnerabilities
+        securityHotspots = $securityHotspots
+        codeSmells = $codeSmells
+        unresolvedIssues = $unresolvedIssues
+        coverage = $coverage
+        duplicatedLinesDensity = $duplication
+        reliabilityRating = $reliabilityRating
+        securityRating = $securityRating
+        maintainabilityRating = $maintainabilityRating
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        status = "passed"
+    } |
+        ConvertTo-Json -Depth 5 |
+        Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
+}
+
+Write-Host (
+    "The exact SonarQube analysis and global metrics passed."
+) -ForegroundColor Green
