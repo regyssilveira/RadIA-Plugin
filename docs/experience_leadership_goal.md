@@ -188,7 +188,8 @@ navegador visual assíncrono, busca, URL persistente, schema, HTTPS, limites, do
 e vínculo ao pacote assinado. O schema 2 entrega commands, templates e skills de prompt com hot
 reload. O schema 3 adiciona aliases de tools internas com namespace próprio, permissão
 `tool.alias`, metadados de risco herdados, registro comum ao chat e MCP e rollback do catálogo em
-falhas. Execução de scripts isolados permanece fora do contrato declarativo.
+falhas. O schema 5 substitui scripts arbitrários por workflows de 1–16 tools internas: risco,
+timeout e idempotência são derivados, e cada etapa atravessa novamente consentimento e auditoria.
 
 **Saída:** uma capacidade simples pode ser adicionada sem recompilar o RadIA ou reiniciar a IDE.
 

@@ -115,6 +115,9 @@ The board below summarizes the current status of mapped short and medium-term fe
     *   M4 delivered in this stage: schema 3 publishes internal tool aliases in the registry shared
         by chat and MCP, with extension namespaces, explicit `tool.alias` permission, inherited
         risk, chain blocking, and catalog rollback when a target or registration is invalid.
+    *   M4 delivered in this stage: schema 5 provides audited workflows of up to 16 internal tools
+        without arbitrary shells, with inherited maximum risk, bounds, fail-fast, and per-step
+        policy enforcement.
     *   M5 delivered in this stage: search and rebuild expose local latency, status reports the
         estimated size, and every response retains the isolated workspace identity without telemetry.
     *   M5 delivered in this stage: incremental indexing covers Pascal, textual DFM/FMX, projects,

@@ -115,6 +115,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
     *   M4 entregue nesta etapa: schema 3 publica aliases de tools internas no registry comum ao
         chat e MCP, com namespace da extensão, permissão `tool.alias`, risco herdado, bloqueio de
         cadeias e rollback do catálogo quando o target ou o registro é inválido.
+    *   M4 entregue nesta etapa: schema 5 oferece workflows auditados de até 16 tools internas,
+        sem shell arbitrário, com risco máximo herdado, limites, fail-fast e policy por etapa.
     *   M5 entregue nesta etapa: busca e reconstrução expõem latência local, o status informa
         tamanho estimado e cada resposta mantém a identidade isolada do workspace, sem telemetria.
     *   M5 entregue nesta etapa: o índice incremental cobre Pascal, DFM/FMX textual, projetos e

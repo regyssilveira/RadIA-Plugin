@@ -13,3 +13,8 @@ powershell.exe -ExecutionPolicy Bypass `
 
 O arquivo `TeamCommands-1.0.0.radiaext` resultante também pode ser selecionado no gerenciador
 visual. O importador verifica o envelope e o conteúdo antes de instalar o manifesto.
+
+Os exemplos adicionais cobrem templates/skills (schema 2), aliases (schema 3), jornadas/políticas
+(schema 4) e workflows auditados de tools (schema 5). O arquivo
+`team-tool-workflow.radia.json` executa somente tools internas pelo consentimento e auditoria
+centrais; ele não inicia scripts, shells ou binários arbitrários.

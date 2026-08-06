@@ -7,7 +7,7 @@ uses
   System.JSON;
 
 const
-  CRadIADeclarativeExtensionSchemaVersion = 4;
+  CRadIADeclarativeExtensionSchemaVersion = 5;
 
 type
   TRadIADeclarativeCommand = record
@@ -54,6 +54,38 @@ type
     property TargetTool: string read FTargetTool;
   end;
 
+  TRadIADeclarativeWorkflowStep = record
+  private
+    FTargetTool: string;
+    FArgumentsJson: string;
+  public
+    constructor Create(
+      const ATargetTool: string;
+      const AArgumentsJson: string
+    );
+    property TargetTool: string read FTargetTool;
+    property ArgumentsJson: string read FArgumentsJson;
+  end;
+
+  TRadIADeclarativeWorkflow = record
+  private
+    FExtensionId: string;
+    FName: string;
+    FDescription: string;
+    FSteps: TArray<TRadIADeclarativeWorkflowStep>;
+  public
+    constructor Create(
+      const AExtensionId: string;
+      const AName: string;
+      const ADescription: string;
+      const ASteps: TArray<TRadIADeclarativeWorkflowStep>
+    );
+    property ExtensionId: string read FExtensionId;
+    property Name: string read FName;
+    property Description: string read FDescription;
+    property Steps: TArray<TRadIADeclarativeWorkflowStep> read FSteps;
+  end;
+
   TRadIADeclarativeExtensionDiagnostic = record
   private
     FFileName: string;
@@ -78,6 +110,7 @@ type
     FDirectory: string;
     FCommands: TList<TRadIADeclarativeCommand>;
     FTools: TList<TRadIADeclarativeTool>;
+    FWorkflows: TList<TRadIADeclarativeWorkflow>;
     FDiagnostics: TList<TRadIADeclarativeExtensionDiagnostic>;
     procedure AtomicWrite(
       const AFileName: string;
@@ -138,6 +171,15 @@ type
       const AJson: TJSONObject;
       const AExtensionId: string
     ): TRadIADeclarativeTool;
+    function ParseWorkflows(
+      const AJson: TJSONObject;
+      const AExtensionId: string;
+      const ASchemaVersion: Integer
+    ): TArray<TRadIADeclarativeWorkflow>;
+    function ParseWorkflow(
+      const AJson: TJSONObject;
+      const AExtensionId: string
+    ): TRadIADeclarativeWorkflow;
     procedure ValidateToolFields(
       const AExtensionId: string;
       const AName: string;
@@ -158,7 +200,8 @@ type
     procedure ValidatePermissions(
       const AJson: TJSONObject;
       const AHasPromptCapabilities: Boolean;
-      const AHasTools: Boolean
+      const AHasTools: Boolean;
+      const AHasWorkflows: Boolean
     );
   public
     constructor Create(const ADirectory: string);
@@ -189,6 +232,7 @@ type
     ): Boolean;
     function GetCommands: TArray<TRadIADeclarativeCommand>;
     function GetTools: TArray<TRadIADeclarativeTool>;
+    function GetWorkflows: TArray<TRadIADeclarativeWorkflow>;
     function GetDiagnostics:
       TArray<TRadIADeclarativeExtensionDiagnostic>;
     function TryResolve(
@@ -213,7 +257,9 @@ uses
 const
   CCommandPermission = 'chat.prompt';
   CToolAliasPermission = 'tool.alias';
+  CToolWorkflowPermission = 'tool.workflow';
   CMaximumCommandsPerExtension = 100;
+  CMaximumWorkflowSteps = 16;
   CMaximumDescriptionLength = 500;
   CMaximumManifestBytes = 1048576;
   CMaximumPromptLength = 32768;
@@ -307,6 +353,32 @@ begin
   FTargetTool := ATargetTool;
 end;
 
+{ TRadIADeclarativeWorkflowStep }
+
+constructor TRadIADeclarativeWorkflowStep.Create(
+  const ATargetTool: string;
+  const AArgumentsJson: string
+);
+begin
+  FTargetTool := ATargetTool;
+  FArgumentsJson := AArgumentsJson;
+end;
+
+{ TRadIADeclarativeWorkflow }
+
+constructor TRadIADeclarativeWorkflow.Create(
+  const AExtensionId: string;
+  const AName: string;
+  const ADescription: string;
+  const ASteps: TArray<TRadIADeclarativeWorkflowStep>
+);
+begin
+  FExtensionId := AExtensionId;
+  FName := AName;
+  FDescription := ADescription;
+  FSteps := Copy(ASteps);
+end;
+
 { TRadIADeclarativeExtensionDiagnostic }
 
 constructor TRadIADeclarativeExtensionDiagnostic.Create(
@@ -336,12 +408,14 @@ begin
   FDirectory := TPath.GetFullPath(ADirectory);
   FCommands := TList<TRadIADeclarativeCommand>.Create;
   FTools := TList<TRadIADeclarativeTool>.Create;
+  FWorkflows := TList<TRadIADeclarativeWorkflow>.Create;
   FDiagnostics := TList<TRadIADeclarativeExtensionDiagnostic>.Create;
 end;
 
 destructor TRadIADeclarativeExtensionManager.Destroy;
 begin
   FDiagnostics.Free;
+  FWorkflows.Free;
   FTools.Free;
   FCommands.Free;
   inherited Destroy;
@@ -380,6 +454,12 @@ function TRadIADeclarativeExtensionManager.GetTools:
   TArray<TRadIADeclarativeTool>;
 begin
   Result := FTools.ToArray;
+end;
+
+function TRadIADeclarativeExtensionManager.GetWorkflows:
+  TArray<TRadIADeclarativeWorkflow>;
+begin
+  Result := FWorkflows.ToArray;
 end;
 
 function TRadIADeclarativeExtensionManager.InstallOrUpdate(
@@ -610,9 +690,11 @@ var
   LExtensionId: string;
   LHasPromptCapabilities: Boolean;
   LHasTools: Boolean;
+  LHasWorkflows: Boolean;
   LJson: TJSONObject;
   LSchemaVersion: Integer;
   LTools: TArray<TRadIADeclarativeTool>;
+  LWorkflows: TArray<TRadIADeclarativeWorkflow>;
   LVersion: string;
 begin
   if TFile.GetSize(AFileName) > CMaximumManifestBytes then
@@ -654,10 +736,12 @@ begin
       Assigned(LJson.GetValue('journeys')) or
       Assigned(LJson.GetValue('policies'));
     LHasTools := Assigned(LJson.GetValue('tools'));
+    LHasWorkflows := Assigned(LJson.GetValue('workflows'));
     ValidatePermissions(
       LJson,
       LHasPromptCapabilities,
-      LHasTools
+      LHasTools,
+      LHasWorkflows
     );
     if not LEnabled then
     begin
@@ -678,14 +762,20 @@ begin
       LSchemaVersion
     );
     LTools := ParseTools(LJson, LExtensionId, LSchemaVersion);
-    if (Length(LCommands) + Length(LTools) = 0) or
-      (Length(LCommands) + Length(LTools) >
+    LWorkflows := ParseWorkflows(
+      LJson,
+      LExtensionId,
+      LSchemaVersion
+    );
+    if (Length(LCommands) + Length(LTools) + Length(LWorkflows) = 0) or
+      (Length(LCommands) + Length(LTools) + Length(LWorkflows) >
         CMaximumCommandsPerExtension) then
       raise EArgumentException.Create(
         'Manifest must contain between 1 and 100 capabilities.'
       );
     FCommands.AddRange(LCommands);
     FTools.AddRange(LTools);
+    FWorkflows.AddRange(LWorkflows);
     FDiagnostics.Add(
       TRadIADeclarativeExtensionDiagnostic.Create(
         AFileName,
@@ -693,7 +783,11 @@ begin
         'loaded',
         Format(
           '%d capability item(s) loaded.',
-          [Length(LCommands) + Length(LTools)]
+          [
+            Length(LCommands) +
+            Length(LTools) +
+            Length(LWorkflows)
+          ]
         )
       )
     );
@@ -942,6 +1036,124 @@ begin
   );
 end;
 
+function TRadIADeclarativeExtensionManager.ParseWorkflow(
+  const AJson: TJSONObject;
+  const AExtensionId: string
+): TRadIADeclarativeWorkflow;
+var
+  LArguments: TJSONObject;
+  LArgumentsJson: string;
+  LDescription: string;
+  LIndex: Integer;
+  LName: string;
+  LStepJson: TJSONObject;
+  LSteps: TArray<TRadIADeclarativeWorkflowStep>;
+  LStepsJson: TJSONArray;
+  LTargetTool: string;
+begin
+  LName := Trim(AJson.GetValue<string>('name', ''));
+  LDescription := Trim(AJson.GetValue<string>('description', ''));
+  if not IsPascalIdentifier(LName) or
+    not LName.StartsWith(AExtensionId, True) then
+    raise EArgumentException.Create(
+      'Workflow name must be PascalCase and start with the extension ID.'
+    );
+  if (LDescription = '') or
+    (Length(LDescription) > CMaximumDescriptionLength) then
+    raise EArgumentException.Create(
+      'Workflow description must contain between 1 and 500 characters.'
+    );
+  LStepsJson := AJson.GetValue<TJSONArray>('steps');
+  if not Assigned(LStepsJson) or
+    (LStepsJson.Count < 1) or
+    (LStepsJson.Count > CMaximumWorkflowSteps) then
+    raise EArgumentException.Create(
+      'Workflow must contain between 1 and 16 steps.'
+    );
+  SetLength(LSteps, LStepsJson.Count);
+  for LIndex := 0 to LStepsJson.Count - 1 do
+  begin
+    if not (LStepsJson[LIndex] is TJSONObject) then
+      raise EArgumentException.Create(
+        'Each workflow step must be a JSON object.'
+      );
+    LStepJson := TJSONObject(LStepsJson[LIndex]);
+    LTargetTool := Trim(LStepJson.GetValue<string>('tool', ''));
+    if not IsPascalIdentifier(LTargetTool) then
+      raise EArgumentException.Create(
+        'Workflow target tool must use alphanumeric PascalCase.'
+      );
+    LArguments := LStepJson.GetValue<TJSONObject>('arguments');
+    if Assigned(LArguments) then
+      LArgumentsJson := LArguments.ToJSON
+    else
+      LArgumentsJson := '{}';
+    if Length(LArgumentsJson) > CMaximumPromptLength then
+      raise EArgumentException.Create(
+        'Workflow step arguments exceed the 32768 character limit.'
+      );
+    LSteps[LIndex] := TRadIADeclarativeWorkflowStep.Create(
+      LTargetTool,
+      LArgumentsJson
+    );
+  end;
+  Result := TRadIADeclarativeWorkflow.Create(
+    AExtensionId,
+    LName,
+    LDescription,
+    LSteps
+  );
+end;
+
+function TRadIADeclarativeExtensionManager.ParseWorkflows(
+  const AJson: TJSONObject;
+  const AExtensionId: string;
+  const ASchemaVersion: Integer
+): TArray<TRadIADeclarativeWorkflow>;
+var
+  LArray: TJSONArray;
+  LExisting: TRadIADeclarativeWorkflow;
+  LIndex: Integer;
+  LParsed: TRadIADeclarativeWorkflow;
+  LValue: TJSONValue;
+  LWorkflows: TList<TRadIADeclarativeWorkflow>;
+begin
+  Result := [];
+  LValue := AJson.GetValue('workflows');
+  if not Assigned(LValue) then
+    Exit;
+  if ASchemaVersion < 5 then
+    raise EArgumentException.Create(
+      'Declarative workflows require schema version 5.'
+    );
+  if not (LValue is TJSONArray) then
+    raise EArgumentException.Create('Manifest workflows must be an array.');
+  LArray := TJSONArray(LValue);
+  LWorkflows := TList<TRadIADeclarativeWorkflow>.Create;
+  try
+    for LIndex := 0 to LArray.Count - 1 do
+    begin
+      if not (LArray[LIndex] is TJSONObject) then
+        raise EArgumentException.Create(
+          'Each declarative workflow must be a JSON object.'
+        );
+      LParsed := ParseWorkflow(
+        TJSONObject(LArray[LIndex]),
+        AExtensionId
+      );
+      for LExisting in LWorkflows do
+        if SameText(LExisting.Name, LParsed.Name) then
+          raise EArgumentException.Create(
+            'Manifest contains duplicate workflow names.'
+          );
+      LWorkflows.Add(LParsed);
+    end;
+    Result := LWorkflows.ToArray;
+  finally
+    LWorkflows.Free;
+  end;
+end;
+
 procedure TRadIADeclarativeExtensionManager.ValidateToolFields(
   const AExtensionId: string;
   const AName: string;
@@ -997,12 +1209,14 @@ end;
 procedure TRadIADeclarativeExtensionManager.ValidatePermissions(
   const AJson: TJSONObject;
   const AHasPromptCapabilities: Boolean;
-  const AHasTools: Boolean
+  const AHasTools: Boolean;
+  const AHasWorkflows: Boolean
 );
 var
   LArray: TJSONArray;
   LHasPromptPermission: Boolean;
   LHasToolPermission: Boolean;
+  LHasWorkflowPermission: Boolean;
   LIndex: Integer;
   LPermission: string;
   LValue: TJSONValue;
@@ -1015,6 +1229,7 @@ begin
   LArray := TJSONArray(LValue);
   LHasPromptPermission := False;
   LHasToolPermission := False;
+  LHasWorkflowPermission := False;
   for LIndex := 0 to LArray.Count - 1 do
   begin
     LPermission := LArray[LIndex].Value;
@@ -1022,6 +1237,8 @@ begin
       LHasPromptPermission := True
     else if SameText(LPermission, CToolAliasPermission) then
       LHasToolPermission := True
+    else if SameText(LPermission, CToolWorkflowPermission) then
+      LHasWorkflowPermission := True
     else
       raise EArgumentException.Create(
         'Manifest contains an unsupported permission.'
@@ -1035,7 +1252,14 @@ begin
     raise EArgumentException.Create(
       'Declarative tools require exactly the tool.alias permission.'
     );
-  if LArray.Count <> Ord(AHasPromptCapabilities) + Ord(AHasTools) then
+  if AHasWorkflows <> LHasWorkflowPermission then
+    raise EArgumentException.Create(
+      'Declarative workflows require exactly the tool.workflow permission.'
+    );
+  if LArray.Count <>
+    Ord(AHasPromptCapabilities) +
+    Ord(AHasTools) +
+    Ord(AHasWorkflows) then
     raise EArgumentException.Create(
       'Manifest permissions must not contain duplicates.'
     );
@@ -1050,6 +1274,7 @@ var
 begin
   FCommands.Clear;
   FTools.Clear;
+  FWorkflows.Clear;
   FDiagnostics.Clear;
   if not TDirectory.Exists(FDirectory) then
     TDirectory.CreateDirectory(FDirectory);

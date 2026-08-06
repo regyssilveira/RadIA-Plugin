@@ -24,7 +24,7 @@ This page is the functional map of RadIA 2.0.
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
 | Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |
 | Extensions | Visual manifest/package manager plus a versioned tool API protected by the policy pipeline. |
-| Declarative extensions | Versioned, hot-reloaded chat commands with explicit minimal permission. |
+| Declarative extensions | Hot-reloaded commands, aliases, and audited tool workflows with explicit minimal permissions. |
 
 Use the visual Agent On/Off button or `/agent on` and `/agent off`. Start an autonomous run with:
 

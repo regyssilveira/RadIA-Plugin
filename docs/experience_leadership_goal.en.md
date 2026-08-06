@@ -181,8 +181,9 @@ trust store, and visual publisher revocation. The remote catalog now has an asyn
 browser, search, persisted URL, schema, HTTPS, limits, transactional downloads, and signed-package
 binding. Schema 2 delivers hot-reloaded prompt commands, templates, and skills. Schema 3 adds
 internal tool aliases with an extension-owned namespace, explicit `tool.alias` permission,
-inherited risk metadata, shared chat/MCP registration, and catalog rollback on failure. Isolated
-script execution remains outside the declarative contract.
+inherited risk metadata, shared chat/MCP registration, and catalog rollback on failure. Schema 5
+replaces arbitrary scripts with workflows of 1–16 internal tools: risk, timeout, and idempotency
+are derived, and every step re-enters consent and auditing.
 
 **Outcome:** simple capabilities can be added without rebuilding RadIA or restarting the IDE.
 

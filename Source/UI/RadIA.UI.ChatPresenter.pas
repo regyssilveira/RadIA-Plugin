@@ -434,9 +434,10 @@ begin
     TRadIADeclarativeExtensionManager.Create(
       TPath.Combine(FDataDir, 'extensions')
     );
-  if Assigned(FToolRegistry) then
+  if Assigned(FToolRegistry) and Assigned(FToolExecutor) then
     FDeclarativeToolBinder := TRadIADeclarativeToolBinder.Create(
-      FToolRegistry
+      FToolRegistry,
+      FToolExecutor
     );
   ReloadDeclarativeExtensions;
 
@@ -732,7 +733,8 @@ begin
     Exit;
   try
     FDeclarativeToolBinder.Reload(
-      FDeclarativeExtensionManager.GetTools
+      FDeclarativeExtensionManager.GetTools,
+      FDeclarativeExtensionManager.GetWorkflows
     );
   except
     on E: Exception do

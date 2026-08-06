@@ -1,7 +1,8 @@
 # Extensões declarativas
 
-O RadIA 2.0 pode carregar comandos, templates, skills, jornadas, políticas e aliases seguros de
-tools sem recompilar o plugin ou reiniciar o Delphi. Cada extensão é um manifesto `*.radia.json`
+O RadIA 2.0 pode carregar comandos, templates, skills, jornadas, políticas, aliases e workflows
+seguros de tools sem recompilar o plugin ou reiniciar o Delphi. Cada extensão é um manifesto
+`*.radia.json`
 armazenado em:
 
 ```text
@@ -28,15 +29,15 @@ da ativação e o conjunto completo é recarregado depois da troca. Se houver co
 inválido ou falha de escrita, o RadIA restaura automaticamente a versão anterior. Um chat aberto
 atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estado.
 
-## Manifesto versão 4
+## Manifesto versão 5
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "TeamWorkflow",
-  "version": "3.0.0",
+  "version": "5.0.0",
   "enabled": true,
-  "permissions": ["chat.prompt", "tool.alias"],
+  "permissions": ["chat.prompt", "tool.alias", "tool.workflow"],
   "templates": [
     {
       "name": "Team fix plan",
@@ -75,30 +76,42 @@ atualiza seu catálogo, e chats abertos posteriormente já carregam o novo estad
       "description": "Inspect project health using the team's published name.",
       "targetTool": "GetProjectHealth"
     }
+  ],
+  "workflows": [
+    {
+      "name": "TeamWorkflowInspection",
+      "description": "Collect the IDE and project state through audited tools.",
+      "steps": [
+        {"tool": "GetIDEState", "arguments": {}},
+        {"tool": "GetActiveProject", "arguments": {}}
+      ]
+    }
   ]
 }
 ```
 
 Os exemplos completos estão em `Examples/DeclarativeExtension/team-workflow.radia.json`,
 `Examples/DeclarativeExtension/team-tools.radia.json` e
-`Examples/DeclarativeExtension/team-journeys.radia.json`. Manifestos schema 1, 2 e 3 continuam
+`Examples/DeclarativeExtension/team-journeys.radia.json`. O workflow completo está em
+`Examples/DeclarativeExtension/team-tool-workflow.radia.json`. Manifestos schema 1–4 continuam
 compatíveis sem migração.
 
 ## Campos e validação
 
 | Campo | Regra |
 |---|---|
-| `schemaVersion` | `1` para comandos, `2` para templates/skills, `3` para tools e `4` para jornadas/políticas. |
+| `schemaVersion` | `1` comandos, `2` templates/skills, `3` aliases, `4` jornadas/políticas e `5` workflows. |
 | `id` | Identificador PascalCase alfanumérico e exclusivo. |
 | `version` | Versão semântica `major.minor.patch`. |
 | `enabled` | Opcional; `false` mantém o manifesto instalado, mas inativo. |
-| `permissions` | Deve declarar exatamente `chat.prompt` e/ou `tool.alias`, conforme as capacidades presentes. |
+| `permissions` | Deve declarar exatamente `chat.prompt`, `tool.alias` e/ou `tool.workflow`, conforme as capacidades. |
 | `commands` | Comandos de prompt; usa o campo `prompt`. |
 | `templates` | Templates reutilizáveis; usa o campo `prompt` e requer schema 2. |
 | `skills` | Instruções especializadas; usa `instructions` e requer schema 2. |
 | `journeys` | Receitas agentivas; usa `objective`, ativa o Agent Runtime e requer schema 4. |
 | `policies` | Políticas explícitas de prompt; usa `instructions` e requer schema 4. |
 | `tools` | Aliases de tools internas; requer schema 3, `tool.alias`, `name`, `description` e `targetTool`. |
+| `workflows` | Sequência de 1–16 tools internas com argumentos JSON fixos; requer schema 5 e `tool.workflow`. |
 | limite total | Entre 1 e 100 itens somando todas as capacidades. |
 | `command` | `/` seguido de letras, números ou hífens; máximo de 32 caracteres após a barra. |
 | `prompt` | Texto não vazio com até 32.768 caracteres. |
@@ -129,6 +142,23 @@ Targets inexistentes, colisões ou falhas de registro produzem o diagnóstico `r
 preservam o conjunto anterior de aliases. Tools avançadas com implementação própria continuam
 disponíveis pela API BPL descrita no [guia de extensões](tool_extension_guide.md).
 
+## Workflows declarativos
+
+Um workflow schema 5 registra uma nova tool no namespace da extensão. Ele não executa texto como
+código: cada etapa referencia uma tool interna existente e um objeto JSON fixo de argumentos.
+
+- o nome deve começar com o `id` da extensão;
+- são permitidas de 1 a 16 etapas;
+- aliases e workflows declarativos não podem ser targets, impedindo cadeias e ciclos;
+- o risco visível do workflow é o maior risco entre as etapas;
+- timeout e idempotência são derivados dos descritores reais;
+- cada etapa volta a passar pelo policy executor, consentimento e auditoria centrais;
+- a primeira falha interrompe o restante, e resultados agregados são limitados a 1 MiB UTF-16;
+- cancelamento, sessão, projeto, origem e escopo são propagados para todas as etapas.
+
+Assim, equipes podem publicar automações repetíveis sem conceder acesso a shell, PowerShell,
+executáveis ou uma segunda política de permissões.
+
 ## Jornadas, políticas e credenciais
 
 Uma entrada de `journeys` inicia uma execução real no Agent Runtime. O RadIA acrescenta ao objetivo
@@ -153,6 +183,9 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.DeclarativeExtensionPackage.ps1 `
   -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json
 ```
+
+O empacotador aceita manifestos dos schemas 1 a 5, inclusive aliases, jornadas, políticas e
+workflows auditados.
 
 Esse comando gera um pacote versão 1 sem assinatura. Para produzir um pacote versão 2 assinado,
 use um certificado RSA de pelo menos 2.048 bits, com chave privada disponível em

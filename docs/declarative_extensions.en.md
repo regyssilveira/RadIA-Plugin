@@ -1,7 +1,8 @@
 # Declarative extensions
 
-RadIA 2.0 can load chat commands, templates, skills, journeys, policies, and safe tool aliases
-without rebuilding the plugin or restarting Delphi. Each extension is a `*.radia.json` manifest
+RadIA 2.0 can load chat commands, templates, skills, journeys, policies, safe tool aliases, and
+audited tool workflows without rebuilding the plugin or restarting Delphi. Each extension is a
+`*.radia.json` manifest
 stored under:
 
 ```text
@@ -20,10 +21,10 @@ and status changes use an atomic write. RadIA validates the candidate first, rel
 installed set, and restores the previous file if validation or activation fails. An open chat
 refreshes its catalog, while chats opened later load the current state directly.
 
-Schema 2 supports templates and skills. Schema 3 adds `tools`, which publish safe aliases for
-existing internal tools. Schema 4 adds team journeys and policies. Permissions must exactly match
-the capabilities present: `chat.prompt` for prompt capabilities and `tool.alias` for aliases.
-Schema 1, 2, and 3 manifests remain compatible. The combined total is limited to 100 capabilities.
+Schema 2 supports templates and skills. Schema 3 adds safe aliases, schema 4 adds team journeys and
+policies, and schema 5 adds audited workflows of internal tools. Permissions must exactly match the
+capabilities present: `chat.prompt`, `tool.alias`, and `tool.workflow`. Schemas 1–4 remain
+compatible. The combined total is limited to 100 capabilities.
 
 ```json
 {
@@ -72,9 +73,17 @@ Schema 4 rejects fields named `apiKey`, `credential`, `password`, `secret`, or `
 manifest depth. Credentials remain in each installation's protected settings and must never be
 included in shared manifests or packages.
 
+Schema 5 workflows register a tool whose name starts with the extension ID. Each workflow contains
+1–16 fixed-argument steps that target existing internal tools. Declarative aliases and workflows
+cannot be targets. The workflow inherits the highest risk, summed bounded timeout, and combined
+idempotency from its steps. Every step re-enters the central policy executor, consent, and audit
+flow; execution stops on the first failure, propagates cancellation and scope, and bounds aggregate
+results to 1 MiB UTF-16. No manifest text is executed as PowerShell, shell code, or a binary.
+
 See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2,
 `Examples/DeclarativeExtension/team-tools.radia.json` for schema 3, and
-`Examples/DeclarativeExtension/team-journeys.radia.json` for schema 4.
+`Examples/DeclarativeExtension/team-journeys.radia.json` for schema 4. See
+`Examples/DeclarativeExtension/team-tool-workflow.radia.json` for schema 5.
 
 The visual manager completes the local install, update, activation, diagnostics, and removal cycle.
 
@@ -87,6 +96,9 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.DeclarativeExtensionPackage.ps1 `
   -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json
 ```
+
+The packager accepts manifests from schemas 1 through 5, including aliases, journeys, policies,
+and audited workflows.
 
 The package contains exactly `package.json` and `<ExtensionId>.radia.json`. Metadata records the
 schema, ID, version, closed file list, UTF-8 size, and SHA-256. The visual manager imports

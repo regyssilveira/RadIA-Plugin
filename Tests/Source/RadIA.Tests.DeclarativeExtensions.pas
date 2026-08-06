@@ -52,6 +52,12 @@ type
     [Test]
     procedure LoadsSchemaFourTeamJourneysAndPolicies;
     [Test]
+    procedure LoadsAndExecutesSchemaFiveWorkflow;
+    [Test]
+    procedure RejectsWorkflowWithoutExplicitPermission;
+    [Test]
+    procedure BinderRejectsWorkflowTargetingDeclarativeCapability;
+    [Test]
     procedure RejectsSchemaFourCredentialFields;
     [Test]
     procedure RejectsDeclarativeToolWithoutExplicitPermission;
@@ -79,6 +85,29 @@ type
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
     function GetDescriptor: TRadIAToolDescriptor;
+  end;
+
+  TRadIATestExecutionTool = class(TInterfacedObject, IRadIATool)
+  public
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+    function GetDescriptor: TRadIAToolDescriptor;
+  end;
+
+  TRadIATestWorkflowExecutor = class(
+    TInterfacedObject,
+    IRadIAToolExecutor
+  )
+  private
+    FCallCount: Integer;
+    FInner: IRadIAToolExecutor;
+  public
+    constructor Create(const AInner: IRadIAToolExecutor);
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+    property CallCount: Integer read FCallCount;
   end;
 
 const
@@ -110,16 +139,62 @@ begin
   ).WithExecutionOptions(5000, True);
 end;
 
+{ TRadIATestExecutionTool }
+
+function TRadIATestExecutionTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"target":"' + ARequest.ToolName + '"}'
+  );
+end;
+
+function TRadIATestExecutionTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'BuildProject',
+    '1.0.0',
+    'Builds a project.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trExecution
+  ).WithExecutionOptions(10000, False);
+end;
+
+{ TRadIATestWorkflowExecutor }
+
+constructor TRadIATestWorkflowExecutor.Create(
+  const AInner: IRadIAToolExecutor
+);
+begin
+  inherited Create;
+  FInner := AInner;
+end;
+
+function TRadIATestWorkflowExecutor.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Inc(FCallCount);
+  Result := FInner.Execute(ARequest);
+end;
+
 procedure TRadIADeclarativeExtensionTests.
   BinderRejectsUnknownOrChainedTargets;
 var
   LBinder: TRadIADeclarativeToolBinder;
   LDefinitions: TArray<TRadIADeclarativeTool>;
+  LExecutor: IRadIAToolExecutor;
   LRegistry: IRadIAToolRegistry;
 begin
   LRegistry := TRadIAToolRegistry.Create;
   LRegistry.RegisterTool(TRadIATestTargetTool.Create);
-  LBinder := TRadIADeclarativeToolBinder.Create(LRegistry);
+  LExecutor := TRadIAToolExecutor.Create(LRegistry);
+  LBinder := TRadIADeclarativeToolBinder.Create(
+    LRegistry,
+    LExecutor
+  );
   try
     LDefinitions := [
       TRadIADeclarativeTool.Create(
@@ -132,7 +207,7 @@ begin
     Assert.WillRaise(
       procedure
       begin
-        LBinder.Reload(LDefinitions);
+        LBinder.Reload(LDefinitions, []);
       end,
       EArgumentException
     );
@@ -153,7 +228,7 @@ begin
     Assert.WillRaise(
       procedure
       begin
-        LBinder.Reload(LDefinitions);
+        LBinder.Reload(LDefinitions, []);
       end,
       EArgumentException
     );
@@ -168,13 +243,18 @@ var
   LAlias: IRadIATool;
   LBinder: TRadIADeclarativeToolBinder;
   LDefinitions: TArray<TRadIADeclarativeTool>;
+  LExecutor: IRadIAToolExecutor;
   LRegistry: IRadIAToolRegistry;
   LRequest: TRadIAToolRequest;
   LResult: TRadIAToolResult;
 begin
   LRegistry := TRadIAToolRegistry.Create;
   LRegistry.RegisterTool(TRadIATestTargetTool.Create);
-  LBinder := TRadIADeclarativeToolBinder.Create(LRegistry);
+  LExecutor := TRadIAToolExecutor.Create(LRegistry);
+  LBinder := TRadIADeclarativeToolBinder.Create(
+    LRegistry,
+    LExecutor
+  );
   try
     LDefinitions := [
       TRadIADeclarativeTool.Create(
@@ -184,7 +264,7 @@ begin
         'GetProjectHealth'
       )
     ];
-    LBinder.Reload(LDefinitions);
+    LBinder.Reload(LDefinitions, []);
     Assert.IsTrue(
       LRegistry.TryResolve('TeamToolsProjectHealth', LAlias)
     );
@@ -199,7 +279,7 @@ begin
     LResult := LAlias.Execute(LRequest);
     Assert.IsTrue(LResult.Success);
     Assert.Contains(LResult.ContentJson, 'GetProjectHealth');
-    LBinder.Reload([]);
+    LBinder.Reload([], []);
     Assert.IsFalse(
       LRegistry.TryResolve('TeamToolsProjectHealth', LAlias)
     );
@@ -402,6 +482,126 @@ begin
   Assert.AreEqual('policy', LCapability.Kind);
   Assert.AreEqual('loaded', FManager.GetDiagnostics[0].Status);
   Assert.Contains(FManager.GetDiagnostics[0].Message, '2 capability');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  LoadsAndExecutesSchemaFiveWorkflow;
+const
+  CManifest =
+    '{"schemaVersion":5,"id":"TeamFlow","version":"5.0.0",' +
+    '"permissions":["tool.workflow"],"workflows":[{' +
+    '"name":"TeamFlowInspect","description":"Inspect twice.",' +
+    '"steps":[{"tool":"GetProjectHealth","arguments":{}},' +
+    '{"tool":"BuildProject","arguments":{"mode":"check"}}]}]}';
+var
+  LBinder: TRadIADeclarativeToolBinder;
+  LExecutor: IRadIAToolExecutor;
+  LRegistry: IRadIAToolRegistry;
+  LRequest: TRadIAToolRequest;
+  LResult: TRadIAToolResult;
+  LSpy: TRadIATestWorkflowExecutor;
+  LTool: IRadIATool;
+  LWorkflows: TArray<TRadIADeclarativeWorkflow>;
+begin
+  WriteManifest('team-flow.radia.json', CManifest);
+  FManager.Reload([]);
+  LWorkflows := FManager.GetWorkflows;
+  Assert.AreEqual<Integer>(1, Length(LWorkflows));
+  Assert.AreEqual<Integer>(2, Length(LWorkflows[0].Steps));
+  Assert.AreEqual('GetProjectHealth', LWorkflows[0].Steps[0].TargetTool);
+
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(TRadIATestTargetTool.Create);
+  LRegistry.RegisterTool(TRadIATestExecutionTool.Create);
+  LExecutor := TRadIAToolExecutor.Create(LRegistry);
+  LSpy := TRadIATestWorkflowExecutor.Create(LExecutor);
+  LExecutor := LSpy;
+  LBinder := TRadIADeclarativeToolBinder.Create(LRegistry, LExecutor);
+  try
+    LBinder.Reload([], LWorkflows);
+    Assert.IsTrue(LRegistry.TryResolve('TeamFlowInspect', LTool));
+    Assert.AreEqual(trExecution, LTool.Descriptor.Risk);
+    Assert.AreEqual<Cardinal>(15000, LTool.Descriptor.TimeoutMs);
+    Assert.IsFalse(LTool.Descriptor.Idempotent);
+    LRequest := TRadIAToolRequest.Create(
+      'TeamFlowInspect',
+      '{}',
+      'workflow-test'
+    );
+    LResult := LTool.Execute(LRequest);
+    Assert.IsTrue(LResult.Success);
+    Assert.AreEqual(2, LSpy.CallCount);
+    Assert.Contains(LResult.ContentJson, '"index":1');
+    Assert.Contains(LResult.ContentJson, '"index":2');
+  finally
+    LBinder.Free;
+  end;
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  RejectsWorkflowWithoutExplicitPermission;
+const
+  CManifest =
+    '{"schemaVersion":5,"id":"TeamFlow","version":"5.0.0",' +
+    '"permissions":[],"workflows":[{' +
+    '"name":"TeamFlowInspect","description":"Inspect safely.",' +
+    '"steps":[{"tool":"GetProjectHealth","arguments":{}}]}]}';
+begin
+  WriteManifest('workflow-permission.radia.json', CManifest);
+  FManager.Reload([]);
+
+  Assert.AreEqual<Integer>(0, Length(FManager.GetWorkflows));
+  Assert.AreEqual('rejected', FManager.GetDiagnostics[0].Status);
+  Assert.Contains(FManager.GetDiagnostics[0].Message, 'tool.workflow');
+end;
+
+procedure TRadIADeclarativeExtensionTests.
+  BinderRejectsWorkflowTargetingDeclarativeCapability;
+var
+  LBinder: TRadIADeclarativeToolBinder;
+  LDefinitions: TArray<TRadIADeclarativeTool>;
+  LExecutor: IRadIAToolExecutor;
+  LRegistry: IRadIAToolRegistry;
+  LSteps: TArray<TRadIADeclarativeWorkflowStep>;
+  LWorkflows: TArray<TRadIADeclarativeWorkflow>;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(TRadIATestTargetTool.Create);
+  LExecutor := TRadIAToolExecutor.Create(LRegistry);
+  LBinder := TRadIADeclarativeToolBinder.Create(LRegistry, LExecutor);
+  try
+    LDefinitions := [
+      TRadIADeclarativeTool.Create(
+        'TeamTools',
+        'TeamToolsHealth',
+        'Health alias.',
+        'GetProjectHealth'
+      )
+    ];
+    LSteps := [
+      TRadIADeclarativeWorkflowStep.Create(
+        'TeamToolsHealth',
+        '{}'
+      )
+    ];
+    LWorkflows := [
+      TRadIADeclarativeWorkflow.Create(
+        'TeamFlow',
+        'TeamFlowInspect',
+        'Invalid chained workflow.',
+        LSteps
+      )
+    ];
+    Assert.WillRaise(
+      procedure
+      begin
+        LBinder.Reload(LDefinitions, LWorkflows);
+      end,
+      EArgumentException
+    );
+  finally
+    LBinder.Free;
+  end;
 end;
 
 procedure TRadIADeclarativeExtensionTests.
