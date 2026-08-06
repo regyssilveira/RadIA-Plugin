@@ -8,6 +8,7 @@ uses
   RadIA.Core.Interfaces,
   RadIA.Core.InlineCompletion,
   RadIA.Core.InlineReviews,
+  RadIA.Core.InlineShortcuts,
   RadIA.OTA.ContextParser,
   RadIA.OTA.InlineCompletion;
 
@@ -101,6 +102,10 @@ type
     {$ENDIF}
 
     procedure ActiveFormChange(Sender: TObject);
+    procedure AddInlineMenuItems(
+      const ARootItem: TMenuItem;
+      const AProfile: TRadIAInlineShortcutProfile
+    );
     procedure QueueHookActiveEditor;
     {$IFNDEF TESTS}
     procedure HookEditorWindowsNow;
@@ -178,7 +183,6 @@ type
 implementation
 
 uses
-  RadIA.Core.InlineShortcuts,
   RadIA.Core.Patches,
   System.Generics.Collections,
   System.SysUtils,
@@ -942,6 +946,73 @@ begin
   end;
 end;
 
+procedure TRadIAEditorHook.AddInlineMenuItems(
+  const ARootItem: TMenuItem;
+  const AProfile: TRadIAInlineShortcutProfile
+);
+  procedure AddItem(
+    const ACaption: string;
+    const AShortcut: TShortCut;
+    const AHandler: TNotifyEvent
+  );
+  var
+    LItem: TMenuItem;
+  begin
+    LItem := TMenuItem.Create(ARootItem);
+    LItem.Caption := ACaption;
+    LItem.ShortCut := AShortcut;
+    LItem.OnClick := AHandler;
+    ARootItem.Add(LItem);
+  end;
+begin
+  AddItem(
+    'Request Inline Suggestion',
+    AProfile.ShortcutFor(isaRequest),
+    OnInlineCompletionRequestExecute
+  );
+  AddItem(
+    'Accept Inline Suggestion',
+    AProfile.ShortcutFor(isaAcceptAll),
+    OnInlineCompletionAcceptExecute
+  );
+  AddItem(
+    'Accept Next Inline Word',
+    AProfile.ShortcutFor(isaAcceptNextWord),
+    OnInlineCompletionNextWordExecute
+  );
+  AddItem(
+    'Request Alternative Inline Suggestion',
+    AProfile.ShortcutFor(isaAlternative),
+    OnInlineCompletionAlternativeExecute
+  );
+  AddItem(
+    'Reject Inline Suggestion',
+    AProfile.ShortcutFor(isaReject),
+    OnInlineCompletionRejectExecute
+  );
+  AddItem('-', 0, nil);
+  AddItem(
+    'Accept Review at Cursor',
+    AProfile.ShortcutFor(isaReviewAccept),
+    OnInlineReviewAcceptExecute
+  );
+  AddItem(
+    'Reject Review at Cursor',
+    AProfile.ShortcutFor(isaReviewReject),
+    OnInlineReviewRejectExecute
+  );
+  AddItem(
+    'Pause/Resume Inline Completion for Session',
+    0,
+    OnInlineCompletionSessionToggleExecute
+  );
+  AddItem(
+    'Preview Local Ghost Text Diagnostic',
+    0,
+    OnInlineCompletionPreviewDiagnosticExecute
+  );
+end;
+
 procedure TRadIAEditorHook.InjectMenuIntoPopupMenu(APopupMenu: TPopupMenu);
 var
   LError: string;
@@ -1044,61 +1115,7 @@ begin
   LSubItem.Caption := '-';
   LRootItem.Add(LSubItem);
 
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Request Inline Suggestion';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaRequest);
-  LSubItem.OnClick := OnInlineCompletionRequestExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Accept Inline Suggestion';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaAcceptAll);
-  LSubItem.OnClick := OnInlineCompletionAcceptExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Accept Next Inline Word';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaAcceptNextWord);
-  LSubItem.OnClick := OnInlineCompletionNextWordExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Request Alternative Inline Suggestion';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaAlternative);
-  LSubItem.OnClick := OnInlineCompletionAlternativeExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Reject Inline Suggestion';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaReject);
-  LSubItem.OnClick := OnInlineCompletionRejectExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := '-';
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Accept Review at Cursor';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaReviewAccept);
-  LSubItem.OnClick := OnInlineReviewAcceptExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Reject Review at Cursor';
-  LSubItem.ShortCut := LProfile.ShortcutFor(isaReviewReject);
-  LSubItem.OnClick := OnInlineReviewRejectExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Pause/Resume Inline Completion for Session';
-  LSubItem.OnClick := OnInlineCompletionSessionToggleExecute;
-  LRootItem.Add(LSubItem);
-
-  LSubItem := TMenuItem.Create(LRootItem);
-  LSubItem.Caption := 'Preview Local Ghost Text Diagnostic';
-  LSubItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
-  LRootItem.Add(LSubItem);
+  AddInlineMenuItems(LRootItem, LProfile);
 
   // Separator visual
   LSubItem := TMenuItem.Create(APopupMenu);
