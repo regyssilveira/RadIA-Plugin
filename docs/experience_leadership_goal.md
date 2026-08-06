@@ -308,6 +308,9 @@ fechado, transação reversível e comparação de build, testes e saúde antes 
 O schema declarativo 4 publica jornadas e políticas com hot reload. Jornadas compartilhadas entram
 no Agent Runtime com gates obrigatórios acrescentados pelo RadIA; políticas só expandem mediante
 comando explícito. Campos de credenciais são rejeitados recursivamente e não entram nos pacotes.
+A matriz real validou os três targets suportados com 95 ferramentas: o manifesto foi carregado,
+registrado e executado por hot reload. O workflow `RadIADiagnosticInspection`, classificado como
+`readOnly`, concluiu suas duas etapas em Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 
 ### M8 — Prova de liderança e release
 

@@ -301,6 +301,9 @@ baseline, bounded scope, reversible transaction, and build, test, and health com
 Declarative schema 4 publishes journeys and policies with hot reload. Shared journeys enter Agent
 Runtime with mandatory RadIA gates appended; policies expand only through an explicit command.
 Credential fields are rejected recursively and never enter extension packages.
+The real matrix validated all three supported targets with 95 tools: the manifest was loaded,
+registered, and executed through hot reload. The `RadIADiagnosticInspection` workflow, classified
+as `readOnly`, completed both steps on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 
 ### M8 — Leadership proof and release
 
