@@ -221,6 +221,30 @@ The consolidator fails when any target, cycle, upgrade, lifecycle mode, hash, co
 or tool count diverges from the packages and release evidence. Never assemble or adjust the
 versioned JSON manually.
 
+### Terminal visual evidence
+
+Use `-TerminalEvidencePath` with `-ExerciseTerminal` to open the real VCL surface and validate
+geometry, required controls, input, output, and keyboard tab navigation:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseTerminal `
+  -SkipPackageHashCheck `
+  -TerminalEvidencePath "Output\Validation\Terminal\Delphi13-Win32.json"
+```
+
+After all four targets, consolidate the fail-closed matrix:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.TerminalEvidence.ps1
+```
+
+The versioned result is stored in `terminal_smoke_evidence_2.0.0.json`.
+
 ### Ghost Text visual evidence
 
 Use `-InlineCompletionEvidencePath` with `-ExerciseInlineCompletion` to prove real-unit capture,

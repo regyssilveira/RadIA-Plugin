@@ -221,6 +221,30 @@ O consolidador falha se qualquer target, ciclo, upgrade, modo do lifecycle, hash
 contagem de tools divergir dos pacotes e da evidência de release. O JSON versionado nunca deve ser
 montado ou ajustado manualmente.
 
+### Evidência visual do terminal
+
+Use `-TerminalEvidencePath` com `-ExerciseTerminal` para abrir a superfície VCL real e validar
+geometria, controles essenciais, entrada, saída e navegação por Tab:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "37.0" `
+  -Cycles 1 `
+  -ExerciseTerminal `
+  -SkipPackageHashCheck `
+  -TerminalEvidencePath "Output\Validation\Terminal\Delphi13-Win32.json"
+```
+
+Depois dos quatro targets, consolide a matriz fail-closed:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.TerminalEvidence.ps1
+```
+
+O resultado versionado fica em `terminal_smoke_evidence_2.0.0.json`.
+
 ### Evidência visual do Ghost Text
 
 Use `-InlineCompletionEvidencePath` com `-ExerciseInlineCompletion` para comprovar separadamente a

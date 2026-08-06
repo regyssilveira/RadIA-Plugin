@@ -22,6 +22,9 @@ documentação do candidato RadIA 2.0.0. Ela complementa, mas não substitui, os
 - O gate global do Sonar falha para qualquer issue, rating diferente de A, cobertura abaixo de 80%
   ou duplicação acima de 3%. A evidência atual registra zero issues, 82,3% de cobertura e 2,3% de
   duplicação.
+- O terminal nativo abriu com controles, entrada, saída e nove pontos de navegação por Tab nas
+  quatro combinações, conforme
+  [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json).
 
 ## Como reproduzir
 
@@ -33,5 +36,5 @@ powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1
 powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.SonarQualityGate.ps1
 ```
 
-O aceite visual com teclado e tecnologia assistiva dentro de cada IDE suportada permanece parte dos
-ciclos reais do M8 e só pode ser registrado depois que a BPL comprovada estiver instalada.
+A navegação visual e por Tab do terminal já está comprovada. O aceite explícito com tecnologia
+assistiva para todas as superfícies permanece parte dos ciclos reais do M8.

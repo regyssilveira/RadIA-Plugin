@@ -21,6 +21,9 @@ RadIA 2.0.0 candidate. It complements but does not replace real IDE cycles.
   common mojibake markers.
 - The global Sonar gate fails on any issue, rating below A, coverage below 80%, or duplication above
   3%. Current evidence records zero issues, 82.3% coverage, and 2.3% duplication.
+- The native terminal opened with controls, input, output, and nine keyboard tab stops in all four
+  combinations, as recorded in
+  [`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json).
 
 ## Reproduce
 
@@ -32,5 +35,5 @@ powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1
 powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.SonarQualityGate.ps1
 ```
 
-Visual keyboard and assistive-technology acceptance inside every supported IDE remains part of the
-M8 real cycles and can only be recorded after the proven BPL is installed.
+Visual and keyboard tab navigation for the terminal is now proven. Explicit assistive-technology
+acceptance for every surface remains part of the M8 real cycles.

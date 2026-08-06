@@ -149,6 +149,8 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
         passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64, inclusive com orientação quando
         o provider ainda não está configurado.
     *   M7–M8: validar jornadas especializadas e provar o candidato 2.0.0 na matriz completa.
+    *   M8 entregue nesta etapa: terminal visual comprovado na matriz completa com janela nativa,
+        controles essenciais, entrada, saída, geometria útil e nove pontos navegáveis por Tab.
     *   Plano e critérios: [Goal de liderança](experience_leadership_goal.md).
 
 *   Hardening E2E dentro da IDE e preparação da release RadIA 2.0.

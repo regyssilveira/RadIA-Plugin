@@ -297,7 +297,8 @@ comando explícito. Campos de credenciais são rejeitados recursivamente e não 
 ### M8 — Prova de liderança e release
 
 - [x] Executar a matriz completa de build e 100% dos testes.
-- Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
+- [x] Validar Ghost Text, terminal, central, extensões e conhecimento em IDE real.
+- [ ] Aprovar navegação completa por teclado e tecnologia assistiva nas quatro combinações.
 - [x] Executar dez ciclos de desinstalação, instalação, reparo, uso e shutdown por combinação.
 - [x] Validar upgrade real entre versões diferentes do pacote em cada combinação suportada.
 - [x] Aprovar a jornada contínua: criar, editar, desenhar, testar, depurar, corrigir e commitar.
@@ -329,6 +330,12 @@ parou em breakpoint com call stack e timeline, criou um commit Git revisado e en
 órfão. Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 passaram autonomamente. O consolidador rejeita
 fonte suja, SHA divergente, hash de BPL inválido, fase ausente, testes incompletos, debug sem
 evidência ou commit sem diff revisado.
+
+A validação funcional das cinco superfícies em IDE real também está completa. O terminal possui
+prova dedicada em `terminal_smoke_evidence_2.0.0.json`: a janela nativa, controles essenciais,
+entrada, saída, geometria útil e nove pontos navegáveis por Tab passaram no Delphi 11, 12 e 13
+Win32 e no Delphi 13 IDE64. Ghost Text, central agentiva, extensões e conhecimento permanecem
+vinculados às suas respectivas matrizes versionadas.
 
 A auditoria reproduzível está em `release_audit_2.0.0.md`. Ela removeu a única conexão Web
 silenciosa no startup, adicionou semântica e teclado às superfícies Web e criou um gate para links e

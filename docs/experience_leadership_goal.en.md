@@ -290,7 +290,8 @@ Credential fields are rejected recursively and never enter extension packages.
 ### M8 — Leadership proof and release
 
 - [x] Run the complete build and test matrix.
-- Validate inline assistance, terminal, execution center, extensions, and knowledge in a real IDE.
+- [x] Validate inline assistance, terminal, execution center, extensions, and knowledge in real IDEs.
+- [ ] Approve complete keyboard and assistive-technology navigation in all four combinations.
 - [x] Complete ten uninstall, install, repair, usage, and shutdown cycles per supported combination.
 - [x] Validate a real upgrade between different package versions on every supported combination.
 - [x] Pass the create, edit, design, test, debug, fix, and commit continuous journey.
@@ -323,6 +324,12 @@ commit, and shut down without orphan processes. Delphi 11, 12, and 13 Win32 plus
 passed autonomously. The consolidator rejects dirty source, divergent SHAs, invalid installed-BPL
 hashes, missing phases, incomplete tests, debugging without evidence, or a commit without a
 reviewed diff.
+
+Functional validation of all five surfaces in real IDEs is also complete. The terminal has
+dedicated proof in `terminal_smoke_evidence_2.0.0.json`: its native window, required controls,
+input, output, usable geometry, and nine keyboard tab stops passed on Delphi 11, 12, and 13 Win32
+plus Delphi 13 IDE64. Inline assistance, the agent center, extensions, and knowledge remain bound
+to their respective versioned matrices.
 
 The reproducible audit is stored in `release_audit_2.0.0.en.md`. It removed the only silent Web
 connection at startup, added semantics and keyboard operation to Web surfaces, and created a local
