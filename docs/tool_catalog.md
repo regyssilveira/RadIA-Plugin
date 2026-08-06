@@ -115,10 +115,14 @@ para restaurar o conteúdo original quando a revisão produzida ainda estiver at
 - `ClearInlineReviews`
 
 Revisões são limitadas a 128 itens, ancoradas ao arquivo, hash completo do buffer e intervalo de
-linhas. O notifier compatível com Delphi 11, 12 e 13 sublinha as linhas conforme a severidade e
+linhas. O notifier suportado no Delphi 12 e 13 sublinha as linhas conforme a severidade e
 mostra a mensagem no status do editor. Se o buffer mudar, a revisão deixa de ser renderizada.
 Sugestões não escrevem código diretamente: `PrepareInlineReviewFix` cria um preview no serviço de
 patches, que continua sujeito a consentimento, precondições e reversão.
+Aplicações diretas são limitadas a 20 linhas e 4.096 caracteres; acima disso, o resultado sinaliza
+`requiresSmartDiff` e a decisão ocorre na superfície completa de diff. Alterações multiarquivo usam
+as ferramentas transacionais `PrepareMultiFilePatch`, `ApplyMultiFilePatch` e
+`RevertMultiFilePatch`.
 
 ## 4. Projeto e project group
 

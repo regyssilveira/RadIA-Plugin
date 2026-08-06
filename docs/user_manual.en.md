@@ -243,6 +243,10 @@ user decides. On the marked line, use the editor **Rad IA** submenu, `Ctrl+Alt+E
 transactional patch; rejection removes the decoration without changing the buffer. Chat, agent
 mode, and MCP can also prepare the preview before the decision. Stale reviews are never applied.
 
+Reviews spanning more than 20 lines or 4,096 characters open in Smart Diff, where each block can be
+accepted or rejected before application. Changes spanning multiple files use the multi-file
+transaction and are never reduced to independent inline applications.
+
 ### 4.12 Local knowledge
 
 RadIA indexes projects locally, searches symbols and excerpts, reports status, returns bounded

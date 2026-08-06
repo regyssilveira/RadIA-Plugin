@@ -350,6 +350,10 @@ visuais e não alteram o código diretamente. Na linha marcada, use o submenu **
 hash-base e aplica um patch transacional; a rejeição remove a marca sem alterar o buffer. Também é
 possível preparar o preview pelo chat, agente ou MCP antes da decisão.
 
+Revisões com mais de 20 linhas ou 4.096 caracteres são abertas no Smart Diff, onde cada bloco pode
+ser aceito ou rejeitado antes da aplicação. Mudanças que abrangem mais de um arquivo usam a
+transação multiarquivo e nunca são reduzidas a várias aplicações inline independentes.
+
 ### 4.13 Conhecimento local
 
 O índice local permite:

@@ -151,6 +151,10 @@ type
     procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
     procedure OnInlineReviewAcceptExecute(Sender: TObject);
     procedure OnInlineReviewRejectExecute(Sender: TObject);
+    function ReviewWithSmartDiff(
+      const AService: IRadIAInlineReviewService;
+      const AReview: TRadIAInlineReview
+    ): Boolean;
     function TryGetInlineReviewAtCursor(
       out AService: IRadIAInlineReviewService;
       out AReview: TRadIAInlineReview
@@ -194,6 +198,7 @@ uses
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm,
   RadIA.OTA.Onboarding,
+  RadIA.UI.DiffForm,
   {$ENDIF}
   RadIA.Core.Logger, RadIA.Core.Container, RadIA.OTA.Adapter, RadIA.OTA.Helper;
 
@@ -1379,6 +1384,11 @@ begin
     ShowMessage('No inline review is available at the current line.');
     Exit;
   end;
+  if LReview.RequiresSmartDiff then
+  begin
+    ReviewWithSmartDiff(LService, LReview);
+    Exit;
+  end;
   if MessageDlg(
     'Apply this inline review suggestion?' + sLineBreak + sLineBreak +
     LReview.Message,
@@ -1423,6 +1433,75 @@ begin
     'Inline review rejected from the editor: ' + LReview.Id,
     'InlineReview'
   );
+end;
+
+function TRadIAEditorHook.ReviewWithSmartDiff(
+  const AService: IRadIAInlineReviewService;
+  const AReview: TRadIAInlineReview
+): Boolean;
+{$IFNDEF TESTS}
+var
+  LApply: TRadIAPatchResult;
+  LForm: TRadIAFormAIDiff;
+  LPatchService: IRadIAPatchService;
+  LPrepare: TRadIAPatchResult;
+  LSelected: TRadIAPatchResult;
+{$ENDIF}
+begin
+  Result := False;
+  {$IFNDEF TESTS}
+  LPrepare := AService.PrepareFix(AReview.Id);
+  if not LPrepare.Success then
+  begin
+    ShowMessage(
+      'The inline review preview could not be prepared: ' +
+      LPrepare.ErrorMessage
+    );
+    Exit;
+  end;
+  if not TRadIAContainer.TryResolve<IRadIAPatchService>(
+    LPatchService
+  ) then
+    Exit;
+  LForm := TRadIAFormAIDiff.Create(nil);
+  try
+    LForm.InitializePreparedDiff(
+      AReview.FileName,
+      LPrepare.Preview.OriginalContent,
+      LPrepare.Preview.ProposedContent
+    );
+    if LForm.ShowModal <> mrOk then
+      Exit;
+    LSelected := LPatchService.Prepare(
+      TRadIAPatchSpec.Create(
+        AReview.FileName,
+        AReview.BaseRevision,
+        LPrepare.Preview.OriginalContent,
+        LForm.SuggestedCode
+      )
+    );
+    if not LSelected.Success then
+      LApply := LSelected
+    else
+      LApply := LPatchService.Apply(LSelected.Preview.Id);
+    if not LApply.Success then
+    begin
+      ShowMessage(
+        'The selected inline review blocks could not be applied: ' +
+        LApply.ErrorMessage
+      );
+      Exit;
+    end;
+    AService.Remove(AReview.Id);
+    TLogger.Log(
+      'Inline review applied through Smart Diff: ' + AReview.Id,
+      'InlineReview'
+    );
+    Result := True;
+  finally
+    LForm.Free;
+  end;
+  {$ENDIF}
 end;
 
 function TRadIAEditorHook.TryGetInlineReviewAtCursor(

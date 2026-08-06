@@ -41,6 +41,7 @@ type
       const AReplacementText: string
     );
     function HasSuggestion: Boolean;
+    function RequiresSmartDiff: Boolean;
     property Id: string read FId;
     property FileName: string read FFileName;
     property BaseRevision: string read FBaseRevision;
@@ -159,6 +160,8 @@ uses
   System.SysUtils;
 
 const
+  CMaxInlineDecisionCharacters = 4096;
+  CMaxInlineDecisionLines = 20;
   CMaxMessageLength = 2000;
   CMaxReviewBufferLength = 2 * 1024 * 1024;
   CMaxReviews = 128;
@@ -219,12 +222,36 @@ begin
   Result.FReview := AReview;
 end;
 
+function TRadIAInlineReview.RequiresSmartDiff: Boolean;
+begin
+  Result :=
+    (Length(FOriginalText) > CMaxInlineDecisionCharacters) or
+    (Length(FReplacementText) > CMaxInlineDecisionCharacters) or
+    ((FEndLine - FStartLine + 1) > CMaxInlineDecisionLines);
+end;
+
 function TRadIAInlineReviewService.ApplyFix(
   const AReviewId: string
 ): TRadIAPatchResult;
 var
   LPrepared: TRadIAPatchResult;
+  LReview: TRadIAInlineReview;
 begin
+  TMonitor.Enter(FReviews);
+  try
+    if not FReviews.TryGetValue(AReviewId, LReview) then
+      Exit(TRadIAPatchResult.Failed(
+        'review_not_found',
+        'Inline review was not found.'
+      ));
+  finally
+    TMonitor.Exit(FReviews);
+  end;
+  if LReview.RequiresSmartDiff then
+    Exit(TRadIAPatchResult.Failed(
+      'smart_diff_required',
+      'This review is too large for a direct inline decision.'
+    ));
   LPrepared := PrepareFix(AReviewId);
   if not LPrepared.Success then
     Exit(LPrepared);

@@ -417,6 +417,10 @@ begin
     'hasSuggestion',
     TJSONBool.Create(AReview.HasSuggestion)
   );
+  Result.AddPair(
+    'requiresSmartDiff',
+    TJSONBool.Create(AReview.RequiresSmartDiff)
+  );
 end;
 
 end.

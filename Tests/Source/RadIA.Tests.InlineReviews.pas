@@ -58,6 +58,8 @@ type
     [Test]
     procedure AppliesSuggestionAndRemovesReview;
     [Test]
+    procedure RoutesLargeSuggestionToSmartDiff;
+    [Test]
     procedure RejectsSuggestionWithoutChangingBuffer;
     [Test]
     procedure RemovesAndClearsReviews;
@@ -199,6 +201,28 @@ begin
   Assert.IsTrue(FService.Reject(LPublish.Review.Id));
   Assert.AreEqual(LOriginalContent, FWorkspace.Content);
   Assert.AreEqual<Integer>(0, Length(FService.ListCurrent));
+end;
+
+procedure TTestRadIAInlineReviews.RoutesLargeSuggestionToSmartDiff;
+var
+  LApply: TRadIAPatchResult;
+  LPublish: TRadIAInlineReviewResult;
+  LReview: TRadIAInlineReview;
+begin
+  LReview := BuildReview(2, 2);
+  LReview.SetContent(
+    'Review a large generated replacement.',
+    'OldValue',
+    StringOfChar('N', 4097)
+  );
+  Assert.IsTrue(LReview.RequiresSmartDiff);
+  LPublish := FService.Publish(LReview);
+  Assert.IsTrue(LPublish.Success);
+  LApply := FService.ApplyFix(LPublish.Review.Id);
+  Assert.IsFalse(LApply.Success);
+  Assert.AreEqual('smart_diff_required', LApply.ErrorCode);
+  Assert.Contains(FWorkspace.Content, 'OldValue');
+  Assert.AreEqual<Integer>(1, Length(FService.ListCurrent));
 end;
 
 procedure TTestRadIAInlineReviews.RemovesAndClearsReviews;

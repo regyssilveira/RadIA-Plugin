@@ -60,6 +60,11 @@ type
     procedure ProcessWebMessage(const AMessage: string);
   public
     procedure InitializeDiff(const AUnitName, AOriginalCode: string; const AWebFilesDir: string = '');
+    procedure InitializePreparedDiff(
+      const AUnitName: string;
+      const AOriginalCode: string;
+      const AProposedCode: string
+    );
 
     property SuggestedCode: string read FSuggestedCode;
   end;
@@ -258,6 +263,21 @@ begin
   FOriginalCode := AOriginalCode;
   if not AWebFilesDir.IsEmpty then
     FWebFilesDir := AWebFilesDir;
+end;
+
+procedure TRadIAFormAIDiff.InitializePreparedDiff(
+  const AUnitName: string;
+  const AOriginalCode: string;
+  const AProposedCode: string
+);
+begin
+  FUnitName := AUnitName;
+  FOriginalCode := AOriginalCode;
+  FSuggestedCode := AProposedCode;
+  FRequestStarted := True;
+  FRequestFinished := True;
+  FCanApply := True;
+  FPendingRender := True;
 end;
 
 procedure TRadIAFormAIDiff.EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdgeBrowser; AResult: HRESULT);
