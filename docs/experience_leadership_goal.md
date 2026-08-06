@@ -330,11 +330,11 @@ registrado e executado por hot reload. O workflow `RadIADiagnosticInspection`, c
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
 A prova reproduzível em `release_evidence_2.0.0.json` contém os três ZIPs da matriz vigente, todos
-gerados do commit `ad0b5a250cb9e7f7de8d390d84db1e15d8a43b10`, com validação interna,
+gerados do commit `20a9f996c10c76ecfc925bb80029debb307cd117`, com validação interna,
 SHA-256 independente e árvore rastreada limpa.
 
 A matriz em `ide_smoke_evidence_2.0.0.json` comprova Delphi 12 Win32 e Delphi 13 Win32/IDE64 com
-10/10 ciclos por target e o catálogo vigente de 95 tools. Cada target exercitou o docking nativo
+10/10 ciclos por target, 30/30 no total, e o catálogo vigente de 95 tools. Cada target exercitou o docking nativo
 `TOTADockForm`, restaurou o estado do desktop e terminou sem
 processos órfãos. Cada ciclo executou `Uninstall`, instalou a versão 1.0.0, atualizou para 2.0.0 e
 executou `Repair`, preservando dados do usuário e revalidando manifesto, hashes, registro e arquivos
