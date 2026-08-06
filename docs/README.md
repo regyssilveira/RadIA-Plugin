@@ -34,7 +34,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Execução e análise de testes DUnitX | [Runner DUnitX](dunitx_runner.md) |
 | Commit Git local e revisável | [Fluxo Git](git_workflow.md) |
 | O que faz e quando usar cada ferramenta | [Referência operacional](internal_tools_reference.md) |
-| Todas as 98 ferramentas internas | [Catálogo gerado](runtime_tool_catalog.md) |
+| Todas as 100 ferramentas internas | [Catálogo gerado](runtime_tool_catalog.md) |
 | Arquitetura alvo e contratos | [Catálogo arquitetural](tool_catalog.md) |
 | Consentimento, risco e auditoria | [Modelo de segurança](tool_security_model.md) |
 | MCP e clientes externos | [Integração MCP](mcp_integration_guide.md) |
@@ -79,6 +79,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Goal prioritário pós-2.0 | [Reprodução autônoma de falhas runtime](runtime_debug_automation_plan.md) |
 | Execução do M0 runtime | [Baseline, contratos e matriz](runtime_debug_automation_m0.md) |
 | Execução do M1 runtime | [Correlação e espera do depurador](runtime_debug_automation_m1.md) |
+| Execução do M2 runtime | [Descoberta segura de janelas e controles](runtime_debug_automation_m2.md) |
 | Plano congelado para retomada | [Continuidade CLI e integração avançada](competitive_leadership_plan.md) |
 | Estratégia Delphi 12/13 | [Plataforma e plano de liderança](delphi_12_13_strategy.md) |
 

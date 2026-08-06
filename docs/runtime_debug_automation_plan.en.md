@@ -1,6 +1,6 @@
 # Post-2.0 goal — Autonomous runtime failure reproduction
 
-> **Status:** in execution; M0/M1 implemented with in-IDE validation pending, M2 is next.
+> **Status:** in execution; M0–M2 implemented with in-IDE validation pending, M3 is next.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Plan paused during this goal:** [CLI continuity and advanced integration](competitive_leadership_plan.en.md).
@@ -102,6 +102,8 @@ Implementation and evidence: [M1 correlation](runtime_debug_automation_m1.en.md)
 **Still missing:** control discovery, UI interaction, and scenario replay.
 
 ### M2 — Safe runtime discovery
+
+Implementation and evidence: [Safe discovery M2](runtime_debug_automation_m2.en.md).
 
 - list only windows from the authorized process and its descendants;
 - expose hierarchy, modal state, owner, class, name, text, and control capabilities;

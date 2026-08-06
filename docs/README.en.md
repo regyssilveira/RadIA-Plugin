@@ -75,6 +75,7 @@ This index brings together the functional, operational, and technical documentat
 | Priority post-2.0 goal | [Autonomous runtime failure reproduction](runtime_debug_automation_plan.en.md) |
 | Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
 | Runtime M1 execution | [Debugger correlation and waiting](runtime_debug_automation_m1.en.md) |
+| Runtime M2 execution | [Safe window and control discovery](runtime_debug_automation_m2.en.md) |
 | Frozen plan to resume | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
 
 ## Security and compliance

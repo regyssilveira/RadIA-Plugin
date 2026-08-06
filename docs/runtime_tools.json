@@ -247,6 +247,14 @@
       ]
     },
     {
+      "name": "Runtime window discovery",
+      "source": "Source/Core/RadIA.Core.RuntimeDiscoveryTools.pas",
+      "tools": [
+        "GetRuntimeWindows",
+        "GetRuntimeControlTree"
+      ]
+    },
+    {
       "name": "Reviewable local Git commits",
       "source": "Source/Core/RadIA.Core.GitTools.pas",
       "tools": [

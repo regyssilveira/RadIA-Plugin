@@ -51,7 +51,8 @@ implementation
 uses
   System.DateUtils,
   System.IOUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.OTA.RuntimeProcess;
 
 function ResolveRuntimeExecutable(
   const AProcess: IOTAProcess
@@ -68,22 +69,6 @@ begin
     Result := TPath.Combine(AProcess.Location, AProcess.ExeName)
   else
     Result := AProcess.ExeName;
-end;
-
-function RuntimeBuildId(const AExecutablePath: string): string;
-var
-  LModifiedUtc: TDateTime;
-  LSize: Int64;
-begin
-  Result := '';
-  if not FileExists(AExecutablePath) then
-    Exit;
-  LSize := TFile.GetSize(AExecutablePath);
-  LModifiedUtc := TFile.GetLastWriteTimeUtc(AExecutablePath);
-  Result := Format(
-    '%d:%s',
-    [LSize, DateToISO8601(LModifiedUtc, True)]
-  );
 end;
 
 constructor TRadIAOTADebugTimelineNotifier.Create(
@@ -179,6 +164,7 @@ procedure TRadIAOTADebugTimelineNotifier.ProcessCreated(
   const Process: IOTAProcess
 );
 var
+  LCreatedAtUtc: TDateTime;
   LExecutablePath: string;
 begin
   FTimeline.RecordEvent(
@@ -189,13 +175,23 @@ begin
   );
   if not Assigned(FRuntimeCoordinator) or (FRuntimeSessionId = '') then
     Exit;
-  LExecutablePath := ResolveRuntimeExecutable(Process);
+  LExecutablePath := '';
+  LCreatedAtUtc := 0;
+  if not TryGetRadIARuntimeProcessIdentity(
+    RuntimeProcessId(Process),
+    LExecutablePath,
+    LCreatedAtUtc
+  ) then
+  begin
+    LExecutablePath := ResolveRuntimeExecutable(Process);
+    LCreatedAtUtc := TTimeZone.Local.ToUniversalTime(Now);
+  end;
   if FRuntimeCoordinator.AttachProcess(
     FRuntimeSessionId,
     RuntimeProcessId(Process),
-    TTimeZone.Local.ToUniversalTime(Now),
+    LCreatedAtUtc,
     LExecutablePath,
-    RuntimeBuildId(LExecutablePath)
+    GetRadIARuntimeBuildId(LExecutablePath)
   ) then
     FRuntimeCoordinator.RecordEvent(
       FRuntimeSessionId,

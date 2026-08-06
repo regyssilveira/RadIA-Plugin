@@ -3,6 +3,16 @@ unit RadIA.Core.RuntimeAutomation;
 interface
 
 type
+  TRadIARuntimeAutomationCapability = (
+    racInvoke,
+    racSetValue,
+    racSelect,
+    racClose
+  );
+
+  TRadIARuntimeAutomationCapabilities =
+    set of TRadIARuntimeAutomationCapability;
+
   TRadIARuntimeActionKind = (
     rakInvoke,
     rakSetValue,
@@ -107,10 +117,139 @@ type
     function IsExecutable: Boolean;
   end;
 
+  TRadIARuntimeElementState = record
+  private
+    FCapabilities: TRadIARuntimeAutomationCapabilities;
+    FEnabled: Boolean;
+    FVisible: Boolean;
+  public
+    constructor Create(
+      const AVisible: Boolean;
+      const AEnabled: Boolean;
+      const ACapabilities: TRadIARuntimeAutomationCapabilities
+    );
+    property Visible: Boolean read FVisible;
+    property Enabled: Boolean read FEnabled;
+    property Capabilities: TRadIARuntimeAutomationCapabilities
+      read FCapabilities;
+  end;
+
+  TRadIARuntimeWindowSnapshot = record
+  private
+    FClassName: string;
+    FOwnerId: string;
+    FProcessId: LongWord;
+    FState: TRadIARuntimeElementState;
+    FText: string;
+    FWindowId: string;
+  public
+    constructor Create(
+      const AWindowId: string;
+      const AProcessId: LongWord;
+      const AClassName: string;
+      const AText: string;
+      const AOwnerId: string;
+      const AState: TRadIARuntimeElementState
+    );
+    property WindowId: string read FWindowId;
+    property ProcessId: LongWord read FProcessId;
+    property ClassName: string read FClassName;
+    property Text: string read FText;
+    property OwnerId: string read FOwnerId;
+    property State: TRadIARuntimeElementState read FState;
+  end;
+
+  TRadIARuntimeControlSnapshot = record
+  private
+    FClassName: string;
+    FControlId: string;
+    FParentId: string;
+    FPath: string;
+    FState: TRadIARuntimeElementState;
+    FText: string;
+  public
+    constructor Create(
+      const AControlId: string;
+      const AParentId: string;
+      const AClassName: string;
+      const AText: string;
+      const APath: string;
+      const AState: TRadIARuntimeElementState
+    );
+    property ControlId: string read FControlId;
+    property ParentId: string read FParentId;
+    property ClassName: string read FClassName;
+    property Text: string read FText;
+    property Path: string read FPath;
+    property State: TRadIARuntimeElementState read FState;
+  end;
+
+  IRadIARuntimeDiscoveryFacade = interface
+    ['{0A8C3464-B8C8-4DF3-8417-D2310EC1A23F}']
+    function GetWindows(
+      const ASession: TRadIARuntimeSessionIdentity
+    ): TArray<TRadIARuntimeWindowSnapshot>;
+    function GetControlTree(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AWindowId: string
+    ): TArray<TRadIARuntimeControlSnapshot>;
+  end;
+
 implementation
 
 uses
   System.SysUtils;
+
+{ TRadIARuntimeElementState }
+
+constructor TRadIARuntimeElementState.Create(
+  const AVisible: Boolean;
+  const AEnabled: Boolean;
+  const ACapabilities: TRadIARuntimeAutomationCapabilities
+);
+begin
+  FVisible := AVisible;
+  FEnabled := AEnabled;
+  FCapabilities := ACapabilities;
+end;
+
+{ TRadIARuntimeWindowSnapshot }
+
+constructor TRadIARuntimeWindowSnapshot.Create(
+  const AWindowId: string;
+  const AProcessId: LongWord;
+  const AClassName: string;
+  const AText: string;
+  const AOwnerId: string;
+  const AState: TRadIARuntimeElementState
+);
+begin
+  FWindowId := AWindowId;
+  FProcessId := AProcessId;
+  FClassName := AClassName;
+  FText := AText;
+  FOwnerId := AOwnerId;
+  FState := AState;
+end;
+
+{ TRadIARuntimeControlSnapshot }
+
+constructor TRadIARuntimeControlSnapshot.Create(
+  const AControlId: string;
+  const AParentId: string;
+  const AClassName: string;
+  const AText: string;
+  const APath: string;
+  const AState: TRadIARuntimeElementState
+);
+begin
+  FControlId := AControlId;
+  FParentId := AParentId;
+  FClassName := AClassName;
+  FText := AText;
+  FPath := APath;
+  FState := AState;
+end;
 
 { TRadIARuntimeSelector }
 
