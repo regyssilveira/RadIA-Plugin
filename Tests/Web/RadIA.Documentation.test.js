@@ -50,3 +50,29 @@ test('documentation local links resolve to existing paths', () => {
     }
   });
 });
+
+test('every built-in tool has an operational description and activation guidance', () => {
+  const manifestPath = path.join(documentationRoot, 'runtime_tools.json');
+  const referencePath = path.join(documentationRoot, 'internal_tools_reference.md');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const reference = fs.readFileSync(referencePath, 'utf8');
+  const documentedTools = new Map();
+  const toolRowPattern = /^\| `([^`]+)` \| ([^|]+) \| ([^|]+) \|$/gmu;
+
+  for (const match of reference.matchAll(toolRowPattern)) {
+    documentedTools.set(match[1], {
+      purpose: match[2].trim(),
+      activation: match[3].trim()
+    });
+  }
+
+  const registeredTools = manifest.groups.flatMap(group => group.tools);
+  assert.equal(registeredTools.length, 111);
+  assert.equal(documentedTools.size, registeredTools.length);
+  registeredTools.forEach(toolName => {
+    const documentation = documentedTools.get(toolName);
+    assert.ok(documentation, `Missing operational documentation for ${toolName}`);
+    assert.ok(documentation.purpose.length >= 20, `Purpose is too short for ${toolName}`);
+    assert.ok(documentation.activation.length >= 20, `Activation guidance is too short for ${toolName}`);
+  });
+});

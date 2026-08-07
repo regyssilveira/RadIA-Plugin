@@ -66,6 +66,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Tema | Documento |
 |---|---|
 | Processo de release | [Finalização de release](release_process.md) |
+| Auditoria da versão 2.1 | [Builds, qualidade, instalação e artefatos](release_audit_2.1.0.md) |
 | Instalador visual e canal | [Distribuição assinável](visual_installer.md) |
 | Migração 1.x para 2.0 | [Migração para RadIA 2.0](migration_1_to_2.md) |
 | Checklist agentivo | [Checklist](agentic_release_checklist.md) |

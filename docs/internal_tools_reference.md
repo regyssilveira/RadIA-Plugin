@@ -38,6 +38,13 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | Para contextualizar erros, símbolos, inserções e revisões ancoradas. |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | Depois de um build ou quando o objetivo envolve corrigir falhas de compilação. |
 
+## Saúde do projeto e da instalação
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetProjectHealth` | Consolida configuração, build, mensagens, testes e sinais de manutenção do projeto ativo. | No início de uma jornada, antes de propor melhorias ou para confirmar se o projeto está pronto para avançar. |
+| `GetInstallationHealth` | Verifica versão, plataforma, BPL, bridge MCP, terminal, chat, executores e prontidão da instalação. | Depois de instalar ou atualizar, no onboarding e ao diagnosticar uma funcionalidade indisponível. |
+
 ## Navegação, símbolos e project groups
 
 | Ferramenta | O que faz | Quando é acionada |
