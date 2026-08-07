@@ -79,6 +79,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Goal de liderança | [Experiência Delphi completa](experience_leadership_goal.md) |
 | Diagnóstico runtime autônomo | [Guia completo de uso](runtime_debug_automation.md) |
 | Goal runtime 2.1 concluído | [Plano e evidências de aceite](runtime_debug_automation_plan.md) |
+| Goal de memória 2.2 | [Plano de integração opcional com FastMM5](fastmm5_memory_diagnostics_plan.md) |
 | Execução do M0 runtime | [Baseline, contratos e matriz](runtime_debug_automation_m0.md) |
 | Execução do M1 runtime | [Correlação e espera do depurador](runtime_debug_automation_m1.md) |
 | Execução do M2 runtime | [Descoberta segura de janelas e controles](runtime_debug_automation_m2.md) |
