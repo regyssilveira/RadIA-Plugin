@@ -55,6 +55,9 @@ Este projeto adota regras claras de idioma e padrões de design para desenvolved
 *   **Diagnóstico Runtime Autônomo:** Compila, inicia a aplicação pelo depurador, executa um cenário
     visual limitado, captura exceção e pilha, aplica uma correção revisada, recompila e repete o
     mesmo cenário para comprovar o resultado. Cenários visuais podem ser versionados como regressão.
+*   **Diagnóstico Dinâmico de Memória:** Com uma instalação FastMM5 fornecida pelo usuário,
+    instrumenta temporariamente projetos Debug, reproduz o fluxo visual, agrupa vazamentos e erros
+    de heap por stack, navega até a origem, prepara a correção e compara uma nova execução.
 *   **Documentação XML Automática:** Geração de comentários XML estruturados (`/// <summary>`) acima do cabeçalho de métodos para alimentar o Help Insight.
 *   **Conversor de DTO e Modelos:** Geração automática e instantânea de classes (DTOs) e records Object Pascal a partir de JSON ou scripts de tabelas SQL (DDL), com suporte inteligente a DEXT ORM, TMS Aurelius, REST.Json e Vanilla Delphi.
 *   **Comandos de Barra Customizáveis (Slash Commands):** Execução de ações rápidas digitando comandos no chat (ex: `/explain`, `/createprojectarch`). Permite cadastrar novos comandos dinâmicos associados a templates de prompts personalizados pelas opções do plugin.
@@ -84,7 +87,7 @@ Para aprender desde a configuração inicial até tools, MCP, Designer, debugger
 
 👉 [**Tudo que o RadIA pode fazer**](docs/capabilities.md)
 
-👉 [**Manual Completo do RadIA 2.1**](docs/user_manual.md)
+👉 [**Manual Completo do RadIA 2.2**](docs/user_manual.md)
 
 👉 [**Diagnóstico Runtime Autônomo**](docs/runtime_debug_automation.md)
 
@@ -96,8 +99,9 @@ Referências rápidas:
 
 - [Tudo que o RadIA pode fazer](docs/capabilities.md)
 - [O que faz e quando usar cada ferramenta](docs/internal_tools_reference.md)
-- [Todas as 111 ferramentas internas](docs/runtime_tool_catalog.md)
+- [Todas as 123 ferramentas internas](docs/runtime_tool_catalog.md)
 - [Todos os comandos de barra](docs/slash_commands.md)
+- [Diagnóstico completo de memória com FastMM5](docs/fastmm5_diagnostic_session.md)
 
 ### 2.2 Capacidades do RadIA em um relance
 
@@ -111,6 +115,7 @@ Referências rápidas:
 | **Build** | Iniciar e cancelar builds, acompanhar estado e estruturar erros e warnings. |
 | **Form Designer** | Consultar e alterar componentes, propriedades, eventos e layout com consentimento. |
 | **Debugger** | Consultar estado, controlar execução, gerenciar breakpoints e avaliar expressões. |
+| **Memória** | Instrumentar Debug, reproduzir leaks, analisar stacks, comparar a correção e restaurar o DPR. |
 | **Revisão inline** | Apresentar sugestões no editor e aplicar ou reverter alterações revisadas. |
 | **Conhecimento local** | Indexar projetos, pesquisar símbolos e acompanhar edit, save, rename e close. |
 | **MCP** | Expor tools a clientes locais por bridge stdio, named pipe e discovery por processo. |
@@ -120,7 +125,7 @@ Referências rápidas:
 | **Compatibilidade** | Operar no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. |
 
 As ferramentas implementadas estão no
-[Catálogo das 111 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
+[Catálogo das 123 Ferramentas Internas](docs/runtime_tool_catalog.md). Contratos e evoluções
 planejadas permanecem no [Catálogo Arquitetural](docs/tool_catalog.md).
 
 ### 3. Como Funciona e Arquitetura
@@ -150,7 +155,7 @@ Para entender a estrutura física dos arquivos de código-fonte, mapeamento de r
 *   **Web Engine:** *Microsoft Edge WebView2 Runtime* instalado no sistema Windows (pré-instalado em versões modernas do Windows). **Importante:** A DLL `WebView2Loader.dll` correspondente à arquitetura da IDE deve estar presente na pasta `bin` da instalação do Delphi (ex: `C:\Program Files (x86)\Embarcadero\Studio\<versao>\bin`) ou no PATH do sistema.
 ### 5. Instalação e Configuração
 
-O Rad IA 2.1 possui um **instalador visual único** para Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+O Rad IA 2.2 possui um **instalador visual único** para Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 A automação via PowerShell e a instalação manual continuam
 disponíveis. Para o fluxo visual, assinatura e canal, consulte o
 [guia do instalador](docs/visual_installer.md). Para compilação, registro e configuração de
@@ -184,7 +189,7 @@ Para aprender a tirar o máximo proveito das funcionalidades do Rad IA no seu di
 
 *   👉 [**Tudo que o RadIA pode fazer**](docs/capabilities.md): Mapa funcional completo do chat,
     editor, geração, agente, MCP, Designer, build, testes, debugger, Git e segurança.
-*   👉 [**Manual Completo do RadIA 2.1**](docs/user_manual.md): Ponto de entrada com ativação das
+*   👉 [**Manual Completo do RadIA 2.2**](docs/user_manual.md): Ponto de entrada com ativação das
     ferramentas agentivas, capacidades, exemplos, segurança, limitações e referências.
 *   👉 [**Diagnóstico Runtime Autônomo**](docs/runtime_debug_automation.md): Reprodução visual,
     evidências, correção, comparação e regressão em Delphi 12/13.

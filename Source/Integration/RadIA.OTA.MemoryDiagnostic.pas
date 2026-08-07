@@ -37,7 +37,7 @@ begin
       rakWait,
       Default(TRadIARuntimeSelector),
       '',
-      20000
+      500
     ),
     TRadIARuntimeScenarioAction.Create(
       rakInvoke,
@@ -113,7 +113,8 @@ end;
 
 procedure WriteDiagnosticResult(
   const AFileName: string;
-  const AResult: TRadIAToolResult
+  const AResult: TRadIAToolResult;
+  const ACompletedCycles: Integer
 );
 var
   LRoot: TJSONObject;
@@ -123,6 +124,7 @@ begin
     LRoot.AddPair('success', TJSONBool.Create(AResult.Success));
     LRoot.AddPair('errorCode', AResult.ErrorCode);
     LRoot.AddPair('errorMessage', AResult.ErrorMessage);
+    LRoot.AddPair('completedCycles', ACompletedCycles);
     if AResult.Success then
       LRoot.AddPair(
         'evidence',
@@ -135,16 +137,14 @@ begin
   end;
 end;
 
-procedure RunDiagnostic(
+function ExecuteDiagnostic(
   const ACoordinator: IRadIAMemoryDiagnosticSessionCoordinator;
-  const AWorkspace: IRadIAWorkspaceFacade;
-  const AOutputPath: string
-);
+  const AWorkspace: IRadIAWorkspaceFacade
+): TRadIAToolResult;
 var
   LDeadline: TDateTime;
   LPrepare: TRadIAToolResult;
   LProject: TRadIAProjectSnapshot;
-  LResult: TRadIAToolResult;
 begin
   LDeadline := IncSecond(Now, 120);
   repeat
@@ -161,23 +161,47 @@ begin
     'RadIARuntimeLab.dproj'
   ) or not SameText(LProject.Configuration, 'Debug') then
   begin
-    WriteDiagnosticResult(
-      AOutputPath,
+    Exit(
       TRadIAToolResult.Failed(
         'memory_smoke_project_timeout',
         'RuntimeLab did not become active in Debug. Active project: ' +
-        LProject.FileName + '; configuration: ' +
-        LProject.Configuration
+        LProject.FileName + '; configuration: ' + LProject.Configuration
       )
     );
-    Exit;
   end;
   LPrepare := ACoordinator.Prepare(BuildSmokeScenario, 0);
   if LPrepare.Success then
-    LResult := ACoordinator.Run(PreviewId(LPrepare.ContentJson), nil)
+    Result := ACoordinator.Run(PreviewId(LPrepare.ContentJson), nil)
   else
-    LResult := LPrepare;
-  WriteDiagnosticResult(AOutputPath, LResult);
+    Result := LPrepare;
+end;
+
+procedure RunDiagnosticCycles(
+  const ACoordinator: IRadIAMemoryDiagnosticSessionCoordinator;
+  const AWorkspace: IRadIAWorkspaceFacade;
+  const AOutputPath: string
+);
+var
+  LCompletedCycles: Integer;
+  LCycle: Integer;
+  LCycles: Integer;
+  LResult: TRadIAToolResult;
+begin
+  LCycles := StrToIntDef(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC_CYCLES'),
+    1
+  );
+  if (LCycles < 1) or (LCycles > 10) then
+    LCycles := 1;
+  LCompletedCycles := 0;
+  for LCycle := 1 to LCycles do
+  begin
+    LResult := ExecuteDiagnostic(ACoordinator, AWorkspace);
+    if not LResult.Success then
+      Break;
+    LCompletedCycles := LCycle;
+  end;
+  WriteDiagnosticResult(AOutputPath, LResult, LCompletedCycles);
 end;
 
 procedure StartRadIAMemoryDiagnosticIfRequested;
@@ -207,7 +231,7 @@ begin
     begin
       TThread.Sleep(15000);
       try
-        RunDiagnostic(LCoordinator, LWorkspace, LOutputPath);
+        RunDiagnosticCycles(LCoordinator, LWorkspace, LOutputPath);
       except
         on E: Exception do
         begin
@@ -220,7 +244,8 @@ begin
             TRadIAToolResult.Failed(
               'memory_diagnostic_smoke_failed',
               E.Message
-            )
+            ),
+            0
           );
         end;
       end;

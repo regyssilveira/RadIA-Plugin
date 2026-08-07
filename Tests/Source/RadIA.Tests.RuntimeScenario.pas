@@ -72,6 +72,8 @@ type
     [Test]
     procedure RunCompletesTenStableRepetitions;
     [Test]
+    procedure RunStopsAtGlobalTimeout;
+    [Test]
     procedure ToolsKeepRunBehindConsentAndCancelImmediate;
   end;
 
@@ -79,6 +81,7 @@ implementation
 
 uses
   System.Classes,
+  System.DateUtils,
   System.SysUtils,
   System.Threading,
   RadIA.Core.RuntimeDebugSession,
@@ -277,6 +280,25 @@ begin
   Assert.AreEqual(rssSucceeded, LStatus.State);
   Assert.AreEqual(20, LStatus.CompletedActions);
   Assert.AreEqual(20, FMock.ExecuteCount);
+end;
+
+procedure TTestRadIARuntimeScenario.RunStopsAtGlobalTimeout;
+var
+  LPreview: TRadIARuntimeScenarioPreview;
+  LStarted: TDateTime;
+  LStatus: TRadIARuntimeScenarioStatus;
+begin
+  LPreview := FCoordinator.Prepare(
+    Scenario([Action(rakWait, '', '', 100)], 2, 150)
+  );
+  LStarted := Now;
+  LStatus := FCoordinator.Run(LPreview.PreviewId, FSession, nil);
+  Assert.AreEqual(rssFailed, LStatus.State);
+  Assert.AreEqual('runtime_scenario_timeout', LStatus.ErrorCode);
+  Assert.IsTrue(
+    MilliSecondsBetween(Now, LStarted) < 1000,
+    'Global timeout must cap the remaining repeated action time.'
+  );
 end;
 
 procedure TTestRadIARuntimeScenario.

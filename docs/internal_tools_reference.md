@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 121 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 123 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -51,9 +51,11 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `RevertMemoryInstrumentation` | Restaura exatamente o conteúdo do DPR capturado antes da instrumentação. | No fim de uma sessão temporária, em cancelamentos e quando o usuário desfaz a instrumentação persistente. |
 | `ParseMemoryDiagnosticLog` | Interpreta um log FastMM5 limitado e autorizado, agrupando eventos, bytes, classes, stacks, linhas e fingerprints. | Depois de uma execução diagnóstica ou ao importar um log localizado dentro do workspace ativo. |
 | `PrepareMemoryDiagnosticSession` | Prepara um preview único com instrumentação, aquecimento, repetições e cenário runtime, sem executar o projeto. | Quando o usuário solicita um diagnóstico completo de memória e antes do consentimento de execução. |
-| `RunMemoryDiagnosticSession` | Instrumenta, compila, inicia o debugger, executa o cenário, encerra, interpreta o log e restaura o DPR. | Depois da revisão do preview e do consentimento explícito para a sessão composta. |
-| `CancelMemoryDiagnosticSession` | Cancela build, cenário e processo de depuração da sessão de memória ativa. | Quando o usuário cancela ou quando o agente precisa interromper uma execução que excedeu o esperado. |
+| `RunMemoryDiagnosticSession` | Instrumenta, compila, inicia somente o processo supervisionado, executa o cenário, coleta o log e restaura o DPR. | Depois da revisão do preview e do consentimento explícito para a sessão composta. |
+| `CancelMemoryDiagnosticSession` | Cancela build, cenário e somente o processo supervisionado pela sessão de memória ativa. | Quando o usuário cancela ou quando o limite da execução é atingido. |
 | `GetMemoryDiagnosticSessionStatus` | Informa a fase atual, mensagem operacional, preview e estado de cancelamento. | Durante uma sessão longa, pelo chat ou MCP, para acompanhar o progresso sem interferir na execução. |
+| `CompareMemoryDiagnosticEvidence` | Compara baseline e verificação de builds distintos sob o mesmo cenário e classifica como `fixed`, `improved`, `unchanged`, `regressed` ou `incomparable`. | Depois de aplicar uma correção e repetir exatamente o cenário original. |
+| `PrepareMemoryDiagnosticFix` | Escolhe o primeiro frame do projeto, informa arquivo, linha, rotina e número da alocação e encaminha a edição ao `PreparePatch`. | Depois de selecionar um grupo de leak ou erro cuja stack contenha código do projeto. |
 
 ## Navegação, símbolos e project groups
 

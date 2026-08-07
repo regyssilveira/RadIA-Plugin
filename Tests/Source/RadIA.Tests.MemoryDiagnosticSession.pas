@@ -91,6 +91,8 @@ type
     IRadIADebuggerSessionFacade,
     IRadIADebuggerControlFacade
   )
+  private
+    FStoppedProcessId: LongWord;
   public
     function StartDebugging: TRadIADebuggerActionResult;
     function StartRuntimeProcess(
@@ -103,6 +105,7 @@ type
     function ExecuteAction(
       const AAction: TRadIADebuggerAction
     ): TRadIADebuggerActionResult;
+    property StoppedProcessId: LongWord read FStoppedProcessId;
   end;
 
   TRadIAMemorySessionRuntimeMock = class(
@@ -143,6 +146,9 @@ type
     TInterfacedObject,
     IRadIARuntimeScenarioCoordinator
   )
+  private
+    FBlockUntilCancelled: Boolean;
+    FCancelled: Boolean;
   public
     function Cancel: Boolean;
     function GetStatus: TRadIARuntimeScenarioStatus;
@@ -154,6 +160,8 @@ type
       const ACurrentSession: TRadIARuntimeSessionIdentity;
       const ACancellationToken: IRadIAToolCancellationToken
     ): TRadIARuntimeScenarioStatus;
+    property BlockUntilCancelled: Boolean
+      read FBlockUntilCancelled write FBlockUntilCancelled;
   end;
 
   [TestFixture]
@@ -165,6 +173,7 @@ type
     FInstrumentation: TRadIAMemorySessionInstrumentationMock;
     FRuntime: IRadIARuntimeDebugSessionCoordinator;
     FScenario: IRadIARuntimeScenarioCoordinator;
+    FScenarioMock: TRadIAMemorySessionScenarioMock;
     FWorkspace: IRadIAWorkspaceFacade;
     function ExecutableScenario: TRadIARuntimeScenario;
   public
@@ -177,7 +186,11 @@ type
     [Test]
     procedure BuildFailureAlwaysRevertsInstrumentation;
     [Test]
+    procedure CancellationStopsOnlySupervisedProcessAndRestoresProject;
+    [Test]
     procedure PrepareRecoversInterruptedInstrumentation;
+    [Test]
+    procedure PrepareRejectsConflictingInterruptedInstrumentation;
     [Test]
     procedure SuccessfulRunReturnsStructuredEvidence;
   end;
@@ -185,11 +198,15 @@ type
 implementation
 
 uses
+  System.Classes,
   System.DateUtils,
   System.Hash,
   System.IOUtils,
   System.JSON,
-  System.SysUtils;
+  System.StrUtils,
+  System.SysUtils,
+  System.Threading,
+  Winapi.Windows;
 
 function MemorySessionFixtureRoot: string;
 begin
@@ -441,6 +458,7 @@ function TRadIAMemorySessionDebuggerMock.StopRuntimeProcess(
   const AProcessId: LongWord
 ): Boolean;
 begin
+  FStoppedProcessId := AProcessId;
   Result := AProcessId > 0;
 end;
 
@@ -528,7 +546,8 @@ end;
 
 function TRadIAMemorySessionScenarioMock.Cancel: Boolean;
 begin
-  Result := True;
+  FCancelled := True;
+  Result := FBlockUntilCancelled;
 end;
 
 function TRadIAMemorySessionScenarioMock.GetStatus:
@@ -557,6 +576,20 @@ function TRadIAMemorySessionScenarioMock.Run(
   const ACancellationToken: IRadIAToolCancellationToken
 ): TRadIARuntimeScenarioStatus;
 begin
+  while FBlockUntilCancelled and not FCancelled do
+    TThread.Sleep(10);
+  if FCancelled then
+    Exit(
+      TRadIARuntimeScenarioStatus.Create(
+        APreviewId,
+        rssCancelled,
+        1,
+        0,
+        0,
+        'runtime_scenario_cancelled',
+        'Runtime scenario was cancelled.'
+      )
+    );
   Result := TRadIARuntimeScenarioStatus.Create(
     APreviewId,
     rssSucceeded,
@@ -617,7 +650,8 @@ begin
   FBuild := TRadIAMemorySessionBuildMock.Create;
   FDebugger := TRadIAMemorySessionDebuggerMock.Create;
   FRuntime := TRadIAMemorySessionRuntimeMock.Create;
-  FScenario := TRadIAMemorySessionScenarioMock.Create;
+  FScenarioMock := TRadIAMemorySessionScenarioMock.Create;
+  FScenario := FScenarioMock;
   LDependencies := TRadIAMemoryDiagnosticSessionDependencies.Create(
     FWorkspace,
     LInstrumentationIntf,
@@ -635,6 +669,7 @@ procedure TRadIAMemoryDiagnosticSessionTests.TearDown;
 begin
   FCoordinator := nil;
   FScenario := nil;
+  FScenarioMock := nil;
   FRuntime := nil;
   FBuild := nil;
   FWorkspace := nil;
@@ -706,6 +741,58 @@ begin
   Assert.IsFalse(TDirectory.Exists(LDirectory));
 end;
 
+procedure TRadIAMemoryDiagnosticSessionTests.
+  PrepareRejectsConflictingInterruptedInstrumentation;
+var
+  LDirectory: string;
+  LManifest: TJSONObject;
+  LResult: TRadIAToolResult;
+  LSourceFile: string;
+begin
+  LSourceFile := TPath.Combine(MemorySessionFixtureRoot, 'Demo.dpr');
+  LDirectory := TPath.Combine(
+    MemorySessionFixtureRoot,
+    '.radia\memory\recovery'
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'instrumentation-original.bin'),
+    'program Demo; begin end.',
+    TEncoding.UTF8
+  );
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'instrumentation-staged.bin'),
+    'program Demo; uses FastMM5; begin end.',
+    TEncoding.UTF8
+  );
+  TFile.WriteAllText(
+    LSourceFile,
+    'program Demo; uses UserChange; begin end.',
+    TEncoding.UTF8
+  );
+  LManifest := TJSONObject.Create;
+  try
+    LManifest.AddPair('schemaVersion', 1);
+    LManifest.AddPair('sourceFile', LSourceFile);
+    LManifest.AddPair('timestampUtc', DateToISO8601(Now, True));
+    TFile.WriteAllText(
+      TPath.Combine(LDirectory, 'instrumentation-recovery.json'),
+      LManifest.ToJSON,
+      TEncoding.UTF8
+    );
+  finally
+    LManifest.Free;
+  end;
+  LResult := FCoordinator.Prepare(ExecutableScenario, 1);
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('memory_recovery_conflict', LResult.ErrorCode);
+  Assert.AreEqual(
+    'program Demo; uses UserChange; begin end.',
+    TFile.ReadAllText(LSourceFile, TEncoding.UTF8)
+  );
+  Assert.IsTrue(TDirectory.Exists(LDirectory));
+end;
+
 procedure TRadIAMemoryDiagnosticSessionTests.BuildFailureAlwaysRevertsInstrumentation;
 var
   LPrepare: TRadIAToolResult;
@@ -727,6 +814,44 @@ begin
   Assert.AreEqual('memory_diagnostic_build_failed', LRun.ErrorCode);
   Assert.AreEqual(1, FInstrumentation.ApplyCount);
   Assert.AreEqual(1, FInstrumentation.RevertCount);
+end;
+
+procedure TRadIAMemoryDiagnosticSessionTests.
+  CancellationStopsOnlySupervisedProcessAndRestoresProject;
+var
+  LDeadline: UInt64;
+  LPrepare: TRadIAToolResult;
+  LPreviewId: string;
+  LRoot: TJSONObject;
+  LRun: TRadIAToolResult;
+  LTask: ITask;
+begin
+  FBuild.Succeed := True;
+  FScenarioMock.BlockUntilCancelled := True;
+  LPrepare := FCoordinator.Prepare(ExecutableScenario, 0);
+  LRoot := TJSONObject.ParseJSONValue(LPrepare.ContentJson) as TJSONObject;
+  try
+    LPreviewId := LRoot.GetValue<string>('previewId');
+  finally
+    LRoot.Free;
+  end;
+  LTask := TTask.Run(
+    procedure
+    begin
+      LRun := FCoordinator.Run(LPreviewId, nil);
+    end
+  );
+  LDeadline := GetTickCount64 + 3000;
+  while (GetTickCount64 < LDeadline) and
+    not ContainsText(FCoordinator.GetStatus, '"state":"running"') do
+    TThread.Sleep(10);
+  Assert.IsTrue(FCoordinator.Cancel);
+  Assert.IsTrue(LTask.Wait(3000));
+  Assert.IsFalse(LRun.Success);
+  Assert.AreEqual('runtime_scenario_cancelled', LRun.ErrorCode);
+  Assert.AreEqual(LongWord(1), FDebugger.StoppedProcessId);
+  Assert.AreEqual(1, FInstrumentation.RevertCount);
+  Assert.Contains(FCoordinator.GetStatus, '"state":"cancelled"');
 end;
 
 procedure TRadIAMemoryDiagnosticSessionTests.SuccessfulRunReturnsStructuredEvidence;

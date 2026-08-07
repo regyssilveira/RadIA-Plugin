@@ -295,9 +295,16 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CancelMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
 | `GetMemoryDiagnosticSessionStatus` | `RadIA.Core.MemoryDiagnosticSession.pas` |
 
+## Memory evidence correction workflow
+
+| Tool | Source unit |
+|---|---|
+| `CompareMemoryDiagnosticEvidence` | `RadIA.Core.MemoryEvidence.pas` |
+| `PrepareMemoryDiagnosticFix` | `RadIA.Core.MemoryEvidence.pas` |
+
 ## Resumo
 
-- Registered groups: 34
-- Registered built-in tools: 121
+- Registered groups: 35
+- Registered built-in tools: 123
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -326,6 +326,14 @@
         "CancelMemoryDiagnosticSession",
         "GetMemoryDiagnosticSessionStatus"
       ]
+    },
+    {
+      "name": "Memory evidence correction workflow",
+      "source": "Source/Core/RadIA.Core.MemoryEvidence.pas",
+      "tools": [
+        "CompareMemoryDiagnosticEvidence",
+        "PrepareMemoryDiagnosticFix"
+      ]
     }
   ]
 }

@@ -15,3 +15,7 @@ writes the log to `.radia/memory/latest-fastmm5.log`, and enters diagnostic mode
 the project main block without depending on the process current directory. Release and unrelated
 project settings are not changed. Session mode is reverted after the diagnostic even on
 cancellation; persistent Debug mode remains until explicit reversion.
+
+Instrumentation also writes a readiness marker, can set `FastMM_DebugBreakAllocationNumber`, and
+keeps an interruption-recovery journal under `.radia/memory/recovery`. A divergent user edit is
+never overwritten automatically.

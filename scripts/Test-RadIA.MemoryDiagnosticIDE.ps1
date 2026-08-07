@@ -8,6 +8,8 @@ param(
     [string]$EvidencePath,
     [switch]$IDE64,
     [switch]$ExpectNoLeaks,
+    [ValidateRange(1, 10)]
+    [int]$Cycles = 1,
     [ValidateRange(30, 600)]
     [int]$TimeoutSeconds = 240
 )
@@ -137,11 +139,15 @@ if (Test-Path -LiteralPath $memoryLogPath) {
 $previousDiagnosticEnvironment = (
     $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC
 )
+$previousCyclesEnvironment = (
+    $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC_CYCLES
+)
 $previousLeakEnvironment = $env:RADIA_MEMORY_DIAGNOSTIC_SMOKE
 $previousFixedEnvironment = $env:RADIA_MEMORY_DIAGNOSTIC_FIXED
 $process = $null
 try {
     $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC = $resolvedEvidencePath
+    $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC_CYCLES = $Cycles
     $env:RADIA_MEMORY_DIAGNOSTIC_SMOKE = "1"
     if ($ExpectNoLeaks) {
         $env:RADIA_MEMORY_DIAGNOSTIC_FIXED = "1"
@@ -184,6 +190,7 @@ try {
     )
     if (
         $result.evidence.schemaVersion -ne 1 -or
+        $result.completedCycles -ne $Cycles -or
         $result.evidence.termination -ne "controlled" -or
         ($ExpectNoLeaks -and $leaks.Count -ne 0) -or
         (-not $ExpectNoLeaks -and $leaks.Count -lt 1) -or
@@ -200,12 +207,15 @@ try {
     Write-Host (
         "FastMM5 IDE diagnostic passed: Delphi $DelphiVersion " +
         "$(if ($IDE64) { 'Win64' } else { 'Win32' }), " +
-        "$($leaks.Count) leak group(s), DPR restored" +
+        "$Cycles cycle(s), $($leaks.Count) leak group(s), DPR restored" +
         "$(if ($ExpectNoLeaks) { ', fixed control.' } else { '.' })"
     ) -ForegroundColor Green
 } finally {
     $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC = (
         $previousDiagnosticEnvironment
+    )
+    $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC_CYCLES = (
+        $previousCyclesEnvironment
     )
     $env:RADIA_MEMORY_DIAGNOSTIC_SMOKE = $previousLeakEnvironment
     $env:RADIA_MEMORY_DIAGNOSTIC_FIXED = $previousFixedEnvironment

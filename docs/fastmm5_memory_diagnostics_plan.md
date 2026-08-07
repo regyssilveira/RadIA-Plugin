@@ -1,6 +1,6 @@
 # Goal 2.2 — Diagnóstico dinâmico de memória com FastMM5
 
-> **Estado:** em execução; M0, M1, M2 e M3 concluídos.
+> **Estado:** em execução; M0 a M5 concluídos, M6 em validação de release.
 > **Versão-alvo:** 2.2.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64, diagnosticando aplicações Win32 e Win64.
 > **Dependência:** FastMM5 opcional, fornecido e licenciado pelo usuário.
@@ -49,16 +49,16 @@ capacidades sem copiar sua implementação.
 1. O usuário descreve um vazamento ou crescimento de memória.
 2. O RadIA executa `GetMemoryDiagnosticsStatus`.
 3. Se FastMM5 não estiver configurado, a interface orienta a localização da instalação.
-4. `PrepareFastMMInstrumentation` mostra todos os arquivos, defines e configurações afetados.
+4. `PrepareMemoryInstrumentation` mostra o DPR, defines, biblioteca e configurações afetados.
 5. O usuário escolhe sessão temporária ou configuração Debug persistente e concede consentimento.
-6. `ApplyFastMMInstrumentation` aplica a instrumentação transacional e reversível.
-7. O RadIA compila, inicia o debugger e executa o cenário aprovado.
+6. `ApplyMemoryInstrumentation` aplica a instrumentação transacional e reversível.
+7. O RadIA compila, inicia somente um processo supervisionado e executa o cenário aprovado.
 8. Snapshots opcionais medem o estado antes e depois de cada repetição.
 9. O encerramento controlado produz o relatório de leaks e erros.
-10. `CaptureMemoryLeakEvidence` normaliza stacks, classes, tamanhos e números de alocação.
+10. `RunMemoryDiagnosticSession` normaliza stacks, classes, tamanhos e números de alocação.
 11. O chat apresenta grupos ordenados por impacto e permite navegar até a origem.
 12. O RadIA prepara a correção, recompila e repete o cenário.
-13. `CompareMemoryLeakEvidence` classifica o resultado como `fixed`, `improved`, `unchanged`,
+13. `CompareMemoryDiagnosticEvidence` classifica o resultado como `fixed`, `improved`, `unchanged`,
     `regressed` ou `incomparable`.
 14. A instrumentação temporária é revertida e a regressão fica versionada.
 
@@ -67,20 +67,16 @@ capacidades sem copiar sua implementação.
 | Ferramenta | Responsabilidade | Risco |
 |---|---|---|
 | `GetMemoryDiagnosticsStatus` | Detectar backend, configuração, target e prontidão. | Leitura |
-| `PrepareFastMMInstrumentation` | Criar preview transacional sem alterar o projeto. | Leitura |
-| `ApplyFastMMInstrumentation` | Aplicar somente o preview aprovado à configuração Debug. | Mutação |
-| `RevertFastMMInstrumentation` | Restaurar DPR, opções e artefatos alterados. | Mutação |
-| `PrepareMemoryDiagnosticScenario` | Associar cenário, snapshots, limites e encerramento. | Leitura |
-| `RunMemoryDiagnosticScenario` | Executar o cenário limitado sob o backend configurado. | Execução |
-| `CancelMemoryDiagnosticScenario` | Cancelar cenário e coleta imediatamente. | Controle |
-| `GetMemoryDiagnosticStatus` | Informar fase, repetição, memória e eventos coletados. | Leitura |
-| `CaptureMemoryLeakEvidence` | Normalizar relatório, stacks, blocos e métricas. | Leitura |
-| `GetMemoryLeakReport` | Consultar grupos, alocações e origem navegável. | Leitura |
-| `CompareMemoryLeakEvidence` | Comparar baseline e verificação de builds distintos. | Leitura |
-| `NavigateToLeakAllocation` | Abrir arquivo e linha da stack selecionada. | Navegação |
-| `SetAllocationBreakpoint` | Preparar break em número de alocação validado. | Debug |
-| `SaveMemoryRegression` | Versionar cenário e expectativas de memória. | Mutação |
-| `RunMemoryRegression` | Reexecutar a regressão com limites aprovados. | Execução |
+| `PrepareMemoryInstrumentation` | Criar preview transacional sem alterar o projeto. | Leitura |
+| `ApplyMemoryInstrumentation` | Aplicar somente o preview aprovado à configuração Debug. | Mutação |
+| `RevertMemoryInstrumentation` | Restaurar exatamente o DPR alterado. | Mutação |
+| `ParseMemoryDiagnosticLog` | Normalizar um relatório FastMM5 confinado ao workspace. | Leitura |
+| `PrepareMemoryDiagnosticSession` | Associar cenário, snapshots, limites e encerramento. | Leitura |
+| `RunMemoryDiagnosticSession` | Executar a sessão composta sob o backend configurado. | Execução |
+| `CancelMemoryDiagnosticSession` | Cancelar build, cenário e processo supervisionado. | Controle |
+| `GetMemoryDiagnosticSessionStatus` | Informar fase e estado da sessão. | Leitura |
+| `CompareMemoryDiagnosticEvidence` | Comparar baseline e verificação de builds distintos. | Leitura |
+| `PrepareMemoryDiagnosticFix` | Selecionar frame, linha, rotina e número de alocação. | Leitura |
 
 Os nomes definitivos dependerão do baseline para evitar duplicação com ferramentas atuais. Cada
 ferramenta nova deverá aparecer automaticamente no catálogo das ferramentas internas.
@@ -212,6 +208,8 @@ crescimento entre repetições e grupos de stacks equivalentes.
 
 ### M4 — Cenário, snapshots e evidência
 
+**Estado:** concluído.
+
 - integrar com os cenários runtime da v2.1;
 - adicionar aquecimento, baseline, repetições e snapshots;
 - executar encerramento controlado;
@@ -221,6 +219,8 @@ crescimento entre repetições e grupos de stacks equivalentes.
 **Aceite:** o leak determinístico é reproduzido e localizado nos três targets.
 
 ### M5 — Correção, comparação e regressão
+
+**Estado:** concluído.
 
 - preparar correção revisável a partir da stack de alocação;
 - repetir cenário em build e sessão novos;
@@ -232,6 +232,9 @@ crescimento entre repetições e grupos de stacks equivalentes.
 controle.
 
 ### M6 — Hardening e release 2.2.0
+
+**Estado:** em execução. Os três targets concluíram 10/10 ciclos reais; documentação, matriz final,
+instalação e publicação permanecem como gates.
 
 - executar dez ciclos por target;
 - validar cancelamento, timeout, shutdown e restauração do projeto;

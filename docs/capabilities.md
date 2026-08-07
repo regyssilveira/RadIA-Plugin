@@ -1,6 +1,6 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.1. Ela reúne as capacidades disponíveis e aponta para
+Esta página é o mapa funcional do RadIA 2.2. Ela reúne as capacidades disponíveis e aponta para
 as instruções detalhadas.
 
 Para distinguir implementação de planejamento:
@@ -221,7 +221,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 111 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 123 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)

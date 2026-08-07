@@ -320,7 +320,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 The versioned result is stored in `declarative_workflow_smoke_evidence_2.0.0.json`.
-The gate requires exactly three supported targets, 111 tools, and the
+The gate requires exactly three supported targets, 123 tools, and the
 `RadIADiagnosticInspection` workflow loaded, registered, and executed through hot reload. The
 evidence also confirms its `readOnly` classification and the completion of both workflow steps.
 
@@ -347,7 +347,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 The versioned result is stored in `knowledge_smoke_evidence_2.0.0.json`.
-The gate requires exactly Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, all with 111 tools,
+The gate requires exactly Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, all with 123 tools,
 the `local-hash-v1` provider, a vector hit, provenance, navigation, document retrieval, index
 metrics, and workspace isolation.
 
@@ -391,8 +391,8 @@ Publish the catalog after the executable and its SHA-256 are available through H
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath Output\Installer\RadIA-v2.1.0-Setup.exe `
-  -DownloadUrl "https://downloads.example.com/RadIA-v2.1.0-Setup.exe"
+  -InstallerPath Output\Installer\RadIA-v2.2.0-Setup.exe `
+  -DownloadUrl "https://downloads.example.com/RadIA-v2.2.0-Setup.exe"
 ```
 
 The `stable` catalog requires HTTPS and records hash and Authenticode state. See

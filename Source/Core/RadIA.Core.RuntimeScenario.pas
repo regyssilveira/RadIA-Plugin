@@ -115,6 +115,10 @@ type
       const AActionIndex: Integer;
       const ACompletedActions: Integer
     ): TRadIARuntimeScenarioStatus;
+    function BoundActionTimeout(
+      const AAction: TRadIARuntimeScenarioAction;
+      const ARemainingMs: Cardinal
+    ): TRadIARuntimeScenarioAction;
     function CancellationRequested(
       const ACancellationToken: IRadIAToolCancellationToken
     ): Boolean;
@@ -339,6 +343,21 @@ begin
   end;
 end;
 
+function TRadIARuntimeScenarioCoordinator.BoundActionTimeout(
+  const AAction: TRadIARuntimeScenarioAction;
+  const ARemainingMs: Cardinal
+): TRadIARuntimeScenarioAction;
+begin
+  if AAction.TimeoutMs <= ARemainingMs then
+    Exit(AAction);
+  Result := TRadIARuntimeScenarioAction.Create(
+    AAction.Kind,
+    AAction.Selector,
+    AAction.Value,
+    ARemainingMs
+  );
+end;
+
 function TRadIARuntimeScenarioCoordinator.CancellationRequested(
   const ACancellationToken: IRadIAToolCancellationToken
 ): Boolean;
@@ -449,6 +468,7 @@ var
   LActionIndex: Integer;
   LActionResult: TRadIARuntimeActionResult;
   LCompletedActions: Integer;
+  LRemainingMs: Cardinal;
   LRepetition: Integer;
   LStopwatch: TStopwatch;
 begin
@@ -479,11 +499,25 @@ begin
         ''
       ));
       LAction := APrepared.Scenario.Actions[LActionIndex];
+      LRemainingMs :=
+        APrepared.Scenario.Limits.MaxDurationMs -
+        Cardinal(LStopwatch.ElapsedMilliseconds);
+      LAction := BoundActionTimeout(LAction, LRemainingMs);
       LActionResult := ExecutePreparedAction(
         APrepared.Scenario.Session,
         LAction,
         ACancellationToken
       );
+      if TryGetInterruption(
+        APrepared,
+        ACancellationToken,
+        LStopwatch.ElapsedMilliseconds,
+        LRepetition,
+        LActionIndex + 1,
+        LCompletedActions,
+        Result
+      ) then
+        Exit;
       if not LActionResult.Success then
         Exit(BuildActionFailureStatus(
           APrepared,
@@ -539,7 +573,7 @@ begin
     );
     Exit;
   end;
-  Result := AElapsedMs >
+  Result := AElapsedMs >=
     APrepared.Scenario.Limits.MaxDurationMs;
   if Result then
     AStatus := TRadIARuntimeScenarioStatus.Create(

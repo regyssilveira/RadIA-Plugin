@@ -27,6 +27,8 @@ type
     [Test]
     procedure RejectsSameBuildAsIncomparable;
     [Test]
+    procedure RejectsMalformedGroupEvidence;
+    [Test]
     procedure SelectsProjectFrameForReviewableFix;
   end;
 
@@ -99,6 +101,18 @@ begin
   );
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, '"outcome":"incomparable"');
+end;
+
+procedure TRadIAMemoryEvidenceTests.RejectsMalformedGroupEvidence;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := FService.Compare(
+    Evidence('baseline', 'build-1', '[null]'),
+    Evidence('verification', 'build-2', '[]')
+  );
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('invalid_baseline_evidence', LResult.ErrorCode);
 end;
 
 procedure TRadIAMemoryEvidenceTests.SelectsProjectFrameForReviewableFix;

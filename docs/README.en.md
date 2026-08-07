@@ -1,6 +1,6 @@
 # RadIA documentation center
 
-This index brings together the functional, operational, and technical documentation for RadIA 2.1.
+This index brings together the functional, operational, and technical documentation for RadIA 2.2.
 
 ## Start here
 
@@ -33,7 +33,7 @@ This index brings together the functional, operational, and technical documentat
 | DUnitX test execution and analysis | [DUnitX runner](dunitx_runner.en.md) |
 | Reviewable local Git commit | [Git workflow](git_workflow.en.md) |
 | What each tool does and when to use it | [Operational reference](internal_tools_reference.md) |
-| All 111 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
+| All 123 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
 | Target architecture and contracts | [Architectural catalog](tool_catalog.md) |
 | Consent, risk, and audit | [Security model](tool_security_model.md) |
 | MCP and external clients | [MCP integration](mcp_integration_guide.en.md) |
@@ -78,7 +78,7 @@ This index brings together the functional, operational, and technical documentat
 | Memory diagnostics 2.2 goal | [Optional FastMM5 integration plan](fastmm5_memory_diagnostics_plan.en.md) |
 | Memory diagnostics M0 | [FastMM5 baseline, contracts, and laboratory](fastmm5_memory_diagnostics_m0.en.md) |
 | FastMM5 configuration | [Settings, chat, consent, and readiness states](fastmm5_configuration.en.md) |
-| Complete FastMM5 session | [Build, debugger, scenario, snapshots, evidence, and restoration](fastmm5_diagnostic_session.en.md) |
+| Complete FastMM5 session | [Build, supervised process, scenario, evidence, and restoration](fastmm5_diagnostic_session.en.md) |
 | Memory instrumentation | [Preview, apply, revert, and DPR safeguards](fastmm5_instrumentation.en.md) |
 | Memory log parser | [Bounded collection and structured evidence](fastmm5_evidence_parser.en.md) |
 | Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
@@ -92,7 +92,7 @@ This index brings together the functional, operational, and technical documentat
 - [Terms, privacy, and compliance](compliance.en.md)
 - [Tool security model](tool_security_model.md)
 
-## RadIA 2.1 platform coverage
+## RadIA 2.2 platform coverage
 
 | Capability | User guide | Technical reference |
 |---|---|---|

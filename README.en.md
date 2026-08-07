@@ -89,7 +89,7 @@ Quick references:
 
 - [Everything RadIA can do](docs/capabilities.en.md)
 - [What each tool does and when to use it](docs/internal_tools_reference.md)
-- [All 80 built-in tools](docs/runtime_tool_catalog.md)
+- [All 123 built-in tools](docs/runtime_tool_catalog.md)
 - [All slash commands](docs/slash_commands.en.md)
 
 ### 2.2 RadIA capabilities at a glance
@@ -104,6 +104,7 @@ Quick references:
 | **Build** | Start and cancel builds, inspect state, and structure errors and warnings. |
 | **Form Designer** | Inspect and change components, properties, events, and layout with consent. |
 | **Debugger** | Inspect state, control execution, manage breakpoints, and evaluate expressions. |
+| **Memory** | Instrument Debug, reproduce leaks, inspect stacks, compare the fix, and restore the DPR. |
 | **Inline review** | Present editor suggestions and apply or reverse reviewed changes. |
 | **Local knowledge** | Index projects, search symbols, and follow edit, save, rename, and close events. |
 | **MCP** | Expose tools through stdio, a named pipe, and per-process discovery. |
@@ -142,7 +143,7 @@ To understand the physical file structure, unit responsibilities mapping, and st
 
 ### 5. Installation and Configuration
 
-RadIA 2.0 provides a **single visual installer** for Delphi 12 Win32 and Delphi 13 Win32/IDE64.
+RadIA 2.2 provides a **single visual installer** for Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 PowerShell automation and manual installation remain available.
 See the [visual installer guide](docs/visual_installer.en.md) for signing and channel publication.
 For compilation, registration, and provider configuration, see:

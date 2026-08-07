@@ -111,6 +111,75 @@ begin
     (AFrame.GetValue<Integer>('lineNumber', 0) > 0);
 end;
 
+function FindEvidenceGroup(
+  const ARoot: TJSONObject;
+  const AGroupFingerprint: string;
+  out AInvalidGroup: Boolean
+): TJSONObject;
+var
+  LGroup: TJSONValue;
+  LGroups: TJSONArray;
+begin
+  Result := nil;
+  AInvalidGroup := False;
+  LGroups := ARoot.GetValue<TJSONArray>('groups');
+  if not Assigned(LGroups) then
+    Exit;
+  for LGroup in LGroups do
+  begin
+    if not (LGroup is TJSONObject) then
+    begin
+      AInvalidGroup := True;
+      Exit;
+    end;
+    if SameText(
+      (LGroup as TJSONObject).GetValue<string>('fingerprint', ''),
+      AGroupFingerprint
+    ) then
+      Exit(LGroup as TJSONObject);
+  end;
+end;
+
+function FindProjectFrame(const AGroup: TJSONObject): TJSONObject;
+var
+  LFrame: TJSONValue;
+  LFrames: TJSONArray;
+begin
+  Result := nil;
+  LFrames := AGroup.GetValue<TJSONArray>('frames');
+  if not Assigned(LFrames) then
+    Exit;
+  for LFrame in LFrames do
+    if (LFrame is TJSONObject) and
+      IsProjectFrame(LFrame as TJSONObject) then
+      Exit(LFrame as TJSONObject);
+end;
+
+function BuildPreparedFix(
+  const AGroupFingerprint: string;
+  const AGroup: TJSONObject;
+  const AFrame: TJSONObject
+): TRadIAToolResult;
+var
+  LRoot: TJSONObject;
+begin
+  LRoot := TJSONObject.Create;
+  try
+    LRoot.AddPair('groupFingerprint', AGroupFingerprint);
+    LRoot.AddPair(
+      'allocationNumber',
+      TJSONNumber.Create(AGroup.GetValue<Int64>('allocationNumber', 0))
+    );
+    LRoot.AddPair('targetFile', AFrame.GetValue<string>('fileName', ''));
+    LRoot.AddPair('lineNumber', AFrame.GetValue<Integer>('lineNumber', 0));
+    LRoot.AddPair('routineName', AFrame.GetValue<string>('routineName', ''));
+    LRoot.AddPair('nextTool', 'PreparePatch');
+    Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
+  finally
+    LRoot.Free;
+  end;
+end;
+
 function TryReadSummary(
   const AEvidence: string;
   out ASummary: TRadIAMemoryEvidenceSummary
@@ -118,6 +187,7 @@ function TryReadSummary(
 var
   LFingerprint: string;
   LGroup: TJSONValue;
+  LGroupObject: TJSONObject;
   LGroups: TJSONArray;
   LRoot: TJSONObject;
   LSession: TJSONObject;
@@ -142,11 +212,14 @@ begin
     ASummary.FGroupBytes := TDictionary<string, Int64>.Create;
     for LGroup in LGroups do
     begin
-      LFingerprint := (LGroup as TJSONObject).GetValue<string>(
+      if not (LGroup is TJSONObject) then
+        Exit;
+      LGroupObject := LGroup as TJSONObject;
+      LFingerprint := LGroupObject.GetValue<string>(
         'fingerprint',
         ''
       );
-      LTotalBytes := (LGroup as TJSONObject).GetValue<Int64>(
+      LTotalBytes := LGroupObject.GetValue<Int64>(
         'totalBytes',
         0
       );
@@ -281,10 +354,7 @@ function TRadIAMemoryEvidenceService.PrepareFix(
   const AGroupFingerprint: string
 ): TRadIAToolResult;
 var
-  LFrame: TJSONValue;
-  LFrames: TJSONArray;
-  LGroup: TJSONValue;
-  LGroups: TJSONArray;
+  LInvalidGroup: Boolean;
   LRoot: TJSONObject;
   LSelected: TJSONObject;
   LTargetFrame: TJSONObject;
@@ -296,60 +366,31 @@ begin
       'Memory evidence is invalid.'
     ));
   try
-    LSelected := nil;
-    LTargetFrame := nil;
-    LGroups := LRoot.GetValue<TJSONArray>('groups');
-    if Assigned(LGroups) then
-      for LGroup in LGroups do
-        if SameText(
-          (LGroup as TJSONObject).GetValue<string>('fingerprint', ''),
-          AGroupFingerprint
-        ) then
-        begin
-          LSelected := LGroup as TJSONObject;
-          Break;
-        end;
+    LSelected := FindEvidenceGroup(
+      LRoot,
+      AGroupFingerprint,
+      LInvalidGroup
+    );
+    if LInvalidGroup then
+      Exit(TRadIAToolResult.Failed(
+        'invalid_memory_evidence',
+        'Memory evidence contains an invalid group.'
+      ));
     if not Assigned(LSelected) then
       Exit(TRadIAToolResult.Failed(
         'memory_group_not_found',
         'The requested memory group was not found.'
       ));
-    LFrames := LSelected.GetValue<TJSONArray>('frames');
-    if Assigned(LFrames) then
-      for LFrame in LFrames do
-        if IsProjectFrame(LFrame as TJSONObject) then
-        begin
-          LTargetFrame := LFrame as TJSONObject;
-          Break;
-        end;
+    LTargetFrame := FindProjectFrame(LSelected);
     if not Assigned(LTargetFrame) then
       Exit(TRadIAToolResult.Failed(
         'memory_fix_target_unavailable',
         'No project source frame was found for this memory group.'
       ));
-    Result := TRadIAToolResult.Succeeded(
-      Format(
-        '{"groupFingerprint":"%s","allocationNumber":%d,' +
-        '"targetFile":"%s","lineNumber":%d,"routineName":"%s",' +
-        '"nextTool":"PreparePatch"}',
-        [
-          AGroupFingerprint,
-          LSelected.GetValue<Int64>('allocationNumber', 0),
-          StringReplace(
-            LTargetFrame.GetValue<string>('fileName', ''),
-            '\',
-            '\\',
-            [rfReplaceAll]
-          ),
-          LTargetFrame.GetValue<Integer>('lineNumber', 0),
-          StringReplace(
-            LTargetFrame.GetValue<string>('routineName', ''),
-            '"',
-            '\"',
-            [rfReplaceAll]
-          )
-        ]
-      )
+    Result := BuildPreparedFix(
+      AGroupFingerprint,
+      LSelected,
+      LTargetFrame
     );
   finally
     LRoot.Free;
@@ -375,6 +416,8 @@ function TRadIAMemoryEvidenceTool.Execute(
 ): TRadIAToolResult;
 var
   LJson: TJSONObject;
+  LBaseline: TJSONValue;
+  LVerification: TJSONValue;
   LValue: TJSONValue;
 begin
   LJson := TJSONObject.ParseJSONValue(ARequest.ArgumentsJson) as TJSONObject;
@@ -385,13 +428,24 @@ begin
     ));
   try
     if FKind = metCompare then
-      Result := FService.Compare(
-        LJson.GetValue('baselineEvidence').ToJSON,
-        LJson.GetValue('verificationEvidence').ToJSON
-      )
+    begin
+      LBaseline := LJson.GetValue('baselineEvidence');
+      LVerification := LJson.GetValue('verificationEvidence');
+      if not Assigned(LBaseline) or not Assigned(LVerification) then
+        Exit(TRadIAToolResult.Failed(
+          'invalid_request',
+          'Baseline and verification evidence are required.'
+        ));
+      Result := FService.Compare(LBaseline.ToJSON, LVerification.ToJSON);
+    end
     else
     begin
       LValue := LJson.GetValue('evidence');
+      if not Assigned(LValue) then
+        Exit(TRadIAToolResult.Failed(
+          'invalid_request',
+          'Memory evidence is required.'
+        ));
       Result := FService.PrepareFix(
         LValue.ToJSON,
         LJson.GetValue<string>('groupFingerprint', '')
