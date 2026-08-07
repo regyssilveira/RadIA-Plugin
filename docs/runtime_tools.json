@@ -300,6 +300,15 @@
         "GetMemoryDiagnosticsStatus",
         "ConfigureMemoryDiagnostics"
       ]
+    },
+    {
+      "name": "Reversible memory instrumentation",
+      "source": "Source/Core/RadIA.Core.MemoryInstrumentation.pas",
+      "tools": [
+        "PrepareMemoryInstrumentation",
+        "ApplyMemoryInstrumentation",
+        "RevertMemoryInstrumentation"
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 113 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 116 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -46,6 +46,9 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetInstallationHealth` | Verifica versão, plataforma, BPL, bridge MCP, terminal, chat, executores e prontidão da instalação. | Depois de instalar ou atualizar, no onboarding e ao diagnosticar uma funcionalidade indisponível. |
 | `GetMemoryDiagnosticsStatus` | Verifica diretório, versão, aceite de licença e DLL de diagnóstico do FastMM5 para a plataforma atual. | Antes de iniciar um diagnóstico de memória ou ao investigar por que o recurso não está pronto. |
 | `ConfigureMemoryDiagnostics` | Salva o diretório fornecido pelo usuário e o aceite explícito da licença do FastMM5, retornando a prontidão resultante. | Pelo assistente de configuração ou por chamada direta após consentimento estrutural. |
+| `PrepareMemoryInstrumentation` | Cria um preview com fingerprint para inserir o FastMM5 primeiro no projeto e habilitar diagnósticos somente em Debug. | Antes de alterar o DPR, depois de confirmar que FastMM5, plataforma e configuração estão prontos. |
+| `ApplyMemoryInstrumentation` | Revalida o fingerprint e aplica o preview ao buffer vivo do DPR com suporte ao Undo da IDE. | Após revisão e consentimento estrutural do usuário, antes do build diagnóstico. |
+| `RevertMemoryInstrumentation` | Restaura exatamente o conteúdo do DPR capturado antes da instrumentação. | No fim de uma sessão temporária, em cancelamentos e quando o usuário desfaz a instrumentação persistente. |
 
 ## Navegação, símbolos e project groups
 

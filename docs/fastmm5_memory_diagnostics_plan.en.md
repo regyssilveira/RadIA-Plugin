@@ -1,6 +1,6 @@
 # Goal 2.2 — Dynamic memory diagnostics with FastMM5
 
-> **Status:** in progress; M0 and M1 completed.
+> **Status:** in progress; M0, M1, and M2 completed.
 > **Target version:** 2.2.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64, diagnosing Win32 and Win64 applications.
 > **Dependency:** optional, user-supplied and user-licensed FastMM5.
@@ -63,6 +63,9 @@ Implement backend detection, settings, architecture validation, doctor integrati
 inspection without redistributing FastMM5.
 
 ### M2 — Reversible instrumentation
+
+**Status:** completed. See
+[Reversible memory instrumentation](fastmm5_instrumentation.en.md).
 
 Implement transactional prepare/apply/revert for DPR and Debug configuration while preserving live
 buffers, encoding, unrelated options, and rollback after interrupted execution.
