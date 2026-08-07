@@ -104,6 +104,7 @@ uses
   RadIA.Core.KnowledgeTools,
   RadIA.Core.ProjectHealthTools,
   RadIA.Core.InstallationHealthTools,
+  RadIA.Core.FastMM5,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.RuntimeDiscovery,
@@ -1244,6 +1245,9 @@ initialization
       ),
       TRadIAContainer.Resolve<IRadIAToolRegistry>
     )
+  );
+  RegisterRadIAFastMM5Tools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>
   );
   TRadIAContainer.Register<IRadIAMcpProtocol>(
     TRadIAMcpProtocol.Create(

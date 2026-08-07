@@ -77,6 +77,7 @@ This index brings together the functional, operational, and technical documentat
 | Completed 2.1 runtime goal | [Plan and acceptance evidence](runtime_debug_automation_plan.en.md) |
 | Memory diagnostics 2.2 goal | [Optional FastMM5 integration plan](fastmm5_memory_diagnostics_plan.en.md) |
 | Memory diagnostics M0 | [FastMM5 baseline, contracts, and laboratory](fastmm5_memory_diagnostics_m0.en.md) |
+| FastMM5 configuration | [Settings, chat, consent, and readiness states](fastmm5_configuration.en.md) |
 | Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
 | Runtime M1 execution | [Debugger correlation and waiting](runtime_debug_automation_m1.en.md) |
 | Runtime M2 execution | [Safe window and control discovery](runtime_debug_automation_m2.en.md) |

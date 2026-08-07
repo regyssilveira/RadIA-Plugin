@@ -1,6 +1,6 @@
 # Goal 2.2 — Dynamic memory diagnostics with FastMM5
 
-> **Status:** planned and ready for execution.
+> **Status:** in progress; M0 and M1 completed.
 > **Target version:** 2.2.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64, diagnosing Win32 and Win64 applications.
 > **Dependency:** optional, user-supplied and user-licensed FastMM5.
@@ -55,6 +55,9 @@ Freeze the supported FastMM5 contract, create deterministic leak and memory-erro
 schemas, and prove the reports manually on all supported targets.
 
 ### M1 — Detection and configuration
+
+**Status:** completed. See
+[FastMM5 configuration](fastmm5_configuration.en.md).
 
 Implement backend detection, settings, architecture validation, doctor integration, and readiness
 inspection without redistributing FastMM5.

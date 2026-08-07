@@ -292,6 +292,14 @@
         "PreviewGitCommit",
         "CommitChanges"
       ]
+    },
+    {
+      "name": "FastMM5 memory diagnostics",
+      "source": "Source/Core/RadIA.Core.FastMM5.pas",
+      "tools": [
+        "GetMemoryDiagnosticsStatus",
+        "ConfigureMemoryDiagnostics"
+      ]
     }
   ]
 }

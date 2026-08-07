@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 111 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 113 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -44,6 +44,8 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 |---|---|---|
 | `GetProjectHealth` | Consolida configuração, build, mensagens, testes e sinais de manutenção do projeto ativo. | No início de uma jornada, antes de propor melhorias ou para confirmar se o projeto está pronto para avançar. |
 | `GetInstallationHealth` | Verifica versão, plataforma, BPL, bridge MCP, terminal, chat, executores e prontidão da instalação. | Depois de instalar ou atualizar, no onboarding e ao diagnosticar uma funcionalidade indisponível. |
+| `GetMemoryDiagnosticsStatus` | Verifica diretório, versão, aceite de licença e DLL de diagnóstico do FastMM5 para a plataforma atual. | Antes de iniciar um diagnóstico de memória ou ao investigar por que o recurso não está pronto. |
+| `ConfigureMemoryDiagnostics` | Salva o diretório fornecido pelo usuário e o aceite explícito da licença do FastMM5, retornando a prontidão resultante. | Pelo assistente de configuração ou por chamada direta após consentimento estrutural. |
 
 ## Navegação, símbolos e project groups
 

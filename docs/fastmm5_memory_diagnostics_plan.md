@@ -1,6 +1,6 @@
 # Goal 2.2 — Diagnóstico dinâmico de memória com FastMM5
 
-> **Estado:** planejado, pronto para execução.
+> **Estado:** em execução; M0 e M1 concluídos.
 > **Versão-alvo:** 2.2.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64, diagnosticando aplicações Win32 e Win64.
 > **Dependência:** FastMM5 opcional, fornecido e licenciado pelo usuário.
@@ -172,6 +172,9 @@ crescimento entre repetições e grupos de stacks equivalentes.
 **Aceite:** relatórios reproduzíveis e fixtures anonimizadas para todas as classes de evento.
 
 ### M1 — Detecção e configuração
+
+**Estado:** concluído. Consulte
+[Configuração do FastMM5](fastmm5_configuration.md).
 
 - implementar backend abstrato e detector FastMM5;
 - adicionar configurações de caminho, versão, DLLs e política de licença;

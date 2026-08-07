@@ -265,9 +265,16 @@ This list contains only the built-in tools registered by the current package. Ar
 | `PreviewGitCommit` | `RadIA.Core.GitTools.pas` |
 | `CommitChanges` | `RadIA.Core.GitTools.pas` |
 
+## FastMM5 memory diagnostics
+
+| Tool | Source unit |
+|---|---|
+| `GetMemoryDiagnosticsStatus` | `RadIA.Core.FastMM5.pas` |
+| `ConfigureMemoryDiagnostics` | `RadIA.Core.FastMM5.pas` |
+
 ## Resumo
 
-- Registered groups: 30
-- Registered built-in tools: 111
+- Registered groups: 31
+- Registered built-in tools: 113
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.
