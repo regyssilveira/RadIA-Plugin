@@ -215,6 +215,47 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|
 | `GetDebugTimeline` | `RadIA.Core.DebugTimelineTools.pas` |
 
+## Runtime debugger correlation
+
+| Tool | Source unit |
+|---|---|
+| `GetRuntimeDebugSession` | `RadIA.Core.RuntimeDebugTools.pas` |
+| `WaitForDebuggerEvent` | `RadIA.Core.RuntimeDebugTools.pas` |
+| `CancelDebuggerWait` | `RadIA.Core.RuntimeDebugTools.pas` |
+
+## Runtime window discovery
+
+| Tool | Source unit |
+|---|---|
+| `GetRuntimeWindows` | `RadIA.Core.RuntimeDiscoveryTools.pas` |
+| `GetRuntimeControlTree` | `RadIA.Core.RuntimeDiscoveryTools.pas` |
+
+## Bounded runtime scenarios
+
+| Tool | Source unit |
+|---|---|
+| `PrepareRuntimeScenario` | `RadIA.Core.RuntimeScenarioTools.pas` |
+| `RunRuntimeScenario` | `RadIA.Core.RuntimeScenarioTools.pas` |
+| `CancelRuntimeScenario` | `RadIA.Core.RuntimeScenarioTools.pas` |
+| `GetRuntimeScenarioStatus` | `RadIA.Core.RuntimeScenarioTools.pas` |
+
+## Runtime diagnostic evidence
+
+| Tool | Source unit |
+|---|---|
+| `CaptureRuntimeEvidence` | `RadIA.Core.RuntimeEvidenceTools.pas` |
+| `CompareRuntimeEvidence` | `RadIA.Core.RuntimeEvidenceTools.pas` |
+
+## Versioned runtime regressions
+
+| Tool | Source unit |
+|---|---|
+| `PrepareRuntimeRegression` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `SaveRuntimeRegression` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `RevertRuntimeRegression` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `ListRuntimeRegressions` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `PrepareSavedRuntimeScenario` | `RadIA.Core.RuntimeRegressionTools.pas` |
+
 ## Reviewable local Git commits
 
 | Tool | Source unit |
@@ -226,7 +267,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Resumo
 
-- Registered groups: 25
-- Registered built-in tools: 95
+- Registered groups: 30
+- Registered built-in tools: 111
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

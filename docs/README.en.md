@@ -1,6 +1,6 @@
 # RadIA documentation center
 
-This index brings together the functional, operational, and technical documentation for RadIA 2.0.
+This index brings together the functional, operational, and technical documentation for RadIA 2.1.
 
 ## Start here
 
@@ -33,7 +33,7 @@ This index brings together the functional, operational, and technical documentat
 | DUnitX test execution and analysis | [DUnitX runner](dunitx_runner.en.md) |
 | Reviewable local Git commit | [Git workflow](git_workflow.en.md) |
 | What each tool does and when to use it | [Operational reference](internal_tools_reference.md) |
-| All 95 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
+| All 111 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
 | Target architecture and contracts | [Architectural catalog](tool_catalog.md) |
 | Consent, risk, and audit | [Security model](tool_security_model.md) |
 | MCP and external clients | [MCP integration](mcp_integration_guide.en.md) |
@@ -62,6 +62,7 @@ This index brings together the functional, operational, and technical documentat
 | Topic | Document |
 |---|---|
 | Release process | [Release finalization](release_process.en.md) |
+| Version 2.1 audit | [Builds, quality, installation, and artifacts](release_audit_2.1.0.en.md) |
 | Visual installer and channel | [Signable distribution](visual_installer.en.md) |
 | Migration from 1.x to 2.0 | [Migration to RadIA 2.0](migration_1_to_2.en.md) |
 | Agentic checklist | [Checklist](agentic_release_checklist.md) |
@@ -72,14 +73,20 @@ This index brings together the functional, operational, and technical documentat
 | Backlog | [Backlog](backlog.en.md) |
 | RadIA 2.0 goal | [Complete development journey](radia_2_goal.en.md) |
 | Leadership goal | [Complete Delphi experience](experience_leadership_goal.en.md) |
-| Next technical goal | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
+| Autonomous runtime diagnostics | [Complete usage guide](runtime_debug_automation.en.md) |
+| Completed 2.1 runtime goal | [Plan and acceptance evidence](runtime_debug_automation_plan.en.md) |
+| Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
+| Runtime M1 execution | [Debugger correlation and waiting](runtime_debug_automation_m1.en.md) |
+| Runtime M2 execution | [Safe window and control discovery](runtime_debug_automation_m2.en.md) |
+| Runtime M3 execution | [Bounded declarative execution](runtime_debug_automation_m3.en.md) |
+| Frozen plan to resume | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
 
 ## Security and compliance
 
 - [Terms, privacy, and compliance](compliance.en.md)
 - [Tool security model](tool_security_model.md)
 
-## RadIA 2.0 platform coverage
+## RadIA 2.1 platform coverage
 
 | Capability | User guide | Technical reference |
 |---|---|---|

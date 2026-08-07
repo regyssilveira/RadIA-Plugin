@@ -1,6 +1,6 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.0.
+This page is the functional map of RadIA 2.1.
 
 | Area | What RadIA can do |
 |---|---|
@@ -16,6 +16,7 @@ This page is the functional map of RadIA 2.0.
 | Build | Make, build, check, clean, structured diagnostics, status, timeout and cancellation. |
 | DUnitX | Run, filter and cancel tests, parse NUnit XML and return structured failures and stack traces. |
 | Debugger | Start, stop, pause, continue, step, manage breakpoints and watches, evaluate expressions, inspect call stacks and read the timeline. |
+| Autonomous runtime diagnostics | Build and start under the IDE debugger, run a bounded visual scenario, capture an exception and stack, rebuild, compare evidence across distinct sessions and builds, and preserve a versioned regression. |
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
 | Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
@@ -36,7 +37,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 95 registered built-in tools](runtime_tool_catalog.md)
+- [All 111 registered built-in tools](runtime_tool_catalog.md)
 - [Operational reference for every tool](internal_tools_reference.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)

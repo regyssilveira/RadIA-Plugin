@@ -1,6 +1,6 @@
 # Centro de documentação do RadIA
 
-Este índice reúne a documentação funcional, operacional e técnica do RadIA 2.0.
+Este índice reúne a documentação funcional, operacional e técnica do RadIA 2.1.
 
 ## Comece aqui
 
@@ -34,7 +34,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Execução e análise de testes DUnitX | [Runner DUnitX](dunitx_runner.md) |
 | Commit Git local e revisável | [Fluxo Git](git_workflow.md) |
 | O que faz e quando usar cada ferramenta | [Referência operacional](internal_tools_reference.md) |
-| Todas as 95 ferramentas internas | [Catálogo gerado](runtime_tool_catalog.md) |
+| Todas as 111 ferramentas internas | [Catálogo gerado](runtime_tool_catalog.md) |
 | Arquitetura alvo e contratos | [Catálogo arquitetural](tool_catalog.md) |
 | Consentimento, risco e auditoria | [Modelo de segurança](tool_security_model.md) |
 | MCP e clientes externos | [Integração MCP](mcp_integration_guide.md) |
@@ -66,6 +66,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Tema | Documento |
 |---|---|
 | Processo de release | [Finalização de release](release_process.md) |
+| Auditoria da versão 2.1 | [Builds, qualidade, instalação e artefatos](release_audit_2.1.0.md) |
 | Instalador visual e canal | [Distribuição assinável](visual_installer.md) |
 | Migração 1.x para 2.0 | [Migração para RadIA 2.0](migration_1_to_2.md) |
 | Checklist agentivo | [Checklist](agentic_release_checklist.md) |
@@ -76,7 +77,13 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Backlog | [Backlog](backlog.md) |
 | Goal RadIA 2.0 | [Jornada completa](radia_2_goal.md) |
 | Goal de liderança | [Experiência Delphi completa](experience_leadership_goal.md) |
-| Próximo goal técnico | [Continuidade CLI e integração avançada](competitive_leadership_plan.md) |
+| Diagnóstico runtime autônomo | [Guia completo de uso](runtime_debug_automation.md) |
+| Goal runtime 2.1 concluído | [Plano e evidências de aceite](runtime_debug_automation_plan.md) |
+| Execução do M0 runtime | [Baseline, contratos e matriz](runtime_debug_automation_m0.md) |
+| Execução do M1 runtime | [Correlação e espera do depurador](runtime_debug_automation_m1.md) |
+| Execução do M2 runtime | [Descoberta segura de janelas e controles](runtime_debug_automation_m2.md) |
+| Execução do M3 runtime | [Execução declarativa limitada](runtime_debug_automation_m3.md) |
+| Plano congelado para retomada | [Continuidade CLI e integração avançada](competitive_leadership_plan.md) |
 | Estratégia Delphi 12/13 | [Plataforma e plano de liderança](delphi_12_13_strategy.md) |
 
 ## Segurança e compliance
@@ -84,7 +91,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 - [Termos, privacidade e compliance](compliance.md)
 - [Modelo de segurança das tools](tool_security_model.md)
 
-## Cobertura da plataforma RadIA 2.0
+## Cobertura da plataforma RadIA 2.1
 
 | Capacidade | Manual de uso | Referência técnica |
 |---|---|---|

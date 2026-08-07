@@ -9,7 +9,7 @@ uses
 
 type
   IRadIAMcpCancellationSource = interface(
-    IRadIAToolCancellationToken
+    IRadIAToolCancellationNotifier
   )
     ['{09F80619-D036-479E-89AD-8C8AD4B45A55}']
     procedure Cancel;
@@ -18,13 +18,19 @@ type
   TRadIAMcpCancellationSource = class(
     TInterfacedObject,
     IRadIAMcpCancellationSource,
-    IRadIAToolCancellationToken
+    IRadIAToolCancellationToken,
+    IRadIAToolCancellationNotifier
   )
   private
+    FCancellationCallback: TRadIAToolCancellationCallback;
     FCancelled: Integer;
   public
     procedure Cancel;
+    procedure ClearCancellationCallback;
     function GetCancellationRequested: Boolean;
+    procedure SetCancellationCallback(
+      const ACallback: TRadIAToolCancellationCallback
+    );
   end;
 
   TRadIAMcpSession = class
@@ -182,14 +188,51 @@ const
 { TRadIAMcpCancellationSource }
 
 procedure TRadIAMcpCancellationSource.Cancel;
+var
+  LCallback: TRadIAToolCancellationCallback;
 begin
   TInterlocked.Exchange(FCancelled, 1);
+  TMonitor.Enter(Self);
+  try
+    LCallback := FCancellationCallback;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  if Assigned(LCallback) then
+    LCallback();
+end;
+
+procedure TRadIAMcpCancellationSource.ClearCancellationCallback;
+begin
+  TMonitor.Enter(Self);
+  try
+    FCancellationCallback := nil;
+  finally
+    TMonitor.Exit(Self);
+  end;
 end;
 
 function TRadIAMcpCancellationSource.GetCancellationRequested:
   Boolean;
 begin
   Result := TInterlocked.CompareExchange(FCancelled, 0, 0) <> 0;
+end;
+
+procedure TRadIAMcpCancellationSource.SetCancellationCallback(
+  const ACallback: TRadIAToolCancellationCallback
+);
+var
+  LInvokeNow: Boolean;
+begin
+  TMonitor.Enter(Self);
+  try
+    FCancellationCallback := ACallback;
+    LInvokeNow := GetCancellationRequested;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  if LInvokeNow and Assigned(ACallback) then
+    ACallback();
 end;
 
 { TRadIAMcpSession }

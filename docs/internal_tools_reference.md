@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 95 ferramentas internas do RadIA 2.0: o que cada uma faz e em qual etapa
+Esta página explica as 111 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -37,6 +37,13 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetEditorSelection` | Lê a seleção atual do editor. | Em ações direcionadas a um trecho, como explicar, revisar, testar ou refatorar. |
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | Para contextualizar erros, símbolos, inserções e revisões ancoradas. |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | Depois de um build ou quando o objetivo envolve corrigir falhas de compilação. |
+
+## Saúde do projeto e da instalação
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetProjectHealth` | Consolida configuração, build, mensagens, testes e sinais de manutenção do projeto ativo. | No início de uma jornada, antes de propor melhorias ou para confirmar se o projeto está pronto para avançar. |
+| `GetInstallationHealth` | Verifica versão, plataforma, BPL, bridge MCP, terminal, chat, executores e prontidão da instalação. | Depois de instalar ou atualizar, no onboarding e ao diagnosticar uma funcionalidade indisponível. |
 
 ## Navegação, símbolos e project groups
 
@@ -225,6 +232,47 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `GetDebugTimeline` | Retorna eventos recentes de processo, estado, breakpoint e memória. | Para acompanhar a sessão sem polling destrutivo e explicar a sequência do debug. |
+
+## Correlação do depurador runtime
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetRuntimeDebugSession` | Retorna sessão, PID real, projeto, executável, build e última sequência correlacionados. | Depois de iniciar o debug e antes de observar ou automatizar a aplicação. |
+| `WaitForDebuggerEvent` | Aguarda estados do processo sem busy-wait e inclui a pilha quando ocorre parada ou exceção. | Para sincronizar o agente com exceção, parada, término ou futura descoberta de janela. |
+| `CancelDebuggerWait` | Interrompe imediatamente a espera ativa. | Ao cancelar o objetivo, trocar de projeto ou encerrar a depuração. |
+
+## Descoberta segura da aplicação em execução
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetRuntimeWindows` | Lista janelas autorizadas com ID opaco, processo, classe, texto sanitizado, proprietário, estado e capacidades. No IDE64, a identidade permanece segura mesmo quando uma aplicação Win32 não expõe o texto. | Depois de confirmar a sessão runtime e antes de preparar um cenário visual. |
+| `GetRuntimeControlTree` | Retorna a hierarquia sanitizada dos controles com janela própria, sem aceitar ou expor `HWND`. | Para localizar ações possíveis em uma janela retornada por `GetRuntimeWindows`. |
+
+## Cenários runtime limitados
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareRuntimeScenario` | Valida ações, alvos, capacidades, duração, repetições e cria um preview com fingerprint. Alvos que só aparecem após uma ação anterior são validados dinamicamente na execução. | Depois da descoberta e antes de solicitar consentimento para interagir com a aplicação. |
+| `RunRuntimeScenario` | Revalida a sessão e executa exatamente o preview aprovado, restringindo seletores à janela raiz visível e habilitada do processo correlacionado. | Após o usuário revisar o roteiro; exige novo consentimento em toda execução. |
+| `CancelRuntimeScenario` | Interrompe a execução ou uma espera ativa sem solicitar consentimento. | Pelo botão ou comando de parada de emergência, pelo agente ou pelo MCP. |
+| `GetRuntimeScenarioStatus` | Retorna estado, repetição, ação atual, total concluído e eventual falha. | Para acompanhar o roteiro e coletar seu resultado estruturado. |
+
+## Evidências de diagnóstico runtime
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `CaptureRuntimeEvidence` | Registra sessão, build, cenário, último evento, pilha e até dez expressões em uma evidência sanitizada e identificada por fingerprint. | Uma vez na reprodução da falha e novamente, com `phase=verification`, após aplicar a correção e recompilar. |
+| `CompareRuntimeEvidence` | Compara uma evidência de falha com outra de verificação e informa se são comparáveis e se a falha foi removida. | Depois de repetir o mesmo cenário em uma nova sessão e em um build diferente; não altera código nem substitui a revisão humana. |
+
+## Regressões runtime versionadas
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareRuntimeRegression` | Valida um cenário com seletores repetíveis, rejeita IDs ligados à sessão e cria o preview do artefato. | Depois de comprovar a correção e antes de gravar a regressão no projeto. |
+| `SaveRuntimeRegression` | Grava o preview em `.radia/runtime-scenarios/<id>.json` com schema, fingerprint e escrita atômica. | Após revisão e consentimento para escrita reversível. |
+| `RevertRuntimeRegression` | Restaura o artefato anterior ou remove o arquivo criado pela aplicação correspondente. | Quando o usuário desfaz a gravação ainda rastreada pelo runtime atual. |
+| `ListRuntimeRegressions` | Lista os cenários versionados do projeto ativo. | Para descobrir regressões disponíveis sem executar a aplicação. |
+| `PrepareSavedRuntimeScenario` | Valida a integridade do artefato, religa seletores persistidos à sessão atual e cria um preview executável. | Depois de iniciar nova sessão de debug; a execução continua em `RunRuntimeScenario` com consentimento próprio e pode repetir o roteiro até o limite versionado. |
 
 ## Git local
 

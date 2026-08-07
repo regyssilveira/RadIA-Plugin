@@ -141,7 +141,9 @@ type
     procedure Delete(const ASessionId: string);
   end;
 
-  IRadIAAgentCancellationControl = interface(IRadIAToolCancellationToken)
+  IRadIAAgentCancellationControl = interface(
+    IRadIAToolCancellationNotifier
+  )
     ['{8B64F959-1A49-4BB0-9424-8B2EE0AC4B27}']
     procedure Request;
   end;
@@ -430,13 +432,20 @@ uses
 type
   TRadIAAgentCancellationToken = class(
     TInterfacedObject,
-    IRadIAAgentCancellationControl
+    IRadIAAgentCancellationControl,
+    IRadIAToolCancellationToken,
+    IRadIAToolCancellationNotifier
   )
   private
+    FCancellationCallback: TRadIAToolCancellationCallback;
     FRequested: Integer;
   public
+    procedure ClearCancellationCallback;
     function GetCancellationRequested: Boolean;
     procedure Request;
+    procedure SetCancellationCallback(
+      const ACallback: TRadIAToolCancellationCallback
+    );
   end;
 
 function RadIAAgentStatusName(
@@ -945,8 +954,45 @@ begin
 end;
 
 procedure TRadIAAgentCancellationToken.Request;
+var
+  LCallback: TRadIAToolCancellationCallback;
 begin
   TInterlocked.Exchange(FRequested, 1);
+  TMonitor.Enter(Self);
+  try
+    LCallback := FCancellationCallback;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  if Assigned(LCallback) then
+    LCallback();
+end;
+
+procedure TRadIAAgentCancellationToken.ClearCancellationCallback;
+begin
+  TMonitor.Enter(Self);
+  try
+    FCancellationCallback := nil;
+  finally
+    TMonitor.Exit(Self);
+  end;
+end;
+
+procedure TRadIAAgentCancellationToken.SetCancellationCallback(
+  const ACallback: TRadIAToolCancellationCallback
+);
+var
+  LInvokeNow: Boolean;
+begin
+  TMonitor.Enter(Self);
+  try
+    FCancellationCallback := ACallback;
+    LInvokeNow := GetCancellationRequested;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  if LInvokeNow and Assigned(ACallback) then
+    ACallback();
 end;
 
 { TRadIAAgentRuntime }
@@ -1063,10 +1109,15 @@ begin
     ApplyTestEvidence(AStep, AValidation)
   else if SameText(AStep.ToolName, 'GetCoverageSummary') then
     ApplyCoverageEvidence(AStep, AValidation)
-  else if SameText(AStep.ToolName, 'StartDebugging') then
+  else if SameText(AStep.ToolName, 'StartDebugging') or
+    SameText(AStep.ToolName, 'RunRuntimeScenario') then
     ApplyExecutionEvidence(AStep, AValidation)
   else if SameText(AStep.ToolName, 'GetDebuggerState') or
-    SameText(AStep.ToolName, 'GetDebugTimeline') then
+    SameText(AStep.ToolName, 'GetDebugTimeline') or
+    SameText(AStep.ToolName, 'WaitForDebuggerEvent') or
+    SameText(AStep.ToolName, 'GetRuntimeScenarioStatus') or
+    SameText(AStep.ToolName, 'CaptureRuntimeEvidence') or
+    SameText(AStep.ToolName, 'CompareRuntimeEvidence') then
     ApplyDebugEvidence(AStep, AValidation);
 end;
 
@@ -1084,13 +1135,25 @@ begin
     Exit;
   try
     AValidation.DebugObserved := True;
-    if SameText(AStep.ToolName, 'GetDebuggerState') then
-      AValidation.DebugState := LRoot.GetValue<string>('state', 'unknown')
-    else
+    if SameText(AStep.ToolName, 'GetDebugTimeline') then
       AValidation.DebugLastSequence := LRoot.GetValue<Int64>(
         'lastSequence',
         0
+      )
+    else
+    begin
+      AValidation.DebugState := LRoot.GetValue<string>(
+        'state',
+        LRoot.GetValue<string>(
+          'debuggerState',
+          LRoot.GetValue<string>('outcome', 'observed')
+        )
       );
+      AValidation.DebugLastSequence := LRoot.GetValue<Int64>(
+        'eventSequence',
+        AValidation.DebugLastSequence
+      );
+    end;
   finally
     LRoot.Free;
   end;

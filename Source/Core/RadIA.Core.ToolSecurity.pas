@@ -550,7 +550,8 @@ begin
   LPermissionKey := BuildPermissionKey(ARequest);
   TMonitor.Enter(FSessionPermissions);
   try
-    if (ADescriptor.Risk <> trDestructive) and
+    if not ADescriptor.ConsentEveryTime and
+      (ADescriptor.Risk <> trDestructive) and
       FSessionPermissions.ContainsKey(LPermissionKey) then
       Exit(cdAllowSession);
   finally
@@ -562,6 +563,7 @@ begin
 
   Result := FConsentProvider.RequestConsent(ARequest, ADescriptor);
   if (Result = cdAllowSession) and
+    not ADescriptor.ConsentEveryTime and
     (ADescriptor.Risk <> trDestructive) then
   begin
     TMonitor.Enter(FSessionPermissions);

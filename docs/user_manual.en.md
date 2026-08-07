@@ -1,4 +1,4 @@
-# Complete RadIA 2.0 user manual
+# Complete RadIA 2.1 user manual
 
 ## 1. What RadIA is
 
@@ -235,6 +235,23 @@ JSON Lines audit trail is appended to `.radia/debug/timeline.jsonl` in the activ
 
 See the [Designer and debugger guide](user_guide_designer_debugger.en.md).
 
+#### 4.10.1 Visual runtime regressions
+
+After correcting a UI-dependent failure, RadIA can preserve its script under
+`.radia/runtime-scenarios/<id>.json`. The artifact has a versioned schema and fingerprint and does
+not store session-bound opaque IDs: every target needs a stable class, text, and path. Use
+`parentPath` equal to `$root` for a root window.
+
+The flow is `PrepareRuntimeRegression`, review, `SaveRuntimeRegression`, a user-controlled commit,
+and, in a future debug session, `PrepareSavedRuntimeScenario` followed by `RunRuntimeScenario`.
+Preparation and listing are read-only. Save and revert are reversible writes, while every scenario
+execution requires fresh consent. An artifact changed without a matching fingerprint is rejected.
+
+The complete build, new-session, reproduction, evidence, fix, verification, comparison, and
+ten-replay workflow is documented in
+[Autonomous Runtime Diagnostics](runtime_debug_automation.en.md). Evidence is comparable only for
+the same project across distinct sessions and builds.
+
 ### 4.11 Inline review
 
 Review findings are anchored to a file, hash, and line range. Suggestions remain visual until the
@@ -307,11 +324,15 @@ See the [security model](tool_security_model.md) and
 | Delphi 13 | Win32 | Supported and validated |
 | Delphi 13 | IDE64 | Supported and validated |
 
-## 8. Version 2.0 limitations
+## 8. Version 2.1 limitations
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.md) lists the 80 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.md) lists the 111 registered built-in tools.
+- Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
+  capability.
+- RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user
+  review and consent.
 - Some architectural catalog entries remain roadmap items and may not appear in `/tools`.
 - Debugger and Designer tools require valid IDE context and state.
 - Patches are rejected after the buffer changes.

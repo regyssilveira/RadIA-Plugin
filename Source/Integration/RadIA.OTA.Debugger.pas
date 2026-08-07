@@ -10,6 +10,7 @@ type
   TRadIAOTADebuggerFacade = class(
     TInterfacedObject,
     IRadIADebuggerFacade,
+    IRadIADebuggerRuntimeFacade,
     IRadIADebuggerControlFacade,
     IRadIADebuggerBreakpointFacade,
     IRadIADebuggerEvaluationFacade,
@@ -25,6 +26,12 @@ type
     function GetCallStack(
       const AMaxCount: Integer
     ): TRadIACallStackSnapshot;
+    function ResolveRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): Boolean;
     function ExecuteAction(
       const AAction: TRadIADebuggerAction
     ): TRadIADebuggerActionResult;
@@ -56,7 +63,8 @@ uses
   Vcl.ActnList,
   Vcl.Forms,
   Winapi.Windows,
-  RadIA.Core.Types;
+  RadIA.Core.Types,
+  RadIA.OTA.RuntimeProcess;
 
 const
   CDebuggerUnavailable = 'The debugger is shutting down.';
@@ -243,11 +251,18 @@ begin
       daStop:
         AProcess.Terminate;
     end;
-    Result := TRadIADebuggerActionResult.Succeeded(
-      'The debugger accepted the requested action.',
-      LStateBefore,
-      ProcessStateToString(AProcess.ProcessState)
-    );
+    if AAction = daStop then
+      Result := TRadIADebuggerActionResult.Succeeded(
+        'The debugger accepted the requested action.',
+        LStateBefore,
+        'terminated'
+      )
+    else
+      Result := TRadIADebuggerActionResult.Succeeded(
+        'The debugger accepted the requested action.',
+        LStateBefore,
+        ProcessStateToString(AProcess.ProcessState)
+      );
   except
     on E: Exception do
       Result := TRadIADebuggerActionResult.Failed(
@@ -367,11 +382,20 @@ begin
     );
   except
     on E: Exception do
-      Result := TRadIADebuggerActionResult.Failed(
-        'debugger_start_failed',
-        E.Message,
-        'no_process'
-      );
+    begin
+      if WaitForDebugProcess(ADebugger) then
+        Result := TRadIADebuggerActionResult.Succeeded(
+          'The IDE started the debug session after a transient response.',
+          'no_process',
+          'starting'
+        )
+      else
+        Result := TRadIADebuggerActionResult.Failed(
+          'debugger_start_failed',
+          E.Message,
+          'no_process'
+        );
+    end;
   end;
 end;
 
@@ -837,6 +861,34 @@ begin
     end
   );
   Result := LResult;
+end;
+
+function TRadIAOTADebuggerFacade.ResolveRuntimeProcess(
+  out AProcessId: LongWord;
+  out ACreatedAtUtc: TDateTime;
+  out AExecutablePath: string;
+  out ABuildId: string
+): Boolean;
+var
+  LSnapshot: TRadIADebuggerSnapshot;
+begin
+  AProcessId := 0;
+  ACreatedAtUtc := 0;
+  AExecutablePath := '';
+  ABuildId := '';
+  LSnapshot := GetDebuggerState;
+  AProcessId := LSnapshot.OSProcessId;
+  Result := (AProcessId > 0) and
+    TryGetRadIARuntimeProcessIdentity(
+      AProcessId,
+      AExecutablePath,
+      ACreatedAtUtc
+    );
+  if Result then
+  begin
+    ABuildId := GetRadIARuntimeBuildId(AExecutablePath);
+    Result := ABuildId <> '';
+  end;
 end;
 
 end.

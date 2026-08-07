@@ -3,11 +3,23 @@ unit RadIA.Core.Tools;
 interface
 
 type
+  TRadIAToolCancellationCallback = reference to procedure;
+
   IRadIAToolCancellationToken = interface
     ['{28C282D6-ECC9-4CD1-BE2E-9AB26FBFDD99}']
     function GetCancellationRequested: Boolean;
     property CancellationRequested: Boolean
       read GetCancellationRequested;
+  end;
+
+  IRadIAToolCancellationNotifier = interface(
+    IRadIAToolCancellationToken
+  )
+    ['{D9558F1D-FAF8-4683-A26F-C0D336627976}']
+    procedure SetCancellationCallback(
+      const ACallback: TRadIAToolCancellationCallback
+    );
+    procedure ClearCancellationCallback;
   end;
 
   TRadIAToolRisk = (
@@ -29,6 +41,7 @@ type
     FRisk: TRadIAToolRisk;
     FTimeoutMs: Cardinal;
     FIdempotent: Boolean;
+    FConsentEveryTime: Boolean;
   public
     constructor Create(
       const AName: string;
@@ -42,6 +55,7 @@ type
       const ATimeoutMs: Cardinal;
       const AIdempotent: Boolean
     ): TRadIAToolDescriptor;
+    function WithConsentEveryTime: TRadIAToolDescriptor;
     property Name: string read FName;
     property Version: string read FVersion;
     property Description: string read FDescription;
@@ -50,6 +64,7 @@ type
     property Risk: TRadIAToolRisk read FRisk;
     property TimeoutMs: Cardinal read FTimeoutMs;
     property Idempotent: Boolean read FIdempotent;
+    property ConsentEveryTime: Boolean read FConsentEveryTime;
   end;
 
   TRadIAToolRequest = record
@@ -197,6 +212,14 @@ begin
   FRisk := ARisk;
   FTimeoutMs := 10000;
   FIdempotent := ARisk = trReadOnly;
+  FConsentEveryTime := False;
+end;
+
+function TRadIAToolDescriptor.WithConsentEveryTime:
+  TRadIAToolDescriptor;
+begin
+  Result := Self;
+  Result.FConsentEveryTime := True;
 end;
 
 function TRadIAToolDescriptor.WithExecutionOptions(

@@ -71,6 +71,103 @@ const
   CNoActiveProject = 'no_active_project';
   CUnsupported = 'build_unsupported';
 
+function ResolveBuildConfiguration(
+  const AConfigurations: IOTAProjectOptionsConfigurations
+): string;
+var
+  LConfiguration: IOTABuildConfiguration;
+  LIndex: Integer;
+begin
+  Result := Trim(AConfigurations.ActiveConfigurationName);
+  if (Result <> '') and not SameText(Result, 'Base') then
+    Exit;
+
+  Result := '';
+  for LIndex := 0 to AConfigurations.ConfigurationCount - 1 do
+  begin
+    LConfiguration := AConfigurations.Configurations[LIndex];
+    if not Assigned(LConfiguration) or
+      not Assigned(LConfiguration.Parent) then
+      Continue;
+    if SameText(LConfiguration.Name, 'Debug') then
+      Exit(LConfiguration.Name);
+    if Result = '' then
+      Result := LConfiguration.Name;
+  end;
+end;
+
+function ResolveDeclaredProjectPlatform(
+  const AProjectFile: string
+): string;
+var
+  LContent: string;
+  LMatch: TMatch;
+  LTargetedPlatforms: Integer;
+begin
+  Result := '';
+  if not TFile.Exists(AProjectFile) then
+    Exit;
+
+  LContent := TFile.ReadAllText(AProjectFile, TEncoding.UTF8);
+  LMatch := TRegEx.Match(
+    LContent,
+    '<TargetedPlatforms>\s*(\d+)\s*</TargetedPlatforms>',
+    [roIgnoreCase]
+  );
+  if LMatch.Success and
+    TryStrToInt(LMatch.Groups[1].Value, LTargetedPlatforms) then
+  begin
+    if ((LTargetedPlatforms and 1) <> 0) and
+      ((LTargetedPlatforms and 2) = 0) then
+      Exit('Win32');
+    if ((LTargetedPlatforms and 2) <> 0) and
+      ((LTargetedPlatforms and 1) = 0) then
+      Exit('Win64');
+  end;
+
+  LMatch := TRegEx.Match(
+    LContent,
+    '<Platform\b[^>]*>\s*(Win32|Win64)\s*</Platform>',
+    [roIgnoreCase]
+  );
+  if LMatch.Success then
+    Result := LMatch.Groups[1].Value;
+end;
+
+function ResolveBuildPlatform(
+  const AConfigurations: IOTAProjectOptionsConfigurations;
+  const AProjectFile: string;
+  const AProjectPlatform: string
+): string;
+var
+  LActiveConfiguration: IOTABuildConfiguration;
+  LCandidate: string;
+  LPlatform: string;
+  LPlatforms: TArray<string>;
+begin
+  Result := ResolveDeclaredProjectPlatform(AProjectFile);
+  if Result <> '' then
+    Exit;
+
+  LActiveConfiguration := AConfigurations.ActiveConfiguration;
+  if not Assigned(LActiveConfiguration) then
+    Exit;
+
+  LPlatforms := LActiveConfiguration.Platforms;
+  LCandidate := Trim(AProjectPlatform);
+  if LCandidate = '' then
+    LCandidate := Trim(AConfigurations.ActivePlatformName);
+  for LPlatform in LPlatforms do
+    if SameText(LPlatform, LCandidate) then
+      Exit(LPlatform);
+
+  for LPlatform in LPlatforms do
+    if SameText(LPlatform, 'Win32') then
+      Exit(LPlatform);
+  if Length(LPlatforms) > 0 then
+    Result := LPlatforms[0];
+end;
+
 { TRadIAOTABuildFacade }
 
 function TRadIAOTABuildFacade.Cancel: Boolean;
@@ -135,6 +232,7 @@ var
   LModule: IOTAModule;
   LModuleServices: IOTAModuleServices;
   LProject: IOTAProject;
+  LProjectConfigurations: IOTAProjectOptionsConfigurations;
   LServices: IOTAServices;
 begin
   if Supports(BorlandIDEServices, IOTAModuleServices, LModuleServices) then
@@ -145,14 +243,32 @@ begin
       if Assigned(LModule) and
         (Trim(LModule.FileName) <> '') and
         TFile.Exists(LModule.FileName) then
-        LModule.Save(False, True);
+        LModule.Save(False, False);
     end;
     LProject := LModuleServices.GetActiveProject;
     if Assigned(LProject) then
     begin
       AProjectFile := LProject.FileName;
-      AConfiguration := LProject.CurrentConfiguration;
-      APlatform := LProject.CurrentPlatform;
+      if Supports(
+        LProject.ProjectOptions,
+        IOTAProjectOptionsConfigurations,
+        LProjectConfigurations
+      ) then
+      begin
+        AConfiguration := ResolveBuildConfiguration(
+          LProjectConfigurations
+        );
+        APlatform := ResolveBuildPlatform(
+          LProjectConfigurations,
+          LProject.FileName,
+          LProject.CurrentPlatform
+        );
+      end
+      else
+      begin
+        AConfiguration := LProject.CurrentConfiguration;
+        APlatform := LProject.CurrentPlatform;
+      end;
     end;
   end;
   if Supports(BorlandIDEServices, IOTAServices, LServices) then

@@ -14,9 +14,10 @@ The board below summarizes the current status of mapped short and medium-term fe
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
 | **Secure Agentic Platform for Delphi 11/12/13** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.0.0 |
-| **RadIA 2.0 Goal — Complete Development Journey** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
-| **RadIA 2.0 Goal — Leading the Delphi Experience** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
-| **RadIA 2.0 Goal — CLI Continuity and Advanced Integration** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **RadIA 2.0 Goal — Complete Development Journey** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **RadIA 2.0 Goal — Leading the Delphi Experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **2.1 Goal — Autonomous Runtime Failure Reproduction** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.1.0 |
+| **Goal — CLI Continuity and Advanced Integration** | ⏸️ Frozen | 🔴 High | ⭐⭐⭐⭐⭐ Critical | After v2.1.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -26,7 +27,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Event-driven Debug Agent** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.6.0 |
 | **Reviewable Git and Delivery Pipeline** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐ High | v1.7.0 |
 | **CLI Manager, Terminal, and Hybrid Experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
-| **E2E Hardening and RadIA 2.0 Release** | 🚧 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
+| **E2E Hardening and RadIA 2.0 Release** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Editor Selection Fixes and Gemini OAuth Block** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.29 |
 | **Open Tools API Adapter and Network Testing** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐ High | v0.0.28 |
 | **Resolution of Code Smells and Test Coverage Expansion** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.27 |

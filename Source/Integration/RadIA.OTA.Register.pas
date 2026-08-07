@@ -85,6 +85,12 @@ uses
   RadIA.Core.DesignerEvents, RadIA.Core.DesignerEventTools,
   RadIA.Core.Debugger, RadIA.Core.DebuggerTools,
   RadIA.Core.DebugTimeline, RadIA.Core.DebugTimelineTools,
+  RadIA.Core.RuntimeDebugSession,
+  RadIA.Core.RuntimeDebugTools,
+  RadIA.Core.RuntimeAutomation, RadIA.Core.RuntimeDiscoveryTools,
+  RadIA.Core.RuntimeScenario, RadIA.Core.RuntimeScenarioTools,
+  RadIA.Core.RuntimeEvidence, RadIA.Core.RuntimeEvidenceTools,
+  RadIA.Core.RuntimeRegression, RadIA.Core.RuntimeRegressionTools,
   RadIA.Core.DebuggerControlTools, RadIA.Core.DebuggerBreakpointTools,
   RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
@@ -100,6 +106,7 @@ uses
   RadIA.Core.InstallationHealthTools,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
+  RadIA.OTA.RuntimeDiscovery,
   RadIA.OTA.DebugTimelineStore,
   RadIA.OTA.Knowledge,
   RadIA.OTA.KnowledgeNotifier, RadIA.OTA.InlineReviews,
@@ -283,7 +290,8 @@ begin
   );
   TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Install;
   FDebugTimelineNotifier := TRadIAOTADebugTimelineNotifier.Create(
-    TRadIAContainer.Resolve<IRadIADebugTimeline>
+    TRadIAContainer.Resolve<IRadIADebugTimeline>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>
   );
   TRadIAOTADebugTimelineNotifier(FDebugTimelineNotifier).Install;
   RegisterMenus;
@@ -935,6 +943,37 @@ initialization
       TRadIAContainer.Resolve<IRadIADebugTimelineStore>
     )
   );
+  TRadIAContainer.Register<IRadIARuntimeDebugSessionCoordinator>(
+    TRadIARuntimeDebugSessionCoordinator.Create
+  );
+  TRadIAContainer.Register<IRadIARuntimeDiscoveryFacade>(
+    TRadIAWindowsRuntimeDiscoveryFacade.Create
+  );
+  TRadIAContainer.Register<IRadIARuntimeActionFacade>(
+    TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade> as
+      IRadIARuntimeActionFacade
+  );
+  TRadIAContainer.Register<IRadIARuntimeScenarioCoordinator>(
+    TRadIARuntimeScenarioCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIARuntimeActionFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIARuntimeEvidenceCoordinator>(
+    TRadIARuntimeEvidenceCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+      TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>,
+      TRadIAContainer.Resolve<IRadIADebuggerFacade>,
+      TRadIAContainer.Resolve<IRadIADebuggerEvaluationFacade>,
+      TRadIAContainer.Resolve<IRadIASecretRedactor>
+    )
+  );
+  TRadIAContainer.Register<IRadIARuntimeRegressionCoordinator>(
+    TRadIARuntimeRegressionCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+      TRadIAContainer.Resolve<IRadIASecretRedactor>
+    )
+  );
   TRadIAContainer.Register<IRadIAKnowledgeSource>(
     TRadIAConfigurableKnowledgeSource.Create(
       TRadIAConfig.GetInstance,
@@ -1154,6 +1193,31 @@ initialization
   RegisterRadIADebugTimelineTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIADebugTimeline>
+  );
+  RegisterRadIARuntimeDebugTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIADebuggerFacade>
+  );
+  RegisterRadIARuntimeDiscoveryTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade>
+  );
+  RegisterRadIARuntimeScenarioTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>
+  );
+  RegisterRadIARuntimeEvidenceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeEvidenceCoordinator>
+  );
+  RegisterRadIARuntimeRegressionTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeRegressionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>
   );
   RegisterRadIAKnowledgeTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

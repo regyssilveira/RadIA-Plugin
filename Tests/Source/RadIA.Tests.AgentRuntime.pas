@@ -1403,12 +1403,12 @@ begin
           );
         5:
           LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
-            '{"accepted":true,"stateBefore":"stopped",' +
-            '"stateAfter":"running"}'
+            '{"state":"succeeded","completedActions":2}'
           );
         6:
           LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
-            '{"state":"paused","processId":1234}'
+            '{"phase":"verification","debuggerState":"stopped",' +
+            '"eventSequence":41}'
           );
         7:
           LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
@@ -1431,8 +1431,14 @@ begin
       '{"executablePath":"tests.exe"}'
     ),
     TRadIAAgentDecision.CallTool('GetCoverageSummary', '{}'),
-    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
-    TRadIAAgentDecision.CallTool('GetDebuggerState', '{}'),
+    TRadIAAgentDecision.CallTool(
+      'RunRuntimeScenario',
+      '{"previewId":"runtime-preview"}'
+    ),
+    TRadIAAgentDecision.CallTool(
+      'CaptureRuntimeEvidence',
+      '{"phase":"verification"}'
+    ),
     TRadIAAgentDecision.CallTool('GetDebugTimeline', '{}'),
     TRadIAAgentDecision.Complete('Validation evidence captured.')
   ]);
@@ -1462,9 +1468,12 @@ begin
     Assert.Contains(LStoreObject.SnapshotJson, '"coveragePercent":81');
     Assert.Contains(LStoreObject.SnapshotJson, '"executionRun":true');
     Assert.Contains(LStoreObject.SnapshotJson, '"executionPassed":true');
-    Assert.Contains(LStoreObject.SnapshotJson, '"executionTool":"StartDebugging"');
+    Assert.Contains(
+      LStoreObject.SnapshotJson,
+      '"executionTool":"RunRuntimeScenario"'
+    );
     Assert.Contains(LStoreObject.SnapshotJson, '"debugObserved":true');
-    Assert.Contains(LStoreObject.SnapshotJson, '"debugState":"paused"');
+    Assert.Contains(LStoreObject.SnapshotJson, '"debugState":"stopped"');
     Assert.Contains(LStoreObject.SnapshotJson, '"debugLastSequence":42');
   finally
     LRuntime.Free;

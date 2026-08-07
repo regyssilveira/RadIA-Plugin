@@ -163,6 +163,16 @@ type
     ): TRadIACallStackSnapshot;
   end;
 
+  IRadIADebuggerRuntimeFacade = interface
+    ['{B664E55F-0A56-49DA-A5EB-30749E5A47A6}']
+    function ResolveRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): Boolean;
+  end;
+
   IRadIADebuggerControlFacade = interface
     ['{09E0E712-C0D2-4DEB-972C-A70DF3E56BC8}']
     function ExecuteAction(

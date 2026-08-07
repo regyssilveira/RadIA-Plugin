@@ -15,9 +15,10 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
 | **Plataforma Agentiva Segura para Delphi 11/12/13** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.0.0 |
-| **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
-| **Goal RadIA 2.0 — Liderança da Experiência Delphi** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
-| **Goal RadIA 2.0 — Continuidade CLI e Integração Avançada** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Goal RadIA 2.0 — Liderança da Experiência Delphi** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Goal 2.1 — Reprodução Autônoma de Falhas Runtime** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.1.0 |
+| **Goal — Continuidade CLI e Integração Avançada** | ⏸️ Congelado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Após v2.1.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -27,7 +28,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Debug Agent Orientado a Eventos** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.6.0 |
 | **Git Revisável e Pipeline de Entrega** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐ Alta | v1.7.0 |
 | **CLI Manager, Terminal e Experiência Híbrida** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
-| **Hardening E2E e Release RadIA 2.0** | 🚧 Em andamento | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
+| **Hardening E2E e Release RadIA 2.0** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Correção de Seleção do Editor e Bloqueio do Gemini OAuth** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.29 |
 | **Adapter da Open Tools API e Testes de Rede** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.0.28 |
 | **Resolução de Code Smells e Ampliação de Testes** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.27 |

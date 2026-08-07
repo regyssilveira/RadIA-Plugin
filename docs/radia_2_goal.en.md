@@ -1,6 +1,6 @@
 # RadIA 2.0 goal: complete development journey
 
-> **Release status:** under development and validation. Version 2.0.0 has not been released.
+> **Historical status:** goal completed and version 2.0.0 published.
 > Evidence in this document proves the implemented baseline, but does not close the expanded
 > release gates.
 

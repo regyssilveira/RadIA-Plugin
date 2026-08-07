@@ -234,19 +234,20 @@ begin
       '/journey debug',
       'Debug Failure',
       'Guides a debugger session from reproduction to verified correction.',
-      'Reproduce and diagnose the reported Delphi failure using debugger state, breakpoints, call ' +
-      'stack, watches, evaluations, and timeline evidence. Present the diagnosis before editing, ' +
-      'apply a reviewable fix, then rebuild and rerun the relevant verification.',
+      'Build and start the Delphi application under the debugger, prepare and run a bounded runtime ' +
+      'scenario, then wait for and capture the failure with stack and expression evidence. Present ' +
+      'the diagnosis before editing, apply a reviewable fix, rebuild, rerun the same scenario, and ' +
+      'compare failure and verification evidence.',
       [
         TRadIAJourneyPhase.Create(
           'Reproduce',
-          'Start or attach the debugger and reproduce the reported behavior.',
-          'Record process state, location, and reproduction conditions.'
+          'Build, start debugging, preview the runtime scenario, obtain consent, and run it.',
+          'Record the authorized process, build, scenario, actions, and reproduction conditions.'
         ),
         TRadIAJourneyPhase.Create(
           'Inspect',
-          'Use breakpoints, call stack, watches, and evaluations to isolate the cause.',
-          'Capture the decisive debugger observations.'
+          'Wait for the debugger event and capture failure evidence with stack and safe expressions.',
+          'Preserve the sanitized failure evidence identifier and decisive observations.'
         ),
         TRadIAJourneyPhase.Create(
           'Correct',
@@ -255,13 +256,16 @@ begin
         ),
         TRadIAJourneyPhase.Create(
           'Confirm',
-          'Rebuild and rerun the reproduction or focused test.',
-          'Provide build and runtime verification evidence.'
+          'Rebuild, start a new session, rerun the same scenario, and compare both evidence records.',
+          'Provide a comparable fixed outcome, then add a focused DUnitX test or save the visual ' +
+          'scenario as a versioned runtime regression.'
         )
       ],
       [
         'The root cause is supported by debugger evidence.',
         'The correction is reviewed before application.',
+        'Failure and verification use different builds and debug sessions.',
+        'An isolated cause has a focused DUnitX test or the visual scenario is saved as a regression.',
         'The original failure no longer reproduces or a blocker is proven.'
       ]
     ),

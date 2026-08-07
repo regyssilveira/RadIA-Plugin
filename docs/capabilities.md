@@ -1,6 +1,6 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.0. Ela reúne as capacidades disponíveis e aponta para
+Esta página é o mapa funcional do RadIA 2.1. Ela reúne as capacidades disponíveis e aponta para
 as instruções detalhadas.
 
 Para distinguir implementação de planejamento:
@@ -116,6 +116,25 @@ Durante uma sessão válida, o RadIA pode:
 
 Consulte [Form Designer e debugger](user_guide_designer_debugger.md).
 
+## Diagnóstico runtime autônomo
+
+O RadIA pode transformar uma falha visual reproduzível em uma prova verificável:
+
+- compilar o projeto e iniciar uma nova sessão pelo depurador da IDE;
+- correlacionar projeto, processo, executável, build e identidade da sessão;
+- descobrir somente janelas e controles do processo depurado e seus descendentes;
+- preparar um roteiro visual com preview, limites, fingerprint e consentimento;
+- reproduzir uma exceção, capturar a pilha e registrar evidência sanitizada;
+- aplicar uma correção revisada, recompilar e repetir o mesmo roteiro;
+- comparar falha e verificação entre sessões e builds distintos;
+- versionar o cenário em `.radia/runtime-scenarios` e executá-lo repetidamente como regressão.
+
+A automação não aceita `HWND`, coordenadas globais ou processos arbitrários. Em Delphi 13 IDE64,
+seletores cruzados para aplicações Win32 preservam classe e hierarquia quando o texto do controle
+não está disponível.
+
+Consulte [Diagnóstico Runtime Autônomo](runtime_debug_automation.md).
+
 ## Git local e revisável
 
 Dentro do repositório do projeto ativo, o RadIA pode consultar status e diff, preparar o preview,
@@ -202,7 +221,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 95 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 111 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)
