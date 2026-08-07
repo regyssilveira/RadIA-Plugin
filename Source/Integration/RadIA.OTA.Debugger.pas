@@ -251,11 +251,18 @@ begin
       daStop:
         AProcess.Terminate;
     end;
-    Result := TRadIADebuggerActionResult.Succeeded(
-      'The debugger accepted the requested action.',
-      LStateBefore,
-      ProcessStateToString(AProcess.ProcessState)
-    );
+    if AAction = daStop then
+      Result := TRadIADebuggerActionResult.Succeeded(
+        'The debugger accepted the requested action.',
+        LStateBefore,
+        'terminated'
+      )
+    else
+      Result := TRadIADebuggerActionResult.Succeeded(
+        'The debugger accepted the requested action.',
+        LStateBefore,
+        ProcessStateToString(AProcess.ProcessState)
+      );
   except
     on E: Exception do
       Result := TRadIADebuggerActionResult.Failed(

@@ -185,13 +185,22 @@ procedure TRadIAOTADebugTimelineNotifier.EnsureRuntimeSession(
 );
 var
   LCreatedAtUtc: TDateTime;
+  LCurrentSession: TRadIARuntimeSessionIdentity;
   LExecutablePath: string;
   LProcessId: LongWord;
   LProjectPath: string;
 begin
   if not Assigned(FRuntimeCoordinator) or not Assigned(AProcess) then
     Exit;
-  if FRuntimeSessionId = '' then
+  LProcessId := RuntimeProcessId(AProcess);
+  if LProcessId = 0 then
+    Exit;
+  LCurrentSession := FRuntimeCoordinator.GetCurrentSession;
+  if (FRuntimeSessionId = '') or
+    (
+      LCurrentSession.IsComplete and
+      (LCurrentSession.ProcessId <> LProcessId)
+    ) then
   begin
     LProjectPath := ActiveProjectPath;
     if LProjectPath = '' then
@@ -201,9 +210,6 @@ begin
     );
   end;
   if FRuntimeSessionId = '' then
-    Exit;
-  LProcessId := RuntimeProcessId(AProcess);
-  if LProcessId = 0 then
     Exit;
   LExecutablePath := '';
   LCreatedAtUtc := 0;
