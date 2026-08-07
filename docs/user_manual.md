@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.2
+# Manual completo do RadIA 2.2.1
 
 ## 1. O que é o RadIA
 
@@ -462,7 +462,7 @@ Consulte o [modelo de segurança](tool_security_model.md) e o
 
 Use sempre o ZIP correspondente à versão e arquitetura da IDE.
 
-## 8. Limitações importantes da versão 2.1
+## 8. Limitações importantes da versão atual
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.

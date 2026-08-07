@@ -35,7 +35,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
       *   Reset e colapso programático do bloco de seleção do editor (`LEditBlock.Reset` e `LView.Position.Move`) após inserção de código automático para evitar que textos recém-gerados continuem marcados como selecionados.
       *   Tradução da mensagem do indicador moderno de digitação no chat de `"Pensando..."` para `"Thinking..."` para total aderência às diretrizes de idioma do código-fonte e interface (en-US).
       *   Implementação de barreiras preventivas de login e envio de prompts usando o Gemini no modo OAuth, exibindo avisos claros instruindo a usar API Keys devido ao status de verificação pendente, omitindo qualquer menção a "Web Login" (removido).
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.29)](backlog.md#v0029--correção-de-seleção-do-editor-e-bloqueio-do-gemini-oauth-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.29)](backlog.md).*
 </details>
 
 <details>
@@ -47,7 +47,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
       *   Implementação de testes com `TMockEditorAdapter` que simula buffers de texto e ações de inserção, seleção, e substituição offline.
       *   Testes de resiliência a lentidão de rede e streaming assíncrono abortado via `TestProviderBase_CancellationAndTimeout`.
       *   Resolução de problemas de concorrência e file-locking no Windows ao manusear templates.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.28)](backlog.md#v0028--adapter-da-open-tools-api-e-testes-de-rede-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.28)](backlog.md).*
 </details>
 
 <details>
@@ -60,7 +60,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
       *   Cobertura robusta de descoberta de modelos no Gemini (`FetchAvailableModelsAsync`) sob sucesso, falha e chaves vazias.
       *   Testes de decodificação de múltiplos formatos de payloads de erro JSON da API base dos provedores.
       *   Cobertura total (100%) nas classes de dados fundamentais `RadIA.Core.Types` e `RadIA.Core.ChatMessage`.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.27)](backlog.md#v0027--resolução-de-code-smells-e-ampliação-de-testes-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.27)](backlog.md).*
 </details>
 
 <details>
@@ -74,7 +74,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
       *   Blindagem absoluta contra apagamento acidental de dados locais de produção através de injeção de diretórios temporários baseados em GUIDs nos testes.
       *   Correção de colagem de código em uma única linha no editor com o normalizador centralizado `IRadIATextNormalizer` (CRLF).
       *   Novos serviços desacoplados: cliente HTTP centralizado (`IRadIAHttpClient`), decodificador de erros de APIs (`IRadIAErrorDecoder`) e dicionário de localização (`IRadIALocalizer`).
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.26)](backlog.md#v0026--ícones-de-provedores-visuais-e-reformulação-arquitetural-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.26)](backlog.md).*
 </details>
 
 <details>
@@ -82,7 +82,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Login web mais direto e confiável para ChatGPT/Gemini, com confirmação explícita de sessão já autenticada, e aplicação de diffs mais segura no editor para evitar duplicação de código.
   *   **Destaques**: abertura da página oficial do provedor com a pasta de dados correta, fechamento automático quando a sessão já está logada, identificação visual como **Web Login** em vez de nome de modelo incorreto e substituição OTA baseada no bloco original quando a seleção do editor se perde.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.25)](backlog.md#v0025--web-login-simplificado-e-apply-changes-seguro-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.25)](backlog.md).*
 </details>
 
 <details>
@@ -90,7 +90,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Auditoria estática inteligente de warnings de compilação e vazamento de handles visando a robustez do software, aliado à correção definitiva de travamentos de code folding (Elision) na IDE do Delphi 13.
   *   **Destaques**: Ação contextual de scan no editor, comando de barra `/scanwarnings`, perfil dedicado `rpScanWarnings` e proteção estrutural contra reentrância de hooks no menu do editor.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.24)](backlog.md#v0024--delphi-compiler--os-warning-scanner-e-protecao-de-menus-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.24)](backlog.md).*
 </details>
 
 <details>
@@ -98,7 +98,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Otimização inteligente e contextual de strings de consultas SQL diretamente no editor da IDE, sem sair do fluxo de trabalho.
   *   **Destaques**: Nova ação de contexto no editor, comando de barra `/sqloptimize`, parametrização dedicada de temperatura baixa (`0.1`) e alta quantidade de tokens no orquestrador do serviço, e suite de testes unitários DUnitX.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.23)](backlog.md#v0023--smart-sql-optimizer-no-editor-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.23)](backlog.md).*
 </details>
 
 <details>
@@ -106,7 +106,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Respostas mais objetivas e menor gasto de tokens, com os menus do editor preservando a formatação Pascal enviada ao chat.
   *   **Destaques**: blocos `pascal` preservados em slash commands, templates padrão mais sucintos, nova opção **Prefer concise AI responses** persistida nas configurações e cobertura DUnitX para o fluxo de pré-processamento.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.22)](backlog.md#v0022--prompts-concisos-e-preservacao-de-quebras-no-editor-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.22)](backlog.md).*
 </details>
 
 <details>
@@ -114,7 +114,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Menos fricção para transformar intenção em código Delphi, permitindo escrever a assinatura do método e um comentário de intenção para o Rad IA gerar o corpo automaticamente.
   *   **Destaques**: detecção do método pelo cursor, suporte a comentários `//`, `{ ... }` e `(* ... *)`, inserção direta abaixo do comentário, validações para evitar sobrescrever lógica existente e compatibilidade com Web Login.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.21)](backlog.md#v0021--create-example-from-comment-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.21)](backlog.md).*
 </details>
 
 <details>
@@ -122,7 +122,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Refatorações pelo Smart Diff mais confiáveis com provedores Web Login, preservando a formatação do código e evitando regressões de configuração.
   *   **Destaques**: Smart Diff sem exigência indevida de API key em Web Login, resposta em bloco `pascal` único, preservação de indentação no bridge, isolamento dos testes de configuração do registro real e hook do editor menos intrusivo ao criar novos projetos.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.20)](backlog.md#v0020--smart-diff-com-web-login-e-persistência-de-configuração-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.20)](backlog.md).*
 </details>
 
 <details>
@@ -130,7 +130,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Menos fricção no uso diário das ações do editor, permitindo acionar comandos mesmo sem selecionar código manualmente.
   *   **Destaques**: fallback automático para a unit ativa, Smart Diff substituindo o buffer inteiro quando apropriado, leitura do editor em blocos e hook contextual mais estável no Delphi 13 ao criar novos projetos.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.19)](backlog.md#v0019--ações-do-editor-com-fallback-para-unit-ativa-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.19)](backlog.md).*
 </details>
 
 <details>
@@ -138,7 +138,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Experiência mais clara e previsível no uso diário do chat, com abertura mais suave, tema alinhado à IDE, sessões protegidas durante processamento e login web mais orientativo.
   *   **Destaques**: tela inicial com atalhos rápidos, histórico sob demanda, Mountain Mist tratado como light, múltiplos chats sem reordenação ao selecionar, bloqueio de ações durante respostas, generator em tela cheia, web login com fallback visual e marca exibida como **Rad IA**.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.18)](backlog.md#v0018--polimento-do-chat-web-login-e-marca-rad-ia-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.18)](backlog.md).*
 </details>
 
 <details>
@@ -146,7 +146,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Experiência mais previsível ao usar ações do editor: código selecionado chega ao chat formatado, `/explain` não cai mais em review e Delphi 12/13 carregam os recursos web atualizados.
   *   **Destaques**: blocos Pascal renderizados em mensagens do usuário, template nativo **Explain Code**, migração de slash command legado, cache busting de `chat.js` e instalador sincronizando `%APPDATA%\RadIA\Web`.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.17)](backlog.md#v0017--estabilização-do-menu-do-editor-e-chat-webview2-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.17)](backlog.md).*
 </details>
 
 <details>
@@ -154,7 +154,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Base interna mais testável e estável, com telas desacopladas em MVP e menu contextual do editor mais confiável no Delphi 12/13.
   *   **Destaques**: `TChatPresenter`, `TConfigPresenter`, `ISettingsStorage`, storage em memória para testes, hook do editor via notifiers OTA e submenu **Rad IA** no topo do menu contextual.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.16)](backlog.md#v0016--refatoração-arquitetural-mvp-storage-abstraction-e-robustez-do-editor-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.16)](backlog.md).*
 </details>
 
 <details>
@@ -162,7 +162,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Segurança de que novas atualizações do plugin trazem prompts novos da comunidade sem sobrescrever ou apagar suas personalizações locais.
   *   **Destaques**: Segregação de templates nativos e de usuário, indicador visual de origem no menu de configurações e opção de "Restaurar Padrão".
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.15)](backlog.md#v0015--arquitetura-de-templates-em-duas-camadas-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.15)](backlog.md).*
 </details>
 
 <details>
@@ -170,7 +170,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Liberdade para criar comandos personalizados barra (`/`) associados a prompts repetitivos e facilidade para migrar e compartilhar sua biblioteca de templates de IA entre computadores.
   *   **Destaques**: Customização dinâmica total de comandos barra, backup em JSON com controle de importação (mesclar ou sobrescrever) e template nativo de Clean Architecture Delphi.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.14)](backlog.md#v0014--templates-dinâmicos-e-backup-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.14)](backlog.md).*
 </details>
 
 <details>
@@ -178,7 +178,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Velocidade extrema no início de novas ideias e microsserviços. A IA cria a estrutura completa de pastas e arquivos e os carrega diretamente na sua IDE prontos para uso.
   *   **Destaques**: Gerador transacional de arquivos, painel visual com design *glassmorphism* no chat e abertura automática do projeto gerado na IDE do Delphi.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.13)](backlog.md#v0013--geração-de-projetos-delphi-inteiros-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.13)](backlog.md).*
 </details>
 
 <details>
@@ -186,7 +186,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Integração com os modelos de ponta da Amazon (Anthropic Claude, Llama 3) em ambientes corporativos rígidos que demandam segurança em nuvens AWS.
   *   **Destaques**: Suporte nativo ao AWS Bedrock, assinador criptográfico SigV4 e parser de streaming binário.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.12)](backlog.md#v0012--provedor-aws-bedrock-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.12)](backlog.md).*
 </details>
 
 <details>
@@ -194,7 +194,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Expansão do catálogo de IAs nativas de ponta do plugin para atender a políticas de compliance de TI internas de diferentes empresas.
   *   **Destaques**: Suporte nativo para Azure OpenAI, Alibaba Qwen 2.5 e Mistral AI, com abas dedicadas e atalhos na tela de opções da IDE.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.11)](backlog.md#v0011--provedores-azure-qwen-e-mistral-ai-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.11)](backlog.md).*
 </details>
 
 <details>
@@ -202,7 +202,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Autenticação oficial e simplificada com a IA de desenvolvimento mais popular do mundo diretamente do painel do Rad IA, sem a necessidade de proxies locais.
   *   **Destaques**: Suporte nativo ao GitHub Copilot na nuvem, fluxo de login interativo por PIN do dispositivo e importação do token ativo do VS Code em um clique.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.10)](backlog.md#v0010--conexão-nativa-ao-github-copilot-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.10)](backlog.md).*
 </details>
 
 <details>
@@ -210,7 +210,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Facilidade de implantação em computadores de desenvolvimento que rodam múltiplas versões da IDE do Delphi simultaneamente (ex: Alexandria e Athens).
   *   **Destaques**: Instalador PowerShell interativo com autodescoberta do registro do Windows e correções de encodings de consoles locais.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.9)](backlog.md#v009--suporte-multi-ide-no-build-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.9)](backlog.md).*
 </details>
 
 <details>
@@ -218,7 +218,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Autonomia de uso com modelos de IA locais e offline rodando em servidores corporativos ou computadores locais pelo LM Studio.
   *   **Destaques**: Provedor nativo do LM Studio e aba dedicada Claro/Escuro de configurações.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.8)](backlog.md#v008--provedor-local-lm-studio-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.8)](backlog.md).*
 </details>
 
 <details>
@@ -233,7 +233,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Extensibilidade imediata. Permite cadastrar qualquer nova IA de mercado compatível com a API da OpenAI apenas salvando um arquivo JSON, sem necessitar reinstalar ou compilar o plugin.
   *   **Destaques**: Provedores dinâmicos configuráveis por JSON local e conexões iniciais de proxies do Copilot.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.6)](backlog.md#v006--provedores-dinâmicos-via-json-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.6)](backlog.md).*
 </details>
 
 <details>
@@ -248,7 +248,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Automatização de tarefas manuais repetitivas (como criar classes DTO) e análise rápida de pilha de erros no código ativo.
   *   **Destaques**: Conversor DTO (JSON/SQL para Pascal), Assistente de Stack Trace em relatórios de exceções, análise estática de memory leaks e popup visual flutuante de sugestões barra (`/`).
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.4)](backlog.md#v004--produtividade--análise-estática-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.4)](backlog.md).*
 </details>
 
 <details>
@@ -256,7 +256,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Garantia de que o plugin rode em background na IDE sem causar travamentos, vazamentos de memória da BPL ou Access Violations durante o uso diário.
   *   **Destaques**: Barramento central de registro dinâmico de IAs e ciclo de vida robusto com threads secundárias.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.3)](backlog.md#v003--estabilidade-de-runtime-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.3)](backlog.md).*
 </details>
 
 <details>
@@ -264,7 +264,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: Organização das conversas por projetos e controle direto sobre os custos das chaves de API.
   *   **Destaques**: Sidebar de chat de múltiplas sessões persistentes, controle local de orçamento de tokens mensal na barra de status e integração com OpenRouter.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.2)](backlog.md#v002--múltiplas-sessões-e-gestão-de-consumo-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.2)](backlog.md).*
 </details>
 
 <details>
@@ -272,7 +272,7 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
   *   **Valor Entregue**: A IA acoplada de forma nativa e fluida à IDE do Delphi, trazendo respostas incrementais rápidas e atalhos na tela.
   *   **Destaques**: Chat lateral VCL integrado com Edge WebView2, suporte a 6 provedores, streaming SSE, histórico local, atalhos contextuais no editor de código, comparador visual Diff de alterações, Smart Build Debugger e documentação XML automática.
-  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.1)](backlog.md#v001--lançamento-inicial-clique-para-expandir).*
+  *   👉 *Veja os detalhes de implementação e testes no [Backlog Técnico (v0.0.1)](backlog.md).*
 </details>
 
 ---

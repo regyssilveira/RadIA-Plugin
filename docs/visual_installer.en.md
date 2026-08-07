@@ -1,6 +1,6 @@
 # Visual installer and release channel
 
-RadIA 2.0.0 has one visual installer for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+RadIA has one visual installer for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 The wizard detects installed IDEs, preselects matching targets, and lets users customize the
 selection.
 
@@ -17,12 +17,17 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.VisualInstaller.ps1
 ```
 
-The result is `Output\Installer\RadIA-v2.0.0-Setup.exe`.
+The result uses the version from `package.json`. To obtain its current path:
+
+```powershell
+$version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+$installer = "Output\Installer\RadIA-v$version-Setup.exe"
+```
 `VisualInstallerEvidence.json` records version, size, SHA-256, and informational Authenticode
 status.
 
-The proven run is recorded in
-[`visual_installer_evidence_2.0.0.json`](visual_installer_evidence_2.0.0.json). Its `NotSigned`
+Each release records `visual_installer_evidence_<version>.json`. For example, see
+[`visual_installer_evidence_2.2.0.json`](visual_installer_evidence_2.2.0.json). Its `NotSigned`
 status is intentional: RadIA is open source, can be built by users, and does not require a
 certificate for publication.
 
@@ -43,10 +48,10 @@ verification:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath Output\Installer\RadIA-v2.0.0-Setup.exe `
+  -InstallerPath $installer `
   -DownloadUrl (
     "https://github.com/regyssilveira/RadIA-Plugin/releases/" +
-    "download/v2.0.0/RadIA-v2.0.0-Setup.exe"
+    "download/v$version/RadIA-v$version-Setup.exe"
   )
 ```
 
@@ -70,4 +75,5 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.ReleasePipeline.ps1
 ```
 
-There is no external certificate or marketplace gate for version 2.0.0.
+Certificate and marketplace are not gates for the current channel. SHA-256 and release origin
+remain mandatory for artifact verification.

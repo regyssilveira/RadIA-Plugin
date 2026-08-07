@@ -1,112 +1,74 @@
-# RadIA documentation center
+# RadIA documentation
 
-This index brings together the functional, operational, and technical documentation for RadIA 2.2.
+This is the documentation entry point for RadIA 2.2.1. Start with the task you want to complete;
+each subject has one primary guide to prevent duplicated or conflicting instructions.
 
-## Start here
+> The `/tools` command is the most accurate reference for the current installation because the
+> catalog may vary with IDE version, context, and installed extensions.
 
-1. [Everything RadIA can do](capabilities.en.md)
-2. [Complete user manual](user_manual.en.md)
-3. [Installation and configuration](install_config.en.md)
-4. [Features and capabilities](features.en.md)
-5. [Troubleshooting](troubleshooting_agentic_platform.en.md)
+## Start using RadIA
 
-## Daily use
-
-| Topic | Document |
-|---|---|
-| Chat, sessions, history, and templates | [Chat and sessions](user_guide_chat_sessions.en.md) |
-| Editor, Smart Diff, and generation | [Editor and generation](user_guide_editor_generation.en.md) |
-| Diagnostics and analysis | [Diagnostics](user_guide_diagnostics_analysis.en.md) |
-| Slash commands | [Commands](slash_commands.en.md) |
-| Providers | [Installation and configuration](install_config.en.md) |
-| New provider | [Provider guide](new_provider_guide.en.md) |
-
-## Agentic platform
-
-| Topic | Document |
-|---|---|
-| Tool access and execution | [Agentic tools](user_guide_agentic_tools.en.md) |
-| Pricing and monetary budget | [Local pricing catalog](agent_pricing.en.md) |
-| Deterministic project creation | [New Project Wizard](project_wizard.en.md) |
-| Unit/form creation and removal | [Structural operations](project_file_operations.en.md) |
-| Code, project, and Designer transactions | [Composite transactions](development_transactions.en.md) |
-| DUnitX test execution and analysis | [DUnitX runner](dunitx_runner.en.md) |
-| Reviewable local Git commit | [Git workflow](git_workflow.en.md) |
-| What each tool does and when to use it | [Operational reference](internal_tools_reference.md) |
-| All 123 built-in tools | [Generated catalog](runtime_tool_catalog.md) |
-| Target architecture and contracts | [Architectural catalog](tool_catalog.md) |
-| Consent, risk, and audit | [Security model](tool_security_model.md) |
-| MCP and external clients | [MCP integration](mcp_integration_guide.en.md) |
-| Local knowledge | [Project knowledge](user_guide_project_knowledge.en.md) |
-| Delphi journeys | [End-to-end journeys](user_guide_journeys.en.md) |
-| Form Designer and debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
-| Tool extensions | [Extensions](tool_extension_guide.md) |
-| Declarative extensions | [Commands without recompiling](declarative_extensions.en.md) |
-| Migration to 1.0 | [Migration guide](agentic_migration_0_1.md) |
-
-## Architecture and development
-
-| Topic | Document |
-|---|---|
-| General architecture | [Architecture guide](architecture_guide.en.md) |
-| Agentic architecture | [Agentic architecture](agentic_architecture.md) |
-| Source map | [Source guide](source_code_guide.en.md) |
-| Delphi compatibility | [Compatibility matrix](delphi_compatibility_matrix.md) |
-| BPL extensions | [Extension guide](tool_extension_guide.md) |
-| New provider | [Provider guide](new_provider_guide.en.md) |
-| Commit convention | [Commits](commit_convention.en.md) |
-| Branch convention | [Branches](branch_convention.en.md) |
-
-## Quality and release
-
-| Topic | Document |
-|---|---|
-| Release process | [Release finalization](release_process.en.md) |
-| Version 2.1 audit | [Builds, quality, installation, and artifacts](release_audit_2.1.0.en.md) |
-| Version 2.2 audit | [FastMM5, builds, quality, installation, and artifacts](release_audit_2.2.0.en.md) |
-| Visual installer and channel | [Signable distribution](visual_installer.en.md) |
-| Migration from 1.x to 2.0 | [Migration to RadIA 2.0](migration_1_to_2.en.md) |
-| Agentic checklist | [Checklist](agentic_release_checklist.md) |
-| Plan and evidence | [Validation](agentic_validation_plan.md) |
-| Completion audit | [Audit](agentic_completion_audit.md) |
-| Agentic roadmap | [Agentic roadmap](agentic_roadmap.md) |
-| Product roadmap | [Roadmap](roadmap.en.md) |
-| Backlog | [Backlog](backlog.en.md) |
-| RadIA 2.0 goal | [Complete development journey](radia_2_goal.en.md) |
-| Leadership goal | [Complete Delphi experience](experience_leadership_goal.en.md) |
-| Autonomous runtime diagnostics | [Complete usage guide](runtime_debug_automation.en.md) |
-| Completed 2.1 runtime goal | [Plan and acceptance evidence](runtime_debug_automation_plan.en.md) |
-| Memory diagnostics 2.2 goal | [Optional FastMM5 integration plan](fastmm5_memory_diagnostics_plan.en.md) |
-| Memory diagnostics M0 | [FastMM5 baseline, contracts, and laboratory](fastmm5_memory_diagnostics_m0.en.md) |
-| FastMM5 configuration | [Settings, chat, consent, and readiness states](fastmm5_configuration.en.md) |
-| Complete FastMM5 session | [Build, supervised process, scenario, evidence, and restoration](fastmm5_diagnostic_session.en.md) |
-| Memory instrumentation | [Preview, apply, revert, and DPR safeguards](fastmm5_instrumentation.en.md) |
-| Memory log parser | [Bounded collection and structured evidence](fastmm5_evidence_parser.en.md) |
-| Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
-| Runtime M1 execution | [Debugger correlation and waiting](runtime_debug_automation_m1.en.md) |
-| Runtime M2 execution | [Safe window and control discovery](runtime_debug_automation_m2.en.md) |
-| Runtime M3 execution | [Bounded declarative execution](runtime_debug_automation_m3.en.md) |
-| Frozen plan to resume | [CLI continuity and advanced integration](competitive_leadership_plan.en.md) |
-
-## Security and compliance
-
-- [Terms, privacy, and compliance](compliance.en.md)
-- [Tool security model](tool_security_model.md)
-
-## RadIA 2.2 platform coverage
-
-| Capability | User guide | Technical reference |
+| Goal | Start here | Continue with |
 |---|---|---|
-| Shared registry | [Tools](user_guide_agentic_tools.en.md) | [Architecture](agentic_architecture.md) |
-| OTA workspace | [User manual](user_manual.en.md) | [ADR 0002](adr/0002-workspace-facade.md) |
-| Consent and audit | [Tools](user_guide_agentic_tools.en.md) | [Security](tool_security_model.md) |
-| Reversible patches | [Tools](user_guide_agentic_tools.en.md) | [Catalog](tool_catalog.md) |
-| Controlled build | [User manual](user_manual.en.md) | [Catalog](tool_catalog.md) |
-| Structured DUnitX tests | [DUnitX runner](dunitx_runner.en.md) | [Catalog](runtime_tool_catalog.md) |
-| MCP | [MCP guide](mcp_integration_guide.en.md) | [Architecture](agentic_architecture.md) |
-| Form Designer | [Designer](user_guide_designer_debugger.en.md) | [Catalog](tool_catalog.md) |
-| Debugger | [Debugger](user_guide_designer_debugger.en.md) | [Catalog](tool_catalog.md) |
-| Inline review | [User manual](user_manual.en.md) | [Catalog](tool_catalog.md) |
-| Local knowledge | [Knowledge](user_guide_project_knowledge.en.md) | [Architecture](agentic_architecture.md) |
-| Extensions | [Extensions](tool_extension_guide.md) | [ADR 0001](adr/0001-internal-tool-registry.md) |
-| Safe shutdown | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Architecture](agentic_architecture.md) |
+| Install on Delphi 12 or 13 | [Installation and configuration](install_config.en.md) | [User manual](user_manual.en.md) |
+| Discover current capabilities | [Capabilities](capabilities.en.md) | [Feature catalog](features.en.md) |
+| Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.md) |
+| Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
+| Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.md) |
+
+## Complete a development task
+
+| Task | Primary guide |
+|---|---|
+| Explain, review, refactor, or generate code | [Editor and generation](user_guide_editor_generation.en.md) |
+| Create a Delphi project | [New Project Wizard](project_wizard.en.md) |
+| Add or remove units and forms | [Project operations](project_file_operations.en.md) |
+| Build, fix errors, and run tests | [End-to-end journeys](user_guide_journeys.en.md) |
+| Run DUnitX tests | [DUnitX runner](dunitx_runner.en.md) |
+| Use Form Designer or debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
+| Reproduce a visual failure | [Runtime diagnostics](runtime_debug_automation.en.md) |
+| Diagnose memory problems | [FastMM5 diagnostics](fastmm5_diagnostic_session.en.md) |
+| Search project knowledge | [Project knowledge](user_guide_project_knowledge.en.md) |
+
+## Agent, tools, and security
+
+| Subject | Authoritative document |
+|---|---|
+| Enable and operate agent mode | [User manual](user_manual.en.md) |
+| Native agent and external executors | [CLI executors](cli_executors.md) |
+| Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.md) |
+| Consent, risk, and auditing | [Tool security model](tool_security_model.md) |
+| Agent cost and limits | [Agent pricing](agent_pricing.en.md) |
+| Use tools from another client | [MCP integration](mcp_integration_guide.en.md) |
+
+Provider, CLI executor, and MCP are independent settings. A declared authentication transport,
+such as ChatGPT login through Codex, is the explicit exception.
+
+## Extend and contribute
+
+| Subject | Guide |
+|---|---|
+| Declarative extensions | [Commands and workflows](declarative_extensions.en.md) |
+| Register tools from a package | [Tool extension API](tool_extension_guide.md) |
+| Add a provider | [Provider guide](new_provider_guide.en.md) |
+| Architecture | [Architecture guide](architecture_guide.en.md) |
+| Source map | [Source code guide](source_code_guide.en.md) |
+| Release process | [Release guide](release_process.en.md) |
+
+## Planning and historical records
+
+Roadmaps, backlogs, goals, milestone reports, release audits, and `*_evidence_*.json` files preserve
+project history. They are not current user instructions. If historical content differs from a
+primary guide, the current code, `/tools`, and the primary guides above take precedence.
+
+## Current compatibility
+
+| IDE | Architecture | Support |
+|---|---|---|
+| Delphi 12 Athens | Win32 | Supported and validated |
+| Delphi 13 | Win32 | Supported and validated |
+| Delphi 13 | IDE64 | Supported and validated |
+
+Delphi 11 appears only in historical records and is outside the current support matrix.
+
+Documentação em português: [Centro de documentação](README.md).

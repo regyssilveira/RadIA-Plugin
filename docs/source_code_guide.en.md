@@ -30,7 +30,7 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | :--- | :--- |
 | [RadIA.Core.Interfaces.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Interfaces.pas) | Fundamental contracts (Interfaces) that decouple all layers of the plugin. |
 | [RadIA.Core.Config.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Config.pas) | Concrete implementation of global configuration (`TRadIAConfig`), managing endpoints, tokens, and secure keys. |
-| [RadIA.Core.SettingsStorage.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.SettingsStorage.pas) | Persistent storage mechanisms. Reads/writes to the Windows Registry (`TRegistrySettingsStorage`) in production, and in-memory during tests. |
+| `RadIA.Core.SettingsStorage.pas` | `IRadIASettingsStorage` contract; uses `TRadIARegistrySettingsStorage` in production and `TRadIAMemorySettingsStorage` in tests. |
 | [RadIA.Core.Container.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Container.pas) | Static and thread-safe IoC container for dependency injection and class lifecycle decoupling. |
 | [RadIA.Core.Service.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Service.pas) | Main orchestrator (`TRadIAService`). Manages chat sessions, provider activation, and caching. |
 | [RadIA.Core.Sessions.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Sessions.pas) | Business logic for managing historical chat sessions and automatic local persistence in JSON files. |
@@ -116,7 +116,7 @@ If you need to save and expose a new configuration setting to the user (e.g., "M
 graph TD
     A[1. Add property in IRadIAConfig] --> B[2. Implement property in TRadIAConfig]
     B --> C[3. Add visual control in TFrameConfig]
-    C --> D[4. Update mapping in TConfigPresenter]
+    C --> D[4. Update mapping in TRadIAConfigPresenter]
 ```
 
 1.  **Configuration Interface**: In [RadIA.Core.Interfaces.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Interfaces.pas), declare read and write methods in the `IRadIAConfig` interface:

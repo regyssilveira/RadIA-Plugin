@@ -16,12 +16,34 @@ function markdownFiles(directory) {
   });
 }
 
+function headingSlug(heading) {
+  return heading
+    .trim()
+    .toLowerCase()
+    .replace(/<[^>]+>/gu, '')
+    .replace(/[`*_~]/gu, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .replace(/\s+/gu, '-');
+}
+
+function markdownAnchors(fileName) {
+  return new Set(
+    fs.readFileSync(fileName, 'utf8')
+      .split(/\r?\n/gu)
+      .filter(line => /^#{1,6} /u.test(line))
+      .map(line => headingSlug(line.replace(/^#{1,6} /u, '')))
+  );
+}
+
 const files = [
   path.join(repositoryRoot, 'README.md'),
   ...markdownFiles(documentationRoot)
 ];
 const mojibakePattern = /[\u00c3\u00c2\ufffd]|\u00e2[\u0080-\u00bf]/u;
 const markdownLinkPattern = /!?\[[^\]]*\]\((?<target>[^)]+)\)/gu;
+const packageVersion = JSON.parse(
+  fs.readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8')
+).version;
 
 test('documentation has no common mojibake markers', () => {
   files.forEach(fileName => {
@@ -38,15 +60,23 @@ test('documentation local links resolve to existing paths', () => {
       if (target.startsWith('<') && target.endsWith('>')) {
         target = target.slice(1, -1);
       }
-      target = target.split('#', 1)[0];
-      if (!target || /^[a-z][a-z0-9+.-]*:/iu.test(target)) {
+      const [targetPath, fragment = ''] = target.split('#', 2);
+      if (/^[a-z][a-z0-9+.-]*:/iu.test(targetPath)) {
         continue;
       }
-      const resolved = path.resolve(path.dirname(fileName), decodeURIComponent(target));
+      const resolved = targetPath
+        ? path.resolve(path.dirname(fileName), decodeURIComponent(targetPath))
+        : fileName;
       assert.ok(
         fs.existsSync(resolved),
-        `${path.relative(repositoryRoot, fileName)} references missing path: ${target}`
+        `${path.relative(repositoryRoot, fileName)} references missing path: ${targetPath}`
       );
+      if (fragment && resolved.endsWith('.md')) {
+        assert.ok(
+          markdownAnchors(resolved).has(decodeURIComponent(fragment).toLowerCase()),
+          `${path.relative(repositoryRoot, fileName)} references missing anchor: ${target}`
+        );
+      }
     }
   });
 });
@@ -74,5 +104,55 @@ test('every built-in tool has an operational description and activation guidance
     assert.ok(documentation, `Missing operational documentation for ${toolName}`);
     assert.ok(documentation.purpose.length >= 20, `Purpose is too short for ${toolName}`);
     assert.ok(documentation.activation.length >= 20, `Activation guidance is too short for ${toolName}`);
+  });
+});
+
+test('primary documentation entry points expose task-oriented navigation', () => {
+  const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
+  const documentationHub = fs.readFileSync(
+    path.join(documentationRoot, 'README.md'),
+    'utf8'
+  );
+
+  assert.match(rootReadme, /\[Documentação\]\(docs\/README\.md\)/u);
+  assert.match(documentationHub, /## Quero começar a usar/u);
+  assert.match(documentationHub, /## Quero realizar uma tarefa/u);
+  assert.match(documentationHub, /## Agente, ferramentas e segurança/u);
+  assert.match(documentationHub, /## Desenvolver e contribuir/u);
+  assert.match(documentationHub, /## Planejamento e histórico/u);
+});
+
+test('current user-facing documents follow the package version', () => {
+  const currentDocuments = [
+    path.join(documentationRoot, 'README.md'),
+    path.join(documentationRoot, 'user_manual.md'),
+    path.join(documentationRoot, 'capabilities.md')
+  ];
+
+  currentDocuments.forEach(fileName => {
+    const content = fs.readFileSync(fileName, 'utf8');
+    assert.match(
+      content,
+      new RegExp(`RadIA ${packageVersion.replaceAll('.', '\\\.')}`),
+      path.relative(repositoryRoot, fileName)
+    );
+  });
+});
+
+test('operational release guides do not pin obsolete artifact names', () => {
+  const operationalGuides = [
+    path.join(documentationRoot, 'install_config.md'),
+    path.join(documentationRoot, 'visual_installer.md'),
+    path.join(documentationRoot, 'install_config.en.md'),
+    path.join(documentationRoot, 'visual_installer.en.md')
+  ];
+
+  operationalGuides.forEach(fileName => {
+    const content = fs.readFileSync(fileName, 'utf8');
+    assert.doesNotMatch(
+      content,
+      /RadIA-v2\.0\.0-(?:Setup|Delphi)/u,
+      path.relative(repositoryRoot, fileName)
+    );
   });
 });

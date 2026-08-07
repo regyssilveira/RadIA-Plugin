@@ -31,7 +31,7 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | :--- | :--- |
 | [RadIA.Core.Interfaces.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Interfaces.pas) | Contratos fundamentais (Interfaces) que desacoplam todas as camadas do plugin. |
 | [RadIA.Core.Config.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Config.pas) | Implementação concreta da configuração global (`TRadIAConfig`), gerenciamento de endpoints, tokens e chaves seguras. |
-| [RadIA.Core.SettingsStorage.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.SettingsStorage.pas) | Mecanismos de armazenamento persistente. Lê/grava no Registro do Windows (`TRegistrySettingsStorage`) em produção, e em memória nos testes. |
+| `RadIA.Core.SettingsStorage.pas` | Contrato `IRadIASettingsStorage`; usa `TRadIARegistrySettingsStorage` em produção e `TRadIAMemorySettingsStorage` nos testes. |
 | [RadIA.Core.Container.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Container.pas) | Container IoC estático e thread-safe para injeção de dependência e desacoplamento do ciclo de vida das classes. |
 | [RadIA.Core.Service.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Service.pas) | Orquestrador principal (`TRadIAService`). Gerencia sessões de chat, ativação de provedores e caching. |
 | [RadIA.Core.Sessions.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Sessions.pas) | Lógica de gerenciamento de sessões de chat histórico e persistência automática em arquivos JSON locais. |
@@ -117,7 +117,7 @@ Se você precisa salvar e expor uma nova opção de configuração para o usuár
 graph TD
     A[1. Adicionar propriedade em IRadIAConfig] --> B[2. Implementar propriedade em TRadIAConfig]
     B --> C[3. Adicionar controle visual em TFrameConfig]
-    C --> D[4. Atualizar mapeamento em TConfigPresenter]
+    C --> D[4. Atualizar mapeamento em TRadIAConfigPresenter]
 ```
 
 1.  **Interface de Configuração**: No arquivo [RadIA.Core.Interfaces.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Interfaces.pas), declare os métodos de leitura e escrita na interface `IRadIAConfig`:

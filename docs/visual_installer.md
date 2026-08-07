@@ -1,6 +1,6 @@
 # Instalador visual e canal de release
 
-O RadIA 2.0.0 possui um instalador visual único para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13
+O RadIA possui um instalador visual único para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13
 IDE64. O assistente detecta as IDEs instaladas, pré-seleciona os targets encontrados e permite
 personalizar a seleção.
 
@@ -17,12 +17,17 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.VisualInstaller.ps1
 ```
 
-O resultado fica em `Output\Installer\RadIA-v2.0.0-Setup.exe`.
+O nome do resultado usa a versão de `package.json`. Para obter o caminho atual:
+
+```powershell
+$version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+$installer = "Output\Installer\RadIA-v$version-Setup.exe"
+```
 `VisualInstallerEvidence.json` registra versão, tamanho, SHA-256 e o estado Authenticode
 informativo.
 
-A execução comprovada está registrada em
-[`visual_installer_evidence_2.0.0.json`](visual_installer_evidence_2.0.0.json). O estado
+A evidência de cada release fica em `visual_installer_evidence_<versão>.json`. Consulte, por
+exemplo, [`visual_installer_evidence_2.2.0.json`](visual_installer_evidence_2.2.0.json). O estado
 `NotSigned` é intencional: o RadIA é aberto, pode ser compilado pelo usuário e não exige
 certificado para publicação.
 
@@ -42,10 +47,10 @@ O catálogo estável exige HTTPS e publica tamanho, SHA-256 e estado Authenticod
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath Output\Installer\RadIA-v2.0.0-Setup.exe `
+  -InstallerPath $installer `
   -DownloadUrl (
     "https://github.com/regyssilveira/RadIA-Plugin/releases/" +
-    "download/v2.0.0/RadIA-v2.0.0-Setup.exe"
+    "download/v$version/RadIA-v$version-Setup.exe"
   )
 ```
 
@@ -70,4 +75,5 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.ReleasePipeline.ps1
 ```
 
-Não existe gate externo de certificado ou marketplace para a versão 2.0.0.
+Certificado e marketplace não são gates do canal atual. O hash SHA-256 e a origem da release
+continuam obrigatórios para verificar os artefatos.

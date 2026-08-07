@@ -1,6 +1,6 @@
 # Inline assistance and Fill-in-the-Middle
 
-This document describes the RadIA 2.0.0 inline-assistance architecture. Delivery is incremental.
+This document describes the inline assistance available in RadIA.
 The engine, explicit capture, and first visual overlay are now connected to the Open Tools API.
 
 ## Goal

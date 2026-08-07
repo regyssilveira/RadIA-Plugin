@@ -1,6 +1,6 @@
 # Deterministic New Project Wizard
 
-The RadIA 2.0 New Project Wizard is being built as a two-phase operation:
+The RadIA New Project Wizard performs creation as a two-phase operation:
 
 1. generate and review a deterministic manifest without modifying disk;
 2. after approval, materialize in staging and publish the folder as a transaction.

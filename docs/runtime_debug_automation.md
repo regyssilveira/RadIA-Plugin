@@ -1,6 +1,6 @@
 # Diagnóstico Runtime Autônomo
 
-O RadIA 2.1 pode reproduzir uma falha visual em uma aplicação VCL iniciada pelo depurador, capturar
+O RadIA pode reproduzir uma falha visual em uma aplicação VCL iniciada pelo depurador, capturar
 evidências, preparar uma correção revisável, recompilar, repetir o cenário e comprovar se a falha
 foi removida.
 
@@ -145,7 +145,7 @@ O artefato deve ser incluído no controle de versão pelo usuário.
   após a correção.
 - **Artefato recusado:** o fingerprint não corresponde ao conteúdo; gere e revise um novo preview.
 
-## Aceite da versão 2.1
+## Evidência histórica de aceite inicial
 
 O caso-laboratório de Access Violation ao cancelar um formulário foi comprovado em Delphi 12 Win32,
 Delphi 13 Win32 e Delphi 13 IDE64. Em cada alvo houve reprodução, captura, correção, novo build,

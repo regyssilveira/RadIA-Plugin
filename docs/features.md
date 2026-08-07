@@ -64,7 +64,7 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Armazenamento Seguro** | Segurança | Chaves de API salvas localmente criptografadas usando a API do Windows DPAPI. | ✅ Concluído |
 | **Build e Instalação Multi-IDE** | Infraestrutura | Script PowerShell com suporte a múltiplos ambientes Delphi no registro, seleção interativa, sincronização de recursos WebView2 e limpeza de cache local. | ✅ Concluído |
 | **Arquitetura MVP** | Infraestrutura | Desacoplamento completo entre UI VCL (Views) e lógica (Presenters) do Chat e Configurações. | ✅ Concluído |
-| **Abstração de Armazenamento** | Infraestrutura | Abstração de persistência via `ISettingsStorage` facilitando testes em memória. | ✅ Concluído |
+| **Abstração de Armazenamento** | Infraestrutura | Persistência via `IRadIASettingsStorage`, com Registro em produção e memória nos testes. | ✅ Concluído |
 | **Testes de Apresentação** | Infraestrutura | Suíte de testes automatizados com DUnitX validando lógica de Presenters com mocks de Views. | ✅ Concluído |
 | **Hook do Editor** | Infraestrutura | Integração resiliente com o menu contextual do editor via hook VCL assíncrono, compatível com Delphi 12/13 e estável durante a criação de novos projetos. | ✅ Concluído |
 | **Registry Agentivo** | Agentivo | Catálogo compartilhado por chat, MCP e extensões. | ✅ Concluído |

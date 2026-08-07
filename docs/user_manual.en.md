@@ -1,4 +1,4 @@
-# Complete RadIA 2.2 user manual
+# Complete RadIA 2.2.1 user manual
 
 ## 1. What RadIA is
 

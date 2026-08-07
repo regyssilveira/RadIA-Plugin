@@ -64,7 +64,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Secure Credentials** | Security | API Keys saved securely inside the Windows Registry using DPAPI. | ✅ Completed |
 | **Multi-IDE Build & Install** | Infrastructure | PowerShell script supporting multiple registry Delphi environments, interactive selection, WebView2 asset synchronization, and local cache cleanup. | ✅ Completed |
 | **MVP Architecture** | Infrastructure | Complete decoupling between VCL UI (Views) and logic (Presenters) in the Chat and Settings frames. | ✅ Completed |
-| **Storage Abstraction** | Infrastructure | Persistence abstraction via `ISettingsStorage` allowing in-memory configurations. | ✅ Completed |
+| **Storage Abstraction** | Infrastructure | Persistence through `IRadIASettingsStorage`, using Registry in production and memory in tests. | ✅ Completed |
 | **Presentation Testing** | Infrastructure | Automated DUnitX test suite validating Presenters logic with mocked Views. | ✅ Completed |
 | **Editor Hook** | Infrastructure | Resilient editor context-menu integration using an asynchronous VCL hook, compatible with Delphi 12/13 and stable during new project creation. | ✅ Completed |
 | **Agentic Registry** | Agentic | Catalog shared by chat, MCP, and extensions. | ✅ Completed |

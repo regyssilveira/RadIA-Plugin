@@ -178,9 +178,10 @@ O diretório `Output\Packages` também recebe `SHA256SUMS.txt` com o hash de cad
 Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
 
 ```powershell
+$version = (Get-Content package.json -Raw | ConvertFrom-Json).version
 powershell.exe -ExecutionPolicy Bypass `
   -File .\scripts\Test-RadIA.Package.ps1 `
-  -PackagePath .\Output\Packages\RadIA-v2.0.0-Delphi-23.0-Win32-Release.zip `
+  -PackagePath ".\Output\Packages\RadIA-v$version-Delphi-23.0-Win32-Release.zip" `
   -DelphiVersion "23.0"
 ```
 
