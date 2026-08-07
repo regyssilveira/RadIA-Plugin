@@ -94,6 +94,16 @@ a seguir.
 
 ## Execução integrada ao chat
 
+No agente nativo, o seletor do chat apresenta os modelos disponibilizados pelo provider ativo. Ao
+salvar uma troca de provider ou executor, o RadIA recarrega essa lista de forma assíncrona e aplica
+a mudança imediatamente, sem reiniciar o Delphi. Respostas atrasadas do provider anterior são
+descartadas.
+
+No executor externo, o modelo é administrado pelo próprio CLI. Como os clientes suportados não
+oferecem um contrato uniforme e estável para descobrir e selecionar modelos, o seletor do chat fica
+desabilitado e informa **Model managed by &lt;CLI&gt;**. Configure o modelo pelos mecanismos do CLI
+escolhido; ao retornar ao agente nativo, o seletor volta a usar os modelos do provider.
+
 Quando **External CLI orchestration** está ativo e existe um projeto Delphi aberto, o modo agente encaminha o
 objetivo ao CLI detectado usando a pasta do projeto como diretório de trabalho. O processo:
 

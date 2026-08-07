@@ -48,6 +48,10 @@ Selecione provider e modelo, crie uma sessão e escreva o prompt. Use `Ctrl + En
 `Enter` para inserir uma nova linha. As setas para cima e para baixo navegam pelo histórico de
 prompts.
 
+No agente nativo, os modelos pertencem ao provider selecionado. A lista é recarregada ao trocar o
+provider ou salvar as configurações, sem reiniciar o Delphi. No executor externo, o CLI administra
+o modelo e o seletor fica desabilitado com uma indicação visual do cliente responsável.
+
 ## 3. Como ativar o modo agente
 
 ### 3.1 Botão e comandos do modo agente

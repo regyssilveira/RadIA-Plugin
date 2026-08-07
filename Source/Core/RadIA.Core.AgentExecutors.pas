@@ -26,6 +26,18 @@ type
     property CliClientId: string read FCliClientId;
   end;
 
+  TRadIAModelSelectionState = record
+  private
+    FEnabled: Boolean;
+    FDisplayText: string;
+  public
+    class function FromExecutor(
+      const ASettings: TRadIAAgentExecutorSettings
+    ): TRadIAModelSelectionState; static;
+    property Enabled: Boolean read FEnabled;
+    property DisplayText: string read FDisplayText;
+  end;
+
   TRadIAAgentExecutorSettingsStore = class
   private
     FStorage: IRadIASettingsStorage;
@@ -122,6 +134,24 @@ constructor TRadIAAgentExecutorSettings.Create(
 begin
   FKind := AKind;
   FCliClientId := LowerCase(Trim(ACliClientId));
+end;
+
+{ TRadIAModelSelectionState }
+
+class function TRadIAModelSelectionState.FromExecutor(
+  const ASettings: TRadIAAgentExecutorSettings
+): TRadIAModelSelectionState;
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  Result.FEnabled := ASettings.Kind = aekNative;
+  Result.FDisplayText := '';
+  if Result.FEnabled then
+    Exit;
+  if TRadIACliCatalog.FindById(ASettings.CliClientId, LDefinition) then
+    Result.FDisplayText := 'Model managed by ' + LDefinition.DisplayName
+  else
+    Result.FDisplayText := 'Model managed by external CLI';
 end;
 
 { TRadIAAgentExecutorSettingsStore }

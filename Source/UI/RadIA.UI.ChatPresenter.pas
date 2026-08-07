@@ -121,7 +121,12 @@ type
     function CanChangeSession: Boolean;
 
     procedure SendInitialConfigToWeb;
-    procedure SendModelsUpdateToWeb(const AModels: TArray<string>; const AActiveModel: string);
+    procedure SendModelsUpdateToWeb(
+      const AModels: TArray<string>;
+      const AActiveModel: string;
+      const AEnabled: Boolean
+    );
+    function GetModelSelectionState: TRadIAModelSelectionState;
     procedure SendSessionsUpdateToWeb;
     procedure PostToWebView(const AAction, ARole, AText: string; const AProvider: string = '';
         const AModel: string = ''); overload;
@@ -578,11 +583,16 @@ end;
 procedure TRadIAChatPresenter.HandleUpdateModelsComboResult(AModels: TArray<string>; AProvider: IRadIAProvider);
 var
   LActiveModel: string;
+  LModelState: TRadIAModelSelectionState;
   LProvId: string;
 begin
   if FModelsProvider <> AProvider then
     Exit;
   FModelsProvider := nil;
+
+  LModelState := GetModelSelectionState;
+  if not LModelState.Enabled then
+    Exit;
 
   if Assigned(AProvider) then
   begin
@@ -598,7 +608,7 @@ begin
     end;
 
     Self.FView.UpdateModels(AModels, LActiveModel, True);
-    Self.SendModelsUpdateToWeb(AModels, LActiveModel);
+    Self.SendModelsUpdateToWeb(AModels, LActiveModel, True);
   end;
 end;
 
@@ -969,10 +979,10 @@ begin
 end;
 procedure TRadIAChatPresenter.UpdateModelsCombo;
 var
+  LModelState: TRadIAModelSelectionState;
   LProvider: IRadIAProvider;
   LGuard: IRadIALifecycleGuard;
 begin
-  FView.UpdateModels(['Loading...'], 'Loading...', False);
   LGuard := FLifecycleGuard as IRadIALifecycleGuard;
 
   try
@@ -986,6 +996,17 @@ begin
       end;
       FModelsProvider := nil;
     end;
+
+    LModelState := GetModelSelectionState;
+    if not LModelState.Enabled then
+    begin
+      FActiveModels := [LModelState.DisplayText];
+      FView.UpdateModels(FActiveModels, LModelState.DisplayText, False);
+      SendModelsUpdateToWeb(FActiveModels, LModelState.DisplayText, False);
+      Exit;
+    end;
+
+    FView.UpdateModels(['Loading...'], 'Loading...', False);
 
     FModelsProvider := FAIService.CreateActiveProvider;
     LProvider := FModelsProvider;
@@ -1025,7 +1046,7 @@ procedure TRadIAChatPresenter.ChangeModel(const AModelName: string);
 var
   LSelectedProvider: string;
 begin
-  if FLoadingConfig then
+  if FLoadingConfig or not GetModelSelectionState.Enabled then
     Exit;
 
   LSelectedProvider := FConfig.GetActiveProvider;
@@ -3479,23 +3500,35 @@ end;
 procedure TRadIAChatPresenter.SendInitialConfigToWeb;
 var
   LJson: TJSONObject;
+  LModels: TJSONArray;
   LActiveProvider: string;
   LActiveModel: string;
   LIsWebLogin: Boolean;
+  LModelState: TRadIAModelSelectionState;
 begin
   if not FWebViewReady then Exit;
 
   LActiveProvider := FConfig.GetActiveProvider;
   LIsWebLogin := FConfig.IsWebLoginProvider(LActiveProvider);
+  LModelState := GetModelSelectionState;
+  if LModelState.Enabled then
+    LModels := BuildModelsJsonArray(LActiveProvider, LIsWebLogin, LActiveModel)
+  else
+  begin
+    LModels := TJSONArray.Create;
+    LModels.Add(LModelState.DisplayText);
+    LActiveModel := LModelState.DisplayText;
+  end;
 
   LJson := TJSONObject.Create;
   try
     LJson.AddPair('action', 'initialize_config');
     LJson.AddPair('providers', BuildProvidersJsonArray);
-    LJson.AddPair('models', BuildModelsJsonArray(LActiveProvider, LIsWebLogin, LActiveModel));
+    LJson.AddPair('models', LModels);
     LJson.AddPair('slashCommands', BuildSlashCommandsJsonArray);
     LJson.AddPair('tools', BuildToolsJsonArray);
     LJson.AddPair('agentModeEnabled', TJSONBool.Create(FAgentModeEnabled));
+    LJson.AddPair('modelSelectionEnabled', TJSONBool.Create(LModelState.Enabled));
     LJson.AddPair('activeProvider', LActiveProvider);
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));
@@ -3506,7 +3539,11 @@ begin
   end;
 end;
 
-procedure TRadIAChatPresenter.SendModelsUpdateToWeb(const AModels: TArray<string>; const AActiveModel: string);
+procedure TRadIAChatPresenter.SendModelsUpdateToWeb(
+  const AModels: TArray<string>;
+  const AActiveModel: string;
+  const AEnabled: Boolean
+);
 var
   LJson: TJSONObject;
   LModels: TJSONArray;
@@ -3525,11 +3562,19 @@ begin
     LJson.AddPair('action', 'update_models');
     LJson.AddPair('models', LModels);
     LJson.AddPair('activeModel', AActiveModel);
+    LJson.AddPair('enabled', TJSONBool.Create(AEnabled));
 
     FView.PostMessageToWeb(LJson.ToJSON);
   finally
     LJson.Free;
   end;
+end;
+
+function TRadIAChatPresenter.GetModelSelectionState: TRadIAModelSelectionState;
+begin
+  Result := TRadIAModelSelectionState.FromExecutor(
+    FAgentExecutorSettings.Load
+  );
 end;
 
 procedure TRadIAChatPresenter.SendSessionsUpdateToWeb;

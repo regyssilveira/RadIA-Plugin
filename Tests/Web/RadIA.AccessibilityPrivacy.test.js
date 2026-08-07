@@ -31,6 +31,13 @@ test('custom selectors support keyboard activation and synchronized ARIA state',
   assert.match(chatJs, /div\.setAttribute\('aria-pressed'/);
 });
 
+test('model selector remains governed by the active chat executor', () => {
+  assert.match(chatJs, /let modelSelectionEnabled = true/);
+  assert.match(chatJs, /data\.modelSelectionEnabled !== false/);
+  assert.match(chatJs, /data\.enabled !== false/);
+  assert.match(chatJs, /modelSelectionEnabled && !requestInProgress/);
+});
+
 test('diff review announces selection state and errors', () => {
   assert.match(diffHtml, /<output id="selection-summary" aria-live="polite"/);
   assert.match(diffHtml, /id="selection-error" role="alert" aria-live="assertive"/);

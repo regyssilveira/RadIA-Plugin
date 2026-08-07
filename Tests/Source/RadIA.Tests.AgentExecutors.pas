@@ -33,6 +33,10 @@ type
     procedure StructuredOutputsReturnLastAssistantText;
     [Test]
     procedure PlainOutputIsPreserved;
+    [Test]
+    procedure NativeExecutorEnablesProviderModelSelection;
+    [Test]
+    procedure SupportedCliExecutorsManageTheirOwnModels;
   end;
 
 implementation
@@ -201,6 +205,17 @@ begin
   end;
 end;
 
+procedure TRadIAAgentExecutorTests.NativeExecutorEnablesProviderModelSelection;
+var
+  LState: TRadIAModelSelectionState;
+begin
+  LState := TRadIAModelSelectionState.FromExecutor(
+    TRadIAAgentExecutorSettings.Create(aekNative, 'codex')
+  );
+  Assert.IsTrue(LState.Enabled);
+  Assert.IsEmpty(LState.DisplayText);
+end;
+
 procedure TRadIAAgentExecutorTests.PlainOutputIsPreserved;
 begin
   Assert.AreEqual(
@@ -227,6 +242,33 @@ begin
       '{"response":"Gemini answer","stats":{"tokens":12}}'
     )
   );
+end;
+
+procedure TRadIAAgentExecutorTests.SupportedCliExecutorsManageTheirOwnModels;
+const
+  CClientIds: array[0..3] of string = (
+    'codex',
+    'claude',
+    'gemini',
+    'copilot'
+  );
+var
+  LClientId: string;
+  LDefinition: TRadIACliDefinition;
+  LState: TRadIAModelSelectionState;
+begin
+  for LClientId in CClientIds do
+  begin
+    Assert.IsTrue(TRadIACliCatalog.FindById(LClientId, LDefinition));
+    LState := TRadIAModelSelectionState.FromExecutor(
+      TRadIAAgentExecutorSettings.Create(aekCli, LClientId)
+    );
+    Assert.IsFalse(LState.Enabled);
+    Assert.AreEqual(
+      'Model managed by ' + LDefinition.DisplayName,
+      LState.DisplayText
+    );
+  end;
 end;
 
 procedure TRadIAAgentExecutorTests.UnknownCliSelectionIsRejected;

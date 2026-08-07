@@ -1882,6 +1882,7 @@ function getProviderIcon(providerId) {
 }
 
 let requestInProgress = false;
+let modelSelectionEnabled = true;
 const _promptHistory = [];
 let _promptHistoryIndex = -1;
 let _promptDraft = '';
@@ -2856,7 +2857,7 @@ function initializeConfig(data) {
     ? `${activeIcon}<span>${activeText}</span>`
     : `<span>${activeText}</span>`;
 
-  updateModelsList(data.models, data.activeModel);
+  updateModelsList(data.models, data.activeModel, data.modelSelectionEnabled !== false);
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
   setAgentMode(data.agentModeEnabled);
 
@@ -2884,7 +2885,18 @@ function initializeConfig(data) {
 
 }
 
-function updateModelsList(models, activeModel) {
+function applyModelSelectionState() {
+  const enabled = modelSelectionEnabled && !requestInProgress;
+  selectModel.disabled = !enabled;
+  modelDropdownWrapper.classList.toggle('disabled', !enabled);
+  modelDropdownTrigger.setAttribute('aria-disabled', String(!enabled));
+  modelDropdownTrigger.title = modelSelectionEnabled
+    ? 'Select AI model'
+    : modelDropdownValue.textContent;
+}
+
+function updateModelsList(models, activeModel, enabled = true) {
+  modelSelectionEnabled = enabled;
   selectModel.innerHTML = '';
 
   if (!models || models.length === 0) {
@@ -2895,6 +2907,7 @@ function updateModelsList(models, activeModel) {
 
     modelDropdownValue.textContent = 'No models available';
     modelOptionsList.innerHTML = '<li class="no-sessions">No models available</li>';
+    applyModelSelectionState();
     return;
   }
 
@@ -2949,6 +2962,7 @@ function updateModelsList(models, activeModel) {
   if (!activeModel && models.length > 0) {
     modelDropdownValue.textContent = 'Select model...';
   }
+  applyModelSelectionState();
 }
 
 function setRequestState(inProgress) {
@@ -2962,9 +2976,6 @@ function setRequestState(inProgress) {
     selectProvider.disabled = true;
     providerDropdownWrapper.classList.add('disabled');
     providerDropdownTrigger.setAttribute('aria-disabled', 'true');
-    selectModel.disabled = true;
-    modelDropdownWrapper.classList.add('disabled');
-    modelDropdownTrigger.setAttribute('aria-disabled', 'true');
   } else {
     btnSendPrompt.classList.remove('stop-btn');
     btnSendPrompt.title = 'Send message';
@@ -2972,10 +2983,8 @@ function setRequestState(inProgress) {
     selectProvider.disabled = false;
     providerDropdownWrapper.classList.remove('disabled');
     providerDropdownTrigger.setAttribute('aria-disabled', 'false');
-    selectModel.disabled = false;
-    modelDropdownWrapper.classList.remove('disabled');
-    modelDropdownTrigger.setAttribute('aria-disabled', 'false');
   }
+  applyModelSelectionState();
 }
 
 function setContextText(text) {
@@ -3202,7 +3211,9 @@ if (globalThis.chrome?.webview) {
       case 'hide_typing':           hideTypingIndicator();                                       break;
       case 'append_message':        appendMessage(data.text, data.isDone, data.provider, data.model); break;
       case 'initialize_config':     initializeConfig(data);                                      break;
-      case 'update_models':         updateModelsList(data.models, data.activeModel);             break;
+      case 'update_models':
+        updateModelsList(data.models, data.activeModel, data.enabled !== false);
+        break;
       case 'set_request_state':     setRequestState(data.inProgress);                            break;
       case 'set_context':           setContextText(data.text);                                   break;
       case 'update_sessions':       updateSessions(data.sessions, data.activeSessionId);         break;
