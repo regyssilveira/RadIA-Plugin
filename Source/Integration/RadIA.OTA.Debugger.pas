@@ -375,11 +375,20 @@ begin
     );
   except
     on E: Exception do
-      Result := TRadIADebuggerActionResult.Failed(
-        'debugger_start_failed',
-        E.Message,
-        'no_process'
-      );
+    begin
+      if WaitForDebugProcess(ADebugger) then
+        Result := TRadIADebuggerActionResult.Succeeded(
+          'The IDE started the debug session after a transient response.',
+          'no_process',
+          'starting'
+        )
+      else
+        Result := TRadIADebuggerActionResult.Failed(
+          'debugger_start_failed',
+          E.Message,
+          'no_process'
+        );
+    end;
   end;
 end;
 
