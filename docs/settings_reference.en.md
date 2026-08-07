@@ -77,12 +77,17 @@ allows an external client to use RadIA's protected tool registry.
 | Browse | To select an existing CLI | A self-contained executable does not require Node.js/npm. |
 | Diagnose | After install, path selection, or login | Resolves path, version, and authentication when supported. |
 | Install/Update channel | When no usable executable exists | Shows official package, command, and prerequisites and runs only after confirmation. |
+| Manual steps | When automation is not wanted or failed | Copies the official URL, complete command, expected names, and portable alternative. |
+| Start login | After detection and before authenticated use | Opens a visible login terminal and repeats diagnosis when it closes. |
 | MCP client configuration | For advanced path override | Full JSON/TOML path; the client default is detected automatically. |
 | RadIA MCP bridge | Only after moving or repairing installation | Installed beside the BPL; no separate bridge download is required. |
 | Preview | Before connecting | Shows proposed content without writing. |
 | Connect / Repair | To add or fix the managed entry | Confirms, backs up to `.radia.bak`, writes, verifies, and restores on failure. |
 | Disconnect | To remove integration | Removes only the RadIA-managed entry. |
 | Test Handshake | After connecting | Runs `initialize`, `ping`, and `tools/list` without changing the project. |
+
+The **MCP connection** block is explicitly independent from the chat executor. Sanitized setup and
+repair history is stored at `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
 
 See [native and CLI executors](cli_executors.md) and [MCP integration](mcp_integration_guide.en.md).
 

@@ -94,6 +94,28 @@ type
     property Preview: string read FPreview;
   end;
 
+  TRadIACliSetupDiagnostic = record
+  private
+    FReady: Boolean;
+    FPrerequisiteName: string;
+    FExecutablePath: string;
+    FAction: string;
+    FDocumentationUrl: string;
+  public
+    constructor Create(
+      const AReady: Boolean;
+      const APrerequisiteName: string;
+      const AExecutablePath: string;
+      const AAction: string;
+      const ADocumentationUrl: string
+    );
+    property Ready: Boolean read FReady;
+    property PrerequisiteName: string read FPrerequisiteName;
+    property ExecutablePath: string read FExecutablePath;
+    property Action: string read FAction;
+    property DocumentationUrl: string read FDocumentationUrl;
+  end;
+
   IRadIACliEnvironment = interface
     ['{E49148CA-B27C-49B5-9190-18B52EA570C6}']
     function FileExists(const AFileName: string): Boolean;
@@ -122,6 +144,9 @@ type
   private
     FEnvironment: IRadIACliEnvironment;
     function FindInPath(
+      const AExecutableNames: TArray<string>
+    ): string;
+    function FindInKnownLocations(
       const AExecutableNames: TArray<string>
     ): string;
   public
@@ -162,10 +187,43 @@ type
     class function BuildPlan(
       const ADefinition: TRadIACliDefinition
     ): TRadIACliInstallPlan; static;
+    class function BuildPrerequisitePlan(
+      const ADefinition: TRadIACliDefinition
+    ): TRadIACliInstallPlan; static;
+  end;
+
+  TRadIACliSetupAdvisor = class
+  private
+    class function FindExecutable(
+      const ANames: TArray<string>
+    ): string; static;
+  public
+    class function DiagnosePrerequisite(
+      const ADefinition: TRadIACliDefinition
+    ): TRadIACliSetupDiagnostic; static;
+    class function ManualGuidance(
+      const ADefinition: TRadIACliDefinition
+    ): string; static;
+  end;
+
+  TRadIACliSetupHistory = class
+  public
+    class function FileName: string; static;
+    class procedure Append(
+      const AClientId: string;
+      const AOperation: string;
+      const ASucceeded: Boolean;
+      const ADetails: string
+    ); static;
   end;
 
   TRadIACliHealth = class
   public
+    class function DescribeFailure(
+      const AStdOut: string;
+      const AStdErr: string;
+      const AExitCode: Integer
+    ): string; static;
     class function NormalizeVersionOutput(
       const AStdOut: string;
       const AStdErr: string
@@ -176,12 +234,37 @@ implementation
 
 uses
   System.Classes,
+  System.DateUtils,
   System.Generics.Collections,
   System.IOUtils,
+  System.JSON,
   System.SysUtils,
   RadIA.Core.CliMcpSettings;
 
 { TRadIACliHealth }
+
+class function TRadIACliHealth.DescribeFailure(
+  const AStdOut: string;
+  const AStdErr: string;
+  const AExitCode: Integer
+): string;
+var
+  LText: string;
+begin
+  LText := LowerCase(AStdOut + sLineBreak + AStdErr);
+  if LText.Contains('not recognized') or LText.Contains('not found') then
+    Exit('A required command was not found. Run Diagnose or use Manual steps.');
+  if LText.Contains('access is denied') or LText.Contains('permission denied') then
+    Exit('Windows denied access. Review permissions and retry the approved step.');
+  if LText.Contains('proxy') then
+    Exit('The package manager reported a proxy problem. Review the network proxy settings.');
+  if LText.Contains('network') or LText.Contains('timed out') then
+    Exit('The download could not complete. Check the network and retry.');
+  Result := Format(
+    'The setup step failed with exit code %d. Use Manual steps for the official command and URL.',
+    [AExitCode]
+  );
+end;
 
 class function TRadIACliHealth.NormalizeVersionOutput(
   const AStdOut: string;
@@ -316,6 +399,23 @@ begin
   FPreview := APreview;
 end;
 
+{ TRadIACliSetupDiagnostic }
+
+constructor TRadIACliSetupDiagnostic.Create(
+  const AReady: Boolean;
+  const APrerequisiteName: string;
+  const AExecutablePath: string;
+  const AAction: string;
+  const ADocumentationUrl: string
+);
+begin
+  FReady := AReady;
+  FPrerequisiteName := APrerequisiteName;
+  FExecutablePath := AExecutablePath;
+  FAction := AAction;
+  FDocumentationUrl := ADocumentationUrl;
+end;
+
 function TRadIACliEnvironment.GetPathEntries: TArray<string>;
 var
   LList: TStringList;
@@ -437,6 +537,8 @@ begin
     );
 
   LExecutablePath := FindInPath(ADefinition.ExecutableNames);
+  if LExecutablePath = '' then
+    LExecutablePath := FindInKnownLocations(ADefinition.ExecutableNames);
   Result := TRadIACliDetection.Create(
     ADefinition,
     LExecutablePath <> '',
@@ -493,6 +595,52 @@ begin
   end;
 end;
 
+function TRadIACliDetector.FindInKnownLocations(
+  const AExecutableNames: TArray<string>
+): string;
+var
+  LCandidate: string;
+  LDirectory: string;
+  LDirectories: TArray<string>;
+  LExecutableName: string;
+begin
+  LDirectories := [
+    TPath.Combine(GetEnvironmentVariable('APPDATA'), 'npm'),
+    TPath.Combine(GetEnvironmentVariable('ProgramFiles'), 'nodejs'),
+    TPath.Combine(
+      GetEnvironmentVariable('LOCALAPPDATA'),
+      'Microsoft\WinGet\Links'
+    )
+  ];
+  for LDirectory in LDirectories do
+    for LExecutableName in AExecutableNames do
+    begin
+      LCandidate := TPath.Combine(LDirectory, LExecutableName);
+      if FEnvironment.FileExists(LCandidate) then
+        Exit(LCandidate);
+    end;
+  Result := '';
+end;
+
+class function TRadIACliInstaller.BuildPrerequisitePlan(
+  const ADefinition: TRadIACliDefinition
+): TRadIACliInstallPlan;
+const
+  CNodeCommand =
+    'winget install --id OpenJS.NodeJS.LTS --exact --source winget ' +
+    '--accept-source-agreements --accept-package-agreements --disable-interactivity';
+begin
+  if ADefinition.PrimaryChannel <> cicNpm then
+    raise EInvalidOpException.Create(
+      'This prerequisite cannot be installed automatically.'
+    );
+  Result := TRadIACliInstallPlan.Create(
+    'cmd.exe',
+    ['/d', '/s', '/c', CNodeCommand],
+    CNodeCommand
+  );
+end;
+
 class procedure TRadIACliInstaller.ValidatePackageId(
   const APackageId: string
 );
@@ -525,6 +673,133 @@ begin
     'cmd.exe',
     ['/d', '/s', '/c', LCommand],
     LCommand
+  );
+end;
+
+{ TRadIACliSetupAdvisor }
+
+class function TRadIACliSetupAdvisor.FindExecutable(
+  const ANames: TArray<string>
+): string;
+var
+  LName: string;
+  LPath: string;
+begin
+  for LName in ANames do
+  begin
+    LPath := FileSearch(LName, GetEnvironmentVariable('PATH'));
+    if LPath <> '' then
+      Exit(LPath);
+  end;
+  Result := '';
+end;
+
+class function TRadIACliSetupAdvisor.DiagnosePrerequisite(
+  const ADefinition: TRadIACliDefinition
+): TRadIACliSetupDiagnostic;
+var
+  LPath: string;
+begin
+  case ADefinition.PrimaryChannel of
+    cicNpm:
+      begin
+        LPath := FindExecutable(['npm.cmd', 'npm.exe', 'npm']);
+        Result := TRadIACliSetupDiagnostic.Create(
+          LPath <> '',
+          'Node.js and npm',
+          LPath,
+          'Install Node.js LTS, then run Diagnose again.',
+          'https://nodejs.org/en/download'
+        );
+      end;
+    cicWinget:
+      begin
+        LPath := FindExecutable(['winget.exe', 'winget']);
+        Result := TRadIACliSetupDiagnostic.Create(
+          LPath <> '',
+          'Windows Package Manager (winget)',
+          LPath,
+          'Install or update App Installer, then run Diagnose again.',
+          'https://learn.microsoft.com/windows/package-manager/winget/'
+        );
+      end;
+  else
+    Result := TRadIACliSetupDiagnostic.Create(
+      True,
+      '',
+      '',
+      '',
+      ADefinition.DocumentationUrl
+    );
+  end;
+end;
+
+class function TRadIACliSetupAdvisor.ManualGuidance(
+  const ADefinition: TRadIACliDefinition
+): string;
+var
+  LPlan: TRadIACliInstallPlan;
+begin
+  LPlan := TRadIACliInstaller.BuildPlan(ADefinition);
+  Result := Format(
+    '%s installation options:' + sLineBreak +
+    'Official documentation: %s' + sLineBreak +
+    'Official command: %s' + sLineBreak +
+    'Expected executable names: %s' + sLineBreak +
+    'Portable alternative: select the full executable path with Browse.',
+    [
+      ADefinition.DisplayName,
+      ADefinition.DocumentationUrl,
+      LPlan.Preview,
+      string.Join(', ', ADefinition.ExecutableNames)
+    ]
+  );
+end;
+
+{ TRadIACliSetupHistory }
+
+class procedure TRadIACliSetupHistory.Append(
+  const AClientId: string;
+  const AOperation: string;
+  const ASucceeded: Boolean;
+  const ADetails: string
+);
+var
+  LEntry: TJSONObject;
+  LFolder: string;
+begin
+  LFolder := TPath.GetDirectoryName(FileName);
+  TDirectory.CreateDirectory(LFolder);
+  LEntry := TJSONObject.Create;
+  try
+    LEntry.AddPair(
+      'timestampUtc',
+      DateToISO8601(TTimeZone.Local.ToUniversalTime(Now), True)
+    );
+    LEntry.AddPair('clientId', AClientId);
+    LEntry.AddPair('operation', AOperation);
+    LEntry.AddPair('succeeded', TJSONBool.Create(ASucceeded));
+    LEntry.AddPair('details', Copy(ADetails, 1, 500));
+    TFile.AppendAllText(
+      FileName,
+      LEntry.ToJSON + sLineBreak,
+      TEncoding.UTF8
+    );
+  finally
+    LEntry.Free;
+  end;
+end;
+
+class function TRadIACliSetupHistory.FileName: string;
+var
+  LOverride: string;
+begin
+  LOverride := Trim(GetEnvironmentVariable('RADIA_CLI_MCP_HISTORY_PATH'));
+  if LOverride <> '' then
+    Exit(LOverride);
+  Result := TPath.Combine(
+    TPath.Combine(TPath.GetHomePath, 'RadIA'),
+    'cli-mcp-setup-history.jsonl'
   );
 end;
 

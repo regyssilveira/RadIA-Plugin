@@ -95,6 +95,8 @@ type
     FBtnCliBrowse: TButton;
     FBtnCliRefresh: TButton;
     FBtnCliInstall: TButton;
+    FBtnCliManual: TButton;
+    FBtnCliLogin: TButton;
     FBtnMcpPreview: TButton;
     FBtnMcpProvision: TButton;
     FBtnMcpRemove: TButton;
@@ -106,6 +108,8 @@ type
     FCliVersionRequestId: Integer;
     FMcpHandshakeSession: IRadIACliProcessSession;
     FCliInstallGuard: IInterface;
+    FCliInstallOperation: string;
+    FCliInstallClientId: string;
 
     FTsMemoryDiagnostics: TTabSheet;
     FPnlMemoryDiagnostics: TPanel;
@@ -123,6 +127,8 @@ type
     procedure BtnCliRefreshClick(Sender: TObject);
     procedure BtnCliBrowseClick(Sender: TObject);
     procedure BtnCliInstallClick(Sender: TObject);
+    procedure BtnCliManualClick(Sender: TObject);
+    procedure BtnCliLoginClick(Sender: TObject);
     procedure BtnMcpPreviewClick(Sender: TObject);
     procedure BtnMcpHandshakeClick(Sender: TObject);
     procedure BtnMcpProvisionClick(Sender: TObject);
@@ -181,6 +187,10 @@ type
     function McpStateText(
       const AState: TRadIAMcpProvisionState
     ): string;
+    function PrepareCliInstallPlan(
+      const ADefinition: TRadIACliDefinition;
+      out APlan: TRadIACliInstallPlan
+    ): Boolean;
     procedure LoadAgentExecutorSettings;
     procedure OpenUrl(const AUrl: string);
     procedure RefreshCliMcpDiagnostics;
@@ -467,7 +477,7 @@ implementation
 
 uses
   System.IOUtils, System.JSON, System.SyncObjs,
-  RadIA.UI.Resources, System.UITypes, Vcl.FileCtrl,
+  RadIA.UI.Resources, System.UITypes, Vcl.Clipbrd, Vcl.FileCtrl,
   Winapi.Messages, Winapi.ShellAPI, RadIA.UI.GithubAuthForm,
   Winapi.Windows, System.SysUtils, ToolsAPI,
   RadIA.Core.Container, RadIA.Core.McpHandshake,
@@ -962,6 +972,9 @@ begin
   FBtnCliBrowse.OnClick := BtnCliBrowseClick;
 
   FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 120);
+  FLblCliStatus.AutoSize := False;
+  FLblCliStatus.WordWrap := True;
+  FLblCliStatus.SetBounds(16, 116, 256, 40);
   FBtnCliRefresh := TButton.Create(Self);
   FBtnCliRefresh.Parent := FPnlCliMcp;
   FBtnCliRefresh.SetBounds(510, 86, 96, 25);
@@ -975,6 +988,18 @@ begin
   FBtnCliInstall.Anchors := [akTop, akRight];
   FBtnCliInstall.Caption := 'Install channel';
   FBtnCliInstall.OnClick := BtnCliInstallClick;
+
+  FBtnCliManual := TButton.Create(Self);
+  FBtnCliManual.Parent := FPnlCliMcp;
+  FBtnCliManual.SetBounds(280, 116, 100, 25);
+  FBtnCliManual.Caption := 'Manual steps';
+  FBtnCliManual.OnClick := BtnCliManualClick;
+
+  FBtnCliLogin := TButton.Create(Self);
+  FBtnCliLogin.Parent := FPnlCliMcp;
+  FBtnCliLogin.SetBounds(388, 116, 100, 25);
+  FBtnCliLogin.Caption := 'Start login';
+  FBtnCliLogin.OnClick := BtnCliLoginClick;
 end;
 
 procedure TRadIAFrameAIConfig.SetControlsHint(
@@ -1177,6 +1202,14 @@ begin
     'Review and run the official optional installation or update channel for this CLI.'
   );
   SetControlsHint(
+    [FBtnCliManual],
+    'Show the official URL, complete command, expected executable names, and portable alternative.'
+  );
+  SetControlsHint(
+    [FBtnCliLogin],
+    'Open the selected CLI authentication command, then revalidate its status.'
+  );
+  SetControlsHint(
     [FEdtMcpConfig, FEdtMcpBridge],
     'Paths used to configure the selected MCP client and the RadIA stdio bridge.'
   );
@@ -1247,16 +1280,22 @@ begin
 
   CreateCliExecutableControls;
 
-  CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 152);
-  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 170, 590);
-  CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 206);
-  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 224, 590);
+  CreateLabel(
+    FPnlCliMcp,
+    'MCP connection (independent from the chat executor)',
+    16,
+    148
+  ).Font.Style := [fsBold];
+  CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 170);
+  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 188, 590);
+  CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 224);
+  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 242, 590);
 
-  FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 256);
+  FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 274);
   FBtnMcpPreview := TButton.Create(Self);
   FBtnMcpPreview.Parent := FPnlCliMcp;
   FBtnMcpPreview.Left := 16;
-  FBtnMcpPreview.Top := 282;
+  FBtnMcpPreview.Top := 300;
   FBtnMcpPreview.Width := 104;
   FBtnMcpPreview.Height := 27;
   FBtnMcpPreview.Caption := 'Preview';
@@ -1265,7 +1304,7 @@ begin
   FBtnMcpProvision := TButton.Create(Self);
   FBtnMcpProvision.Parent := FPnlCliMcp;
   FBtnMcpProvision.Left := 128;
-  FBtnMcpProvision.Top := 282;
+  FBtnMcpProvision.Top := 300;
   FBtnMcpProvision.Width := 136;
   FBtnMcpProvision.Height := 27;
   FBtnMcpProvision.Caption := 'Connect / Repair';
@@ -1274,7 +1313,7 @@ begin
   FBtnMcpRemove := TButton.Create(Self);
   FBtnMcpRemove.Parent := FPnlCliMcp;
   FBtnMcpRemove.Left := 272;
-  FBtnMcpRemove.Top := 282;
+  FBtnMcpRemove.Top := 300;
   FBtnMcpRemove.Width := 104;
   FBtnMcpRemove.Height := 27;
   FBtnMcpRemove.Caption := 'Disconnect';
@@ -1283,7 +1322,7 @@ begin
   FBtnMcpHandshake := TButton.Create(Self);
   FBtnMcpHandshake.Parent := FPnlCliMcp;
   FBtnMcpHandshake.Left := 384;
-  FBtnMcpHandshake.Top := 282;
+  FBtnMcpHandshake.Top := 300;
   FBtnMcpHandshake.Width := 130;
   FBtnMcpHandshake.Height := 27;
   FBtnMcpHandshake.Caption := 'Test Handshake';
@@ -1292,9 +1331,9 @@ begin
   FMemoMcpPreview := TMemo.Create(Self);
   FMemoMcpPreview.Parent := FPnlCliMcp;
   FMemoMcpPreview.Left := 16;
-  FMemoMcpPreview.Top := 320;
+  FMemoMcpPreview.Top := 338;
   FMemoMcpPreview.Width := 590;
-  FMemoMcpPreview.Height := 136;
+  FMemoMcpPreview.Height := 118;
   FMemoMcpPreview.ReadOnly := True;
   FMemoMcpPreview.ScrollBars := ssBoth;
   FMemoMcpPreview.WordWrap := False;
@@ -1899,11 +1938,18 @@ var
   LPlan: TRadIACliInstallPlan;
   LPrompt: string;
 begin
+  if Assigned(FCliInstallSession) then
+  begin
+    FCliInstallSession.Cancel;
+    Exit;
+  end;
   if not GetSelectedCliDefinition(LDefinition) then
     Exit;
-  LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
+  if not PrepareCliInstallPlan(LDefinition, LPlan) then
+    Exit;
+  FCliInstallClientId := LDefinition.Id;
   LPrompt := Format(
-    'Optionally install or update %s through its official channel?' + sLineBreak +
+    'Run the next approved setup step for %s?' + sLineBreak +
     'You can cancel and select an existing portable executable instead.' + sLineBreak +
     sLineBreak + 'Command:' + sLineBreak + '%s' + sLineBreak +
     sLineBreak + 'Prerequisites: %s',
@@ -1994,6 +2040,136 @@ begin
   RefreshCliMcpDiagnostics;
 end;
 
+function TRadIAFrameAIConfig.PrepareCliInstallPlan(
+  const ADefinition: TRadIACliDefinition;
+  out APlan: TRadIACliInstallPlan
+): Boolean;
+var
+  LDiagnostic: TRadIACliSetupDiagnostic;
+begin
+  LDiagnostic := TRadIACliSetupAdvisor.DiagnosePrerequisite(ADefinition);
+  FCliInstallOperation := 'cli-install';
+  if LDiagnostic.Ready then
+  begin
+    APlan := TRadIACliInstaller.BuildPlan(ADefinition);
+    if LDiagnostic.ExecutablePath <> '' then
+      AppendCliInstallOutput(
+        'Prerequisite detected at ' + LDiagnostic.ExecutablePath + sLineBreak
+      );
+    Exit(True);
+  end;
+  Result := False;
+  if ADefinition.PrimaryChannel <> cicNpm then
+  begin
+    ShowMessage(
+      LDiagnostic.PrerequisiteName + ' is required.' + sLineBreak +
+      LDiagnostic.Action + sLineBreak + LDiagnostic.DocumentationUrl
+    );
+    OpenUrl(LDiagnostic.DocumentationUrl);
+    Exit;
+  end;
+  if FileSearch('winget.exe', GetEnvironmentVariable('PATH')) = '' then
+  begin
+    ShowMessage(
+      'Automatic prerequisite installation requires winget.' + sLineBreak +
+      'Install Node.js LTS manually from:' + sLineBreak +
+      LDiagnostic.DocumentationUrl
+    );
+    OpenUrl(LDiagnostic.DocumentationUrl);
+    Exit;
+  end;
+  APlan := TRadIACliInstaller.BuildPrerequisitePlan(ADefinition);
+  FCliInstallOperation := 'prerequisite-install';
+  Result := True;
+end;
+
+procedure TRadIAFrameAIConfig.BtnCliManualClick(Sender: TObject);
+var
+  LDefinition: TRadIACliDefinition;
+  LGuidance: string;
+begin
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  LGuidance := TRadIACliSetupAdvisor.ManualGuidance(LDefinition);
+  Clipboard.AsText := LGuidance;
+  FMemoMcpPreview.Text := LGuidance;
+  if MessageDlg(
+    LGuidance + sLineBreak + sLineBreak +
+    'The complete instructions were copied. Open the official documentation?',
+    mtInformation,
+    [mbYes, mbNo],
+    0
+  ) = mrYes then
+    OpenUrl(LDefinition.DocumentationUrl);
+end;
+
+procedure TRadIAFrameAIConfig.BtnCliLoginClick(Sender: TObject);
+var
+  LDefinition: TRadIACliDefinition;
+  LDetection: TRadIACliDetection;
+  LGuard: IRadIAConfigLifecycleGuard;
+  LInfo: TShellExecuteInfo;
+  LParameters: string;
+begin
+  if not GetSelectedCliDefinition(LDefinition) then
+    Exit;
+  SaveCliMcpSettings;
+  LDetection := TRadIACliResolver.Resolve(LDefinition.Id);
+  if not LDetection.Installed then
+  begin
+    ShowMessage('Install the CLI or select its full executable path before login.');
+    Exit;
+  end;
+  case LDefinition.Kind of
+    ckCodex:
+      LParameters := '/k ""' + LDetection.ExecutablePath + '" login"';
+    ckClaude:
+      LParameters := '/k ""' + LDetection.ExecutablePath + '" auth login"';
+    ckGemini:
+      LParameters := '/k ""' + LDetection.ExecutablePath + '""';
+    ckCopilot:
+      LParameters := '/k ""' + LDetection.ExecutablePath + '" login"';
+  end;
+  if MessageDlg(
+    'Open the guided login for ' + LDefinition.DisplayName + '?' +
+    sLineBreak + sLineBreak + 'Command: ' + LDefinition.AuthLoginHint +
+    sLineBreak + 'Return to this screen and click Diagnose after authorization.',
+    mtConfirmation,
+    [mbYes, mbNo],
+    0
+  ) <> mrYes then
+    Exit;
+  ZeroMemory(@LInfo, SizeOf(LInfo));
+  LInfo.cbSize := SizeOf(LInfo);
+  LInfo.fMask := SEE_MASK_NOCLOSEPROCESS;
+  LInfo.Wnd := Handle;
+  LInfo.lpVerb := 'open';
+  LInfo.lpFile := 'cmd.exe';
+  LInfo.lpParameters := PChar(LParameters);
+  LInfo.nShow := SW_SHOWNORMAL;
+  if not ShellExecuteEx(@LInfo) then
+  begin
+    ShowMessage('The login terminal could not be opened.');
+    Exit;
+  end;
+  LGuard := FCliInstallGuard as IRadIAConfigLifecycleGuard;
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      WaitForSingleObject(LInfo.hProcess, INFINITE);
+      CloseHandle(LInfo.hProcess);
+      TThread.Queue(
+        nil,
+        procedure
+        begin
+          if LGuard.IsAlive then
+            RefreshCliMcpDiagnostics;
+        end
+      );
+    end
+  ).Start;
+end;
+
 procedure TRadIAFrameAIConfig.BtnCliBrowseClick(Sender: TObject);
 var
   LDialog: TOpenDialog;
@@ -2065,6 +2241,8 @@ end;
 procedure TRadIAFrameAIConfig.CompleteCliInstall(
   const AResult: TRadIACliProcessResult
 );
+var
+  LNodePath: string;
 begin
   FCliInstallSession := nil;
   SetCliInstallRunning(False);
@@ -2079,11 +2257,42 @@ begin
     AppendCliInstallOutput(sLineBreak + 'Installation cancelled.' + sLineBreak)
   else
     AppendCliInstallOutput(
-      Format(
-        sLineBreak + 'Installation failed with exit code %d.' + sLineBreak,
-        [AResult.ExitCode]
-      )
+      sLineBreak + TRadIACliHealth.DescribeFailure(
+        AResult.StdOut,
+        AResult.StdErr,
+        AResult.ExitCode
+      ) + sLineBreak
     );
+  TRadIACliSetupHistory.Append(
+    FCliInstallClientId,
+    FCliInstallOperation,
+    AResult.Succeeded,
+    Format('exitCode=%d; timedOut=%s; cancelled=%s', [
+      AResult.ExitCode,
+      BoolToStr(AResult.TimedOut, True),
+      BoolToStr(AResult.Cancelled, True)
+    ])
+  );
+  if AResult.Succeeded and SameText(
+    FCliInstallOperation,
+    'prerequisite-install'
+  ) then
+  begin
+    LNodePath := TPath.Combine(
+      GetEnvironmentVariable('ProgramFiles'),
+      'nodejs'
+    );
+    if TDirectory.Exists(LNodePath) then
+      SetEnvironmentVariable(
+        PChar('PATH'),
+        PChar(GetEnvironmentVariable('PATH') + ';' + LNodePath)
+      );
+    ShowMessage(
+      'The prerequisite was installed. RadIA will now recheck it before installing the CLI.'
+    );
+    BtnCliInstallClick(FBtnCliInstall);
+    Exit;
+  end;
   RefreshCliMcpDiagnostics;
 end;
 
@@ -2169,6 +2378,12 @@ begin
       FEdtMcpConfig.Text,
       FEdtMcpBridge.Text
     );
+    TRadIACliSetupHistory.Append(
+      LProfile.Id,
+      'mcp-connect-repair',
+      LResult.Succeeded,
+      LResult.Message
+    );
     ShowMessage(LResult.Message);
   finally
     LProvisioner.Free;
@@ -2202,6 +2417,12 @@ begin
     LResult := LProvisioner.Remove(
       LProfile,
       FEdtMcpConfig.Text
+    );
+    TRadIACliSetupHistory.Append(
+      LProfile.Id,
+      'mcp-disconnect',
+      LResult.Succeeded,
+      LResult.Message
     );
     ShowMessage(LResult.Message);
   finally
@@ -2475,9 +2696,16 @@ begin
   FCmbCliClient.Enabled := not ARunning;
   FBtnCliBrowse.Enabled := not ARunning;
   FBtnCliRefresh.Enabled := not ARunning;
-  FBtnCliInstall.Enabled := not ARunning;
+  FBtnCliManual.Enabled := not ARunning;
+  FBtnCliLogin.Enabled := not ARunning;
+  FBtnCliInstall.Enabled := True;
   if ARunning then
-    FLblCliStatus.Caption := 'CLI status: installing through the official channel...';
+  begin
+    FBtnCliInstall.Caption := 'Cancel';
+    FLblCliStatus.Caption := 'CLI status: running the approved setup step...';
+  end
+  else
+    FBtnCliInstall.Caption := 'Install channel';
 end;
 
 procedure TRadIAFrameAIConfig.StartCliVersionProbe(

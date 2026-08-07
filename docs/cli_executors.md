@@ -47,6 +47,27 @@ Os identificadores vêm de um catálogo interno e são validados contra metacara
 execução. O Rad IA não baixa, empacota ou redistribui binários desses fornecedores. A autenticação
 continua sendo feita pelo próprio CLI depois da instalação.
 
+### Assistente guiado de instalação e recuperação
+
+Antes de executar qualquer comando, o RadIA verifica o gerenciador exigido pelo canal oficial. Se
+uma CLI baseada em npm não encontrar Node.js/npm, ele oferece instalar o Node.js LTS por `winget`
+como uma etapa independente, mostrando o comando e pedindo consentimento. A instalação da CLI possui
+uma segunda confirmação. Se `winget` também não existir, nenhuma tentativa cega é feita: o RadIA abre
+a página oficial e mostra a ação necessária.
+
+**Manual steps** copia e exibe a URL oficial, o comando completo, os nomes esperados do executável e
+a alternativa de selecionar um `.exe`, `.cmd` ou `.bat` portátil. **Start login** abre o comando de
+autenticação do cliente em um terminal visível; ao fechar esse terminal, o diagnóstico de versão e
+autenticação é repetido automaticamente.
+
+Depois de instalar, o resolver pesquisa o `PATH` e também os diretórios conhecidos do npm, Node.js e
+WinGet. Assim, um executável recém-instalado pode ser usado pela IDE atual sem reiniciar o Delphi. O
+botão de instalação vira **Cancel** durante uma etapa em andamento.
+
+Instalações, atualizações e conexões/reparos MCP gravam somente metadados sanitizados em
+`%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`; comandos de autenticação, tokens e saída bruta não
+são persistidos.
+
 ## Detecção e versão instalada
 
 Ao abrir o painel **CLI & MCP**, trocar o cliente ou usar **Diagnose**, o RadIA procura primeiro o

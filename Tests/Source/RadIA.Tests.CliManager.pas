@@ -54,13 +54,26 @@ type
     procedure ResolverUsesPortableOverrideWithoutPackageManager;
     [Test]
     procedure ResolverUsesPathWhenOverrideIsMissing;
+    [Test]
+    procedure PrerequisitePlanUsesOfficialNodePackage;
+    [Test]
+    procedure ManualGuidanceIncludesEveryRecoveryPath;
+    [Test]
+    procedure FindsNewNpmExecutableOutsideInheritedPath;
+    [Test]
+    procedure ConvertsSetupFailuresIntoActionableGuidance;
+    [Test]
+    procedure DiagnosesOfficialChannelPrerequisites;
+    [Test]
+    procedure PersistsSanitizedSetupHistory;
   end;
 
 implementation
 
 uses
   System.SysUtils,
-  System.IOUtils;
+  System.IOUtils,
+  Winapi.Windows;
 
 { TRadIAFakeCliEnvironment }
 
@@ -207,6 +220,124 @@ begin
     );
   finally
     LDetector.Free;
+  end;
+end;
+
+procedure TRadIACliManagerTests.DiagnosesOfficialChannelPrerequisites;
+var
+  LDefinition: TRadIACliDefinition;
+  LDiagnostic: TRadIACliSetupDiagnostic;
+begin
+  for LDefinition in TRadIACliCatalog.All do
+  begin
+    LDiagnostic := TRadIACliSetupAdvisor.DiagnosePrerequisite(LDefinition);
+    Assert.IsNotEmpty(LDiagnostic.PrerequisiteName);
+    Assert.IsNotEmpty(LDiagnostic.DocumentationUrl);
+    if LDiagnostic.Ready then
+      Assert.IsNotEmpty(LDiagnostic.ExecutablePath)
+    else
+      Assert.IsNotEmpty(LDiagnostic.Action);
+  end;
+end;
+
+procedure TRadIACliManagerTests.ConvertsSetupFailuresIntoActionableGuidance;
+begin
+  Assert.Contains(
+    TRadIACliHealth.DescribeFailure('', '''npm'' is not recognized', 1),
+    'Run Diagnose'
+  );
+  Assert.Contains(
+    TRadIACliHealth.DescribeFailure('', 'network timed out', 1),
+    'Check the network'
+  );
+  Assert.Contains(
+    TRadIACliHealth.DescribeFailure('', 'unexpected failure', 7),
+    'exit code 7'
+  );
+end;
+
+procedure TRadIACliManagerTests.ManualGuidanceIncludesEveryRecoveryPath;
+var
+  LDefinition: TRadIACliDefinition;
+  LGuidance: string;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  LGuidance := TRadIACliSetupAdvisor.ManualGuidance(LDefinition);
+  Assert.Contains(LGuidance, 'https://github.com/openai/codex');
+  Assert.Contains(LGuidance, 'npm install --global @openai/codex@latest');
+  Assert.Contains(LGuidance, 'codex.exe');
+  Assert.Contains(LGuidance, 'portable');
+end;
+
+procedure TRadIACliManagerTests.FindsNewNpmExecutableOutsideInheritedPath;
+var
+  LDefinition: TRadIACliDefinition;
+  LDetection: TRadIACliDetection;
+  LDetector: TRadIACliDetector;
+  LEnvironment: IRadIACliEnvironment;
+  LFake: TRadIAFakeCliEnvironment;
+  LOriginalAppData: string;
+begin
+  LOriginalAppData := GetEnvironmentVariable('APPDATA');
+  SetEnvironmentVariable(
+    PChar('APPDATA'),
+    PChar('C:\NewProfile\AppData\Roaming')
+  );
+  try
+    LFake := TRadIAFakeCliEnvironment.Create([]);
+    LEnvironment := LFake;
+    LFake.AddFile('C:\NewProfile\AppData\Roaming\npm\codex.cmd');
+    LDetector := TRadIACliDetector.Create(LEnvironment);
+    try
+      Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+      LDetection := LDetector.Detect(LDefinition);
+      Assert.IsTrue(LDetection.Installed);
+      Assert.AreEqual(
+        'C:\NewProfile\AppData\Roaming\npm\codex.cmd',
+        LDetection.ExecutablePath
+      );
+    finally
+      LDetector.Free;
+    end;
+  finally
+    SetEnvironmentVariable(PChar('APPDATA'), PChar(LOriginalAppData));
+  end;
+end;
+
+procedure TRadIACliManagerTests.PrerequisitePlanUsesOfficialNodePackage;
+var
+  LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
+  LPlan := TRadIACliInstaller.BuildPrerequisitePlan(LDefinition);
+  Assert.AreEqual('cmd.exe', LPlan.ExecutablePath);
+  Assert.Contains(LPlan.Preview, 'OpenJS.NodeJS.LTS');
+  Assert.Contains(LPlan.Preview, '--accept-package-agreements');
+end;
+
+procedure TRadIACliManagerTests.PersistsSanitizedSetupHistory;
+var
+  LContent: string;
+  LFileName: string;
+  LOriginal: string;
+begin
+  LFileName := TPath.Combine(TPath.GetTempPath, TPath.GetRandomFileName);
+  LOriginal := GetEnvironmentVariable('RADIA_CLI_MCP_HISTORY_PATH');
+  SetEnvironmentVariable(PChar('RADIA_CLI_MCP_HISTORY_PATH'), PChar(LFileName));
+  try
+    TRadIACliSetupHistory.Append('codex', 'test-install', True, 'exitCode=0');
+    LContent := TFile.ReadAllText(LFileName, TEncoding.UTF8);
+    Assert.Contains(LContent, '"clientId":"codex"');
+    Assert.Contains(LContent, '"operation":"test-install"');
+    Assert.Contains(LContent, '"succeeded":true');
+  finally
+    if TFile.Exists(LFileName) then
+      TFile.Delete(LFileName);
+    SetEnvironmentVariable(
+      PChar('RADIA_CLI_MCP_HISTORY_PATH'),
+      PChar(LOriginal)
+    );
   end;
 end;
 

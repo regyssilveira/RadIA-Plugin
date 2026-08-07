@@ -67,6 +67,15 @@ test('configuration controls enable centralized contextual hints', () => {
   assert.match(configFrame, /ConfigureControlHints;/);
 });
 
+test('CLI and MCP setup exposes guided and recoverable actions', () => {
+  assert.match(configFrame, /FBtnCliManual\.Caption := 'Manual steps'/u);
+  assert.match(configFrame, /FBtnCliLogin\.Caption := 'Start login'/u);
+  assert.match(configFrame, /MCP connection \(independent from the chat executor\)/u);
+  assert.match(configFrame, /BuildPrerequisitePlan/u);
+  assert.match(configFrame, /TRadIACliSetupHistory\.Append/u);
+  assert.match(configFrame, /RefreshCliMcpDiagnostics/u);
+});
+
 test('diff review announces selection state and errors', () => {
   assert.match(diffHtml, /<output id="selection-summary" aria-live="polite"/);
   assert.match(diffHtml, /id="selection-error" role="alert" aria-live="assertive"/);

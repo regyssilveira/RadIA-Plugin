@@ -146,12 +146,17 @@ permite que um cliente externo acesse as ferramentas protegidas do RadIA.
 | Browse... | Para localizar uma CLI existente | Seleciona o arquivo sem exigir Node.js/npm. |
 | Diagnose | Depois de instalar, trocar caminho ou autenticar | Resolve o caminho efetivo, lê versão e verifica autenticação quando o cliente oferece esse comando. |
 | Install/Update channel | Quando não há executável utilizável | Mostra pacote, comando e pré-requisitos; só executa o canal oficial após confirmação. A alternativa é cancelar e selecionar um executável portátil. |
+| Manual steps | Quando a automação não é desejada ou falhou | Copia URL oficial, comando completo, nomes esperados e alternativa portátil; pode abrir a documentação oficial. |
+| Start login | Depois de detectar a CLI e antes do primeiro uso autenticado | Abre o login em terminal visível e repete o diagnóstico quando o terminal é fechado. |
 | MCP client configuration | Somente para override ou diagnóstico avançado | Caminho completo do JSON/TOML do cliente. O padrão é detectado por cliente. |
 | RadIA MCP bridge | Somente se a instalação foi movida ou reparada | Caminho da bridge fornecida pelo instalador junto à BPL. Não requer download separado. |
 | Preview | Antes de conectar ou reparar | Mostra o conteúdo proposto sem gravar arquivos. |
 | Connect / Repair | Para adicionar ou corrigir a entrada `radia` | Pede confirmação, cria `.radia.bak`, grava, verifica e restaura o original se a verificação falhar. |
 | Disconnect | Para remover a integração | Remove somente a entrada gerenciada pelo RadIA e mantém as demais configurações do cliente. |
 | Test Handshake | Depois de conectar e com a IDE ativa | Executa `initialize`, `ping` e `tools/list`; não modifica projeto nem configurações. |
+
+O bloco **MCP connection** é explicitamente independente do executor do chat. O histórico sanitizado
+de instalação e reparo fica em `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
 
 Para requisitos, autenticação e limitações de WSL, consulte
 [Orquestração nativa e executores por CLI](cli_executors.md). Para formatos e descoberta, consulte
