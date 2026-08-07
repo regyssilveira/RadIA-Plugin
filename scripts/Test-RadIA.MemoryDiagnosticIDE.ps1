@@ -7,6 +7,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$EvidencePath,
     [switch]$IDE64,
+    [switch]$ExpectNoLeaks,
     [ValidateRange(30, 600)]
     [int]$TimeoutSeconds = 240
 )
@@ -137,10 +138,17 @@ $previousDiagnosticEnvironment = (
     $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC
 )
 $previousLeakEnvironment = $env:RADIA_MEMORY_DIAGNOSTIC_SMOKE
+$previousFixedEnvironment = $env:RADIA_MEMORY_DIAGNOSTIC_FIXED
 $process = $null
 try {
     $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC = $resolvedEvidencePath
     $env:RADIA_MEMORY_DIAGNOSTIC_SMOKE = "1"
+    if ($ExpectNoLeaks) {
+        $env:RADIA_MEMORY_DIAGNOSTIC_FIXED = "1"
+    } else {
+        Remove-Item Env:RADIA_MEMORY_DIAGNOSTIC_FIXED `
+            -ErrorAction SilentlyContinue
+    }
     $process = Start-Process `
         -FilePath $bdsPath `
         -ArgumentList @($runtimeProject) `
@@ -177,7 +185,8 @@ try {
     if (
         $result.evidence.schemaVersion -ne 1 -or
         $result.evidence.termination -ne "controlled" -or
-        $leaks.Count -lt 1 -or
+        ($ExpectNoLeaks -and $leaks.Count -ne 0) -or
+        (-not $ExpectNoLeaks -and $leaks.Count -lt 1) -or
         $result.evidence.snapshots.Count -ne 2
     ) {
         throw "The memory diagnostic evidence is incomplete."
@@ -191,13 +200,15 @@ try {
     Write-Host (
         "FastMM5 IDE diagnostic passed: Delphi $DelphiVersion " +
         "$(if ($IDE64) { 'Win64' } else { 'Win32' }), " +
-        "$($leaks.Count) leak group(s), DPR restored."
+        "$($leaks.Count) leak group(s), DPR restored" +
+        "$(if ($ExpectNoLeaks) { ', fixed control.' } else { '.' })"
     ) -ForegroundColor Green
 } finally {
     $env:RADIA_IDE_SMOKE_MEMORY_DIAGNOSTIC = (
         $previousDiagnosticEnvironment
     )
     $env:RADIA_MEMORY_DIAGNOSTIC_SMOKE = $previousLeakEnvironment
+    $env:RADIA_MEMORY_DIAGNOSTIC_FIXED = $previousFixedEnvironment
     Get-CimInstance Win32_Process |
         Where-Object {
             $_.ExecutablePath -and

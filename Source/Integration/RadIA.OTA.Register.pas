@@ -109,6 +109,7 @@ uses
   RadIA.Core.MemoryInstrumentation,
   RadIA.Core.FastMM5LogParser,
   RadIA.Core.MemoryDiagnosticSession,
+  RadIA.Core.MemoryEvidence,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.RuntimeDiscovery,
@@ -1066,7 +1067,6 @@ initialization
         TRadIAContainer.Resolve<IRadIAMemoryInstrumentationCoordinator>,
         TRadIAContainer.Resolve<IRadIABuildFacade>,
         TRadIAContainer.Resolve<IRadIADebuggerSessionFacade>,
-        TRadIAContainer.Resolve<IRadIADebuggerControlFacade>,
         TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
         TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>
       )
@@ -1165,6 +1165,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAMemoryDiagnosticSessionCoordinator>,
     TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+  );
+  RegisterRadIAMemoryEvidenceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAMemoryEvidenceService.Create
   );
   RegisterRadIAMultiFilePatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

@@ -33,7 +33,6 @@ type
   TRadIAMemoryDiagnosticSessionDependencies = record
   private
     FBuild: IRadIABuildFacade;
-    FDebugControl: IRadIADebuggerControlFacade;
     FDebugSession: IRadIADebuggerSessionFacade;
     FInstrumentation: IRadIAMemoryInstrumentationCoordinator;
     FRuntimeSession: IRadIARuntimeDebugSessionCoordinator;
@@ -45,12 +44,10 @@ type
       const AInstrumentation: IRadIAMemoryInstrumentationCoordinator;
       const ABuild: IRadIABuildFacade;
       const ADebugSession: IRadIADebuggerSessionFacade;
-      const ADebugControl: IRadIADebuggerControlFacade;
       const ARuntimeSession: IRadIARuntimeDebugSessionCoordinator;
       const AScenario: IRadIARuntimeScenarioCoordinator
     );
     property Build: IRadIABuildFacade read FBuild;
-    property DebugControl: IRadIADebuggerControlFacade read FDebugControl;
     property DebugSession: IRadIADebuggerSessionFacade read FDebugSession;
     property Instrumentation: IRadIAMemoryInstrumentationCoordinator
       read FInstrumentation;
@@ -79,6 +76,7 @@ type
     IRadIAMemoryDiagnosticSessionCoordinator
   )
   private
+    FActiveProcessId: LongWord;
     FCancelRequested: Boolean;
     FDependencies: TRadIAMemoryDiagnosticSessionDependencies;
     FEditorMutation: IRadIAEditorMutationFacade;
@@ -106,6 +104,7 @@ type
       const AInstrumentationJson: string;
       const AScenarioFingerprint: string
     ): string;
+    procedure ClearRecoveryJournal;
     function CaptureSnapshot(
       const ALabel: string;
       const AProcessId: LongWord
@@ -124,6 +123,9 @@ type
       const AContentJson: string
     ): string;
     function ProcessIsRunning(const AProcessId: LongWord): Boolean;
+    function RecoverInterruptedInstrumentation(
+      out AErrorMessage: string
+    ): Boolean;
     function PrepareExecutable(
       out AFailure: TRadIAToolResult
     ): Boolean;
@@ -145,6 +147,9 @@ type
       const AInstrumentationJson: string
     ): Boolean;
     function StageInstrumentedSource: Boolean;
+    function StageRecoveryJournal(
+      const AInstrumentedContent: string
+    ): Boolean;
     procedure SetStatus(
       const AState: TRadIAMemoryDiagnosticSessionState;
       const AMessage: string
@@ -247,6 +252,16 @@ const
     '"previewId":{"type":"string","minLength":32,"maxLength":32}},' +
     '"additionalProperties":false}';
   CObjectOutputSchema = '{"type":"object"}';
+  CRecoveryManifestName = 'instrumentation-recovery.json';
+  CRecoveryOriginalName = 'instrumentation-original.bin';
+  CRecoveryStagedName = 'instrumentation-staged.bin';
+
+function ByteArraysEqual(const ALeft, ARight: TBytes): Boolean;
+begin
+  Result := Length(ALeft) = Length(ARight);
+  if Result and (Length(ALeft) > 0) then
+    Result := CompareMem(@ALeft[0], @ARight[0], Length(ALeft));
+end;
 
 function SizeValueToString(const AValue: SIZE_T): string;
 begin
@@ -294,7 +309,6 @@ constructor TRadIAMemoryDiagnosticSessionDependencies.Create(
   const AInstrumentation: IRadIAMemoryInstrumentationCoordinator;
   const ABuild: IRadIABuildFacade;
   const ADebugSession: IRadIADebuggerSessionFacade;
-  const ADebugControl: IRadIADebuggerControlFacade;
   const ARuntimeSession: IRadIARuntimeDebugSessionCoordinator;
   const AScenario: IRadIARuntimeScenarioCoordinator
 );
@@ -303,7 +317,6 @@ begin
   FInstrumentation := AInstrumentation;
   FBuild := ABuild;
   FDebugSession := ADebugSession;
-  FDebugControl := ADebugControl;
   FRuntimeSession := ARuntimeSession;
   FScenario := AScenario;
 end;
@@ -319,7 +332,6 @@ begin
     not Assigned(ADependencies.Instrumentation) or
     not Assigned(ADependencies.Build) or
     not Assigned(ADependencies.DebugSession) or
-    not Assigned(ADependencies.DebugControl) or
     not Assigned(ADependencies.RuntimeSession) or
     not Assigned(ADependencies.Scenario) then
     raise EArgumentNilException.Create('ADependencies');
@@ -337,6 +349,7 @@ begin
     );
   FDependencies := ADependencies;
   FLock := TObject.Create;
+  FActiveProcessId := 0;
   FState := mdssIdle;
 end;
 
@@ -452,11 +465,13 @@ end;
 
 function TRadIAMemoryDiagnosticSessionCoordinator.Cancel: Boolean;
 var
+  LProcessId: LongWord;
   LState: TRadIAMemoryDiagnosticSessionState;
 begin
   TMonitor.Enter(FLock);
   try
     LState := FState;
+    LProcessId := FActiveProcessId;
     Result := FState in [
       mdssInstrumenting,
       mdssBuilding,
@@ -474,15 +489,38 @@ begin
   begin
     FDependencies.Build.Cancel;
     FDependencies.Scenario.Cancel;
-    if LState in [
+    if (LState in [
       mdssStarting,
       mdssWarmingUp,
       mdssRunning,
       mdssStopping,
       mdssCollecting
-    ] then
-      FDependencies.DebugControl.ExecuteAction(daStop);
+    ]) and (LProcessId > 0) then
+      FDependencies.DebugSession.StopRuntimeProcess(LProcessId);
   end;
+end;
+
+procedure TRadIAMemoryDiagnosticSessionCoordinator.ClearRecoveryJournal;
+var
+  LDirectory: string;
+  LFileName: string;
+begin
+  if FProjectSourceFile.IsEmpty then
+    Exit;
+  LDirectory := TPath.Combine(
+    ExtractFilePath(FProjectSourceFile),
+    '.radia\memory\recovery'
+  );
+  for LFileName in [
+    CRecoveryManifestName,
+    CRecoveryOriginalName,
+    CRecoveryStagedName
+  ] do
+    if TFile.Exists(TPath.Combine(LDirectory, LFileName)) then
+      TFile.Delete(TPath.Combine(LDirectory, LFileName));
+  if TDirectory.Exists(LDirectory) and
+    (Length(TDirectory.GetFileSystemEntries(LDirectory)) = 0) then
+    TDirectory.Delete(LDirectory);
 end;
 
 function TRadIAMemoryDiagnosticSessionCoordinator.CancellationRequested(
@@ -567,8 +605,18 @@ procedure TRadIAMemoryDiagnosticSessionCoordinator.FinalizeRun(
   var AResult: TRadIAToolResult
 );
 var
+  LProcessId: LongWord;
   LRevertResult: TRadIAMemoryInstrumentationResult;
 begin
+  TMonitor.Enter(FLock);
+  try
+    LProcessId := FActiveProcessId;
+    FActiveProcessId := 0;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if (LProcessId > 0) and ProcessIsRunning(LProcessId) then
+    FDependencies.DebugSession.StopRuntimeProcess(LProcessId);
   if CancellationRequested(ACancellationToken) then
     SetStatus(mdssCancelled, 'Memory diagnostic session was cancelled.')
   else if not (FState in [mdssSucceeded, mdssCancelled]) then
@@ -629,8 +677,21 @@ function TRadIAMemoryDiagnosticSessionCoordinator.Prepare(
 ): TRadIAToolResult;
 var
   LInstrumentation: TRadIAMemoryInstrumentationResult;
+  LProject: TRadIAProjectSnapshot;
+  LRecoveryError: string;
   LScenarioFingerprint: string;
 begin
+  LProject := FDependencies.Workspace.GetActiveProject;
+  FProjectSourceFile := ChangeFileExt(LProject.FileName, '.dpr');
+  if not FProjectSourceFile.IsEmpty and
+    TFile.Exists(FProjectSourceFile) and
+    not RecoverInterruptedInstrumentation(LRecoveryError) then
+    Exit(
+      TRadIAToolResult.Failed(
+        'memory_recovery_conflict',
+        LRecoveryError
+      )
+    );
   if not AScenario.IsExecutable then
     Exit(
       TRadIAToolResult.Failed(
@@ -713,6 +774,80 @@ begin
   end;
 end;
 
+function TRadIAMemoryDiagnosticSessionCoordinator.RecoverInterruptedInstrumentation(
+  out AErrorMessage: string
+): Boolean;
+var
+  LCurrentBytes: TBytes;
+  LDirectory: string;
+  LManifest: TJSONObject;
+  LManifestFile: string;
+  LOriginalBytes: TBytes;
+  LOriginalFile: string;
+  LSourceFile: string;
+  LStagedBytes: TBytes;
+  LStagedFile: string;
+  LTimestampUtc: TDateTime;
+begin
+  Result := False;
+  AErrorMessage := '';
+  LDirectory := TPath.Combine(
+    ExtractFilePath(FProjectSourceFile),
+    '.radia\memory\recovery'
+  );
+  LManifestFile := TPath.Combine(LDirectory, CRecoveryManifestName);
+  if not TFile.Exists(LManifestFile) then
+    Exit(True);
+  LOriginalFile := TPath.Combine(LDirectory, CRecoveryOriginalName);
+  LStagedFile := TPath.Combine(LDirectory, CRecoveryStagedName);
+  if not TFile.Exists(LOriginalFile) or not TFile.Exists(LStagedFile) then
+  begin
+    AErrorMessage := 'The interrupted instrumentation journal is incomplete.';
+    Exit;
+  end;
+  LManifest := TJSONObject.ParseJSONValue(
+    TFile.ReadAllText(LManifestFile, TEncoding.UTF8)
+  ) as TJSONObject;
+  if not Assigned(LManifest) then
+  begin
+    AErrorMessage := 'The interrupted instrumentation journal is invalid.';
+    Exit;
+  end;
+  try
+    LSourceFile := LManifest.GetValue<string>('sourceFile', '');
+    if not SameFileName(LSourceFile, FProjectSourceFile) or
+      not TryISO8601ToDate(
+        LManifest.GetValue<string>('timestampUtc', ''),
+        LTimestampUtc,
+        True
+      ) then
+    begin
+      AErrorMessage := 'The interrupted instrumentation journal does not match the active project.';
+      Exit;
+    end;
+  finally
+    LManifest.Free;
+  end;
+  LCurrentBytes := TFile.ReadAllBytes(FProjectSourceFile);
+  LOriginalBytes := TFile.ReadAllBytes(LOriginalFile);
+  LStagedBytes := TFile.ReadAllBytes(LStagedFile);
+  if ByteArraysEqual(LCurrentBytes, LOriginalBytes) then
+  begin
+    ClearRecoveryJournal;
+    Exit(True);
+  end;
+  if not ByteArraysEqual(LCurrentBytes, LStagedBytes) then
+  begin
+    AErrorMessage :=
+      'The project source changed after interrupted instrumentation; recovery was not applied.';
+    Exit;
+  end;
+  TFile.WriteAllBytes(FProjectSourceFile, LOriginalBytes);
+  TFile.SetLastWriteTimeUtc(FProjectSourceFile, LTimestampUtc);
+  ClearRecoveryJournal;
+  Result := True;
+end;
+
 function TRadIAMemoryDiagnosticSessionCoordinator.PrepareExecutable(
   out AFailure: TRadIAToolResult
 ): Boolean;
@@ -785,11 +920,13 @@ var
   LExecutablePath: string;
   LFailure: TRadIAToolResult;
   LFinalSnapshot: string;
+  LLogContent: string;
   LLogPath: string;
   LParseResult: TRadIAMemoryLogParseResult;
   LParser: TRadIAFastMM5LogParser;
   LProcessId: LongWord;
   LProject: TRadIAProjectSnapshot;
+  LReadyPath: string;
   LScenarioStatus: TRadIARuntimeScenarioStatus;
   LSession: TRadIARuntimeSessionIdentity;
   LSessionId: string;
@@ -809,12 +946,15 @@ begin
     TPath.Combine(LProject.RootPath, '.radia\memory'),
     'latest-fastmm5.log'
   );
+  LReadyPath := LLogPath + '.ready';
   LTermination := 'exceptional';
   LBaselineSnapshot := '';
   LFinalSnapshot := '';
   try
     if TFile.Exists(LLogPath) then
       TFile.Delete(LLogPath);
+    if TFile.Exists(LReadyPath) then
+      TFile.Delete(LReadyPath);
     if not PrepareExecutable(LFailure) then
       Exit(LFailure);
     if CancellationRequested(ACancellationToken) then
@@ -833,6 +973,12 @@ begin
           LDebugResult.Message
         )
       );
+    TMonitor.Enter(FLock);
+    try
+      FActiveProcessId := LProcessId;
+    finally
+      TMonitor.Exit(FLock);
+    end;
     LSessionId := FDependencies.RuntimeSession.BeginSession(
       LProject.FileName
     );
@@ -893,13 +1039,18 @@ begin
     end;
     LTermination := 'controlled';
     SetStatus(mdssCollecting, 'Collecting and parsing bounded FastMM5 evidence.');
-    if not WaitForLog(LLogPath, 10000, ACancellationToken) then
+    if not WaitForLog(LReadyPath, 10000, ACancellationToken) then
       Exit(
         TRadIAToolResult.Failed(
-          'memory_log_timeout',
-          'FastMM5 did not produce the expected diagnostic log.'
+          'memory_backend_not_initialized',
+          'FastMM5 did not produce the diagnostic readiness marker.'
         )
       );
+    if TFile.Exists(LLogPath) then
+      LLogContent := TFile.ReadAllText(LLogPath)
+    else
+      LLogContent := '';
+    TFile.Delete(LReadyPath);
     LSettingsStore := TRadIAFastMM5SettingsStore.Create;
     try
       LSettings := LSettingsStore.Load;
@@ -909,7 +1060,7 @@ begin
     LParser := TRadIAFastMM5LogParser.Create;
     try
       LParseResult := LParser.Parse(
-        TFile.ReadAllText(LLogPath),
+        LLogContent,
         LSettings.Limits.MaxLogBytes
       );
     finally
@@ -960,12 +1111,16 @@ begin
   end;
   Result := AResult.Success;
   FSourceRestored := Result;
+  if Result then
+    ClearRecoveryJournal;
 end;
 
 function TRadIAMemoryDiagnosticSessionCoordinator.StageInstrumentedSource:
   Boolean;
 var
+  LDirectory: string;
   LSnapshot: TRadIAEditorContent;
+  LStagedFile: string;
 begin
   Result := False;
   LSnapshot := FEditorMutation.ReadContent(
@@ -975,14 +1130,62 @@ begin
   if LSnapshot.Content.IsEmpty or LSnapshot.Truncated then
     Exit;
   try
-    TFile.WriteAllText(
-      FProjectSourceFile,
-      LSnapshot.Content,
-      TEncoding.UTF8
+    if not StageRecoveryJournal(LSnapshot.Content) then
+      Exit;
+    LDirectory := TPath.Combine(
+      ExtractFilePath(FProjectSourceFile),
+      '.radia\memory\recovery'
     );
+    LStagedFile := TPath.Combine(LDirectory, CRecoveryStagedName);
+    TFile.Copy(LStagedFile, FProjectSourceFile, True);
     Result := True;
   except
     Result := False;
+  end;
+end;
+
+function TRadIAMemoryDiagnosticSessionCoordinator.StageRecoveryJournal(
+  const AInstrumentedContent: string
+): Boolean;
+var
+  LDirectory: string;
+  LManifest: TJSONObject;
+  LManifestFile: string;
+begin
+  LDirectory := TPath.Combine(
+    ExtractFilePath(FProjectSourceFile),
+    '.radia\memory\recovery'
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  TFile.WriteAllBytes(
+    TPath.Combine(LDirectory, CRecoveryOriginalName),
+    FOriginalSourceBytes
+  );
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, CRecoveryStagedName),
+    AInstrumentedContent,
+    TEncoding.UTF8
+  );
+  LManifest := TJSONObject.Create;
+  try
+    LManifest.AddPair('schemaVersion', 1);
+    LManifest.AddPair('sourceFile', FProjectSourceFile);
+    LManifest.AddPair(
+      'timestampUtc',
+      DateToISO8601(FOriginalSourceTimestampUtc, True)
+    );
+    LManifestFile := TPath.Combine(
+      LDirectory,
+      CRecoveryManifestName
+    );
+    TFile.WriteAllText(
+      LManifestFile,
+      LManifest.ToJSON,
+      TEncoding.UTF8
+    );
+    Result := True;
+  finally
+    LManifest.Free;
   end;
 end;
 

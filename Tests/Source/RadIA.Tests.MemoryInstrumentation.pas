@@ -43,6 +43,7 @@ begin
       'D:\Delphi\FastMM5\FastMM5.pas',
       'D:\Delphi\FastMM5\FastMM_FullDebugMode.dll',
       'D:\Demo\.radia\memory\latest-fastmm5.log',
+      419,
       LInstrumented
     )
   );
@@ -53,6 +54,10 @@ begin
   Assert.Contains(
     LInstrumented,
     'FastMM_SetEventLogFilename'
+  );
+  Assert.Contains(
+    LInstrumented,
+    'FastMM_DebugBreakAllocationNumber := 419;'
   );
   Assert.IsTrue(
     Pos('begin' + sLineBreak + '  FastMM_DebugSupportLibraryName', LInstrumented) > 0
@@ -81,6 +86,7 @@ begin
       'D:\FastMM5\FastMM5.pas',
       'D:\FastMM5\FastMM_FullDebugMode.dll',
       'D:\Demo\.radia\memory\latest-fastmm5.log',
+      0,
       LInstrumented
     )
   );
@@ -103,6 +109,7 @@ begin
       'D:\FastMM5\FastMM5.pas',
       'D:\FastMM5\FastMM_FullDebugMode.dll',
       'D:\Demo\.radia\memory\latest-fastmm5.log',
+      0,
       LInstrumented
     )
   );
@@ -118,6 +125,7 @@ begin
       'D:\FastMM5\FastMM5.pas',
       'D:\FastMM5\FastMM_FullDebugMode.dll',
       'D:\Demo\.radia\memory\latest-fastmm5.log',
+      0,
       LInstrumented
     )
   );

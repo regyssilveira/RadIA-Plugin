@@ -37,7 +37,8 @@ type
   IRadIAMemoryInstrumentationCoordinator = interface
     ['{8AF6AC89-D02A-460B-BB03-7829968D15BC}']
     function Prepare(
-      const AMode: TRadIAMemoryInstrumentationMode
+      const AMode: TRadIAMemoryInstrumentationMode;
+      const ABreakAllocationNumber: Int64 = 0
     ): TRadIAMemoryInstrumentationResult;
     function Apply(
       const APreviewId: string
@@ -64,6 +65,7 @@ type
       const AFastMMUnitPath: string;
       const ADebugLibraryPath: string;
       const ALogPath: string;
+      const ABreakAllocationNumber: Int64;
       out AInstrumentedContent: string
     ): Boolean; static;
   end;
@@ -81,6 +83,7 @@ type
     function BuildResultJson(
       const APreview: TRadIAPatchPreview;
       const AMode: TRadIAMemoryInstrumentationMode;
+      const ABreakAllocationNumber: Int64;
       const AState: string
     ): string;
     function ParseModeName(
@@ -95,7 +98,8 @@ type
     );
     destructor Destroy; override;
     function Prepare(
-      const AMode: TRadIAMemoryInstrumentationMode
+      const AMode: TRadIAMemoryInstrumentationMode;
+      const ABreakAllocationNumber: Int64 = 0
     ): TRadIAMemoryInstrumentationResult;
     function Apply(
       const APreviewId: string
@@ -132,6 +136,7 @@ end;
 
 type
   TRadIAMemoryInstrumentationEntry = record
+    BreakAllocationNumber: Int64;
     Mode: TRadIAMemoryInstrumentationMode;
     Preview: TRadIAPatchPreview;
   end;
@@ -167,7 +172,9 @@ type
 const
   CPreviewInputSchema =
     '{"type":"object","properties":{"mode":{"type":"string",' +
-    '"enum":["session","persistentDebug"]}},"additionalProperties":false}';
+    '"enum":["session","persistentDebug"]},"allocationNumber":{' +
+    '"type":"integer","minimum":1,"maximum":4294967295}},' +
+    '"additionalProperties":false}';
   CPreviewIdInputSchema =
     '{"type":"object","required":["previewId"],"properties":{' +
     '"previewId":{"type":"string","minLength":1}},"additionalProperties":false}';
@@ -258,6 +265,7 @@ class function TRadIAMemoryInstrumentationTransformer.Instrument(
   const AFastMMUnitPath: string;
   const ADebugLibraryPath: string;
   const ALogPath: string;
+  const ABreakAllocationNumber: Int64;
   out AInstrumentedContent: string
 ): Boolean;
 var
@@ -312,10 +320,20 @@ begin
     '  FastMM_SetEventLogFilename(PWideChar(''' +
     StringReplace(ALogPath, '''', '''''', [rfReplaceAll]) +
     '''));' + LLineBreak +
+    '  FastMM_LogStateToFile(PWideChar(''' +
+    StringReplace(ALogPath + '.ready', '''', '''''', [rfReplaceAll]) +
+    '''), PWideChar(''RadIA memory diagnostic ready''), True);' +
+    LLineBreak +
     '  FastMM_LogToFileEvents := FastMM_LogToFileEvents + [' +
     'mmetUnexpectedMemoryLeakDetail, ' +
     'mmetUnexpectedMemoryLeakSummary];' + LLineBreak +
     '  FastMM_MessageBoxEvents := [];' + LLineBreak +
+    IfThen(
+      ABreakAllocationNumber > 0,
+      '  FastMM_DebugBreakAllocationNumber := ' +
+      ABreakAllocationNumber.ToString + ';' + LLineBreak,
+      ''
+    ) +
     '  FastMM_EnterDebugMode;';
   Insert(LSetup, AInstrumentedContent, LMainBeginInsertion);
   Result := True;
@@ -364,6 +382,7 @@ end;
 function TRadIAMemoryInstrumentationCoordinator.BuildResultJson(
   const APreview: TRadIAPatchPreview;
   const AMode: TRadIAMemoryInstrumentationMode;
+  const ABreakAllocationNumber: Int64;
   const AState: string
 ): string;
 var
@@ -374,6 +393,10 @@ begin
     LRoot.AddPair('previewId', APreview.Id);
     LRoot.AddPair('state', AState);
     LRoot.AddPair('mode', ParseModeName(AMode));
+    LRoot.AddPair(
+      'breakAllocationNumber',
+      TJSONNumber.Create(ABreakAllocationNumber)
+    );
     LRoot.AddPair('fileName', APreview.Spec.TargetFile);
     LRoot.AddPair(
       'logPath',
@@ -402,7 +425,8 @@ begin
 end;
 
 function TRadIAMemoryInstrumentationCoordinator.Prepare(
-  const AMode: TRadIAMemoryInstrumentationMode
+  const AMode: TRadIAMemoryInstrumentationMode;
+  const ABreakAllocationNumber: Int64
 ): TRadIAMemoryInstrumentationResult;
 var
   LEntry: TRadIAMemoryInstrumentationEntry;
@@ -419,6 +443,14 @@ var
   LSnapshot: TRadIAEditorContent;
   LSpec: TRadIAPatchSpec;
 begin
+  if (ABreakAllocationNumber < 0) or
+    (ABreakAllocationNumber > High(Cardinal)) then
+    Exit(
+      TRadIAMemoryInstrumentationResult.Failed(
+        'invalid_allocation_number',
+        'Allocation number must fit an unsigned 32-bit value.'
+      )
+    );
   LProject := FWorkspace.GetActiveProject;
   if LProject.FileName.IsEmpty then
     Exit(
@@ -490,6 +522,7 @@ begin
     TPath.Combine(LFastMMSettings.RootPath, 'FastMM5.pas'),
     LFastMMStatus.DebugLibraryPath,
     LLogPath,
+    ABreakAllocationNumber,
     LInstrumentedContent
   ) then
     Exit(
@@ -513,11 +546,17 @@ begin
       )
     );
   LEntry.Mode := AMode;
+  LEntry.BreakAllocationNumber := ABreakAllocationNumber;
   LEntry.Preview := LPatchResult.Preview;
   TDictionary<string, TRadIAMemoryInstrumentationEntry>(FEntries)
     .AddOrSetValue(LPatchResult.Preview.Id, LEntry);
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
-    BuildResultJson(LPatchResult.Preview, AMode, 'prepared')
+    BuildResultJson(
+      LPatchResult.Preview,
+      AMode,
+      ABreakAllocationNumber,
+      'prepared'
+    )
   );
 end;
 
@@ -564,7 +603,12 @@ begin
     end;
   end;
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
-    BuildResultJson(LEntry.Preview, LEntry.Mode, 'applied')
+    BuildResultJson(
+      LEntry.Preview,
+      LEntry.Mode,
+      LEntry.BreakAllocationNumber,
+      'applied'
+    )
   );
 end;
 
@@ -594,7 +638,12 @@ begin
   TDictionary<string, TRadIAMemoryInstrumentationEntry>(FEntries)
     .Remove(APreviewId);
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
-    BuildResultJson(LEntry.Preview, LEntry.Mode, 'reverted')
+    BuildResultJson(
+      LEntry.Preview,
+      LEntry.Mode,
+      LEntry.BreakAllocationNumber,
+      'reverted'
+    )
   );
 end;
 
@@ -644,6 +693,7 @@ function TRadIAMemoryInstrumentationTool.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
 var
+  LAllocationNumber: Int64;
   LMode: TRadIAMemoryInstrumentationMode;
   LModeName: string;
   LPreviewId: string;
@@ -652,6 +702,7 @@ begin
   if FKind = mitPrepare then
   begin
     LMode := mimSession;
+    LAllocationNumber := 0;
     LRoot := TJSONObject.ParseJSONValue(
       ARequest.ArgumentsJson
     ) as TJSONObject;
@@ -661,11 +712,18 @@ begin
         LModeName := LRoot.GetValue<string>('mode', 'session');
         if SameText(LModeName, 'persistentDebug') then
           LMode := mimPersistentDebug;
+        LAllocationNumber := LRoot.GetValue<Int64>(
+          'allocationNumber',
+          0
+        );
       end;
     finally
       LRoot.Free;
     end;
-    Exit(ToToolResult(FCoordinator.Prepare(LMode)));
+    Exit(ToToolResult(FCoordinator.Prepare(
+      LMode,
+      LAllocationNumber
+    )));
   end;
   LPreviewId := ParsePreviewId(ARequest.ArgumentsJson);
   if LPreviewId.IsEmpty then

@@ -345,7 +345,7 @@ begin
   Result :=
     (FAutomationId <> '') or
     (FControlName <> '') or
-    ((FClassName <> '') and (FText <> '') and (FParentPath <> ''));
+    ((FClassName <> '') and (FText <> ''));
 end;
 
 function TRadIARuntimeSelector.HasReplayableIdentity: Boolean;

@@ -106,6 +106,7 @@ contains
   RadIA.Core.MemoryInstrumentation in 'Source\Core\RadIA.Core.MemoryInstrumentation.pas',
   RadIA.Core.FastMM5LogParser in 'Source\Core\RadIA.Core.FastMM5LogParser.pas',
   RadIA.Core.MemoryDiagnosticSession in 'Source\Core\RadIA.Core.MemoryDiagnosticSession.pas',
+  RadIA.Core.MemoryEvidence in 'Source\Core\RadIA.Core.MemoryEvidence.pas',
   RadIA.Core.Mcp in 'Source\Core\RadIA.Core.Mcp.pas',
   RadIA.Core.Designer in 'Source\Core\RadIA.Core.Designer.pas',
   RadIA.Core.DesignerTools in 'Source\Core\RadIA.Core.DesignerTools.pas',

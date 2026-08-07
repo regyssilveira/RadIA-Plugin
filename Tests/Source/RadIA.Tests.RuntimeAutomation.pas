@@ -26,7 +26,7 @@ type
     [Test]
     procedure RejectsScenarioBeyondLimits;
     [Test]
-    procedure RejectsActionWithoutStableSelector;
+    procedure AcceptsSessionScopedClassAndTextSelector;
   end;
 
 implementation
@@ -100,7 +100,7 @@ begin
   );
 end;
 
-procedure TTestRadIARuntimeAutomation.RejectsActionWithoutStableSelector;
+procedure TTestRadIARuntimeAutomation.AcceptsSessionScopedClassAndTextSelector;
 var
   LActions: TArray<TRadIARuntimeScenarioAction>;
   LScenario: TRadIARuntimeScenario;
@@ -119,7 +119,7 @@ begin
     LActions
   );
 
-  Assert.IsFalse(LScenario.IsExecutable);
+  Assert.IsTrue(LScenario.IsExecutable);
 end;
 
 procedure TTestRadIARuntimeAutomation.RejectsIncompleteSessionIdentity;
@@ -169,7 +169,7 @@ begin
     '',
     'TButton',
     '',
-    'Cancel',
+    '',
     ''
   );
 

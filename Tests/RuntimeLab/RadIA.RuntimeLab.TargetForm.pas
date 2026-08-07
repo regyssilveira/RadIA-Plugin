@@ -40,14 +40,31 @@ var
 procedure TRadIARuntimeLabTargetForm.btnCancelClick(
   Sender: TObject
 );
+var
+  LControlFixture: TStringList;
 begin
   if SameText(
     GetEnvironmentVariable('RADIA_MEMORY_DIAGNOSTIC_SMOKE'),
     '1'
   ) then
   begin
-    GMemoryLeakFixture := TStringList.Create;
-    TStringList(GMemoryLeakFixture).Add('deterministic runtime leak');
+    if SameText(
+      GetEnvironmentVariable('RADIA_MEMORY_DIAGNOSTIC_FIXED'),
+      '1'
+    ) then
+    begin
+      LControlFixture := TStringList.Create;
+      try
+        LControlFixture.Add('deterministic runtime control');
+      finally
+        LControlFixture.Free;
+      end;
+    end
+    else
+    begin
+      GMemoryLeakFixture := TStringList.Create;
+      TStringList(GMemoryLeakFixture).Add('deterministic runtime leak');
+    end;
     ModalResult := mrCancel;
     Exit;
   end;

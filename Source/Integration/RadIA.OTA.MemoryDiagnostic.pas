@@ -46,7 +46,7 @@ begin
         'TButton',
         '',
         'Fail when form cancels',
-        'TButton[0]'
+        ''
       ),
       '',
       5000
@@ -64,7 +64,7 @@ begin
         'TButton',
         '',
         'Cancel',
-        'TButton[0]'
+        ''
       ),
       '',
       5000

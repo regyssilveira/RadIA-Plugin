@@ -58,7 +58,8 @@ type
     FRevertCount: Integer;
   public
     function Prepare(
-      const AMode: TRadIAMemoryInstrumentationMode
+      const AMode: TRadIAMemoryInstrumentationMode;
+      const ABreakAllocationNumber: Int64 = 0
     ): TRadIAMemoryInstrumentationResult;
     function Apply(
       const APreviewId: string
@@ -176,12 +177,15 @@ type
     [Test]
     procedure BuildFailureAlwaysRevertsInstrumentation;
     [Test]
+    procedure PrepareRecoversInterruptedInstrumentation;
+    [Test]
     procedure SuccessfulRunReturnsStructuredEvidence;
   end;
 
 implementation
 
 uses
+  System.DateUtils,
   System.Hash,
   System.IOUtils,
   System.JSON,
@@ -312,13 +316,21 @@ begin
     '00401000 [Demo.pas] RunLeakCase' + sLineBreak +
     '--------------------------------'
   );
+  TFile.WriteAllText(
+    TPath.Combine(
+      TPath.Combine(MemorySessionFixtureRoot, '.radia\memory'),
+      'latest-fastmm5.log.ready'
+    ),
+    'ready'
+  );
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
     '{"previewId":"instrumentation","state":"applied"}'
   );
 end;
 
 function TRadIAMemorySessionInstrumentationMock.Prepare(
-  const AMode: TRadIAMemoryInstrumentationMode
+  const AMode: TRadIAMemoryInstrumentationMode;
+  const ABreakAllocationNumber: Int64
 ): TRadIAMemoryInstrumentationResult;
 begin
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
@@ -611,7 +623,6 @@ begin
     LInstrumentationIntf,
     FBuild,
     FDebugger,
-    FDebugger,
     FRuntime,
     FScenario
   );
@@ -639,6 +650,60 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, '"consentRequired":true');
   Assert.Contains(LResult.ContentJson, '"warmupRepetitions":1');
+end;
+
+procedure TRadIAMemoryDiagnosticSessionTests.
+  PrepareRecoversInterruptedInstrumentation;
+var
+  LDirectory: string;
+  LManifest: TJSONObject;
+  LOriginalContent: string;
+  LResult: TRadIAToolResult;
+  LSourceFile: string;
+  LStagedContent: string;
+begin
+  LOriginalContent := 'program Demo; begin end.';
+  LStagedContent := 'program Demo; uses FastMM5; begin end.';
+  LSourceFile := TPath.Combine(MemorySessionFixtureRoot, 'Demo.dpr');
+  LDirectory := TPath.Combine(
+    MemorySessionFixtureRoot,
+    '.radia\memory\recovery'
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'instrumentation-original.bin'),
+    LOriginalContent,
+    TEncoding.UTF8
+  );
+  TFile.WriteAllText(
+    TPath.Combine(LDirectory, 'instrumentation-staged.bin'),
+    LStagedContent,
+    TEncoding.UTF8
+  );
+  TFile.WriteAllText(LSourceFile, LStagedContent, TEncoding.UTF8);
+  LManifest := TJSONObject.Create;
+  try
+    LManifest.AddPair('schemaVersion', 1);
+    LManifest.AddPair('sourceFile', LSourceFile);
+    LManifest.AddPair(
+      'timestampUtc',
+      DateToISO8601(TFile.GetLastWriteTimeUtc(LSourceFile), True)
+    );
+    TFile.WriteAllText(
+      TPath.Combine(LDirectory, 'instrumentation-recovery.json'),
+      LManifest.ToJSON,
+      TEncoding.UTF8
+    );
+  finally
+    LManifest.Free;
+  end;
+  LResult := FCoordinator.Prepare(ExecutableScenario, 1);
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.AreEqual(
+    LOriginalContent,
+    TFile.ReadAllText(LSourceFile, TEncoding.UTF8)
+  );
+  Assert.IsFalse(TDirectory.Exists(LDirectory));
 end;
 
 procedure TRadIAMemoryDiagnosticSessionTests.BuildFailureAlwaysRevertsInstrumentation;
