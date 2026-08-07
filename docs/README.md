@@ -82,6 +82,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Goal de memória 2.2 | [Plano de integração opcional com FastMM5](fastmm5_memory_diagnostics_plan.md) |
 | Execução de memória M0 | [Baseline, contratos e laboratório FastMM5](fastmm5_memory_diagnostics_m0.md) |
 | Configuração do FastMM5 | [Tela, chat, consentimento e estados de prontidão](fastmm5_configuration.md) |
+| Sessão completa FastMM5 | [Build, debugger, cenário, snapshots, evidência e reversão](fastmm5_diagnostic_session.md) |
 | Instrumentação de memória | [Preview, Apply, Revert e proteção do DPR](fastmm5_instrumentation.md) |
 | Parser de memória | [Coleta limitada e evidência estruturada](fastmm5_evidence_parser.md) |
 | Execução do M0 runtime | [Baseline, contratos e matriz](runtime_debug_automation_m0.md) |

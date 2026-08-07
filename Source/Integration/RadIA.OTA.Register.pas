@@ -107,6 +107,7 @@ uses
   RadIA.Core.FastMM5,
   RadIA.Core.MemoryInstrumentation,
   RadIA.Core.FastMM5LogParser,
+  RadIA.Core.MemoryDiagnosticSession,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.RuntimeDiscovery,
@@ -1053,6 +1054,19 @@ initialization
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
     )
   );
+  TRadIAContainer.Register<IRadIAMemoryDiagnosticSessionCoordinator>(
+    TRadIAMemoryDiagnosticSessionCoordinator.Create(
+      TRadIAMemoryDiagnosticSessionDependencies.Create(
+        TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+        TRadIAContainer.Resolve<IRadIAMemoryInstrumentationCoordinator>,
+        TRadIAContainer.Resolve<IRadIABuildFacade>,
+        TRadIAContainer.Resolve<IRadIADebuggerSessionFacade>,
+        TRadIAContainer.Resolve<IRadIADebuggerControlFacade>,
+        TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+        TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>
+      )
+    )
+  );
   TRadIAContainer.Register<IRadIADUnitXRunner>(
     TRadIAOTADUnitXRunner.Create(
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
@@ -1140,6 +1154,12 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
     TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+  );
+  RegisterRadIAMemoryDiagnosticSessionTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAMemoryDiagnosticSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
   );
   RegisterRadIAMultiFilePatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

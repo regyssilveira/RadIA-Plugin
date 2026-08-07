@@ -286,9 +286,18 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|
 | `ParseMemoryDiagnosticLog` | `RadIA.Core.FastMM5LogParser.pas` |
 
+## Composed memory diagnostic sessions
+
+| Tool | Source unit |
+|---|---|
+| `PrepareMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+| `RunMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+| `CancelMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+| `GetMemoryDiagnosticSessionStatus` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+
 ## Resumo
 
-- Registered groups: 33
-- Registered built-in tools: 117
+- Registered groups: 34
+- Registered built-in tools: 121
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

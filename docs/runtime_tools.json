@@ -316,6 +316,16 @@
       "tools": [
         "ParseMemoryDiagnosticLog"
       ]
+    },
+    {
+      "name": "Composed memory diagnostic sessions",
+      "source": "Source/Core/RadIA.Core.MemoryDiagnosticSession.pas",
+      "tools": [
+        "PrepareMemoryDiagnosticSession",
+        "RunMemoryDiagnosticSession",
+        "CancelMemoryDiagnosticSession",
+        "GetMemoryDiagnosticSessionStatus"
+      ]
     }
   ]
 }

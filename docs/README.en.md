@@ -78,6 +78,7 @@ This index brings together the functional, operational, and technical documentat
 | Memory diagnostics 2.2 goal | [Optional FastMM5 integration plan](fastmm5_memory_diagnostics_plan.en.md) |
 | Memory diagnostics M0 | [FastMM5 baseline, contracts, and laboratory](fastmm5_memory_diagnostics_m0.en.md) |
 | FastMM5 configuration | [Settings, chat, consent, and readiness states](fastmm5_configuration.en.md) |
+| Complete FastMM5 session | [Build, debugger, scenario, snapshots, evidence, and restoration](fastmm5_diagnostic_session.en.md) |
 | Memory instrumentation | [Preview, apply, revert, and DPR safeguards](fastmm5_instrumentation.en.md) |
 | Memory log parser | [Bounded collection and structured evidence](fastmm5_evidence_parser.en.md) |
 | Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
