@@ -44,6 +44,7 @@ uses
   Winapi.Messages,
   Winapi.TlHelp32,
   Winapi.Windows,
+  RadIA.Core.Logger,
   RadIA.OTA.RuntimeProcess;
 
 const
@@ -1122,6 +1123,8 @@ var
   LCreatedAtUtc: TDateTime;
   LExecutablePath: string;
 begin
+  LCreatedAtUtc := 0;
+  LExecutablePath := '';
   Result :=
     ASession.IsComplete and
     TryGetRadIARuntimeProcessIdentity(
@@ -1133,7 +1136,22 @@ begin
     (Abs(MilliSecondsBetween(
       LCreatedAtUtc,
       ASession.CreatedAtUtc
-    )) < 1000);
+    )) < 10000);
+  if not Result then
+    TLogger.Log(
+      Format(
+        'Runtime session validation failed: pid=%d; expectedExe=%s; ' +
+        'actualExe=%s; expectedCreated=%s; actualCreated=%s',
+        [
+          ASession.ProcessId,
+          ASession.ExecutablePath,
+          LExecutablePath,
+          DateTimeToStr(ASession.CreatedAtUtc),
+          DateTimeToStr(LCreatedAtUtc)
+        ]
+      ),
+      'RuntimeAutomation'
+    );
 end;
 
 end.

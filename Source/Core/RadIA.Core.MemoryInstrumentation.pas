@@ -122,6 +122,14 @@ uses
   RadIA.Core.FastMM5,
   RadIA.Core.MemoryDiagnostics;
 
+function NormalizeMemorySourceText(const AContent: string): string;
+begin
+  Result := StringReplace(AContent, #13#10, #10, [rfReplaceAll]);
+  Result := StringReplace(Result, #13, #10, [rfReplaceAll]);
+  if (Result <> '') and (Result[Low(Result)] = #$FEFF) then
+    Delete(Result, Low(Result), 1);
+end;
+
 type
   TRadIAMemoryInstrumentationEntry = record
     Mode: TRadIAMemoryInstrumentationMode;
@@ -304,6 +312,9 @@ begin
     '  FastMM_SetEventLogFilename(PWideChar(''' +
     StringReplace(ALogPath, '''', '''''', [rfReplaceAll]) +
     '''));' + LLineBreak +
+    '  FastMM_LogToFileEvents := FastMM_LogToFileEvents + [' +
+    'mmetUnexpectedMemoryLeakDetail, ' +
+    'mmetUnexpectedMemoryLeakSummary];' + LLineBreak +
     '  FastMM_MessageBoxEvents := [];' + LLineBreak +
     '  FastMM_EnterDebugMode;';
   Insert(LSetup, AInstrumentedContent, LMainBeginInsertion);
@@ -377,6 +388,12 @@ begin
     LRoot.AddPair(
       'fingerprint',
       THashSHA2.GetHashString(APreview.OriginalContent)
+    );
+    LRoot.AddPair(
+      'normalizedFingerprint',
+      THashSHA2.GetHashString(
+        NormalizeMemorySourceText(APreview.OriginalContent)
+      )
     );
     Result := LRoot.ToJSON;
   finally

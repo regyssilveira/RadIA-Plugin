@@ -12,7 +12,8 @@ type
   TRadIAOTAWorkspaceFacade = class(
     TInterfacedObject,
     IRadIAWorkspaceFacade,
-    IRadIAEditorMutationFacade
+    IRadIAEditorMutationFacade,
+    IRadIAEditorPersistenceFacade
   )
   private
     FIDEAdapter: IRadIAIDEAdapter;
@@ -46,6 +47,7 @@ type
       const AFileName: string;
       const AMaxCharacters: Integer
     ): TRadIAEditorContent;
+    function ReloadFile(const AFileName: string): Boolean;
   end;
 
 implementation
@@ -95,6 +97,20 @@ begin
         Exit(LSourceEditor);
     end;
   end;
+end;
+
+function ReloadModuleFile(const AFileName: string): Boolean;
+var
+  LActionServices: IOTAActionServices;
+begin
+  Result := False;
+  if not Supports(
+    BorlandIDEServices,
+    IOTAActionServices,
+    LActionServices
+  ) then
+    Exit;
+  Result := LActionServices.ReloadFile(AFileName);
 end;
 
 function GetActiveProjectFromOTA: IOTAProject;
@@ -296,6 +312,22 @@ begin
         LOriginalLength,
         LTruncated
       );
+    end
+  );
+  Result := LResult;
+end;
+
+function TRadIAOTAWorkspaceFacade.ReloadFile(
+  const AFileName: string
+): Boolean;
+var
+  LResult: Boolean;
+begin
+  LResult := False;
+  RunOnMainThread(
+    procedure
+    begin
+      LResult := ReloadModuleFile(AFileName);
     end
   );
   Result := LResult;

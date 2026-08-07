@@ -114,6 +114,11 @@ begin
     Exit;
   if SameFileName(AProject.FileName, AFileName) then
     Exit(True);
+  if SameFileName(
+    ChangeFileExt(AProject.FileName, '.dpr'),
+    AFileName
+  ) then
+    Exit(True);
   for LIndex := 0 to AProject.GetModuleCount - 1 do
   begin
     LModuleInfo := AProject.GetModule(LIndex);

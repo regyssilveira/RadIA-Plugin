@@ -50,6 +50,7 @@ type
 implementation
 
 uses
+  System.Classes,
   System.DateUtils,
   System.IOUtils,
   System.SysUtils,
@@ -247,6 +248,16 @@ begin
     Exit;
   EnsureRuntimeSession(Process);
   LSession := FRuntimeCoordinator.GetCurrentSession;
+  if not LSession.IsComplete and (RuntimeProcessId(Process) = 0) then
+  begin
+    TThread.ForceQueue(
+      nil,
+      procedure
+      begin
+        EnsureRuntimeSession(Process);
+      end
+    );
+  end;
   if LSession.IsComplete then
     FRuntimeCoordinator.RecordEvent(
       FRuntimeSessionId,

@@ -53,6 +53,7 @@ uses
   System.Win.Registry, Winapi.Windows,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
+  RadIA.OTA.MemoryDiagnostic,
   RadIA.OTA.EditorHook,
   RadIA.UI.DiffForm, RadIA.UI.ConfigForm,
   RadIA.UI.ProjectWizard, RadIA.UI.OnboardingForm,
@@ -868,6 +869,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade> as
       IRadIAEditorMutationFacade
   );
+  TRadIAContainer.Register<IRadIAEditorPersistenceFacade>(
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade> as
+      IRadIAEditorPersistenceFacade
+  );
   TRadIAContainer.Register<IRadIAFormDesignerFacade>(
     TRadIAOTAFormDesignerFacade.Create
   );
@@ -1322,6 +1327,7 @@ initialization
   TRadIAContainer.Register<IRadIALocalizer>(TRadIALocalizer.Create);
   StartRadIAAgentRuntimeDiagnosticIfRequested;
   StartRadIADeclarativeWorkflowDiagnosticIfRequested;
+  StartRadIAMemoryDiagnosticIfRequested;
 
 finalization
   if not GIsShuttingDown then

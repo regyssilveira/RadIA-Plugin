@@ -8,6 +8,7 @@ uses
   RadIA.Core.Debugger,
   RadIA.Core.MemoryDiagnosticSession,
   RadIA.Core.MemoryInstrumentation,
+  RadIA.Core.Patches,
   RadIA.Core.RuntimeAutomation,
   RadIA.Core.RuntimeDebugSession,
   RadIA.Core.RuntimeScenario,
@@ -17,7 +18,9 @@ uses
 type
   TRadIAMemorySessionWorkspaceMock = class(
     TInterfacedObject,
-    IRadIAWorkspaceFacade
+    IRadIAWorkspaceFacade,
+    IRadIAEditorMutationFacade,
+    IRadIAEditorPersistenceFacade
   )
   public
     function GetIDEState: TRadIAIDEState;
@@ -33,6 +36,17 @@ type
     function GetCompilerMessages(
       const AMaxCount: Integer
     ): TArray<TRadIACompilerMessage>;
+    function ApplyContent(
+      const AFileName: string;
+      const AExpectedRevision: string;
+      const ANewContent: string;
+      out AAppliedRevision: string
+    ): Boolean;
+    function ReadContent(
+      const AFileName: string;
+      const AMaxCharacters: Integer
+    ): TRadIAEditorContent;
+    function ReloadFile(const AFileName: string): Boolean;
   end;
 
   TRadIAMemorySessionInstrumentationMock = class(
@@ -78,6 +92,13 @@ type
   )
   public
     function StartDebugging: TRadIADebuggerActionResult;
+    function StartRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): TRadIADebuggerActionResult;
+    function StopRuntimeProcess(const AProcessId: LongWord): Boolean;
     function ExecuteAction(
       const AAction: TRadIADebuggerAction
     ): TRadIADebuggerActionResult;
@@ -87,8 +108,6 @@ type
     TInterfacedObject,
     IRadIARuntimeDebugSessionCoordinator
   )
-  private
-    FGetSessionCount: Integer;
   public
     function BeginSession(const AProjectPath: string): string;
     function AttachProcess(
@@ -163,10 +182,10 @@ type
 implementation
 
 uses
+  System.Hash,
   System.IOUtils,
   System.JSON,
-  System.SysUtils,
-  Winapi.Windows;
+  System.SysUtils;
 
 function MemorySessionFixtureRoot: string;
 begin
@@ -233,6 +252,45 @@ begin
   Result := [];
 end;
 
+function TRadIAMemorySessionWorkspaceMock.ApplyContent(
+  const AFileName: string;
+  const AExpectedRevision: string;
+  const ANewContent: string;
+  out AAppliedRevision: string
+): Boolean;
+begin
+  AAppliedRevision := '';
+  Result := False;
+end;
+
+function TRadIAMemorySessionWorkspaceMock.ReadContent(
+  const AFileName: string;
+  const AMaxCharacters: Integer
+): TRadIAEditorContent;
+var
+  LContent: string;
+begin
+  LContent := 'program Demo; begin end.';
+  Result := TRadIAEditorContent.Create(
+    'Demo',
+    AFileName,
+    LContent,
+    THashSHA2.GetHashString(LContent),
+    Length(LContent),
+    False
+  );
+end;
+
+function TRadIAMemorySessionWorkspaceMock.ReloadFile(
+  const AFileName: string
+): Boolean;
+begin
+  Result := SameText(
+    AFileName,
+    TPath.Combine(MemorySessionFixtureRoot, 'Demo.dpr')
+  );
+end;
+
 { TRadIAMemorySessionInstrumentationMock }
 
 function TRadIAMemorySessionInstrumentationMock.Apply(
@@ -264,7 +322,18 @@ function TRadIAMemorySessionInstrumentationMock.Prepare(
 ): TRadIAMemoryInstrumentationResult;
 begin
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
-    '{"previewId":"instrumentation","state":"prepared"}'
+    '{"previewId":"instrumentation","state":"prepared",' +
+    '"fileName":"' +
+    StringReplace(
+      TPath.Combine(MemorySessionFixtureRoot, 'Demo.dpr'),
+      '\',
+      '\\',
+      [rfReplaceAll]
+    ) +
+    '","fingerprint":"' +
+    THashSHA2.GetHashString('program Demo; begin end.') +
+    '","normalizedFingerprint":"' +
+    THashSHA2.GetHashString('program Demo; begin end.') + '"}'
   );
 end;
 
@@ -338,6 +407,31 @@ begin
   );
 end;
 
+function TRadIAMemorySessionDebuggerMock.StartRuntimeProcess(
+  out AProcessId: LongWord;
+  out ACreatedAtUtc: TDateTime;
+  out AExecutablePath: string;
+  out ABuildId: string
+): TRadIADebuggerActionResult;
+begin
+  AProcessId := 1;
+  ACreatedAtUtc := Now;
+  AExecutablePath := 'D:\Demo\Demo.exe';
+  ABuildId := 'build';
+  Result := TRadIADebuggerActionResult.Succeeded(
+    'Started.',
+    'no_process',
+    'running'
+  );
+end;
+
+function TRadIAMemorySessionDebuggerMock.StopRuntimeProcess(
+  const AProcessId: LongWord
+): Boolean;
+begin
+  Result := AProcessId > 0;
+end;
+
 { TRadIAMemorySessionRuntimeMock }
 
 function TRadIAMemorySessionRuntimeMock.AttachProcess(
@@ -348,14 +442,18 @@ function TRadIAMemorySessionRuntimeMock.AttachProcess(
   const ABuildId: string
 ): Boolean;
 begin
-  Result := False;
+  Result :=
+    SameText(ASessionId, 'runtime-session') and
+    (AProcessId = 1) and
+    SameText(AExecutablePath, 'D:\Demo\Demo.exe') and
+    SameText(ABuildId, 'build');
 end;
 
 function TRadIAMemorySessionRuntimeMock.BeginSession(
   const AProjectPath: string
 ): string;
 begin
-  Result := '';
+  Result := 'runtime-session';
 end;
 
 function TRadIAMemorySessionRuntimeMock.CreateWait(
@@ -368,16 +466,13 @@ end;
 function TRadIAMemorySessionRuntimeMock.GetCurrentSession:
   TRadIARuntimeSessionIdentity;
 begin
-  Inc(FGetSessionCount);
-  if FGetSessionCount = 1 then
-    Exit(Default(TRadIARuntimeSessionIdentity));
   Result := TRadIARuntimeSessionIdentity.Create(
     'runtime-session',
-    GetCurrentProcessId,
+    1,
     Now,
-    TPath.Combine(MemorySessionFixtureRoot, 'Demo.exe'),
+    'D:\Demo\Demo.exe',
     TPath.Combine(MemorySessionFixtureRoot, 'Demo.dproj'),
-    'fixture-build'
+    'build'
   );
 end;
 
@@ -498,6 +593,12 @@ var
   LDependencies: TRadIAMemoryDiagnosticSessionDependencies;
   LInstrumentationIntf: IRadIAMemoryInstrumentationCoordinator;
 begin
+  TDirectory.CreateDirectory(MemorySessionFixtureRoot);
+  TFile.WriteAllText(
+    TPath.Combine(MemorySessionFixtureRoot, 'Demo.dpr'),
+    'program Demo; begin end.',
+    TEncoding.UTF8
+  );
   FWorkspace := TRadIAMemorySessionWorkspaceMock.Create;
   FInstrumentation := TRadIAMemorySessionInstrumentationMock.Create;
   LInstrumentationIntf := FInstrumentation;

@@ -21,6 +21,13 @@ type
       const AExpression: string
     ): TRadIADebugValueSnapshot;
     function StartDebugging: TRadIADebuggerActionResult;
+    function StartRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): TRadIADebuggerActionResult;
+    function StopRuntimeProcess(const AProcessId: LongWord): Boolean;
     property StartCount: Integer read FStartCount;
   end;
 
@@ -86,6 +93,31 @@ begin
     'no_process',
     'starting'
   );
+end;
+
+function TRadIAFakeDebuggerInspection.StartRuntimeProcess(
+  out AProcessId: LongWord;
+  out ACreatedAtUtc: TDateTime;
+  out AExecutablePath: string;
+  out ABuildId: string
+): TRadIADebuggerActionResult;
+begin
+  AProcessId := 0;
+  ACreatedAtUtc := 0;
+  AExecutablePath := '';
+  ABuildId := '';
+  Result := TRadIADebuggerActionResult.Failed(
+    'not_supported',
+    'The inspection fake does not start runtime processes.',
+    'no_process'
+  );
+end;
+
+function TRadIAFakeDebuggerInspection.StopRuntimeProcess(
+  const AProcessId: LongWord
+): Boolean;
+begin
+  Result := False;
 end;
 
 procedure TTestRadIADebuggerInspectionTools.AddsListsAndRemovesWatch;

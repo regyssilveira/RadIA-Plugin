@@ -204,6 +204,7 @@ contains
   RadIA.OTA.Designer in 'Source\Integration\RadIA.OTA.Designer.pas',
   RadIA.OTA.Debugger in 'Source\Integration\RadIA.OTA.Debugger.pas',
   RadIA.OTA.DebugTimeline in 'Source\Integration\RadIA.OTA.DebugTimeline.pas',
+  RadIA.OTA.MemoryDiagnostic in 'Source\Integration\RadIA.OTA.MemoryDiagnostic.pas',
   RadIA.OTA.RuntimeProcess in 'Source\Integration\RadIA.OTA.RuntimeProcess.pas',
   RadIA.OTA.RuntimeDiscovery in 'Source\Integration\RadIA.OTA.RuntimeDiscovery.pas',
   RadIA.OTA.DebugTimelineStore in 'Source\Integration\RadIA.OTA.DebugTimelineStore.pas',

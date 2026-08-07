@@ -71,6 +71,31 @@ const
   CNoActiveProject = 'no_active_project';
   CUnsupported = 'build_unsupported';
 
+function ReadSharedBuildOutput(const AOutputPath: string): string;
+var
+  LStream: TFileStream;
+  LText: TStringList;
+begin
+  Result := '';
+  if not TFile.Exists(AOutputPath) then
+    Exit;
+  LStream := TFileStream.Create(
+    AOutputPath,
+    fmOpenRead or fmShareDenyNone
+  );
+  try
+    LText := TStringList.Create;
+    try
+      LText.LoadFromStream(LStream, TEncoding.Default);
+      Result := LText.Text;
+    finally
+      LText.Free;
+    end;
+  finally
+    LStream.Free;
+  end;
+end;
+
 function ResolveBuildConfiguration(
   const AConfigurations: IOTAProjectOptionsConfigurations
 ): string;
@@ -228,8 +253,6 @@ procedure TRadIAOTABuildFacade.CaptureIDEContext(
   out AIDERoot: string
 );
 var
-  LIndex: Integer;
-  LModule: IOTAModule;
   LModuleServices: IOTAModuleServices;
   LProject: IOTAProject;
   LProjectConfigurations: IOTAProjectOptionsConfigurations;
@@ -237,14 +260,6 @@ var
 begin
   if Supports(BorlandIDEServices, IOTAModuleServices, LModuleServices) then
   begin
-    for LIndex := 0 to LModuleServices.ModuleCount - 1 do
-    begin
-      LModule := LModuleServices.Modules[LIndex];
-      if Assigned(LModule) and
-        (Trim(LModule.FileName) <> '') and
-        TFile.Exists(LModule.FileName) then
-        LModule.Save(False, False);
-    end;
     LProject := LModuleServices.GetActiveProject;
     if Assigned(LProject) then
     begin
@@ -344,7 +359,10 @@ begin
     LWorkingDirectory := TPath.GetDirectoryName(LProjectFile);
     LOutputPath := TPath.Combine(
       LWorkingDirectory,
-      '.radia-build-output.log'
+      Format(
+        '.radia-build-output-%d-%d.log',
+        [GetCurrentProcessId, GetTickCount]
+      )
     );
     LCommandProcessor := GetEnvironmentVariable('ComSpec');
     if LCommandProcessor = '' then
@@ -512,14 +530,17 @@ var
   LRegex: TRegEx;
   LSeverity: TRadIACompilerMessageSeverity;
   LText: string;
+  LOutputLines: TStringList;
 begin
   SetLength(Result, 0);
   if not TFile.Exists(AOutputPath) then
     Exit;
   LRegex := TRegEx.Create(CDiagnosticPattern, [roIgnoreCase]);
   LList := TList<TRadIACompilerMessage>.Create;
+  LOutputLines := TStringList.Create;
   try
-    for LLine in TFile.ReadAllLines(AOutputPath) do
+    LOutputLines.Text := ReadSharedBuildOutput(AOutputPath);
+    for LLine in LOutputLines do
     begin
       LMatch := LRegex.Match(Trim(LLine));
       if not LMatch.Success then
@@ -545,6 +566,7 @@ begin
     end;
     Result := LList.ToArray;
   finally
+    LOutputLines.Free;
     LList.Free;
   end;
 end;
@@ -560,7 +582,7 @@ begin
   Result := '';
   if not TFile.Exists(AOutputPath) then
     Exit;
-  LOutput := Trim(TFile.ReadAllText(AOutputPath));
+  LOutput := Trim(ReadSharedBuildOutput(AOutputPath));
   if Length(LOutput) > CMaximumFailureCharacters then
     Delete(LOutput, 1, Length(LOutput) - CMaximumFailureCharacters);
   Result := LOutput;

@@ -3,9 +3,11 @@ unit RadIA.Core.MemoryDiagnosticSession;
 interface
 
 uses
+  System.SysUtils,
   RadIA.Core.Build,
   RadIA.Core.Debugger,
   RadIA.Core.MemoryInstrumentation,
+  RadIA.Core.Patches,
   RadIA.Core.RuntimeAutomation,
   RadIA.Core.RuntimeDebugSession,
   RadIA.Core.RuntimeScenario,
@@ -79,9 +81,15 @@ type
   private
     FCancelRequested: Boolean;
     FDependencies: TRadIAMemoryDiagnosticSessionDependencies;
+    FEditorMutation: IRadIAEditorMutationFacade;
+    FEditorPersistence: IRadIAEditorPersistenceFacade;
     FInstrumentationPreviewId: string;
     FLock: TObject;
+    FOriginalSourceBytes: TBytes;
+    FOriginalSourceTimestampUtc: TDateTime;
     FPreviewId: string;
+    FProjectSourceFile: string;
+    FSourceRestored: Boolean;
     FScenario: TRadIARuntimeScenario;
     FState: TRadIAMemoryDiagnosticSessionState;
     FStatusMessage: string;
@@ -105,11 +113,22 @@ type
     function CancellationRequested(
       const ACancellationToken: IRadIAToolCancellationToken
     ): Boolean;
+    procedure FinalizeRun(
+      const ACancellationToken: IRadIAToolCancellationToken;
+      var AResult: TRadIAToolResult
+    );
     function ParseInstrumentationPreviewId(
       const AContentJson: string
     ): string;
+    function ParseInstrumentationSourceFile(
+      const AContentJson: string
+    ): string;
+    function ProcessIsRunning(const AProcessId: LongWord): Boolean;
     function PrepareExecutable(
       out AFailure: TRadIAToolResult
+    ): Boolean;
+    function RestoreProjectSource(
+      out AResult: TRadIAMemoryInstrumentationResult
     ): Boolean;
     function RunScenario(
       const ASession: TRadIARuntimeSessionIdentity;
@@ -122,6 +141,10 @@ type
       out AStatus: TRadIARuntimeScenarioStatus
     ): Boolean;
     function ScenarioFingerprint: string;
+    function SourceMatchesSavedFile(
+      const AInstrumentationJson: string
+    ): Boolean;
+    function StageInstrumentedSource: Boolean;
     procedure SetStatus(
       const AState: TRadIAMemoryDiagnosticSessionState;
       const AMessage: string
@@ -131,11 +154,10 @@ type
       const ATimeoutMs: Cardinal;
       const ACancellationToken: IRadIAToolCancellationToken
     ): Boolean;
-    function WaitForNewRuntimeSession(
-      const APreviousSessionId: string;
+    function WaitForProcessExit(
+      const AProcessId: LongWord;
       const ATimeoutMs: Cardinal;
-      const ACancellationToken: IRadIAToolCancellationToken;
-      out ASession: TRadIARuntimeSessionIdentity
+      const ACancellationToken: IRadIAToolCancellationToken
     ): Boolean;
   public
     constructor Create(
@@ -169,11 +191,11 @@ uses
   System.Hash,
   System.IOUtils,
   System.JSON,
-  System.SysUtils,
   Winapi.PsAPI,
   Winapi.Windows,
   RadIA.Core.FastMM5,
   RadIA.Core.FastMM5LogParser,
+  RadIA.Core.Logger,
   RadIA.Core.MemoryDiagnostics,
   RadIA.Core.RuntimeScenarioTools;
 
@@ -301,6 +323,18 @@ begin
     not Assigned(ADependencies.RuntimeSession) or
     not Assigned(ADependencies.Scenario) then
     raise EArgumentNilException.Create('ADependencies');
+  if not Supports(
+    ADependencies.Workspace,
+    IRadIAEditorMutationFacade,
+    FEditorMutation
+  ) or not Supports(
+    ADependencies.Workspace,
+    IRadIAEditorPersistenceFacade,
+    FEditorPersistence
+  ) then
+    raise EArgumentException.Create(
+      'Workspace does not support editor persistence.'
+    );
   FDependencies := ADependencies;
   FLock := TObject.Create;
   FState := mdssIdle;
@@ -528,6 +562,33 @@ begin
   end;
 end;
 
+procedure TRadIAMemoryDiagnosticSessionCoordinator.FinalizeRun(
+  const ACancellationToken: IRadIAToolCancellationToken;
+  var AResult: TRadIAToolResult
+);
+var
+  LRevertResult: TRadIAMemoryInstrumentationResult;
+begin
+  if CancellationRequested(ACancellationToken) then
+    SetStatus(mdssCancelled, 'Memory diagnostic session was cancelled.')
+  else if not (FState in [mdssSucceeded, mdssCancelled]) then
+    SetStatus(mdssFailed, 'Memory diagnostic session failed.');
+  if FSourceRestored then
+    LRevertResult := TRadIAMemoryInstrumentationResult.Succeeded('{}')
+  else
+    RestoreProjectSource(LRevertResult);
+  if LRevertResult.Success then
+    Exit;
+  SetStatus(
+    mdssFailed,
+    'Memory diagnostic completed but project restoration failed.'
+  );
+  AResult := TRadIAToolResult.Failed(
+    'memory_instrumentation_revert_failed',
+    LRevertResult.ErrorMessage
+  );
+end;
+
 function TRadIAMemoryDiagnosticSessionCoordinator.ParseInstrumentationPreviewId(
   const AContentJson: string
 ): string;
@@ -540,6 +601,23 @@ begin
     Exit;
   try
     Result := LRoot.GetValue<string>('previewId', '');
+  finally
+    LRoot.Free;
+  end;
+end;
+
+function TRadIAMemoryDiagnosticSessionCoordinator.ParseInstrumentationSourceFile(
+  const AContentJson: string
+): string;
+var
+  LRoot: TJSONObject;
+begin
+  Result := '';
+  LRoot := TJSONObject.ParseJSONValue(AContentJson) as TJSONObject;
+  if not Assigned(LRoot) then
+    Exit;
+  try
+    Result := LRoot.GetValue<string>('fileName', '');
   finally
     LRoot.Free;
   end;
@@ -585,6 +663,20 @@ begin
         'Memory instrumentation did not return a preview identifier.'
       )
     );
+  FProjectSourceFile := ParseInstrumentationSourceFile(
+    LInstrumentation.ContentJson
+  );
+  if not SourceMatchesSavedFile(LInstrumentation.ContentJson) then
+    Exit(
+      TRadIAToolResult.Failed(
+        'memory_project_source_unsaved',
+        'Save the project source before preparing a composed memory diagnostic.'
+      )
+    );
+  FOriginalSourceBytes := TFile.ReadAllBytes(FProjectSourceFile);
+  FOriginalSourceTimestampUtc :=
+    TFile.GetLastWriteTimeUtc(FProjectSourceFile);
+  FSourceRestored := False;
   FScenario := AScenario;
   FWarmupRepetitions := AWarmupRepetitions;
   LScenarioFingerprint := ScenarioFingerprint;
@@ -602,6 +694,23 @@ begin
       LScenarioFingerprint
     )
   );
+end;
+
+function TRadIAMemoryDiagnosticSessionCoordinator.ProcessIsRunning(
+  const AProcessId: LongWord
+): Boolean;
+var
+  LHandle: THandle;
+begin
+  Result := False;
+  LHandle := OpenProcess(SYNCHRONIZE, False, AProcessId);
+  if LHandle = 0 then
+    Exit;
+  try
+    Result := WaitForSingleObject(LHandle, 0) = WAIT_TIMEOUT;
+  finally
+    CloseHandle(LHandle);
+  end;
 end;
 
 function TRadIAMemoryDiagnosticSessionCoordinator.PrepareExecutable(
@@ -624,6 +733,23 @@ begin
     );
     Exit;
   end;
+  if not StageInstrumentedSource then
+  begin
+    AFailure := TRadIAToolResult.Failed(
+      'memory_instrumentation_save_failed',
+      'The instrumented project source could not be staged for the build.'
+    );
+    Exit;
+  end;
+  if Assigned(FEditorPersistence) and
+     not FEditorPersistence.ReloadFile(FProjectSourceFile) then
+  begin
+    AFailure := TRadIAToolResult.Failed(
+      'memory_instrumentation_reload_failed',
+      'The IDE could not reload the staged project source safely.'
+    );
+    Exit;
+  end;
   SetStatus(mdssBuilding, 'Building the active project in Debug mode.');
   LBuildResult := FDependencies.Build.Execute(
     TRadIABuildRequest.Create(bmBuild, 300000, True)
@@ -636,6 +762,14 @@ begin
     );
     Exit;
   end;
+  if not RestoreProjectSource(LInstrumentation) then
+  begin
+    AFailure := TRadIAToolResult.Failed(
+      LInstrumentation.ErrorCode,
+      LInstrumentation.ErrorMessage
+    );
+    Exit;
+  end;
   Result := True;
 end;
 
@@ -645,20 +779,23 @@ function TRadIAMemoryDiagnosticSessionCoordinator.Run(
 ): TRadIAToolResult;
 var
   LBaselineSnapshot: string;
+  LBuildId: string;
+  LCreatedAtUtc: TDateTime;
   LDebugResult: TRadIADebuggerActionResult;
+  LExecutablePath: string;
   LFailure: TRadIAToolResult;
   LFinalSnapshot: string;
   LLogPath: string;
   LParseResult: TRadIAMemoryLogParseResult;
   LParser: TRadIAFastMM5LogParser;
-  LPreviousSessionId: string;
+  LProcessId: LongWord;
   LProject: TRadIAProjectSnapshot;
   LScenarioStatus: TRadIARuntimeScenarioStatus;
   LSession: TRadIARuntimeSessionIdentity;
+  LSessionId: string;
   LSettings: TRadIAFastMM5Settings;
   LSettingsStore: TRadIAFastMM5SettingsStore;
   LTermination: string;
-  LRevertResult: TRadIAMemoryInstrumentationResult;
 begin
   if not SameText(APreviewId, FPreviewId) or (FState <> mdssPrepared) then
     Exit(
@@ -672,8 +809,6 @@ begin
     TPath.Combine(LProject.RootPath, '.radia\memory'),
     'latest-fastmm5.log'
   );
-  LPreviousSessionId :=
-    FDependencies.RuntimeSession.GetCurrentSession.SessionId;
   LTermination := 'exceptional';
   LBaselineSnapshot := '';
   LFinalSnapshot := '';
@@ -684,8 +819,13 @@ begin
       Exit(LFailure);
     if CancellationRequested(ACancellationToken) then
       Exit(TRadIAToolResult.Failed('cancelled', 'Memory diagnostic cancelled.'));
-    SetStatus(mdssStarting, 'Starting the application under the IDE debugger.');
-    LDebugResult := FDependencies.DebugSession.StartDebugging;
+    SetStatus(mdssStarting, 'Starting the instrumented runtime process.');
+    LDebugResult := FDependencies.DebugSession.StartRuntimeProcess(
+      LProcessId,
+      LCreatedAtUtc,
+      LExecutablePath,
+      LBuildId
+    );
     if not LDebugResult.Accepted then
       Exit(
         TRadIAToolResult.Failed(
@@ -693,18 +833,23 @@ begin
           LDebugResult.Message
         )
       );
-    if not WaitForNewRuntimeSession(
-      LPreviousSessionId,
-      30000,
-      ACancellationToken,
-      LSession
+    LSessionId := FDependencies.RuntimeSession.BeginSession(
+      LProject.FileName
+    );
+    if not FDependencies.RuntimeSession.AttachProcess(
+      LSessionId,
+      LProcessId,
+      LCreatedAtUtc,
+      LExecutablePath,
+      LBuildId
     ) then
       Exit(
         TRadIAToolResult.Failed(
-          'runtime_session_timeout',
-          'The debugged process did not become available in time.'
+          'runtime_session_attach_failed',
+          'The instrumented process could not be correlated safely.'
         )
       );
+    LSession := FDependencies.RuntimeSession.GetCurrentSession;
     if not RunWarmup(
       LSession,
       ACancellationToken,
@@ -731,15 +876,21 @@ begin
         )
       );
     LFinalSnapshot := CaptureSnapshot('final', LSession.ProcessId);
-    SetStatus(mdssStopping, 'Stopping the debugged process in a controlled way.');
-    LDebugResult := FDependencies.DebugControl.ExecuteAction(daStop);
-    if not LDebugResult.Accepted then
+    SetStatus(mdssStopping, 'Stopping the runtime process in a controlled way.');
+    if ProcessIsRunning(LSession.ProcessId) and not WaitForProcessExit(
+      LSession.ProcessId,
+      10000,
+      ACancellationToken
+    ) then
+    begin
+      FDependencies.DebugSession.StopRuntimeProcess(LSession.ProcessId);
       Exit(
         TRadIAToolResult.Failed(
-          LDebugResult.ErrorCode,
-          LDebugResult.Message
+          'runtime_graceful_stop_timeout',
+          'The instrumented runtime process did not finish cleanly.'
         )
       );
+    end;
     LTermination := 'controlled';
     SetStatus(mdssCollecting, 'Collecting and parsing bounded FastMM5 evidence.');
     if not WaitForLog(LLogPath, 10000, ACancellationToken) then
@@ -777,28 +928,106 @@ begin
       LParseResult.Truncated
     );
   finally
-    if CancellationRequested(ACancellationToken) then
-    begin
-      LTermination := 'cancelled';
-      SetStatus(mdssCancelled, 'Memory diagnostic session was cancelled.');
-    end
-    else if not (FState in [mdssSucceeded, mdssCancelled]) then
-      SetStatus(mdssFailed, 'Memory diagnostic session failed.');
-    LRevertResult := FDependencies.Instrumentation.Revert(
-      FInstrumentationPreviewId
-    );
-    if not LRevertResult.Success then
-    begin
-      SetStatus(
-        mdssFailed,
-        'Memory diagnostic completed but project restoration failed.'
-      );
-      Result := TRadIAToolResult.Failed(
-        'memory_instrumentation_revert_failed',
-        LRevertResult.ErrorMessage
-      );
-    end;
+    FinalizeRun(ACancellationToken, Result);
   end;
+end;
+
+function TRadIAMemoryDiagnosticSessionCoordinator.RestoreProjectSource(
+  out AResult: TRadIAMemoryInstrumentationResult
+): Boolean;
+begin
+  AResult := FDependencies.Instrumentation.Revert(
+    FInstrumentationPreviewId
+  );
+  try
+    TFile.WriteAllBytes(FProjectSourceFile, FOriginalSourceBytes);
+    TFile.SetLastWriteTimeUtc(
+      FProjectSourceFile,
+      FOriginalSourceTimestampUtc
+    );
+    if AResult.Success and
+      not FEditorPersistence.ReloadFile(FProjectSourceFile) then
+      AResult := TRadIAMemoryInstrumentationResult.Failed(
+        'memory_source_reload_failed',
+        'The original project source was restored but the IDE could not reload it.'
+      );
+  except
+    on E: Exception do
+      AResult := TRadIAMemoryInstrumentationResult.Failed(
+        'memory_source_restore_failed',
+        E.Message
+      );
+  end;
+  Result := AResult.Success;
+  FSourceRestored := Result;
+end;
+
+function TRadIAMemoryDiagnosticSessionCoordinator.StageInstrumentedSource:
+  Boolean;
+var
+  LSnapshot: TRadIAEditorContent;
+begin
+  Result := False;
+  LSnapshot := FEditorMutation.ReadContent(
+    FProjectSourceFile,
+    2 * 1024 * 1024
+  );
+  if LSnapshot.Content.IsEmpty or LSnapshot.Truncated then
+    Exit;
+  try
+    TFile.WriteAllText(
+      FProjectSourceFile,
+      LSnapshot.Content,
+      TEncoding.UTF8
+    );
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+function TRadIAMemoryDiagnosticSessionCoordinator.SourceMatchesSavedFile(
+  const AInstrumentationJson: string
+): Boolean;
+var
+  LDiskContent: string;
+  LFingerprint: string;
+  LNormalizedContent: string;
+  LRoot: TJSONObject;
+begin
+  Result := False;
+  if FProjectSourceFile.IsEmpty or not TFile.Exists(FProjectSourceFile) then
+    Exit;
+  LRoot := TJSONObject.ParseJSONValue(AInstrumentationJson) as TJSONObject;
+  if not Assigned(LRoot) then
+    Exit;
+  try
+    LFingerprint := LRoot.GetValue<string>('normalizedFingerprint', '');
+    if LFingerprint.IsEmpty then
+      LFingerprint := LRoot.GetValue<string>('fingerprint', '');
+  finally
+    LRoot.Free;
+  end;
+  LDiskContent := TFile.ReadAllText(FProjectSourceFile, TEncoding.UTF8);
+  LNormalizedContent := StringReplace(
+    LDiskContent,
+    #13#10,
+    #10,
+    [rfReplaceAll]
+  );
+  LNormalizedContent := StringReplace(
+    LNormalizedContent,
+    #13,
+    #10,
+    [rfReplaceAll]
+  );
+  if (LNormalizedContent <> '') and
+     (LNormalizedContent[Low(LNormalizedContent)] = #$FEFF) then
+    Delete(LNormalizedContent, Low(LNormalizedContent), 1);
+  Result := SameText(
+    LFingerprint,
+    THashSHA2.GetHashString(LNormalizedContent)
+  );
 end;
 
 function TRadIAMemoryDiagnosticSessionCoordinator.RunScenario(
@@ -889,6 +1118,10 @@ begin
   finally
     TMonitor.Exit(FLock);
   end;
+  TLogger.Log(
+    MemorySessionStateName(AState) + ': ' + AMessage,
+    'MemoryDiagnostic'
+  );
 end;
 
 function TRadIAMemoryDiagnosticSessionCoordinator.WaitForLog(
@@ -910,26 +1143,23 @@ begin
   Result := False;
 end;
 
-function TRadIAMemoryDiagnosticSessionCoordinator.WaitForNewRuntimeSession(
-  const APreviousSessionId: string;
+function TRadIAMemoryDiagnosticSessionCoordinator.WaitForProcessExit(
+  const AProcessId: LongWord;
   const ATimeoutMs: Cardinal;
-  const ACancellationToken: IRadIAToolCancellationToken;
-  out ASession: TRadIARuntimeSessionIdentity
+  const ACancellationToken: IRadIAToolCancellationToken
 ): Boolean;
 var
   LStarted: UInt64;
 begin
   LStarted := GetTickCount64;
   repeat
+    if not ProcessIsRunning(AProcessId) then
+      Exit(True);
     if CancellationRequested(ACancellationToken) then
       Exit(False);
-    ASession := FDependencies.RuntimeSession.GetCurrentSession;
-    if ASession.IsComplete and
-      not SameText(ASession.SessionId, APreviousSessionId) then
-      Exit(True);
     TThread.Sleep(50);
   until GetTickCount64 - LStarted >= ATimeoutMs;
-  Result := False;
+  Result := not ProcessIsRunning(AProcessId);
 end;
 
 { TRadIAMemoryDiagnosticSessionTool }

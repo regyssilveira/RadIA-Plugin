@@ -130,6 +130,11 @@ type
       const AAction: TRadIARuntimeScenarioAction;
       const ACancellationToken: IRadIAToolCancellationToken
     ): TRadIARuntimeActionResult;
+    function ExecuteRuntimeAction(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AAction: TRadIARuntimeScenarioAction;
+      const ACancellationToken: IRadIAToolCancellationToken
+    ): TRadIARuntimeActionResult;
     function ExecuteWait(
       const ATimeoutMs: Cardinal;
       const ACancellationToken: IRadIAToolCancellationToken
@@ -397,7 +402,11 @@ function TRadIARuntimeScenarioCoordinator.ExecutePreparedAction(
 ): TRadIARuntimeActionResult;
 begin
   if AAction.Kind <> rakWait then
-    Exit(FActionFacade.ExecuteAction(ASession, AAction));
+    Exit(ExecuteRuntimeAction(
+      ASession,
+      AAction,
+      ACancellationToken
+    ));
   if ExecuteWait(AAction.TimeoutMs, ACancellationToken) then
     Result := TRadIARuntimeActionResult.Succeeded
   else
@@ -405,6 +414,30 @@ begin
       'runtime_scenario_cancelled',
       'Runtime scenario execution was cancelled.'
     );
+end;
+
+function TRadIARuntimeScenarioCoordinator.ExecuteRuntimeAction(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AAction: TRadIARuntimeScenarioAction;
+  const ACancellationToken: IRadIAToolCancellationToken
+): TRadIARuntimeActionResult;
+var
+  LStopwatch: TStopwatch;
+begin
+  LStopwatch := TStopwatch.StartNew;
+  repeat
+    Result := FActionFacade.ExecuteAction(ASession, AAction);
+    if Result.Success or not SameText(
+      Result.ErrorCode,
+      'runtime_target_not_found'
+    ) then
+      Exit;
+    if not ExecuteWait(CWaitSliceMs, ACancellationToken) then
+      Exit(TRadIARuntimeActionResult.Failed(
+        'runtime_scenario_cancelled',
+        'Runtime scenario execution was cancelled.'
+      ));
+  until LStopwatch.ElapsedMilliseconds >= AAction.TimeoutMs;
 end;
 
 function TRadIARuntimeScenarioCoordinator.ExecuteScenario(
@@ -715,7 +748,10 @@ begin
   for LAction in AScenario.Actions do
   begin
     if LAction.Kind = rakWait then
+    begin
+      LDynamicTargetAllowed := True;
       Continue;
+    end;
     LResult := FActionFacade.ValidateAction(
       AScenario.Session,
       LAction

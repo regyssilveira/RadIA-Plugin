@@ -94,6 +94,7 @@ uses
   RadIA.Core.MemoryInstrumentation in '..\Source\Core\RadIA.Core.MemoryInstrumentation.pas',
   RadIA.Core.FastMM5LogParser in '..\Source\Core\RadIA.Core.FastMM5LogParser.pas',
   RadIA.Core.MemoryDiagnosticSession in '..\Source\Core\RadIA.Core.MemoryDiagnosticSession.pas',
+  RadIA.OTA.MemoryDiagnostic in '..\Source\Integration\RadIA.OTA.MemoryDiagnostic.pas',
   RadIA.Core.InlineReviews in '..\Source\Core\RadIA.Core.InlineReviews.pas',
   RadIA.Core.InlineCompletion in '..\Source\Core\RadIA.Core.InlineCompletion.pas',
   RadIA.Core.InlineShortcuts in '..\Source\Core\RadIA.Core.InlineShortcuts.pas',

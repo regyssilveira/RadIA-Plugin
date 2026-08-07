@@ -51,18 +51,29 @@ type
       const AExpression: string
     ): TRadIADebugValueSnapshot;
     function StartDebugging: TRadIADebuggerActionResult;
+    function StartRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): TRadIADebuggerActionResult;
+    function StopRuntimeProcess(const AProcessId: LongWord): Boolean;
   end;
 
 implementation
 
 uses
   System.Actions,
+  System.DateUtils,
   System.Math,
   System.SysUtils,
+  System.Variants,
   ToolsAPI,
   Vcl.ActnList,
   Vcl.Forms,
+  Vcl.Menus,
   Winapi.Windows,
+  RadIA.Core.Logger,
   RadIA.Core.Types,
   RadIA.OTA.RuntimeProcess;
 
@@ -94,6 +105,47 @@ begin
         SameText(LAction.Name, AActionNames[LNameIndex]) then
         Exit(LAction);
     end;
+end;
+
+function FindMenuItemForAction(
+  const ARoot: TMenuItem;
+  const AAction: TBasicAction
+): TMenuItem;
+var
+  LIndex: Integer;
+begin
+  Result := nil;
+  if not Assigned(ARoot) then
+    Exit;
+  if ARoot.Action = AAction then
+    Exit(ARoot);
+  for LIndex := 0 to ARoot.Count - 1 do
+  begin
+    Result := FindMenuItemForAction(ARoot[LIndex], AAction);
+    if Assigned(Result) then
+      Exit;
+  end;
+end;
+
+function ExecuteIDEActionThroughMenu(
+  const AAction: TBasicAction
+): Boolean;
+var
+  LMenuItem: TMenuItem;
+  LServices: INTAServices;
+begin
+  Result := False;
+  if not Supports(BorlandIDEServices, INTAServices, LServices) or
+    not Assigned(LServices.MainMenu) then
+    Exit;
+  LMenuItem := FindMenuItemForAction(
+    LServices.MainMenu.Items,
+    AAction
+  );
+  if not Assigned(LMenuItem) then
+    Exit;
+  LMenuItem.Click;
+  Result := True;
 end;
 
 function HasDebugProcess(
@@ -368,7 +420,23 @@ begin
         'The active project cannot be run by the IDE.',
         'no_process'
       ));
-    LAction.Execute;
+    TLogger.Log(
+      Format(
+        'Starting debugger action: name=%s; class=%s; target=%s',
+        [
+          LAction.Name,
+          LAction.ClassName,
+          AProject.ProjectOptions.TargetName
+        ]
+      ),
+      'Debugger'
+    );
+    if not ExecuteIDEActionThroughMenu(LAction) then
+      Exit(TRadIADebuggerActionResult.Failed(
+        'debugger_action_rejected',
+        'The active IDE surface rejected the Run action.',
+        'no_process'
+      ));
     if not WaitForDebugProcess(ADebugger) then
       Exit(TRadIADebuggerActionResult.Failed(
         'debugger_start_not_confirmed',
@@ -861,6 +929,114 @@ begin
     end
   );
   Result := LResult;
+end;
+
+function TRadIAOTADebuggerFacade.StartRuntimeProcess(
+  out AProcessId: LongWord;
+  out ACreatedAtUtc: TDateTime;
+  out AExecutablePath: string;
+  out ABuildId: string
+): TRadIADebuggerActionResult;
+var
+  LArguments: string;
+  LCommandLine: string;
+  LExecutablePath: string;
+  LProcessInfo: TProcessInformation;
+  LStartupInfo: TStartupInfo;
+begin
+  AProcessId := 0;
+  ACreatedAtUtc := 0;
+  AExecutablePath := '';
+  ABuildId := '';
+  LArguments := '';
+  LExecutablePath := '';
+  RunOnMainThread(
+    procedure
+    var
+      LModuleServices: IOTAModuleServices;
+      LProject: IOTAProject;
+    begin
+      if not Supports(
+        BorlandIDEServices,
+        IOTAModuleServices,
+        LModuleServices
+      ) then
+        Exit;
+      LProject := LModuleServices.GetActiveProject;
+      if not Assigned(LProject) or
+        not Assigned(LProject.ProjectOptions) then
+        Exit;
+      LExecutablePath := LProject.ProjectOptions.TargetName;
+      LArguments := VarToStr(
+        LProject.ProjectOptions.Values['Debugger_RunParams']
+      );
+    end
+  );
+  if LExecutablePath.IsEmpty or not FileExists(LExecutablePath) then
+    Exit(TRadIADebuggerActionResult.Failed(
+      'runtime_target_unavailable',
+      'The built runtime target is unavailable.',
+      'no_process'
+    ));
+  LCommandLine := '"' + LExecutablePath + '"';
+  if not LArguments.IsEmpty then
+    LCommandLine := LCommandLine + ' ' + LArguments;
+  ZeroMemory(@LStartupInfo, SizeOf(LStartupInfo));
+  LStartupInfo.cb := SizeOf(LStartupInfo);
+  ZeroMemory(@LProcessInfo, SizeOf(LProcessInfo));
+  if not Winapi.Windows.CreateProcess(
+    PChar(LExecutablePath),
+    PChar(LCommandLine),
+    nil,
+    nil,
+    False,
+    CREATE_NEW_PROCESS_GROUP,
+    nil,
+    PChar(ExtractFilePath(LExecutablePath)),
+    LStartupInfo,
+    LProcessInfo
+  ) then
+    Exit(TRadIADebuggerActionResult.Failed(
+      'runtime_start_failed',
+      SysErrorMessage(GetLastError),
+      'no_process'
+    ));
+  try
+    AProcessId := LProcessInfo.dwProcessId;
+    AExecutablePath := LExecutablePath;
+    if not TryGetRadIARuntimeProcessIdentity(
+      AProcessId,
+      AExecutablePath,
+      ACreatedAtUtc
+    ) then
+      ACreatedAtUtc := TTimeZone.Local.ToUniversalTime(Now);
+    ABuildId := GetRadIARuntimeBuildId(AExecutablePath);
+    Result := TRadIADebuggerActionResult.Succeeded(
+      'The instrumented runtime process started.',
+      'no_process',
+      'running'
+    );
+  finally
+    CloseHandle(LProcessInfo.hThread);
+    CloseHandle(LProcessInfo.hProcess);
+  end;
+end;
+
+function TRadIAOTADebuggerFacade.StopRuntimeProcess(
+  const AProcessId: LongWord
+): Boolean;
+var
+  LHandle: THandle;
+begin
+  Result := False;
+  LHandle := OpenProcess(PROCESS_TERMINATE, False, AProcessId);
+  if LHandle = 0 then
+    Exit;
+  try
+    Result := TerminateProcess(LHandle, 5);
+  finally
+    CloseHandle(LHandle);
+  end;
 end;
 
 function TRadIAOTADebuggerFacade.ResolveRuntimeProcess(
