@@ -51,6 +51,9 @@ const
   CAllowOnceModalResult = 101;
   CAllowSessionModalResult = 102;
   CDenyModalResult = 103;
+  CConsentContentMargin = 20;
+  CConsentContentWidth = 640;
+  CConsentButtonTop = 466;
 
 type
   TRadIAConsentForm = class(TForm)
@@ -96,7 +99,7 @@ begin
   LButton.Parent := Self;
   LButton.Caption := ACaption;
   LButton.Left := ALeft;
-  LButton.Top := 352;
+  LButton.Top := CConsentButtonTop;
   LButton.Width := 104;
   LButton.Height := 30;
   LButton.ModalResult := AModalResult;
@@ -116,8 +119,12 @@ var
 begin
   LTitleLabel := TLabel.Create(Self);
   LTitleLabel.Parent := Self;
-  LTitleLabel.Left := 20;
+  LTitleLabel.Left := CConsentContentMargin;
   LTitleLabel.Top := 18;
+  LTitleLabel.Width := CConsentContentWidth;
+  LTitleLabel.Height := 48;
+  LTitleLabel.AutoSize := False;
+  LTitleLabel.WordWrap := True;
   LTitleLabel.Font.Style := [fsBold];
   LTitleLabel.Font.Size := 12;
   LTitleLabel.Caption := 'RadIA requests permission to run ' +
@@ -125,19 +132,22 @@ begin
 
   LDescriptionLabel := TLabel.Create(Self);
   LDescriptionLabel.Parent := Self;
-  LDescriptionLabel.Left := 20;
-  LDescriptionLabel.Top := 55;
-  LDescriptionLabel.Width := 520;
+  LDescriptionLabel.Left := CConsentContentMargin;
+  LDescriptionLabel.Top := 72;
+  LDescriptionLabel.Width := CConsentContentWidth;
+  LDescriptionLabel.Height := 44;
   LDescriptionLabel.AutoSize := False;
   LDescriptionLabel.WordWrap := True;
   LDescriptionLabel.Caption := ADescriptor.Description;
 
   LScopeLabel := TLabel.Create(Self);
   LScopeLabel.Parent := Self;
-  LScopeLabel.Left := 20;
-  LScopeLabel.Top := 104;
-  LScopeLabel.Width := 520;
+  LScopeLabel.Left := CConsentContentMargin;
+  LScopeLabel.Top := 126;
+  LScopeLabel.Width := CConsentContentWidth;
+  LScopeLabel.Height := 48;
   LScopeLabel.AutoSize := False;
+  LScopeLabel.WordWrap := True;
   LScopeLabel.Caption := Format(
     'Risk: %s | Origin: %s | Project: %s | Scope: %s',
     [
@@ -150,10 +160,10 @@ begin
 
   LArgumentsMemo := TMemo.Create(Self);
   LArgumentsMemo.Parent := Self;
-  LArgumentsMemo.Left := 20;
-  LArgumentsMemo.Top := 136;
-  LArgumentsMemo.Width := 520;
-  LArgumentsMemo.Height := 170;
+  LArgumentsMemo.Left := CConsentContentMargin;
+  LArgumentsMemo.Top := 184;
+  LArgumentsMemo.Width := CConsentContentWidth;
+  LArgumentsMemo.Height := 220;
   LArgumentsMemo.ReadOnly := True;
   LArgumentsMemo.ScrollBars := ssBoth;
   LArgumentsMemo.WordWrap := False;
@@ -165,10 +175,12 @@ begin
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := Self;
-  FStatusLabel.Left := 20;
-  FStatusLabel.Top := 320;
-  FStatusLabel.Width := 520;
+  FStatusLabel.Left := CConsentContentMargin;
+  FStatusLabel.Top := 416;
+  FStatusLabel.Width := CConsentContentWidth;
+  FStatusLabel.Height := 38;
   FStatusLabel.AutoSize := False;
+  FStatusLabel.WordWrap := True;
 end;
 
 constructor TRadIAConsentForm.CreateConsent(
@@ -182,20 +194,22 @@ begin
   inherited CreateNew(nil);
   BorderStyle := bsDialog;
   Caption := 'RadIA Tool Consent';
-  ClientWidth := 560;
-  ClientHeight := 400;
+  ClientWidth := 680;
+  ClientHeight := 508;
+  Constraints.MinWidth := Width;
+  Constraints.MinHeight := Height;
   Position := poMainFormCenter;
   ConfigureContent(ARequest, ADescriptor, AShowArguments);
 
-  AddButton('Allow once', 20, CAllowOnceModalResult);
+  AddButton('Allow once', CConsentContentMargin, CAllowOnceModalResult);
   AddButton(
     'Allow session',
-    132,
+    140,
     CAllowSessionModalResult,
     AAllowSession
   );
-  AddButton('Deny', 356, CDenyModalResult);
-  AddButton('Cancel', 468, mrCancel);
+  AddButton('Deny', 452, CDenyModalResult);
+  AddButton('Cancel', 564, mrCancel);
 
   FRemainingSeconds := Integer((ATimeoutMs + 999) div 1000);
   FTimer := TTimer.Create(Self);
