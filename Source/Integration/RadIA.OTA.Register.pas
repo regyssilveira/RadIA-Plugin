@@ -106,6 +106,7 @@ uses
   RadIA.Core.InstallationHealthTools,
   RadIA.Core.FastMM5,
   RadIA.Core.MemoryInstrumentation,
+  RadIA.Core.FastMM5LogParser,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.RuntimeDiscovery,
@@ -1134,6 +1135,11 @@ initialization
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAMemoryInstrumentationCoordinator>
+  );
+  RegisterRadIAFastMM5LogTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
   );
   RegisterRadIAMultiFilePatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

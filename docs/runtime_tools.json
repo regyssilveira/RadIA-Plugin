@@ -309,6 +309,13 @@
         "ApplyMemoryInstrumentation",
         "RevertMemoryInstrumentation"
       ]
+    },
+    {
+      "name": "FastMM5 log evidence",
+      "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
+      "tools": [
+        "ParseMemoryDiagnosticLog"
+      ]
     }
   ]
 }

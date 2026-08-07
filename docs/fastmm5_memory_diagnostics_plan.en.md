@@ -1,6 +1,6 @@
 # Goal 2.2 — Dynamic memory diagnostics with FastMM5
 
-> **Status:** in progress; M0, M1, and M2 completed.
+> **Status:** in progress; M0, M1, M2, and M3 completed.
 > **Target version:** 2.2.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64, diagnosing Win32 and Win64 applications.
 > **Dependency:** optional, user-supplied and user-licensed FastMM5.
@@ -71,6 +71,9 @@ Implement transactional prepare/apply/revert for DPR and Debug configuration whi
 buffers, encoding, unrelated options, and rollback after interrupted execution.
 
 ### M3 — Collection and parser
+
+**Status:** completed. See
+[FastMM5 log collection and parsing](fastmm5_evidence_parser.en.md).
 
 Parse leak summaries, details, stacks, classes, sizes, allocation numbers, corruption, double frees,
 and use-after-free events from fixtures and real applications.

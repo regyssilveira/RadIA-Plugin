@@ -1,6 +1,6 @@
 # Goal 2.2 — Diagnóstico dinâmico de memória com FastMM5
 
-> **Estado:** em execução; M0, M1 e M2 concluídos.
+> **Estado:** em execução; M0, M1, M2 e M3 concluídos.
 > **Versão-alvo:** 2.2.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64, diagnosticando aplicações Win32 e Win64.
 > **Dependência:** FastMM5 opcional, fornecido e licenciado pelo usuário.
@@ -198,6 +198,9 @@ crescimento entre repetições e grupos de stacks equivalentes.
 **Aceite:** round-trip sem diff residual nos três targets e rejeição de preview obsoleto.
 
 ### M3 — Coleta e parser
+
+**Estado:** concluído. Consulte
+[Coleta e interpretação dos logs](fastmm5_evidence_parser.md).
 
 - capturar arquivo e `OutputDebugString`;
 - interpretar leak summary/detail, stacks, classes, bytes e números de alocação;

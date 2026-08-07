@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 116 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 117 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -49,6 +49,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `PrepareMemoryInstrumentation` | Cria um preview com fingerprint para inserir o FastMM5 primeiro no projeto e habilitar diagnósticos somente em Debug. | Antes de alterar o DPR, depois de confirmar que FastMM5, plataforma e configuração estão prontos. |
 | `ApplyMemoryInstrumentation` | Revalida o fingerprint e aplica o preview ao buffer vivo do DPR com suporte ao Undo da IDE. | Após revisão e consentimento estrutural do usuário, antes do build diagnóstico. |
 | `RevertMemoryInstrumentation` | Restaura exatamente o conteúdo do DPR capturado antes da instrumentação. | No fim de uma sessão temporária, em cancelamentos e quando o usuário desfaz a instrumentação persistente. |
+| `ParseMemoryDiagnosticLog` | Interpreta um log FastMM5 limitado e autorizado, agrupando eventos, bytes, classes, stacks, linhas e fingerprints. | Depois de uma execução diagnóstica ou ao importar um log localizado dentro do workspace ativo. |
 
 ## Navegação, símbolos e project groups
 

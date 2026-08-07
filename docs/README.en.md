@@ -79,6 +79,7 @@ This index brings together the functional, operational, and technical documentat
 | Memory diagnostics M0 | [FastMM5 baseline, contracts, and laboratory](fastmm5_memory_diagnostics_m0.en.md) |
 | FastMM5 configuration | [Settings, chat, consent, and readiness states](fastmm5_configuration.en.md) |
 | Memory instrumentation | [Preview, apply, revert, and DPR safeguards](fastmm5_instrumentation.en.md) |
+| Memory log parser | [Bounded collection and structured evidence](fastmm5_evidence_parser.en.md) |
 | Runtime M0 execution | [Baseline, contracts, and matrix](runtime_debug_automation_m0.en.md) |
 | Runtime M1 execution | [Debugger correlation and waiting](runtime_debug_automation_m1.en.md) |
 | Runtime M2 execution | [Safe window and control discovery](runtime_debug_automation_m2.en.md) |

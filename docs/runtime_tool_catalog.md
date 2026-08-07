@@ -280,9 +280,15 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ApplyMemoryInstrumentation` | `RadIA.Core.MemoryInstrumentation.pas` |
 | `RevertMemoryInstrumentation` | `RadIA.Core.MemoryInstrumentation.pas` |
 
+## FastMM5 log evidence
+
+| Tool | Source unit |
+|---|---|
+| `ParseMemoryDiagnosticLog` | `RadIA.Core.FastMM5LogParser.pas` |
+
 ## Resumo
 
-- Registered groups: 32
-- Registered built-in tools: 116
+- Registered groups: 33
+- Registered built-in tools: 117
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.
