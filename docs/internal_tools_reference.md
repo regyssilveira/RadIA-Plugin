@@ -238,15 +238,15 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
-| `GetRuntimeWindows` | Lista janelas autorizadas com ID opaco, processo, classe, texto sanitizado, proprietário, estado e capacidades. | Depois de confirmar a sessão runtime e antes de preparar um cenário visual. |
+| `GetRuntimeWindows` | Lista janelas autorizadas com ID opaco, processo, classe, texto sanitizado, proprietário, estado e capacidades. No IDE64, a identidade permanece segura mesmo quando uma aplicação Win32 não expõe o texto. | Depois de confirmar a sessão runtime e antes de preparar um cenário visual. |
 | `GetRuntimeControlTree` | Retorna a hierarquia sanitizada dos controles com janela própria, sem aceitar ou expor `HWND`. | Para localizar ações possíveis em uma janela retornada por `GetRuntimeWindows`. |
 
 ## Cenários runtime limitados
 
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
-| `PrepareRuntimeScenario` | Valida ações, alvos, capacidades, duração, repetições e cria um preview com fingerprint. | Depois da descoberta e antes de solicitar consentimento para interagir com a aplicação. |
-| `RunRuntimeScenario` | Revalida a sessão e executa exatamente o preview aprovado. | Após o usuário revisar o roteiro; exige novo consentimento em toda execução. |
+| `PrepareRuntimeScenario` | Valida ações, alvos, capacidades, duração, repetições e cria um preview com fingerprint. Alvos que só aparecem após uma ação anterior são validados dinamicamente na execução. | Depois da descoberta e antes de solicitar consentimento para interagir com a aplicação. |
+| `RunRuntimeScenario` | Revalida a sessão e executa exatamente o preview aprovado, restringindo seletores à janela raiz visível e habilitada do processo correlacionado. | Após o usuário revisar o roteiro; exige novo consentimento em toda execução. |
 | `CancelRuntimeScenario` | Interrompe a execução ou uma espera ativa sem solicitar consentimento. | Pelo botão ou comando de parada de emergência, pelo agente ou pelo MCP. |
 | `GetRuntimeScenarioStatus` | Retorna estado, repetição, ação atual, total concluído e eventual falha. | Para acompanhar o roteiro e coletar seu resultado estruturado. |
 
@@ -265,7 +265,7 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `SaveRuntimeRegression` | Grava o preview em `.radia/runtime-scenarios/<id>.json` com schema, fingerprint e escrita atômica. | Após revisão e consentimento para escrita reversível. |
 | `RevertRuntimeRegression` | Restaura o artefato anterior ou remove o arquivo criado pela aplicação correspondente. | Quando o usuário desfaz a gravação ainda rastreada pelo runtime atual. |
 | `ListRuntimeRegressions` | Lista os cenários versionados do projeto ativo. | Para descobrir regressões disponíveis sem executar a aplicação. |
-| `PrepareSavedRuntimeScenario` | Valida a integridade do artefato, religa os seletores à sessão atual e cria um preview executável. | Depois de iniciar nova sessão de debug; a execução continua em `RunRuntimeScenario` com consentimento próprio. |
+| `PrepareSavedRuntimeScenario` | Valida a integridade do artefato, religa seletores persistidos à sessão atual e cria um preview executável. | Depois de iniciar nova sessão de debug; a execução continua em `RunRuntimeScenario` com consentimento próprio e pode repetir o roteiro até o limite versionado. |
 
 ## Git local
 

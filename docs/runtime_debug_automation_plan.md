@@ -1,6 +1,6 @@
-# Goal pós-2.0 — Reprodução autônoma de falhas runtime
+# Goal 2.1 — Reprodução autônoma de falhas runtime
 
-> **Estado:** M0–M5 implementados e validados automaticamente; aceite ponta a ponta nas IDEs pendente.
+> **Estado:** concluído e aceito ponta a ponta nos três alvos suportados.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Plano pausado durante este goal:** [Continuidade CLI e integração avançada](competitive_leadership_plan.md).
@@ -29,12 +29,17 @@ O RadIA já consegue:
 - capturar e comparar evidências sanitizadas entre uma falha e sua verificação;
 - preparar alterações revisáveis e recompilar após o consentimento.
 
-Ainda não consegue:
+O aceite da versão 2.1 comprovou:
 
-- persistir e versionar um cenário visual como prova de regressão;
-- gerar automaticamente um teste DUnitX a partir de toda causa isolável;
-- comprovar dez repetições consecutivas em cada alvo real sem flutuação;
-- concluir o gate ponta a ponta do M5 nos três hosts suportados.
+- cenário visual persistido e versionado como prova de regressão;
+- reprodução da Access Violation com pilha e linha de origem;
+- correção, novo build, nova sessão e comparação com resultado `fixed`;
+- dez repetições e trinta ações consecutivas em Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64;
+- build e 806 testes aprovados em cada alvo, sem falhas ou vazamentos;
+- SonarQube com Quality Gate `OK`, zero issues e ratings A.
+
+A geração automática de DUnitX é usada quando a causa pode ser isolada sem o ciclo visual. Quando a
+falha depende da interface, o cenário versionado é a regressão apropriada.
 
 ## Limites de segurança
 
@@ -56,14 +61,14 @@ Ainda não consegue:
 - substituição de testes unitários por testes visuais;
 - injeção de código na aplicação como requisito inicial.
 
-## Arquitetura proposta
+## Arquitetura implementada
 
 O núcleo receberá uma fachada neutra, `IRadIARuntimeAutomationFacade`. A integração OTA correlacionará
 projeto, build, sessão e processo. Um adaptador Windows combinará UI Automation e descoberta Win32
 para controles VCL com janela própria. Controles VCL sem handle terão capacidade explícita como
 indisponível; uma sonda de teste opcional somente será considerada após medição dessa lacuna.
 
-As ferramentas de alto nível previstas são:
+As ferramentas de alto nível disponíveis são:
 
 | Ferramenta | Responsabilidade |
 |---|---|
@@ -175,7 +180,7 @@ aprovado.
 
 ## Definição de pronto
 
-O goal estará concluído somente quando um usuário puder descrever o caminho até a falha, revisar o
+O goal foi concluído quando ficou comprovado que um usuário pode descrever o caminho até a falha, revisar o
 roteiro e autorizar o RadIA a:
 
 1. compilar e iniciar a aplicação no depurador;
@@ -185,4 +190,4 @@ roteiro e autorizar o RadIA a:
 5. recompilar e repetir exatamente o mesmo cenário;
 6. comprovar a ausência da falha e deixar uma regressão executável.
 
-Depois de M5, retomar o plano de continuidade CLI pela Fase 0, sem alterar seu escopo congelado.
+O plano de continuidade CLI pode ser retomado pela Fase 0, sem alterar seu escopo congelado.

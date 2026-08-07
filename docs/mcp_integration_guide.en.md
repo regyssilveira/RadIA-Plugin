@@ -160,7 +160,7 @@ For reproducible automation, prefer `mcp.<pid>.json`.
 1. Open Delphi and a project.
 2. Confirm that `mcp.<pid>.json` exists.
 3. Start or reload the MCP server in the client.
-4. Verify that `initialize` reports RadIA `2.0.0`.
+4. Verify that `initialize` reports RadIA `2.1.0`.
 5. Call `tools/list`.
 6. Call `GetIDEState` and `GetActiveProject`.
 7. Test mutable consent only in a disposable project.
@@ -180,7 +180,7 @@ See also the [Complete RadIA User Manual](user_manual.en.md).
 
 ## Safe CLI client provisioning
 
-RadIA 2.0 includes a provisioning engine for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot
+RadIA 2.1 includes a provisioning engine for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot
 CLI. Its visual integration is available on the settings screen, while the core contract
 enforces this workflow:
 
@@ -219,3 +219,19 @@ An empty executable field keeps automatic `PATH` detection enabled.
 The connection button remains disabled when the bridge is missing, the configuration is invalid,
 or the client is already configured correctly. This screen never installs CLIs or changes client
 configuration without visual confirmation.
+## Runtime diagnostics over MCP
+
+An MCP client can drive the same cycle available in Agent Mode:
+
+1. `BuildProject` and `StartDebugging`;
+2. `GetRuntimeDebugSession`, `GetRuntimeWindows`, and `GetRuntimeControlTree`;
+3. `PrepareRuntimeScenario` and, after IDE consent, `RunRuntimeScenario`;
+4. `CaptureRuntimeEvidence` with `phase=failure`;
+5. reviewed fix application, a new build, and a new session;
+6. scenario replay, `phase=verification`, and `CompareRuntimeEvidence`;
+7. `PrepareRuntimeRegression`, `SaveRuntimeRegression`, and later
+   `PrepareSavedRuntimeScenario`.
+
+MCP never grants implicit authorization. Build, debugger, visual execution, and write operations
+continue to show IDE consent. See
+[Autonomous Runtime Diagnostics](runtime_debug_automation.en.md).

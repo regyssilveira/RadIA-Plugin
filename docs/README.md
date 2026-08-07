@@ -1,6 +1,6 @@
 # Centro de documentação do RadIA
 
-Este índice reúne a documentação funcional, operacional e técnica do RadIA 2.0.
+Este índice reúne a documentação funcional, operacional e técnica do RadIA 2.1.
 
 ## Comece aqui
 
@@ -76,7 +76,8 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Backlog | [Backlog](backlog.md) |
 | Goal RadIA 2.0 | [Jornada completa](radia_2_goal.md) |
 | Goal de liderança | [Experiência Delphi completa](experience_leadership_goal.md) |
-| Goal prioritário pós-2.0 | [Reprodução autônoma de falhas runtime](runtime_debug_automation_plan.md) |
+| Diagnóstico runtime autônomo | [Guia completo de uso](runtime_debug_automation.md) |
+| Goal runtime 2.1 concluído | [Plano e evidências de aceite](runtime_debug_automation_plan.md) |
 | Execução do M0 runtime | [Baseline, contratos e matriz](runtime_debug_automation_m0.md) |
 | Execução do M1 runtime | [Correlação e espera do depurador](runtime_debug_automation_m1.md) |
 | Execução do M2 runtime | [Descoberta segura de janelas e controles](runtime_debug_automation_m2.md) |
@@ -89,7 +90,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 - [Termos, privacidade e compliance](compliance.md)
 - [Modelo de segurança das tools](tool_security_model.md)
 
-## Cobertura da plataforma RadIA 2.0
+## Cobertura da plataforma RadIA 2.1
 
 | Capacidade | Manual de uso | Referência técnica |
 |---|---|---|

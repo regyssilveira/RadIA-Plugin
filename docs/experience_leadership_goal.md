@@ -1,7 +1,7 @@
 # Goal RadIA 2.0: liderança da experiência Delphi
 
 > **Estado:** planejado e em execução.
-> **Versão alvo:** 2.0.0, ainda não publicada.
+> **Estado histórico:** goal concluído e publicado na versão 2.0.0.
 
 ## Objetivo
 

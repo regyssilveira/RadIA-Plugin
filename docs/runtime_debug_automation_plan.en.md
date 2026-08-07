@@ -1,6 +1,6 @@
-# Post-2.0 goal — Autonomous runtime failure reproduction
+# 2.1 goal — Autonomous runtime failure reproduction
 
-> **Status:** M0–M5 implemented and automatically validated; end-to-end IDE acceptance is pending.
+> **Status:** completed and accepted end to end on all three supported targets.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Plan paused during this goal:** [CLI continuity and advanced integration](competitive_leadership_plan.en.md).
@@ -29,12 +29,17 @@ RadIA can already:
 - capture and compare sanitized evidence between failure and verification;
 - prepare reviewable changes and rebuild after consent.
 
-It cannot yet:
+Version 2.1 acceptance proved:
 
-- persist and version a visual scenario as regression evidence;
-- automatically generate a DUnitX test from every isolatable cause;
-- prove ten consecutive stable replays on every real target;
-- complete the end-to-end M5 gate on all three supported hosts.
+- a persisted and versioned visual regression scenario;
+- Access Violation reproduction with stack and source line;
+- a fix, new build, new session, and evidence comparison with outcome `fixed`;
+- ten replays and thirty consecutive actions on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64;
+- build and 806 passing tests on every target, without failures or leaks;
+- SonarQube Quality Gate `OK`, zero issues, and A ratings.
+
+Automatic DUnitX generation applies when the cause can be isolated without the visual lifecycle.
+When the UI lifecycle is essential, the versioned scenario is the appropriate regression.
 
 ## Security boundaries
 
@@ -56,14 +61,14 @@ It cannot yet:
 - replacing unit tests with visual tests;
 - code injection into the application as an initial requirement.
 
-## Proposed architecture
+## Implemented architecture
 
 The core receives a neutral `IRadIARuntimeAutomationFacade`. OTA integration correlates project,
 build, session, and process. A Windows adapter combines UI Automation with Win32 discovery for
 windowed VCL controls. VCL controls without handles report their capability as unavailable; an
 optional test probe is considered only after this gap is measured.
 
-The planned high-level tools are:
+The available high-level tools are:
 
 | Tool | Responsibility |
 |---|---|
@@ -175,7 +180,7 @@ approved quality gate.
 
 ## Definition of done
 
-The goal is complete only when a user can describe the path to a failure, review the scenario, and
+The goal was completed after proving that a user can describe the path to a failure, review the scenario, and
 authorize RadIA to:
 
 1. build and start the application under the debugger;
@@ -185,4 +190,4 @@ authorize RadIA to:
 5. rebuild and replay exactly the same scenario;
 6. prove the failure is absent and leave an executable regression.
 
-After M5, resume the CLI continuity plan at Phase 0 without changing its frozen scope.
+The CLI continuity plan can resume at Phase 0 without changing its frozen scope.

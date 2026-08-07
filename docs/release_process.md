@@ -207,7 +207,7 @@ origem, instala a versão anterior, aplica o ZIP atual, executa o reparo e regis
 de origem na evidência. O parâmetro exige `-ExercisePackageLifecycle`.
 
 O resumo versionado da matriz 2.0.0 está em `ide_smoke_evidence_2.0.0.json`. Ele registra os hashes
-dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 95 tools,
+dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 111 tools,
 docking nativo, restauração do desktop e ausência de processos órfãos.
 
 Depois de gerar os três arquivos em `Output\Validation`, consolide a prova oficial com:
@@ -347,7 +347,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado versionado fica em `declarative_workflow_smoke_evidence_2.0.0.json`.
-O gate exige exatamente os três targets suportados, 95 ferramentas e o workflow
+O gate exige exatamente os três targets suportados, 111 ferramentas e o workflow
 `RadIADiagnosticInspection` carregado, registrado e executado por hot reload. A evidência também
 confirma a classificação `readOnly` e a conclusão das duas etapas do workflow.
 
@@ -374,7 +374,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado versionado fica em `knowledge_smoke_evidence_2.0.0.json`.
-O gate exige exatamente Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, todos com 95
+O gate exige exatamente Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, todos com 111
 ferramentas, provider `local-hash-v1`, acerto vetorial, origem, navegação, leitura do documento,
 métricas do índice e isolamento do workspace.
 
@@ -418,8 +418,8 @@ Publique o catálogo depois que o executável e seu SHA-256 estiverem disponíve
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath Output\Installer\RadIA-v2.0.0-Setup.exe `
-  -DownloadUrl "https://downloads.example.com/RadIA-v2.0.0-Setup.exe"
+  -InstallerPath Output\Installer\RadIA-v2.1.0-Setup.exe `
+  -DownloadUrl "https://downloads.example.com/RadIA-v2.1.0-Setup.exe"
 ```
 
 O catálogo `stable` exige HTTPS e registra hash e estado Authenticode. O fluxo completo está em

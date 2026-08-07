@@ -1,6 +1,6 @@
 # Goal RadIA 2.0: jornada completa de desenvolvimento
 
-> **Estado da release:** em desenvolvimento e validação. A versão 2.0.0 ainda não foi lançada.
+> **Estado histórico:** goal concluído e versão 2.0.0 publicada.
 > Evidências registradas neste documento comprovam o baseline já implementado, mas não substituem
 > os gates adicionais definidos na seção "Expansão competitiva antes da release".
 

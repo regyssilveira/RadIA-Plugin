@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.0
+# Manual completo do RadIA 2.1
 
 ## 1. O que é o RadIA
 
@@ -354,6 +354,10 @@ em uma sessão futura, `PrepareSavedRuntimeScenario` seguido de `RunRuntimeScena
 listar são somente leitura. Salvar e reverter são escritas reversíveis, enquanto cada execução do
 cenário exige consentimento novo. Artefatos alterados sem atualizar o fingerprint são recusados.
 
+O ciclo completo — build, nova sessão, reprodução, evidência, correção, verificação, comparação e
+dez repetições — está em [Diagnóstico Runtime Autônomo](runtime_debug_automation.md). A comparação
+só aceita evidências do mesmo projeto obtidas em sessões e builds distintos.
+
 ### 4.12 Revisão inline
 
 O RadIA pode publicar observações ancoradas a arquivo, hash e linhas do editor. Sugestões são
@@ -444,11 +448,15 @@ Consulte o [modelo de segurança](tool_security_model.md) e o
 
 Use sempre o ZIP correspondente à versão e arquitetura da IDE.
 
-## 8. Limitações importantes da versão 2.0
+## 8. Limitações importantes da versão 2.1
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
 - O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 111 tools internas registradas.
+- A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
+  informam capacidade indisponível.
+- O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao
+  consentimento do usuário.
 - Algumas ideias do catálogo arquitetural são roadmap e podem não aparecer em `/tools`.
 - Debugger e Designer dependem de contexto e estado válidos da IDE.
 - Patches são recusados quando o buffer muda depois do preview.

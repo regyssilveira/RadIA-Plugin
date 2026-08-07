@@ -180,7 +180,7 @@ Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
 1. Abra o Delphi e um projeto.
 2. Confirme que `mcp.<pid>.json` foi criado.
 3. Inicie ou recarregue o servidor no cliente MCP.
-4. Verifique que `initialize` retorna RadIA `2.0.0`.
+4. Verifique que `initialize` retorna RadIA `2.1.0`.
 5. Execute `tools/list`.
 6. Chame `GetIDEState` e `GetActiveProject`.
 7. Para testar consentimento, use uma tool mutável somente em um projeto descartável.
@@ -200,9 +200,26 @@ Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
 
 Consulte também o [Manual Completo do RadIA](user_manual.md).
 
+## Diagnóstico runtime por MCP
+
+Um cliente MCP pode conduzir o mesmo ciclo disponível no modo agente:
+
+1. `BuildProject` e `StartDebugging`;
+2. `GetRuntimeDebugSession`, `GetRuntimeWindows` e `GetRuntimeControlTree`;
+3. `PrepareRuntimeScenario` e, após consentimento na IDE, `RunRuntimeScenario`;
+4. `CaptureRuntimeEvidence` com `phase=failure`;
+5. aplicação revisada da correção, novo build e nova sessão;
+6. repetição do cenário, captura com `phase=verification` e `CompareRuntimeEvidence`;
+7. `PrepareRuntimeRegression`, `SaveRuntimeRegression` e posterior
+   `PrepareSavedRuntimeScenario`.
+
+O cliente nunca recebe autorização implícita. Builds, ações do depurador, execução visual e escritas
+continuam exibindo o consentimento na IDE. Para detalhes, consulte
+[Diagnóstico Runtime Autônomo](runtime_debug_automation.md).
+
 ## Provisionamento seguro dos clientes CLI
 
-O RadIA 2.0 possui um mecanismo visual de provisionamento para Codex CLI, Claude Code, Gemini CLI e
+O RadIA 2.1 possui um mecanismo visual de provisionamento para Codex CLI, Claude Code, Gemini CLI e
 GitHub Copilot CLI. O contrato central garante que o processo siga estas etapas:
 
 1. detectar se a configuração está ausente, válida, divergente ou inválida;
