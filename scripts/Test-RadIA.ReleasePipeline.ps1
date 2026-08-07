@@ -16,13 +16,10 @@ $requiredFragments = @(
     "Test-RadIA.VisualInstaller.ps1",
     "New-RadIA.ReleaseChannel.ps1",
     "Prepare a clean distribution directory",
-    "Delphi-23.0-Win32-Release.zip",
-    "Delphi-37.0-Win32-Release.zip",
-    "Delphi-37.0-Win64-Release.zip",
     "https://github.com/",
     "actions/upload-artifact@v4",
     "gh release upload",
-    "SHA256SUMS.txt"
+    "INSTALLER_NAME"
 )
 
 foreach ($fragment in $requiredFragments) {
@@ -48,8 +45,16 @@ if (
 if ($workflow.Contains("http://github.com/")) {
     throw "Signed release workflow contains an insecure release URL."
 }
+if (
+    $workflow.Contains('Destination ".\Output\Distribution\$package"') -or
+    $workflow.Contains(
+        'Destination ".\Output\Distribution\SHA256SUMS.txt"'
+    )
+) {
+    throw "Internal package ZIP files cannot be published in the distribution."
+}
 
 Write-Host (
-    "Release workflow validation succeeded with three Delphi 12/13 package " +
-    "targets, SHA-256 evidence, and no certificate dependency."
+    "Release workflow validation succeeded with three internal Delphi inputs, " +
+    "one public installer, SHA-256 evidence, and no certificate dependency."
 )

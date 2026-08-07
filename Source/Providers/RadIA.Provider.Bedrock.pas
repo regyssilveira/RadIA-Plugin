@@ -206,8 +206,9 @@ end;
 function TRadIABedrockProvider.GetAvailableModels: TArray<string>;
 begin
   Result := TArray<string>.Create(
-    'anthropic.claude-3-5-sonnet-20241022-v2:0',
-    'anthropic.claude-3-5-sonnet-20240620-v1:0'
+    'anthropic.claude-sonnet-5',
+    'anthropic.claude-opus-5',
+    'anthropic.claude-fable-5'
   );
 end;
 
@@ -343,7 +344,7 @@ begin
   LModelId := GetActiveModel;
 
   if LModelId.IsEmpty then
-    LModelId := 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+    LModelId := 'anthropic.claude-sonnet-5';
 
   LUri := '/model/' + LModelId + '/invoke';
   LUrl := Format('https://bedrock-runtime.%s.amazonaws.com%s', [LRegion, LUri]);
@@ -451,7 +452,7 @@ begin
   LModelId := GetActiveModel;
 
   if LModelId.IsEmpty then
-    LModelId := 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+    LModelId := 'anthropic.claude-sonnet-5';
 
   LUri := '/model/' + LModelId + '/invoke-with-response-stream';
   LUrl := Format('https://bedrock-runtime.%s.amazonaws.com%s', [LRegion, LUri]);
@@ -561,7 +562,7 @@ initialization
       'https://bedrock-runtime.us-east-1.amazonaws.com',
       False, // HasApiKey
       False, // HasCustomUrl
-      ['anthropic.claude-3-5-sonnet-20241022-v2:0', 'anthropic.claude-3-5-sonnet-20240620-v1:0'],
+      ['anthropic.claude-sonnet-5', 'anthropic.claude-opus-5', 'anthropic.claude-fable-5'],
       function(const ACfg: IRadIAConfig): IRadIAProvider
       begin
         Result := TRadIABedrockProvider.Create(ACfg);

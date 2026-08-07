@@ -178,7 +178,7 @@ independent SHA-256 hashes, and writes `Output\ReleaseEvidence.json`.
 
 ## IDE smoke evidence
 
-Run every smoke with `-EvidencePath` to bind real cycles to the published ZIP, its `sourceCommit`,
+Run every smoke with `-EvidencePath` to bind real cycles to the verified internal ZIP, its `sourceCommit`,
 and the installed BPL:
 
 ```powershell
@@ -411,10 +411,10 @@ dependency. Production environment approval is recommended.
 * Delphi build executed successfully.
 * The exact analysis passed the SonarQube Quality Gate.
 * Required `Build, analyze, and enforce Quality Gate` status check passed.
-* Release packages generated for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+* Internal release packages generated for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 * Visual installer, SHA-256, and stable HTTPS catalog published.
 * Positive and negative validation completed for every package.
-* `SHA256SUMS.txt` published with the three ZIPs generated from the same commit.
+* The three internal ZIP files validated and consumed by the installer without redundant publication.
 * JSON evidence for ten real cycles generated for every supported combination.
 * No MCP process or discovery file left after smoke tests.
 * Working branch published.

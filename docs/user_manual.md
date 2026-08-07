@@ -52,6 +52,12 @@ No agente nativo, os modelos pertencem ao provider selecionado. A lista é recar
 provider ou salvar as configurações, sem reiniciar o Delphi. No executor externo, o CLI administra
 o modelo e o seletor fica desabilitado com uma indicação visual do cliente responsável.
 
+O Rad IA consulta primeiro a lista de modelos oferecida pela conta e pelo endpoint configurados.
+Somente quando essa descoberta falha, mostra um catálogo mínimo de fallback, atualizado com as
+famílias estáveis atuais do provider. A lista descoberta sempre prevalece, pois disponibilidade,
+região, plano e permissões podem variar. Os modelos do transporte ChatGPT OAuth/Codex são tratados
+separadamente dos modelos da API OpenAI.
+
 ## 3. Como ativar o modo agente
 
 ### 3.1 Botão e comandos do modo agente
@@ -78,6 +84,10 @@ No chat, o acesso às ferramentas é explícito:
 
 Esse comando mostra o catálogo realmente disponível na IDE atual. Ele é a fonte autoritativa,
 porque versão da IDE, contexto e extensões podem alterar o catálogo.
+
+O catálogo exibido no chat permite pesquisar por nome, finalidade ou risco. Cada tool apresenta
+descrição, categoria de risco, orientação de acionamento direto ou pelo agente e o schema JSON
+aceito. Abrir os detalhes não executa a ferramenta.
 
 Para executar uma ferramenta:
 
@@ -478,6 +488,10 @@ Use sempre o ZIP correspondente à versão e arquitetura da IDE.
 - Análise de código por IA não substitui compilador, testes, FastMM ou revisão humana.
 
 ## 9. Onde procurar ajuda
+
+Passe o mouse sobre campos e botões para ver a ajuda contextual. Nas Configurações, os hints
+explicam formato, efeito e dependências; no chat, os botões informam a ação equivalente e atalhos
+quando existirem. No terminal, os hints também documentam `Enter`, `Ctrl+R` e `Ctrl+P`.
 
 - [Tudo que o RadIA pode fazer](capabilities.md)
 - [Instalação e configuração](install_config.md)

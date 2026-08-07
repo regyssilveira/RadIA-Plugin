@@ -85,7 +85,7 @@ end;
 
 function TRadIAGithubCopilotProvider.GetAvailableModels: TArray<string>;
 begin
-  Result := TArray<string>.Create('gpt-4', 'gpt-3.5-turbo');
+  Result := TArray<string>.Create('gpt-5.4', 'claude-sonnet-4.6');
 end;
 
 function TRadIAGithubCopilotProvider.GetName: string;
@@ -535,7 +535,7 @@ initialization
       'https://api.githubcopilot.com',
       True,  { Requer API Key (ghu_... / gho_...) }
       False, { NÃƒÂ£o permite URL customizada }
-      ['gpt-4', 'gpt-3.5-turbo'],
+      ['gpt-5.4', 'claude-sonnet-4.6'],
       function(const ACfg: IRadIAConfig): IRadIAProvider
       begin
         Result := TRadIAGithubCopilotProvider.Create(ACfg);

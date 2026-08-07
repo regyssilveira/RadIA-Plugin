@@ -54,7 +54,7 @@ begin
   { Azure uses Deployment Names mapped by the administrator.
     We return standard default identifiers, but the user will write or select
     their own Deployment Name in the settings/combobox. }
-  Result := TArray<string>.Create('gpt-4o', 'gpt-4', 'gpt-35-turbo');
+  Result := TArray<string>.Create('gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna');
 end;
 
 function TRadIAAzureOpenAIProvider.GetName: string;
@@ -174,7 +174,7 @@ initialization
       '',
       True,  { Requer API Key }
       True,  { Permite URL customizada (Resource Endpoint) }
-      ['gpt-4o', 'gpt-4', 'gpt-35-turbo'],
+      ['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna'],
       function(const ACfg: IRadIAConfig): IRadIAProvider
       begin
         Result := TRadIAAzureOpenAIProvider.Create(ACfg);

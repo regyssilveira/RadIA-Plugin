@@ -8,6 +8,10 @@ const webRoot = path.join(repositoryRoot, 'Source', 'UI', 'Web');
 const chatHtml = fs.readFileSync(path.join(webRoot, 'chat.html'), 'utf8');
 const chatJs = fs.readFileSync(path.join(webRoot, 'chat.js'), 'utf8');
 const diffHtml = fs.readFileSync(path.join(webRoot, 'diff.html'), 'utf8');
+const configFrame = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigFrame.pas'),
+  'utf8'
+);
 
 test('web surfaces do not contact external origins during startup', () => {
   assert.doesNotMatch(chatHtml, /(?:src|href)="https?:\/\//i);
@@ -31,11 +35,36 @@ test('custom selectors support keyboard activation and synchronized ARIA state',
   assert.match(chatJs, /div\.setAttribute\('aria-pressed'/);
 });
 
+test('every static chat button provides contextual help', () => {
+  const buttons = [...chatHtml.matchAll(/<button\b[\s\S]*?<\/button>/gu)];
+  assert.ok(buttons.length > 0);
+  buttons.forEach(match => {
+    const openingTag = match[0].slice(0, match[0].indexOf('>') + 1);
+    assert.match(openingTag, /\btitle="[^"]+"/u, openingTag);
+  });
+});
+
 test('model selector remains governed by the active chat executor', () => {
   assert.match(chatJs, /let modelSelectionEnabled = true/);
   assert.match(chatJs, /data\.modelSelectionEnabled !== false/);
   assert.match(chatJs, /data\.enabled !== false/);
   assert.match(chatJs, /modelSelectionEnabled && !requestInProgress/);
+});
+
+test('runtime tool catalog explains discovery, risk, activation, and arguments', () => {
+  assert.match(chatJs, /Search tools by name, purpose, or risk/);
+  assert.match(chatJs, /How and when to use/);
+  assert.match(chatJs, /Direct invocation:/);
+  assert.match(chatJs, /Accepted arguments/);
+  assert.match(chatJs, /tool\.inputSchema/);
+});
+
+test('configuration controls enable centralized contextual hints', () => {
+  assert.match(configFrame, /procedure TRadIAFrameAIConfig\.ConfigureControlHints/);
+  assert.match(configFrame, /procedure TRadIAFrameAIConfig\.ConfigureOperationalHints/);
+  assert.match(configFrame, /LControl\.Hint := AHint/);
+  assert.match(configFrame, /LControl\.ShowHint := True/);
+  assert.match(configFrame, /ConfigureControlHints;/);
 });
 
 test('diff review announces selection state and errors', () => {

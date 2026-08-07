@@ -35,7 +35,8 @@
     </div>
     <div class="header-right">
       <button class="header-action-btn agent-mode-enabled" id="btn-agent-mode"
-        title="Agent Mode: On" aria-label="Agent Mode: On" aria-pressed="true">
+        title="Agent mode is on: RadIA may use IDE tools after policy and consent checks"
+        aria-label="Agent Mode: On" aria-pressed="true">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="4" y="7" width="16" height="12" rx="3"></rect>
@@ -46,7 +47,8 @@
         </svg>
         <span class="btn-label">Agent On</span>
       </button>
-      <button class="header-action-btn" id="btn-terminal" title="Open Terminal (/terminal)"
+      <button class="header-action-btn" id="btn-terminal"
+        title="Open the integrated terminal. You can also type /terminal"
         aria-label="Open Terminal">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -56,7 +58,8 @@
         </svg>
         <span class="btn-label">Terminal</span>
       </button>
-      <button class="header-action-btn" id="btn-agent-history" title="Agent Run History (/agent history)"
+      <button class="header-action-btn" id="btn-agent-history"
+        title="Review previous agent runs, steps, status, and checkpoints (/agent history)"
         aria-label="Open Agent Run History">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -66,7 +69,8 @@
         </svg>
         <span class="btn-label">Runs</span>
       </button>
-      <button class="header-action-btn" id="btn-clear-chat" title="Clear Chat"
+      <button class="header-action-btn" id="btn-clear-chat"
+        title="Clear messages from the current chat without deleting other sessions"
         aria-label="Clear Chat">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -76,7 +80,8 @@
         </svg>
         <span class="btn-label">Clear</span>
       </button>
-      <button class="header-action-btn" id="btn-generators" title="Generators"
+      <button class="header-action-btn" id="btn-generators"
+        title="Open guided generators for models, DTOs, and project content"
         aria-label="Open Generators">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -85,7 +90,8 @@
         </svg>
         <span class="btn-label">Generators</span>
       </button>
-      <button class="header-action-btn" id="btn-history" title="Chats"
+      <button class="header-action-btn" id="btn-history"
+        title="Show, create, rename, or delete saved chat sessions"
         aria-label="Toggle Chat Sessions" aria-expanded="false" aria-controls="sessions-sidebar">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -95,7 +101,8 @@
         </svg>
         <span class="btn-label">Chats</span>
       </button>
-      <button class="header-action-btn hidden" id="btn-web-login" title="Connect Web Login"
+      <button class="header-action-btn hidden" id="btn-web-login"
+        title="Connect or disconnect the web-login session required by this provider"
         aria-label="Connect Web Login">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -104,7 +111,8 @@
         </svg>
         <span class="btn-label">Connect</span>
       </button>
-      <button class="header-action-btn" id="btn-settings" title="Settings"
+      <button class="header-action-btn" id="btn-settings"
+        title="Configure providers, agent execution, consent, CLI, MCP, logs, and diagnostics"
         aria-label="Open Settings">
         <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -122,7 +130,7 @@
     <aside id="sessions-sidebar" class="collapsed" aria-label="Chat sessions">
       <div class="sidebar-header">
         <span>CHATS</span>
-        <button id="btn-new-chat-sidebar" title="New Session"
+        <button id="btn-new-chat-sidebar" title="Create a separate empty chat session"
           aria-label="Create New Chat Session">+</button>
       </div>
       <ul id="sessions-list"></ul>
@@ -149,8 +157,9 @@
           <div id="prompt-wrapper">
             <div id="prompt-capsule">
               <textarea id="prompt-textarea" aria-label="Message Rad IA"
+                title="Describe a task, ask a question, or type / to discover commands. Ctrl+Enter sends"
                 placeholder="Ask Rad IA or type / for commands..." rows="1"></textarea>
-              <button id="btn-send-prompt" title="Send message" aria-label="Send message">
+              <button id="btn-send-prompt" title="Send message (Ctrl+Enter)" aria-label="Send message">
                 <svg class="send-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -167,6 +176,7 @@
               </select>
               <div class="custom-dropdown-wrapper" id="provider-dropdown-wrapper">
                 <button type="button" class="custom-dropdown-trigger" id="provider-dropdown-trigger"
+                  title="Select the AI provider used by native chat requests"
                   aria-label="AI provider" aria-expanded="false"
                   aria-haspopup="listbox" aria-controls="provider-options-list">
                   <span id="provider-dropdown-value">Provider...</span>
@@ -182,6 +192,7 @@
               </select>
               <div class="custom-dropdown-wrapper" id="model-dropdown-wrapper">
                 <button type="button" class="custom-dropdown-trigger" id="model-dropdown-trigger"
+                  title="Select a provider model; external CLI executors manage their own model"
                   aria-label="AI model" aria-expanded="false"
                   aria-haspopup="listbox" aria-controls="model-options-list">
                   <span id="model-dropdown-value">Model...</span>
@@ -233,7 +244,9 @@
             </div>
           </div>
 
-          <button id="btn-generate-model" class="btn-primary-gradient">Generate Model</button>
+          <button id="btn-generate-model" class="btn-primary-gradient"
+            title="Generate Delphi model code from the JSON or DDL entered above"
+            aria-label="Generate Model">Generate Model</button>
         </div>
 
         <div class="generator-preview-card hidden" id="generator-preview-card">

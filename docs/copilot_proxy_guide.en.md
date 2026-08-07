@@ -71,7 +71,7 @@ Now that you have the proxy running and your Copilot token:
   "baseUrl": "http://localhost:8080/v1",
   "apiKey": "ghu_paste_your_token_here_...",
   "defaultModels": [
-    "gpt-4"
+    "gpt-5.4"
   ]
 }
 ```

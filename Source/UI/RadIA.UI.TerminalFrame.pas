@@ -60,6 +60,7 @@ type
     );
     procedure BuildControls;
     procedure BuildPaletteControls;
+    procedure ConfigureControlHints;
     function CanRunCommand(
       const AProfile: TRadIATerminalProfile;
       const ACommand: string;
@@ -352,6 +353,7 @@ begin
   FClearButton.OnClick := ClearClick;
 
   BuildPaletteControls;
+  ConfigureControlHints;
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := FTopPanel;
@@ -395,6 +397,29 @@ begin
   FPaletteCombo.SetBounds(296, 122, 548, 25);
   FPaletteCombo.Style := csDropDownList;
   FPaletteCombo.OnChange := PaletteChange;
+end;
+
+procedure TRadIATerminalFrame.ConfigureControlHints;
+begin
+  FProfileCombo.Hint := 'Select the shell executable and argument profile for this terminal session';
+  FSnippetCombo.Hint := 'Insert a safe predefined command into the command field without running it';
+  FHistoryCombo.Hint := 'Restore a command from local terminal history without executing it';
+  FCommandEdit.Hint := 'Enter runs or sends input. Ctrl+R searches history and Ctrl+P opens the palette';
+  FRunButton.Hint := 'Run the command after execution policy and consent checks';
+  FStopButton.Hint := 'Cancel the active process and its child process tree';
+  FClearButton.Hint := 'Clear visible terminal output without deleting command history';
+  FPaletteEdit.Hint := 'Filter command snippets and local history. Press Enter to select a result';
+  FPaletteCombo.Hint := 'Choose a filtered command and place it in the command field';
+
+  FProfileCombo.ShowHint := True;
+  FSnippetCombo.ShowHint := True;
+  FHistoryCombo.ShowHint := True;
+  FCommandEdit.ShowHint := True;
+  FRunButton.ShowHint := True;
+  FStopButton.ShowHint := True;
+  FClearButton.ShowHint := True;
+  FPaletteEdit.ShowHint := True;
+  FPaletteCombo.ShowHint := True;
 end;
 
 procedure TRadIATerminalFrame.AppendOutput(const AText: string);

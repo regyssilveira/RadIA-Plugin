@@ -72,7 +72,11 @@ begin
   if SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
     Result := TArray<string>.Create(MODEL_OPENAI_GPT54_MINI, MODEL_OPENAI_GPT54)
   else
-    Result := TArray<string>.Create(MODEL_OPENAI_GPT4O_MINI, MODEL_OPENAI_GPT4O);
+    Result := TArray<string>.Create(
+      MODEL_OPENAI_GPT56_TERRA,
+      MODEL_OPENAI_GPT56_SOL,
+      MODEL_OPENAI_GPT56_LUNA
+    );
 end;
 
 function TRadIAOpenAIProvider.GetName: string;
@@ -614,7 +618,7 @@ initialization
       'https://api.openai.com/v1',
       True, // HasApiKey
       True, // HasCustomUrl
-      [MODEL_OPENAI_GPT4O_MINI, MODEL_OPENAI_GPT4O, MODEL_OPENAI_GPT54_MINI, MODEL_OPENAI_GPT54],
+      [MODEL_OPENAI_GPT56_TERRA, MODEL_OPENAI_GPT56_SOL, MODEL_OPENAI_GPT56_LUNA],
       function(const ACfg: IRadIAConfig): IRadIAProvider
       begin
         Result := TRadIAOpenAIProvider.Create(ACfg);

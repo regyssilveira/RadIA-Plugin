@@ -38,7 +38,11 @@ end;
 
 function TRadIAClaudeProvider.GetAvailableModels: TArray<string>;
 begin
-  Result := TArray<string>.Create(MODEL_CLAUDE_3_HAIKU, MODEL_CLAUDE_35_SONNET);
+  Result := TArray<string>.Create(
+    MODEL_CLAUDE_SONNET_5,
+    MODEL_CLAUDE_OPUS_5,
+    MODEL_CLAUDE_FABLE_5
+  );
 end;
 
 function TRadIAClaudeProvider.GetName: string;
@@ -291,7 +295,7 @@ initialization
       'https://api.anthropic.com',
       True, // HasApiKey
       False, // HasCustomUrl
-      [MODEL_CLAUDE_3_HAIKU, MODEL_CLAUDE_35_SONNET],
+      [MODEL_CLAUDE_SONNET_5, MODEL_CLAUDE_OPUS_5, MODEL_CLAUDE_FABLE_5],
       function(const ACfg: IRadIAConfig): IRadIAProvider
       begin
         Result := TRadIAClaudeProvider.Create(ACfg);

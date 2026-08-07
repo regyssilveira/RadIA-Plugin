@@ -65,7 +65,13 @@ The `.github/workflows/release.yml` workflow runs the complete chain on a Window
 4. verifies that all packages share the version, clean commit, and valid hashes;
 5. builds and validates the installer without a certificate dependency;
 6. creates the `stable` catalog with the GitHub Release HTTPS URL;
-7. publishes the installer, ZIPs, `SHA256SUMS.txt`, catalog, and evidence.
+7. publishes only the user-facing installer, plus the catalog and evidence.
+
+The three ZIP files are still generated temporarily as verified installer inputs. They are not
+attached to the GitHub Release: the visual installer is the only installation artifact offered to
+users. Contributors who prefer manual builds or packaging can use `build.ps1`.
+This avoids three redundant downloads while preserving per-target version, architecture, manifest,
+and SHA-256 validation before the installer is assembled.
 
 The workflow can run manually without publishing to validate the distribution; a `v*` tag
 publishes the release. Audit the pipeline contract locally with:

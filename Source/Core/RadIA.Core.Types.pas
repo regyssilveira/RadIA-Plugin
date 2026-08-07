@@ -11,19 +11,22 @@ type
       rpScanWarnings);
 
 const
-  { Standard models for Google Gemini }
-  MODEL_GEMINI_15_FLASH = 'gemini-1.5-flash';
-  MODEL_GEMINI_15_PRO   = 'gemini-1.5-pro';
+  { Current fallback models for Google Gemini }
+  MODEL_GEMINI_36_FLASH      = 'gemini-3.6-flash';
+  MODEL_GEMINI_35_FLASH      = 'gemini-3.5-flash';
+  MODEL_GEMINI_35_FLASH_LITE = 'gemini-3.5-flash-lite';
 
   { Standard models for OpenAI }
-  MODEL_OPENAI_GPT4O       = 'gpt-4o';
-  MODEL_OPENAI_GPT4O_MINI  = 'gpt-4o-mini';
+  MODEL_OPENAI_GPT56_SOL   = 'gpt-5.6-sol';
+  MODEL_OPENAI_GPT56_TERRA = 'gpt-5.6-terra';
+  MODEL_OPENAI_GPT56_LUNA  = 'gpt-5.6-luna';
   MODEL_OPENAI_GPT54       = 'gpt-5.4';
   MODEL_OPENAI_GPT54_MINI  = 'gpt-5.4-mini';
 
-  { Standard models for Anthropic Claude }
-  MODEL_CLAUDE_35_SONNET = 'claude-3-5-sonnet-20240620';
-  MODEL_CLAUDE_3_HAIKU   = 'claude-3-haiku-20240307';
+  { Current fallback models for Anthropic Claude }
+  MODEL_CLAUDE_FABLE_5  = 'claude-fable-5';
+  MODEL_CLAUDE_OPUS_5   = 'claude-opus-5';
+  MODEL_CLAUDE_SONNET_5 = 'claude-sonnet-5';
 
   { Standard models for DeepSeek }
   MODEL_DEEPSEEK_CHAT      = 'deepseek-chat';

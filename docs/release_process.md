@@ -438,10 +438,10 @@ certificado. Recomenda-se proteger a execução com aprovação de ambiente.
 * Build Delphi executado com sucesso.
 * Análise exata aprovada pelo SonarQube Quality Gate.
 * Status check `Build, analyze, and enforce Quality Gate` obrigatório e aprovado.
-* Pacotes Release gerados para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+* Pacotes Release internos gerados para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 * Instalador visual, SHA-256 e catálogo estável HTTPS publicados.
 * Validação positiva e negativa executada para cada pacote.
-* `SHA256SUMS.txt` publicado com os três ZIPs gerados pelo mesmo commit.
+* Os três ZIPs internos validados e consumidos pelo instalador, sem publicação redundante.
 * Evidência JSON de dez ciclos reais gerada para cada combinação suportada.
 * Nenhum processo ou discovery MCP órfão após os smokes.
 * Branch de trabalho publicada.

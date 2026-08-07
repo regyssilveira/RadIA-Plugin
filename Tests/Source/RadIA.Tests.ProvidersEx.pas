@@ -234,8 +234,8 @@ begin
   FConfig.SetActiveModel('LMStudio', 'lms-default');
   FConfig.SetActiveModel('Qwen', MODEL_QWEN_25_CODER_32B);
   FConfig.SetActiveModel('Mistral', MODEL_MISTRAL_CODESTRAL);
-  FConfig.SetActiveModel('Gemini', MODEL_GEMINI_15_FLASH);
-  FConfig.SetActiveModel('Claude', MODEL_CLAUDE_3_HAIKU);
+  FConfig.SetActiveModel('Gemini', MODEL_GEMINI_36_FLASH);
+  FConfig.SetActiveModel('Claude', MODEL_CLAUDE_SONNET_5);
   FConfig.SetActiveModel('Ollama', 'llama3:latest');
   FConfig.SetActiveModel('Bedrock', 'anthropic.claude-3-5-sonnet-20241022-v2:0');
 
@@ -826,7 +826,7 @@ const
     '"usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30}}';
 begin
   RunOpenAIPayloadTest(FGithubCopilotProv, 'Fix this code', 'Copilot Query',
-    MOCK_COPILOT_RESPONSE, 'gpt-4', 'Copilot response text', True, 10, 20, 30);
+    MOCK_COPILOT_RESPONSE, 'gpt-5.4', 'Copilot response text', True, 10, 20, 30);
 end;
 
 procedure TTestRadIAProvidersEx.TestGithubCopilot_StreamingSSE;

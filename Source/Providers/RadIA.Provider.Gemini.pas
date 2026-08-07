@@ -49,7 +49,11 @@ end;
 
 function TRadIAGeminiProvider.GetAvailableModels: TArray<string>;
 begin
-  Result := TArray<string>.Create(MODEL_GEMINI_15_FLASH, MODEL_GEMINI_15_PRO);
+  Result := TArray<string>.Create(
+    MODEL_GEMINI_36_FLASH,
+    MODEL_GEMINI_35_FLASH,
+    MODEL_GEMINI_35_FLASH_LITE
+  );
 end;
 
 function TRadIAGeminiProvider.GetName: string;
@@ -603,7 +607,7 @@ initialization
       'https://generativelanguage.googleapis.com',
       True, // HasApiKey
       False, // HasCustomUrl
-      [MODEL_GEMINI_15_FLASH, MODEL_GEMINI_15_PRO],
+      [MODEL_GEMINI_36_FLASH, MODEL_GEMINI_35_FLASH, MODEL_GEMINI_35_FLASH_LITE],
       function(const ACfg: IRadIAConfig): IRadIAProvider
       begin
         Result := TRadIAGeminiProvider.Create(ACfg);

@@ -159,6 +159,12 @@ type
     procedure CreateCliMcpTab;
     procedure CreateCliExecutableControls;
     procedure CreateMemoryDiagnosticsTab;
+    procedure ConfigureControlHints;
+    procedure ConfigureOperationalHints;
+    procedure SetControlsHint(
+      const AControls: array of TControl;
+      const AHint: string
+    );
     procedure CreateTemplateOriginLabel;
     procedure CreateProviderAdvancedControls(ATabSheet: TTabSheet; const AProviderId: string);
     function GetBridgePath: string;
@@ -651,7 +657,7 @@ begin
   );
   FLblConsentSummary.AutoSize := False;
   FLblConsentSummary.WordWrap := True;
-  FLblConsentSummary.Width := 520;
+  FLblConsentSummary.Width := 560;
   FLblConsentSummary.Height := 40;
 
   FLblConsentTimeout := CreateLabel(
@@ -880,7 +886,7 @@ begin
     FPnlSecurity,
     16,
     1048,
-    640
+    560
   );
 end;
 
@@ -945,12 +951,12 @@ end;
 procedure TRadIAFrameAIConfig.CreateCliExecutableControls;
 begin
   CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 70);
-  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 88, 414);
+  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 88, 382);
   FEdtCliExecutable.Anchors := [akLeft, akTop, akRight];
 
   FBtnCliBrowse := TButton.Create(Self);
   FBtnCliBrowse.Parent := FPnlCliMcp;
-  FBtnCliBrowse.SetBounds(438, 86, 96, 25);
+  FBtnCliBrowse.SetBounds(406, 86, 92, 25);
   FBtnCliBrowse.Anchors := [akTop, akRight];
   FBtnCliBrowse.Caption := 'Browse...';
   FBtnCliBrowse.OnClick := BtnCliBrowseClick;
@@ -958,17 +964,242 @@ begin
   FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 120);
   FBtnCliRefresh := TButton.Create(Self);
   FBtnCliRefresh.Parent := FPnlCliMcp;
-  FBtnCliRefresh.SetBounds(548, 86, 96, 25);
+  FBtnCliRefresh.SetBounds(510, 86, 96, 25);
   FBtnCliRefresh.Anchors := [akTop, akRight];
   FBtnCliRefresh.Caption := 'Diagnose';
   FBtnCliRefresh.OnClick := BtnCliRefreshClick;
 
   FBtnCliInstall := TButton.Create(Self);
   FBtnCliInstall.Parent := FPnlCliMcp;
-  FBtnCliInstall.SetBounds(534, 116, 110, 25);
+  FBtnCliInstall.SetBounds(496, 116, 110, 25);
   FBtnCliInstall.Anchors := [akTop, akRight];
   FBtnCliInstall.Caption := 'Install channel';
   FBtnCliInstall.OnClick := BtnCliInstallClick;
+end;
+
+procedure TRadIAFrameAIConfig.SetControlsHint(
+  const AControls: array of TControl;
+  const AHint: string
+);
+var
+  LControl: TControl;
+begin
+  for LControl in AControls do
+  begin
+    if not Assigned(LControl) then
+      Continue;
+    LControl.Hint := AHint;
+    LControl.ShowHint := True;
+  end;
+end;
+
+procedure TRadIAFrameAIConfig.ConfigureControlHints;
+begin
+  SetControlsHint(
+    [edtGeminiKey, edtOpenAIKey, edtClaudeKey, edtDeepSeekKey,
+     edtGroqKey, edtOpenRouterKey, edtQwenKey, edtMistralKey],
+    'Provider API key. It is protected locally with Windows DPAPI.'
+  );
+  SetControlsHint(
+    [grpGeminiAuthType, grpOpenAIAuthType],
+    'Select API key authentication or the provider-specific web login transport.'
+  );
+  SetControlsHint(
+    [btnGeminiWebLogin, btnOpenAIWebLogin],
+    'Start the selected provider web login flow and store the resulting local session.'
+  );
+  SetControlsHint(
+    [lnkGeminiGetKey, lnkOpenAIGetKey, lnkClaudeGetKey, lnkDeepSeekGetKey,
+     lnkGroqGetKey, lnkOpenRouterGetKey, lnkQwenGetKey, lnkMistralGetKey,
+     lnkBedrockGetKey],
+    'Open the provider documentation where credentials can be created or managed.'
+  );
+  SetControlsHint(
+    [edtOpenAICustomUrl],
+    'Optional OpenAI-compatible base URL. Leave empty to use the official endpoint.'
+  );
+  SetControlsHint(
+    [edtOllamaUrl, edtLMStudioUrl],
+    'Base URL of the local or network model server, including its port.'
+  );
+  SetControlsHint(
+    [edtGithubCopilotKey],
+    'GitHub Copilot token imported or obtained by the device login flow.'
+  );
+  SetControlsHint(
+    [btnConnectGithub],
+    'Start GitHub Copilot device login and save the authorized token.'
+  );
+  SetControlsHint(
+    [btnImportVSCode],
+    'Import the active GitHub Copilot credentials from the local VS Code profile.'
+  );
+  SetControlsHint(
+    [edtAzureKey],
+    'Azure OpenAI resource key, protected locally with Windows DPAPI.'
+  );
+  SetControlsHint(
+    [edtAzureUrl],
+    'Azure OpenAI resource endpoint, for example https://resource.openai.azure.com.'
+  );
+  SetControlsHint(
+    [edtAzureModel],
+    'Azure deployment name. This is usually different from the base model name.'
+  );
+  SetControlsHint(
+    [edtAzureApiVersion],
+    'Azure OpenAI API version appended to requests as the api-version parameter.'
+  );
+  SetControlsHint(
+    [edtAwsAccessKeyId, edtAwsSecretAccessKey, edtAwsSessionToken],
+    'AWS credential used for Bedrock. Session token is optional for long-lived keys.'
+  );
+  SetControlsHint(
+    [edtAwsRegion],
+    'AWS region that hosts the selected Bedrock model, for example us-east-1.'
+  );
+  SetControlsHint(
+    [memSystemPrompt],
+    'System instruction applied to new conversations. Keep project secrets out of this field.'
+  );
+  SetControlsHint(
+    [lstTemplates],
+    'Select a prompt template to inspect or edit it.'
+  );
+  SetControlsHint(
+    [edtTemplateName, edtTemplateDesc, memTemplateBody, edtTemplateSlash],
+    'Template metadata or content. Slash aliases must be unique and start with a slash.'
+  );
+  SetControlsHint(
+    [btnNewTemplate, btnDeleteTemplate, btnSaveTemplate, btnRestoreDefaults,
+     btnExportTemplates, btnImportTemplates],
+    'Manage reusable prompt templates. Destructive actions request confirmation.'
+  );
+  SetControlsHint(
+    [chkIsProjectGenerator],
+    'Treat this template response as a multi-file project generation result.'
+  );
+  ConfigureOperationalHints;
+end;
+
+procedure TRadIAFrameAIConfig.ConfigureOperationalHints;
+begin
+  SetControlsHint(
+    [FChkSmartConfig],
+    'Let RadIA choose provider parameters when a field is not explicitly configured.'
+  );
+  SetControlsHint(
+    [FChkInjectDelphiVersion],
+    'Add the active Delphi version to prompts so generated code targets the correct compiler.'
+  );
+  SetControlsHint(
+    [FChkConciseResponses],
+    'Ask providers for shorter answers by default. Explicit requests can still be detailed.'
+  );
+  SetControlsHint(
+    [FChkLogEnabled, FEdtLogPath, FBtnBrowseLogPath, FEdtLogMaxSize],
+    'Configure local diagnostic logs and their maximum size. Credentials are sanitized.'
+  );
+  SetControlsHint(
+    [FChkQuotaEnabled, FEdtQuotaLimit, FBtnResetQuota],
+    'Set or reset the local monthly token budget. This does not change provider billing limits.'
+  );
+  SetControlsHint(
+    [FEdtConsentTimeout],
+    'Seconds before an unanswered tool consent dialog is cancelled automatically.'
+  );
+  SetControlsHint(
+    [FChkConsentShowArguments],
+    'Show sanitized JSON arguments before approving a tool call.'
+  );
+  SetControlsHint(
+    [FChkConsentRememberReversible, FChkConsentRememberStructural,
+     FChkConsentRememberExecution],
+    'Allow the consent dialog to offer session-only permission for this risk category.'
+  );
+  SetControlsHint(
+    [FBtnRevokeConsent],
+    'Immediately revoke every permission remembered for the current IDE session.'
+  );
+  SetControlsHint(
+    [FChkKnowledgeSemanticEnabled],
+    'Create a rebuildable local semantic index for the active project without network access.'
+  );
+  SetControlsHint(
+    [FEdtKnowledgeExcludedFiles, FEdtKnowledgeExcludedProjects],
+    'Semicolon-separated fragments excluded from project knowledge indexing.'
+  );
+  SetControlsHint(
+    [FChkKnowledgeRemoteEnabled, FChkKnowledgeRemoteConsent],
+    'Enable remote embeddings and explicitly consent to sending bounded project text.'
+  );
+  SetControlsHint(
+    [FEdtKnowledgeRemoteEndpoint, FEdtKnowledgeRemoteModel,
+     FEdtKnowledgeRemoteApiKey],
+    'Configure the OpenAI-compatible embedding endpoint, model, and protected API key.'
+  );
+  SetControlsHint(
+    [FEdtKnowledgeRemoteDimensions, FEdtKnowledgeRemoteTimeout,
+     FEdtKnowledgeRemoteInputLimit],
+    'Embedding vector dimensions, request timeout in milliseconds, and maximum input characters.'
+  );
+  SetControlsHint(
+    [FChkInlineCompletionEnabled, FEdtInlineCompletionDelay],
+    'Enable inline suggestions and configure the idle delay before a request starts.'
+  );
+  SetControlsHint(
+    [FEdtInlineCompletionExcludedLanguages, FEdtInlineCompletionExcludedFiles,
+     FEdtInlineCompletionExcludedProjects],
+    'Semicolon-separated filters where continuous inline completion must remain disabled.'
+  );
+  SetControlsHint(
+    [FEdtInlineShortcutProfile],
+    'Configure RadIA editor shortcuts as action=shortcut pairs separated by semicolons.'
+  );
+  SetControlsHint(
+    [FCmbAgentExecutor],
+    'Choose native RadIA orchestration or delegate agent objectives to the selected external CLI.'
+  );
+  SetControlsHint(
+    [FCmbCliClient],
+    'Select the external CLI profile used for diagnosis, execution, and MCP provisioning.'
+  );
+  SetControlsHint(
+    [FEdtCliExecutable, FBtnCliBrowse],
+    'Optional path to an existing CLI executable. Leave empty to use the Windows PATH.'
+  );
+  SetControlsHint(
+    [FBtnCliRefresh],
+    'Resolve the effective executable and check its version and authentication status.'
+  );
+  SetControlsHint(
+    [FBtnCliInstall],
+    'Review and run the official optional installation or update channel for this CLI.'
+  );
+  SetControlsHint(
+    [FEdtMcpConfig, FEdtMcpBridge],
+    'Paths used to configure the selected MCP client and the RadIA stdio bridge.'
+  );
+  SetControlsHint(
+    [FBtnMcpPreview, FBtnMcpProvision, FBtnMcpRemove, FBtnMcpHandshake],
+    'Preview, connect, disconnect, or test the selected MCP client without changing the chat executor.'
+  );
+  SetControlsHint(
+    [FMemoMcpPreview],
+    'Read-only preview and diagnostic output for MCP configuration operations.'
+  );
+  SetControlsHint(
+    [FEdtFastMM5Root, FBtnBrowseFastMM5],
+    'Select the user-supplied FastMM5 source root that contains FastMM5.pas.'
+  );
+  SetControlsHint(
+    [FChkFastMM5License],
+    'Confirm that FastMM5 is supplied by the user and governed by its own license.'
+  );
+  SetControlsHint(
+    [FBtnValidateFastMM5],
+    'Validate the configured FastMM5 layout without changing the active Delphi project.'
+  );
 end;
 
 procedure TRadIAFrameAIConfig.CreateCliMcpTab;
@@ -1017,9 +1248,9 @@ begin
   CreateCliExecutableControls;
 
   CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 152);
-  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 170, 628);
+  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 170, 590);
   CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 206);
-  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 224, 628);
+  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 224, 590);
 
   FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 256);
   FBtnMcpPreview := TButton.Create(Self);
@@ -1062,8 +1293,8 @@ begin
   FMemoMcpPreview.Parent := FPnlCliMcp;
   FMemoMcpPreview.Left := 16;
   FMemoMcpPreview.Top := 320;
-  FMemoMcpPreview.Width := 628;
-  FMemoMcpPreview.Height := 150;
+  FMemoMcpPreview.Width := 590;
+  FMemoMcpPreview.Height := 136;
   FMemoMcpPreview.ReadOnly := True;
   FMemoMcpPreview.ScrollBars := ssBoth;
   FMemoMcpPreview.WordWrap := False;
@@ -1116,6 +1347,7 @@ begin
   CreateSecurityTab;
   CreateCliMcpTab;
   CreateMemoryDiagnosticsTab;
+  ConfigureControlHints;
   LoadAgentExecutorSettings;
   LoadFastMM5Settings;
 
@@ -1199,6 +1431,10 @@ begin
   LEdtTemp.Left := 16;
   LEdtTemp.Top := 42;
   LEdtTemp.Width := 100;
+  SetControlsHint(
+    [LEdtTemp],
+    'Controls output randomness. Lower values are more deterministic.'
+  );
   FEdtTemperatures.Add(AProviderId, LEdtTemp);
 
   LLabel := TLabel.Create(Self);
@@ -1213,6 +1449,10 @@ begin
   LEdtMax.Top := 42;
   LEdtMax.Width := 100;
   LEdtMax.NumbersOnly := True;
+  SetControlsHint(
+    [LEdtMax],
+    'Maximum number of tokens the provider may return in one response.'
+  );
   FEdtMaxTokens.Add(AProviderId, LEdtMax);
 
   LLabel := TLabel.Create(Self);
@@ -1227,6 +1467,10 @@ begin
   LEdtTime.Top := 42;
   LEdtTime.Width := 100;
   LEdtTime.NumbersOnly := True;
+  SetControlsHint(
+    [LEdtTime],
+    'Maximum time to wait for this provider before cancelling the request.'
+  );
   FEdtTimeouts.Add(AProviderId, LEdtTime);
 end;
 

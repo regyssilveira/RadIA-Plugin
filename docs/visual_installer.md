@@ -65,7 +65,13 @@ Delphi:
 4. confirma que os pacotes compartilham versão, commit limpo e hashes válidos;
 5. gera e valida o instalador sem depender de certificado;
 6. cria o catálogo `stable` com a URL HTTPS da GitHub Release;
-7. publica instalador, ZIPs, `SHA256SUMS.txt`, catálogo e evidências.
+7. publica somente o instalador para o usuário, além do catálogo e das evidências.
+
+Os três ZIPs continuam sendo gerados temporariamente como entradas verificáveis do instalador.
+Eles não são anexados à GitHub Release: o instalador visual é o único artefato de instalação
+oferecido ao usuário. Quem preferir compilar ou empacotar manualmente pode usar `build.ps1`.
+Essa separação evita três downloads redundantes sem remover a validação individual de versão,
+arquitetura, manifesto e SHA-256 feita antes de montar o instalador.
 
 O workflow pode ser acionado manualmente sem publicação para validar a distribuição; uma tag `v*`
 publica o release. O contrato do pipeline pode ser auditado localmente com:

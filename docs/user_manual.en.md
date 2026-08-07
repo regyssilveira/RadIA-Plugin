@@ -21,6 +21,12 @@ send a prompt with `Ctrl + Enter`.
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](install_config.en.md).
 
+RadIA first requests the model list exposed by the configured account and endpoint. Only when
+discovery fails does it show a minimal fallback catalog based on the provider's current stable
+families. The discovered list always takes precedence because availability can vary by account,
+region, plan, and permissions. ChatGPT OAuth/Codex transport models are kept separate from OpenAI
+API models.
+
 ## 3. Enabling agent mode
 
 ### 3.1 Agent Mode button and commands
@@ -36,6 +42,10 @@ In chat, tool access is explicit:
 ```
 
 This displays the catalog available in the current IDE and is the runtime source of truth.
+
+The catalog can be searched by name, purpose, or risk. Each tool shows its description, risk
+category, direct and agent activation guidance, and accepted JSON schema. Expanding details never
+executes the tool.
 
 Run a tool with:
 
@@ -324,7 +334,7 @@ See the [security model](tool_security_model.md) and
 | Delphi 13 | Win32 | Supported and validated |
 | Delphi 13 | IDE64 | Supported and validated |
 
-## 8. Version 2.1 limitations
+## 8. Current version limitations
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
@@ -340,6 +350,10 @@ See the [security model](tool_security_model.md) and
 - AI analysis does not replace compilation, tests, runtime leak detection, or human review.
 
 ## 9. Help and reference
+
+Hover over fields and buttons to see contextual help. Settings hints explain format, effect, and
+dependencies; chat buttons mention equivalent actions and shortcuts when available. Terminal
+hints also document `Enter`, `Ctrl+R`, and `Ctrl+P`.
 
 - [Everything RadIA can do](capabilities.en.md)
 - [Installation](install_config.en.md)

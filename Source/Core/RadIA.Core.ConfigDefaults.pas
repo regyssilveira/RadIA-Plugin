@@ -58,7 +58,7 @@ end;
 
 class function TConfigDefaults.AutocompleteModel: string;
 begin
-  Result := 'gemini-1.5-flash';
+  Result := 'gemini-3.6-flash';
 end;
 
 class function TConfigDefaults.AutocompleteProvider: string;

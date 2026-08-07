@@ -9,7 +9,7 @@ on:
       release_tag:
         description: Existing version tag to package
         required: true
-        default: v2.0.0
+        default: v2.2.1
       publish:
         description: Publish or update the GitHub release
         required: true
@@ -110,7 +110,7 @@ jobs:
             New-Item -ItemType Directory -Path $distribution | Out-Null
           }
 
-      - name: Build Delphi 12 and 13 release packages
+      - name: Build internal Delphi 12 and 13 installer inputs
         shell: powershell
         run: |
           .\build.ps1 -DelphiVersion "23.0" -Release -Package
@@ -145,19 +145,6 @@ jobs:
           Copy-Item `
             -LiteralPath ".\Output\Installer\$env:INSTALLER_NAME" `
             -Destination ".\Output\Distribution\$env:INSTALLER_NAME"
-          Copy-Item `
-            -LiteralPath ".\Output\Packages\SHA256SUMS.txt" `
-            -Destination ".\Output\Distribution\SHA256SUMS.txt"
-          $packages = @(
-            "RadIA-v$env:RADIA_VERSION-Delphi-23.0-Win32-Release.zip",
-            "RadIA-v$env:RADIA_VERSION-Delphi-37.0-Win32-Release.zip",
-            "RadIA-v$env:RADIA_VERSION-Delphi-37.0-Win64-Release.zip"
-          )
-          foreach ($package in $packages) {
-            Copy-Item `
-              -LiteralPath ".\Output\Packages\$package" `
-              -Destination ".\Output\Distribution\$package"
-          }
 
       - name: Upload distribution evidence
         uses: actions/upload-artifact@v4

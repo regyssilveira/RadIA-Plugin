@@ -211,8 +211,13 @@ function setAgentMode(enabled) {
   agentModeEnabled = enabled !== false;
   btnAgentMode.classList.toggle('agent-mode-enabled', agentModeEnabled);
   btnAgentMode.classList.toggle('agent-mode-disabled', !agentModeEnabled);
-  btnAgentMode.title = `Agent Mode: ${agentModeEnabled ? 'On' : 'Off'}`;
-  btnAgentMode.setAttribute('aria-label', btnAgentMode.title);
+  btnAgentMode.title = agentModeEnabled
+    ? 'Agent mode is on: RadIA may use IDE tools after policy and consent checks'
+    : 'Agent mode is off: messages use chat only and cannot execute IDE tools';
+  btnAgentMode.setAttribute(
+    'aria-label',
+    `Agent Mode: ${agentModeEnabled ? 'On' : 'Off'}`
+  );
   btnAgentMode.setAttribute('aria-pressed', String(agentModeEnabled));
   btnAgentMode.querySelector('.btn-label').textContent =
     agentModeEnabled ? 'Agent On' : 'Agent Off';
@@ -222,6 +227,7 @@ function createAgentControl(label, action, disabled = false) {
   const button = document.createElement('button');
   button.className = 'agent-control-button';
   button.textContent = label;
+  button.title = `${label} the current agent run`;
   button.disabled = disabled;
   button.addEventListener('click', () => {
     postMessageToDelphi({ action });
@@ -784,6 +790,7 @@ function openAgentPlanEditor(planElement, plan) {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.textContent = 'Remove step';
+    remove.title = 'Remove this step from the pending plan';
     const entry = { row, title, description };
     remove.addEventListener('click', () => {
       if (rows.length <= 1) return;
@@ -799,6 +806,7 @@ function openAgentPlanEditor(planElement, plan) {
   actions.className = 'agent-plan-editor-actions';
   const add = document.createElement('button');
   add.textContent = 'Add step';
+  add.title = 'Append a new step to the pending agent plan';
   add.addEventListener('click', () => {
     if (rows.length >= 50) return;
     addRow({ title: `Step ${rows.length + 1}`, description: '' });
@@ -807,6 +815,7 @@ function openAgentPlanEditor(planElement, plan) {
   });
   const save = document.createElement('button');
   save.textContent = 'Save plan';
+  save.title = 'Validate and replace the pending plan without executing it';
   save.addEventListener('click', () => {
     const updatedPlan = rows.map(row => ({
       title: row.title.value.trim(),
@@ -822,6 +831,7 @@ function openAgentPlanEditor(planElement, plan) {
   });
   const cancel = document.createElement('button');
   cancel.textContent = 'Cancel edit';
+  cancel.title = 'Discard plan edits and keep the current pending plan';
   cancel.addEventListener('click', () => renderAgentPlanItems(planElement, plan));
   actions.append(add, save, cancel);
   editor.appendChild(actions);
@@ -852,6 +862,7 @@ function renderAgentHistory(data) {
   });
   const searchButton = document.createElement('button');
   searchButton.textContent = 'Search';
+  searchButton.title = 'Search local agent run metadata without exposing tool payloads';
   searchButton.addEventListener('click', submitSearch);
   header.append(title, search, searchButton);
   panel.appendChild(header);
@@ -948,6 +959,7 @@ function renderAgentState(data) {
   const editPlan = document.createElement('button');
   editPlan.className = 'agent-control-button';
   editPlan.textContent = 'Edit plan';
+  editPlan.title = 'Review and change pending plan steps before approval';
   editPlan.disabled = status !== 'awaitingApproval' || plan.length === 0;
   editPlan.addEventListener('click', () => openAgentPlanEditor(planElement, plan));
   controls.appendChild(editPlan);
@@ -1007,27 +1019,79 @@ function showTools(tools) {
   card.className = 'tool-catalog';
 
   const title = document.createElement('h3');
-  title.textContent = 'Available IDE tools';
+  title.textContent = `Available IDE tools (${AVAILABLE_TOOLS.length})`;
   card.appendChild(title);
+
+  const guidance = document.createElement('p');
+  guidance.className = 'tool-catalog-guidance';
+  guidance.textContent = 'Search by name or purpose. Use /tool Name with JSON arguments, ' +
+    'or describe the objective in agent mode and RadIA will select an appropriate tool.';
+  card.appendChild(guidance);
 
   if (AVAILABLE_TOOLS.length === 0) {
     const empty = document.createElement('p');
     empty.textContent = 'No IDE tools are available.';
     card.appendChild(empty);
   } else {
+    const search = document.createElement('input');
+    search.className = 'tool-catalog-search';
+    search.type = 'search';
+    search.placeholder = 'Search tools by name, purpose, or risk...';
+    search.setAttribute('aria-label', 'Search available IDE tools');
+    search.title = 'Filter the runtime tool catalog without executing a tool';
+    card.appendChild(search);
+
+    const items = [];
     AVAILABLE_TOOLS.forEach(tool => {
       const item = document.createElement('div');
       item.className = 'tool-catalog-item';
+
+      const summary = document.createElement('div');
+      summary.className = 'tool-catalog-summary';
 
       const name = document.createElement('code');
       name.textContent = `/tool ${tool.name}`;
 
       const description = document.createElement('span');
-      description.textContent = tool.description || '';
+      description.textContent = tool.description || 'No operational description is available.';
 
-      item.appendChild(name);
-      item.appendChild(description);
+      const risk = document.createElement('span');
+      risk.className = `tool-risk tool-risk-${tool.risk || 'sensitive'}`;
+      risk.textContent = `Risk: ${tool.risk || 'sensitive'}`;
+
+      const details = document.createElement('details');
+      details.className = 'tool-catalog-details';
+      const detailsSummary = document.createElement('summary');
+      detailsSummary.textContent = 'How and when to use';
+      detailsSummary.title = 'Show invocation guidance and accepted JSON arguments';
+
+      const activation = document.createElement('p');
+      activation.textContent = 'Direct invocation: ' +
+        `/tool ${tool.name} { ... }. In agent mode it is selected only when the objective ` +
+        'requires this capability and the current IDE context allows it.';
+
+      const schemaLabel = document.createElement('strong');
+      schemaLabel.textContent = 'Accepted arguments';
+      const schema = document.createElement('pre');
+      schema.textContent = tool.inputSchema || '{}';
+
+      summary.append(name, description, risk);
+      details.append(detailsSummary, activation, schemaLabel, schema);
+      item.append(summary, details);
+      item.dataset.searchText = [
+        tool.name,
+        tool.description,
+        tool.risk
+      ].join(' ').toLowerCase();
+      items.push(item);
       card.appendChild(item);
+    });
+
+    search.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      items.forEach(item => {
+        item.hidden = query && !item.dataset.searchText.includes(query);
+      });
     });
   }
 
@@ -1047,6 +1111,7 @@ function createToolArgumentsButton(label, toolName, args) {
   button.className = 'tool-action-button';
   button.type = 'button';
   button.textContent = label;
+  button.title = `Run ${toolName} with the prepared arguments after policy and consent checks`;
   button.addEventListener('click', () => {
     button.disabled = true;
     postMessageToDelphi({
@@ -1594,6 +1659,7 @@ function showWelcomeScreen() {
     button.type = 'button';
     button.className = 'welcome-action-btn';
     button.innerHTML = `<span class="welcome-action-icon">${action.icon}</span><span>${action.label}</span>`;
+    button.title = `Prepare ${action.command} in the prompt without sending it`;
     button.addEventListener('click', () => setPromptText(action.command));
     actionsContainer.appendChild(button);
   });
@@ -2736,6 +2802,7 @@ function processProjectFiles(contentElement) {
 
   const actionBtn = document.createElement('button');
   actionBtn.className = 'radia-project-action-btn';
+  actionBtn.title = 'Create the reviewed project files on disk and open the project in Delphi';
   actionBtn.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -2978,7 +3045,7 @@ function setRequestState(inProgress) {
     providerDropdownTrigger.setAttribute('aria-disabled', 'true');
   } else {
     btnSendPrompt.classList.remove('stop-btn');
-    btnSendPrompt.title = 'Send message';
+    btnSendPrompt.title = 'Send message (Ctrl+Enter)';
     btnSendPrompt.setAttribute('aria-label', 'Send message');
     selectProvider.disabled = false;
     providerDropdownWrapper.classList.remove('disabled');
