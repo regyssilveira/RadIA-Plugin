@@ -41,7 +41,8 @@ API models.
 
 Every field and button provides a contextual hint. See the [security model](tool_security_model.md)
 for security decisions and the [executor matrix](cli_executors.md) for native, CLI, and MCP
-dependencies.
+dependencies. The purpose, usage, dependencies, and care for every option are in the
+[complete settings reference](settings_reference.en.md).
 
 ## 3. Enabling agent mode
 

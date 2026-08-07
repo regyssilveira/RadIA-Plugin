@@ -14,6 +14,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Discover current capabilities | [Capabilities](capabilities.en.md) | [Feature catalog](features.en.md) |
 | Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.md) |
 | Understand every settings tab | [Settings map](user_manual.en.md#21-settings-map) | [Security model](tool_security_model.md) |
+| Look up a specific field or button | [Complete settings reference](settings_reference.en.md) | [Troubleshooting](troubleshooting_agentic_platform.en.md) |
 | Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
 | Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.md) |
 
@@ -46,6 +47,8 @@ Provider, CLI executor, and MCP are independent settings. A declared authenticat
 such as ChatGPT login through Codex, is the explicit exception.
 
 ## Extend and contribute
+
+- [Required documentation policy](documentation_policy.en.md)
 
 | Subject | Guide |
 |---|---|

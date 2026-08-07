@@ -101,6 +101,9 @@ Feche a IDE antes de instalar ou substituir uma BPL. O procedimento completo, in
 usuário, build para contribuidores, providers e solução de problemas, está no
 [guia de instalação e configuração](docs/install_config.md).
 
+Para localizar e entender qualquer campo ou botão de configuração, consulte a
+[referência completa das configurações](docs/settings_reference.md).
+
 ## Segurança e privacidade
 
 - Credenciais compatíveis são protegidas localmente com Windows DPAPI.

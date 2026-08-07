@@ -14,6 +14,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Conhecer tudo que está disponível | [Mapa de capacidades](capabilities.md) | [Manual do usuário](user_manual.md) |
 | Configurar provider, agente ou CLI | [Instalação e configuração](install_config.md) | [Executores nativo e CLI](cli_executors.md) |
 | Entender cada aba de configurações | [Mapa das configurações](user_manual.md#24-mapa-das-configurações) | [Modelo de segurança](tool_security_model.md) |
+| Consultar um campo ou botão específico | [Referência completa das configurações](settings_reference.md) | [Solução de problemas](troubleshooting_agentic_platform.md) |
 | Usar o chat no dia a dia | [Chat e sessões](user_guide_chat_sessions.md) | [Comandos de barra](slash_commands.md) |
 | Resolver um problema | [Solução de problemas](troubleshooting_agentic_platform.md) | [Diagnóstico da instalação](capabilities.md#diagnóstico-da-instalação) |
 
@@ -63,6 +64,8 @@ O [catálogo arquitetural](tool_catalog.md) inclui contratos e propostas. Para s
 versão instalada, use `/tools` ou o [catálogo gerado](runtime_tool_catalog.md).
 
 ## Desenvolver e contribuir
+
+- [Política obrigatória de documentação](documentation_policy.md)
 
 | Assunto | Documento |
 |---|---|

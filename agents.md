@@ -11,6 +11,10 @@ Este arquivo define as regras técnicas, restrições do compilador Delphi (Obje
 *   **Nomes de Branch:** Todas as branches devem seguir o padrão `<tipo>/<descricao-curta>` documentado em `docs/branch_convention.md`.
 *   **Código Fonte (Codebase):** Todo o código fonte, incluindo classes, métodos, records, variáveis, enums, comentários internos, esquemas de dados, bem como **prompts e templates de IA hardcoded** (por exemplo, prompt padrão de sistema ou templates Pascal embutidos) devem ser escritos **100% em Inglês (en-US)**.
 *   **Arquitetura:** Siga rigorosamente os princípios **SOLID**, **Clean Code**, **DRY** (Don't Repeat Yourself) e **KISS** (Keep It Simple, Stupid).
+*   **Documentação como parte do produto:** Toda alteração visível ao usuário deve atualizar, no mesmo
+    trabalho, a referência central, o guia de uso aplicável, os hints da interface, a tradução existente
+    e os testes documentais. Uma funcionalidade não está concluída enquanto seu uso exigir consulta ao
+    código-fonte, roadmap ou histórico. Siga `docs/documentation_policy.md`.
 
 ---
 

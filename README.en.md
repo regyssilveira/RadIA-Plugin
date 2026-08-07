@@ -78,6 +78,9 @@ To use RadIA, download only `RadIA-v<version>-Setup.exe` from the
 the installer, and select the intended IDEs. A release installation does not require a ZIP,
 PowerShell/npm, or a local build.
 
+To find and understand any settings field or button, see the
+[complete settings reference](docs/settings_reference.en.md).
+
 ## Build from source
 
 The commands below are intended for contributors:

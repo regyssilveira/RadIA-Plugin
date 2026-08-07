@@ -72,7 +72,9 @@ separadamente dos modelos da API OpenAI.
 
 Cada campo e botão possui hint contextual. Para decisões de segurança, consulte o
 [modelo de segurança](tool_security_model.md); para dependências entre modo nativo, CLI e MCP,
-consulte a [matriz de executores](cli_executors.md).
+consulte a [matriz de executores](cli_executors.md). A finalidade, o momento de uso, as dependências
+e os cuidados de cada opção estão na
+[referência completa das configurações](settings_reference.md).
 
 ## 3. Como ativar o modo agente
 

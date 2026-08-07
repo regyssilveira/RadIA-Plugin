@@ -201,3 +201,71 @@ test('documentation hubs expose the settings map and security guidance', () => {
   assert.match(portugueseManual, /tool_security_model\.md/u);
   assert.match(englishManual, /tool_security_model\.md/u);
 });
+
+test('every visible settings group has a detailed central reference', () => {
+  const portugueseReference = fs.readFileSync(
+    path.join(documentationRoot, 'settings_reference.md'),
+    'utf8'
+  );
+  const englishReference = fs.readFileSync(
+    path.join(documentationRoot, 'settings_reference.en.md'),
+    'utf8'
+  );
+  const visibleOptions = [
+    'API Key',
+    'Temperature',
+    'Max Output Tokens',
+    'Timeout',
+    'Auto (Smart Parameters)',
+    'Inject Delphi version',
+    'Prefer concise AI responses',
+    'Enable logging',
+    'Log Folder Path',
+    'Max Log File Size',
+    'Enable local token quota',
+    'Consent dialog timeout',
+    'Show tool arguments',
+    'Revoke session permissions',
+    'Enable local semantic project knowledge',
+    'remote embedding provider',
+    'continuous inline completion',
+    'RadIA shortcuts',
+    'Chat executor',
+    'CLI client',
+    'CLI executable override',
+    'Diagnose',
+    'Install/Update channel',
+    'MCP client configuration',
+    'RadIA MCP bridge',
+    'Connect / Repair',
+    'Test Handshake',
+    'FastMM5 root',
+    'System Prompt',
+    'Slash Command',
+    'Restore Defaults'
+  ];
+
+  visibleOptions.forEach(option => {
+    assert.ok(portugueseReference.includes(option), `Portuguese reference is missing ${option}`);
+    assert.ok(englishReference.includes(option), `English reference is missing ${option}`);
+  });
+  assert.match(portugueseReference, /Quando alterar|Quando usar/u);
+  assert.match(portugueseReference, /Efeito e cuidados/u);
+  assert.match(englishReference, /When to use/u);
+  assert.match(englishReference, /Effect and care/u);
+});
+
+test('documentation maintenance is an explicit project rule', () => {
+  const agentRules = fs.readFileSync(path.join(repositoryRoot, 'AGENTS.md'), 'utf8');
+  const portuguesePolicy = fs.readFileSync(
+    path.join(documentationRoot, 'documentation_policy.md'),
+    'utf8'
+  );
+  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
+
+  assert.match(agentRules, /Documentação como parte do produto/u);
+  assert.match(portuguesePolicy, /Toda mudança que adicione, remova, renomeie/u);
+  assert.match(portugueseHub, /settings_reference\.md/u);
+  assert.match(englishHub, /settings_reference\.en\.md/u);
+});
