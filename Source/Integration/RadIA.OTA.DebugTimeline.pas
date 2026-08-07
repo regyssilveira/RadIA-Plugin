@@ -50,12 +50,20 @@ type
 implementation
 
 uses
-  System.Classes,
   System.DateUtils,
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.Logger,
   RadIA.Core.RuntimeAutomation,
   RadIA.OTA.RuntimeProcess;
+
+procedure LogNotifierFailure(const ACallback: string; const AException: Exception);
+begin
+  TLogger.Log(
+    Format('%s ignored an unavailable debugger process: %s', [ACallback, AException.Message]),
+    'DebugTimeline'
+  );
+end;
 
 function ActiveProjectPath: string;
 var
@@ -110,13 +118,18 @@ function TRadIAOTADebugTimelineNotifier.BeforeProgramLaunch(
 var
   LDetails: string;
 begin
-  LDetails := '';
-  if Assigned(Project) then
-    LDetails := Project.FileName;
-  FTimeline.RecordEvent(dekSessionStarting, 0, 'starting', LDetails);
-  if Assigned(FRuntimeCoordinator) and (LDetails <> '') then
-    FRuntimeSessionId := FRuntimeCoordinator.BeginSession(LDetails);
   Result := True;
+  try
+    LDetails := '';
+    if Assigned(Project) then
+      LDetails := Project.FileName;
+    FTimeline.RecordEvent(dekSessionStarting, 0, 'starting', LDetails);
+    if Assigned(FRuntimeCoordinator) and (LDetails <> '') then
+      FRuntimeSessionId := FRuntimeCoordinator.BeginSession(LDetails);
+  except
+    on E: Exception do
+      LogNotifierFailure('BeforeProgramLaunch', E);
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.BreakpointAdded(
@@ -144,13 +157,18 @@ procedure TRadIAOTADebugTimelineNotifier.CurrentProcessChanged(
   const Process: IOTAProcess
 );
 begin
-  EnsureRuntimeSession(Process);
-  FTimeline.RecordEvent(
-    dekCurrentProcessChanged,
-    ProcessId(Process),
-    ProcessState(Process),
-    ''
-  );
+  try
+    EnsureRuntimeSession(Process);
+    FTimeline.RecordEvent(
+      dekCurrentProcessChanged,
+      ProcessId(Process),
+      ProcessState(Process),
+      ''
+    );
+  except
+    on E: Exception do
+      LogNotifierFailure('CurrentProcessChanged', E);
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.DebuggerOptionsChanged;
@@ -178,7 +196,13 @@ function TRadIAOTADebugTimelineNotifier.ProcessId(
 begin
   Result := 0;
   if Assigned(AProcess) then
-    Result := AProcess.ProcessId;
+  begin
+    try
+      Result := AProcess.ProcessId;
+    except
+      Result := 0;
+    end;
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.EnsureRuntimeSession(
@@ -238,53 +262,53 @@ procedure TRadIAOTADebugTimelineNotifier.ProcessCreated(
 var
   LSession: TRadIARuntimeSessionIdentity;
 begin
-  FTimeline.RecordEvent(
-    dekProcessCreated,
-    ProcessId(Process),
-    ProcessState(Process),
-    ''
-  );
-  if not Assigned(FRuntimeCoordinator) then
-    Exit;
-  EnsureRuntimeSession(Process);
-  LSession := FRuntimeCoordinator.GetCurrentSession;
-  if not LSession.IsComplete and (RuntimeProcessId(Process) = 0) then
-  begin
-    TThread.ForceQueue(
-      nil,
-      procedure
-      begin
-        EnsureRuntimeSession(Process);
-      end
-    );
-  end;
-  if LSession.IsComplete then
-    FRuntimeCoordinator.RecordEvent(
-      FRuntimeSessionId,
-      rdekProcessCreated,
+  try
+    FTimeline.RecordEvent(
+      dekProcessCreated,
+      ProcessId(Process),
       ProcessState(Process),
-      LSession.ExecutablePath
+      ''
     );
+    if not Assigned(FRuntimeCoordinator) then
+      Exit;
+    EnsureRuntimeSession(Process);
+    LSession := FRuntimeCoordinator.GetCurrentSession;
+    if LSession.IsComplete then
+      FRuntimeCoordinator.RecordEvent(
+        FRuntimeSessionId,
+        rdekProcessCreated,
+        ProcessState(Process),
+        LSession.ExecutablePath
+      );
+  except
+    on E: Exception do
+      LogNotifierFailure('ProcessCreated', E);
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.ProcessDestroyed(
   const Process: IOTAProcess
 );
 begin
-  EnsureRuntimeSession(Process);
-  FTimeline.RecordEvent(
-    dekProcessDestroyed,
-    ProcessId(Process),
-    ProcessState(Process),
-    ''
-  );
-  if Assigned(FRuntimeCoordinator) and (FRuntimeSessionId <> '') then
-    FRuntimeCoordinator.RecordEvent(
-      FRuntimeSessionId,
-      rdekProcessExited,
+  try
+    EnsureRuntimeSession(Process);
+    FTimeline.RecordEvent(
+      dekProcessDestroyed,
+      ProcessId(Process),
       ProcessState(Process),
       ''
     );
+    if Assigned(FRuntimeCoordinator) and (FRuntimeSessionId <> '') then
+      FRuntimeCoordinator.RecordEvent(
+        FRuntimeSessionId,
+        rdekProcessExited,
+        ProcessState(Process),
+        ''
+      );
+  except
+    on E: Exception do
+      LogNotifierFailure('ProcessDestroyed', E);
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.ProcessMemoryChanged;
@@ -310,18 +334,22 @@ function TRadIAOTADebugTimelineNotifier.ProcessState(
 begin
   if not Assigned(AProcess) then
     Exit('noProcess');
-  case AProcess.ProcessState of
-    psNothing: Result := 'nothing';
-    psRunning: Result := 'running';
-    psStopping: Result := 'stopping';
-    psStopped: Result := 'stopped';
-    psFault: Result := 'fault';
-    psResFault: Result := 'resourceFault';
-    psTerminated: Result := 'terminated';
-    psException: Result := 'exception';
-    psNoProcess: Result := 'noProcess';
-  else
-    Result := 'unknown';
+  try
+    case AProcess.ProcessState of
+      psNothing: Result := 'nothing';
+      psRunning: Result := 'running';
+      psStopping: Result := 'stopping';
+      psStopped: Result := 'stopped';
+      psFault: Result := 'fault';
+      psResFault: Result := 'resourceFault';
+      psTerminated: Result := 'terminated';
+      psException: Result := 'exception';
+      psNoProcess: Result := 'noProcess';
+    else
+      Result := 'unknown';
+    end;
+  except
+    Result := 'initializing';
   end;
 end;
 
@@ -364,21 +392,32 @@ function TRadIAOTADebugTimelineNotifier.RuntimeProcessId(
 begin
   Result := 0;
   if Assigned(AProcess) then
-    Result := AProcess.OSProcessId;
+  begin
+    try
+      Result := AProcess.OSProcessId;
+    except
+      Result := 0;
+    end;
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.ProcessStateChanged(
   const Process: IOTAProcess
 );
 begin
-  EnsureRuntimeSession(Process);
-  FTimeline.RecordEvent(
-    dekProcessStateChanged,
-    ProcessId(Process),
-    ProcessState(Process),
-    ''
-  );
-  RecordRuntimeState(Process);
+  try
+    EnsureRuntimeSession(Process);
+    FTimeline.RecordEvent(
+      dekProcessStateChanged,
+      ProcessId(Process),
+      ProcessState(Process),
+      ''
+    );
+    RecordRuntimeState(Process);
+  except
+    on E: Exception do
+      LogNotifierFailure('ProcessStateChanged', E);
+  end;
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.RecordBreakpoint(

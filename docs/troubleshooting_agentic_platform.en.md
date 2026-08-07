@@ -38,6 +38,7 @@
 | Component changed | Create a new preview from current state. |
 | Evaluation unavailable | Pause the process in a valid frame. |
 | Control rejected | Inspect debugger state before the next command. |
+| `Debug process not initialized` when pressing F9 | Update RadIA and restart the IDE. The timeline observer ignores transient OTA states and must never block manual debugging. If it persists, temporarily disable the package and preserve `%APPDATA%\RadIA\Logs` for diagnosis. |
 
 ## Local data
 

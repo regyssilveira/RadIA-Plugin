@@ -38,6 +38,7 @@
 | Componente mudou | Gere novo preview a partir do estado atual. |
 | Avaliação indisponível | Pause o processo em um frame válido. |
 | Controle recusado | Consulte o estado do debugger antes do próximo comando. |
+| `Debug process not initialized` ao usar F9 | Atualize o Rad IA e reinicie a IDE. O observador de timeline ignora estados transitórios da OTA e nunca deve bloquear um debug manual. Se persistir, desabilite temporariamente o package e preserve `%APPDATA%\RadIA\Logs` para diagnóstico. |
 
 ## Logs e dados locais
 
