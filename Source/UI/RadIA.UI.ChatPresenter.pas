@@ -550,6 +550,7 @@ var
 begin
   FLoadingConfig := True;
   try
+    FConfig.Load;
     LConfiguredProviders := [];
     LProviders := TProviderRegistry.GetProviders;
     for I := 0 to Length(LProviders) - 1 do
