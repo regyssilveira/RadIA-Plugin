@@ -55,10 +55,15 @@ type
     class function FindUsesInsertion(
       const AContent: string
     ): Integer; static;
+    class function FindMainBeginInsertion(
+      const AContent: string
+    ): Integer; static;
   public
     class function Instrument(
       const AContent: string;
       const AFastMMUnitPath: string;
+      const ADebugLibraryPath: string;
+      const ALogPath: string;
       out AInstrumentedContent: string
     ): Boolean; static;
   end;
@@ -215,21 +220,51 @@ begin
   end;
 end;
 
+class function TRadIAMemoryInstrumentationTransformer.FindMainBeginInsertion(
+  const AContent: string
+): Integer;
+var
+  LCandidate: Integer;
+  LLowerContent: string;
+  LSearchIndex: Integer;
+begin
+  Result := 0;
+  LLowerContent := LowerCase(AContent);
+  LSearchIndex := Pos('begin', LLowerContent);
+  while LSearchIndex > 0 do
+  begin
+    if ((LSearchIndex = 1) or
+      not CharInSet(LLowerContent[LSearchIndex - 1], ['a'..'z', '0'..'9', '_'])) and
+      ((LSearchIndex + 5 > Length(LLowerContent)) or
+      not CharInSet(LLowerContent[LSearchIndex + 5], ['a'..'z', '0'..'9', '_'])) then
+    begin
+      LCandidate := LSearchIndex + 5;
+      Result := LCandidate;
+    end;
+    LSearchIndex := PosEx('begin', LLowerContent, LSearchIndex + 5);
+  end;
+end;
+
 class function TRadIAMemoryInstrumentationTransformer.Instrument(
   const AContent: string;
   const AFastMMUnitPath: string;
+  const ADebugLibraryPath: string;
+  const ALogPath: string;
   out AInstrumentedContent: string
 ): Boolean;
 var
   LDefines: string;
   LHeaderEnd: Integer;
   LLineBreak: string;
+  LMainBeginInsertion: Integer;
+  LSetup: string;
   LUnitEntry: string;
   LUsesInsertion: Integer;
 begin
   Result := False;
   AInstrumentedContent := '';
-  if AContent.IsEmpty or AFastMMUnitPath.IsEmpty then
+  if AContent.IsEmpty or AFastMMUnitPath.IsEmpty or
+    ADebugLibraryPath.IsEmpty or ALogPath.IsEmpty then
     Exit;
   if ContainsText(AContent, 'FastMM5 in') or
     ContainsText(AContent, '{$DEFINE FastMM_FullDebugModeWhenDLLAvailable}') then
@@ -243,7 +278,6 @@ begin
   LLineBreak := DetectLineBreak(AContent);
   LDefines :=
     LLineBreak +
-    '{$DEFINE FastMM_FullDebugModeWhenDLLAvailable}' + LLineBreak +
     '{$DEFINE FastMM_EnableMemoryLeakReporting}' + LLineBreak;
   AInstrumentedContent :=
     Copy(AContent, 1, LHeaderEnd) +
@@ -256,6 +290,23 @@ begin
     StringReplace(AFastMMUnitPath, '''', '''''', [rfReplaceAll]) +
     ''',';
   Insert(LUnitEntry, AInstrumentedContent, LUsesInsertion);
+  LMainBeginInsertion := FindMainBeginInsertion(AInstrumentedContent);
+  if LMainBeginInsertion = 0 then
+  begin
+    AInstrumentedContent := '';
+    Exit;
+  end;
+  LSetup :=
+    LLineBreak +
+    '  FastMM_DebugSupportLibraryName := PWideChar(''' +
+    StringReplace(ADebugLibraryPath, '''', '''''', [rfReplaceAll]) +
+    ''');' + LLineBreak +
+    '  FastMM_SetEventLogFilename(PWideChar(''' +
+    StringReplace(ALogPath, '''', '''''', [rfReplaceAll]) +
+    '''));' + LLineBreak +
+    '  FastMM_MessageBoxEvents := [];' + LLineBreak +
+    '  FastMM_EnterDebugMode;';
+  Insert(LSetup, AInstrumentedContent, LMainBeginInsertion);
   Result := True;
 end;
 
@@ -314,6 +365,16 @@ begin
     LRoot.AddPair('mode', ParseModeName(AMode));
     LRoot.AddPair('fileName', APreview.Spec.TargetFile);
     LRoot.AddPair(
+      'logPath',
+      TPath.Combine(
+        TPath.Combine(
+          ExtractFilePath(APreview.Spec.TargetFile),
+          '.radia\memory'
+        ),
+        'latest-fastmm5.log'
+      )
+    );
+    LRoot.AddPair(
       'fingerprint',
       THashSHA2.GetHashString(APreview.OriginalContent)
     );
@@ -331,6 +392,7 @@ var
   LFastMMDetector: TRadIAFastMM5Detector;
   LFastMMSettings: TRadIAFastMM5Settings;
   LFastMMStatus: TRadIAMemoryBackendStatus;
+  LLogPath: string;
   LFastMMStore: TRadIAFastMM5SettingsStore;
   LInstrumentedContent: string;
   LNavigationResult: TRadIANavigationResult;
@@ -385,6 +447,10 @@ begin
         LFastMMStatus.Message
       )
     );
+  LLogPath := TPath.Combine(
+    TPath.Combine(LProject.RootPath, '.radia\memory'),
+    'latest-fastmm5.log'
+  );
   LProjectSource := ChangeFileExt(LProject.FileName, '.dpr');
   LNavigationResult := FNavigation.NavigateToFile(LProjectSource, 1, 1);
   if not LNavigationResult.Success then
@@ -405,6 +471,8 @@ begin
   if not TRadIAMemoryInstrumentationTransformer.Instrument(
     LSnapshot.Content,
     TPath.Combine(LFastMMSettings.RootPath, 'FastMM5.pas'),
+    LFastMMStatus.DebugLibraryPath,
+    LLogPath,
     LInstrumentedContent
   ) then
     Exit(
@@ -441,6 +509,7 @@ function TRadIAMemoryInstrumentationCoordinator.Apply(
 ): TRadIAMemoryInstrumentationResult;
 var
   LEntry: TRadIAMemoryInstrumentationEntry;
+  LLogDirectory: string;
   LPatchResult: TRadIAPatchResult;
 begin
   if not TDictionary<string, TRadIAMemoryInstrumentationEntry>(FEntries)
@@ -459,6 +528,24 @@ begin
         LPatchResult.ErrorMessage
       )
     );
+  LLogDirectory := TPath.Combine(
+    ExtractFilePath(LEntry.Preview.Spec.TargetFile),
+    '.radia\memory'
+  );
+  try
+    TDirectory.CreateDirectory(LLogDirectory);
+  except
+    on E: Exception do
+    begin
+      FPatches.Revert(APreviewId);
+      Exit(
+        TRadIAMemoryInstrumentationResult.Failed(
+          'log_directory_failed',
+          E.Message
+        )
+      );
+    end;
+  end;
   Result := TRadIAMemoryInstrumentationResult.Succeeded(
     BuildResultJson(LEntry.Preview, LEntry.Mode, 'applied')
   );

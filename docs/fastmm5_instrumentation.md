@@ -15,10 +15,13 @@ Somente o DPR é alterado. O preview:
 
 - exige a configuração **Debug**;
 - aceita apenas Win32 e Win64;
-- insere os defines `FastMM_FullDebugModeWhenDLLAvailable` e
-  `FastMM_EnableMemoryLeakReporting`;
+- insere o define `FastMM_EnableMemoryLeakReporting`;
 - coloca `FastMM5` como primeira unit, requisito do gerenciador de memória;
-- referencia o `FastMM5.pas` da pasta configurada pelo usuário.
+- referencia o `FastMM5.pas` da pasta configurada pelo usuário;
+- configura explicitamente a DLL FullDebugMode correspondente à plataforma;
+- direciona o log para `.radia/memory/latest-fastmm5.log`;
+- entra no modo de diagnóstico no início do bloco principal do projeto, sem depender do diretório
+  atual do processo.
 
 Release não é instrumentado e configurações não relacionadas não são alteradas. O escritor da IDE
 mantém o buffer, participa do Undo e recusa previews obsoletos.

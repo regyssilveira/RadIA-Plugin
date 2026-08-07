@@ -9,7 +9,9 @@ code changes:
 4. `ApplyMemoryInstrumentation` revalidates it and requests structural consent;
 5. `RevertMemoryInstrumentation` restores the exact captured content.
 
-Only the DPR is changed. Debug is required, only Win32 and Win64 are accepted, FastMM5 is placed
-first in the uses list, and bounded diagnostic defines are enabled. Release and unrelated project
-settings are not changed. Session mode is reverted after the diagnostic even on cancellation;
-persistent Debug mode remains until explicit reversion.
+Only the DPR is changed. Debug is required, only Win32 and Win64 are accepted, and FastMM5 is placed
+first in the uses list. RadIA explicitly configures the platform-specific FullDebugMode library,
+writes the log to `.radia/memory/latest-fastmm5.log`, and enters diagnostic mode at the beginning of
+the project main block without depending on the process current directory. Release and unrelated
+project settings are not changed. Session mode is reverted after the diagnostic even on
+cancellation; persistent Debug mode remains until explicit reversion.

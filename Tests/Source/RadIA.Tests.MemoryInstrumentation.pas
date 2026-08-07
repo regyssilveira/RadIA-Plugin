@@ -41,12 +41,21 @@ begin
     TRadIAMemoryInstrumentationTransformer.Instrument(
       LOriginal,
       'D:\Delphi\FastMM5\FastMM5.pas',
+      'D:\Delphi\FastMM5\FastMM_FullDebugMode.dll',
+      'D:\Demo\.radia\memory\latest-fastmm5.log',
       LInstrumented
     )
   );
   Assert.Contains(
     LInstrumented,
-    '{$DEFINE FastMM_FullDebugModeWhenDLLAvailable}'
+    'FastMM_DebugSupportLibraryName'
+  );
+  Assert.Contains(
+    LInstrumented,
+    'FastMM_SetEventLogFilename'
+  );
+  Assert.IsTrue(
+    Pos('begin' + sLineBreak + '  FastMM_DebugSupportLibraryName', LInstrumented) > 0
   );
   Assert.Contains(
     LInstrumented,
@@ -70,6 +79,8 @@ begin
     TRadIAMemoryInstrumentationTransformer.Instrument(
       LOriginal,
       'D:\FastMM5\FastMM5.pas',
+      'D:\FastMM5\FastMM_FullDebugMode.dll',
+      'D:\Demo\.radia\memory\latest-fastmm5.log',
       LInstrumented
     )
   );
@@ -90,6 +101,8 @@ begin
     TRadIAMemoryInstrumentationTransformer.Instrument(
       'program Demo; uses FastMM5 in ''FastMM5.pas''; begin end.',
       'D:\FastMM5\FastMM5.pas',
+      'D:\FastMM5\FastMM_FullDebugMode.dll',
+      'D:\Demo\.radia\memory\latest-fastmm5.log',
       LInstrumented
     )
   );
@@ -103,6 +116,8 @@ begin
     TRadIAMemoryInstrumentationTransformer.Instrument(
       'program Demo; begin end.',
       'D:\FastMM5\FastMM5.pas',
+      'D:\FastMM5\FastMM_FullDebugMode.dll',
+      'D:\Demo\.radia\memory\latest-fastmm5.log',
       LInstrumented
     )
   );
