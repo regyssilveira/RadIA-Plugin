@@ -71,7 +71,16 @@ its transport, such as ChatGPT login through Codex, is the exception. See the
 The runtime `/tools` response is authoritative. Roadmaps and architectural catalogs may include
 proposals that are not yet available.
 
+## Installation
+
+To use RadIA, download only `RadIA-v<version>-Setup.exe` from the
+[latest release](https://github.com/regyssilveira/RadIA-Plugin/releases/latest). Close Delphi, run
+the installer, and select the intended IDEs. A release installation does not require a ZIP,
+PowerShell/npm, or a local build.
+
 ## Build from source
+
+The commands below are intended for contributors:
 
 ```powershell
 # Delphi 12 Win32

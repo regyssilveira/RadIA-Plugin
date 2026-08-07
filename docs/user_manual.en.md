@@ -27,6 +27,22 @@ families. The discovered list always takes precedence because availability can v
 region, plan, and permissions. ChatGPT OAuth/Codex transport models are kept separate from OpenAI
 API models.
 
+### 2.1 Settings map
+
+| Tab | Purpose | When to change it |
+|---|---|---|
+| Providers | Credentials, login, endpoint, and provider-specific advanced options | When connecting or changing the AI service |
+| System | System prompt applied to conversations | When permanent instructions are required |
+| Templates | Reusable prompts and custom slash commands | When standardizing recurring tasks |
+| General / Logs | Language, context, logs, and local token quota | When adjusting general behavior or diagnostics |
+| Security & Consent | Risk approval, timeout, session grants, shortcuts, and context sharing | Before allowing execution, mutations, or remote content |
+| CLI & MCP | Native/external executor, portable executable, and MCP connection | Only when using an external CLI or MCP client |
+| Memory Diagnostics | FastMM5 path and execution limits | When investigating leaks, double free, or use-after-free |
+
+Every field and button provides a contextual hint. See the [security model](tool_security_model.md)
+for security decisions and the [executor matrix](cli_executors.md) for native, CLI, and MCP
+dependencies.
+
 ## 3. Enabling agent mode
 
 ### 3.1 Agent Mode button and commands

@@ -1,6 +1,6 @@
 # Installation and Configuration Guide — Rad IA
 
-This document describes in detail the installation, compilation, and configuration process of the **Rad IA** plugin for the Delphi IDE.
+This document separates end-user installation from contributor source builds.
 
 ---
 
@@ -8,13 +8,19 @@ This document describes in detail the installation, compilation, and configurati
 
 Rad IA requires active and valid API keys to function with cloud models (Gemini, OpenAI, Claude, DeepSeek, or Groq) or a configured **Ollama** instance running on your machine or local network.
 
-The plugin can be installed in two ways:
+### Recommended end-user installation
 
-### Option A: Automated Installation (PowerShell) - Recommended
+1. Open the [latest release](https://github.com/regyssilveira/RadIA-Plugin/releases/latest).
+2. Download `RadIA-v<version>-Setup.exe`, the only public installation artifact.
+3. Close every Delphi instance.
+4. Run the installer and select Delphi 12 Win32, Delphi 13 Win32, and/or Delphi 13 IDE64.
+5. Open the IDE and run **Tools > Rad IA Getting Started > Run installation doctor** or `/doctor`.
 
-This option compiles the plugin, copies the binaries to the official public Delphi directories, and registers the plugin in the Windows Registry. If you need to compile and run the unit test suite (**DUnitX**), simply add the `-Test` switch to the command.
+Using a release does not require extracting a ZIP, installing PowerShell/npm, or compiling the
+project. **Repair** reapplies files while preserving settings; **Uninstall** removes selected
+architectures and preserves user data by default.
 
-During installation, the script also updates the HTML/CSS/JS assets used by WebView2 under
+During installation, the installer also updates the HTML/CSS/JS assets used by WebView2 under
 `%APPDATA%\RadIA\Web`. It clears the local `%APPDATA%\RadIA\WebView2` cache when no Delphi IDE is
 open. If another Delphi version is in use, cache cleanup is deferred and installation continues
 without interrupting that work; the refreshed assets take full effect after that IDE restarts.
@@ -24,20 +30,10 @@ After opening the IDE, use **Tools > Rad IA Getting Started > Run installation d
 web assets, and the first read-only tool. It returns a score, checks, and next action without
 displaying tokens or credentials.
 
-1. Open the Windows PowerShell console.
-2. Make sure the Delphi installation `bin` folder containing `dcc32` is present in your system PATH.
-3. Run the command in the project root directory according to your IDE's architecture:
-   * **For the default 32-bit IDE (Delphi 12)**:
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File .\build.ps1 -Install
-     ```
-   * **For the 64-bit IDE (Delphi 13 Florence)**:
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File .\build.ps1 -Install -IDE64
-     ```
-4. Done! The plugin will be installed and active on the next startup of the IDE.
+### Build from source
 
-### Option B: Manual Installation via IDE
+This flow is for contributors and users who deliberately chose to compile the open-source project.
+It is not the normal release installation procedure.
 
 1. Clone this repository to your computer.
 2. Open the project group `RadIA.groupproj` in Delphi.
@@ -122,7 +118,10 @@ Enter the obtained keys in the plugin settings (**Settings** at the top of the c
 
 ---
 
-## 4. PowerShell Build Script (Advanced Options)
+## 4. Contributor build and packaging
+
+> This section is not required to install a release. Any ZIP mentioned below is a verified internal
+> input used to build and test the visual installer; ZIP packages are not published.
 
 The distribution package installs `RadIA.MCP.Bridge.exe` next to the BPL. For per-process
 discovery, multi-IDE selection, handshake, consent, and troubleshooting, see the
@@ -143,9 +142,9 @@ The `.\build.ps1` script supports the following switches:
 > [!NOTE]
 > **DUnitX Auto-Detection:** If the `-Test` parameter is provided, the installer automatically detects if the DUnitX framework is present in your selected Delphi installation. If DUnitX is missing, the script will display a warning, automatically disable tests execution, and proceed normally with compiling and installing the main plugin.
 
-### Package repair and removal
+### Internal package repair and removal
 
-The installer bundled in the release ZIP supports `Install`, `Repair`, and `Uninstall`. Use
+The script bundled in the internal validation package supports `Install`, `Repair`, and `Uninstall`. Use
 `-PlanOnly` to inspect every target without changing files or the Registry:
 
 ```powershell

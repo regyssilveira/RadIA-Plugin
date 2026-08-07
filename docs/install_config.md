@@ -1,6 +1,6 @@
 # Guia de Instalação e Configuração — Rad IA
 
-Este documento descreve detalhadamente o processo de instalação, compilação e configuração do plugin **Rad IA** para a IDE do Delphi.
+Este documento separa a instalação para usuários finais da compilação destinada a contribuidores.
 
 ---
 
@@ -8,13 +8,19 @@ Este documento descreve detalhadamente o processo de instalação, compilação 
 
 O Rad IA exige chaves de API válidas e ativas para funcionar com provedores de nuvem (Gemini, OpenAI, Claude, DeepSeek ou Groq) ou uma instância configurada do **Ollama** rodando localmente ou na rede.
 
-O plugin pode ser instalado de duas formas:
+### Instalação recomendada para usuários
 
-### Opção A: Instalação Automatizada (PowerShell) - Recomendada
+1. Abra a [release mais recente](https://github.com/regyssilveira/RadIA-Plugin/releases/latest).
+2. Baixe `RadIA-v<versão>-Setup.exe`, o único artefato público de instalação.
+3. Feche todas as instâncias do Delphi.
+4. Execute o instalador e selecione Delphi 12 Win32, Delphi 13 Win32 e/ou Delphi 13 IDE64.
+5. Abra a IDE e execute **Tools > Rad IA Getting Started > Run installation doctor** ou `/doctor`.
 
-Esta opção compila o plugin, copia os binários para os diretórios públicos oficiais do Delphi e registra o plugin no Registro do Windows automaticamente. Se for necessário rodar a suíte de testes unitários (**DUnitX**), basta adicionar o parâmetro `-Test` ao comando.
+Não é necessário extrair ZIP, instalar PowerShell/npm ou compilar o projeto para usar o Rad IA.
+**Repair** reaplica os arquivos mantendo configurações; **Uninstall** remove as arquiteturas
+selecionadas e preserva os dados do usuário por padrão.
 
-Durante a instalação, o script também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em
+Durante a instalação, o instalador também atualiza os recursos HTML/CSS/JS usados pelo WebView2 em
 `%APPDATA%\RadIA\Web`. O cache local `%APPDATA%\RadIA\WebView2` é limpo quando nenhuma IDE Delphi
 está aberta. Se outra versão do Delphi estiver em uso, a limpeza é adiada e o instalador continua sem
 interromper o trabalho; os recursos atualizados passam a valer integralmente após reiniciar essa IDE.
@@ -24,20 +30,10 @@ Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation d
 recursos web e a primeira tool somente leitura. Ele retorna score, checks e próxima ação sem
 mostrar tokens ou credenciais.
 
-1. Abra o console do Windows PowerShell.
-2. Certifique-se de que a pasta `bin` da instalação do Delphi contendo o `dcc32` está presente no PATH do sistema.
-3. Execute o comando na raiz do projeto de acordo com a arquitetura da sua IDE:
-   * **Para a IDE padrão de 32 bits (Delphi 12)**:
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File .\build.ps1 -Install
-     ```
-   * **Para a IDE de 64 bits (Delphi 13 Florence)**:
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File .\build.ps1 -Install -IDE64
-     ```
-4. Pronto! O plugin estará instalado e ativo no próximo startup da IDE.
+### Compilação a partir do código-fonte
 
-### Opção B: Instalação Manual via IDE
+Este fluxo é destinado a contribuidores e usuários que escolheram compilar o projeto aberto.
+Ele não é o procedimento normal de instalação de uma release.
 
 1. Clone o repositório em sua máquina.
 2. Abra o grupo de projetos `RadIA.groupproj` no Delphi.
@@ -122,7 +118,10 @@ Insira as chaves obtidas nas configurações do plugin (**Settings** no topo do 
 
 ---
 
-## 4. Script de Build PowerShell (Opções Avançadas)
+## 4. Build e empacotamento para contribuidores
+
+> Esta seção não é necessária para instalar a release. Os ZIPs mencionados abaixo são entradas
+> internas verificáveis usadas para construir e testar o instalador visual; eles não são publicados.
 
 O script `.\build.ps1` aceita os seguintes parâmetros:
 
@@ -141,7 +140,7 @@ O script `.\build.ps1` aceita os seguintes parâmetros:
 > [!NOTE]
 > **Autodetecção do DUnitX:** Se o parâmetro `-Test` for fornecido, o instalador verifica automaticamente se o framework DUnitX está instalado no Delphi selecionado. Se o DUnitX não for encontrado, o script exibirá um aviso no console, desativará a execução dos testes de forma automática e prosseguirá normalmente com a compilação e instalação do plugin principal.
 
-### Pacote de distribuição
+### Pacotes internos de validação
 
 Para gerar um pacote Release:
 
@@ -150,7 +149,7 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
   -DelphiVersion "23.0" -Release -Package
 ```
 
-Depois de extrair o ZIP, feche todas as IDEs e execute o instalador incluído:
+Para validar internamente o pacote extraído, feche todas as IDEs e execute:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -173,7 +172,7 @@ Na IDE64, o package é registrado no subkey oficial
 `HKCU\Software\Embarcadero\BDS\37.0\Known Packages x64`. A IDE Win32 continua usando
 `Known Packages`; os binários permanecem separados em `Bpl` e `Bpl\Win64`.
 
-O diretório `Output\Packages` também recebe `SHA256SUMS.txt` com o hash de cada ZIP disponível.
+O diretório interno `Output\Packages` também recebe `SHA256SUMS.txt` para a montagem da release.
 
 Antes da publicação, execute a suíte positiva e negativa contra cada pacote:
 
@@ -189,9 +188,9 @@ Para o pacote IDE64 do Delphi 13, acrescente `-IDE64`. A suíte confirma a valid
 também exige rejeição de arquivos extras, conteúdo corrompido, versão ou plataforma incompatível,
 path traversal e caminhos duplicados no manifesto.
 
-### Reparação e desinstalação do pacote
+### Manutenção do pacote interno
 
-O instalador incluído no ZIP também executa manutenção reproduzível. Use `-PlanOnly` para revisar
+O script incluído no pacote interno também executa manutenção reproduzível. Use `-PlanOnly` para revisar
 todos os alvos sem alterar arquivos ou Registro:
 
 ```powershell

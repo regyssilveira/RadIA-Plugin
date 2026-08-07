@@ -13,6 +13,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Install on Delphi 12 or 13 | [Installation and configuration](install_config.en.md) | [User manual](user_manual.en.md) |
 | Discover current capabilities | [Capabilities](capabilities.en.md) | [Feature catalog](features.en.md) |
 | Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.md) |
+| Understand every settings tab | [Settings map](user_manual.en.md#21-settings-map) | [Security model](tool_security_model.md) |
 | Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
 | Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.md) |
 

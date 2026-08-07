@@ -58,6 +58,22 @@ famílias estáveis atuais do provider. A lista descoberta sempre prevalece, poi
 região, plano e permissões podem variar. Os modelos do transporte ChatGPT OAuth/Codex são tratados
 separadamente dos modelos da API OpenAI.
 
+### 2.4 Mapa das configurações
+
+| Aba | Para que serve | Quando alterar |
+|---|---|---|
+| Providers | Credenciais, login, endpoint e opções avançadas de cada provider | Ao conectar ou trocar o serviço de IA |
+| System | Prompt de sistema aplicado às conversas | Quando precisar de instruções permanentes |
+| Templates | Prompts reutilizáveis e comandos de barra personalizados | Ao padronizar tarefas recorrentes |
+| General / Logs | Idioma, contexto, logs e limite local de tokens | Ao ajustar comportamento geral ou diagnóstico |
+| Security & Consent | Aprovação por risco, timeout, sessão, atalhos e envio de contexto | Antes de permitir execução, mutações ou conteúdo remoto |
+| CLI & MCP | Executor nativo/externo, executável portátil e conexão MCP | Somente ao usar CLI externa ou cliente MCP |
+| Memory Diagnostics | Caminho e limites do FastMM5 | Ao investigar leaks, double free ou use-after-free |
+
+Cada campo e botão possui hint contextual. Para decisões de segurança, consulte o
+[modelo de segurança](tool_security_model.md); para dependências entre modo nativo, CLI e MCP,
+consulte a [matriz de executores](cli_executors.md).
+
 ## 3. Como ativar o modo agente
 
 ### 3.1 Botão e comandos do modo agente
@@ -470,7 +486,7 @@ Consulte o [modelo de segurança](tool_security_model.md) e o
 | Delphi 13 | Win32 | Suportado e validado |
 | Delphi 13 | IDE64 | Suportado e validado |
 
-Use sempre o ZIP correspondente à versão e arquitetura da IDE.
+Use o instalador visual, que detecta e valida a versão e a arquitetura selecionadas.
 
 ## 8. Limitações importantes da versão atual
 

@@ -156,3 +156,48 @@ test('operational release guides do not pin obsolete artifact names', () => {
     );
   });
 });
+
+test('end-user installation guidance prioritizes the visual installer', () => {
+  const portugueseGuide = fs.readFileSync(
+    path.join(documentationRoot, 'install_config.md'),
+    'utf8'
+  );
+  const englishGuide = fs.readFileSync(
+    path.join(documentationRoot, 'install_config.en.md'),
+    'utf8'
+  );
+
+  assert.match(portugueseGuide, /RadIA-v<versão>-Setup\.exe/u);
+  assert.match(englishGuide, /RadIA-v<version>-Setup\.exe/u);
+  assert.match(portugueseGuide, /contribuidores/u);
+  assert.match(englishGuide, /contributors/u);
+  assert.doesNotMatch(portugueseGuide, /Instalação Automatizada \(PowerShell\) - Recomendada/u);
+  assert.doesNotMatch(englishGuide, /Automated Installation \(PowerShell\) - Recommended/u);
+  assert.doesNotMatch(portugueseGuide, /Use sempre o ZIP correspondente/u);
+  assert.doesNotMatch(englishGuide, /installer bundled in the release ZIP/u);
+});
+
+test('documentation hubs expose the settings map and security guidance', () => {
+  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
+  const portugueseManual = fs.readFileSync(path.join(documentationRoot, 'user_manual.md'), 'utf8');
+  const englishManual = fs.readFileSync(path.join(documentationRoot, 'user_manual.en.md'), 'utf8');
+  const settings = [
+    'Providers',
+    'System',
+    'Templates',
+    'General / Logs',
+    'Security & Consent',
+    'CLI & MCP',
+    'Memory Diagnostics'
+  ];
+
+  assert.match(portugueseHub, /user_manual\.md#24-mapa-das-configurações/u);
+  assert.match(englishHub, /user_manual\.en\.md#21-settings-map/u);
+  settings.forEach(setting => {
+    assert.ok(portugueseManual.includes(setting), `Portuguese manual is missing ${setting}`);
+    assert.ok(englishManual.includes(setting), `English manual is missing ${setting}`);
+  });
+  assert.match(portugueseManual, /tool_security_model\.md/u);
+  assert.match(englishManual, /tool_security_model\.md/u);
+});

@@ -75,9 +75,16 @@ declare uma CLI como transporte, como o login ChatGPT via Codex. Veja a
 O catálogo retornado por `/tools` é a fonte mais precisa em runtime. Documentos de roadmap e
 catálogos arquiteturais podem incluir propostas ainda não disponíveis.
 
-## Instalação resumida
+## Instalação
 
-Use o instalador visual da release ou compile o package correspondente à IDE:
+Para usar o Rad IA, baixe somente `RadIA-v<versão>-Setup.exe` na
+[release mais recente](https://github.com/regyssilveira/RadIA-Plugin/releases/latest). Feche o
+Delphi, execute o instalador e selecione as IDEs desejadas. Não é necessário baixar ZIP, instalar
+PowerShell/npm ou compilar o projeto.
+
+## Compilar do código-fonte
+
+Os comandos abaixo são destinados a contribuidores:
 
 ```powershell
 # Delphi 12 Win32
@@ -90,8 +97,8 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -Te
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -IDE64 -Test
 ```
 
-Feche a IDE antes de instalar ou substituir uma BPL. O procedimento completo, incluindo instalação
-manual, packages Release, providers e solução de problemas, está no
+Feche a IDE antes de instalar ou substituir uma BPL. O procedimento completo, incluindo o fluxo do
+usuário, build para contribuidores, providers e solução de problemas, está no
 [guia de instalação e configuração](docs/install_config.md).
 
 ## Segurança e privacidade
