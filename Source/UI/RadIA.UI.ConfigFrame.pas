@@ -92,6 +92,7 @@ type
     FLblCliStatus: TLabel;
     FLblMcpStatus: TLabel;
     FMemoMcpPreview: TMemo;
+    FBtnCliBrowse: TButton;
     FBtnCliRefresh: TButton;
     FBtnCliInstall: TButton;
     FBtnMcpPreview: TButton;
@@ -120,6 +121,7 @@ type
     procedure BtnResetQuotaClick(Sender: TObject);
     procedure BtnRevokeConsentClick(Sender: TObject);
     procedure BtnCliRefreshClick(Sender: TObject);
+    procedure BtnCliBrowseClick(Sender: TObject);
     procedure BtnCliInstallClick(Sender: TObject);
     procedure BtnMcpPreviewClick(Sender: TObject);
     procedure BtnMcpHandshakeClick(Sender: TObject);
@@ -155,6 +157,7 @@ type
     procedure CreateGeneralTab;
     procedure CreateSecurityTab;
     procedure CreateCliMcpTab;
+    procedure CreateCliExecutableControls;
     procedure CreateMemoryDiagnosticsTab;
     procedure CreateTemplateOriginLabel;
     procedure CreateProviderAdvancedControls(ATabSheet: TTabSheet; const AProviderId: string);
@@ -939,6 +942,35 @@ begin
   FLblFastMM5Status.Height := 64;
 end;
 
+procedure TRadIAFrameAIConfig.CreateCliExecutableControls;
+begin
+  CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 70);
+  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 88, 414);
+  FEdtCliExecutable.Anchors := [akLeft, akTop, akRight];
+
+  FBtnCliBrowse := TButton.Create(Self);
+  FBtnCliBrowse.Parent := FPnlCliMcp;
+  FBtnCliBrowse.SetBounds(438, 86, 96, 25);
+  FBtnCliBrowse.Anchors := [akTop, akRight];
+  FBtnCliBrowse.Caption := 'Browse...';
+  FBtnCliBrowse.OnClick := BtnCliBrowseClick;
+
+  FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 120);
+  FBtnCliRefresh := TButton.Create(Self);
+  FBtnCliRefresh.Parent := FPnlCliMcp;
+  FBtnCliRefresh.SetBounds(548, 86, 96, 25);
+  FBtnCliRefresh.Anchors := [akTop, akRight];
+  FBtnCliRefresh.Caption := 'Diagnose';
+  FBtnCliRefresh.OnClick := BtnCliRefreshClick;
+
+  FBtnCliInstall := TButton.Create(Self);
+  FBtnCliInstall.Parent := FPnlCliMcp;
+  FBtnCliInstall.SetBounds(534, 116, 110, 25);
+  FBtnCliInstall.Anchors := [akTop, akRight];
+  FBtnCliInstall.Caption := 'Install channel';
+  FBtnCliInstall.OnClick := BtnCliInstallClick;
+end;
+
 procedure TRadIAFrameAIConfig.CreateCliMcpTab;
 var
   LDefinition: TRadIACliDefinition;
@@ -961,9 +993,15 @@ begin
   FCmbAgentExecutor.Top := 34;
   FCmbAgentExecutor.Width := 240;
   FCmbAgentExecutor.Style := csDropDownList;
-  FCmbAgentExecutor.Items.Add('RadIA native agent');
-  FCmbAgentExecutor.Items.Add('Selected CLI');
+  FCmbAgentExecutor.Items.Add('RadIA native orchestration');
+  FCmbAgentExecutor.Items.Add('External CLI orchestration');
   FCmbAgentExecutor.ItemIndex := 0;
+  CreateLabel(
+    FPnlCliMcp,
+    'Orchestration choice; provider authentication is configured separately.',
+    280,
+    58
+  );
 
   CreateLabel(FPnlCliMcp, 'CLI client:', 16, 16);
   FCmbCliClient := TComboBox.Create(Self);
@@ -976,27 +1014,7 @@ begin
   for LDefinition in TRadIACliCatalog.All do
     FCmbCliClient.Items.Add(LDefinition.DisplayName);
 
-  CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 70);
-  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 88, 520);
-
-  FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 120);
-  FBtnCliRefresh := TButton.Create(Self);
-  FBtnCliRefresh.Parent := FPnlCliMcp;
-  FBtnCliRefresh.Left := 548;
-  FBtnCliRefresh.Top := 86;
-  FBtnCliRefresh.Width := 96;
-  FBtnCliRefresh.Height := 25;
-  FBtnCliRefresh.Caption := 'Diagnose';
-  FBtnCliRefresh.OnClick := BtnCliRefreshClick;
-
-  FBtnCliInstall := TButton.Create(Self);
-  FBtnCliInstall.Parent := FPnlCliMcp;
-  FBtnCliInstall.Left := 534;
-  FBtnCliInstall.Top := 116;
-  FBtnCliInstall.Width := 110;
-  FBtnCliInstall.Height := 25;
-  FBtnCliInstall.Caption := 'Install / Update';
-  FBtnCliInstall.OnClick := BtnCliInstallClick;
+  CreateCliExecutableControls;
 
   CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 152);
   FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 170, 628);
@@ -1072,7 +1090,7 @@ begin
   if grpGeminiAuthType.Items.Count > 1 then
     grpGeminiAuthType.Items[1] := 'Sign in with Google (OAuth)';
   if grpOpenAIAuthType.Items.Count > 1 then
-    grpOpenAIAuthType.Items[1] := 'Sign in with ChatGPT (OAuth)';
+    grpOpenAIAuthType.Items[1] := 'Sign in with ChatGPT (OAuth via Codex CLI)';
 
   CreateTemplateOriginLabel;
 
@@ -1641,7 +1659,8 @@ begin
     Exit;
   LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
   LPrompt := Format(
-    'Install or update %s through its official channel?' + sLineBreak +
+    'Optionally install or update %s through its official channel?' + sLineBreak +
+    'You can cancel and select an existing portable executable instead.' + sLineBreak +
     sLineBreak + 'Command:' + sLineBreak + '%s' + sLineBreak +
     sLineBreak + 'Prerequisites: %s',
     [
@@ -1729,6 +1748,26 @@ end;
 procedure TRadIAFrameAIConfig.BtnCliRefreshClick(Sender: TObject);
 begin
   RefreshCliMcpDiagnostics;
+end;
+
+procedure TRadIAFrameAIConfig.BtnCliBrowseClick(Sender: TObject);
+var
+  LDialog: TOpenDialog;
+begin
+  LDialog := TOpenDialog.Create(Self);
+  try
+    LDialog.Title := 'Select the CLI executable';
+    LDialog.Filter := 'Executables and command files|*.exe;*.cmd;*.bat|All files|*.*';
+    LDialog.Options := [ofFileMustExist, ofPathMustExist, ofEnableSizing];
+    LDialog.FileName := FEdtCliExecutable.Text;
+    if LDialog.Execute then
+    begin
+      FEdtCliExecutable.Text := LDialog.FileName;
+      RefreshCliMcpDiagnostics;
+    end;
+  finally
+    LDialog.Free;
+  end;
 end;
 
 procedure TRadIAFrameAIConfig.BtnMcpHandshakeClick(Sender: TObject);
@@ -2038,27 +2077,18 @@ procedure TRadIAFrameAIConfig.RefreshCliMcpDiagnostics;
 var
   LDefinition: TRadIACliDefinition;
   LDetection: TRadIACliDetection;
-  LDetector: TRadIACliDetector;
 begin
   if not GetSelectedCliDefinition(LDefinition) then
     Exit;
   SaveCliMcpSettings;
-  LDetector := TRadIACliDetector.Create;
-  try
-    LDetection := LDetector.Detect(
-      LDefinition,
-      FEdtCliExecutable.Text
-    );
-  finally
-    LDetector.Free;
-  end;
+  LDetection := TRadIACliResolver.Resolve(LDefinition.Id);
   if LDetection.Installed then
   begin
     FLblCliStatus.Caption := Format(
       'CLI status: detected via %s at %s; reading version...',
       [LDetection.Source, LDetection.ExecutablePath]
     );
-    FBtnCliInstall.Caption := 'Update';
+    FBtnCliInstall.Caption := 'Update channel';
     StartCliVersionProbe(
       LDefinition,
       LDetection.ExecutablePath
@@ -2067,8 +2097,8 @@ begin
   else
   begin
     FLblCliStatus.Caption :=
-      'CLI status: not detected. Install it through the official channel.';
-    FBtnCliInstall.Caption := 'Install';
+      'CLI status: not detected. Select a portable executable or use the optional install channel.';
+    FBtnCliInstall.Caption := 'Install channel';
   end;
   FBtnCliInstall.Enabled := not Assigned(FCliInstallSession);
   RefreshMcpPreview;
@@ -2199,6 +2229,7 @@ procedure TRadIAFrameAIConfig.SetCliInstallRunning(
 );
 begin
   FCmbCliClient.Enabled := not ARunning;
+  FBtnCliBrowse.Enabled := not ARunning;
   FBtnCliRefresh.Enabled := not ARunning;
   FBtnCliInstall.Enabled := not ARunning;
   if ARunning then

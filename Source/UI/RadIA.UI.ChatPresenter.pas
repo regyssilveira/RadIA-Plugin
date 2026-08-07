@@ -318,7 +318,7 @@ uses
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
   RadIA.Core.AgentPricing, RadIA.Core.AgentProvider,
-  RadIA.Core.CliManager, RadIA.Core.CliMcpSettings,
+  RadIA.Core.CliManager,
   RadIA.Core.Journeys,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
@@ -579,8 +579,9 @@ var
   LActiveModel: string;
   LProvId: string;
 begin
-  if FModelsProvider = AProvider then
-    FModelsProvider := nil;
+  if FModelsProvider <> AProvider then
+    Exit;
+  FModelsProvider := nil;
 
   if Assigned(AProvider) then
   begin
@@ -2966,11 +2967,8 @@ function TRadIAChatPresenter.TryStartCliAgentRun(
   const AObjective: string
 ): Boolean;
 var
-  LClientSettings: TRadIACliMcpClientSettings;
-  LClientStore: TRadIACliMcpSettings;
   LDefinition: TRadIACliDefinition;
   LDetection: TRadIACliDetection;
-  LDetector: TRadIACliDetector;
   LGuard: IRadIALifecycleGuard;
   LInvocation: TRadIACliInvocation;
   LProject: TRadIAProjectSnapshot;
@@ -3007,21 +3005,7 @@ begin
     Exit;
   end;
 
-  LClientStore := TRadIACliMcpSettings.Create;
-  try
-    LClientSettings := LClientStore.Load(LDefinition.Id, '', '');
-  finally
-    LClientStore.Free;
-  end;
-  LDetector := TRadIACliDetector.Create;
-  try
-    LDetection := LDetector.Detect(
-      LDefinition,
-      LClientSettings.CliExecutablePath
-    );
-  finally
-    LDetector.Free;
-  end;
+  LDetection := TRadIACliResolver.Resolve(LDefinition.Id);
   if not LDetection.Installed then
   begin
     PostToWebView(

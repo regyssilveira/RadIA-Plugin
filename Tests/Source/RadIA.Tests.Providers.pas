@@ -544,8 +544,10 @@ end;
 procedure TTestRadIAProviders.TestOpenAI_SendPromptAsync_OAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
+  LErrorText: string;
 begin
   LCallbackCalled := False;
+  LErrorText := '';
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
   FConfig.SetActiveModel('OpenAI', 'gpt-5.4');
 
@@ -555,6 +557,7 @@ begin
     procedure(const AResponse: string; const AError: string; AFromCache: Boolean; const AUsage: TTokenUsage)
     begin
       LCallbackCalled := True;
+      LErrorText := AError;
       Assert.IsNotEmpty(AError);
     end,
     0.7,
@@ -562,13 +565,18 @@ begin
   );
 
   Assert.IsTrue(LCallbackCalled, 'Missing executable must report the error synchronously');
+  Assert.Contains(LErrorText, 'Settings > CLI & MCP');
+  Assert.Contains(LErrorText, 'existing executable');
+  Assert.Contains(LErrorText, 'https://github.com/openai/codex');
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_SendPromptStreamAsync_OAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
+  LErrorText: string;
 begin
   LCallbackCalled := False;
+  LErrorText := '';
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
   FConfig.SetActiveModel('OpenAI', 'gpt-5.4');
 
@@ -580,6 +588,7 @@ begin
       if AIsDone then
       begin
         LCallbackCalled := True;
+        LErrorText := AError;
         Assert.IsNotEmpty(AError);
       end;
     end,
@@ -588,6 +597,9 @@ begin
   );
 
   Assert.IsTrue(LCallbackCalled, 'Missing executable must report the stream error synchronously');
+  Assert.Contains(LErrorText, 'Settings > CLI & MCP');
+  Assert.Contains(LErrorText, 'existing executable');
+  Assert.Contains(LErrorText, 'https://github.com/openai/codex');
 end;
 
 

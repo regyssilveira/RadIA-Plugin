@@ -46,7 +46,8 @@ implementation
 uses
   System.SysUtils, System.Classes, Winapi.Windows,
   System.Generics.Collections, RadIA.Core.ProviderRegistry, RadIA.Core.Types,
-  RadIA.Core.TokenUsage, RadIA.Core.Logger, RadIA.Core.Container;
+  RadIA.Core.TokenUsage, RadIA.Core.Logger, RadIA.Core.Container,
+  RadIA.Core.CliManager;
 
 { TRadIAOpenAIProvider }
 
@@ -137,15 +138,13 @@ end;
 
 function TRadIAOpenAIProvider.GetCodexExecutablePath: string;
 var
-  LPath: string;
+  LDetection: TRadIACliDetection;
 begin
-  Result := '';
-
-  LPath := IncludeTrailingPathDelimiter(GetHomePath) + 'AppData\Local\OpenAI\Codex\bin\codex.exe';
-  if FileExists(LPath) then
-  begin
-    Result := LPath;
-  end;
+  LDetection := TRadIACliResolver.Resolve('codex');
+  if LDetection.Installed then
+    Result := LDetection.ExecutablePath
+  else
+    Result := '';
 end;
 
 function TRadIAOpenAIProvider.ExtractDeltaText(const ADeltaObj: TJSONObject): string;
@@ -561,14 +560,16 @@ begin
   begin
     if AIsStream then
       AStreamCallback('', True,
-        'Error: The Codex CLI executable (codex.exe) was not found on your system. ' +
-        'Please install the OpenAI Codex CLI. ' +
-        '[Click here for installation instructions](https://github.com/openai/codex-cli)')
+        'Error: ChatGPT OAuth uses Codex CLI as its transport, but the executable was not found. ' +
+        'Select an existing portable codex.exe in Settings > CLI & MCP, or review the optional ' +
+        '[installation instructions](https://github.com/openai/codex). Node.js and npm are not ' +
+        'required when you provide an existing executable.')
     else
       ACallback('',
-        'Error: The Codex CLI executable (codex.exe) was not found on your system. ' +
-        'Please install the OpenAI Codex CLI. ' +
-        '[Click here for installation instructions](https://github.com/openai/codex-cli)',
+        'Error: ChatGPT OAuth uses Codex CLI as its transport, but the executable was not found. ' +
+        'Select an existing portable codex.exe in Settings > CLI & MCP, or review the optional ' +
+        '[installation instructions](https://github.com/openai/codex). Node.js and npm are not ' +
+        'required when you provide an existing executable.',
         False, TTokenUsage.Empty);
     Exit;
   end;

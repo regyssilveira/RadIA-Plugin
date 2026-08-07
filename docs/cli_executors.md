@@ -1,8 +1,19 @@
-# Executores de agente por CLI
+# Orquestração nativa e executores por CLI
 
-O RadIA 2.0 oferece uma abstração única para manter o agente nativo como padrão e selecionar um
-CLI externo quando esse executor estiver disponível. A preferência fica em **Configurações >
-CLI & MCP > Chat executor** e não exige reiniciar a IDE.
+O RadIA oferece duas escolhas independentes: a **orquestração do agente** e o **transporte de
+autenticação do provider**. A preferência de orquestração fica em **Configurações > CLI & MCP >
+Chat executor** e não exige reiniciar a IDE.
+
+- **RadIA native orchestration** executa o loop, as ferramentas, os consentimentos e os checkpoints
+  dentro do RadIA. Ele não troca silenciosamente para um executor externo.
+- **External CLI orchestration** entrega o objetivo diretamente ao CLI selecionado.
+- O botão **Agent** do chat liga ou desliga o comportamento agente; ele não escolhe o executor nem
+  muda a autenticação do provider.
+
+Providers com API key e providers locais funcionam sem CLI. A opção **Sign in with ChatGPT (OAuth
+via Codex CLI)** é uma exceção explícita: nesse tipo de autenticação, o Codex CLI é o transporte do
+provider mesmo quando a orquestração é nativa. Para operar totalmente sem CLIs, use uma API key ou
+outro provider que ofereça transporte HTTP/local nativo.
 
 ## Perfis suportados
 
@@ -18,10 +29,12 @@ do Windows apenas na fronteira de execução. O prompt não é concatenado a um 
 
 ## Instalação opcional pelo canal oficial
 
-Em **Configurações > CLI & MCP**, o botão **Install** ou **Update** apresenta o comando completo e
+Em **Configurações > CLI & MCP**, o botão **Install channel** ou **Update channel** apresenta o
+comando completo e
 os pré-requisitos antes de solicitar confirmação. Depois da aprovação, a instalação roda fora da
 thread da IDE, mostra stdout e stderr no painel e possui timeout e encerramento da árvore de
-processos.
+processos. Esse canal é opcional: o botão **Browse...** permite selecionar um `.exe`, `.cmd` ou
+`.bat` já existente. Nesse caso, Node.js e npm não são necessários para o RadIA usar o executável.
 
 | Executor | Canal usado pelo Rad IA | Pacote oficial |
 |---|---|---|
@@ -36,8 +49,9 @@ continua sendo feita pelo próprio CLI depois da instalação.
 
 ## Detecção e versão instalada
 
-Ao abrir o painel **CLI & MCP**, trocar o cliente ou usar **Refresh**, o RadIA procura primeiro o
-caminho configurado e depois o `PATH` do Windows. Quando encontra o executável, chama
+Ao abrir o painel **CLI & MCP**, trocar o cliente ou usar **Diagnose**, o RadIA procura primeiro o
+caminho configurado e depois o `PATH` do Windows. Diagnóstico, ChatGPT OAuth e execução externa
+usam o mesmo resolvedor e, portanto, o mesmo caminho efetivo. Quando encontra o executável, chama
 `--version` em segundo plano, com timeout de dez segundos, e apresenta na própria tela:
 
 - nome e versão informados pelo CLI;
@@ -67,9 +81,9 @@ arquivos ou variáveis de ambiente.
 
 ## Seleção e segurança
 
-- **RadIA native agent** permanece como padrão e usa as ferramentas, consentimentos e checkpoints
+- **RadIA native orchestration** permanece como padrão e usa as ferramentas, consentimentos e checkpoints
   internos.
-- **Selected CLI** usa o cliente escolhido no mesmo painel e o caminho detectado ou configurado.
+- **External CLI orchestration** usa o cliente escolhido no mesmo painel e o caminho detectado ou configurado.
 - Um identificador desconhecido ou uma configuração corrompida retorna automaticamente ao agente
   nativo.
 - A seleção não habilita opções de aprovação automática dos CLIs.
@@ -80,7 +94,7 @@ a seguir.
 
 ## Execução integrada ao chat
 
-Quando **Selected CLI** está ativo e existe um projeto Delphi aberto, o modo agente encaminha o
+Quando **External CLI orchestration** está ativo e existe um projeto Delphi aberto, o modo agente encaminha o
 objetivo ao CLI detectado usando a pasta do projeto como diretório de trabalho. O processo:
 
 - roda fora da thread da interface;
@@ -93,6 +107,20 @@ objetivo ao CLI detectado usando a pasta do projeto como diretório de trabalho.
 Se o executável não estiver disponível, o RadIA não inicia uma execução parcial: ele informa o
 problema e direciona o usuário ao diagnóstico em **CLI & MCP**. A seleção pode ser alterada para o
 agente nativo e vale na próxima solicitação, sem reiniciar a IDE.
+
+## Cenários de configuração
+
+| Cenário | Configuração | Exige Node.js/npm no Windows? |
+|---|---|---|
+| Agente nativo com API key | Orquestração nativa + provider por API | Não |
+| Agente nativo com provider local | Orquestração nativa + Ollama/LM Studio | Não |
+| ChatGPT OAuth | Qualquer orquestração + caminho do Codex CLI | Não, se um executável existente for selecionado |
+| Agente externo | Orquestração externa + CLI selecionado | Não, se um executável existente for selecionado |
+| Instalação assistida do Codex/Claude/Gemini | Canal opcional de instalação | Sim |
+
+CLIs instalados apenas dentro do WSL não aparecem no `PATH` do Windows e não são tratados como um
+`codex.exe` nativo. Até existir um executor WSL dedicado, use um executável Windows apontado pelo
+campo de override ou selecione um provider que não dependa de CLI.
 
 O terminal acoplável reutiliza o mesmo transporte, streaming, timeout e cancelamento em cascata.
 Veja [Terminal](terminal.md).

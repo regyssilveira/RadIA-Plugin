@@ -56,6 +56,16 @@ A infraestrutura agentiva é inicializada automaticamente quando o package do Ra
 O botão **Agent On/Off** controla se o chat pode executar tools. O mesmo estado pode ser alterado
 com `/agent`, `/agent on` e `/agent off`.
 
+Esse botão não seleciona o executor nem altera a autenticação. Em **Configurações > CLI & MCP >
+Chat executor**, **RadIA native orchestration** mantém o loop de ferramentas dentro do RadIA;
+**External CLI orchestration** entrega o objetivo ao CLI selecionado. Providers por API key e
+providers locais não exigem CLI. **Sign in with ChatGPT (OAuth via Codex CLI)** usa o Codex como
+transporte de autenticação e mostra essa dependência explicitamente.
+
+O caminho de um CLI portátil pode ser selecionado com **Browse...**. O mesmo caminho é usado por
+**Diagnose**, pelo executor externo e pelo transporte ChatGPT OAuth, sem exigir uma instalação npm.
+Consulte [Orquestração nativa e executores por CLI](cli_executors.md) para a matriz completa.
+
 No chat, o acesso às ferramentas é explícito:
 
 ```text

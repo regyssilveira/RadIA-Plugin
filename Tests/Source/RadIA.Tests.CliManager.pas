@@ -50,6 +50,10 @@ type
     procedure MissingConfiguredPathFallsBackToEnvironmentPath;
     [Test]
     procedure NormalizesCliVersionOutput;
+    [Test]
+    procedure ResolverUsesPortableOverrideWithoutPackageManager;
+    [Test]
+    procedure ResolverUsesPathWhenOverrideIsMissing;
   end;
 
 implementation
@@ -204,6 +208,40 @@ begin
   finally
     LDetector.Free;
   end;
+end;
+
+procedure TRadIACliManagerTests.ResolverUsesPortableOverrideWithoutPackageManager;
+var
+  LDetection: TRadIACliDetection;
+  LEnvironment: TRadIAFakeCliEnvironment;
+begin
+  LEnvironment := TRadIAFakeCliEnvironment.Create([]);
+  LEnvironment.AddFile('C:\Portable\codex.exe');
+  LDetection := TRadIACliResolver.Resolve(
+    'codex',
+    'C:\Portable\codex.exe',
+    LEnvironment
+  );
+  Assert.IsTrue(LDetection.Installed);
+  Assert.AreEqual('configured', LDetection.Source);
+  Assert.AreEqual('C:\Portable\codex.exe', LDetection.ExecutablePath);
+end;
+
+procedure TRadIACliManagerTests.ResolverUsesPathWhenOverrideIsMissing;
+var
+  LDetection: TRadIACliDetection;
+  LEnvironment: TRadIAFakeCliEnvironment;
+begin
+  LEnvironment := TRadIAFakeCliEnvironment.Create(['C:\Alternative']);
+  LEnvironment.AddFile('C:\Alternative\codex.exe');
+  LDetection := TRadIACliResolver.Resolve(
+    'codex',
+    '',
+    LEnvironment
+  );
+  Assert.IsTrue(LDetection.Installed);
+  Assert.AreEqual('path', LDetection.Source);
+  Assert.AreEqual('C:\Alternative\codex.exe', LDetection.ExecutablePath);
 end;
 
 procedure TRadIACliManagerTests.MissingConfiguredPathFallsBackToEnvironmentPath;

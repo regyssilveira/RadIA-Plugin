@@ -135,6 +135,18 @@ type
     function DetectAll: TArray<TRadIACliDetection>;
   end;
 
+  TRadIACliResolver = class
+  public
+    class function Resolve(
+      const AClientId: string
+    ): TRadIACliDetection; overload; static;
+    class function Resolve(
+      const AClientId: string;
+      const AConfiguredPath: string;
+      const AEnvironment: IRadIACliEnvironment
+    ): TRadIACliDetection; overload; static;
+  end;
+
   TRadIACliInstaller = class
   private
     class function BuildNpmPlan(
@@ -166,7 +178,8 @@ uses
   System.Classes,
   System.Generics.Collections,
   System.IOUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.CliMcpSettings;
 
 { TRadIACliHealth }
 
@@ -534,6 +547,50 @@ begin
         Exit(LCandidate);
     end;
   Result := '';
+end;
+
+{ TRadIACliResolver }
+
+class function TRadIACliResolver.Resolve(
+  const AClientId: string
+): TRadIACliDetection;
+var
+  LSettings: TRadIACliMcpClientSettings;
+  LSettingsStore: TRadIACliMcpSettings;
+begin
+  LSettingsStore := TRadIACliMcpSettings.Create;
+  try
+    LSettings := LSettingsStore.Load(AClientId, '', '');
+  finally
+    LSettingsStore.Free;
+  end;
+
+  Result := Resolve(AClientId, LSettings.CliExecutablePath, nil);
+end;
+
+class function TRadIACliResolver.Resolve(
+  const AClientId: string;
+  const AConfiguredPath: string;
+  const AEnvironment: IRadIACliEnvironment
+): TRadIACliDetection;
+var
+  LDefinition: TRadIACliDefinition;
+  LDetector: TRadIACliDetector;
+begin
+  if not TRadIACliCatalog.FindById(AClientId, LDefinition) then
+    raise EArgumentException.CreateFmt(
+      'The CLI client "%s" is not supported.',
+      [AClientId]
+    );
+  LDetector := TRadIACliDetector.Create(AEnvironment);
+  try
+    Result := LDetector.Detect(
+      LDefinition,
+      AConfiguredPath
+    );
+  finally
+    LDetector.Free;
+  end;
 end;
 
 end.
