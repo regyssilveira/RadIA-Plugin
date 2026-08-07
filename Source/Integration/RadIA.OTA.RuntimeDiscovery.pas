@@ -474,53 +474,176 @@ begin
   end;
 end;
 
+function SelectorMatches(
+  const ASelector: TRadIARuntimeSelector;
+  const AHandle: HWND;
+  const APath: string
+): Boolean;
+var
+  LClassName: string;
+begin
+  if ASelector.ControlName <> '' then
+    Exit(False);
+  LClassName := WindowClassName(AHandle);
+  Result :=
+    (
+      (ASelector.ClassName = '') or
+      SameText(ASelector.ClassName, LClassName)
+    ) and
+    (
+      (ASelector.Text = '') or
+      SameText(ASelector.Text, WindowText(AHandle, LClassName))
+    ) and
+    (
+      (ASelector.ParentPath = '') or
+      (
+        SameText(ASelector.ParentPath, '$root') and
+        (APath = '')
+      ) or
+      SameText(ASelector.ParentPath, APath)
+    );
+end;
+
+procedure AddStableControlMatches(
+  const ASelector: TRadIARuntimeSelector;
+  const ARootWindow: HWND;
+  const AAllowedProcessIds: TDictionary<LongWord, Boolean>;
+  const AMatches: TList<HWND>
+);
+var
+  LContext: TRadIAControlEnumerationContext;
+  LControl: HWND;
+begin
+  LContext := TRadIAControlEnumerationContext.Create;
+  try
+    EnumChildWindows(
+      ARootWindow,
+      @TRadIAControlEnumerationContext.EnumerateControl,
+      LPARAM(LContext)
+    );
+    for LControl in LContext.Handles do
+      if AAllowedProcessIds.ContainsKey(WindowProcessId(LControl)) and
+        SelectorMatches(
+          ASelector,
+          LControl,
+          ControlPath(LControl, ARootWindow)
+        ) then
+        AMatches.Add(LControl);
+  finally
+    LContext.Free;
+  end;
+end;
+
+function FindByStableSelector(
+  const ASelector: TRadIARuntimeSelector;
+  const AAllowedProcessIds: TDictionary<LongWord, Boolean>;
+  out AIsWindow: Boolean
+): HWND;
+var
+  LContext: TRadIAWindowEnumerationContext;
+  LMatches: TList<HWND>;
+  LWindow: HWND;
+begin
+  Result := 0;
+  AIsWindow := False;
+  LMatches := TList<HWND>.Create;
+  LContext := TRadIAWindowEnumerationContext.Create(AAllowedProcessIds);
+  try
+    EnumWindows(
+      @TRadIAWindowEnumerationContext.EnumerateWindow,
+      LPARAM(LContext)
+    );
+    for LWindow in LContext.Handles do
+    begin
+      if SelectorMatches(ASelector, LWindow, '') then
+        LMatches.Add(LWindow);
+      AddStableControlMatches(
+        ASelector,
+        LWindow,
+        AAllowedProcessIds,
+        LMatches
+      );
+    end;
+    if LMatches.Count = 1 then
+    begin
+      Result := LMatches[0];
+      AIsWindow := GetAncestor(Result, GA_ROOT) = Result;
+    end;
+  finally
+    LContext.Free;
+    LMatches.Free;
+  end;
+end;
+
+procedure PopulateRuntimeTarget(
+  const AHandle: HWND;
+  const AIsWindow: Boolean;
+  out ATarget: TRadIARuntimeTarget
+);
+var
+  LCapabilities: TRadIARuntimeAutomationCapabilities;
+begin
+  ATarget.Handle := AHandle;
+  ATarget.IsWindow := AIsWindow;
+  ATarget.ClassName := WindowClassName(AHandle);
+  if AIsWindow then
+    LCapabilities := [racClose]
+  else
+    LCapabilities := ControlCapabilities(ATarget.ClassName);
+  ATarget.Text := WindowText(AHandle, ATarget.ClassName);
+  ATarget.State := TRadIARuntimeElementState.Create(
+    IsWindowVisible(AHandle),
+    IsWindowEnabled(AHandle),
+    LCapabilities
+  );
+end;
+
 function ResolveRuntimeTarget(
   const ASession: TRadIARuntimeSessionIdentity;
-  const ATargetId: string;
+  const ASelector: TRadIARuntimeSelector;
   out ATarget: TRadIARuntimeTarget
 ): Boolean;
 var
   LAllowedProcessIds: TDictionary<LongWord, Boolean>;
-  LCapabilities: TRadIARuntimeAutomationCapabilities;
   LRootWindow: HWND;
 begin
   ATarget := Default(TRadIARuntimeTarget);
   Result := False;
-  if Length(ATargetId) <> 64 then
+  if not ASelector.HasStableIdentity then
     Exit;
   LAllowedProcessIds := BuildAllowedProcessIds(
     ASession.ProcessId,
     ASession.CreatedAtUtc
   );
   try
-    ATarget.Handle := FindWindowById(
-      ASession.SessionId,
-      ATargetId,
-      LAllowedProcessIds
-    );
-    ATarget.IsWindow := ATarget.Handle <> 0;
-    if not ATarget.IsWindow then
-      ATarget.Handle := FindControlById(
+    if Length(ASelector.AutomationId) = 64 then
+    begin
+      ATarget.Handle := FindWindowById(
         ASession.SessionId,
-        ATargetId,
+        ASelector.AutomationId,
+        LAllowedProcessIds
+      );
+      ATarget.IsWindow := ATarget.Handle <> 0;
+      if not ATarget.IsWindow then
+        ATarget.Handle := FindControlById(
+          ASession.SessionId,
+          ASelector.AutomationId,
+          LAllowedProcessIds,
+          LRootWindow
+        );
+    end
+    else
+      ATarget.Handle := FindByStableSelector(
+        ASelector,
         LAllowedProcessIds,
-        LRootWindow
+        ATarget.IsWindow
       );
     if ATarget.Handle = 0 then
       Exit;
-    ATarget.ClassName := WindowClassName(ATarget.Handle);
-    if ATarget.IsWindow then
-      LCapabilities := [racClose]
-    else
-      LCapabilities := ControlCapabilities(ATarget.ClassName);
-    ATarget.Text := WindowText(
+    PopulateRuntimeTarget(
       ATarget.Handle,
-      ATarget.ClassName
-    );
-    ATarget.State := TRadIARuntimeElementState.Create(
-      IsWindowVisible(ATarget.Handle),
-      IsWindowEnabled(ATarget.Handle),
-      LCapabilities
+      ATarget.IsWindow,
+      ATarget
     );
     Result := True;
   finally
@@ -587,22 +710,18 @@ function InvokeRuntimeTarget(
   const ATarget: TRadIARuntimeTarget;
   const ATimeoutMs: Cardinal
 ): TRadIARuntimeActionResult;
-var
-  LMessageResult: DWORD_PTR;
 begin
-  if SendRuntimeMessage(
+  if (ATimeoutMs >= 100) and PostMessage(
     ATarget.Handle,
     BM_CLICK,
     0,
-    0,
-    ATimeoutMs,
-    LMessageResult
+    0
   ) then
     Result := TRadIARuntimeActionResult.Succeeded
   else
     Result := TRadIARuntimeActionResult.Failed(
-      CMessageTimeoutError,
-      'Invoking the runtime control timed out.'
+      'runtime_action_queue_failed',
+      'Invoking the runtime control could not be queued.'
     );
 end;
 
@@ -735,7 +854,7 @@ begin
     Exit;
   if not ResolveRuntimeTarget(
     ASession,
-    AAction.Selector.AutomationId,
+    AAction.Selector,
     LTarget
   ) then
     Exit(TRadIARuntimeActionResult.Failed(
@@ -952,7 +1071,7 @@ begin
     ));
   if not ResolveRuntimeTarget(
     ASession,
-    AAction.Selector.AutomationId,
+    AAction.Selector,
     LTarget
   ) then
     Exit(TRadIARuntimeActionResult.Failed(

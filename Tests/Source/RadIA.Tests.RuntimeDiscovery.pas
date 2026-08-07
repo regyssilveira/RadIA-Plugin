@@ -153,6 +153,7 @@ begin
   );
   LResult := FActionFacade.ExecuteAction(FSession, LAction);
   Assert.IsTrue(LResult.Success);
+  Application.ProcessMessages;
   Assert.AreEqual(1, FClickCount);
 
   LAction := TRadIARuntimeScenarioAction.Create(
@@ -246,6 +247,7 @@ procedure TTestRadIARuntimeDiscovery.
   ScenarioToolsPrepareAndRunReviewedAction;
 var
   LButtonId: string;
+  LButtonPath: string;
   LControl: TRadIARuntimeControlSnapshot;
   LJson: TJSONObject;
   LPrepare: TRadIAToolResult;
@@ -255,12 +257,16 @@ var
 begin
   Assert.IsTrue(FindLaboratoryWindow(LWindow));
   LButtonId := '';
+  LButtonPath := '';
   for LControl in FDiscovery.GetControlTree(
     FSession,
     LWindow.WindowId
   ) do
     if SameText(LControl.Text, CTestButtonCaption) then
+    begin
       LButtonId := LControl.ControlId;
+      LButtonPath := LControl.Path;
+    end;
   Assert.AreEqual(64, Length(LButtonId));
   LPrepare := FRegistry.Resolve('PrepareRuntimeScenario').Execute(
     TRadIAToolRequest.Create(
@@ -268,7 +274,9 @@ begin
       '{"name":"Invoke authorized test button",' +
       '"limits":{"maxActions":1,"maxDurationMs":5000,' +
       '"maxRepetitions":1},"actions":[{"kind":"invoke",' +
-      '"targetId":"' + LButtonId + '","timeoutMs":1000}]}',
+      '"selector":{"className":"TButton","text":"' +
+      CTestButtonCaption + '","parentPath":"' + LButtonPath +
+      '"},"timeoutMs":1000}]}',
       'runtime-scenario-prepare-test'
     )
   );
@@ -290,6 +298,7 @@ begin
     )
   );
   Assert.IsTrue(LRun.Success);
+  Application.ProcessMessages;
   Assert.AreEqual(1, FClickCount);
   Assert.Contains(LRun.ContentJson, '"state":"succeeded"');
 end;

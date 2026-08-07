@@ -235,6 +235,18 @@ JSON Lines audit trail is appended to `.radia/debug/timeline.jsonl` in the activ
 
 See the [Designer and debugger guide](user_guide_designer_debugger.en.md).
 
+#### 4.10.1 Visual runtime regressions
+
+After correcting a UI-dependent failure, RadIA can preserve its script under
+`.radia/runtime-scenarios/<id>.json`. The artifact has a versioned schema and fingerprint and does
+not store session-bound opaque IDs: every target needs a stable class, text, and path. Use
+`parentPath` equal to `$root` for a root window.
+
+The flow is `PrepareRuntimeRegression`, review, `SaveRuntimeRegression`, a user-controlled commit,
+and, in a future debug session, `PrepareSavedRuntimeScenario` followed by `RunRuntimeScenario`.
+Preparation and listing are read-only. Save and revert are reversible writes, while every scenario
+execution requires fresh consent. An artifact changed without a matching fingerprint is rejected.
+
 ### 4.11 Inline review
 
 Review findings are anchored to a file, hash, and line range. Suggestions remain visual until the
@@ -311,7 +323,7 @@ See the [security model](tool_security_model.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.md) lists the 106 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.md) lists the 111 registered built-in tools.
 - Some architectural catalog entries remain roadmap items and may not appear in `/tools`.
 - Debugger and Designer tools require valid IDE context and state.
 - Patches are rejected after the buffer changes.

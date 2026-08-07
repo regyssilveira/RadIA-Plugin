@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "cancel-access-violation",
+  "savedAtUtc": "2026-08-06T00:00:00.000Z",
+  "fingerprint": "70a6013b96b8af9c55e628163b1423c29b8766e083a6a655e7722a81b01e72d1",
+  "scenario": {
+    "name": "Cancel form access violation regression",
+    "limits": {
+      "maxActions": 3,
+      "maxDurationMs": 15000,
+      "maxRepetitions": 10
+    },
+    "actions": [
+      {
+        "kind": "invoke",
+        "selector": {
+          "className": "TButton",
+          "text": "Fail when form cancels",
+          "parentPath": "TButton[1]"
+        },
+        "timeoutMs": 1000
+      },
+      {
+        "kind": "wait",
+        "timeoutMs": 500
+      },
+      {
+        "kind": "cancel",
+        "selector": {
+          "className": "TButton",
+          "text": "Cancel",
+          "parentPath": "TButton[0]"
+        },
+        "timeoutMs": 1000
+      }
+    ]
+  }
+}

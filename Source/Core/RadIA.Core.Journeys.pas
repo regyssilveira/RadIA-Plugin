@@ -257,13 +257,15 @@ begin
         TRadIAJourneyPhase.Create(
           'Confirm',
           'Rebuild, start a new session, rerun the same scenario, and compare both evidence records.',
-          'Provide a comparable fixed outcome or an explicit reason why verification is inconclusive.'
+          'Provide a comparable fixed outcome, then add a focused DUnitX test or save the visual ' +
+          'scenario as a versioned runtime regression.'
         )
       ],
       [
         'The root cause is supported by debugger evidence.',
         'The correction is reviewed before application.',
         'Failure and verification use different builds and debug sessions.',
+        'An isolated cause has a focused DUnitX test or the visual scenario is saved as a regression.',
         'The original failure no longer reproduces or a blocker is proven.'
       ]
     ),

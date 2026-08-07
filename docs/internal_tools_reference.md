@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 106 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 111 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -256,6 +256,16 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 |---|---|---|
 | `CaptureRuntimeEvidence` | Registra sessão, build, cenário, último evento, pilha e até dez expressões em uma evidência sanitizada e identificada por fingerprint. | Uma vez na reprodução da falha e novamente, com `phase=verification`, após aplicar a correção e recompilar. |
 | `CompareRuntimeEvidence` | Compara uma evidência de falha com outra de verificação e informa se são comparáveis e se a falha foi removida. | Depois de repetir o mesmo cenário em uma nova sessão e em um build diferente; não altera código nem substitui a revisão humana. |
+
+## Regressões runtime versionadas
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareRuntimeRegression` | Valida um cenário com seletores repetíveis, rejeita IDs ligados à sessão e cria o preview do artefato. | Depois de comprovar a correção e antes de gravar a regressão no projeto. |
+| `SaveRuntimeRegression` | Grava o preview em `.radia/runtime-scenarios/<id>.json` com schema, fingerprint e escrita atômica. | Após revisão e consentimento para escrita reversível. |
+| `RevertRuntimeRegression` | Restaura o artefato anterior ou remove o arquivo criado pela aplicação correspondente. | Quando o usuário desfaz a gravação ainda rastreada pelo runtime atual. |
+| `ListRuntimeRegressions` | Lista os cenários versionados do projeto ativo. | Para descobrir regressões disponíveis sem executar a aplicação. |
+| `PrepareSavedRuntimeScenario` | Valida a integridade do artefato, religa os seletores à sessão atual e cria um preview executável. | Depois de iniciar nova sessão de debug; a execução continua em `RunRuntimeScenario` com consentimento próprio. |
 
 ## Git local
 

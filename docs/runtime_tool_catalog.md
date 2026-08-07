@@ -246,6 +246,16 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CaptureRuntimeEvidence` | `RadIA.Core.RuntimeEvidenceTools.pas` |
 | `CompareRuntimeEvidence` | `RadIA.Core.RuntimeEvidenceTools.pas` |
 
+## Versioned runtime regressions
+
+| Tool | Source unit |
+|---|---|
+| `PrepareRuntimeRegression` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `SaveRuntimeRegression` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `RevertRuntimeRegression` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `ListRuntimeRegressions` | `RadIA.Core.RuntimeRegressionTools.pas` |
+| `PrepareSavedRuntimeScenario` | `RadIA.Core.RuntimeRegressionTools.pas` |
+
 ## Reviewable local Git commits
 
 | Tool | Source unit |
@@ -257,7 +267,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Resumo
 
-- Registered groups: 29
-- Registered built-in tools: 106
+- Registered groups: 30
+- Registered built-in tools: 111
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

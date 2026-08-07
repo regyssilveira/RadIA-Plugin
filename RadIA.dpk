@@ -96,6 +96,8 @@ contains
   RadIA.Core.RuntimeScenarioTools in 'Source\Core\RadIA.Core.RuntimeScenarioTools.pas',
   RadIA.Core.RuntimeEvidence in 'Source\Core\RadIA.Core.RuntimeEvidence.pas',
   RadIA.Core.RuntimeEvidenceTools in 'Source\Core\RadIA.Core.RuntimeEvidenceTools.pas',
+  RadIA.Core.RuntimeRegression in 'Source\Core\RadIA.Core.RuntimeRegression.pas',
+  RadIA.Core.RuntimeRegressionTools in 'Source\Core\RadIA.Core.RuntimeRegressionTools.pas',
   RadIA.Core.RuntimeDebugSession in 'Source\Core\RadIA.Core.RuntimeDebugSession.pas',
   RadIA.Core.RuntimeDebugTools in 'Source\Core\RadIA.Core.RuntimeDebugTools.pas',
   RadIA.Core.RuntimeDiscoveryTools in 'Source\Core\RadIA.Core.RuntimeDiscoveryTools.pas',

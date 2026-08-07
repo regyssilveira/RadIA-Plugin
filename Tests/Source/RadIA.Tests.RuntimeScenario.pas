@@ -64,7 +64,7 @@ type
     [Test]
     procedure RunRejectsChangedSession;
     [Test]
-    procedure RunRepeatsPreparedActions;
+    procedure RunCompletesTenStableRepetitions;
     [Test]
     procedure ToolsKeepRunBehindConsentAndCancelImmediate;
   end;
@@ -225,7 +225,7 @@ begin
   Assert.AreEqual(rssIdle, LStatus.State);
 end;
 
-procedure TTestRadIARuntimeScenario.RunRepeatsPreparedActions;
+procedure TTestRadIARuntimeScenario.RunCompletesTenStableRepetitions;
 var
   LPreview: TRadIARuntimeScenarioPreview;
   LStatus: TRadIARuntimeScenarioStatus;
@@ -236,7 +236,7 @@ begin
         Action(rakInvoke, StringOfChar('a', 64)),
         Action(rakAssert, StringOfChar('b', 64), 'ready')
       ],
-      3
+      10
     )
   );
   LStatus := FCoordinator.Run(
@@ -245,8 +245,8 @@ begin
     nil
   );
   Assert.AreEqual(rssSucceeded, LStatus.State);
-  Assert.AreEqual(6, LStatus.CompletedActions);
-  Assert.AreEqual(6, FMock.ExecuteCount);
+  Assert.AreEqual(20, LStatus.CompletedActions);
+  Assert.AreEqual(20, FMock.ExecuteCount);
 end;
 
 procedure TTestRadIARuntimeScenario.

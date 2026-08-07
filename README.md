@@ -91,7 +91,7 @@ Referências rápidas:
 
 - [Tudo que o RadIA pode fazer](docs/capabilities.md)
 - [O que faz e quando usar cada ferramenta](docs/internal_tools_reference.md)
-- [Todas as 106 ferramentas internas](docs/runtime_tool_catalog.md)
+- [Todas as 111 ferramentas internas](docs/runtime_tool_catalog.md)
 - [Todos os comandos de barra](docs/slash_commands.md)
 
 ### 2.2 Capacidades do RadIA em um relance

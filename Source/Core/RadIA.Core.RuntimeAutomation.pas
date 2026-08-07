@@ -39,6 +39,7 @@ type
       const AParentPath: string
     );
     function HasStableIdentity: Boolean;
+    function HasReplayableIdentity: Boolean;
     property AutomationId: string read FAutomationId;
     property ClassName: string read FClassName;
     property ControlName: string read FControlName;
@@ -345,6 +346,17 @@ begin
     (FAutomationId <> '') or
     (FControlName <> '') or
     ((FClassName <> '') and (FText <> '') and (FParentPath <> ''));
+end;
+
+function TRadIARuntimeSelector.HasReplayableIdentity: Boolean;
+begin
+  Result :=
+    (FControlName <> '') or
+    (
+      (FClassName <> '') and
+      (FText <> '') and
+      (FParentPath <> '')
+    );
 end;
 
 { TRadIARuntimeSessionIdentity }

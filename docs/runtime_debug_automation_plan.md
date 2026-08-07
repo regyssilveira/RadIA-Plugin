@@ -1,6 +1,6 @@
 # Goal pós-2.0 — Reprodução autônoma de falhas runtime
 
-> **Estado:** em execução; M0–M4 implementados, com validação ponta a ponta na IDE pendente; M5 é a próxima etapa.
+> **Estado:** M0–M5 implementados e validados automaticamente; aceite ponta a ponta nas IDEs pendente.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Plano pausado durante este goal:** [Continuidade CLI e integração avançada](competitive_leadership_plan.md).
@@ -148,6 +148,8 @@ alvos, com trilha completa de consentimento.
 **Ainda faltará:** endurecimento, regressão versionada e gate de entrega.
 
 ### M5 — Regressão, evidências e gate
+
+Implementação e evidências: [Regressão e hardening M5](runtime_debug_automation_m5.md).
 
 - gerar teste DUnitX quando a causa puder ser isolada;
 - preservar cenário runtime quando a falha depender do ciclo visual;

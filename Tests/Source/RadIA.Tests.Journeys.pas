@@ -84,7 +84,7 @@ begin
   Assert.AreEqual(NativeInt(4), Length(LDefinition.Phases));
   Assert.AreEqual('Reproduce', LDefinition.Phases[0].Name);
   Assert.Contains(LDefinition.Phases[1].Evidence, 'failure evidence');
-  Assert.AreEqual(NativeInt(4), Length(LDefinition.SuccessCriteria));
+  Assert.AreEqual(NativeInt(5), Length(LDefinition.SuccessCriteria));
 
   LObjective := LDefinition.BuildAgentObjective(
     'Access violation after saving an invoice'

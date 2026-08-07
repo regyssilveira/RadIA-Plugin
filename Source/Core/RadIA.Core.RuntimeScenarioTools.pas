@@ -3,6 +3,7 @@ unit RadIA.Core.RuntimeScenarioTools;
 interface
 
 uses
+  RadIA.Core.RuntimeAutomation,
   RadIA.Core.RuntimeDebugSession,
   RadIA.Core.RuntimeScenario,
   RadIA.Core.Tools;
@@ -12,14 +13,18 @@ procedure RegisterRadIARuntimeScenarioTools(
   const ADebugCoordinator: IRadIARuntimeDebugSessionCoordinator;
   const AScenarioCoordinator: IRadIARuntimeScenarioCoordinator
 );
+function TryParseRadIARuntimeScenarioDefinition(
+  const AJson: TObject;
+  const ASession: TRadIARuntimeSessionIdentity;
+  out AScenario: TRadIARuntimeScenario
+): Boolean;
 
 implementation
 
 uses
   System.Generics.Collections,
   System.JSON,
-  System.SysUtils,
-  RadIA.Core.RuntimeAutomation;
+  System.SysUtils;
 
 type
   TRadIARuntimeScenarioToolKind = (
@@ -91,37 +96,14 @@ begin
     Result := False;
 end;
 
-function ParseLimits(
-  const AJson: TJSONObject;
-  out ALimits: TRadIARuntimeScenarioLimits
-): Boolean;
-var
-  LMaxActions: Integer;
-  LMaxDurationMs: Integer;
-  LMaxRepetitions: Integer;
-begin
-  Result := False;
-  if not Assigned(AJson) then
-    Exit;
-  LMaxActions := AJson.GetValue<Integer>('maxActions', 0);
-  LMaxDurationMs := AJson.GetValue<Integer>('maxDurationMs', 0);
-  LMaxRepetitions := AJson.GetValue<Integer>('maxRepetitions', 0);
-  if LMaxDurationMs < 0 then
-    Exit;
-  ALimits := TRadIARuntimeScenarioLimits.Create(
-    LMaxActions,
-    LMaxDurationMs,
-    LMaxRepetitions
-  );
-  Result := ALimits.IsValid;
-end;
-
 function ParseAction(
   const AJson: TJSONObject;
   out AAction: TRadIARuntimeScenarioAction
 ): Boolean;
 var
   LKind: TRadIARuntimeActionKind;
+  LSelectorJson: TJSONObject;
+  LSelectorValue: TJSONValue;
   LSelector: TRadIARuntimeSelector;
   LTargetId: string;
   LTimeoutMs: Integer;
@@ -134,21 +116,36 @@ begin
   ) then
     Exit;
   LTargetId := Trim(AJson.GetValue<string>('targetId', ''));
-  if (LKind <> rakWait) and (Length(LTargetId) <> 64) then
-    Exit;
+  LSelectorJson := nil;
+  LSelectorValue := AJson.GetValue('selector');
+  if LSelectorValue is TJSONObject then
+    LSelectorJson := TJSONObject(LSelectorValue);
   LTimeoutMs := AJson.GetValue<Integer>('timeoutMs', 0);
   if (LTimeoutMs < 100) or (LTimeoutMs > 300000) then
     Exit;
   LValue := AJson.GetValue<string>('value', '');
   if Length(LValue) > CMaxRuntimeValueLength then
     Exit;
-  LSelector := TRadIARuntimeSelector.Create(
-    LTargetId,
-    '',
-    '',
-    '',
-    ''
-  );
+  if Assigned(LSelectorJson) then
+    LSelector := TRadIARuntimeSelector.Create(
+      LTargetId,
+      Trim(LSelectorJson.GetValue<string>('className', '')),
+      Trim(LSelectorJson.GetValue<string>('controlName', '')),
+      Trim(LSelectorJson.GetValue<string>('text', '')),
+      Trim(LSelectorJson.GetValue<string>('parentPath', ''))
+    )
+  else
+    LSelector := TRadIARuntimeSelector.Create(
+      LTargetId,
+      '',
+      '',
+      '',
+      ''
+    );
+  if (LKind <> rakWait) and
+    (Length(LTargetId) <> 64) and
+    not LSelector.HasStableIdentity then
+    Exit;
   AAction := TRadIARuntimeScenarioAction.Create(
     LKind,
     LSelector,
@@ -158,32 +155,74 @@ begin
   Result := True;
 end;
 
-function ParseActions(
-  const AJson: TJSONArray;
-  out AActions: TArray<TRadIARuntimeScenarioAction>
+function TryParseRadIARuntimeScenarioDefinition(
+  const AJson: TObject;
+  const ASession: TRadIARuntimeSessionIdentity;
+  out AScenario: TRadIARuntimeScenario
 ): Boolean;
 var
   LAction: TRadIARuntimeScenarioAction;
+  LActionsJson: TJSONArray;
+  LActions: TArray<TRadIARuntimeScenarioAction>;
   LItem: TJSONValue;
   LItems: TList<TRadIARuntimeScenarioAction>;
+  LJson: TJSONObject;
+  LLimitsJson: TJSONObject;
+  LLimits: TRadIARuntimeScenarioLimits;
+  LMaxActions: Integer;
+  LMaxDurationMs: Integer;
+  LMaxRepetitions: Integer;
+  LName: string;
 begin
   Result := False;
-  if not Assigned(AJson) then
+  LActions := [];
+  LLimits := Default(TRadIARuntimeScenarioLimits);
+  if not (AJson is TJSONObject) then
+    Exit;
+  LJson := TJSONObject(AJson);
+  LName := Trim(LJson.GetValue<string>('name', ''));
+  if not (LJson.GetValue('limits') is TJSONObject) or
+    not (LJson.GetValue('actions') is TJSONArray) then
+    Exit;
+  LLimitsJson := TJSONObject(LJson.GetValue('limits'));
+  LActionsJson := TJSONArray(LJson.GetValue('actions'));
+  LMaxActions := LLimitsJson.GetValue<Integer>('maxActions', 0);
+  LMaxDurationMs := LLimitsJson.GetValue<Integer>('maxDurationMs', 0);
+  LMaxRepetitions := LLimitsJson.GetValue<Integer>(
+    'maxRepetitions',
+    0
+  );
+  if LMaxDurationMs < 0 then
+    Exit;
+  LLimits := TRadIARuntimeScenarioLimits.Create(
+    LMaxActions,
+    LMaxDurationMs,
+    LMaxRepetitions
+  );
+  if (LName = '') or not LLimits.IsValid then
     Exit;
   LItems := TList<TRadIARuntimeScenarioAction>.Create;
   try
-    for LItem in AJson do
+    for LItem in LActionsJson do
     begin
       if not (LItem is TJSONObject) or
         not ParseAction(TJSONObject(LItem), LAction) then
         Exit;
       LItems.Add(LAction);
     end;
-    AActions := LItems.ToArray;
-    Result := Length(AActions) > 0;
+    LActions := LItems.ToArray;
   finally
     LItems.Free;
   end;
+  if Length(LActions) = 0 then
+    Exit;
+  AScenario := TRadIARuntimeScenario.Create(
+    LName,
+    ASession,
+    LLimits,
+    LActions
+  );
+  Result := AScenario.IsExecutable;
 end;
 
 function StatusJson(
@@ -285,12 +324,7 @@ function TRadIARuntimeScenarioTool.ExecutePrepare(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
 var
-  LActions: TArray<TRadIARuntimeScenarioAction>;
-  LActionsJson: TJSONArray;
   LJson: TJSONObject;
-  LLimits: TRadIARuntimeScenarioLimits;
-  LLimitsJson: TJSONObject;
-  LName: string;
   LPreview: TRadIARuntimeScenarioPreview;
   LResult: TJSONObject;
   LScenario: TRadIARuntimeScenario;
@@ -304,21 +338,15 @@ begin
       'Runtime scenario arguments must be a JSON object.'
     ));
   try
-    LName := Trim(LJson.GetValue<string>('name', ''));
-    LLimitsJson := LJson.GetValue<TJSONObject>('limits');
-    LActionsJson := LJson.GetValue<TJSONArray>('actions');
-    if (LName = '') or not ParseLimits(LLimitsJson, LLimits) or
-      not ParseActions(LActionsJson, LActions) then
+    if not TryParseRadIARuntimeScenarioDefinition(
+      LJson,
+      FDebugCoordinator.GetCurrentSession,
+      LScenario
+    ) then
       Exit(TRadIAToolResult.Failed(
         'invalid_runtime_scenario',
         'Runtime scenario name, limits, or actions are invalid.'
       ));
-    LScenario := TRadIARuntimeScenario.Create(
-      LName,
-      FDebugCoordinator.GetCurrentSession,
-      LLimits,
-      LActions
-    );
     LPreview := FScenarioCoordinator.Prepare(LScenario);
     LResult := TJSONObject.Create;
     try

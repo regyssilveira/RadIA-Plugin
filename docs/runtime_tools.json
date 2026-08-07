@@ -273,6 +273,17 @@
       ]
     },
     {
+      "name": "Versioned runtime regressions",
+      "source": "Source/Core/RadIA.Core.RuntimeRegressionTools.pas",
+      "tools": [
+        "PrepareRuntimeRegression",
+        "SaveRuntimeRegression",
+        "RevertRuntimeRegression",
+        "ListRuntimeRegressions",
+        "PrepareSavedRuntimeScenario"
+      ]
+    },
+    {
       "name": "Reviewable local Git commits",
       "source": "Source/Core/RadIA.Core.GitTools.pas",
       "tools": [

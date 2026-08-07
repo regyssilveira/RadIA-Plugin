@@ -1,6 +1,6 @@
 # Post-2.0 goal — Autonomous runtime failure reproduction
 
-> **Status:** in execution; M0–M4 implemented with end-to-end IDE validation pending; M5 is next.
+> **Status:** M0–M5 implemented and automatically validated; end-to-end IDE acceptance is pending.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Plan paused during this goal:** [CLI continuity and advanced integration](competitive_leadership_plan.en.md).
@@ -148,6 +148,8 @@ on all three targets, with a complete consent trail.
 **Still missing:** hardening, versioned regression, and a delivery gate.
 
 ### M5 — Regression, evidence, and gate
+
+Implementation and evidence: [M5 regression and hardening](runtime_debug_automation_m5.en.md).
 
 - generate a DUnitX test when the cause can be isolated;
 - preserve a runtime scenario when the failure depends on the visual lifecycle;
