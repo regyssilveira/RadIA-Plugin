@@ -159,6 +159,9 @@ crescimento entre repetições e grupos de stacks equivalentes.
 
 ### M0 — Baseline, licença e laboratório
 
+**Estado:** concluído. Evidências em
+[Execução M0](fastmm5_memory_diagnostics_m0.md).
+
 - congelar contratos oficiais da versão FastMM5 validada;
 - mapear DPR, `.dproj`, MAP e diferenças Win32/Win64;
 - criar aplicação-laboratório com leak determinístico, crescimento transitório, double free e

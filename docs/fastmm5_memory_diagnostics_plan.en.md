@@ -49,6 +49,8 @@ be sanitized; raw memory contents will never be sent to a model by default.
 
 ### M0 — Baseline, licensing, and laboratory
 
+**Status:** completed. See [M0 execution evidence](fastmm5_memory_diagnostics_m0.en.md).
+
 Freeze the supported FastMM5 contract, create deterministic leak and memory-error cases, define the
 schemas, and prove the reports manually on all supported targets.
 

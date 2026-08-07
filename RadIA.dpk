@@ -101,6 +101,7 @@ contains
   RadIA.Core.RuntimeDebugSession in 'Source\Core\RadIA.Core.RuntimeDebugSession.pas',
   RadIA.Core.RuntimeDebugTools in 'Source\Core\RadIA.Core.RuntimeDebugTools.pas',
   RadIA.Core.RuntimeDiscoveryTools in 'Source\Core\RadIA.Core.RuntimeDiscoveryTools.pas',
+  RadIA.Core.MemoryDiagnostics in 'Source\Core\RadIA.Core.MemoryDiagnostics.pas',
   RadIA.Core.Mcp in 'Source\Core\RadIA.Core.Mcp.pas',
   RadIA.Core.Designer in 'Source\Core\RadIA.Core.Designer.pas',
   RadIA.Core.DesignerTools in 'Source\Core\RadIA.Core.DesignerTools.pas',
