@@ -265,9 +265,46 @@ This list contains only the built-in tools registered by the current package. Ar
 | `PreviewGitCommit` | `RadIA.Core.GitTools.pas` |
 | `CommitChanges` | `RadIA.Core.GitTools.pas` |
 
+## FastMM5 memory diagnostics
+
+| Tool | Source unit |
+|---|---|
+| `GetMemoryDiagnosticsStatus` | `RadIA.Core.FastMM5.pas` |
+| `ConfigureMemoryDiagnostics` | `RadIA.Core.FastMM5.pas` |
+
+## Reversible memory instrumentation
+
+| Tool | Source unit |
+|---|---|
+| `PrepareMemoryInstrumentation` | `RadIA.Core.MemoryInstrumentation.pas` |
+| `ApplyMemoryInstrumentation` | `RadIA.Core.MemoryInstrumentation.pas` |
+| `RevertMemoryInstrumentation` | `RadIA.Core.MemoryInstrumentation.pas` |
+
+## FastMM5 log evidence
+
+| Tool | Source unit |
+|---|---|
+| `ParseMemoryDiagnosticLog` | `RadIA.Core.FastMM5LogParser.pas` |
+
+## Composed memory diagnostic sessions
+
+| Tool | Source unit |
+|---|---|
+| `PrepareMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+| `RunMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+| `CancelMemoryDiagnosticSession` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+| `GetMemoryDiagnosticSessionStatus` | `RadIA.Core.MemoryDiagnosticSession.pas` |
+
+## Memory evidence correction workflow
+
+| Tool | Source unit |
+|---|---|
+| `CompareMemoryDiagnosticEvidence` | `RadIA.Core.MemoryEvidence.pas` |
+| `PrepareMemoryDiagnosticFix` | `RadIA.Core.MemoryEvidence.pas` |
+
 ## Resumo
 
-- Registered groups: 30
-- Registered built-in tools: 111
+- Registered groups: 35
+- Registered built-in tools: 123
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -160,7 +160,7 @@ For reproducible automation, prefer `mcp.<pid>.json`.
 1. Open Delphi and a project.
 2. Confirm that `mcp.<pid>.json` exists.
 3. Start or reload the MCP server in the client.
-4. Verify that `initialize` reports RadIA `2.1.0`.
+4. Verify that `initialize` reports RadIA `2.2.0`.
 5. Call `tools/list`.
 6. Call `GetIDEState` and `GetActiveProject`.
 7. Test mutable consent only in a disposable project.
@@ -180,7 +180,7 @@ See also the [Complete RadIA User Manual](user_manual.en.md).
 
 ## Safe CLI client provisioning
 
-RadIA 2.1 includes a provisioning engine for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot
+RadIA 2.2 includes a provisioning engine for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot
 CLI. Its visual integration is available on the settings screen, while the core contract
 enforces this workflow:
 

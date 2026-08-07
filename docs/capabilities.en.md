@@ -1,6 +1,6 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.1.
+This page is the functional map of RadIA 2.2.
 
 | Area | What RadIA can do |
 |---|---|
@@ -37,7 +37,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 111 registered built-in tools](runtime_tool_catalog.md)
+- [All 123 registered built-in tools](runtime_tool_catalog.md)
 - [Operational reference for every tool](internal_tools_reference.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)

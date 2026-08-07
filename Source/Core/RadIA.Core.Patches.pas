@@ -86,6 +86,11 @@ type
     ): Boolean;
   end;
 
+  IRadIAEditorPersistenceFacade = interface
+    ['{8F34CC93-37C1-4A48-820F-9072C350E2D4}']
+    function ReloadFile(const AFileName: string): Boolean;
+  end;
+
   IRadIAPatchService = interface
     ['{133C31E5-AF60-497D-838D-F35852ED8CBA}']
     function Prepare(

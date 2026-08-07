@@ -292,6 +292,48 @@
         "PreviewGitCommit",
         "CommitChanges"
       ]
+    },
+    {
+      "name": "FastMM5 memory diagnostics",
+      "source": "Source/Core/RadIA.Core.FastMM5.pas",
+      "tools": [
+        "GetMemoryDiagnosticsStatus",
+        "ConfigureMemoryDiagnostics"
+      ]
+    },
+    {
+      "name": "Reversible memory instrumentation",
+      "source": "Source/Core/RadIA.Core.MemoryInstrumentation.pas",
+      "tools": [
+        "PrepareMemoryInstrumentation",
+        "ApplyMemoryInstrumentation",
+        "RevertMemoryInstrumentation"
+      ]
+    },
+    {
+      "name": "FastMM5 log evidence",
+      "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
+      "tools": [
+        "ParseMemoryDiagnosticLog"
+      ]
+    },
+    {
+      "name": "Composed memory diagnostic sessions",
+      "source": "Source/Core/RadIA.Core.MemoryDiagnosticSession.pas",
+      "tools": [
+        "PrepareMemoryDiagnosticSession",
+        "RunMemoryDiagnosticSession",
+        "CancelMemoryDiagnosticSession",
+        "GetMemoryDiagnosticSessionStatus"
+      ]
+    },
+    {
+      "name": "Memory evidence correction workflow",
+      "source": "Source/Core/RadIA.Core.MemoryEvidence.pas",
+      "tools": [
+        "CompareMemoryDiagnosticEvidence",
+        "PrepareMemoryDiagnosticFix"
+      ]
     }
   ]
 }

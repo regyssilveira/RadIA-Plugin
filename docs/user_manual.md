@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.1
+# Manual completo do RadIA 2.2
 
 ## 1. O que é o RadIA
 
@@ -452,7 +452,7 @@ Use sempre o ZIP correspondente à versão e arquitetura da IDE.
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 111 tools internas registradas.
+- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 123 tools internas registradas.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

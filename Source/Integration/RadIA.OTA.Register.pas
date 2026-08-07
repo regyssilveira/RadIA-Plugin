@@ -53,6 +53,7 @@ uses
   System.Win.Registry, Winapi.Windows,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
+  RadIA.OTA.MemoryDiagnostic,
   RadIA.OTA.EditorHook,
   RadIA.UI.DiffForm, RadIA.UI.ConfigForm,
   RadIA.UI.ProjectWizard, RadIA.UI.OnboardingForm,
@@ -104,6 +105,11 @@ uses
   RadIA.Core.KnowledgeTools,
   RadIA.Core.ProjectHealthTools,
   RadIA.Core.InstallationHealthTools,
+  RadIA.Core.FastMM5,
+  RadIA.Core.MemoryInstrumentation,
+  RadIA.Core.FastMM5LogParser,
+  RadIA.Core.MemoryDiagnosticSession,
+  RadIA.Core.MemoryEvidence,
   RadIA.Core.KnowledgeStore, RadIA.Core.KnowledgeScheduler,
   RadIA.OTA.Designer, RadIA.OTA.Debugger, RadIA.OTA.DebugTimeline,
   RadIA.OTA.RuntimeDiscovery,
@@ -864,6 +870,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade> as
       IRadIAEditorMutationFacade
   );
+  TRadIAContainer.Register<IRadIAEditorPersistenceFacade>(
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade> as
+      IRadIAEditorPersistenceFacade
+  );
   TRadIAContainer.Register<IRadIAFormDesignerFacade>(
     TRadIAOTAFormDesignerFacade.Create
   );
@@ -1026,6 +1036,14 @@ initialization
       TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
     )
   );
+  TRadIAContainer.Register<IRadIAMemoryInstrumentationCoordinator>(
+    TRadIAMemoryInstrumentationCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+      TRadIAContainer.Resolve<IRadIAIDENavigationFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
   TRadIAContainer.Register<IRadIAInlineReviewVisualFacade>(
     TRadIAOTAInlineReviewFacade.Create
   );
@@ -1040,6 +1058,18 @@ initialization
   TRadIAContainer.Register<IRadIABuildFacade>(
     TRadIAOTABuildFacade.Create(
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAMemoryDiagnosticSessionCoordinator>(
+    TRadIAMemoryDiagnosticSessionCoordinator.Create(
+      TRadIAMemoryDiagnosticSessionDependencies.Create(
+        TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+        TRadIAContainer.Resolve<IRadIAMemoryInstrumentationCoordinator>,
+        TRadIAContainer.Resolve<IRadIABuildFacade>,
+        TRadIAContainer.Resolve<IRadIADebuggerSessionFacade>,
+        TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+        TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>
+      )
     )
   );
   TRadIAContainer.Register<IRadIADUnitXRunner>(
@@ -1120,6 +1150,25 @@ initialization
   RegisterRadIAPatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAPatchService>
+  );
+  RegisterRadIAMemoryInstrumentationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAMemoryInstrumentationCoordinator>
+  );
+  RegisterRadIAFastMM5LogTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+  );
+  RegisterRadIAMemoryDiagnosticSessionTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAMemoryDiagnosticSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+  );
+  RegisterRadIAMemoryEvidenceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAMemoryEvidenceService.Create
   );
   RegisterRadIAMultiFilePatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
@@ -1245,6 +1294,9 @@ initialization
       TRadIAContainer.Resolve<IRadIAToolRegistry>
     )
   );
+  RegisterRadIAFastMM5Tools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>
+  );
   TRadIAContainer.Register<IRadIAMcpProtocol>(
     TRadIAMcpProtocol.Create(
       TRadIAContainer.Resolve<IRadIAToolRegistry>,
@@ -1279,6 +1331,7 @@ initialization
   TRadIAContainer.Register<IRadIALocalizer>(TRadIALocalizer.Create);
   StartRadIAAgentRuntimeDiagnosticIfRequested;
   StartRadIADeclarativeWorkflowDiagnosticIfRequested;
+  StartRadIAMemoryDiagnosticIfRequested;
 
 finalization
   if not GIsShuttingDown then

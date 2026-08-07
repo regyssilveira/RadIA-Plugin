@@ -1,4 +1,4 @@
-# Complete RadIA 2.1 user manual
+# Complete RadIA 2.2 user manual
 
 ## 1. What RadIA is
 
@@ -328,7 +328,7 @@ See the [security model](tool_security_model.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.md) lists the 111 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.md) lists the 123 registered built-in tools.
 - Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
   capability.
 - RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user

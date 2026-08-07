@@ -206,6 +206,13 @@ type
   IRadIADebuggerSessionFacade = interface
     ['{189FDF6A-A8C7-498A-B3E5-00943969A75F}']
     function StartDebugging: TRadIADebuggerActionResult;
+    function StartRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): TRadIADebuggerActionResult;
+    function StopRuntimeProcess(const AProcessId: LongWord): Boolean;
   end;
 
 implementation

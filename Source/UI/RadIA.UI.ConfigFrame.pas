@@ -10,7 +10,8 @@ uses  System.Classes,
   RadIA.Core.CliManager,
   RadIA.Core.CliProcess,
   RadIA.Core.CliMcpSettings,
-  RadIA.Core.McpProvisioning;
+  RadIA.Core.McpProvisioning,
+  RadIA.Core.FastMM5;
 
 type
   TRadIAFrameAIConfig = class(TFrame, IRadIAConfigView)
@@ -105,6 +106,15 @@ type
     FMcpHandshakeSession: IRadIACliProcessSession;
     FCliInstallGuard: IInterface;
 
+    FTsMemoryDiagnostics: TTabSheet;
+    FPnlMemoryDiagnostics: TPanel;
+    FEdtFastMM5Root: TEdit;
+    FChkFastMM5License: TCheckBox;
+    FLblFastMM5Status: TLabel;
+    FBtnBrowseFastMM5: TButton;
+    FBtnValidateFastMM5: TButton;
+    FFastMM5Settings: TRadIAFastMM5SettingsStore;
+
     procedure BtnBrowseLogPathClick(Sender: TObject);
     procedure AppendCliInstallOutput(const AText: string);
     procedure BtnResetQuotaClick(Sender: TObject);
@@ -115,6 +125,8 @@ type
     procedure BtnMcpHandshakeClick(Sender: TObject);
     procedure BtnMcpProvisionClick(Sender: TObject);
     procedure BtnMcpRemoveClick(Sender: TObject);
+    procedure BtnBrowseFastMM5Click(Sender: TObject);
+    procedure BtnValidateFastMM5Click(Sender: TObject);
     procedure CliClientChange(Sender: TObject);
     procedure CompleteCliInstall(
       const AResult: TRadIACliProcessResult
@@ -143,6 +155,7 @@ type
     procedure CreateGeneralTab;
     procedure CreateSecurityTab;
     procedure CreateCliMcpTab;
+    procedure CreateMemoryDiagnosticsTab;
     procedure CreateTemplateOriginLabel;
     procedure CreateProviderAdvancedControls(ATabSheet: TTabSheet; const AProviderId: string);
     function GetBridgePath: string;
@@ -175,6 +188,9 @@ type
     );
     procedure SaveCliMcpSettings;
     procedure SaveAgentExecutorSettings;
+    procedure LoadFastMM5Settings;
+    procedure RefreshFastMM5Status;
+    procedure SaveFastMM5Settings;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -446,7 +462,7 @@ uses
   Winapi.Messages, Winapi.ShellAPI, RadIA.UI.GithubAuthForm,
   Winapi.Windows, System.SysUtils, ToolsAPI,
   RadIA.Core.Container, RadIA.Core.McpHandshake,
-  RadIA.Core.ToolSecurity;
+  RadIA.Core.ToolSecurity, RadIA.Core.MemoryDiagnostics;
 
 {$R *.dfm}
 
@@ -865,6 +881,64 @@ begin
   );
 end;
 
+procedure TRadIAFrameAIConfig.CreateMemoryDiagnosticsTab;
+begin
+  FTsMemoryDiagnostics := TTabSheet.Create(Self);
+  FTsMemoryDiagnostics.PageControl := pgcSettings;
+  FTsMemoryDiagnostics.Caption := 'Memory Diagnostics';
+  FTsMemoryDiagnostics.TabVisible := False;
+
+  FPnlMemoryDiagnostics := TPanel.Create(Self);
+  FPnlMemoryDiagnostics.Parent := FTsMemoryDiagnostics;
+  FPnlMemoryDiagnostics.Align := alClient;
+  FPnlMemoryDiagnostics.BevelOuter := bvNone;
+  FPnlMemoryDiagnostics.ShowCaption := False;
+
+  CreateLabel(
+    FPnlMemoryDiagnostics,
+    'FastMM5 root directory:',
+    16,
+    20
+  );
+  FEdtFastMM5Root := CreateEdit(
+    FPnlMemoryDiagnostics,
+    16,
+    42,
+    450
+  );
+
+  FBtnBrowseFastMM5 := TButton.Create(Self);
+  FBtnBrowseFastMM5.Parent := FPnlMemoryDiagnostics;
+  FBtnBrowseFastMM5.SetBounds(474, 40, 82, 27);
+  FBtnBrowseFastMM5.Caption := 'Browse...';
+  FBtnBrowseFastMM5.OnClick := BtnBrowseFastMM5Click;
+
+  FChkFastMM5License := CreateCheckBox(
+    FPnlMemoryDiagnostics,
+    'I acknowledge that FastMM5 is user-supplied and subject to its own license.',
+    16,
+    82,
+    600
+  );
+
+  FBtnValidateFastMM5 := TButton.Create(Self);
+  FBtnValidateFastMM5.Parent := FPnlMemoryDiagnostics;
+  FBtnValidateFastMM5.SetBounds(16, 120, 150, 28);
+  FBtnValidateFastMM5.Caption := 'Validate installation';
+  FBtnValidateFastMM5.OnClick := BtnValidateFastMM5Click;
+
+  FLblFastMM5Status := CreateLabel(
+    FPnlMemoryDiagnostics,
+    'Status: not checked',
+    16,
+    164
+  );
+  FLblFastMM5Status.AutoSize := False;
+  FLblFastMM5Status.WordWrap := True;
+  FLblFastMM5Status.Width := 620;
+  FLblFastMM5Status.Height := 64;
+end;
+
 procedure TRadIAFrameAIConfig.CreateCliMcpTab;
 var
   LDefinition: TRadIACliDefinition;
@@ -991,6 +1065,7 @@ begin
   FPresenter := TRadIAConfigPresenter.Create(Self);
   FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
   FCliMcpSettings := TRadIACliMcpSettings.Create;
+  FFastMM5Settings := TRadIAFastMM5SettingsStore.Create;
   FCliInstallGuard := TRadIAConfigLifecycleGuard.Create;
 
   // Update RadioGroup text in runtime for OAuth
@@ -1022,7 +1097,9 @@ begin
   CreateGeneralTab;
   CreateSecurityTab;
   CreateCliMcpTab;
+  CreateMemoryDiagnosticsTab;
   LoadAgentExecutorSettings;
+  LoadFastMM5Settings;
 
   LActiveTheme := 'light';
   LUseIDETheme := False;
@@ -1057,6 +1134,7 @@ begin
   FCliInstallGuard := nil;
   FAgentExecutorSettings.Free;
   FCliMcpSettings.Free;
+  FFastMM5Settings.Free;
   FPresenter.Free;
   FEdtTemperatures.Free;
   FEdtMaxTokens.Free;
@@ -1286,13 +1364,20 @@ begin
     FTsCliMcp.SetParentBackground(False);
     FTsCliMcp.SetColor(LColors.BgBase);
   end;
+  if Assigned(FTsMemoryDiagnostics) then
+  begin
+    FTsMemoryDiagnostics.StyleElements :=
+      FTsMemoryDiagnostics.StyleElements - [seClient, seBorder];
+    FTsMemoryDiagnostics.SetParentBackground(False);
+    FTsMemoryDiagnostics.SetColor(LColors.BgBase);
+  end;
 
   ApplyThemeToPanels([pnlGemini, pnlOpenAI, pnlClaude, pnlDeepSeek, pnlGroq, pnlOllama,
     pnlOpenRouter, pnlLMStudio,
     pnlGithubCopilot, pnlAzureOpenAI, pnlQwen,
     pnlMistral, pnlBedrock, pnlSystemPrompt,
     pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral,
-    FPnlCliMcp], LColors);
+    FPnlCliMcp, FPnlMemoryDiagnostics], LColors);
 
   for LEditD in FEdtTemperatures.Values do ApplyThemeToEdits([LEditD], LColors);
   for LEditD in FEdtMaxTokens.Values do ApplyThemeToEdits([LEditD], LColors);
@@ -1312,7 +1397,8 @@ begin
     FEdtKnowledgeRemoteApiKey, FEdtKnowledgeRemoteDimensions,
     FEdtKnowledgeRemoteTimeout, FEdtKnowledgeRemoteInputLimit,
     FEdtInlineShortcutProfile,
-    FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge], LColors);
+    FEdtCliExecutable, FEdtMcpConfig, FEdtMcpBridge,
+    FEdtFastMM5Root], LColors);
 
   ApplyThemeToLabels([lblGeminiKey, lblOpenAIKey, lblOpenAICustomUrl, lblClaudeKey,
     lblDeepSeekKey, lblGroqKey, lblOllamaUrl, lblOpenRouterKey, lblLMStudioUrl,
@@ -1328,7 +1414,7 @@ begin
     FLblKnowledgeRemoteEndpoint, FLblKnowledgeRemoteModel,
     FLblKnowledgeRemoteApiKey, FLblKnowledgeRemoteLimits,
     FLblInlineShortcutProfile,
-    FLblMcpStatus], LColors, False);
+    FLblMcpStatus, FLblFastMM5Status], LColors, False);
 
   ApplyThemeToLabels([lnkGeminiGetKey, lnkOpenAIGetKey, lnkClaudeGetKey, lnkDeepSeekGetKey,
     lnkGroqGetKey, lnkOpenRouterGetKey, lnkQwenGetKey, lnkMistralGetKey, lnkBedrockGetKey], LColors, True);
@@ -1364,7 +1450,7 @@ begin
     FChkConsentRememberStructural, FChkConsentRememberExecution,
     FChkKnowledgeSemanticEnabled, FChkKnowledgeApprovedHistoryEnabled,
     FChkKnowledgeRemoteEnabled, FChkKnowledgeRemoteConsent,
-    FChkInlineCompletionEnabled], LColors);
+    FChkInlineCompletionEnabled, FChkFastMM5License], LColors);
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
   ApplyThemeToGroupBoxes([FGrpQuota], LColors);
@@ -1461,6 +1547,77 @@ end;
 procedure TRadIAFrameAIConfig.BtnBrowseLogPathClick(Sender: TObject);
 begin
   FPresenter.BrowseLogPath;
+end;
+
+procedure TRadIAFrameAIConfig.BtnBrowseFastMM5Click(Sender: TObject);
+var
+  LFolderName: string;
+begin
+  LFolderName := FEdtFastMM5Root.Text;
+  if Vcl.FileCtrl.SelectDirectory(
+    'Select FastMM5 root directory',
+    '',
+    LFolderName,
+    [sdNewUI]
+  ) then
+  begin
+    FEdtFastMM5Root.Text := LFolderName;
+    RefreshFastMM5Status;
+  end;
+end;
+
+procedure TRadIAFrameAIConfig.BtnValidateFastMM5Click(Sender: TObject);
+begin
+  RefreshFastMM5Status;
+end;
+
+procedure TRadIAFrameAIConfig.LoadFastMM5Settings;
+var
+  LSettings: TRadIAFastMM5Settings;
+begin
+  LSettings := FFastMM5Settings.Load;
+  FEdtFastMM5Root.Text := LSettings.RootPath;
+  FChkFastMM5License.Checked := LSettings.LicenseAcknowledged;
+  RefreshFastMM5Status;
+end;
+
+procedure TRadIAFrameAIConfig.RefreshFastMM5Status;
+var
+  LDetector: TRadIAFastMM5Detector;
+  LSettings: TRadIAFastMM5Settings;
+  LStatus: TRadIAMemoryBackendStatus;
+begin
+  LSettings := TRadIAFastMM5Settings.Create(
+    FEdtFastMM5Root.Text,
+    FChkFastMM5License.Checked,
+    TRadIAMemoryDiagnosticsLimits.Create(120000, 52428800, 10)
+  );
+  LDetector := TRadIAFastMM5Detector.Create;
+  try
+    {$IFDEF WIN64}
+    LStatus := LDetector.Detect(LSettings, 'Win64');
+    {$ELSE}
+    LStatus := LDetector.Detect(LSettings, 'Win32');
+    {$ENDIF}
+  finally
+    LDetector.Free;
+  end;
+  FLblFastMM5Status.Caption := 'Status: ' + LStatus.Message;
+end;
+
+procedure TRadIAFrameAIConfig.SaveFastMM5Settings;
+var
+  LCurrent: TRadIAFastMM5Settings;
+begin
+  LCurrent := FFastMM5Settings.Load;
+  FFastMM5Settings.Save(
+    TRadIAFastMM5Settings.Create(
+      FEdtFastMM5Root.Text,
+      FChkFastMM5License.Checked,
+      LCurrent.Limits
+    )
+  );
+  RefreshFastMM5Status;
 end;
 
 procedure TRadIAFrameAIConfig.AppendCliInstallOutput(
@@ -2196,13 +2353,14 @@ var
   I: Integer;
 begin
   LNames := ['General / Logs', 'Security & Consent', 'CLI & MCP',
-             'System Prompt', 'Templates',
+             'Memory Diagnostics', 'System Prompt', 'Templates',
              'Gemini', 'OpenAI',
              'Claude', 'DeepSeek', 'Groq', 'Ollama', 'OpenRouter', 'LM Studio',
              'GitHub Copilot', 'Azure OpenAI', 'Alibaba Qwen', 'Mistral AI', 'AWS Bedrock'];
 
-  LPages := [FTsGeneral, FTsSecurity, FTsCliMcp, tsSystemPrompt,
-             tsTemplates, tsGemini, tsOpenAI,
+  LPages := [FTsGeneral, FTsSecurity, FTsCliMcp,
+             FTsMemoryDiagnostics, tsSystemPrompt, tsTemplates,
+             tsGemini, tsOpenAI,
              tsClaude, tsDeepSeek, tsGroq, tsOllama, tsOpenRouter, tsLMStudio,
              tsGithubCopilot, tsAzureOpenAI, tsQwen, tsMistral, tsBedrock];
 
@@ -2398,6 +2556,7 @@ procedure TRadIAFrameAIConfig.BtnSaveClick(Sender: TObject);
 begin
   SaveCliMcpSettings;
   SaveAgentExecutorSettings;
+  SaveFastMM5Settings;
   FPresenter.SaveConfig;
 end;
 

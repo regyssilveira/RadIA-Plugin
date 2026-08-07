@@ -1,6 +1,6 @@
 # Centro de documentação do RadIA
 
-Este índice reúne a documentação funcional, operacional e técnica do RadIA 2.1.
+Este índice reúne a documentação funcional, operacional e técnica do RadIA 2.2.
 
 ## Comece aqui
 
@@ -34,7 +34,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Execução e análise de testes DUnitX | [Runner DUnitX](dunitx_runner.md) |
 | Commit Git local e revisável | [Fluxo Git](git_workflow.md) |
 | O que faz e quando usar cada ferramenta | [Referência operacional](internal_tools_reference.md) |
-| Todas as 111 ferramentas internas | [Catálogo gerado](runtime_tool_catalog.md) |
+| Todas as 123 ferramentas internas | [Catálogo gerado](runtime_tool_catalog.md) |
 | Arquitetura alvo e contratos | [Catálogo arquitetural](tool_catalog.md) |
 | Consentimento, risco e auditoria | [Modelo de segurança](tool_security_model.md) |
 | MCP e clientes externos | [Integração MCP](mcp_integration_guide.md) |
@@ -67,6 +67,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 |---|---|
 | Processo de release | [Finalização de release](release_process.md) |
 | Auditoria da versão 2.1 | [Builds, qualidade, instalação e artefatos](release_audit_2.1.0.md) |
+| Auditoria da versão 2.2 | [FastMM5, builds, qualidade, instalação e artefatos](release_audit_2.2.0.md) |
 | Instalador visual e canal | [Distribuição assinável](visual_installer.md) |
 | Migração 1.x para 2.0 | [Migração para RadIA 2.0](migration_1_to_2.md) |
 | Checklist agentivo | [Checklist](agentic_release_checklist.md) |
@@ -79,6 +80,13 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 | Goal de liderança | [Experiência Delphi completa](experience_leadership_goal.md) |
 | Diagnóstico runtime autônomo | [Guia completo de uso](runtime_debug_automation.md) |
 | Goal runtime 2.1 concluído | [Plano e evidências de aceite](runtime_debug_automation_plan.md) |
+| Goal de memória 2.2 | [Plano de integração opcional com FastMM5](fastmm5_memory_diagnostics_plan.md) |
+| Execução de memória M0 | [Baseline, contratos e laboratório FastMM5](fastmm5_memory_diagnostics_m0.md) |
+| Configuração do FastMM5 | [Tela, chat, consentimento e estados de prontidão](fastmm5_configuration.md) |
+| Sessão completa FastMM5 | [Build, processo supervisionado, cenário, evidência e reversão](fastmm5_diagnostic_session.md) |
+| Instrumentação de memória | [Preview, Apply, Revert e proteção do DPR](fastmm5_instrumentation.md) |
+| Parser de memória | [Coleta limitada e evidência estruturada](fastmm5_evidence_parser.md) |
+| Hardening FastMM5 M6 | [10 ciclos, cancelamento, timeout e recuperação](fastmm5_memory_diagnostics_m6.md) |
 | Execução do M0 runtime | [Baseline, contratos e matriz](runtime_debug_automation_m0.md) |
 | Execução do M1 runtime | [Correlação e espera do depurador](runtime_debug_automation_m1.md) |
 | Execução do M2 runtime | [Descoberta segura de janelas e controles](runtime_debug_automation_m2.md) |
@@ -91,7 +99,7 @@ Este índice reúne a documentação funcional, operacional e técnica do RadIA 
 - [Termos, privacidade e compliance](compliance.md)
 - [Modelo de segurança das tools](tool_security_model.md)
 
-## Cobertura da plataforma RadIA 2.1
+## Cobertura da plataforma RadIA 2.2
 
 | Capacidade | Manual de uso | Referência técnica |
 |---|---|---|

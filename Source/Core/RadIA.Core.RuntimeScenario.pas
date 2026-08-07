@@ -115,6 +115,10 @@ type
       const AActionIndex: Integer;
       const ACompletedActions: Integer
     ): TRadIARuntimeScenarioStatus;
+    function BoundActionTimeout(
+      const AAction: TRadIARuntimeScenarioAction;
+      const ARemainingMs: Cardinal
+    ): TRadIARuntimeScenarioAction;
     function CancellationRequested(
       const ACancellationToken: IRadIAToolCancellationToken
     ): Boolean;
@@ -126,6 +130,11 @@ type
       const ACancellationToken: IRadIAToolCancellationToken
     ): TRadIARuntimeScenarioStatus;
     function ExecutePreparedAction(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AAction: TRadIARuntimeScenarioAction;
+      const ACancellationToken: IRadIAToolCancellationToken
+    ): TRadIARuntimeActionResult;
+    function ExecuteRuntimeAction(
       const ASession: TRadIARuntimeSessionIdentity;
       const AAction: TRadIARuntimeScenarioAction;
       const ACancellationToken: IRadIAToolCancellationToken
@@ -334,6 +343,21 @@ begin
   end;
 end;
 
+function TRadIARuntimeScenarioCoordinator.BoundActionTimeout(
+  const AAction: TRadIARuntimeScenarioAction;
+  const ARemainingMs: Cardinal
+): TRadIARuntimeScenarioAction;
+begin
+  if AAction.TimeoutMs <= ARemainingMs then
+    Exit(AAction);
+  Result := TRadIARuntimeScenarioAction.Create(
+    AAction.Kind,
+    AAction.Selector,
+    AAction.Value,
+    ARemainingMs
+  );
+end;
+
 function TRadIARuntimeScenarioCoordinator.CancellationRequested(
   const ACancellationToken: IRadIAToolCancellationToken
 ): Boolean;
@@ -397,7 +421,11 @@ function TRadIARuntimeScenarioCoordinator.ExecutePreparedAction(
 ): TRadIARuntimeActionResult;
 begin
   if AAction.Kind <> rakWait then
-    Exit(FActionFacade.ExecuteAction(ASession, AAction));
+    Exit(ExecuteRuntimeAction(
+      ASession,
+      AAction,
+      ACancellationToken
+    ));
   if ExecuteWait(AAction.TimeoutMs, ACancellationToken) then
     Result := TRadIARuntimeActionResult.Succeeded
   else
@@ -405,6 +433,30 @@ begin
       'runtime_scenario_cancelled',
       'Runtime scenario execution was cancelled.'
     );
+end;
+
+function TRadIARuntimeScenarioCoordinator.ExecuteRuntimeAction(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AAction: TRadIARuntimeScenarioAction;
+  const ACancellationToken: IRadIAToolCancellationToken
+): TRadIARuntimeActionResult;
+var
+  LStopwatch: TStopwatch;
+begin
+  LStopwatch := TStopwatch.StartNew;
+  repeat
+    Result := FActionFacade.ExecuteAction(ASession, AAction);
+    if Result.Success or not SameText(
+      Result.ErrorCode,
+      'runtime_target_not_found'
+    ) then
+      Exit;
+    if not ExecuteWait(CWaitSliceMs, ACancellationToken) then
+      Exit(TRadIARuntimeActionResult.Failed(
+        'runtime_scenario_cancelled',
+        'Runtime scenario execution was cancelled.'
+      ));
+  until LStopwatch.ElapsedMilliseconds >= AAction.TimeoutMs;
 end;
 
 function TRadIARuntimeScenarioCoordinator.ExecuteScenario(
@@ -416,6 +468,7 @@ var
   LActionIndex: Integer;
   LActionResult: TRadIARuntimeActionResult;
   LCompletedActions: Integer;
+  LRemainingMs: Cardinal;
   LRepetition: Integer;
   LStopwatch: TStopwatch;
 begin
@@ -446,11 +499,25 @@ begin
         ''
       ));
       LAction := APrepared.Scenario.Actions[LActionIndex];
+      LRemainingMs :=
+        APrepared.Scenario.Limits.MaxDurationMs -
+        Cardinal(LStopwatch.ElapsedMilliseconds);
+      LAction := BoundActionTimeout(LAction, LRemainingMs);
       LActionResult := ExecutePreparedAction(
         APrepared.Scenario.Session,
         LAction,
         ACancellationToken
       );
+      if TryGetInterruption(
+        APrepared,
+        ACancellationToken,
+        LStopwatch.ElapsedMilliseconds,
+        LRepetition,
+        LActionIndex + 1,
+        LCompletedActions,
+        Result
+      ) then
+        Exit;
       if not LActionResult.Success then
         Exit(BuildActionFailureStatus(
           APrepared,
@@ -506,7 +573,7 @@ begin
     );
     Exit;
   end;
-  Result := AElapsedMs >
+  Result := AElapsedMs >=
     APrepared.Scenario.Limits.MaxDurationMs;
   if Result then
     AStatus := TRadIARuntimeScenarioStatus.Create(
@@ -715,7 +782,10 @@ begin
   for LAction in AScenario.Actions do
   begin
     if LAction.Kind = rakWait then
+    begin
+      LDynamicTargetAllowed := True;
       Continue;
+    end;
     LResult := FActionFacade.ValidateAction(
       AScenario.Session,
       LAction
