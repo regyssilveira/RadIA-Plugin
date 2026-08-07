@@ -97,7 +97,8 @@ begin
 end;
 
 function ResolveBuildPlatform(
-  const AConfigurations: IOTAProjectOptionsConfigurations
+  const AConfigurations: IOTAProjectOptionsConfigurations;
+  const AProjectPlatform: string
 ): string;
 var
   LActiveConfiguration: IOTABuildConfiguration;
@@ -111,7 +112,9 @@ begin
     Exit;
 
   LPlatforms := LActiveConfiguration.Platforms;
-  LCandidate := Trim(AConfigurations.ActivePlatformName);
+  LCandidate := Trim(AProjectPlatform);
+  if LCandidate = '' then
+    LCandidate := Trim(AConfigurations.ActivePlatformName);
   for LPlatform in LPlatforms do
     if SameText(LPlatform, LCandidate) then
       Exit(LPlatform);
@@ -213,7 +216,10 @@ begin
         AConfiguration := ResolveBuildConfiguration(
           LProjectConfigurations
         );
-        APlatform := ResolveBuildPlatform(LProjectConfigurations);
+        APlatform := ResolveBuildPlatform(
+          LProjectConfigurations,
+          LProject.CurrentPlatform
+        );
       end
       else
       begin
