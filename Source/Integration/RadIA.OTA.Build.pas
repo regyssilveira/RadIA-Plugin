@@ -96,6 +96,33 @@ begin
   end;
 end;
 
+function ResolveBuildPlatform(
+  const AConfigurations: IOTAProjectOptionsConfigurations
+): string;
+var
+  LActiveConfiguration: IOTABuildConfiguration;
+  LCandidate: string;
+  LPlatform: string;
+  LPlatforms: TArray<string>;
+begin
+  Result := '';
+  LActiveConfiguration := AConfigurations.ActiveConfiguration;
+  if not Assigned(LActiveConfiguration) then
+    Exit;
+
+  LPlatforms := LActiveConfiguration.Platforms;
+  LCandidate := Trim(AConfigurations.ActivePlatformName);
+  for LPlatform in LPlatforms do
+    if SameText(LPlatform, LCandidate) then
+      Exit(LPlatform);
+
+  for LPlatform in LPlatforms do
+    if SameText(LPlatform, 'Win32') then
+      Exit(LPlatform);
+  if Length(LPlatforms) > 0 then
+    Result := LPlatforms[0];
+end;
+
 { TRadIAOTABuildFacade }
 
 function TRadIAOTABuildFacade.Cancel: Boolean;
@@ -186,7 +213,7 @@ begin
         AConfiguration := ResolveBuildConfiguration(
           LProjectConfigurations
         );
-        APlatform := LProjectConfigurations.ActivePlatformName;
+        APlatform := ResolveBuildPlatform(LProjectConfigurations);
       end
       else
       begin
