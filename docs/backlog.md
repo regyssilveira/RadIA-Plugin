@@ -18,7 +18,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Goal RadIA 2.0 — Jornada Completa de Desenvolvimento** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Goal RadIA 2.0 — Liderança da Experiência Delphi** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Goal 2.1 — Reprodução Autônoma de Falhas Runtime** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.1.0 |
-| **Goal 2.2 — Diagnóstico Dinâmico de Memória com FastMM5** | 🟡 Em validação | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.0 |
+| **Goal 2.2 — Diagnóstico Dinâmico de Memória com FastMM5** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.0 |
 | **Goal — Continuidade CLI e Integração Avançada** | ⏸️ Congelado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Após v2.1.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |

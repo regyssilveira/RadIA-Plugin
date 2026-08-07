@@ -1,6 +1,6 @@
 # Goal 2.2 — Diagnóstico dinâmico de memória com FastMM5
 
-> **Estado:** em execução; M0 a M5 concluídos, M6 em validação de release.
+> **Estado:** concluído; M0 a M6 aprovados para a release 2.2.0.
 > **Versão-alvo:** 2.2.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64, diagnosticando aplicações Win32 e Win64.
 > **Dependência:** FastMM5 opcional, fornecido e licenciado pelo usuário.
@@ -233,8 +233,8 @@ controle.
 
 ### M6 — Hardening e release 2.2.0
 
-**Estado:** em execução. Os três targets concluíram 10/10 ciclos reais; documentação, matriz final,
-instalação e publicação permanecem como gates.
+**Estado:** concluído. Os três targets concluíram 10/10 ciclos reais, a matriz final foi aprovada e
+os pacotes foram instalados nas três IDEs.
 
 - executar dez ciclos por target;
 - validar cancelamento, timeout, shutdown e restauração do projeto;

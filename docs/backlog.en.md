@@ -17,7 +17,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **RadIA 2.0 Goal — Complete Development Journey** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **RadIA 2.0 Goal — Leading the Delphi Experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **2.1 Goal — Autonomous Runtime Failure Reproduction** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.1.0 |
-| **2.2 Goal — Dynamic Memory Diagnostics with FastMM5** | 🟡 Under validation | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.0 |
+| **2.2 Goal — Dynamic Memory Diagnostics with FastMM5** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.0 |
 | **Goal — CLI Continuity and Advanced Integration** | ⏸️ Frozen | 🔴 High | ⭐⭐⭐⭐⭐ Critical | After v2.1.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |

@@ -63,6 +63,7 @@ This index brings together the functional, operational, and technical documentat
 |---|---|
 | Release process | [Release finalization](release_process.en.md) |
 | Version 2.1 audit | [Builds, quality, installation, and artifacts](release_audit_2.1.0.en.md) |
+| Version 2.2 audit | [FastMM5, builds, quality, installation, and artifacts](release_audit_2.2.0.en.md) |
 | Visual installer and channel | [Signable distribution](visual_installer.en.md) |
 | Migration from 1.x to 2.0 | [Migration to RadIA 2.0](migration_1_to_2.en.md) |
 | Agentic checklist | [Checklist](agentic_release_checklist.md) |
