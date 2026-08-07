@@ -11,7 +11,8 @@ uses
 type
   TRadIAFakeRuntimeDebugger = class(
     TInterfacedObject,
-    IRadIADebuggerFacade
+    IRadIADebuggerFacade,
+    IRadIADebuggerRuntimeFacade
   )
   public
     function GetDebuggerState: TRadIADebuggerSnapshot;
@@ -21,6 +22,12 @@ type
     function GetCallStack(
       const AMaxCount: Integer
     ): TRadIACallStackSnapshot;
+    function ResolveRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): Boolean;
   end;
 
   [TestFixture]
@@ -40,6 +47,8 @@ type
     procedure RegistersRuntimeDebugTools;
     [Test]
     procedure ReturnsCorrelatedSession;
+    [Test]
+    procedure ReconcilesIncompleteSessionFromDebugger;
     [Test]
     procedure WaitReturnsExceptionAndCallStack;
     [Test]
@@ -215,6 +224,20 @@ begin
   Result := nil;
 end;
 
+function TRadIAFakeRuntimeDebugger.ResolveRuntimeProcess(
+  out AProcessId: LongWord;
+  out ACreatedAtUtc: TDateTime;
+  out AExecutablePath: string;
+  out ABuildId: string
+): Boolean;
+begin
+  AProcessId := 1234;
+  ACreatedAtUtc := Now;
+  AExecutablePath := 'C:\Workspace\RuntimeLab.exe';
+  ABuildId := 'size:timestamp';
+  Result := True;
+end;
+
 { TTestRadIARuntimeDebugTools }
 
 procedure TTestRadIARuntimeDebugTools.CancelReportsNoActiveWait;
@@ -278,6 +301,40 @@ begin
   Assert.AreEqual(
     Ord(trReadOnly),
     Ord(FRegistry.Resolve('WaitForDebuggerEvent').Descriptor.Risk)
+  );
+end;
+
+procedure TTestRadIARuntimeDebugTools.ReconcilesIncompleteSessionFromDebugger;
+var
+  LCoordinator: IRadIARuntimeDebugSessionCoordinator;
+  LDebugger: IRadIADebuggerFacade;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+begin
+  LCoordinator := TRadIARuntimeDebugSessionCoordinator.Create;
+  LCoordinator.BeginSession('C:\Workspace\RuntimeLab.dproj');
+  LRegistry := TRadIAToolRegistry.Create;
+  LDebugger := TRadIAFakeRuntimeDebugger.Create;
+  RegisterRadIARuntimeDebugTools(
+    LRegistry,
+    LCoordinator,
+    LDebugger
+  );
+
+  LResult := LRegistry.Resolve('GetRuntimeDebugSession').Execute(
+    TRadIAToolRequest.Create(
+      'GetRuntimeDebugSession',
+      '{}',
+      'runtime-reconciliation-test'
+    )
+  );
+
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"complete":true');
+  Assert.Contains(LResult.ContentJson, '"processId":1234');
+  Assert.Contains(
+    LResult.ContentJson,
+    '"buildId":"size:timestamp"'
   );
 end;
 

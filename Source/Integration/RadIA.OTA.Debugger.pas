@@ -10,6 +10,7 @@ type
   TRadIAOTADebuggerFacade = class(
     TInterfacedObject,
     IRadIADebuggerFacade,
+    IRadIADebuggerRuntimeFacade,
     IRadIADebuggerControlFacade,
     IRadIADebuggerBreakpointFacade,
     IRadIADebuggerEvaluationFacade,
@@ -25,6 +26,12 @@ type
     function GetCallStack(
       const AMaxCount: Integer
     ): TRadIACallStackSnapshot;
+    function ResolveRuntimeProcess(
+      out AProcessId: LongWord;
+      out ACreatedAtUtc: TDateTime;
+      out AExecutablePath: string;
+      out ABuildId: string
+    ): Boolean;
     function ExecuteAction(
       const AAction: TRadIADebuggerAction
     ): TRadIADebuggerActionResult;
@@ -56,7 +63,8 @@ uses
   Vcl.ActnList,
   Vcl.Forms,
   Winapi.Windows,
-  RadIA.Core.Types;
+  RadIA.Core.Types,
+  RadIA.OTA.RuntimeProcess;
 
 const
   CDebuggerUnavailable = 'The debugger is shutting down.';
@@ -837,6 +845,34 @@ begin
     end
   );
   Result := LResult;
+end;
+
+function TRadIAOTADebuggerFacade.ResolveRuntimeProcess(
+  out AProcessId: LongWord;
+  out ACreatedAtUtc: TDateTime;
+  out AExecutablePath: string;
+  out ABuildId: string
+): Boolean;
+var
+  LSnapshot: TRadIADebuggerSnapshot;
+begin
+  AProcessId := 0;
+  ACreatedAtUtc := 0;
+  AExecutablePath := '';
+  ABuildId := '';
+  LSnapshot := GetDebuggerState;
+  AProcessId := LSnapshot.OSProcessId;
+  Result := (AProcessId > 0) and
+    TryGetRadIARuntimeProcessIdentity(
+      AProcessId,
+      AExecutablePath,
+      ACreatedAtUtc
+    );
+  if Result then
+  begin
+    ABuildId := GetRadIARuntimeBuildId(AExecutablePath);
+    Result := ABuildId <> '';
+  end;
 end;
 
 end.

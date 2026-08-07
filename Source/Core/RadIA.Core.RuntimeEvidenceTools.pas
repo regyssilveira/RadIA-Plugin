@@ -71,7 +71,7 @@ var
   LItems: TList<string>;
 begin
   Result := False;
-  LArray := AJson.GetValue<TJSONArray>('expressions');
+  LArray := AJson.GetValue('expressions') as TJSONArray;
   if not Assigned(LArray) then
   begin
     AExpressions := [];

@@ -181,7 +181,9 @@ function TRadIARuntimeEvidenceCoordinator.BuildCapture(
   const AEntry: TRadIARuntimeEvidenceEntry
 ): string;
 var
+  LDebuggerState: TRadIADebuggerSnapshot;
   LEvent: TRadIARuntimeDebugEvent;
+  LRecordedEventAvailable: Boolean;
   LRoot: TJSONObject;
   LScenarioStatus: TRadIARuntimeScenarioStatus;
   LSession: TRadIARuntimeSessionIdentity;
@@ -198,9 +200,16 @@ begin
   AEntry.ProjectPath := LSession.ProjectPath;
   AEntry.BuildId := LSession.BuildId;
   AEntry.ScenarioState := LScenarioStatus.State;
-  AEntry.EventAvailable := FDebugCoordinator.TryGetLastEvent(LEvent);
-  if AEntry.EventAvailable then
+  LRecordedEventAvailable := FDebugCoordinator.TryGetLastEvent(LEvent);
+  AEntry.EventAvailable := LRecordedEventAvailable;
+  if LRecordedEventAvailable then
     AEntry.EventKind := LEvent.Kind;
+  LDebuggerState := FDebugger.GetDebuggerState;
+  if SameText(LDebuggerState.State, 'exception') then
+  begin
+    AEntry.EventAvailable := True;
+    AEntry.EventKind := rdekException;
+  end;
 
   LRoot := TJSONObject.Create;
   try
@@ -228,16 +237,20 @@ begin
     );
     if AEntry.EventAvailable then
     begin
-      LRoot.AddPair(
-        'eventSequence',
-        TJSONNumber.Create(LEvent.Sequence)
-      );
+      if LRecordedEventAvailable then
+        LRoot.AddPair(
+          'eventSequence',
+          TJSONNumber.Create(LEvent.Sequence)
+        );
       LRoot.AddPair(
         'eventKind',
-        RadIARuntimeDebugEventKindName(LEvent.Kind)
+        RadIARuntimeDebugEventKindName(AEntry.EventKind)
       );
-      LRoot.AddPair('debuggerState', LEvent.State);
-      LRoot.AddPair('details', FRedactor.Redact(LEvent.Details));
+      LRoot.AddPair('debuggerState', LDebuggerState.State);
+      if LRecordedEventAvailable then
+        LRoot.AddPair('details', FRedactor.Redact(LEvent.Details))
+      else
+        LRoot.AddPair('details', FRedactor.Redact(LDebuggerState.Status));
     end;
     AddCallStack(FDebugger, FRedactor, LRoot);
     AddExpressions(FEvaluation, FRedactor, AExpressions, LRoot);

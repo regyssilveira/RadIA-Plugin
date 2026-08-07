@@ -18,6 +18,7 @@ type
     FRuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator;
     FRuntimeSessionId: string;
     FNotifierIndex: Integer;
+    procedure EnsureRuntimeSession(const AProcess: IOTAProcess);
     function ProcessId(const AProcess: IOTAProcess): LongWord;
     function RuntimeProcessId(const AProcess: IOTAProcess): LongWord;
     function ProcessState(const AProcess: IOTAProcess): string;
@@ -52,7 +53,25 @@ uses
   System.DateUtils,
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.RuntimeAutomation,
   RadIA.OTA.RuntimeProcess;
+
+function ActiveProjectPath: string;
+var
+  LModuleServices: IOTAModuleServices;
+  LProject: IOTAProject;
+begin
+  Result := '';
+  if not Supports(
+    BorlandIDEServices,
+    IOTAModuleServices,
+    LModuleServices
+  ) then
+    Exit;
+  LProject := LModuleServices.GetActiveProject;
+  if Assigned(LProject) then
+    Result := LProject.FileName;
+end;
 
 function ResolveRuntimeExecutable(
   const AProcess: IOTAProcess
@@ -124,6 +143,7 @@ procedure TRadIAOTADebugTimelineNotifier.CurrentProcessChanged(
   const Process: IOTAProcess
 );
 begin
+  EnsureRuntimeSession(Process);
   FTimeline.RecordEvent(
     dekCurrentProcessChanged,
     ProcessId(Process),
@@ -160,12 +180,56 @@ begin
     Result := AProcess.ProcessId;
 end;
 
-procedure TRadIAOTADebugTimelineNotifier.ProcessCreated(
-  const Process: IOTAProcess
+procedure TRadIAOTADebugTimelineNotifier.EnsureRuntimeSession(
+  const AProcess: IOTAProcess
 );
 var
   LCreatedAtUtc: TDateTime;
   LExecutablePath: string;
+  LProcessId: LongWord;
+  LProjectPath: string;
+begin
+  if not Assigned(FRuntimeCoordinator) or not Assigned(AProcess) then
+    Exit;
+  if FRuntimeSessionId = '' then
+  begin
+    LProjectPath := ActiveProjectPath;
+    if LProjectPath = '' then
+      Exit;
+    FRuntimeSessionId := FRuntimeCoordinator.BeginSession(
+      LProjectPath
+    );
+  end;
+  if FRuntimeSessionId = '' then
+    Exit;
+  LProcessId := RuntimeProcessId(AProcess);
+  if LProcessId = 0 then
+    Exit;
+  LExecutablePath := '';
+  LCreatedAtUtc := 0;
+  if not TryGetRadIARuntimeProcessIdentity(
+    LProcessId,
+    LExecutablePath,
+    LCreatedAtUtc
+  ) then
+  begin
+    LExecutablePath := ResolveRuntimeExecutable(AProcess);
+    LCreatedAtUtc := TTimeZone.Local.ToUniversalTime(Now);
+  end;
+  FRuntimeCoordinator.AttachProcess(
+    FRuntimeSessionId,
+    LProcessId,
+    LCreatedAtUtc,
+    LExecutablePath,
+    GetRadIARuntimeBuildId(LExecutablePath)
+  );
+end;
+
+procedure TRadIAOTADebugTimelineNotifier.ProcessCreated(
+  const Process: IOTAProcess
+);
+var
+  LSession: TRadIARuntimeSessionIdentity;
 begin
   FTimeline.RecordEvent(
     dekProcessCreated,
@@ -173,31 +237,16 @@ begin
     ProcessState(Process),
     ''
   );
-  if not Assigned(FRuntimeCoordinator) or (FRuntimeSessionId = '') then
+  if not Assigned(FRuntimeCoordinator) then
     Exit;
-  LExecutablePath := '';
-  LCreatedAtUtc := 0;
-  if not TryGetRadIARuntimeProcessIdentity(
-    RuntimeProcessId(Process),
-    LExecutablePath,
-    LCreatedAtUtc
-  ) then
-  begin
-    LExecutablePath := ResolveRuntimeExecutable(Process);
-    LCreatedAtUtc := TTimeZone.Local.ToUniversalTime(Now);
-  end;
-  if FRuntimeCoordinator.AttachProcess(
-    FRuntimeSessionId,
-    RuntimeProcessId(Process),
-    LCreatedAtUtc,
-    LExecutablePath,
-    GetRadIARuntimeBuildId(LExecutablePath)
-  ) then
+  EnsureRuntimeSession(Process);
+  LSession := FRuntimeCoordinator.GetCurrentSession;
+  if LSession.IsComplete then
     FRuntimeCoordinator.RecordEvent(
       FRuntimeSessionId,
       rdekProcessCreated,
       ProcessState(Process),
-      LExecutablePath
+      LSession.ExecutablePath
     );
 end;
 
@@ -205,6 +254,7 @@ procedure TRadIAOTADebugTimelineNotifier.ProcessDestroyed(
   const Process: IOTAProcess
 );
 begin
+  EnsureRuntimeSession(Process);
   FTimeline.RecordEvent(
     dekProcessDestroyed,
     ProcessId(Process),
@@ -304,6 +354,7 @@ procedure TRadIAOTADebugTimelineNotifier.ProcessStateChanged(
   const Process: IOTAProcess
 );
 begin
+  EnsureRuntimeSession(Process);
   FTimeline.RecordEvent(
     dekProcessStateChanged,
     ProcessId(Process),

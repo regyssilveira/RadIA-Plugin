@@ -43,6 +43,7 @@ type
     function BuildWaitResult(
       const AResult: TRadIARuntimeDebugWaitResult
     ): TRadIAToolResult;
+    procedure RefreshSession;
     function ParseKinds(
       const AJson: TJSONObject;
       out AKinds: TRadIARuntimeDebugEventKinds
@@ -237,6 +238,7 @@ var
   LRoot: TJSONObject;
   LSession: TRadIARuntimeSessionIdentity;
 begin
+  RefreshSession;
   LSession := FCoordinator.GetCurrentSession;
   LRoot := TJSONObject.Create;
   try
@@ -261,6 +263,54 @@ begin
   finally
     LRoot.Free;
   end;
+end;
+
+procedure TRadIARuntimeDebugToolService.RefreshSession;
+var
+  LBuildId: string;
+  LCreatedAtUtc: TDateTime;
+  LExecutablePath: string;
+  LProcessId: LongWord;
+  LRuntimeDebugger: IRadIADebuggerRuntimeFacade;
+  LSession: TRadIARuntimeSessionIdentity;
+begin
+  LSession := FCoordinator.GetCurrentSession;
+  if LSession.SessionId = '' then
+    Exit;
+  if not Supports(
+    FDebugger,
+    IRadIADebuggerRuntimeFacade,
+    LRuntimeDebugger
+  ) or not LRuntimeDebugger.ResolveRuntimeProcess(
+    LProcessId,
+    LCreatedAtUtc,
+    LExecutablePath,
+    LBuildId
+  ) then
+    Exit;
+  if LSession.IsComplete and
+    (LSession.ProcessId = LProcessId) and
+    SameText(LSession.ExecutablePath, LExecutablePath) and
+    SameText(LSession.BuildId, LBuildId) then
+    Exit;
+  if LSession.IsComplete then
+  begin
+    FCoordinator.BeginSession(LSession.ProjectPath);
+    LSession := FCoordinator.GetCurrentSession;
+  end;
+  if FCoordinator.AttachProcess(
+    LSession.SessionId,
+    LProcessId,
+    LCreatedAtUtc,
+    LExecutablePath,
+    LBuildId
+  ) then
+    FCoordinator.RecordEvent(
+      LSession.SessionId,
+      rdekProcessCreated,
+      'attached',
+      LExecutablePath
+    );
 end;
 
 function TRadIARuntimeDebugToolService.ParseKinds(

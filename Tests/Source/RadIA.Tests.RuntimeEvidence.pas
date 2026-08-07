@@ -17,6 +17,8 @@ type
     IRadIADebuggerFacade,
     IRadIADebuggerEvaluationFacade
   )
+  private
+    FState: string;
   public
     function EvaluateExpression(
       const AExpression: string
@@ -28,6 +30,7 @@ type
     function ListBreakpoints(
       const AMaxCount: Integer
     ): TArray<TRadIABreakpointSnapshot>;
+    procedure SetState(const AState: string);
   end;
 
   TMockRadIARuntimeEvidenceScenario = class(
@@ -74,6 +77,10 @@ type
     procedure ComparesFailureWithSuccessfulRebuiltSession;
     [Test]
     procedure EvidenceToolsAreReadOnlyAndRegistered;
+    [Test]
+    procedure CaptureToolAcceptsOmittedExpressions;
+    [Test]
+    procedure DebuggerExceptionOverridesStaleRuntimeEvent;
   end;
 
 implementation
@@ -123,12 +130,19 @@ function TMockRadIARuntimeEvidenceDebugger.GetDebuggerState:
 begin
   Result := TRadIADebuggerSnapshot.Create(
     True,
-    'stopped',
+    FState,
     100,
     'RuntimeLab.exe',
     1,
     0
   );
+end;
+
+procedure TMockRadIARuntimeEvidenceDebugger.SetState(
+  const AState: string
+);
+begin
+  FState := AState;
 end;
 
 function TMockRadIARuntimeEvidenceDebugger.ListBreakpoints(
@@ -229,6 +243,39 @@ begin
   Assert.AreEqual(32, Length(EvidenceId(LContent)));
 end;
 
+procedure TTestRadIARuntimeEvidence.CaptureToolAcceptsOmittedExpressions;
+var
+  LCoordinator: IRadIARuntimeDebugSessionCoordinator;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LSessionId: string;
+begin
+  LCoordinator := FDebugCoordinator;
+  LSessionId := AttachSession('failure-build');
+  Assert.IsTrue(
+    LCoordinator.RecordEvent(
+      LSessionId,
+      rdekException,
+      'exception',
+      'Access violation'
+    )
+  );
+  FScenario.SetState(rssFailed);
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIARuntimeEvidenceTools(LRegistry, FEvidence);
+
+  LResult := LRegistry.Resolve('CaptureRuntimeEvidence').Execute(
+    TRadIAToolRequest.Create(
+      'CaptureRuntimeEvidence',
+      '{"phase":"failure"}',
+      'runtime-evidence-test'
+    )
+  );
+
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"phase":"failure"');
+end;
+
 procedure TTestRadIARuntimeEvidence.
   ComparesFailureWithSuccessfulRebuiltSession;
 var
@@ -273,6 +320,32 @@ begin
   Assert.Contains(LComparison, '"verificationSucceeded":true');
   Assert.Contains(LComparison, '"failureRemoved":true');
   Assert.Contains(LComparison, '"outcome":"fixed"');
+end;
+
+procedure TTestRadIARuntimeEvidence.
+  DebuggerExceptionOverridesStaleRuntimeEvent;
+var
+  LContent: string;
+  LCoordinator: IRadIARuntimeDebugSessionCoordinator;
+  LSessionId: string;
+begin
+  LCoordinator := FDebugCoordinator;
+  LSessionId := AttachSession('failure-build');
+  Assert.IsTrue(
+    LCoordinator.RecordEvent(
+      LSessionId,
+      rdekProcessCreated,
+      'attached',
+      'RuntimeEvidence.exe'
+    )
+  );
+  FScenario.SetState(rssSucceeded);
+  FDebugger.SetState('exception');
+
+  LContent := FEvidence.Capture('failure', []);
+
+  Assert.Contains(LContent, '"eventKind":"exception"');
+  Assert.Contains(LContent, '"debuggerState":"exception"');
 end;
 
 function TTestRadIARuntimeEvidence.EvidenceId(
@@ -320,6 +393,7 @@ begin
   LCoordinator := TRadIARuntimeDebugSessionCoordinator.Create;
   FDebugCoordinator := LCoordinator;
   FDebugger := TMockRadIARuntimeEvidenceDebugger.Create;
+  FDebugger.SetState('stopped');
   LDebuggerFacade := FDebugger;
   LEvaluation := FDebugger;
   FScenario := TMockRadIARuntimeEvidenceScenario.Create;
