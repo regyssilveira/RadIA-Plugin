@@ -118,6 +118,9 @@ type
     function CancellationRequested(
       const ACancellationToken: IRadIAToolCancellationToken
     ): Boolean;
+    function CanRevealRuntimeTarget(
+      const AKind: TRadIARuntimeActionKind
+    ): Boolean;
     function ExecuteScenario(
       const APrepared: TRadIAPreparedRuntimeScenario;
       const ACancellationToken: IRadIAToolCancellationToken
@@ -345,6 +348,19 @@ begin
     Assigned(ACancellationToken) and
     ACancellationToken.CancellationRequested
   );
+end;
+
+function TRadIARuntimeScenarioCoordinator.CanRevealRuntimeTarget(
+  const AKind: TRadIARuntimeActionKind
+): Boolean;
+begin
+  Result := AKind in [
+    rakInvoke,
+    rakSetValue,
+    rakSelect,
+    rakClose,
+    rakCancel
+  ];
 end;
 
 constructor TRadIARuntimeScenarioCoordinator.Create(
@@ -688,12 +704,14 @@ procedure TRadIARuntimeScenarioCoordinator.ValidateScenario(
 );
 var
   LAction: TRadIARuntimeScenarioAction;
+  LDynamicTargetAllowed: Boolean;
   LResult: TRadIARuntimeActionResult;
 begin
   if not AScenario.IsExecutable then
     raise EArgumentException.Create(
       'Runtime scenario is invalid or exceeds its limits.'
     );
+  LDynamicTargetAllowed := False;
   for LAction in AScenario.Actions do
   begin
     if LAction.Kind = rakWait then
@@ -703,10 +721,19 @@ begin
       LAction
     );
     if not LResult.Success then
+    begin
+      if LDynamicTargetAllowed and SameText(
+        LResult.ErrorCode,
+        'runtime_target_not_found'
+      ) then
+        Continue;
       raise EArgumentException.CreateFmt(
         '%s: %s',
         [LResult.ErrorCode, LResult.Message]
       );
+    end;
+    if CanRevealRuntimeTarget(LAction.Kind) then
+      LDynamicTargetAllowed := True;
   end;
 end;
 

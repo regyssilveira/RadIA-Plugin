@@ -15,7 +15,9 @@ type
   private
     FExecuteCount: Integer;
     FFailExecution: Boolean;
+    FRejectDynamicTarget: Boolean;
     FRejectValidation: Boolean;
+    FValidationCount: Integer;
   public
     function ExecuteAction(
       const ASession: TRadIARuntimeSessionIdentity;
@@ -28,6 +30,8 @@ type
     property ExecuteCount: Integer read FExecuteCount;
     property FailExecution: Boolean
       read FFailExecution write FFailExecution;
+    property RejectDynamicTarget: Boolean
+      read FRejectDynamicTarget write FRejectDynamicTarget;
     property RejectValidation: Boolean
       read FRejectValidation write FRejectValidation;
   end;
@@ -59,6 +63,8 @@ type
     procedure CancelInterruptsWaitImmediately;
     [Test]
     procedure FailedActionStopsScenario;
+    [Test]
+    procedure PrepareAllowsTargetRevealedByPriorAction;
     [Test]
     procedure PrepareValidatesEveryAction;
     [Test]
@@ -100,6 +106,12 @@ function TMockRadIARuntimeActionFacade.ValidateAction(
   const AAction: TRadIARuntimeScenarioAction
 ): TRadIARuntimeActionResult;
 begin
+  Inc(FValidationCount);
+  if FRejectDynamicTarget and (FValidationCount > 1) then
+    Exit(TRadIARuntimeActionResult.Failed(
+      'runtime_target_not_found',
+      'Mock dynamic runtime target is not visible yet.'
+    ));
   if FRejectValidation then
     Result := TRadIARuntimeActionResult.Failed(
       'mock_action_rejected',
@@ -107,6 +119,24 @@ begin
     )
   else
     Result := TRadIARuntimeActionResult.Succeeded;
+end;
+
+procedure TTestRadIARuntimeScenario.
+  PrepareAllowsTargetRevealedByPriorAction;
+var
+  LPreview: TRadIARuntimeScenarioPreview;
+begin
+  FMock.RejectDynamicTarget := True;
+  LPreview := FCoordinator.Prepare(
+    Scenario(
+      [
+        Action(rakInvoke, StringOfChar('a', 64)),
+        Action(rakCancel, StringOfChar('b', 64))
+      ]
+    )
+  );
+  Assert.AreEqual(36, Length(LPreview.PreviewId));
+  Assert.AreEqual(2, LPreview.ActionCount);
 end;
 
 function TTestRadIARuntimeScenario.Action(
