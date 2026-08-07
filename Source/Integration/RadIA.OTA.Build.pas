@@ -96,8 +96,47 @@ begin
   end;
 end;
 
+function ResolveDeclaredProjectPlatform(
+  const AProjectFile: string
+): string;
+var
+  LContent: string;
+  LMatch: TMatch;
+  LTargetedPlatforms: Integer;
+begin
+  Result := '';
+  if not TFile.Exists(AProjectFile) then
+    Exit;
+
+  LContent := TFile.ReadAllText(AProjectFile, TEncoding.UTF8);
+  LMatch := TRegEx.Match(
+    LContent,
+    '<TargetedPlatforms>\s*(\d+)\s*</TargetedPlatforms>',
+    [roIgnoreCase]
+  );
+  if LMatch.Success and
+    TryStrToInt(LMatch.Groups[1].Value, LTargetedPlatforms) then
+  begin
+    if ((LTargetedPlatforms and 1) <> 0) and
+      ((LTargetedPlatforms and 2) = 0) then
+      Exit('Win32');
+    if ((LTargetedPlatforms and 2) <> 0) and
+      ((LTargetedPlatforms and 1) = 0) then
+      Exit('Win64');
+  end;
+
+  LMatch := TRegEx.Match(
+    LContent,
+    '<Platform\b[^>]*>\s*(Win32|Win64)\s*</Platform>',
+    [roIgnoreCase]
+  );
+  if LMatch.Success then
+    Result := LMatch.Groups[1].Value;
+end;
+
 function ResolveBuildPlatform(
   const AConfigurations: IOTAProjectOptionsConfigurations;
+  const AProjectFile: string;
   const AProjectPlatform: string
 ): string;
 var
@@ -106,7 +145,10 @@ var
   LPlatform: string;
   LPlatforms: TArray<string>;
 begin
-  Result := '';
+  Result := ResolveDeclaredProjectPlatform(AProjectFile);
+  if Result <> '' then
+    Exit;
+
   LActiveConfiguration := AConfigurations.ActiveConfiguration;
   if not Assigned(LActiveConfiguration) then
     Exit;
@@ -218,6 +260,7 @@ begin
         );
         APlatform := ResolveBuildPlatform(
           LProjectConfigurations,
+          LProject.FileName,
           LProject.CurrentPlatform
         );
       end
