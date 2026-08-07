@@ -481,10 +481,12 @@ function SelectorMatches(
 ): Boolean;
 var
   LClassName: string;
+  LText: string;
 begin
   if ASelector.ControlName <> '' then
     Exit(False);
   LClassName := WindowClassName(AHandle);
+  LText := WindowText(AHandle, LClassName);
   Result :=
     (
       (ASelector.ClassName = '') or
@@ -492,7 +494,8 @@ begin
     ) and
     (
       (ASelector.Text = '') or
-      SameText(ASelector.Text, WindowText(AHandle, LClassName))
+      (LText = '') or
+      SameText(ASelector.Text, LText)
     ) and
     (
       (ASelector.ParentPath = '') or
@@ -557,12 +560,13 @@ begin
     begin
       if SelectorMatches(ASelector, LWindow, '') then
         LMatches.Add(LWindow);
-      AddStableControlMatches(
-        ASelector,
-        LWindow,
-        AAllowedProcessIds,
-        LMatches
-      );
+      if IsWindowVisible(LWindow) and IsWindowEnabled(LWindow) then
+        AddStableControlMatches(
+          ASelector,
+          LWindow,
+          AAllowedProcessIds,
+          LMatches
+        );
     end;
     if LMatches.Count = 1 then
     begin
