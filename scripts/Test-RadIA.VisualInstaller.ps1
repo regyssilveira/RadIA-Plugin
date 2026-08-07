@@ -1,16 +1,19 @@
 param(
-    [string]$InstallerPath = ".\Output\Installer\RadIA-v2.0.0-Setup.exe",
+    [string]$InstallerPath = "",
     [string]$EvidencePath = ".\Output\Installer\VisualInstallerEvidence.json",
     [switch]$RequireSignature
 )
 
 $ErrorActionPreference = "Stop"
-$resolvedInstaller = [IO.Path]::GetFullPath($InstallerPath)
 $resolvedEvidence = [IO.Path]::GetFullPath($EvidencePath)
 $productVersion = (
     Get-Content -LiteralPath ".\package.json" -Raw |
     ConvertFrom-Json
 ).version
+if (-not $InstallerPath) {
+    $InstallerPath = ".\Output\Installer\RadIA-v$productVersion-Setup.exe"
+}
+$resolvedInstaller = [IO.Path]::GetFullPath($InstallerPath)
 
 if (-not (Test-Path -LiteralPath $resolvedInstaller -PathType Leaf)) {
     throw "Visual installer was not found: $resolvedInstaller"
