@@ -52,8 +52,8 @@ stopped by a local token budget. Account and provider limits remain independent.
 | CLI & MCP | Native/external executor, portable executable, and MCP connection | Only when using an external CLI or MCP client |
 | Memory Diagnostics | FastMM5 path and execution limits | When investigating leaks, double free, or use-after-free |
 
-Every field and button provides a contextual hint. See the [security model](tool_security_model.md)
-for security decisions and the [executor matrix](cli_executors.md) for native, CLI, and MCP
+Every field and button provides a contextual hint. See the [security model](tool_security_model.en.md)
+for security decisions and the [executor matrix](cli_executors.en.md) for native, CLI, and MCP
 dependencies. The purpose, usage, dependencies, and care for every option are in the
 [complete settings reference](settings_reference.en.md).
 
@@ -334,7 +334,7 @@ code or binaries. The manager updates, enables, disables, diagnoses, and removes
 restarting the IDE.
 
 See the [MCP guide](mcp_integration_guide.en.md) and
-[extension guide](tool_extension_guide.md), plus
+[extension guide](tool_extension_guide.en.md), plus
 [declarative extensions](declarative_extensions.en.md).
 
 ## 5. Slash commands
@@ -360,7 +360,7 @@ See the [slash command reference](slash_commands.en.md).
 - MCP uses a local named pipe.
 - Shutdown cancels pending work and protects the WebView2 lifecycle.
 
-See the [security model](tool_security_model.md) and
+See the [security model](tool_security_model.en.md) and
 [compliance guide](compliance.en.md).
 
 ## 7. Compatibility
@@ -395,11 +395,11 @@ hints also document `Enter`, `Ctrl+R`, and `Ctrl+P`.
 - [Everything RadIA can do](capabilities.en.md)
 - [Installation](install_config.en.md)
 - [Agentic tools](user_guide_agentic_tools.en.md)
-- [What each tool does and when to use it](internal_tools_reference.md)
+- [What each tool does and when to use it](internal_tools_reference.en.md)
 - [Internal tool catalog](runtime_tool_catalog.en.md)
 - [MCP](mcp_integration_guide.en.md)
 - [Local knowledge](user_guide_project_knowledge.en.md)
 - [Designer and debugger](user_guide_designer_debugger.en.md)
 - [Troubleshooting](troubleshooting_agentic_platform.en.md)
-- [Agentic architecture](agentic_architecture.md)
-- [Security](tool_security_model.md)
+- [Agentic architecture](agentic_architecture.en.md)
+- [Security](tool_security_model.en.md)

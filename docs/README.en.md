@@ -12,11 +12,11 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 |---|---|---|
 | Install on Delphi 12 or 13 | [Installation and configuration](install_config.en.md) | [User manual](user_manual.en.md) |
 | Discover current capabilities | [Capabilities](capabilities.en.md) | [Feature catalog](features.en.md) |
-| Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.md) |
-| Understand every settings tab | [Settings map](user_manual.en.md#21-settings-map) | [Security model](tool_security_model.md) |
+| Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.en.md) |
+| Understand every settings tab | [Settings map](user_manual.en.md#21-settings-map) | [Security model](tool_security_model.en.md) |
 | Look up a specific field or button | [Complete settings reference](settings_reference.en.md) | [Troubleshooting](troubleshooting_agentic_platform.en.md) |
 | Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
-| Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.md) |
+| Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.en.md) |
 | Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) | [Settings reference](settings_reference.en.md) |
 
 ## Complete a development task
@@ -39,9 +39,9 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Subject | Authoritative document |
 |---|---|
 | Enable and operate agent mode | [User manual](user_manual.en.md) |
-| Native agent and external executors | [CLI executors](cli_executors.md) |
+| Native agent and external executors | [CLI executors](cli_executors.en.md) |
 | Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.en.md) |
-| Consent, risk, and auditing | [Tool security model](tool_security_model.md) |
+| Consent, risk, and auditing | [Tool security model](tool_security_model.en.md) |
 | Agent cost and limits | [Agent pricing](agent_pricing.en.md) |
 | Plan internal result compaction | [Internal RTK execution plan](rtk_execution_plan.en.md) |
 | Use and diagnose the internal RTK | [Agent result compaction and recovery](agent_result_compaction.en.md) |
@@ -58,7 +58,7 @@ such as ChatGPT login through Codex, is the explicit exception.
 | Subject | Guide |
 |---|---|
 | Declarative extensions | [Commands and workflows](declarative_extensions.en.md) |
-| Register tools from a package | [Tool extension API](tool_extension_guide.md) |
+| Register tools from a package | [Tool extension API](tool_extension_guide.en.md) |
 | Add a provider | [Provider guide](new_provider_guide.en.md) |
 | Architecture | [Architecture guide](architecture_guide.en.md) |
 | Source map | [Source code guide](source_code_guide.en.md) |
@@ -72,7 +72,7 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Research records:
 
-- [Free Claude Code ideas applicable to RadIA (pt-BR)](research/free-claude-code-radia-analysis.md).
+- [Free Claude Code ideas applicable to RadIA (pt-BR)](research/free-claude-code-radia-analysis.en.md).
 
 ## Current compatibility
 

@@ -4,7 +4,7 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 > [!NOTE]
 > Rad IA follows a **community-driven open-source development model**.
-> *   For a detailed view of feature priorities, effort estimates, and impacts, check the [Feature Prioritization Matrix (feature_prioritization_matrix.md)](feature_prioritization_matrix.md).
+> *   For a detailed view of feature priorities, effort estimates, and impacts, check the [Feature Prioritization Matrix (feature_prioritization_matrix.md)](feature_prioritization_matrix.en.md).
 > *   For technical details of past and pending implementations (such as class names, successful DUnitX tests, and commits), refer to the [Evolution Backlog (backlog.en.md)](backlog.en.md).
 
 ---
@@ -27,7 +27,7 @@ workspace, consent, audit, reversible patches, build, MCP, Form Designer, debugg
 local knowledge, and versioned extensions.
 
 The active matrix is validated on Delphi 12 Win32 and Delphi 13 Win32/IDE64. See the
-[agentic roadmap](agentic_roadmap.md) and [completion audit](agentic_completion_audit.md).
+[agentic roadmap](agentic_roadmap.en.md) and [completion audit](agentic_completion_audit.en.md).
 
 ### v2.2.2 — DEXT journeys and guided experience
 

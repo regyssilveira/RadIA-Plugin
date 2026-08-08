@@ -235,8 +235,8 @@ Check the implementation details of each completed feature grouped by target rel
 - Inline reviews and a versioned external extension API.
 - Validated matrix for Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
 
-See the [completion audit](agentic_completion_audit.md) and
-[agentic roadmap](agentic_roadmap.md).
+See the [completion audit](agentic_completion_audit.en.md) and
+[agentic roadmap](agentic_roadmap.en.md).
 
 <details>
   <summary><b>📦 v0.0.29 — Editor Selection Fixes and Gemini OAuth Block (Click to expand)</b></summary>

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const childProcess = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -79,6 +80,53 @@ test('documentation local links resolve to existing paths', () => {
       }
     }
   });
+});
+
+test('tracked documentation has complete Portuguese and English pairs', () => {
+  const trackedMarkdown = childProcess.execFileSync(
+    'git',
+    ['ls-files', 'docs/*.md', 'docs/**/*.md'],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  ).trim().split(/\r?\n/u).filter(Boolean);
+  const trackedSet = new Set(trackedMarkdown);
+
+  trackedMarkdown.forEach(fileName => {
+    const counterpart = fileName.endsWith('.en.md')
+      ? fileName.replace(/\.en\.md$/u, '.md')
+      : fileName.replace(/\.md$/u, '.en.md');
+    assert.ok(
+      trackedSet.has(counterpart) || fs.existsSync(path.join(repositoryRoot, counterpart)),
+      `${fileName} is missing its language counterpart: ${counterpart}`
+    );
+  });
+});
+
+test('English documentation links to English counterparts when available', () => {
+  const intentionalPortugueseLinks = new Set([
+    'README.en.md->README.md',
+    'rtk_execution_plan.en.md->rtk_execution_plan.md'
+  ]);
+
+  markdownFiles(documentationRoot)
+    .filter(fileName => fileName.endsWith('.en.md'))
+    .forEach(fileName => {
+      const content = fs.readFileSync(fileName, 'utf8');
+      for (const match of content.matchAll(markdownLinkPattern)) {
+        const target = match.groups.target.trim().replace(/^<|>$/gu, '').split('#', 1)[0];
+        if (!target.endsWith('.md') || /^[a-z][a-z0-9+.-]*:/iu.test(target) ||
+            target.endsWith('.en.md')) {
+          continue;
+        }
+        const resolved = path.resolve(path.dirname(fileName), decodeURIComponent(target));
+        const englishCounterpart = resolved.replace(/\.md$/u, '.en.md');
+        if (!fs.existsSync(englishCounterpart)) {
+          continue;
+        }
+        const key = `${path.relative(documentationRoot, fileName)}->${target}`
+          .replaceAll('\\', '/');
+        assert.ok(intentionalPortugueseLinks.has(key), `${key} should use its English counterpart`);
+      }
+    });
 });
 
 test('every built-in tool has an operational description and activation guidance', () => {
@@ -257,7 +305,7 @@ test('documentation hubs expose the settings map and security guidance', () => {
     assert.ok(englishManual.includes(setting), `English manual is missing ${setting}`);
   });
   assert.match(portugueseManual, /tool_security_model\.md/u);
-  assert.match(englishManual, /tool_security_model\.md/u);
+  assert.match(englishManual, /tool_security_model\.en\.md/u);
 });
 
 test('every visible settings group has a detailed central reference', () => {

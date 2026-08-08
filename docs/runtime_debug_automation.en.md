@@ -61,7 +61,7 @@ The plan is shown before the first execution. Every risky tool keeps its own con
 | Fix | `PreparePatch`, `ApplyPatch`, `RevertPatch` |
 | Regression | `PrepareRuntimeRegression`, `SaveRuntimeRegression`, `ListRuntimeRegressions`, `PrepareSavedRuntimeScenario` |
 
-See the [operational tool reference](internal_tools_reference.md) and the
+See the [operational tool reference](internal_tools_reference.en.md) and the
 [generated catalog](runtime_tool_catalog.en.md).
 
 ## Scenarios and selectors

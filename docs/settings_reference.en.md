@@ -74,7 +74,7 @@ advanced settings above. Provider account, region, plan, and permissions determi
 | Excluded languages/files/projects | To suppress inline requests | Semicolon-separated language, name, or path fragments. |
 | RadIA shortcuts | To customize keyboard access | Use semicolon-separated `action=shortcut` entries for `request`, `accept`, `nextWord`, `alternative`, `reject`, and `terminal`; conflicts are validated. |
 
-See the [security model](tool_security_model.md) for risk classes and consent scope.
+See the [security model](tool_security_model.en.md) for risk classes and consent scope.
 
 ## CLI & MCP
 
@@ -119,7 +119,7 @@ repair history is stored at `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
 
 Cancelling or declining leaves the environment unchanged and keeps a visible alternative.
 
-See [native and CLI executors](cli_executors.md) and [MCP integration](mcp_integration_guide.en.md).
+See [native and CLI executors](cli_executors.en.md) and [MCP integration](mcp_integration_guide.en.md).
 
 ## Memory Diagnostics
 

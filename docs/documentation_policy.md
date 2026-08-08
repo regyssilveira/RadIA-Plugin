@@ -2,6 +2,9 @@
 
 Documentação é parte do produto e deve permanecer correta, encontrável e verificável.
 
+Todo documento Markdown mantido em `docs` deve possuir duas versões completas e equivalentes: o
+arquivo-base em português do Brasil e o arquivo correspondente com sufixo `.en.md` em inglês.
+
 ## Regra obrigatória
 
 Toda mudança que adicione, remova, renomeie ou altere comportamento visível deve atualizar, no mesmo

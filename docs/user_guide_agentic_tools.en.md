@@ -15,7 +15,7 @@ select **Approve plan**. The live card displays status, steps, tokens, and time 
 Resume, and Cancel; the same controls are available through `/agent pause`, `/agent resume`, and
 `/agent cancel`.
 
-See the [tool catalog](tool_catalog.md) for tool names, parameters, and risk levels.
+See the [tool catalog](tool_catalog.en.md) for tool names, parameters, and risk levels.
 For a complete product overview, see the [Complete RadIA User Manual](user_manual.en.md).
 
 ## Operation flow
@@ -68,4 +68,4 @@ the missing precondition.
 
 The audit trail is stored at `%APPDATA%\RadIA\audit\tools.jsonl`. Credentials and sensitive fields
 are sanitized before writing. For risk and workspace confinement details, see the
-[security model](tool_security_model.md).
+[security model](tool_security_model.en.md).

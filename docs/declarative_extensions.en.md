@@ -91,7 +91,7 @@ or binaries and cannot widen the target tool's permissions.
 Prompts and skill instructions may use `{code}`, `{argument}`, `{specification}`, and
 `{stacktrace}`. Declarative prompt capabilities do not run processes, writes, or OTA operations.
 Advanced tools with custom implementations remain available through the
-BPL API documented in the [extension guide](tool_extension_guide.md) and remain subject to central
+BPL API documented in the [extension guide](tool_extension_guide.en.md) and remain subject to central
 risk and consent policies.
 
 Schema 4 journeys start Agent Runtime with mandatory RadIA workspace inspection, plan review,

@@ -1,5 +1,8 @@
 # Documentation policy
 
+Every maintained Markdown document under `docs` must have two complete, equivalent versions: the
+base file in Brazilian Portuguese and the corresponding `.en.md` file in English.
+
 Documentation is part of the product. Every user-visible addition, removal, rename, or behavior
 change must update in the same work: the affected central reference, applicable task guide, UI hints,
 existing translation, and documentation tests. A feature is incomplete when users must inspect

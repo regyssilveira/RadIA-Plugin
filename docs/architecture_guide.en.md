@@ -2,7 +2,7 @@
 
 > This guide describes the original plugin foundation. For the tool registry, OTA workspace,
 > security, MCP, Designer, debugger, and local knowledge, also see the
-> [Agentic Architecture](agentic_architecture.md).
+> [Agentic Architecture](agentic_architecture.en.md).
 
 This technical guide is intended for developers and software architects who want to understand the internal engineering, design patterns, concurrent workflows, and infrastructure of **Rad IA**. The plugin runs integrated into the main process of the Delphi IDE (`bds.exe`), which imposes strict memory management, thread safety, and lifecycle control constraints.
 

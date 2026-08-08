@@ -21,7 +21,7 @@ passed 892 tests with zero leaks.
 
 See the [complete audit](result_compaction_release_audit_2.3.0.en.md).
 Publication-ready numbers and methodology are available in the
-[editorial benchmark](result_compaction_article_benchmark_2.3.0.md).
+[editorial benchmark](result_compaction_article_benchmark_2.3.0.en.md).
 
 ## Upgrade and rollback
 

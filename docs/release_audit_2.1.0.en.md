@@ -30,6 +30,6 @@ The provenance and hashes of all three ZIP files are recorded in
 ## Documentation
 
 The [runtime diagnostics guide](runtime_debug_automation.en.md) explains the complete reproduction,
-capture, fix, and regression workflow. The [operational reference](internal_tools_reference.md)
+capture, fix, and regression workflow. The [operational reference](internal_tools_reference.en.md)
 documents all 111 tools individually, including what each one does and when it may be invoked. An
 automated test compares this reference with the runtime manifest and blocks undocumented tools.

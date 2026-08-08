@@ -145,7 +145,7 @@ the IDE, and MCP use does not grant implicit authorization.
 The transport is local, uses user ACLs, enforces payload and concurrency limits, and applies the
 workspace boundary to MCP paths. Clients must handle structured errors, timeouts, and cancellation.
 
-See the [security model](tool_security_model.md) and [tool catalog](tool_catalog.md).
+See the [security model](tool_security_model.en.md) and [tool catalog](tool_catalog.en.md).
 
 ## Multiple IDE instances
 
