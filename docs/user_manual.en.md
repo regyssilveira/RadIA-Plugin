@@ -126,6 +126,9 @@ compiler message count, and DUnitX totals, passes, failures, errors, and ignored
 remain in the checkpoint and return when the run is opened from history. When an authoritative
 Delphi Code Coverage report exists, the same section shows its percentage, covered and total
 lines, source-file count, and evidence path.
+Use `/journey dext-minimal` or `/journey dext-controllers` to create HTTP servers. The journeys turn
+the endpoint list into a reviewable specification, generate a DEXT project, open it, and build the
+result. See the [DEXT journey guide](user_guide_dext_journeys.en.md).
 Successful patch steps present **Reviewed changes** inside their details. Each file shows only the
 changed block, three context lines, and removed/added totals. This view is review-only; applying or
 reverting remains an audited tool call subject to configured consent.

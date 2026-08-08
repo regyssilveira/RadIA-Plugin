@@ -4,7 +4,9 @@ param(
     [ValidateSet("23.0", "37.0")]
     [string]$DelphiVersion,
 
-    [string]$EvidencePath = ""
+    [string]$EvidencePath = "",
+
+    [string]$DextRoot = $env:DEXT_ROOT
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,10 +19,17 @@ $msBuildPath = Join-Path `
     $env:WINDIR `
     "Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"
 $generatorRoot = Join-Path $repositoryRoot "Tests\GeneratedProjects"
+$dextOutputPath = ""
+if ($DextRoot) {
+    $dextOutputPath = Join-Path `
+        ([IO.Path]::GetFullPath($DextRoot)) `
+        "Output\$($DelphiVersion)_Win32_Debug"
+}
 $isolatedLibraryPath = (
     (Join-Path $studioRoot "lib\Win32\release") +
     "%3B" +
-    (Join-Path $studioRoot "source\DUnitX")
+    (Join-Path $studioRoot "source\DUnitX") +
+    $(if ($dextOutputPath) { "%3B$dextOutputPath" } else { "" })
 )
 $validationRoot = Join-Path `
     ([System.IO.Path]::GetTempPath()) `
@@ -31,6 +40,8 @@ $templateResults = @()
 $expectedTemplates = @(
     "ConsoleApp",
     "DUnitXApp",
+    "DextControllerApi",
+    "DextMinimalApi",
     "FmxApp",
     "LibraryApp",
     "PackageApp",
@@ -38,11 +49,67 @@ $expectedTemplates = @(
     "VclApp"
 )
 
+function Test-DextEndpoint {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExecutablePath,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Urls
+    )
+
+    $serverProcess = Start-Process `
+        -FilePath $ExecutablePath `
+        -PassThru `
+        -WindowStyle Hidden
+    try {
+        foreach ($url in $Urls) {
+            $lastError = $null
+            $responded = $false
+            for ($attempt = 1; $attempt -le 30; $attempt++) {
+                if ($serverProcess.HasExited) {
+                    throw "Generated DEXT server exited before responding: $ExecutablePath"
+                }
+                try {
+                    $response = Invoke-WebRequest `
+                        -Uri $url `
+                        -UseBasicParsing `
+                        -TimeoutSec 2
+                    if ($response.StatusCode -eq 200) {
+                        $responded = $true
+                        break
+                    }
+                    $lastError = "Unexpected HTTP status $($response.StatusCode)."
+                }
+                catch {
+                    $lastError = $_.Exception.Message
+                }
+                Start-Sleep -Milliseconds 200
+            }
+            if (-not $responded) {
+                throw "Generated DEXT endpoint did not respond: $url. $lastError"
+            }
+        }
+    }
+    finally {
+        if (-not $serverProcess.HasExited) {
+            Stop-Process -Id $serverProcess.Id -Force
+            Wait-Process -Id $serverProcess.Id -Timeout 5 -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 if (-not (Test-Path -LiteralPath $compilerPath -PathType Leaf)) {
     throw "Delphi compiler not found: $compilerPath"
 }
 if (-not (Test-Path -LiteralPath $msBuildPath -PathType Leaf)) {
     throw "MSBuild not found: $msBuildPath"
+}
+if (-not $DextRoot) {
+    throw "DEXT_ROOT or -DextRoot is required to validate DEXT templates."
+}
+if (-not (Test-Path -LiteralPath $dextOutputPath -PathType Container)) {
+    throw "DEXT output not found for Delphi $DelphiVersion: $dextOutputPath"
 }
 
 New-Item -ItemType Directory -Path $validationRoot | Out-Null
@@ -79,8 +146,8 @@ try {
             -Recurse `
             -Filter "*.dproj"
     )
-    if ($projects.Count -ne 7) {
-        throw "Expected seven generated projects, found $($projects.Count)."
+    if ($projects.Count -ne 9) {
+        throw "Expected nine generated projects, found $($projects.Count)."
     }
     $projectNames = @($projects | ForEach-Object { $_.BaseName })
     foreach ($expectedTemplate in $expectedTemplates) {
@@ -114,6 +181,24 @@ try {
             status = "passed"
         }
     }
+
+    Test-DextEndpoint `
+        -ExecutablePath (
+            Join-Path `
+                $validationRoot `
+                "DextMinimalApi\bin\Win32\Debug\DextMinimalApi.exe"
+        ) `
+        -Urls @("http://localhost:8081/health")
+    Test-DextEndpoint `
+        -ExecutablePath (
+            Join-Path `
+                $validationRoot `
+                "DextControllerApi\bin\Win32\Debug\DextControllerApi.exe"
+        ) `
+        -Urls @(
+            "http://localhost:8082/health",
+            "http://localhost:8082/swagger.json"
+        )
 
     if ($EvidencePath) {
         $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
@@ -161,7 +246,7 @@ try {
     }
 
     Write-Host (
-        "All seven generated projects passed on Delphi $DelphiVersion."
+        "All nine generated projects passed on Delphi $DelphiVersion."
     ) -ForegroundColor Green
 }
 finally {

@@ -26,6 +26,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Criar um projeto Delphi | [New Project Wizard](project_wizard.md) |
 | Adicionar ou remover units e forms | [Operações estruturais](project_file_operations.md) |
 | Compilar, corrigir erros e executar testes | [Jornadas ponta a ponta](user_guide_journeys.md) |
+| Criar um servidor DEXT a partir de endpoints | [Jornadas de servidores DEXT](user_guide_dext_journeys.md) |
 | Executar e interpretar testes DUnitX | [Runner DUnitX](dunitx_runner.md) |
 | Trabalhar com Form Designer ou debugger | [Designer e debugger](user_guide_designer_debugger.md) |
 | Reproduzir uma falha visual automaticamente | [Diagnóstico runtime](runtime_debug_automation.md) |

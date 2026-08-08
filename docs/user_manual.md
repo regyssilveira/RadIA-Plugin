@@ -171,6 +171,9 @@ build, quantidade de mensagens do compilador e contagens DUnitX de total, aprova
 e ignorados. Quando existe um relatório oficial do Delphi Code Coverage, a mesma seção mostra o
 percentual, as linhas cobertas e totais, a quantidade de arquivos-fonte e o caminho da evidência.
 Esses dados permanecem no checkpoint e voltam a aparecer ao abrir o histórico.
+Para criar servidores HTTP, use `/journey dext-minimal` ou `/journey dext-controllers`. As jornadas
+transformam a lista de endpoints em uma especificação revisável, geram um projeto DEXT, abrem e
+compilam o resultado. Consulte o [guia das jornadas DEXT](user_guide_dext_journeys.md).
 Etapas de patch bem-sucedidas apresentam **Reviewed changes** dentro de seus detalhes. Cada arquivo
 mostra apenas o bloco alterado, três linhas de contexto e os totais removidos/adicionados. Essa
 visualização é somente para revisão; aplicar ou reverter continua sendo uma tool auditada e sujeita

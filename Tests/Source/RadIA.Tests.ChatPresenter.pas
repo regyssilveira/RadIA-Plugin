@@ -184,6 +184,8 @@ type
     [Test]
     procedure TestDeclarativeExtensionAppearsInSlashCatalog;
     [Test]
+    procedure TestDextJourneysAppearInSlashCatalog;
+    [Test]
     procedure TestDeclarativeJourneyStartsGuardedAgentRun;
     [Test]
     procedure TestSlashCommandUsesProvidedCodeBlock;
@@ -828,12 +830,27 @@ begin
   FPresenter.SendPromptText('/journey');
 
   Assert.Contains(FMockView.PostedMessages.Text, '/journey create');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey dext-minimal');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey dext-controllers');
   Assert.Contains(FMockView.PostedMessages.Text, '/journey fix-build');
   Assert.Contains(FMockView.PostedMessages.Text, '/journey debug');
   Assert.Contains(FMockView.PostedMessages.Text, '/journey modernize');
   Assert.Contains(FMockView.PostedMessages.Text, '/journey migrate');
   Assert.Contains(FMockView.PostedMessages.Text, '4 phases');
   Assert.Contains(FMockView.PostedMessages.Text, '3 completion criteria');
+end;
+
+procedure TTestChatPresenter.TestDextJourneysAppearInSlashCatalog;
+var
+  LCatalogJson: string;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.OnWebViewReady;
+
+  LCatalogJson := FMockView.LastPostedJson.Replace('\/', '/');
+  Assert.Contains(LCatalogJson, '"command":"/journey dext-minimal"');
+  Assert.Contains(LCatalogJson, '"command":"/journey dext-controllers"');
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

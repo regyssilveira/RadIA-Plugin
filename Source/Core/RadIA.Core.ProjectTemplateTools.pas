@@ -127,11 +127,29 @@ const
     '"delphiVersion","platforms","destinationPath"],"properties":{' +
     '"projectName":{"type":"string"},"template":{"type":"string",' +
     '"enum":["console","vcl","fmx","library","package","dunitx",' +
-    '"service"]},' +
+    '"service","dext-minimal-api","dext-controller-api"]},' +
     '"delphiVersion":{"type":"string","enum":["23.0","37.0"]},' +
     '"platforms":{"type":"array","items":{"type":"string",' +
     '"enum":["Win32","Win64"]},"minItems":1},' +
-    '"destinationPath":{"type":"string"}},"additionalProperties":false}';
+    '"destinationPath":{"type":"string"},' +
+    '"apiSpecification":{"type":"object","required":[' +
+    '"schemaVersion","endpoints"],"properties":{' +
+    '"schemaVersion":{"type":"integer","const":1},' +
+    '"port":{"type":"integer","minimum":1,"maximum":65535},' +
+    '"enableSwagger":{"type":"boolean"},' +
+    '"enableCors":{"type":"boolean"},' +
+    '"enableLogging":{"type":"boolean"},' +
+    '"endpoints":{"type":"array","minItems":1,"maxItems":100,' +
+    '"items":{"type":"object","required":[' +
+    '"name","method","path"],"properties":{' +
+    '"name":{"type":"string"},"group":{"type":"string"},' +
+    '"method":{"type":"string","enum":[' +
+    '"GET","POST","PUT","PATCH","DELETE"]},' +
+    '"path":{"type":"string"},"description":{"type":"string"},' +
+    '"statusCode":{"type":"integer","minimum":100,"maximum":599}' +
+    '},"additionalProperties":false}}},' +
+    '"additionalProperties":false}},' +
+    '"additionalProperties":false}';
   CProjectTemplateOutputSchema =
     '{"type":"object","required":["previewId","destinationPath",' +
     '"preview","committed","rolledBack"],"properties":{' +
@@ -431,6 +449,7 @@ function TRadIAPreviewProjectTemplateTool.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
 var
+  LApiSpecification: string;
   LJson: TJSONObject;
   LRequest: TRadIAProjectTemplateRequest;
 begin
@@ -443,11 +462,16 @@ begin
       'Project template arguments must be a valid JSON object.'
     ));
   try
+    if Assigned(LJson.GetValue('apiSpecification')) then
+      LApiSpecification := LJson.GetValue('apiSpecification').ToJSON
+    else
+      LApiSpecification := '';
     LRequest := TRadIAProjectTemplateRequest.Create(
       GetRequiredString(LJson, 'projectName'),
       ParseKind(GetRequiredString(LJson, 'template')),
       GetRequiredString(LJson, 'delphiVersion'),
-      ParsePlatforms(LJson)
+      ParsePlatforms(LJson),
+      LApiSpecification
     );
     Result := ResultToToolResult(
       FService.Preview(
@@ -491,6 +515,10 @@ begin
     Exit(ptkDUnitX);
   if SameText(AValue, 'service') then
     Exit(ptkService);
+  if SameText(AValue, 'dext-minimal-api') then
+    Exit(ptkDextMinimalApi);
+  if SameText(AValue, 'dext-controller-api') then
+    Exit(ptkDextControllerApi);
   raise EArgumentException.Create(
     'Argument "template" contains an unsupported template kind.'
   );

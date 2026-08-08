@@ -5,6 +5,10 @@ program RadIAGenerateProjects;
 uses
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.ApiSpecifications in
+    '..\..\Source\Core\RadIA.Core.ApiSpecifications.pas',
+  RadIA.Core.DextProjectTemplates in
+    '..\..\Source\Core\RadIA.Core.DextProjectTemplates.pas',
   RadIA.Core.ProjectTemplates in
     '..\..\Source\Core\RadIA.Core.ProjectTemplates.pas',
   RadIA.Core.ProjectTransaction in
@@ -14,7 +18,8 @@ procedure GenerateProject(
   const ARootPath: string;
   const ADelphiVersion: string;
   const AProjectName: string;
-  const AKind: TRadIAProjectTemplateKind
+  const AKind: TRadIAProjectTemplateKind;
+  const ASpecificationJson: string = ''
 );
 var
   LEngine: TRadIAProjectTemplateEngine;
@@ -26,7 +31,8 @@ begin
     AProjectName,
     AKind,
     ADelphiVersion,
-    ['Win32']
+    ['Win32'],
+    ASpecificationJson
   );
   LEngine := TRadIAProjectTemplateEngine.Create;
   try
@@ -69,6 +75,27 @@ begin
   GenerateProject(LRootPath, LDelphiVersion, 'PackageApp', ptkPackage);
   GenerateProject(LRootPath, LDelphiVersion, 'DUnitXApp', ptkDUnitX);
   GenerateProject(LRootPath, LDelphiVersion, 'ServiceApp', ptkService);
+  GenerateProject(
+    LRootPath,
+    LDelphiVersion,
+    'DextMinimalApi',
+    ptkDextMinimalApi,
+    '{"schemaVersion":1,"port":8081,"enableCors":true,"endpoints":[' +
+    '{"name":"Health","group":"System","method":"GET",' +
+    '"path":"/health"},{"name":"SubmitReading","group":"Readings",' +
+    '"method":"POST","path":"/readings","statusCode":202}]}'
+  );
+  GenerateProject(
+    LRootPath,
+    LDelphiVersion,
+    'DextControllerApi',
+    ptkDextControllerApi,
+    '{"schemaVersion":1,"port":8082,"enableSwagger":true,' +
+    '"endpoints":[{"name":"Health","group":"System",' +
+    '"method":"GET","path":"/health"},{"name":"CreateBooking",' +
+    '"group":"Bookings","method":"POST","path":"/bookings",' +
+    '"statusCode":201}]}'
+  );
 end;
 
 begin

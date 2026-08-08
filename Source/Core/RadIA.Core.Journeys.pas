@@ -161,6 +161,78 @@ begin
       ]
     ),
     TRadIAJourneyDefinition.Create(
+      '/journey dext-minimal',
+      'Create DEXT Minimal API',
+      'Creates and verifies a compiled DEXT server with direct endpoint mappings.',
+      'Create a new DEXT Minimal API project from the endpoints requested by the user. Convert the ' +
+      'request into a versioned API specification, review every route and generated file, use the ' +
+      'dext-minimal-api deterministic template, open and build the project, then start the server ' +
+      'and verify its health endpoint. Do not claim success from generated text alone.',
+      [
+        TRadIAJourneyPhase.Create(
+          'Specify',
+          'Collect project settings and explicit HTTP method, path, group, status, and purpose for every endpoint.',
+          'Present the versioned API specification and report all validation results.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Design',
+          'Review direct route mappings, contracts, configuration, dependency availability, and generated files.',
+          'Present the immutable project preview before any file is written.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Create',
+          'Create the approved project atomically and open it in the Delphi IDE.',
+          'Report the preview identifier, destination, project file, and committed files.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Verify',
+          'Build the selected target, start the server, and call its local health endpoint.',
+          'Provide compiler diagnostics, process outcome, HTTP status, and remaining external blockers.'
+        )
+      ],
+      [
+        'Every requested endpoint is represented by a reviewed direct DEXT route mapping.',
+        'The generated project is open and builds successfully.',
+        'The server starts and its health endpoint responds, or a specific external blocker is proven.'
+      ]
+    ),
+    TRadIAJourneyDefinition.Create(
+      '/journey dext-controllers',
+      'Create DEXT Controllers API',
+      'Creates and verifies a compiled DEXT server organized with controllers.',
+      'Create a new DEXT Controllers API project from the endpoints requested by the user. Convert ' +
+      'the request into a versioned API specification, review controller grouping and generated ' +
+      'files, use the dext-controller-api deterministic template, open and build the project, then ' +
+      'start the server and verify health and Swagger when enabled.',
+      [
+        TRadIAJourneyPhase.Create(
+          'Specify',
+          'Collect project settings and explicit HTTP method, path, controller group, status, and purpose.',
+          'Present the versioned API specification and report all validation results.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Design',
+          'Review controller groups, contracts, Swagger, dependency availability, and generated files.',
+          'Present the immutable project preview before any file is written.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Create',
+          'Create the approved controller project atomically and open it in the Delphi IDE.',
+          'Report the preview identifier, destination, project file, controllers, and committed files.'
+        ),
+        TRadIAJourneyPhase.Create(
+          'Verify',
+          'Build the selected target, start the server, and verify health and Swagger when enabled.',
+          'Provide compiler diagnostics, process outcome, HTTP status, and remaining external blockers.'
+        )
+      ],
+      [
+        'Every requested endpoint is represented by a reviewed DEXT controller action.',
+        'The generated project is open and builds successfully.',
+        'Health and enabled Swagger endpoints respond, or a specific external blocker is proven.'
+      ]
+    ),
+    TRadIAJourneyDefinition.Create(
       '/journey fix-build',
       'Fix Build',
       'Diagnoses compiler errors and validates a minimal repair.',

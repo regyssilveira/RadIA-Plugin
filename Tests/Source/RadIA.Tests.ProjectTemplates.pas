@@ -45,17 +45,25 @@ var
   LKind: TRadIAProjectTemplateKind;
   LPlan: TRadIAProjectTemplatePlan;
   LRequest: TRadIAProjectTemplateRequest;
+  LSpecificationJson: string;
 begin
   LEngine := TRadIAProjectTemplateEngine.Create;
   try
     for LKind := Low(TRadIAProjectTemplateKind) to
       High(TRadIAProjectTemplateKind) do
     begin
+      if LKind in [ptkDextMinimalApi, ptkDextControllerApi] then
+        LSpecificationJson :=
+          '{"schemaVersion":1,"endpoints":[{"name":"Health",' +
+          '"group":"System","method":"GET","path":"/health"}]}'
+      else
+        LSpecificationJson := '';
       LRequest := TRadIAProjectTemplateRequest.Create(
         'SampleProject',
         LKind,
         '37.0',
-        ['Win32', 'Win64']
+        ['Win32', 'Win64'],
+        LSpecificationJson
       );
       LPlan := LEngine.BuildPlan(LRequest);
       try

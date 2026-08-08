@@ -10,6 +10,8 @@ Every recipe accepts optional context after the command, for example:
 
 ```text
 /journey create VCL inventory application with FireDAC and SQLite
+/journey dext-minimal telemetry server with GET /health and POST /readings
+/journey dext-controllers booking API with GET /bookings/{id}
 /journey fix-build preserve the public API of CustomerService
 /journey debug Access Violation while closing the orders form
 /journey modernize reduce coupling without changing public interfaces
@@ -26,6 +28,8 @@ claim success merely because it produced a text response.
 | Command | Objective |
 |---|---|
 | `/journey create [requirements]` | Create, organize, document, build, and explain a Delphi project. |
+| `/journey dext-minimal [endpoints]` | Create and validate a DEXT server with direct routes. |
+| `/journey dext-controllers [endpoints]` | Create and validate a DEXT server organized by controllers. |
 | `/journey fix-build [constraints]` | Diagnose errors, apply a minimal repair, and rebuild. |
 | `/journey tests [focus]` | Identify gaps, add DUnitX tests, and run validation. |
 | `/journey debug [symptom]` | Reproduce a failure, collect evidence, fix, and validate. |

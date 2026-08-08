@@ -170,6 +170,8 @@ contains
   RadIA.Core.ProjectFiles in 'Source\Core\RadIA.Core.ProjectFiles.pas',
   RadIA.Core.ProjectFileTools in 'Source\Core\RadIA.Core.ProjectFileTools.pas',
   RadIA.Core.ProjectOpening in 'Source\Core\RadIA.Core.ProjectOpening.pas',
+  RadIA.Core.ApiSpecifications in 'Source\Core\RadIA.Core.ApiSpecifications.pas',
+  RadIA.Core.DextProjectTemplates in 'Source\Core\RadIA.Core.DextProjectTemplates.pas',
   RadIA.Core.ProjectTemplates in 'Source\Core\RadIA.Core.ProjectTemplates.pas',
   RadIA.Core.ProjectTransaction in 'Source\Core\RadIA.Core.ProjectTransaction.pas',
   RadIA.Core.ProjectTemplateService in 'Source\Core\RadIA.Core.ProjectTemplateService.pas',

@@ -27,6 +27,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Create a Delphi project | [New Project Wizard](project_wizard.en.md) |
 | Add or remove units and forms | [Project operations](project_file_operations.en.md) |
 | Build, fix errors, and run tests | [End-to-end journeys](user_guide_journeys.en.md) |
+| Create a DEXT server from endpoints | [DEXT server journeys](user_guide_dext_journeys.en.md) |
 | Run DUnitX tests | [DUnitX runner](dunitx_runner.en.md) |
 | Use Form Designer or debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
 | Reproduce a visual failure | [Runtime diagnostics](runtime_debug_automation.en.md) |

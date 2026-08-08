@@ -104,7 +104,7 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
-| `PreviewProjectTemplate` | Renderiza a árvore e os arquivos de um template sem gravá-los. | Ao criar Console, VCL, FMX, Library, Package ou DUnitX. |
+| `PreviewProjectTemplate` | Renderiza a árvore e os arquivos de um template sem gravá-los. | Ao criar Console, VCL, FMX, Library, Package, DUnitX ou servidor DEXT. |
 | `CreateProjectFromTemplate` | Publica o projeto preparado usando staging e validações. | Depois que o usuário aprova o nome, destino, template e preview. |
 | `RevertCreatedProject` | Remove de forma controlada os arquivos criados pela operação. | Quando a criação precisa ser desfeita e os hashes ainda correspondem. |
 | `OpenCreatedProject` | Abre na IDE o projeto que acabou de ser criado. | Após a publicação bem-sucedida ou por solicitação explícita. |

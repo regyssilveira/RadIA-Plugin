@@ -10,7 +10,9 @@ type
     ptkLibrary,
     ptkPackage,
     ptkDUnitX,
-    ptkService
+    ptkService,
+    ptkDextMinimalApi,
+    ptkDextControllerApi
   );
 
   TRadIAProjectTemplateRequest = record
@@ -19,17 +21,20 @@ type
     FKind: TRadIAProjectTemplateKind;
     FDelphiVersion: string;
     FPlatforms: TArray<string>;
+    FSpecificationJson: string;
   public
     constructor Create(
       const AProjectName: string;
       const AKind: TRadIAProjectTemplateKind;
       const ADelphiVersion: string;
-      const APlatforms: TArray<string>
+      const APlatforms: TArray<string>;
+      const ASpecificationJson: string = ''
     );
     property ProjectName: string read FProjectName;
     property Kind: TRadIAProjectTemplateKind read FKind;
     property DelphiVersion: string read FDelphiVersion;
     property Platforms: TArray<string> read FPlatforms;
+    property SpecificationJson: string read FSpecificationJson;
   end;
 
   TRadIAProjectTemplateFile = record
@@ -118,7 +123,9 @@ uses
   System.Hash,
   System.JSON,
   System.StrUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.ApiSpecifications,
+  RadIA.Core.DextProjectTemplates;
 
 function RadIAProjectTemplateKindName(
   const AKind: TRadIAProjectTemplateKind
@@ -139,6 +146,10 @@ begin
       Result := 'dunitx';
     ptkService:
       Result := 'service';
+    ptkDextMinimalApi:
+      Result := 'dext-minimal-api';
+    ptkDextControllerApi:
+      Result := 'dext-controller-api';
   else
     Result := 'unknown';
   end;
@@ -150,7 +161,8 @@ constructor TRadIAProjectTemplateRequest.Create(
   const AProjectName: string;
   const AKind: TRadIAProjectTemplateKind;
   const ADelphiVersion: string;
-  const APlatforms: TArray<string>
+  const APlatforms: TArray<string>;
+  const ASpecificationJson: string
 );
 var
   LIndex: Integer;
@@ -160,6 +172,7 @@ begin
   FProjectName := AProjectName;
   FKind := AKind;
   FDelphiVersion := ADelphiVersion;
+  FSpecificationJson := ASpecificationJson;
   LPlatformList := TStringList.Create;
   try
     LPlatformList.CaseSensitive := False;
@@ -259,6 +272,10 @@ function TRadIAProjectTemplateEngine.BuildFiles(
   const ATemplateId: string
 ): TArray<TRadIAProjectTemplateFile>;
 var
+  LDextFile: TRadIADextGeneratedFile;
+  LDextFiles: TArray<TRadIADextGeneratedFile>;
+  LDextIndex: Integer;
+  LDextSpecification: TRadIAApiSpecification;
   LMainSource: string;
   LProjectName: string;
 begin
@@ -267,6 +284,40 @@ begin
     LMainSource := LProjectName + '.dpk'
   else
     LMainSource := LProjectName + '.dpr';
+
+  if ARequest.Kind in [ptkDextMinimalApi, ptkDextControllerApi] then
+  begin
+    if ARequest.Kind = ptkDextMinimalApi then
+      LDextSpecification := TRadIAApiSpecificationParser.Parse(
+        LProjectName,
+        asMinimal,
+        ARequest.SpecificationJson
+      )
+    else
+      LDextSpecification := TRadIAApiSpecificationParser.Parse(
+        LProjectName,
+        asControllers,
+        ARequest.SpecificationJson
+      );
+    LDextFiles := TRadIADextProjectRenderer.BuildFiles(LDextSpecification);
+    SetLength(Result, Length(LDextFiles));
+    LDextIndex := 0;
+    for LDextFile in LDextFiles do
+    begin
+      Result[LDextIndex] := TRadIAProjectTemplateFile.Create(
+        LDextFile.RelativePath,
+        LDextFile.Content
+      );
+      Inc(LDextIndex);
+    end;
+    Result := Result + [
+      TRadIAProjectTemplateFile.Create(
+        LProjectName + '.dproj',
+        BuildProjectFile(ARequest, ATemplateId, LMainSource)
+      )
+    ];
+    Exit;
+  end;
 
   case ARequest.Kind of
     ptkConsole:
@@ -596,6 +647,7 @@ var
   LFrameworkType: string;
   LPlatform: string;
   LTargetedPlatforms: Integer;
+  LUnitSearchPath: string;
 begin
   LFrameworkType := 'None';
   LAppType := 'Application';
@@ -618,6 +670,11 @@ begin
     else if SameText(LPlatform, 'Win64') then
       LTargetedPlatforms := LTargetedPlatforms or 2;
   end;
+  LUnitSearchPath := '$(BDSLIB)\$(Platform)\release';
+  if ARequest.Kind in [ptkDextMinimalApi, ptkDextControllerApi] then
+    LUnitSearchPath := LUnitSearchPath +
+      ';$(DEXT_ROOT)\Output\' + ARequest.DelphiVersion +
+      '_$(Platform)_$(Config)';
 
   Result :=
     '<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ' +
@@ -651,7 +708,7 @@ begin
     '    <DCC_ForceExecute>true</DCC_ForceExecute>' + sLineBreak +
     '    <DelphiLibraryPath>$(BDSLIB)\$(Platform)\release' +
     '</DelphiLibraryPath>' + sLineBreak +
-    '    <DCC_UnitSearchPath>$(BDSLIB)\$(Platform)\release' +
+    '    <DCC_UnitSearchPath>' + LUnitSearchPath +
     '</DCC_UnitSearchPath>' + sLineBreak +
     '    <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;' +
     'FMX</DCC_Namespace>' + sLineBreak +
@@ -694,7 +751,27 @@ begin
   end
   else if ARequest.Kind = ptkDUnitX then
     Result := Result +
-      '    <DCCReference Include="Tests.Sample.pas" />' + sLineBreak;
+      '    <DCCReference Include="Tests.Sample.pas" />' + sLineBreak
+  else if ARequest.Kind = ptkDextMinimalApi then
+    Result := Result +
+      '    <DCCReference Include="' + ARequest.ProjectName +
+      '.Startup.pas" />' + sLineBreak +
+      '    <DCCReference Include="Endpoints\' + ARequest.ProjectName +
+      '.Endpoints.pas" />' + sLineBreak +
+      '    <DCCReference Include="Contracts\' + ARequest.ProjectName +
+      '.Contracts.pas" />' + sLineBreak
+  else if ARequest.Kind = ptkDextControllerApi then
+    Result := Result +
+      '    <DCCReference Include="' + ARequest.ProjectName +
+      '.Startup.pas" />' + sLineBreak +
+      '    <DCCReference Include="Controllers\' + ARequest.ProjectName +
+      '.Controllers.pas" />' + sLineBreak +
+      '    <DCCReference Include="Contracts\' + ARequest.ProjectName +
+      '.Contracts.pas" />' + sLineBreak +
+      '    <DCCReference Include="Services\' + ARequest.ProjectName +
+      '.Services.pas" />' + sLineBreak +
+      '    <DCCReference Include="Infrastructure\' + ARequest.ProjectName +
+      '.DependencyInjection.pas" />' + sLineBreak;
   Result := Result +
     '    <BuildConfiguration Include="Base">' + sLineBreak +
     '      <Key>Base</Key>' + sLineBreak +
@@ -784,6 +861,10 @@ begin
     ARequest.DelphiVersion + '|' +
     LPlatforms
   );
+  if ARequest.SpecificationJson <> '' then
+    Result := Result + '|' + LowerCase(
+      THashSHA2.GetHashString(ARequest.SpecificationJson)
+    );
 end;
 
 procedure TRadIAProjectTemplateEngine.ValidateDelphiVersion(

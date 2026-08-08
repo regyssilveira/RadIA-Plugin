@@ -33,7 +33,7 @@ var
   LDefinition: TRadIAJourneyDefinition;
 begin
   LCount := Length(TRadIAJourneyCatalog.All);
-  Assert.AreEqual(7, LCount);
+  Assert.AreEqual(9, LCount);
   Assert.IsTrue(
     TRadIAJourneyCatalog.Find('/journey create', LDefinition)
   );
@@ -50,6 +50,14 @@ begin
     TRadIAJourneyCatalog.Find('/journey migrate', LDefinition)
   );
   Assert.AreEqual('Migrate Legacy Delphi Code', LDefinition.Name);
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey dext-minimal', LDefinition)
+  );
+  Assert.AreEqual('Create DEXT Minimal API', LDefinition.Name);
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey dext-controllers', LDefinition)
+  );
+  Assert.AreEqual('Create DEXT Controllers API', LDefinition.Name);
 end;
 
 procedure TTestRadIAJourneys.JourneyObjectivesPreserveSafetyGates;

@@ -10,6 +10,8 @@ Cada receita aceita contexto opcional depois do comando, por exemplo:
 
 ```text
 /journey create aplicativo VCL de estoque com FireDAC e SQLite
+/journey dext-minimal servidor de telemetria com GET /health e POST /readings
+/journey dext-controllers API de reservas com GET /bookings/{id}
 /journey fix-build preserve a API pública da unit CustomerService
 /journey debug Access Violation ao fechar o formulário de pedidos
 /journey modernize reduzir acoplamento sem alterar as interfaces públicas
@@ -26,6 +28,8 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 | Comando | Objetivo |
 |---|---|
 | `/journey create [requisitos]` | Criar, organizar, documentar, compilar e explicar um projeto Delphi. |
+| `/journey dext-minimal [endpoints]` | Criar e validar um servidor DEXT com rotas diretas. |
+| `/journey dext-controllers [endpoints]` | Criar e validar um servidor DEXT organizado por controllers. |
 | `/journey fix-build [restrições]` | Diagnosticar erros, aplicar correção mínima e recompilar. |
 | `/journey tests [foco]` | Identificar lacunas, criar testes DUnitX e executar a validação. |
 | `/journey debug [sintoma]` | Reproduzir uma falha, coletar evidências, corrigir e validar. |

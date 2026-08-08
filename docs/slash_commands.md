@@ -30,6 +30,8 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
 | `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |
+| `/journey dext-minimal` | Cria e valida um servidor DEXT com rotas diretas. | Templates DEXT, build e runtime. |
+| `/journey dext-controllers` | Cria e valida um servidor DEXT com controllers. | Templates DEXT, build, Swagger e runtime. |
 | `/journey fix-build` | Diagnostica e corrige um build com alterações mínimas. | Compilador, patches e build. |
 | `/journey tests` | Amplia testes DUnitX e executa validação. | Projeto, patches e DUnitX. |
 | `/journey debug` | Conduz reprodução, diagnóstico, correção e validação. | Debugger, patches e build. |
