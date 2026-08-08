@@ -14,9 +14,14 @@ and require build validation.
 Examples:
 
 ```text
-/journey dext-minimal telemetry server with GET /health and POST /readings
-/journey dext-controllers booking API with GET /bookings/{id} and POST /bookings
+/journey dext-minimal
+/journey dext-controllers project=BookingApi destination=D:\Projects platform=Win64 port=8080 health=/health endpoints="GET /bookings/{id} group=Bookings status=200 purpose=GetBooking; POST /bookings group=Bookings status=201 purpose=CreateBooking"
 ```
+
+In the first example, RadIA asks sequentially for project name, destination, platform, port, health
+endpoint, and endpoints. Every answer remains attached to the journey. In the second, all values are
+already present and the journey can proceed directly to planning. Type `/journey cancel` at any time
+during intake to abandon it.
 
 RadIA confirms the name, destination, Delphi version, platforms, port, and the HTTP method, path,
 Pascal name, group, response status, and purpose of every endpoint. The contract accepts `GET`,

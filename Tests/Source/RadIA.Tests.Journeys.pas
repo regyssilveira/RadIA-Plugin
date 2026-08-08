@@ -19,6 +19,10 @@ type
     procedure ResolvesOptionalUserContext;
     [Test]
     procedure RejectsOversizedUserContext;
+    [Test]
+    procedure DextJourneyRequestsMissingInputsInOrder;
+    [Test]
+    procedure JourneysExposeUsageAndExamples;
   end;
 
 implementation
@@ -151,6 +155,52 @@ begin
     end;
   end;
   Assert.IsTrue(LRaised);
+end;
+
+procedure TTestRadIAJourneys.DextJourneyRequestsMissingInputsInOrder;
+var
+  LDefinition: TRadIAJourneyDefinition;
+  LField: string;
+  LQuestion: string;
+begin
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey dext-minimal', LDefinition)
+  );
+  Assert.IsTrue(
+    LDefinition.NextRequiredInput('products get post', LField, LQuestion)
+  );
+  Assert.AreEqual('project', LField);
+  Assert.Contains(LQuestion, 'project');
+  Assert.IsTrue(
+    LDefinition.NextRequiredInput(
+      'project=Catalog destination=D:\Projects platform=Win32 port=8080 ' +
+      'health=/health',
+      LField,
+      LQuestion
+    )
+  );
+  Assert.AreEqual('endpoints', LField);
+  Assert.IsFalse(
+    LDefinition.NextRequiredInput(
+      'project=Catalog destination=D:\Projects platform=Win32 port=8080 ' +
+      'health=/health endpoints="GET /products group=Products status=200 purpose=List"',
+      LField,
+      LQuestion
+    )
+  );
+end;
+
+procedure TTestRadIAJourneys.JourneysExposeUsageAndExamples;
+var
+  LDefinition: TRadIAJourneyDefinition;
+begin
+  for LDefinition in TRadIAJourneyCatalog.All do
+  begin
+    Assert.Contains(LDefinition.Usage, LDefinition.Command);
+    Assert.Contains(LDefinition.Example, LDefinition.Command);
+    Assert.Contains(LDefinition.InputHelpText, 'Usage:');
+    Assert.Contains(LDefinition.InputHelpText, 'Example:');
+  end;
 end;
 
 initialization

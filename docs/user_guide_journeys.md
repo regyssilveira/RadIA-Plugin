@@ -6,12 +6,17 @@ checkpoints e mantém diffs, build, testes, debugger e Git observáveis no chat.
 
 Digite `/journey` para listar as receitas disponíveis.
 
+Você pode informar tudo no comando ou iniciar apenas com o nome da jornada. Quando faltar um dado,
+o RadIA mantém a jornada ativa, pergunta um item por vez e incorpora cada resposta ao mesmo
+contexto. A execução do agente começa somente depois da coleta. Use `/journey cancel` para abandonar
+a coleta e descartar o que foi informado; trocar de chat fica bloqueado enquanto ela estiver ativa.
+
 Cada receita aceita contexto opcional depois do comando, por exemplo:
 
 ```text
 /journey create aplicativo VCL de estoque com FireDAC e SQLite
-/journey dext-minimal servidor de telemetria com GET /health e POST /readings
-/journey dext-controllers API de reservas com GET /bookings/{id}
+/journey dext-minimal
+/journey dext-controllers project=BookingApi destination=D:\Projects platform=Win64 port=8080 health=/health endpoints="GET /bookings/{id} group=Bookings status=200 purpose=GetBooking"
 /journey fix-build preserve a API pública da unit CustomerService
 /journey debug Access Violation ao fechar o formulário de pedidos
 /journey modernize reduzir acoplamento sem alterar as interfaces públicas

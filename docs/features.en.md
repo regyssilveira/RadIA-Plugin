@@ -6,8 +6,11 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
-v2.2.1 note: actionable `/doctor`, new sanitized and filterable `/status`, guided CLI/MCP
-experience, centralized documentation, and debugger and UI stability fixes.
+v2.2.2 note: `/help`, conversational DEXT journeys, transport-compatible model discovery, an
+optional local token limit, and refined CLI/MCP settings.
+
+v2.2.1 note: actionable `/doctor`, sanitized `/status`, guided CLI/MCP setup, centralized
+documentation, and debugger and UI stability fixes.
 
 v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against duplicated code when the original editor selection is lost.
 
@@ -30,6 +33,8 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Dynamic Slash Commands** | Chat UX | Dynamic mapping of templates to slash commands (e.g. `/createprojectarch`), synced and autocompleted in WebView2. | ✅ Completed |
 | **RadIA Doctor and Status** | Diagnostics | `/doctor` checks readiness and recommends the next action; `/status` inventories configuration and availability without exposing credentials. | ✅ Completed (v2.2.1) |
 | **CLI/MCP Setup Assistant** | Integration | Detects, explains, requests consent, installs or configures, validates, and provides complete manual fallback without an IDE restart. | ✅ Completed (v2.2.1) |
+| **Integrated Help** | Chat UX | `/help` summarizes capabilities and opens public guides in the default browser. | ✅ Completed (v2.2.2) |
+| **Conversational DEXT Journeys** | Projects | Collects missing requirements across messages, preserves context, and generates minimal or controller-based APIs. | ✅ Completed (v2.2.2) |
 | **Declarative Skills and Templates** | Extensibility | Schema 2 manifest with hot reload, autocomplete, and minimal `chat.prompt` permission. | ✅ Completed |
 | **Declarative Tool Aliases** | Extensibility | Schema 3 registers safe chat/MCP aliases that inherit internal tool risk, schemas, and consent. | ✅ Completed |
 | **Declarative Workflows** | Extensibility | Schema 5 chains up to 16 internal tools with inherited risk, bounds, and per-step central policy, without arbitrary shells. | ✅ Completed |

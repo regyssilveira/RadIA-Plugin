@@ -186,6 +186,8 @@ type
     [Test]
     procedure TestDextJourneysAppearInSlashCatalog;
     [Test]
+    procedure TestDextJourneyCollectsMissingInputAcrossMessages;
+    [Test]
     procedure TestDeclarativeJourneyStartsGuardedAgentRun;
     [Test]
     procedure TestSlashCommandUsesProvidedCodeBlock;
@@ -217,6 +219,8 @@ type
     procedure TestStatusCommandRejectsUnknownFilter;
     [Test]
     procedure TestJourneyCommandListsEndToEndRecipes;
+    [Test]
+    procedure TestHelpCommandShowsCapabilitiesAndDocumentation;
     [Test]
     procedure TestWebMessageToggleHistory;
     [Test]
@@ -840,6 +844,18 @@ begin
   Assert.Contains(FMockView.PostedMessages.Text, '3 completion criteria');
 end;
 
+procedure TTestChatPresenter.TestHelpCommandShowsCapabilitiesAndDocumentation;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/help');
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'RadIA help');
+  Assert.Contains(FMockView.PostedMessages.Text, '/journey cancel');
+  Assert.Contains(FMockView.PostedMessages.Text, 'slash_commands.md');
+  Assert.Contains(FMockView.PostedMessages.Text, 'settings_reference.md');
+end;
+
 procedure TTestChatPresenter.TestDextJourneysAppearInSlashCatalog;
 var
   LCatalogJson: string;
@@ -851,6 +867,31 @@ begin
   LCatalogJson := FMockView.LastPostedJson.Replace('\/', '/');
   Assert.Contains(LCatalogJson, '"command":"/journey dext-minimal"');
   Assert.Contains(LCatalogJson, '"command":"/journey dext-controllers"');
+  Assert.Contains(LCatalogJson, '"usage":');
+  Assert.Contains(LCatalogJson, '"example":');
+end;
+
+procedure TTestChatPresenter.TestDextJourneyCollectsMissingInputAcrossMessages;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText(
+    '/journey dext-minimal products get post clients get post'
+  );
+  Assert.Contains(FMockView.PostedMessages.Text, 'What should the project be called?');
+  Assert.IsFalse(FMockView.PostedMessages.Text.Contains('"action":"agent_state"'));
+
+  FPresenter.SendPromptText('CatalogApi');
+  Assert.Contains(FMockView.PostedMessages.Text, 'destination folder');
+  FPresenter.SendPromptText('D:\Projects');
+  Assert.Contains(FMockView.PostedMessages.Text, 'Win32 or Win64');
+  FPresenter.SendPromptText('Win32');
+  Assert.Contains(FMockView.PostedMessages.Text, 'HTTP port');
+  FPresenter.SendPromptText('8080');
+  Assert.Contains(FMockView.PostedMessages.Text, 'health endpoint');
+  FPresenter.SendPromptText('/health');
+  Assert.Contains(FMockView.PostedMessages.Text, 'List the endpoints');
 end;
 
 procedure TTestChatPresenter.TestAgentRunPublishesObservableState;

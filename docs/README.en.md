@@ -1,6 +1,6 @@
 # RadIA documentation
 
-This is the documentation entry point for RadIA 2.2.1. Start with the task you want to complete;
+This is the documentation entry point for RadIA 2.2.2. Start with the task you want to complete;
 each subject has one primary guide to prevent duplicated or conflicting instructions.
 
 > The `/tools` command is the most accurate reference for the current installation because the

@@ -37,6 +37,14 @@ type
       const ASuccessCriteria: TArray<string>
     );
     function BuildAgentObjective(const AContext: string): string;
+    function Example: string;
+    function InputHelpText: string;
+    function NextRequiredInput(
+      const AContext: string;
+      out AField: string;
+      out AQuestion: string
+    ): Boolean;
+    function Usage: string;
     property Command: string read FCommand;
     property Name: string read FName;
     property Description: string read FDescription;
@@ -117,6 +125,110 @@ begin
   if not AContext.Trim.IsEmpty then
     Result := Result + sLineBreak + sLineBreak +
       'User-provided context: ' + AContext.Trim;
+end;
+
+function TRadIAJourneyDefinition.Usage: string;
+begin
+  if SameText(FCommand, '/journey create') then
+    Exit('/journey create project=<name> type=<VCL|FMX|Console> ' +
+      'destination=<folder> platform=<Win32|Win64> requirements="<details>"');
+  if SameText(FCommand, '/journey dext-minimal') or
+    SameText(FCommand, '/journey dext-controllers') then
+    Exit(FCommand + ' project=<name> destination=<folder> ' +
+      'platform=<Win32|Win64> port=<number> health=<path> ' +
+      'endpoints="<METHOD path group=... status=... purpose=...; ...>"');
+  if SameText(FCommand, '/journey fix-build') then
+    Exit('/journey fix-build scope=<project|target> preserve="<constraints>"');
+  if SameText(FCommand, '/journey tests') then
+    Exit('/journey tests focus="<behavior or unit>" constraints="<limits>"');
+  if SameText(FCommand, '/journey debug') then
+    Exit('/journey debug symptom="<failure>" reproduce="<steps>" expected="<result>"');
+  if SameText(FCommand, '/journey modernize') then
+    Exit('/journey modernize scope="<units or subsystem>" preserve="<contracts>"');
+  if SameText(FCommand, '/journey migrate') then
+    Exit('/journey migrate from="<legacy pattern>" to="<target>" scope="<boundary>"');
+  Result := '/journey release scope="<changes>" targets="<platforms>" publish=<no|yes>';
+end;
+
+function TRadIAJourneyDefinition.Example: string;
+begin
+  if SameText(FCommand, '/journey create') then
+    Exit('/journey create project=Inventory type=VCL destination=D:\Projects ' +
+      'platform=Win32 requirements="FireDAC with SQLite"');
+  if SameText(FCommand, '/journey dext-minimal') then
+    Exit('/journey dext-minimal project=CatalogApi destination=D:\Projects ' +
+      'platform=Win32 port=8080 health=/health endpoints="GET /products ' +
+      'group=Products status=200 purpose=ListProducts; POST /clients ' +
+      'group=Clients status=201 purpose=CreateClient"');
+  if SameText(FCommand, '/journey dext-controllers') then
+    Exit('/journey dext-controllers project=BookingApi destination=D:\Projects ' +
+      'platform=Win64 port=8080 health=/health endpoints="GET /bookings/{id} ' +
+      'group=Bookings status=200 purpose=GetBooking"');
+  if SameText(FCommand, '/journey fix-build') then
+    Exit('/journey fix-build scope=ActiveProject preserve="public APIs and local changes"');
+  if SameText(FCommand, '/journey tests') then
+    Exit('/journey tests focus="CustomerService validation" constraints="DUnitX, no network"');
+  if SameText(FCommand, '/journey debug') then
+    Exit('/journey debug symptom="Access violation on close" ' +
+      'reproduce="Open Orders and close the form" expected="Clean shutdown"');
+  if SameText(FCommand, '/journey modernize') then
+    Exit('/journey modernize scope="Orders units" preserve="public interfaces and behavior"');
+  if SameText(FCommand, '/journey migrate') then
+    Exit('/journey migrate from=ADO to=FireDAC scope="Orders data layer"');
+  Result := '/journey release scope="current tracked changes" targets="Win32;Win64" publish=no';
+end;
+
+function TRadIAJourneyDefinition.InputHelpText: string;
+begin
+  Result := FDescription + sLineBreak + sLineBreak +
+    'Usage:' + sLineBreak + Usage + sLineBreak + sLineBreak +
+    'Example:' + sLineBreak + Example;
+end;
+
+function TRadIAJourneyDefinition.NextRequiredInput(
+  const AContext: string;
+  out AField: string;
+  out AQuestion: string
+): Boolean;
+const
+  CDextFields: array[0..5] of string = (
+    'project', 'destination', 'platform', 'port', 'health', 'endpoints'
+  );
+  CDextQuestions: array[0..5] of string = (
+    'What should the project be called?',
+    'Which destination folder should receive the project?',
+    'Which target platform should be used: Win32 or Win64?',
+    'Which HTTP port should the server use?',
+    'What should the health endpoint path be? Example: /health',
+    'List the endpoints. For each one, provide method, path, group, expected status, and purpose.'
+  );
+var
+  LIndex: Integer;
+  LLowerContext: string;
+begin
+  AField := '';
+  AQuestion := '';
+  if not (SameText(FCommand, '/journey dext-minimal') or
+    SameText(FCommand, '/journey dext-controllers')) then
+  begin
+    Result := AContext.Trim.IsEmpty;
+    if Result then
+    begin
+      AField := 'goal';
+      AQuestion := 'Describe the goal, scope, constraints, and expected result for this journey.';
+    end;
+    Exit;
+  end;
+
+  LLowerContext := LowerCase(AContext);
+  for LIndex := Low(CDextFields) to High(CDextFields) do
+    if not LLowerContext.Contains(CDextFields[LIndex] + '=') then
+    begin
+      AField := CDextFields[LIndex];
+      AQuestion := CDextQuestions[LIndex];
+      Exit(True);
+    end;
+  Result := False;
 end;
 
 class function TRadIAJourneyCatalog.All:
@@ -513,11 +625,12 @@ var
 begin
   Result := 'Available Delphi journeys:';
   for LDefinition in All do
-    Result := Result + sLineBreak + LDefinition.Command + ' - ' +
+    Result := Result + sLineBreak + sLineBreak + LDefinition.Command + ' - ' +
       LDefinition.Description + Format(
         ' (%d phases, %d completion criteria)',
         [Length(LDefinition.Phases), Length(LDefinition.SuccessCriteria)]
-      );
+      ) + sLineBreak + 'Usage: ' + LDefinition.Usage +
+      sLineBreak + 'Example: ' + LDefinition.Example;
 end;
 
 end.

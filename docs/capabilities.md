@@ -1,6 +1,6 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.2.1. Ela reúne as capacidades disponíveis e aponta para
+Esta página é o mapa funcional do RadIA 2.2.2. Ela reúne as capacidades disponíveis e aponta para
 as instruções detalhadas.
 
 Para distinguir implementação de planejamento:
@@ -20,6 +20,8 @@ Para distinguir implementação de planejamento:
 - Estimativas e limites locais de tokens e custo.
 - Templates editáveis, importáveis e exportáveis.
 - Comandos internos e comandos personalizados.
+- Ajuda integrada com `/help`, exemplos de comandos e links abertos no navegador padrão.
+- Jornadas conversacionais que preservam respostas até concluir ou abandonar a coleta.
 
 Consulte [Chat e sessões](user_guide_chat_sessions.md) e
 [Comandos de barra](slash_commands.md).

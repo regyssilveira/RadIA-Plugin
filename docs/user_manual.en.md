@@ -1,4 +1,4 @@
-# Complete RadIA 2.2.1 user manual
+# Complete RadIA 2.2.2 user manual
 
 ## 1. What RadIA is
 
@@ -13,6 +13,10 @@ For usage, architecture, quality, and release documentation, see the
 [Documentation Center](README.en.md).
 
 ## 2. Getting started
+
+Type `/help` in chat for capabilities, primary commands, and guide links. Links open in the default
+browser. Journeys started without every required value enter conversational intake and retain each
+answer until execution or `/journey cancel`.
 
 After installing the package for the intended IDE architecture, open Delphi and dock the RadIA
 panel. Configure a provider under `Tools > Options > Rad IA`, select a model, create a session, and

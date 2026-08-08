@@ -11,7 +11,8 @@ uses
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
   RadIA.Core.AgentProvider,
   RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
-  RadIA.Core.Tools, RadIA.Core.ToolSecurity, RadIA.Core.Workspace;
+  RadIA.Core.Journeys, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
+  RadIA.Core.Workspace;
 
 type
   IRadIAChatView = interface
@@ -89,6 +90,12 @@ type
     FAgentController: IRadIAAgentRunController;
     FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
     FCliProcessSession: IRadIACliProcessSession;
+    FPendingJourneyActive: Boolean;
+    FPendingJourneyContext: string;
+    FPendingJourneyDeclarativePrompt: string;
+    FPendingJourneyDefinition: TRadIAJourneyDefinition;
+    FPendingJourneyField: string;
+    FPendingJourneyNative: Boolean;
 
     procedure UpdateModelsCombo;
 
@@ -103,6 +110,7 @@ type
     procedure AddUtilitySlashCommands(const ACommands: TJSONArray);
     function BuildReservedSlashCommands: TArray<string>;
     function BuildDeclarativeExtensionStatus: string;
+    function BuildHelpText: string;
     procedure ReloadDeclarativeExtensions;
     function BuildToolsJsonArray: TJSONArray;
     function ToolRiskName(const ARisk: TRadIAToolRisk): string;
@@ -228,6 +236,16 @@ type
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
+    function TryHandlePendingJourneyInput(const APromptText: string): Boolean;
+    procedure ResetPendingJourney;
+    procedure AskForPendingJourneyInput(const AQuestion: string);
+    procedure StartPendingJourney;
+    function TryBeginJourneyIntake(
+      const AIsNative: Boolean;
+      const ADefinition: TRadIAJourneyDefinition;
+      const ADeclarative: TRadIADeclarativeCommand;
+      const AContext: string
+    ): Boolean;
     procedure HandleExplicitToolCommand(
       const APromptText: string;
       const ACommandText: string
@@ -337,7 +355,6 @@ uses
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
   RadIA.Core.AgentPricing,
   RadIA.Core.CliManager,
-  RadIA.Core.Journeys,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -396,6 +413,7 @@ begin
   FLoginPopupOpen := False;
   FAgentModeEnabled := True;
   FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
+  ResetPendingJourney;
 
   // WebViewBridge events removed
 
@@ -554,9 +572,13 @@ end;
 
 function TRadIAChatPresenter.CanChangeSession: Boolean;
 begin
-  Result := not FRequestInProgress;
-  if not Result then
+  Result := not FRequestInProgress and not FPendingJourneyActive;
+  if FRequestInProgress then
     FView.ShowMessageDialog('Wait for the current response to finish, or cancel it before switching chats.');
+  if FPendingJourneyActive then
+    FView.ShowMessageDialog(
+      'Finish the current journey input or use /journey cancel before switching chats.'
+    );
 end;
 
 procedure TRadIAChatPresenter.LoadConfig;
@@ -708,7 +730,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..15] of string = (
+  CNativeCommands: array[0..16] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -717,6 +739,7 @@ const
     '/agent resume',
     '/agent cancel',
     '/agent history',
+    '/help',
     '/terminal',
     '/settings',
     '/extensions',
@@ -739,6 +762,7 @@ begin
     LCommands.Add('/tool');
     LCommands.Add('/extensions reload');
     LCommands.Add('/journey');
+    LCommands.Add('/journey cancel');
     for LJourney in TRadIAJourneyCatalog.All do
       LCommands.Add(LJourney.Command);
     for LTemplate in FTemplateManager.GetTemplates do
@@ -856,11 +880,20 @@ begin
 
   AddUtilitySlashCommands(Result);
 
+  LSlashObj := TJSONObject.Create;
+  LSlashObj.AddPair('command', '/journey cancel');
+  LSlashObj.AddPair('description', 'Abandons the active journey input collection.');
+  LSlashObj.AddPair('name', 'Cancel Journey');
+  LSlashObj.AddPair('isProjectGenerator', TJSONBool.Create(False));
+  Result.AddElement(LSlashObj);
+
   for LJourney in TRadIAJourneyCatalog.All do
   begin
     LSlashObj := TJSONObject.Create;
     LSlashObj.AddPair('command', LJourney.Command);
     LSlashObj.AddPair('description', LJourney.Description);
+    LSlashObj.AddPair('usage', LJourney.Usage);
+    LSlashObj.AddPair('example', LJourney.Example);
     LSlashObj.AddPair('name', LJourney.Name);
     LSlashObj.AddPair(
       'isProjectGenerator',
@@ -921,6 +954,7 @@ procedure TRadIAChatPresenter.AddUtilitySlashCommands(
     ACommands.AddElement(LSlashObj);
   end;
 begin
+  AddCommand('/help', 'Shows RadIA capabilities and documentation links.', 'RadIA Help');
   AddCommand('/terminal', 'Opens the integrated terminal.', 'Open Terminal');
   AddCommand('/settings', 'Opens RadIA settings.', 'Open Settings');
   AddCommand(
@@ -959,6 +993,30 @@ begin
     'Reloads and diagnoses declarative command extensions.',
     'Reload Extensions'
   );
+end;
+
+function TRadIAChatPresenter.BuildHelpText: string;
+const
+  CDocsRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/';
+begin
+  Result :=
+    '## RadIA help' + sLineBreak + sLineBreak +
+    '- **Chat and code:** ask questions or use `/` for code review, tests, documentation, and generators.' +
+    sLineBreak +
+    '- **Journeys:** use `/journey` for guided, end-to-end work. Missing input is collected one answer ' +
+    'at a time; use `/journey cancel` to abandon it.' + sLineBreak +
+    '- **Agent:** use `/agent on`, `/agent run <goal>`, pause, resume, inspect, or cancel observable runs.' +
+    sLineBreak +
+    '- **Project diagnostics:** use `/health`, `/doctor`, and `/status`.' + sLineBreak +
+    '- **CLI, MCP, and providers:** open `/settings` to discover executables, authenticate, and choose ' +
+    'native, CLI, or MCP execution.' + sLineBreak +
+    '- **Tools and extensions:** use `/tools` and `/extensions`.' + sLineBreak + sLineBreak +
+    '### Documentation' + sLineBreak + sLineBreak +
+    '- [Getting started](https://github.com/regyssilveira/RadIA-Plugin#readme)' + sLineBreak +
+    '- [Slash commands](' + CDocsRoot + 'slash_commands.md)' + sLineBreak +
+    '- [Journeys](' + CDocsRoot + 'user_guide_journeys.md)' + sLineBreak +
+    '- [DEXT journeys](' + CDocsRoot + 'user_guide_dext_journeys.md)' + sLineBreak +
+    '- [Settings reference](' + CDocsRoot + 'settings_reference.md)';
 end;
 
 function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;
@@ -1080,6 +1138,7 @@ begin
 
   FHistory := [];
   FAccumulatedUsage := TTokenUsage.Empty;
+  ResetPendingJourney;
   PostToWebView('clear_chat', '', '');
   PostToWebView('update_tokens', '', '');
 
@@ -1387,7 +1446,9 @@ begin
   Self.PostToWebView('append_message', 'assistant', '', True, AActiveProvider, AActiveModel);
 end;
 
-procedure TRadIAChatPresenter.HandleStreamDone(const APromptText, AActiveProvider, AActiveModel, AFullResponse: string);
+procedure TRadIAChatPresenter.HandleStreamDone(
+  const APromptText, AActiveProvider, AActiveModel, AFullResponse: string
+);
 var
   LAssistantMsg: IRadIAChatMessage;
   LUsage: TTokenUsage;
@@ -2284,6 +2345,12 @@ function TRadIAChatPresenter.TryHandleCatalogCommand(
 ): Boolean;
 begin
   Result := True;
+  if SameText(ACommandText, '/help') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView('add_message', 'assistant', BuildHelpText);
+    Exit;
+  end;
   if SameText(ACommandText, '/terminal') then
   begin
     PostToWebView('add_message', 'user', APromptText);
@@ -2457,6 +2524,8 @@ var
   LText: string;
 begin
   LText := Trim(APromptText);
+  if TryHandlePendingJourneyInput(APromptText) then
+    Exit(True);
   if TryHandleJourneyCommand(APromptText, LText) then
     Exit(True);
   if TryHandleAgentCommand(APromptText, LText) then
@@ -2467,6 +2536,140 @@ begin
     LText.StartsWith('/tool ', True);
   if Result then
     HandleExplicitToolCommand(APromptText, LText);
+end;
+
+procedure TRadIAChatPresenter.ResetPendingJourney;
+begin
+  FPendingJourneyActive := False;
+  FPendingJourneyContext := '';
+  FPendingJourneyDeclarativePrompt := '';
+  FPendingJourneyField := '';
+  FPendingJourneyNative := False;
+end;
+
+procedure TRadIAChatPresenter.AskForPendingJourneyInput(
+  const AQuestion: string
+);
+begin
+  PostToWebView(
+    'add_message',
+    'assistant',
+    AQuestion + sLineBreak + sLineBreak +
+    'Reply with the requested value, or type /journey cancel to abandon this journey.'
+  );
+end;
+
+procedure TRadIAChatPresenter.StartPendingJourney;
+var
+  LObjective: string;
+begin
+  if FPendingJourneyNative then
+    LObjective := FPendingJourneyDefinition.BuildAgentObjective(
+      FPendingJourneyContext
+    )
+  else
+    LObjective := FPendingJourneyDeclarativePrompt + sLineBreak + sLineBreak +
+      'User-provided context: ' + FPendingJourneyContext;
+  ResetPendingJourney;
+  if not FAgentModeEnabled then
+    SetAgentModeEnabled(True);
+  StartAgentRun(LObjective);
+end;
+
+function TRadIAChatPresenter.TryHandlePendingJourneyInput(
+  const APromptText: string
+): Boolean;
+var
+  LAnswer: string;
+  LField: string;
+  LQuestion: string;
+begin
+  Result := FPendingJourneyActive;
+  if not Result then
+    Exit;
+  LAnswer := Trim(APromptText);
+  if SameText(LAnswer, '/journey cancel') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    ResetPendingJourney;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Journey abandoned. Collected input was discarded.'
+    );
+    Exit;
+  end;
+  if LAnswer.StartsWith('/journey ', True) then
+  begin
+    ResetPendingJourney;
+    Exit(False);
+  end;
+  PostToWebView('add_message', 'user', APromptText);
+  if FPendingJourneyField = 'goal' then
+    FPendingJourneyContext := LAnswer
+  else
+  begin
+    if not FPendingJourneyContext.IsEmpty then
+      FPendingJourneyContext := FPendingJourneyContext + ' ';
+    FPendingJourneyContext := FPendingJourneyContext +
+      FPendingJourneyField + '="' + LAnswer.Replace('"', '''') + '"';
+  end;
+  if FPendingJourneyNative and
+    FPendingJourneyDefinition.NextRequiredInput(
+      FPendingJourneyContext,
+      LField,
+      LQuestion
+    ) then
+  begin
+    FPendingJourneyField := LField;
+    AskForPendingJourneyInput(LQuestion);
+    Exit;
+  end;
+  StartPendingJourney;
+end;
+
+function TRadIAChatPresenter.TryBeginJourneyIntake(
+  const AIsNative: Boolean;
+  const ADefinition: TRadIAJourneyDefinition;
+  const ADeclarative: TRadIADeclarativeCommand;
+  const AContext: string
+): Boolean;
+var
+  LField: string;
+  LQuestion: string;
+begin
+  Result := AIsNative and ADefinition.NextRequiredInput(
+    AContext,
+    LField,
+    LQuestion
+  );
+  if Result then
+  begin
+    FPendingJourneyActive := True;
+    FPendingJourneyContext := AContext;
+    FPendingJourneyDefinition := ADefinition;
+    FPendingJourneyField := LField;
+    FPendingJourneyNative := True;
+    AskForPendingJourneyInput(LQuestion);
+    Exit;
+  end;
+  Result := not AIsNative and AContext.Trim.IsEmpty;
+  if not Result then
+    Exit;
+  FPendingJourneyActive := True;
+  FPendingJourneyContext := '';
+  FPendingJourneyDeclarativePrompt := ADeclarative.Prompt + sLineBreak +
+    sLineBreak + 'Mandatory RadIA safety gates:' + sLineBreak +
+    '- Inspect the active workspace before proposing changes.' + sLineBreak +
+    '- Present a reviewable plan before the first tool call.' + sLineBreak +
+    '- Use only registered tools through central consent and auditing.' + sLineBreak +
+    '- Preview mutations and preserve independent rollback evidence.' + sLineBreak +
+    '- Build and run focused tests before claiming completion.';
+  FPendingJourneyField := 'goal';
+  FPendingJourneyNative := False;
+  AskForPendingJourneyInput(
+    'Describe the goal, scope, constraints, and expected result for this journey.'
+  );
 end;
 
 function TRadIAChatPresenter.TryHandleJourneyCommand(
@@ -2481,6 +2684,12 @@ var
   LObjective: string;
 begin
   Result := True;
+  if SameText(ACommandText, '/journey cancel') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView('add_message', 'assistant', 'There is no journey input in progress.');
+    Exit;
+  end;
   if SameText(ACommandText, '/journey') then
   begin
     PostToWebView('add_message', 'user', APromptText);
@@ -2516,6 +2725,13 @@ begin
     end;
   end;
   PostToWebView('add_message', 'user', APromptText);
+  if TryBeginJourneyIntake(
+    LIsNativeJourney,
+    LDefinition,
+    LDeclarative,
+    LContext
+  ) then
+    Exit;
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
   if LIsNativeJourney then

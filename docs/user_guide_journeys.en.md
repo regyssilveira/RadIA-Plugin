@@ -6,12 +6,17 @@ tests, debugger evidence, and Git visible in chat.
 
 Type `/journey` to list the available recipes.
 
+You may provide everything in the command or start with only the journey name. When information is
+missing, RadIA keeps the journey active, asks for one item at a time, and adds every answer to the
+same context. The agent starts only after intake is complete. Use `/journey cancel` to abandon the
+intake and discard collected values; chat switching is blocked while intake is active.
+
 Every recipe accepts optional context after the command, for example:
 
 ```text
 /journey create VCL inventory application with FireDAC and SQLite
-/journey dext-minimal telemetry server with GET /health and POST /readings
-/journey dext-controllers booking API with GET /bookings/{id}
+/journey dext-minimal
+/journey dext-controllers project=BookingApi destination=D:\Projects platform=Win64 port=8080 health=/health endpoints="GET /bookings/{id} group=Bookings status=200 purpose=GetBooking"
 /journey fix-build preserve the public API of CustomerService
 /journey debug Access Violation while closing the orders form
 /journey modernize reduce coupling without changing public interfaces

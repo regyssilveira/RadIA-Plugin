@@ -19,6 +19,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **2.1 Goal — Autonomous Runtime Failure Reproduction** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.1.0 |
 | **2.2 Goal — Dynamic Memory Diagnostics with FastMM5** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.0 |
 | **Diagnostics, CLI/MCP UX, and Centralized Documentation** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.2.1 |
+| **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
 | **Goal — CLI Continuity and Advanced Integration** | ⏸️ Frozen | 🔴 High | ⭐⭐⭐⭐⭐ Critical | After v2.1.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |

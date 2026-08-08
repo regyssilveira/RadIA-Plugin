@@ -71,6 +71,7 @@ begin
   tvCategories.Items.Add(nil, 'Knowledge & Embeddings');
   tvCategories.Items.Add(nil, 'Editor Assistance');
   LNodeCli := tvCategories.Items.Add(nil, 'CLI & MCP');
+  tvCategories.Items.AddChild(LNodeCli, 'Chat Orchestration');
   LNodeExternalCli := tvCategories.Items.AddChild(LNodeCli, 'External CLI clients');
   tvCategories.Items.AddChild(LNodeExternalCli, 'Codex CLI');
   tvCategories.Items.AddChild(LNodeExternalCli, 'Claude Code');

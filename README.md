@@ -23,6 +23,9 @@ produzir evidências para validar uma correção — sempre com consentimento e 
 
 Se você quer primeiro entender o alcance do produto, veja [tudo que o RadIA pode fazer](docs/capabilities.md).
 
+No chat, digite `/help` para ver um resumo das capacidades, os comandos principais e links para a
+documentação. Os links são abertos no navegador padrão do Windows.
+
 ## Compatibilidade
 
 | IDE | Arquitetura | Estado |
@@ -40,6 +43,7 @@ Delphi 11 não faz parte da matriz atual.
 | Chat | Providers, streaming, sessões, templates, histórico e comandos | [Chat e sessões](docs/user_guide_chat_sessions.md) |
 | Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
+| DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/user_guide_dext_journeys.md) |
 | Build e testes | Compilar, estruturar erros, executar DUnitX e usar resultados como gate | [Jornadas](docs/user_guide_journeys.md) |
 | Designer | Consultar e alterar componentes, propriedades, eventos e layout | [Designer e debugger](docs/user_guide_designer_debugger.md) |
 | Debugger | Iniciar, pausar, continuar, executar passos, breakpoints, watches e call stack | [Designer e debugger](docs/user_guide_designer_debugger.md) |
@@ -66,6 +70,8 @@ declare uma CLI como transporte, como o login ChatGPT via Codex. Veja a
 ## Ferramentas e comandos
 
 - `/tools` mostra as ferramentas disponíveis na instalação e no contexto atuais.
+- `/help` resume o produto e aponta para a documentação aplicável.
+- `/journey` lista jornadas que coletam dados ausentes sem perder o contexto da conversa.
 - [Catálogo das 124 ferramentas](docs/runtime_tool_catalog.md) lista o catálogo interno gerado.
 - [Referência operacional](docs/internal_tools_reference.md) explica o que cada ferramenta faz e
   quando pode ser acionada.

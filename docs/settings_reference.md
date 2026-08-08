@@ -137,9 +137,9 @@ se ele não responder, verifique processo, porta, firewall e URL.
 
 CLI e MCP são independentes. O agente nativo não exige CLI para providers por API key ou locais. MCP
 permite que um cliente externo acesse as ferramentas protegidas do RadIA.
-No menu lateral, **External CLI clients** agrupa cada CLI suportado e abre apenas a configuração
-do cliente escolhido. **MCP Connection** abre somente a conexão MCP. O nó pai distingue o modo
-de orquestração nativo do modo por CLI externo.
+Os nós pais **CLI & MCP** e **External CLI clients** exibem somente orientação. Use **Chat
+Orchestration** para escolher execução nativa ou por CLI externo, um cliente específico para
+configurar sua instalação ou **MCP Connection** para configurar apenas a conexão MCP.
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|

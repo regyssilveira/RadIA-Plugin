@@ -20,6 +20,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Goal 2.1 — Reprodução Autônoma de Falhas Runtime** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.1.0 |
 | **Goal 2.2 — Diagnóstico Dinâmico de Memória com FastMM5** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.0 |
 | **Diagnóstico, UX CLI/MCP e Documentação Centralizada** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.2.1 |
+| **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
 | **Goal — Continuidade CLI e Integração Avançada** | ⏸️ Congelado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Após v2.1.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |

@@ -90,14 +90,18 @@ test('configuration separates focused pages and exposes CLI child navigation', (
 
   assert.match(configFrame, /FTsKnowledge\.Caption := 'Knowledge & Embeddings'/u);
   assert.match(configFrame, /FTsEditorAssistance\.Caption := 'Editor Assistance'/u);
+  assert.match(configFrame, /FTsCategoryOverview\.Caption := 'Category Overview'/u);
   assert.match(configFrame, /Enable ghost text \(inline completion/u);
   assert.match(configFrame, /FPnlCliMcp\.VertScrollBar\.Tracking := True/u);
   assert.match(configForm, /AddChild\(LNodeCli, 'External CLI clients'\)/u);
+  assert.match(configForm, /AddChild\(LNodeCli, 'Chat Orchestration'\)/u);
   assert.match(configForm, /AddChild\(LNodeExternalCli, 'Codex CLI'\)/u);
   assert.match(configForm, /AddChild\(LNodeCli, 'MCP Connection'\)/u);
   assert.match(configFrame, /Items\.IndexOf\(ACategoryName\)/u);
   assert.match(configFrame, /External CLI: %s installation and authentication/u);
   assert.match(configFrame, /MCP client connection \(independent from chat orchestration\)/u);
+  assert.match(configFrame, /SameText\(ACategoryName, 'AI Providers'\)/u);
+  assert.match(configFrame, /SameText\(ACategoryName, 'CLI & MCP'\)/u);
 });
 
 test('CLI and MCP setup exposes guided and recoverable actions', () => {

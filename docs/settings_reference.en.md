@@ -78,9 +78,9 @@ See the [security model](tool_security_model.md) for risk classes and consent sc
 
 CLI and MCP are independent. Native orchestration needs no CLI for API-key or local providers. MCP
 allows an external client to use RadIA's protected tool registry.
-The sidebar groups supported clients under **External CLI clients** and opens only the selected
-client configuration. **MCP Connection** opens only MCP connectivity. The parent page distinguishes
-native orchestration from external CLI orchestration.
+The **CLI & MCP** and **External CLI clients** parent nodes show guidance only. Use **Chat
+Orchestration** to choose native or external CLI execution, a specific client to configure its
+installation, or **MCP Connection** to configure MCP connectivity only.
 
 | Option | When to use | Effect and care |
 |---|---|---|

@@ -22,6 +22,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/agent resume` | Resumes the latest checkpoint for the session. | Paused agent run. |
 | `/agent cancel` | Cancels the current decision and agent run. | Active agent run. |
 | `/agent history [query]` | Searches runs by objective, status, or ID. | Local checkpoints. |
+| `/help` | Summarizes RadIA capabilities and links to its documentation. | Public catalogs and guides. |
 | `/terminal` | Opens the integrated dockable terminal; equivalent to the chat `>_` button. | Current IDE project and desktop. |
 | `/settings` | Opens RadIA settings; equivalent to the chat gear button. | Local user configuration. |
 | `/extensions` | Opens the visual extension manager. | Local extensions and publishers. |
@@ -29,6 +30,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP, terminal, chat, and first tool. |
 | `/status [filter\|--json]` | Shows a sanitized inventory of RadIA state. | Provider, agent, CLI, MCP, security, editor, project, tools, and logs. |
 | `/journey` | Lists end-to-end Delphi recipes. | Native journey catalog. |
+| `/journey cancel` | Abandons the active journey intake. | Context not yet executed. |
 | `/journey create` | Creates, opens, builds, and explains a new project. | Agent Runtime and project tools. |
 | `/journey dext-minimal` | Creates and validates a DEXT server with direct routes. | DEXT templates, build, and runtime. |
 | `/journey dext-controllers` | Creates and validates a DEXT server with controllers. | DEXT templates, build, Swagger, and runtime. |

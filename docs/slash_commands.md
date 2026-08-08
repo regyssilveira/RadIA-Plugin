@@ -22,6 +22,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/agent resume` | Retoma o último checkpoint da sessão. | Execução agentiva pausada. |
 | `/agent cancel` | Cancela a decisão e a execução agentiva atuais. | Execução agentiva ativa. |
 | `/agent history [filtro]` | Pesquisa execuções por objetivo, estado ou ID. | Checkpoints locais. |
+| `/help` | Resume as capacidades do RadIA e oferece links para a documentação. | Catálogos e guias públicos. |
 | `/terminal` | Abre o terminal integrado acoplável; equivale ao botão `>_` do chat. | Projeto e desktop atuais da IDE. |
 | `/settings` | Abre as configurações do RadIA; equivale ao botão de engrenagem do chat. | Configuração local do usuário. |
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
@@ -29,6 +30,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/doctor` | Diagnostica a instalação e recomenda a próxima ação. | Provider, executor, MCP condicional, terminal, chat e primeira tool. |
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
+| `/journey cancel` | Abandona a coleta de dados da jornada ativa. | Contexto ainda não executado. |
 | `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |
 | `/journey dext-minimal` | Cria e valida um servidor DEXT com rotas diretas. | Templates DEXT, build e runtime. |
 | `/journey dext-controllers` | Cria e valida um servidor DEXT com controllers. | Templates DEXT, build, Swagger e runtime. |

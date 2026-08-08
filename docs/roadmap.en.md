@@ -22,6 +22,13 @@ local knowledge, and versioned extensions.
 The active matrix is validated on Delphi 12 Win32 and Delphi 13 Win32/IDE64. See the
 [agentic roadmap](agentic_roadmap.md) and [completion audit](agentic_completion_audit.md).
 
+### v2.2.2 — DEXT journeys and guided experience
+
+- guided CLI/MCP setup and configuration organized by provider, CLI, and MCP responsibility;
+- minimal and controller-based DEXT journeys with conversational requirement intake;
+- integrated `/help`, fillable slash-command examples, and external-browser documentation links;
+- transport-compatible model discovery and a truly optional Agent Runtime token limit.
+
 ### v2.2.1 — Diagnostics and guided experience
 
 - structured `/doctor` with readiness, recommendations, and next action;

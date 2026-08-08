@@ -6,8 +6,11 @@ Este documento contém o checklist completo de recursos, categorização e statu
 
 ## Tabela Completa de Recursos
 
-Nota v2.2.1: diagnóstico `/doctor` acionável, novo `/status` sanitizado e filtrável, experiência
-guiada de CLI/MCP, documentação centralizada e correções de estabilidade do debugger e da UI.
+Nota v2.2.2: `/help`, jornadas DEXT conversacionais, descoberta de modelos compatível com o
+transporte ativo, limite local de tokens opcional e refinamentos da configuração CLI/MCP.
+
+Nota v2.2.1: diagnóstico `/doctor`, `/status` sanitizado, experiência guiada de CLI/MCP,
+documentação centralizada e correções de estabilidade do debugger e da UI.
 
 Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra duplicação de código quando a seleção original do editor é perdida.
 
@@ -30,6 +33,8 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Slash Commands Dinâmicos** | Chat UX | Mapeamento dinâmico de templates para comandos de barra (ex: `/createprojectarch`), sincronizados e autocompletados no WebView2. | ✅ Concluído |
 | **Doctor e Status do RadIA** | Diagnóstico | `/doctor` verifica prontidão e recomenda a próxima ação; `/status` inventaria configuração e disponibilidade sem expor credenciais. | ✅ Concluído (v2.2.1) |
 | **Assistente CLI/MCP** | Integração | Detecta, explica, solicita consentimento, instala ou configura, valida e oferece fallback manual completo sem exigir reinício da IDE. | ✅ Concluído (v2.2.1) |
+| **Ajuda integrada** | Chat UX | `/help` resume capacidades e abre os guias públicos no navegador padrão. | ✅ Concluído (v2.2.2) |
+| **Jornadas DEXT conversacionais** | Projetos | Coleta requisitos ausentes em várias mensagens, preserva o contexto e gera APIs minimalistas ou com controllers. | ✅ Concluído (v2.2.2) |
 | **Skills e Templates Declarativos** | Extensibilidade | Manifesto schema 2 com hot reload, autocomplete e permissão mínima `chat.prompt`. | ✅ Concluído |
 | **Aliases Declarativos de Tools** | Extensibilidade | Schema 3 registra aliases seguros no chat e MCP, herdando risco, schemas e consentimento da tool interna. | ✅ Concluído |
 | **Workflows Declarativos** | Extensibilidade | Schema 5 encadeia até 16 tools internas com risco herdado, limites e policy central por etapa, sem shell arbitrário. | ✅ Concluído |

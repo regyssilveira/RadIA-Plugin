@@ -14,9 +14,14 @@ forma atômica, abrem o projeto e exigem validação de build.
 Exemplos:
 
 ```text
-/journey dext-minimal servidor de telemetria com GET /health e POST /readings
-/journey dext-controllers API de reservas com GET /bookings/{id} e POST /bookings
+/journey dext-minimal
+/journey dext-controllers project=BookingApi destination=D:\Projects platform=Win64 port=8080 health=/health endpoints="GET /bookings/{id} group=Bookings status=200 purpose=GetBooking; POST /bookings group=Bookings status=201 purpose=CreateBooking"
 ```
+
+No primeiro exemplo, o RadIA pergunta sequencialmente nome do projeto, destino, plataforma, porta,
+endpoint de saúde e endpoints. Cada resposta permanece vinculada à jornada. No segundo, todos os
+dados já estão presentes e a jornada pode seguir diretamente para o plano. Digite
+`/journey cancel` a qualquer momento da coleta para abandoná-la.
 
 O RadIA confirma nome, destino, Delphi, plataformas, porta e, para cada endpoint, método HTTP,
 caminho, nome Pascal, grupo, status de resposta e finalidade. O contrato aceita `GET`, `POST`,

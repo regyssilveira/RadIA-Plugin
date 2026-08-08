@@ -1,6 +1,6 @@
 # Documentação do RadIA
 
-Este é o ponto de entrada da documentação do RadIA 2.2.1. Escolha primeiro o que você deseja
+Este é o ponto de entrada da documentação do RadIA 2.2.2. Escolha primeiro o que você deseja
 fazer; cada assunto tem um guia principal para evitar informações duplicadas ou contraditórias.
 
 > A referência mais precisa da instalação atual é o comando `/tools`, pois o catálogo pode variar

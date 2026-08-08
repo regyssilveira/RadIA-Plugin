@@ -1515,6 +1515,21 @@ body.light-theme .session-action-btn:disabled:hover {
   color: var(--fg-primary);
 }
 
+.slash-command-usage {
+  color: var(--fg-secondary);
+  font-family: Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.slash-command-example {
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
 .slash-command-shortcut {
   font-size: 10px;
   font-family: Consolas, monospace;

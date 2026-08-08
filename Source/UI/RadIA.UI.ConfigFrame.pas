@@ -42,6 +42,11 @@ type
     FLblQuotaUsed: TLabel;
     FBtnResetQuota: TButton;
 
+    FTsCategoryOverview: TTabSheet;
+    FPnlCategoryOverview: TPanel;
+    FLblCategoryOverviewTitle: TLabel;
+    FLblCategoryOverviewDescription: TLabel;
+
     FTsSecurity: TTabSheet;
     FPnlSecurity: TScrollBox;
     FTsKnowledge: TTabSheet;
@@ -168,6 +173,7 @@ type
         const ANumbersOnly: Boolean = False): TEdit;
     function CreateLabel(AParent: TWinControl; const ACaption: string; const ALeft, ATop: Integer): TLabel;
     procedure CreateGeneralTab;
+    procedure CreateCategoryOverviewTab;
     procedure CreateSecurityTab;
     procedure CreateKnowledgeTab;
     procedure CreateEditorAssistanceTab;
@@ -180,6 +186,10 @@ type
     );
     function CliMcpTopOffset(const ASection: Integer): Integer;
     procedure RestoreCliMcpControlPositions;
+    procedure ShowCategoryOverview(
+      const ATitle: string;
+      const ADescription: string
+    );
     procedure CreateMemoryDiagnosticsTab;
     procedure ConfigureControlHints;
     procedure ConfigureOperationalHints;
@@ -224,6 +234,7 @@ type
     procedure SaveCliMcpSettings;
     procedure ResetCategoryScroll(const APage: TTabSheet);
     function TrySelectCliMcpCategory(const ACategoryName: string): Boolean;
+    function TryShowCategoryOverview(const ACategoryName: string): Boolean;
     procedure SaveAgentExecutorSettings;
     procedure LoadFastMM5Settings;
     procedure RefreshFastMM5Status;
@@ -598,6 +609,36 @@ begin
   FLblTemplateOrigin.Font.Assign(lblTemplateName.Font);
   FLblTemplateOrigin.Font.Style := [fsItalic];
   FLblTemplateOrigin.Caption := '';
+end;
+
+procedure TRadIAFrameAIConfig.CreateCategoryOverviewTab;
+begin
+  FTsCategoryOverview := TTabSheet.Create(Self);
+  FTsCategoryOverview.PageControl := pgcSettings;
+  FTsCategoryOverview.Caption := 'Category Overview';
+  FTsCategoryOverview.TabVisible := False;
+
+  FPnlCategoryOverview := TPanel.Create(Self);
+  FPnlCategoryOverview.Parent := FTsCategoryOverview;
+  FPnlCategoryOverview.Align := alClient;
+  FPnlCategoryOverview.BevelOuter := bvNone;
+  FPnlCategoryOverview.ShowCaption := False;
+
+  FLblCategoryOverviewTitle := CreateLabel(FPnlCategoryOverview, '', 20, 20);
+  FLblCategoryOverviewTitle.Font.Style := [fsBold];
+  FLblCategoryOverviewTitle.Font.Size := 12;
+
+  FLblCategoryOverviewDescription := CreateLabel(
+    FPnlCategoryOverview,
+    '',
+    20,
+    58
+  );
+  FLblCategoryOverviewDescription.AutoSize := False;
+  FLblCategoryOverviewDescription.WordWrap := True;
+  FLblCategoryOverviewDescription.Width := 570;
+  FLblCategoryOverviewDescription.Height := 140;
+  FLblCategoryOverviewDescription.Anchors := [akLeft, akTop, akRight];
 end;
 
 procedure TRadIAFrameAIConfig.CreateGeneralTab;
@@ -1505,6 +1546,16 @@ begin
   end;
 end;
 
+procedure TRadIAFrameAIConfig.ShowCategoryOverview(
+  const ATitle: string;
+  const ADescription: string
+);
+begin
+  FLblCategoryOverviewTitle.Caption := ATitle;
+  FLblCategoryOverviewDescription.Caption := ADescription;
+  pgcSettings.ActivePage := FTsCategoryOverview;
+end;
+
 constructor TRadIAFrameAIConfig.Create(AOwner: TComponent);
 var
   LThemingServices: IOTAIDEThemingServices;
@@ -1544,6 +1595,7 @@ begin
   CreateProviderAdvancedControls(tsMistral, 'Mistral');
   CreateProviderAdvancedControls(tsBedrock, 'Bedrock');
 
+  CreateCategoryOverviewTab;
   CreateGeneralTab;
   CreateSecurityTab;
   CreateKnowledgeTab;
@@ -1862,7 +1914,8 @@ begin
     pnlOpenRouter, pnlLMStudio,
     pnlGithubCopilot, pnlAzureOpenAI, pnlQwen,
     pnlMistral, pnlBedrock, pnlSystemPrompt,
-    pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral,
+    pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient,
+    FPnlCategoryOverview, FPnlGeneral,
     FPnlMemoryDiagnostics], LColors);
 
   for LEditD in FEdtTemperatures.Values do ApplyThemeToEdits([LEditD], LColors);
@@ -3046,6 +3099,8 @@ var
   LPages: TArray<TTabSheet>;
   I: Integer;
 begin
+  if TryShowCategoryOverview(ACategoryName) then
+    Exit;
   if TrySelectCliMcpCategory(ACategoryName) then
     Exit;
 
@@ -3092,10 +3147,19 @@ var
   LCliIndex: Integer;
 begin
   Result := True;
-  if SameText(ACategoryName, 'External CLI clients') then
+  if SameText(ACategoryName, 'Chat Orchestration') then
   begin
     pgcSettings.ActivePage := FTsCliMcp;
-    ConfigureCliMcpView(0);
+    ConfigureCliMcpView(1);
+    Exit;
+  end;
+  if SameText(ACategoryName, 'External CLI clients') then
+  begin
+    ShowCategoryOverview(
+      'External CLI clients',
+      'Select a specific CLI below to configure its executable, ' +
+      'authentication, diagnostics, and update channel.'
+    );
     Exit;
   end;
   LCliIndex := FCmbCliClient.Items.IndexOf(ACategoryName);
@@ -3111,6 +3175,33 @@ begin
   begin
     pgcSettings.ActivePage := FTsCliMcp;
     ConfigureCliMcpView(3);
+    Exit;
+  end;
+  Result := False;
+end;
+
+function TRadIAFrameAIConfig.TryShowCategoryOverview(
+  const ACategoryName: string
+): Boolean;
+begin
+  Result := True;
+  if SameText(ACategoryName, 'CLI & MCP') then
+  begin
+    ShowCategoryOverview(
+      'CLI & MCP',
+      'Choose Chat Orchestration to select native or external CLI execution. ' +
+      'Choose a client under External CLI clients to configure that CLI. ' +
+      'Choose MCP Connection to connect an independent MCP client.'
+    );
+    Exit;
+  end;
+  if SameText(ACategoryName, 'AI Providers') then
+  begin
+    ShowCategoryOverview(
+      'AI Providers',
+      'Select a provider below to configure its credentials, authentication, ' +
+      'endpoint, models, and provider-specific options.'
+    );
     Exit;
   end;
   Result := False;

@@ -1,10 +1,12 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.2.1.
+This page is the functional map of RadIA 2.2.2.
 
 | Area | What RadIA can do |
 |---|---|
 | Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, sessions, history, exports, templates, token and cost estimates. |
+| Help | `/help`, fillable command examples, and documentation links opened in the default browser. |
+| Journeys | Conversational intake that preserves answers, plus minimal and controller-based DEXT project generation. |
 | Providers | Gemini, OpenAI, Azure OpenAI, Claude, Bedrock, Copilot, DeepSeek, Groq, Qwen, Mistral, OpenRouter, Ollama, LM Studio, OpenAI-compatible and JSON-defined providers. |
 | Editor | Read live buffers and selections, explain, review, refactor, optimize SQL, find bugs, scan warnings, generate tests and XML documentation. |
 | Review | Smart Diff, inline reviews, reviewed fixes, safe apply and controlled revert. |

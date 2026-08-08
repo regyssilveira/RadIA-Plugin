@@ -21,6 +21,9 @@ evidence that validates a fix, with consent and workspace boundaries.
 3. Use the [documentation hub](docs/README.en.md) to find guides by task.
 4. Review the [capability map](docs/capabilities.en.md) for the current product scope.
 
+Type `/help` in chat for a capability summary, primary commands, and documentation links. Links open
+in the Windows default browser.
+
 ## Compatibility
 
 | IDE | Architecture | Status |
@@ -38,6 +41,7 @@ Delphi 11 is outside the current support matrix.
 | Chat | Providers, streaming, sessions, templates, history, and commands | [Chat and sessions](docs/user_guide_chat_sessions.en.md) |
 | Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/user_guide_editor_generation.en.md) |
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/project_wizard.en.md) |
+| DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/user_guide_dext_journeys.en.md) |
 | Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/user_guide_journeys.en.md) |
 | Designer and debugger | Components, events, execution, breakpoints, watches, and call stack | [Designer and debugger](docs/user_guide_designer_debugger.en.md) |
 | Runtime diagnostics | Reproduce a visual failure, fix it, and replay the scenario | [Runtime diagnostics](docs/runtime_debug_automation.en.md) |
@@ -63,6 +67,8 @@ its transport, such as ChatGPT login through Codex, is the exception. See the
 ## Tools and commands
 
 - `/tools` shows tools available in the current installation and context.
+- `/help` summarizes the product and links to the applicable documentation.
+- `/journey` lists journeys that collect missing input without losing conversational context.
 - The [123-tool runtime catalog](docs/runtime_tool_catalog.md) lists built-in registrations.
 - The [operational reference](docs/internal_tools_reference.md) explains purpose and activation.
 - The [slash command guide](docs/slash_commands.en.md) documents commands and examples.

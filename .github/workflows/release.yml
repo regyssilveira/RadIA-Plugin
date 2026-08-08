@@ -9,7 +9,7 @@ on:
       release_tag:
         description: Existing version tag to package
         required: true
-        default: v2.2.1
+        default: v2.2.2
       publish:
         description: Publish or update the GitHub release
         required: true

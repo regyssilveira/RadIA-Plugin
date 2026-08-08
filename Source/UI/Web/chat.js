@@ -2366,6 +2366,8 @@ function renderSlashCommands() {
       <div class="slash-command-info">
         <span class="slash-command-name">${cmd.name}</span>
         <span class="slash-command-desc">${cmd.desc}</span>
+        ${cmd.usage ? `<span class="slash-command-usage">${cmd.usage}</span>` : ''}
+        ${cmd.example ? `<span class="slash-command-example">Example: ${cmd.example}</span>` : ''}
       </div>
       ${cmd.shortcut ? `<span class="slash-command-shortcut">${cmd.shortcut}</span>` : ''}
     `;
@@ -2373,15 +2375,15 @@ function renderSlashCommands() {
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      insertSlashCommand(cmd.name);
+      insertSlashCommand(cmd.usage || cmd.name);
     });
 
     popup.appendChild(item);
   });
 }
 
-function insertSlashCommand(name) {
-  setPromptText(name + ' ');
+function insertSlashCommand(commandText) {
+  setPromptText(commandText + ' ');
   hideSlashPopup();
 }
 
@@ -2947,6 +2949,8 @@ function initializeConfig(data) {
       SLASH_COMMANDS.push({
         name: cmd.command,
         desc: cmd.description || cmd.name,
+        usage: cmd.usage || '',
+        example: cmd.example || '',
         shortcut: ''
       });
     });

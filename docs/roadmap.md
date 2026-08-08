@@ -26,6 +26,13 @@ Designer, debugger, revisão inline, conhecimento local e extensões versionadas
 A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Consulte o
 [roadmap agentivo](agentic_roadmap.md) e a [auditoria de conclusão](agentic_completion_audit.md).
 
+### v2.2.2 — Jornadas DEXT e experiência orientada
+
+- jornadas DEXT minimalistas e com controllers, com coleta conversacional de requisitos;
+- `/help` integrado, exemplos preenchíveis no menu `/` e links abertos no navegador padrão;
+- configuração reorganizada por provider, CLI e MCP, com páginas-pai apenas descritivas;
+- descoberta de modelos compatíveis por transporte e limite de tokens realmente opcional.
+
 ### v2.2.1 — Diagnóstico e experiência guiada
 
 - `/doctor` estruturado com prontidão, recomendações e próxima ação;

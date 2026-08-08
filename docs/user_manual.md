@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.2.1
+# Manual completo do RadIA 2.2.2
 
 ## 1. O que é o RadIA
 
@@ -20,6 +20,10 @@ Para navegar por documentação de uso, arquitetura, qualidade e release, consul
 [Centro de Documentação](README.md).
 
 ## 2. Primeiros passos
+
+Digite `/help` no chat para consultar capacidades, comandos principais e links para os guias. Os
+links são abertos no navegador padrão. Jornadas iniciadas sem todos os dados entram em coleta
+conversacional e mantêm cada resposta até a execução ou até `/journey cancel`.
 
 ### 2.1 Abrir o painel
 
