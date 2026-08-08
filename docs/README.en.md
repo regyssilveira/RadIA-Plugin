@@ -66,6 +66,10 @@ Roadmaps, backlogs, goals, milestone reports, release audits, and `*_evidence_*.
 project history. They are not current user instructions. If historical content differs from a
 primary guide, the current code, `/tools`, and the primary guides above take precedence.
 
+Research records:
+
+- [Free Claude Code ideas applicable to RadIA (pt-BR)](research/free-claude-code-radia-analysis.md).
+
 ## Current compatibility
 
 | IDE | Architecture | Support |

@@ -89,6 +89,7 @@ descrevem necessariamente o comportamento atual:
 - [goal da jornada 2.0](radia_2_goal.md) e [goal de experiência 2.0](experience_leadership_goal.md);
 - [planos e marcos do diagnóstico runtime](runtime_debug_automation_plan.md);
 - [planos e marcos do diagnóstico de memória](fastmm5_memory_diagnostics_plan.md);
+- [auditoria de ideias do Free Claude Code aplicáveis ao RadIA](research/free-claude-code-radia-analysis.md);
 - arquivos `*_evidence_*.json`, que são evidências imutáveis de releases anteriores.
 
 Se uma informação histórica divergir de um guia principal, prevalecem o código da versão atual,
