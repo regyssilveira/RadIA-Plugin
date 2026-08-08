@@ -38,7 +38,7 @@ Os atalhos aparecem no submenu **Rad IA** do menu contextual do editor. O primei
 sessão informa qual contexto será enviado e exige consentimento explícito.
 
 Os atalhos são bindings parciais nativos da Open Tools API e funcionam diretamente no editor, sem
-abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Security & Consent** e edite
+abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Editor Assistance** e edite
 **Inline shortcuts** usando o formato:
 
 ```text
@@ -73,8 +73,8 @@ OTA.
 
 ## Assistência contínua e escopo
 
-A assistência contínua nasce desligada. Para ativá-la, abra **Rad IA > Settings > Security &
-Consent** e marque **Enable continuous inline completion**. O próprio texto da opção informa que
+A assistência contínua nasce desligada. Para ativá-la, abra **Rad IA > Settings > Editor
+Assistance** e marque **Enable ghost text (inline completion)**. O próprio texto da opção informa que
 um contexto limitado do buffer ativo será enviado ao provider selecionado.
 
 Na mesma seção é possível configurar:

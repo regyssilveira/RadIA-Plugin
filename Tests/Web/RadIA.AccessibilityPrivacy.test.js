@@ -12,10 +12,20 @@ const configFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigFrame.pas'),
   'utf8'
 );
+const chatFrame = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ChatFrame.pas'),
+  'utf8'
+);
 
 test('web surfaces do not contact external origins during startup', () => {
   assert.doesNotMatch(chatHtml, /(?:src|href)="https?:\/\//i);
   assert.doesNotMatch(diffHtml, /(?:src|href)="https?:\/\//i);
+});
+
+test('external chat links open in the Windows default browser', () => {
+  assert.match(chatFrame, /OnNavigationStarting := EdgeBrowserNavigationStarting/u);
+  assert.match(chatFrame, /Args\.ArgsInterface\.Set_Cancel\(1\)/u);
+  assert.match(chatFrame, /ShellExecute\(0, 'open', PChar\(LUrl\)/u);
 });
 
 test('chat exposes its primary controls and live regions to assistive technology', () => {
@@ -51,6 +61,11 @@ test('model selector remains governed by the active chat executor', () => {
   assert.match(chatJs, /modelSelectionEnabled && !requestInProgress/);
 });
 
+test('disabled agent token budget is presented as unlimited', () => {
+  assert.match(chatJs, /state\.maxTotalTokens > 0/u);
+  assert.match(chatJs, /tokens \(unlimited\)/u);
+});
+
 test('runtime tool catalog explains discovery, risk, activation, and arguments', () => {
   assert.match(chatJs, /Search tools by name, purpose, or risk/);
   assert.match(chatJs, /How and when to use/);
@@ -67,10 +82,28 @@ test('configuration controls enable centralized contextual hints', () => {
   assert.match(configFrame, /ConfigureControlHints;/);
 });
 
+test('configuration separates focused pages and exposes CLI child navigation', () => {
+  const configForm = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigForm.pas'),
+    'utf8'
+  );
+
+  assert.match(configFrame, /FTsKnowledge\.Caption := 'Knowledge & Embeddings'/u);
+  assert.match(configFrame, /FTsEditorAssistance\.Caption := 'Editor Assistance'/u);
+  assert.match(configFrame, /Enable ghost text \(inline completion/u);
+  assert.match(configFrame, /FPnlCliMcp\.VertScrollBar\.Tracking := True/u);
+  assert.match(configForm, /AddChild\(LNodeCli, 'External CLI clients'\)/u);
+  assert.match(configForm, /AddChild\(LNodeExternalCli, 'Codex CLI'\)/u);
+  assert.match(configForm, /AddChild\(LNodeCli, 'MCP Connection'\)/u);
+  assert.match(configFrame, /Items\.IndexOf\(ACategoryName\)/u);
+  assert.match(configFrame, /External CLI: %s installation and authentication/u);
+  assert.match(configFrame, /MCP client connection \(independent from chat orchestration\)/u);
+});
+
 test('CLI and MCP setup exposes guided and recoverable actions', () => {
   assert.match(configFrame, /FBtnCliManual\.Caption := 'Manual steps'/u);
   assert.match(configFrame, /FBtnCliLogin\.Caption := 'Start login'/u);
-  assert.match(configFrame, /MCP connection \(independent from the chat executor\)/u);
+  assert.match(configFrame, /MCP client connection \(independent from chat orchestration\)/u);
   assert.match(configFrame, /BuildPrerequisitePlan/u);
   assert.match(configFrame, /TRadIACliSetupHistory\.Append/u);
   assert.match(configFrame, /RefreshCliMcpDiagnostics/u);

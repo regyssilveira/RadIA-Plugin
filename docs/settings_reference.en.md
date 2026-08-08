@@ -36,7 +36,7 @@ advanced settings above. Provider account, region, plan, and permissions determi
 | Enable logging | While diagnosing a problem | Writes sanitized local diagnostics. |
 | Log Folder Path / `...` | To select log storage | Choose a writable folder not shared with untrusted users. |
 | Max Log File Size | To control disk use | Limits logs, not model responses. |
-| Enable local token quota | To track a local monthly budget | Does not replace provider limits or billing. |
+| Enable local token quota | To track a local monthly budget | When disabled, the agent has no local per-run token budget. Provider limits still apply. |
 | Monthly Token Limit / Used Tokens | To configure and inspect local tracking | Usage is an estimate and may differ from provider accounting. |
 | Reset Usage | To restart local tracking | Resets only the local counter. |
 
@@ -50,6 +50,11 @@ advanced settings above. Provider account, region, plan, and permissions determi
 | Session permission for structural writes | Only for a trusted structural task | Disabled by default because it covers project structure. |
 | Session permission for build/tests/execution | For repeated validation | Never bypasses auditing, limits, or workspace boundaries. |
 | Revoke session permissions | After a task or when scope is uncertain | Immediately clears remembered permissions for the current IDE session. |
+
+## Knowledge & Embeddings
+
+| Option | When to use | Effect and care |
+|---|---|---|
 | Enable local semantic project knowledge | For semantic project search | Builds a reconstructable local index without network access. |
 | Include approved run summaries | To recover approved decisions | Includes summaries only, never tool arguments or results. |
 | Excluded file/project fragments | To omit sensitive, generated, or third-party areas | Semicolon-separated name or path fragments. |
@@ -57,7 +62,12 @@ advanced settings above. Provider account, region, plan, and permissions determi
 | Consent to sending bounded project text | After reviewing endpoint and policy | Authorizes bounded transmission and can be revoked by clearing it. |
 | Embedding endpoint / model / API key | To configure remote embeddings | HTTPS or loopback HTTP only; the key is DPAPI-protected. |
 | Dimensions / timeout / maximum input | For compatibility and bounds | Dimension must match the model; timeout bounds waiting; input bounds sent text. |
-| Enable continuous inline completion | For suggestions while editing | Sends bounded editor context and honors exclusions. |
+
+## Editor Assistance
+
+| Option | When to use | Effect and care |
+|---|---|---|
+| Enable ghost text (inline completion) | For suggestions while editing | Sends bounded editor context and honors exclusions. |
 | Idle delay | To balance speed and request volume | Accepts 250–5000 ms; lower requests earlier. |
 | Excluded languages/files/projects | To suppress inline requests | Semicolon-separated language, name, or path fragments. |
 | RadIA shortcuts | To customize keyboard access | Use semicolon-separated `action=shortcut` entries for `request`, `accept`, `nextWord`, `alternative`, `reject`, and `terminal`; conflicts are validated. |
@@ -68,6 +78,9 @@ See the [security model](tool_security_model.md) for risk classes and consent sc
 
 CLI and MCP are independent. Native orchestration needs no CLI for API-key or local providers. MCP
 allows an external client to use RadIA's protected tool registry.
+The sidebar groups supported clients under **External CLI clients** and opens only the selected
+client configuration. **MCP Connection** opens only MCP connectivity. The parent page distinguishes
+native orchestration from external CLI orchestration.
 
 | Option | When to use | Effect and care |
 |---|---|---|

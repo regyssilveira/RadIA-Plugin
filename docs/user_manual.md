@@ -56,7 +56,15 @@ O Rad IA consulta primeiro a lista de modelos oferecida pela conta e pelo endpoi
 Somente quando essa descoberta falha, mostra um catálogo mínimo de fallback, atualizado com as
 famílias estáveis atuais do provider. A lista descoberta sempre prevalece, pois disponibilidade,
 região, plano e permissões podem variar. Os modelos do transporte ChatGPT OAuth/Codex são tratados
-separadamente dos modelos da API OpenAI.
+separadamente dos modelos da API OpenAI e são consultados pelo `model/list` do Codex App Server.
+Se o Codex CLI não responder, o Rad IA mantém os modelos atuais de fallback no seletor.
+
+Links externos exibidos nas respostas são abertos no navegador padrão do Windows. O painel do chat
+permanece na página local do Rad IA e não é usado como navegador para esses destinos.
+
+Quando **Enable local token quota** está desligado, execuções do agente mostram `tokens (unlimited)`
+e não são interrompidas por um orçamento local de tokens. Limites da conta ou do provider continuam
+independentes.
 
 ### 2.4 Mapa das configurações
 
@@ -66,7 +74,9 @@ separadamente dos modelos da API OpenAI.
 | System | Prompt de sistema aplicado às conversas | Quando precisar de instruções permanentes |
 | Templates | Prompts reutilizáveis e comandos de barra personalizados | Ao padronizar tarefas recorrentes |
 | General / Logs | Idioma, contexto, logs e limite local de tokens | Ao ajustar comportamento geral ou diagnóstico |
-| Security & Consent | Aprovação por risco, timeout, sessão, atalhos e envio de contexto | Antes de permitir execução, mutações ou conteúdo remoto |
+| Security & Consent | Aprovação por risco, timeout e permissões da sessão | Antes de permitir execução ou mutações |
+| Knowledge & Embeddings | Conhecimento local, exclusões e embeddings remotos | Ao configurar recuperação de contexto do projeto |
+| Editor Assistance | Ghost text, atraso, exclusões e atalhos | Ao configurar sugestões no editor |
 | CLI & MCP | Executor nativo/externo, executável portátil e conexão MCP | Somente ao usar CLI externa ou cliente MCP |
 | Memory Diagnostics | Caminho e limites do FastMM5 | Ao investigar leaks, double free ou use-after-free |
 
@@ -208,6 +218,9 @@ Em **Settings > Security & Consent**, é possível configurar:
 - permissão de sessão para escrita reversível;
 - permissão de sessão, desabilitada por padrão, para escrita estrutural;
 - permissão de sessão, desabilitada por padrão, para build, testes e execução.
+
+Em **Settings > Knowledge & Embeddings**, é possível configurar:
+
 - conhecimento semântico local, desabilitado por padrão, sem envio de código pela rede.
 - memória local de resumos agentivos aprovados, desabilitada por padrão e isolada por projeto.
 - exclusões de conhecimento por fragmentos de caminho de arquivo e projeto.

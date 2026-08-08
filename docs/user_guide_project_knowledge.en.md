@@ -31,7 +31,7 @@ Typical chat or MCP requests include:
 
 Search results include file, position, excerpt, total score, lexical contribution, vector
 contribution, and a ranking explanation. If the embedding provider fails or is disabled under
-**Settings > Security & Consent**, retrieval automatically uses the deterministic lexical fallback. Search
+**Settings > Knowledge & Embeddings**, retrieval automatically uses the deterministic lexical fallback. Search
 and document reads enforce result and payload limits.
 
 Search results and document chunks show an **Open source** action in chat. It uses `NavigateToFile`
@@ -51,7 +51,7 @@ Format 2 persists vectors with chunks and remains compatible with lexical format
 are not authoritative source files and may be removed to force a rebuild.
 
 **Enable local semantic project knowledge (no network)** is disabled by default. When users enable
-it under **Settings > Security & Consent**, the `local-hash-v1` provider calculates vectors entirely
+it under **Settings > Knowledge & Embeddings**, the `local-hash-v1` provider calculates vectors entirely
 inside the IDE process without HTTP, tokens, or code transmission. The preference takes effect
 immediately without restarting the IDE. Disabling it stops vector calculation for new indexing and
 search operations while deterministic lexical retrieval remains available.
@@ -64,7 +64,7 @@ to be indexed again.
 
 ### Optional remote embeddings
 
-Under **Settings > Security & Consent**, users can configure an OpenAI-compatible embedding
+Under **Settings > Knowledge & Embeddings**, users can configure an OpenAI-compatible embedding
 endpoint. Activation requires all of the following:
 
 - **Use a remote OpenAI-compatible embedding provider**;

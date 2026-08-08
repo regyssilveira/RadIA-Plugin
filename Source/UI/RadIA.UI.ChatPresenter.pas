@@ -9,6 +9,7 @@ uses
   RadIA.Core.DeclarativeTools,
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
+  RadIA.Core.AgentProvider,
   RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
   RadIA.Core.Tools, RadIA.Core.ToolSecurity, RadIA.Core.Workspace;
 
@@ -164,6 +165,14 @@ type
     );
     procedure SetAgentModeEnabled(const AEnabled: Boolean);
     procedure PostAgentModeToWeb;
+    function GetAgentTokenLimit: Integer;
+    procedure ResolveAgentRuntimeSettings(
+      const AProvider: string;
+      const AModel: string;
+      const ATokenLimit: Integer;
+      out AProviderSettings: TRadIAAgentProviderSettings;
+      out ALimits: TRadIAAgentLimits
+    );
     procedure StartAgentRun(const AObjective: string);
     function TryStartCliAgentRun(const AObjective: string): Boolean;
     procedure HandleCliAgentFinished(
@@ -326,7 +335,7 @@ uses
   RadIA.Core.ProviderRegistry, RadIA.Core.ConversationExporter,
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
-  RadIA.Core.AgentPricing, RadIA.Core.AgentProvider,
+  RadIA.Core.AgentPricing,
   RadIA.Core.CliManager,
   RadIA.Core.Journeys,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
@@ -2942,9 +2951,8 @@ var
   LCheckpointDirectory: string;
   LDecisionProvider: IRadIAAgentDecisionProvider;
   LGuard: IRadIALifecycleGuard;
+  LAgentTokenLimit: Integer;
   LLimits: TRadIAAgentLimits;
-  LPricing: TRadIAAgentPricing;
-  LPricingCatalog: TRadIAAgentPricingCatalog;
   LProviderSettings: TRadIAAgentProviderSettings;
   LProject: TRadIAProjectSnapshot;
   LProjectId: string;
@@ -2983,38 +2991,14 @@ begin
     LProject := FWorkspace.GetActiveProject;
     LProjectId := LProject.FileName;
   end;
-  LPricingCatalog := TRadIAAgentPricingCatalog.Create(
-    TPath.Combine(FDataDir, 'agent-pricing.json')
+  LAgentTokenLimit := GetAgentTokenLimit;
+  ResolveAgentRuntimeSettings(
+    LActiveProvider,
+    LActiveModel,
+    LAgentTokenLimit,
+    LProviderSettings,
+    LLimits
   );
-  try
-    if LPricingCatalog.TryResolve(
-      LActiveProvider,
-      LActiveModel,
-      LPricing
-    ) then
-    begin
-      LProviderSettings := TRadIAAgentProviderSettings.WithPricing(
-        BuildAgentToolCatalogJson,
-        LPricing
-      );
-      LLimits := TRadIAAgentLimits.Create(
-        20,
-        3,
-        15 * 60 * 1000,
-        100000,
-        LPricingCatalog.DefaultRunBudgetMicros
-      );
-    end
-    else
-    begin
-      LProviderSettings := TRadIAAgentProviderSettings.Default(
-        BuildAgentToolCatalogJson
-      );
-      LLimits := TRadIAAgentLimits.Default;
-    end;
-  finally
-    LPricingCatalog.Free;
-  end;
   LDecisionProvider := TRadIAAgentServiceDecisionProvider.Create(
     FAIService,
     FHistory,
@@ -3056,6 +3040,64 @@ begin
     LProjectId,
     LLimits
   );
+end;
+
+function TRadIAChatPresenter.GetAgentTokenLimit: Integer;
+var
+  LRemainingQuota: Int64;
+begin
+  Result := 0;
+  if not FConfig.QuotaEnabled then
+    Exit;
+  LRemainingQuota := FConfig.QuotaLimit - FConfig.QuotaUsed;
+  if LRemainingQuota > 1000000 then
+    Result := 1000000
+  else if LRemainingQuota > 0 then
+    Result := Integer(LRemainingQuota);
+end;
+
+procedure TRadIAChatPresenter.ResolveAgentRuntimeSettings(
+  const AProvider: string;
+  const AModel: string;
+  const ATokenLimit: Integer;
+  out AProviderSettings: TRadIAAgentProviderSettings;
+  out ALimits: TRadIAAgentLimits
+);
+var
+  LPricing: TRadIAAgentPricing;
+  LPricingCatalog: TRadIAAgentPricingCatalog;
+begin
+  LPricingCatalog := TRadIAAgentPricingCatalog.Create(
+    TPath.Combine(FDataDir, 'agent-pricing.json')
+  );
+  try
+    if LPricingCatalog.TryResolve(AProvider, AModel, LPricing) then
+    begin
+      AProviderSettings := TRadIAAgentProviderSettings.WithPricing(
+        BuildAgentToolCatalogJson,
+        LPricing
+      );
+      ALimits := TRadIAAgentLimits.Create(
+        20,
+        3,
+        15 * 60 * 1000,
+        ATokenLimit,
+        LPricingCatalog.DefaultRunBudgetMicros
+      );
+      Exit;
+    end;
+    AProviderSettings := TRadIAAgentProviderSettings.Default(
+      BuildAgentToolCatalogJson
+    );
+    ALimits := TRadIAAgentLimits.Create(
+      20,
+      3,
+      15 * 60 * 1000,
+      ATokenLimit
+    );
+  finally
+    LPricingCatalog.Free;
+  end;
 end;
 
 function TRadIAChatPresenter.TryStartCliAgentRun(
@@ -3107,7 +3149,9 @@ begin
       'add_message',
       'assistant',
       LDefinition.DisplayName +
-        ' was not found. Open Settings > CLI & MCP to diagnose it.'
+        ' was not found. Expected executable: `' +
+        TRadIACliResolver.ExpectedExecutablePath(LDefinition.Id) +
+        '`. Open Settings > CLI & MCP to diagnose it or select another path with Browse.'
     );
     Exit;
   end;

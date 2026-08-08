@@ -174,12 +174,12 @@ begin
     SetLength(LEndpoints, LArray.Count);
     for LIndex := 0 to LArray.Count - 1 do
     begin
-      if not (LArray.Items[LIndex] is TJSONObject) then
+      if not (LArray[LIndex] is TJSONObject) then
         raise EArgumentException.CreateFmt(
           'API specification endpoints[%d] must be an object.',
           [LIndex]
         );
-      LEndpoint := TJSONObject(LArray.Items[LIndex]);
+      LEndpoint := TJSONObject(LArray[LIndex]);
       LEndpoints[LIndex] := TRadIAApiEndpoint.Create(
         ReadRequiredString(LEndpoint, 'name', Format('endpoints[%d]', [LIndex])),
         LEndpoint.GetValue<string>('group', 'General'),
@@ -247,6 +247,10 @@ var
   LRouteKeys: TDictionary<string, Boolean>;
   LRouteKey: string;
 begin
+  if ASpecification.SchemaVersion <> 1 then
+    raise EArgumentException.Create(
+      'API specification schemaVersion must be 1.'
+    );
   if (ASpecification.Port < 1) or (ASpecification.Port > 65535) then
     raise EArgumentException.Create(
       'API specification port must be between 1 and 65535.'

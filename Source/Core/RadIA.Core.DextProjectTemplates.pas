@@ -3,6 +3,7 @@ unit RadIA.Core.DextProjectTemplates;
 interface
 
 uses
+  System.SysUtils,
   RadIA.Core.ApiSpecifications;
 
 type
@@ -21,6 +22,16 @@ type
 
   TRadIADextProjectRenderer = class
   private
+    class procedure AppendControllerImplementation(
+      const ABuilder: TStringBuilder;
+      const AGroup: string;
+      const ASpecification: TRadIAApiSpecification
+    ); static;
+    class procedure AppendControllerType(
+      const ABuilder: TStringBuilder;
+      const AGroup: string;
+      const ASpecification: TRadIAApiSpecification
+    ); static;
     class function BuildControllerUnit(
       const ASpecification: TRadIAApiSpecification
     ): string; static;
@@ -58,10 +69,8 @@ type
 implementation
 
 uses
-  System.Classes,
   System.Generics.Collections,
-  System.StrUtils,
-  System.SysUtils;
+  System.StrUtils;
 
 { TRadIADextGeneratedFile }
 
@@ -103,60 +112,11 @@ begin
     LBuilder.AppendLine;
     LBuilder.AppendLine('type');
     for LGroup in LGroups do
-    begin
-      LBuilder.AppendLine('  [ApiController('''')]');
-      LBuilder.AppendLine('  T' + LGroup + 'Controller = class');
-      LBuilder.AppendLine('  private');
-      LBuilder.AppendLine('    FService: IApiService;');
-      LBuilder.AppendLine('  public');
-      LBuilder.AppendLine('    constructor Create(const AService: IApiService);');
-      for LEndpoint in ASpecification.Endpoints do
-      begin
-        if not SameText(LEndpoint.Group, LGroup) then
-          Continue;
-        LBuilder.AppendLine(
-          '    [' + HttpAttribute(LEndpoint.Method) + '(''' + LEndpoint.Path + ''')]'
-        );
-        LBuilder.AppendLine(
-          '    procedure ' + LEndpoint.Name + '(const AContext: IHttpContext);'
-        );
-      end;
-      LBuilder.AppendLine('  end;');
-      LBuilder.AppendLine;
-    end;
+      AppendControllerType(LBuilder, LGroup, ASpecification);
     LBuilder.AppendLine('implementation');
     LBuilder.AppendLine;
     for LGroup in LGroups do
-    begin
-      LBuilder.AppendLine(
-        'constructor T' + LGroup + 'Controller.Create(const AService: IApiService);'
-      );
-      LBuilder.AppendLine('begin');
-      LBuilder.AppendLine('  inherited Create;');
-      LBuilder.AppendLine('  FService := AService;');
-      LBuilder.AppendLine('end;');
-      LBuilder.AppendLine;
-      for LEndpoint in ASpecification.Endpoints do
-      begin
-        if not SameText(LEndpoint.Group, LGroup) then
-          Continue;
-        LBuilder.AppendLine(
-          'procedure T' + LGroup + 'Controller.' + LEndpoint.Name + '('
-        );
-        LBuilder.AppendLine('  const AContext: IHttpContext');
-        LBuilder.AppendLine(');');
-        LBuilder.AppendLine('begin');
-        LBuilder.AppendLine(
-          '  AContext.Response.Status(' + LEndpoint.StatusCode.ToString + ');'
-        );
-        LBuilder.AppendLine(
-          '  AContext.Response.Json(FService.Execute(''' +
-          LEndpoint.Name + '''));'
-        );
-        LBuilder.AppendLine('end;');
-        LBuilder.AppendLine;
-      end;
-    end;
+      AppendControllerImplementation(LBuilder, LGroup, ASpecification);
     LBuilder.AppendLine('initialization');
     for LGroup in LGroups do
       LBuilder.AppendLine('  T' + LGroup + 'Controller.ClassName;');
@@ -167,6 +127,72 @@ begin
     LGroups.Free;
     LBuilder.Free;
   end;
+end;
+
+class procedure TRadIADextProjectRenderer.AppendControllerImplementation(
+  const ABuilder: TStringBuilder;
+  const AGroup: string;
+  const ASpecification: TRadIAApiSpecification
+);
+var
+  LEndpoint: TRadIAApiEndpoint;
+begin
+  ABuilder.AppendLine(
+    'constructor T' + AGroup + 'Controller.Create(const AService: IApiService);'
+  );
+  ABuilder.AppendLine('begin');
+  ABuilder.AppendLine('  inherited Create;');
+  ABuilder.AppendLine('  FService := AService;');
+  ABuilder.AppendLine('end;');
+  ABuilder.AppendLine;
+  for LEndpoint in ASpecification.Endpoints do
+  begin
+    if not SameText(LEndpoint.Group, AGroup) then
+      Continue;
+    ABuilder.AppendLine(
+      'procedure T' + AGroup + 'Controller.' + LEndpoint.Name + '('
+    );
+    ABuilder.AppendLine('  const AContext: IHttpContext');
+    ABuilder.AppendLine(');');
+    ABuilder.AppendLine('begin');
+    ABuilder.AppendLine(
+      '  AContext.Response.Status(' + LEndpoint.StatusCode.ToString + ');'
+    );
+    ABuilder.AppendLine(
+      '  AContext.Response.Json(FService.Execute(''' + LEndpoint.Name + '''));'
+    );
+    ABuilder.AppendLine('end;');
+    ABuilder.AppendLine;
+  end;
+end;
+
+class procedure TRadIADextProjectRenderer.AppendControllerType(
+  const ABuilder: TStringBuilder;
+  const AGroup: string;
+  const ASpecification: TRadIAApiSpecification
+);
+var
+  LEndpoint: TRadIAApiEndpoint;
+begin
+  ABuilder.AppendLine('  [ApiController('''')]');
+  ABuilder.AppendLine('  T' + AGroup + 'Controller = class');
+  ABuilder.AppendLine('  private');
+  ABuilder.AppendLine('    FService: IApiService;');
+  ABuilder.AppendLine('  public');
+  ABuilder.AppendLine('    constructor Create(const AService: IApiService);');
+  for LEndpoint in ASpecification.Endpoints do
+  begin
+    if not SameText(LEndpoint.Group, AGroup) then
+      Continue;
+    ABuilder.AppendLine(
+      '    [' + HttpAttribute(LEndpoint.Method) + '(''' + LEndpoint.Path + ''')]'
+    );
+    ABuilder.AppendLine(
+      '    procedure ' + LEndpoint.Name + '(const AContext: IHttpContext);'
+    );
+  end;
+  ABuilder.AppendLine('  end;');
+  ABuilder.AppendLine;
 end;
 
 class function TRadIADextProjectRenderer.BuildDependencyInjectionUnit(
@@ -448,7 +474,7 @@ begin
     LBuilder.AppendLine;
     for LEndpoint in ASpecification.Endpoints do
       LBuilder.AppendLine('- `' + LEndpoint.Method + ' ' + LEndpoint.Path +
-        '` — ' + LEndpoint.Name);
+        '` — ' + LEndpoint.Name + ': ' + LEndpoint.Description);
     Result := LBuilder.ToString;
   finally
     LBuilder.Free;

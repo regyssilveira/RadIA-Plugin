@@ -55,6 +55,8 @@ type
     [Test]
     procedure ResolverUsesPathWhenOverrideIsMissing;
     [Test]
+    procedure ExpectedCodexPathUsesGlobalNpmDirectory;
+    [Test]
     procedure PrerequisitePlanUsesOfficialNodePackage;
     [Test]
     procedure ManualGuidanceIncludesEveryRecoveryPath;
@@ -170,6 +172,20 @@ begin
     TRadIACliCatalog.FindById('unknown', LDefinition)
   );
   Assert.AreEqual('', LDefinition.Id);
+end;
+
+procedure TRadIACliManagerTests.ExpectedCodexPathUsesGlobalNpmDirectory;
+var
+  LExpected: string;
+begin
+  LExpected := TPath.Combine(
+    TPath.Combine(GetEnvironmentVariable('APPDATA'), 'npm'),
+    'codex.cmd'
+  );
+  Assert.AreEqual(
+    LExpected,
+    TRadIACliResolver.ExpectedExecutablePath('codex')
+  );
 end;
 
 procedure TRadIACliManagerTests.FindsConfiguredExecutableBeforePath;

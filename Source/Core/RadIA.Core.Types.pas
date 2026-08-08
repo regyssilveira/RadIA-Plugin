@@ -20,9 +20,6 @@ const
   MODEL_OPENAI_GPT56_SOL   = 'gpt-5.6-sol';
   MODEL_OPENAI_GPT56_TERRA = 'gpt-5.6-terra';
   MODEL_OPENAI_GPT56_LUNA  = 'gpt-5.6-luna';
-  MODEL_OPENAI_GPT54       = 'gpt-5.4';
-  MODEL_OPENAI_GPT54_MINI  = 'gpt-5.4-mini';
-
   { Current fallback models for Anthropic Claude }
   MODEL_CLAUDE_FABLE_5  = 'claude-fable-5';
   MODEL_CLAUDE_OPUS_5   = 'claude-opus-5';

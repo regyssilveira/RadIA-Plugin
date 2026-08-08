@@ -52,6 +52,10 @@ type
     [Test]
     procedure TestOpenAI_RunCodexLoop_SuccessPath;
     [Test]
+    procedure TestOpenAI_ParseCodexModelList;
+    [Test]
+    procedure TestOpenAI_OAuthFallbackUsesCurrentModels;
+    [Test]
     procedure TestOpenAI_SendPromptAsync_OAuth_CodexNotFound;
     [Test]
     procedure TestOpenAI_SendPromptStreamAsync_OAuth_CodexNotFound;
@@ -541,6 +545,47 @@ begin
   Assert.IsTrue(LCallbackCalled, 'Completion callback should have been executed');
 end;
 
+procedure TTestRadIAProviders.TestOpenAI_ParseCodexModelList;
+const
+  CModelListResponse =
+    '{"id":1,"result":{}}' + sLineBreak +
+    '{"id":2,"result":{"data":[' +
+    '{"id":"gpt-5.6-sol","model":"gpt-5.6-sol","hidden":false},' +
+    '{"id":"gpt-5.6-terra","model":"gpt-5.6-terra","hidden":false}' +
+    ']}}';
+var
+  LContext: TRttiContext;
+  LMethod: TRttiMethod;
+  LModels: TArray<string>;
+  LResult: TValue;
+  LType: TRttiInstanceType;
+begin
+  LContext := TRttiContext.Create;
+  LType := LContext.GetType(TRadIAOpenAIProvider) as TRttiInstanceType;
+  LMethod := LType.GetMethod('ParseCodexModelList');
+  Assert.IsNotNull(LMethod, 'ParseCodexModelList method must exist');
+
+  LResult := LMethod.Invoke(FOpenAIProv, [CModelListResponse]);
+  LModels := LResult.AsType<TArray<string>>;
+
+  Assert.AreEqual(2, Length(LModels));
+  Assert.AreEqual(MODEL_OPENAI_GPT56_SOL, LModels[0]);
+  Assert.AreEqual(MODEL_OPENAI_GPT56_TERRA, LModels[1]);
+end;
+
+procedure TTestRadIAProviders.TestOpenAI_OAuthFallbackUsesCurrentModels;
+var
+  LModels: TArray<string>;
+begin
+  FConfig.SetProviderAuthType('OpenAI', 'oauth');
+  LModels := FOpenAIProv.GetAvailableModels;
+
+  Assert.AreEqual(3, Length(LModels));
+  Assert.AreEqual(MODEL_OPENAI_GPT56_TERRA, LModels[0]);
+  Assert.AreEqual(MODEL_OPENAI_GPT56_SOL, LModels[1]);
+  Assert.AreEqual(MODEL_OPENAI_GPT56_LUNA, LModels[2]);
+end;
+
 procedure TTestRadIAProviders.TestOpenAI_SendPromptAsync_OAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
@@ -549,7 +594,7 @@ begin
   LCallbackCalled := False;
   LErrorText := '';
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
-  FConfig.SetActiveModel('OpenAI', 'gpt-5.4');
+  FConfig.SetActiveModel('OpenAI', MODEL_OPENAI_GPT56_SOL);
 
   FOpenAIProv.SendPromptAsync(
     'test prompt',
@@ -566,8 +611,8 @@ begin
 
   Assert.IsTrue(LCallbackCalled, 'Missing executable must report the error synchronously');
   Assert.Contains(LErrorText, 'Settings > CLI & MCP');
-  Assert.Contains(LErrorText, 'existing executable');
-  Assert.Contains(LErrorText, 'https://github.com/openai/codex');
+  Assert.Contains(LErrorText, 'codex.cmd');
+  Assert.Contains(LErrorText, 'Browse');
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_SendPromptStreamAsync_OAuth_CodexNotFound;
@@ -578,7 +623,7 @@ begin
   LCallbackCalled := False;
   LErrorText := '';
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
-  FConfig.SetActiveModel('OpenAI', 'gpt-5.4');
+  FConfig.SetActiveModel('OpenAI', MODEL_OPENAI_GPT56_SOL);
 
   FOpenAIProv.SendPromptStreamAsync(
     'test prompt',
@@ -598,8 +643,8 @@ begin
 
   Assert.IsTrue(LCallbackCalled, 'Missing executable must report the stream error synchronously');
   Assert.Contains(LErrorText, 'Settings > CLI & MCP');
-  Assert.Contains(LErrorText, 'existing executable');
-  Assert.Contains(LErrorText, 'https://github.com/openai/codex');
+  Assert.Contains(LErrorText, 'codex.cmd');
+  Assert.Contains(LErrorText, 'Browse');
 end;
 
 

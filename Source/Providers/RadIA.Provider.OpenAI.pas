@@ -2,7 +2,8 @@ unit RadIA.Provider.OpenAI;
 
 interface
 
-uses  System.JSON, RadIA.Core.Interfaces, RadIA.Provider.Base;
+uses
+  System.SysUtils, System.JSON, RadIA.Core.Interfaces, RadIA.Provider.Base;
 
 type
   {$RTTI EXPLICIT METHODS([vcPrivate, vcProtected, vcPublic, vcPublished])}
@@ -21,7 +22,12 @@ type
       var AResponseText: string; var AInputTokens, AOutputTokens: Integer);
     procedure ExecuteCodexCli(const APrompt: string; const ACallback: TCompletionCallback;
       const AStreamCallback: TStreamChunkCallback; const AIsStream: Boolean);
+    function BuildCodexExecutableError(const AReason: string): string;
     function GetEffectiveSystemPrompt: string;
+    function GetCodexModelData(const AJson: TJSONObject): TJSONArray;
+    function GetCodexModelId(const AValue: TJSONValue): string;
+    function ParseCodexModelLine(const ALine: string): TArray<string>;
+    function ParseCodexModelList(const AOutput: string): TArray<string>;
   protected
     function GetCodexExecutablePath: string; virtual;
     function GetBaseUrl: string; override;
@@ -37,6 +43,7 @@ type
     procedure SendPromptStreamAsync(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
       const ACallback: TStreamChunkCallback; const ATemperature: Double; const AMaxTokens: Integer); override;
 
+    procedure FetchAvailableModelsAsync(const ACallback: TProc<TArray<string>, string>); override;
     function GetAvailableModels: TArray<string>; override;
     function GetName: string; override;
   end;
@@ -44,10 +51,10 @@ type
 implementation
 
 uses
-  System.SysUtils, System.Classes, Winapi.Windows,
+  System.Classes, Winapi.Windows,
   System.Generics.Collections, RadIA.Core.ProviderRegistry, RadIA.Core.Types,
   RadIA.Core.TokenUsage, RadIA.Core.Logger, RadIA.Core.Container,
-  RadIA.Core.CliManager;
+  RadIA.Core.CliManager, RadIA.Core.AgentExecutors, RadIA.Core.CliProcess;
 
 { TRadIAOpenAIProvider }
 
@@ -69,14 +76,145 @@ end;
 
 function TRadIAOpenAIProvider.GetAvailableModels: TArray<string>;
 begin
-  if SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
-    Result := TArray<string>.Create(MODEL_OPENAI_GPT54_MINI, MODEL_OPENAI_GPT54)
-  else
-    Result := TArray<string>.Create(
-      MODEL_OPENAI_GPT56_TERRA,
-      MODEL_OPENAI_GPT56_SOL,
-      MODEL_OPENAI_GPT56_LUNA
-    );
+  Result := TArray<string>.Create(
+    MODEL_OPENAI_GPT56_TERRA,
+    MODEL_OPENAI_GPT56_SOL,
+    MODEL_OPENAI_GPT56_LUNA
+  );
+end;
+
+function TRadIAOpenAIProvider.ParseCodexModelList(const AOutput: string): TArray<string>;
+var
+  LLines: TStringList;
+  LLine: string;
+  LModelId: string;
+  LModelIds: TArray<string>;
+  LModels: TList<string>;
+begin
+  LLines := TStringList.Create;
+  LModels := TList<string>.Create;
+  try
+    LLines.Text := AOutput;
+    for LLine in LLines do
+    begin
+      LModelIds := ParseCodexModelLine(LLine);
+      for LModelId in LModelIds do
+        if not LModels.Contains(LModelId) then
+          LModels.Add(LModelId);
+    end;
+    Result := LModels.ToArray;
+  finally
+    LModels.Free;
+    LLines.Free;
+  end;
+end;
+
+function TRadIAOpenAIProvider.ParseCodexModelLine(
+  const ALine: string
+): TArray<string>;
+var
+  LData: TJSONArray;
+  LJson: TJSONObject;
+  LModelId: string;
+  LModels: TList<string>;
+  LValue: TJSONValue;
+begin
+  LModels := TList<string>.Create;
+  LJson := TJSONObject.ParseJSONValue(ALine.Trim) as TJSONObject;
+  try
+    if not Assigned(LJson) then
+      Exit(nil);
+    LData := GetCodexModelData(LJson);
+    if not Assigned(LData) then
+      Exit(nil);
+    for LValue in LData do
+    begin
+      LModelId := GetCodexModelId(LValue);
+      if LModelId <> '' then
+        LModels.Add(LModelId);
+    end;
+    Result := LModels.ToArray;
+  finally
+    LJson.Free;
+    LModels.Free;
+  end;
+end;
+
+function TRadIAOpenAIProvider.GetCodexModelData(
+  const AJson: TJSONObject
+): TJSONArray;
+var
+  LResult: TJSONObject;
+begin
+  Result := nil;
+  if AJson.GetValue<Integer>('id', 0) <> 2 then
+    Exit;
+  LResult := AJson.GetValue('result') as TJSONObject;
+  if Assigned(LResult) then
+    Result := LResult.GetValue('data') as TJSONArray;
+end;
+
+function TRadIAOpenAIProvider.GetCodexModelId(
+  const AValue: TJSONValue
+): string;
+begin
+  Result := '';
+  if not (AValue is TJSONObject) then
+    Exit;
+  Result := TJSONObject(AValue).GetValue<string>('model', '');
+  if Result.IsEmpty then
+    Result := TJSONObject(AValue).GetValue<string>('id', '');
+end;
+
+procedure TRadIAOpenAIProvider.FetchAvailableModelsAsync(
+  const ACallback: TProc<TArray<string>, string>);
+const
+  CDiscoveryTimeoutMs = 10000;
+var
+  LCodexPath: string;
+  LInput: string;
+  LInvocation: TRadIACliInvocation;
+  LProviderRef: IRadIAProvider;
+begin
+  if not SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
+  begin
+    inherited FetchAvailableModelsAsync(ACallback);
+    Exit;
+  end;
+
+  LCodexPath := GetCodexExecutablePath;
+  if LCodexPath.IsEmpty then
+  begin
+    ACallback(GetAvailableModels, 'Codex CLI executable was not found.');
+    Exit;
+  end;
+
+  LInput := '{"method":"initialize","id":1,"params":{"clientInfo":' +
+    '{"name":"radia","title":"Rad IA","version":"2.2"},"capabilities":{}}}' + sLineBreak +
+    '{"method":"initialized","params":{}}' + sLineBreak +
+    '{"method":"model/list","id":2,"params":{"limit":100,"includeHidden":false}}' + sLineBreak;
+  LInvocation := TRadIACliInvocation.Create(LCodexPath, ['app-server'], '', 'jsonl');
+  LProviderRef := Self;
+  TRadIACliProcessRunner.StartWithInput(
+    LInvocation,
+    LInput,
+    CDiscoveryTimeoutMs,
+    nil,
+    nil,
+    procedure(AResult: TRadIACliProcessResult)
+    var
+      LModels: TArray<string>;
+    begin
+      LProviderRef.GetProviderId;
+      LModels := ParseCodexModelList(AResult.StdOut);
+      if Length(LModels) > 0 then
+        ACallback(LModels, '')
+      else if AResult.TimedOut then
+        ACallback(GetAvailableModels, 'Codex model discovery timed out.')
+      else
+        ACallback(GetAvailableModels, 'Codex model discovery returned no visible models.');
+    end
+  );
 end;
 
 function TRadIAOpenAIProvider.GetName: string;
@@ -149,6 +287,21 @@ begin
     Result := LDetection.ExecutablePath
   else
     Result := '';
+end;
+
+function TRadIAOpenAIProvider.BuildCodexExecutableError(const AReason: string): string;
+var
+  LExpectedPath: string;
+  LResolvedPath: string;
+begin
+  LExpectedPath := TRadIACliResolver.ExpectedExecutablePath('codex');
+  LResolvedPath := GetCodexExecutablePath;
+  Result := 'Error: ' + AReason + ' ';
+  if not LResolvedPath.IsEmpty then
+    Result := Result + 'Resolved executable: `' + LResolvedPath + '`. ';
+  Result := Result + 'Expected global npm executable: `' + LExpectedPath + '`. ' +
+    'Open Settings > CLI & MCP, select Codex CLI, and use Browse if the executable is installed ' +
+    'elsewhere. The executable bundled inside the Windows Store Codex app may be protected by Windows.';
 end;
 
 function TRadIAOpenAIProvider.ExtractDeltaText(const ADeltaObj: TJSONObject): string;
@@ -447,7 +600,12 @@ begin
   end
   else
   begin
-    QueueError(AIsStream, AStreamCallback, ACallback, 'Error: Failed to create the Codex process.');
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      BuildCodexExecutableError('Failed to create the Codex process.')
+    );
   end;
 end;
 
@@ -542,39 +700,27 @@ var
 begin
   LActiveModel := GetActiveModel;
 
-  if not (SameText(LActiveModel, MODEL_OPENAI_GPT54) or
-          SameText(LActiveModel, MODEL_OPENAI_GPT54_MINI)) then
-  begin
-    if AIsStream then
-      AStreamCallback('', True, Format(
-        'Error: The selected model ''%s'' is not supported in ChatGPT Plus (OAuth) mode. ' +
-        'Please select a compatible model (gpt-5.4 or gpt-5.4-mini) in the chat panel.',
-        [LActiveModel]))
-    else
-      ACallback('', Format(
-        'Error: The selected model ''%s'' is not supported in ChatGPT Plus (OAuth) mode. ' +
-        'Please select a compatible model (gpt-5.4 or gpt-5.4-mini) in the chat panel.',
-        [LActiveModel]), False, TTokenUsage.Empty);
-    Exit;
-  end;
-
   LCodexPath := GetCodexExecutablePath;
 
   if LCodexPath.IsEmpty then
   begin
     if AIsStream then
-      AStreamCallback('', True,
-        'Error: ChatGPT OAuth uses Codex CLI as its transport, but the executable was not found. ' +
-        'Select an existing portable codex.exe in Settings > CLI & MCP, or review the optional ' +
-        '[installation instructions](https://github.com/openai/codex). Node.js and npm are not ' +
-        'required when you provide an existing executable.')
+      AStreamCallback(
+        '',
+        True,
+        BuildCodexExecutableError(
+          'ChatGPT OAuth uses Codex CLI as its transport, but the executable was not found.'
+        )
+      )
     else
-      ACallback('',
-        'Error: ChatGPT OAuth uses Codex CLI as its transport, but the executable was not found. ' +
-        'Select an existing portable codex.exe in Settings > CLI & MCP, or review the optional ' +
-        '[installation instructions](https://github.com/openai/codex). Node.js and npm are not ' +
-        'required when you provide an existing executable.',
-        False, TTokenUsage.Empty);
+      ACallback(
+        '',
+        BuildCodexExecutableError(
+          'ChatGPT OAuth uses Codex CLI as its transport, but the executable was not found.'
+        ),
+        False,
+        TTokenUsage.Empty
+      );
     Exit;
   end;
 

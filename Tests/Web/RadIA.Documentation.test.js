@@ -212,6 +212,8 @@ test('documentation hubs expose the settings map and security guidance', () => {
     'Templates',
     'General / Logs',
     'Security & Consent',
+    'Knowledge & Embeddings',
+    'Editor Assistance',
     'CLI & MCP',
     'Memory Diagnostics'
   ];
@@ -252,7 +254,7 @@ test('every visible settings group has a detailed central reference', () => {
     'Revoke session permissions',
     'Enable local semantic project knowledge',
     'remote embedding provider',
-    'continuous inline completion',
+    'ghost text (inline completion)',
     'RadIA shortcuts',
     'Chat executor',
     'CLI client',

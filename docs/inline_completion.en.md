@@ -38,7 +38,7 @@ The shortcuts appear in the **Rad IA** submenu of the editor context menu. The f
 each session explains which context will be sent and requires explicit consent.
 
 The shortcuts are native Open Tools API partial bindings and work directly in the editor without
-opening the context menu. To change them, open **Rad IA > Settings > Security & Consent** and edit
+opening the context menu. To change them, open **Rad IA > Settings > Editor Assistance** and edit
 **Inline shortcuts** using this format:
 
 ```text
@@ -72,8 +72,8 @@ distinguish an invoked action from an overlay actually processed by the OTA pain
 
 ## Continuous assistance and scope
 
-Continuous assistance is disabled by default. To enable it, open **Rad IA > Settings > Security &
-Consent** and select **Enable continuous inline completion**. The option itself explains that a
+Continuous assistance is disabled by default. To enable it, open **Rad IA > Settings > Editor
+Assistance** and select **Enable ghost text (inline completion)**. The option itself explains that a
 bounded context from the active buffer will be sent to the selected provider.
 
 The same section configures:

@@ -924,9 +924,12 @@ function renderAgentState(data) {
   card.querySelector('.agent-run-message').textContent = state.message || '';
   const steps = Array.isArray(state.steps) ? state.steps : [];
   const elapsedSeconds = Math.round((state.elapsedMilliseconds || 0) / 1000);
+  const tokenBudget = state.maxTotalTokens > 0
+    ? `${state.totalTokens || 0}/${state.maxTotalTokens} tokens`
+    : `${state.totalTokens || 0} tokens (unlimited)`;
   let metricsText =
     `${steps.length}/${state.maxSteps || 0} steps · ` +
-    `${state.totalTokens || 0}/${state.maxTotalTokens || 0} tokens · ` +
+    `${tokenBudget} · ` +
     `${elapsedSeconds}s/${Math.round((state.maxDurationMilliseconds || 0) / 1000)}s`;
   if (state.pricingConfigured) {
     const estimatedCost = (state.estimatedCostMicros || 0) / 1000000;

@@ -567,9 +567,9 @@ begin
     raise EArgumentOutOfRangeException.Create(
       'Agent duration limit must be between 1000 and 3600000 ms.'
     );
-  if (AMaxTotalTokens < 1) or (AMaxTotalTokens > 1000000) then
+  if (AMaxTotalTokens < 0) or (AMaxTotalTokens > 1000000) then
     raise EArgumentOutOfRangeException.Create(
-      'Agent token limit must be between 1 and 1000000.'
+      'Agent token limit must be between 0 and 1000000; zero disables the limit.'
     );
   if (AMaxEstimatedCostMicros < 0) or
     (AMaxEstimatedCostMicros > Int64(10000) * 1000000) then
@@ -1547,11 +1547,12 @@ begin
     );
     Exit;
   end;
-  if EffectiveTotalTokens >= FLimits.MaxTotalTokens then
+  if (FLimits.MaxTotalTokens > 0) and
+    (EffectiveTotalTokens >= FLimits.MaxTotalTokens) then
   begin
     ChangeStatus(
       asFailed,
-      'Agent stopped after reaching the configured token limit.'
+      'Agent stopped after reaching the configured local run token budget.'
     );
     Exit;
   end;

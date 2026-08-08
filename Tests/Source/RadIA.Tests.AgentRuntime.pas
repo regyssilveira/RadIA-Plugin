@@ -188,6 +188,8 @@ type
     [Test]
     procedure TestTokenBudgetStopsBeforePlanExecution;
     [Test]
+    procedure TestZeroTokenBudgetAllowsUnlimitedRun;
+    [Test]
     procedure TestDurationBudgetStopsAfterSlowDecision;
     [Test]
     procedure TestCostBudgetStopsBeforePlanExecution;
@@ -984,9 +986,54 @@ begin
     );
 
     Assert.AreEqual(asFailed, LResult.Status);
-    Assert.Contains(LResult.Message, 'token limit');
+    Assert.Contains(LResult.Message, 'local run token budget');
     Assert.AreEqual(0, LExecutorObject.CallCount);
     Assert.Contains(LRuntime.SnapshotJson, '"totalTokens":6');
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestZeroTokenBudgetAllowsUnlimitedRun;
+var
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LServiceObject: TRadIAMockAgentService;
+  LStore: IRadIAAgentCheckpointStore;
+  LUsage: TTokenUsage;
+begin
+  LServiceObject := TRadIAMockAgentService.Create(
+    '{"kind":"plan","message":"Plan ready.",' +
+    '"steps":[{"title":"Inspect"}]}'
+  );
+  LUsage := TTokenUsage.Empty;
+  LUsage.PromptTokens := 150000;
+  LUsage.CompletionTokens := 50000;
+  LUsage.TotalTokens := 200000;
+  LServiceObject.Usage := LUsage;
+  LProvider := TRadIAAgentServiceDecisionProvider.Create(
+    LServiceObject,
+    [],
+    TRadIAAgentProviderSettings.Default('[]')
+  );
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{}')
+  );
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Run without a local token budget.',
+      'unlimited-token-session',
+      'project',
+      TRadIAAgentLimits.Create(10, 3, 60000, 0)
+    );
+
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    Assert.Contains(LRuntime.SnapshotJson, '"maxTotalTokens":0');
+    Assert.Contains(LRuntime.SnapshotJson, '"totalTokens":200000');
   finally
     LRuntime.Free;
   end;

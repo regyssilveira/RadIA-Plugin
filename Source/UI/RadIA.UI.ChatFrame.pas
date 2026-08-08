@@ -48,6 +48,7 @@ type
     procedure btnSettingsClick(Sender: TObject);
     procedure btnTerminalClick(Sender: TObject);
     procedure EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdgeBrowser; AResult: HRESULT);
+    procedure EdgeBrowserNavigationStarting(Sender: TCustomEdgeBrowser; Args: TNavigationStartingEventArgs);
     procedure EdgeBrowserWebMessageReceived(Sender: TCustomEdgeBrowser; Args: TWebMessageReceivedEventArgs);
     procedure memPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnToggleSessionsClick(Sender: TObject);
@@ -130,7 +131,7 @@ uses
   System.IOUtils, System.JSON, ToolsAPI, RadIA.OTA.Helper, RadIA.UI.ConfigForm,
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
-  RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm,
+  Winapi.ShellAPI, RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm,
   RadIA.UI.ExtensionManagerForm;
 
 {$R *.dfm}
@@ -303,6 +304,7 @@ begin
     if Assigned(FEdgeBrowser) then
     begin
       FEdgeBrowser.OnCreateWebViewCompleted := nil;
+      FEdgeBrowser.OnNavigationStarting := nil;
       FEdgeBrowser.OnWebMessageReceived := nil;
       FEdgeBrowser := nil;
     end;
@@ -335,6 +337,7 @@ begin
     FEdgeBrowser.Align := alClient;
     FEdgeBrowser.AlignWithMargins := True;
     FEdgeBrowser.OnCreateWebViewCompleted := EdgeBrowserCreateWebViewCompleted;
+    FEdgeBrowser.OnNavigationStarting := EdgeBrowserNavigationStarting;
     FEdgeBrowser.OnWebMessageReceived := EdgeBrowserWebMessageReceived;
   end;
 end;
@@ -421,6 +424,7 @@ begin
     if GIsShuttingDown then
     begin
       LEdgeToFree.OnCreateWebViewCompleted := nil;
+      LEdgeToFree.OnNavigationStarting := nil;
       LEdgeToFree.OnWebMessageReceived := nil;
     end
     else
@@ -656,6 +660,37 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TRadIAFrameAIChat.EdgeBrowserNavigationStarting(
+  Sender: TCustomEdgeBrowser;
+  Args: TNavigationStartingEventArgs
+);
+var
+  LOpenResult: HINST;
+  LUri: PWideChar;
+  LUrl: string;
+begin
+  if not Assigned(Args) or not Assigned(Args.ArgsInterface) then
+    Exit;
+  LUri := nil;
+  if Failed(Args.ArgsInterface.Get_uri(LUri)) then
+    Exit;
+  try
+    LUrl := string(LUri);
+  finally
+    CoTaskMemFree(LUri);
+  end;
+
+  if not LUrl.StartsWith('http://', True) and
+    not LUrl.StartsWith('https://', True) and
+    not LUrl.StartsWith('mailto:', True) then
+    Exit;
+
+  Args.ArgsInterface.Set_Cancel(1);
+  LOpenResult := ShellExecute(0, 'open', PChar(LUrl), nil, nil, SW_SHOWNORMAL);
+  if NativeInt(LOpenResult) <= 32 then
+    TLogger.Log('Unable to open external chat link: ' + LUrl, 'UI');
 end;
 
 procedure TRadIAFrameAIChat.btnTemplatesClick(Sender: TObject);

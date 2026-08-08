@@ -42,7 +42,7 @@ constructor TRadIAFormAIConfig.Create(AOwner: TComponent);
 var
   LThemingServices: IOTAIDEThemingServices;
   LActiveTheme: string;
-  LNodeGeneral, LNodeProviders: TTreeNode;
+  LNodeCli, LNodeExternalCli, LNodeGeneral, LNodeProviders: TTreeNode;
   LUseIDETheme: Boolean;
 begin
   inherited Create(AOwner);
@@ -68,7 +68,15 @@ begin
 
   LNodeGeneral := tvCategories.Items.Add(nil, 'General / Logs');
   tvCategories.Items.Add(nil, 'Security & Consent');
-  tvCategories.Items.Add(nil, 'CLI & MCP');
+  tvCategories.Items.Add(nil, 'Knowledge & Embeddings');
+  tvCategories.Items.Add(nil, 'Editor Assistance');
+  LNodeCli := tvCategories.Items.Add(nil, 'CLI & MCP');
+  LNodeExternalCli := tvCategories.Items.AddChild(LNodeCli, 'External CLI clients');
+  tvCategories.Items.AddChild(LNodeExternalCli, 'Codex CLI');
+  tvCategories.Items.AddChild(LNodeExternalCli, 'Claude Code');
+  tvCategories.Items.AddChild(LNodeExternalCli, 'Gemini CLI');
+  tvCategories.Items.AddChild(LNodeExternalCli, 'GitHub Copilot CLI');
+  tvCategories.Items.AddChild(LNodeCli, 'MCP Connection');
   tvCategories.Items.Add(nil, 'Memory Diagnostics');
   tvCategories.Items.Add(nil, 'System Prompt');
   tvCategories.Items.Add(nil, 'Templates');

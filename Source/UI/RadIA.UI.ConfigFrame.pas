@@ -44,6 +44,10 @@ type
 
     FTsSecurity: TTabSheet;
     FPnlSecurity: TScrollBox;
+    FTsKnowledge: TTabSheet;
+    FPnlKnowledge: TScrollBox;
+    FTsEditorAssistance: TTabSheet;
+    FPnlEditorAssistance: TScrollBox;
     FLblConsentSummary: TLabel;
     FLblConsentTimeout: TLabel;
     FEdtConsentTimeout: TEdit;
@@ -83,9 +87,12 @@ type
     FLblInlineShortcutProfile: TLabel;
 
     FTsCliMcp: TTabSheet;
-    FPnlCliMcp: TPanel;
+    FPnlCliMcp: TScrollBox;
     FCmbAgentExecutor: TComboBox;
     FCmbCliClient: TComboBox;
+    FLblCliSectionTitle: TLabel;
+    FLblMcpSectionTitle: TLabel;
+    FCliMcpViewSection: Integer;
     FEdtCliExecutable: TEdit;
     FEdtMcpConfig: TEdit;
     FEdtMcpBridge: TEdit;
@@ -162,8 +169,17 @@ type
     function CreateLabel(AParent: TWinControl; const ACaption: string; const ALeft, ATop: Integer): TLabel;
     procedure CreateGeneralTab;
     procedure CreateSecurityTab;
+    procedure CreateKnowledgeTab;
+    procedure CreateEditorAssistanceTab;
     procedure CreateCliMcpTab;
     procedure CreateCliExecutableControls;
+    procedure ConfigureCliMcpView(const ASection: Integer);
+    procedure ApplyCliMcpControlVisibility(
+      const ASection: Integer;
+      const ATopOffset: Integer
+    );
+    function CliMcpTopOffset(const ASection: Integer): Integer;
+    procedure RestoreCliMcpControlPositions;
     procedure CreateMemoryDiagnosticsTab;
     procedure ConfigureControlHints;
     procedure ConfigureOperationalHints;
@@ -206,6 +222,8 @@ type
       const ARequestId: Integer
     );
     procedure SaveCliMcpSettings;
+    procedure ResetCategoryScroll(const APage: TTabSheet);
+    function TrySelectCliMcpCategory(const ACategoryName: string): Boolean;
     procedure SaveAgentExecutorSettings;
     procedure LoadFastMM5Settings;
     procedure RefreshFastMM5Status;
@@ -832,7 +850,7 @@ begin
   );
   FChkInlineCompletionEnabled := CreateCheckBox(
     FPnlSecurity,
-    'Enable continuous inline completion (sends bounded editor context)',
+    'Enable ghost text (inline completion; sends bounded editor context)',
     16,
     752,
     500
@@ -900,6 +918,63 @@ begin
   );
 end;
 
+procedure TRadIAFrameAIConfig.CreateKnowledgeTab;
+var
+  LControl: TControl;
+begin
+  FTsKnowledge := TTabSheet.Create(Self);
+  FTsKnowledge.PageControl := pgcSettings;
+  FTsKnowledge.Caption := 'Knowledge & Embeddings';
+  FTsKnowledge.TabVisible := False;
+
+  FPnlKnowledge := TScrollBox.Create(Self);
+  FPnlKnowledge.Parent := FTsKnowledge;
+  FPnlKnowledge.Align := alClient;
+  FPnlKnowledge.BorderStyle := bsNone;
+  FPnlKnowledge.VertScrollBar.Tracking := True;
+
+  for LControl in [FChkKnowledgeSemanticEnabled, FChkKnowledgeApprovedHistoryEnabled,
+    FLblKnowledgeExcludedFiles, FEdtKnowledgeExcludedFiles,
+    FLblKnowledgeExcludedProjects, FEdtKnowledgeExcludedProjects,
+    FChkKnowledgeRemoteEnabled, FChkKnowledgeRemoteConsent,
+    FLblKnowledgeRemoteEndpoint, FEdtKnowledgeRemoteEndpoint,
+    FLblKnowledgeRemoteModel, FEdtKnowledgeRemoteModel,
+    FLblKnowledgeRemoteApiKey, FEdtKnowledgeRemoteApiKey,
+    FLblKnowledgeRemoteLimits, FEdtKnowledgeRemoteDimensions,
+    FEdtKnowledgeRemoteTimeout, FEdtKnowledgeRemoteInputLimit] do
+  begin
+    LControl.Parent := FPnlKnowledge;
+    LControl.Top := LControl.Top - 304;
+  end;
+end;
+
+procedure TRadIAFrameAIConfig.CreateEditorAssistanceTab;
+var
+  LControl: TControl;
+begin
+  FTsEditorAssistance := TTabSheet.Create(Self);
+  FTsEditorAssistance.PageControl := pgcSettings;
+  FTsEditorAssistance.Caption := 'Editor Assistance';
+  FTsEditorAssistance.TabVisible := False;
+
+  FPnlEditorAssistance := TScrollBox.Create(Self);
+  FPnlEditorAssistance.Parent := FTsEditorAssistance;
+  FPnlEditorAssistance.Align := alClient;
+  FPnlEditorAssistance.BorderStyle := bsNone;
+  FPnlEditorAssistance.VertScrollBar.Tracking := True;
+
+  for LControl in [FChkInlineCompletionEnabled, FLblInlineCompletionDelay,
+    FEdtInlineCompletionDelay, FLblInlineCompletionExcludedLanguages,
+    FEdtInlineCompletionExcludedLanguages, FLblInlineCompletionExcludedFiles,
+    FEdtInlineCompletionExcludedFiles, FLblInlineCompletionExcludedProjects,
+    FEdtInlineCompletionExcludedProjects, FLblInlineShortcutProfile,
+    FEdtInlineShortcutProfile] do
+  begin
+    LControl.Parent := FPnlEditorAssistance;
+    LControl.Top := LControl.Top - 736;
+  end;
+end;
+
 procedure TRadIAFrameAIConfig.CreateMemoryDiagnosticsTab;
 begin
   FTsMemoryDiagnostics := TTabSheet.Create(Self);
@@ -960,44 +1035,51 @@ end;
 
 procedure TRadIAFrameAIConfig.CreateCliExecutableControls;
 begin
-  CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 70);
-  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 88, 382);
+  FLblCliSectionTitle := CreateLabel(
+    FPnlCliMcp,
+    'External CLI installation and authentication',
+    16,
+    104
+  );
+  FLblCliSectionTitle.Font.Style := [fsBold];
+  CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 130);
+  FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 150, 382);
   FEdtCliExecutable.Anchors := [akLeft, akTop, akRight];
 
   FBtnCliBrowse := TButton.Create(Self);
   FBtnCliBrowse.Parent := FPnlCliMcp;
-  FBtnCliBrowse.SetBounds(406, 86, 92, 25);
+  FBtnCliBrowse.SetBounds(406, 148, 92, 25);
   FBtnCliBrowse.Anchors := [akTop, akRight];
   FBtnCliBrowse.Caption := 'Browse...';
   FBtnCliBrowse.OnClick := BtnCliBrowseClick;
 
-  FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 120);
+  FLblCliStatus := CreateLabel(FPnlCliMcp, 'CLI status: not checked', 16, 184);
   FLblCliStatus.AutoSize := False;
   FLblCliStatus.WordWrap := True;
-  FLblCliStatus.SetBounds(16, 116, 256, 40);
+  FLblCliStatus.SetBounds(16, 184, 590, 48);
   FBtnCliRefresh := TButton.Create(Self);
   FBtnCliRefresh.Parent := FPnlCliMcp;
-  FBtnCliRefresh.SetBounds(510, 86, 96, 25);
+  FBtnCliRefresh.SetBounds(510, 148, 96, 25);
   FBtnCliRefresh.Anchors := [akTop, akRight];
   FBtnCliRefresh.Caption := 'Diagnose';
   FBtnCliRefresh.OnClick := BtnCliRefreshClick;
 
   FBtnCliInstall := TButton.Create(Self);
   FBtnCliInstall.Parent := FPnlCliMcp;
-  FBtnCliInstall.SetBounds(496, 116, 110, 25);
+  FBtnCliInstall.SetBounds(352, 238, 110, 25);
   FBtnCliInstall.Anchors := [akTop, akRight];
   FBtnCliInstall.Caption := 'Install channel';
   FBtnCliInstall.OnClick := BtnCliInstallClick;
 
   FBtnCliManual := TButton.Create(Self);
   FBtnCliManual.Parent := FPnlCliMcp;
-  FBtnCliManual.SetBounds(280, 116, 100, 25);
+  FBtnCliManual.SetBounds(16, 238, 100, 25);
   FBtnCliManual.Caption := 'Manual steps';
   FBtnCliManual.OnClick := BtnCliManualClick;
 
   FBtnCliLogin := TButton.Create(Self);
   FBtnCliLogin.Parent := FPnlCliMcp;
-  FBtnCliLogin.SetBounds(388, 116, 100, 25);
+  FBtnCliLogin.SetBounds(124, 238, 100, 25);
   FBtnCliLogin.Caption := 'Start login';
   FBtnCliLogin.OnClick := BtnCliLoginClick;
 end;
@@ -1244,17 +1326,24 @@ begin
   FTsCliMcp.Caption := 'CLI & MCP';
   FTsCliMcp.TabVisible := False;
 
-  FPnlCliMcp := TPanel.Create(Self);
+  FPnlCliMcp := TScrollBox.Create(Self);
   FPnlCliMcp.Parent := FTsCliMcp;
   FPnlCliMcp.Align := alClient;
-  FPnlCliMcp.BevelOuter := bvNone;
-  FPnlCliMcp.ShowCaption := False;
+  FPnlCliMcp.BorderStyle := bsNone;
+  FPnlCliMcp.HorzScrollBar.Visible := False;
+  FPnlCliMcp.VertScrollBar.Tracking := True;
 
-  CreateLabel(FPnlCliMcp, 'Chat executor:', 280, 16);
+  CreateLabel(
+    FPnlCliMcp,
+    'Chat orchestration mode: native or external CLI',
+    16,
+    8
+  ).Font.Style := [fsBold];
+  CreateLabel(FPnlCliMcp, 'Orchestration mode:', 280, 32);
   FCmbAgentExecutor := TComboBox.Create(Self);
   FCmbAgentExecutor.Parent := FPnlCliMcp;
   FCmbAgentExecutor.Left := 280;
-  FCmbAgentExecutor.Top := 34;
+  FCmbAgentExecutor.Top := 50;
   FCmbAgentExecutor.Width := 240;
   FCmbAgentExecutor.Style := csDropDownList;
   FCmbAgentExecutor.Items.Add('RadIA native orchestration');
@@ -1264,14 +1353,14 @@ begin
     FPnlCliMcp,
     'Orchestration choice; provider authentication is configured separately.',
     280,
-    58
-  );
+    76
+  ).Width := 330;
 
-  CreateLabel(FPnlCliMcp, 'CLI client:', 16, 16);
+  CreateLabel(FPnlCliMcp, 'CLI client:', 16, 32);
   FCmbCliClient := TComboBox.Create(Self);
   FCmbCliClient.Parent := FPnlCliMcp;
   FCmbCliClient.Left := 16;
-  FCmbCliClient.Top := 34;
+  FCmbCliClient.Top := 50;
   FCmbCliClient.Width := 240;
   FCmbCliClient.Style := csDropDownList;
   FCmbCliClient.OnChange := CliClientChange;
@@ -1280,22 +1369,23 @@ begin
 
   CreateCliExecutableControls;
 
-  CreateLabel(
+  FLblMcpSectionTitle := CreateLabel(
     FPnlCliMcp,
-    'MCP connection (independent from the chat executor)',
+    'MCP client connection (independent from chat orchestration)',
     16,
-    148
-  ).Font.Style := [fsBold];
-  CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 170);
-  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 188, 590);
-  CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 224);
-  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 242, 590);
+    280
+  );
+  FLblMcpSectionTitle.Font.Style := [fsBold];
+  CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 306);
+  FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 326, 590);
+  CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 362);
+  FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 382, 590);
 
-  FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 274);
+  FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 418);
   FBtnMcpPreview := TButton.Create(Self);
   FBtnMcpPreview.Parent := FPnlCliMcp;
   FBtnMcpPreview.Left := 16;
-  FBtnMcpPreview.Top := 300;
+  FBtnMcpPreview.Top := 444;
   FBtnMcpPreview.Width := 104;
   FBtnMcpPreview.Height := 27;
   FBtnMcpPreview.Caption := 'Preview';
@@ -1304,7 +1394,7 @@ begin
   FBtnMcpProvision := TButton.Create(Self);
   FBtnMcpProvision.Parent := FPnlCliMcp;
   FBtnMcpProvision.Left := 128;
-  FBtnMcpProvision.Top := 300;
+  FBtnMcpProvision.Top := 444;
   FBtnMcpProvision.Width := 136;
   FBtnMcpProvision.Height := 27;
   FBtnMcpProvision.Caption := 'Connect / Repair';
@@ -1313,7 +1403,7 @@ begin
   FBtnMcpRemove := TButton.Create(Self);
   FBtnMcpRemove.Parent := FPnlCliMcp;
   FBtnMcpRemove.Left := 272;
-  FBtnMcpRemove.Top := 300;
+  FBtnMcpRemove.Top := 444;
   FBtnMcpRemove.Width := 104;
   FBtnMcpRemove.Height := 27;
   FBtnMcpRemove.Caption := 'Disconnect';
@@ -1322,7 +1412,7 @@ begin
   FBtnMcpHandshake := TButton.Create(Self);
   FBtnMcpHandshake.Parent := FPnlCliMcp;
   FBtnMcpHandshake.Left := 384;
-  FBtnMcpHandshake.Top := 300;
+  FBtnMcpHandshake.Top := 444;
   FBtnMcpHandshake.Width := 130;
   FBtnMcpHandshake.Height := 27;
   FBtnMcpHandshake.Caption := 'Test Handshake';
@@ -1331,7 +1421,7 @@ begin
   FMemoMcpPreview := TMemo.Create(Self);
   FMemoMcpPreview.Parent := FPnlCliMcp;
   FMemoMcpPreview.Left := 16;
-  FMemoMcpPreview.Top := 338;
+  FMemoMcpPreview.Top := 482;
   FMemoMcpPreview.Width := 590;
   FMemoMcpPreview.Height := 118;
   FMemoMcpPreview.ReadOnly := True;
@@ -1340,7 +1430,79 @@ begin
 
   if FCmbCliClient.Items.Count > 0 then
     FCmbCliClient.ItemIndex := 0;
+  FCliMcpViewSection := 0;
   CliClientChange(FCmbCliClient);
+end;
+
+procedure TRadIAFrameAIConfig.ConfigureCliMcpView(const ASection: Integer);
+begin
+  RestoreCliMcpControlPositions;
+  if ASection = 2 then
+    FLblCliSectionTitle.Caption := Format(
+      'External CLI: %s installation and authentication',
+      [FCmbCliClient.Text]
+    )
+  else
+    FLblCliSectionTitle.Caption :=
+      'External CLI installation and authentication';
+  FLblMcpSectionTitle.Caption :=
+    'MCP client connection (independent from chat orchestration)';
+  ApplyCliMcpControlVisibility(ASection, CliMcpTopOffset(ASection));
+  FCliMcpViewSection := ASection;
+  FPnlCliMcp.VertScrollBar.Position := 0;
+end;
+
+procedure TRadIAFrameAIConfig.ApplyCliMcpControlVisibility(
+  const ASection: Integer;
+  const ATopOffset: Integer
+);
+var
+  I: Integer;
+  LControl: TControl;
+  LSection: Integer;
+begin
+  for I := 0 to FPnlCliMcp.ControlCount - 1 do
+  begin
+    LControl := FPnlCliMcp.Controls[I];
+    if LControl.Top < 104 then
+      LSection := 1
+    else if LControl.Top < 280 then
+      LSection := 2
+    else
+      LSection := 3;
+    LControl.Visible := (ASection = 0) or (LSection = ASection);
+    if LControl.Visible then
+      LControl.Top := LControl.Top - ATopOffset;
+  end;
+end;
+
+function TRadIAFrameAIConfig.CliMcpTopOffset(
+  const ASection: Integer
+): Integer;
+begin
+  case ASection of
+    2: Result := 96;
+    3: Result := 272;
+  else
+    Result := 0;
+  end;
+end;
+
+procedure TRadIAFrameAIConfig.RestoreCliMcpControlPositions;
+var
+  I: Integer;
+  LControl: TControl;
+  LTopOffset: Integer;
+begin
+  LTopOffset := CliMcpTopOffset(FCliMcpViewSection);
+  if LTopOffset = 0 then
+    Exit;
+  for I := 0 to FPnlCliMcp.ControlCount - 1 do
+  begin
+    LControl := FPnlCliMcp.Controls[I];
+    if LControl.Visible then
+      LControl.Top := LControl.Top + LTopOffset;
+  end;
 end;
 
 constructor TRadIAFrameAIConfig.Create(AOwner: TComponent);
@@ -1384,6 +1546,8 @@ begin
 
   CreateGeneralTab;
   CreateSecurityTab;
+  CreateKnowledgeTab;
+  CreateEditorAssistanceTab;
   CreateCliMcpTab;
   CreateMemoryDiagnosticsTab;
   ConfigureControlHints;
@@ -1658,6 +1822,27 @@ begin
     FPnlSecurity.Color := LColors.BgBase;
     FPnlSecurity.Font.Color := LColors.TextColor;
   end;
+  if Assigned(FPnlKnowledge) then
+  begin
+    FPnlKnowledge.StyleElements :=
+      FPnlKnowledge.StyleElements - [seClient, seBorder];
+    FPnlKnowledge.Color := LColors.BgBase;
+    FPnlKnowledge.Font.Color := LColors.TextColor;
+  end;
+  if Assigned(FPnlEditorAssistance) then
+  begin
+    FPnlEditorAssistance.StyleElements :=
+      FPnlEditorAssistance.StyleElements - [seClient, seBorder];
+    FPnlEditorAssistance.Color := LColors.BgBase;
+    FPnlEditorAssistance.Font.Color := LColors.TextColor;
+  end;
+  if Assigned(FPnlCliMcp) then
+  begin
+    FPnlCliMcp.StyleElements :=
+      FPnlCliMcp.StyleElements - [seClient, seBorder];
+    FPnlCliMcp.Color := LColors.BgBase;
+    FPnlCliMcp.Font.Color := LColors.TextColor;
+  end;
   if Assigned(FTsCliMcp) then
   begin
     FTsCliMcp.StyleElements :=
@@ -1678,7 +1863,7 @@ begin
     pnlGithubCopilot, pnlAzureOpenAI, pnlQwen,
     pnlMistral, pnlBedrock, pnlSystemPrompt,
     pnlTemplatesLeft, pnlTemplatesLeftButtons, pnlTemplatesClient, FPnlGeneral,
-    FPnlCliMcp, FPnlMemoryDiagnostics], LColors);
+    FPnlMemoryDiagnostics], LColors);
 
   for LEditD in FEdtTemperatures.Values do ApplyThemeToEdits([LEditD], LColors);
   for LEditD in FEdtMaxTokens.Values do ApplyThemeToEdits([LEditD], LColors);
@@ -2861,14 +3046,18 @@ var
   LPages: TArray<TTabSheet>;
   I: Integer;
 begin
-  LNames := ['General / Logs', 'Security & Consent', 'CLI & MCP',
-             'Memory Diagnostics', 'System Prompt', 'Templates',
+  if TrySelectCliMcpCategory(ACategoryName) then
+    Exit;
+
+  LNames := ['General / Logs', 'Security & Consent', 'Knowledge & Embeddings',
+             'Editor Assistance', 'CLI & MCP', 'Memory Diagnostics',
+             'System Prompt', 'Templates',
              'Gemini', 'OpenAI',
              'Claude', 'DeepSeek', 'Groq', 'Ollama', 'OpenRouter', 'LM Studio',
              'GitHub Copilot', 'Azure OpenAI', 'Alibaba Qwen', 'Mistral AI', 'AWS Bedrock'];
 
-  LPages := [FTsGeneral, FTsSecurity, FTsCliMcp,
-             FTsMemoryDiagnostics, tsSystemPrompt, tsTemplates,
+  LPages := [FTsGeneral, FTsSecurity, FTsKnowledge, FTsEditorAssistance,
+             FTsCliMcp, FTsMemoryDiagnostics, tsSystemPrompt, tsTemplates,
              tsGemini, tsOpenAI,
              tsClaude, tsDeepSeek, tsGroq, tsOllama, tsOpenRouter, tsLMStudio,
              tsGithubCopilot, tsAzureOpenAI, tsQwen, tsMistral, tsBedrock];
@@ -2878,9 +3067,53 @@ begin
     if SameText(LNames[I], ACategoryName) then
     begin
       pgcSettings.ActivePage := LPages[I];
+      ResetCategoryScroll(LPages[I]);
       Exit;
     end;
   end;
+end;
+
+procedure TRadIAFrameAIConfig.ResetCategoryScroll(const APage: TTabSheet);
+begin
+  if APage = FTsSecurity then
+    FPnlSecurity.VertScrollBar.Position := 0
+  else if APage = FTsKnowledge then
+    FPnlKnowledge.VertScrollBar.Position := 0
+  else if APage = FTsEditorAssistance then
+    FPnlEditorAssistance.VertScrollBar.Position := 0
+  else if APage = FTsCliMcp then
+    ConfigureCliMcpView(0);
+end;
+
+function TRadIAFrameAIConfig.TrySelectCliMcpCategory(
+  const ACategoryName: string
+): Boolean;
+var
+  LCliIndex: Integer;
+begin
+  Result := True;
+  if SameText(ACategoryName, 'External CLI clients') then
+  begin
+    pgcSettings.ActivePage := FTsCliMcp;
+    ConfigureCliMcpView(0);
+    Exit;
+  end;
+  LCliIndex := FCmbCliClient.Items.IndexOf(ACategoryName);
+  if LCliIndex >= 0 then
+  begin
+    pgcSettings.ActivePage := FTsCliMcp;
+    FCmbCliClient.ItemIndex := LCliIndex;
+    CliClientChange(FCmbCliClient);
+    ConfigureCliMcpView(2);
+    Exit;
+  end;
+  if SameText(ACategoryName, 'MCP Connection') then
+  begin
+    pgcSettings.ActivePage := FTsCliMcp;
+    ConfigureCliMcpView(3);
+    Exit;
+  end;
+  Result := False;
 end;
 
 procedure TRadIAFrameAIConfig.grpGeminiAuthTypeClick(Sender: TObject);

@@ -25,7 +25,14 @@ RadIA first requests the model list exposed by the configured account and endpoi
 discovery fails does it show a minimal fallback catalog based on the provider's current stable
 families. The discovered list always takes precedence because availability can vary by account,
 region, plan, and permissions. ChatGPT OAuth/Codex transport models are kept separate from OpenAI
-API models.
+API models and are queried through the Codex App Server `model/list` method. If Codex CLI does not
+respond, Rad IA keeps the current fallback models in the selector.
+
+External links shown in responses open in the Windows default browser. The chat panel remains on
+Rad IA's local page and is not used as a browser for those destinations.
+
+When **Enable local token quota** is disabled, agent runs show `tokens (unlimited)` and are not
+stopped by a local token budget. Account and provider limits remain independent.
 
 ### 2.1 Settings map
 
@@ -35,7 +42,9 @@ API models.
 | System | System prompt applied to conversations | When permanent instructions are required |
 | Templates | Reusable prompts and custom slash commands | When standardizing recurring tasks |
 | General / Logs | Language, context, logs, and local token quota | When adjusting general behavior or diagnostics |
-| Security & Consent | Risk approval, timeout, session grants, shortcuts, and context sharing | Before allowing execution, mutations, or remote content |
+| Security & Consent | Risk approval, timeout, and session grants | Before allowing execution or mutations |
+| Knowledge & Embeddings | Local knowledge, exclusions, and remote embeddings | When configuring project context retrieval |
+| Editor Assistance | Ghost text, delay, exclusions, and shortcuts | When configuring editor suggestions |
 | CLI & MCP | Native/external executor, portable executable, and MCP connection | Only when using an external CLI or MCP client |
 | Memory Diagnostics | FastMM5 path and execution limits | When investigating leaks, double free, or use-after-free |
 
@@ -159,6 +168,9 @@ Under **Settings > Security & Consent**, users can configure:
 - session permission for reversible writes;
 - session permission, disabled by default, for structural writes;
 - session permission, disabled by default, for builds, tests, and execution.
+
+Under **Settings > Knowledge & Embeddings**, users can configure:
+
 - local semantic project knowledge, disabled by default, without network code transmission.
 - local memory of approved agent run summaries, disabled by default and isolated per project.
 - knowledge exclusions using file and project path fragments.

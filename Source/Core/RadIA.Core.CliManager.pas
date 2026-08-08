@@ -162,6 +162,9 @@ type
 
   TRadIACliResolver = class
   public
+    class function ExpectedExecutablePath(
+      const AClientId: string
+    ): string; static;
     class function Resolve(
       const AClientId: string
     ): TRadIACliDetection; overload; static;
@@ -856,6 +859,32 @@ begin
 end;
 
 { TRadIACliResolver }
+
+class function TRadIACliResolver.ExpectedExecutablePath(
+  const AClientId: string
+): string;
+var
+  LDefinition: TRadIACliDefinition;
+begin
+  Result := '';
+  if not TRadIACliCatalog.FindById(AClientId, LDefinition) then
+    Exit;
+  case LDefinition.PrimaryChannel of
+    cicNpm:
+      Result := TPath.Combine(
+        TPath.Combine(GetEnvironmentVariable('APPDATA'), 'npm'),
+        LDefinition.Id + '.cmd'
+      );
+    cicWinget:
+      Result := TPath.Combine(
+        TPath.Combine(
+          GetEnvironmentVariable('LOCALAPPDATA'),
+          'Microsoft\WinGet\Links'
+        ),
+        LDefinition.Id + '.exe'
+      );
+  end;
+end;
 
 class function TRadIACliResolver.Resolve(
   const AClientId: string

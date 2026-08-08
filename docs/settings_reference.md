@@ -90,7 +90,7 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | Enable logging | Ao investigar problemas | Registra diagnósticos locais sanitizados. Desative quando não precisar de investigação prolongada. |
 | Log Folder Path / `...` | Para mudar ou escolher a pasta de logs | Use uma pasta gravável. Não selecione pastas compartilhadas com usuários não confiáveis. |
 | Max Log File Size (KB) | Para controlar uso de disco | Limita a rotação/tamanho dos logs locais, não a resposta do modelo. |
-| Enable local token quota | Para impor um aviso/limite local mensal | É um controle local e não substitui limite ou cobrança do provider. |
+| Enable local token quota | Para impor um aviso/limite local mensal | Desligado, o agente não aplica orçamento local de tokens por execução. Não substitui limites do provider. |
 | Monthly Token Limit | Ao definir o orçamento local | Quantidade mensal aceita pelo controle do RadIA. |
 | Monthly Used Tokens | Para acompanhar consumo estimado | Contador local; pode divergir da contabilização oficial do provider. |
 | Reset Usage | Ao iniciar deliberadamente um novo acompanhamento | Zera somente o contador local, sem alterar cobrança externa. |
@@ -108,7 +108,7 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | Allow session permission for build, tests, and execution | Somente quando o plano exigir execução repetida | Não autoriza ações destrutivas e não substitui limites, auditoria ou workspace boundary. |
 | Revoke session permissions | Ao terminar uma tarefa ou suspeitar de escopo excessivo | Revoga imediatamente todas as permissões lembradas na sessão atual da IDE. |
 
-### Conhecimento do projeto
+## Knowledge & Embeddings
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
@@ -122,11 +122,11 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | Embedding model / API key | Conforme o endpoint | Modelo deve existir no serviço; chave fica protegida com DPAPI. |
 | Dimensions / timeout / maximum input | Para compatibilidade e limites | Dimensão deve corresponder ao modelo; timeout limita espera; input limita texto enviado por requisição. |
 
-### Completação inline e atalhos
+## Editor Assistance
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
-| Enable continuous inline completion | Para receber sugestões enquanto edita | Envia contexto limitado do editor ao provider ativo; respeita exclusões e consentimentos aplicáveis. |
+| Enable ghost text (inline completion) | Para receber sugestões enquanto edita | Envia contexto limitado do editor ao provider ativo; respeita exclusões e consentimentos aplicáveis. |
 | Idle delay (250–5000 ms) | Para equilibrar rapidez e quantidade de chamadas | Valor menor solicita mais cedo e pode aumentar chamadas; valor maior reduz interrupções. |
 | Excluded languages | Para impedir completação em linguagens específicas | Lista separada por `;`, por exemplo `sql;markdown`. |
 | Excluded file fragments | Para impedir completação em arquivos específicos | Fragmentos de nome ou caminho separados por `;`. |
@@ -137,6 +137,9 @@ se ele não responder, verifique processo, porta, firewall e URL.
 
 CLI e MCP são independentes. O agente nativo não exige CLI para providers por API key ou locais. MCP
 permite que um cliente externo acesse as ferramentas protegidas do RadIA.
+No menu lateral, **External CLI clients** agrupa cada CLI suportado e abre apenas a configuração
+do cliente escolhido. **MCP Connection** abre somente a conexão MCP. O nó pai distingue o modo
+de orquestração nativo do modo por CLI externo.
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|

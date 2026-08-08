@@ -33,7 +33,7 @@ Solicitações típicas no chat ou MCP:
 
 A busca retorna resultados limitados com arquivo, posição, trecho relevante, score total, parcela
 lexical, parcela vetorial e uma explicação do ranking. Se o provider de embeddings falhar ou estiver
-desabilitado em **Settings > Security & Consent**, o mesmo fluxo usa automaticamente o fallback lexical
+desabilitado em **Settings > Knowledge & Embeddings**, o mesmo fluxo usa automaticamente o fallback lexical
 determinístico. A leitura de documentos também possui limites para evitar respostas e payloads
 excessivos.
 
@@ -54,7 +54,7 @@ formato 2 persiste os vetores junto aos chunks e continua lendo snapshots lexica
 Eles não são arquivos-fonte autoritativos e podem ser removidos para forçar reconstrução.
 
 O recurso **Enable local semantic project knowledge (no network)** fica desabilitado por padrão.
-Quando o usuário o habilita em **Settings > Security & Consent**, o provider `local-hash-v1`
+Quando o usuário o habilita em **Settings > Knowledge & Embeddings**, o provider `local-hash-v1`
 calcula os vetores inteiramente no processo da IDE, sem HTTP, tokens ou envio de código. A
 preferência entra em vigor imediatamente, sem reiniciar a IDE. Ao desabilitá-la, novas indexações
 e buscas deixam de calcular vetores e continuam funcionando com busca lexical determinística.
@@ -67,7 +67,7 @@ arquivos do snapshot persistido. Remover um padrão permite que o conteúdo volt
 
 ### Embeddings remotos opcionais
 
-Em **Settings > Security & Consent**, o usuário pode configurar um endpoint de embeddings
+Em **Settings > Knowledge & Embeddings**, o usuário pode configurar um endpoint de embeddings
 OpenAI-compatible. A ativação exige simultaneamente:
 
 - **Use a remote OpenAI-compatible embedding provider**;

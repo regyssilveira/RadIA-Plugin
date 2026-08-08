@@ -64,6 +64,11 @@ Depois de instalar, o resolver pesquisa o `PATH` e também os diretórios conhec
 WinGet. Assim, um executável recém-instalado pode ser usado pela IDE atual sem reiniciar o Delphi. O
 botão de instalação vira **Cancel** durante uma etapa em andamento.
 
+Quando o Codex CLI não é encontrado ou não pode ser iniciado, o diagnóstico e o chat mostram o
+caminho resolvido e o caminho global esperado do npm, normalmente
+`%APPDATA%\npm\codex.cmd`. Use **Browse...** para selecionar outro executável acessível. O executável
+interno do aplicativo Codex distribuído pela Microsoft Store pode permanecer protegido pelo Windows.
+
 Instalações, atualizações e conexões/reparos MCP gravam somente metadados sanitizados em
 `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`; comandos de autenticação, tokens e saída bruta não
 são persistidos.
