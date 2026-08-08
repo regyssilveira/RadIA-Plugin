@@ -15,6 +15,13 @@ Este documento descreve o planejamento estratégico e a visão de futuro do assi
 
 ## 📅 Histórico de Versões Concluídas
 
+### v2.3.0 — RTK interno e contexto recuperável
+
+- compactação determinística de resultados de DUnitX, Git diff, build e conhecimento;
+- armazenamento integral por sessão com recuperação por summary/range;
+- orçamento de contexto, perfis operacionais e métricas sanitizadas;
+- catálogo de 126 ferramentas e evidência mensurada de viabilidade.
+
 Abaixo estão listadas as conquistas e os valores entregues em cada versão já lançada do plugin:
 
 ### Plataforma agentiva segura — concluída

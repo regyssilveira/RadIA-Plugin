@@ -41,7 +41,7 @@ begin
     CValidSpecification
   );
   Assert.AreEqual(8090, LSpecification.Port);
-  Assert.AreEqual(1, Length(LSpecification.Endpoints));
+  Assert.AreEqual<Integer>(1, Length(LSpecification.Endpoints));
   Assert.AreEqual('Telemetry', LSpecification.Endpoints[0].Group);
   Assert.AreEqual('/telemetry/{id}', LSpecification.Endpoints[0].Path);
 end;

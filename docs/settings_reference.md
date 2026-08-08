@@ -94,6 +94,8 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | Monthly Token Limit | Ao definir o orçamento local | Quantidade mensal aceita pelo controle do RadIA. |
 | Monthly Used Tokens | Para acompanhar consumo estimado | Contador local; pode divergir da contabilização oficial do provider. |
 | Reset Usage | Ao iniciar deliberadamente um novo acompanhamento | Zera somente o contador local, sem alterar cobrança externa. |
+| Agent result compaction profile | Para equilibrar economia e diagnóstico | `Conservative` é o padrão; `Balanced` reduz mais o orçamento de etapas antigas; `Off` restaura o contexto integral. Não altera checkpoints nem resultados das tools. |
+| Maximum agent decision context characters | Quando a janela do modelo ou a jornada exigir outro limite | Aceita 16.000–1.000.000; padrão 120.000. Conteúdo omitido permanece recuperável pelas tools de resultado. |
 
 ## Security & Consent
 

@@ -11,6 +11,13 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 ## 📅 Completed Releases History
 
+### v2.3.0 — Internal RTK and recoverable context
+
+- deterministic DUnitX, Git diff, build, and knowledge result compaction;
+- complete per-session storage with summary/range recovery;
+- context budget, operational profiles, and sanitized metrics;
+- 126-tool catalog and measured viability evidence.
+
 Below are the achievements and values delivered in each release version of the plugin:
 
 ### Secure agentic platform — completed

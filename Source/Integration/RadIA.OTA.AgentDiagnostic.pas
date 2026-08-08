@@ -10,13 +10,17 @@ uses
   System.Classes,
   System.SysUtils,
   RadIA.Core.AgentDiagnostic,
+  RadIA.Core.AgentResultStore,
   RadIA.Core.Container,
   RadIA.Core.Logger,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.Tools;
 
 procedure StartRadIAAgentRuntimeDiagnosticIfRequested;
 var
   LCheckpointDirectory: string;
+  LResultCompactor: IRadIAResultCompactor;
+  LResultStore: IRadIAAgentResultStore;
   LToolExecutor: IRadIAToolExecutor;
 begin
   LCheckpointDirectory := Trim(
@@ -32,6 +36,15 @@ begin
     );
     Exit;
   end;
+  if not TRadIAContainer.TryResolve<IRadIAResultCompactor>(LResultCompactor) or
+    not TRadIAContainer.TryResolve<IRadIAAgentResultStore>(LResultStore) then
+  begin
+    TLogger.Log(
+      'Agent runtime diagnostic failed: RTK services are unavailable.',
+      'AgentDiagnostic'
+    );
+    Exit;
+  end;
   TThread.CreateAnonymousThread(
     procedure
     begin
@@ -39,7 +52,9 @@ begin
       try
         RunRadIAAgentRuntimeDiagnostic(
           LToolExecutor,
-          LCheckpointDirectory
+          LCheckpointDirectory,
+          LResultCompactor,
+          LResultStore
         );
       except
         on E: Exception do

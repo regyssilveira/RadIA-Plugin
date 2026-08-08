@@ -18,6 +18,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `GetCursorPosition` | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCompilerMessages` | `RadIA.Core.WorkspaceTools.pas` |
 
+## Agent result recovery
+
+| Tool | Source unit |
+|---|---|
+| `GetToolResultSummary` | `RadIA.Core.AgentResultTools.pas` |
+| `GetToolResultRange` | `RadIA.Core.AgentResultTools.pas` |
+
 ## Project health
 
 | Tool | Source unit |
@@ -305,7 +312,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Resumo
 
-- Registered groups: 35
-- Registered built-in tools: 124
+- Registered groups: 36
+- Registered built-in tools: 126
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

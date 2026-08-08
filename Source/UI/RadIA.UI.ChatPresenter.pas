@@ -354,7 +354,10 @@ uses
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
   RadIA.Core.AgentPricing,
+  RadIA.Core.AgentResultStore,
   RadIA.Core.CliManager,
+  RadIA.Core.ResultCompactionSettings,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -3172,6 +3175,8 @@ var
   LProviderSettings: TRadIAAgentProviderSettings;
   LProject: TRadIAProjectSnapshot;
   LProjectId: string;
+  LResultCompactor: IRadIAResultCompactor;
+  LResultStore: IRadIAAgentResultStore;
   LSessionId: string;
   LStore: IRadIAAgentCheckpointStore;
   LUserMessage: IRadIAChatMessage;
@@ -3222,6 +3227,12 @@ begin
   );
   LCheckpointDirectory := TPath.Combine(FDataDir, 'agent-checkpoints');
   LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  if not TRadIAContainer.TryResolve<IRadIAResultCompactor>(LResultCompactor) then
+    LResultCompactor := TRadIAResultCompactor.Create;
+  if not TRadIAContainer.TryResolve<IRadIAAgentResultStore>(LResultStore) then
+    LResultStore := TRadIAAgentFileResultStore.Create(
+      TPath.Combine(FDataDir, 'agent-results')
+    );
   LGuard := FLifecycleGuard as IRadIALifecycleGuard;
   FAgentController := TRadIAAgentRunController.Create(
     FToolExecutor,
@@ -3236,7 +3247,9 @@ begin
     begin
       if LGuard.IsAlive then
         HandleAgentFinished(AResult, LActiveProvider, LActiveModel);
-    end
+    end,
+    LResultCompactor,
+    LResultStore
   );
 
   LUserMessage := TRadIAChatMessage.CreateMessage(
@@ -3282,7 +3295,15 @@ procedure TRadIAChatPresenter.ResolveAgentRuntimeSettings(
 var
   LPricing: TRadIAAgentPricing;
   LPricingCatalog: TRadIAAgentPricingCatalog;
+  LResultSettings: TRadIAResultCompactionSettings;
+  LResultSettingsStore: TRadIAResultCompactionSettingsStore;
 begin
+  LResultSettingsStore := TRadIAResultCompactionSettingsStore.Create;
+  try
+    LResultSettings := LResultSettingsStore.Load;
+  finally
+    LResultSettingsStore.Free;
+  end;
   LPricingCatalog := TRadIAAgentPricingCatalog.Create(
     TPath.Combine(FDataDir, 'agent-pricing.json')
   );
@@ -3298,7 +3319,8 @@ begin
         3,
         15 * 60 * 1000,
         ATokenLimit,
-        LPricingCatalog.DefaultRunBudgetMicros
+        LPricingCatalog.DefaultRunBudgetMicros,
+        LResultSettings.MaximumDecisionContextCharacters
       );
       Exit;
     end;
@@ -3309,7 +3331,9 @@ begin
       20,
       3,
       15 * 60 * 1000,
-      ATokenLimit
+      ATokenLimit,
+      0,
+      LResultSettings.MaximumDecisionContextCharacters
     );
   finally
     LPricingCatalog.Free;

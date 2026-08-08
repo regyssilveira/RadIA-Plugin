@@ -114,6 +114,10 @@
         <DCCReference Include="Source\Core\RadIA.Core.Types.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Version.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Tools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ResultCompactor.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ResultCompactionSettings.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.AgentResultStore.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.AgentResultTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ToolRegistry.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Extensions.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ToolSecurity.pas"/>

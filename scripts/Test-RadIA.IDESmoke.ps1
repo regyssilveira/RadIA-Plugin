@@ -750,7 +750,9 @@ function Wait-RadIAAgentRuntimeDiagnostic {
         "Agent diagnostic checkpoint: status=completed, steps=1",
         (
             "Agent runtime diagnostic passed: persisted=true, " +
-            "resumed=true, tool=GetIDEState"
+            "resumed=true, compaction=true, recovery=true, " +
+            "rollback=true, " +
+            "tool=GetIDEState"
         )
     )
     $deadline = [DateTime]::UtcNow.AddSeconds(30)

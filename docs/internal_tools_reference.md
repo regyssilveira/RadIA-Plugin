@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 124 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 126 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -37,6 +37,13 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetEditorSelection` | Lê a seleção atual do editor. | Em ações direcionadas a um trecho, como explicar, revisar, testar ou refatorar. |
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | Para contextualizar erros, símbolos, inserções e revisões ancoradas. |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | Depois de um build ou quando o objetivo envolve corrigir falhas de compilação. |
+
+## Recuperação de resultados compactados
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetToolResultSummary` | Retorna hash, tamanho e step de um resultado integral preservado pelo agente. | Quando uma etapa compactada informa um `artifactId` e o agente precisa conferir sua identidade antes de recuperar conteúdo. |
+| `GetToolResultRange` | Recupera um intervalo limitado do resultado integral sem reexecutar a ferramenta original. | Quando o contexto compactado omitiu um trecho necessário de build, teste, diff ou outro resultado armazenado. |
 
 ## Saúde do projeto e da instalação
 

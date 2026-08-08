@@ -3,11 +3,15 @@ unit RadIA.Core.AgentDiagnostic;
 interface
 
 uses
+  RadIA.Core.AgentResultStore,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.Tools;
 
 procedure RunRadIAAgentRuntimeDiagnostic(
   const AToolExecutor: IRadIAToolExecutor;
-  const ACheckpointDirectory: string
+  const ACheckpointDirectory: string;
+  const AResultCompactor: IRadIAResultCompactor = nil;
+  const AResultStore: IRadIAAgentResultStore = nil
 );
 
 implementation
@@ -106,6 +110,75 @@ begin
   end;
 end;
 
+procedure AssertDiagnosticCompaction(
+  const AResultCompactor: IRadIAResultCompactor
+);
+var
+  LCompaction: TRadIAResultCompaction;
+  LOffCompaction: TRadIAResultCompaction;
+  LPayload: string;
+begin
+  if not Assigned(AResultCompactor) then
+    Exit;
+  LPayload := '{"status":"succeeded","output":"' +
+    StringOfChar('x', 30000) + '"}';
+  LCompaction := AResultCompactor.CompactResult(
+    'RunDUnitXTests',
+    LPayload,
+    cpConservative
+  );
+  if not LCompaction.Compacted or
+    (LCompaction.CompactedCharacters >= LCompaction.OriginalCharacters) then
+    raise EInvalidOp.Create('Agent diagnostic compaction was not effective.');
+  LOffCompaction := AResultCompactor.CompactResult(
+    'RunDUnitXTests',
+    LPayload,
+    cpOff
+  );
+  if LOffCompaction.Compacted or
+    (LOffCompaction.CompactedJson <> LPayload) then
+    raise EInvalidOp.Create('Agent diagnostic Off rollback was not exact.');
+end;
+
+procedure AssertDiagnosticResultRecovery(
+  const ACheckpointStore: IRadIAAgentCheckpointStore;
+  const AResultStore: IRadIAAgentResultStore
+);
+var
+  LArtifact: TRadIAAgentResultArtifact;
+  LArtifactId: string;
+  LRoot: TJSONObject;
+  LSnapshot: string;
+  LSteps: TJSONArray;
+begin
+  if not Assigned(AResultStore) then
+    Exit;
+  if not ACheckpointStore.TryLoad(CDiagnosticSessionId, LSnapshot) then
+    raise EInvalidOp.Create('Agent diagnostic recovery checkpoint is missing.');
+  LRoot := TJSONObject.ParseJSONValue(LSnapshot) as TJSONObject;
+  try
+    if not Assigned(LRoot) then
+      raise EInvalidOp.Create('Agent diagnostic recovery checkpoint is invalid.');
+    LSteps := LRoot.GetValue<TJSONArray>('steps');
+    if not Assigned(LSteps) or (LSteps.Count <> 1) then
+      raise EInvalidOp.Create('Agent diagnostic recovery step is missing.');
+    LArtifactId := TJSONObject(LSteps[0]).GetValue<string>(
+      'resultArtifactId',
+      ''
+    );
+    if (LArtifactId = '') or not AResultStore.TryGetSummary(
+      CDiagnosticSessionId,
+      LArtifactId,
+      LArtifact
+    ) then
+      raise EInvalidOp.Create('Agent diagnostic result is not recoverable.');
+    if LArtifact.CharacterCount < 1 then
+      raise EInvalidOp.Create('Agent diagnostic recovered result is empty.');
+  finally
+    LRoot.Free;
+  end;
+end;
+
 { TRadIAAgentDiagnosticProvider }
 
 function TRadIAAgentDiagnosticProvider.NextDecision(
@@ -167,7 +240,9 @@ end;
 
 procedure RunRadIAAgentRuntimeDiagnostic(
   const AToolExecutor: IRadIAToolExecutor;
-  const ACheckpointDirectory: string
+  const ACheckpointDirectory: string;
+  const AResultCompactor: IRadIAResultCompactor;
+  const AResultStore: IRadIAAgentResultStore
 );
 var
   LObserver: IRadIAAgentObserver;
@@ -181,6 +256,7 @@ begin
     raise EArgumentNilException.Create('AToolExecutor');
   if Trim(ACheckpointDirectory) = '' then
     raise EArgumentException.Create('ACheckpointDirectory');
+  AssertDiagnosticCompaction(AResultCompactor);
 
   LProvider := TRadIAAgentDiagnosticProvider.Create;
   LStore := TRadIAAgentFileCheckpointStore.Create(ACheckpointDirectory);
@@ -190,7 +266,9 @@ begin
     AToolExecutor,
     LProvider,
     LStore,
-    LObserver
+    LObserver,
+    AResultCompactor,
+    AResultStore
   );
   try
     LObserverObject.Runtime := LRuntime;
@@ -215,16 +293,20 @@ begin
     AToolExecutor,
     LProvider,
     LStore,
-    LObserver
+    LObserver,
+    AResultCompactor,
+    AResultStore
   );
   try
     LObserverObject.Runtime := LRuntime;
     LResult := LRuntime.Resume(CDiagnosticSessionId);
     AssertDiagnosticStatus(LResult, asCompleted, 'resume');
     AssertPersistedStatus(LStore, 'completed');
+    AssertDiagnosticResultRecovery(LStore, AResultStore);
     TLogger.Log(
       'Agent runtime diagnostic passed: persisted=true, resumed=true, ' +
-      'tool=' + CDiagnosticToolName,
+      'compaction=true, recovery=true, rollback=true, tool=' +
+        CDiagnosticToolName,
       'AgentDiagnostic'
     );
   finally

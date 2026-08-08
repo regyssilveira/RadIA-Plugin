@@ -1,6 +1,6 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.2.2. Ela reúne as capacidades disponíveis e aponta para
+Esta página é o mapa funcional do RadIA 2.3.0. Ela reúne as capacidades disponíveis e aponta para
 as instruções detalhadas.
 
 Para distinguir implementação de planejamento:
@@ -182,12 +182,15 @@ O modo agente oferece:
 - apresentação e aprovação do plano;
 - execução iterativa de ferramentas e cartão de progresso;
 - pausa, retomada, cancelamento e checkpoints;
+- compactação interna de saídas extensas de DUnitX e Git diff antes da próxima decisão, preservando
+  o resultado integral no checkpoint;
 - limites de passos, tokens, tempo, custo e repetição;
 - build e validação como parte do objetivo quando solicitados.
 
 Perguntas comuns continuam como chat e não iniciam automaticamente um loop de ferramentas.
 
-Consulte [Manual completo](user_manual.md) e [Custos do agente](agent_pricing.md).
+Consulte [Manual completo](user_manual.md), [Custos do agente](agent_pricing.md) e
+[Compactação de resultados](agent_result_compaction.md).
 
 ## MCP
 
@@ -228,7 +231,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 124 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 126 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)

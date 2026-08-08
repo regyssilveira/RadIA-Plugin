@@ -568,7 +568,7 @@ begin
   LResult := LMethod.Invoke(FOpenAIProv, [CModelListResponse]);
   LModels := LResult.AsType<TArray<string>>;
 
-  Assert.AreEqual(2, Length(LModels));
+  Assert.AreEqual<Integer>(2, Length(LModels));
   Assert.AreEqual(MODEL_OPENAI_GPT56_SOL, LModels[0]);
   Assert.AreEqual(MODEL_OPENAI_GPT56_TERRA, LModels[1]);
 end;
@@ -580,7 +580,7 @@ begin
   FConfig.SetProviderAuthType('OpenAI', 'oauth');
   LModels := FOpenAIProv.GetAvailableModels;
 
-  Assert.AreEqual(3, Length(LModels));
+  Assert.AreEqual<Integer>(3, Length(LModels));
   Assert.AreEqual(MODEL_OPENAI_GPT56_TERRA, LModels[0]);
   Assert.AreEqual(MODEL_OPENAI_GPT56_SOL, LModels[1]);
   Assert.AreEqual(MODEL_OPENAI_GPT56_LUNA, LModels[2]);

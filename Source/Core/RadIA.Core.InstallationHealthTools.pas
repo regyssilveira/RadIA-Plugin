@@ -98,6 +98,8 @@ implementation
 uses
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.ResultCompactionSettings,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliManager,
   RadIA.Core.CliMcpSettings,
@@ -259,6 +261,8 @@ procedure TRadIAInstallationHealthProbe.AddStatusSections(
   const AAgentModeEnabled: Boolean
 );
 var
+  LCompactionSettings: TRadIAResultCompactionSettings;
+  LCompactionSettingsStore: TRadIAResultCompactionSettingsStore;
   LSection: TJSONObject;
   function Includes(const AName: string): Boolean;
   begin
@@ -276,10 +280,28 @@ begin
   end;
   if Includes('agent') then
   begin
+    LCompactionSettingsStore :=
+      TRadIAResultCompactionSettingsStore.Create;
+    try
+      LCompactionSettings := LCompactionSettingsStore.Load;
+    finally
+      LCompactionSettingsStore.Free;
+    end;
     LSection := TJSONObject.Create;
     LSection.AddPair('modeEnabled', TJSONBool.Create(AAgentModeEnabled));
     LSection.AddPair('executorKind', AReadiness.FExecutorKind);
     LSection.AddPair('client', AReadiness.FExecutorId);
+    LSection.AddPair(
+      'resultCompactionProfile',
+      RadIACompactionProfileName(RadIAResolveCompactionProfile)
+    );
+    LSection.AddPair('resultRecoveryAvailable', TJSONBool.Create(True));
+    LSection.AddPair(
+      'maximumDecisionContextCharacters',
+      TJSONNumber.Create(
+        LCompactionSettings.MaximumDecisionContextCharacters
+      )
+    );
     ARoot.AddPair('agent', LSection);
   end;
   if Includes('cli') then

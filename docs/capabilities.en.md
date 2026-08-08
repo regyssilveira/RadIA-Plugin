@@ -1,6 +1,6 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.2.2.
+This page is the functional map of RadIA 2.3.0.
 
 | Area | What RadIA can do |
 |---|---|
@@ -24,7 +24,7 @@ This page is the functional map of RadIA 2.2.2.
 | Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
 | Installation doctor | Score provider, executor, conditional MCP, terminal, chat, and first-tool readiness with a next action. |
 | RadIA status | Show a sanitized, filterable inventory of provider, agent, CLI, MCP, security, editor, project, tools, and logging state. |
-| Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints and resource limits. |
+| Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints, resource limits, and internal DUnitX/Git diff result compaction. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
 | Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |
 | Extensions | Visual manifest/package manager plus a versioned tool API protected by the policy pipeline. |
@@ -40,11 +40,12 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 124 registered built-in tools](runtime_tool_catalog.md)
+- [All 126 registered built-in tools](runtime_tool_catalog.md)
 - [Operational reference for every tool](internal_tools_reference.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)
 - [Feature catalog](features.en.md)
+- [Agent result compaction](agent_result_compaction.en.md)
 - [Documentation center](README.en.md)
 
 The active IDE is authoritative: use `/tools` in chat or `tools/list` over MCP because context and
