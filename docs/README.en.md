@@ -1,6 +1,6 @@
 # RadIA documentation
 
-This is the documentation entry point for RadIA 2.3.0. Start with the task you want to complete;
+This is the documentation entry point for RadIA 2.3.1. Start with the task you want to complete;
 each subject has one primary guide to prevent duplicated or conflicting instructions.
 
 > The `/tools` command is the most accurate reference for the current installation because the
@@ -45,7 +45,8 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Agent cost and limits | [Agent pricing](agent_pricing.en.md) |
 | Plan internal result compaction | [Internal RTK execution plan](rtk_execution_plan.en.md) |
 | Use and diagnose the internal RTK | [Agent result compaction and recovery](agent_result_compaction.en.md) |
-| Review the 2.3.0 candidate | [Release notes](release_notes_2.3.0.en.md) and [audit](result_compaction_release_audit_2.3.0.en.md) |
+| Review version 2.3.1 | [Release notes](release_notes_2.3.1.en.md) |
+| Review the 2.3.0 RTK | [Release notes](release_notes_2.3.0.en.md) and [audit](result_compaction_release_audit_2.3.0.en.md) |
 | Use tools from another client | [MCP integration](mcp_integration_guide.en.md) |
 
 Provider, CLI executor, and MCP are independent settings. A declared authentication transport,

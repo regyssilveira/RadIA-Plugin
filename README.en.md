@@ -60,9 +60,10 @@ These settings have separate responsibilities:
   or Copilot client;
 - **MCP** lets another authorized client use tools published by the IDE.
 
-One setting does not silently activate another. A login method that explicitly declares a CLI as
-its transport, such as ChatGPT login through Codex, is the exception. See the
-[executor matrix](docs/cli_executors.md).
+OpenAI API via API Key uses HTTP transport and API Platform billing. ChatGPT Pro uses the Codex CLI
+session and quota. In the latter route, **RadIA native** keeps orchestration inside RadIA, while
+**Codex CLI direct** delegates the complete execution to the CLI. See the
+[executor matrix](docs/cli_executors.en.md).
 
 ## Tools and commands
 

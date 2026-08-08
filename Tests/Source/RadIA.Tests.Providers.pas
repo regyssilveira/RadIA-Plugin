@@ -10,6 +10,8 @@ type
   TTestRadIAOpenAIProvider = class(TRadIAOpenAIProvider)
   protected
     function GetCodexExecutablePath: string; override;
+  public
+    function IsUsingCodexCliTransport: Boolean;
   end;
 
   [TestFixture]
@@ -56,9 +58,11 @@ type
     [Test]
     procedure TestOpenAI_OAuthFallbackUsesCurrentModels;
     [Test]
-    procedure TestOpenAI_SendPromptAsync_OAuth_CodexNotFound;
+    procedure TestOpenAI_LegacyOAuthAndProUseCodexCli;
     [Test]
-    procedure TestOpenAI_SendPromptStreamAsync_OAuth_CodexNotFound;
+    procedure TestOpenAI_SendPromptAsync_CliOAuth_CodexNotFound;
+    [Test]
+    procedure TestOpenAI_SendPromptStreamAsync_CliOAuth_CodexNotFound;
   end;
 
   [TestFixture]
@@ -84,6 +88,11 @@ uses
 function TTestRadIAOpenAIProvider.GetCodexExecutablePath: string;
 begin
   Result := '';
+end;
+
+function TTestRadIAOpenAIProvider.IsUsingCodexCliTransport: Boolean;
+begin
+  Result := UsesCodexCliTransport;
 end;
 
 { TTestRadIAProviders }
@@ -586,14 +595,29 @@ begin
   Assert.AreEqual(MODEL_OPENAI_GPT56_LUNA, LModels[2]);
 end;
 
-procedure TTestRadIAProviders.TestOpenAI_SendPromptAsync_OAuth_CodexNotFound;
+procedure TTestRadIAProviders.TestOpenAI_LegacyOAuthAndProUseCodexCli;
+begin
+  FConfig.SetProviderAuthType('OpenAI', 'oauth');
+  Assert.IsTrue(
+    FOpenAIProv.IsUsingCodexCliTransport,
+    'Legacy OAuth must be routed through Codex CLI instead of the native API'
+  );
+
+  FConfig.SetProviderAuthType('OpenAI', 'oauth_cli');
+  Assert.IsTrue(
+    FOpenAIProv.IsUsingCodexCliTransport,
+    'ChatGPT Pro must use the Codex CLI transport'
+  );
+end;
+
+procedure TTestRadIAProviders.TestOpenAI_SendPromptAsync_CliOAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
   LErrorText: string;
 begin
   LCallbackCalled := False;
   LErrorText := '';
-  FConfig.SetProviderAuthType('OpenAI', 'oauth');
+  FConfig.SetProviderAuthType('OpenAI', 'oauth_cli');
   FConfig.SetActiveModel('OpenAI', MODEL_OPENAI_GPT56_SOL);
 
   FOpenAIProv.SendPromptAsync(
@@ -615,14 +639,14 @@ begin
   Assert.Contains(LErrorText, 'Browse');
 end;
 
-procedure TTestRadIAProviders.TestOpenAI_SendPromptStreamAsync_OAuth_CodexNotFound;
+procedure TTestRadIAProviders.TestOpenAI_SendPromptStreamAsync_CliOAuth_CodexNotFound;
 var
   LCallbackCalled: Boolean;
   LErrorText: string;
 begin
   LCallbackCalled := False;
   LErrorText := '';
-  FConfig.SetProviderAuthType('OpenAI', 'oauth');
+  FConfig.SetProviderAuthType('OpenAI', 'oauth_cli');
   FConfig.SetActiveModel('OpenAI', MODEL_OPENAI_GPT56_SOL);
 
   FOpenAIProv.SendPromptStreamAsync(

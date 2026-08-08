@@ -22,6 +22,7 @@ until it is selected for a goal after version 2.2.2.
 | **2.2 Goal — Dynamic Memory Diagnostics with FastMM5** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.0 |
 | **Diagnostics, CLI/MCP UX, and Centralized Documentation** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.2.1 |
 | **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
+| **Explicit Routes, Restored Pro Login, and Universal Copy** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
 | **Goal — CLI Continuity and Advanced Integration** | 🔎 Reassess residual scope | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |

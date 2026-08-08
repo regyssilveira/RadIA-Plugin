@@ -172,7 +172,26 @@ type
       const AArgumentsJson: string
     );
     procedure SetAgentModeEnabled(const AEnabled: Boolean);
+    procedure SetAgentExecutor(const AExecutorId: string);
     procedure PostAgentModeToWeb;
+    procedure PostExecutionRouteToWeb;
+    procedure ResolveExecutionRoute(
+      const AProvider: string;
+      const AAuthType: string;
+      const ASettings: TRadIAAgentExecutorSettings;
+      out AMode: string;
+      out AOrchestrator: string;
+      out ATransport: string;
+      out ADisplayName: string
+    );
+    function BuildExecutionRouteLabel(
+      const AMode: string;
+      const AOrchestrator: string;
+      const ATransport: string;
+      const AProvider: string;
+      const ACliClientId: string
+    ): string;
+    function BuildExecutionRouteJson: TJSONObject;
     function GetAgentTokenLimit: Integer;
     procedure ResolveAgentRuntimeSettings(
       const AProvider: string;
@@ -566,6 +585,9 @@ begin
     if SameText(FConfig.GetProviderAuthType(AProviderId), 'oauth') then
       Exit(not FConfig.GetOAuthAccessToken(AProviderId).Trim.IsEmpty or
            not FConfig.GetOAuthRefreshToken(AProviderId).Trim.IsEmpty);
+
+    if SameText(FConfig.GetProviderAuthType(AProviderId), 'oauth_cli') then
+      Exit(True);
 
     Result := not FConfig.GetApiKey(AProviderId).Trim.IsEmpty;
   end;
@@ -1120,6 +1142,7 @@ begin
   FConfig.SetActiveProvider(AProviderName);
   FConfig.Save;
   UpdateModelsCombo;
+  PostExecutionRouteToWeb;
 end;
 
 procedure TRadIAChatPresenter.ChangeModel(const AModelName: string);
@@ -1386,6 +1409,13 @@ begin
 
   LProcessed := PreProcessPrompt(APromptText);
   PostToWebView('add_message', 'user', APromptText);
+  if FAgentModeEnabled then
+  begin
+    StartAgentRun(LProcessed);
+    Exit;
+  end;
+  if TryStartCliAgentRun(LProcessed) then
+    Exit;
   SendPromptToAI(LProcessed);
 end;
 
@@ -1508,15 +1538,16 @@ procedure TRadIAChatPresenter.HandleStreamError(
    var AFullResponse: string);
 var
   LAssistantMsg: IRadIAChatMessage;
+  LDisplayError: string;
 begin
   Self.FRequestInProgress := False;
   Self.FView.SetRequestState(False);
   TLogger.Log(Format('SendPromptToAI error callback: %s', [AError]), 'UI');
-
+  LDisplayError := AError;
   if not AFullResponse.IsEmpty then
   begin
-    AFullResponse := AFullResponse + #13#10#13#10 + '**Error:** ' + AError;
-    Self.PostToWebView('append_message', 'assistant', #13#10#13#10 + '**Error:** ' + AError,
+    AFullResponse := AFullResponse + #13#10#13#10 + '**Error:** ' + LDisplayError;
+    Self.PostToWebView('append_message', 'assistant', #13#10#13#10 + '**Error:** ' + LDisplayError,
         True, AActiveProvider, AActiveModel);
 
     LAssistantMsg := TRadIAChatMessage.CreateMessage(mrAssistant, AFullResponse, AActiveProvider,
@@ -1526,7 +1557,7 @@ begin
   end
   else
   begin
-    Self.PostToWebView('add_message', 'assistant', '**Error:** ' + AError, False, AActiveProvider,
+    Self.PostToWebView('add_message', 'assistant', '**Error:** ' + LDisplayError, False, AActiveProvider,
         AActiveModel);
     Self.PostToWebView('append_message', 'assistant', '', True, AActiveProvider, AActiveModel);
   end;
@@ -1637,6 +1668,9 @@ var
   LGuard: IRadIALifecycleGuard;
   HandleStreamCallback: TStreamChunkCallback;
 begin
+  { Settings can persist OAuth credentials even when its modal dialog is closed
+    without OK. Reload before every native request to avoid stale credentials. }
+  FConfig.Load;
   LActiveProvider := FConfig.GetActiveProvider;
   if SameText(LActiveProvider, 'Gemini') and SameText(FConfig.GetProviderAuthType('Gemini'), 'oauth') then
   begin
@@ -2192,6 +2226,8 @@ begin
   Result := True;
   if AAction = 'set_agent_mode' then
     SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
+  else if AAction = 'set_agent_executor' then
+    SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
   else if AAction = 'pause_agent' then
     PauseAgentRun
   else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
@@ -2934,10 +2970,33 @@ begin
     FAgentController.Cancel;
   FAgentModeEnabled := AEnabled;
   PostAgentModeToWeb;
-  if FAgentModeEnabled then
-    PostToWebView('add_message', 'assistant', 'Agent mode is enabled.')
+  PostExecutionRouteToWeb;
+  UpdateModelsCombo;
+end;
+
+procedure TRadIAChatPresenter.SetAgentExecutor(const AExecutorId: string);
+var
+  LCurrent: TRadIAAgentExecutorSettings;
+  LDefinition: TRadIACliDefinition;
+begin
+  if FRequestInProgress then
+    Exit;
+  LCurrent := FAgentExecutorSettings.Load;
+  if SameText(AExecutorId, 'native') then
+    FAgentExecutorSettings.Save(
+      TRadIAAgentExecutorSettings.Create(aekNative, LCurrent.CliClientId)
+    )
+  else if TRadIACliCatalog.FindById(AExecutorId, LDefinition) then
+    FAgentExecutorSettings.Save(
+      TRadIAAgentExecutorSettings.Create(aekCli, LDefinition.Id)
+    )
   else
-    PostToWebView('add_message', 'assistant', 'Agent mode is disabled.');
+  begin
+    PostToWebView('add_message', 'assistant', 'The selected executor is not supported.');
+    Exit;
+  end;
+  PostExecutionRouteToWeb;
+  UpdateModelsCombo;
 end;
 
 function TRadIAChatPresenter.BuildAgentToolCatalogJson: string;
@@ -3374,12 +3433,16 @@ begin
   LWorkingDirectory := ExtractFileDir(LProject.FileName);
   if LWorkingDirectory = '' then
   begin
-    PostToWebView(
-      'add_message',
-      'assistant',
-      'Open a Delphi project before starting an external CLI agent.'
-    );
-    Exit;
+    if FAgentModeEnabled then
+    begin
+      PostToWebView(
+        'add_message',
+        'assistant',
+        'Open a Delphi project before starting an external CLI agent.'
+      );
+      Exit;
+    end;
+    LWorkingDirectory := GetCurrentDir;
   end;
 
   LDetection := TRadIACliResolver.Resolve(LDefinition.Id);
@@ -3448,9 +3511,9 @@ begin
   FRequestInProgress := False;
   FView.SetRequestState(False);
   if AResult.Cancelled or FCancelledByUser then
-    LResponse := 'CLI agent execution was cancelled.'
+    LResponse := 'CLI execution was cancelled.'
   else if AResult.TimedOut then
-    LResponse := 'CLI agent execution exceeded the 15-minute limit.'
+    LResponse := 'CLI execution exceeded the 15-minute limit.'
   else if not AResult.Succeeded then
   begin
     LResponse := Trim(AResult.StdErr);
@@ -3458,7 +3521,7 @@ begin
       LResponse := Trim(AResult.StdOut);
     if LResponse = '' then
       LResponse := Format(
-        'CLI agent failed with exit code %d.',
+        'CLI execution failed with exit code %d.',
         [AResult.ExitCode]
       );
   end
@@ -3489,6 +3552,130 @@ begin
   try
     LJson.AddPair('action', 'agent_mode_changed');
     LJson.AddPair('enabled', TJSONBool.Create(FAgentModeEnabled));
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.ResolveExecutionRoute(
+  const AProvider: string;
+  const AAuthType: string;
+  const ASettings: TRadIAAgentExecutorSettings;
+  out AMode: string;
+  out AOrchestrator: string;
+  out ATransport: string;
+  out ADisplayName: string
+);
+begin
+  AMode := 'chat';
+  AOrchestrator := 'none';
+  ATransport := 'native';
+  ADisplayName := 'Native';
+
+  if SameText(AAuthType, 'api_key') then
+    ADisplayName := 'Native API';
+
+  if SameText(AProvider, 'OpenAI') and SameText(AAuthType, 'oauth_cli') then
+  begin
+    ATransport := 'codex-cli';
+    ADisplayName := 'ChatGPT Pro via Codex CLI';
+  end;
+
+  if FAgentModeEnabled then
+  begin
+    AMode := 'agent';
+    AOrchestrator := 'radia-native';
+  end;
+
+  if ASettings.Kind = aekCli then
+  begin
+    AOrchestrator := 'external-cli';
+    ATransport := ASettings.CliClientId + '-cli';
+    ADisplayName := ASettings.CliClientId + ' CLI';
+  end;
+end;
+
+function TRadIAChatPresenter.BuildExecutionRouteLabel(
+  const AMode: string;
+  const AOrchestrator: string;
+  const ATransport: string;
+  const AProvider: string;
+  const ACliClientId: string
+): string;
+begin
+  if AMode = 'chat' then
+  begin
+    if AOrchestrator = 'external-cli' then
+      Exit('Chat | ' + ACliClientId + ' CLI direct');
+    if ATransport = 'codex-cli' then
+      Exit('Chat | RadIA native | ChatGPT Pro via Codex CLI');
+    Exit('Chat | ' + AProvider + ' native');
+  end
+  else if AOrchestrator = 'external-cli' then
+    Result := 'Agent | ' + ACliClientId + ' CLI direct'
+  else if ATransport = 'codex-cli' then
+    Result := 'Agent | RadIA native | ChatGPT Pro via Codex CLI'
+  else
+    Result := 'Agent | RadIA native | ' + AProvider;
+end;
+
+function TRadIAChatPresenter.BuildExecutionRouteJson: TJSONObject;
+var
+  LAuthType: string;
+  LCliClientId: string;
+  LDetails: string;
+  LDisplayName: string;
+  LLabel: string;
+  LMode: string;
+  LOrchestrator: string;
+  LProvider: string;
+  LSettings: TRadIAAgentExecutorSettings;
+  LTransport: string;
+begin
+  LProvider := FConfig.GetActiveProvider;
+  LAuthType := FConfig.GetProviderAuthType(LProvider);
+  LSettings := FAgentExecutorSettings.Load;
+  LCliClientId := LSettings.CliClientId;
+  ResolveExecutionRoute(
+    LProvider,
+    LAuthType,
+    LSettings,
+    LMode,
+    LOrchestrator,
+    LTransport,
+    LDisplayName
+  );
+  LLabel := BuildExecutionRouteLabel(
+    LMode,
+    LOrchestrator,
+    LTransport,
+    LProvider,
+    LCliClientId
+  );
+
+  LDetails := 'Mode: ' + LMode + '. Orchestrator: ' + LOrchestrator +
+    '. Provider transport: ' + LTransport +
+    '. MCP is a separate external tool bridge and is not this chat route.';
+  Result := TJSONObject.Create;
+  Result.AddPair('label', LLabel);
+  Result.AddPair('displayName', LDisplayName);
+  Result.AddPair('details', LDetails);
+  Result.AddPair('mode', LMode);
+  Result.AddPair('orchestrator', LOrchestrator);
+  Result.AddPair('transport', LTransport);
+  Result.AddPair('provider', LProvider);
+  Result.AddPair('cliClientId', LCliClientId);
+  Result.AddPair('mcpRole', 'external-bridge');
+end;
+
+procedure TRadIAChatPresenter.PostExecutionRouteToWeb;
+var
+  LJson: TJSONObject;
+begin
+  LJson := BuildExecutionRouteJson;
+  try
+    LJson.AddPair('action', 'execution_route');
     PostJsonToWeb(LJson);
   finally
     LJson.Free;
@@ -3889,6 +4076,7 @@ begin
     LJson.AddPair('activeProvider', LActiveProvider);
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));
+    LJson.AddPair('executionRoute', BuildExecutionRouteJson);
 
     FView.PostMessageToWeb(LJson.ToJSON);
   finally

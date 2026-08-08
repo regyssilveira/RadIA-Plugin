@@ -30,6 +30,7 @@ type
     function ParseCodexModelList(const AOutput: string): TArray<string>;
   protected
     function GetCodexExecutablePath: string; virtual;
+    function UsesCodexCliTransport: Boolean;
     function GetBaseUrl: string; override;
     function GetModelsDiscoveryUrl: string; override;
     function FilterModelId(const AId: string): Boolean; override;
@@ -66,12 +67,20 @@ end;
 
 function TRadIAOpenAIProvider.GetBaseUrl: string;
 begin
-  if SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
+  if SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') or
+    SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth_cli') then
     Result := 'https://api.openai.com/v1'
   else if not FConfig.GetOpenAICustomBaseUrl.IsEmpty then
     Result := FConfig.GetOpenAICustomBaseUrl
   else
     Result := 'https://api.openai.com/v1';
+end;
+
+function TRadIAOpenAIProvider.UsesCodexCliTransport: Boolean;
+begin
+  Result := SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth_cli') or
+    SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') or
+    SameText(FConfig.GetProviderAuthType(FProviderId), 'web_login');
 end;
 
 function TRadIAOpenAIProvider.GetAvailableModels: TArray<string>;
@@ -176,7 +185,7 @@ var
   LInvocation: TRadIACliInvocation;
   LProviderRef: IRadIAProvider;
 begin
-  if not SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
+  if not UsesCodexCliTransport then
   begin
     inherited FetchAvailableModelsAsync(ACallback);
     Exit;
@@ -250,7 +259,7 @@ procedure TRadIAOpenAIProvider.SendPromptAsync(const APrompt: string;
   const AHistory: TArray<IRadIAChatMessage>; const ACallback: TCompletionCallback;
   const ATemperature: Double; const AMaxTokens: Integer);
 begin
-  if SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
+  if UsesCodexCliTransport then
   begin
     if Length(AHistory) = 0 then
       FThreadId := '';
@@ -266,7 +275,7 @@ procedure TRadIAOpenAIProvider.SendPromptStreamAsync(const APrompt: string;
   const AHistory: TArray<IRadIAChatMessage>; const ACallback: TStreamChunkCallback;
   const ATemperature: Double; const AMaxTokens: Integer);
 begin
-  if SameText(FConfig.GetProviderAuthType(FProviderId), 'oauth') then
+  if UsesCodexCliTransport then
   begin
     if Length(AHistory) = 0 then
       FThreadId := '';

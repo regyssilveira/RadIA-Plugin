@@ -1,6 +1,6 @@
 # Documentação do RadIA
 
-Este é o ponto de entrada da documentação do RadIA 2.3.0. Escolha primeiro o que você deseja
+Este é o ponto de entrada da documentação do RadIA 2.3.1. Escolha primeiro o que você deseja
 fazer; cada assunto tem um guia principal para evitar informações duplicadas ou contraditórias.
 
 > A referência mais precisa da instalação atual é o comando `/tools`, pois o catálogo pode variar
@@ -48,7 +48,8 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Consultar custos e limites do agente | [Custos do agente](agent_pricing.md) |
 | Planejar a evolução do compactador interno | [Plano de execução do RTK](rtk_execution_plan.md) |
 | Usar e diagnosticar o RTK interno | [Compactação e recuperação de resultados](agent_result_compaction.md) |
-| Revisar a candidata 2.3.0 | [Notas de release](release_notes_2.3.0.md) e [auditoria](result_compaction_release_audit_2.3.0.md) |
+| Revisar a versão 2.3.1 | [Notas de release](release_notes_2.3.1.md) |
+| Revisar o RTK da 2.3.0 | [Notas de release](release_notes_2.3.0.md) e [auditoria](result_compaction_release_audit_2.3.0.md) |
 | Usar as ferramentas por outro cliente | [Integração MCP](mcp_integration_guide.md) |
 
 MCP, executor CLI e provider são configurações independentes. A exceção é um método de

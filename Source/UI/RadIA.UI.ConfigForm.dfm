@@ -1,11 +1,13 @@
 object FormAIConfig: TRadIAFormAIConfig
   Left = 0
   Top = 0
-  BorderStyle = bsDialog
+  BorderStyle = bsSizeable
   Caption = 'Rad IA Configuration'
   ClientHeight = 520
   ClientWidth = 840
   Color = clBtnFace
+  Constraints.MinHeight = 559
+  Constraints.MinWidth = 856
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12

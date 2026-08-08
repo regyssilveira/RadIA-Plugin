@@ -23,6 +23,7 @@ nova até ser selecionada para um goal após a versão 2.2.2.
 | **Goal 2.2 — Diagnóstico Dinâmico de Memória com FastMM5** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.0 |
 | **Diagnóstico, UX CLI/MCP e Documentação Centralizada** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.2.1 |
 | **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
+| **Rotas explícitas, login Pro restaurado e cópia universal** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
 | **Goal — Continuidade CLI e Integração Avançada** | 🔎 Reavaliar escopo residual | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |

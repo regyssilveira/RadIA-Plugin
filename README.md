@@ -63,8 +63,9 @@ Essas escolhas têm responsabilidades diferentes:
 - **executor CLI externo** entrega o objetivo ao Codex, Claude, Gemini ou Copilot instalado pelo usuário;
 - **MCP** permite que outro cliente autorizado use as tools publicadas pela IDE.
 
-Uma configuração não ativa silenciosamente outra. A exceção é um método de autenticação que
-declare uma CLI como transporte, como o login ChatGPT via Codex. Veja a
+O OpenAI API via API Key usa transporte HTTP e cobrança da plataforma API. O ChatGPT Pro usa a
+sessão e a cota do Codex CLI. Nesse segundo caso, **RadIA native** mantém a orquestração dentro do
+RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja a
 [matriz completa de executores](docs/cli_executors.md).
 
 ## Ferramentas e comandos

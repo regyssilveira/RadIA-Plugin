@@ -11,6 +11,13 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 ## 📅 Completed Releases History
 
+### v2.3.1 — Explicit routes and functional ChatGPT Pro
+
+- independent Chat/Agent and RadIA native/direct CLI selection;
+- route-specific visual identity and effective route name on every response;
+- ChatGPT Pro restored through Codex CLI transport and separated from OpenAI API Key;
+- copy actions on every textual surface and resizable settings.
+
 ### v2.3.0 — Internal RTK and recoverable context
 
 - deterministic DUnitX, Git diff, build, and knowledge result compaction;

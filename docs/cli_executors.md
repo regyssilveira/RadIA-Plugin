@@ -1,18 +1,20 @@
 # Orquestração nativa e executores por CLI
 
 O RadIA oferece duas escolhas independentes: a **orquestração do agente** e o **transporte de
-autenticação do provider**. A preferência de orquestração fica em **Configurações > CLI & MCP >
-Chat executor** e não exige reiniciar a IDE.
+autenticação do provider**. No compositor, selecione **Mode: Agent** e escolha o executor em **Send
+with**. A escolha vale para a próxima mensagem, é persistida como padrão e não exige reiniciar a
+IDE. **Configurações > CLI & MCP > Chat executor** mantém os caminhos, diagnóstico e o mesmo padrão.
 
 - **RadIA native orchestration** executa o loop, as ferramentas, os consentimentos e os checkpoints
   dentro do RadIA. Ele não troca silenciosamente para um executor externo.
 - **External CLI orchestration** entrega o objetivo diretamente ao CLI selecionado.
-- O botão **Agent** do chat liga ou desliga o comportamento agente; ele não escolhe o executor nem
-  muda a autenticação do provider.
+- **Mode: Chat** envia uma conversa pela rota escolhida. O modo nativo não usa tools registradas do
+  RadIA; um CLI externo preserva suas capacidades próprias. **Mode: Agent** envia um objetivo ao
+  executor escolhido em **Send with**. Nenhuma das opções altera a autenticação do provider.
 
-Providers com API key e providers locais funcionam sem CLI. A opção **Sign in with ChatGPT (OAuth
-via Codex CLI)** é uma exceção explícita: nesse tipo de autenticação, o Codex CLI é o transporte do
-provider mesmo quando a orquestração é nativa. Para operar totalmente sem CLIs, use uma API key ou
+Providers com API key e providers locais funcionam sem CLI. A opção **ChatGPT Pro via Codex CLI** é
+uma exceção explícita: o Codex CLI é o transporte do provider mesmo quando a orquestração é nativa.
+O login do CLI é compartilhado; escolher o CLI direto muda a orquestração, não a conta. Para operar sem CLIs, use uma API key ou
 outro provider que ofereça transporte HTTP/local nativo.
 
 ## Perfis suportados
@@ -76,7 +78,7 @@ são persistidos.
 ## Detecção e versão instalada
 
 Ao abrir o painel **CLI & MCP**, trocar o cliente ou usar **Diagnose**, o RadIA procura primeiro o
-caminho configurado e depois o `PATH` do Windows. Diagnóstico, ChatGPT OAuth e execução externa
+caminho configurado e depois o `PATH` do Windows. Diagnóstico, ChatGPT Pro e execução externa
 usam o mesmo resolvedor e, portanto, o mesmo caminho efetivo. Quando encontra o executável, chama
 `--version` em segundo plano, com timeout de dez segundos, e apresenta na própria tela:
 
@@ -150,7 +152,7 @@ agente nativo e vale na próxima solicitação, sem reiniciar a IDE.
 |---|---|---|
 | Agente nativo com API key | Orquestração nativa + provider por API | Não |
 | Agente nativo com provider local | Orquestração nativa + Ollama/LM Studio | Não |
-| ChatGPT OAuth | Qualquer orquestração + caminho do Codex CLI | Não, se um executável existente for selecionado |
+| ChatGPT Pro | Qualquer orquestração + caminho do Codex CLI | Não, se um executável existente for selecionado |
 | Agente externo | Orquestração externa + CLI selecionado | Não, se um executável existente for selecionado |
 | Instalação assistida do Codex/Claude/Gemini | Canal opcional de instalação | Sim |
 

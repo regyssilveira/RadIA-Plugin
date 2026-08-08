@@ -9,7 +9,8 @@ templates, logs, or screenshots. Saving provider settings refreshes models witho
 | Option | When to use | Effect and care |
 |---|---|---|
 | API Key / Get API Key | To connect a cloud provider | The key authenticates calls and is DPAPI-protected; the link opens the official provider page. Billing remains with the provider. |
-| Connection Method | To choose API key or Gemini/OpenAI web login | API key does not require CLI. ChatGPT OAuth explicitly uses Codex CLI as transport. |
+| Connection Method | To choose **API Key (BYOK)** or **ChatGPT Pro via Codex CLI** | API key uses HTTP and API Platform billing. ChatGPT Pro uses the Codex CLI session and quota, including with RadIA native orchestration. Legacy OAuth settings migrate automatically. |
+| Configure Codex CLI login | Before using ChatGPT Pro | Opens Codex under **CLI & MCP**, where **Start login**, **Logout**, and **Diagnose** control and verify the shared session. |
 | Sign In / Sign Out | To start or end a supported web session | Uses the provider's official authorization flow and updates the local session. |
 | Custom Base URL | Only for an OpenAI-compatible endpoint | Empty uses OpenAI. Include `/v1` when required. Do not send secrets to an untrusted endpoint. |
 | Server URL | For Ollama or LM Studio | Enter scheme, host, and port. Use HTTP only on loopback or trusted networks. These providers need no cloud key or CLI. |

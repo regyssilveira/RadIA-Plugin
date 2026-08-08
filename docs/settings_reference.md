@@ -36,7 +36,8 @@ consulte o [manual do usuário](user_manual.md); para problemas, consulte a
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
-| Connection Method | Para escolher API key ou **Sign in with ChatGPT** | API key funciona sem CLI. ChatGPT OAuth usa Codex CLI como transporte, mesmo com orquestração nativa. |
+| Connection Method | Para escolher **API Key (BYOK)** ou **ChatGPT Pro via Codex CLI** | API key usa HTTP e cobrança da plataforma API. ChatGPT Pro usa a sessão e a cota do Codex CLI, inclusive com orquestração RadIA native. Configurações OAuth legadas são migradas automaticamente. |
+| Configure Codex CLI login | Antes de usar ChatGPT Pro | Abre o cliente Codex em **CLI & MCP**, onde **Start login**, **Logout** e **Diagnose** controlam e verificam a sessão compartilhada. |
 | Custom Base URL (optional) | Somente para endpoint compatível com OpenAI | Vazio usa o endpoint oficial. Informe a URL base completa, incluindo `/v1` quando o serviço exigir. |
 | Sign In with ChatGPT / Sign Out | Para autorizar ou encerrar o transporte OAuth | Exige um Codex CLI resolvido em **CLI & MCP**. Não instala npm automaticamente sem confirmação. |
 

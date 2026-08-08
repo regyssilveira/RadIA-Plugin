@@ -6,6 +6,9 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
+Version 2.3.1 note: explicit RadIA native versus direct CLI selection, route-specific identity,
+copy actions on every textual response, and ChatGPT Pro restored exclusively through Codex CLI.
+
 v2.2.2 note: `/help`, conversational DEXT journeys, transport-compatible model discovery, an
 optional local token limit, and refined CLI/MCP settings.
 
@@ -33,6 +36,9 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Dynamic Slash Commands** | Chat UX | Dynamic mapping of templates to slash commands (e.g. `/createprojectarch`), synced and autocompleted in WebView2. | ✅ Completed |
 | **RadIA Doctor and Status** | Diagnostics | `/doctor` checks readiness and recommends the next action; `/status` inventories configuration and availability without exposing credentials. | ✅ Completed (v2.2.1) |
 | **CLI/MCP Setup Assistant** | Integration | Detects, explains, requests consent, installs or configures, validates, and provides complete manual fallback without an IDE restart. | ✅ Completed (v2.2.1) |
+| **Explicit execution routes** | Chat UX | Separates Chat/Agent mode, RadIA native orchestration, and direct CLI while showing the effective route, transport, and credential. | ✅ Completed (v2.3.1) |
+| **ChatGPT Pro via Codex CLI** | Provider | Uses the ChatGPT/Codex session and quota as either the native provider transport or direct CLI execution; API Key remains separate. | ✅ Completed (v2.3.1) |
+| **Universal text copy** | Chat UX | Adds copy actions to responses, JSON, tool results, and other textual payloads while preserving original content. | ✅ Completed (v2.3.1) |
 | **Integrated Help** | Chat UX | `/help` summarizes capabilities and opens public guides in the default browser. | ✅ Completed (v2.2.2) |
 | **Conversational DEXT Journeys** | Projects | Collects missing requirements across messages, preserves context, and generates minimal or controller-based APIs. | ✅ Completed (v2.2.2) |
 | **Declarative Skills and Templates** | Extensibility | Schema 2 manifest with hot reload, autocomplete, and minimal `chat.prompt` permission. | ✅ Completed |

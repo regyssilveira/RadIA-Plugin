@@ -1620,7 +1620,7 @@ begin
   if grpGeminiAuthType.Items.Count > 1 then
     grpGeminiAuthType.Items[1] := 'Sign in with Google (OAuth)';
   if grpOpenAIAuthType.Items.Count > 1 then
-    grpOpenAIAuthType.Items[1] := 'Sign in with ChatGPT (OAuth via Codex CLI)';
+    grpOpenAIAuthType.Items[1] := 'ChatGPT Pro via Codex CLI';
 
   CreateTemplateOriginLabel;
 
@@ -2443,24 +2443,36 @@ begin
     ShowMessage('Install the CLI or select its full executable path before login.');
     Exit;
   end;
+  if (LDefinition.Kind = ckCodex) and SameText(FBtnCliLogin.Caption, 'Logout') then
+  begin
+    if MessageDlg(
+      'Sign out from the Codex CLI session?',
+      mtConfirmation,
+      [mbYes, mbNo],
+      0
+    ) <> mrYes then
+      Exit;
+    LParameters := '/c ""' + LDetection.ExecutablePath + '" logout"';
+  end
+  else
   case LDefinition.Kind of
     ckCodex:
-      LParameters := '/k ""' + LDetection.ExecutablePath + '" login"';
+      LParameters := '/c ""' + LDetection.ExecutablePath + '" login"';
     ckClaude:
-      LParameters := '/k ""' + LDetection.ExecutablePath + '" auth login"';
+      LParameters := '/c ""' + LDetection.ExecutablePath + '" auth login"';
     ckGemini:
-      LParameters := '/k ""' + LDetection.ExecutablePath + '""';
+      LParameters := '/c ""' + LDetection.ExecutablePath + '""';
     ckCopilot:
-      LParameters := '/k ""' + LDetection.ExecutablePath + '" login"';
+      LParameters := '/c ""' + LDetection.ExecutablePath + '" login"';
   end;
-  if MessageDlg(
+  if not SameText(FBtnCliLogin.Caption, 'Logout') and (MessageDlg(
     'Open the guided login for ' + LDefinition.DisplayName + '?' +
     sLineBreak + sLineBreak + 'Command: ' + LDefinition.AuthLoginHint +
-    sLineBreak + 'Return to this screen and click Diagnose after authorization.',
+    sLineBreak + 'The status will refresh automatically after authorization.',
     mtConfirmation,
     [mbYes, mbNo],
     0
-  ) <> mrYes then
+  ) <> mrYes) then
     Exit;
   ZeroMemory(@LInfo, SizeOf(LInfo));
   LInfo.cbSize := SizeOf(LInfo);
@@ -2947,13 +2959,24 @@ begin
   if not SameText(LDefinition.Id, ACliId) then
     Exit;
   if AResult.Succeeded then
+  begin
     FLblCliStatus.Caption := FLblCliStatus.Caption +
-      '; authentication: ready'
+      '; authentication: ready';
+    if LDefinition.Kind = ckCodex then
+    begin
+      FBtnCliLogin.Caption := 'Logout';
+      FBtnCliLogin.Hint := 'End the authenticated Codex CLI session.';
+    end;
+  end
   else
+  begin
     FLblCliStatus.Caption := Format(
       '%s; authentication: required (%s)',
       [FLblCliStatus.Caption, LDefinition.AuthLoginHint]
     );
+    FBtnCliLogin.Caption := 'Start login';
+    FBtnCliLogin.Hint := 'Start the selected CLI authentication flow.';
+  end;
 end;
 
 procedure TRadIAFrameAIConfig.RefreshMcpPreview;
@@ -3310,6 +3333,11 @@ begin
   btnOpenAIWebLogin.Enabled := not LIsApiKey;
   if not LIsApiKey then
   begin
+    btnOpenAIWebLogin.Caption := 'Configure Codex CLI login';
+    btnOpenAIWebLogin.Hint := 'Open the Codex CLI settings used by the ChatGPT Pro route.';
+  end;
+  if not LIsApiKey then
+  begin
     edtOpenAIKey.Text := '';
     edtOpenAICustomUrl.Text := '';
   end;
@@ -3440,10 +3468,7 @@ end;
 
 procedure TRadIAFrameAIConfig.btnOpenAIWebLoginClick(Sender: TObject);
 begin
-  if SameText(btnOpenAIWebLogin.Caption, 'Sign Out') then
-    FPresenter.PerformOAuthLogoff('OpenAI')
-  else
-    FPresenter.StartOAuthLogin('OpenAI');
+  SelectCategoryByName('Codex CLI');
 end;
 
 procedure TRadIAFrameAIConfig.UpdateOAuthState(const AProviderId: string; const AIsLoggedIn: Boolean);
@@ -3457,10 +3482,8 @@ begin
   end
   else if SameText(AProviderId, 'OpenAI') then
   begin
-    if AIsLoggedIn then
-      btnOpenAIWebLogin.Caption := 'Sign Out'
-    else
-      btnOpenAIWebLogin.Caption := 'Sign In with ChatGPT';
+    btnOpenAIWebLogin.Caption := 'Configure Codex CLI login';
+    btnOpenAIWebLogin.Hint := 'Open the Codex CLI settings used by the ChatGPT Pro route.';
   end;
 end;
 

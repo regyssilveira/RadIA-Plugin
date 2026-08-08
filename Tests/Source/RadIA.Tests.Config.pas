@@ -50,6 +50,8 @@ type
     procedure TestOAuthTokenEncryptionAndDecryption;
     [Test]
     procedure TestClearOAuthTokens;
+    [Test]
+    procedure TestLegacyOpenAIOAuthMigratesToCodexCli;
   end;
 
 implementation
@@ -489,6 +491,20 @@ begin
   finally
     FStorage.CloseKey;
   end;
+end;
+
+procedure TTestRadIAConfig.TestLegacyOpenAIOAuthMigratesToCodexCli;
+begin
+  FConfig.SetProviderAuthType('OpenAI', 'oauth');
+  FConfig.SetOAuthAccessToken('OpenAI', 'legacy-access-token');
+  FConfig.SetOAuthRefreshToken('OpenAI', 'legacy-refresh-token');
+  FConfig.Save;
+
+  FConfig.Load;
+
+  Assert.AreEqual('oauth_cli', FConfig.GetProviderAuthType('OpenAI'));
+  Assert.IsEmpty(FConfig.GetOAuthAccessToken('OpenAI'));
+  Assert.IsEmpty(FConfig.GetOAuthRefreshToken('OpenAI'));
 end;
 
 initialization

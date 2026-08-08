@@ -32,21 +32,12 @@
         </svg>
       </div>
       <span class="header-title">Rad IA - AI ASSISTANT</span>
+      <output id="execution-route" class="execution-route" aria-live="polite"
+        title="Effective route used by the current conversation">
+        Effective: Chat | Native provider
+      </output>
     </div>
     <div class="header-right">
-      <button class="header-action-btn agent-mode-enabled" id="btn-agent-mode"
-        title="Agent mode is on: RadIA may use IDE tools after policy and consent checks"
-        aria-label="Agent Mode: On" aria-pressed="true">
-        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="7" width="16" height="12" rx="3"></rect>
-          <path d="M9 3h6"></path>
-          <path d="M12 3v4"></path>
-          <circle cx="9" cy="13" r="1"></circle>
-          <circle cx="15" cy="13" r="1"></circle>
-        </svg>
-        <span class="btn-label">Agent On</span>
-      </button>
       <button class="header-action-btn" id="btn-terminal"
         title="Open the integrated terminal. You can also type /terminal"
         aria-label="Open Terminal">
@@ -170,6 +161,24 @@
           </div>
 
           <div id="model-selectors">
+            <button type="button" class="composer-mode-toggle agent-mode-enabled" id="btn-agent-mode"
+              title="Agent mode is on: tools may be used after policy and consent checks"
+              aria-label="Mode: Agent" aria-pressed="true">
+              <span class="composer-control-label">Mode</span>
+              <span class="btn-label">Agent</span>
+            </button>
+            <label class="composer-executor-control" for="select-execution-route">
+              <span class="composer-control-label">Send with</span>
+              <select id="select-execution-route" aria-label="Executor for the next message">
+                <option value="native">RadIA native</option>
+                <option value="codex">Codex CLI</option>
+                <option value="claude">Claude Code</option>
+                <option value="gemini">Gemini CLI</option>
+                <option value="copilot">GitHub Copilot CLI</option>
+              </select>
+            </label>
+            <output id="composer-route" class="composer-route" aria-live="polite"
+              title="Credential and model for the next message">Auth: Native</output>
             <div class="selector-wrapper">
               <select id="select-provider" aria-label="AI provider" style="display: none;">
                 <option value="">Provider...</option>

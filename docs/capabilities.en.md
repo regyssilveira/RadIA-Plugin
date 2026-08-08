@@ -1,6 +1,6 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.3.0.
+This page is the functional map of RadIA 2.3.1.
 
 | Area | What RadIA can do |
 |---|---|

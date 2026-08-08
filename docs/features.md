@@ -6,6 +6,9 @@ Este documento contém o checklist completo de recursos, categorização e statu
 
 ## Tabela Completa de Recursos
 
+Nota v2.3.1: seleção explícita entre RadIA native e CLI direto, identidade visual por rota,
+cópia em todas as respostas textuais e ChatGPT Pro restaurado exclusivamente pelo Codex CLI.
+
 Nota v2.2.2: `/help`, jornadas DEXT conversacionais, descoberta de modelos compatível com o
 transporte ativo, limite local de tokens opcional e refinamentos da configuração CLI/MCP.
 
@@ -33,6 +36,9 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Slash Commands Dinâmicos** | Chat UX | Mapeamento dinâmico de templates para comandos de barra (ex: `/createprojectarch`), sincronizados e autocompletados no WebView2. | ✅ Concluído |
 | **Doctor e Status do RadIA** | Diagnóstico | `/doctor` verifica prontidão e recomenda a próxima ação; `/status` inventaria configuração e disponibilidade sem expor credenciais. | ✅ Concluído (v2.2.1) |
 | **Assistente CLI/MCP** | Integração | Detecta, explica, solicita consentimento, instala ou configura, valida e oferece fallback manual completo sem exigir reinício da IDE. | ✅ Concluído (v2.2.1) |
+| **Rotas explícitas de execução** | Chat UX | Separa modo Chat/Agent, orquestração RadIA native e CLI direto, mostrando rota, transporte e credencial efetivos. | ✅ Concluído (v2.3.1) |
+| **ChatGPT Pro via Codex CLI** | Provedor | Usa a sessão e a cota ChatGPT/Codex tanto como transporte do provider nativo quanto na execução CLI direta; API Key permanece separada. | ✅ Concluído (v2.3.1) |
+| **Cópia universal de texto** | Chat UX | Oferece cópia para respostas, JSON, resultados de tools e demais payloads textuais, preservando o conteúdo original. | ✅ Concluído (v2.3.1) |
 | **Ajuda integrada** | Chat UX | `/help` resume capacidades e abre os guias públicos no navegador padrão. | ✅ Concluído (v2.2.2) |
 | **Jornadas DEXT conversacionais** | Projetos | Coleta requisitos ausentes em várias mensagens, preserva o contexto e gera APIs minimalistas ou com controllers. | ✅ Concluído (v2.2.2) |
 | **Skills e Templates Declarativos** | Extensibilidade | Manifesto schema 2 com hot reload, autocomplete e permissão mínima `chat.prompt`. | ✅ Concluído |

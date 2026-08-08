@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.3.0
+# Manual completo do RadIA 2.3.1
 
 ## 1. O que é o RadIA
 
@@ -72,6 +72,9 @@ independentes.
 
 ### 2.4 Mapa das configurações
 
+A janela de configurações pode ser redimensionada ou maximizada e preserva um tamanho mínimo seguro
+para evitar que controles sejam cortados.
+
 | Aba | Para que serve | Quando alterar |
 |---|---|---|
 | Providers | Credenciais, login, endpoint e opções avançadas de cada provider | Ao conectar ou trocar o serviço de IA |
@@ -95,18 +98,44 @@ e os cuidados de cada opção estão na
 ### 3.1 Botão e comandos do modo agente
 
 A infraestrutura agentiva é inicializada automaticamente quando o package do RadIA é carregado.
-O botão **Agent On/Off** controla se o chat pode executar tools. O mesmo estado pode ser alterado
-com `/agent`, `/agent on` e `/agent off`.
+No compositor, **Mode: Chat** envia uma conversa comum pela rota escolhida em **Send with**. Com
+**RadIA native**, usa o provider selecionado sem executar tools registradas do RadIA; com um CLI,
+envia diretamente ao processo externo, que conserva suas próprias capacidades e políticas.
+**Mode: Agent** transforma a próxima mensagem em um objetivo agentivo e também usa **Send with**:
+**RadIA native**, **Codex CLI**, **Claude Code**, **Gemini CLI** ou **GitHub Copilot CLI**. A escolha
+é aplicada à próxima mensagem e salva como padrão. Os comandos `/agent`, `/agent on` e `/agent off`
+continuam disponíveis.
 
-Esse botão não seleciona o executor nem altera a autenticação. Em **Configurações > CLI & MCP >
-Chat executor**, **RadIA native orchestration** mantém o loop de ferramentas dentro do RadIA;
-**External CLI orchestration** entrega o objetivo ao CLI selecionado. Providers por API key e
-providers locais não exigem CLI. **Sign in with ChatGPT (OAuth via Codex CLI)** usa o Codex como
-transporte de autenticação e mostra essa dependência explicitamente.
+Em **Configurações > CLI & MCP > Chat executor** permanecem o padrão e os caminhos dos executáveis.
+Providers por API key e providers locais não exigem CLI. Para OpenAI, **OpenAI API via API Key** usa
+o transporte HTTP nativo e a cobrança da plataforma API. **ChatGPT Pro via Codex CLI** usa a sessão e
+a cota da conta ChatGPT/Codex. O login é compartilhado pelas duas rotas Codex, mas a orquestração não:
+**RadIA native** mantém o controle no RadIA, enquanto **Codex CLI direto** entrega a execução ao CLI.
 
 O caminho de um CLI portátil pode ser selecionado com **Browse...**. O mesmo caminho é usado por
-**Diagnose**, pelo executor externo e pelo transporte ChatGPT OAuth, sem exigir uma instalação npm.
+**Diagnose**, pelo executor externo e pelo transporte ChatGPT Pro, sem exigir uma instalação npm.
 Consulte [Orquestração nativa e executores por CLI](cli_executors.md) para a matriz completa.
+
+O cabeçalho do chat mostra a rota efetiva da conversa. Exemplos incluem **Chat | OpenAI native**,
+**Chat | RadIA native | ChatGPT Pro via Codex CLI**, **Agent | RadIA native | OpenAI** e
+**Agent | codex CLI direct**. Esse
+indicador representa o caminho realmente usado, não apenas a configuração selecionada. MCP aparece
+separadamente porque é uma ponte para clientes externos e não o executor do chat interno.
+Cada resposta também repete a identificação no cabeçalho e usa um avatar próprio: brilho RadIA para
+transporte nativo, terminal para CLI e nós conectados para MCP. Os marcadores **N**, **>_** e **M** e
+o nome ao lado informam a rota e a credencial efetivas, como **Native API**, **ChatGPT Pro via Codex
+CLI** ou **Codex CLI direct**, evitando depender apenas de cor ou ícone.
+
+Antes do envio, a linha inferior do compositor permite escolher a rota e mostra a credencial e, quando aplicável, o
+modelo selecionado. Durante o processamento, o avatar da rota recebe uma animação discreta e o texto
+de estado informa se o RadIA está preparando a resposta, executando uma ferramenta ou processando o
+resultado. Após a conclusão, um resumo técnico recolhível registra a rota, a duração e as ferramentas
+utilizadas. No modo agente, a economia do RTK é exibida somente quando as métricas reais de compactação
+estão presentes, em caracteres e percentual; o RadIA não estima nem inventa esse valor.
+
+Respostas do assistente, resultados de ferramentas, argumentos JSON e erros textuais possuem uma
+ação de cópia. A ação usa o conteúdo original do retorno, preservando indentação e quebras de linha
+sem incluir botões, títulos ou outros elementos visuais. Blocos de código mantêm sua cópia própria.
 
 No chat, o acesso às ferramentas é explícito:
 

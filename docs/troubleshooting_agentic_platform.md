@@ -39,6 +39,15 @@ A [referência de comandos](slash_commands.md#qual-diagnóstico-usar) detalha as
 | Tool call pendente | Procure consentimento aberto na IDE. |
 | Erro de protocolo | Envie `initialize` antes de `tools/list` ou `tools/call`. |
 
+## Provider e rota de execução
+
+| Sintoma | Verificação e ação |
+|---|---|
+| ChatGPT Pro retorna 401 ou 429 | Confirme **ChatGPT Pro via Codex CLI**, abra **Configure Codex CLI login** e execute **Diagnose**. Não use API Key esperando consumir a cota Pro. |
+| Login concluído, mas o chat não reconhece | Feche as configurações, reabra e confirme `authentication: ready`; o RadIA recarrega a sessão antes do envio. |
+| Não sei qual rota está ativa | Confira **Send with** e o indicador no cabeçalho da resposta: **RadIA native** mantém a orquestração interna; **CLI direct** delega ao cliente. |
+| Quero usar a OpenAI API | Selecione **API Key (BYOK)** e configure uma chave com quota da plataforma API, separada do ChatGPT Pro. |
+
 ## Conhecimento, Designer e debugger
 
 | Sintoma | Verificação e ação |

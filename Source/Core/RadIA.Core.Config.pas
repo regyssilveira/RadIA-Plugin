@@ -358,6 +358,13 @@ end;
 procedure TRadIAConfig.Load;
 begin
   LoadFromPath(GetRegistryPath);
+  if SameText(GetProviderAuthType('OpenAI'), 'oauth') or
+    SameText(GetProviderAuthType('OpenAI'), 'web_login') then
+  begin
+    ClearOAuthTokens('OpenAI');
+    SetProviderAuthType('OpenAI', 'oauth_cli');
+    Save;
+  end;
 end;
 
 function TRadIAConfig.TryMigrateLegacyPath(const APath: string; out AMigratedPath: string): Boolean;

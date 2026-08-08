@@ -1071,10 +1071,10 @@ begin
       end;
     end;
 
-    if LForm.ShowModal = mrOk then
-    begin
-      FPresenter.LoadConfig;
-    end;
+    LForm.ShowModal;
+    { OAuth login persists independently from the modal result. Always reload
+      so a token obtained before closing the dialog is immediately available. }
+    FPresenter.LoadConfig;
   finally
     LForm.Free;
   end;

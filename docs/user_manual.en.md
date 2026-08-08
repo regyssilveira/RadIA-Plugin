@@ -1,4 +1,4 @@
-# Complete RadIA 2.3.0 user manual
+# Complete RadIA 2.3.1 user manual
 
 ## 1. What RadIA is
 
@@ -40,6 +40,9 @@ stopped by a local token budget. Account and provider limits remain independent.
 
 ### 2.1 Settings map
 
+The settings window can be resized or maximized and keeps a safe minimum size to prevent controls
+from being clipped.
+
 | Tab | Purpose | When to change it |
 |---|---|---|
 | Providers | Credentials, login, endpoint, and provider-specific advanced options | When connecting or changing the AI service |
@@ -64,6 +67,41 @@ dependencies. The purpose, usage, dependencies, and care for every option are in
 The agentic infrastructure starts automatically when the RadIA package loads. The
 **Agent On/Off** button controls whether chat may execute tools. The same state can be changed with
 `/agent`, `/agent on`, and `/agent off`.
+
+In the composer, **Mode: Chat** sends a regular conversation through the route selected under **Send
+with**. **RadIA native** uses the selected provider without registered RadIA tools; a CLI sends
+directly to the external process, which retains its own capabilities and policies. **Mode: Agent**
+turns the next message into an agent objective and also uses **Send with**: **RadIA
+native**, **Codex CLI**, **Claude Code**, **Gemini CLI**, or **GitHub Copilot CLI**. The selection
+applies to the next message and is saved as the default. The `/agent`, `/agent on`, and `/agent off`
+commands remain available. **Settings > CLI & MCP > Chat executor** retains the default and executable
+paths. Provider authentication remains independent from the agent executor.
+
+OpenAI offers two explicit credential paths. **OpenAI API via API Key** uses native HTTP transport and
+API Platform billing. **ChatGPT Pro via Codex CLI** uses the ChatGPT/Codex account session and quota.
+Both Codex routes share the same CLI login, but not the same orchestration: **RadIA native** keeps
+control in RadIA, while **Codex CLI direct** delegates execution to the CLI.
+
+The chat header displays the conversation's effective route. Examples include **Chat | OpenAI
+native**, **Chat | RadIA native | ChatGPT Pro via Codex CLI**, **Agent | RadIA native | OpenAI**, and
+**Agent | codex CLI direct**. The indicator represents the path actually in use. MCP
+remains separate because it is a bridge for external clients, not the internal chat executor.
+Each response repeats this identity in its header and uses a distinct avatar: the RadIA sparkle for
+native transport, a terminal for CLI, and connected nodes for MCP. The **N**, **>_**, and **M** markers
+and the adjacent name identify the effective route and credential path, such as **Native API**,
+**ChatGPT Pro via Codex CLI**, or **Codex CLI direct**, so the distinction never depends only on color
+or an icon.
+
+Before sending, the composer footer shows the route, credential, and selected model when applicable.
+While processing, the route avatar uses a subtle animation and the status text identifies whether
+RadIA is preparing the response, running a tool, or processing its result. After completion, a
+collapsible technical summary records the route, duration, and tools used. In agent mode, RTK savings
+appear only when actual compaction metrics are present, in characters and percentage; RadIA does not
+estimate or fabricate this value.
+
+Assistant responses, tool results, JSON arguments, and textual errors provide a copy action. It uses
+the original returned content, preserving indentation and line breaks without including buttons,
+titles, or other visual elements. Code blocks retain their dedicated copy action.
 
 In chat, tool access is explicit:
 

@@ -169,6 +169,30 @@ const btnSettings     = document.getElementById('btn-settings');
 const btnAgentMode    = document.getElementById('btn-agent-mode');
 const btnTerminal     = document.getElementById('btn-terminal');
 const btnAgentHistory = document.getElementById('btn-agent-history');
+const executionRoute  = document.getElementById('execution-route');
+const composerRoute   = document.getElementById('composer-route');
+const executionRouteSelector = document.getElementById('select-execution-route');
+let activeExecutionRoute = {
+  displayName: 'Native',
+  label: 'Chat | Native provider',
+  mode: 'chat',
+  transport: 'native'
+};
+let activeResponseContext = null;
+
+const ROUTE_AVATARS = {
+  native: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l1.5 5.5L19 9l-5.5 ' +
+    '1.5L12 16l-1.5-5.5L5 9l5.5-1.5L12 2z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 ' +
+    '18l2.2-.8L18 15z"/></svg>',
+  cli: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" ' +
+    'height="16" rx="2"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>',
+  mcp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2"/>' +
+    '<circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="M11 7L6 16M13 7l5 9M7 18h10"/>' +
+    '</svg>'
+};
 
 const promptTextarea  = document.getElementById('prompt-textarea');
 const btnSendPrompt   = document.getElementById('btn-send-prompt');
@@ -219,8 +243,10 @@ function setAgentMode(enabled) {
     `Agent Mode: ${agentModeEnabled ? 'On' : 'Off'}`
   );
   btnAgentMode.setAttribute('aria-pressed', String(agentModeEnabled));
-  btnAgentMode.querySelector('.btn-label').textContent =
-    agentModeEnabled ? 'Agent On' : 'Agent Off';
+  btnAgentMode.querySelector('.btn-label').textContent = agentModeEnabled ? 'Agent' : 'Chat';
+  btnAgentMode.setAttribute('aria-label', `Mode: ${agentModeEnabled ? 'Agent' : 'Chat'}`);
+  executionRouteSelector.disabled = requestInProgress;
+  updateComposerRoute();
 }
 
 function createAgentControl(label, action, disabled = false) {
@@ -563,21 +589,12 @@ function createAgentStep(step, status) {
     `Risk: ${step.risk || 'unknown'}`;
   details.appendChild(metadata);
 
-  const argumentsTitle = document.createElement('strong');
-  argumentsTitle.textContent = 'Arguments';
-  details.appendChild(argumentsTitle);
-  const argumentsBlock = document.createElement('pre');
-  argumentsBlock.textContent = formatToolPayload(step.arguments);
-  details.appendChild(argumentsBlock);
-
-  const resultTitle = document.createElement('strong');
-  resultTitle.textContent = step.success ? 'Result' : 'Error';
-  details.appendChild(resultTitle);
-  const resultBlock = document.createElement('pre');
-  resultBlock.textContent = formatToolPayload(
-    step.success ? step.result : step.errorMessage
+  appendCopyablePayload(details, step.arguments, 'Arguments');
+  appendCopyablePayload(
+    details,
+    step.success ? step.result : step.errorMessage,
+    step.success ? 'Result' : 'Error'
   );
-  details.appendChild(resultBlock);
   appendAgentPatchReview(details, step);
   appendAgentGitEvidence(details, step);
   appendAgentDebugEvidence(details, step);
@@ -938,6 +955,14 @@ function renderAgentState(data) {
   } else {
     metricsText += ' · cost pricing not configured';
   }
+  const compaction = state.resultCompactionMetrics;
+  if (compaction?.appliedCount > 0) {
+    const original = Math.max(0, compaction.originalCharacters || 0);
+    const compacted = Math.max(0, compaction.compactedCharacters || 0);
+    const saved = Math.max(0, original - compacted);
+    const savedPercent = original > 0 ? Math.round((saved / original) * 100) : 0;
+    metricsText += ` · RTK saved ${saved.toLocaleString()} chars (${savedPercent}%)`;
+  }
   card.querySelector('.agent-run-metrics').textContent = metricsText;
   renderAgentValidation(card, state);
   renderAgentImpact(card, steps);
@@ -988,6 +1013,139 @@ function formatToolPayload(payload) {
   return JSON.stringify(payload, null, 2);
 }
 
+function updateExecutionRoute(route) {
+  if (!executionRoute || !route) return;
+  activeExecutionRoute = { ...activeExecutionRoute, ...route };
+  executionRoute.textContent = `Effective: ${route.label || 'Chat | Native provider'}`;
+  executionRoute.title = route.details || route.label || 'Effective execution route';
+  executionRoute.dataset.mode = route.mode || 'chat';
+  executionRoute.dataset.transport = route.transport || 'native';
+  executionRouteSelector.value = route.orchestrator === 'external-cli'
+    ? (route.cliClientId || 'codex')
+    : 'native';
+  updateComposerRoute();
+}
+
+function getExecutionRouteKind(route = activeExecutionRoute) {
+  const transport = route.transport || 'native';
+  if (transport.includes('cli')) return 'cli';
+  if (transport === 'mcp') return 'mcp';
+  return 'native';
+}
+
+function decorateExecutionAvatar(avatar, route = activeExecutionRoute) {
+  const avatarKind = getExecutionRouteKind(route);
+  const routeTitle = route.details || route.label || 'Effective execution route';
+  const marker = document.createElement('span');
+
+  avatar.innerHTML = ROUTE_AVATARS[avatarKind];
+  avatar.classList.remove('provider-avatar-badge');
+  avatar.classList.add('execution-avatar', `route-${avatarKind}`);
+  avatar.title = routeTitle;
+  marker.className = 'message-route-marker';
+  marker.textContent = 'N';
+  if (avatarKind === 'cli') {
+    marker.textContent = '>_';
+  } else if (avatarKind === 'mcp') {
+    marker.textContent = 'M';
+  }
+  marker.title = routeTitle;
+  avatar.appendChild(marker);
+}
+
+function decorateAssistantRoute(wrapper, avatar, header) {
+  const route = activeExecutionRoute;
+  const transport = route.transport || 'native';
+  const avatarKind = getExecutionRouteKind(route);
+  const routeLabel = document.createElement('span');
+  const routeTitle = route.details || route.label || 'Effective execution route';
+
+  wrapper.dataset.executionTransport = transport;
+  decorateExecutionAvatar(avatar, route);
+
+  routeLabel.className = 'message-route-label';
+  routeLabel.textContent = route.displayName || avatarKind.toUpperCase();
+  routeLabel.title = routeTitle;
+  header.appendChild(routeLabel);
+}
+
+function updateComposerRoute() {
+  if (!composerRoute) return;
+  const routeName = activeExecutionRoute.displayName || 'Native';
+  const selectedModel = modelSelectionEnabled ? selectModel?.value : '';
+  composerRoute.textContent = `Auth: ${[routeName, selectedModel].filter(Boolean).join(' | ')}`;
+  composerRoute.title = activeExecutionRoute.details || activeExecutionRoute.label || routeName;
+  composerRoute.dataset.transport = activeExecutionRoute.transport || 'native';
+}
+
+function createResponseTechnicalSummary(wrapper, provider, model) {
+  if (!wrapper || wrapper.querySelector('.response-technical-summary')) return;
+  const context = activeResponseContext;
+  const route = context?.route || activeExecutionRoute;
+  const durationMs = context?.startedAt ? Date.now() - context.startedAt : 0;
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  const routeName = route.displayName || getExecutionRouteKind(route).toUpperCase();
+  const summaryParts = [routeName];
+
+  if (durationMs > 0) summaryParts.push(`${(durationMs / 1000).toFixed(1)} s`);
+  summary.textContent = summaryParts.join(' · ');
+  summary.title = 'Show technical details for this response';
+  details.className = 'response-technical-summary';
+  details.appendChild(summary);
+
+  const metadata = document.createElement('div');
+  metadata.className = 'response-technical-metadata';
+  [provider, model, route.label].filter(Boolean).forEach(value => {
+    const item = document.createElement('span');
+    item.textContent = value;
+    metadata.appendChild(item);
+  });
+  if (context?.tools?.size) {
+    context.tools.forEach(toolName => {
+      const item = document.createElement('span');
+      item.className = 'response-tool-chip';
+      item.textContent = toolName;
+      metadata.appendChild(item);
+    });
+  }
+  details.appendChild(metadata);
+  wrapper.querySelector('.message-body')?.appendChild(details);
+}
+
+function copyTextWithFeedback(button, text) {
+  return navigator.clipboard.writeText(String(text ?? '')).then(() => {
+    const original = button.innerHTML;
+    button.innerHTML = SVG_ICONS.check;
+    setTimeout(() => { button.innerHTML = original; }, 2000);
+  });
+}
+
+function createTextCopyButton(textProvider, title, className = '') {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `text-copy-button ${className}`.trim();
+  button.innerHTML = SVG_ICONS.copy;
+  button.title = title;
+  button.setAttribute('aria-label', title);
+  button.addEventListener('click', () => copyTextWithFeedback(button, textProvider()));
+  return button;
+}
+
+function appendCopyablePayload(container, payload, title) {
+  const text = formatToolPayload(payload);
+  const toolbar = document.createElement('div');
+  toolbar.className = 'copyable-payload-header';
+  const label = document.createElement('strong');
+  label.textContent = title;
+  toolbar.appendChild(label);
+  toolbar.appendChild(createTextCopyButton(() => text, `Copy ${title.toLowerCase()}`));
+  const block = document.createElement('pre');
+  block.textContent = text;
+  container.appendChild(toolbar);
+  container.appendChild(block);
+}
+
 function createToolCard(name, correlationId) {
   const card = document.createElement('section');
   card.className = 'tool-card';
@@ -1006,8 +1164,18 @@ function createToolCard(name, correlationId) {
   const content = document.createElement('div');
   content.className = 'tool-card-content';
 
+  const headerActions = document.createElement('div');
+  headerActions.className = 'tool-card-header-actions';
+  const copyButton = createTextCopyButton(
+    () => card.dataset.copyText || content.textContent || '',
+    'Copy tool result'
+  );
+  copyButton.disabled = true;
+  headerActions.appendChild(status);
+  headerActions.appendChild(copyButton);
+
   header.appendChild(title);
-  header.appendChild(status);
+  header.appendChild(headerActions);
   card.appendChild(header);
   card.appendChild(content);
   chatContainer.appendChild(card);
@@ -1103,6 +1271,10 @@ function showTools(tools) {
 }
 
 function renderToolCall(data) {
+  if (activeResponseContext && data.name) {
+    activeResponseContext.tools.add(data.name);
+  }
+  updateActiveExecutionStage(`Running ${data.name || 'IDE tool'}…`);
   const card = createToolCard(data.name, data.correlationId);
   const content = card.querySelector('.tool-card-content');
   content.textContent = formatToolPayload(data.arguments ?? data.argumentsText);
@@ -1443,6 +1615,7 @@ function renderToolResult(data) {
     createToolCard(data.name, data.correlationId);
   const status = card.querySelector('.tool-card-status');
   const content = card.querySelector('.tool-card-content');
+  const copyButton = card.querySelector('.text-copy-button');
   const renderer = data.success && data.result
     ? TOOL_RESULT_RENDERERS[data.name]
     : undefined;
@@ -1454,6 +1627,11 @@ function renderToolResult(data) {
   } else {
     renderDefaultToolResult(content, data);
   }
+  card.dataset.copyText = data.success
+    ? formatToolPayload(data.result ?? data.resultText)
+    : `${data.errorCode || 'tool_error'}: ${data.errorMessage || 'Tool execution failed.'}`;
+  if (copyButton) copyButton.disabled = false;
+  updateActiveExecutionStage(data.success ? 'Processing tool result…' : 'Tool execution failed');
   TOOL_CARDS.delete(data.correlationId);
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
@@ -2234,6 +2412,13 @@ selectModel.addEventListener('change', () => {
   postMessageToDelphi({ action: 'change_model', model: selectModel.value });
 });
 
+executionRouteSelector.addEventListener('change', () => {
+  postMessageToDelphi({
+    action: 'set_agent_executor',
+    executor: executionRouteSelector.value
+  });
+});
+
 function setDropdownOpen(wrapper, trigger, open) {
   wrapper.classList.toggle('open', open);
   trigger.setAttribute('aria-expanded', String(open));
@@ -2421,6 +2606,16 @@ function addMessage(role, text, provider, model) {
     headerText += ` - ${provider} (${model})`;
   }
   header.textContent = headerText;
+  if (role === 'assistant') {
+    decorateAssistantRoute(wrapper, avatar, header);
+  }
+  if (role === 'assistant' || role === 'system') {
+    header.appendChild(createTextCopyButton(
+      () => text,
+      'Copy response',
+      'message-copy-button'
+    ));
+  }
 
   const content = document.createElement('div');
   content.classList.add('message-content');
@@ -2440,6 +2635,11 @@ function addMessage(role, text, provider, model) {
   wrapper.appendChild(body);
 
   chatContainer.appendChild(wrapper);
+
+  if (role === 'assistant') {
+    createResponseTechnicalSummary(wrapper, provider, model);
+    activeResponseContext = null;
+  }
 
   setTimeout(() => {
     Prism.highlightAllUnder(wrapper);
@@ -2494,11 +2694,7 @@ function setTheme(themeInfo) {
 
 function copyCode(btn, id) {
   const code = _codeRegistry[id] || '';
-  navigator.clipboard.writeText(code).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = SVG_ICONS.check;
-    setTimeout(() => { btn.innerHTML = orig; }, 2000);
-  });
+  copyTextWithFeedback(btn, code);
 }
 
 function applyCode(id) {
@@ -2591,7 +2787,7 @@ function showTypingIndicator() {
 
   const avatar = document.createElement('div');
   avatar.classList.add('message-avatar', info.avatarClass);
-  avatar.innerHTML = info.icon;
+  decorateExecutionAvatar(avatar);
 
   const indicator = document.createElement('div');
   indicator.classList.add('typing-indicator-modern');
@@ -2602,7 +2798,7 @@ function showTypingIndicator() {
           <path d="M12 2L14.7 9.3L22 12L14.7 14.7L12 22L9.3 14.7L2 12L9.3 9.3L12 2Z" fill="currentColor"/>
         </svg>
       </div>
-      <span class="typing-status-text">Thinking...</span>
+      <span class="typing-status-text">Preparing response…</span>
       <span class="typing-timer">0.0s</span>
     </div>
     <div class="typing-skeleton">
@@ -2627,6 +2823,11 @@ function showTypingIndicator() {
       timerEl.textContent = `${elapsed}s`;
     }
   }, 100);
+}
+
+function updateActiveExecutionStage(text) {
+  const status = typingIndicatorEl?.querySelector('.typing-status-text');
+  if (status) status.textContent = text;
 }
 
 function hideTypingIndicator() {
@@ -2660,6 +2861,7 @@ function appendMessage(text, isDone, provider, model) {
     const info = SENDER_INFO.assistant;
     currentAssistantWrapper = document.createElement('div');
     currentAssistantWrapper.classList.add('message-wrapper', 'message-assistant');
+    currentAssistantWrapper.dataset.responseStartedAt = String(activeResponseContext?.startedAt || Date.now());
 
     const avatar = document.createElement('div');
     avatar.classList.add('message-avatar', info.avatarClass);
@@ -2680,6 +2882,12 @@ function appendMessage(text, isDone, provider, model) {
       headerText += ` - ${provider} (${model})`;
     }
     header.textContent = headerText;
+    decorateAssistantRoute(currentAssistantWrapper, avatar, header);
+    header.appendChild(createTextCopyButton(
+      () => currentAssistantWrapper?.dataset.copyText || '',
+      'Copy response',
+      'message-copy-button'
+    ));
 
     currentAssistantContent = document.createElement('div');
     currentAssistantContent.classList.add('message-content');
@@ -2692,6 +2900,7 @@ function appendMessage(text, isDone, provider, model) {
   }
 
   currentAssistantText += text;
+  currentAssistantWrapper.dataset.copyText = currentAssistantText;
   currentAssistantContent.innerHTML = marked.parse(currentAssistantText);
 
   Prism.highlightAllUnder(currentAssistantContent);
@@ -2700,6 +2909,8 @@ function appendMessage(text, isDone, provider, model) {
 
   if (isDone) {
     processProjectFiles(currentAssistantContent);
+    createResponseTechnicalSummary(currentAssistantWrapper, provider, model);
+    activeResponseContext = null;
     currentAssistantWrapper = null;
     currentAssistantContent  = null;
     currentAssistantText     = '';
@@ -2932,6 +3143,7 @@ function initializeConfig(data) {
   updateModelsList(data.models, data.activeModel, data.modelSelectionEnabled !== false);
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
   setAgentMode(data.agentModeEnabled);
+  updateExecutionRoute(data.executionRoute);
 
   if (data.slashCommands && Array.isArray(data.slashCommands)) {
     const baseCommands = [
@@ -2982,6 +3194,7 @@ function updateModelsList(models, activeModel, enabled = true) {
     modelDropdownValue.textContent = 'No models available';
     modelOptionsList.innerHTML = '<li class="no-sessions">No models available</li>';
     applyModelSelectionState();
+    updateComposerRoute();
     return;
   }
 
@@ -3037,11 +3250,19 @@ function updateModelsList(models, activeModel, enabled = true) {
     modelDropdownValue.textContent = 'Select model...';
   }
   applyModelSelectionState();
+  updateComposerRoute();
 }
 
 function setRequestState(inProgress) {
   console.log('[DEBUG] setRequestState called with:', inProgress);
   requestInProgress = inProgress;
+  if (inProgress) {
+    activeResponseContext = {
+      route: { ...activeExecutionRoute },
+      startedAt: Date.now(),
+      tools: new Set()
+    };
+  }
   updateSessionControlsState();
   if (inProgress) {
     btnSendPrompt.classList.add('stop-btn');
@@ -3059,6 +3280,8 @@ function setRequestState(inProgress) {
     providerDropdownTrigger.setAttribute('aria-disabled', 'false');
   }
   applyModelSelectionState();
+  executionRouteSelector.disabled = inProgress;
+  updateComposerRoute();
 }
 
 function setContextText(text) {
@@ -3222,6 +3445,7 @@ function updateMessage(text, isDone, provider, model) {
     const info = SENDER_INFO.assistant;
     currentAssistantWrapper = document.createElement('div');
     currentAssistantWrapper.classList.add('message-wrapper', 'message-assistant');
+    currentAssistantWrapper.dataset.responseStartedAt = String(activeResponseContext?.startedAt || Date.now());
 
     const avatar = document.createElement('div');
     avatar.classList.add('message-avatar', info.avatarClass);
@@ -3242,6 +3466,12 @@ function updateMessage(text, isDone, provider, model) {
       headerText += ` - ${provider} (${model})`;
     }
     header.textContent = headerText;
+    decorateAssistantRoute(currentAssistantWrapper, avatar, header);
+    header.appendChild(createTextCopyButton(
+      () => currentAssistantWrapper?.dataset.copyText || '',
+      'Copy response',
+      'message-copy-button'
+    ));
 
     currentAssistantContent = document.createElement('div');
     currentAssistantContent.classList.add('message-content');
@@ -3254,12 +3484,15 @@ function updateMessage(text, isDone, provider, model) {
   }
 
   currentAssistantText = text;
+  currentAssistantWrapper.dataset.copyText = currentAssistantText;
   currentAssistantContent.innerHTML = marked.parse(currentAssistantText);
   Prism.highlightAllUnder(currentAssistantContent);
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   if (isDone) {
     processProjectFiles(currentAssistantContent);
+    createResponseTechnicalSummary(currentAssistantWrapper, provider, model);
+    activeResponseContext = null;
     currentAssistantWrapper = null;
     currentAssistantContent  = null;
     currentAssistantText     = '';
@@ -3296,6 +3529,7 @@ if (globalThis.chrome?.webview) {
       case 'tool_call':             renderToolCall(data);                                        break;
       case 'tool_result':           renderToolResult(data);                                      break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
+      case 'execution_route':       updateExecutionRoute(data);                                  break;
       case 'agent_state':           renderAgentState(data);                                      break;
       case 'agent_history':         renderAgentHistory(data);                                    break;
     }

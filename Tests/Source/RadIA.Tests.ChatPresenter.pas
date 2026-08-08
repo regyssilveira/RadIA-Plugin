@@ -722,7 +722,9 @@ begin
 
   Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_mode_changed"');
   Assert.Contains(FMockView.PostedMessages.Text, '"enabled":false');
-  Assert.Contains(FMockView.LastPostedJson, 'Agent mode is disabled.');
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"execution_route"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"mode":"chat"');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, 'Agent mode is disabled.');
 end;
 
 procedure TTestChatPresenter.TestAgentHistoryCommandPublishesSafeIndex;

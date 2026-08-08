@@ -69,7 +69,21 @@ O **Ollama** permite executar LLMs de código aberto (Llama 3, Mistral, Phi-3, C
 
 ---
 
-## 3. Guia de Obtenção de Chaves de API por Provedor
+## 3. OpenAI API ou ChatGPT Pro
+
+Em **Settings > Providers > OpenAI**, escolha uma das rotas:
+
+- **API Key (BYOK)** envia por HTTP para a plataforma OpenAI API e usa sua cobrança e quota próprias.
+- **ChatGPT Pro via Codex CLI** usa a sessão e a cota da conta ChatGPT/Codex. Clique em
+  **Configure Codex CLI login**, confirme o cliente Codex em **CLI & MCP**, use **Start login** e
+  execute **Diagnose** até o estado mostrar `authentication: ready`.
+
+No compositor, **RadIA native** mantém histórico, contexto, RTK e orquestração no RadIA, usando o
+Codex CLI apenas como transporte do provider. **Codex CLI direct** entrega o prompt diretamente ao
+cliente externo. As duas rotas Codex compartilham o mesmo login. Configurações antigas de OAuth são
+migradas automaticamente e nunca são enviadas a `api.openai.com`.
+
+## 4. Guia de Obtenção de Chaves de API por Provedor
 
 Insira as chaves obtidas nas configurações do plugin (**Settings** no topo do painel de chat):
 

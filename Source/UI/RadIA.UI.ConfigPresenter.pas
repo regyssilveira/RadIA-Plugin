@@ -293,11 +293,14 @@ begin
     FView.UpdateOAuthState('Gemini', False);
   end;
 
-  if SameText(FConfig.GetProviderAuthType('OpenAI'), 'oauth') or
-     SameText(FConfig.GetProviderAuthType('OpenAI'), 'web_login') then
+  if SameText(FConfig.GetProviderAuthType('OpenAI'), 'oauth_cli') or
+    SameText(FConfig.GetProviderAuthType('OpenAI'), 'oauth') or
+    SameText(FConfig.GetProviderAuthType('OpenAI'), 'web_login') then
   begin
+    FConfig.SetProviderAuthType('OpenAI', 'oauth_cli');
+    FConfig.Save;
     FView.SetAuthTypeIndex('OpenAI', 1);
-    FView.UpdateOAuthState('OpenAI', not FConfig.GetOAuthAccessToken('OpenAI').IsEmpty);
+    FView.UpdateOAuthState('OpenAI', False);
   end
   else
   begin
@@ -574,7 +577,7 @@ begin
     FConfig.SetProviderAuthType('Gemini', 'api_key');
 
   if FView.GetAuthTypeIndex('OpenAI') = 1 then
-    FConfig.SetProviderAuthType('OpenAI', 'oauth')
+    FConfig.SetProviderAuthType('OpenAI', 'oauth_cli')
   else
     FConfig.SetProviderAuthType('OpenAI', 'api_key');
 

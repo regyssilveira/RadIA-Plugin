@@ -130,7 +130,7 @@ object FrameAIConfig: TRadIAFrameAIConfig
           ItemIndex = 0
           Items.Strings = (
             'API Key (BYOK)'
-            'Web Login (Plus/Pro)')
+            'ChatGPT Pro via Codex CLI')
           TabOrder = 0
           OnClick = grpOpenAIAuthTypeClick
         end

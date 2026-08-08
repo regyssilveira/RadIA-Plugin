@@ -69,7 +69,21 @@ It is not the normal release installation procedure.
 
 ---
 
-## 3. API Key Acquisition Guide by Provider
+## 3. OpenAI API or ChatGPT Pro
+
+Under **Settings > Providers > OpenAI**, choose one route:
+
+- **API Key (BYOK)** uses HTTP, OpenAI API Platform billing, and its separate quota.
+- **ChatGPT Pro via Codex CLI** uses the ChatGPT/Codex account session and quota. Click
+  **Configure Codex CLI login**, select Codex under **CLI & MCP**, use **Start login**, and run
+  **Diagnose** until the state reports `authentication: ready`.
+
+In the composer, **RadIA native** keeps history, context, RTK, and orchestration in RadIA while using
+Codex CLI only as provider transport. **Codex CLI direct** delegates the prompt to the external
+client. Both Codex routes share the same login. Legacy OAuth settings migrate automatically and are
+never sent to `api.openai.com`.
+
+## 4. API Key Acquisition Guide by Provider
 
 Enter the obtained keys in the plugin settings (**Settings** at the top of the chat panel):
 

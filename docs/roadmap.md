@@ -15,6 +15,13 @@ Este documento descreve o planejamento estratégico e a visão de futuro do assi
 
 ## 📅 Histórico de Versões Concluídas
 
+### v2.3.1 — Rotas explícitas e ChatGPT Pro funcional
+
+- seleção independente de Chat/Agent e RadIA native/CLI direto;
+- identidade visual e nome da rota efetiva em cada resposta;
+- ChatGPT Pro restaurado pelo transporte Codex CLI, separado da OpenAI API Key;
+- cópia disponível em todas as superfícies textuais e configurações redimensionáveis.
+
 ### v2.3.0 — RTK interno e contexto recuperável
 
 - compactação determinística de resultados de DUnitX, Git diff, build e conhecimento;
