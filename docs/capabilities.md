@@ -166,6 +166,11 @@ exigido pela CLI, terminal, recursos web e disponibilidade de `GetIDEState` como
 somente leitura. O resultado não expõe credenciais e inclui score, checks, próxima ação e
 recomendações de configuração, provisionamento ou reparo.
 
+`GetRadIAStatus` e `/status` complementam o diagnóstico com um inventário sanitizado da
+configuração e disponibilidade atuais. Use `/status` para a visão completa ou filtre com
+`provider`, `agent`, `cli`, `mcp`, `security`, `editor`, `project`, `tools` ou `logging`. Caminhos
+efetivos podem aparecer; chaves de API, tokens OAuth e argumentos de tools nunca são incluídos.
+
 ## Modo agente
 
 O modo agente oferece:
@@ -221,7 +226,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 123 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 124 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)

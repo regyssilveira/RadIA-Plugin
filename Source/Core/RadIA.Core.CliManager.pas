@@ -204,6 +204,10 @@ type
     class function ManualGuidance(
       const ADefinition: TRadIACliDefinition
     ): string; static;
+    class function PrerequisiteManualGuidance(
+      const ADefinition: TRadIACliDefinition;
+      const ADiagnostic: TRadIACliSetupDiagnostic
+    ): string; static;
   end;
 
   TRadIACliSetupHistory = class
@@ -752,6 +756,33 @@ begin
       ADefinition.DocumentationUrl,
       LPlan.Preview,
       string.Join(', ', ADefinition.ExecutableNames)
+    ]
+  );
+end;
+
+class function TRadIACliSetupAdvisor.PrerequisiteManualGuidance(
+  const ADefinition: TRadIACliDefinition;
+  const ADiagnostic: TRadIACliSetupDiagnostic
+): string;
+var
+  LRecommendedVersion: string;
+begin
+  if ADefinition.PrimaryChannel = cicNpm then
+    LRecommendedVersion := 'current LTS release'
+  else
+    LRecommendedVersion := 'current stable release';
+  Result := Format(
+    '%s is required for the optional %s installation channel.' + sLineBreak +
+    'Official source: %s' + sLineBreak +
+    'Recommended version: %s.' + sLineBreak +
+    'Install it using the official installer, then reopen this screen.' + sLineBreak +
+    'Click Diagnose to verify detection and continue the original setup.' + sLineBreak +
+    'Alternative: cancel and select an existing portable CLI with Browse.',
+    [
+      ADiagnostic.PrerequisiteName,
+      ADefinition.DisplayName,
+      ADiagnostic.DocumentationUrl,
+      LRecommendedVersion
     ]
   );
 end;

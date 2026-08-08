@@ -40,7 +40,8 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 |---|---|
 | Ativar e operar o modo agente | [Manual do usuário](user_manual.md#3-como-ativar-o-modo-agente) |
 | Entender o agente nativo e executores externos | [Executores nativo e CLI](cli_executors.md) |
-| Ver todas as ferramentas disponíveis | [Catálogo das 123 ferramentas](runtime_tool_catalog.md) |
+| Ver o estado configurado do RadIA | [Doctor, status, health e tools](slash_commands.md#qual-diagnóstico-usar) |
+| Ver todas as ferramentas disponíveis | [Catálogo das 124 ferramentas](runtime_tool_catalog.md) |
 | Entender cada ferramenta e quando ela é acionada | [Referência operacional](internal_tools_reference.md) |
 | Entender consentimento, riscos e auditoria | [Modelo de segurança](tool_security_model.md) |
 | Consultar custos e limites do agente | [Custos do agente](agent_pricing.md) |

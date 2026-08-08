@@ -27,6 +27,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/doctor` | Diagnostica a instalação e recomenda a próxima ação. | Provider, executor, MCP condicional, terminal, chat e primeira tool. |
+| `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
 | `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |
 | `/journey fix-build` | Diagnostica e corrige um build com alterações mínimas. | Compilador, patches e build. |
@@ -56,12 +57,26 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 ---
 
+## Qual diagnóstico usar
+
+| Necessidade | Comando | Resultado |
+|---|---|---|
+| Descobrir por que o RadIA não está pronto | `/doctor` | Seis verificações, problemas, recomendações e próxima ação. |
+| Conferir o que está configurado e disponível | `/status` | Todas as áreas, sem chaves, tokens ou payloads sensíveis. |
+| Investigar somente uma área | `/status cli`, `/status mcp`, `/status provider` | Apenas a seção solicitada. Também aceita `agent`, `security`, `editor`, `project`, `tools` e `logging`. |
+| Copiar ou analisar a estrutura completa | `/status --json` | Estado completo no formato estruturado retornado pela tool. |
+| Avaliar o projeto Delphi aberto | `/health` | Score e riscos do projeto, build, testes, compilador e conhecimento local. |
+| Descobrir ferramentas executáveis | `/tools` | Catálogo efetivo da instância atual da IDE. |
+
+Comece com `/doctor` quando algo não funciona. Use `/status` quando a pergunta for “o que está
+configurado agora?”. Caminhos de executáveis podem aparecer, mas credenciais nunca são incluídas.
+
 ## Customização e Backups de Comandos
 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
 
 Os comandos da família `/agent`, além de `/terminal`, `/settings`, `/extensions`, `/health`,
-`/doctor`, `/tools`,
+`/doctor`, `/status`, `/tools`,
 `/tool`, `/revoke-tools` e
 `/extensions reload`, são
 internos e não podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para

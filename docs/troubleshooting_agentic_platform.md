@@ -1,5 +1,15 @@
 # Solução de problemas da plataforma agentiva
 
+## Comece pelo comando certo
+
+- Execute `/doctor` quando algo não funciona: ele testa a prontidão e indica a próxima ação.
+- Execute `/status` para conferir toda a configuração e disponibilidade sem revelar credenciais.
+- Use `/status cli` ou `/status mcp` para isolar essas integrações.
+- Use `/health` quando o problema está no projeto Delphi aberto, build, testes ou conhecimento local.
+- Use `/tools` para confirmar se uma ferramenta existe na instância atual da IDE.
+
+A [referência de comandos](slash_commands.md#qual-diagnóstico-usar) detalha as diferenças e filtros.
+
 ## Ferramentas e consentimento
 
 | Sintoma | Verificação e ação |

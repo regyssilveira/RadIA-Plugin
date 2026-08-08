@@ -158,6 +158,21 @@ permite que um cliente externo acesse as ferramentas protegidas do RadIA.
 O bloco **MCP connection** é explicitamente independente do executor do chat. O histórico sanitizado
 de instalação e reparo fica em `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
 
+### Fluxo guiado e recuperação
+
+| Situação | O que o RadIA faz | Como continuar |
+|---|---|---|
+| Tudo já configurado | Detecta caminho, versão e autenticação disponível; não instala nada. | Use o executor ou teste o handshake MCP. |
+| CLI ausente | Oferece o canal oficial após mostrar comando, origem e pré-requisitos. | Autorize ou use **Browse...** para um executável existente. |
+| Node.js/npm ausente | Oferece Node.js LTS via WinGet em uma confirmação separada. | Após sucesso, revalida e oferece instalar a CLI. |
+| Usuário recusa | Nenhuma alteração é feita. | Use **Manual steps**, **Browse...** ou mantenha o agente nativo. |
+| Instalação falha | Mostra erro acionável, preserva saída visível e registra metadados sanitizados. | Corrija a causa indicada, execute **Diagnose** e retome. |
+| Instalação manual | Procura override, `PATH`, npm, Node.js e links do WinGet. | Clique **Diagnose**; não é necessário reiniciar o Delphi. |
+| Configuração MCP inválida | Não sobrescreve o arquivo e desabilita a gravação. | Corrija o arquivo indicado e gere novo **Preview**. |
+| Primeiro MCP | Mostra preview, pede consentimento, cria backup, verifica e permite handshake. | Execute **Connect / Repair** e depois **Test Handshake**. |
+
+Cancelar ou recusar mantém o ambiente inalterado e deixa uma alternativa visível.
+
 Para requisitos, autenticação e limitações de WSL, consulte
 [Orquestração nativa e executores por CLI](cli_executors.md). Para formatos e descoberta, consulte
 [Integração MCP](mcp_integration_guide.md).

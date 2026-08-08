@@ -144,6 +144,14 @@ type
     ): TRadIAToolResult;
   end;
 
+  TMockRadIAStatusTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
   [TestFixture]
   TTestChatPresenter = class
   strict private
@@ -201,6 +209,10 @@ type
     procedure TestHealthCommandExecutesProjectHealth;
     [Test]
     procedure TestDoctorCommandExecutesInstallationHealth;
+    [Test]
+    procedure TestStatusCommandExecutesFilteredStatus;
+    [Test]
+    procedure TestStatusCommandRejectsUnknownFilter;
     [Test]
     procedure TestJourneyCommandListsEndToEndRecipes;
     [Test]
@@ -518,6 +530,25 @@ begin
   );
 end;
 
+function TMockRadIAStatusTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(ARequest.ArgumentsJson);
+end;
+
+function TMockRadIAStatusTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetRadIAStatus',
+    '1.0.0',
+    'Returns mock RadIA status.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  );
+end;
+
 { TTestChatPresenter }
 
 procedure TTestChatPresenter.DrainQueuedCalls;
@@ -571,6 +602,7 @@ begin
   FToolRegistry.RegisterTool(TMockReadOnlyTool.Create);
   FToolRegistry.RegisterTool(TMockProjectHealthTool.Create);
   FToolRegistry.RegisterTool(TMockInstallationHealthTool.Create);
+  FToolRegistry.RegisterTool(TMockRadIAStatusTool.Create);
   FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
   FMockView := TMockChatView.Create;
   FPresenter := TRadIAChatPresenter.Create(
@@ -766,6 +798,27 @@ begin
   DrainQueuedCalls;
 
   Assert.Contains(FMockView.PostedMessages.Text, '"status":"ready"');
+end;
+
+procedure TTestChatPresenter.TestStatusCommandExecutesFilteredStatus;
+begin
+  FPresenter.SendPromptText('/status cli');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"filter":"cli"');
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    '"agentModeEnabled":true'
+  );
+end;
+
+procedure TTestChatPresenter.TestStatusCommandRejectsUnknownFilter;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/status unknown');
+
+  Assert.Contains(FMockView.LastPostedJson, 'Usage: /status');
 end;
 
 procedure TTestChatPresenter.TestJourneyCommandListsEndToEndRecipes;

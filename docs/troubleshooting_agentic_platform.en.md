@@ -1,5 +1,15 @@
 # Agentic platform troubleshooting
 
+## Start with the right command
+
+- Run `/doctor` when something does not work: it checks readiness and identifies the next action.
+- Run `/status` to inspect configuration and availability without revealing credentials.
+- Use `/status cli` or `/status mcp` to isolate those integrations.
+- Use `/health` when the issue concerns the open Delphi project, build, tests, or local knowledge.
+- Use `/tools` to verify whether a tool exists in the current IDE instance.
+
+The [command reference](slash_commands.en.md#which-diagnostic-command-to-use) explains each choice.
+
 ## Tools and consent
 
 | Symptom | Check and action |

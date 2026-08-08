@@ -97,7 +97,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 123);
+  assert.equal(registeredTools.length, 124);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -105,6 +105,30 @@ test('every built-in tool has an operational description and activation guidance
     assert.ok(documentation.purpose.length >= 20, `Purpose is too short for ${toolName}`);
     assert.ok(documentation.activation.length >= 20, `Activation guidance is too short for ${toolName}`);
   });
+});
+
+test('diagnostic commands are discoverable and clearly separated', () => {
+  const commands = fs.readFileSync(
+    path.join(documentationRoot, 'slash_commands.md'),
+    'utf8'
+  );
+  const hub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+  const englishHub = fs.readFileSync(
+    path.join(documentationRoot, 'README.en.md'),
+    'utf8'
+  );
+
+  assert.match(commands, /## Qual diagnóstico usar/u);
+  assert.match(commands, /`\/doctor`/u);
+  assert.match(commands, /`\/status`/u);
+  assert.match(commands, /`\/health`/u);
+  assert.match(commands, /`\/tools`/u);
+  assert.match(commands, /credenciais nunca são incluídas/u);
+  assert.match(hub, /slash_commands\.md#qual-diagnóstico-usar/u);
+  assert.match(
+    englishHub,
+    /slash_commands\.en\.md#which-diagnostic-command-to-use/u
+  );
 });
 
 test('primary documentation entry points expose task-oriented navigation', () => {
@@ -253,6 +277,42 @@ test('every visible settings group has a detailed central reference', () => {
   assert.match(portugueseReference, /Efeito e cuidados/u);
   assert.match(englishReference, /When to use/u);
   assert.match(englishReference, /Effect and care/u);
+});
+
+test('CLI and MCP guidance covers every recovery outcome', () => {
+  const portugueseReference = fs.readFileSync(
+    path.join(documentationRoot, 'settings_reference.md'),
+    'utf8'
+  );
+  const englishReference = fs.readFileSync(
+    path.join(documentationRoot, 'settings_reference.en.md'),
+    'utf8'
+  );
+  const portugueseScenarios = [
+    'Tudo já configurado',
+    'CLI ausente',
+    'Node.js/npm ausente',
+    'Usuário recusa',
+    'Instalação falha',
+    'Instalação manual',
+    'Configuração MCP inválida',
+    'Primeiro MCP'
+  ];
+  const englishScenarios = [
+    'Everything is configured',
+    'CLI is missing',
+    'Node.js/npm is missing',
+    'User declines',
+    'Installation fails',
+    'Manual installation',
+    'MCP configuration is invalid',
+    'First MCP setup'
+  ];
+
+  portugueseScenarios.forEach(scenario => assert.ok(portugueseReference.includes(scenario)));
+  englishScenarios.forEach(scenario => assert.ok(englishReference.includes(scenario)));
+  assert.match(portugueseReference, /não é necessário reiniciar o Delphi/u);
+  assert.match(englishReference, /does not need a restart/u);
 });
 
 test('documentation maintenance is an explicit project rule', () => {

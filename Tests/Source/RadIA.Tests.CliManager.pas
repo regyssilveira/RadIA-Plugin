@@ -59,6 +59,8 @@ type
     [Test]
     procedure ManualGuidanceIncludesEveryRecoveryPath;
     [Test]
+    procedure PrerequisiteGuidanceReturnsToOriginalFlow;
+    [Test]
     procedure FindsNewNpmExecutableOutsideInheritedPath;
     [Test]
     procedure ConvertsSetupFailuresIntoActionableGuidance;
@@ -267,6 +269,30 @@ begin
   Assert.Contains(LGuidance, 'npm install --global @openai/codex@latest');
   Assert.Contains(LGuidance, 'codex.exe');
   Assert.Contains(LGuidance, 'portable');
+end;
+
+procedure TRadIACliManagerTests.PrerequisiteGuidanceReturnsToOriginalFlow;
+var
+  LDefinition: TRadIACliDefinition;
+  LDiagnostic: TRadIACliSetupDiagnostic;
+  LGuidance: string;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  LDiagnostic := TRadIACliSetupDiagnostic.Create(
+    False,
+    'Node.js and npm',
+    '',
+    'Install Node.js LTS.',
+    'https://nodejs.org/en/download'
+  );
+  LGuidance := TRadIACliSetupAdvisor.PrerequisiteManualGuidance(
+    LDefinition,
+    LDiagnostic
+  );
+  Assert.Contains(LGuidance, 'current LTS release');
+  Assert.Contains(LGuidance, 'https://nodejs.org/en/download');
+  Assert.Contains(LGuidance, 'Click Diagnose');
+  Assert.Contains(LGuidance, 'portable CLI');
 end;
 
 procedure TRadIACliManagerTests.FindsNewNpmExecutableOutsideInheritedPath;

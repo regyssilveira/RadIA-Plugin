@@ -22,6 +22,10 @@ type
   )
   public
     function Diagnose: string;
+    function Status(
+      const AFilter: string;
+      const AAgentModeEnabled: Boolean
+    ): string;
   end;
 
   [TestFixture]
@@ -30,7 +34,11 @@ type
     [Test]
     procedure RegistersReadOnlyDiagnosticTool;
     [Test]
+    procedure RegistersReadOnlyStatusTool;
+    [Test]
     procedure ConcreteProbeReportsLocalReadinessWithoutSecrets;
+    [Test]
+    procedure StatusFiltersSanitizedConfiguration;
     [Test]
     procedure NativeJourneyDoesNotRequireMcpAndExposesNextAction;
   end;
@@ -69,6 +77,14 @@ begin
   Result :=
     '{"status":"attention","issues":["mcp_bridge_missing"],' +
     '"recommendations":["Repair the installation."]}';
+end;
+
+function TRadIAInstallationHealthTestProbe.Status(
+  const AFilter: string;
+  const AAgentModeEnabled: Boolean
+): string;
+begin
+  Result := '{"scope":"' + AFilter + '","sanitized":true}';
 end;
 
 procedure TTestRadIAInstallationHealthTools.
@@ -111,6 +127,9 @@ begin
     Assert.Contains(LResult, '"mcpRequired":false');
     Assert.Contains(LResult, '"firstToolReady":true');
     Assert.Contains(LResult, '"readinessScore":100');
+    Assert.Contains(LResult, '"readyCheckCount":6');
+    Assert.Contains(LResult, '"totalCheckCount":6');
+    Assert.Contains(LResult, '"summary":"6 of 6 readiness checks passed."');
     Assert.Contains(
       LResult,
       '"nextAction":"run_first_read_only_tool"'
@@ -125,6 +144,31 @@ begin
     if TDirectory.Exists(LDirectory) then
       TDirectory.Delete(LDirectory, True);
   end;
+end;
+
+procedure TTestRadIAInstallationHealthTools.RegistersReadOnlyStatusTool;
+var
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LTool: IRadIATool;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIAInstallationHealthTools(
+    LRegistry,
+    TRadIAInstallationHealthTestProbe.Create
+  );
+  LTool := LRegistry.Resolve('GetRadIAStatus');
+  Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
+  LResult := LTool.Execute(
+    TRadIAToolRequest.Create(
+      'GetRadIAStatus',
+      '{"filter":"cli","agentModeEnabled":true}',
+      'status-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"scope":"cli"');
+  Assert.Contains(LResult.ContentJson, '"sanitized":true');
 end;
 
 procedure TTestRadIAInstallationHealthTools.
@@ -151,6 +195,48 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, 'mcp_bridge_missing');
   Assert.Contains(LResult.ContentJson, 'Repair the installation.');
+end;
+
+procedure TTestRadIAInstallationHealthTools.
+  StatusFiltersSanitizedConfiguration;
+var
+  LConfig: IRadIAConfig;
+  LDirectory: string;
+  LProbe: IRadIAInstallationHealthProbe;
+  LResult: string;
+  LStorage: IRadIASettingsStorage;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIAStatus-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  try
+    LStorage := TRadIAMemorySettingsStorage.Create;
+    TRadIAConfig.SetStorage(LStorage);
+    LConfig := TRadIAConfig.Create;
+    LConfig.SetActiveProvider('OpenAI');
+    LConfig.SetApiKey('OpenAI', 'secret-value');
+    LProbe := TRadIAInstallationHealthProbe.Create(
+      LConfig,
+      TPath.Combine(LDirectory, 'bridge.exe'),
+      LDirectory
+    );
+
+    LResult := LProbe.Status('provider', True);
+
+    Assert.Contains(LResult, '"scope":"provider"');
+    Assert.Contains(LResult, '"provider"');
+    Assert.DoesNotContain(LResult, '"security"');
+    Assert.DoesNotContain(LResult, 'secret-value');
+  finally
+    LProbe := nil;
+    LConfig := nil;
+    LStorage := nil;
+    TRadIAConfig.SetStorage(nil);
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
 end;
 
 procedure TTestRadIAInstallationHealthTools.

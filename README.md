@@ -66,7 +66,7 @@ declare uma CLI como transporte, como o login ChatGPT via Codex. Veja a
 ## Ferramentas e comandos
 
 - `/tools` mostra as ferramentas disponíveis na instalação e no contexto atuais.
-- [Catálogo das 123 ferramentas](docs/runtime_tool_catalog.md) lista o catálogo interno gerado.
+- [Catálogo das 124 ferramentas](docs/runtime_tool_catalog.md) lista o catálogo interno gerado.
 - [Referência operacional](docs/internal_tools_reference.md) explica o que cada ferramenta faz e
   quando pode ser acionada.
 - [Comandos de barra](docs/slash_commands.md) documenta comandos, argumentos e exemplos.

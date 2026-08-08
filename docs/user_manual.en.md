@@ -322,6 +322,7 @@ See the [MCP guide](mcp_integration_guide.en.md) and
 
 Type `/` to open the command menu. Main commands include:
 
+- `/doctor` for readiness, `/status` for sanitized inventory, and `/health` for the project;
 - `/tools`, `/tool`, and `/revoke-tools`;
 - `/explain`, `/refactor`, `/bugs`, and `/review`;
 - `/doc`, `/stacktrace`, `/sqloptimize`, and `/scanwarnings`;

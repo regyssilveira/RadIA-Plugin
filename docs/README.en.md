@@ -17,6 +17,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Look up a specific field or button | [Complete settings reference](settings_reference.en.md) | [Troubleshooting](troubleshooting_agentic_platform.en.md) |
 | Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
 | Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.md) |
+| Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) | [Settings reference](settings_reference.en.md) |
 
 ## Complete a development task
 

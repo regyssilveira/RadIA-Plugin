@@ -89,6 +89,21 @@ allows an external client to use RadIA's protected tool registry.
 The **MCP connection** block is explicitly independent from the chat executor. Sanitized setup and
 repair history is stored at `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
 
+### Guided flow and recovery
+
+| Situation | What RadIA does | How to continue |
+|---|---|---|
+| Everything is configured | Detects path, version, and available authentication; installs nothing. | Use the executor or test the MCP handshake. |
+| CLI is missing | Offers the official channel after showing command, source, and prerequisites. | Approve it or use **Browse...** for an existing executable. |
+| Node.js/npm is missing | Offers Node.js LTS through WinGet under separate consent. | After success, RadIA revalidates and offers the CLI installation. |
+| User declines | Makes no change. | Use **Manual steps**, **Browse...**, or keep native orchestration. |
+| Installation fails | Shows actionable guidance, keeps output visible, and stores sanitized metadata. | Fix the reported cause, run **Diagnose**, and resume. |
+| Manual installation | Searches override, `PATH`, npm, Node.js, and WinGet links. | Click **Diagnose**; Delphi does not need a restart. |
+| MCP configuration is invalid | Does not overwrite the file and disables writes. | Fix the indicated file and create a new **Preview**. |
+| First MCP setup | Shows a preview, requests consent, backs up, verifies, and enables handshake. | Run **Connect / Repair**, then **Test Handshake**. |
+
+Cancelling or declining leaves the environment unchanged and keeps a visible alternative.
+
 See [native and CLI executors](cli_executors.md) and [MCP integration](mcp_integration_guide.en.md).
 
 ## Memory Diagnostics

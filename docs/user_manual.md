@@ -455,6 +455,7 @@ Consulte o [guia de extensões](tool_extension_guide.md) e
 
 Digite `/` no chat para abrir o menu. Os comandos principais incluem:
 
+- `/doctor` para prontidão, `/status` para inventário sanitizado e `/health` para o projeto;
 - `/tools`, `/tool` e `/revoke-tools`;
 - `/explain`, `/refactor`, `/bugs`, `/review`;
 - `/doc`, `/stacktrace`, `/sqloptimize`, `/scanwarnings`;
@@ -494,7 +495,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 123 tools internas registradas.
+- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 124 tools internas registradas.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

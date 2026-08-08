@@ -28,7 +28,8 @@
       "name": "Installation health",
       "source": "Source/Core/RadIA.Core.InstallationHealthTools.pas",
       "tools": [
-        "GetInstallationHealth"
+        "GetInstallationHealth",
+        "GetRadIAStatus"
       ]
     },
     {

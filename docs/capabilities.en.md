@@ -21,6 +21,7 @@ This page is the functional map of RadIA 2.2.1.
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
 | Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
 | Installation doctor | Score provider, executor, conditional MCP, terminal, chat, and first-tool readiness with a next action. |
+| RadIA status | Show a sanitized, filterable inventory of provider, agent, CLI, MCP, security, editor, project, tools, and logging state. |
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints and resource limits. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
 | Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |
@@ -37,7 +38,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 123 registered built-in tools](runtime_tool_catalog.md)
+- [All 124 registered built-in tools](runtime_tool_catalog.md)
 - [Operational reference for every tool](internal_tools_reference.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)

@@ -1952,11 +1952,13 @@ begin
     'Run the next approved setup step for %s?' + sLineBreak +
     'You can cancel and select an existing portable executable instead.' + sLineBreak +
     sLineBreak + 'Command:' + sLineBreak + '%s' + sLineBreak +
-    sLineBreak + 'Prerequisites: %s',
+    sLineBreak + 'Prerequisites: %s' + sLineBreak +
+    'Official source: %s',
     [
       LDefinition.DisplayName,
       LPlan.Preview,
-      string.Join(', ', LDefinition.Prerequisites)
+      string.Join(', ', LDefinition.Prerequisites),
+      LDefinition.DocumentationUrl
     ]
   );
   if MessageDlg(LPrompt, mtConfirmation, [mbYes, mbNo], 0) <> mrYes then
@@ -2062,8 +2064,10 @@ begin
   if ADefinition.PrimaryChannel <> cicNpm then
   begin
     ShowMessage(
-      LDiagnostic.PrerequisiteName + ' is required.' + sLineBreak +
-      LDiagnostic.Action + sLineBreak + LDiagnostic.DocumentationUrl
+      TRadIACliSetupAdvisor.PrerequisiteManualGuidance(
+        ADefinition,
+        LDiagnostic
+      )
     );
     OpenUrl(LDiagnostic.DocumentationUrl);
     Exit;
@@ -2072,8 +2076,10 @@ begin
   begin
     ShowMessage(
       'Automatic prerequisite installation requires winget.' + sLineBreak +
-      'Install Node.js LTS manually from:' + sLineBreak +
-      LDiagnostic.DocumentationUrl
+      TRadIACliSetupAdvisor.PrerequisiteManualGuidance(
+        ADefinition,
+        LDiagnostic
+      )
     );
     OpenUrl(LDiagnostic.DocumentationUrl);
     Exit;

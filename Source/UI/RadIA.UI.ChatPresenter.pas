@@ -211,6 +211,10 @@ type
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
+    function TryHandleStatusCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
     function TryHandleJourneyCommand(
       const APromptText: string;
       const ACommandText: string
@@ -695,7 +699,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..14] of string = (
+  CNativeCommands: array[0..15] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -709,6 +713,7 @@ const
     '/extensions',
     '/health',
     '/doctor',
+    '/status',
     '/tools',
     '/revoke-tools'
   );
@@ -921,8 +926,13 @@ begin
   );
   AddCommand(
     '/doctor',
-    'Diagnoses the RadIA installation and first-run readiness.',
+    'Checks readiness and recommends the next corrective action.',
     'Installation Doctor'
+  );
+  AddCommand(
+    '/status',
+    'Shows a sanitized snapshot of RadIA configuration and readiness.',
+    'RadIA Status'
   );
   AddCommand('/tools', 'Lists available read-only IDE tools.', 'IDE Tools');
   AddCommand(
@@ -2304,6 +2314,9 @@ begin
     Exit;
   end;
 
+  if TryHandleStatusCommand(APromptText, ACommandText) then
+    Exit;
+
   if SameText(ACommandText, '/tools') then
   begin
     PostToWebView('add_message', 'user', APromptText);
@@ -2337,6 +2350,66 @@ begin
     Exit;
   end;
   Result := False;
+end;
+
+function TRadIAChatPresenter.TryHandleStatusCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+const
+  CFilters: array[0..9] of string = (
+    'all',
+    'provider',
+    'agent',
+    'cli',
+    'mcp',
+    'security',
+    'editor',
+    'project',
+    'tools',
+    'logging'
+  );
+var
+  LAgentMode: string;
+  LFilter: string;
+  LKnownFilter: string;
+  LValid: Boolean;
+begin
+  Result := SameText(ACommandText, '/status') or
+    ACommandText.StartsWith('/status ', True);
+  if not Result then
+    Exit;
+  LFilter := Trim(Copy(ACommandText, Length('/status') + 1, MaxInt));
+  if SameText(LFilter, '--json') or LFilter.IsEmpty then
+    LFilter := 'all';
+  LValid := False;
+  for LKnownFilter in CFilters do
+    if SameText(LFilter, LKnownFilter) then
+    begin
+      LFilter := LKnownFilter;
+      LValid := True;
+      Break;
+    end;
+  if not LValid then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Usage: /status [provider|agent|cli|mcp|security|editor|' +
+      'project|tools|logging|--json]'
+    );
+    Exit;
+  end;
+  if FAgentModeEnabled then
+    LAgentMode := 'true'
+  else
+    LAgentMode := 'false';
+  HandleExplicitToolCommand(
+    APromptText,
+    '/tool GetRadIAStatus {"filter":"' + LFilter + '",' +
+    '"agentModeEnabled":' + LAgentMode + '}'
+  );
 end;
 
 procedure TRadIAChatPresenter.HandleExplicitToolCommand(
