@@ -29,6 +29,10 @@ outro provider que ofereça transporte HTTP/local nativo.
 O RadIA mantém os argumentos separados até a criação do processo e aplica o escape de argumentos
 do Windows apenas na fronteira de execução. O prompt não é concatenado a um comando de shell.
 
+A [matriz contratual de capacidades](cli_capability_matrix.md) separa o que cada fornecedor publica
+do que a versão atual do RadIA já utiliza. Retomada por ID e FIM somente ficam disponíveis depois
+que o executável detectado comprova o contrato correspondente.
+
 ## Instalação opcional pelo canal oficial
 
 Em **Configurações > CLI & MCP**, o botão **Install channel** ou **Update channel** apresenta o

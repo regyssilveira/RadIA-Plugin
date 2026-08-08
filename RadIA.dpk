@@ -48,6 +48,7 @@ contains
   RadIA.Core.AgentResultTools in 'Source\Core\RadIA.Core.AgentResultTools.pas',
   RadIA.Core.AgentDiagnostic in 'Source\Core\RadIA.Core.AgentDiagnostic.pas',
   RadIA.Core.AgentExecutors in 'Source\Core\RadIA.Core.AgentExecutors.pas',
+  RadIA.Core.AgentExecutorContracts in 'Source\Core\RadIA.Core.AgentExecutorContracts.pas',
   RadIA.Core.CliProcess in 'Source\Core\RadIA.Core.CliProcess.pas',
   RadIA.Core.PseudoTerminal in 'Source\Core\RadIA.Core.PseudoTerminal.pas',
   RadIA.Core.Terminal in 'Source\Core\RadIA.Core.Terminal.pas',

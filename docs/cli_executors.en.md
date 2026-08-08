@@ -29,6 +29,10 @@ provider that offers native HTTP or local transport.
 RadIA keeps arguments separate until process creation and applies argument escaping
 of Windows only at the execution boundary. The prompt is not concatenated to a shell command.
 
+The [contractual capability matrix](cli_capability_matrix.en.md) separates vendor-published
+features from behavior already used by the current RadIA version. ID resume and FIM become
+available only after the detected executable proves the corresponding contract.
+
 ## Optional installation via the official channel
 
 In **Settings > CLI & MCP**, the **Install channel** or **Update channel** button displays the

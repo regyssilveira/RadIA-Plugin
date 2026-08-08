@@ -53,6 +53,10 @@ supported Delphi matrix. A UI-only, single-provider, or single-target delivery d
 
 **Acceptance:** versioned matrix, reviewed contracts, green baseline, and no new Sonar issue.
 
+**Status:** completed. The typed catalog, five identity boundaries, bilingual matrix, and four
+contract tests passed with 898/898 tests on all three targets. See the
+[Phase 0 evidence](competitive_gap_phase_0_evidence_2.3.1.json).
+
 **Still missing:** implementation of all six functional points.
 
 ### Phase 1 — Native CLI session continuity

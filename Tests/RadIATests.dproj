@@ -107,6 +107,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentResultStore.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentResultTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentExecutors.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.AgentExecutorContracts.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.CliProcess.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.PseudoTerminal.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Terminal.pas"/>

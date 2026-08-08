@@ -55,6 +55,10 @@ Todas as fases obedecem aos seguintes contratos:
 
 **Aceite:** matriz versionada, contratos revisados, baseline de testes verde e Sonar sem issue nova.
 
+**Estado:** concluída. O catálogo tipado, as cinco fronteiras de identidade, a matriz bilíngue e os
+quatro testes contratuais foram aprovados com 898/898 testes nos três targets. Consulte a
+[evidência da Fase 0](competitive_gap_phase_0_evidence_2.3.1.json).
+
 **Ainda faltará:** implementar os seis pontos funcionais.
 
 ### Fase 1 — Continuidade nativa das sessões CLI

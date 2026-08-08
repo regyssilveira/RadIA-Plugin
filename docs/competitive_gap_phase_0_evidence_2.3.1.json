@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhase0Baseline",
+  "product": "RadIA",
+  "baselineVersion": "2.3.1",
+  "sourceBaseCommit": "b08ea47ad5c02dedea5aa062c56c3e22b22c01cc",
+  "generatedAtUtc": "2026-08-08T22:12:00.8927522Z",
+  "status": "passed",
+  "contracts": {
+    "executorCount": 4,
+    "scopeIdentityCount": 5,
+    "capabilityContractTests": 4,
+    "silentFallbackAllowed": false,
+    "fimDeclaredByCli": false
+  },
+  "targets": [
+    {
+      "delphiVersion": "23.0",
+      "platform": "Win32",
+      "buildPassed": true,
+      "testsFound": 898,
+      "testsPassed": 898,
+      "testsFailed": 0,
+      "testsErrored": 0,
+      "testsLeaked": 0
+    },
+    {
+      "delphiVersion": "37.0",
+      "platform": "Win32",
+      "buildPassed": true,
+      "testsFound": 898,
+      "testsPassed": 898,
+      "testsFailed": 0,
+      "testsErrored": 0,
+      "testsLeaked": 0
+    },
+    {
+      "delphiVersion": "37.0",
+      "platform": "Win64",
+      "buildPassed": true,
+      "testsFound": 898,
+      "testsPassed": 898,
+      "testsFailed": 0,
+      "testsErrored": 0,
+      "testsLeaked": 0
+    }
+  ],
+  "documentation": {
+    "testsFound": 17,
+    "testsPassed": 17,
+    "portugueseEnglishPairs": true,
+    "localLinksValid": true,
+    "mojibakeFree": true
+  },
+  "sonar": {
+    "qualityGate": "OK",
+    "globalCoveragePercent": 83.3,
+    "globalDuplicationPercent": 2.0,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  }
+}

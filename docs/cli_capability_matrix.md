@@ -1,0 +1,68 @@
+# Matriz contratual de capacidades dos executores CLI
+
+> **Baseline:** RadIA 2.3.1, atualizada em 8 de agosto de 2026.
+> **Natureza:** contrato técnico para implementação e testes. Uma capacidade declarada pelo CLI
+> não significa que o RadIA já a exponha na interface.
+
+## Como interpretar
+
+- **Contrato do CLI** registra a capacidade publicada pelo fornecedor e representada por
+  `TRadIAExecutorContractCatalog`.
+- **Uso atual no RadIA** descreve o comportamento entregue no início do goal.
+- Toda execução futura deve confirmar a capacidade contra o executável detectado. Uma versão
+  incompatível deve produzir diagnóstico explícito, nunca fallback silencioso.
+- FIM é um contrato de completion separado do chat. Nenhum dos quatro CLIs é presumido como FIM
+  apenas por aceitar um modelo configurável.
+
+## Matriz versionada
+
+| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.3.1 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Codex CLI | Sim, JSONL | Evento estruturado | `exec resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
+| Claude Code | Sim, stream JSON | Evento estruturado | `--resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
+| Gemini CLI | Sim, stream JSON | Evento `init` | `--resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
+| GitHub Copilot CLI | Sim, JSONL | Hint de encerramento | `--resume=<id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
+
+## Fontes primárias do contrato
+
+- [Codex CLI](https://developers.openai.com/codex/cli/reference) — execução JSON e retomada por ID.
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code/cli-usage) — saída estruturada,
+  modelo, MCP e `--resume`.
+- [Gemini CLI](https://geminicli.com/docs/reference/configuration/) e
+  [modo headless](https://geminicli.com/docs/cli/headless/) — stream JSON, evento `init`, modelo e
+  `--resume`.
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference)
+  — JSONL, modelo, MCP e identificador informado ao encerrar uma execução programática.
+
+As fontes registram o contrato esperado; o probe definido na Fase 0 deverá confrontar esse contrato
+com a versão local antes de habilitar retomada, modelo ou MCP.
+
+## Identidades e isolamento
+
+`TRadIAAgentScopeIdentity` delimita cinco fronteiras que não podem ser inferidas umas das outras:
+
+| Identidade | Finalidade |
+|---|---|
+| Jornada | Correlacionar uma tarefa que atravessa mais de uma superfície |
+| Conversa | Representar o histórico lógico visto pelo usuário |
+| Sessão | Representar a execução do agente ou CLI |
+| Projeto | Impedir mistura de contexto entre workspaces |
+| Solicitação | Rejeitar callbacks e respostas tardias |
+
+Uma identidade só é completa quando todas as fronteiras estão presentes. Duas solicitações
+pertencem à mesma jornada somente quando `JourneyId` e `ProjectId` coincidem.
+
+## Baseline mensurável
+
+| Risco | Evidência inicial | Gate futuro |
+|---|---|---|
+| Timeout e cancelamento | Processo externo possui timeout e encerramento em Job Object | Nenhum processo filho após cancelar |
+| Resposta obsoleta | Troca de provider/executor descarta callbacks antigos | Correlação também inclui jornada e sessão CLI |
+| Retomada | Não implementada no RadIA 2.3.1 | Retomar por ID ou informar capacidade indisponível |
+| Latência | Duração é registrada na central de execução | Separar startup, primeiro evento e conclusão |
+| FIM | Ghost Text usa completion geral | Capability probe e montagem prefixo/sufixo |
+
+## Próxima fase
+
+A Fase 1 deve consumir este contrato para capturar IDs, persistir somente metadados não secretos e
+montar a sintaxe de retomada específica de cada executor.

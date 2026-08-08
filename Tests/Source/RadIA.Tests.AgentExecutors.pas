@@ -37,12 +37,21 @@ type
     procedure NativeExecutorEnablesProviderModelSelection;
     [Test]
     procedure SupportedCliExecutorsManageTheirOwnModels;
+    [Test]
+    procedure CapabilityCatalogCoversEveryCli;
+    [Test]
+    procedure CapabilityCatalogDeclaresStableResumeWithoutFim;
+    [Test]
+    procedure ScopeIdentityRequiresEveryBoundary;
+    [Test]
+    procedure ScopeIdentityRejectsCrossProjectJourney;
   end;
 
 implementation
 
 uses
   System.SysUtils,
+  RadIA.Core.AgentExecutorContracts,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliManager,
   RadIA.Core.SettingsStorage;
@@ -64,6 +73,47 @@ begin
     APrompt,
     'C:\Project'
   );
+end;
+
+procedure TRadIAAgentExecutorTests.CapabilityCatalogCoversEveryCli;
+var
+  LContract: TRadIAExecutorContract;
+  LDefinition: TRadIACliDefinition;
+begin
+  Assert.AreEqual<Integer>(
+    4,
+    Length(TRadIAExecutorContractCatalog.All)
+  );
+  for LDefinition in TRadIACliCatalog.All do
+  begin
+    Assert.IsTrue(
+      TRadIAExecutorContractCatalog.FindByKind(
+        LDefinition.Kind,
+        LContract
+      )
+    );
+    Assert.AreEqual(LDefinition.Id, LContract.ClientId);
+  end;
+end;
+
+procedure TRadIAAgentExecutorTests.CapabilityCatalogDeclaresStableResumeWithoutFim;
+var
+  LContract: TRadIAExecutorContract;
+begin
+  for LContract in TRadIAExecutorContractCatalog.All do
+  begin
+    Assert.IsTrue(LContract.Supports(ecStructuredOutput));
+    Assert.IsTrue(LContract.Supports(ecStableResume));
+    Assert.IsTrue(LContract.Supports(ecSessionIdInOutput));
+    Assert.IsTrue(LContract.Supports(ecModelSelection));
+    Assert.IsTrue(LContract.Supports(ecMcp));
+    Assert.IsFalse(LContract.Supports(ecFim));
+    Assert.AreNotEqual(Ord(rsUnsupported), Ord(LContract.ResumeSyntax));
+    Assert.AreNotEqual(
+      Ord(sisUnavailable),
+      Ord(LContract.SessionIdSource)
+    );
+  end;
 end;
 
 procedure TRadIAAgentExecutorTests.ClaudeInvocationUsesPrintStreamJson;
@@ -159,20 +209,22 @@ end;
 procedure TRadIAAgentExecutorTests.EmptyPromptIsRejected;
 var
   LDefinition: TRadIACliDefinition;
+  LRaised: Boolean;
 begin
   Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
-  Assert.WillRaise(
-    procedure
-    begin
-      TRadIACliInvocationBuilder.Build(
-        LDefinition,
-        'codex.exe',
-        '',
-        'C:\Project'
-      );
-    end,
-    EArgumentException
-  );
+  LRaised := False;
+  try
+    TRadIACliInvocationBuilder.Build(
+      LDefinition,
+      'codex.exe',
+      '',
+      'C:\Project'
+    );
+  except
+    on EArgumentException do
+      LRaised := True;
+  end;
+  Assert.IsTrue(LRaised, 'An empty prompt must be rejected.');
 end;
 
 procedure TRadIAAgentExecutorTests.GeminiInvocationUsesPromptStreamJson;
@@ -244,6 +296,60 @@ begin
   );
 end;
 
+procedure TRadIAAgentExecutorTests.ScopeIdentityRejectsCrossProjectJourney;
+var
+  LFirst: TRadIAAgentScopeIdentity;
+  LOtherProject: TRadIAAgentScopeIdentity;
+  LSameJourney: TRadIAAgentScopeIdentity;
+begin
+  LFirst := TRadIAAgentScopeIdentity.Create(
+    'journey-1',
+    'conversation-1',
+    'session-1',
+    'project-a',
+    'request-1'
+  );
+  LSameJourney := TRadIAAgentScopeIdentity.Create(
+    'JOURNEY-1',
+    'conversation-1',
+    'session-1',
+    'PROJECT-A',
+    'request-2'
+  );
+  LOtherProject := TRadIAAgentScopeIdentity.Create(
+    'journey-1',
+    'conversation-2',
+    'session-2',
+    'project-b',
+    'request-3'
+  );
+  Assert.IsTrue(LFirst.BelongsToJourney(LSameJourney));
+  Assert.IsFalse(LFirst.BelongsToJourney(LOtherProject));
+end;
+
+procedure TRadIAAgentExecutorTests.ScopeIdentityRequiresEveryBoundary;
+var
+  LComplete: TRadIAAgentScopeIdentity;
+  LIncomplete: TRadIAAgentScopeIdentity;
+begin
+  LComplete := TRadIAAgentScopeIdentity.Create(
+    'journey-1',
+    'conversation-1',
+    'session-1',
+    'project-1',
+    'request-1'
+  );
+  LIncomplete := TRadIAAgentScopeIdentity.Create(
+    'journey-1',
+    'conversation-1',
+    'session-1',
+    'project-1',
+    ''
+  );
+  Assert.IsTrue(LComplete.IsComplete);
+  Assert.IsFalse(LIncomplete.IsComplete);
+end;
+
 procedure TRadIAAgentExecutorTests.SupportedCliExecutorsManageTheirOwnModels;
 const
   CClientIds: array[0..3] of string = (
@@ -273,6 +379,7 @@ end;
 
 procedure TRadIAAgentExecutorTests.UnknownCliSelectionIsRejected;
 var
+  LRaised: Boolean;
   LSettings: TRadIAAgentExecutorSettingsStore;
   LStorage: IRadIASettingsStorage;
 begin
@@ -282,15 +389,16 @@ begin
     CSettingsPath
   );
   try
-    Assert.WillRaise(
-      procedure
-      begin
-        LSettings.Save(
-          TRadIAAgentExecutorSettings.Create(aekCli, 'unknown')
-        );
-      end,
-      EArgumentException
-    );
+    LRaised := False;
+    try
+      LSettings.Save(
+        TRadIAAgentExecutorSettings.Create(aekCli, 'unknown')
+      );
+    except
+      on EArgumentException do
+        LRaised := True;
+    end;
+    Assert.IsTrue(LRaised, 'An unknown CLI selection must be rejected.');
   finally
     LSettings.Free;
   end;
