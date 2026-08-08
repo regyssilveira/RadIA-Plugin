@@ -1,145 +1,194 @@
-# Plano de liderança técnica do RadIA 2.0
+# Goal — eliminar as seis lacunas competitivas do RadIA
 
-> **Estado:** checkpoint congelado após a publicação da versão 2.0.0; nenhuma fase foi iniciada.
+> **Estado:** ativo, planejado a partir do RadIA 2.3.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+> **Versão de entrega:** será definida pela mudança pública efetivamente entregue; números herdados
+> de backlogs anteriores não são compromisso.
 > **Fora do escopo:** C++Builder, marketplace, assinatura Authenticode obrigatória e substituição do
 > host WebView2 atual.
-> **Prioridade atual:** [Reprodução autônoma de falhas runtime](runtime_debug_automation_plan.md).
-> **Ponto de retomada:** após concluir esse goal, iniciar pela Fase 0 — Baseline e contratos, sem
-> reabrir decisões de escopo.
 
-## Goal
+## Objetivo
 
-Transformar a base híbrida já entregue em uma experiência contínua e comprovável: descobrir um
-executor, autenticar, iniciar ou retomar uma conversa, usar o mesmo contexto no chat, terminal e
-editor, revisar mudanças e concluir a jornada dentro da IDE.
+Eliminar, com evidência reproduzível, as seis lacunas funcionais restantes:
 
-O instalador continua sendo uma facilidade para um projeto aberto que também pode ser compilado
-pelo usuário. A ausência de assinatura não bloqueia a versão 2.0. O canal deve publicar hash
-SHA-256 e instruções reproduzíveis de build e instalação.
+1. continuidade nativa das sessões CLI;
+2. contexto único entre chat, terminal e editor;
+3. revisão por bloco diretamente no gutter;
+4. completion especializada em Fill-In-the-Middle (FIM);
+5. cliente e federação de servidores MCP externos;
+6. configurações por projeto, sessão e solicitação.
 
-## Ideias aproveitadas da nova análise externa
+O goal termina somente quando os seis contratos estiverem implementados, documentados e aprovados
+na matriz Delphi suportada. Entregar apenas a interface, um provider ou um target não fecha uma fase.
 
-A revisão de implementações atualizadas encontrou quatro ideias que trazem ganho real:
+## Baseline que deve ser preservada
 
-1. Capturar e persistir o identificador de conversa devolvido por cada CLI, permitindo continuar
-   uma sessão em vez de reiniciá-la a cada mensagem.
-2. Tratar gravações de configuração como transações para que duas telas ou serviços não apaguem
-   campos um do outro.
-3. Vincular pedidos de consentimento à execução e à sessão que os originaram, preservando ou
-   cancelando o pedido de modo explícito quando o chat é fechado ou trocado.
-4. Validar executores com contas reais em uma matriz ponta a ponta, incluindo streaming,
-   cancelamento, retomada, MCP e encerramento.
+- Agente nativo independente de CLI e executores externos opcionais.
+- Um registry de tools compartilhado por chat, agente, MCP e extensões.
+- Consentimento por risco, auditoria sanitizada, workspace boundary, checkpoints e rollback.
+- Terminal ConPTY, Ghost Text, revisão inline, debugger, Designer, build, DUnitX e FastMM5.
+- Descoberta e troca de provider/modelo sem reiniciar a IDE.
+- Documentação central, `/doctor`, `/status` e `/tools` coerentes com o runtime.
 
-A conclusão inline por CLI, o diagnóstico de instalação/autenticação, o Copilot CLI e o Ghost Text
-já existem no RadIA. Esses itens entram somente no gate integrado, sem duplicação de implementação.
+## Contratos transversais
 
-SQLite não é requisito inicial. A migração da persistência somente será considerada se medições
-demonstrarem lentidão, crescimento excessivo ou necessidade de consultas que o armazenamento atual
-não atende. O WebView2 permanece como está e não gera item futuro ou backlog.
+Todas as fases obedecem aos seguintes contratos:
+
+- nenhuma credencial, token ou conteúdo sensível é persistido em texto aberto;
+- callbacks tardios nunca atravessam sessão, projeto, revisão ou instância da IDE;
+- tools internas e externas usam a mesma classificação de risco e consentimento;
+- alterações no editor são preview-first, atômicas, auditáveis e reversíveis;
+- a UI informa origem efetiva de executor, modelo, configuração e tool;
+- recursos indisponíveis degradam de forma explícita, sem fallback silencioso;
+- toda capacidade visível atualiza referência central, guia, hints, tradução e testes documentais;
+- cada fase fecha com testes, Sonar e evidência na matriz suportada.
 
 ## Plano de execução
 
-### Fase 0 — Baseline e contratos
+### Fase 0 — Baseline, contratos e telemetria local
 
-- Mapear o ciclo atual dos quatro executores: Codex, Claude, Gemini e GitHub Copilot.
-- Definir um contrato comum de identidade de conversa, capacidade de retomada e diagnóstico.
-- Registrar quais CLIs oferecem identificador estável e qual fallback seguro será usado.
-- Criar testes de contrato para argumentos, parsing, timeout, cancelamento e saída parcial.
+- Versionar uma matriz de capacidades dos executores Codex, Claude, Gemini e GitHub Copilot.
+- Definir records/interfaces para identidade de jornada, conversa, sessão, projeto e solicitação.
+- Definir contratos de capability discovery para retomada, FIM e seleção de modelo.
+- Medir localmente latência, cancelamento, respostas obsoletas e retomadas, sem telemetria remota.
+- Criar fixtures e testes de contrato antes das mudanças de persistência e UI.
 
-**Critério de aceite:** matriz de capacidades versionada, testes atuais verdes e Sonar sem issue
-nova.
+**Aceite:** matriz versionada, contratos revisados, baseline de testes verde e Sonar sem issue nova.
 
-**Após a fase ainda faltará:** persistência real, compartilhamento entre superfícies, UX guiada e
-prova autenticada.
+**Ainda faltará:** implementar os seis pontos funcionais.
 
-### Fase 1 — Continuidade nativa por CLI
+### Fase 1 — Continuidade nativa das sessões CLI
 
-- Capturar o identificador de sessão ou conversa retornado por cada executor.
-- Persistir executor, modelo, diretório de trabalho e identificador sem armazenar credenciais.
-- Retomar a conversa quando o CLI suportar essa operação.
-- Exibir claramente quando uma conversa foi retomada ou começou do zero.
-- Impedir que uma resposta tardia seja anexada à sessão errada.
+- Capturar o identificador de conversa devolvido por cada CLI e validar seu formato.
+- Persistir somente metadados não secretos: executor, modelo declarado, workspace e identificador.
+- Implementar criar, retomar, duplicar, desvincular e encerrar conversa.
+- Definir fallback explícito para CLIs sem retomada estável; nunca simular continuidade.
+- Correlacionar processo, streaming, consentimento e resposta com a sessão que os originou.
+- Expor estado e ações por botão, comando e `/status`.
 
-**Critério de aceite:** fechar e reabrir o painel, continuar uma conversa suportada e provar por
-teste que mensagens não atravessam sessões.
+**Aceite:** após fechar o painel e reiniciar a IDE, cada CLI suportada retoma a conversa correta ou
+informa claramente que iniciou uma nova; testes provam isolamento e descarte de saída tardia.
 
-**Após a fase ainda faltará:** contexto compartilhado entre chat, terminal e editor, configuração
-transacional, consentimento de ciclo de vida e matriz real.
+**Ainda faltará:** contexto entre superfícies, configuração hierárquica, FIM, gutter e MCP externo.
 
-### Fase 2 — Contexto unificado no chat, terminal e editor
+### Fase 2 — Contexto único entre chat, terminal e editor
 
-- Associar chat e terminal à mesma identidade de conversa quando o usuário escolher continuar.
-- Permitir iniciar, escolher, retomar e desvincular uma sessão por botão e comando.
-- Reutilizar a seleção de CLI, projeto, modelo e diagnóstico nas três superfícies.
-- Manter ferramentas, MCP, consentimento, auditoria e workspace boundary sob a política do RadIA.
-- Mostrar executor, estado de autenticação e estado da sessão sem abrir Configurações.
+- Introduzir uma identidade de jornada que referencia conversa, projeto e execução sem duplicá-los.
+- Permitir iniciar no chat, continuar no terminal e solicitar completion/revisão no editor.
+- Compartilhar executor, projeto, diagnóstico e artefatos selecionados, não histórico irrestrito.
+- Permitir vincular, desvincular e trocar jornada por interface visual e comando.
+- Mostrar em cada superfície a jornada ativa e impedir mistura entre projetos.
+- Preservar consentimento, auditoria, checkpoints e limites do agente nativo.
 
-**Critério de aceite:** uma jornada inicia no chat, continua no terminal e solicita uma conclusão
-no editor sem perder executor, projeto ou identidade de conversa.
+**Aceite:** uma jornada autenticada atravessa chat, terminal e editor sem perder identidade nem
+copiar contexto de outro workspace; cancelamento em uma superfície produz estado coerente nas demais.
 
-**Após a fase ainda faltará:** hardening concorrente, consentimento resiliente e prova autenticada
-nas IDEs suportadas.
+**Ainda faltará:** configuração hierárquica, FIM, gutter e MCP externo.
 
-### Fase 3 — Configuração e consentimento resilientes
+### Fase 3 — Configuração por projeto, sessão e solicitação
 
-- Centralizar atualização de configurações em operação de leitura, merge e gravação atômica.
-- Testar dois escritores concorrentes e preservar campos desconhecidos.
-- Vincular cada consentimento ao identificador da execução e da sessão.
-- Definir comportamento determinístico para troca, fechamento e retomada do chat.
-- Descartar cards, indicadores e callbacks obsoletos sem responder pelo usuário.
+- Implementar precedência explícita: solicitação > sessão > projeto > global > padrão seguro.
+- Cobrir provider, modelo, executor e limites compatíveis; credenciais permanecem globais e seguras.
+- Armazenar configuração de projeto fora de arquivos versionados por padrão, com exportação opt-in.
+- Mostrar valor efetivo, origem, override e ação para restaurar herança.
+- Aplicar gravação read-merge-write atômica e preservar campos desconhecidos.
+- Atualizar modelo e capacidades ao trocar escopo, sem reiniciar o Delphi.
 
-**Critério de aceite:** testes concorrentes não perdem configuração e nenhum consentimento fica
-órfão, é aplicado à sessão errada ou recebe decisão implícita.
+**Aceite:** dois projetos e duas sessões usam configurações distintas simultaneamente; concorrência
+não perde campos e a UI, `/status` e a execução real concordam sobre cada valor efetivo.
 
-**Após a fase ainda faltará:** experiência CodeInsight avançada e validação autenticada completa.
+**Ainda faltará:** FIM, gutter e MCP externo.
 
-### Fase 4 — Integração avançada com o editor
+### Fase 4 — Completion especializada em FIM
 
-- Unificar a origem de contexto entre Ghost Text, ações contextuais, revisão inline e chat.
-- Permitir navegar entre alternativas sem escrever no buffer antes do aceite.
-- Mostrar origem, executor e estado da sugestão de forma acessível.
-- Preservar atalhos configuráveis e devolver as teclas à IDE quando não houver sugestão válida.
-- Cancelar sugestões obsoletas quando cursor, revisão ou buffer mudarem.
+- Adicionar um contrato de completion separado do contrato de chat.
+- Detectar suporte a FIM por capability, sem inferir apenas pelo nome do modelo.
+- Enviar prefixo, sufixo, linguagem, posição do cursor e orçamento dentro dos limites configurados.
+- Manter fallback explícito para completion tradicional quando FIM não estiver disponível.
+- Cancelar respostas obsoletas ao mudar cursor, buffer, arquivo, projeto ou jornada.
+- Expor latência local, origem do modelo e motivo do fallback para diagnóstico.
 
-**Critério de aceite:** aceitar, rejeitar e alternar alternativas somente pelo teclado, com undo
-único e sem alteração antecipada do buffer.
+**Aceite:** fixtures provam montagem correta de prefixo/sufixo e um smoke real por target aceita e
+rejeita Ghost Text sem alterar antecipadamente o buffer, com undo único e nenhum vazamento de código.
 
-**Após a fase ainda faltará:** apenas a prova ponta a ponta e o fechamento dos gates da versão.
+**Ainda faltará:** gutter por bloco e MCP externo.
 
-### Fase 5 — Matriz CLI autenticada e fechamento
+### Fase 5 — Revisão por bloco diretamente no gutter
 
-Executar Codex, Claude, Gemini e GitHub Copilot nas três combinações suportadas:
+- Projetar marcadores acessíveis para aceitar, rejeitar, editar e explicar cada bloco.
+- Vincular cada bloco ao hash da revisão e invalidá-lo quando o buffer divergir.
+- Aplicar decisões parciais como transações coerentes com checkpoint e rollback.
+- Oferecer equivalentes por teclado e comando para todas as ações visuais.
+- Suportar múltiplos arquivos sem perder navegação, foco ou estado de revisão.
+- Integrar o resultado à timeline e à auditoria, sem duplicar a fonte do diff.
 
-- detecção, versão e orientação de autenticação;
-- início e retomada de conversa;
-- streaming e saída parcial;
-- cancelamento, timeout e encerramento da árvore;
-- chamada MCP somente leitura e mutação com consentimento;
-- continuidade entre chat e terminal;
-- conclusão inline e descarte de resposta obsoleta;
-- fechamento da IDE sem processo órfão.
+**Aceite:** revisão multiarquivo real permite decisões diferentes por bloco, rejeita base obsoleta,
+gera undo previsível e passa por mouse e teclado nos três targets.
 
-**Critério de aceite:** evidência versionada por CLI e target, build e testes verdes, Sonar verde e
-dez ciclos consecutivos de instalação, uso, docking e encerramento.
+**Ainda faltará:** cliente e federação MCP externa.
 
-**Após a fase ainda faltará:** nenhum item técnico obrigatório deste goal.
+### Fase 6 — Cliente e federação de servidores MCP externos
 
-## Ordem e complexidade
+- Implementar cliente MCP separado do servidor já existente, com lifecycle e cancelamento.
+- Cadastrar servidores locais por fluxo guiado e importar configuração somente após preview.
+- Descobrir tools, recursos e prompts com namespace estável e indicação clara de origem.
+- Resolver colisões sem renomear silenciosamente e manter catálogo interno disponível em falhas.
+- Aplicar allowlist, workspace boundary, consentimento, timeout, auditoria e sanitização.
+- Isolar processos, segredos e configuração por servidor; suportar desabilitar e remover com segurança.
+- Refletir saúde e próxima ação em Configurações, `/doctor` e `/status` sem exigir restart.
 
-| Ordem | Fase | Complexidade | Dependência |
-|---:|---|---|---|
-| 1 | Baseline e contratos | Baixa | Nenhuma |
-| 2 | Continuidade nativa por CLI | Alta | Fase 0 |
-| 3 | Contexto unificado | Alta | Fase 1 |
-| 4 | Configuração e consentimento | Média | Fases 0 e 1 |
-| 5 | Integração avançada com editor | Alta | Fases 2 e 3 |
-| 6 | Matriz autenticada | Alta | Todas |
+**Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
+mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.
 
-## Regras permanentes
+**Ainda faltará:** somente o gate integrado de encerramento.
 
-- Consultar o Sonar em cada rodada e não aceitar issue nova.
-- Commitar e enviar cada etapa fechada pela branch de trabalho.
-- Informar ao final de cada etapa o que foi concluído, a evidência e o que ainda falta para o goal.
-- Não ampliar o escopo para C++Builder, marketplace ou um novo host WebView2.
-- Não bloquear a publicação por ausência de certificado de assinatura de código.
+### Fase 7 — Jornada integrada e encerramento do goal
+
+Executar nas três combinações suportadas:
+
+1. abrir dois projetos com configurações diferentes;
+2. iniciar e retomar uma conversa CLI;
+3. continuar a mesma jornada no terminal;
+4. pedir completion FIM no editor;
+5. revisar uma mudança multiarquivo por bloco no gutter;
+6. chamar uma tool de MCP externo com consentimento;
+7. compilar, testar, depurar e revisar as evidências;
+8. reiniciar a IDE, retomar a jornada e encerrar sem processo órfão.
+
+**Aceite:** evidência versionada para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64; builds,
+testes Delphi, testes web, testes documentais e Sonar verdes; dez ciclos consecutivos de uso e
+shutdown; documentação navegável validada contra UI, comandos e catálogo runtime.
+
+**Ainda faltará:** nenhum dos seis pontos deste goal.
+
+## Ordem, dependências e complexidade
+
+| Ordem | Fase | Ponto principal | Complexidade | Dependência |
+|---:|---|---|---|---|
+| 1 | Fase 0 | Contratos | Média | Nenhuma |
+| 2 | Fase 1 | Continuidade CLI | Alta | Fase 0 |
+| 3 | Fase 2 | Contexto único | Alta | Fase 1 |
+| 4 | Fase 3 | Configuração hierárquica | Alta | Fases 0–2 |
+| 5 | Fase 4 | FIM | Alta | Fases 0 e 3 |
+| 6 | Fase 5 | Gutter por bloco | Alta | Fases 2 e 4 |
+| 7 | Fase 6 | MCP externo | Muito alta | Fases 0, 2 e 3 |
+| 8 | Fase 7 | Gate integrado | Muito alta | Todas |
+
+## Evidência obrigatória por etapa
+
+Cada etapa fechada deve publicar:
+
+- requisitos e contratos cobertos;
+- arquivos e superfícies alterados;
+- testes unitários, de integração e smokes executados;
+- resultado do Sonar pela API/script oficial do projeto;
+- evidência separada por target quando houver OTA ou UI;
+- documentação e hints atualizados;
+- resumo objetivo do que ainda falta para o goal;
+- commit e push da branch de trabalho.
+
+## Definição de conclusão
+
+O goal não está concluído enquanto qualquer uma das seis lacunas estiver apenas prototipada,
+documentada, disponível em um único executor ou validada em somente parte da matriz. A auditoria
+final deve mapear cada requisito deste documento a código, teste, evidência runtime e documentação.

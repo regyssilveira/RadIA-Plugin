@@ -12,7 +12,8 @@ Este documento registra o status de desenvolvimento, planejamento futuro e o his
 
 O quadro abaixo separa entregas, pendências reais e itens ainda sem compromisso de versão. Números
 da linha `0.x` são preservados somente nas entregas históricas. Uma pendência não recebe versão
-nova até ser selecionada para um goal após a versão 2.2.2.
+nova até ser selecionada para um goal. O goal competitivo ativo parte do RadIA 2.3.0 e terá a
+versão definida pelo comportamento público efetivamente entregue.
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
@@ -24,7 +25,7 @@ nova até ser selecionada para um goal após a versão 2.2.2.
 | **Diagnóstico, UX CLI/MCP e Documentação Centralizada** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.2.1 |
 | **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
 | **Rotas explícitas, login Pro restaurado e cópia universal** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
-| **Goal — Continuidade CLI e Integração Avançada** | 🔎 Reavaliar escopo residual | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
+| **Goal — Eliminar as seis lacunas competitivas** | 🚧 Plano ativo | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | A definir após a primeira entrega pública |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -42,22 +43,22 @@ nova até ser selecionada para um goal após a versão 2.2.2.
 | **Web Login Simplificado e Apply Changes Seguro** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.25 |
 | **Delphi Compiler & OS Warning Scanner** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.24 |
 | **Smart SQL Optimizer no Editor** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.23 |
-| **Revisão Automática de Código no Save** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
+| **Revisão Automática de Código no Save** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Histórico de Refatorações Aplicadas** | ✅ Absorvido por patches, timeline e checkpoints | 🟢 Baixa | ⭐⭐⭐ Média | v2.0.0 |
-| **Otimizador de Cláusula Uses (Clean Uses)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
-| **Gerador de Mocks para Testes Unitários** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
-| **Smart Multi-Unit Trace Resolver** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
-| **MadExcept / EurekaLog Context Extractor** | 🔀 Fundir com diagnóstico de traces | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
+| **Otimizador de Cláusula Uses (Clean Uses)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Gerador de Mocks para Testes Unitários** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Smart Multi-Unit Trace Resolver** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Sem versão comprometida |
+| **MadExcept / EurekaLog Context Extractor** | 🔀 Fundir com diagnóstico de traces | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Sem versão comprometida |
 | **Gerador OpenAPI/Swagger para projetos existentes** | 🟨 Parcial; novos projetos DEXT atendidos | 🟡 Média | ⭐⭐⭐⭐ Alta | Parcial em v2.2.2; residual não comprometido |
-| **Análise Semântica Bidirecional (DFM vs PAS)** | 🟨 Parcial; mutações preservam consistência | 🟡 Média | ⭐⭐⭐⭐ Alta | Residual não comprometido após v2.2.2 |
-| **Assistente de Migração (Smart Migrate)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
-| **Painel de Gerenciamento do Cache** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Não comprometida após v2.2.2 |
+| **Análise Semântica Bidirecional (DFM vs PAS)** | 🟨 Parcial; mutações preservam consistência | 🟡 Média | ⭐⭐⭐⭐ Alta | Residual sem versão comprometida |
+| **Assistente de Migração (Smart Migrate)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Painel de Gerenciamento do Cache** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Sem versão comprometida |
 | **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Decompositor de Forms (Code-Behind)** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Assistente de Threads e PPL** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Internacionalização Automática (i18n Wizard)** | 🟨 Infraestrutura pronta; wizard pendente | 🔴 Alta | ⭐⭐⭐⭐ Alta | Residual sem versão comprometida |
 | **Autocompletar Inline (Ghost Text)** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
-| **Geração de Docs de Projeto (API.md)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Não comprometida após v2.2.2 |
+| **Geração de Docs de Projeto (API.md)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Sem versão comprometida |
 | **Suporte Nativo macOS/Linux (Lazarus)** | 🚫 Descartado | 🔴 Alta | 🟢 Baixa | Fora do escopo |
 
 ---
@@ -214,11 +215,15 @@ nova até ser selecionada para um goal após a versão 2.2.2.
 
 ---
 
-## 🔲 2. Próximos Passos (Planned Backlog)
+## 🚧 2. Goal ativo
 
-Nenhuma pendência herdada possui versão futura comprometida. Primeiro, o escopo residual será
-confirmado contra o produto atual; depois, os itens válidos serão priorizados em um novo goal. Para
-impactos e referências, consulte a [matriz de priorização](feature_prioritization_matrix.md) e o
+O [goal para eliminar as seis lacunas competitivas](competitive_leadership_plan.md) é a linha de
+execução atual. Ele cobre continuidade CLI, contexto único, configuração hierárquica, FIM, revisão
+por bloco no gutter e cliente MCP externo, com aceite obrigatório no Delphi 12 Win32 e Delphi 13
+Win32/IDE64.
+
+As demais pendências continuam sem versão comprometida até nova triagem. Para impactos e
+referências, consulte a [matriz de priorização](feature_prioritization_matrix.md) e o
 [roadmap](roadmap.md).
 
 ---

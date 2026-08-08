@@ -11,7 +11,8 @@ This document registers the development status, future planning, and technical i
 
 The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
 numbers are retained only for historical deliveries. A pending item does not receive a new version
-until it is selected for a goal after version 2.2.2.
+until selected for a goal. The active competitive goal starts from RadIA 2.3.0 and receives a
+version based on the public behavior actually delivered.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
@@ -23,7 +24,7 @@ until it is selected for a goal after version 2.2.2.
 | **Diagnostics, CLI/MCP UX, and Centralized Documentation** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.2.1 |
 | **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
 | **Explicit Routes, Restored Pro Login, and Universal Copy** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
-| **Goal — CLI Continuity and Advanced Integration** | 🔎 Reassess residual scope | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
+| **Goal — Eliminate the six competitive gaps** | 🚧 Active plan | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Set after the first public delivery |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -41,22 +42,22 @@ until it is selected for a goal after version 2.2.2.
 | **Simplified Web Login and Safe Apply Changes** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.25 |
 | **Delphi Compiler & OS Warning Scanner** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.24 |
 | **Smart SQL Optimizer in Editor** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.23 |
-| **Automatic Code Review on Save** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
+| **Automatic Code Review on Save** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
 | **Applied Refactoring History** | ✅ Absorbed by patches, timeline, and checkpoints | 🟢 Low | ⭐⭐⭐ Medium | v2.0.0 |
-| **Uses Clause Optimizer (Clean Uses)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
-| **Mock Generator for Unit Tests** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
-| **Smart Multi-Unit Trace Resolver** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
-| **MadExcept / EurekaLog Context Extractor** | 🔀 Merge with trace diagnostics | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
+| **Uses Clause Optimizer (Clean Uses)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
+| **Mock Generator for Unit Tests** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
+| **Smart Multi-Unit Trace Resolver** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | No committed version |
+| **MadExcept / EurekaLog Context Extractor** | 🔀 Merge with trace diagnostics | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | No committed version |
 | **OpenAPI/Swagger for existing projects** | 🟨 Partial; new DEXT projects covered | 🟡 Medium | ⭐⭐⭐⭐ High | Partial in v2.2.2; residual uncommitted |
-| **Bidirectional Semantic Analysis (DFM x PAS)** | 🟨 Partial; mutations preserve consistency | 🟡 Medium | ⭐⭐⭐⭐ High | Residual uncommitted after v2.2.2 |
-| **Version Migration Assistant (Smart Migrate)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
-| **Cache Management Panel** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | Uncommitted after v2.2.2 |
+| **Bidirectional Semantic Analysis (DFM x PAS)** | 🟨 Partial; mutations preserve consistency | 🟡 Medium | ⭐⭐⭐⭐ High | Residual has no committed version |
+| **Version Migration Assistant (Smart Migrate)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
+| **Cache Management Panel** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | No committed version |
 | **BDE/ADO/dbExpress ➔ DEXT with FireDAC Migration** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
 | **Legacy Form Decomposer (Code-Behind)** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
 | **Threads and PPL Assistant** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
 | **Automated Internationalization (i18n Wizard)** | 🟨 Infrastructure ready; wizard pending | 🔴 High | ⭐⭐⭐⭐ High | Residual has no committed version |
 | **Smart Inline Autocomplete (Ghost Text)** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
-| **Project Docs Auto Generation (API.md)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | Uncommitted after v2.2.2 |
+| **Project Docs Auto Generation (API.md)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | No committed version |
 | **Native macOS/Linux Support (Lazarus)** | 🚫 Discarded | 🔴 High | 🟢 Low | Out of scope |
 
 ---
@@ -212,10 +213,14 @@ until it is selected for a goal after version 2.2.2.
 
 ---
 
-## 🔲 2. Next Up (Planned Backlog)
+## 🚧 2. Active goal
 
-No inherited pending item has a committed future version. Its residual scope will first be confirmed
-against the current product; valid items will then be prioritized in a new goal. See the
+The [goal to eliminate the six competitive gaps](competitive_leadership_plan.en.md) is the current
+execution line. It covers CLI continuity, unified context, hierarchical settings, FIM, block-level
+gutter review, and an external MCP client, with mandatory acceptance on Delphi 12 Win32 and Delphi
+13 Win32/IDE64.
+
+Other pending work remains uncommitted until a new triage. See the
 [prioritization matrix](feature_prioritization_matrix.en.md) and [roadmap](roadmap.en.md).
 
 ---
