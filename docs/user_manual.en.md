@@ -375,7 +375,7 @@ See the [security model](tool_security_model.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.md) lists the 123 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.en.md) lists the 126 registered built-in tools.
 - Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
   capability.
 - RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user
@@ -396,7 +396,7 @@ hints also document `Enter`, `Ctrl+R`, and `Ctrl+P`.
 - [Installation](install_config.en.md)
 - [Agentic tools](user_guide_agentic_tools.en.md)
 - [What each tool does and when to use it](internal_tools_reference.md)
-- [Internal tool catalog](runtime_tool_catalog.md)
+- [Internal tool catalog](runtime_tool_catalog.en.md)
 - [MCP](mcp_integration_guide.en.md)
 - [Local knowledge](user_guide_project_knowledge.en.md)
 - [Designer and debugger](user_guide_designer_debugger.en.md)

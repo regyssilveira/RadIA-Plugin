@@ -107,6 +107,38 @@ test('every built-in tool has an operational description and activation guidance
   });
 });
 
+test('generated runtime tool catalogs describe every tool in both languages', () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(documentationRoot, 'runtime_tools.json'), 'utf8')
+  );
+  const toolNames = manifest.groups.flatMap(group => group.tools);
+  const catalogs = [
+    {
+      path: path.join(documentationRoot, 'runtime_tool_catalog.md'),
+      header: '| Ferramenta | O que faz | Unit de origem |',
+      forbiddenHeading: '# RadIA built-in tool catalog'
+    },
+    {
+      path: path.join(documentationRoot, 'runtime_tool_catalog.en.md'),
+      header: '| Tool | Purpose | Source unit |',
+      forbiddenHeading: '# Catálogo de ferramentas internas do RadIA'
+    }
+  ];
+
+  catalogs.forEach(catalog => {
+    const content = fs.readFileSync(catalog.path, 'utf8');
+    assert.match(content, new RegExp(catalog.header.replaceAll('|', '\\|'), 'u'));
+    assert.doesNotMatch(content, new RegExp(catalog.forbiddenHeading, 'u'));
+    toolNames.forEach(toolName => {
+      const rowPattern = new RegExp(
+        '^\\| `' + toolName + '` \\| [^|]{20,} \\| `[^`]+` \\|$',
+        'mu'
+      );
+      assert.match(content, rowPattern, `${path.basename(catalog.path)}: ${toolName}`);
+    });
+  });
+});
+
 test('diagnostic commands are discoverable and clearly separated', () => {
   const commands = fs.readFileSync(
     path.join(documentationRoot, 'slash_commands.md'),

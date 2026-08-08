@@ -40,7 +40,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 |---|---|
 | Enable and operate agent mode | [User manual](user_manual.en.md) |
 | Native agent and external executors | [CLI executors](cli_executors.md) |
-| Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.md) |
+| Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.en.md) |
 | Consent, risk, and auditing | [Tool security model](tool_security_model.md) |
 | Agent cost and limits | [Agent pricing](agent_pricing.en.md) |
 | Plan internal result compaction | [Internal RTK execution plan](rtk_execution_plan.en.md) |

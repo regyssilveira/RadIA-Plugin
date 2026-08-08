@@ -40,7 +40,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 126 registered built-in tools](runtime_tool_catalog.md)
+- [All 126 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)
