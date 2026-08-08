@@ -4,8 +4,10 @@ interface
 
 uses
   System.SysUtils,
+  RadIA.Core.AgentResultStore,
   RadIA.Core.AgentProvider,
   RadIA.Core.AgentRuntime,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.Tools;
 
 type
@@ -45,6 +47,8 @@ type
     FDecisionCancellation: IRadIAAgentDecisionCancellation;
     FCheckpointStore: IRadIAAgentCheckpointStore;
     FObserver: IRadIAAgentObserver;
+    FResultCompactor: IRadIAResultCompactor;
+    FResultStore: IRadIAAgentResultStore;
     FOnFinished: TRadIAAgentFinishedCallback;
     FRuntime: TRadIAAgentRuntime;
     FRunning: Integer;
@@ -58,7 +62,9 @@ type
       const ADecisionProvider: IRadIAAgentDecisionProvider;
       const ACheckpointStore: IRadIAAgentCheckpointStore;
       const AOnState: TRadIAAgentStateCallback;
-      const AOnFinished: TRadIAAgentFinishedCallback
+      const AOnFinished: TRadIAAgentFinishedCallback;
+      const AResultCompactor: IRadIAResultCompactor = nil;
+      const AResultStore: IRadIAAgentResultStore = nil
     );
     procedure Start(
       const AObjective: string;
@@ -120,7 +126,9 @@ constructor TRadIAAgentRunController.Create(
   const ADecisionProvider: IRadIAAgentDecisionProvider;
   const ACheckpointStore: IRadIAAgentCheckpointStore;
   const AOnState: TRadIAAgentStateCallback;
-  const AOnFinished: TRadIAAgentFinishedCallback
+  const AOnFinished: TRadIAAgentFinishedCallback;
+  const AResultCompactor: IRadIAResultCompactor;
+  const AResultStore: IRadIAAgentResultStore
 );
 begin
   inherited Create;
@@ -140,6 +148,8 @@ begin
   FCheckpointStore := ACheckpointStore;
   FObserver := TRadIAAgentCallbackObserver.Create(AOnState);
   FOnFinished := AOnFinished;
+  FResultCompactor := AResultCompactor;
+  FResultStore := AResultStore;
 end;
 
 procedure TRadIAAgentRunController.BeginRun(
@@ -165,7 +175,9 @@ begin
           FToolExecutor,
           FDecisionProvider,
           FCheckpointStore,
-          FObserver
+          FObserver,
+          FResultCompactor,
+          FResultStore
         );
         SetRuntime(LRuntime);
         try

@@ -97,7 +97,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 124);
+  assert.equal(registeredTools.length, 126);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -330,4 +330,36 @@ test('documentation maintenance is an explicit project rule', () => {
   assert.match(portuguesePolicy, /Toda mudança que adicione, remova, renomeie/u);
   assert.match(portugueseHub, /settings_reference\.md/u);
   assert.match(englishHub, /settings_reference\.en\.md/u);
+});
+
+test('agent result compaction documents preservation and fallback', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'agent_result_compaction.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'agent_result_compaction.en.md'),
+    'utf8'
+  );
+
+  assert.match(portuguese, /resultado\s+integral/u);
+  assert.match(portuguese, /fallback automático/u);
+  assert.match(english, /complete result/u);
+  assert.match(english, /falls\s+back to the original JSON/u);
+});
+
+test('internal RTK plan defines measurable gates and an executable sequence', () => {
+  const plan = fs.readFileSync(
+    path.join(documentationRoot, 'rtk_execution_plan.md'),
+    'utf8'
+  );
+  const hub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+
+  ['Fase 0', 'Fase 1', 'Fase 2', 'Fase 3', 'Fase 4', 'Fase 5', 'Fase 6', 'Fase 7']
+    .forEach(phase => assert.ok(plan.includes(phase), `RTK plan is missing ${phase}`));
+  assert.match(plan, /Redução mediana de pelo menos 30%/u);
+  assert.match(plan, /GetToolResultRange/u);
+  assert.match(plan, /RTK-001/u);
+  assert.match(plan, /Gate F6 — viabilidade/u);
+  assert.match(hub, /rtk_execution_plan\.md/u);
 });

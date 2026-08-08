@@ -160,7 +160,7 @@ For reproducible automation, prefer `mcp.<pid>.json`.
 1. Open Delphi and a project.
 2. Confirm that `mcp.<pid>.json` exists.
 3. Start or reload the MCP server in the client.
-4. Verify that `initialize` reports RadIA `2.2.2`.
+4. Verify that `initialize` reports RadIA `2.3.0`.
 5. Call `tools/list`.
 6. Call `GetIDEState` and `GetActiveProject`.
 7. Test mutable consent only in a disposable project.

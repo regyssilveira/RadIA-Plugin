@@ -68,6 +68,8 @@ uses
   RadIA.Core.ProjectFiles, RadIA.Core.ProjectFileTools,
   RadIA.OTA.ProjectFiles,
   RadIA.Core.EditorAdapter, RadIA.Core.Tools, RadIA.Core.ToolRegistry, RadIA.Core.Workspace,
+  RadIA.Core.AgentResultStore, RadIA.Core.AgentResultTools,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.Extensions, RadIA.Core.Version,
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
   RadIA.Core.ToolSecurity, RadIA.Core.Patches, RadIA.Core.PatchTools,
@@ -809,6 +811,25 @@ begin
   end;
 end;
 
+procedure RegisterRadIAResultStore;
+var
+  LResultStore: IRadIAAgentResultStore;
+begin
+  LResultStore := TRadIAAgentFileResultStore.Create(
+    TPath.Combine(
+      TPath.Combine(TPath.GetHomePath, 'RadIA'),
+      'agent-results'
+    )
+  );
+  try
+    LResultStore.CleanupExpired;
+  except
+    on E: Exception do
+      LogDebug('Result artifact cleanup skipped: ' + E.Message);
+  end;
+  TRadIAContainer.Register<IRadIAAgentResultStore>(LResultStore);
+end;
+
 initialization
   TRadIAContainer.Register<IRadIAConfig>(TRadIAConfig.GetInstance);
   TRadIAContainer.Register<IRadIALogger>(TConcreteLogger.Create);
@@ -816,6 +837,10 @@ initialization
   TRadIAContainer.Register<IRadIAIDEAdapter>(TRadIAConcreteIDEAdapter.Create);
   TRadIAContainer.Register<IRadIAEditorAdapter>(TRadIAOTAEditorAdapter.Create);
   TRadIAContainer.Register<IRadIAToolRegistry>(TRadIAToolRegistry.Create);
+  TRadIAContainer.Register<IRadIAResultCompactor>(
+    TRadIAResultCompactor.Create
+  );
+  RegisterRadIAResultStore;
   TRadIAContainer.Register<IRadIAToolExtensionHost>(
     TRadIAToolExtensionHost.Create(
       TRadIAContainer.Resolve<IRadIAToolRegistry>
@@ -1133,6 +1158,10 @@ initialization
   RegisterRadIAWorkspaceTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+  );
+  RegisterRadIAAgentResultTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAAgentResultStore>
   );
   RegisterRadIAIDENavigationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

@@ -39,6 +39,8 @@ advanced settings above. Provider account, region, plan, and permissions determi
 | Enable local token quota | To track a local monthly budget | When disabled, the agent has no local per-run token budget. Provider limits still apply. |
 | Monthly Token Limit / Used Tokens | To configure and inspect local tracking | Usage is an estimate and may differ from provider accounting. |
 | Reset Usage | To restart local tracking | Resets only the local counter. |
+| Agent result compaction profile | To balance savings and diagnosis | `Conservative` is the default; `Balanced` reduces older-step budgets further; `Off` restores complete context. It does not alter checkpoints or tool results. |
+| Maximum agent decision context characters | When the model window or journey requires a different limit | Accepts 16,000–1,000,000; default 120,000. Omitted content remains recoverable through result tools. |
 
 ## Security & Consent
 

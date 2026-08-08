@@ -5,9 +5,19 @@ interface
 uses
   System.Generics.Collections,
   System.JSON,
+  RadIA.Core.AgentResultStore,
+  RadIA.Core.ResultCompactor,
   RadIA.Core.Tools;
 
 type
+  TRadIAAgentCompactionMetrics = record
+    AppliedCount: Integer;
+    CompactedCharacters: Int64;
+    DurationMicroseconds: Int64;
+    OriginalCharacters: Int64;
+    RecoverableCount: Integer;
+  end;
+
   TRadIAAgentStatus = (
     asIdle,
     asRunning,
@@ -61,6 +71,7 @@ type
     FMaxDurationMilliseconds: Integer;
     FMaxTotalTokens: Integer;
     FMaxEstimatedCostMicros: Int64;
+    FMaxDecisionContextCharacters: Integer;
   public
     constructor Create(
       const AMaxSteps: Integer;
@@ -79,6 +90,14 @@ type
       const AMaxTotalTokens: Integer;
       const AMaxEstimatedCostMicros: Int64
     ); overload;
+    constructor Create(
+      const AMaxSteps: Integer;
+      const AMaxRepeatedCalls: Integer;
+      const AMaxDurationMilliseconds: Integer;
+      const AMaxTotalTokens: Integer;
+      const AMaxEstimatedCostMicros: Int64;
+      const AMaxDecisionContextCharacters: Integer
+    ); overload;
     class function Default: TRadIAAgentLimits; static;
     property MaxSteps: Integer read FMaxSteps;
     property MaxRepeatedCalls: Integer read FMaxRepeatedCalls;
@@ -87,6 +106,8 @@ type
     property MaxTotalTokens: Integer read FMaxTotalTokens;
     property MaxEstimatedCostMicros: Int64
       read FMaxEstimatedCostMicros;
+    property MaxDecisionContextCharacters: Integer
+      read FMaxDecisionContextCharacters;
   end;
 
   TRadIAAgentRunResult = record
@@ -218,6 +239,9 @@ type
       CorrelationId: string;
       Success: Boolean;
       ResultJson: string;
+      ResultArtifactId: string;
+      ResultArtifactHash: string;
+      ResultArtifactCharacters: Integer;
       ErrorCode: string;
       ErrorMessage: string;
       StartedElapsedMilliseconds: Int64;
@@ -263,6 +287,8 @@ type
     FUsageProvider: IRadIAAgentUsageProvider;
     FCheckpointStore: IRadIAAgentCheckpointStore;
     FObserver: IRadIAAgentObserver;
+    FResultCompactor: IRadIAResultCompactor;
+    FResultStore: IRadIAAgentResultStore;
     FCancellationToken: IRadIAAgentCancellationControl;
     FSteps: TList<TRadIAAgentStep>;
     FStatus: TRadIAAgentStatus;
@@ -300,8 +326,35 @@ type
     procedure HandlePlanDecision(
       const ADecision: TRadIAAgentDecision
     );
-    function BuildSnapshotJson: string;
+    function BuildSnapshotJson(const ACompactResults: Boolean): string;
     function BuildDecisionContextJson: string;
+    function BuildValidationJson: TJSONObject;
+    function BuildStepsJson(
+      const ACompactResults: Boolean;
+      const AProfile: TRadIACompactionProfile;
+      out AMetrics: TRadIAAgentCompactionMetrics
+    ): TJSONArray;
+    function BuildStepJson(
+      const AStep: TRadIAAgentStep;
+      const ACompactResults: Boolean;
+      const AProfile: TRadIACompactionProfile;
+      const AResultBudget: Integer;
+      var AMetrics: TRadIAAgentCompactionMetrics
+    ): TJSONObject;
+    function BuildCompactedStepResult(
+      const AStep: TRadIAAgentStep;
+      const AProfile: TRadIACompactionProfile;
+      const AResultBudget: Integer;
+      out ACompaction: TRadIAResultCompaction;
+      out ARuleName: string
+    ): string;
+    procedure AddCompactionDetails(
+      const AStepJson: TJSONObject;
+      const AStep: TRadIAAgentStep;
+      const ACompaction: TRadIAResultCompaction;
+      const ACompactedResult: string;
+      const ARuleName: string
+    );
     function BuildCallSignature(
       const ADecision: TRadIAAgentDecision
     ): string;
@@ -392,8 +445,16 @@ type
       const AToolExecutor: IRadIAToolExecutor;
       const ADecisionProvider: IRadIAAgentDecisionProvider;
       const ACheckpointStore: IRadIAAgentCheckpointStore;
-      const AObserver: IRadIAAgentObserver = nil
-    );
+      const AObserver: IRadIAAgentObserver
+    ); overload;
+    constructor Create(
+      const AToolExecutor: IRadIAToolExecutor;
+      const ADecisionProvider: IRadIAAgentDecisionProvider;
+      const ACheckpointStore: IRadIAAgentCheckpointStore;
+      const AObserver: IRadIAAgentObserver;
+      const AResultCompactor: IRadIAResultCompactor;
+      const AResultStore: IRadIAAgentResultStore
+    ); overload;
     destructor Destroy; override;
     function Start(
       const AObjective: string;
@@ -526,7 +587,8 @@ begin
     AMaxRepeatedCalls,
     15 * 60 * 1000,
     100000,
-    0
+    0,
+    120000
   );
 end;
 
@@ -542,7 +604,8 @@ begin
     AMaxRepeatedCalls,
     AMaxDurationMilliseconds,
     AMaxTotalTokens,
-    0
+    0,
+    120000
   );
 end;
 
@@ -552,6 +615,25 @@ constructor TRadIAAgentLimits.Create(
   const AMaxDurationMilliseconds: Integer;
   const AMaxTotalTokens: Integer;
   const AMaxEstimatedCostMicros: Int64
+);
+begin
+  Self := TRadIAAgentLimits.Create(
+    AMaxSteps,
+    AMaxRepeatedCalls,
+    AMaxDurationMilliseconds,
+    AMaxTotalTokens,
+    AMaxEstimatedCostMicros,
+    120000
+  );
+end;
+
+constructor TRadIAAgentLimits.Create(
+  const AMaxSteps: Integer;
+  const AMaxRepeatedCalls: Integer;
+  const AMaxDurationMilliseconds: Integer;
+  const AMaxTotalTokens: Integer;
+  const AMaxEstimatedCostMicros: Int64;
+  const AMaxDecisionContextCharacters: Integer
 );
 begin
   if (AMaxSteps < 1) or (AMaxSteps > 100) then
@@ -576,11 +658,17 @@ begin
     raise EArgumentOutOfRangeException.Create(
       'Agent cost limit must be between USD 0 and 10000.'
     );
+  if (AMaxDecisionContextCharacters < 16000) or
+    (AMaxDecisionContextCharacters > 1000000) then
+    raise EArgumentOutOfRangeException.Create(
+      'Agent decision context must be between 16000 and 1000000 characters.'
+    );
   FMaxSteps := AMaxSteps;
   FMaxRepeatedCalls := AMaxRepeatedCalls;
   FMaxDurationMilliseconds := AMaxDurationMilliseconds;
   FMaxTotalTokens := AMaxTotalTokens;
   FMaxEstimatedCostMicros := AMaxEstimatedCostMicros;
+  FMaxDecisionContextCharacters := AMaxDecisionContextCharacters;
 end;
 
 class function TRadIAAgentLimits.Default: TRadIAAgentLimits;
@@ -1004,6 +1092,25 @@ constructor TRadIAAgentRuntime.Create(
   const AObserver: IRadIAAgentObserver
 );
 begin
+  Create(
+    AToolExecutor,
+    ADecisionProvider,
+    ACheckpointStore,
+    AObserver,
+    nil,
+    nil
+  );
+end;
+
+constructor TRadIAAgentRuntime.Create(
+  const AToolExecutor: IRadIAToolExecutor;
+  const ADecisionProvider: IRadIAAgentDecisionProvider;
+  const ACheckpointStore: IRadIAAgentCheckpointStore;
+  const AObserver: IRadIAAgentObserver;
+  const AResultCompactor: IRadIAResultCompactor;
+  const AResultStore: IRadIAAgentResultStore
+);
+begin
   inherited Create;
   if not Assigned(AToolExecutor) then
     raise EArgumentNilException.Create('AToolExecutor');
@@ -1022,6 +1129,10 @@ begin
   Supports(ADecisionProvider, IRadIAAgentUsageProvider, FUsageProvider);
   FCheckpointStore := ACheckpointStore;
   FObserver := AObserver;
+  FResultCompactor := AResultCompactor;
+  if not Assigned(FResultCompactor) then
+    FResultCompactor := TRadIAResultCompactor.Create;
+  FResultStore := AResultStore;
   FSteps := TList<TRadIAAgentStep>.Create;
   FStatus := asIdle;
   FLimits := TRadIAAgentLimits.Default;
@@ -1041,6 +1152,7 @@ procedure TRadIAAgentRuntime.AddToolStep(
   const ADurationMilliseconds: Int64
 );
 var
+  LArtifact: TRadIAAgentResultArtifact;
   LStep: TRadIAAgentStep;
 begin
   LStep := Default(TRadIAAgentStep);
@@ -1050,6 +1162,17 @@ begin
   LStep.CorrelationId := ACorrelationId;
   LStep.Success := AResult.Success;
   LStep.ResultJson := AResult.ContentJson;
+  if Assigned(FResultStore) and (LStep.ResultJson <> '') then
+  begin
+    LArtifact := FResultStore.Store(
+      FSessionId,
+      LStep.Index,
+      LStep.ResultJson
+    );
+    LStep.ResultArtifactId := LArtifact.ArtifactId;
+    LStep.ResultArtifactHash := LArtifact.Hash;
+    LStep.ResultArtifactCharacters := LArtifact.CharacterCount;
+  end;
   LStep.ErrorCode := AResult.ErrorCode;
   LStep.ErrorMessage := AResult.ErrorMessage;
   LStep.StartedElapsedMilliseconds := AStartedElapsedMilliseconds;
@@ -1303,20 +1426,299 @@ end;
 
 function TRadIAAgentRuntime.BuildDecisionContextJson: string;
 begin
-  Result := BuildSnapshotJson;
+  Result := BuildSnapshotJson(True);
 end;
 
-function TRadIAAgentRuntime.BuildSnapshotJson: string;
+procedure TRadIAAgentRuntime.AddCompactionDetails(
+  const AStepJson: TJSONObject;
+  const AStep: TRadIAAgentStep;
+  const ACompaction: TRadIAResultCompaction;
+  const ACompactedResult: string;
+  const ARuleName: string
+);
 var
+  LCompactionJson: TJSONObject;
+begin
+  LCompactionJson := TJSONObject.Create;
+  LCompactionJson.AddPair('applied', TJSONBool.Create(True));
+  LCompactionJson.AddPair(
+    'originalCharacters',
+    TJSONNumber.Create(ACompaction.OriginalCharacters)
+  );
+  LCompactionJson.AddPair(
+    'compactedCharacters',
+    TJSONNumber.Create(Length(ACompactedResult))
+  );
+  LCompactionJson.AddPair('rule', ARuleName);
+  LCompactionJson.AddPair(
+    'durationMicroseconds',
+    TJSONNumber.Create(ACompaction.DurationMicroseconds)
+  );
+  if AStep.ResultArtifactId <> '' then
+  begin
+    LCompactionJson.AddPair('fullResultAvailable', TJSONBool.Create(True));
+    LCompactionJson.AddPair('artifactId', AStep.ResultArtifactId);
+    LCompactionJson.AddPair('artifactHash', AStep.ResultArtifactHash);
+    LCompactionJson.AddPair('recoveryTool', 'GetToolResultRange');
+  end;
+  AStepJson.AddPair('resultCompaction', LCompactionJson);
+end;
+
+function TRadIAAgentRuntime.BuildCompactedStepResult(
+  const AStep: TRadIAAgentStep;
+  const AProfile: TRadIACompactionProfile;
+  const AResultBudget: Integer;
+  out ACompaction: TRadIAResultCompaction;
+  out ARuleName: string
+): string;
+var
+  LEnvelopeJson: TJSONObject;
+begin
+  ACompaction := FResultCompactor.CompactResult(
+    AStep.ToolName,
+    AStep.ResultJson,
+    AProfile
+  );
+  Result := ACompaction.CompactedJson;
+  ARuleName := ACompaction.RuleName;
+  if (AProfile = cpOff) or (Length(Result) <= AResultBudget) or
+    (AStep.ResultArtifactId = '') then
+    Exit;
+  LEnvelopeJson := TJSONObject.Create;
+  try
+    LEnvelopeJson.AddPair('compactedHistory', TJSONBool.Create(True));
+    LEnvelopeJson.AddPair('toolName', AStep.ToolName);
+    LEnvelopeJson.AddPair('success', TJSONBool.Create(AStep.Success));
+    LEnvelopeJson.AddPair('artifactId', AStep.ResultArtifactId);
+    LEnvelopeJson.AddPair('artifactHash', AStep.ResultArtifactHash);
+    LEnvelopeJson.AddPair(
+      'originalCharacters',
+      TJSONNumber.Create(Length(AStep.ResultJson))
+    );
+    Result := LEnvelopeJson.ToJSON;
+    ARuleName := 'context-budget';
+  finally
+    LEnvelopeJson.Free;
+  end;
+end;
+
+function TRadIAAgentRuntime.BuildStepJson(
+  const AStep: TRadIAAgentStep;
+  const ACompactResults: Boolean;
+  const AProfile: TRadIACompactionProfile;
+  const AResultBudget: Integer;
+  var AMetrics: TRadIAAgentCompactionMetrics
+): TJSONObject;
+var
+  LCompactedResult: string;
+  LCompaction: TRadIAResultCompaction;
   LFile: string;
   LFileArray: TJSONArray;
+  LRuleName: string;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('index', TJSONNumber.Create(AStep.Index));
+  Result.AddPair('toolName', AStep.ToolName);
+  Result.AddPair('arguments', AStep.ArgumentsJson);
+  Result.AddPair('correlationId', AStep.CorrelationId);
+  Result.AddPair('success', TJSONBool.Create(AStep.Success));
+  if ACompactResults then
+  begin
+    LCompactedResult := BuildCompactedStepResult(
+      AStep,
+      AProfile,
+      AResultBudget,
+      LCompaction,
+      LRuleName
+    );
+    if SameText(LRuleName, 'context-budget') then
+    begin
+      Inc(AMetrics.AppliedCount);
+      Inc(AMetrics.OriginalCharacters, Length(AStep.ResultJson));
+      Inc(AMetrics.CompactedCharacters, Length(LCompactedResult));
+      Inc(AMetrics.DurationMicroseconds, LCompaction.DurationMicroseconds);
+      Inc(AMetrics.RecoverableCount);
+      Result.Free;
+      Result := TJSONObject.Create;
+      Result.AddPair('index', TJSONNumber.Create(AStep.Index));
+      Result.AddPair('toolName', AStep.ToolName);
+      Result.AddPair('success', TJSONBool.Create(AStep.Success));
+      Result.AddPair('compactedHistory', TJSONBool.Create(True));
+      Result.AddPair('artifactId', AStep.ResultArtifactId);
+      Exit;
+    end;
+    Result.AddPair('result', LCompactedResult);
+    if LCompaction.Compacted or
+      (LCompactedResult <> LCompaction.CompactedJson) then
+    begin
+      Inc(AMetrics.AppliedCount);
+      Inc(AMetrics.OriginalCharacters, Length(AStep.ResultJson));
+      Inc(AMetrics.CompactedCharacters, Length(LCompactedResult));
+      Inc(AMetrics.DurationMicroseconds, LCompaction.DurationMicroseconds);
+      if AStep.ResultArtifactId <> '' then
+        Inc(AMetrics.RecoverableCount);
+      AddCompactionDetails(
+        Result,
+        AStep,
+        LCompaction,
+        LCompactedResult,
+        LRuleName
+      );
+    end;
+  end
+  else
+  begin
+    Result.AddPair('result', AStep.ResultJson);
+    if AStep.ResultArtifactId <> '' then
+    begin
+      Result.AddPair('resultArtifactId', AStep.ResultArtifactId);
+      Result.AddPair('resultArtifactHash', AStep.ResultArtifactHash);
+      Result.AddPair(
+        'resultArtifactCharacters',
+        TJSONNumber.Create(AStep.ResultArtifactCharacters)
+      );
+    end;
+  end;
+  Result.AddPair('errorCode', AStep.ErrorCode);
+  Result.AddPair('errorMessage', AStep.ErrorMessage);
+  Result.AddPair(
+    'startedElapsedMilliseconds',
+    TJSONNumber.Create(AStep.StartedElapsedMilliseconds)
+  );
+  Result.AddPair(
+    'durationMilliseconds',
+    TJSONNumber.Create(AStep.DurationMilliseconds)
+  );
+  Result.AddPair('mutation', TJSONBool.Create(AStep.Mutation));
+  Result.AddPair(
+    'replayOfStepIndex',
+    TJSONNumber.Create(AStep.ReplayOfStepIndex)
+  );
+  Result.AddPair('risk', AStep.Risk);
+  LFileArray := TJSONArray.Create;
+  for LFile in AStep.AffectedFiles do
+    LFileArray.Add(LFile);
+  Result.AddPair('affectedFiles', LFileArray);
+end;
+
+function TRadIAAgentRuntime.BuildStepsJson(
+  const ACompactResults: Boolean;
+  const AProfile: TRadIACompactionProfile;
+  out AMetrics: TRadIAAgentCompactionMetrics
+): TJSONArray;
+var
+  LResultBudget: Integer;
+  LStep: TRadIAAgentStep;
+begin
+  AMetrics := Default(TRadIAAgentCompactionMetrics);
+  LResultBudget := Min(
+    24000,
+    Max(
+      512,
+      (FLimits.MaxDecisionContextCharacters - 40000) div
+        Max(1, FSteps.Count)
+    )
+  );
+  if AProfile = cpBalanced then
+    LResultBudget := Max(512, LResultBudget div 2);
+  Result := TJSONArray.Create;
+  for LStep in FSteps do
+    Result.AddElement(
+      BuildStepJson(
+        LStep,
+        ACompactResults,
+        AProfile,
+        LResultBudget,
+        AMetrics
+      )
+    );
+end;
+
+function TRadIAAgentRuntime.BuildValidationJson: TJSONObject;
+var
+  LValidation: TRadIAAgentValidationState;
+begin
+  LValidation := AnalyzeValidationState;
+  Result := TJSONObject.Create;
+  Result.AddPair(
+    'mutationPending',
+    TJSONBool.Create(LValidation.MutationPending)
+  );
+  Result.AddPair('buildPassed', TJSONBool.Create(LValidation.BuildPassed));
+  Result.AddPair('buildStatus', LValidation.BuildStatus);
+  Result.AddPair(
+    'buildDurationMilliseconds',
+    TJSONNumber.Create(LValidation.BuildDurationMilliseconds)
+  );
+  Result.AddPair(
+    'buildMessageCount',
+    TJSONNumber.Create(LValidation.BuildMessageCount)
+  );
+  Result.AddPair('testsRun', TJSONBool.Create(LValidation.TestsRun));
+  Result.AddPair('testsPassed', TJSONBool.Create(LValidation.TestsPassed));
+  Result.AddPair('testStatus', LValidation.TestStatus);
+  Result.AddPair(
+    'testDurationMilliseconds',
+    TJSONNumber.Create(LValidation.TestDurationMilliseconds)
+  );
+  Result.AddPair('testTotal', TJSONNumber.Create(LValidation.TestTotal));
+  Result.AddPair('testPassed', TJSONNumber.Create(LValidation.TestPassed));
+  Result.AddPair('testFailed', TJSONNumber.Create(LValidation.TestFailed));
+  Result.AddPair('testErrors', TJSONNumber.Create(LValidation.TestErrors));
+  Result.AddPair('testIgnored', TJSONNumber.Create(LValidation.TestIgnored));
+  Result.AddPair(
+    'coverageAvailable',
+    TJSONBool.Create(LValidation.CoverageAvailable)
+  );
+  Result.AddPair('coverageReportPath', LValidation.CoverageReportPath);
+  Result.AddPair(
+    'coverageSourceFiles',
+    TJSONNumber.Create(LValidation.CoverageSourceFiles)
+  );
+  Result.AddPair(
+    'coverageSourceLines',
+    TJSONNumber.Create(LValidation.CoverageSourceLines)
+  );
+  Result.AddPair(
+    'coverageCoveredLines',
+    TJSONNumber.Create(LValidation.CoverageCoveredLines)
+  );
+  Result.AddPair(
+    'coveragePercent',
+    TJSONNumber.Create(LValidation.CoveragePercent)
+  );
+  Result.AddPair('executionRun', TJSONBool.Create(LValidation.ExecutionRun));
+  Result.AddPair(
+    'executionPassed',
+    TJSONBool.Create(LValidation.ExecutionPassed)
+  );
+  Result.AddPair('executionTool', LValidation.ExecutionTool);
+  Result.AddPair(
+    'executionDurationMilliseconds',
+    TJSONNumber.Create(LValidation.ExecutionDurationMilliseconds)
+  );
+  Result.AddPair('debugObserved', TJSONBool.Create(LValidation.DebugObserved));
+  Result.AddPair('debugState', LValidation.DebugState);
+  Result.AddPair(
+    'debugLastSequence',
+    TJSONNumber.Create(LValidation.DebugLastSequence)
+  );
+end;
+
+function TRadIAAgentRuntime.BuildSnapshotJson(
+  const ACompactResults: Boolean
+): string;
+var
+  LMetricsJson: TJSONObject;
+  LMetrics: TRadIAAgentCompactionMetrics;
+  LProfile: TRadIACompactionProfile;
   LRoot: TJSONObject;
   LStepArray: TJSONArray;
-  LStepJson: TJSONObject;
-  LStep: TRadIAAgentStep;
-  LValidation: TRadIAAgentValidationState;
-  LValidationJson: TJSONObject;
 begin
+  if ACompactResults then
+    LProfile := RadIAResolveCompactionProfile
+  else
+    LProfile := cpOff;
   LRoot := TJSONObject.Create;
   try
     LRoot.AddPair('schemaVersion', TJSONNumber.Create(1));
@@ -1351,6 +1753,10 @@ begin
       TJSONNumber.Create(FLimits.MaxEstimatedCostMicros)
     );
     LRoot.AddPair(
+      'maxDecisionContextCharacters',
+      TJSONNumber.Create(FLimits.MaxDecisionContextCharacters)
+    );
+    LRoot.AddPair(
       'elapsedMilliseconds',
       TJSONNumber.Create(ElapsedMilliseconds)
     );
@@ -1377,143 +1783,40 @@ begin
         FUsageProvider.GetPricingConfigured
       )
     );
-    LValidation := AnalyzeValidationState;
-    LValidationJson := TJSONObject.Create;
-    LValidationJson.AddPair(
-      'mutationPending',
-      TJSONBool.Create(LValidation.MutationPending)
-    );
-    LValidationJson.AddPair(
-      'buildPassed',
-      TJSONBool.Create(LValidation.BuildPassed)
-    );
-    LValidationJson.AddPair('buildStatus', LValidation.BuildStatus);
-    LValidationJson.AddPair(
-      'buildDurationMilliseconds',
-      TJSONNumber.Create(LValidation.BuildDurationMilliseconds)
-    );
-    LValidationJson.AddPair(
-      'buildMessageCount',
-      TJSONNumber.Create(LValidation.BuildMessageCount)
-    );
-    LValidationJson.AddPair(
-      'testsRun',
-      TJSONBool.Create(LValidation.TestsRun)
-    );
-    LValidationJson.AddPair(
-      'testsPassed',
-      TJSONBool.Create(LValidation.TestsPassed)
-    );
-    LValidationJson.AddPair('testStatus', LValidation.TestStatus);
-    LValidationJson.AddPair(
-      'testDurationMilliseconds',
-      TJSONNumber.Create(LValidation.TestDurationMilliseconds)
-    );
-    LValidationJson.AddPair(
-      'testTotal',
-      TJSONNumber.Create(LValidation.TestTotal)
-    );
-    LValidationJson.AddPair(
-      'testPassed',
-      TJSONNumber.Create(LValidation.TestPassed)
-    );
-    LValidationJson.AddPair(
-      'testFailed',
-      TJSONNumber.Create(LValidation.TestFailed)
-    );
-    LValidationJson.AddPair(
-      'testErrors',
-      TJSONNumber.Create(LValidation.TestErrors)
-    );
-    LValidationJson.AddPair(
-      'testIgnored',
-      TJSONNumber.Create(LValidation.TestIgnored)
-    );
-    LValidationJson.AddPair(
-      'coverageAvailable',
-      TJSONBool.Create(LValidation.CoverageAvailable)
-    );
-    LValidationJson.AddPair(
-      'coverageReportPath',
-      LValidation.CoverageReportPath
-    );
-    LValidationJson.AddPair(
-      'coverageSourceFiles',
-      TJSONNumber.Create(LValidation.CoverageSourceFiles)
-    );
-    LValidationJson.AddPair(
-      'coverageSourceLines',
-      TJSONNumber.Create(LValidation.CoverageSourceLines)
-    );
-    LValidationJson.AddPair(
-      'coverageCoveredLines',
-      TJSONNumber.Create(LValidation.CoverageCoveredLines)
-    );
-    LValidationJson.AddPair(
-      'coveragePercent',
-      TJSONNumber.Create(LValidation.CoveragePercent)
-    );
-    LValidationJson.AddPair(
-      'executionRun',
-      TJSONBool.Create(LValidation.ExecutionRun)
-    );
-    LValidationJson.AddPair(
-      'executionPassed',
-      TJSONBool.Create(LValidation.ExecutionPassed)
-    );
-    LValidationJson.AddPair(
-      'executionTool',
-      LValidation.ExecutionTool
-    );
-    LValidationJson.AddPair(
-      'executionDurationMilliseconds',
-      TJSONNumber.Create(LValidation.ExecutionDurationMilliseconds)
-    );
-    LValidationJson.AddPair(
-      'debugObserved',
-      TJSONBool.Create(LValidation.DebugObserved)
-    );
-    LValidationJson.AddPair('debugState', LValidation.DebugState);
-    LValidationJson.AddPair(
-      'debugLastSequence',
-      TJSONNumber.Create(LValidation.DebugLastSequence)
-    );
-    LRoot.AddPair('validation', LValidationJson);
-    LStepArray := TJSONArray.Create;
+    LRoot.AddPair('validation', BuildValidationJson);
+    LStepArray := BuildStepsJson(ACompactResults, LProfile, LMetrics);
     LRoot.AddPair('steps', LStepArray);
-    for LStep in FSteps do
+    if ACompactResults then
     begin
-      LStepJson := TJSONObject.Create;
-      LStepJson.AddPair('index', TJSONNumber.Create(LStep.Index));
-      LStepJson.AddPair('toolName', LStep.ToolName);
-      LStepJson.AddPair('arguments', LStep.ArgumentsJson);
-      LStepJson.AddPair('correlationId', LStep.CorrelationId);
-      LStepJson.AddPair('success', TJSONBool.Create(LStep.Success));
-      LStepJson.AddPair('result', LStep.ResultJson);
-      LStepJson.AddPair('errorCode', LStep.ErrorCode);
-      LStepJson.AddPair('errorMessage', LStep.ErrorMessage);
-      LStepJson.AddPair(
-        'startedElapsedMilliseconds',
-        TJSONNumber.Create(LStep.StartedElapsedMilliseconds)
+      LMetricsJson := TJSONObject.Create;
+      LMetricsJson.AddPair('profile', RadIACompactionProfileName(LProfile));
+      LMetricsJson.AddPair(
+        'appliedCount',
+        TJSONNumber.Create(LMetrics.AppliedCount)
       );
-      LStepJson.AddPair(
-        'durationMilliseconds',
-        TJSONNumber.Create(LStep.DurationMilliseconds)
+      LMetricsJson.AddPair(
+        'originalCharacters',
+        TJSONNumber.Create(LMetrics.OriginalCharacters)
       );
-      LStepJson.AddPair(
-        'mutation',
-        TJSONBool.Create(LStep.Mutation)
+      LMetricsJson.AddPair(
+        'compactedCharacters',
+        TJSONNumber.Create(LMetrics.CompactedCharacters)
       );
-      LStepJson.AddPair(
-        'replayOfStepIndex',
-        TJSONNumber.Create(LStep.ReplayOfStepIndex)
+      LMetricsJson.AddPair(
+        'durationMicroseconds',
+        TJSONNumber.Create(LMetrics.DurationMicroseconds)
       );
-      LStepJson.AddPair('risk', LStep.Risk);
-      LFileArray := TJSONArray.Create;
-      for LFile in LStep.AffectedFiles do
-        LFileArray.Add(LFile);
-      LStepJson.AddPair('affectedFiles', LFileArray);
-      LStepArray.AddElement(LStepJson);
+      LMetricsJson.AddPair(
+        'maximumContextCharacters',
+        TJSONNumber.Create(FLimits.MaxDecisionContextCharacters)
+      );
+      if LMetrics.RecoverableCount > 0 then
+      begin
+        LMetricsJson.AddPair('historyRule', 'context-budget');
+        LMetricsJson.AddPair('fullResultAvailable', TJSONBool.Create(True));
+        LMetricsJson.AddPair('recoveryTool', 'GetToolResultRange');
+      end;
+      LRoot.AddPair('resultCompactionMetrics', LMetricsJson);
     end;
     Result := LRoot.ToJSON;
   finally
@@ -2000,7 +2303,8 @@ begin
         15 * 60 * 1000
       ),
       LRoot.GetValue<Integer>('maxTotalTokens', 100000),
-      LRoot.GetValue<Int64>('maxEstimatedCostMicros', 0)
+      LRoot.GetValue<Int64>('maxEstimatedCostMicros', 0),
+      LRoot.GetValue<Integer>('maxDecisionContextCharacters', 120000)
     );
     FElapsedBeforeRunMilliseconds := LRoot.GetValue<Int64>(
       'elapsedMilliseconds',
@@ -2065,6 +2369,18 @@ begin
   Result.CorrelationId := AStepJson.GetValue<string>('correlationId', '');
   Result.Success := AStepJson.GetValue<Boolean>('success', False);
   Result.ResultJson := AStepJson.GetValue<string>('result', '');
+  Result.ResultArtifactId := AStepJson.GetValue<string>(
+    'resultArtifactId',
+    ''
+  );
+  Result.ResultArtifactHash := AStepJson.GetValue<string>(
+    'resultArtifactHash',
+    ''
+  );
+  Result.ResultArtifactCharacters := AStepJson.GetValue<Integer>(
+    'resultArtifactCharacters',
+    0
+  );
   Result.ErrorCode := AStepJson.GetValue<string>('errorCode', '');
   Result.ErrorMessage := AStepJson.GetValue<string>('errorMessage', '');
   Result.StartedElapsedMilliseconds := AStepJson.GetValue<Int64>(
@@ -2094,7 +2410,7 @@ procedure TRadIAAgentRuntime.NotifyAndCheckpoint;
 var
   LSnapshot: string;
 begin
-  LSnapshot := BuildSnapshotJson;
+  LSnapshot := BuildSnapshotJson(False);
   FCheckpointStore.Save(FSessionId, LSnapshot);
   if Assigned(FObserver) then
     FObserver.AgentStateChanged(LSnapshot);
@@ -2296,7 +2612,7 @@ end;
 
 function TRadIAAgentRuntime.SnapshotJson: string;
 begin
-  Result := BuildSnapshotJson;
+  Result := BuildSnapshotJson(False);
 end;
 
 function TRadIAAgentRuntime.Start(

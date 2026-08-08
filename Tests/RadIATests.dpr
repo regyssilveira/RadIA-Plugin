@@ -4,6 +4,7 @@ program RadIATests;
 {$APPTYPE CONSOLE}
 
 uses
+  System.IOUtils,
   System.SysUtils,
   DUnitX.Loggers.Console,
   DUnitX.Loggers.XML.NUnit,
@@ -14,6 +15,10 @@ uses
   RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',
   RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in '..\Source\Core\RadIA.Core.AgentRuntime.pas',
+  RadIA.Core.ResultCompactor in '..\Source\Core\RadIA.Core.ResultCompactor.pas',
+  RadIA.Core.ResultCompactionSettings in '..\Source\Core\RadIA.Core.ResultCompactionSettings.pas',
+  RadIA.Core.AgentResultStore in '..\Source\Core\RadIA.Core.AgentResultStore.pas',
+  RadIA.Core.AgentResultTools in '..\Source\Core\RadIA.Core.AgentResultTools.pas',
   RadIA.Core.AgentDiagnostic in '..\Source\Core\RadIA.Core.AgentDiagnostic.pas',
   RadIA.Core.AgentExecutors in '..\Source\Core\RadIA.Core.AgentExecutors.pas',
   RadIA.Core.CliProcess in '..\Source\Core\RadIA.Core.CliProcess.pas',
@@ -235,6 +240,10 @@ uses
   RadIA.Tests.ToolRegistry in 'Source\RadIA.Tests.ToolRegistry.pas',
   RadIA.Tests.ToolViews in 'Source\RadIA.Tests.ToolViews.pas',
   RadIA.Tests.AgentRuntime in 'Source\RadIA.Tests.AgentRuntime.pas',
+  RadIA.Tests.ResultCompactor in 'Source\RadIA.Tests.ResultCompactor.pas',
+  RadIA.Tests.ResultCompactionBenchmark in 'Source\RadIA.Tests.ResultCompactionBenchmark.pas',
+  RadIA.Tests.ResultCompactionSettings in 'Source\RadIA.Tests.ResultCompactionSettings.pas',
+  RadIA.Tests.AgentResultStore in 'Source\RadIA.Tests.AgentResultStore.pas',
   RadIA.Tests.AgentExecutors in 'Source\RadIA.Tests.AgentExecutors.pas',
   RadIA.Tests.CliProcess in 'Source\RadIA.Tests.CliProcess.pas',
   RadIA.Tests.Terminal in 'Source\RadIA.Tests.Terminal.pas',
@@ -297,6 +306,7 @@ uses
   RadIA.Tests.ToolSecurity in 'Source\RadIA.Tests.ToolSecurity.pas';
 
 var
+  EvidencePath: string;
   Runner: ITestRunner;
   Results: IRunResults;
   Logger: ITestLogger;
@@ -317,6 +327,19 @@ begin
     Runner.AddLogger(XmlLogger);
 
     Results := Runner.Execute;
+
+    EvidencePath := GetEnvironmentVariable(
+      'RADIA_RESULT_COMPACTION_EVIDENCE_PATH'
+    );
+    if EvidencePath <> '' then
+    begin
+      TDirectory.CreateDirectory(ExtractFileDir(EvidencePath));
+      TFile.WriteAllText(
+        EvidencePath,
+        BuildRadIAResultCompactionEvidence,
+        TEncoding.UTF8
+      );
+    end;
 
     if not Results.AllPassed then
       System.ExitCode := 1

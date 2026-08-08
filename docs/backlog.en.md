@@ -9,7 +9,9 @@ This document registers the development status, future planning, and technical i
 
 ## 📊 Kanban Dashboard
 
-The board below summarizes the current status of mapped short and medium-term features in the project:
+The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
+numbers are retained only for historical deliveries. A pending item does not receive a new version
+until it is selected for a goal after version 2.2.2.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
@@ -20,7 +22,7 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **2.2 Goal — Dynamic Memory Diagnostics with FastMM5** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.0 |
 | **Diagnostics, CLI/MCP UX, and Centralized Documentation** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.2.1 |
 | **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
-| **Goal — CLI Continuity and Advanced Integration** | ⏸️ Frozen | 🔴 High | ⭐⭐⭐⭐⭐ Critical | After v2.1.0 |
+| **Goal — CLI Continuity and Advanced Integration** | 🔎 Reassess residual scope | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -38,27 +40,27 @@ The board below summarizes the current status of mapped short and medium-term fe
 | **Simplified Web Login and Safe Apply Changes** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.25 |
 | **Delphi Compiler & OS Warning Scanner** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.24 |
 | **Smart SQL Optimizer in Editor** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v0.0.23 |
-| **Automatic Code Review on Save** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐ High | v0.1.0 |
-| **Applied Refactoring History** | 🔲 Planned | 🟢 Low | ⭐⭐⭐ Medium | v0.1.0 |
-| **Uses Clause Optimizer (Clean Uses)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐ High | v0.2.0 |
-| **Mock Generator for Unit Tests** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐ High | v0.2.0 |
-| **Smart Multi-Unit Trace Resolver** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v0.2.0 |
-| **MadExcept / EurekaLog Context Extractor** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v0.2.0 |
-| **OpenAPI/Swagger Documentation Generator** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐ High | v0.2.0 |
-| **Bidirectional Semantic Analysis (DFM x PAS)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐ High | v0.2.0 |
-| **Version Migration Assistant (Smart Migrate)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐⭐ High | v0.2.0 |
-| **Cache Management Panel** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐ Medium | v0.2.0 |
-| **BDE/ADO/dbExpress ➔ DEXT with FireDAC Migration** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **Legacy Form Decomposer (Code-Behind)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **Threads and PPL Assistant** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
-| **Automated Internationalization (i18n Wizard)** | 🔲 Planned | 🔴 High | ⭐⭐⭐⭐ High | v0.3.0+ |
+| **Automatic Code Review on Save** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
+| **Applied Refactoring History** | ✅ Absorbed by patches, timeline, and checkpoints | 🟢 Low | ⭐⭐⭐ Medium | v2.0.0 |
+| **Uses Clause Optimizer (Clean Uses)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
+| **Mock Generator for Unit Tests** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
+| **Smart Multi-Unit Trace Resolver** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
+| **MadExcept / EurekaLog Context Extractor** | 🔀 Merge with trace diagnostics | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | Uncommitted after v2.2.2 |
+| **OpenAPI/Swagger for existing projects** | 🟨 Partial; new DEXT projects covered | 🟡 Medium | ⭐⭐⭐⭐ High | Partial in v2.2.2; residual uncommitted |
+| **Bidirectional Semantic Analysis (DFM x PAS)** | 🟨 Partial; mutations preserve consistency | 🟡 Medium | ⭐⭐⭐⭐ High | Residual uncommitted after v2.2.2 |
+| **Version Migration Assistant (Smart Migrate)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | Uncommitted after v2.2.2 |
+| **Cache Management Panel** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | Uncommitted after v2.2.2 |
+| **BDE/ADO/dbExpress ➔ DEXT with FireDAC Migration** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
+| **Legacy Form Decomposer (Code-Behind)** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
+| **Threads and PPL Assistant** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
+| **Automated Internationalization (i18n Wizard)** | 🟨 Infrastructure ready; wizard pending | 🔴 High | ⭐⭐⭐⭐ High | Residual has no committed version |
 | **Smart Inline Autocomplete (Ghost Text)** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
-| **Project Docs Auto Generation (API.md)** | 🔲 Planned | 🟡 Medium | ⭐⭐⭐ Medium | v0.3.0+ |
-| **Native macOS/Linux Support (Lazarus)** | 🔲 Planned | 🔴 High | 🟢 Low | v0.3.0+ |
+| **Project Docs Auto Generation (API.md)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | Uncommitted after v2.2.2 |
+| **Native macOS/Linux Support (Lazarus)** | 🚫 Discarded | 🔴 High | 🟢 Low | Out of scope |
 
 ---
 
-## ⏳ 1. Work in Progress (WIP)
+## ✅ 1. Historical 2.0 execution record (completed)
 
 *   Goal for leading the Delphi development experience.
     *   M0 completed: automated global Sonar gate with zero issues, 82.3% coverage, and 2.3%
@@ -211,7 +213,9 @@ The board below summarizes the current status of mapped short and medium-term fe
 
 ## 🔲 2. Next Up (Planned Backlog)
 
-For complete details on objectives, impacts, and technical specifications for each future feature, check the [Feature Prioritization Matrix (docs/feature_prioritization_matrix.md)](feature_prioritization_matrix.md) or the [Evolution Roadmap (docs/roadmap.en.md)](roadmap.en.md).
+No inherited pending item has a committed future version. Its residual scope will first be confirmed
+against the current product; valid items will then be prioritized in a new goal. See the
+[prioritization matrix](feature_prioritization_matrix.en.md) and [roadmap](roadmap.en.md).
 
 ---
 

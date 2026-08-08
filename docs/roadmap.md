@@ -15,6 +15,13 @@ Este documento descreve o planejamento estratégico e a visão de futuro do assi
 
 ## 📅 Histórico de Versões Concluídas
 
+### v2.3.0 — RTK interno e contexto recuperável
+
+- compactação determinística de resultados de DUnitX, Git diff, build e conhecimento;
+- armazenamento integral por sessão com recuperação por summary/range;
+- orçamento de contexto, perfis operacionais e métricas sanitizadas;
+- catálogo de 126 ferramentas e evidência mensurada de viabilidade.
+
 Abaixo estão listadas as conquistas e os valores entregues em cada versão já lançada do plugin:
 
 ### Plataforma agentiva segura — concluída
@@ -292,31 +299,32 @@ A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Cons
 
 ---
 
-## 🔲 Milestones de Planejamento Futuro
+## Inventário futuro sem versão comprometida
 
-As próximas versões do Rad IA focarão em trazer automação inteligente em diagnóstico de erros e refatorações complexas de código legado:
+Os números `0.1.0`, `0.2.0` e `0.3.0+` pertenciam ao planejamento anterior à linha 2.x e não são
+mais versões-alvo. Após a versão 2.2.2, cada item abaixo precisa ser selecionado e detalhado em um
+novo goal antes de receber versão.
 
-### 🔲 v0.1.0 — Automação, Auditoria e Ganhos Rápidos
-Esta versão trará auditoria de código e correções no editor em tempo real de forma leve, silenciosa e sem atritos na produtividade:
-*   **Smart SQL Optimizer no Editor** (Concluído na v0.0.23): Varredura inteligente de strings SQL dentro do Pascal para otimizar joins, performance e validar sintaxes.
-*   **Delphi Compiler & OS Warning Scanner** (Concluído na v0.0.24): Auditoria estática focada no compilador Delphi e em armadilhas de baixo nível do Windows (concorrência, vazamento de GDI handles).
-*   **Revisão Automática no Save**: Análise estática rápida executada em background ao salvar arquivos na IDE, sinalizando bugs potenciais.
-*   **Histórico de Refatorações Aplicadas**: Logs das modificações aplicadas com possibilidade de reversão manual.
+### Pendências funcionais confirmadas
 
-### 🔲 v0.2.0 — Engenharia de Código e Análise Estrutural
-Foco em estruturação arquitetural de APIs, testes automatizados e depuração profunda de exceções:
-*   **Smart Multi-Unit Trace Resolver**: Decodificação inteligente de stack traces colados no chat que lê em background os múltiplos arquivos físicos do projeto citados no log para apontar a causa raiz.
-*   **MadExcept / EurekaLog Context Extractor**: Parser automatizado de dumps de variáveis de runtime coletados nos logs de erro do sistema para dar visibilidade exata à IA sobre a falha.
-*   **Otimizador de Cláusula Uses (Clean Uses)**: Limpeza automática de imports não referenciados na unit ativa e inclusões rápidas de units do sistema.
-*   **Gerador de Mocks para Testes**: Geração automatizada de classes e mocks de interfaces para viabilizar testes unitários em ambientes acoplados.
-*   **Swagger/OpenAPI Generator**: Geração de documentação estruturada Swagger a partir das rotas e controllers registrados (Horse / RAD Server).
-*   **Análise Semântica DFM vs PAS**: Auditoria bidirecional para remoção automática de componentes visuais do DFM e eventos que ficaram órfãos no código.
+*   **Revisão Automática no Save**: o evento de save existe, mas ainda não dispara revisão em background.
+*   **Diagnóstico multiarquivo de traces e logs de exceção**: `/stacktrace` existe, mas ainda não resolve automaticamente todas as units nem extrai dumps estruturados de MadExcept/EurekaLog.
+*   **Otimizador de Cláusula Uses (Clean Uses)**: ainda não implementado.
+*   **Gerador de Mocks para Testes**: ainda não implementado como jornada própria.
+*   **Swagger/OpenAPI para projetos existentes**: novos projetos DEXT foram atendidos na 2.2.2; a leitura de rotas Horse/RAD Server existentes permanece pendente.
+*   **Análise Semântica DFM vs PAS**: mutações atuais preservam consistência, mas a auditoria de órfãos permanece pendente.
+*   **Smart Migrate**, **painel de cache** e **geração de API.md**: permanecem pendentes e não priorizados.
 
-### 💡 Ideias Futuras (v0.3.0+)
-Ideias em fase de concepção e estudo de viabilidade técnica na ToolsAPI ou que demandam hooks de baixo nível:
+### Capacidade absorvida
+
+*   **Histórico de Refatorações Aplicadas**: absorvido na 2.0.0 por patches reversíveis, timeline, auditoria e checkpoints.
+
+### Oportunidades estratégicas
 *   **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC**: Assistente interativo de migração estrutural que converte componentes visuais obsoletos do DFM e reescreve a lógica do código Pascal para o DEXT ORM com FireDAC.
 *   **Decompositor de Formulários (Code-Behind Extractor)**: Extração cirúrgica de lógica de negócios acoplada nos eventos de cliques de telas para classes de serviços limpas separadas.
 *   **Assistente de Threads e PPL**: Auxiliar a reescrever rotinas pesadas síncronas para rodarem de forma assíncrona segura e sem travar a interface da aplicação.
-*   **Internacionalização Automática (i18n Wizard)**: Extrair todas as propriedades de tela e textos hardcoded Pascal para arquivos centralizados de tradução.
-*   **Autocompletar Inline (Ghost Text)**: Exibição de sugestões de código em tempo real no editor com texto cinza (Copilot/Cursor style).
-*   **Suporte Nativo macOS/Linux**: Compatibilidade e portabilidade de UI e editor do Rad IA para Lazarus / Free Pascal.
+*   **Internacionalização Automática (i18n Wizard)**: a infraestrutura de localização existe; falta o wizard para projetos do usuário.
+
+### Fora do escopo
+
+*   **Lazarus / Free Pascal**: descartado; o suporte vigente permanece Delphi 12 e 13.

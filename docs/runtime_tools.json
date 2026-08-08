@@ -18,6 +18,14 @@
       ]
     },
     {
+      "name": "Agent result recovery",
+      "source": "Source/Core/RadIA.Core.AgentResultTools.pas",
+      "tools": [
+        "GetToolResultSummary",
+        "GetToolResultRange"
+      ]
+    },
+    {
       "name": "Project health",
       "source": "Source/Core/RadIA.Core.ProjectHealthTools.pas",
       "tools": [

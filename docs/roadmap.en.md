@@ -11,6 +11,13 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 ## 📅 Completed Releases History
 
+### v2.3.0 — Internal RTK and recoverable context
+
+- deterministic DUnitX, Git diff, build, and knowledge result compaction;
+- complete per-session storage with summary/range recovery;
+- context budget, operational profiles, and sanitized metrics;
+- 126-tool catalog and measured viability evidence.
+
 Below are the achievements and values delivered in each release version of the plugin:
 
 ### Secure agentic platform — completed
@@ -288,31 +295,32 @@ The active matrix is validated on Delphi 12 Win32 and Delphi 13 Win32/IDE64. See
 
 ---
 
-## 🔲 Planned Evolution Milestones
+## Uncommitted future inventory
 
-Future versions of Rad IA will focus on introducing smart diagnostics and complex legacy codebase refactorings:
+The `0.1.0`, `0.2.0`, and `0.3.0+` numbers belonged to planning before the 2.x line and are no
+longer target versions. After 2.2.2, each item must be selected and detailed in a new goal before it
+receives a version.
 
-### 🔲 v0.1.0 — Automation, Auditing, and Quick Wins
-This release focuses on bringing lightweight, silent, and friction-free code auditing and editor enhancements to everyday workflows:
-*   **Smart SQL Optimizer in Editor** (Completed in v0.0.23): Scans SQL strings inside Pascal to optimize joins, improve queries, and validate syntax.
-*   **Delphi Compiler & OS Warning Scanner** (Completed in v0.0.24): Static auditing targeted at compiler warnings and low-level Windows pitfalls (concurrency, GDI leaks).
-*   **Automatic Code Review on Save**: Background static review triggered on file saving, alerting developers of potential bugs in the active unit.
-*   **Applied Refactoring History**: Logs all changes applied through the Diff view with rollback support.
+### Confirmed functional gaps
 
-### 🔲 v0.2.0 — Code Engineering and Structural Analysis
-Focuses on architectural design of APIs, automated mock tests, and deep exception log debugging:
-*   **Smart Multi-Unit Trace Resolver**: Decodes call stack traces pasted in chat by reading background source code files cited in the log, providing global multi-unit context.
-*   **Exception Log Assistant (MadExcept / EurekaLog Context Extractor)**: Autoparses variable dumps in crash reports to provide the AI with the exact runtime variables state.
-*   **Uses Clause Optimizer (Clean Uses)**: Safely clean unused imports in the active unit and add missing system libraries.
-*   **Mock Generator for Unit Tests**: Automatically maps constructors and interface dependencies to generate DUnitX mock classes.
-*   **Swagger/OpenAPI Generator**: Exports structured Swagger APIs by scanning controllers and routing variables (Horse / RAD Server).
-*   **Bidirectional Semantic Analysis DFM vs PAS**: Scans form files and Pascal source code to delete orphaned controls and empty events.
+*   **Automatic Code Review on Save**: the save event exists, but does not trigger background review.
+*   **Multi-file trace and exception-log diagnostics**: `/stacktrace` exists, but does not yet resolve all units automatically or extract structured MadExcept/EurekaLog dumps.
+*   **Uses Clause Optimizer (Clean Uses)**: not implemented.
+*   **Mock Generator for Unit Tests**: not implemented as a dedicated journey.
+*   **Swagger/OpenAPI for existing projects**: new DEXT projects were covered in 2.2.2; scanning existing Horse/RAD Server routes remains pending.
+*   **Bidirectional DFM vs PAS Analysis**: current mutations preserve consistency, but orphan auditing remains pending.
+*   **Smart Migrate**, **cache panel**, and **API.md generation** remain pending and unprioritized.
 
-### 💡 Future Ideas (v0.3.0+)
-Conceptual stage items being evaluated for technical feasibility or demanding low-level Hooks:
+### Absorbed capability
+
+*   **Applied Refactoring History**: absorbed in 2.0.0 by reversible patches, timeline, audit, and checkpoints.
+
+### Strategic opportunities
 *   **BDE/ADO/dbExpress ➔ DEXT with FireDAC Migration**: Interactive assistant that converts legacy data access controls and rewrites code for the modern DEXT ORM using FireDAC.
 *   **Legacy Form Decomposer (Code-Behind Extractor)**: Decouple business logic out of form visual button clicks into standalone service units.
 *   **Threads and PPL Assistant**: Helper to rewrite heavy synchronous routines to run asynchronously using thread-safe task handlers.
-*   **Automated Internationalization (i18n Wizard)**: Extract visual properties and hardcoded Pascal strings into external translation files.
-*   **Smart Inline Autocomplete (Ghost Text)**: Real-time gray text suggestions inside the editor (Copilot/Cursor style).
-*   **Native macOS/Linux Support**: UI and editor compatibility for Lazarus / Free Pascal environments.
+*   **Automated Internationalization (i18n Wizard)**: localization infrastructure exists; the user-project wizard remains pending.
+
+### Out of scope
+
+*   **Lazarus / Free Pascal**: discarded; current support remains Delphi 12 and 13.

@@ -134,6 +134,9 @@ type
   [TestFixture]
   TTestRadIAAgentRuntime = class
   private
+    procedure AssertDecisionContextBudgetAtStepCount(
+      const AStepCount: Integer
+    );
     function NewRuntime(
       const AExecutor: IRadIAToolExecutor;
       const AProvider: IRadIAAgentDecisionProvider;
@@ -153,6 +156,12 @@ type
     procedure TestFailedBuildRequiresCorrectionAndSuccessfulRebuild;
     [Test]
     procedure TestToolFailureIsAddedToDecisionContext;
+    [Test]
+    procedure TestDecisionContextCompactsWithoutChangingCheckpoint;
+    [Test]
+    procedure TestDecisionContextBudgetUsesRecoverableEnvelopes;
+    [Test]
+    procedure TestDecisionContextBudgetAcrossRequiredStepCounts;
     [Test]
     procedure TestStopsAtStepLimit;
     [Test]
@@ -203,11 +212,104 @@ uses
   System.Classes,
   System.IOUtils,
   System.JSON,
+  System.Math,
   System.SyncObjs,
   RadIA.Core.AgentDiagnostic,
   RadIA.Core.AgentController,
+  RadIA.Core.AgentResultStore,
   RadIA.Core.AgentPricing,
-  RadIA.Core.AgentProvider;
+  RadIA.Core.AgentProvider,
+  RadIA.Core.ResultCompactor;
+
+procedure TTestRadIAAgentRuntime.AssertDecisionContextBudgetAtStepCount(
+  const AStepCount: Integer
+);
+var
+  LCheckpointDirectory: string;
+  LDecisions: TArray<TRadIAAgentDecision>;
+  LExecutor: IRadIAToolExecutor;
+  LIndex: Integer;
+  LLimits: TRadIAAgentLimits;
+  LProvider: IRadIAAgentDecisionProvider;
+  LProviderObject: TRadIAMockAgentDecisionProvider;
+  LResultDirectory: string;
+  LResultStore: IRadIAAgentResultStore;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+  LSessionId: string;
+  LToolStepCount: Integer;
+begin
+  LSessionId := 'budget-steps-' + IntToStr(AStepCount);
+  LCheckpointDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-BudgetMatrixCheckpoint-' + TGUID.NewGuid.ToString
+  );
+  LResultDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-BudgetMatrixResult-' + TGUID.NewGuid.ToString
+  );
+  LToolStepCount := Max(0, AStepCount - 1);
+  SetLength(LDecisions, LToolStepCount + 2);
+  LDecisions[0] := TRadIAAgentDecision.Plan(
+    'Approve.',
+    '[{"title":"Read bounded results"}]'
+  );
+  for LIndex := 1 to LToolStepCount do
+    LDecisions[LIndex] := TRadIAAgentDecision.CallTool(
+      'GetEditorContent',
+      Format('{"step":%d}', [LIndex])
+    );
+  LDecisions[High(LDecisions)] := TRadIAAgentDecision.Complete('Done.');
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded(
+      '{"content":"' + StringOfChar('x', 10000) + '"}'
+    )
+  );
+  LProviderObject := TRadIAMockAgentDecisionProvider.Create(LDecisions);
+  LProvider := LProviderObject;
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  LResultStore := TRadIAAgentFileResultStore.Create(LResultDirectory);
+  LRuntime := TRadIAAgentRuntime.Create(
+    LExecutor,
+    LProvider,
+    LStore,
+    nil,
+    TRadIAResultCompactor.Create,
+    LResultStore
+  );
+  try
+    LLimits := TRadIAAgentLimits.Create(
+      Max(AStepCount, 1),
+      3,
+      60000,
+      0,
+      0,
+      16000
+    );
+    LRuntime.Start('Respect context budget.', LSessionId, 'project', LLimits);
+    LRuntime.Resume(LSessionId);
+    Assert.IsTrue(
+      Length(LProviderObject.ContextJson) <= 16000,
+      Format('Context exceeded budget at %d steps.', [AStepCount])
+    );
+    if LToolStepCount > 0 then
+      Assert.Contains(LProviderObject.ContextJson, 'GetToolResultRange');
+  finally
+    LRuntime.Free;
+    if TDirectory.Exists(LCheckpointDirectory) then
+      TDirectory.Delete(LCheckpointDirectory, True);
+    if TDirectory.Exists(LResultDirectory) then
+      TDirectory.Delete(LResultDirectory, True);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestDecisionContextBudgetAcrossRequiredStepCounts;
+var
+  LStepCount: Integer;
+begin
+  for LStepCount in [1, 10, 50, 100] do
+    AssertDecisionContextBudgetAtStepCount(LStepCount);
+end;
 
 { TRadIAMockAgentDecisionProvider }
 
@@ -1619,6 +1721,121 @@ begin
     Assert.Contains(LProviderObject.ContextJson, 'File is unavailable.');
   finally
     LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestDecisionContextCompactsWithoutChangingCheckpoint;
+const
+  CRepeatedLine = 'Running a deliberately verbose DUnitX fixture';
+var
+  LExecutor: IRadIAToolExecutor;
+  LProviderObject: TRadIAMockAgentDecisionProvider;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResultJson: string;
+  LRuntime: TRadIAAgentRuntime;
+  LStoreObject: TRadIAMemoryAgentCheckpointStore;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LResultJson := '{"status":"succeeded","output":"' +
+    CRepeatedLine + '\r\n' + CRepeatedLine + '\r\n' +
+    CRepeatedLine + '\r\nDone"}';
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded(LResultJson)
+  );
+  LProviderObject := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Approve compacted test execution.',
+      '[{"title":"Run tests"}]'
+    ),
+    TRadIAAgentDecision.CallTool('RunDUnitXTests', '{}'),
+    TRadIAAgentDecision.Complete('Tests completed.')
+  ]);
+  LProvider := LProviderObject;
+  LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
+  LStore := LStoreObject;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LRuntime.Start(
+      'Run verbose tests.',
+      'compaction-session',
+      'project',
+      TRadIAAgentLimits.Default
+    );
+    LRuntime.Resume('compaction-session');
+    Assert.Contains(LProviderObject.ContextJson, '"applied":true');
+    Assert.Contains(LProviderObject.ContextJson, 'repeated 2 times');
+    Assert.Contains(LStoreObject.SnapshotJson, CRepeatedLine + '\\r\\n' +
+      CRepeatedLine + '\\r\\n' + CRepeatedLine);
+    Assert.DoesNotContain(LStoreObject.SnapshotJson, 'resultCompaction');
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestDecisionContextBudgetUsesRecoverableEnvelopes;
+var
+  LCheckpointDirectory: string;
+  LExecutor: IRadIAToolExecutor;
+  LLimits: TRadIAAgentLimits;
+  LProviderObject: TRadIAMockAgentDecisionProvider;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResultDirectory: string;
+  LResultStore: IRadIAAgentResultStore;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LCheckpointDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-BudgetCheckpoint-' + TGUID.NewGuid.ToString
+  );
+  LResultDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-BudgetResult-' + TGUID.NewGuid.ToString
+  );
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded(
+      '{"content":"' + StringOfChar('x', 10000) + '"}'
+    )
+  );
+  LProviderObject := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan('Approve.', '[{"title":"Read repeatedly"}]'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":2}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":3}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":4}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":5}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":6}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":7}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":8}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":9}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":10}'),
+    TRadIAAgentDecision.Complete('Done.')
+  ]);
+  LProvider := LProviderObject;
+  LStore := TRadIAAgentFileCheckpointStore.Create(LCheckpointDirectory);
+  LResultStore := TRadIAAgentFileResultStore.Create(LResultDirectory);
+  LRuntime := TRadIAAgentRuntime.Create(
+    LExecutor,
+    LProvider,
+    LStore,
+    nil,
+    TRadIAResultCompactor.Create,
+    LResultStore
+  );
+  try
+    LLimits := TRadIAAgentLimits.Create(20, 3, 60000, 0, 0, 16000);
+    LRuntime.Start('Respect context budget.', 'budget-session', 'project', LLimits);
+    LRuntime.Resume('budget-session');
+    Assert.IsTrue(Length(LProviderObject.ContextJson) <= 16000);
+    Assert.Contains(LProviderObject.ContextJson, 'context-budget');
+    Assert.Contains(LProviderObject.ContextJson, 'fullResultAvailable');
+    Assert.Contains(LProviderObject.ContextJson, 'GetToolResultRange');
+  finally
+    LRuntime.Free;
+    if TDirectory.Exists(LCheckpointDirectory) then
+      TDirectory.Delete(LCheckpointDirectory, True);
+    if TDirectory.Exists(LResultDirectory) then
+      TDirectory.Delete(LResultDirectory, True);
   end;
 end;
 

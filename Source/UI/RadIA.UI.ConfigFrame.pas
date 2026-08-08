@@ -11,7 +11,8 @@ uses  System.Classes,
   RadIA.Core.CliProcess,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.McpProvisioning,
-  RadIA.Core.FastMM5;
+  RadIA.Core.FastMM5,
+  RadIA.Core.ResultCompactionSettings;
 
 type
   TRadIAFrameAIConfig = class(TFrame, IRadIAConfigView)
@@ -41,6 +42,11 @@ type
     FEdtQuotaLimit: TEdit;
     FLblQuotaUsed: TLabel;
     FBtnResetQuota: TButton;
+    FCmbResultCompactionProfile: TComboBox;
+    FEdtMaximumDecisionContext: TEdit;
+    FLblResultCompactionProfile: TLabel;
+    FLblMaximumDecisionContext: TLabel;
+    FResultCompactionSettings: TRadIAResultCompactionSettingsStore;
 
     FTsCategoryOverview: TTabSheet;
     FPnlCategoryOverview: TPanel;
@@ -237,8 +243,10 @@ type
     function TryShowCategoryOverview(const ACategoryName: string): Boolean;
     procedure SaveAgentExecutorSettings;
     procedure LoadFastMM5Settings;
+    procedure LoadResultCompactionSettings;
     procedure RefreshFastMM5Status;
     procedure SaveFastMM5Settings;
+    procedure SaveResultCompactionSettings;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -704,6 +712,35 @@ begin
   FBtnResetQuota.Height := 25;
   FBtnResetQuota.Caption := 'Reset Usage';
   FBtnResetQuota.OnClick := BtnResetQuotaClick;
+
+  FLblResultCompactionProfile := CreateLabel(
+    FPnlGeneral,
+    'Agent result compaction profile:',
+    16,
+    414
+  );
+  FCmbResultCompactionProfile := TComboBox.Create(Self);
+  FCmbResultCompactionProfile.Parent := FPnlGeneral;
+  FCmbResultCompactionProfile.SetBounds(16, 432, 180, 25);
+  FCmbResultCompactionProfile.Style := csDropDownList;
+  FCmbResultCompactionProfile.Items.Add('Off');
+  FCmbResultCompactionProfile.Items.Add('Conservative');
+  FCmbResultCompactionProfile.Items.Add('Balanced');
+  FLblResultCompactionProfile.FocusControl := FCmbResultCompactionProfile;
+
+  FLblMaximumDecisionContext := CreateLabel(
+    FPnlGeneral,
+    'Maximum agent decision context characters:',
+    216,
+    414
+  );
+  FEdtMaximumDecisionContext := CreateEdit(
+    FPnlGeneral,
+    216,
+    432,
+    156,
+    True
+  );
 end;
 
 procedure TRadIAFrameAIConfig.CreateSecurityTab;
@@ -1305,6 +1342,14 @@ begin
     'Configure RadIA editor shortcuts as action=shortcut pairs separated by semicolons.'
   );
   SetControlsHint(
+    [FCmbResultCompactionProfile],
+    'Control internal agent result compaction. Conservative is the recommended default.'
+  );
+  SetControlsHint(
+    [FEdtMaximumDecisionContext],
+    'Set the maximum decision-context size from 16000 to 1000000 characters.'
+  );
+  SetControlsHint(
     [FCmbAgentExecutor],
     'Choose native RadIA orchestration or delegate agent objectives to the selected external CLI.'
   );
@@ -1567,6 +1612,8 @@ begin
   FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
   FCliMcpSettings := TRadIACliMcpSettings.Create;
   FFastMM5Settings := TRadIAFastMM5SettingsStore.Create;
+  FResultCompactionSettings :=
+    TRadIAResultCompactionSettingsStore.Create;
   FCliInstallGuard := TRadIAConfigLifecycleGuard.Create;
 
   // Update RadioGroup text in runtime for OAuth
@@ -1605,6 +1652,7 @@ begin
   ConfigureControlHints;
   LoadAgentExecutorSettings;
   LoadFastMM5Settings;
+  LoadResultCompactionSettings;
 
   LActiveTheme := 'light';
   LUseIDETheme := False;
@@ -1640,6 +1688,7 @@ begin
   FAgentExecutorSettings.Free;
   FCliMcpSettings.Free;
   FFastMM5Settings.Free;
+  FResultCompactionSettings.Free;
   FPresenter.Free;
   FEdtTemperatures.Free;
   FEdtMaxTokens.Free;
@@ -1998,6 +2047,36 @@ end;
 procedure TRadIAFrameAIConfig.LoadConfig;
 begin
   FPresenter.LoadConfig;
+  LoadResultCompactionSettings;
+end;
+
+procedure TRadIAFrameAIConfig.LoadResultCompactionSettings;
+var
+  LSettings: TRadIAResultCompactionSettings;
+begin
+  LSettings := FResultCompactionSettings.Load;
+  FCmbResultCompactionProfile.ItemIndex :=
+    FCmbResultCompactionProfile.Items.IndexOf(LSettings.ProfileName);
+  if FCmbResultCompactionProfile.ItemIndex < 0 then
+    FCmbResultCompactionProfile.ItemIndex := 1;
+  FEdtMaximumDecisionContext.Text :=
+    IntToStr(LSettings.MaximumDecisionContextCharacters);
+end;
+
+procedure TRadIAFrameAIConfig.SaveResultCompactionSettings;
+var
+  LMaximumCharacters: Integer;
+begin
+  LMaximumCharacters := StrToIntDef(
+    Trim(FEdtMaximumDecisionContext.Text),
+    120000
+  );
+  FResultCompactionSettings.Save(
+    TRadIAResultCompactionSettings.Create(
+      FCmbResultCompactionProfile.Text,
+      LMaximumCharacters
+    )
+  );
 end;
 
 procedure TRadIAFrameAIConfig.lstTemplatesClick(Sender: TObject);
@@ -3390,6 +3469,7 @@ begin
   SaveCliMcpSettings;
   SaveAgentExecutorSettings;
   SaveFastMM5Settings;
+  SaveResultCompactionSettings;
   FPresenter.SaveConfig;
 end;
 

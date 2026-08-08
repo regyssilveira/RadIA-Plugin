@@ -32,6 +32,7 @@ jobs:
       - X64
       - radia-delphi
     timeout-minutes: 90
+    environment: production
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
