@@ -11,6 +11,10 @@ type
     Name: string;
     CreatedAt: TDateTime;
     LastActive: TDateTime;
+    CliClientId: string;
+    CliExternalSessionId: string;
+    CliWorkingDirectory: string;
+    CliModel: string;
 
     class function CreateNew(const AId, AName: string): TSessionInfo; static;
     class function ParseFromJSON(const AObj: TJSONObject): TSessionInfo; static;
@@ -38,6 +42,18 @@ type
     procedure DeleteSession(const AId: string);
     procedure RenameSession(const AId: string; const ANewName: string);
     procedure UpdateSessionActivity(const AId: string);
+    procedure ClearCliConversation(const AId: string);
+    procedure SetCliConversation(
+      const AId: string;
+      const AClientId: string;
+      const AExternalSessionId: string;
+      const AWorkingDirectory: string;
+      const AModel: string
+    );
+    function TryGetSession(
+      const AId: string;
+      out ASession: TSessionInfo
+    ): Boolean;
 
     function GetSessionFilePath(const AId: string): string;
     function SessionHasHistory(const AId: string): Boolean;
@@ -67,6 +83,10 @@ begin
   Result.Name := AName;
   Result.CreatedAt := Now;
   Result.LastActive := Now;
+  Result.CliClientId := '';
+  Result.CliExternalSessionId := '';
+  Result.CliWorkingDirectory := '';
+  Result.CliModel := '';
 end;
 
 class function TSessionInfo.ParseFromJSON(const AObj: TJSONObject): TSessionInfo;
@@ -102,6 +122,17 @@ begin
   end
   else
     Result.LastActive := Now;
+
+  Result.CliClientId := AObj.GetValue<string>('cliClientId', '');
+  Result.CliExternalSessionId := AObj.GetValue<string>(
+    'cliExternalSessionId',
+    ''
+  );
+  Result.CliWorkingDirectory := AObj.GetValue<string>(
+    'cliWorkingDirectory',
+    ''
+  );
+  Result.CliModel := AObj.GetValue<string>('cliModel', '');
 end;
 
 { TRadIASessionManager }
@@ -216,6 +247,13 @@ begin
       LObj.AddPair('name', LInfo.Name);
       LObj.AddPair('createdAt', DateToISO8601(LInfo.CreatedAt));
       LObj.AddPair('lastActive', DateToISO8601(LInfo.LastActive));
+      if LInfo.CliExternalSessionId <> '' then
+      begin
+        LObj.AddPair('cliClientId', LInfo.CliClientId);
+        LObj.AddPair('cliExternalSessionId', LInfo.CliExternalSessionId);
+        LObj.AddPair('cliWorkingDirectory', LInfo.CliWorkingDirectory);
+        LObj.AddPair('cliModel', LInfo.CliModel);
+      end;
       LArr.AddElement(LObj);
     end;
 
@@ -223,6 +261,23 @@ begin
   finally
     LArr.Free;
   end;
+end;
+
+procedure TRadIASessionManager.ClearCliConversation(const AId: string);
+var
+  LIndex: Integer;
+  LInfo: TSessionInfo;
+begin
+  LIndex := FindSessionIndex(AId);
+  if LIndex < 0 then
+    Exit;
+  LInfo := FSessions[LIndex];
+  LInfo.CliClientId := '';
+  LInfo.CliExternalSessionId := '';
+  LInfo.CliWorkingDirectory := '';
+  LInfo.CliModel := '';
+  FSessions[LIndex] := LInfo;
+  SaveIndex;
 end;
 
 function TRadIASessionManager.CreateSession(const AName: string): TSessionInfo;
@@ -301,6 +356,47 @@ begin
     FSessions[LIndex] := LInfo;
     SaveIndex;
   end;
+end;
+
+procedure TRadIASessionManager.SetCliConversation(
+  const AId: string;
+  const AClientId: string;
+  const AExternalSessionId: string;
+  const AWorkingDirectory: string;
+  const AModel: string
+);
+var
+  LIndex: Integer;
+  LInfo: TSessionInfo;
+begin
+  if Trim(AExternalSessionId) = '' then
+    raise EArgumentException.Create('The external CLI session id is required.');
+  LIndex := FindSessionIndex(AId);
+  if LIndex < 0 then
+    raise EArgumentException.Create('The RadIA chat session was not found.');
+  LInfo := FSessions[LIndex];
+  LInfo.CliClientId := LowerCase(Trim(AClientId));
+  LInfo.CliExternalSessionId := Trim(AExternalSessionId);
+  LInfo.CliWorkingDirectory := Trim(AWorkingDirectory);
+  LInfo.CliModel := Trim(AModel);
+  LInfo.LastActive := Now;
+  FSessions[LIndex] := LInfo;
+  SaveIndex;
+end;
+
+function TRadIASessionManager.TryGetSession(
+  const AId: string;
+  out ASession: TSessionInfo
+): Boolean;
+var
+  LIndex: Integer;
+begin
+  LIndex := FindSessionIndex(AId);
+  Result := LIndex >= 0;
+  if Result then
+    ASession := FSessions[LIndex]
+  else
+    ASession := Default(TSessionInfo);
 end;
 
 function TRadIASessionManager.GetSessionFilePath(const AId: string): string;

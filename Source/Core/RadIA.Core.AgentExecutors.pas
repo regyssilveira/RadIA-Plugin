@@ -76,8 +76,12 @@ type
   private
     class function BuildArguments(
       const AKind: TRadIACliKind;
-      const APrompt: string
+      const APrompt: string;
+      const AResumeSessionId: string
     ): TArray<string>; static;
+    class procedure ValidateSessionId(
+      const ASessionId: string
+    ); static;
     class procedure ValidateInput(
       const AExecutablePath: string;
       const APrompt: string;
@@ -91,7 +95,8 @@ type
       const ADefinition: TRadIACliDefinition;
       const AExecutablePath: string;
       const APrompt: string;
-      const AWorkingDirectory: string
+      const AWorkingDirectory: string;
+      const AResumeSessionId: string = ''
     ): TRadIACliInvocation; static;
   end;
 
@@ -111,6 +116,11 @@ type
     ): Boolean; static;
   public
     class function ExtractFinalText(const AOutput: string): string; static;
+    class function TryExtractSessionId(
+      const AKind: TRadIACliKind;
+      const AOutput: string;
+      out ASessionId: string
+    ): Boolean; static;
   end;
 
 implementation
@@ -119,6 +129,7 @@ uses
   System.Classes,
   System.Generics.Collections,
   System.SysUtils,
+  RadIA.Core.AgentExecutorContracts,
   RadIA.Core.Config;
 
 const
@@ -269,13 +280,25 @@ class function TRadIACliInvocationBuilder.Build(
   const ADefinition: TRadIACliDefinition;
   const AExecutablePath: string;
   const APrompt: string;
-  const AWorkingDirectory: string
+  const AWorkingDirectory: string;
+  const AResumeSessionId: string
 ): TRadIACliInvocation;
+var
+  LContract: TRadIAExecutorContract;
 begin
   ValidateInput(AExecutablePath, APrompt, AWorkingDirectory);
+  ValidateSessionId(AResumeSessionId);
+  if (AResumeSessionId <> '') and
+    (not TRadIAExecutorContractCatalog.FindByClientId(
+      ADefinition.Id,
+      LContract
+    ) or not LContract.Supports(ecStableResume)) then
+    raise EArgumentException.Create(
+      'The CLI executor does not support conversation resume.'
+    );
   Result := TRadIACliInvocation.Create(
     Trim(AExecutablePath),
-    BuildArguments(ADefinition.Kind, APrompt),
+    BuildArguments(ADefinition.Kind, APrompt, AResumeSessionId),
     Trim(AWorkingDirectory),
     'stream-json'
   );
@@ -283,9 +306,44 @@ end;
 
 class function TRadIACliInvocationBuilder.BuildArguments(
   const AKind: TRadIACliKind;
-  const APrompt: string
+  const APrompt: string;
+  const AResumeSessionId: string
 ): TArray<string>;
 begin
+  if AResumeSessionId <> '' then
+  begin
+    case AKind of
+      ckCodex:
+        Result := [
+          'exec',
+          'resume',
+          '--json',
+          AResumeSessionId,
+          APrompt
+        ];
+      ckClaude,
+      ckGemini:
+        Result := [
+          '-p',
+          APrompt,
+          '--output-format',
+          'stream-json',
+          '--resume',
+          AResumeSessionId
+        ];
+      ckCopilot:
+        Result := [
+          '-p',
+          APrompt,
+          '--output-format=json',
+          '--no-color',
+          '--resume=' + AResumeSessionId
+        ];
+    else
+      raise EArgumentException.Create('The CLI executor kind is not supported.');
+    end;
+    Exit;
+  end;
   case AKind of
     ckCodex:
       Result := ['exec', '--json', APrompt];
@@ -298,6 +356,24 @@ begin
   else
     raise EArgumentException.Create('The CLI executor kind is not supported.');
   end;
+end;
+
+class procedure TRadIACliInvocationBuilder.ValidateSessionId(
+  const ASessionId: string
+);
+var
+  LCharacter: Char;
+begin
+  if ASessionId = '' then
+    Exit;
+  if (Length(ASessionId) > 256) or (Trim(ASessionId) <> ASessionId) then
+    raise EArgumentException.Create('The CLI session id is invalid.');
+  for LCharacter in ASessionId do
+    if not CharInSet(
+      LCharacter,
+      ['a'..'z', 'A'..'Z', '0'..'9', '-', '_', '.', ':']
+    ) then
+      raise EArgumentException.Create('The CLI session id is invalid.');
 end;
 
 class function TRadIACliInvocationBuilder.QuoteWindowsArgument(
@@ -382,6 +458,80 @@ begin
   end;
   if Result = '' then
     Result := Trim(AOutput);
+end;
+
+class function TRadIACliOutputParser.TryExtractSessionId(
+  const AKind: TRadIACliKind;
+  const AOutput: string;
+  out ASessionId: string
+): Boolean;
+const
+  CSessionNames: array[0..4] of string = (
+    'thread_id',
+    'session_id',
+    'sessionId',
+    'conversation_id',
+    'conversationId'
+  );
+var
+  LJson: TJSONValue;
+  LLine: string;
+  LLines: TStringList;
+  LName: string;
+  LObject: TJSONObject;
+  LResumeIndex: Integer;
+  LValue: TJSONValue;
+begin
+  ASessionId := '';
+  LLines := TStringList.Create;
+  try
+    LLines.Text := AOutput;
+    for LLine in LLines do
+    begin
+      LJson := TJSONObject.ParseJSONValue(Trim(LLine));
+      try
+        if not (LJson is TJSONObject) then
+          Continue;
+        LObject := TJSONObject(LJson);
+        for LName in CSessionNames do
+        begin
+          LValue := LObject.GetValue(LName);
+          if LValue is TJSONString then
+          begin
+            ASessionId := TJSONString(LValue).Value;
+            try
+              TRadIACliInvocationBuilder.ValidateSessionId(ASessionId);
+              Exit(True);
+            except
+              on EArgumentException do
+                ASessionId := '';
+            end;
+          end;
+        end;
+      finally
+        LJson.Free;
+      end;
+    end;
+  finally
+    LLines.Free;
+  end;
+  if AKind <> ckCopilot then
+    Exit(False);
+  LResumeIndex := LowerCase(AOutput).IndexOf('copilot --resume=');
+  if LResumeIndex < 0 then
+    Exit(False);
+  ASessionId := AOutput.Substring(LResumeIndex + Length('copilot --resume='));
+  ASessionId := ASessionId.Split([#13, #10, ' ', #9])[0].Trim;
+  try
+    TRadIACliInvocationBuilder.ValidateSessionId(ASessionId);
+    Result := ASessionId <> '';
+  except
+    on EArgumentException do
+    begin
+      ASessionId := '';
+      Result := False;
+    end;
+  end;
 end;
 
 class function TRadIACliOutputParser.FindText(

@@ -30,8 +30,8 @@ O RadIA mantém os argumentos separados até a criação do processo e aplica o 
 do Windows apenas na fronteira de execução. O prompt não é concatenado a um comando de shell.
 
 A [matriz contratual de capacidades](cli_capability_matrix.md) separa o que cada fornecedor publica
-do que a versão atual do RadIA já utiliza. Retomada por ID e FIM somente ficam disponíveis depois
-que o executável detectado comprova o contrato correspondente.
+do que a versão atual do RadIA já utiliza. A retomada por ID é usada pelos quatro executores
+suportados. FIM permanece condicionado a um contrato específico do executor.
 
 ## Instalação opcional pelo canal oficial
 
@@ -145,6 +145,29 @@ objetivo ao CLI detectado usando a pasta do projeto como diretório de trabalho.
 - possui timeout de 15 minutos;
 - entra em um Job Object do Windows;
 - encerra toda a árvore de processos ao cancelar, exceder o timeout ou fechar o RadIA.
+
+### Continuidade da conversa externa
+
+Cada conversa do RadIA mantém seu próprio vínculo com a conversa do CLI. Depois de uma execução
+bem-sucedida, o RadIA captura o identificador estruturado devolvido pelo cliente e grava somente:
+executor, identificador externo, diretório do projeto e modelo declarado. Tokens, credenciais,
+prompts e saída bruta não fazem parte desse índice.
+
+Na próxima solicitação, o RadIA retoma automaticamente a conversa apenas quando o executor e a
+pasta do projeto ainda correspondem ao vínculo. Trocar de conversa do RadIA isola também a sessão
+externa. Uma resposta que terminar depois dessa troca é salva na conversa que a iniciou e não é
+inserida na conversa atualmente visível.
+
+- O indicador **Session: Resume** confirma que a próxima solicitação reutilizará o vínculo.
+- **Session: New** significa que o CLI iniciará uma conversa nova.
+- Use o botão **New CLI session** ou `/cli new` para desvincular a conversa externa atual.
+- Use `/cli session` para consultar o identificador e o executor vinculados.
+- Criar outra conversa pelo botão **Novo chat** cria um escopo independente; voltar à conversa
+  anterior restaura seu próprio vínculo.
+
+Desvincular encerra a continuidade no RadIA, mas não apaga dados mantidos pelo fornecedor do CLI.
+Como não existe uma operação universal de exclusão remota, essa eventual remoção deve ser feita
+pelos mecanismos do cliente correspondente.
 
 Se o executável não estiver disponível, o RadIA não inicia uma execução parcial: ele informa o
 problema e direciona o usuário ao diagnóstico em **CLI & MCP**. A seleção pode ser alterada para o

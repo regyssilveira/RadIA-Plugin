@@ -39,6 +39,14 @@ O Rad IA organiza o seu trabalho em sessões persistentes de conversa. O histór
 4.  **Excluir Conversa**: Clique no ícone de lixeira ao lado do título da conversa para removê-la permanentemente do histórico local.
 5.  **Isolamento de Segurança**: A barra lateral de sessões e a criação/exclusão de chats ficam dinamicamente desativadas se houver uma resposta da IA sendo transmitida via streaming no momento.
 
+### Sessões de executores CLI
+
+Quando o chat usa um executor CLI externo, cada conversa do RadIA preserva separadamente o
+identificador necessário para continuar aquela conversa no cliente. O compositor mostra
+**Session: Resume** quando existe um vínculo compatível e **Session: New** quando a próxima mensagem
+iniciará uma conversa externa nova. Use **New CLI session** ou `/cli new` para recomeçar sem apagar
+o histórico visível do RadIA. Consulte [Executores CLI](cli_executors.md) para limites e privacidade.
+
 ---
 
 ## 4. Exportação de Conversas

@@ -71,6 +71,11 @@ contract tests passed with 898/898 tests on all three targets. See the
 **Acceptance:** after panel and IDE restart, each supported CLI resumes the correct conversation or
 clearly starts fresh; tests prove isolation and stale-output rejection.
 
+**Status:** complete. Codex, Claude, Gemini, and Copilot resume by identifier, with sanitized
+metadata per conversation, late-response isolation, and equivalent composer and command actions.
+The Delphi matrix passed with 904/904 tests per target. See the
+[Phase 1 evidence](competitive_gap_phase_1_evidence_2.3.1.json).
+
 **Still missing:** cross-surface context, hierarchical settings, FIM, gutter, and external MCP.
 
 ### Phase 2 — One context across chat, terminal, and editor

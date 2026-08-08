@@ -34,8 +34,8 @@
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference)
   — JSONL, modelo, MCP e identificador informado ao encerrar uma execução programática.
 
-As fontes registram o contrato esperado; o probe definido na Fase 0 deverá confrontar esse contrato
-com a versão local antes de habilitar retomada, modelo ou MCP.
+As fontes registram o contrato esperado; o probe de runtime previsto para a Fase 6 deverá confrontar
+esse contrato com a versão local antes de habilitar capacidades opcionais.
 
 ## Identidades e isolamento
 
@@ -58,9 +58,9 @@ pertencem à mesma jornada somente quando `JourneyId` e `ProjectId` coincidem.
 |---|---|---|
 | Timeout e cancelamento | Processo externo possui timeout e encerramento em Job Object | Nenhum processo filho após cancelar |
 | Resposta obsoleta | Troca de provider/executor descarta callbacks antigos | Correlação também inclui jornada e sessão CLI |
-| Retomada | Não implementada no RadIA 2.3.1 | Retomar por ID ou informar capacidade indisponível |
+| Retomada | Implementada por ID para os quatro clientes | Validar versão antes de capacidades opcionais |
 | Latência | Duração é registrada na central de execução | Separar startup, primeiro evento e conclusão |
-| FIM | Ghost Text usa completion geral | Capability probe e montagem prefixo/sufixo |
+| FIM | Ghost Text usa completion geral | Probe de runtime e montagem prefixo/sufixo |
 
 ## Próxima fase
 

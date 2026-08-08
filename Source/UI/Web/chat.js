@@ -169,6 +169,7 @@ const btnSettings     = document.getElementById('btn-settings');
 const btnAgentMode    = document.getElementById('btn-agent-mode');
 const btnTerminal     = document.getElementById('btn-terminal');
 const btnAgentHistory = document.getElementById('btn-agent-history');
+const btnCliNewSession = document.getElementById('btn-cli-new-session');
 const executionRoute  = document.getElementById('execution-route');
 const composerRoute   = document.getElementById('composer-route');
 const executionRouteSelector = document.getElementById('select-execution-route');
@@ -1022,7 +1023,11 @@ function updateExecutionRoute(route) {
   executionRoute.dataset.transport = route.transport || 'native';
   executionRouteSelector.value = route.orchestrator === 'external-cli'
     ? (route.cliClientId || 'codex')
-    : 'native';
+      : 'native';
+  if (btnCliNewSession) {
+    btnCliNewSession.hidden = route.orchestrator !== 'external-cli';
+    btnCliNewSession.disabled = requestInProgress || route.cliSessionState !== 'resume';
+  }
   updateComposerRoute();
 }
 
@@ -1073,7 +1078,12 @@ function updateComposerRoute() {
   if (!composerRoute) return;
   const routeName = activeExecutionRoute.displayName || 'Native';
   const selectedModel = modelSelectionEnabled ? selectModel?.value : '';
-  composerRoute.textContent = `Auth: ${[routeName, selectedModel].filter(Boolean).join(' | ')}`;
+  let cliSessionState = 'New';
+  if (activeExecutionRoute.cliSessionState === 'resume') cliSessionState = 'Resume';
+  const cliSession = activeExecutionRoute.orchestrator === 'external-cli'
+    ? `Session: ${cliSessionState}`
+    : '';
+  composerRoute.textContent = `Auth: ${[routeName, selectedModel, cliSession].filter(Boolean).join(' | ')}`;
   composerRoute.title = activeExecutionRoute.details || activeExecutionRoute.label || routeName;
   composerRoute.dataset.transport = activeExecutionRoute.transport || 'native';
 }
@@ -2417,6 +2427,10 @@ executionRouteSelector.addEventListener('change', () => {
     action: 'set_agent_executor',
     executor: executionRouteSelector.value
   });
+});
+
+btnCliNewSession?.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'reset_cli_session' });
 });
 
 function setDropdownOpen(wrapper, trigger, open) {

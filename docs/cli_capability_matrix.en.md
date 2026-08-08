@@ -34,8 +34,8 @@
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference)
   — JSONL, model, MCP, and the identifier reported after programmatic execution.
 
-Sources describe the expected contract. The probe defined in Phase 0 must compare it with the
-installed version before enabling resume, model, or MCP capabilities.
+Sources describe the expected contract. The runtime probe planned for Phase 6 must compare it with
+the installed version before enabling optional capabilities.
 
 ## Identities and isolation
 
@@ -58,9 +58,9 @@ journey only when both `JourneyId` and `ProjectId` match.
 |---|---|---|
 | Timeout and cancellation | External process has a timeout and Job Object termination | No child process after cancellation |
 | Stale response | Provider/executor switch rejects old callbacks | Correlation also includes journey and CLI session |
-| Resume | Not implemented in RadIA 2.3.1 | Resume by ID or report unavailable capability |
+| Resume | Implemented by ID for all four clients | Validate version before optional capabilities |
 | Latency | Execution Center records duration | Separate startup, first event, and completion |
-| FIM | Ghost Text uses general completion | Capability probe and prefix/suffix assembly |
+| FIM | Ghost Text uses general completion | Runtime probe and prefix/suffix assembly |
 
 ## Next phase
 

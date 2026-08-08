@@ -30,8 +30,8 @@ RadIA keeps arguments separate until process creation and applies argument escap
 of Windows only at the execution boundary. The prompt is not concatenated to a shell command.
 
 The [contractual capability matrix](cli_capability_matrix.en.md) separates vendor-published
-features from behavior already used by the current RadIA version. ID resume and FIM become
-available only after the detected executable proves the corresponding contract.
+features from behavior already used by the current RadIA version. ID resume is used for all four
+supported executors. FIM remains conditional on an executor-specific contract.
 
 ## Optional installation via the official channel
 
@@ -145,6 +145,28 @@ target to CLI detected using project folder as working directory. The process:
 - has a 15-minute timeout;
 - enters a Windows Job Object;
 - terminates the entire process tree when canceling, timeout or closing RadIA.
+
+### External conversation continuity
+
+Each RadIA conversation keeps its own link to a CLI conversation. After a successful run, RadIA
+captures the structured identifier returned by the client and stores only the executor, external
+identifier, project directory, and declared model. Tokens, credentials, prompts, and raw output are
+not part of this index.
+
+On the next request, RadIA resumes automatically only when the executor and project directory still
+match the link. Switching RadIA conversations also isolates the external session. A response that
+finishes after that switch is saved to the conversation that started it and is not inserted into the
+conversation currently visible.
+
+- **Session: Resume** confirms that the next request will reuse the link.
+- **Session: New** means that the CLI will start a new conversation.
+- Use **New CLI session** or `/cli new` to detach the current external conversation.
+- Use `/cli session` to inspect the linked identifier and executor.
+- Creating another conversation with **New chat** creates an independent scope; returning to the
+  previous conversation restores its own link.
+
+Detaching ends continuity in RadIA but does not erase data retained by the CLI vendor. There is no
+universal remote deletion operation, so any such removal must use that client's own mechanisms.
 
 If the executable is not available, RadIA does not start a partial execution: it reports the
 problem and directs the user to diagnosis in **CLI & MCP**. The selection can be changed to the

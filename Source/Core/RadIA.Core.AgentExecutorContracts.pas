@@ -49,7 +49,6 @@ type
     ): Boolean;
     property Kind: TRadIACliKind read FKind;
     property ClientId: string read FClientId;
-    property Capabilities: TRadIAExecutorCapabilities read FCapabilities;
     property ResumeSyntax: TRadIAResumeSyntax read FResumeSyntax;
     property SessionIdSource: TRadIASessionIdSource read FSessionIdSource;
   end;
@@ -78,16 +77,6 @@ type
     property SessionId: string read FSessionId;
     property ProjectId: string read FProjectId;
     property RequestId: string read FRequestId;
-  end;
-
-  IRadIAExecutorCapabilityProbe = interface
-    ['{9A1D5849-1427-4206-A178-C24312564465}']
-    function Probe(
-      const ADefinition: TRadIACliDefinition;
-      const ADeclared: TRadIAExecutorContract;
-      out AEffective: TRadIAExecutorContract;
-      out AReason: string
-    ): Boolean;
   end;
 
   TRadIAExecutorContractCatalog = class
@@ -173,11 +162,11 @@ end;
 function TRadIAAgentScopeIdentity.IsComplete: Boolean;
 begin
   Result :=
-    (FJourneyId <> '') and
-    (FConversationId <> '') and
-    (FSessionId <> '') and
-    (FProjectId <> '') and
-    (FRequestId <> '');
+    (JourneyId <> '') and
+    (ConversationId <> '') and
+    (SessionId <> '') and
+    (ProjectId <> '') and
+    (RequestId <> '');
 end;
 
 { TRadIAExecutorContractCatalog }

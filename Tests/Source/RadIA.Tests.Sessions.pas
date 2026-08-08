@@ -27,6 +27,8 @@ type
     procedure TestHistoryLoadSave;
     [Test]
     procedure TestUpdateSessionActivity;
+    [Test]
+    procedure TestCliConversationMetadataPersistsAndClears;
   end;
 
 implementation
@@ -65,6 +67,35 @@ begin
   Assert.AreEqual('Test Session', FManager.Sessions[0].Name);
   Assert.IsFalse(LSession.Id.IsEmpty);
   Assert.IsTrue(TFile.Exists(TPath.Combine(FTempDir, 'sessions_index.json')));
+end;
+
+procedure TTestRadIASessions.TestCliConversationMetadataPersistsAndClears;
+var
+  LLoaded: TSessionInfo;
+  LSession: TSessionInfo;
+begin
+  LSession := FManager.CreateSession('CLI Session');
+  FManager.SetCliConversation(
+    LSession.Id,
+    'codex',
+    'external-123',
+    'C:\Project',
+    'gpt-test'
+  );
+  Assert.IsTrue(FManager.TryGetSession(LSession.Id, LLoaded));
+  Assert.AreEqual('external-123', LLoaded.CliExternalSessionId);
+
+  FManager.Free;
+  FManager := TRadIASessionManager.Create(FTempDir);
+  Assert.IsTrue(FManager.TryGetSession(LSession.Id, LLoaded));
+  Assert.AreEqual('codex', LLoaded.CliClientId);
+  Assert.AreEqual('external-123', LLoaded.CliExternalSessionId);
+  Assert.AreEqual('C:\Project', LLoaded.CliWorkingDirectory);
+  Assert.AreEqual('gpt-test', LLoaded.CliModel);
+
+  FManager.ClearCliConversation(LSession.Id);
+  Assert.IsTrue(FManager.TryGetSession(LSession.Id, LLoaded));
+  Assert.IsEmpty(LLoaded.CliExternalSessionId);
 end;
 
 procedure TTestRadIASessions.TestRenameSession;

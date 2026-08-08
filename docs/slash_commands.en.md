@@ -29,6 +29,8 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
 | `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP, terminal, chat, and first tool. |
 | `/status [filter\|--json]` | Shows a sanitized inventory of RadIA state. | Provider, agent, CLI, MCP, security, editor, project, tools, and logs. |
+| `/cli session` | Shows whether the current conversation is linked to a resumable CLI session. | Current conversation, executor, and project. |
+| `/cli new` | Detaches the external session; the next request starts a new CLI conversation. | Active conversation; it does not delete vendor data. |
 | `/journey` | Lists end-to-end Delphi recipes. | Native journey catalog. |
 | `/journey cancel` | Abandons the active journey intake. | Context not yet executed. |
 | `/journey create` | Creates, opens, builds, and explains a new project. | Agent Runtime and project tools. |

@@ -45,6 +45,12 @@ type
     procedure ScopeIdentityRequiresEveryBoundary;
     [Test]
     procedure ScopeIdentityRejectsCrossProjectJourney;
+    [Test]
+    procedure ResumeInvocationUsesExecutorSpecificSyntax;
+    [Test]
+    procedure UnsafeResumeIdentifierIsRejected;
+    [Test]
+    procedure StructuredOutputsExposeSessionIdentifiers;
   end;
 
 implementation
@@ -348,6 +354,113 @@ begin
   );
   Assert.IsTrue(LComplete.IsComplete);
   Assert.IsFalse(LIncomplete.IsComplete);
+end;
+
+procedure TRadIAAgentExecutorTests.ResumeInvocationUsesExecutorSpecificSyntax;
+var
+  LDefinition: TRadIACliDefinition;
+  LInvocation: TRadIACliInvocation;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  LInvocation := TRadIACliInvocationBuilder.Build(
+    LDefinition,
+    'codex.exe',
+    'Continue work',
+    'C:\Project',
+    'session-123'
+  );
+  Assert.AreEqual('resume', LInvocation.Arguments[1]);
+  Assert.AreEqual('session-123', LInvocation.Arguments[3]);
+
+  Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
+  LInvocation := TRadIACliInvocationBuilder.Build(
+    LDefinition,
+    'claude.exe',
+    'Continue work',
+    'C:\Project',
+    'session-123'
+  );
+  Assert.AreEqual('--resume', LInvocation.Arguments[4]);
+  Assert.AreEqual('session-123', LInvocation.Arguments[5]);
+
+  Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
+  LInvocation := TRadIACliInvocationBuilder.Build(
+    LDefinition,
+    'gemini.exe',
+    'Continue work',
+    'C:\Project',
+    'session-123'
+  );
+  Assert.AreEqual('--resume', LInvocation.Arguments[4]);
+
+  Assert.IsTrue(TRadIACliCatalog.FindById('copilot', LDefinition));
+  LInvocation := TRadIACliInvocationBuilder.Build(
+    LDefinition,
+    'copilot.exe',
+    'Continue work',
+    'C:\Project',
+    'session-123'
+  );
+  Assert.AreEqual('--resume=session-123', LInvocation.Arguments[4]);
+end;
+
+procedure TRadIAAgentExecutorTests.StructuredOutputsExposeSessionIdentifiers;
+var
+  LSessionId: string;
+begin
+  Assert.IsTrue(
+    TRadIACliOutputParser.TryExtractSessionId(
+      ckCodex,
+      '{"type":"thread.started","thread_id":"codex-123"}',
+      LSessionId
+    )
+  );
+  Assert.AreEqual('codex-123', LSessionId);
+  Assert.IsTrue(
+    TRadIACliOutputParser.TryExtractSessionId(
+      ckClaude,
+      '{"type":"result","session_id":"claude-123"}',
+      LSessionId
+    )
+  );
+  Assert.AreEqual('claude-123', LSessionId);
+  Assert.IsTrue(
+    TRadIACliOutputParser.TryExtractSessionId(
+      ckGemini,
+      '{"type":"init","session_id":"gemini-123"}',
+      LSessionId
+    )
+  );
+  Assert.IsTrue(
+    TRadIACliOutputParser.TryExtractSessionId(
+      ckCopilot,
+      'Continue with: copilot --resume=copilot-123',
+      LSessionId
+    )
+  );
+  Assert.AreEqual('copilot-123', LSessionId);
+end;
+
+procedure TRadIAAgentExecutorTests.UnsafeResumeIdentifierIsRejected;
+var
+  LDefinition: TRadIACliDefinition;
+  LRaised: Boolean;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  LRaised := False;
+  try
+    TRadIACliInvocationBuilder.Build(
+      LDefinition,
+      'codex.exe',
+      'Continue work',
+      'C:\Project',
+      'session & calc.exe'
+    );
+  except
+    on EArgumentException do
+      LRaised := True;
+  end;
+  Assert.IsTrue(LRaised, 'Unsafe CLI session ids must be rejected.');
 end;
 
 procedure TRadIAAgentExecutorTests.SupportedCliExecutorsManageTheirOwnModels;

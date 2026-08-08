@@ -29,6 +29,8 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/doctor` | Diagnostica a instalação e recomenda a próxima ação. | Provider, executor, MCP condicional, terminal, chat e primeira tool. |
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
+| `/cli session` | Mostra se a conversa atual está vinculada a uma sessão de CLI retomável. | Conversa, executor e projeto atuais. |
+| `/cli new` | Desvincula a sessão externa; a próxima solicitação inicia uma conversa nova no CLI. | Conversa ativa; não apaga dados no fornecedor. |
 | `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
 | `/journey cancel` | Abandona a coleta de dados da jornada ativa. | Contexto ainda não executado. |
 | `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |

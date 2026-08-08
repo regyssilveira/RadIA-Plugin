@@ -177,6 +177,12 @@
                 <option value="copilot">GitHub Copilot CLI</option>
               </select>
             </label>
+            <button type="button" class="composer-mode-toggle" id="btn-cli-new-session"
+              title="Detach the resumed CLI conversation and start fresh on the next request"
+              aria-label="Start a new external CLI session" hidden>
+              <span class="composer-control-label">CLI</span>
+              <span class="btn-label">New session</span>
+            </button>
             <output id="composer-route" class="composer-route" aria-live="polite"
               title="Credential and model for the next message">Auth: Native</output>
             <div class="selector-wrapper">

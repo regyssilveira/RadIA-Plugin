@@ -10,7 +10,7 @@ uses
   RadIA.Core.TokenUsage, RadIA.Core.PromptHistory, RadIA.Core.Types,
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
   RadIA.Core.AgentProvider,
-  RadIA.Core.AgentExecutors, RadIA.Core.CliProcess,
+  RadIA.Core.AgentExecutors, RadIA.Core.CliManager, RadIA.Core.CliProcess,
   RadIA.Core.Journeys, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
   RadIA.Core.Workspace;
 
@@ -204,7 +204,10 @@ type
     function TryStartCliAgentRun(const AObjective: string): Boolean;
     procedure HandleCliAgentFinished(
       const AResult: TRadIACliProcessResult;
-      const AClientName: string
+      const ADefinition: TRadIACliDefinition;
+      const ALocalSessionId: string;
+      const AWorkingDirectory: string;
+      const AWasResumed: Boolean
     );
     procedure PauseAgentRun;
     procedure ResumeAgentRun;
@@ -247,6 +250,11 @@ type
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
+    function TryHandleCliCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    procedure PostCliSessionStatus;
     function TryHandleStatusCommand(
       const APromptText: string;
       const ACommandText: string
@@ -374,7 +382,6 @@ uses
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
   RadIA.Core.AgentPricing,
   RadIA.Core.AgentResultStore,
-  RadIA.Core.CliManager,
   RadIA.Core.ResultCompactionSettings,
   RadIA.Core.ResultCompactor,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
@@ -755,7 +762,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..16] of string = (
+  CNativeCommands: array[0..18] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -772,7 +779,9 @@ const
     '/doctor',
     '/status',
     '/tools',
-    '/revoke-tools'
+    '/revoke-tools',
+    '/cli session',
+    '/cli new'
   );
 var
   LCommand: string;
@@ -1003,6 +1012,16 @@ begin
     'RadIA Status'
   );
   AddCommand('/tools', 'Lists available read-only IDE tools.', 'IDE Tools');
+  AddCommand(
+    '/cli session',
+    'Shows the external CLI session linked to the active conversation.',
+    'CLI Session Status'
+  );
+  AddCommand(
+    '/cli new',
+    'Detaches the external CLI session so the next request starts fresh.',
+    'New CLI Session'
+  );
   AddCommand(
     '/revoke-tools',
     'Revokes all IDE tool permissions granted for this session.',
@@ -2228,6 +2247,11 @@ begin
     SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
   else if AAction = 'set_agent_executor' then
     SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
+  else if AAction = 'reset_cli_session' then
+  begin
+    FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
+    PostExecutionRouteToWeb;
+  end
   else if AAction = 'pause_agent' then
     PauseAgentRun
   else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
@@ -2378,12 +2402,80 @@ begin
   ReplayAgentStep(LStepIndex);
 end;
 
+function TRadIAChatPresenter.TryHandleCliCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LCliSession: TSessionInfo;
+begin
+  Result := True;
+  if SameText(ACommandText, '/cli session') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    if FSessionManager.TryGetSession(
+      FSessionManager.ActiveSessionId,
+      LCliSession
+    ) and (LCliSession.CliExternalSessionId <> '') then
+      PostToWebView(
+        'add_message',
+        'assistant',
+        'CLI session: `' + LCliSession.CliExternalSessionId + '` (' +
+          LCliSession.CliClientId + '). The next compatible request resumes it.'
+      )
+    else
+      PostToWebView(
+        'add_message',
+        'assistant',
+        'No external CLI session is linked. The next CLI request starts a new session.'
+      );
+    Exit;
+  end;
+  if SameText(ACommandText, '/cli new') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
+    PostExecutionRouteToWeb;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'The external CLI session was detached. The next CLI request starts fresh.'
+    );
+    Exit;
+  end;
+  Result := False;
+end;
+
+procedure TRadIAChatPresenter.PostCliSessionStatus;
+var
+  LSession: TSessionInfo;
+begin
+  if FSessionManager.TryGetSession(
+    FSessionManager.ActiveSessionId,
+    LSession
+  ) and (LSession.CliExternalSessionId <> '') then
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'CLI conversation link: resume `' + LSession.CliExternalSessionId +
+        '` with ' + LSession.CliClientId + '.'
+    )
+  else
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'CLI conversation link: new session on the next external CLI request.'
+    );
+end;
+
 function TRadIAChatPresenter.TryHandleCatalogCommand(
   const APromptText: string;
   const ACommandText: string
 ): Boolean;
 begin
   Result := True;
+  if TryHandleCliCommand(APromptText, ACommandText) then
+    Exit;
   if SameText(ACommandText, '/help') then
   begin
     PostToWebView('add_message', 'user', APromptText);
@@ -2525,6 +2617,8 @@ begin
     '/tool GetRadIAStatus {"filter":"' + LFilter + '",' +
     '"agentModeEnabled":' + LAgentMode + '}'
   );
+  if SameText(LFilter, 'all') or SameText(LFilter, 'cli') then
+    PostCliSessionStatus;
 end;
 
 procedure TRadIAChatPresenter.HandleExplicitToolCommand(
@@ -3405,9 +3499,12 @@ function TRadIAChatPresenter.TryStartCliAgentRun(
 var
   LDefinition: TRadIACliDefinition;
   LDetection: TRadIACliDetection;
+  LExternalSessionId: string;
   LGuard: IRadIALifecycleGuard;
   LInvocation: TRadIACliInvocation;
   LProject: TRadIAProjectSnapshot;
+  LSession: TSessionInfo;
+  LSessionId: string;
   LSettings: TRadIAAgentExecutorSettings;
   LUserMessage: IRadIAChatMessage;
   LWorkingDirectory: string;
@@ -3459,11 +3556,18 @@ begin
     Exit;
   end;
 
+  LExternalSessionId := '';
+  LSessionId := FSessionManager.ActiveSessionId;
+  if FSessionManager.TryGetSession(LSessionId, LSession) and
+    SameText(LSession.CliClientId, LDefinition.Id) and
+    SameText(LSession.CliWorkingDirectory, LWorkingDirectory) then
+    LExternalSessionId := LSession.CliExternalSessionId;
   LInvocation := TRadIACliInvocationBuilder.Build(
     LDefinition,
     LDetection.ExecutablePath,
     AObjective,
-    LWorkingDirectory
+    LWorkingDirectory,
+    LExternalSessionId
   );
   LUserMessage := TRadIAChatMessage.CreateMessage(
     mrUser,
@@ -3484,16 +3588,20 @@ begin
     nil,
     procedure(AResult: TRadIACliProcessResult)
     begin
-      TThread.Queue(
+      TThread.ForceQueue(
         nil,
+        TThreadProcedure(
         procedure
         begin
           if LGuard.IsAlive then
             Self.HandleCliAgentFinished(
               AResult,
-              LDefinition.DisplayName
+              LDefinition,
+              LSessionId,
+              LWorkingDirectory,
+              LExternalSessionId <> ''
             );
-        end
+        end)
       );
     end
   );
@@ -3501,10 +3609,17 @@ end;
 
 procedure TRadIAChatPresenter.HandleCliAgentFinished(
   const AResult: TRadIACliProcessResult;
-  const AClientName: string
+  const ADefinition: TRadIACliDefinition;
+  const ALocalSessionId: string;
+  const AWorkingDirectory: string;
+  const AWasResumed: Boolean
 );
 var
+  LExternalSessionId: string;
+  LHistory: TArray<IRadIAChatMessage>;
+  LIsActiveSession: Boolean;
   LMessage: IRadIAChatMessage;
+  LModelLabel: string;
   LResponse: string;
 begin
   FCliProcessSession := nil;
@@ -3526,22 +3641,54 @@ begin
       );
   end
   else
+  begin
     LResponse := TRadIACliOutputParser.ExtractFinalText(AResult.StdOut);
+    if TRadIACliOutputParser.TryExtractSessionId(
+      ADefinition.Kind,
+      AResult.StdOut,
+      LExternalSessionId
+    ) then
+      FSessionManager.SetCliConversation(
+        ALocalSessionId,
+        ADefinition.Id,
+        LExternalSessionId,
+        AWorkingDirectory,
+        ''
+      );
+  end;
+  if AWasResumed then
+    LModelLabel := 'CLI resumed'
+  else
+    LModelLabel := 'CLI new session';
   LMessage := TRadIAChatMessage.CreateMessage(
     mrAssistant,
     LResponse,
-    AClientName,
-    'CLI'
+    ADefinition.DisplayName,
+    LModelLabel
   );
-  FHistory := FHistory + [LMessage];
-  SaveChatHistory;
-  PostToWebView(
-    'add_message',
-    'assistant',
-    LResponse,
-    AClientName,
-    'CLI'
+  LIsActiveSession := SameText(
+    FSessionManager.ActiveSessionId,
+    ALocalSessionId
   );
+  if LIsActiveSession then
+  begin
+    FHistory := FHistory + [LMessage];
+    SaveChatHistory;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      LResponse,
+      ADefinition.DisplayName,
+      LModelLabel
+    );
+    PostExecutionRouteToWeb;
+  end
+  else
+  begin
+    LHistory := FSessionManager.LoadSessionHistory(ALocalSessionId);
+    LHistory := LHistory + [LMessage];
+    FSessionManager.SaveSessionHistory(ALocalSessionId, LHistory);
+  end;
 end;
 
 procedure TRadIAChatPresenter.PostAgentModeToWeb;
@@ -3630,6 +3777,8 @@ var
   LMode: string;
   LOrchestrator: string;
   LProvider: string;
+  LSession: TSessionInfo;
+  LSessionState: string;
   LSettings: TRadIAAgentExecutorSettings;
   LTransport: string;
 begin
@@ -3637,6 +3786,13 @@ begin
   LAuthType := FConfig.GetProviderAuthType(LProvider);
   LSettings := FAgentExecutorSettings.Load;
   LCliClientId := LSettings.CliClientId;
+  LSessionState := 'new';
+  if FSessionManager.TryGetSession(
+    FSessionManager.ActiveSessionId,
+    LSession
+  ) and SameText(LSession.CliClientId, LCliClientId) and
+    (LSession.CliExternalSessionId <> '') then
+    LSessionState := 'resume';
   ResolveExecutionRoute(
     LProvider,
     LAuthType,
@@ -3656,6 +3812,7 @@ begin
 
   LDetails := 'Mode: ' + LMode + '. Orchestrator: ' + LOrchestrator +
     '. Provider transport: ' + LTransport +
+    '. CLI session: ' + LSessionState +
     '. MCP is a separate external tool bridge and is not this chat route.';
   Result := TJSONObject.Create;
   Result.AddPair('label', LLabel);
@@ -3666,6 +3823,7 @@ begin
   Result.AddPair('transport', LTransport);
   Result.AddPair('provider', LProvider);
   Result.AddPair('cliClientId', LCliClientId);
+  Result.AddPair('cliSessionState', LSessionState);
   Result.AddPair('mcpRole', 'external-bridge');
 end;
 

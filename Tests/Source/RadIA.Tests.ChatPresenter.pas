@@ -218,6 +218,10 @@ type
     [Test]
     procedure TestStatusCommandRejectsUnknownFilter;
     [Test]
+    procedure TestCliSessionCommandShowsLinkedConversation;
+    [Test]
+    procedure TestCliNewCommandDetachesLinkedConversation;
+    [Test]
     procedure TestJourneyCommandListsEndToEndRecipes;
     [Test]
     procedure TestHelpCommandShowsCapabilitiesAndDocumentation;
@@ -810,6 +814,8 @@ end;
 
 procedure TTestChatPresenter.TestStatusCommandExecutesFilteredStatus;
 begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
   FPresenter.SendPromptText('/status cli');
   DrainQueuedCalls;
 
@@ -818,6 +824,7 @@ begin
     FMockView.PostedMessages.Text,
     '"agentModeEnabled":true'
   );
+  Assert.Contains(FMockView.PostedMessages.Text, 'CLI conversation link:');
 end;
 
 procedure TTestChatPresenter.TestStatusCommandRejectsUnknownFilter;
@@ -827,6 +834,48 @@ begin
   FPresenter.SendPromptText('/status unknown');
 
   Assert.Contains(FMockView.LastPostedJson, 'Usage: /status');
+end;
+
+procedure TTestChatPresenter.TestCliSessionCommandShowsLinkedConversation;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SessionManager.SetCliConversation(
+    FPresenter.SessionManager.ActiveSessionId,
+    'codex',
+    'thread-123',
+    'C:\projects\sample',
+    'gpt-5.4'
+  );
+
+  FPresenter.SendPromptText('/cli session');
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'thread-123');
+  Assert.Contains(FMockView.PostedMessages.Text, 'next compatible request resumes');
+end;
+
+procedure TTestChatPresenter.TestCliNewCommandDetachesLinkedConversation;
+var
+  LSession: TSessionInfo;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SessionManager.SetCliConversation(
+    FPresenter.SessionManager.ActiveSessionId,
+    'claude',
+    'session-456',
+    'C:\projects\sample',
+    'claude-sonnet'
+  );
+
+  FPresenter.SendPromptText('/cli new');
+
+  Assert.IsTrue(FPresenter.SessionManager.TryGetSession(
+    FPresenter.SessionManager.ActiveSessionId,
+    LSession
+  ));
+  Assert.IsTrue(LSession.CliExternalSessionId.IsEmpty);
+  Assert.Contains(FMockView.PostedMessages.Text, 'next CLI request starts fresh');
 end;
 
 procedure TTestChatPresenter.TestJourneyCommandListsEndToEndRecipes;

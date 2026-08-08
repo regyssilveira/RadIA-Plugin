@@ -39,6 +39,14 @@ Rad IA organizes your work into persistent conversation sessions. History is sav
 4.  **Delete Chat**: Click the trash icon next to the conversation title to remove it permanently from local history.
 5.  **Safety Isolation**: The sessions sidebar and chat creation/deletion are dynamically disabled while an AI streaming response is actively transmission.
 
+### CLI executor sessions
+
+When chat uses an external CLI executor, each RadIA conversation separately preserves the identifier
+needed to continue that conversation in the client. The composer shows **Session: Resume** when a
+compatible link exists and **Session: New** when the next message will start a new external
+conversation. Use **New CLI session** or `/cli new` to start over without deleting the visible RadIA
+history. See [CLI executors](cli_executors.en.md) for limits and privacy.
+
 ---
 
 ## 4. Exporting Conversations

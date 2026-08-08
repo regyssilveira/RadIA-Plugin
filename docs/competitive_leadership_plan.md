@@ -73,6 +73,11 @@ quatro testes contratuais foram aprovados com 898/898 testes nos três targets. 
 **Aceite:** após fechar o painel e reiniciar a IDE, cada CLI suportada retoma a conversa correta ou
 informa claramente que iniciou uma nova; testes provam isolamento e descarte de saída tardia.
 
+**Estado:** concluída. Codex, Claude, Gemini e Copilot retomam por identificador, com metadados
+sanitizados por conversa, isolamento de respostas tardias e ações equivalentes no compositor e por
+comando. A matriz Delphi passou com 904/904 testes por alvo. Consulte a
+[evidência da Fase 1](competitive_gap_phase_1_evidence_2.3.1.json).
+
 **Ainda faltará:** contexto entre superfícies, configuração hierárquica, FIM, gutter e MCP externo.
 
 ### Fase 2 — Contexto único entre chat, terminal e editor
