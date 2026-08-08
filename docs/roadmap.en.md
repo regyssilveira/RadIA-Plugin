@@ -22,6 +22,14 @@ local knowledge, and versioned extensions.
 The active matrix is validated on Delphi 12 Win32 and Delphi 13 Win32/IDE64. See the
 [agentic roadmap](agentic_roadmap.md) and [completion audit](agentic_completion_audit.md).
 
+### v2.2.1 — Diagnostics and guided experience
+
+- structured `/doctor` with readiness, recommendations, and next action;
+- sanitized and filterable `/status` for provider, agent, CLI, MCP, security, editor, and tools;
+- consent-guided CLI/MCP installation, authentication, and recovery;
+- task-oriented documentation and an operational catalog of 124 tools;
+- debugger stability, dynamic model refresh, and layout and hint improvements.
+
 <details>
   <summary><b>📦 v0.0.29 — Editor Selection Fixes and Gemini OAuth Block (Completed)</b></summary>
 

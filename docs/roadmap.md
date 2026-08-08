@@ -26,6 +26,14 @@ Designer, debugger, revisão inline, conhecimento local e extensões versionadas
 A matriz vigente é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. Consulte o
 [roadmap agentivo](agentic_roadmap.md) e a [auditoria de conclusão](agentic_completion_audit.md).
 
+### v2.2.1 — Diagnóstico e experiência guiada
+
+- `/doctor` estruturado com prontidão, recomendações e próxima ação;
+- `/status` sanitizado e filtrável para provider, agente, CLI, MCP, segurança, editor e tools;
+- instalação, autenticação e recuperação de CLI/MCP guiadas por consentimento;
+- documentação reorganizada por tarefa e catálogo operacional de 124 ferramentas;
+- estabilidade do debugger, atualização dinâmica de modelos e melhorias de layout e hints.
+
 <details>
   <summary><b>📦 v0.0.29 — Correção de Seleção do Editor e Bloqueio do Gemini OAuth (Concluído)</b></summary>
 
