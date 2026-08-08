@@ -14,7 +14,8 @@ sem dependência obrigatória do executável externo `rtk.exe`.
 Todas as fases e gates deste plano foram concluídos. A implementação interna obteve 96,71% de
 redução no corpus, 96,55% no contexto de decisão e 0% de aumento em chamadas repetidas. A matriz
 Release passou com 892/892 testes e zero leaks nos três alvos, o smoke IDE64 carregou 126 ferramentas
-e o quality gate do SonarQube foi aprovado sem issues. A candidata está preparada, mas não publicada.
+e o quality gate do SonarQube foi aprovado sem issues. A versão 2.3.0 foi publicada em 8 de agosto
+de 2026.
 
 Consulte a [auditoria de viabilidade](result_compaction_release_audit_2.3.0.md) e a
 [evidência mensurada](result_compaction_evidence_2.3.0.json).

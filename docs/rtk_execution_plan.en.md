@@ -11,7 +11,8 @@ original tool.
 All phases and gates in this plan are complete. The internal implementation achieved a 96.71%
 corpus reduction, a 96.55% decision-context reduction, and no increase in repeated calls. The
 Release matrix passed 892/892 tests with zero leaks on all three targets, the IDE64 smoke loaded 126
-tools, and the SonarQube quality gate passed with no issues. The candidate is prepared but unpublished.
+tools, and the SonarQube quality gate passed with no issues. Version 2.3.0 was published on August 8,
+2026.
 
 See the [viability audit](result_compaction_release_audit_2.3.0.en.md) and the
 [measured evidence](result_compaction_evidence_2.3.0.json).

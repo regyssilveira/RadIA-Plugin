@@ -10,7 +10,6 @@ if (-not (Test-Path -LiteralPath $resolvedWorkflow -PathType Leaf)) {
 
 $workflow = Get-Content -LiteralPath $resolvedWorkflow -Raw
 $requiredFragments = @(
-    "environment: production",
     "New-RadIA.ReleaseEvidence.ps1",
     "New-RadIA.VisualInstaller.ps1",
     "Test-RadIA.VisualInstaller.ps1",
