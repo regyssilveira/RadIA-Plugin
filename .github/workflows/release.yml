@@ -9,7 +9,7 @@ on:
       release_tag:
         description: Existing version tag to package
         required: true
-        default: v2.2.2
+        default: v2.3.0
       publish:
         description: Publish or update the GitHub release
         required: true
@@ -32,7 +32,6 @@ jobs:
       - X64
       - radia-delphi
     timeout-minutes: 90
-    environment: production
     env:
       GH_TOKEN: ${{ github.token }}
     steps:

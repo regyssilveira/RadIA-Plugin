@@ -1,6 +1,6 @@
 # Notas de release — RadIA 2.3.0
 
-Estado: candidata preparada; ainda não publicada.
+Estado: publicada em 8 de agosto de 2026.
 
 ## Destaques
 

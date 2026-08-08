@@ -1,6 +1,6 @@
 # Internal RTK viability audit — RadIA 2.3.0
 
-Date: August 8, 2026. Status: **technical go; candidate prepared and unpublished**.
+Date: August 8, 2026. Status: **technical go; version published**.
 
 ## Measured result
 
@@ -36,5 +36,5 @@ concurrency, and reopening.
 
 ## Rollout decision
 
-Savings, fidelity, recovery, performance, compatibility, security, and operation gates passed. The
-2.3.0 candidate remains local and must not be published without explicit authorization.
+Savings, fidelity, recovery, performance, compatibility, security, and operation gates passed.
+Version 2.3.0 was published from commit `c988159` with its tag and artifacts validated by SHA-256.
