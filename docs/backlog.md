@@ -10,7 +10,9 @@ Este documento registra o status de desenvolvimento, planejamento futuro e o his
 
 ## 📊 Kanban Dashboard
 
-O quadro abaixo resume o status atual das features mapeadas a curto e médio prazo no projeto:
+O quadro abaixo separa entregas, pendências reais e itens ainda sem compromisso de versão. Números
+da linha `0.x` são preservados somente nas entregas históricas. Uma pendência não recebe versão
+nova até ser selecionada para um goal após a versão 2.2.2.
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
@@ -21,7 +23,7 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Goal 2.2 — Diagnóstico Dinâmico de Memória com FastMM5** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.0 |
 | **Diagnóstico, UX CLI/MCP e Documentação Centralizada** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.2.1 |
 | **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
-| **Goal — Continuidade CLI e Integração Avançada** | ⏸️ Congelado | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Após v2.1.0 |
+| **Goal — Continuidade CLI e Integração Avançada** | 🔎 Reavaliar escopo residual | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -39,27 +41,27 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 | **Web Login Simplificado e Apply Changes Seguro** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.25 |
 | **Delphi Compiler & OS Warning Scanner** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.24 |
 | **Smart SQL Optimizer no Editor** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v0.0.23 |
-| **Revisão Automática de Código no Save** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.1.0 |
-| **Histórico de Refatorações Aplicadas** | 🔲 Planejado | 🟢 Baixa | ⭐⭐⭐ Média | v0.1.0 |
-| **Otimizador de Cláusula Uses (Clean Uses)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.2.0 |
-| **Gerador de Mocks para Testes Unitários** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.2.0 |
-| **Smart Multi-Unit Trace Resolver** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v0.2.0 |
-| **MadExcept / EurekaLog Context Extractor** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v0.2.0 |
-| **Gerador de Documentação OpenAPI/Swagger** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.2.0 |
-| **Análise Semântica Bidirecional (DFM vs PAS)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.2.0 |
-| **Assistente de Migração (Smart Migrate)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐⭐ Alta | v0.2.0 |
-| **Painel de Gerenciamento do Cache** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐ Média | v0.2.0 |
-| **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Decompositor de Forms (Code-Behind)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Assistente de Threads e PPL** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
-| **Internacionalização Automática (i18n Wizard)** | 🔲 Planejado | 🔴 Alta | ⭐⭐⭐⭐ Alta | v0.3.0+ |
+| **Revisão Automática de Código no Save** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
+| **Histórico de Refatorações Aplicadas** | ✅ Absorvido por patches, timeline e checkpoints | 🟢 Baixa | ⭐⭐⭐ Média | v2.0.0 |
+| **Otimizador de Cláusula Uses (Clean Uses)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
+| **Gerador de Mocks para Testes Unitários** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
+| **Smart Multi-Unit Trace Resolver** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
+| **MadExcept / EurekaLog Context Extractor** | 🔀 Fundir com diagnóstico de traces | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Não comprometida após v2.2.2 |
+| **Gerador OpenAPI/Swagger para projetos existentes** | 🟨 Parcial; novos projetos DEXT atendidos | 🟡 Média | ⭐⭐⭐⭐ Alta | Parcial em v2.2.2; residual não comprometido |
+| **Análise Semântica Bidirecional (DFM vs PAS)** | 🟨 Parcial; mutações preservam consistência | 🟡 Média | ⭐⭐⭐⭐ Alta | Residual não comprometido após v2.2.2 |
+| **Assistente de Migração (Smart Migrate)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Não comprometida após v2.2.2 |
+| **Painel de Gerenciamento do Cache** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Não comprometida após v2.2.2 |
+| **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Decompositor de Forms (Code-Behind)** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Assistente de Threads e PPL** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Internacionalização Automática (i18n Wizard)** | 🟨 Infraestrutura pronta; wizard pendente | 🔴 Alta | ⭐⭐⭐⭐ Alta | Residual sem versão comprometida |
 | **Autocompletar Inline (Ghost Text)** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
-| **Geração de Docs de Projeto (API.md)** | 🔲 Planejado | 🟡 Média | ⭐⭐⭐ Média | v0.3.0+ |
-| **Suporte Nativo macOS/Linux (Lazarus)** | 🔲 Planejado | 🔴 Alta | 🟢 Baixa | v0.3.0+ |
+| **Geração de Docs de Projeto (API.md)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Não comprometida após v2.2.2 |
+| **Suporte Nativo macOS/Linux (Lazarus)** | 🚫 Descartado | 🔴 Alta | 🟢 Baixa | Fora do escopo |
 
 ---
 
-## ⏳ 1. Em Desenvolvimento (Work in Progress)
+## ✅ 1. Registro histórico da execução 2.0 (concluído)
 
 *   Goal de liderança da experiência Delphi.
     *   M0 concluído: gate global do Sonar automatizado, zero issues, 82,3% de cobertura e 2,3% de
@@ -213,7 +215,10 @@ O quadro abaixo resume o status atual das features mapeadas a curto e médio pra
 
 ## 🔲 2. Próximos Passos (Planned Backlog)
 
-Para detalhes completos de objetivos, impactos e referências técnicas de cada funcionalidade futura, consulte a [Matriz de Priorização de Features (docs/feature_prioritization_matrix.md)](feature_prioritization_matrix.md) ou o [Roadmap de Evolução (docs/roadmap.md)](roadmap.md).
+Nenhuma pendência herdada possui versão futura comprometida. Primeiro, o escopo residual será
+confirmado contra o produto atual; depois, os itens válidos serão priorizados em um novo goal. Para
+impactos e referências, consulte a [matriz de priorização](feature_prioritization_matrix.md) e o
+[roadmap](roadmap.md).
 
 ---
 

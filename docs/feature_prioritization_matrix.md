@@ -1,6 +1,8 @@
 # Rad IA - Matriz de Priorização e Viabilidade de Features
 
-Este documento apresenta uma análise técnica e de negócios comparando as **13 ideias de novas features** com as **7 features que já constam no backlog/roadmap** do projeto Rad IA.
+Este documento preserva a avaliação de esforço e impacto das ideias herdadas, reclassificada contra
+o estado da versão 2.2.2. Ele não atribui versão futura: essa decisão ocorre somente quando um item
+é selecionado para um novo goal.
 
 A análise é estruturada sob a perspectiva de um **Arquiteto de Software Sênior**, avaliando a complexidade de implementação no ecossistema do Embarcadero Delphi (usando a Open Tools API e Windows) contra o impacto gerado no dia a dia do desenvolvedor.
 
@@ -14,24 +16,24 @@ A tabela abaixo cruza o **Esforço (Dificuldade)** com o **Impacto (Benefício)*
 | :--- | :--- | :--- | :--- | :--- |
 | **1. Smart SQL Optimizer no Editor** | Nova | 🟢 Baixa | 🔴 Alto | **Quick Win** (Ganho Rápido) |
 | **2. Delphi Compiler & OS Warning Scanner** | Nova | 🟢 Baixa | 🔴 Alto | **Quick Win** (Ganho Rápido) |
-| **3. Histórico de Refatorações Aplicadas** | Backlog | 🟢 Baixa | 🟡 Médio | **Tarefa de Apoio** |
+| **3. Histórico de Refatorações Aplicadas** | Absorvido na 2.0.0 | 🟢 Baixa | 🟡 Médio | **Entregue** |
 | **4. Otimizador de Cláusula Uses (Clean Uses)** | Nova | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **5. Gerador de Mocks para Testes Unitários** | Nova | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **6. Smart Multi-Unit Trace Resolver** | Nova | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **7. MadExcept / EurekaLog Context Extractor** | Nova | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **8. Revisão Automática de Código no Save** | Backlog | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **9. Assistente de Migração (Smart Migrate)** | Backlog | 🟡 Média | 🔴 Alto | **Projeto Principal** |
-| **10. Gerador de Documentação OpenAPI/Swagger** | Nova | 🟡 Média | 🔴 Alto | **Projeto Principal** |
-| **11. Análise Semântica Bidirecional (DFM x PAS)** | Nova | 🟡 Média | 🟡 Médio-Alto | **Projeto Principal** |
+| **10. OpenAPI/Swagger para projetos existentes** | Parcial na 2.2.2 | 🟡 Média | 🔴 Alto | **Escopo residual** |
+| **11. Análise Semântica Bidirecional (DFM x PAS)** | Parcial | 🟡 Média | 🟡 Médio-Alto | **Escopo residual** |
 | **12. Geração de Docs de Projeto (API.md)** | Backlog | 🟡 Média | 🟡 Médio-Alto | **Projeto Principal** |
 | **13. Painel de Gerenciamento do Cache** | Backlog | 🟡 Média | 🟡 Médio | **Tarefa de Apoio** |
 | **14. Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
 | **15. Decompositor de Forms (Code-Behind)** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
 | **16. Assistente de Threads e PPL** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
 | **17. Internacionalização Automática (i18n)** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
-| **18. Autocompletar Inline (Ghost Text)** | Backlog | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
+| **18. Autocompletar Inline (Ghost Text)** | Concluído na 2.0.0 | 🔴 Alta | 🔴 Alto | **Entregue** |
 | **19. Integração com Depurador da IDE (OTA)** | Concluído | 🔴 Alta | 🔴 Alto | **Entregue** |
-| **20. Suporte Nativo macOS/Linux (Lazarus)** | Backlog | 🔴 Alta | 🟡 Baixo-Médio | **Descarte/Longo Prazo** |
+| **20. Suporte Nativo macOS/Linux (Lazarus)** | Decisão encerrada | 🔴 Alta | 🟡 Baixo-Médio | **Descartado** |
 
 ---
 
@@ -54,9 +56,10 @@ graph TD
 * **Benefício:** **Alto**. Previne bugs silenciosos do ecossistema do Delphi (ex: travamentos por chamadas visuais sem sincronização de threads, conflitos de string Unicode, vazamentos de handles do Windows).
 * **Complexidade:** **Baixa**. Consiste principalmente no desenvolvimento de modelos estruturados de prompt para a análise estática executada no comando `/bugs`, ensinando a IA a focar especificamente em armadilhas conhecidas de runtime e compilador da VCL.
 
-### 1.3. Histórico de Refatorações Aplicadas (Backlog - v0.1.0)
+### 1.3. Histórico de Refatorações Aplicadas (absorvido na v2.0.0)
 * **Benefício:** **Médio**. Fornece rastreabilidade e auditoria interna, permitindo que o desenvolvedor veja e desfaça edições que a IA realizou diretamente pelo editor.
-* **Complexidade:** **Baixa**. Consiste em gravar um log incremental contendo `Data`, `Arquivo`, `Trecho Anterior` e `Trecho Novo` em um diretório JSON local (ex: `%APPDATA%\RadIA\history\`) a cada clique no botão **[Aplicar Alteração]**.
+* **Estado atual:** patches simples e multiarquivo são reversíveis; a timeline, a auditoria e os
+  checkpoints registram as execuções. Não existe escopo residual obrigatório com esse nome.
 
 ---
 
@@ -80,27 +83,29 @@ Features que envolvem manipulação estrutural de código Object Pascal (reescri
 * **Benefício:** **Alto**. A IA ganha "visibilidade de runtime", analisando as exceções com base nos valores reais das variáveis e objetos locais coletados pelo log de erro no instante exato da falha do sistema.
 * **Complexidade:** **Média**. Exige a criação de rotinas regex para extrair a lista e o estado das variáveis listadas nos logs de crash e formatá-los para a IA como metadados do prompt.
 
-### 2.5. Revisão Automática de Código no Save (Backlog - v0.1.0)
+### 2.5. Revisão Automática de Código no Save (pendente, sem versão)
 * **Benefício:** **Alto**. Garante que boas práticas (Clean Code/SOLID) sejam analisadas continuamente sem a necessidade de acionamento manual do desenvolvedor.
 * **Complexidade:** **Média**. Necessita interceptar o evento de gravação da IDE (`IOTAModuleNotifier.AfterSave`), coletar as alterações e enviar uma requisição silenciosa em background. O desafio é não bloquear o processo de gravação e exibir as mensagens de alerta de forma não-intrusiva no painel Rad IA.
 
-### 2.6. Assistente de Migração de Versão (Smart Migrate) (Backlog - v0.2.0)
+### 2.6. Assistente de Migração de Versão (Smart Migrate) (pendente, sem versão)
 * **Benefício:** **Alto**. Acelera drasticamente a modernização de projetos antigos baseados em Delphi 7/XE para Delphi moderno (10.4/11/12), lidando com tipos de strings Unicode, chamadas de rede legadas e substituição de bibliotecas obsoletas.
 * **Complexidade:** **Média**. Funciona de forma similar às refatorações existentes, utilizando templates e prompts focados em padrões Delphi moderno.
 
 ### 2.7. Gerador de Documentação OpenAPI/Swagger (Nova)
 * **Benefício:** **Alto**. Essencial para times que usam Delphi no backend com Horse ou RAD Server, economizando dias de digitação manual de especificações.
-* **Complexidade:** **Média**. O Rad IA precisa varrer as rotas registradas nas classes de controle ou nas units de inicialização da API, ler as estruturas dos DTOs referenciados e compilar o arquivo de configuração Swagger (JSON/YAML).
+* **Estado atual:** a versão 2.2.2 gera novos projetos DEXT com Swagger. O escopo residual precisa
+  varrer rotas de projetos Horse ou RAD Server existentes, ler DTOs e produzir JSON/YAML.
 
 ### 2.8. Análise Semântica Bidirecional (DFM vs PAS) (Nova)
 * **Benefício:** **Médio-Alto**. Remove o lixo acumulado em formulários legados (declarações invisíveis de componentes removidos e eventos órfãos).
-* **Complexidade:** **Média**. Envolve a leitura cruzada do arquivo `.dfm` (em modo texto) e a unit `.pas`, identificando componentes instanciados no DFM que não possuem referência ativa ou manipulação no código-fonte.
+* **Estado atual:** tools transacionais mantêm PAS e DFM consistentes durante mutações. Ainda falta
+  a auditoria dedicada de componentes, declarações e eventos órfãos preexistentes.
 
-### 2.9. Geração de Documentação de Projeto (Backlog - v0.3.0+)
+### 2.9. Geração de Documentação de Projeto (pendente, sem versão)
 * **Benefício:** **Médio-Alto**. Gera sumários arquiteturais e mapeia as units do projeto em um arquivo de documentação centralizado (ex: `docs/API.md`).
 * **Complexidade:** **Média**. A IA analisa a estrutura de pastas do projeto ativo, lê o cabeçalho das principais classes (`/// <summary>`) e gera um arquivo Markdown estruturado.
 
-### 2.10. Painel de Gerenciamento do Cache (Backlog - v0.2.0)
+### 2.10. Painel de Gerenciamento do Cache (pendente, sem versão)
 * **Benefício:** **Médio**. Ajuda a gerenciar os custos e depurar as respostas salvas da IA localmente.
 * **Complexidade:** **Média**. Exige a criação de uma tela VCL clássica em `Source/UI/` que lista os itens salvos no cache local e permite sua exclusão individual ou total.
 
@@ -129,16 +134,17 @@ Features que alteram profundamente a estrutura de múltiplos arquivos simultanea
 * **Benefício:** **Alto**. Abre mercados internacionais para produtos de software legados em Delphi.
 * **Complexidade:** **Alta**. Demanda varrer exaustivamente o DFM (para traduzir Captions, Hints, e labels estáticos) e o PAS (para localizar strings literais de ShowMessages, mensagens de erro e exceções). O plugin precisa criar o arquivo externo de localização e injetar funções de tradução de runtime em centenas de locais sem introduzir bugs de sintaxe.
 
-### 3.5. Autocompletar Inline Inteligente (Ghost Text) (Backlog - v0.3.0+)
+### 3.5. Autocompletar Inline Inteligente (Ghost Text) (concluído na v2.0.0)
 * **Benefício:** **Alto**. Fornece a experiência premium de co-pilotagem de código em tempo real no editor do Delphi, semelhante ao VS Code.
-* **Complexidade:** **Muito Alta**. A Open Tools API (OTA) do Delphi **não fornece suporte nativo** para desenhar texto fantasma (cinza) inline no editor de código. Implementar isso exige o uso de técnicas avançadas e arriscadas do Windows, como subclassing de janelas Win32, interceptação de mensagens do Windows (messages hooking) e hooks nas rotas de pintura gráfica (GDI / Direct2D) da IDE.
+* **Estado atual:** entregue com overlay virtual, alternativas, atalhos configuráveis, descarte de
+  respostas obsoletas e buffer preservado até o aceite.
 
 ### 3.6. Integração com Depurador da IDE (OTA) (Concluída)
 
 Entregue pela plataforma agentiva com leitura de estado, controle, breakpoints, avaliação e watches.
 As operações mutáveis passam por consentimento, precondições de estado e falha segura.
 
-### 3.7. Suporte Nativo macOS/Linux (Lazarus/FPC) (Backlog - v0.3.0+)
+### 3.7. Suporte Nativo macOS/Linux (Lazarus/FPC) (descartado)
 * **Benefício:** **Baixo-Médio**. Expandiria o uso do Rad IA para desenvolvedores do ecossistema Free Pascal / Lazarus.
 * **Complexidade:** **Muito Alta**. Toda a interface gráfica, integração com o editor de código e persistência do Rad IA são estritamente vinculadas à VCL do Delphi (Windows), à Open Tools API (proprietária da Embarcadero) e ao motor WebView2 da Microsoft. Portar isso exigiria reescrever a camada de UI em LCL e substituir o motor web.
 
@@ -146,4 +152,6 @@ As operações mutáveis passam por consentimento, precondições de estado e fa
 
 > [!TIP]
 > **Recomendação de Próximos Passos:**
-> O foco estratégico do Rad IA deve ser a implementação de **Quick Wins** (Smart SQL Optimizer e Delphi Compiler Scanner), pois trazem valor imediato com baixíssimo risco de regressões. Paralelamente, podemos planejar o desenvolvimento incremental dos **Projetos Principais** de esforço médio (como a Otimização da Cláusula Uses, Smart Multi-Unit Trace Resolver e a Revisão Automática no Save), consolidando a robustez do assistente antes de partirmos para refatorações complexas em DFM.
+> Esta matriz informa esforço e impacto, mas não define o próximo goal. Primeiro, o backlog saneado
+> deve ser analisado junto às pendências de confiabilidade e continuidade atuais; somente então os
+> itens selecionados recebem prioridade e versão.
