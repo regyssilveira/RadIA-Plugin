@@ -98,6 +98,7 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /public static void RepaintDescendants/u);
   assert.match(smoke, /FindVisibleChildByClass/u);
   assert.match(smoke, /"TEditControl"/u);
+  assert.match(smoke, /-Name "NavigateToFile"/u);
   assert.match(
     smoke,
     /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u

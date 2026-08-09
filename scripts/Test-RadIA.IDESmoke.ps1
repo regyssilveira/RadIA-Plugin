@@ -866,9 +866,19 @@ function Invoke-RadIAEditorRepaint {
         $IDEProcess.MainWindowHandle
     )
     Start-Sleep -Milliseconds 250
-    $editorHandle = [RadIAKnowledgeSmokeNative]::FindVisibleChildByClass(
-        $IDEProcess.MainWindowHandle,
-        "TEditControl"
+    $editorDeadline = [DateTime]::UtcNow.AddSeconds(10)
+    $editorHandle = [IntPtr]::Zero
+    do {
+        $editorHandle = [RadIAKnowledgeSmokeNative]::FindVisibleChildByClass(
+            $IDEProcess.MainWindowHandle,
+            "TEditControl"
+        )
+        if ($editorHandle -eq [IntPtr]::Zero) {
+            Start-Sleep -Milliseconds 250
+        }
+    } while (
+        $editorHandle -eq [IntPtr]::Zero -and
+        [DateTime]::UtcNow -lt $editorDeadline
     )
     if ($editorHandle -eq [IntPtr]::Zero) {
         throw "The visible Delphi editor control was not found for repaint."
@@ -2267,6 +2277,19 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             if (-not $editorPosition.line) {
                 throw "No active cursor was found for inline diagnostics."
             }
+            $navigation = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "NavigateToFile" `
+                -Arguments @{
+                    fileName = $editorContent.fileName
+                    line = $editorPosition.line
+                    column = $editorPosition.column
+                }
+            if (-not $navigation.success) {
+                throw "The inline smoke could not activate the editor file."
+            }
+            Start-Sleep -Milliseconds 500
         }
         if ($ExerciseInlineCompletion) {
             $inlineDiagnostic = Wait-RadIAInlineCompletionDiagnostic `

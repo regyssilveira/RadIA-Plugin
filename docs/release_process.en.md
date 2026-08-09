@@ -281,8 +281,9 @@ powershell.exe -ExecutionPolicy Bypass `
 The consolidator fails unless all three journeys, all 30 cycles, and the authorized MCP proof use
 the same version and clean source commit. It also requires build, tests, debugger, Git, terminal,
 FIM, gutter review, agent persistence, and shutdown without descendant processes on every target.
-Visual acceptance activates `TEditControl`, requests its native repaint, and passes only when the
-real OTA callback confirms that completion and reviews reached the paint cycle.
+Visual acceptance uses `NavigateToFile`, waits for and activates `TEditControl`, requests its native
+repaint, and passes only when the real OTA callback confirms that completion and reviews reached the
+paint cycle.
 
 ### Terminal visual evidence
 
