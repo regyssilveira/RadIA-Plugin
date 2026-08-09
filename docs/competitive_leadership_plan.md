@@ -176,7 +176,8 @@ preflight de SHA e compensação. `ListBlockReviews`, `DecideBlockReview`, `Appl
 
 **Aceite comprovado:** 953 testes passam sem falhas ou vazamentos em cada target. Smokes reais no
 Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64 publicam revisões, pintam linha e gutter pela OTA,
-aceitam pelo teclado, rejeitam pelo mouse e protegem contra revisão obsoleta.
+aceitam pelo teclado, rejeitam pelo mouse e protegem contra revisão obsoleta. Consulte a
+[evidência visual final da Fase 5](competitive_gap_phase_5_gutter_evidence_2.3.1.json).
 
 **Ainda faltará:** cliente e federação MCP externa.
 

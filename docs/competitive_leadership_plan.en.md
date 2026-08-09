@@ -173,7 +173,8 @@ transaction, with SHA preflight and compensation. `ListBlockReviews`, `DecideBlo
 
 **Acceptance proven:** 953 tests pass without failures or leaks on every target. Real smokes on
 Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 publish reviews, paint line and gutter through
-OTA, accept by keyboard, reject by mouse, and protect against stale revisions.
+OTA, accept by keyboard, reject by mouse, and protect against stale revisions. See the
+[final Phase 5 visual evidence](competitive_gap_phase_5_gutter_evidence_2.3.1.json).
 
 **Still missing:** external MCP client and federation.
 
