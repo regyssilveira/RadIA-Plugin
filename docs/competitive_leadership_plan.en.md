@@ -164,6 +164,13 @@ make the gutter visible yet: OTA projection, commands, transactions, and real sm
 phase. See the
 [Phase 5 foundation evidence](competitive_gap_phase_5_foundation_evidence_2.3.1.json).
 
+**Transaction implemented:** single and multi-file previews now publish a block session
+automatically. Decisions do not write to the editor; `ApplyBlockReviews` requires every block to be
+resolved and applies the result through the existing multi-file transaction, with SHA preflight and
+compensation. `ListBlockReviews`, `DecideBlockReview`, `ApplyBlockReviews`, and `ClearBlockReviews`
+are part of the 130-tool catalog. See the
+[Phase 5 transaction evidence](competitive_gap_phase_5_transaction_evidence_2.3.1.json).
+
 **Acceptance:** a real multi-file review makes different decisions per block, rejects stale bases,
 produces predictable undo, and passes mouse and keyboard validation on all three targets.
 

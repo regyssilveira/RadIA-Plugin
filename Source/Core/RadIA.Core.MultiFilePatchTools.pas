@@ -3,12 +3,14 @@ unit RadIA.Core.MultiFilePatchTools;
 interface
 
 uses
+  RadIA.Core.BlockReviewSessions,
   RadIA.Core.MultiFilePatches,
   RadIA.Core.Tools;
 
 procedure RegisterRadIAMultiFilePatchTools(
   const ARegistry: IRadIAToolRegistry;
-  const AService: IRadIAMultiFilePatchService
+  const AService: IRadIAMultiFilePatchService;
+  const ABlockReviewSession: IRadIABlockReviewSession = nil
 );
 
 implementation
@@ -25,12 +27,16 @@ type
   )
   protected
     FService: IRadIAMultiFilePatchService;
+    FBlockReviewSession: IRadIABlockReviewSession;
     function GetPreviewId(const AJson: TJSONObject): string;
     function ResultToToolResult(
       const AResult: TRadIAMultiFilePatchResult
     ): TRadIAToolResult;
   public
-    constructor Create(const AService: IRadIAMultiFilePatchService);
+    constructor Create(
+      const AService: IRadIAMultiFilePatchService;
+      const ABlockReviewSession: IRadIABlockReviewSession
+    );
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult; virtual; abstract;
@@ -92,13 +98,15 @@ const
 { TRadIAMultiFilePatchToolBase }
 
 constructor TRadIAMultiFilePatchToolBase.Create(
-  const AService: IRadIAMultiFilePatchService
+  const AService: IRadIAMultiFilePatchService;
+  const ABlockReviewSession: IRadIABlockReviewSession
 );
 begin
   inherited Create;
   if not Assigned(AService) then
     raise EArgumentNilException.Create('AService');
   FService := AService;
+  FBlockReviewSession := ABlockReviewSession;
 end;
 
 function TRadIAMultiFilePatchToolBase.GetPreviewId(
@@ -177,7 +185,10 @@ function TRadIAPrepareMultiFilePatchTool.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
 var
+  LEntry: TRadIAMultiFilePatchEntry;
   LJson: TJSONObject;
+  LPatchResult: TRadIAMultiFilePatchResult;
+  LReviewResult: TRadIABlockReviewSessionResult;
 begin
   LJson := TJSONObject.ParseJSONValue(
     ARequest.ArgumentsJson
@@ -188,9 +199,29 @@ begin
       'Multi-file patch arguments must be a valid JSON object.'
     ));
   try
-    Result := ResultToToolResult(
-      FService.Prepare(ParseSpecs(LJson))
-    );
+    LPatchResult := FService.Prepare(ParseSpecs(LJson));
+    Result := ResultToToolResult(LPatchResult);
+    if LPatchResult.Success and Assigned(FBlockReviewSession) then
+    begin
+      FBlockReviewSession.Clear;
+      for LEntry in LPatchResult.Preview.Entries do
+      begin
+        LReviewResult := FBlockReviewSession.PublishFile(
+          LEntry.Spec.TargetFile,
+          LEntry.Spec.BaseRevision,
+          LEntry.OriginalContent,
+          LEntry.Spec.ProposedContent
+        );
+        if not LReviewResult.Success then
+        begin
+          FBlockReviewSession.Clear;
+          Exit(TRadIAToolResult.Failed(
+            LReviewResult.ErrorCode,
+            LReviewResult.ErrorMessage
+          ));
+        end;
+      end;
+    end;
   finally
     LJson.Free;
   end;
@@ -316,7 +347,8 @@ end;
 
 procedure RegisterRadIAMultiFilePatchTools(
   const ARegistry: IRadIAToolRegistry;
-  const AService: IRadIAMultiFilePatchService
+  const AService: IRadIAMultiFilePatchService;
+  const ABlockReviewSession: IRadIABlockReviewSession
 );
 begin
   if not Assigned(ARegistry) then
@@ -324,13 +356,13 @@ begin
   if not Assigned(AService) then
     raise EArgumentNilException.Create('AService');
   ARegistry.RegisterTool(
-    TRadIAPrepareMultiFilePatchTool.Create(AService)
+    TRadIAPrepareMultiFilePatchTool.Create(AService, ABlockReviewSession)
   );
   ARegistry.RegisterTool(
-    TRadIAApplyMultiFilePatchTool.Create(AService)
+    TRadIAApplyMultiFilePatchTool.Create(AService, ABlockReviewSession)
   );
   ARegistry.RegisterTool(
-    TRadIARevertMultiFilePatchTool.Create(AService)
+    TRadIARevertMultiFilePatchTool.Create(AService, ABlockReviewSession)
   );
 end;
 

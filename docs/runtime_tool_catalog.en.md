@@ -67,6 +67,15 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ApplyMultiFilePatch` | Applies all reviewed buffer edits or compensates every partial write. | `RadIA.Core.MultiFilePatchTools.pas` |
 | `RevertMultiFilePatch` | Reverts all applied buffer edits or restores the proposed transaction. | `RadIA.Core.MultiFilePatchTools.pas` |
 
+## Block reviews
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `ListBlockReviews` | Lists revision-bound patch blocks and their pending review decisions. | `RadIA.Core.BlockReviewTools.pas` |
+| `DecideBlockReview` | Records an accept, reject, or edited decision without changing any editor buffer. | `RadIA.Core.BlockReviewTools.pas` |
+| `ApplyBlockReviews` | Applies all resolved block decisions as one preconditioned multi-file transaction. | `RadIA.Core.BlockReviewTools.pas` |
+| `ClearBlockReviews` | Discards the active review session without changing editor buffers. | `RadIA.Core.BlockReviewTools.pas` |
+
 ## Development transactions
 
 | Tool | Purpose | Source unit |
@@ -312,7 +321,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 36
-- Registered built-in tools: 126
+- Registered groups: 37
+- Registered built-in tools: 130
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -29,6 +29,7 @@ $portugueseGroupNames = @{
     "IDE navigation and project graph" = "Navegação na IDE e grafo do projeto"
     "Patches" = "Patches"
     "Multi-file patches" = "Patches em múltiplos arquivos"
+    "Block reviews" = "Revisões por bloco"
     "Development transactions" = "Transações de desenvolvimento"
     "Project templates" = "Templates de projeto"
     "Project files" = "Arquivos de projeto"

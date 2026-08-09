@@ -207,7 +207,7 @@ origem, instala a versão anterior, aplica o ZIP atual, executa o reparo e regis
 de origem na evidência. O parâmetro exige `-ExercisePackageLifecycle`.
 
 O resumo versionado da matriz 2.0.0 está em `ide_smoke_evidence_2.0.0.json`. Ele registra os hashes
-dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 126 tools,
+dos ZIPs e BPLs, os 10 ciclos aprovados por target, a faixa de duração, o catálogo de 130 tools,
 docking nativo, restauração do desktop e ausência de processos órfãos.
 
 Depois de gerar os três arquivos em `Output\Validation`, consolide a prova oficial com:
@@ -350,7 +350,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado versionado fica em `declarative_workflow_smoke_evidence_2.0.0.json`.
-O gate exige exatamente os três targets suportados, 126 ferramentas e o workflow
+O gate exige exatamente os três targets suportados, 130 ferramentas e o workflow
 `RadIADiagnosticInspection` carregado, registrado e executado por hot reload. A evidência também
 confirma a classificação `readOnly` e a conclusão das duas etapas do workflow.
 

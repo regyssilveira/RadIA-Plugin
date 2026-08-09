@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 126 internal tools: what each one does and at what stage
+This page explains RadIA's 130 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -96,6 +96,15 @@ passes `execution` classification and does not accept arbitrary names received f
 |`PrepareMultiFilePatch`|Creates a single preview for coordinated changes across multiple files.|In refactorings that cross units or require related changes.|
 |`ApplyMultiFilePatch`|Applies the set after validating all files.|When the full preview has been approved and no files are out of date.|
 |`RevertMultiFilePatch`|Reverses the set of files in a coordinated manner.|To fully undo an applied multi-file change.|
+
+## Block reviews
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`ListBlockReviews`|Lists revision-bound blocks and their current decisions.|After a single or multi-file preview publishes a review session.|
+|`DecideBlockReview`|Records accept, reject, or edit without changing a buffer.|From an editor action, command, chat, or MCP during review.|
+|`ApplyBlockReviews`|Composes all decisions and applies files in one transaction.|When no block remains pending and write consent is granted.|
+|`ClearBlockReviews`|Discards the session and decisions without changing files.|To cancel review or abandon a stale preview.|
 
 ## Development Transactions
 

@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 126 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 130 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -96,6 +96,15 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `PrepareMultiFilePatch` | Cria um preview único para alterações coordenadas em vários arquivos. | Em refatorações que atravessam units ou exigem mudanças relacionadas. |
 | `ApplyMultiFilePatch` | Aplica o conjunto depois de validar todos os arquivos. | Quando o preview completo foi aprovado e nenhum arquivo ficou desatualizado. |
 | `RevertMultiFilePatch` | Reverte o conjunto de arquivos de forma coordenada. | Para desfazer integralmente uma alteração multi-arquivo aplicada. |
+
+## Revisão por bloco
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `ListBlockReviews` | Lista blocos ligados ao arquivo e à revisão-base, incluindo a decisão atual. | Depois que um preview simples ou multiarquivo publica uma sessão revisável. |
+| `DecideBlockReview` | Registra aceitar, rejeitar ou editar sem alterar o buffer. | Por uma ação no editor, comando, chat ou MCP durante a revisão. |
+| `ApplyBlockReviews` | Compõe as decisões e aplica os arquivos em uma transação. | Quando nenhum bloco continua pendente e após consentimento de escrita. |
+| `ClearBlockReviews` | Descarta a sessão e suas decisões sem alterar arquivos. | Para cancelar a revisão ou abandonar um preview obsoleto. |
 
 ## Transações de desenvolvimento
 

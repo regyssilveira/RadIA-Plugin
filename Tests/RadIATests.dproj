@@ -129,6 +129,8 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolSecurity.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Patches.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.BlockReviews.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.BlockReviewSessions.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.BlockReviewTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.PatchTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Build.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.BuildTools.pas"/>
@@ -269,6 +271,7 @@
         <DCCReference Include="Source\RadIA.Tests.WorkspaceBoundary.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Patches.pas"/>
         <DCCReference Include="Source\RadIA.Tests.BlockReviews.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.BlockReviewSessions.pas"/>
         <DCCReference Include="Source\RadIA.Tests.BuildTools.pas"/>
         <DCCReference Include="Source\RadIA.Tests.DUnitX.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Git.pas"/>

@@ -3,12 +3,14 @@ unit RadIA.Core.PatchTools;
 interface
 
 uses
+  RadIA.Core.BlockReviewSessions,
   RadIA.Core.Patches,
   RadIA.Core.Tools;
 
 procedure RegisterRadIAPatchTools(
   const ARegistry: IRadIAToolRegistry;
-  const APatchService: IRadIAPatchService
+  const APatchService: IRadIAPatchService;
+  const ABlockReviewSession: IRadIABlockReviewSession = nil
 );
 
 implementation
@@ -25,6 +27,7 @@ type
   )
   protected
     FPatchService: IRadIAPatchService;
+    FBlockReviewSession: IRadIABlockReviewSession;
     function GetRequiredString(
       const AJson: TJSONObject;
       const AName: string
@@ -33,7 +36,10 @@ type
       const AResult: TRadIAPatchResult
     ): TRadIAToolResult;
   public
-    constructor Create(const APatchService: IRadIAPatchService);
+    constructor Create(
+      const APatchService: IRadIAPatchService;
+      const ABlockReviewSession: IRadIABlockReviewSession
+    );
     function Execute(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult; virtual; abstract;
@@ -85,13 +91,15 @@ const
 { TRadIAPatchToolBase }
 
 constructor TRadIAPatchToolBase.Create(
-  const APatchService: IRadIAPatchService
+  const APatchService: IRadIAPatchService;
+  const ABlockReviewSession: IRadIABlockReviewSession
 );
 begin
   inherited Create;
   if not Assigned(APatchService) then
     raise EArgumentNilException.Create('APatchService');
   FPatchService := APatchService;
+  FBlockReviewSession := ABlockReviewSession;
 end;
 
 function TRadIAPatchToolBase.GetRequiredString(
@@ -153,6 +161,8 @@ function TRadIAPreparePatchTool.Execute(
 ): TRadIAToolResult;
 var
   LJson: TJSONObject;
+  LPatchResult: TRadIAPatchResult;
+  LReviewResult: TRadIABlockReviewSessionResult;
   LSpec: TRadIAPatchSpec;
 begin
   LJson := TJSONObject.ParseJSONValue(
@@ -170,9 +180,23 @@ begin
       GetRequiredString(LJson, 'originalText'),
       LJson.GetValue<string>('replacementText', '')
     );
-    Result := PatchResultToToolResult(
-      FPatchService.Prepare(LSpec)
-    );
+    LPatchResult := FPatchService.Prepare(LSpec);
+    Result := PatchResultToToolResult(LPatchResult);
+    if LPatchResult.Success and Assigned(FBlockReviewSession) then
+    begin
+      FBlockReviewSession.Clear;
+      LReviewResult := FBlockReviewSession.PublishFile(
+        LSpec.TargetFile,
+        LSpec.BaseRevision,
+        LPatchResult.Preview.OriginalContent,
+        LPatchResult.Preview.ProposedContent
+      );
+      if not LReviewResult.Success then
+        Result := TRadIAToolResult.Failed(
+          LReviewResult.ErrorCode,
+          LReviewResult.ErrorMessage
+        );
+    end;
   finally
     LJson.Free;
   end;
@@ -273,7 +297,8 @@ end;
 
 procedure RegisterRadIAPatchTools(
   const ARegistry: IRadIAToolRegistry;
-  const APatchService: IRadIAPatchService
+  const APatchService: IRadIAPatchService;
+  const ABlockReviewSession: IRadIABlockReviewSession
 );
 begin
   if not Assigned(ARegistry) then
@@ -282,13 +307,13 @@ begin
     raise EArgumentNilException.Create('APatchService');
 
   ARegistry.RegisterTool(
-    TRadIAPreparePatchTool.Create(APatchService)
+    TRadIAPreparePatchTool.Create(APatchService, ABlockReviewSession)
   );
   ARegistry.RegisterTool(
-    TRadIAApplyPatchTool.Create(APatchService)
+    TRadIAApplyPatchTool.Create(APatchService, ABlockReviewSession)
   );
   ARegistry.RegisterTool(
-    TRadIARevertPatchTool.Create(APatchService)
+    TRadIARevertPatchTool.Create(APatchService, ABlockReviewSession)
   );
 end;
 

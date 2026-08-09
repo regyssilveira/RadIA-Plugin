@@ -242,7 +242,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 126 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 130 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)

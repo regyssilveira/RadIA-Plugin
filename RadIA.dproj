@@ -123,6 +123,8 @@
         <DCCReference Include="Source\Core\RadIA.Core.ToolSecurity.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Patches.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.BlockReviews.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.BlockReviewSessions.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.BlockReviewTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.PatchTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Build.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.BuildTools.pas"/>

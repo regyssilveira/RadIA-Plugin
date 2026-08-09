@@ -74,6 +74,8 @@ uses
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
   RadIA.Core.ToolSecurity, RadIA.Core.Patches, RadIA.Core.PatchTools,
   RadIA.Core.MultiFilePatches, RadIA.Core.MultiFilePatchTools,
+  RadIA.Core.BlockReviewSessions,
+  RadIA.Core.BlockReviewTools,
   RadIA.Core.DevelopmentTransactions,
   RadIA.Core.DevelopmentTransactionTools,
   RadIA.Core.Build, RadIA.Core.BuildTools, RadIA.OTA.Workspace,
@@ -1124,6 +1126,11 @@ initialization
       TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
     )
   );
+  TRadIAContainer.Register<IRadIABlockReviewSession>(
+    TRadIABlockReviewSession.Create(
+      TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
+    )
+  );
   TRadIAContainer.Register<IRadIAProjectOpeningFacade>(
     TRadIAOTAProjectOpeningFacade.Create
   );
@@ -1186,7 +1193,8 @@ initialization
   );
   RegisterRadIAPatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
-    TRadIAContainer.Resolve<IRadIAPatchService>
+    TRadIAContainer.Resolve<IRadIAPatchService>,
+    TRadIAContainer.Resolve<IRadIABlockReviewSession>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
@@ -1209,7 +1217,12 @@ initialization
   );
   RegisterRadIAMultiFilePatchTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
-    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
+    TRadIAContainer.Resolve<IRadIABlockReviewSession>
+  );
+  RegisterRadIABlockReviewTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIABlockReviewSession>
   );
   RegisterRadIADevelopmentTransactionTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

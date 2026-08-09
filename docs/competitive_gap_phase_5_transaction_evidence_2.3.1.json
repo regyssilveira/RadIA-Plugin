@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhaseTransaction",
+  "product": "RadIA",
+  "productVersion": "2.3.1",
+  "phase": 5,
+  "capability": "transactionalBlockReviewSession",
+  "status": "transactionPassed",
+  "generatedAtUtc": "2026-08-09T05:12:22Z",
+  "implementation": {
+    "singleFilePreviewPublication": true,
+    "multiFilePreviewPublication": true,
+    "allDecisionsRequired": true,
+    "mixedDecisionComposition": true,
+    "singleMultiFileTransaction": true,
+    "staleRevisionPreflight": true,
+    "partialWriteCompensation": true,
+    "clearWithoutWrite": true,
+    "registeredTools": 4,
+    "runtimeToolCount": 130
+  },
+  "validation": {
+    "delphi12Win32Tests": 952,
+    "delphi13Win32Tests": 952,
+    "delphi13Ide64Tests": 952,
+    "memoryLeaks": 0,
+    "webTests": 54,
+    "documentationTests": 20,
+    "eslintErrors": 0
+  },
+  "sonar": {
+    "analysisId": "1ddedc2f-30bd-4d50-879f-31c95445435f",
+    "qualityGate": "OK",
+    "newCoveragePercent": 83.3,
+    "newDuplicationPercent": 0.93816,
+    "globalCoveragePercent": 83.5,
+    "globalDuplicationPercent": 1.9,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  },
+  "remainingAcceptance": [
+    "Project revision-bound block markers in the real OTA editor gutter.",
+    "Expose mouse, keyboard, command, edit, explanation, and navigation actions from one state.",
+    "Validate gutter decisions, stale invalidation, and predictable undo on all supported IDE targets."
+  ]
+}

@@ -67,6 +67,15 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ApplyMultiFilePatch` | Aplica o conjunto depois de validar todos os arquivos. | `RadIA.Core.MultiFilePatchTools.pas` |
 | `RevertMultiFilePatch` | Reverte o conjunto de arquivos de forma coordenada. | `RadIA.Core.MultiFilePatchTools.pas` |
 
+## Revisões por bloco
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `ListBlockReviews` | Lista blocos ligados ao arquivo e à revisão-base, incluindo a decisão atual. | `RadIA.Core.BlockReviewTools.pas` |
+| `DecideBlockReview` | Registra aceitar, rejeitar ou editar sem alterar o buffer. | `RadIA.Core.BlockReviewTools.pas` |
+| `ApplyBlockReviews` | Compõe as decisões e aplica os arquivos em uma transação. | `RadIA.Core.BlockReviewTools.pas` |
+| `ClearBlockReviews` | Descarta a sessão e suas decisões sem alterar arquivos. | `RadIA.Core.BlockReviewTools.pas` |
+
 ## Transações de desenvolvimento
 
 | Ferramenta | O que faz | Unit de origem |
@@ -312,7 +321,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 36
-- Ferramentas internas registradas: 126
+- Grupos registrados: 37
+- Ferramentas internas registradas: 130
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

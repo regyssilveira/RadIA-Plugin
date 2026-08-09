@@ -166,6 +166,13 @@ ainda não torna o gutter visível: projeção OTA, comandos, transação e smok
 Consulte a
 [evidência do fundamento da Fase 5](competitive_gap_phase_5_foundation_evidence_2.3.1.json).
 
+**Transação implementada:** previews simples e multiarquivo agora publicam automaticamente uma
+sessão de blocos. As decisões não escrevem no editor; `ApplyBlockReviews` exige que todos os blocos
+estejam resolvidos e aplica o resultado pela transação multiarquivo existente, com preflight de SHA
+e compensação. `ListBlockReviews`, `DecideBlockReview`, `ApplyBlockReviews` e `ClearBlockReviews`
+estão no catálogo de 130 ferramentas. Consulte a
+[evidência transacional da Fase 5](competitive_gap_phase_5_transaction_evidence_2.3.1.json).
+
 **Aceite:** revisão multiarquivo real permite decisões diferentes por bloco, rejeita base obsoleta,
 gera undo previsível e passa por mouse e teclado nos três targets.
 

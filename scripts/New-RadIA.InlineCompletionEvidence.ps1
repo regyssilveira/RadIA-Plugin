@@ -3,7 +3,7 @@ param(
     [string]$OutputPath = (
         ".\docs\inline_completion_smoke_evidence_2.3.1.json"
     ),
-    [int]$RequiredToolCount = 126,
+    [int]$RequiredToolCount = 130,
     [int]$RequiredLineCount = 2
 )
 

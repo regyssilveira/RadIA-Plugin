@@ -73,6 +73,16 @@
       ]
     },
     {
+      "name": "Block reviews",
+      "source": "Source/Core/RadIA.Core.BlockReviewTools.pas",
+      "tools": [
+        "ListBlockReviews",
+        "DecideBlockReview",
+        "ApplyBlockReviews",
+        "ClearBlockReviews"
+      ]
+    },
+    {
       "name": "Development transactions",
       "source": "Source/Core/RadIA.Core.DevelopmentTransactionTools.pas",
       "tools": [
