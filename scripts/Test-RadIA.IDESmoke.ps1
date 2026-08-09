@@ -2277,7 +2277,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             if (-not $editorPosition.line) {
                 throw "No active cursor was found for inline diagnostics."
             }
-            $navigation = Invoke-RadIATool `
+            $navigation = Invoke-RadIASmokeTool `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
                 -Name "NavigateToFile" `
