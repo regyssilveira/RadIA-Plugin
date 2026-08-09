@@ -510,6 +510,27 @@ public static class RadIAKnowledgeSmokeNative
         IntPtr longParameter
     );
 
+    [DllImport("user32.dll")]
+    public static extern bool RedrawWindow(
+        IntPtr handle,
+        IntPtr updateRectangle,
+        IntPtr updateRegion,
+        uint flags
+    );
+
+    public static void RepaintDescendants(IntPtr parent)
+    {
+        const uint invalidate = 0x0001;
+        const uint updateNow = 0x0100;
+        const uint allChildren = 0x0080;
+        RedrawWindow(
+            parent,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            invalidate | updateNow | allChildren
+        );
+    }
+
     public static IntPtr FindVisibleWindow(
         uint processId,
         string expectedClassName
@@ -805,6 +826,10 @@ function Invoke-RadIAEditorRepaint {
         9
     )
     [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow(
+        $IDEProcess.MainWindowHandle
+    )
+    Start-Sleep -Milliseconds 250
+    [RadIAKnowledgeSmokeNative]::RepaintDescendants(
         $IDEProcess.MainWindowHandle
     )
     Start-Sleep -Milliseconds 250

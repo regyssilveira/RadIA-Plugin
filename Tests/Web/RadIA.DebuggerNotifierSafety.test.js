@@ -90,6 +90,19 @@ test('continuous journey waits for asynchronous debugger continuation', () => {
   assert.match(smoke, /debug process did not finish after ContinueDebugging/u);
 });
 
+test('IDE smoke requests a native editor repaint before visual acceptance', () => {
+  const smoke = fs.readFileSync(
+    path.join('scripts', 'Test-RadIA.IDESmoke.ps1'),
+    'utf8'
+  );
+  assert.match(smoke, /public static void RepaintDescendants/u);
+  assert.match(
+    smoke,
+    /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u
+  );
+  assert.match(smoke, /diagnostic\.painted/u);
+});
+
 test('transient process properties have initializing-safe fallbacks', () => {
   assert.match(
     notifierSource,
