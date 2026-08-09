@@ -3,7 +3,9 @@ unit RadIA.Core.ExternalMcpClient;
 interface
 
 uses
+  System.JSON,
   RadIA.Core.ExternalMcp,
+  RadIA.Core.ExternalMcpContent,
   RadIA.Core.ExternalMcpTransport,
   RadIA.Core.Tools;
 
@@ -39,13 +41,21 @@ type
     ): Boolean;
   end;
 
+  IRadIAExternalMcpDiscoveryClient = interface
+    ['{E67F563B-FD2A-43ED-A5E5-EF678CF5812E}']
+    function DiscoverPrompts(out AError: string): Boolean;
+    function DiscoverResources(out AError: string): Boolean;
+  end;
+
   TRadIAExternalMcpClient = class(
     TInterfacedObject,
     IRadIAExternalMcpClient,
-    IRadIAExternalMcpCancelableClient
+    IRadIAExternalMcpCancelableClient,
+    IRadIAExternalMcpDiscoveryClient
   )
   private
     FCatalog: IRadIAExternalMcpCatalog;
+    FContentCatalog: IRadIAExternalMcpContentCatalog;
     FConfig: TRadIAExternalMcpServerConfig;
     FConnected: Boolean;
     FLock: TObject;
@@ -68,8 +78,31 @@ type
       out AError: string
     ): Boolean;
     function ParseTools(
-      const AResultJson: string;
+      const AItems: TJSONArray;
       out ATools: TArray<TRadIAExternalMcpTool>;
+      out AError: string
+    ): Boolean;
+    function FetchListItems(
+      const AMethod: string;
+      const AItemName: string;
+      out AItems: TJSONArray;
+      out AError: string
+    ): Boolean;
+    class function AppendListPage(
+      const AResult: TJSONObject;
+      const AItemName: string;
+      const AItems: TJSONArray;
+      out ANextCursor: string;
+      out AError: string
+    ): Boolean; static;
+    function ParsePrompts(
+      const AItems: TJSONArray;
+      out APrompts: TArray<TRadIAExternalMcpPrompt>;
+      out AError: string
+    ): Boolean;
+    function ParseResources(
+      const AItems: TJSONArray;
+      out AResources: TArray<TRadIAExternalMcpResource>;
       out AError: string
     ): Boolean;
     procedure ConfigureCancellation(
@@ -125,7 +158,12 @@ type
     constructor Create(
       const ATransport: IRadIAExternalMcpTransport;
       const ACatalog: IRadIAExternalMcpCatalog
-    );
+    ); overload;
+    constructor Create(
+      const ATransport: IRadIAExternalMcpTransport;
+      const ACatalog: IRadIAExternalMcpCatalog;
+      const AContentCatalog: IRadIAExternalMcpContentCatalog
+    ); overload;
     destructor Destroy; override;
     function CallTool(
       const ANamespacedName: string;
@@ -145,6 +183,8 @@ type
       out AError: string
     ): Boolean;
     procedure Disconnect;
+    function DiscoverPrompts(out AError: string): Boolean;
+    function DiscoverResources(out AError: string): Boolean;
     function DiscoverTools(out AError: string): Boolean;
     function GetConnected: Boolean;
     function GetProtocolVersion: string;
@@ -153,7 +193,7 @@ type
 implementation
 
 uses
-  System.JSON,
+  System.Generics.Collections,
   System.SysUtils,
   Winapi.Windows,
   RadIA.Core.Version;
@@ -163,6 +203,8 @@ const
   CMcpProtocolVersion = '2025-06-18';
   CLegacyMcpProtocolVersion = '2024-11-05';
   CMaximumSkippedMessages = 100;
+  CMaximumListPages = 100;
+  CMaximumListItems = 4096;
   CCancellationPollIntervalMs = 50;
 
 function IsSupportedProtocolVersion(const AVersion: string): Boolean;
@@ -189,11 +231,35 @@ begin
   Result := True;
 end;
 
+function BuildCursorParams(const ACursor: string): string;
+var
+  LParams: TJSONObject;
+begin
+  if ACursor = '' then
+    Exit('{}');
+  LParams := TJSONObject.Create;
+  try
+    LParams.AddPair('cursor', ACursor);
+    Result := LParams.ToJSON;
+  finally
+    LParams.Free;
+  end;
+end;
+
 { TRadIAExternalMcpClient }
 
 constructor TRadIAExternalMcpClient.Create(
   const ATransport: IRadIAExternalMcpTransport;
   const ACatalog: IRadIAExternalMcpCatalog
+);
+begin
+  Create(ATransport, ACatalog, nil);
+end;
+
+constructor TRadIAExternalMcpClient.Create(
+  const ATransport: IRadIAExternalMcpTransport;
+  const ACatalog: IRadIAExternalMcpCatalog;
+  const AContentCatalog: IRadIAExternalMcpContentCatalog
 );
 begin
   inherited Create;
@@ -203,6 +269,7 @@ begin
     raise EArgumentNilException.Create('External MCP catalog is required.');
   FTransport := ATransport;
   FCatalog := ACatalog;
+  FContentCatalog := AContentCatalog;
   FLock := TObject.Create;
 end;
 
@@ -402,6 +469,8 @@ begin
     if FConnected then
     begin
       FCatalog.ClearServer(FConfig.Id);
+      if Assigned(FContentCatalog) then
+        FContentCatalog.ClearServer(FConfig.Id);
       FTransport.Stop;
       FConnected := False;
     end;
@@ -433,10 +502,82 @@ begin
   TMonitor.Enter(FLock);
   try
     if FConfig.Id <> '' then
+    begin
       FCatalog.ClearServer(FConfig.Id);
+      if Assigned(FContentCatalog) then
+        FContentCatalog.ClearServer(FConfig.Id);
+    end;
     FConnected := False;
     FProtocolVersion := '';
     FTransport.Stop;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
+function TRadIAExternalMcpClient.DiscoverPrompts(
+  out AError: string
+): Boolean;
+var
+  LItems: TJSONArray;
+  LPrompts: TArray<TRadIAExternalMcpPrompt>;
+begin
+  AError := '';
+  TMonitor.Enter(FLock);
+  try
+    if not FConnected then
+    begin
+      AError := 'External MCP client is not connected.';
+      Exit(False);
+    end;
+    if not Assigned(FContentCatalog) then
+    begin
+      AError := 'External MCP content catalog is not configured.';
+      Exit(False);
+    end;
+    if not FetchListItems('prompts/list', 'prompts', LItems, AError) then
+      Exit(False);
+    try
+      if not ParsePrompts(LItems, LPrompts, AError) then
+        Exit(False);
+      Result := FContentCatalog.PublishPrompts(FConfig, LPrompts, AError);
+    finally
+      LItems.Free;
+    end;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
+function TRadIAExternalMcpClient.DiscoverResources(
+  out AError: string
+): Boolean;
+var
+  LItems: TJSONArray;
+  LResources: TArray<TRadIAExternalMcpResource>;
+begin
+  AError := '';
+  TMonitor.Enter(FLock);
+  try
+    if not FConnected then
+    begin
+      AError := 'External MCP client is not connected.';
+      Exit(False);
+    end;
+    if not Assigned(FContentCatalog) then
+    begin
+      AError := 'External MCP content catalog is not configured.';
+      Exit(False);
+    end;
+    if not FetchListItems('resources/list', 'resources', LItems, AError) then
+      Exit(False);
+    try
+      if not ParseResources(LItems, LResources, AError) then
+        Exit(False);
+      Result := FContentCatalog.PublishResources(FConfig, LResources, AError);
+    finally
+      LItems.Free;
+    end;
   finally
     TMonitor.Exit(FLock);
   end;
@@ -446,7 +587,7 @@ function TRadIAExternalMcpClient.DiscoverTools(
   out AError: string
 ): Boolean;
 var
-  LResultJson: string;
+  LItems: TJSONArray;
   LTools: TArray<TRadIAExternalMcpTool>;
 begin
   AError := '';
@@ -457,14 +598,108 @@ begin
       AError := 'External MCP client is not connected.';
       Exit(False);
     end;
-    if not SendRequest('tools/list', '{}', nil, LResultJson, AError) then
+    if not FetchListItems('tools/list', 'tools', LItems, AError) then
       Exit(False);
-    if not ParseTools(LResultJson, LTools, AError) then
-      Exit(False);
-    Result := FCatalog.PublishTools(FConfig, LTools, AError);
+    try
+      if not ParseTools(LItems, LTools, AError) then
+        Exit(False);
+      Result := FCatalog.PublishTools(FConfig, LTools, AError);
+    finally
+      LItems.Free;
+    end;
   finally
     TMonitor.Exit(FLock);
   end;
+end;
+
+function TRadIAExternalMcpClient.FetchListItems(
+  const AMethod: string;
+  const AItemName: string;
+  out AItems: TJSONArray;
+  out AError: string
+): Boolean;
+var
+  LCursor: string;
+  LCursors: TDictionary<string, Boolean>;
+  LPage: Integer;
+  LParams: string;
+  LResult: TJSONObject;
+  LResultJson: string;
+begin
+  Result := False;
+  AItems := TJSONArray.Create;
+  AError := '';
+  LCursors := TDictionary<string, Boolean>.Create;
+  try
+    LCursor := '';
+    for LPage := 1 to CMaximumListPages do
+    begin
+      LParams := BuildCursorParams(LCursor);
+      if not SendRequest(AMethod, LParams, nil, LResultJson, AError) then
+        Exit;
+      if not ParseJsonObject(LResultJson, LResult) then
+      begin
+        AError := 'External MCP list result must be a JSON object.';
+        Exit;
+      end;
+      try
+        if not AppendListPage(
+          LResult,
+          AItemName,
+          AItems,
+          LCursor,
+          AError
+        ) then
+          Exit;
+      finally
+        LResult.Free;
+      end;
+      if LCursor = '' then
+        Exit(True);
+      if LCursors.ContainsKey(LCursor) then
+      begin
+        AError := 'External MCP list returned a repeated cursor.';
+        Exit;
+      end;
+      LCursors.Add(LCursor, True);
+    end;
+    AError := 'External MCP list exceeds the safe page limit.';
+  finally
+    LCursors.Free;
+    if not Result then
+      FreeAndNil(AItems);
+  end;
+end;
+
+class function TRadIAExternalMcpClient.AppendListPage(
+  const AResult: TJSONObject;
+  const AItemName: string;
+  const AItems: TJSONArray;
+  out ANextCursor: string;
+  out AError: string
+): Boolean;
+var
+  LIndex: Integer;
+  LPageItems: TJSONArray;
+begin
+  Result := False;
+  ANextCursor := '';
+  AError := '';
+  if not (AResult.GetValue(AItemName) is TJSONArray) then
+  begin
+    AError := 'External MCP list result does not contain ' + AItemName + '.';
+    Exit;
+  end;
+  LPageItems := TJSONArray(AResult.GetValue(AItemName));
+  if AItems.Count + LPageItems.Count > CMaximumListItems then
+  begin
+    AError := 'External MCP list exceeds the safe item limit.';
+    Exit;
+  end;
+  for LIndex := 0 to LPageItems.Count - 1 do
+    AItems.AddElement(LPageItems[LIndex].Clone as TJSONValue);
+  ANextCursor := AResult.GetValue<string>('nextCursor', '');
+  Result := True;
 end;
 
 function TRadIAExternalMcpClient.GetConnected: Boolean;
@@ -488,7 +723,7 @@ begin
 end;
 
 function TRadIAExternalMcpClient.ParseTools(
-  const AResultJson: string;
+  const AItems: TJSONArray;
   out ATools: TArray<TRadIAExternalMcpTool>;
   out AError: string
 ): Boolean;
@@ -496,53 +731,111 @@ var
   LDescription: string;
   LIndex: Integer;
   LName: string;
-  LObject: TJSONObject;
   LSchema: TJSONValue;
   LTool: TJSONObject;
-  LTools: TJSONArray;
 begin
   ATools := nil;
   AError := '';
-  if not ParseJsonObject(AResultJson, LObject) then
+  SetLength(ATools, AItems.Count);
+  for LIndex := 0 to AItems.Count - 1 do
   begin
-    AError := 'External MCP tools/list result must be a JSON object.';
-    Exit(False);
-  end;
-  try
-    if not (LObject.GetValue('tools') is TJSONArray) then
+    if not (AItems[LIndex] is TJSONObject) then
     begin
-      AError := 'External MCP tools/list result does not contain a tools array.';
+      AError := 'External MCP tool entry must be a JSON object.';
       Exit(False);
     end;
-    LTools := TJSONArray(LObject.GetValue('tools'));
-    SetLength(ATools, LTools.Count);
-    for LIndex := 0 to LTools.Count - 1 do
+    LTool := TJSONObject(AItems[LIndex]);
+    LName := LTool.GetValue<string>('name', '');
+    LDescription := LTool.GetValue<string>('description', '');
+    LSchema := LTool.GetValue('inputSchema');
+    if not (LSchema is TJSONObject) then
     begin
-      if not (LTools[LIndex] is TJSONObject) then
-      begin
-        AError := 'External MCP tool entry must be a JSON object.';
-        Exit(False);
-      end;
-      LTool := TJSONObject(LTools[LIndex]);
-      LName := LTool.GetValue<string>('name', '');
-      LDescription := LTool.GetValue<string>('description', '');
-      LSchema := LTool.GetValue('inputSchema');
-      if not (LSchema is TJSONObject) then
-      begin
-        AError := 'External MCP tool inputSchema must be a JSON object.';
-        Exit(False);
-      end;
-      ATools[LIndex] := TRadIAExternalMcpTool.Create(
-        FConfig.Id,
-        LName,
-        LDescription,
-        LSchema.ToJSON
-      );
+      AError := 'External MCP tool inputSchema must be a JSON object.';
+      Exit(False);
     end;
-    Result := True;
-  finally
-    LObject.Free;
+    ATools[LIndex] := TRadIAExternalMcpTool.Create(
+      FConfig.Id,
+      LName,
+      LDescription,
+      LSchema.ToJSON
+    );
   end;
+  Result := True;
+end;
+
+function TRadIAExternalMcpClient.ParsePrompts(
+  const AItems: TJSONArray;
+  out APrompts: TArray<TRadIAExternalMcpPrompt>;
+  out AError: string
+): Boolean;
+var
+  LArguments: TJSONValue;
+  LIndex: Integer;
+  LPrompt: TJSONObject;
+begin
+  APrompts := nil;
+  AError := '';
+  SetLength(APrompts, AItems.Count);
+  for LIndex := 0 to AItems.Count - 1 do
+  begin
+    if not (AItems[LIndex] is TJSONObject) then
+    begin
+      AError := 'External MCP prompt entry must be a JSON object.';
+      Exit(False);
+    end;
+    LPrompt := TJSONObject(AItems[LIndex]);
+    LArguments := LPrompt.GetValue('arguments');
+    if not Assigned(LArguments) then
+      LArguments := TJSONArray.Create;
+    try
+      if not (LArguments is TJSONArray) then
+      begin
+        AError := 'External MCP prompt arguments must be an array.';
+        Exit(False);
+      end;
+      APrompts[LIndex] := TRadIAExternalMcpPrompt.Create(
+        FConfig.Id,
+        LPrompt.GetValue<string>('name', ''),
+        LPrompt.GetValue<string>('description', ''),
+        LArguments.ToJSON
+      );
+    finally
+      if not Assigned(LPrompt.GetValue('arguments')) then
+        LArguments.Free;
+    end;
+  end;
+  Result := True;
+end;
+
+function TRadIAExternalMcpClient.ParseResources(
+  const AItems: TJSONArray;
+  out AResources: TArray<TRadIAExternalMcpResource>;
+  out AError: string
+): Boolean;
+var
+  LIndex: Integer;
+  LResource: TJSONObject;
+begin
+  AResources := nil;
+  AError := '';
+  SetLength(AResources, AItems.Count);
+  for LIndex := 0 to AItems.Count - 1 do
+  begin
+    if not (AItems[LIndex] is TJSONObject) then
+    begin
+      AError := 'External MCP resource entry must be a JSON object.';
+      Exit(False);
+    end;
+    LResource := TJSONObject(AItems[LIndex]);
+    AResources[LIndex] := TRadIAExternalMcpResource.Create(
+      FConfig.Id,
+      LResource.GetValue<string>('uri', ''),
+      LResource.GetValue<string>('name', ''),
+      LResource.GetValue<string>('description', ''),
+      LResource.GetValue<string>('mimeType', '')
+    );
+  end;
+  Result := True;
 end;
 
 function TRadIAExternalMcpClient.SendNotification(

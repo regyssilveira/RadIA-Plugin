@@ -232,8 +232,15 @@ arquivo. Payload corrompido, pertencente a outro usuário, acima dos limites ou 
 risco ou referência inválida é rejeitado sem configuração parcial nem substituição do snapshot
 anterior. IDs de servidor e nomes de grant precisam ser únicos.
 
-**Ainda nesta fase:** paginação e descoberta de resources/prompts, Configurações, `/doctor`,
-`/status` e smokes com servidor fixture MCP completo e servidor real autorizado.
+**Paginação e conteúdo implementados:** `tools/list`, `resources/list` e `prompts/list` percorrem
+`nextCursor` com limites de 100 páginas e 4.096 itens, rejeitam cursor repetido e só publicam depois
+de validar todas as páginas. Resources recebem URI federada `mcp://<servidor>/resources/<uri>` e
+prompts recebem namespace `mcp.<servidor>.prompt.<nome>`, preservando origem e identidade. Resposta,
+schema, URI, nome, descrição, MIME type ou argumentos inválidos não substituem o último catálogo
+válido. Catálogos de conteúdo são opcionais para manter compatibilidade com integrações existentes.
+
+**Ainda nesta fase:** Configurações, `/doctor`, `/status` e smokes com servidor fixture MCP completo
+e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.

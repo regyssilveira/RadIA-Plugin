@@ -69,11 +69,16 @@ type
     procedure UnsupportedProtocolVersionStopsConnection;
     [Test]
     procedure CancellationNotifiesServerAndIgnoresLateResponse;
+    [Test]
+    procedure PaginatedDiscoveryPublishesToolsResourcesAndPrompts;
+    [Test]
+    procedure RepeatedCursorPreservesLastValidToolCatalog;
   end;
 
 implementation
 
 uses
+  RadIA.Core.ExternalMcpContent,
   RadIA.Core.ExternalMcpClient;
 
 function ServerConfig: TRadIAExternalMcpServerConfig;
@@ -393,6 +398,89 @@ begin
     LError
   );
   Assert.Contains(LResult, 'fresh');
+end;
+
+procedure TRadIAExternalMcpClientTests.PaginatedDiscoveryPublishesToolsResourcesAndPrompts;
+var
+  LCatalog: IRadIAExternalMcpCatalog;
+  LClient: IRadIAExternalMcpClient;
+  LContent: IRadIAExternalMcpContentCatalog;
+  LDiscovery: IRadIAExternalMcpDiscoveryClient;
+  LError: string;
+  LMessages: TArray<string>;
+  LPrompts: TArray<TRadIAExternalMcpPrompt>;
+  LResources: TArray<TRadIAExternalMcpResource>;
+  LTransport: TRadIAFakeExternalMcpTransport;
+begin
+  LTransport := TRadIAFakeExternalMcpTransport.Create;
+  LTransport.AddResponse(InitializeResponse);
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":2,"result":{"tools":[{' +
+    '"name":"read_file","description":"Read","inputSchema":{}}],' +
+    '"nextCursor":"tools-2"}}'
+  );
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":3,"result":{"tools":[{' +
+    '"name":"write_file","description":"Write","inputSchema":{}}]}}'
+  );
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":4,"result":{"resources":[{' +
+    '"uri":"file:///project/readme.md","name":"Readme",' +
+    '"description":"Project readme","mimeType":"text/markdown"}]}}'
+  );
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":5,"result":{"prompts":[{' +
+    '"name":"review","description":"Review code",' +
+    '"arguments":[{"name":"path","required":true}]}]}}'
+  );
+  LCatalog := TRadIAExternalMcpCatalog.Create;
+  LContent := TRadIAExternalMcpContentCatalog.Create;
+  LClient := TRadIAExternalMcpClient.Create(LTransport, LCatalog, LContent);
+  Assert.IsTrue(Supports(LClient, IRadIAExternalMcpDiscoveryClient, LDiscovery));
+  Assert.IsTrue(LClient.Connect(ServerConfig, LError), LError);
+  Assert.IsTrue(LClient.DiscoverTools(LError), LError);
+  Assert.AreEqual<Integer>(2, Length(LCatalog.GetTools));
+  Assert.IsTrue(LDiscovery.DiscoverResources(LError), LError);
+  Assert.IsTrue(LDiscovery.DiscoverPrompts(LError), LError);
+  LResources := LContent.GetResources;
+  LPrompts := LContent.GetPrompts;
+  Assert.AreEqual<Integer>(1, Length(LResources));
+  Assert.StartsWith('mcp://fixture/resources/', LResources[0].FederatedUri);
+  Assert.AreEqual<Integer>(1, Length(LPrompts));
+  Assert.AreEqual('mcp.fixture.prompt.review', LPrompts[0].NamespacedName);
+  LMessages := LTransport.SentMessages;
+  Assert.Contains(LMessages[3], '"cursor":"tools-2"');
+end;
+
+procedure TRadIAExternalMcpClientTests.RepeatedCursorPreservesLastValidToolCatalog;
+var
+  LCatalog: IRadIAExternalMcpCatalog;
+  LClient: IRadIAExternalMcpClient;
+  LError: string;
+  LTransport: TRadIAFakeExternalMcpTransport;
+begin
+  LTransport := TRadIAFakeExternalMcpTransport.Create;
+  LTransport.AddResponse(InitializeResponse);
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":2,"result":{"tools":[{' +
+    '"name":"stable","description":"Stable","inputSchema":{}}]}}'
+  );
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":3,"result":{"tools":[],' +
+    '"nextCursor":"again"}}'
+  );
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":4,"result":{"tools":[],' +
+    '"nextCursor":"again"}}'
+  );
+  LCatalog := TRadIAExternalMcpCatalog.Create;
+  LClient := TRadIAExternalMcpClient.Create(LTransport, LCatalog);
+  Assert.IsTrue(LClient.Connect(ServerConfig, LError), LError);
+  Assert.IsTrue(LClient.DiscoverTools(LError), LError);
+  Assert.IsFalse(LClient.DiscoverTools(LError));
+  Assert.Contains(LError, 'repeated cursor');
+  Assert.AreEqual<Integer>(1, Length(LCatalog.GetTools));
+  Assert.AreEqual('stable', LCatalog.GetTools[0].ToolName);
 end;
 
 initialization

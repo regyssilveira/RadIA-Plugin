@@ -42,6 +42,7 @@ uses
   RadIA.Core.McpProvisioning in '..\Source\Core\RadIA.Core.McpProvisioning.pas',
   RadIA.Core.McpHandshake in '..\Source\Core\RadIA.Core.McpHandshake.pas',
   RadIA.Core.ExternalMcp in '..\Source\Core\RadIA.Core.ExternalMcp.pas',
+  RadIA.Core.ExternalMcpContent in '..\Source\Core\RadIA.Core.ExternalMcpContent.pas',
   RadIA.Core.ExternalMcpTransport in '..\Source\Core\RadIA.Core.ExternalMcpTransport.pas',
   RadIA.Core.ExternalMcpClient in '..\Source\Core\RadIA.Core.ExternalMcpClient.pas',
   RadIA.Core.ExternalMcpSecurity in '..\Source\Core\RadIA.Core.ExternalMcpSecurity.pas',

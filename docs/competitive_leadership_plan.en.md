@@ -226,8 +226,16 @@ Commands, arguments, working directories, grant paths, and possible secrets neve
 text in the file. Corrupted, cross-user, oversized, or invalid payloads are rejected without partial
 configuration or replacement of the previous snapshot. Server IDs and grant names must be unique.
 
-**Still in this phase:** pagination and resource/prompt discovery, Settings, `/doctor`, `/status`,
-and smokes with a complete MCP fixture server and one authorized real server.
+**Pagination and content implemented:** `tools/list`, `resources/list`, and `prompts/list` follow
+`nextCursor` with limits of 100 pages and 4,096 items, reject repeated cursors, and publish only
+after every page is validated. Resources receive the federated
+`mcp://<server>/resources/<uri>` URI and prompts use the `mcp.<server>.prompt.<name>` namespace,
+preserving origin and identity. Invalid responses, schemas, URIs, names, descriptions, MIME types,
+or arguments cannot replace the last valid catalog. Content catalogs remain optional for backwards
+compatibility with existing integrations.
+
+**Still in this phase:** Settings, `/doctor`, `/status`, and smokes with a complete MCP fixture
+server and one authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

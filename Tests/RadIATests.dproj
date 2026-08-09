@@ -124,6 +124,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.McpProvisioning.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.McpHandshake.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcp.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpContent.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpTransport.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpClient.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpSecurity.pas"/>
