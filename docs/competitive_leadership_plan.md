@@ -191,6 +191,16 @@ aceitam pelo teclado, rejeitam pelo mouse e protegem contra revisão obsoleta. C
 - Isolar processos, segredos e configuração por servidor; suportar desabilitar e remover com segurança.
 - Refletir saúde e próxima ação em Configurações, `/doctor` e `/status` sem exigir restart.
 
+**Fundamento implementado:** servidores externos agora possuem contrato validado para identidade,
+comando, argumentos, diretório, habilitação e timeout. Ferramentas descobertas recebem namespace
+estável `mcp.<servidor>.<ferramenta>` e só substituem o snapshot anterior após validação integral.
+Colisões, origem divergente, schema inválido, descrição excessiva e publicação por servidor
+desabilitado são rejeitados sem afetar o catálogo interno ou o último snapshot válido.
+
+**Ainda nesta fase:** transporte stdio, lifecycle, persistência segura, descoberta de capabilities,
+execução com consentimento, cancelamento, auditoria, Configurações, `/doctor`, `/status` e smokes com
+servidor fixture e servidor real autorizado.
+
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.
 

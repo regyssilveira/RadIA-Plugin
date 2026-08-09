@@ -188,6 +188,16 @@ OTA, accept by keyboard, reject by mouse, and protect against stale revisions. S
 - Isolate process, secrets, and settings per server; safely disable and remove servers.
 - Refresh health and next action in Settings, `/doctor`, and `/status` without restart.
 
+**Foundation implemented:** external servers now have a validated contract for identity, command,
+arguments, working directory, enabled state, and timeout. Discovered tools receive the stable
+`mcp.<server>.<tool>` namespace and replace the previous snapshot only after complete validation.
+Collisions, mismatched origins, invalid schemas, oversized descriptions, and publication from a
+disabled server are rejected without affecting the internal catalog or the last valid snapshot.
+
+**Still in this phase:** stdio transport, lifecycle, secure persistence, capability discovery,
+consented execution, cancellation, audit, Settings, `/doctor`, `/status`, and smokes with a fixture
+server and one authorized real server.
+
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.
 
