@@ -1,7 +1,7 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\InlineReview",
     [string]$OutputPath = (
-        ".\docs\inline_review_smoke_evidence_2.0.0.json"
+        ".\docs\competitive_gap_phase_5_gutter_evidence_2.3.1.json"
     ),
     [int]$RequiredToolCount = 130
 )
@@ -110,7 +110,12 @@ foreach ($target in $targets) {
                 $cycle.InlineReviewRevisionMatched -eq $true -and
                 $cycle.InlineReviewCount -ge 1 -and
                 $cycle.InlineReviewRejected -eq $true -and
-                $cycle.InlineReviewStaleRevisionRejected -eq $true
+                $cycle.InlineReviewStaleRevisionRejected -eq $true -and
+                $cycle.BlockReviewPublished -eq $true -and
+                $cycle.BlockReviewGutterPainted -eq $true -and
+                $cycle.BlockReviewCount -ge 1 -and
+                $cycle.BlockReviewKeyboardAccepted -eq $true -and
+                $cycle.BlockReviewMouseRejected -eq $true
             ) `
             -Message (
                 "$($target.evidenceFile) contains an incomplete " +
@@ -132,6 +137,10 @@ foreach ($target in $targets) {
         revisionMatched = $true
         rejected = $true
         staleRevisionRejected = $true
+        blockReviewPublished = $true
+        blockReviewGutterPainted = $true
+        blockReviewKeyboardAccepted = $true
+        blockReviewMouseRejected = $true
         generatedAtUtc = $evidence.generatedAtUtc
     }
 }
@@ -143,7 +152,7 @@ if ($outputDirectory) {
 }
 [PSCustomObject]@{
     schemaVersion = 1
-    evidenceKind = "inlineReviewVisualMatrix"
+    evidenceKind = "blockReviewVisualMatrix"
     product = "RadIA"
     productVersion = $productVersion
     sourceCommit = $sourceCommit

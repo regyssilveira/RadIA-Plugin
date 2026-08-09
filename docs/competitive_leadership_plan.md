@@ -158,23 +158,25 @@ rejeita Ghost Text sem alterar antecipadamente o buffer, com undo único e nenhu
 - Suportar múltiplos arquivos sem perder navegação, foco ou estado de revisão.
 - Integrar o resultado à timeline e à auditoria, sem duplicar a fonte do diff.
 
-**Fundamento implementado:** `TRadIABlockReviewEngine` agora separa mudanças independentes,
-vincula cada bloco ao arquivo e à revisão-base, atribui identidade estável e recompõe o arquivo
-com decisões individuais de aceitar, rejeitar ou editar. O motor preserva CRLF e limita a matriz
-de comparação; arquivos acima do limite continuam seguros por meio de um bloco agregado. Essa base
-ainda não torna o gutter visível: projeção OTA, comandos, transação e smoke real permanecem nesta fase.
+**Implementação concluída:** `TRadIABlockReviewEngine` separa mudanças independentes, vincula cada
+bloco ao arquivo e à revisão-base, atribui identidade estável e recompõe o arquivo com decisões
+individuais de aceitar, rejeitar ou editar. O motor preserva CRLF e limita a matriz de comparação;
+arquivos acima do limite continuam seguros por meio de um bloco agregado.
 Consulte a
 [evidência do fundamento da Fase 5](competitive_gap_phase_5_foundation_evidence_2.3.1.json).
 
-**Transação implementada:** previews simples e multiarquivo agora publicam automaticamente uma
-sessão de blocos. As decisões não escrevem no editor; `ApplyBlockReviews` exige que todos os blocos
-estejam resolvidos e aplica o resultado pela transação multiarquivo existente, com preflight de SHA
-e compensação. `ListBlockReviews`, `DecideBlockReview`, `ApplyBlockReviews` e `ClearBlockReviews`
-estão no catálogo de 130 ferramentas. Consulte a
+Previews simples e multiarquivo publicam automaticamente uma sessão de blocos. Marcadores OTA no
+gutter mostram os estados pendente, aceito, rejeitado e editado. O menu do marcador permite aceitar,
+rejeitar, editar, explicar, aplicar ou descartar; comandos e atalhos configuráveis oferecem as mesmas
+ações e navegação entre blocos e arquivos. As decisões não escrevem no editor até a aplicação.
+`ApplyBlockReviews` exige todos os blocos resolvidos e usa a transação multiarquivo existente, com
+preflight de SHA e compensação. `ListBlockReviews`, `DecideBlockReview`, `ApplyBlockReviews` e
+`ClearBlockReviews` estão no catálogo de 130 ferramentas. Consulte a
 [evidência transacional da Fase 5](competitive_gap_phase_5_transaction_evidence_2.3.1.json).
 
-**Aceite:** revisão multiarquivo real permite decisões diferentes por bloco, rejeita base obsoleta,
-gera undo previsível e passa por mouse e teclado nos três targets.
+**Aceite comprovado:** 953 testes passam sem falhas ou vazamentos em cada target. Smokes reais no
+Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64 publicam revisões, pintam linha e gutter pela OTA,
+aceitam pelo teclado, rejeitam pelo mouse e protegem contra revisão obsoleta.
 
 **Ainda faltará:** cliente e federação MCP externa.
 

@@ -156,23 +156,24 @@ rejects Ghost Text without premature writes, with one undo and no unintended cod
 - Support multiple files without losing navigation, focus, or review state.
 - Feed results into timeline and audit without duplicating diff truth.
 
-**Foundation implemented:** `TRadIABlockReviewEngine` now separates independent changes, binds each
+**Implementation completed:** `TRadIABlockReviewEngine` separates independent changes, binds each
 block to its file and base revision, assigns a stable identity, and recomposes the file from
 individual accept, reject, or edit decisions. The engine preserves CRLF and bounds its comparison
-matrix; files beyond the limit remain safe through one aggregated block. This foundation does not
-make the gutter visible yet: OTA projection, commands, transactions, and real smoke remain in this
-phase. See the
+matrix; files beyond the limit remain safe through one aggregated block. See the
 [Phase 5 foundation evidence](competitive_gap_phase_5_foundation_evidence_2.3.1.json).
 
-**Transaction implemented:** single and multi-file previews now publish a block session
-automatically. Decisions do not write to the editor; `ApplyBlockReviews` requires every block to be
-resolved and applies the result through the existing multi-file transaction, with SHA preflight and
-compensation. `ListBlockReviews`, `DecideBlockReview`, `ApplyBlockReviews`, and `ClearBlockReviews`
-are part of the 130-tool catalog. See the
+Single and multi-file previews automatically publish a block session. OTA gutter markers show
+pending, accepted, rejected, and edited states. The marker menu can accept, reject, edit, explain,
+apply, or discard; commands and configurable shortcuts provide the same actions and navigation
+across blocks and files. Decisions do not write to the editor before application.
+`ApplyBlockReviews` requires every block to be resolved and uses the existing multi-file
+transaction, with SHA preflight and compensation. `ListBlockReviews`, `DecideBlockReview`,
+`ApplyBlockReviews`, and `ClearBlockReviews` are part of the 130-tool catalog. See the
 [Phase 5 transaction evidence](competitive_gap_phase_5_transaction_evidence_2.3.1.json).
 
-**Acceptance:** a real multi-file review makes different decisions per block, rejects stale bases,
-produces predictable undo, and passes mouse and keyboard validation on all three targets.
+**Acceptance proven:** 953 tests pass without failures or leaks on every target. Real smokes on
+Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 publish reviews, paint line and gutter through
+OTA, accept by keyboard, reject by mouse, and protect against stale revisions.
 
 **Still missing:** external MCP client and federation.
 

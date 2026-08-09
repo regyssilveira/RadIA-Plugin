@@ -56,6 +56,12 @@ prefix, suffix, or suggested content.
 | Reject the suggestion | `Ctrl+Alt+Backspace` |
 | Accept review at the current line | `Ctrl+Alt+Enter` |
 | Reject review at the current line | `Ctrl+Alt+R` |
+| Next review block | `Ctrl+Alt+PageDown` |
+| Previous review block | `Ctrl+Alt+PageUp` |
+| Edit block at cursor | `Ctrl+Alt+E` |
+| Explain block at cursor | `Ctrl+Alt+I` |
+| Apply resolved review | `Ctrl+Alt+A` |
+| Discard review session | `Ctrl+Alt+Delete` |
 
 The submenu also offers **Show Inline Completion Route Status**, with no default shortcut, to
 explain how the latest suggestion was executed.
@@ -71,12 +77,17 @@ opening the context menu. To change them, open **Rad IA > Settings > Editor Assi
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
 nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
 reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
-reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R
+reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R;
+reviewNext=Ctrl+Alt+PageDown; reviewPrevious=Ctrl+Alt+PageUp;
+reviewEdit=Ctrl+Alt+E; reviewExplain=Ctrl+Alt+I;
+reviewApply=Ctrl+Alt+A; reviewClear=Ctrl+Alt+Delete
 ```
 
 The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. Terminal and
-review decisions use `terminal`, `reviewAccept`, and `reviewReject`; legacy profiles receive the
-default shortcuts automatically. RadIA does
+review decisions use `terminal`, `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`,
+`reviewEdit`, `reviewExplain`, `reviewApply`, and `reviewClear`; legacy profiles receive the default
+shortcuts automatically. See [block-level review](block_reviews.en.md) for markers, colors,
+transactions, and navigation. RadIA does
 not save incomplete profiles, invalid keys, or duplicate shortcuts. The profile reloads after
 returning to the editor, without restarting the IDE. If the active Delphi keymap already owns a
 shortcut, the existing command keeps priority and RadIA records the conflict in its log.

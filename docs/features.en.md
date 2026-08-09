@@ -90,7 +90,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Local MCP Server** | Integration | Stdio bridge, named pipe, and per-PID discovery. | ✅ Completed |
 | **Agentic Designer** | Integration | Reviewable components, properties, events, and layout. | ✅ Completed |
 | **Agentic Debugger** | Integration | State, control, breakpoints, expression evaluation, and watches. | ✅ Completed |
-| **Inline Review** | Editor | Visual review with controlled apply and reversal in the editor. | ✅ Completed |
+| **Inline and block review** | Editor | Gutter markers to accept, reject, edit, explain, navigate, and transactionally apply single- or multi-file changes. | ✅ Completed |
 | **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |

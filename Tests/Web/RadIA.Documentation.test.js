@@ -284,6 +284,41 @@ test('inline completion smoke proves acceptance, one undo, and clean rejection',
   assert.doesNotMatch(smoke, /InlineCompletionSuggestionContent/u);
 });
 
+test('block review documents every decision surface and real gutter evidence', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'block_reviews.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'block_reviews.en.md'),
+    'utf8'
+  );
+  const smoke = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'Test-RadIA.IDESmoke.ps1'),
+    'utf8'
+  );
+  const actions = [
+    'reviewAccept', 'reviewReject', 'reviewNext', 'reviewPrevious',
+    'reviewEdit', 'reviewExplain', 'reviewApply', 'reviewClear'
+  ];
+  actions.forEach(action => {
+    assert.ok(portuguese.includes(action), `Portuguese guide is missing ${action}`);
+    assert.ok(english.includes(action), `English guide is missing ${action}`);
+  });
+  ['PreparePatch', 'PrepareMultiFilePatch', 'ListBlockReviews',
+    'DecideBlockReview', 'ApplyBlockReviews', 'ClearBlockReviews'].forEach(tool => {
+    assert.ok(portuguese.includes(tool), `Portuguese guide is missing ${tool}`);
+    assert.ok(english.includes(tool), `English guide is missing ${tool}`);
+  });
+  assert.match(portuguese, /gutter/u);
+  assert.match(portuguese, /hash da revisão-base/u);
+  assert.match(english, /base-revision hash/u);
+  assert.ok(smoke.includes('BlockReviewPublished'));
+  assert.ok(smoke.includes('BlockReviewGutterPainted'));
+  assert.ok(smoke.includes('BlockReviewKeyboardAccepted'));
+  assert.ok(smoke.includes('BlockReviewMouseRejected'));
+});
+
 test('primary documentation entry points expose task-oriented navigation', () => {
   const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
   const documentationHub = fs.readFileSync(
@@ -408,7 +443,7 @@ test('every visible settings group has a detailed central reference', () => {
     'Enable local semantic project knowledge',
     'remote embedding provider',
     'ghost text (inline completion)',
-    'RadIA shortcuts',
+    'RadIA shortcut profile',
     'Chat executor',
     'CLI client',
     'CLI executable override',

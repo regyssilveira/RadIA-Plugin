@@ -339,6 +339,11 @@ uma solicitação FIM dedicada; outros providers usam fallback tradicional ident
 latência e motivo do fallback. Aceite, aceite parcial, alternativa e rejeição continuam disponíveis
 por atalhos configuráveis. Consulte a [referência completa de FIM](inline_completion.md).
 
+Alterações preparadas pelo agente também podem ser revisadas bloco a bloco diretamente no gutter.
+Cada marcador permite aceitar, rejeitar, editar ou explicar a mudança; a navegação e a aplicação
+possuem atalhos configuráveis e mudanças multiarquivo só são gravadas depois que todos os blocos
+forem resolvidos. Consulte o [guia completo de revisão por bloco](block_reviews.md).
+
 Consulte o [guia de editor e geração](user_guide_editor_generation.md).
 
 ### 4.4 Geração

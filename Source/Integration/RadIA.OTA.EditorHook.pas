@@ -9,6 +9,8 @@ uses
   RadIA.Core.InlineCompletion,
   RadIA.Core.InlineReviews,
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.BlockReviews,
+  RadIA.Core.BlockReviewSessions,
   RadIA.OTA.ContextParser,
   RadIA.OTA.InlineCompletion;
 
@@ -53,6 +55,36 @@ type
       var AResult: TKeyBindingResult
     );
     procedure ReviewReject(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewNext(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewPrevious(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewEdit(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewExplain(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewApply(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure ReviewClear(
       const AContext: IOTAKeyContext;
       AKeyCode: TShortCut;
       var AResult: TKeyBindingResult
@@ -152,6 +184,20 @@ type
     procedure OnInlineCompletionStatusExecute(Sender: TObject);
     procedure OnInlineReviewAcceptExecute(Sender: TObject);
     procedure OnInlineReviewRejectExecute(Sender: TObject);
+    procedure OnBlockReviewNextExecute(Sender: TObject);
+    procedure OnBlockReviewPreviousExecute(Sender: TObject);
+    procedure OnBlockReviewEditExecute(Sender: TObject);
+    procedure OnBlockReviewExplainExecute(Sender: TObject);
+    procedure OnBlockReviewApplyExecute(Sender: TObject);
+    procedure OnBlockReviewClearExecute(Sender: TObject);
+    function DecideBlockReviewAtCursor(
+      const ADecision: TRadIABlockReviewDecision
+    ): Boolean;
+    function TryGetBlockReviewAtCursor(
+      out ASession: IRadIABlockReviewSession;
+      out AReview: TRadIABlockReview
+    ): Boolean;
+    function NavigateBlockReview(const AForward: Boolean): Boolean;
     function ReviewWithSmartDiff(
       const AService: IRadIAInlineReviewService;
       const AReview: TRadIAInlineReview
@@ -192,6 +238,7 @@ implementation
 
 uses
   RadIA.Core.Patches,
+  RadIA.Core.IDENavigation,
   System.Generics.Collections,
   System.SysUtils,
   System.UITypes,
@@ -354,6 +401,18 @@ begin
     ReviewReject,
     'reviewReject'
   );
+  AddBinding(ABindingServices, LProfile.ShortcutFor(isaReviewNext),
+    ReviewNext, 'reviewNext');
+  AddBinding(ABindingServices, LProfile.ShortcutFor(isaReviewPrevious),
+    ReviewPrevious, 'reviewPrevious');
+  AddBinding(ABindingServices, LProfile.ShortcutFor(isaReviewEdit),
+    ReviewEdit, 'reviewEdit');
+  AddBinding(ABindingServices, LProfile.ShortcutFor(isaReviewExplain),
+    ReviewExplain, 'reviewExplain');
+  AddBinding(ABindingServices, LProfile.ShortcutFor(isaReviewApply),
+    ReviewApply, 'reviewApply');
+  AddBinding(ABindingServices, LProfile.ShortcutFor(isaReviewClear),
+    ReviewClear, 'reviewClear');
 end;
 
 constructor TRadIAInlineCompletionKeyboardBinding.Create(
@@ -1010,6 +1069,18 @@ begin
     AProfile.ShortcutFor(isaReviewReject),
     OnInlineReviewRejectExecute
   );
+  AddItem('Next Review Block', AProfile.ShortcutFor(isaReviewNext),
+    OnBlockReviewNextExecute);
+  AddItem('Previous Review Block',
+    AProfile.ShortcutFor(isaReviewPrevious), OnBlockReviewPreviousExecute);
+  AddItem('Edit Review Block at Cursor',
+    AProfile.ShortcutFor(isaReviewEdit), OnBlockReviewEditExecute);
+  AddItem('Explain Review Block at Cursor',
+    AProfile.ShortcutFor(isaReviewExplain), OnBlockReviewExplainExecute);
+  AddItem('Apply Resolved Block Review',
+    AProfile.ShortcutFor(isaReviewApply), OnBlockReviewApplyExecute);
+  AddItem('Discard Block Review Session',
+    AProfile.ShortcutFor(isaReviewClear), OnBlockReviewClearExecute);
   AddItem(
     'Pause/Resume Inline Completion for Session',
     0,
@@ -1385,6 +1456,72 @@ begin
   RefreshInlineCompletionWatch;
 end;
 
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewNext(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnBlockReviewNextExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewPrevious(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnBlockReviewPreviousExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewEdit(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnBlockReviewEditExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewExplain(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnBlockReviewExplainExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewApply(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnBlockReviewApplyExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.ReviewClear(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnBlockReviewClearExecute(nil);
+end;
+
 {$IFNDEF TESTS}
 function TRadIAEditorHook.TryRunInlineCompletionAcceptanceDiagnostic:
   Boolean;
@@ -1500,6 +1637,8 @@ var
   LReview: TRadIAInlineReview;
   LService: IRadIAInlineReviewService;
 begin
+  if DecideBlockReviewAtCursor(brdAccepted) then
+    Exit;
   if not TryGetInlineReviewAtCursor(LService, LReview) then
   begin
     ShowMessage('No inline review is available at the current line.');
@@ -1540,6 +1679,8 @@ var
   LReview: TRadIAInlineReview;
   LService: IRadIAInlineReviewService;
 begin
+  if DecideBlockReviewAtCursor(brdRejected) then
+    Exit;
   if not TryGetInlineReviewAtCursor(LService, LReview) then
   begin
     ShowMessage('No inline review is available at the current line.');
@@ -1554,6 +1695,161 @@ begin
     'Inline review rejected from the editor: ' + LReview.Id,
     'InlineReview'
   );
+end;
+
+function TRadIAEditorHook.DecideBlockReviewAtCursor(
+  const ADecision: TRadIABlockReviewDecision
+): Boolean;
+var
+  LResult: TRadIABlockReviewSessionResult;
+  LReview: TRadIABlockReview;
+  LSession: IRadIABlockReviewSession;
+begin
+  Result := TryGetBlockReviewAtCursor(LSession, LReview);
+  if not Result then
+    Exit;
+  LResult := LSession.Decide(LReview.Id, ADecision);
+  if not LResult.Success then
+    ShowMessage('The review block could not be updated: ' +
+      LResult.ErrorMessage);
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewNextExecute(Sender: TObject);
+begin
+  if not NavigateBlockReview(True) then
+    ShowMessage('No block review is available.');
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewPreviousExecute(Sender: TObject);
+begin
+  if not NavigateBlockReview(False) then
+    ShowMessage('No block review is available.');
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewEditExecute(Sender: TObject);
+{$IFNDEF TESTS}
+var
+  LForm: TRadIAFormAIDiff;
+  LResult: TRadIABlockReviewSessionResult;
+  LReview: TRadIABlockReview;
+  LSession: IRadIABlockReviewSession;
+{$ENDIF}
+begin
+  {$IFNDEF TESTS}
+  if not TryGetBlockReviewAtCursor(LSession, LReview) then
+  begin
+    ShowMessage('No block review is available at the current line.');
+    Exit;
+  end;
+  LForm := TRadIAFormAIDiff.Create(nil);
+  try
+    LForm.InitializePreparedDiff(
+      LReview.TargetFile,
+      LReview.OriginalText,
+      LReview.ProposedText
+    );
+    if LForm.ShowModal <> mrOk then
+      Exit;
+    LResult := LSession.Decide(
+      LReview.Id,
+      brdEdited,
+      LForm.SuggestedCode
+    );
+    if not LResult.Success then
+      ShowMessage('The review block could not be edited: ' +
+        LResult.ErrorMessage);
+  finally
+    LForm.Free;
+  end;
+  {$ENDIF}
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewExplainExecute(Sender: TObject);
+var
+  LReview: TRadIABlockReview;
+  LSession: IRadIABlockReviewSession;
+begin
+  if not TryGetBlockReviewAtCursor(LSession, LReview) then
+  begin
+    ShowMessage('No block review is available at the current line.');
+    Exit;
+  end;
+  ShowMessage(
+    'File: ' + LReview.TargetFile + sLineBreak +
+    'Original lines: ' + LReview.OriginalStartLine.ToString + ' (' +
+    LReview.OriginalLineCount.ToString + ')' + sLineBreak +
+    'Proposed lines: ' + LReview.ProposedStartLine.ToString + ' (' +
+    LReview.ProposedLineCount.ToString + ')' + sLineBreak + sLineBreak +
+    'Original:' + sLineBreak + LReview.OriginalText + sLineBreak +
+    'Proposed:' + sLineBreak + LReview.ProposedText
+  );
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewApplyExecute(Sender: TObject);
+var
+  LResult: TRadIABlockReviewSessionResult;
+  LSession: IRadIABlockReviewSession;
+begin
+  if not TRadIAContainer.TryResolve<IRadIABlockReviewSession>(LSession) then
+  begin
+    ShowMessage('Block review is not available.');
+    Exit;
+  end;
+  LResult := LSession.Apply;
+  if not LResult.Success then
+    ShowMessage('The block review could not be applied: ' +
+      LResult.ErrorMessage);
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewClearExecute(Sender: TObject);
+var
+  LSession: IRadIABlockReviewSession;
+begin
+  if not TRadIAContainer.TryResolve<IRadIABlockReviewSession>(LSession) then
+    Exit;
+  if MessageDlg('Discard the current block review session?',
+    mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+    LSession.Clear;
+end;
+
+function TRadIAEditorHook.NavigateBlockReview(
+  const AForward: Boolean
+): Boolean;
+var
+  LBlocks: TArray<TRadIABlockReview>;
+  LCurrentIndex: Integer;
+  LIndex: Integer;
+  LNavigation: IRadIAIDENavigationFacade;
+  LReview: TRadIABlockReview;
+  LSession: IRadIABlockReviewSession;
+begin
+  Result := False;
+  if not TRadIAContainer.TryResolve<IRadIABlockReviewSession>(LSession) or
+    not TRadIAContainer.TryResolve<IRadIAIDENavigationFacade>(LNavigation) then
+    Exit;
+  LBlocks := LSession.ListBlocks;
+  if Length(LBlocks) = 0 then
+    Exit;
+  LCurrentIndex := -1;
+  if TryGetBlockReviewAtCursor(LSession, LReview) then
+    for LIndex := 0 to High(LBlocks) do
+      if SameText(LBlocks[LIndex].Id, LReview.Id) then
+      begin
+        LCurrentIndex := LIndex;
+        Break;
+      end;
+  if AForward then
+    LCurrentIndex := (LCurrentIndex + 1) mod Length(LBlocks)
+  else if LCurrentIndex <= 0 then
+    LCurrentIndex := High(LBlocks)
+  else
+    Dec(LCurrentIndex);
+  LReview := LBlocks[LCurrentIndex];
+  Result := LNavigation.NavigateToFile(
+    LReview.TargetFile,
+    LReview.OriginalStartLine,
+    1
+  ).Success;
 end;
 
 function TRadIAEditorHook.ReviewWithSmartDiff(
@@ -1659,6 +1955,47 @@ begin
       AReview := LReview;
       Exit(True);
     end;
+end;
+
+function TRadIAEditorHook.TryGetBlockReviewAtCursor(
+  out ASession: IRadIABlockReviewSession;
+  out AReview: TRadIABlockReview
+): Boolean;
+var
+  LBlock: TRadIABlockReview;
+  LBlocks: TArray<TRadIABlockReview>;
+  LEditorServices: IOTAEditorServices;
+  LFileName: string;
+  LLastLine: Integer;
+  LRow: Integer;
+  LView: IOTAEditView;
+begin
+  Result := False;
+  ASession := nil;
+  AReview := Default(TRadIABlockReview);
+  if not TRadIAContainer.TryResolve<IRadIABlockReviewSession>(ASession) or
+    not Supports(BorlandIDEServices, IOTAEditorServices, LEditorServices) then
+    Exit;
+  LView := LEditorServices.TopView;
+  if not Assigned(LView) or not Assigned(LView.Position) or
+    not Assigned(LView.Buffer) then
+    Exit;
+  LFileName := LView.Buffer.FileName;
+  LRow := LView.Position.Row;
+  LBlocks := ASession.ListBlocks;
+  for LBlock in LBlocks do
+  begin
+    LLastLine := LBlock.OriginalStartLine +
+      LBlock.OriginalLineCount - 1;
+    if LLastLine < LBlock.OriginalStartLine then
+      LLastLine := LBlock.OriginalStartLine;
+    if SameFileName(LFileName, LBlock.TargetFile) and
+      (LRow >= LBlock.OriginalStartLine) and (LRow <= LLastLine) then
+    begin
+      AReview := LBlock;
+      Exit(True);
+    end;
+  end;
 end;
 
 procedure TRadIAEditorHook.RefreshKeyboardBinding;

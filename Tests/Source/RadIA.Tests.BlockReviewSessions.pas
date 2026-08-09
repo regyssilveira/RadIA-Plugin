@@ -4,11 +4,28 @@ interface
 
 uses
   DUnitX.TestFramework,
+  RadIA.Core.BlockReviews,
   RadIA.Core.BlockReviewSessions,
   RadIA.Core.Tools,
   RadIA.Tests.MultiFilePatches;
 
 type
+  TRadIABlockReviewVisualStub = class(
+    TInterfacedObject,
+    IRadIABlockReviewVisualFacade
+  )
+  private
+    FBlocks: TArray<TRadIABlockReview>;
+    FClearCount: Integer;
+    FShowCount: Integer;
+  public
+    procedure ShowBlocks(const ABlocks: TArray<TRadIABlockReview>);
+    procedure ClearBlocks;
+    property Blocks: TArray<TRadIABlockReview> read FBlocks;
+    property ClearCount: Integer read FClearCount;
+    property ShowCount: Integer read FShowCount;
+  end;
+
   [TestFixture]
   TTestRadIABlockReviewSessions = class
   private
@@ -17,6 +34,7 @@ type
     FRegistry: IRadIAToolRegistry;
     FSecondFile: string;
     FService: IRadIABlockReviewSession;
+    FVisual: TRadIABlockReviewVisualStub;
     FWorkspace: TRadIAMultiFileWorkspaceStub;
     function RevisionOf(const AFileName: string): string;
   public
@@ -38,6 +56,8 @@ type
     procedure PrepareToolPublishesReviewSession;
     [Test]
     procedure RegistersBlockReviewToolsWithSafeRisks;
+    [Test]
+    procedure RefreshesAndClearsVisualProjection;
   end;
 
 implementation
@@ -46,11 +66,24 @@ uses
   System.IOUtils,
   System.SysUtils,
   RadIA.Core.BlockReviewTools,
-  RadIA.Core.BlockReviews,
   RadIA.Core.MultiFilePatches,
   RadIA.Core.MultiFilePatchTools,
   RadIA.Core.ToolRegistry,
   RadIA.Core.WorkspaceBoundary;
+
+procedure TRadIABlockReviewVisualStub.ClearBlocks;
+begin
+  Inc(FClearCount);
+  FBlocks := nil;
+end;
+
+procedure TRadIABlockReviewVisualStub.ShowBlocks(
+  const ABlocks: TArray<TRadIABlockReview>
+);
+begin
+  Inc(FShowCount);
+  FBlocks := Copy(ABlocks);
+end;
 
 function TTestRadIABlockReviewSessions.RevisionOf(
   const AFileName: string
@@ -164,6 +197,27 @@ begin
   Assert.AreEqual(LOriginal, FWorkspace.ContentOf(FFirstFile));
 end;
 
+procedure TTestRadIABlockReviewSessions.RefreshesAndClearsVisualProjection;
+var
+  LBlock: TRadIABlockReview;
+begin
+  Assert.IsTrue(FService.PublishFile(
+    FFirstFile,
+    RevisionOf(FFirstFile),
+    FWorkspace.ContentOf(FFirstFile),
+    FWorkspace.ContentOf(FFirstFile).Replace('old a', 'new a')
+  ).Success);
+  Assert.AreEqual(1, FVisual.ShowCount);
+  Assert.AreEqual<Integer>(1, Length(FVisual.Blocks));
+  LBlock := FService.ListBlocks[0];
+  Assert.IsTrue(FService.Decide(LBlock.Id, brdAccepted).Success);
+  Assert.AreEqual(2, FVisual.ShowCount);
+  Assert.AreEqual<Integer>(Ord(brdAccepted), Ord(FVisual.Blocks[0].Decision));
+  Assert.IsTrue(FService.Apply.Success);
+  Assert.AreEqual(1, FVisual.ClearCount);
+  Assert.AreEqual<Integer>(0, Length(FVisual.Blocks));
+end;
+
 procedure TTestRadIABlockReviewSessions.RegistersBlockReviewToolsWithSafeRisks;
 begin
   Assert.AreEqual(
@@ -251,7 +305,8 @@ begin
     FWorkspace,
     LBoundary
   );
-  FService := TRadIABlockReviewSession.Create(LPatchService);
+  FVisual := TRadIABlockReviewVisualStub.Create;
+  FService := TRadIABlockReviewSession.Create(LPatchService, FVisual);
   FRegistry := TRadIAToolRegistry.Create;
   RegisterRadIAMultiFilePatchTools(FRegistry, LPatchService, FService);
   RegisterRadIABlockReviewTools(FRegistry, FService);
@@ -260,6 +315,7 @@ end;
 procedure TTestRadIABlockReviewSessions.TearDown;
 begin
   FService := nil;
+  FVisual := nil;
   FRegistry := nil;
   FWorkspace := nil;
   if TDirectory.Exists(FRootPath) then

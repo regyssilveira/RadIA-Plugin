@@ -171,6 +171,12 @@ begin
   Assert.IsNotNull(LRoot);
   Assert.IsTrue(HasCaption(LRoot, 'Accept Review at Cursor'));
   Assert.IsTrue(HasCaption(LRoot, 'Reject Review at Cursor'));
+  Assert.IsTrue(HasCaption(LRoot, 'Next Review Block'));
+  Assert.IsTrue(HasCaption(LRoot, 'Previous Review Block'));
+  Assert.IsTrue(HasCaption(LRoot, 'Edit Review Block at Cursor'));
+  Assert.IsTrue(HasCaption(LRoot, 'Explain Review Block at Cursor'));
+  Assert.IsTrue(HasCaption(LRoot, 'Apply Resolved Block Review'));
+  Assert.IsTrue(HasCaption(LRoot, 'Discard Block Review Session'));
   Assert.IsTrue(
     HasCaption(LRoot, 'Show Inline Completion Route Status')
   );

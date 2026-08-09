@@ -28,6 +28,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 |---|---|
 | Explain, review, refactor, or generate code | [Editor and generation](user_guide_editor_generation.en.md) |
 | Receive and diagnose Ghost Text/FIM suggestions | [Inline assistance and FIM](inline_completion.en.md) |
+| Review changes block by block in the gutter | [Block-level review](block_reviews.en.md) |
 | Create a Delphi project | [New Project Wizard](project_wizard.en.md) |
 | Add or remove units and forms | [Project operations](project_file_operations.en.md) |
 | Build, fix errors, and run tests | [End-to-end journeys](user_guide_journeys.en.md) |

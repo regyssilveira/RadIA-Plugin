@@ -56,6 +56,12 @@ no log sem incluir prefixo, sufixo ou conteúdo sugerido.
 | Rejeitar a sugestão | `Ctrl+Alt+Backspace` |
 | Aceitar revisão na linha atual | `Ctrl+Alt+Enter` |
 | Rejeitar revisão na linha atual | `Ctrl+Alt+R` |
+| Próximo bloco de revisão | `Ctrl+Alt+PageDown` |
+| Bloco de revisão anterior | `Ctrl+Alt+PageUp` |
+| Editar bloco no cursor | `Ctrl+Alt+E` |
+| Explicar bloco no cursor | `Ctrl+Alt+I` |
+| Aplicar revisão resolvida | `Ctrl+Alt+A` |
+| Descartar sessão de revisão | `Ctrl+Alt+Delete` |
 
 O submenu também oferece **Show Inline Completion Route Status**, sem atalho padrão, para explicar
 como a última sugestão foi executada.
@@ -71,12 +77,17 @@ abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Editor Ass
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
 nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
 reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
-reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R
+reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R;
+reviewNext=Ctrl+Alt+PageDown; reviewPrevious=Ctrl+Alt+PageUp;
+reviewEdit=Ctrl+Alt+E; reviewExplain=Ctrl+Alt+I;
+reviewApply=Ctrl+Alt+A; reviewClear=Ctrl+Alt+Delete
 ```
 
 As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. Terminal e
-decisões de revisão usam `terminal`, `reviewAccept` e `reviewReject`; perfis antigos recebem os
-atalhos padrão automaticamente. O RadIA não
+decisões de revisão usam `terminal`, `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`,
+`reviewEdit`, `reviewExplain`, `reviewApply` e `reviewClear`; perfis antigos recebem os atalhos padrão
+automaticamente. Consulte a [revisão por bloco](block_reviews.md) para entender marcadores, cores,
+transações e navegação. O RadIA não
 salva perfis incompletos, teclas inválidas ou atalhos duplicados. A configuração é recarregada ao
 voltar ao editor, sem reiniciar a IDE. Se o keymap ativo do Delphi já possuir o mesmo atalho, o
 comando existente permanece prioritário e o conflito é registrado no log do RadIA.

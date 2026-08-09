@@ -45,6 +45,7 @@ Delphi 11 não faz parte da matriz atual.
 | Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/shared_journey_context.md) |
 | Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
 | Ghost Text/FIM | Completar no cursor por rota dedicada ou fallback diagnosticável | [Assistência inline e FIM](docs/inline_completion.md) |
+| Revisão por bloco | Aceitar, rejeitar, editar e aplicar mudanças pelo gutter | [Revisão por bloco](docs/block_reviews.md) |
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
 | DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/user_guide_dext_journeys.md) |
 | Build e testes | Compilar, estruturar erros, executar DUnitX e usar resultados como gate | [Jornadas](docs/user_guide_journeys.md) |

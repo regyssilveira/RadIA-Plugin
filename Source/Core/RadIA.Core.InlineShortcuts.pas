@@ -11,7 +11,13 @@ type
     isaReject,
     isaTerminal,
     isaReviewAccept,
-    isaReviewReject
+    isaReviewReject,
+    isaReviewNext,
+    isaReviewPrevious,
+    isaReviewEdit,
+    isaReviewExplain,
+    isaReviewApply,
+    isaReviewClear
   );
 
   TRadIAInlineShortcutProfile = record
@@ -135,7 +141,13 @@ begin
       if not (LAction in [
         isaTerminal,
         isaReviewAccept,
-        isaReviewReject
+        isaReviewReject,
+        isaReviewNext,
+        isaReviewPrevious,
+        isaReviewEdit,
+        isaReviewExplain,
+        isaReviewApply,
+        isaReviewClear
       ]) then
       begin
         AError := 'Missing RadIA shortcut action: ' +
@@ -177,6 +189,18 @@ begin
       Result := 'reviewAccept';
     isaReviewReject:
       Result := 'reviewReject';
+    isaReviewNext:
+      Result := 'reviewNext';
+    isaReviewPrevious:
+      Result := 'reviewPrevious';
+    isaReviewEdit:
+      Result := 'reviewEdit';
+    isaReviewExplain:
+      Result := 'reviewExplain';
+    isaReviewApply:
+      Result := 'reviewApply';
+    isaReviewClear:
+      Result := 'reviewClear';
   else
     Result := '';
   end;
@@ -197,6 +221,18 @@ begin
     ShortCut(VK_RETURN, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaReviewReject] :=
     ShortCut(Ord('R'), [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewNext] :=
+    ShortCut(VK_NEXT, [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewPrevious] :=
+    ShortCut(VK_PRIOR, [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewEdit] :=
+    ShortCut(Ord('E'), [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewExplain] :=
+    ShortCut(Ord('I'), [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewApply] :=
+    ShortCut(Ord('A'), [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaReviewClear] :=
+    ShortCut(VK_DELETE, [ssCtrl, ssAlt]);
 end;
 
 class function TRadIAInlineShortcutProfile.DefaultText: string;

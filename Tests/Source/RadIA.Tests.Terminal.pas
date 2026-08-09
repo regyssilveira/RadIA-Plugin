@@ -668,6 +668,30 @@ begin
     Integer(TextToShortCut('Ctrl+Alt+R')),
     Integer(LProfile.ShortcutFor(isaReviewReject))
   );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+PgDn')),
+    Integer(LProfile.ShortcutFor(isaReviewNext))
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+PgUp')),
+    Integer(LProfile.ShortcutFor(isaReviewPrevious))
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+E')),
+    Integer(LProfile.ShortcutFor(isaReviewEdit))
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+I')),
+    Integer(LProfile.ShortcutFor(isaReviewExplain))
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+A')),
+    Integer(LProfile.ShortcutFor(isaReviewApply))
+  );
+  Assert.AreEqual<Integer>(
+    Integer(TextToShortCut('Ctrl+Alt+Del')),
+    Integer(LProfile.ShortcutFor(isaReviewClear))
+  );
   Assert.IsTrue(
     TRadIAInlineShortcutProfile.TryParse(
       'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +

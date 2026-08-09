@@ -272,6 +272,11 @@ receive a dedicated FIM request; other providers use an identified traditional f
 latency, and fallback reason. Configurable shortcuts still provide full acceptance, partial
 acceptance, alternatives, and rejection. See the [complete FIM reference](inline_completion.en.md).
 
+Changes prepared by the agent can also be reviewed block by block directly in the gutter. Each
+marker can accept, reject, edit, or explain the change; navigation and application have configurable
+shortcuts, and multi-file changes are written only after every block is resolved. See the
+[complete block-review guide](block_reviews.en.md).
+
 See the [editor and generation guide](user_guide_editor_generation.en.md).
 
 ### 4.4 IDE and workspace tools

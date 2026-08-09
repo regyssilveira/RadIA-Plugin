@@ -834,6 +834,24 @@ begin
   TRadIAContainer.Register<IRadIAAgentResultStore>(LResultStore);
 end;
 
+procedure RegisterRadIABlockReviewSession;
+var
+  LBlockVisual: IRadIABlockReviewVisualFacade;
+  LInlineVisual: IRadIAInlineReviewVisualFacade;
+  LSession: IRadIABlockReviewSession;
+begin
+  LInlineVisual := TRadIAContainer.Resolve<IRadIAInlineReviewVisualFacade>;
+  if not Supports(LInlineVisual, IRadIABlockReviewVisualFacade, LBlockVisual) then
+    raise EInvalidCast.Create(
+      'The inline review facade does not support block review rendering.'
+    );
+  LSession := TRadIABlockReviewSession.Create(
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
+    LBlockVisual
+  );
+  TRadIAContainer.Register<IRadIABlockReviewSession>(LSession);
+end;
+
 initialization
   TRadIAContainer.Register<IRadIAConfig>(TRadIAConfig.GetInstance);
   TRadIAContainer.Register<IRadIALogger>(TConcreteLogger.Create);
@@ -1126,11 +1144,7 @@ initialization
       TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
     )
   );
-  TRadIAContainer.Register<IRadIABlockReviewSession>(
-    TRadIABlockReviewSession.Create(
-      TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
-    )
-  );
+  RegisterRadIABlockReviewSession;
   TRadIAContainer.Register<IRadIAProjectOpeningFacade>(
     TRadIAOTAProjectOpeningFacade.Create
   );

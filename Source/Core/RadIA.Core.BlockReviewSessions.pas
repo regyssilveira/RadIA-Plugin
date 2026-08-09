@@ -8,6 +8,14 @@ uses
   RadIA.Core.MultiFilePatches;
 
 type
+  IRadIABlockReviewVisualFacade = interface
+    ['{36147658-C524-4D3E-86AE-426D9D7CF90E}']
+    procedure ShowBlocks(
+      const ABlocks: TArray<TRadIABlockReview>
+    );
+    procedure ClearBlocks;
+  end;
+
   TRadIABlockReviewSessionStatus = record
   private
     FBlockCount: Integer;
@@ -89,6 +97,7 @@ type
   private
     FFiles: TObjectDictionary<string, TRadIAFileReview>;
     FPatchService: IRadIAMultiFilePatchService;
+    FVisual: IRadIABlockReviewVisualFacade;
     function BuildSpecs(
       out ASpecs: TArray<TRadIAMultiFilePatchSpec>
     ): TRadIABlockReviewSessionResult;
@@ -97,9 +106,12 @@ type
       out AFileReview: TRadIAFileReview;
       out ABlockIndex: Integer
     ): Boolean;
+    function ApplyLocked: TRadIABlockReviewSessionResult;
+    procedure RefreshVisual;
   public
     constructor Create(
-      const APatchService: IRadIAMultiFilePatchService
+      const APatchService: IRadIAMultiFilePatchService;
+      const AVisual: IRadIABlockReviewVisualFacade = nil
     );
     destructor Destroy; override;
     function PublishFile(
@@ -185,40 +197,48 @@ end;
 
 function TRadIABlockReviewSession.Apply:
   TRadIABlockReviewSessionResult;
+begin
+  TMonitor.Enter(FFiles);
+  try
+    Result := ApplyLocked;
+  finally
+    TMonitor.Exit(FFiles);
+  end;
+  if Result.Success and Assigned(FVisual) then
+    FVisual.ClearBlocks
+  else
+    RefreshVisual;
+end;
+
+function TRadIABlockReviewSession.ApplyLocked:
+  TRadIABlockReviewSessionResult;
 var
   LApply: TRadIAMultiFilePatchResult;
   LPrepare: TRadIAMultiFilePatchResult;
   LSpecs: TArray<TRadIAMultiFilePatchSpec>;
 begin
-  TMonitor.Enter(FFiles);
-  try
-    Result := BuildSpecs(LSpecs);
-    if not Result.Success then
-      Exit;
-    if Length(LSpecs) = 0 then
-    begin
-      FFiles.Clear;
-      Exit(TRadIABlockReviewSessionResult.Succeeded(''));
-    end;
-    LPrepare := FPatchService.Prepare(LSpecs);
-    if not LPrepare.Success then
-      Exit(TRadIABlockReviewSessionResult.Failed(
-        LPrepare.ErrorCode,
-        LPrepare.ErrorMessage
-      ));
-    LApply := FPatchService.Apply(LPrepare.Preview.Id);
-    if not LApply.Success then
-      Exit(TRadIABlockReviewSessionResult.Failed(
-        LApply.ErrorCode,
-        LApply.ErrorMessage
-      ));
-    Result := TRadIABlockReviewSessionResult.Succeeded(
-      LApply.Preview.Id
-    );
+  Result := BuildSpecs(LSpecs);
+  if not Result.Success then
+    Exit;
+  if Length(LSpecs) = 0 then
+  begin
     FFiles.Clear;
-  finally
-    TMonitor.Exit(FFiles);
+    Exit(TRadIABlockReviewSessionResult.Succeeded(''));
   end;
+  LPrepare := FPatchService.Prepare(LSpecs);
+  if not LPrepare.Success then
+    Exit(TRadIABlockReviewSessionResult.Failed(
+      LPrepare.ErrorCode,
+      LPrepare.ErrorMessage
+    ));
+  LApply := FPatchService.Apply(LPrepare.Preview.Id);
+  if not LApply.Success then
+    Exit(TRadIABlockReviewSessionResult.Failed(
+      LApply.ErrorCode,
+      LApply.ErrorMessage
+    ));
+  Result := TRadIABlockReviewSessionResult.Succeeded(LApply.Preview.Id);
+  FFiles.Clear;
 end;
 
 function TRadIABlockReviewSession.BuildSpecs(
@@ -266,16 +286,23 @@ begin
   finally
     TMonitor.Exit(FFiles);
   end;
+  if Assigned(FVisual) then
+    FVisual.ClearBlocks;
 end;
 
 constructor TRadIABlockReviewSession.Create(
-  const APatchService: IRadIAMultiFilePatchService
+  const APatchService: IRadIAMultiFilePatchService;
+  const AVisual: IRadIABlockReviewVisualFacade
 );
 begin
   inherited Create;
   if not Assigned(APatchService) then
     raise EArgumentNilException.Create('APatchService');
   FPatchService := APatchService;
+  if Assigned(AVisual) then
+    FVisual := AVisual
+  else
+    FVisual := nil;
   FFiles := TObjectDictionary<string, TRadIAFileReview>.Create(
     [doOwnsValues]
   );
@@ -319,6 +346,7 @@ begin
   finally
     TMonitor.Exit(FFiles);
   end;
+  RefreshVisual;
 end;
 
 destructor TRadIABlockReviewSession.Destroy;
@@ -461,6 +489,20 @@ begin
     TMonitor.Exit(FFiles);
     LFile.Free;
   end;
+  RefreshVisual;
+end;
+
+procedure TRadIABlockReviewSession.RefreshVisual;
+var
+  LBlocks: TArray<TRadIABlockReview>;
+begin
+  if not Assigned(FVisual) then
+    Exit;
+  LBlocks := ListBlocks;
+  if Length(LBlocks) = 0 then
+    FVisual.ClearBlocks
+  else
+    FVisual.ShowBlocks(LBlocks);
 end;
 
 end.

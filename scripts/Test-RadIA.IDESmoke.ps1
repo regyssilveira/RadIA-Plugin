@@ -364,6 +364,12 @@ public static class RadIADockingSmokeNative
     );
 
     [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr handle, int command);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr handle);
+
+    [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(
         IntPtr handle,
         out uint processId
@@ -422,6 +428,7 @@ public static class RadIADockingSmokeNative
 
 if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
     $ExerciseInlineReview) {
+    Add-Type -AssemblyName System.Windows.Forms
     Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -430,6 +437,13 @@ using System.Text;
 public static class RadIAKnowledgeSmokeNative
 {
     public delegate bool EnumCallback(IntPtr handle, IntPtr parameter);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Point
+    {
+        public int X;
+        public int Y;
+    }
 
     [DllImport("user32.dll")]
     public static extern bool EnumWindows(
@@ -442,6 +456,27 @@ public static class RadIAKnowledgeSmokeNative
         IntPtr parent,
         EnumCallback callback,
         IntPtr parameter
+    );
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr handle, int command);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    public static extern bool ClientToScreen(IntPtr handle, ref Point point);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetCursorPos(int x, int y);
+
+    [DllImport("user32.dll")]
+    public static extern void mouse_event(
+        uint flags,
+        uint dx,
+        uint dy,
+        uint data,
+        UIntPtr extraInfo
     );
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -752,6 +787,160 @@ function Wait-RadIAInlineReviewDiagnostic {
         Painted = $true
         RevisionMatched = $true
         ReviewCount = $diagnostic.reviewCount
+    }
+}
+
+function Invoke-RadIAEditorRepaint {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess
+    )
+
+    $IDEProcess.Refresh()
+    if ($IDEProcess.MainWindowHandle -eq [IntPtr]::Zero) {
+        throw "The Delphi editor window is unavailable for repaint."
+    }
+    [void][RadIAKnowledgeSmokeNative]::ShowWindow(
+        $IDEProcess.MainWindowHandle,
+        9
+    )
+    [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow(
+        $IDEProcess.MainWindowHandle
+    )
+    Start-Sleep -Milliseconds 250
+    [System.Windows.Forms.SendKeys]::SendWait("{DOWN}{UP}")
+    Start-Sleep -Milliseconds 250
+}
+
+function Invoke-RadIABlockMarkerClick {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)]
+        [object]$Diagnostic
+    )
+
+    if ($Diagnostic.blockMarkerScreenX -lt 1 -or
+        $Diagnostic.blockMarkerScreenY -lt 1) {
+        throw "The gutter marker did not expose a clickable hit target."
+    }
+    $IDEProcess.Refresh()
+    [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow(
+        $IDEProcess.MainWindowHandle
+    )
+    [void][RadIAKnowledgeSmokeNative]::SetCursorPos(
+        [int]$Diagnostic.blockMarkerScreenX,
+        [int]$Diagnostic.blockMarkerScreenY
+    )
+    [RadIAKnowledgeSmokeNative]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
+    [RadIAKnowledgeSmokeNative]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 250
+}
+
+function Get-RadIABlockReviewState {
+    param(
+        [Parameter(Mandatory)]
+        [string]$BridgePath,
+        [Parameter(Mandatory)]
+        [string]$InstanceFile
+    )
+
+    $requests = @(
+        (
+            '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
+            '"params":{"protocolVersion":"2025-06-18",' +
+            '"capabilities":{},"clientInfo":{' +
+            '"name":"radia-block-state-smoke","version":"1"}}}'
+        ),
+        (
+            '{"jsonrpc":"2.0","method":' +
+            '"notifications/initialized","params":{}}'
+        ),
+        (
+            '{"jsonrpc":"2.0","id":9,"method":"tools/call",' +
+            '"params":{"name":"ListBlockReviews","arguments":{}}}'
+        )
+    )
+    $responses = @(
+        $requests |
+            & $BridgePath $InstanceFile |
+            ForEach-Object { $_ | ConvertFrom-Json }
+    )
+    if ($LASTEXITCODE -ne 0) {
+        throw "Block review state inspection failed."
+    }
+    return ($responses |
+        Where-Object { $_.id -eq 9 }).result.structuredContent
+}
+
+function Invoke-RadIASmokeRequestsWithRetry {
+    param(
+        [Parameter(Mandatory)]
+        [string]$BridgePath,
+        [Parameter(Mandatory)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory)]
+        [object[]]$Requests,
+        [Parameter(Mandatory)]
+        [string]$Operation
+    )
+
+    for ($attempt = 1; $attempt -le 10; $attempt++) {
+        try {
+            $responseLines = @(
+                $Requests | & $BridgePath $InstanceFile 2>$null
+            )
+            if ($LASTEXITCODE -eq 0) {
+                return @(
+                    $responseLines |
+                        ForEach-Object { $_ | ConvertFrom-Json }
+                )
+            }
+        } catch {
+            # The IDE can rotate its named-pipe listener between clients.
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    throw "$Operation failed after retrying the live IDE connection."
+}
+
+function Wait-RadIABlockReviewDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$EvidencePath
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    do {
+        $diagnostic = $null
+        if (Test-Path -LiteralPath $EvidencePath -PathType Leaf) {
+            $diagnostic = Get-Content `
+                -LiteralPath $EvidencePath `
+                -Raw `
+                -Encoding UTF8 |
+                ConvertFrom-Json
+        }
+        if (-not ($diagnostic.blockPublished -and $diagnostic.blockPainted)) {
+            Start-Sleep -Milliseconds 100
+        }
+    } while (
+        -not ($diagnostic.blockPublished -and $diagnostic.blockPainted) -and
+        [DateTime]::UtcNow -lt $deadline
+    )
+    if (-not $diagnostic.blockPublished) {
+        throw "The block review was not published in the real editor."
+    }
+    if (-not $diagnostic.blockPainted) {
+        throw "The block review marker did not reach the OTA gutter paint cycle."
+    }
+    return [pscustomobject]@{
+        Published = $true
+        Painted = $true
+        BlockCount = $diagnostic.blockCount
+        MarkerX = $diagnostic.blockMarkerX
+        MarkerY = $diagnostic.blockMarkerY
+        EditorWindowHandle = $diagnostic.editorWindowHandle
+        Raw = $diagnostic
     }
 }
 
@@ -1819,6 +2008,20 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not (Test-Path -LiteralPath $instanceFile)) {
             throw "MCP discovery was not created in cycle $cycle."
         }
+        if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
+            $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
+            $currentProcess.Refresh()
+            if ($currentProcess.MainWindowHandle -ne [IntPtr]::Zero) {
+                [void][RadIAKnowledgeSmokeNative]::ShowWindow(
+                    $currentProcess.MainWindowHandle,
+                    9
+                )
+                [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow(
+                    $currentProcess.MainWindowHandle
+                )
+                Start-Sleep -Milliseconds 500
+            }
+        }
         if ($ExerciseDocking) {
             $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
             $dockInfo = Wait-RadIADockInfo `
@@ -1933,6 +2136,10 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 (
                     '{"jsonrpc":"2.0","id":4,"method":"tools/call",' +
                     '"params":{"name":"GetEditorContent","arguments":{}}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","id":5,"method":"tools/call",' +
+                    '"params":{"name":"GetCursorPosition","arguments":{}}}'
                 )
             )
             $editorDeadline = [DateTime]::UtcNow.AddSeconds(90)
@@ -1950,6 +2157,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 $editorResponse = $editorResponses |
                     Where-Object { $_.id -eq 4 }
                 $editorContent = $editorResponse.result.structuredContent
+                $positionResponse = $editorResponses |
+                    Where-Object { $_.id -eq 5 }
+                $editorPosition = $positionResponse.result.structuredContent
                 if (-not $editorContent.fileName) {
                     Start-Sleep -Seconds 2
                 }
@@ -1960,6 +2170,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             if (-not $editorContent.fileName) {
                 throw "No active editor was found for inline diagnostics."
             }
+            if (-not $editorPosition.line) {
+                throw "No active cursor was found for inline diagnostics."
+            }
         }
         if ($ExerciseInlineCompletion) {
             $inlineDiagnostic = Wait-RadIAInlineCompletionDiagnostic `
@@ -1969,12 +2182,13 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 )
         }
         $inlineReviewDiagnostic = $null
+        $blockReviewDiagnostic = $null
         if ($ExerciseInlineReview) {
             $publishArguments = @{
                 fileName = $editorContent.fileName
                 baseRevision = $editorContent.revision
-                startLine = 1
-                endLine = 1
+                startLine = $editorPosition.line
+                endLine = $editorPosition.line
                 severity = "warning"
                 message = "RadIA real IDE inline review smoke."
             } | ConvertTo-Json -Compress
@@ -2027,6 +2241,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             if (-not $publishResponse.result.structuredContent.reviewId) {
                 throw "The inline review tool returned no review identifier."
             }
+            Invoke-RadIAEditorRepaint -IDEProcess $process
             $inlineReviewDiagnostic = Wait-RadIAInlineReviewDiagnostic `
                 -EvidencePath $inlineReviewSmokePath
             $reviewId = $publishResponse.result.structuredContent.reviewId
@@ -2037,8 +2252,8 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $staleArguments = @{
                 fileName = $editorContent.fileName
                 baseRevision = ("0" * 64)
-                startLine = 1
-                endLine = 1
+                startLine = $editorPosition.line
+                endLine = $editorPosition.line
                 severity = "warning"
                 message = "RadIA stale inline review smoke."
             } | ConvertTo-Json -Compress
@@ -2108,6 +2323,99 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $inlineReviewDiagnostic |
                 Add-Member `
                     -NotePropertyName StaleRevisionRejected `
+                    -NotePropertyValue $true
+
+            $lineBreak = if ($editorContent.content.Contains("`r`n")) {
+                "`r`n"
+            } else {
+                "`n"
+            }
+            $blockLines = @($editorContent.content -split "`r?`n", -1)
+            $blockLineIndex = [Math]::Min(
+                $blockLines.Count - 1,
+                [Math]::Max(0, [int]$editorPosition.line - 1)
+            )
+            $blockLines[$blockLineIndex] =
+                $blockLines[$blockLineIndex] +
+                " // RadIA block review gutter smoke."
+            $blockReplacement = $blockLines -join $lineBreak
+            $blockArguments = @{
+                targetFile = $editorContent.fileName
+                baseRevision = $editorContent.revision
+                originalText = $editorContent.content
+                replacementText = $blockReplacement
+            } | ConvertTo-Json -Compress
+            $blockRequests = @(
+                (
+                    '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
+                    '"params":{"protocolVersion":"2025-06-18",' +
+                    '"capabilities":{},"clientInfo":{' +
+                    '"name":"radia-block-review-smoke","version":"1"}}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","method":' +
+                    '"notifications/initialized","params":{}}'
+                ),
+                (
+                    '{"jsonrpc":"2.0","id":8,"method":"tools/call",' +
+                    '"params":{"name":"PreparePatch","arguments":' +
+                    $blockArguments + '}}'
+                )
+            )
+            $blockResponses = Invoke-RadIASmokeRequestsWithRetry `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Requests $blockRequests `
+                -Operation "Block review preparation in cycle $cycle"
+            $blockResponse = $blockResponses |
+                Where-Object { $_.id -eq 8 }
+            if ($blockResponse.result.isError) {
+                throw "PreparePatch did not publish the block review."
+            }
+            Invoke-RadIAEditorRepaint -IDEProcess $process
+            $blockReviewDiagnostic = Wait-RadIABlockReviewDiagnostic `
+                -EvidencePath $inlineReviewSmokePath
+            [System.Windows.Forms.SendKeys]::SendWait("^%{ENTER}")
+            Start-Sleep -Milliseconds 500
+            $keyboardState = Get-RadIABlockReviewState `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile
+            if (@($keyboardState.blocks).Count -lt 1 -or
+                $keyboardState.blocks[0].decision -ne "accepted") {
+                throw "The block review keyboard decision was not accepted."
+            }
+            $blockReviewDiagnostic |
+                Add-Member `
+                    -NotePropertyName KeyboardAccepted `
+                    -NotePropertyValue $true
+
+            $republishResponses = Invoke-RadIASmokeRequestsWithRetry `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Requests $blockRequests `
+                -Operation "Block review republication in cycle $cycle"
+            if (($republishResponses |
+                    Where-Object { $_.id -eq 8 }).result.isError) {
+                throw "Block review republication failed in cycle $cycle."
+            }
+            Invoke-RadIAEditorRepaint -IDEProcess $process
+            $mouseDiagnostic = Wait-RadIABlockReviewDiagnostic `
+                -EvidencePath $inlineReviewSmokePath
+            Invoke-RadIABlockMarkerClick `
+                -IDEProcess $process `
+                -Diagnostic $mouseDiagnostic.Raw
+            [System.Windows.Forms.SendKeys]::SendWait("r")
+            Start-Sleep -Milliseconds 500
+            $mouseState = Get-RadIABlockReviewState `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile
+            if (@($mouseState.blocks).Count -lt 1 -or
+                $mouseState.blocks[0].decision -ne "rejected") {
+                throw "The gutter mouse decision was not rejected."
+            }
+            $blockReviewDiagnostic |
+                Add-Member `
+                    -NotePropertyName MouseRejected `
                     -NotePropertyValue $true
         }
         $agentRuntimeDiagnostic = $null
@@ -2369,6 +2677,23 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [bool]$ExerciseInlineReview -and
                 $inlineReviewDiagnostic.StaleRevisionRejected
             )
+            BlockReviewPublished = (
+                [bool]$ExerciseInlineReview -and
+                $blockReviewDiagnostic.Published
+            )
+            BlockReviewGutterPainted = (
+                [bool]$ExerciseInlineReview -and
+                $blockReviewDiagnostic.Painted
+            )
+            BlockReviewCount = $blockReviewDiagnostic.BlockCount
+            BlockReviewKeyboardAccepted = (
+                [bool]$ExerciseInlineReview -and
+                $blockReviewDiagnostic.KeyboardAccepted
+            )
+            BlockReviewMouseRejected = (
+                [bool]$ExerciseInlineReview -and
+                $blockReviewDiagnostic.MouseRejected
+            )
             AgentRuntimeExercised = [bool]$ExerciseAgentRuntime
             AgentRuntimeAwaitingApproval = (
                 [bool]$ExerciseAgentRuntime -and
@@ -2516,8 +2841,8 @@ if ($ExerciseInlineCompletion) {
 }
 if ($ExerciseInlineReview) {
     Write-Host (
-        "Inline review publication, OTA painting, rejection, and stale " +
-        "revision protection passed."
+        "Inline and block review publication, OTA line and gutter " +
+        "painting, rejection, and stale revision protection passed."
     )
 }
 if ($ExerciseTerminal) {

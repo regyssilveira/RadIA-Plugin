@@ -984,7 +984,7 @@ begin
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
-    'RadIA shortcuts (request, accept, nextWord, alternative, reject, terminal):',
+    'RadIA shortcut profile:',
     16,
     1028
   );
@@ -1339,7 +1339,9 @@ begin
   );
   SetControlsHint(
     [FEdtInlineShortcutProfile],
-    'Configure RadIA editor shortcuts as action=shortcut pairs separated by semicolons.'
+    'Configure completion, terminal, and block-review shortcuts as ' +
+    'action=shortcut pairs separated by semicolons. Legacy profiles inherit ' +
+    'new actions automatically.'
   );
   SetControlsHint(
     [FCmbResultCompactionProfile],

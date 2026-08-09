@@ -73,7 +73,7 @@ advanced settings above. Provider account, region, plan, and permissions determi
 | Enable ghost text (inline completion) | For suggestions while editing | Sends bounded context to the configured inline provider/model or, when empty, the active global provider/model. Uses dedicated FIM by capability and explicit fallback otherwise. |
 | Idle delay | To balance speed and request volume | Accepts 250–5000 ms; lower requests earlier. |
 | Excluded languages/files/projects | To suppress inline requests | Semicolon-separated language, name, or path fragments. |
-| RadIA shortcuts | To customize keyboard access | Use semicolon-separated `action=shortcut` entries for `request`, `accept`, `nextWord`, `alternative`, `reject`, and `terminal`; conflicts are validated. |
+| RadIA shortcut profile | To customize completion, terminal, and block review | Use semicolon-separated `action=shortcut` entries. In addition to `request`, `accept`, `nextWord`, `alternative`, `reject`, and `terminal`, it accepts `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`, `reviewEdit`, `reviewExplain`, `reviewApply`, and `reviewClear`. Legacy profiles inherit new defaults and conflicts are validated on save. |
 | Show Inline Completion Route Status | To understand the latest request | In the editor Rad IA menu or Tools, reports route, provider, model, latency, and fallback reason without exposing code. |
 
 See the [security model](tool_security_model.en.md) for risk classes and consent scope.
