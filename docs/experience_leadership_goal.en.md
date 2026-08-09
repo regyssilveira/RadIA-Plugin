@@ -333,7 +333,7 @@ three execution JSON files and rejects target, cycle, upgrade, lifecycle, hash, 
 or catalog divergence.
 
 The complete continuous journey is proven in
-`continuous_journey_smoke_evidence_2.0.0.json`. In one flow from the same commit, every target
+`New-RadIA.LeadershipClosureEvidence.ps1`. In one flow from the same commit, every target
 created and built a VCL project, changed and reverted the Form Designer, edited and saved the live
 buffer, observed an intentional compiler failure, reverted the correction, rebuilt, passed 761
 tests, stopped at a breakpoint with call stack and timeline evidence, created a reviewed Git

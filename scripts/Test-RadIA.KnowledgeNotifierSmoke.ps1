@@ -785,6 +785,17 @@ if ($targetProcesses.Count -gt 0) {
 $workspaceRoot = [IO.Path]::GetFullPath(
     (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
+$versionSource = Get-Content -LiteralPath (
+    Join-Path $workspaceRoot "Source\Core\RadIA.Core.Version.pas"
+) -Raw
+$versionMatch = [regex]::Match(
+    $versionSource,
+    "CRadIAVersion\s*=\s*'([^']+)'"
+)
+if (-not $versionMatch.Success) {
+    throw "Unable to resolve the RadIA product version."
+}
+$productVersion = $versionMatch.Groups[1].Value
 $sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch "^[0-9a-f]{40}$") {
     throw "The source commit could not be determined."
@@ -1742,7 +1753,7 @@ if ($EvidencePath) {
         schemaVersion = 1
         evidenceKind = "continuousDelphiJourney"
         product = "RadIA"
-        productVersion = "2.0.0"
+        productVersion = $productVersion
         sourceCommit = $sourceCommit
         sourceDirty = $sourceDirty
         delphiVersion = $DelphiVersion

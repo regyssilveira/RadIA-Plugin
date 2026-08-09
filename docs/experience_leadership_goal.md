@@ -340,7 +340,7 @@ de execução e rejeita divergências de target, ciclo, upgrade, lifecycle, hash
 ou catálogo.
 
 A jornada contínua completa está comprovada em
-`continuous_journey_smoke_evidence_2.0.0.json`. No mesmo fluxo e pelo mesmo commit, cada combinação
+`New-RadIA.LeadershipClosureEvidence.ps1`. No mesmo fluxo e pelo mesmo commit, cada combinação
 criou e compilou um projeto VCL, alterou e reverteu o Form Designer, editou e salvou o buffer vivo,
 observou uma falha intencional do compilador, reverteu a correção, recompilou, aprovou 761 testes,
 parou em breakpoint com call stack e timeline, criou um commit Git revisado e encerrou sem processo

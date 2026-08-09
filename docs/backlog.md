@@ -201,7 +201,7 @@ versão definida pelo comportamento público efetivamente entregue.
     *   Concluído no E2E contínuo da matriz: Delphi 11, 12 e 13 Win32 e Delphi 13 IDE64 aprovaram
         autonomamente template, Form Designer, edição viva, falha e correção, build, 736 testes,
         debug com call stack/timeline, commit Git revisável e shutdown na mesma jornada. A prova
-        consolidada está em `continuous_journey_smoke_evidence_2.0.0.json`.
+        consolidada da versão atual deve ser gerada pelo gate integrado descrito no processo de release.
     *   Concluído no host nativo: dois ciclos reais comprovaram a criação do `TOTADockForm`, sua
         visibilidade, restauração de geometria pelo desktop da IDE e shutdown limpo. O gesto de drop
         lateral permanece como aceite visual manual porque a IDE elevada bloqueia entrada sintética
