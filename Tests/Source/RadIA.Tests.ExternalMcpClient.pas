@@ -5,8 +5,10 @@ interface
 uses
   DUnitX.TestFramework,
   System.Generics.Collections,
+  System.SysUtils,
   RadIA.Core.ExternalMcp,
-  RadIA.Core.ExternalMcpTransport;
+  RadIA.Core.ExternalMcpTransport,
+  RadIA.Core.Tools;
 
 type
   TRadIAFakeExternalMcpTransport = class(
@@ -18,6 +20,7 @@ type
     FReceived: TQueue<string>;
     FRunning: Boolean;
     FSent: TList<string>;
+    FOnSend: TProc<string>;
   public
     constructor Create;
     destructor Destroy; override;
@@ -32,6 +35,23 @@ type
       out AError: string
     ): Boolean;
     procedure Stop;
+    property OnSend: TProc<string> read FOnSend write FOnSend;
+  end;
+
+  TRadIAFakeToolCancellation = class(
+    TInterfacedObject,
+    IRadIAToolCancellationNotifier
+  )
+  private
+    FCallback: TRadIAToolCancellationCallback;
+    FRequested: Boolean;
+  public
+    procedure ClearCancellationCallback;
+    function GetCancellationRequested: Boolean;
+    procedure Request;
+    procedure SetCancellationCallback(
+      const ACallback: TRadIAToolCancellationCallback
+    );
   end;
 
   [TestFixture]
@@ -47,12 +67,13 @@ type
     procedure ServerErrorIsReturnedWithoutDisconnecting;
     [Test]
     procedure UnsupportedProtocolVersionStopsConnection;
+    [Test]
+    procedure CancellationNotifiesServerAndIgnoresLateResponse;
   end;
 
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.ExternalMcpClient;
 
 function ServerConfig: TRadIAExternalMcpServerConfig;
@@ -126,7 +147,11 @@ function TRadIAFakeExternalMcpTransport.Send(
 begin
   Result := FRunning;
   if Result then
+  begin
     FSent.Add(AMessage);
+    if Assigned(FOnSend) then
+      FOnSend(AMessage);
+  end;
 end;
 
 function TRadIAFakeExternalMcpTransport.SentMessages: TArray<string>;
@@ -147,6 +172,34 @@ end;
 procedure TRadIAFakeExternalMcpTransport.Stop;
 begin
   FRunning := False;
+end;
+
+{ TRadIAFakeToolCancellation }
+
+procedure TRadIAFakeToolCancellation.ClearCancellationCallback;
+begin
+  FCallback := nil;
+end;
+
+function TRadIAFakeToolCancellation.GetCancellationRequested: Boolean;
+begin
+  Result := FRequested;
+end;
+
+procedure TRadIAFakeToolCancellation.Request;
+begin
+  FRequested := True;
+  if Assigned(FCallback) then
+    FCallback();
+end;
+
+procedure TRadIAFakeToolCancellation.SetCancellationCallback(
+  const ACallback: TRadIAToolCancellationCallback
+);
+begin
+  FCallback := ACallback;
+  if FRequested and Assigned(FCallback) then
+    FCallback();
 end;
 
 { TRadIAExternalMcpClientTests }
@@ -278,6 +331,68 @@ begin
   Assert.Contains(LError, 'unsupported protocol');
   Assert.IsFalse(LClient.Connected);
   Assert.IsFalse(LTransport.GetRunning);
+end;
+
+procedure TRadIAExternalMcpClientTests.CancellationNotifiesServerAndIgnoresLateResponse;
+var
+  LCancelClient: IRadIAExternalMcpCancelableClient;
+  LCancellation: TRadIAFakeToolCancellation;
+  LCancellationNotifier: IRadIAToolCancellationNotifier;
+  LCancellationToken: IRadIAToolCancellationToken;
+  LCatalog: IRadIAExternalMcpCatalog;
+  LClient: IRadIAExternalMcpClient;
+  LError: string;
+  LMessages: TArray<string>;
+  LResult: string;
+  LTransport: TRadIAFakeExternalMcpTransport;
+begin
+  LTransport := TRadIAFakeExternalMcpTransport.Create;
+  LTransport.AddResponse(InitializeResponse);
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":2,"result":{"tools":[{' +
+    '"name":"read_file","description":"Read","inputSchema":{}}]}}'
+  );
+  LCatalog := TRadIAExternalMcpCatalog.Create;
+  LClient := TRadIAExternalMcpClient.Create(LTransport, LCatalog);
+  Assert.IsTrue(LClient.Connect(ServerConfig, LError), LError);
+  Assert.IsTrue(LClient.DiscoverTools(LError), LError);
+  Assert.IsTrue(Supports(LClient, IRadIAExternalMcpCancelableClient, LCancelClient));
+  LCancellation := TRadIAFakeToolCancellation.Create;
+  LCancellationNotifier := LCancellation;
+  LCancellationToken := LCancellationNotifier;
+  LTransport.OnSend :=
+    procedure(AMessage: string)
+    begin
+      if AMessage.Contains('"method":"tools/call"') then
+        LCancellation.Request;
+    end;
+  Assert.IsFalse(
+    LCancelClient.CallToolWithCancellation(
+      'mcp.fixture.read_file',
+      '{"path":"a.pas"}',
+      LCancellationToken,
+      LResult,
+      LError
+    )
+  );
+  Assert.Contains(LError, 'cancelled');
+  LMessages := LTransport.SentMessages;
+  Assert.Contains(LMessages[4], '"method":"notifications/cancelled"');
+  Assert.Contains(LMessages[4], '"requestId":3');
+
+  LTransport.OnSend := nil;
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":3,"result":{"content":[]}}'
+  );
+  LTransport.AddResponse(
+    '{"jsonrpc":"2.0","id":4,"result":{"content":[{' +
+    '"type":"text","text":"fresh"}]}}'
+  );
+  Assert.IsTrue(
+    LClient.CallTool('mcp.fixture.read_file', '{}', LResult, LError),
+    LError
+  );
+  Assert.Contains(LResult, 'fresh');
 end;
 
 initialization

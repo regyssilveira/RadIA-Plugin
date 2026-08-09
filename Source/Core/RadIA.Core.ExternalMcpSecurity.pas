@@ -165,6 +165,8 @@ function TRadIAExternalMcpToolAdapter.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
 var
+  LCallSucceeded: Boolean;
+  LCancelableClient: IRadIAExternalMcpCancelableClient;
   LError: string;
   LResultJson: string;
 begin
@@ -173,13 +175,28 @@ begin
     Exit(TRadIAToolResult.Failed(CToolCancelled, 'Tool execution was cancelled.'));
   if not ValidatePaths(ARequest.ArgumentsJson, LError) then
     Exit(TRadIAToolResult.Failed(CExternalMcpPathDenied, LError));
-  if not FClient.CallTool(
-    FTool.NamespacedName,
-    ARequest.ArgumentsJson,
-    LResultJson,
-    LError
-  ) then
+  if Supports(FClient, IRadIAExternalMcpCancelableClient, LCancelableClient) then
+    LCallSucceeded := LCancelableClient.CallToolWithCancellation(
+      FTool.NamespacedName,
+      ARequest.ArgumentsJson,
+      ARequest.CancellationToken,
+      LResultJson,
+      LError
+    )
+  else
+    LCallSucceeded := FClient.CallTool(
+      FTool.NamespacedName,
+      ARequest.ArgumentsJson,
+      LResultJson,
+      LError
+    );
+  if not LCallSucceeded then
+  begin
+    if Assigned(ARequest.CancellationToken) and
+       ARequest.CancellationToken.CancellationRequested then
+      Exit(TRadIAToolResult.Failed(CToolCancelled, LError));
     Exit(TRadIAToolResult.Failed(CExternalMcpFailed, LError));
+  end;
   Result := TRadIAToolResult.Succeeded(LResultJson);
 end;
 

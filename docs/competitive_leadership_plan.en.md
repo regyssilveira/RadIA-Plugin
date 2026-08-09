@@ -214,9 +214,15 @@ external tool into RadIA's shared policy pipeline, so session decisions, consent
 audit follow the same flow as internal tools. Paths outside the workspace are rejected before any
 server call, and server-provided annotations can never reduce the locally defined risk.
 
-**Still in this phase:** active JSON-RPC cancellation, pagination and resource/prompt discovery,
-secure persistence of settings and grants, Settings, `/doctor`, `/status`, and smokes with a
-complete MCP fixture server and one authorized real server.
+**Active cancellation implemented:** when the execution token is cancelled, the client sends
+`notifications/cancelled` with the original call ID and returns control without waiting for the
+server timeout. A late response retains its old ID, is discarded by the correlator, and cannot
+complete or contaminate the next call. Legacy clients remain compatible through the basic
+interface, while clients exposing the cancellable interface receive the token end to end.
+
+**Still in this phase:** pagination and resource/prompt discovery, secure persistence of settings
+and grants, Settings, `/doctor`, `/status`, and smokes with a complete MCP fixture server and one
+authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

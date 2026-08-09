@@ -218,9 +218,16 @@ de sessão, consentimento, redação e auditoria seguem o mesmo fluxo das tools 
 workspace são rejeitados antes de qualquer chamada ao servidor, e anotações fornecidas pelo servidor
 jamais reduzem o risco definido localmente.
 
-**Ainda nesta fase:** cancelamento ativo por JSON-RPC, paginação e descoberta de resources/prompts,
-persistência segura das configurações e concessões, Configurações, `/doctor`, `/status` e smokes com
-servidor fixture MCP completo e servidor real autorizado.
+**Cancelamento ativo implementado:** quando o token da execução é cancelado, o cliente envia
+`notifications/cancelled` com o ID da chamada original e devolve o controle sem aguardar o timeout
+do servidor. Uma eventual resposta tardia permanece identificada pelo ID antigo, é descartada pelo
+correlator e não pode concluir nem contaminar a chamada seguinte. Clientes legados continuam
+compatíveis pela interface básica, enquanto clientes que oferecem a interface cancelável recebem o
+token de ponta a ponta.
+
+**Ainda nesta fase:** paginação e descoberta de resources/prompts, persistência segura das
+configurações e concessões, Configurações, `/doctor`, `/status` e smokes com servidor fixture MCP
+completo e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.

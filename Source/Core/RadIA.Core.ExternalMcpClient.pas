@@ -4,7 +4,8 @@ interface
 
 uses
   RadIA.Core.ExternalMcp,
-  RadIA.Core.ExternalMcpTransport;
+  RadIA.Core.ExternalMcpTransport,
+  RadIA.Core.Tools;
 
 type
   IRadIAExternalMcpClient = interface
@@ -27,9 +28,21 @@ type
     property ProtocolVersion: string read GetProtocolVersion;
   end;
 
+  IRadIAExternalMcpCancelableClient = interface
+    ['{CA19A7D8-C1CC-4C54-9B6D-04EBEEDC2ED2}']
+    function CallToolWithCancellation(
+      const ANamespacedName: string;
+      const AArgumentsJson: string;
+      const ACancellationToken: IRadIAToolCancellationToken;
+      out AResultJson: string;
+      out AError: string
+    ): Boolean;
+  end;
+
   TRadIAExternalMcpClient = class(
     TInterfacedObject,
-    IRadIAExternalMcpClient
+    IRadIAExternalMcpClient,
+    IRadIAExternalMcpCancelableClient
   )
   private
     FCatalog: IRadIAExternalMcpCatalog;
@@ -47,9 +60,41 @@ type
       out AError: string
     ): Boolean;
     function BuildInitializeParams: string;
+    function CallToolCore(
+      const ANamespacedName: string;
+      const AArgumentsJson: string;
+      const ACancellationToken: IRadIAToolCancellationToken;
+      out AResultJson: string;
+      out AError: string
+    ): Boolean;
     function ParseTools(
       const AResultJson: string;
       out ATools: TArray<TRadIAExternalMcpTool>;
+      out AError: string
+    ): Boolean;
+    procedure ConfigureCancellation(
+      const ACancellationToken: IRadIAToolCancellationToken;
+      const ARequestId: string;
+      out ANotifier: IRadIAToolCancellationNotifier
+    );
+    function CheckCancellation(
+      const ACancellationToken: IRadIAToolCancellationToken;
+      const ARequestId: string;
+      const AHasCancellationNotifier: Boolean;
+      out AError: string
+    ): Boolean;
+    function ReceiveNextResponse(
+      const ACancellationToken: IRadIAToolCancellationToken;
+      const ARequestId: string;
+      const AStartedAt: UInt64;
+      const AHasCancellationNotifier: Boolean;
+      out AMessage: string;
+      out AError: string
+    ): Boolean;
+    function TryGetWaitDuration(
+      const AStartedAt: UInt64;
+      const ACanCancel: Boolean;
+      out AWaitMs: Cardinal;
       out AError: string
     ): Boolean;
     function SendNotification(
@@ -57,9 +102,11 @@ type
       const AParamsJson: string;
       out AError: string
     ): Boolean;
+    procedure SendCancellationNotification(const ARequestId: string);
     function SendRequest(
       const AMethod: string;
       const AParamsJson: string;
+      const ACancellationToken: IRadIAToolCancellationToken;
       out AResultJson: string;
       out AError: string
     ): Boolean;
@@ -86,6 +133,13 @@ type
       out AResultJson: string;
       out AError: string
     ): Boolean;
+    function CallToolWithCancellation(
+      const ANamespacedName: string;
+      const AArgumentsJson: string;
+      const ACancellationToken: IRadIAToolCancellationToken;
+      out AResultJson: string;
+      out AError: string
+    ): Boolean;
     function Connect(
       const AConfig: TRadIAExternalMcpServerConfig;
       out AError: string
@@ -109,6 +163,7 @@ const
   CMcpProtocolVersion = '2025-06-18';
   CLegacyMcpProtocolVersion = '2024-11-05';
   CMaximumSkippedMessages = 100;
+  CCancellationPollIntervalMs = 50;
 
 function IsSupportedProtocolVersion(const AVersion: string): Boolean;
 begin
@@ -219,6 +274,23 @@ function TRadIAExternalMcpClient.CallTool(
   out AResultJson: string;
   out AError: string
 ): Boolean;
+begin
+  Result := CallToolCore(
+    ANamespacedName,
+    AArgumentsJson,
+    nil,
+    AResultJson,
+    AError
+  );
+end;
+
+function TRadIAExternalMcpClient.CallToolCore(
+  const ANamespacedName: string;
+  const AArgumentsJson: string;
+  const ACancellationToken: IRadIAToolCancellationToken;
+  out AResultJson: string;
+  out AError: string
+): Boolean;
 var
   LArguments: TJSONObject;
   LParams: TJSONObject;
@@ -251,6 +323,7 @@ begin
       Result := SendRequest(
         'tools/call',
         LParams.ToJSON,
+        ACancellationToken,
         AResultJson,
         AError
       );
@@ -260,6 +333,60 @@ begin
   finally
     TMonitor.Exit(FLock);
   end;
+end;
+
+function TRadIAExternalMcpClient.CallToolWithCancellation(
+  const ANamespacedName: string;
+  const AArgumentsJson: string;
+  const ACancellationToken: IRadIAToolCancellationToken;
+  out AResultJson: string;
+  out AError: string
+): Boolean;
+begin
+  Result := CallToolCore(
+    ANamespacedName,
+    AArgumentsJson,
+    ACancellationToken,
+    AResultJson,
+    AError
+  );
+end;
+
+function TRadIAExternalMcpClient.CheckCancellation(
+  const ACancellationToken: IRadIAToolCancellationToken;
+  const ARequestId: string;
+  const AHasCancellationNotifier: Boolean;
+  out AError: string
+): Boolean;
+begin
+  Result := Assigned(ACancellationToken) and
+    ACancellationToken.CancellationRequested;
+  if not Result then
+    Exit;
+  if not AHasCancellationNotifier then
+    SendCancellationNotification(ARequestId);
+  AError := 'External MCP request was cancelled.';
+end;
+
+procedure TRadIAExternalMcpClient.ConfigureCancellation(
+  const ACancellationToken: IRadIAToolCancellationToken;
+  const ARequestId: string;
+  out ANotifier: IRadIAToolCancellationNotifier
+);
+begin
+  ANotifier := nil;
+  if not Assigned(ACancellationToken) or not Supports(
+    ACancellationToken,
+    IRadIAToolCancellationNotifier,
+    ANotifier
+  ) then
+    Exit;
+  ANotifier.SetCancellationCallback(
+    procedure
+    begin
+      SendCancellationNotification(ARequestId);
+    end
+  );
 end;
 
 function TRadIAExternalMcpClient.Connect(
@@ -285,6 +412,7 @@ begin
     if not SendRequest(
       'initialize',
       BuildInitializeParams,
+      nil,
       LResultJson,
       AError
     ) or not ValidateInitializeResult(LResultJson, AError) or
@@ -329,7 +457,7 @@ begin
       AError := 'External MCP client is not connected.';
       Exit(False);
     end;
-    if not SendRequest('tools/list', '{}', LResultJson, AError) then
+    if not SendRequest('tools/list', '{}', nil, LResultJson, AError) then
       Exit(False);
     if not ParseTools(LResultJson, LTools, AError) then
       Exit(False);
@@ -445,20 +573,98 @@ begin
   end;
 end;
 
+procedure TRadIAExternalMcpClient.SendCancellationNotification(
+  const ARequestId: string
+);
+var
+  LError: string;
+begin
+  SendNotification(
+    'notifications/cancelled',
+    '{"requestId":' + ARequestId + '}',
+    LError
+  );
+end;
+
+function TRadIAExternalMcpClient.ReceiveNextResponse(
+  const ACancellationToken: IRadIAToolCancellationToken;
+  const ARequestId: string;
+  const AStartedAt: UInt64;
+  const AHasCancellationNotifier: Boolean;
+  out AMessage: string;
+  out AError: string
+): Boolean;
+var
+  LWaitMs: Cardinal;
+begin
+  Result := False;
+  AMessage := '';
+  AError := '';
+  repeat
+    if CheckCancellation(
+      ACancellationToken,
+      ARequestId,
+      AHasCancellationNotifier,
+      AError
+    ) then
+      Exit;
+    if not TryGetWaitDuration(
+      AStartedAt,
+      Assigned(ACancellationToken),
+      LWaitMs,
+      AError
+    ) then
+      Exit;
+    if FTransport.Receive(LWaitMs, AMessage) then
+      Exit(True);
+    if not FTransport.Running then
+    begin
+      AError := FTransport.LastError;
+      if AError = '' then
+        AError := 'External MCP server stopped before responding.';
+      Exit;
+    end;
+  until False;
+end;
+
+function TRadIAExternalMcpClient.TryGetWaitDuration(
+  const AStartedAt: UInt64;
+  const ACanCancel: Boolean;
+  out AWaitMs: Cardinal;
+  out AError: string
+): Boolean;
+var
+  LElapsed: UInt64;
+begin
+  AError := '';
+  LElapsed := GetTickCount64 - AStartedAt;
+  Result := LElapsed < Cardinal(FConfig.TimeoutMs);
+  if not Result then
+  begin
+    AWaitMs := 0;
+    AError := 'External MCP request timed out.';
+    Exit;
+  end;
+  AWaitMs := Cardinal(FConfig.TimeoutMs) - Cardinal(LElapsed);
+  if ACanCancel and (AWaitMs > CCancellationPollIntervalMs) then
+    AWaitMs := CCancellationPollIntervalMs;
+end;
+
 function TRadIAExternalMcpClient.SendRequest(
   const AMethod: string;
   const AParamsJson: string;
+  const ACancellationToken: IRadIAToolCancellationToken;
   out AResultJson: string;
   out AError: string
 ): Boolean;
 var
+  LCancellationNotifier: IRadIAToolCancellationNotifier;
   LId: string;
   LMessage: string;
   LReceived: string;
   LResponseSucceeded: Boolean;
   LSkipped: Integer;
   LStartedAt: UInt64;
-  LWaitMs: Cardinal;
 begin
   AResultJson := '';
   AError := '';
@@ -475,38 +681,43 @@ begin
     AError := FTransport.LastError;
     Exit(False);
   end;
-  LStartedAt := GetTickCount64;
-  LSkipped := 0;
-  repeat
-    if GetTickCount64 - LStartedAt >= Cardinal(FConfig.TimeoutMs) then
-    begin
-      AError := 'External MCP request timed out.';
-      Exit(False);
-    end;
-    LWaitMs := Cardinal(FConfig.TimeoutMs) -
-      Cardinal(GetTickCount64 - LStartedAt);
-    if not FTransport.Receive(LWaitMs, LReceived) then
-    begin
-      AError := FTransport.LastError;
-      if AError = '' then
-        AError := 'External MCP request timed out or the server stopped.';
-      Exit(False);
-    end;
-    Inc(LSkipped);
-    if LSkipped > CMaximumSkippedMessages then
-    begin
-      AError := 'External MCP response correlation limit was exceeded.';
-      Exit(False);
-    end;
-    if TryHandleResponse(
-      LReceived,
+  ConfigureCancellation(
+    ACancellationToken,
+    LId,
+    LCancellationNotifier
+  );
+  try
+    LStartedAt := GetTickCount64;
+    LSkipped := 0;
+    while ReceiveNextResponse(
+      ACancellationToken,
       LId,
-      AResultJson,
-      AError,
-      LResponseSucceeded
-    ) then
-      Exit(LResponseSucceeded);
-  until False;
+      LStartedAt,
+      Assigned(LCancellationNotifier),
+      LReceived,
+      AError
+    ) do
+    begin
+      Inc(LSkipped);
+      if LSkipped > CMaximumSkippedMessages then
+      begin
+        AError := 'External MCP response correlation limit was exceeded.';
+        Exit(False);
+      end;
+      if TryHandleResponse(
+        LReceived,
+        LId,
+        AResultJson,
+        AError,
+        LResponseSucceeded
+      ) then
+        Exit(LResponseSucceeded);
+    end;
+    Result := False;
+  finally
+    if Assigned(LCancellationNotifier) then
+      LCancellationNotifier.ClearCancellationCallback;
+  end;
 end;
 
 function TRadIAExternalMcpClient.TryHandleResponse(

@@ -55,7 +55,7 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.Mcp` | Protocolo MCP, sessões, cancelamento, métricas e despacho. |
 | `RadIA.Core.ExternalMcp` | Contratos e catálogo isolado para consumir servidores MCP externos com namespace estável. |
 | `RadIA.Core.ExternalMcpTransport` | Transporte JSONL stdio limitado, com processo isolado, timeout e encerramento da árvore. |
-| `RadIA.Core.ExternalMcpClient` | Lifecycle JSON-RPC, correlação, descoberta de tools e chamadas por namespace federado. |
+| `RadIA.Core.ExternalMcpClient` | Lifecycle JSON-RPC, correlação, tools e cancelamento ativo por ID. |
 | `RadIA.Core.ExternalMcpSecurity` | Concessões, política comum, consentimento, auditoria e validação de paths. |
 | `RadIA.Core.HierarchicalSettings` | Valores, origens e precedência entre requisição, sessão, projeto, global e padrão seguro. |
 | `RadIA.Core.HierarchicalSettingsStore` | Persistência JSON atômica de escopos, com nomes protegidos por hash e preservação de campos desconhecidos. |
