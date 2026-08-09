@@ -156,5 +156,5 @@ linha lógica. O aceite total preserva todas as quebras, e o aceite parcial atua
 de manter o restante. O marco é validado visualmente no Delphi 12 Win32 e no Delphi 13 Win32/IDE64.
 O smoke abre uma unit real, confirma o editor pelo MCP e exige os eventos separados de
 preparação e pintura OTA. A evidência histórica está em `inline_completion_smoke_evidence_2.0.0.json`;
-o gate atual também exige aceite, um único undo restaurando o snapshot e rejeição limpa, e será
-publicado em `inline_completion_smoke_evidence_2.3.1.json` após a matriz dos três targets.
+o gate atual também exige aceite, um único undo restaurando o snapshot e rejeição limpa. A matriz
+aprovada está publicada em `inline_completion_smoke_evidence_2.3.1.json`.

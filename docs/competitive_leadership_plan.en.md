@@ -122,7 +122,7 @@ See the [Phase 3 foundation evidence](competitive_gap_phase_3_foundation_evidenc
 Also see the
 [Phase 3 persistence evidence](competitive_gap_phase_3_persistence_evidence_2.3.1.json).
 
-**Still missing:** FIM, gutter, and external MCP.
+**Still missing:** block gutter review and external MCP.
 
 ### Phase 4 — FIM-specialized completion
 
@@ -133,12 +133,14 @@ Also see the
 - Cancel stale responses after caret, buffer, file, project, or journey changes.
 - Expose local latency, model origin, and fallback reason for diagnostics.
 
-**Progress:** the separate FIM contract, capability discovery, dedicated Ollama/LM Studio routes,
-fallback, context cancellation, and visual diagnostics are implemented. Provider fixtures and the
-Delphi 12 build/test passed; visual acceptance on all three targets and versioned evidence still
-remain before this phase is complete.
+**Completed:** the separate FIM contract, capability discovery, dedicated Ollama/LM Studio routes,
+fallback, context cancellation, and visual diagnostics are implemented. Provider fixtures and a
+real-editor smoke proved clean preview, acceptance, one undo, restoration, and clean rejection on
+Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 See the
 [Phase 4 foundation evidence](competitive_gap_phase_4_foundation_evidence_2.3.1.json).
+Also see the
+[final FIM matrix evidence](inline_completion_smoke_evidence_2.3.1.json).
 
 **Acceptance:** fixtures prove prefix/suffix assembly and one real smoke per target accepts and
 rejects Ghost Text without premature writes, with one undo and no unintended code disclosure.

@@ -124,7 +124,7 @@ Consulte a [evidência do fundamento da Fase 3](competitive_gap_phase_3_foundati
 Consulte também a
 [evidência da persistência da Fase 3](competitive_gap_phase_3_persistence_evidence_2.3.1.json).
 
-**Ainda faltará:** FIM, gutter e MCP externo.
+**Ainda faltará:** gutter por bloco e MCP externo.
 
 ### Fase 4 — Completion especializada em FIM
 
@@ -135,12 +135,14 @@ Consulte também a
 - Cancelar respostas obsoletas ao mudar cursor, buffer, arquivo, projeto ou jornada.
 - Expor latência local, origem do modelo e motivo do fallback para diagnóstico.
 
-**Progresso:** contrato FIM separado, discovery por capability, rotas dedicadas Ollama/LM Studio,
+**Concluída:** contrato FIM separado, discovery por capability, rotas dedicadas Ollama/LM Studio,
 fallback, cancelamento por contexto e diagnóstico visual estão implementados. Fixtures de provider e
-o build/teste Delphi 12 passaram; ainda falta fechar o aceite visual nos três targets e versionar a
-evidência antes de considerar a fase concluída.
+o smoke no editor real comprovaram preview limpo, aceite, undo único, restauração e rejeição limpa
+no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 Consulte a
 [evidência do fundamento da Fase 4](competitive_gap_phase_4_foundation_evidence_2.3.1.json).
+Consulte também a
+[evidência final da matriz FIM](inline_completion_smoke_evidence_2.3.1.json).
 
 **Aceite:** fixtures provam montagem correta de prefixo/sufixo e um smoke real por target aceita e
 rejeita Ghost Text sem alterar antecipadamente o buffer, com undo único e nenhum vazamento de código.

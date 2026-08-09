@@ -154,5 +154,5 @@ line break, while partial acceptance refreshes the snapshot before keeping the r
 milestone passes visual validation on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The smoke
 opens a real unit, confirms the editor through MCP, and requires separate preparation and OTA
 painting events. Historical evidence is stored in `inline_completion_smoke_evidence_2.0.0.json`;
-the current gate also requires acceptance, one undo restoring the snapshot, and clean rejection,
-and will be published as `inline_completion_smoke_evidence_2.3.1.json` after all three targets pass.
+the current gate also requires acceptance, one undo restoring the snapshot, and clean rejection.
+The approved matrix is published as `inline_completion_smoke_evidence_2.3.1.json`.
