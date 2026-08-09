@@ -90,6 +90,7 @@ uses
   RadIA.Core.Container,
   RadIA.Core.IDENavigation,
   RadIA.Core.Interfaces,
+  RadIA.Core.JourneyContext,
   RadIA.Core.Logger,
   RadIA.OTA.TextReader;
 
@@ -138,6 +139,7 @@ var
   LSuffix: string;
   LView: IOTAEditView;
   LEditorAdapter: IRadIAEditorAdapter;
+  LJourneyContext: IRadIAJourneyContextCoordinator;
 begin
   AContext := Default(TRadIAInlineCompletionContext);
   LView := CurrentView;
@@ -177,6 +179,14 @@ begin
   end;
   LProjectContext := 'Project: ' + LProjectName + sLineBreak +
     'Root: ' + LProjectFolder;
+  if TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
+    LJourneyContext
+  ) then
+    LProjectContext := TRadIAJourneyContextEnricher.EnrichProjectContext(
+      LProjectContext,
+      LProjectFolder,
+      LJourneyContext
+    );
   LSymbolName := '';
   if TRadIAUnitSymbolScanner.TryFindAtLine(
     LContent,

@@ -47,6 +47,14 @@ compatible link exists and **Session: New** when the next message will start a n
 conversation. Use **New CLI session** or `/cli new` to start over without deleting the visible RadIA
 history. See [CLI executors](cli_executors.en.md) for limits and privacy.
 
+### Journey shared with terminal and editor
+
+Each conversation can keep a journey identity linked to the active project. The **Journey** button
+shows **Link** or **Detach**, and the composer displays the shortened identifier. Switching the
+conversation restores its journey without copying messages into the terminal or editor. Use
+`/context`, `/context new`, `/context detach`, and `/context switch <id>` for the same keyboard-driven
+actions. See [Shared context](shared_journey_context.en.md) for limits, privacy, and project isolation.
+
 ---
 
 ## 4. Exporting Conversations

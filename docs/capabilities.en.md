@@ -5,6 +5,7 @@ This page is the functional map of RadIA 2.3.1.
 | Area | What RadIA can do |
 |---|---|
 | Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, sessions, history, exports, templates, token and cost estimates. |
+| Shared journey | Link chat, terminal, and editor by project-safe identity without copying history or process output. |
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |
 | Journeys | Conversational intake that preserves answers, plus minimal and controller-based DEXT project generation. |
 | Providers | Gemini, OpenAI, Azure OpenAI, Claude, Bedrock, Copilot, DeepSeek, Groq, Qwen, Mistral, OpenRouter, Ollama, LM Studio, OpenAI-compatible and JSON-defined providers. |

@@ -58,6 +58,11 @@ test('chat exposes the effective route independently from agent mode', () => {
   assert.match(presenter, /ChatGPT Pro via Codex CLI/u);
   assert.match(chatJs, /executionRouteSelector\.disabled = requestInProgress/u);
   assert.match(presenter, /Result\.AddPair\('cliClientId', LCliClientId\)/u);
+  assert.match(chatHtml, /id="btn-journey-context"/u);
+  assert.match(chatJs, /action: 'toggle_journey_context'/u);
+  assert.match(chatJs, /Journey: Detached/u);
+  assert.match(presenter, /Result\.AddPair\('journeyState', LJourneyState\)/u);
+  assert.match(presenter, /Result\.AddPair\('journeyActivity', LActivityState\)/u);
   assert.doesNotMatch(presenter, /LLabel := 'Agent ·/u);
   assert.match(chatCss, /\.composer-executor-control select option/u);
   assert.match(chatCss, /color: CanvasText/u);

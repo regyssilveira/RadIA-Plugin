@@ -197,6 +197,12 @@ O terminal integrado pode ser aberto pelo botão **Terminal** (`>_`) no cabeçal
 comando `/terminal`. Os dois caminhos abrem o mesmo terminal acoplável e preservam a preferência
 entre interação visual e comandos digitados.
 
+O chat, o terminal e o contexto enviado às ações do editor podem compartilhar uma identidade de
+jornada sem duplicar o histórico da conversa nem a saída do terminal. O botão **Journey** permite
+vincular ou desvincular visualmente; `/context`, `/context new`, `/context detach` e
+`/context switch <id>` oferecem as mesmas operações pelo teclado. A troca é limitada ao projeto
+ativo. Veja o [guia de contexto compartilhado](shared_journey_context.md).
+
 O botão **Agent On/Off** no cabeçalho e os comandos `/agent`, `/agent on` e `/agent off` controlam o
 mesmo estado. Com o modo desligado, o catálogo continua disponível, mas chamadas de tools pelo chat
 são recusadas até a reativação.

@@ -98,6 +98,7 @@ uses
   RadIA.Core.DebuggerWatches, RadIA.Core.DebuggerInspectionTools,
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
   RadIA.Core.InlineCompletion,
+  RadIA.Core.JourneyContext,
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeEmbeddings,
   RadIA.Core.KnowledgeEmbeddingSelection,
@@ -836,6 +837,9 @@ initialization
   TLogger.SetActiveLogger(TRadIAContainer.Resolve<IRadIALogger>);
   TRadIAContainer.Register<IRadIAIDEAdapter>(TRadIAConcreteIDEAdapter.Create);
   TRadIAContainer.Register<IRadIAEditorAdapter>(TRadIAOTAEditorAdapter.Create);
+  TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(
+    TRadIAJourneyContextCoordinator.Create
+  );
   TRadIAContainer.Register<IRadIAToolRegistry>(TRadIAToolRegistry.Create);
   TRadIAContainer.Register<IRadIAResultCompactor>(
     TRadIAResultCompactor.Create

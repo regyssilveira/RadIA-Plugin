@@ -22,9 +22,12 @@ Para distinguir implementação de planejamento:
 - Comandos internos e comandos personalizados.
 - Ajuda integrada com `/help`, exemplos de comandos e links abertos no navegador padrão.
 - Jornadas conversacionais que preservam respostas até concluir ou abandonar a coleta.
+- Identidade de jornada compartilhada entre chat, terminal e editor, com vínculo, troca e isolamento
+  por projeto sem copiar histórico ou saída de processos.
 
 Consulte [Chat e sessões](user_guide_chat_sessions.md) e
-[Comandos de barra](slash_commands.md).
+[Comandos de barra](slash_commands.md). Para continuar a mesma tarefa entre superfícies, consulte
+[Contexto compartilhado](shared_journey_context.md).
 
 ## Providers e modelos
 

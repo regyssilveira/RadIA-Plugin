@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhase2SharedJourneyContext",
+  "product": "RadIA",
+  "baselineVersion": "2.3.1",
+  "generatedAtUtc": "2026-08-09T00:12:16Z",
+  "status": "passed",
+  "capabilities": {
+    "surfaces": ["chat", "terminal", "editor"],
+    "projectIsolation": true,
+    "conversationIsolation": true,
+    "sharedActivityState": true,
+    "historyCopied": false,
+    "visualLinkAction": true,
+    "slashCommands": [
+      "/context",
+      "/context new",
+      "/context detach",
+      "/context switch <id>"
+    ],
+    "persistedOutsideIdeProcess": false
+  },
+  "targets": [
+    {"delphiVersion": "23.0", "platform": "Win32", "buildPassed": true, "testsFound": 916, "testsPassed": 916, "testsFailed": 0, "testsErrored": 0, "testsLeaked": 0},
+    {"delphiVersion": "37.0", "platform": "Win32", "buildPassed": true, "testsFound": 916, "testsPassed": 916, "testsFailed": 0, "testsErrored": 0, "testsLeaked": 0},
+    {"delphiVersion": "37.0", "platform": "Win64", "buildPassed": true, "testsFound": 916, "testsPassed": 916, "testsFailed": 0, "testsErrored": 0, "testsLeaked": 0}
+  ],
+  "documentation": {
+    "testsFound": 17,
+    "testsPassed": 17,
+    "webTestsFound": 50,
+    "webTestsPassed": 50,
+    "lintPassed": true
+  },
+  "sonar": {
+    "analysisId": "06856bee-61ac-4b3e-91d9-a7f9820ad110",
+    "qualityGate": "OK",
+    "newCoveragePercent": 83.2,
+    "newDuplicationPercent": 0.96944,
+    "globalCoveragePercent": 83.4,
+    "globalDuplicationPercent": 2.0,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  }
+}

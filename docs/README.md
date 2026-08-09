@@ -16,6 +16,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Entender cada aba de configurações | [Mapa das configurações](user_manual.md#24-mapa-das-configurações) | [Modelo de segurança](tool_security_model.md) |
 | Consultar um campo ou botão específico | [Referência completa das configurações](settings_reference.md) | [Solução de problemas](troubleshooting_agentic_platform.md) |
 | Usar o chat no dia a dia | [Chat e sessões](user_guide_chat_sessions.md) | [Comandos de barra](slash_commands.md) |
+| Continuar uma tarefa entre chat, terminal e editor | [Contexto compartilhado](shared_journey_context.md) | [Chat e sessões](user_guide_chat_sessions.md) |
 | Resolver um problema | [Solução de problemas](troubleshooting_agentic_platform.md) | [Diagnóstico da instalação](capabilities.md#diagnóstico-da-instalação) |
 
 ## Quero realizar uma tarefa

@@ -12,7 +12,7 @@ uses
   RadIA.Core.AgentProvider,
   RadIA.Core.AgentExecutors, RadIA.Core.CliManager, RadIA.Core.CliProcess,
   RadIA.Core.Journeys, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
-  RadIA.Core.Workspace;
+  RadIA.Core.Workspace, RadIA.Core.JourneyContext;
 
 type
   IRadIAChatView = interface
@@ -86,6 +86,7 @@ type
     FToolExecutor: IRadIAToolExecutor;
     FToolPolicyExecutor: IRadIAToolPolicyExecutor;
     FWorkspace: IRadIAWorkspaceFacade;
+    FJourneyContext: IRadIAJourneyContextCoordinator;
     FAgentModeEnabled: Boolean;
     FAgentController: IRadIAAgentRunController;
     FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
@@ -255,6 +256,17 @@ type
       const ACommandText: string
     ): Boolean;
     procedure PostCliSessionStatus;
+    function CurrentExecutorId: string;
+    function CurrentProjectId: string;
+    procedure SyncJourneyContext;
+    procedure EnsureJourneyProjectBoundary;
+    procedure PostJourneyContextStatus;
+    procedure ToggleJourneyContext;
+    procedure CompleteJourneyActivity;
+    function TryHandleJourneyContextCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
     function TryHandleStatusCommand(
       const APromptText: string;
       const ACommandText: string
@@ -484,6 +496,9 @@ begin
     FToolPolicyExecutor
   );
   TRadIAContainer.TryResolve<IRadIAWorkspaceFacade>(FWorkspace);
+  TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
+    FJourneyContext
+  );
 
   if ADataDir.IsEmpty then
     FDataDir := TPath.Combine(TPath.GetHomePath, 'RadIA')
@@ -570,6 +585,7 @@ begin
 
   LoadConfig;
   UpdateSessionsList;
+  SyncJourneyContext;
   LoadPromptHistory;
 end;
 
@@ -762,7 +778,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..18] of string = (
+  CNativeCommands: array[0..22] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -781,7 +797,11 @@ const
     '/tools',
     '/revoke-tools',
     '/cli session',
-    '/cli new'
+    '/cli new',
+    '/context',
+    '/context new',
+    '/context detach',
+    '/context switch'
   );
 var
   LCommand: string;
@@ -1023,6 +1043,26 @@ begin
     'New CLI Session'
   );
   AddCommand(
+    '/context',
+    'Shows the journey shared by chat, terminal, and editor.',
+    'Journey Context'
+  );
+  AddCommand(
+    '/context new',
+    'Creates a new journey for the active conversation and project.',
+    'New Journey Context'
+  );
+  AddCommand(
+    '/context detach',
+    'Detaches the active conversation from its shared journey.',
+    'Detach Journey Context'
+  );
+  AddCommand(
+    '/context switch',
+    'Switches to a journey from the active project by identifier.',
+    'Switch Journey Context'
+  );
+  AddCommand(
     '/revoke-tools',
     'Revokes all IDE tool permissions granted for this session.',
     'Revoke Tool Permissions'
@@ -1221,6 +1261,8 @@ begin
   FSessionManager.ActiveSessionId := LSession.Id;
   FConfig.ActiveSessionId := LSession.Id;
   FConfig.Save;
+  SyncJourneyContext;
+  PostExecutionRouteToWeb;
 
   FHistory := [];
   FAccumulatedUsage := TTokenUsage.Empty;
@@ -1250,6 +1292,8 @@ begin
     Exit;
 
   FSessionManager.DeleteSession(ASessionId);
+  if Assigned(FJourneyContext) then
+    FJourneyContext.Detach(ASessionId);
 
   if SameText(FSessionManager.ActiveSessionId, ASessionId) then
   begin
@@ -1281,6 +1325,8 @@ begin
   FSessionManager.UpdateSessionActivity(ASessionId);
   FConfig.ActiveSessionId := ASessionId;
   FConfig.Save;
+  SyncJourneyContext;
+  PostExecutionRouteToWeb;
 
   UpdateSessionsList;
 
@@ -1426,6 +1472,7 @@ begin
   if TryHandleToolPrompt(APromptText) then
     Exit;
 
+  EnsureJourneyProjectBoundary;
   LProcessed := PreProcessPrompt(APromptText);
   PostToWebView('add_message', 'user', APromptText);
   if FAgentModeEnabled then
@@ -1482,6 +1529,8 @@ var
   LAssistantMsg: IRadIAChatMessage;
 begin
   Self.FRequestInProgress := False;
+  if Assigned(Self.FJourneyContext) then
+    Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
   TLogger.Log('SendPromptToAI: Handling user cancellation in UI callback.', 'UI');
 
@@ -1507,6 +1556,8 @@ var
   LStats: string;
 begin
   Self.FRequestInProgress := False;
+  if Assigned(Self.FJourneyContext) then
+    Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
   TLogger.Log(Format('SendPromptToAI completed. TotalResponseLength=%d', [Length(AFullResponse)]), 'UI');
 
@@ -1560,6 +1611,8 @@ var
   LDisplayError: string;
 begin
   Self.FRequestInProgress := False;
+  if Assigned(Self.FJourneyContext) then
+    Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
   TLogger.Log(Format('SendPromptToAI error callback: %s', [AError]), 'UI');
   LDisplayError := AError;
@@ -1706,6 +1759,8 @@ begin
   FPendingPrompt := APromptText;
   LDoneHandled := False;
   FRequestInProgress := True;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
 
@@ -1751,6 +1806,8 @@ begin
     on E: Exception do
     begin
       FRequestInProgress := False;
+      if Assigned(FJourneyContext) then
+        FJourneyContext.CompleteActivity;
       FView.SetRequestState(False);
       PostToWebView('add_message', 'assistant', '**Error:** ' + E.Message, False, LActiveProvider, LActiveModel);
       PostToWebView('append_message', 'assistant', '', True, LActiveProvider, LActiveModel);
@@ -1763,6 +1820,8 @@ begin
   if FRequestInProgress then
   begin
     FCancelledByUser := True;
+    if Assigned(FJourneyContext) then
+      FJourneyContext.RequestCancellation;
     TLogger.Log('CancelRequest: User requested cancellation.', 'UI');
     FView.SetRequestState(False);
     if Assigned(FCliProcessSession) and FCliProcessSession.IsRunning then
@@ -1778,6 +1837,8 @@ end;
 procedure TRadIAChatPresenter.HandleGenerateDTOCancel;
 begin
   Self.FRequestInProgress := False;
+  if Assigned(Self.FJourneyContext) then
+    Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
   Self.PostToWebView('append_generator_code', '', ' [Cancelled by user]', True);
 end;
@@ -1785,6 +1846,8 @@ end;
 procedure TRadIAChatPresenter.HandleGenerateDTOError(const AError: string);
 begin
   Self.FRequestInProgress := False;
+  if Assigned(Self.FJourneyContext) then
+    Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
   Self.PostToWebView('append_generator_code', '', #13#10 + '// Error: ' + AError, True);
 end;
@@ -1795,6 +1858,8 @@ var
   LStats: string;
 begin
   Self.FRequestInProgress := False;
+  if Assigned(Self.FJourneyContext) then
+    Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
 
   LUsage.PromptTokens := Length(APromptText) div 4;
@@ -1863,6 +1928,8 @@ begin
 
   LDoneHandled := False;
   FRequestInProgress := True;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
 
@@ -1892,6 +1959,8 @@ begin
     on E: Exception do
     begin
       FRequestInProgress := False;
+      if Assigned(FJourneyContext) then
+        FJourneyContext.CompleteActivity;
       FView.SetRequestState(False);
       PostToWebView('append_generator_code', '', '// Error: ' + E.Message, True);
     end;
@@ -2252,6 +2321,8 @@ begin
     FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
     PostExecutionRouteToWeb;
   end
+  else if AAction = 'toggle_journey_context' then
+    ToggleJourneyContext
   else if AAction = 'pause_agent' then
     PauseAgentRun
   else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
@@ -2446,6 +2517,156 @@ begin
   Result := False;
 end;
 
+function TRadIAChatPresenter.CurrentExecutorId: string;
+var
+  LSettings: TRadIAAgentExecutorSettings;
+begin
+  LSettings := FAgentExecutorSettings.Load;
+  if LSettings.Kind = aekNative then
+    Result := 'native'
+  else
+    Result := LSettings.CliClientId;
+end;
+
+function TRadIAChatPresenter.CurrentProjectId: string;
+var
+  LProject: TRadIAProjectSnapshot;
+begin
+  Result := '';
+  if not Assigned(FWorkspace) then
+    Exit;
+  LProject := FWorkspace.GetActiveProject;
+  Result := Trim(LProject.FileName);
+end;
+
+procedure TRadIAChatPresenter.SyncJourneyContext;
+var
+  LConversationId: string;
+  LProjectId: string;
+begin
+  if not Assigned(FJourneyContext) then
+    Exit;
+  LConversationId := FSessionManager.ActiveSessionId;
+  LProjectId := CurrentProjectId;
+  if (LConversationId = '') or (LProjectId = '') then
+    Exit;
+  FJourneyContext.Activate(
+    LConversationId,
+    LProjectId,
+    CurrentExecutorId
+  );
+end;
+
+procedure TRadIAChatPresenter.EnsureJourneyProjectBoundary;
+var
+  LContext: TRadIAJourneyContextSnapshot;
+begin
+  if Assigned(FJourneyContext) and FJourneyContext.TryGetForConversation(
+    FSessionManager.ActiveSessionId,
+    LContext
+  ) then
+    SyncJourneyContext;
+end;
+
+procedure TRadIAChatPresenter.PostJourneyContextStatus;
+var
+  LContext: TRadIAJourneyContextSnapshot;
+begin
+  if Assigned(FJourneyContext) and FJourneyContext.TryGetActive(LContext) and
+    LContext.MatchesProject(CurrentProjectId) then
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'Active journey: `' + LContext.JourneyId + '`. Conversation: `' +
+        LContext.ConversationId + '`. Executor: `' + LContext.ExecutorId + '`.'
+    )
+  else
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'No journey is linked to the active conversation and project.'
+    );
+end;
+
+procedure TRadIAChatPresenter.ToggleJourneyContext;
+var
+  LContext: TRadIAJourneyContextSnapshot;
+begin
+  if Assigned(FJourneyContext) and
+    FJourneyContext.TryGetForConversation(
+      FSessionManager.ActiveSessionId,
+      LContext
+    ) and LContext.MatchesProject(CurrentProjectId) then
+    FJourneyContext.Detach(FSessionManager.ActiveSessionId)
+  else
+    SyncJourneyContext;
+  PostExecutionRouteToWeb;
+end;
+
+procedure TRadIAChatPresenter.CompleteJourneyActivity;
+begin
+  if Assigned(FJourneyContext) then
+    FJourneyContext.CompleteActivity;
+end;
+
+function TRadIAChatPresenter.TryHandleJourneyContextCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LJourneyId: string;
+  LSnapshot: TRadIAJourneyContextSnapshot;
+begin
+  Result := SameText(ACommandText, '/context') or
+    SameText(ACommandText, '/context new') or
+    SameText(ACommandText, '/context detach') or
+    ACommandText.StartsWith('/context switch ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  if not Assigned(FJourneyContext) then
+  begin
+    PostToWebView('add_message', 'assistant', 'Journey context is unavailable.');
+    Exit;
+  end;
+  if SameText(ACommandText, '/context detach') then
+  begin
+    FJourneyContext.Detach(FSessionManager.ActiveSessionId);
+    PostExecutionRouteToWeb;
+    PostJourneyContextStatus;
+    Exit;
+  end;
+  if ACommandText.StartsWith('/context switch ', True) then
+  begin
+    LJourneyId := Trim(Copy(
+      ACommandText,
+      Length('/context switch ') + 1,
+      MaxInt
+    ));
+    if (LJourneyId = '') or
+      not FJourneyContext.SwitchTo(LJourneyId, CurrentProjectId) or
+      not FJourneyContext.TryGetByJourney(LJourneyId, LSnapshot) then
+    begin
+      PostToWebView(
+        'add_message',
+        'assistant',
+        'Journey not found in the active project. Use `/context` to ' +
+          'inspect the current link.'
+      );
+      Exit;
+    end;
+    SelectSession(LSnapshot.ConversationId);
+    PostExecutionRouteToWeb;
+    PostJourneyContextStatus;
+    Exit;
+  end;
+  if SameText(ACommandText, '/context new') then
+    FJourneyContext.Detach(FSessionManager.ActiveSessionId);
+  SyncJourneyContext;
+  PostExecutionRouteToWeb;
+  PostJourneyContextStatus;
+end;
+
 procedure TRadIAChatPresenter.PostCliSessionStatus;
 var
   LSession: TSessionInfo;
@@ -2474,6 +2695,8 @@ function TRadIAChatPresenter.TryHandleCatalogCommand(
 ): Boolean;
 begin
   Result := True;
+  if TryHandleJourneyContextCommand(APromptText, ACommandText) then
+    Exit;
   if TryHandleCliCommand(APromptText, ACommandText) then
     Exit;
   if SameText(ACommandText, '/help') then
@@ -3089,6 +3312,8 @@ begin
     PostToWebView('add_message', 'assistant', 'The selected executor is not supported.');
     Exit;
   end;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.UpdateExecutor(CurrentExecutorId);
   PostExecutionRouteToWeb;
   UpdateModelsCombo;
 end;
@@ -3123,6 +3348,8 @@ begin
         if not LGuard.IsAlive then
           Exit;
         FRequestInProgress := False;
+        if Assigned(FJourneyContext) then
+          FJourneyContext.CompleteActivity;
         FCancelledByUser := AResult.Status = asCancelled;
         FView.SetRequestState(False);
         LAssistantMessage := TRadIAChatMessage.CreateMessage(
@@ -3240,6 +3467,8 @@ begin
   if not Assigned(FAgentController) or FAgentController.IsRunning then
     Exit;
   FRequestInProgress := True;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
   FAgentController.Resume(FSessionManager.ActiveSessionId);
@@ -3268,6 +3497,8 @@ begin
     Exit;
   end;
   FRequestInProgress := True;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
   FAgentController.ReplayStep(
@@ -3414,6 +3645,8 @@ begin
   FHistory := FHistory + [LUserMessage];
   SaveChatHistory;
   FRequestInProgress := True;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
   FAgentController.Start(
@@ -3578,6 +3811,8 @@ begin
   FHistory := FHistory + [LUserMessage];
   SaveChatHistory;
   FRequestInProgress := True;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
   LGuard := FLifecycleGuard as IRadIALifecycleGuard;
@@ -3624,6 +3859,7 @@ var
 begin
   FCliProcessSession := nil;
   FRequestInProgress := False;
+  CompleteJourneyActivity;
   FView.SetRequestState(False);
   if AResult.Cancelled or FCancelledByUser then
     LResponse := 'CLI execution was cancelled.'
@@ -3770,10 +4006,14 @@ end;
 function TRadIAChatPresenter.BuildExecutionRouteJson: TJSONObject;
 var
   LAuthType: string;
+  LActivityState: string;
   LCliClientId: string;
   LDetails: string;
   LDisplayName: string;
   LLabel: string;
+  LJourney: TRadIAJourneyContextSnapshot;
+  LJourneyId: string;
+  LJourneyState: string;
   LMode: string;
   LOrchestrator: string;
   LProvider: string;
@@ -3787,6 +4027,23 @@ begin
   LSettings := FAgentExecutorSettings.Load;
   LCliClientId := LSettings.CliClientId;
   LSessionState := 'new';
+  LJourneyId := '';
+  LJourneyState := 'detached';
+  LActivityState := 'idle';
+  if Assigned(FJourneyContext) and FJourneyContext.TryGetForConversation(
+    FSessionManager.ActiveSessionId,
+    LJourney
+  ) and LJourney.MatchesProject(CurrentProjectId) then
+  begin
+    LJourneyId := LJourney.JourneyId;
+    LJourneyState := 'linked';
+    case LJourney.State of
+      jasRunning:
+        LActivityState := 'running';
+      jasCancellationRequested:
+        LActivityState := 'cancelling';
+    end;
+  end;
   if FSessionManager.TryGetSession(
     FSessionManager.ActiveSessionId,
     LSession
@@ -3813,6 +4070,8 @@ begin
   LDetails := 'Mode: ' + LMode + '. Orchestrator: ' + LOrchestrator +
     '. Provider transport: ' + LTransport +
     '. CLI session: ' + LSessionState +
+    '. Journey: ' + LJourneyState +
+    '. Journey activity: ' + LActivityState +
     '. MCP is a separate external tool bridge and is not this chat route.';
   Result := TJSONObject.Create;
   Result.AddPair('label', LLabel);
@@ -3824,6 +4083,9 @@ begin
   Result.AddPair('provider', LProvider);
   Result.AddPair('cliClientId', LCliClientId);
   Result.AddPair('cliSessionState', LSessionState);
+  Result.AddPair('journeyState', LJourneyState);
+  Result.AddPair('journeyId', LJourneyId);
+  Result.AddPair('journeyActivity', LActivityState);
   Result.AddPair('mcpRole', 'external-bridge');
 end;
 

@@ -170,6 +170,7 @@ const btnAgentMode    = document.getElementById('btn-agent-mode');
 const btnTerminal     = document.getElementById('btn-terminal');
 const btnAgentHistory = document.getElementById('btn-agent-history');
 const btnCliNewSession = document.getElementById('btn-cli-new-session');
+const btnJourneyContext = document.getElementById('btn-journey-context');
 const executionRoute  = document.getElementById('execution-route');
 const composerRoute   = document.getElementById('composer-route');
 const executionRouteSelector = document.getElementById('select-execution-route');
@@ -1028,6 +1029,14 @@ function updateExecutionRoute(route) {
     btnCliNewSession.hidden = route.orchestrator !== 'external-cli';
     btnCliNewSession.disabled = requestInProgress || route.cliSessionState !== 'resume';
   }
+  if (btnJourneyContext) {
+    const isLinked = route.journeyState === 'linked';
+    btnJourneyContext.disabled = requestInProgress;
+    btnJourneyContext.querySelector('.btn-label').textContent = isLinked ? 'Detach' : 'Link';
+    btnJourneyContext.title = isLinked
+      ? 'Detach this conversation from the shared journey context'
+      : 'Link chat, terminal, and editor to a journey for the active project';
+  }
   updateComposerRoute();
 }
 
@@ -1083,7 +1092,10 @@ function updateComposerRoute() {
   const cliSession = activeExecutionRoute.orchestrator === 'external-cli'
     ? `Session: ${cliSessionState}`
     : '';
-  composerRoute.textContent = `Auth: ${[routeName, selectedModel, cliSession].filter(Boolean).join(' | ')}`;
+  const journey = activeExecutionRoute.journeyState === 'linked'
+    ? `Journey: ${String(activeExecutionRoute.journeyId || '').slice(0, 8)}`
+    : 'Journey: Detached';
+  composerRoute.textContent = `Auth: ${[routeName, selectedModel, cliSession, journey].filter(Boolean).join(' | ')}`;
   composerRoute.title = activeExecutionRoute.details || activeExecutionRoute.label || routeName;
   composerRoute.dataset.transport = activeExecutionRoute.transport || 'native';
 }
@@ -2431,6 +2443,10 @@ executionRouteSelector.addEventListener('change', () => {
 
 btnCliNewSession?.addEventListener('click', () => {
   postMessageToDelphi({ action: 'reset_cli_session' });
+});
+
+btnJourneyContext?.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'toggle_journey_context' });
 });
 
 function setDropdownOpen(wrapper, trigger, open) {

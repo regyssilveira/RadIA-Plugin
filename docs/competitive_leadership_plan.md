@@ -92,6 +92,12 @@ comando. A matriz Delphi passou com 904/904 testes por alvo. Consulte a
 **Aceite:** uma jornada autenticada atravessa chat, terminal e editor sem perder identidade nem
 copiar contexto de outro workspace; cancelamento em uma superfície produz estado coerente nas demais.
 
+**Estado:** concluída. Chat, terminal e editor usam a mesma identidade por conversa e projeto, com
+atividade compartilhada, isolamento entre workspaces, botão visual e comandos para vincular,
+desvincular, renovar e trocar a jornada. Nenhum histórico ou saída de processo é copiado. A matriz
+Delphi passou com 916/916 testes por alvo. Consulte a
+[evidência da Fase 2](competitive_gap_phase_2_evidence_2.3.1.json).
+
 **Ainda faltará:** configuração hierárquica, FIM, gutter e MCP externo.
 
 ### Fase 3 — Configuração por projeto, sessão e solicitação

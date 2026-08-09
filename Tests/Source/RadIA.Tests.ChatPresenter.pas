@@ -4,7 +4,8 @@ interface
 
 uses
   DUnitX.TestFramework, System.SysUtils, System.Classes, RadIA.Core.Interfaces, RadIA.Core.Sessions,
-  RadIA.Core.ProviderRegistry, RadIA.Core.Tools,
+  RadIA.Core.ProviderRegistry, RadIA.Core.Tools, RadIA.Core.Workspace,
+  RadIA.Core.JourneyContext,
   RadIA.UI.ChatPresenter;
 
 type
@@ -152,6 +153,23 @@ type
     ): TRadIAToolResult;
   end;
 
+  TMockWorkspace = class(TInterfacedObject, IRadIAWorkspaceFacade)
+  public
+    function GetIDEState: TRadIAIDEState;
+    function GetActiveProject: TRadIAProjectSnapshot;
+    function GetActiveUnit: string;
+    function ListOpenFiles: TArray<string>;
+    function ListProjectUnits: TArray<string>;
+    function GetEditorContent(
+      const AMaxCharacters: Integer
+    ): TRadIAEditorContent;
+    function GetEditorSelection: TRadIAEditorSelection;
+    function GetCursorPosition: TRadIAEditorPosition;
+    function GetCompilerMessages(
+      const AMaxCount: Integer
+    ): TArray<TRadIACompilerMessage>;
+  end;
+
   [TestFixture]
   TTestChatPresenter = class
   strict private
@@ -165,6 +183,8 @@ type
     FTempDir: string;
     FToolRegistry: IRadIAToolRegistry;
     FToolExecutor: IRadIAToolExecutor;
+    FPreviousJourneyContext: IRadIAJourneyContextCoordinator;
+    FPreviousWorkspace: IRadIAWorkspaceFacade;
 
     procedure DrainQueuedCalls;
   public
@@ -222,6 +242,12 @@ type
     [Test]
     procedure TestCliNewCommandDetachesLinkedConversation;
     [Test]
+    procedure TestContextCommandShowsSharedJourney;
+    [Test]
+    procedure TestContextDetachCommandUnlinksSharedJourney;
+    [Test]
+    procedure TestContextSwitchCommandSelectsLinkedConversation;
+    [Test]
     procedure TestJourneyCommandListsEndToEndRecipes;
     [Test]
     procedure TestHelpCommandShowsCapabilitiesAndDocumentation;
@@ -271,8 +297,65 @@ implementation
 
 uses
   RadIA.Core.AgentRuntime, RadIA.Core.Config, RadIA.Core.SettingsStorage,
-  System.IOUtils, RadIA.Core.Mediator,
+  System.IOUtils, RadIA.Core.Mediator, RadIA.Core.Container,
   RadIA.Core.TokenUsage, RadIA.Core.ToolRegistry;
+
+{ TMockWorkspace }
+
+function TMockWorkspace.GetIDEState: TRadIAIDEState;
+begin
+  Result := Default(TRadIAIDEState);
+end;
+
+function TMockWorkspace.GetActiveProject: TRadIAProjectSnapshot;
+begin
+  Result := TRadIAProjectSnapshot.Create(
+    'Sample',
+    'C:\projects\sample\Sample.dproj',
+    'C:\projects\sample',
+    'Debug',
+    'Win32'
+  );
+end;
+
+function TMockWorkspace.GetActiveUnit: string;
+begin
+  Result := 'Sample.Main';
+end;
+
+function TMockWorkspace.ListOpenFiles: TArray<string>;
+begin
+  Result := [];
+end;
+
+function TMockWorkspace.ListProjectUnits: TArray<string>;
+begin
+  Result := [];
+end;
+
+function TMockWorkspace.GetEditorContent(
+  const AMaxCharacters: Integer
+): TRadIAEditorContent;
+begin
+  Result := Default(TRadIAEditorContent);
+end;
+
+function TMockWorkspace.GetEditorSelection: TRadIAEditorSelection;
+begin
+  Result := Default(TRadIAEditorSelection);
+end;
+
+function TMockWorkspace.GetCursorPosition: TRadIAEditorPosition;
+begin
+  Result := Default(TRadIAEditorPosition);
+end;
+
+function TMockWorkspace.GetCompilerMessages(
+  const AMaxCount: Integer
+): TArray<TRadIACompilerMessage>;
+begin
+  Result := [];
+end;
 
 { TMockChatView }
 
@@ -614,6 +697,14 @@ begin
   FToolRegistry.RegisterTool(TMockInstallationHealthTool.Create);
   FToolRegistry.RegisterTool(TMockRadIAStatusTool.Create);
   FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
+  TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
+    FPreviousJourneyContext
+  );
+  TRadIAContainer.TryResolve<IRadIAWorkspaceFacade>(FPreviousWorkspace);
+  TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(
+    TRadIAJourneyContextCoordinator.Create
+  );
+  TRadIAContainer.Register<IRadIAWorkspaceFacade>(TMockWorkspace.Create);
   FMockView := TMockChatView.Create;
   FPresenter := TRadIAChatPresenter.Create(
     FMockView,
@@ -630,6 +721,14 @@ begin
   FPresenter.Free;
   FToolExecutor := nil;
   FToolRegistry := nil;
+  if Assigned(FPreviousJourneyContext) then
+    TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(
+      FPreviousJourneyContext
+    );
+  if Assigned(FPreviousWorkspace) then
+    TRadIAContainer.Register<IRadIAWorkspaceFacade>(FPreviousWorkspace);
+  FPreviousJourneyContext := nil;
+  FPreviousWorkspace := nil;
   FConfig := nil;
   TRadIAConfig.SetStorage(nil);
 
@@ -876,6 +975,58 @@ begin
   ));
   Assert.IsTrue(LSession.CliExternalSessionId.IsEmpty);
   Assert.Contains(FMockView.PostedMessages.Text, 'next CLI request starts fresh');
+end;
+
+procedure TTestChatPresenter.TestContextCommandShowsSharedJourney;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/context');
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'Active journey:');
+  Assert.Contains(FMockView.PostedMessages.Text, 'Conversation:');
+end;
+
+procedure TTestChatPresenter.TestContextDetachCommandUnlinksSharedJourney;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/context detach');
+
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'No journey is linked to the active conversation and project.'
+  );
+  Assert.Contains(FMockView.PostedMessages.Text, '"journeyState":"detached"');
+end;
+
+procedure TTestChatPresenter.TestContextSwitchCommandSelectsLinkedConversation;
+var
+  LContext: IRadIAJourneyContextCoordinator;
+  LFirstConversationId: string;
+  LFirstJourney: TRadIAJourneyContextSnapshot;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  LFirstConversationId := FPresenter.SessionManager.ActiveSessionId;
+  Assert.IsTrue(TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
+    LContext
+  ));
+  Assert.IsTrue(LContext.TryGetForConversation(
+    LFirstConversationId,
+    LFirstJourney
+  ));
+
+  FPresenter.CreateNewSession;
+  FPresenter.SendPromptText('/context switch ' + LFirstJourney.JourneyId);
+
+  Assert.AreEqual(
+    LFirstConversationId,
+    FPresenter.SessionManager.ActiveSessionId
+  );
+  Assert.Contains(FMockView.PostedMessages.Text, 'Active journey:');
 end;
 
 procedure TTestChatPresenter.TestJourneyCommandListsEndToEndRecipes;

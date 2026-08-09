@@ -31,6 +31,10 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/cli session` | Mostra se a conversa atual está vinculada a uma sessão de CLI retomável. | Conversa, executor e projeto atuais. |
 | `/cli new` | Desvincula a sessão externa; a próxima solicitação inicia uma conversa nova no CLI. | Conversa ativa; não apaga dados no fornecedor. |
+| `/context` | Mostra ou vincula a jornada compartilhada por chat, terminal e editor. | Conversa e projeto ativos. |
+| `/context new` | Cria uma identidade de jornada nova para a conversa e projeto atuais. | Descarta somente o vínculo transitório anterior. |
+| `/context detach` | Desvincula a conversa da jornada compartilhada. | Não apaga conversa, histórico ou sessão CLI. |
+| `/context switch <id>` | Abre a conversa vinculada à jornada informada. | Aceita somente jornadas do projeto ativo. |
 | `/journey` | Lista receitas Delphi ponta a ponta. | Catálogo nativo de jornadas. |
 | `/journey cancel` | Abandona a coleta de dados da jornada ativa. | Contexto ainda não executado. |
 | `/journey create` | Cria, abre, compila e explica um projeto novo. | Agent Runtime e tools de projeto. |

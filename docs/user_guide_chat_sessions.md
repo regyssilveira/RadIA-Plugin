@@ -47,6 +47,15 @@ identificador necessário para continuar aquela conversa no cliente. O composito
 iniciará uma conversa externa nova. Use **New CLI session** ou `/cli new` para recomeçar sem apagar
 o histórico visível do RadIA. Consulte [Executores CLI](cli_executors.md) para limites e privacidade.
 
+### Jornada compartilhada com terminal e editor
+
+Cada conversa pode manter uma identidade de jornada vinculada ao projeto ativo. O botão **Journey**
+mostra **Link** ou **Detach**, e o compositor exibe o identificador abreviado. Ao trocar de conversa,
+o RadIA restaura a jornada correspondente sem copiar mensagens para o terminal ou para o editor.
+Use `/context`, `/context new`, `/context detach` e `/context switch <id>` para executar as mesmas
+ações pelo teclado. Consulte [Contexto compartilhado](shared_journey_context.md) para limites,
+privacidade e isolamento entre projetos.
+
 ---
 
 ## 4. Exportação de Conversas

@@ -12,7 +12,8 @@ uses
   RadIA.Core.CliProcess,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalScreen,
-  RadIA.Core.ToolSecurity;
+  RadIA.Core.ToolSecurity,
+  RadIA.Core.JourneyContext;
 
 type
   IRadIATerminalLifecycleGuard = interface
@@ -42,6 +43,7 @@ type
     FOutputEditor: TRichEdit;
     FOutputLabel: TLabel;
     FStatusLabel: TLabel;
+    FJourneyLabel: TLabel;
     FScreen: TRadIATerminalScreen;
     FHistory: TRadIATerminalHistory;
     FHistorySearchIndex: Integer;
@@ -50,6 +52,7 @@ type
     FFocusQueued: Boolean;
     FSession: IRadIACliProcessSession;
     FAuthorizationPolicy: IRadIAToolAuthorizationPolicy;
+    FJourneyContext: IRadIAJourneyContextCoordinator;
     FLifecycleGuard: IInterface;
     procedure ApplyDeferredFocus(
       const AGuard: IRadIATerminalLifecycleGuard
@@ -104,6 +107,7 @@ type
       const AChunk: string
     );
     procedure RefreshPalette;
+    procedure RefreshJourneyContext;
     procedure RunClick(Sender: TObject);
     procedure SnippetChange(Sender: TObject);
     procedure StopClick(Sender: TObject);
@@ -115,6 +119,9 @@ type
     destructor Destroy; override;
     procedure ApplyCurrentTheme;
     procedure EnsureVisibleContent;
+    {$IFDEF TESTS}
+    function TestJourneyCaption: string;
+    {$ENDIF}
   end;
 
   TRadIATerminalTabsFrame = class(TCustomFrame)
@@ -236,6 +243,9 @@ begin
   TRadIAContainer.TryResolve<IRadIAToolAuthorizationPolicy>(
     FAuthorizationPolicy
   );
+  TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
+    FJourneyContext
+  );
 end;
 
 destructor TRadIATerminalFrame.Destroy;
@@ -274,7 +284,7 @@ begin
   FTopPanel := TPanel.Create(Self);
   FTopPanel.Parent := Self;
   FTopPanel.Align := alTop;
-  FTopPanel.Height := 200;
+  FTopPanel.Height := 220;
   FTopPanel.BevelOuter := bvNone;
   FTopPanel.ShowCaption := False;
 
@@ -355,14 +365,22 @@ begin
   BuildPaletteControls;
   ConfigureControlHints;
 
+  FJourneyLabel := TLabel.Create(Self);
+  FJourneyLabel.Parent := FTopPanel;
+  FJourneyLabel.SetBounds(8, 153, 820, 17);
+  FJourneyLabel.Caption := 'Journey: Detached';
+  FJourneyLabel.Hint :=
+    'Shared context identity used by chat, terminal, and editor for the active project.';
+  FJourneyLabel.ShowHint := True;
+
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := FTopPanel;
-  FStatusLabel.SetBounds(8, 153, 820, 17);
+  FStatusLabel.SetBounds(8, 175, 820, 17);
   FStatusLabel.Caption := 'Ready';
 
   FOutputLabel := TLabel.Create(Self);
   FOutputLabel.Parent := FTopPanel;
-  FOutputLabel.SetBounds(8, 175, 820, 17);
+  FOutputLabel.SetBounds(8, 197, 820, 17);
   FOutputLabel.Caption := 'Terminal output';
 
   FOutputEditor := TRichEdit.Create(Self);
@@ -375,6 +393,7 @@ begin
   FOutputEditor.Font.Size := 10;
   FOutputLabel.FocusControl := FOutputEditor;
   LoadHistory;
+  RefreshJourneyContext;
 end;
 
 procedure TRadIATerminalFrame.BuildPaletteControls;
@@ -527,7 +546,10 @@ var
   LJson: TJSONObject;
   LMcpSettings: TRadIACliMcpClientSettings;
   LMcpStore: TRadIACliMcpSettings;
+  LJourney: TRadIAJourneyContextSnapshot;
+  LProjectId: string;
   LRequest: TRadIAToolRequest;
+  LSessionId: string;
 begin
   Result := False;
   if not Assigned(FAuthorizationPolicy) then
@@ -552,13 +574,21 @@ begin
         LMcpStore.Free;
       end;
     end;
+    LSessionId := 'terminal';
+    LProjectId := AWorkingDirectory;
+    if Assigned(FJourneyContext) and FJourneyContext.TryGetActive(LJourney) and
+      SameFileName(ExtractFileDir(LJourney.ProjectId), AWorkingDirectory) then
+    begin
+      LSessionId := LJourney.JourneyId;
+      LProjectId := LJourney.ProjectId;
+    end;
     LRequest := TRadIAToolRequest.Create(
       'RunTerminalCommand',
       LJson.ToJSON,
       TGUID.NewGuid.ToString,
-      'terminal',
-      'terminal',
-      AWorkingDirectory,
+      LSessionId,
+      LProjectId,
+      LProjectId,
       AWorkingDirectory
     );
     LDescriptor := TRadIAToolDescriptor.Create(
@@ -634,6 +664,7 @@ procedure TRadIATerminalFrame.EnsureVisibleContent;
 var
   LGuard: IRadIATerminalLifecycleGuard;
 begin
+  RefreshJourneyContext;
   if FFocusQueued or not Supports(
     FLifecycleGuard,
     IRadIATerminalLifecycleGuard,
@@ -651,6 +682,34 @@ begin
   );
 end;
 
+procedure TRadIATerminalFrame.RefreshJourneyContext;
+var
+  LContext: TRadIAJourneyContextSnapshot;
+begin
+  if not Assigned(FJourneyLabel) then
+    Exit;
+  if Assigned(FJourneyContext) and FJourneyContext.TryGetActive(LContext) then
+  begin
+    FJourneyLabel.Caption := 'Journey: ' + Copy(LContext.JourneyId, 1, 8) +
+      ' | Project: ' + ExtractFileName(LContext.ProjectId);
+    case LContext.State of
+      jasRunning:
+        FJourneyLabel.Caption := FJourneyLabel.Caption + ' | Running';
+      jasCancellationRequested:
+        FJourneyLabel.Caption := FJourneyLabel.Caption + ' | Cancelling';
+    end;
+    FJourneyLabel.Hint := 'Journey ' + LContext.JourneyId + sLineBreak +
+      'Conversation ' + LContext.ConversationId + sLineBreak +
+      'Executor ' + LContext.ExecutorId;
+  end
+  else
+  begin
+    FJourneyLabel.Caption := 'Journey: Detached';
+    FJourneyLabel.Hint :=
+      'Use the Journey button or /context in chat to link shared context.';
+  end;
+end;
+
 procedure TRadIATerminalFrame.FinishCommand(
   const ACommand: string;
   const AProfileId: string;
@@ -658,6 +717,9 @@ procedure TRadIATerminalFrame.FinishCommand(
 );
 begin
   FSession := nil;
+  if Assigned(FJourneyContext) then
+    FJourneyContext.CompleteActivity;
+  RefreshJourneyContext;
   FRunButton.Enabled := True;
   FRunButton.Caption := 'Run';
   FStopButton.Enabled := False;
@@ -945,6 +1007,11 @@ begin
         );
       end
     );
+  if Assigned(FJourneyContext) then
+  begin
+    FJourneyContext.BeginActivity;
+    RefreshJourneyContext;
+  end;
   FRunButton.Enabled := True;
   FCommandEdit.Clear;
 end;
@@ -976,9 +1043,22 @@ end;
 
 procedure TRadIATerminalFrame.StopClick(Sender: TObject);
 begin
+  if Assigned(FJourneyContext) then
+  begin
+    FJourneyContext.RequestCancellation;
+    RefreshJourneyContext;
+  end;
   if Assigned(FSession) then
     FSession.Cancel;
 end;
+
+{$IFDEF TESTS}
+function TRadIATerminalFrame.TestJourneyCaption: string;
+begin
+  RefreshJourneyContext;
+  Result := FJourneyLabel.Caption;
+end;
+{$ENDIF}
 
 { TRadIATerminalTabsFrame }
 

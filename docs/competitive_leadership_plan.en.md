@@ -90,6 +90,12 @@ The Delphi matrix passed with 904/904 tests per target. See the
 **Acceptance:** an authenticated journey crosses chat, terminal, and editor without losing identity
 or copying another workspace's context; cancellation remains coherent on every surface.
 
+**Status:** complete. Chat, terminal, and editor use the same identity per conversation and project,
+with shared activity state, workspace isolation, a visual button, and commands to link, detach, renew,
+and switch journeys. No history or process output is copied. The Delphi matrix passed with 916/916
+tests per target. See the
+[Phase 2 evidence](competitive_gap_phase_2_evidence_2.3.1.json).
+
 **Still missing:** hierarchical settings, FIM, gutter, and external MCP.
 
 ### Phase 3 — Project, session, and request settings

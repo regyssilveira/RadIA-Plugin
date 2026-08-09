@@ -1,5 +1,9 @@
 # Attachable terminal
 
+When a journey is linked in chat, the terminal header shows the same identifier, project, and
+activity state. Command authorization uses that identity without submitting chat history or previous
+output. See [Shared context](shared_journey_context.en.md).
+
 RadIA 2.0 includes a native terminal that can be plugged into the IDE. It is available on all three targets
 official: Delphi 12 Win32, Delphi 13 Win32 and Delphi 13 IDE64.
 

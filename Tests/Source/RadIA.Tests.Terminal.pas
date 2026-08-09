@@ -60,6 +60,8 @@ type
     procedure TerminalControlsExposeAccessibleLabels;
     [Test]
     procedure TerminalShortcutIsConfigurableAndBackwardCompatible;
+    [Test]
+    procedure TerminalDisplaysTheSharedJourney;
   end;
 
 implementation
@@ -73,6 +75,8 @@ uses
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliManager,
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.Container,
+  RadIA.Core.JourneyContext,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalScreen,
   RadIA.UI.TerminalFrame;
@@ -493,6 +497,35 @@ begin
     end;
   finally
     LHost.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.TerminalDisplaysTheSharedJourney;
+var
+  LCoordinator: IRadIAJourneyContextCoordinator;
+  LFrame: TRadIATerminalFrame;
+  LHost: TForm;
+  LPrevious: IRadIAJourneyContextCoordinator;
+begin
+  TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(LPrevious);
+  LCoordinator := TRadIAJourneyContextCoordinator.Create;
+  LCoordinator.Activate('chat-1', 'C:\project\sample.dproj', 'native');
+  TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(LCoordinator);
+  LHost := TForm.CreateNew(nil);
+  try
+    LFrame := TRadIATerminalFrame.Create(LHost);
+    try
+      LFrame.Parent := LHost;
+      LFrame.HandleNeeded;
+      Assert.Contains(LFrame.TestJourneyCaption, 'Journey: ');
+      Assert.Contains(LFrame.TestJourneyCaption, 'sample.dproj');
+    finally
+      LFrame.Free;
+    end;
+  finally
+    LHost.Free;
+    if Assigned(LPrevious) then
+      TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(LPrevious);
   end;
 end;
 

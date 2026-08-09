@@ -31,6 +31,10 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/status [filter\|--json]` | Shows a sanitized inventory of RadIA state. | Provider, agent, CLI, MCP, security, editor, project, tools, and logs. |
 | `/cli session` | Shows whether the current conversation is linked to a resumable CLI session. | Current conversation, executor, and project. |
 | `/cli new` | Detaches the external session; the next request starts a new CLI conversation. | Active conversation; it does not delete vendor data. |
+| `/context` | Shows or links the journey shared by chat, terminal, and editor. | Active conversation and project. |
+| `/context new` | Creates a new journey identity for the current conversation and project. | Discards only the previous transient link. |
+| `/context detach` | Detaches the conversation from shared journey context. | Does not delete conversation, history, or CLI session. |
+| `/context switch <id>` | Opens the conversation linked to the given journey. | Accepts only journeys from the active project. |
 | `/journey` | Lists end-to-end Delphi recipes. | Native journey catalog. |
 | `/journey cancel` | Abandons the active journey intake. | Context not yet executed. |
 | `/journey create` | Creates, opens, builds, and explains a new project. | Agent Runtime and project tools. |

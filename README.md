@@ -41,6 +41,7 @@ Delphi 11 não faz parte da matriz atual.
 | Área | Capacidades principais | Guia |
 |---|---|---|
 | Chat | Providers, streaming, sessões, templates, histórico e comandos | [Chat e sessões](docs/user_guide_chat_sessions.md) |
+| Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/shared_journey_context.md) |
 | Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
 | DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/user_guide_dext_journeys.md) |

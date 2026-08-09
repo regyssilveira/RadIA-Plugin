@@ -161,6 +161,12 @@ Open the integrated terminal with the **Terminal** (`>_`) button in the chat hea
 `/terminal` command. Both paths open the same dockable terminal, supporting visual and
 keyboard-driven workflows.
 
+Chat, terminal, and the context sent to editor actions can share a journey identity without
+duplicating conversation history or terminal output. The **Journey** button links or detaches it
+visually; `/context`, `/context new`, `/context detach`, and `/context switch <id>` provide the same
+keyboard-driven operations. Switching is restricted to the active project. See the
+[shared context guide](shared_journey_context.en.md).
+
 The **Agent On/Off** header button and `/agent`, `/agent on`, and `/agent off` commands control the
 same state. When disabled, the catalog remains available, but chat tool calls are rejected until
 Agent Mode is enabled again.
