@@ -21,6 +21,13 @@ Each request contains a valid Pascal name, Delphi version (`23.0` or `37.0`), an
 platforms (`Win32`, `Win64`, or both). Platform order, casing, and duplicates are normalized. The
 same request always produces identical paths, content, hashes, template ID, and project GUID.
 
+### Ready to debug after creation
+
+Every generated project receives a `Debug` configuration with embedded symbols, debug DCUs,
+stack frames, and optimization disabled. Source breakpoints therefore work immediately after
+`Create & Open`, without manually editing the `.dproj`. The `Release` configuration remains
+separate for optimized builds.
+
 ## Preview
 
 The JSON preview contains:

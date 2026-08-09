@@ -200,7 +200,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `RemoveDebuggerWatch` | Removes an expression from the RadIA watch list. | `RadIA.Core.DebuggerInspectionTools.pas` |
 | `ListDebuggerWatches` | Lists the bounded RadIA debugger watch expressions. | `RadIA.Core.DebuggerInspectionTools.pas` |
 | `EvaluateDebuggerWatches` | Evaluates all RadIA watches without side effects. | `RadIA.Core.DebuggerInspectionTools.pas` |
-| `StartDebugging` | Builds and starts the active project under the IDE debugger. | `RadIA.Core.DebuggerInspectionTools.pas` |
+| `StartDebugging` | Validates and queues the active project under the debugger without blocking the MCP request. | `RadIA.Core.DebuggerInspectionTools.pas` |
 
 ## Project knowledge
 

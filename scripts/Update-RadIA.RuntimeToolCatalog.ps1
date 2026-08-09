@@ -14,6 +14,10 @@ $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 |
 $seenTools = @{}
 $toolCount = 0
 $englishPurposeOverrides = @{
+    StartDebugging = (
+        "Validates and queues the active project under the debugger " +
+        "without blocking the MCP request."
+    )
     PauseDebugging = "Pauses the current debug process."
     ContinueDebugging = "Continues the current stopped debug process."
     StepInto = "Executes the next source statement and steps into calls."

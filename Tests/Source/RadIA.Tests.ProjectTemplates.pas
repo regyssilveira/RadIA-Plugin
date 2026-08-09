@@ -102,6 +102,38 @@ begin
             );
             Assert.Contains(
               LFile.Content,
+              '<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_DebugDCUs>true</DCC_DebugDCUs>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_Optimize>false</DCC_Optimize>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_DebugInformation>2</DCC_DebugInformation>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>'
+            );
+            Assert.Contains(
+              LFile.Content,
+              '<DCC_RemoteDebug>true</DCC_RemoteDebug>'
+            );
+            Assert.Contains(
+              LFile.Content,
               '<Cfg_2_Win32>true</Cfg_2_Win32>'
             );
             Assert.Contains(

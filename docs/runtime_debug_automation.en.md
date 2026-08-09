@@ -1,6 +1,6 @@
 # Autonomous Runtime Diagnostics
 
-RadIA 2.1 can reproduce a visual failure in a VCL application started by the IDE debugger, capture
+RadIA can reproduce a visual failure in a VCL application started by the IDE debugger, capture
 evidence, prepare a reviewable fix, rebuild, replay the scenario, and prove whether the failure was
 removed.
 
@@ -26,17 +26,27 @@ An MCP client can also drive the workflow. The same consent and security rules a
 ## Complete workflow
 
 1. Describe the exact path to the failure and the expected outcome.
-2. RadIA builds with `BuildProject` and starts the IDE debugger with `StartDebugging`.
-3. `GetRuntimeDebugSession` correlates session, PID, creation time, executable, project, and build.
-4. `GetRuntimeWindows` and `GetRuntimeControlTree` discover only authorized process elements.
-5. `PrepareRuntimeScenario` creates a bounded, fingerprinted preview.
-6. After consent, `RunRuntimeScenario` executes the script.
-7. `CaptureRuntimeEvidence` records the exception, stack, state, and expressions.
-8. RadIA prepares a hypothesis and diff; no change is applied without review.
-9. After approval, the project is rebuilt and a new debug session starts.
-10. The same scenario is replayed and `verification` evidence is captured.
-11. `CompareRuntimeEvidence` requires the same project but distinct sessions and builds.
-12. After `outcome=fixed`, the scenario can be saved and replayed as a regression.
+2. RadIA builds with `BuildProject`, queues the official IDE action with `StartDebugging`, and uses
+   `GetRuntimeDebugSession` to confirm that the process actually started.
+3. `WaitForDebuggerEvent` observes stops or exceptions without blocking the IDE main thread.
+4. The session correlates PID, creation time, executable, project, and build.
+5. `GetRuntimeWindows` and `GetRuntimeControlTree` discover only authorized process elements.
+6. `PrepareRuntimeScenario` creates a bounded, fingerprinted preview.
+7. After consent, `RunRuntimeScenario` executes the script.
+8. `CaptureRuntimeEvidence` records the exception, stack, state, and expressions.
+9. RadIA prepares a hypothesis and diff; no change is applied without review.
+10. After approval, the project is rebuilt and a new debug session starts.
+11. The same scenario is replayed and `verification` evidence is captured.
+12. `CompareRuntimeEvidence` requires the same project but distinct sessions and builds.
+13. After `outcome=fixed`, the scenario can be saved and replayed as a regression.
+
+### Reliable debugger observation
+
+`StartDebugging` returns `starting` before the Run action enters the debugger loop. While the
+application runs, use `GetRuntimeDebugSession` and `WaitForDebuggerEvent`; synchronous OTA queries
+are reserved for before execution or after a stop. The breakpoint event is confirmed by the OTA
+trigger callback itself, including Delphi versions that publish no separate state transition.
+Projects created by RadIA already include every symbol required by this workflow.
 
 ## Example request
 

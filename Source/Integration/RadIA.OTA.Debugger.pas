@@ -70,7 +70,6 @@ uses
   System.Variants,
   ToolsAPI,
   Vcl.ActnList,
-  Vcl.Forms,
   Vcl.Menus,
   Winapi.Windows,
   RadIA.Core.Logger,
@@ -146,13 +145,6 @@ begin
     Exit;
   LMenuItem.Click;
   Result := True;
-end;
-
-function HasDebugProcess(
-  const ADebugger: IOTADebuggerServices
-): Boolean;
-begin
-  Result := Assigned(ADebugger) and (ADebugger.ProcessCount > 0);
 end;
 
 function ProcessStateToString(
@@ -325,22 +317,6 @@ begin
   end;
 end;
 
-function WaitForDebugProcess(
-  const ADebugger: IOTADebuggerServices
-): Boolean;
-var
-  LWaitCount: Integer;
-begin
-  LWaitCount := 30;
-  while (LWaitCount > 0) and not HasDebugProcess(ADebugger) do
-  begin
-    Application.ProcessMessages;
-    Sleep(100);
-    Dec(LWaitCount);
-  end;
-  Result := HasDebugProcess(ADebugger);
-end;
-
 function TryGetDebugProject(
   out ADebugger: IOTADebuggerServices;
   out AProject: IOTAProject;
@@ -394,11 +370,11 @@ begin
 end;
 
 function StartDebugProject(
-  const AProject: IOTAProject;
-  const ADebugger: IOTADebuggerServices
+  const AProject: IOTAProject
 ): TRadIADebuggerActionResult;
 var
   LAction: TBasicAction;
+  LTargetName: string;
 begin
   try
     LAction := FindIDEAction([
@@ -420,50 +396,51 @@ begin
         'The active project cannot be run by the IDE.',
         'no_process'
       ));
+    LTargetName := AProject.ProjectOptions.TargetName;
     TLogger.Log(
       Format(
-        'Starting debugger action: name=%s; class=%s; target=%s',
-        [
-          LAction.Name,
-          LAction.ClassName,
-          AProject.ProjectOptions.TargetName
-        ]
+        'Queueing debugger action: name=%s; class=%s; target=%s',
+        [LAction.Name, LAction.ClassName, LTargetName]
       ),
       'Debugger'
     );
-    if not ExecuteIDEActionThroughMenu(LAction) then
-      Exit(TRadIADebuggerActionResult.Failed(
-        'debugger_action_rejected',
-        'The active IDE surface rejected the Run action.',
-        'no_process'
-      ));
-    if not WaitForDebugProcess(ADebugger) then
-      Exit(TRadIADebuggerActionResult.Failed(
-        'debugger_start_not_confirmed',
-        'The IDE did not start a debug process.',
-        'no_process'
-      ));
+    TThread.CreateAnonymousThread(
+      procedure
+      begin
+        Sleep(250);
+        TThread.ForceQueue(
+          nil,
+          procedure
+          begin
+            try
+              if not ExecuteIDEActionThroughMenu(LAction) then
+                TLogger.Log(
+                  'The queued debugger action was rejected by the IDE.',
+                  'Debugger'
+                );
+            except
+              on E: Exception do
+                TLogger.Log(
+                  'The queued debugger action failed: ' + E.Message,
+                  'Debugger'
+                );
+            end;
+          end
+        );
+      end
+    ).Start;
     Result := TRadIADebuggerActionResult.Succeeded(
-      'The IDE started the active project debug session.',
+      'The IDE accepted the active project debug request.',
       'no_process',
       'starting'
     );
   except
     on E: Exception do
-    begin
-      if WaitForDebugProcess(ADebugger) then
-        Result := TRadIADebuggerActionResult.Succeeded(
-          'The IDE started the debug session after a transient response.',
-          'no_process',
-          'starting'
-        )
-      else
-        Result := TRadIADebuggerActionResult.Failed(
-          'debugger_start_failed',
-          E.Message,
-          'no_process'
-        );
-    end;
+      Result := TRadIADebuggerActionResult.Failed(
+        'debugger_start_failed',
+        E.Message,
+        'no_process'
+      );
   end;
 end;
 
@@ -925,7 +902,7 @@ begin
       LProject: IOTAProject;
     begin
       if TryGetDebugProject(LDebugger, LProject, LResult) then
-        LResult := StartDebugProject(LProject, LDebugger);
+        LResult := StartDebugProject(LProject);
     end
   );
   Result := LResult;

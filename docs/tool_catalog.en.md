@@ -228,9 +228,11 @@ risk `Execution`; termination has risk `Destructive` and never reuses session pe
 `AddBreakpoint` accepts only Pascal fonts within the workspace, rejects duplicates and reports
 `RemoveBreakpoint` as reverse operation. `RemoveBreakpoint` requires destructive commit across
 call. `StartDebugging` uses the IDE's official **Run** action, which recompiles when necessary, and
-starts only the produced `TargetName`, without accepting arbitrary executable path. The list of
-watches is internal state
-limited and its amendments use structural consent.
+starts only the produced `TargetName`, without accepting an arbitrary executable path. The call
+validates and queues the action, returns `starting` without tying the MCP request to the debugger
+loop, and must be followed with `GetRuntimeDebugSession` and `WaitForDebuggerEvent` while running.
+Use `GetDebuggerState` before starting or after a stop. The watch list is bounded internal state,
+and its changes use structural consent.
 
 ## 7. Form Designer
 

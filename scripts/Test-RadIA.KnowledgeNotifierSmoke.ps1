@@ -572,14 +572,28 @@ function Invoke-RadIAToolWithConsent {
         if ($allowOnce -eq [IntPtr]::Zero) {
             throw "The Allow once consent button was not found."
         }
-        [void][RadIAWindowNative]::PostMessage(
+        [void][RadIAWindowNative]::SendMessage(
             $allowOnce,
             0x00F5,
             [IntPtr]0,
             [IntPtr]0
         )
-        if (-not $bridgeProcess.WaitForExit(600000)) {
-            throw "The MCP bridge did not finish after consent."
+        Wait-RadIACondition -TimeoutSeconds 30 -Condition {
+            $bridgeProcess.HasExited -or
+                [RadIAWindowNative]::FindVisibleWindow(
+                    [uint32]$IDEProcess.Id,
+                    "TRadIAConsentForm"
+                ) -eq [IntPtr]::Zero
+        } -FailureMessage (
+            "The consent dialog did not close after allowing $Name."
+        )
+        $responseTimeout = if ($Name -in @(
+            "BuildProject",
+            "RunDUnitXTests",
+            "ValidateCreatedProject"
+        )) { 600000 } else { 120000 }
+        if (-not $bridgeProcess.WaitForExit($responseTimeout)) {
+            throw "The MCP bridge timed out while executing $Name."
         }
         $response = @(
             Get-Content -LiteralPath $outputPath |
@@ -592,7 +606,7 @@ function Invoke-RadIAToolWithConsent {
                 -LiteralPath $errorPath `
                 -Raw `
                 -ErrorAction SilentlyContinue
-            throw "The MCP bridge failed: $bridgeError"
+            throw "The MCP bridge failed while executing $Name`: $bridgeError"
         }
         if (-not $response -or
             $response.error -or
@@ -617,6 +631,83 @@ function Invoke-RadIAToolWithConsent {
             }
         }
     }
+}
+
+function Complete-RadIADebugSession {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BridgePath,
+        [Parameter(Mandatory = $true)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory = $true)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory = $true)]
+        [string]$FileName,
+        [Parameter(Mandatory = $true)]
+        [int]$LineNumber
+    )
+
+    [void](Invoke-RadIAToolWithConsent `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -IDEProcess $IDEProcess `
+        -Name "RemoveBreakpoint" `
+        -Arguments @{
+            fileName = $FileName
+            lineNumber = $LineNumber
+        }
+    )
+    $continueResult = Invoke-RadIAToolWithConsent `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -IDEProcess $IDEProcess `
+        -Name "ContinueDebugging"
+    if (-not $continueResult.accepted -or
+        $continueResult.stateAfter -notin @("running", "terminated")) {
+        throw (
+            "ContinueDebugging did not start execution: " +
+            ($continueResult | ConvertTo-Json -Compress)
+        )
+    }
+    Wait-RadIACondition -TimeoutSeconds 90 -Condition {
+        try {
+            $completedState = Invoke-RadIATool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetDebuggerState"
+            $completedState.state -in @(
+                "no_process",
+                "terminated",
+                "nothing"
+            )
+        } catch {
+            $false
+        }
+    } -FailureMessage (
+        "The debug process did not finish after ContinueDebugging."
+    )
+}
+
+function Get-RadIASourceLine {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [string]$Marker
+    )
+
+    $matches = @(
+        Select-String `
+            -LiteralPath $Path `
+            -SimpleMatch $Marker
+    )
+    if ($matches.Count -ne 1) {
+        throw (
+            "Expected one source marker '$Marker' in $Path; found " +
+            "$($matches.Count)."
+        )
+    }
+    return $matches[0].LineNumber
 }
 
 function New-RadIAKnowledgeSmokeProject {
@@ -801,6 +892,9 @@ $generatedProjectPath = Join-Path $generatedProjectDirectory (
 $generatedProjectSourcePath = Join-Path $generatedProjectDirectory (
     "RadIAJourneyApp.dpr"
 )
+$generatedFormSourcePath = Join-Path $generatedProjectDirectory (
+    "MainForm.pas"
+)
 $testExecutableCandidates = @(
     (Join-Path $smokeDirectory (
         "Tests\Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
@@ -894,6 +988,80 @@ try {
     $templateCreated = $true
     if (-not (Test-Path -LiteralPath $generatedProjectPath)) {
         throw "The generated VCL project file was not published."
+    }
+    $generatedProjectDefinition = Get-Content `
+        -LiteralPath $generatedProjectPath `
+        -Raw
+    $requiredDebugProperties = @(
+        '<DCC_DebugDCUs>true</DCC_DebugDCUs>',
+        '<DCC_Optimize>false</DCC_Optimize>',
+        '<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>',
+        '<DCC_DebugInformation>2</DCC_DebugInformation>',
+        '<DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>',
+        '<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>',
+        '<DCC_RemoteDebug>true</DCC_RemoteDebug>'
+    )
+    foreach ($requiredDebugProperty in $requiredDebugProperties) {
+        if (-not $generatedProjectDefinition.Contains(
+            $requiredDebugProperty
+        )) {
+            throw (
+                "The generated VCL project lacks the Debug property: " +
+                $requiredDebugProperty
+            )
+        }
+    }
+    if ($ExerciseDebugger) {
+        $generatedProjectContent = Get-Content `
+            -LiteralPath $generatedProjectSourcePath `
+            -Raw
+        $runStatement = "  Application.Run;"
+        if ([regex]::Matches(
+            $generatedProjectContent,
+            [regex]::Escape($runStatement)
+        ).Count -ne 1) {
+            throw "The generated debug target has an unexpected run statement."
+        }
+        $generatedProjectContent = $generatedProjectContent.Replace(
+            $runStatement,
+            "  Application.Terminate;`r`n" + $runStatement
+        )
+        $formsUnit = "  Vcl.Forms,"
+        if (-not $generatedProjectContent.Contains($formsUnit)) {
+            throw "The generated debug target lacks the VCL Forms unit."
+        }
+        $generatedProjectContent = $generatedProjectContent.Replace(
+            $formsUnit,
+            "  System.Classes,`r`n" + $formsUnit
+        )
+        $initializeStatement = "  Application.Initialize;"
+        if (-not $generatedProjectContent.Contains($initializeStatement)) {
+            throw "The generated debug target lacks Application.Initialize."
+        }
+        $generatedProjectContent = $generatedProjectContent.Replace(
+            $initializeStatement,
+            $initializeStatement + "`r`n  TThread.Sleep(2000);"
+        )
+        Set-Content `
+            -LiteralPath $generatedProjectSourcePath `
+            -Value $generatedProjectContent `
+            -Encoding UTF8
+        $generatedFormContent = Get-Content `
+            -LiteralPath $generatedFormSourcePath `
+            -Raw
+        $formTerminator = "{`$R *.dfm}`r`n`r`nend."
+        if (-not $generatedFormContent.Contains($formTerminator)) {
+            throw "The generated debug form has an unexpected terminator."
+        }
+        $generatedFormContent = $generatedFormContent.Replace(
+            $formTerminator,
+            "{`$R *.dfm}`r`n`r`ninitialization`r`n" +
+                "  TThread.Sleep(15000);`r`n`r`nend."
+        )
+        Set-Content `
+            -LiteralPath $generatedFormSourcePath `
+            -Value $generatedFormContent `
+            -Encoding UTF8
     }
     if ($SkipTemplateBuild) {
         $templateOpen = Invoke-RadIAToolWithConsent `
@@ -1050,15 +1218,18 @@ try {
     Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
     Start-Sleep -Seconds 2
 
-    if ($IDE64 -and $ExerciseDebugger) {
+    if ($ExerciseDebugger) {
+        $generatedBreakpointLine = Get-RadIASourceLine `
+            -Path $generatedFormSourcePath `
+            -Marker "TThread.Sleep(15000);"
         $breakpoint = Invoke-RadIAToolWithConsent `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
             -IDEProcess $process `
             -Name "AddBreakpoint" `
             -Arguments @{
-                fileName = $generatedProjectSourcePath
-                lineNumber = 8
+                fileName = $generatedFormSourcePath
+                lineNumber = $generatedBreakpointLine
             }
         if ($breakpoint.action -ne "added") {
             throw "The generated-project breakpoint was not added."
@@ -1071,19 +1242,37 @@ try {
         if (-not $debugStart.accepted) {
             throw "The generated project did not start under the debugger."
         }
-        Wait-RadIACondition -TimeoutSeconds 90 -Condition {
+        Wait-RadIACondition -TimeoutSeconds 30 -Condition {
             try {
-                $currentDebugState = Invoke-RadIATool `
+                $runtimeDebugSession = Invoke-RadIATool `
                     -BridgePath $bridgePath `
                     -InstanceFile $instanceFile `
-                    -Name "GetDebuggerState"
-                $currentDebugState.state -in @("stopped", "exception")
+                    -Name "GetRuntimeDebugSession"
+                $runtimeDebugSession.sessionId -and
+                    $runtimeDebugSession.processId -gt 0
             } catch {
                 $false
             }
         } -FailureMessage (
-            "The generated project did not stop at the breakpoint."
+            "The generated project did not attach a runtime debug session."
         )
+        $debugEvent = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "WaitForDebuggerEvent" `
+            -Arguments @{
+                sessionId = $runtimeDebugSession.sessionId
+                sinceSequence = 0
+                timeoutMs = 90000
+                kinds = @("stopped", "exception")
+            }
+        if ($debugEvent.reason -ne "matched") {
+            $eventDetails = $debugEvent | ConvertTo-Json -Depth 8 -Compress
+            throw (
+                "The generated project did not stop at the breakpoint: " +
+                $eventDetails
+            )
+        }
         $debugState = Invoke-RadIATool `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
@@ -1110,25 +1299,15 @@ try {
         if ($timeline.events.Count -lt 1) {
             throw "The generated-project debug timeline was empty."
         }
-        [void](Invoke-RadIAToolWithConsent `
+        Complete-RadIADebugSession `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
             -IDEProcess $process `
-            -Name "StopDebugging"
-        )
-        [void](Invoke-RadIAToolWithConsent `
-            -BridgePath $bridgePath `
-            -InstanceFile $instanceFile `
-            -IDEProcess $process `
-            -Name "RemoveBreakpoint" `
-            -Arguments @{
-                fileName = $generatedProjectSourcePath
-                lineNumber = 8
-            }
-        )
+            -FileName $generatedFormSourcePath `
+            -LineNumber $generatedBreakpointLine
         $debugPassed = $true
         $debugSummary = [PSCustomObject]@{
-            target = "generated-vcl-win32"
+            target = "generated-vcl-$($idePlatform.ToLowerInvariant())"
             state = $debugState.state
             callStackAccessible = $callStack.accessible
             callStackFrameCount = $callStack.frames.Count
@@ -1368,89 +1547,6 @@ try {
             ignored = $testResult.report.ignored
             allPassed = $testResult.report.allPassed
         }
-        if ($ExerciseDebugger -and -not $debugPassed) {
-            $breakpoint = Invoke-RadIAToolWithConsent `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -IDEProcess $process `
-                -Name "AddBreakpoint" `
-                -Arguments @{
-                    fileName = $projectSourcePath
-                    lineNumber = 268
-                }
-            if ($breakpoint.action -ne "added") {
-                throw "The debugger breakpoint was not added."
-            }
-            $debugStart = Invoke-RadIAToolWithConsent `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -IDEProcess $process `
-                -Name "StartDebugging"
-            if (-not $debugStart.accepted) {
-                throw "The debugger did not accept the start request."
-            }
-            Wait-RadIACondition -TimeoutSeconds 90 -Condition {
-                try {
-                    $debugState = Invoke-RadIATool `
-                        -BridgePath $bridgePath `
-                        -InstanceFile $instanceFile `
-                        -Name "GetDebuggerState"
-                    $debugState.state -in @("stopped", "exception")
-                } catch {
-                    $false
-                }
-            } -FailureMessage "The debugger did not stop at the breakpoint."
-            $debugState = Invoke-RadIATool `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -Name "GetDebuggerState"
-            $callStack = Invoke-RadIATool `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -Name "GetCallStack" `
-                -Arguments @{
-                    maxCount = 50
-                }
-            if (-not $callStack.accessible -or
-                $callStack.frames.Count -lt 1) {
-                throw "The debugger call stack was not available."
-            }
-            $timeline = Invoke-RadIATool `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -Name "GetDebugTimeline" `
-                -Arguments @{
-                    sinceSequence = 0
-                    maxCount = 100
-                }
-            if ($timeline.events.Count -lt 1) {
-                throw "The event-driven debug timeline remained empty."
-            }
-            $debugPassed = $true
-            $debugSummary = [PSCustomObject]@{
-                target = "test-suite"
-                state = $debugState.state
-                callStackAccessible = $callStack.accessible
-                callStackFrameCount = $callStack.frames.Count
-                timelineEventCount = $timeline.events.Count
-            }
-            [void](Invoke-RadIAToolWithConsent `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -IDEProcess $process `
-                -Name "StopDebugging"
-            )
-            [void](Invoke-RadIAToolWithConsent `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -IDEProcess $process `
-                -Name "RemoveBreakpoint" `
-                -Arguments @{
-                    fileName = $projectSourcePath
-                    lineNumber = 268
-                }
-            )
-        }
     }
     if ($ExerciseGit) {
             $gitPath = "Source/RadIA.Tests.TextNormalizer.pas"
@@ -1606,9 +1702,11 @@ try {
                         throw "Delphi did not exit after the smoke test."
                     }
                     Write-Warning (
-                        "Delphi remained open after a failed journey; " +
-                        "the original failure is preserved."
+                        "Terminating the disposable Delphi instance after " +
+                        "the failed journey; the original failure is preserved."
                     )
+                    Stop-Process -Id $remainingProcess.Id -Force
+                    [void]$remainingProcess.WaitForExit(10000)
                 }
             }
         } else {

@@ -200,7 +200,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `RemoveDebuggerWatch` | Remove um watch controlado. | `RadIA.Core.DebuggerInspectionTools.pas` |
 | `ListDebuggerWatches` | Lista os watches mantidos pelo RadIA. | `RadIA.Core.DebuggerInspectionTools.pas` |
 | `EvaluateDebuggerWatches` | Avalia os watches no frame atual. | `RadIA.Core.DebuggerInspectionTools.pas` |
-| `StartDebugging` | Inicia o projeto ativo sob o debugger. | `RadIA.Core.DebuggerInspectionTools.pas` |
+| `StartDebugging` | Valida e enfileira a ação Run oficial da IDE sem bloquear o request MCP. | `RadIA.Core.DebuggerInspectionTools.pas` |
 
 ## Conhecimento do projeto
 

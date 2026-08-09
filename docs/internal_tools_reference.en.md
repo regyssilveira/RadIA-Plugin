@@ -230,7 +230,7 @@ passes `execution` classification and does not accept arbitrary names received f
 |`RemoveDebuggerWatch`|Removes a controlled watch.|When the expression no longer needs to be monitored.|
 |`ListDebuggerWatches`|Lists watches maintained by RadIA.|Before evaluating or rearranging the monitored set.|
 |`EvaluateDebuggerWatches`|Evaluates the watches in the current frame.|After a pause or step to compare the observed values.|
-|`StartDebugging`|Starts the active project under the debugger.|After successful build and execution specific consent.|
+|`StartDebugging`|Validates and queues the IDE's official Run action without blocking the MCP request.|After specific execution consent; while running, follow with `GetRuntimeDebugSession` and `WaitForDebuggerEvent`.|
 
 ## Project knowledge
 

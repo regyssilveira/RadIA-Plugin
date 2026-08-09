@@ -221,6 +221,31 @@ O consolidador falha se qualquer target, ciclo, upgrade, modo do lifecycle, hash
 contagem de tools divergir dos pacotes e da evidência de release. O JSON versionado nunca deve ser
 montado ou ajustado manualmente.
 
+### Jornada contínua de desenvolvimento
+
+Use `Test-RadIA.KnowledgeNotifierSmoke.ps1` para comprovar, em um projeto descartável, criação,
+Designer, edição, falha e correção de compilação, testes, breakpoint, call stack, timeline, revisão
+Git e encerramento da IDE. Execute o comando com `23.0`, `37.0` e novamente com `37.0 -IDE64`,
+sempre com a árvore rastreada limpa e um `EvidencePath` diferente:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.KnowledgeNotifierSmoke.ps1 `
+  -DelphiVersion "23.0" `
+  -ExerciseDebugger `
+  -ExerciseCorrection `
+  -ExerciseGit `
+  -EvidencePath `
+    "Output\Validation\ContinuousJourney\Delphi12-Win32.json"
+```
+
+O debugger usa o projeto VCL criado na própria jornada, preparado no workspace descartável para
+terminar naturalmente. Depois de inspecionar o breakpoint, o smoke o remove, usa
+`ContinueDebugging` e exige que a IDE retorne ao estado sem processo antes de continuar com os
+testes e a revisão Git. Em caso de falha, ele tenta fechar normalmente a IDE
+descartável e, após o timeout configurado, encerra somente a instância que ele próprio iniciou. Isso
+evita deixar uma sessão em `[Stopping]` e preserva a falha original para diagnóstico.
+
 ### Evidência visual do terminal
 
 Use `-TerminalEvidencePath` com `-ExerciseTerminal` para abrir a superfície VCL real e validar

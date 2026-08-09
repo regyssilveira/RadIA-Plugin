@@ -228,8 +228,10 @@ risco `Execution`; encerramento possui risco `Destructive` e nunca reutiliza per
 `AddBreakpoint` aceita somente fontes Pascal dentro do workspace, rejeita duplicatas e informa
 `RemoveBreakpoint` como operação inversa. `RemoveBreakpoint` exige confirmação destrutiva em toda
 chamada. `StartDebugging` usa a ação oficial **Run** da IDE, que recompila quando necessário, e
-inicia somente o `TargetName` produzido, sem aceitar caminho de executável arbitrário. A lista de
-watches é estado interno
+inicia somente o `TargetName` produzido, sem aceitar caminho de executável arbitrário. A chamada
+valida e enfileira a ação, retorna `starting` sem prender o request MCP ao loop do debugger, e deve
+ser acompanhada por `GetRuntimeDebugSession` e `WaitForDebuggerEvent` durante a execução.
+`GetDebuggerState` é indicado antes de iniciar ou depois de uma parada. A lista de watches é estado interno
 limitado e suas alterações usam consentimento estrutural.
 
 ## 7. Form Designer

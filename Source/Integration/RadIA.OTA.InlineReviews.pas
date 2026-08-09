@@ -101,6 +101,10 @@ type
     function GetCellSize(
       const AContext: INTACodeEditorPaintContext
     ): TSize;
+    function TryGetCurrentBuffer(
+      out ABuffer: IOTAEditBuffer;
+      out AFileName: string
+    ): Boolean;
     procedure HandleBeginPaint(
       const AEditor: TWinControl;
       const AForceFullRepaint: Boolean
@@ -228,25 +232,45 @@ procedure TRadIAOTAInlineReviewFacade.HandleBeginPaint(
   const AForceFullRepaint: Boolean
 );
 var
+  LBuffer: IOTAEditBuffer;
   LContent: string;
   LNewRevision: string;
 begin
-  if Assigned(AEditor) then
-    FEditorWindowHandle := AEditor.Handle;
-  if not Assigned(FView) or not Assigned(FView.Buffer) then
-  begin
-    FCurrentRevision := '';
+  if GIsShuttingDown then
     Exit;
+  try
+    if Assigned(AEditor) then
+      FEditorWindowHandle := AEditor.Handle;
+    if not Assigned(FView) then
+    begin
+      FCurrentRevision := '';
+      Exit;
+    end;
+    LBuffer := FView.Buffer;
+    if not Assigned(LBuffer) then
+    begin
+      FCurrentRevision := '';
+      Exit;
+    end;
+    LContent := ReadRadIAEditReaderText(
+      LBuffer.CreateReader
+    );
+    LNewRevision := THashSHA2.GetHashString(LContent);
+    if (FObservedRevision <> '') and
+      not SameText(FObservedRevision, LNewRevision) then
+      Modified;
+    FObservedRevision := LNewRevision;
+    FCurrentRevision := LNewRevision;
+  except
+    on E: Exception do
+    begin
+      FCurrentRevision := '';
+      TLogger.Log(
+        'Inline review paint ignored a closing editor buffer: ' + E.Message,
+        'InlineReviews'
+      );
+    end;
   end;
-  LContent := ReadRadIAEditReaderText(
-    FView.Buffer.CreateReader
-  );
-  LNewRevision := THashSHA2.GetHashString(LContent);
-  if (FObservedRevision <> '') and
-    not SameText(FObservedRevision, LNewRevision) then
-    Modified;
-  FObservedRevision := LNewRevision;
-  FCurrentRevision := LNewRevision;
 end;
 
 procedure TRadIAOTAInlineReviewFacade.ClearReviews;
@@ -322,21 +346,30 @@ var
   LMessage: string;
   LReview: TRadIAInlineReview;
 begin
-  if not Assigned(View) or not Assigned(View.Position) or
-    not Assigned(View.Buffer) then
+  if GIsShuttingDown or not Assigned(View) then
     Exit;
-  if SameFileName(View.Buffer.FileName, FFileName) and
-    SameText(FCurrentRevision, FExpectedRevision) and
-    FindReview(View.Position.Row, LReview) then
-  begin
-    LMessage := LReview.Message.Replace(#13, ' ').Replace(#10, ' ');
-    View.SetTempMsg(Copy(LMessage, 1, 240));
-    Exit;
+  try
+    if not Assigned(View.Position) or not Assigned(View.Buffer) then
+      Exit;
+    if SameFileName(View.Buffer.FileName, FFileName) and
+      SameText(FCurrentRevision, FExpectedRevision) and
+      FindReview(View.Position.Row, LReview) then
+    begin
+      LMessage := LReview.Message.Replace(#13, ' ').Replace(#10, ' ');
+      View.SetTempMsg(Copy(LMessage, 1, 240));
+      Exit;
+    end;
+    if FindBlock(View.Position.Row, LBlock) then
+      View.SetTempMsg(
+        'RadIA block review: click the gutter marker or use the review shortcuts.'
+      );
+  except
+    on E: Exception do
+      TLogger.Log(
+        'Inline review idle ignored a closing editor view: ' + E.Message,
+        'InlineReviews'
+      );
   end;
-  if FindBlock(View.Position.Row, LBlock) then
-    View.SetTempMsg(
-      'RadIA block review: click the gutter marker or use the review shortcuts.'
-    );
 end;
 
 procedure TRadIAOTAInlineReviewFacade.HandleEndPaint(
@@ -372,12 +405,14 @@ function TRadIAOTAInlineReviewFacade.FindBlock(
 ): Boolean;
 var
   LBlock: TRadIABlockReview;
+  LBuffer: IOTAEditBuffer;
+  LFileName: string;
 begin
   ABlock := Default(TRadIABlockReview);
-  if not Assigned(FView) or not Assigned(FView.Buffer) then
+  if not TryGetCurrentBuffer(LBuffer, LFileName) then
     Exit(False);
   for LBlock in FBlockReviews do
-    if SameFileName(LBlock.TargetFile, FView.Buffer.FileName) and
+    if SameFileName(LBlock.TargetFile, LFileName) and
       SameText(LBlock.BaseRevision, FCurrentRevision) and
       (LBlock.OriginalStartLine = ALineNumber) then
     begin
@@ -413,16 +448,43 @@ begin
   Result.cy := Max(1, AContext.Canvas.TextHeight('W'));
 end;
 
+function TRadIAOTAInlineReviewFacade.TryGetCurrentBuffer(
+  out ABuffer: IOTAEditBuffer;
+  out AFileName: string
+): Boolean;
+begin
+  ABuffer := nil;
+  AFileName := '';
+  Result := False;
+  if GIsShuttingDown or not Assigned(FView) then
+    Exit;
+  try
+    ABuffer := FView.Buffer;
+    if not Assigned(ABuffer) then
+      Exit;
+    AFileName := ABuffer.FileName;
+    Result := True;
+  except
+    on E: Exception do
+      TLogger.Log(
+        'Inline review ignored a closing editor buffer: ' + E.Message,
+        'InlineReviews'
+      );
+  end;
+end;
+
 procedure TRadIAOTAInlineReviewFacade.Modified;
 var
   LBlock: TRadIABlockReview;
+  LBuffer: IOTAEditBuffer;
   LContent: string;
+  LFileName: string;
   LRevision: string;
 begin
   LRevision := '';
-  if Assigned(FView) and Assigned(FView.Buffer) then
+  if TryGetCurrentBuffer(LBuffer, LFileName) then
   begin
-    LContent := ReadRadIAEditReaderText(FView.Buffer.CreateReader);
+    LContent := ReadRadIAEditReaderText(LBuffer.CreateReader);
     LRevision := THashSHA2.GetHashString(LContent);
   end;
   FCurrentRevision := LRevision;
@@ -431,8 +493,8 @@ begin
     (FExpectedRevision <> '') and
     not SameText(FExpectedRevision, LRevision);
   for LBlock in FBlockReviews do
-    if Assigned(FView) and Assigned(FView.Buffer) and
-      SameFileName(LBlock.TargetFile, FView.Buffer.FileName) and
+    if (LFileName <> '') and
+      SameFileName(LBlock.TargetFile, LFileName) and
       not SameText(LBlock.BaseRevision, LRevision) then
     begin
       FSmokeInvalidated := True;
@@ -449,18 +511,23 @@ procedure TRadIAOTAInlineReviewFacade.HandlePaintLine(
   const AContext: INTACodeEditorPaintContext
 );
 var
+  LBuffer: IOTAEditBuffer;
   LCellSize: TSize;
+  LFileName: string;
   LPaintContext: TRadIAEditPaintContext;
   LReview: TRadIAInlineReview;
   LRight: Integer;
   LUnderlineY: Integer;
 begin
+  if GIsShuttingDown then
+    Exit;
+  try
   if ABeforeEvent or (AStage <> plsEndPaint) or
     not Assigned(AContext) or not Assigned(AContext.LineState) then
     Exit;
   LCellSize := GetCellSize(AContext);
-  if Assigned(FView) and Assigned(FView.Buffer) and
-    SameFileName(FView.Buffer.FileName, FFileName) and
+  if TryGetCurrentBuffer(LBuffer, LFileName) and
+    SameFileName(LFileName, FFileName) and
     SameText(FCurrentRevision, FExpectedRevision) and
     FindReview(AContext.LogicalLineNum, LReview) then
   begin
@@ -497,6 +564,13 @@ begin
   LPaintContext.CodeLeftEdge := AContext.EditorState.CodeLeftEdge;
   LPaintContext.LeftColumn := AContext.EditorState.LeftColumn;
   PaintOverlay(LPaintContext);
+  except
+    on E: Exception do
+      TLogger.Log(
+        'Inline review line paint ignored a closing editor: ' + E.Message,
+        'InlineReviews'
+      );
+  end;
 end;
 
 procedure TRadIAOTAInlineReviewFacade.HandlePaintGutter(
@@ -512,6 +586,9 @@ var
   LMarkerSize: Integer;
   LScreenPoint: TPoint;
 begin
+  if GIsShuttingDown then
+    Exit;
+  try
   if ABeforeEvent or (AStage <> pgsEndPaint) or
     not Assigned(AContext) or
     not FindBlock(AContext.LogicalLineNum, LBlock) then
@@ -541,6 +618,13 @@ begin
   begin
     FSmokeBlockPainted := True;
     WriteSmokeEvidence;
+  end;
+  except
+    on E: Exception do
+      TLogger.Log(
+        'Inline review gutter paint ignored a closing editor: ' + E.Message,
+        'InlineReviews'
+      );
   end;
 end;
 

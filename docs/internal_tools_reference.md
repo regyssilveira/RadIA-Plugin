@@ -230,7 +230,7 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `RemoveDebuggerWatch` | Remove um watch controlado. | Quando a expressão não precisa mais ser monitorada. |
 | `ListDebuggerWatches` | Lista os watches mantidos pelo RadIA. | Antes de avaliar ou reorganizar o conjunto acompanhado. |
 | `EvaluateDebuggerWatches` | Avalia os watches no frame atual. | Após uma pausa ou step para comparar os valores observados. |
-| `StartDebugging` | Inicia o projeto ativo sob o debugger. | Depois de build bem-sucedido e consentimento específico de execução. |
+| `StartDebugging` | Valida e enfileira a ação Run oficial da IDE sem bloquear o request MCP. | Depois de consentimento específico; durante a execução, acompanhe com `GetRuntimeDebugSession` e `WaitForDebuggerEvent`. |
 
 ## Conhecimento do projeto
 

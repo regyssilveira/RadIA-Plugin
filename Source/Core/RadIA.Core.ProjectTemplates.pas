@@ -713,6 +713,18 @@ begin
     '    <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;Vcl;' +
     'FMX</DCC_Namespace>' + sLineBreak +
     '  </PropertyGroup>' + sLineBreak +
+    '  <PropertyGroup Condition="&apos;$(Cfg_1)&apos;!=&apos;&apos;">' +
+    sLineBreak +
+    '    <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>' + sLineBreak +
+    '    <DCC_DebugDCUs>true</DCC_DebugDCUs>' + sLineBreak +
+    '    <DCC_Optimize>false</DCC_Optimize>' + sLineBreak +
+    '    <DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>' +
+    sLineBreak +
+    '    <DCC_DebugInformation>2</DCC_DebugInformation>' + sLineBreak +
+    '    <DCC_LocalDebugSymbols>true</DCC_LocalDebugSymbols>' + sLineBreak +
+    '    <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>' + sLineBreak +
+    '    <DCC_RemoteDebug>true</DCC_RemoteDebug>' + sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
     BuildProjectItems(ARequest, AMainSource) +
     BuildProjectExtensions(ARequest, AMainSource) +
     '  <Target Name="RadIACreateOutputDirectories">' + sLineBreak +

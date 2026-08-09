@@ -23,6 +23,7 @@ type
     function RuntimeProcessId(const AProcess: IOTAProcess): LongWord;
     function ProcessState(const AProcess: IOTAProcess): string;
     procedure RecordRuntimeState(const AProcess: IOTAProcess);
+    procedure RefreshRuntimeSession(const ACallback: string);
     procedure RecordBreakpoint(
       const AKind: TRadIADebugEventKind;
       const ABreakpoint: IOTABreakpoint
@@ -57,12 +58,73 @@ uses
   RadIA.Core.RuntimeAutomation,
   RadIA.OTA.RuntimeProcess;
 
+type
+  TRadIABreakpointTriggerNotifier = class(
+    TNotifierObject,
+    IOTABreakpointNotifier
+  )
+  private
+    FRuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator;
+  public
+    constructor Create(
+      const ARuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator
+    );
+    function Edit(AllowKeyChanges: Boolean): Boolean;
+    function Trigger: TOTATriggerResult;
+    procedure Verified(Enabled, Valid: Boolean);
+  end;
+
 procedure LogNotifierFailure(const ACallback: string; const AException: Exception);
 begin
   TLogger.Log(
     Format('%s ignored an unavailable debugger process: %s', [ACallback, AException.Message]),
     'DebugTimeline'
   );
+end;
+
+constructor TRadIABreakpointTriggerNotifier.Create(
+  const ARuntimeCoordinator: IRadIARuntimeDebugSessionCoordinator
+);
+begin
+  inherited Create;
+  FRuntimeCoordinator := ARuntimeCoordinator;
+end;
+
+function TRadIABreakpointTriggerNotifier.Edit(
+  AllowKeyChanges: Boolean
+): Boolean;
+begin
+  Result := False;
+end;
+
+function TRadIABreakpointTriggerNotifier.Trigger: TOTATriggerResult;
+var
+  LSession: TRadIARuntimeSessionIdentity;
+begin
+  Result := trDefault;
+  try
+    if not Assigned(FRuntimeCoordinator) then
+      Exit;
+    LSession := FRuntimeCoordinator.GetCurrentSession;
+    if LSession.IsComplete then
+      FRuntimeCoordinator.RecordEvent(
+        LSession.SessionId,
+        rdekStopped,
+        'stopped',
+        'sourceBreakpoint'
+      );
+  except
+    on E: Exception do
+      LogNotifierFailure('BreakpointTrigger', E);
+  end;
+end;
+
+procedure TRadIABreakpointTriggerNotifier.Verified(
+  Enabled,
+  Valid: Boolean
+);
+begin
+  // Verification is observed through the debugger timeline callback.
 end;
 
 function ActiveProjectPath: string;
@@ -135,8 +197,21 @@ end;
 procedure TRadIAOTADebugTimelineNotifier.BreakpointAdded(
   const Breakpoint: IOTABreakpoint
 );
+var
+  LNotifier: IOTABreakpointNotifier;
+  LSource: IOTASourceBreakpoint;
 begin
   RecordBreakpoint(dekBreakpointAdded, Breakpoint);
+  if Assigned(FRuntimeCoordinator) and
+    Supports(Breakpoint, IOTASourceBreakpoint, LSource) and
+    (Trim(LSource.FileName) <> '') then
+  begin
+    LNotifier := TRadIABreakpointTriggerNotifier.Create(
+      FRuntimeCoordinator
+    );
+    Breakpoint.AddNotifier(LNotifier);
+  end;
+  RefreshRuntimeSession('BreakpointAdded');
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.BreakpointChanged(
@@ -144,6 +219,7 @@ procedure TRadIAOTADebugTimelineNotifier.BreakpointChanged(
 );
 begin
   RecordBreakpoint(dekBreakpointChanged, Breakpoint);
+  RefreshRuntimeSession('BreakpointChanged');
 end;
 
 procedure TRadIAOTADebugTimelineNotifier.BreakpointDeleted(
@@ -384,6 +460,31 @@ begin
     ProcessState(AProcess),
     AProcess.Status
   );
+end;
+
+procedure TRadIAOTADebugTimelineNotifier.RefreshRuntimeSession(
+  const ACallback: string
+);
+var
+  LDebugger: IOTADebuggerServices;
+  LProcess: IOTAProcess;
+begin
+  try
+    if not Supports(
+      BorlandIDEServices,
+      IOTADebuggerServices,
+      LDebugger
+    ) then
+      Exit;
+    LProcess := LDebugger.CurrentProcess;
+    if not Assigned(LProcess) then
+      Exit;
+    EnsureRuntimeSession(LProcess);
+    RecordRuntimeState(LProcess);
+  except
+    on E: Exception do
+      LogNotifierFailure(ACallback, E);
+  end;
 end;
 
 function TRadIAOTADebugTimelineNotifier.RuntimeProcessId(

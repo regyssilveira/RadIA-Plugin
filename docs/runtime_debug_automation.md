@@ -30,17 +30,27 @@ continuam válidas.
 ## Fluxo completo
 
 1. Descreva o caminho exato até a falha e o resultado esperado.
-2. O RadIA compila com `BuildProject` e inicia pelo depurador com `StartDebugging`.
-3. `GetRuntimeDebugSession` correlaciona sessão, PID, instante de criação, executável, projeto e build.
-4. `GetRuntimeWindows` e `GetRuntimeControlTree` localizam somente elementos do processo autorizado.
-5. `PrepareRuntimeScenario` cria um preview limitado e com fingerprint.
-6. Após consentimento, `RunRuntimeScenario` executa o roteiro.
-7. Ao ocorrer a falha, `CaptureRuntimeEvidence` registra exceção, pilha, estado e expressões.
-8. O RadIA prepara uma hipótese e um diff; nenhuma alteração é aplicada sem revisão.
-9. Depois do aceite, o projeto é recompilado e uma nova sessão de debug é iniciada.
-10. O mesmo cenário é repetido e uma evidência `verification` é capturada.
-11. `CompareRuntimeEvidence` exige o mesmo projeto, mas sessões e builds distintos.
-12. Com `outcome=fixed`, o cenário pode ser salvo como regressão e repetido em ciclos futuros.
+2. O RadIA compila com `BuildProject`, enfileira a ação oficial da IDE com `StartDebugging` e usa
+   `GetRuntimeDebugSession` para confirmar que o processo realmente iniciou.
+3. `WaitForDebuggerEvent` observa parada ou exceção sem bloquear a thread principal da IDE.
+4. A sessão correlaciona PID, instante de criação, executável, projeto e build.
+5. `GetRuntimeWindows` e `GetRuntimeControlTree` localizam somente elementos do processo autorizado.
+6. `PrepareRuntimeScenario` cria um preview limitado e com fingerprint.
+7. Após consentimento, `RunRuntimeScenario` executa o roteiro.
+8. Ao ocorrer a falha, `CaptureRuntimeEvidence` registra exceção, pilha, estado e expressões.
+9. O RadIA prepara uma hipótese e um diff; nenhuma alteração é aplicada sem revisão.
+10. Depois do aceite, o projeto é recompilado e uma nova sessão de debug é iniciada.
+11. O mesmo cenário é repetido e uma evidência `verification` é capturada.
+12. `CompareRuntimeEvidence` exige o mesmo projeto, mas sessões e builds distintos.
+13. Com `outcome=fixed`, o cenário pode ser salvo como regressão e repetido em ciclos futuros.
+
+### Observação confiável do depurador
+
+`StartDebugging` retorna `starting` antes de a ação Run entrar no loop do depurador. Durante a
+execução, use `GetRuntimeDebugSession` e `WaitForDebuggerEvent`; consultas OTA síncronas são
+reservadas para antes da execução ou depois de uma parada. O evento de breakpoint é confirmado
+pelo callback de disparo da própria OTA, inclusive quando o Delphi não publica uma mudança de
+estado separada. Projetos criados pelo RadIA já incluem todos os símbolos exigidos por esse fluxo.
 
 ## Exemplo de pedido
 

@@ -21,6 +21,13 @@ Cada solicitação contém nome Pascal válido, versão Delphi (`23.0` ou `37.0`
 Windows (`Win32`, `Win64` ou ambas). A ordem, caixa e repetição das plataformas são normalizadas.
 Para a mesma solicitação, paths, conteúdo, hashes, ID do template e GUID do projeto são idênticos.
 
+### Depuração pronta desde a criação
+
+Todo projeto gerado recebe uma configuração `Debug` com símbolos embutidos, DCUs de depuração,
+stack frames e otimização desativada. Assim, breakpoints de código-fonte podem ser usados logo
+depois de `Create & Open`, sem editar manualmente o `.dproj`. A configuração `Release` permanece
+separada para builds otimizados.
+
 ## Preview
 
 O preview JSON contém:
