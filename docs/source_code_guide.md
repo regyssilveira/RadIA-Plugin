@@ -53,6 +53,7 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.Knowledge*` | Indexação, persistência, scheduler, busca e leitura limitada. |
 | `RadIA.Core.Mcp` | Protocolo MCP, sessões, cancelamento, métricas e despacho. |
 | `RadIA.Core.HierarchicalSettings` | Valores, origens e precedência entre requisição, sessão, projeto, global e padrão seguro. |
+| `RadIA.Core.HierarchicalSettingsStore` | Persistência JSON atômica de escopos, com nomes protegidos por hash e preservação de campos desconhecidos. |
 | `RadIA.Core.Extensions` | API versionada e ciclo de registro de extensões. |
 
 ### 2.2 Camada de Provedores (`Source/Providers/`)

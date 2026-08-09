@@ -24,6 +24,7 @@ uses
   RadIA.Core.AgentExecutorContracts in '..\Source\Core\RadIA.Core.AgentExecutorContracts.pas',
   RadIA.Core.JourneyContext in '..\Source\Core\RadIA.Core.JourneyContext.pas',
   RadIA.Core.HierarchicalSettings in '..\Source\Core\RadIA.Core.HierarchicalSettings.pas',
+  RadIA.Core.HierarchicalSettingsStore in '..\Source\Core\RadIA.Core.HierarchicalSettingsStore.pas',
   RadIA.Core.CliProcess in '..\Source\Core\RadIA.Core.CliProcess.pas',
   RadIA.Core.PseudoTerminal in '..\Source\Core\RadIA.Core.PseudoTerminal.pas',
   RadIA.Core.Terminal in '..\Source\Core\RadIA.Core.Terminal.pas',

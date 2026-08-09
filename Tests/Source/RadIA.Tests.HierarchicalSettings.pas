@@ -8,7 +8,14 @@ uses
 type
   [TestFixture]
   TRadIAHierarchicalSettingsTests = class
+  private
+    FRootPath: string;
+    FStore: IInterface;
   public
+    [Setup]
+    procedure Setup;
+    [TearDown]
+    procedure TearDown;
     [Test]
     procedure RequestOverridesEveryBroaderScope;
     [Test]
@@ -19,12 +26,33 @@ type
     procedure EmptyScopeDoesNotReplaceExplicitZeroLimits;
     [Test]
     procedure OriginNamesAreStableForStatusAndUi;
+    [Test]
+    procedure StorePersistsProjectAndSessionSeparately;
+    [Test]
+    procedure StorePreservesUnknownFieldsDuringMerge;
+    [Test]
+    procedure EmptyValuesRestoreInheritanceWithoutRemovingExtensions;
+    [Test]
+    procedure CorruptedFilesAreNeverOverwritten;
+    [Test]
+    procedure ScopeFileNamesAreHashedAndLeaveNoTemporaryFile;
   end;
 
 implementation
 
 uses
-  RadIA.Core.HierarchicalSettings;
+  System.IOUtils,
+  System.JSON,
+  System.SysUtils,
+  RadIA.Core.HierarchicalSettings,
+  RadIA.Core.HierarchicalSettingsStore;
+
+function StoreFrom(
+  const AValue: IInterface
+): IRadIAHierarchicalSettingsStore;
+begin
+  Result := AValue as IRadIAHierarchicalSettingsStore;
+end;
 
 function Settings(
   const AProvider: string;
@@ -43,6 +71,23 @@ begin
     ATimeoutMs,
     ATokenBudget
   );
+end;
+
+procedure TRadIAHierarchicalSettingsTests.Setup;
+begin
+  FRootPath := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-HierarchicalSettings-' +
+      TGUID.NewGuid.ToString.Replace('{', '').Replace('}', '')
+  );
+  FStore := TRadIAJsonHierarchicalSettingsStore.Create(FRootPath);
+end;
+
+procedure TRadIAHierarchicalSettingsTests.TearDown;
+begin
+  FStore := nil;
+  if TDirectory.Exists(FRootPath) then
+    TDirectory.Delete(FRootPath, True);
 end;
 
 procedure TRadIAHierarchicalSettingsTests.RequestOverridesEveryBroaderScope;
@@ -143,6 +188,140 @@ begin
   Assert.AreEqual('project', TRadIAExecutionSettingsResolver.OriginName(rsoProject));
   Assert.AreEqual('session', TRadIAExecutionSettingsResolver.OriginName(rsoSession));
   Assert.AreEqual('request', TRadIAExecutionSettingsResolver.OriginName(rsoRequest));
+end;
+
+procedure TRadIAHierarchicalSettingsTests.
+  StorePersistsProjectAndSessionSeparately;
+var
+  LProject: TRadIAExecutionSettings;
+  LSession: TRadIAExecutionSettings;
+  LStore: IRadIAHierarchicalSettingsStore;
+begin
+  LStore := StoreFrom(FStore);
+  LStore.Save(
+    rssProject,
+    'C:\projects\alpha\alpha.dproj',
+    Settings('openai', 'project-model', '', 2000)
+  );
+  LStore.Save(
+    rssSession,
+    'chat-1',
+    Settings('', 'session-model', 'claude', -1, 45000)
+  );
+
+  LProject := LStore.Load(rssProject, 'C:\projects\alpha\alpha.dproj');
+  LSession := LStore.Load(rssSession, 'chat-1');
+  Assert.AreEqual('openai', LProject.ProviderId);
+  Assert.AreEqual('project-model', LProject.ModelId);
+  Assert.AreEqual(2000, LProject.MaxTokens);
+  Assert.AreEqual('session-model', LSession.ModelId);
+  Assert.AreEqual('claude', LSession.ExecutorId);
+  Assert.AreEqual(45000, LSession.TimeoutMs);
+end;
+
+procedure TRadIAHierarchicalSettingsTests.StorePreservesUnknownFieldsDuringMerge;
+var
+  LFileName: string;
+  LJson: TJSONObject;
+  LSettings: TJSONObject;
+  LStore: IRadIAHierarchicalSettingsStore;
+  LText: string;
+begin
+  LStore := StoreFrom(FStore);
+  LStore.Save(rssSession, 'chat-1', Settings('openai', 'first', 'native'));
+  LFileName := LStore.GetScopeFileName(rssSession, 'chat-1');
+  LJson := TJSONObject.ParseJSONValue(
+    TFile.ReadAllText(LFileName, TEncoding.UTF8)
+  ) as TJSONObject;
+  try
+    LJson.AddPair('extensionMetadata', 'keep-me');
+    LSettings := LJson.GetValue<TJSONObject>('settings');
+    LSettings.AddPair('futureLimit', TJSONNumber.Create(42));
+    TFile.WriteAllText(LFileName, LJson.Format(2), TEncoding.UTF8);
+  finally
+    LJson.Free;
+  end;
+
+  LStore.Save(rssSession, 'chat-1', Settings('claude', 'second', 'claude'));
+  LText := TFile.ReadAllText(LFileName, TEncoding.UTF8);
+  Assert.Contains(LText, '"extensionMetadata": "keep-me"');
+  Assert.Contains(LText, '"futureLimit": 42');
+  Assert.Contains(LText, '"provider": "claude"');
+end;
+
+procedure TRadIAHierarchicalSettingsTests.
+  EmptyValuesRestoreInheritanceWithoutRemovingExtensions;
+var
+  LFileName: string;
+  LJson: TJSONObject;
+  LSettings: TJSONObject;
+  LStore: IRadIAHierarchicalSettingsStore;
+  LText: string;
+begin
+  LStore := StoreFrom(FStore);
+  LStore.Save(rssProject, 'project-a', Settings('openai', 'model-a', 'native'));
+  LFileName := LStore.GetScopeFileName(rssProject, 'project-a');
+  LJson := TJSONObject.ParseJSONValue(
+    TFile.ReadAllText(LFileName, TEncoding.UTF8)
+  ) as TJSONObject;
+  try
+    LSettings := LJson.GetValue<TJSONObject>('settings');
+    LSettings.AddPair('extensionSetting', 'preserved');
+    TFile.WriteAllText(LFileName, LJson.Format(2), TEncoding.UTF8);
+  finally
+    LJson.Free;
+  end;
+
+  LStore.Save(rssProject, 'project-a', TRadIAExecutionSettings.Empty);
+  LText := TFile.ReadAllText(LFileName, TEncoding.UTF8);
+  Assert.IsFalse(LText.Contains('"provider"'));
+  Assert.IsFalse(LText.Contains('"model"'));
+  Assert.Contains(LText, '"extensionSetting": "preserved"');
+end;
+
+procedure TRadIAHierarchicalSettingsTests.CorruptedFilesAreNeverOverwritten;
+var
+  LFileName: string;
+  LStore: IRadIAHierarchicalSettingsStore;
+begin
+  LStore := StoreFrom(FStore);
+  LFileName := LStore.GetScopeFileName(rssSession, 'chat-1');
+  TDirectory.CreateDirectory(ExtractFilePath(LFileName));
+  TFile.WriteAllText(LFileName, '{broken', TEncoding.UTF8);
+
+  Assert.WillRaise(
+    procedure
+    begin
+      LStore.Save(rssSession, 'chat-1', Settings('openai', 'model', 'native'));
+    end,
+    EConvertError
+  );
+  Assert.AreEqual('{broken', TFile.ReadAllText(LFileName, TEncoding.UTF8));
+end;
+
+procedure TRadIAHierarchicalSettingsTests.
+  ScopeFileNamesAreHashedAndLeaveNoTemporaryFile;
+var
+  LFileName: string;
+  LFiles: TArray<string>;
+  LStore: IRadIAHierarchicalSettingsStore;
+begin
+  LStore := StoreFrom(FStore);
+  LFileName := LStore.GetScopeFileName(
+    rssProject,
+    'C:\private\customer\secret.dproj'
+  );
+  Assert.IsFalse(LFileName.Contains('customer'));
+  Assert.IsFalse(LFileName.Contains('secret'));
+
+  LStore.Save(rssProject, 'C:\private\customer\secret.dproj', Settings(
+    'openai',
+    'model',
+    'native'
+  ));
+  Assert.IsTrue(TFile.Exists(LFileName));
+  LFiles := TDirectory.GetFiles(FRootPath, '*.tmp');
+  Assert.AreEqual(NativeInt(0), Length(LFiles));
 end;
 
 initialization

@@ -113,9 +113,13 @@ Delphi passou com 916/916 testes por alvo. Consulte a
 não perde campos e a UI, `/status` e a execução real concordam sobre cada valor efetivo.
 
 **Estado:** em andamento. O contrato central já resolve provider, modelo, executor e limites com
-origem individual e precedência determinística. Credenciais não fazem parte dos overrides. Ainda
-faltam persistência atômica, integração com execução, UI, `/status` e troca dinâmica de escopo.
+origem individual e precedência determinística. Os escopos de projeto e sessão são persistidos fora
+do repositório por gravação atômica, nomes protegidos por hash e merge que preserva campos futuros.
+Credenciais não fazem parte dos overrides. Ainda faltam integração com execução, UI, `/status` e
+troca dinâmica de escopo.
 Consulte a [evidência do fundamento da Fase 3](competitive_gap_phase_3_foundation_evidence_2.3.1.json).
+Consulte também a
+[evidência da persistência da Fase 3](competitive_gap_phase_3_persistence_evidence_2.3.1.json).
 
 **Ainda faltará:** FIM, gutter e MCP externo.
 

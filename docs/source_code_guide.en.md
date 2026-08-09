@@ -52,6 +52,7 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.Knowledge*` | Indexing, persistence, scheduling, search, and bounded reads. |
 | `RadIA.Core.Mcp` | MCP protocol, sessions, cancellation, metrics, and dispatch. |
 | `RadIA.Core.HierarchicalSettings` | Values, origins, and precedence across request, session, project, global, and safe defaults. |
+| `RadIA.Core.HierarchicalSettingsStore` | Atomic JSON scope persistence with hashed names and unknown-field preservation. |
 | `RadIA.Core.Extensions` | Versioned API and extension registration lifecycle. |
 
 ### 2.2 Providers Layer (`Source/Providers/`)

@@ -111,9 +111,13 @@ tests per target. See the
 writes lose no fields and UI, `/status`, and real execution agree on effective values.
 
 **Status:** in progress. The core contract now resolves provider, model, executor, and limits with
-per-value origin and deterministic precedence. Credentials are excluded from overrides. Atomic
-persistence, runtime integration, UI, `/status`, and dynamic scope switching are still pending.
+per-value origin and deterministic precedence. Project and session scopes persist outside the
+repository through atomic writes, hashed names, and a merge that preserves future fields.
+Credentials are excluded from overrides. Runtime integration, UI, `/status`, and dynamic scope
+switching are still pending.
 See the [Phase 3 foundation evidence](competitive_gap_phase_3_foundation_evidence_2.3.1.json).
+Also see the
+[Phase 3 persistence evidence](competitive_gap_phase_3_persistence_evidence_2.3.1.json).
 
 **Still missing:** FIM, gutter, and external MCP.
 
