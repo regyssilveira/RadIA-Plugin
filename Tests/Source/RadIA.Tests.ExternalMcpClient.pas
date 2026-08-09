@@ -163,6 +163,45 @@ begin
   end;
 end;
 
+function ResolveExternalMcpFixturePath: string;
+const
+  CFixtureRelativePaths: array[0..1] of string = (
+    'Tests\Fixtures\RadIA.ExternalMcpFixture.ps1',
+    'Fixtures\RadIA.ExternalMcpFixture.ps1'
+  );
+  CMaximumParentDepth = 8;
+var
+  LBasePath: string;
+  LCandidate: string;
+  LDepth: Integer;
+  LRelativePath: string;
+  LRootIndex: Integer;
+  LRoots: array[0..1] of string;
+begin
+  Result := '';
+  LRoots[0] := GetCurrentDir;
+  LRoots[1] := ExtractFilePath(ParamStr(0));
+  for LRootIndex := Low(LRoots) to High(LRoots) do
+  begin
+    LBasePath := TPath.GetFullPath(LRoots[LRootIndex]);
+    for LDepth := 0 to CMaximumParentDepth do
+    begin
+      for LRelativePath in CFixtureRelativePaths do
+      begin
+        LCandidate := TPath.GetFullPath(
+          TPath.Combine(LBasePath, LRelativePath)
+        );
+        if TFile.Exists(LCandidate) then
+          Exit(LCandidate);
+      end;
+      LCandidate := TPath.GetDirectoryName(LBasePath);
+      if SameText(LCandidate, LBasePath) then
+        Break;
+      LBasePath := LCandidate;
+    end;
+  end;
+end;
+
 { TRadIAFakeExternalMcpTransport }
 
 constructor TRadIAFakeExternalMcpTransport.Create;
@@ -623,9 +662,7 @@ var
   LResult: string;
   LStateFile: string;
 begin
-  LFixturePath := TPath.GetFullPath(
-    TPath.Combine(GetCurrentDir, 'Tests\Fixtures\RadIA.ExternalMcpFixture.ps1')
-  );
+  LFixturePath := ResolveExternalMcpFixturePath;
   Assert.IsTrue(TFile.Exists(LFixturePath), 'External MCP fixture script is missing.');
   LStateFile := TPath.Combine(
     TPath.GetTempPath,
