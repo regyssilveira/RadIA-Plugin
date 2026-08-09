@@ -1085,6 +1085,31 @@ function Invoke-RadIABlockMarkerClick {
     Start-Sleep -Milliseconds 250
 }
 
+function Invoke-RadIABlockLineClick {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)]
+        [object]$Diagnostic
+    )
+
+    if ($Diagnostic.blockMarkerScreenX -lt 1 -or
+        $Diagnostic.blockMarkerScreenY -lt 1) {
+        throw "The gutter marker did not expose its source line."
+    }
+    $IDEProcess.Refresh()
+    [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow(
+        $IDEProcess.MainWindowHandle
+    )
+    [void][RadIAKnowledgeSmokeNative]::SetCursorPos(
+        [int]$Diagnostic.blockMarkerScreenX + 200,
+        [int]$Diagnostic.blockMarkerScreenY
+    )
+    [RadIAKnowledgeSmokeNative]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
+    [RadIAKnowledgeSmokeNative]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 250
+}
+
 function Get-RadIABlockReviewState {
     param(
         [Parameter(Mandatory)]
@@ -2430,6 +2455,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             Start-Sleep -Milliseconds 500
         }
         if ($ExerciseInlineCompletion) {
+            Invoke-RadIAEditorRepaint -IDEProcess $process
             $inlineDiagnostic = Wait-RadIAInlineCompletionDiagnostic `
                 -LogPath $inlineSmokeLogPath `
                 -FileName (
@@ -2659,6 +2685,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -PreserveCursor
             $blockReviewDiagnostic = Wait-RadIABlockReviewDiagnostic `
                 -EvidencePath $inlineReviewSmokePath
+            Invoke-RadIABlockLineClick `
+                -IDEProcess $process `
+                -Diagnostic $blockReviewDiagnostic.Raw
             [System.Windows.Forms.SendKeys]::SendWait("^%{ENTER}")
             Start-Sleep -Milliseconds 500
             $keyboardState = Get-RadIABlockReviewState `

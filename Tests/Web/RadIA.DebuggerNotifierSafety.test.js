@@ -102,6 +102,11 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /-Path \$inlineSmokeUnitPath/u);
   assert.match(smoke, /reviewFileMatches/u);
   assert.match(smoke, /\[switch\]\$PreserveCursor/u);
+  assert.match(
+    smoke,
+    /if \(\$ExerciseInlineCompletion\)[\s\S]*?Invoke-RadIAEditorRepaint/u
+  );
+  assert.match(smoke, /function Invoke-RadIABlockLineClick/u);
   assert.match(smoke, /\$response\.result\.isError/u);
   assert.doesNotMatch(
     smoke,
