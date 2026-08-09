@@ -102,7 +102,7 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /-Path \$inlineSmokeUnitPath/u);
   assert.match(smoke, /reviewFileMatches/u);
   assert.match(smoke, /reviewUnitIsActive/u);
-  assert.match(smoke, /FindVisibleProcessDescendantByClass/u);
+  assert.match(smoke, /FindLargestVisibleProcessDescendantByClass/u);
   assert.match(smoke, /\[switch\]\$PreserveCursor/u);
   assert.match(
     smoke,
@@ -119,6 +119,21 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
     /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u
   );
   assert.match(smoke, /diagnostic\.painted/u);
+});
+
+test('inline completion diagnostic defers acceptance until after preview paint', () => {
+  const hook = fs.readFileSync(
+    path.join('Source', 'Integration', 'RadIA.OTA.EditorHook.pas'),
+    'utf8',
+  );
+  assert.match(
+    hook,
+    /if not FInlineCompletionSmokePreviewed then[\s\S]*?Preview\([\s\S]*?FInlineCompletionSmokePreviewed := True;[\s\S]*?Exit;/u,
+  );
+  assert.match(
+    hook,
+    /FInlineCompletionSmokePending := False;[\s\S]*?TryRunInlineCompletionAcceptanceDiagnostic/u,
+  );
 });
 
 test('transient process properties have initializing-safe fallbacks', () => {
@@ -173,4 +188,16 @@ test('inline review paint tolerates editor buffers closing during shutdown', () 
     inlineReviewSource,
     /procedure TRadIAOTAInlineReviewFacade\.HandlePaintGutter[\s\S]*?GIsShuttingDown[\s\S]*?except/u
   );
+});
+
+test('inline review registration defers paint until the notifier is active', () => {
+  assert.match(
+    inlineReviewSource,
+    /FRepaintTimer := TTimer\.Create\(nil\);[\s\S]*?FRepaintTimer\.Interval := 100;/u,
+  );
+  assert.match(
+    inlineReviewSource,
+    /procedure TRadIAOTAInlineReviewFacade\.RepaintTimerTick[\s\S]*?FView\.Paint;/u,
+  );
+  assert.doesNotMatch(inlineReviewSource, /Application\.ProcessMessages/u);
 });

@@ -8,6 +8,7 @@ uses
   ToolsAPI,
   ToolsAPI.Editor,
   Vcl.Controls,
+  Vcl.ExtCtrls,
   Vcl.Graphics,
   Vcl.Menus,
   Winapi.Windows,
@@ -61,6 +62,7 @@ type
     FFileName: string;
     FObservedRevision: string;
     FReviews: TArray<TRadIAInlineReview>;
+    FRepaintTimer: TTimer;
     FSmokeInvalidated: Boolean;
     FSmokePainted: Boolean;
     FSmokeBlockPainted: Boolean;
@@ -132,6 +134,8 @@ type
       const AContext: INTACodeEditorPaintContext
     );
     procedure RunOnMainThread(const AAction: TThreadProcedure);
+    procedure ScheduleRepaint;
+    procedure RepaintTimerTick(Sender: TObject);
     procedure WriteSmokeEvidence;
     procedure OnAcceptBlock(Sender: TObject);
     procedure OnApplyBlockSession(Sender: TObject);
@@ -211,6 +215,10 @@ constructor TRadIAOTAInlineReviewFacade.Create;
 begin
   inherited;
   FBlockMenu := TPopupMenu.Create(nil);
+  FRepaintTimer := TTimer.Create(nil);
+  FRepaintTimer.Enabled := False;
+  FRepaintTimer.Interval := 100;
+  FRepaintTimer.OnTimer := RepaintTimerTick;
   FCodeEditorNotifierIndex := -1;
   FBlockCodeEditorNotifierIndex := -1;
   FSmokeInvalidated := False;
@@ -223,6 +231,7 @@ end;
 destructor TRadIAOTAInlineReviewFacade.Destroy;
 begin
   UnregisterView;
+  FRepaintTimer.Free;
   FBlockMenu.Free;
   inherited;
 end;
@@ -887,6 +896,7 @@ begin
       FSmokeInvalidated := False;
       FSmokePainted := False;
       RegisterCurrentView;
+      ScheduleRepaint;
       if Assigned(FView) and Assigned(FView.Buffer) and
         SameFileName(FView.Buffer.FileName, FFileName) then
       begin
@@ -911,6 +921,22 @@ begin
   );
 end;
 
+procedure TRadIAOTAInlineReviewFacade.ScheduleRepaint;
+begin
+  if not GIsShuttingDown and Assigned(FRepaintTimer) then
+  begin
+    FRepaintTimer.Enabled := False;
+    FRepaintTimer.Enabled := True;
+  end;
+end;
+
+procedure TRadIAOTAInlineReviewFacade.RepaintTimerTick(Sender: TObject);
+begin
+  FRepaintTimer.Enabled := False;
+  if not GIsShuttingDown and Assigned(FView) then
+    FView.Paint;
+end;
+
 procedure TRadIAOTAInlineReviewFacade.ShowBlocks(
   const ABlocks: TArray<TRadIABlockReview>
 );
@@ -932,6 +958,7 @@ begin
       FSmokeMouseX := 0;
       FSmokeMouseY := 0;
       RegisterCurrentView;
+      ScheduleRepaint;
       WriteSmokeEvidence;
       if Assigned(FView) then
         FView.Paint;

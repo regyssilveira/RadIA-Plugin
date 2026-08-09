@@ -131,6 +131,7 @@ type
     FHookPending: Boolean;
     FHookRequestedAt: UInt64;
     FInlineCompletionSmokePending: Boolean;
+    FInlineCompletionSmokePreviewed: Boolean;
     {$ENDIF}
 
     procedure ActiveFormChange(Sender: TObject);
@@ -564,6 +565,7 @@ begin
     GetEnvironmentVariable('RADIA_IDE_SMOKE_INLINE_COMPLETION'),
     '1'
   );
+  FInlineCompletionSmokePreviewed := False;
   {$ENDIF}
   FInstalled := False;
 end;
@@ -1546,11 +1548,16 @@ begin
     not Assigned(FInlineCompletionSession) or
     not FInlineCompletionSession.Capture(LOriginalContext) then
     Exit;
+  if not FInlineCompletionSmokePreviewed then
+  begin
+    FInlineCompletionController.Preview(
+      LOriginalContext,
+      CAcceptanceSuggestion
+    );
+    FInlineCompletionSmokePreviewed := True;
+    Exit;
+  end;
   Result := True;
-  FInlineCompletionController.Preview(
-    LOriginalContext,
-    CAcceptanceSuggestion
-  );
   LPreviewClean := FInlineCompletionSession.Capture(LPreviewContext) and
     SameText(LPreviewContext.Revision, LOriginalContext.Revision);
   LAccepted := FInlineCompletionController.AcceptAll and
@@ -1572,6 +1579,7 @@ begin
   LRejectedClean := LUndoRestored and
     FInlineCompletionSession.Capture(LRejectedContext) and
     SameText(LRejectedContext.Revision, LOriginalContext.Revision);
+  FInlineCompletionSmokePreviewed := False;
   TLogger.Log(
     Format(
       'Inline completion acceptance: previewClean=%s, accepted=%s, ' +
@@ -2310,9 +2318,12 @@ begin
   if (not FInstalled) or GIsShuttingDown then
     Exit;
 
-  if FInlineCompletionSmokePending and
-    TryRunInlineCompletionAcceptanceDiagnostic then
+  if FInlineCompletionSmokePending then
+  begin
     FInlineCompletionSmokePending := False;
+    if not TryRunInlineCompletionAcceptanceDiagnostic then
+      FInlineCompletionSmokePending := True;
+  end;
 
   if not FHookPending then
   begin

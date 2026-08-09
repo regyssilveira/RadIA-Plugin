@@ -591,12 +591,13 @@ public static class RadIAKnowledgeSmokeNative
         return result;
     }
 
-    public static IntPtr FindVisibleProcessDescendantByClass(
+    public static IntPtr FindLargestVisibleProcessDescendantByClass(
         uint processId,
         string expectedClassName
     )
     {
         IntPtr result = IntPtr.Zero;
+        long largestArea = 0;
         EnumWindows(
             delegate(IntPtr topLevelHandle, IntPtr parameter)
             {
@@ -609,11 +610,41 @@ public static class RadIAKnowledgeSmokeNative
                 {
                     return true;
                 }
-                result = FindVisibleChildByClass(
+                EnumChildWindows(
                     topLevelHandle,
-                    expectedClassName
+                    delegate(IntPtr handle, IntPtr childParameter)
+                    {
+                        StringBuilder className = new StringBuilder(128);
+                        GetClassName(
+                            handle,
+                            className,
+                            className.Capacity
+                        );
+                        Rect rectangle;
+                        if (IsWindowVisible(handle) &&
+                            className.ToString() == expectedClassName &&
+                            GetWindowRect(handle, out rectangle))
+                        {
+                            long width = Math.Max(
+                                0,
+                                rectangle.Right - rectangle.Left
+                            );
+                            long height = Math.Max(
+                                0,
+                                rectangle.Bottom - rectangle.Top
+                            );
+                            long area = width * height;
+                            if (area > largestArea)
+                            {
+                                largestArea = area;
+                                result = handle;
+                            }
+                        }
+                        return true;
+                    },
+                    IntPtr.Zero
                 );
-                return result == IntPtr.Zero;
+                return true;
             },
             IntPtr.Zero
         );
@@ -1036,16 +1067,16 @@ function Invoke-RadIAEditorRepaint {
     $editorDeadline = [DateTime]::UtcNow.AddSeconds(10)
     $editorHandle = [IntPtr]::Zero
     do {
-        $editorHandle = [RadIAKnowledgeSmokeNative]::FindVisibleChildByClass(
-            $IDEProcess.MainWindowHandle,
-            "TEditControl"
+        $editorHandle = (
+            [RadIAKnowledgeSmokeNative]::FindLargestVisibleProcessDescendantByClass(
+                [uint32]$IDEProcess.Id,
+                "TEditControl"
+            )
         )
         if ($editorHandle -eq [IntPtr]::Zero) {
-            $editorHandle = (
-                [RadIAKnowledgeSmokeNative]::FindVisibleProcessDescendantByClass(
-                    [uint32]$IDEProcess.Id,
-                    "TEditControl"
-                )
+            $editorHandle = [RadIAKnowledgeSmokeNative]::FindVisibleChildByClass(
+                $IDEProcess.MainWindowHandle,
+                "TEditControl"
             )
         }
         if ($editorHandle -eq [IntPtr]::Zero) {
