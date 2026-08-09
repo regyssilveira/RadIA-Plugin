@@ -5,6 +5,7 @@ interface
 uses
   System.JSON,
   RadIA.Core.Interfaces,
+  RadIA.Core.ExternalMcpRuntime,
   RadIA.Core.Tools;
 
 type
@@ -14,6 +15,8 @@ type
     FCliPath: string;
     FExecutorKind: string;
     FExecutorId: string;
+    FExternalMcpAvailable: Boolean;
+    FExternalMcpStatus: TRadIAExternalMcpRuntimeStatus;
     FFirstToolReady: Boolean;
     FMcpBridgeAvailable: Boolean;
     FMcpConfigured: Boolean;
@@ -42,6 +45,7 @@ type
   private
     FBridgePath: string;
     FConfig: IRadIAConfig;
+    FExternalMcpRuntime: IRadIAExternalMcpRuntime;
     FRegistry: IRadIAToolRegistry;
     FWebDirectory: string;
     procedure AddIssues(
@@ -80,6 +84,13 @@ type
       const ABridgePath: string;
       const AWebDirectory: string;
       const ARegistry: IRadIAToolRegistry
+    ); overload;
+    constructor Create(
+      const AConfig: IRadIAConfig;
+      const ABridgePath: string;
+      const AWebDirectory: string;
+      const ARegistry: IRadIAToolRegistry;
+      const AExternalMcpRuntime: IRadIAExternalMcpRuntime
     ); overload;
     function Diagnose: string;
     function Status(
@@ -146,7 +157,7 @@ constructor TRadIAInstallationHealthProbe.Create(
   const AWebDirectory: string
 );
 begin
-  Create(AConfig, ABridgePath, AWebDirectory, nil);
+  Create(AConfig, ABridgePath, AWebDirectory, nil, nil);
 end;
 
 constructor TRadIAInstallationHealthProbe.Create(
@@ -156,6 +167,17 @@ constructor TRadIAInstallationHealthProbe.Create(
   const ARegistry: IRadIAToolRegistry
 );
 begin
+  Create(AConfig, ABridgePath, AWebDirectory, ARegistry, nil);
+end;
+
+constructor TRadIAInstallationHealthProbe.Create(
+  const AConfig: IRadIAConfig;
+  const ABridgePath: string;
+  const AWebDirectory: string;
+  const ARegistry: IRadIAToolRegistry;
+  const AExternalMcpRuntime: IRadIAExternalMcpRuntime
+);
+begin
   inherited Create;
   if not Assigned(AConfig) then
     raise EArgumentNilException.Create('AConfig');
@@ -163,6 +185,7 @@ begin
   FBridgePath := TPath.GetFullPath(ABridgePath);
   FWebDirectory := TPath.GetFullPath(AWebDirectory);
   FRegistry := ARegistry;
+  FExternalMcpRuntime := AExternalMcpRuntime;
 end;
 
 function TRadIAInstallationHealthProbe.IsFirstToolReady: Boolean;
@@ -214,8 +237,11 @@ begin
     LRoot.AddPair(
       'summary',
       Format(
-        '%d of 6 readiness checks passed.',
-        [LRoot.GetValue<Integer>('readyCheckCount', 0)]
+        '%d of %d readiness checks passed.',
+        [
+          LRoot.GetValue<Integer>('readyCheckCount', 0),
+          LRoot.GetValue<Integer>('totalCheckCount', 0)
+        ]
       )
     );
     LRoot.AddPair('nextAction', NextAction(LReadiness));
@@ -327,6 +353,45 @@ begin
     LSection.AddPair('configured', TJSONBool.Create(AReadiness.FMcpConfigured));
     LSection.AddPair('ready', TJSONBool.Create(AReadiness.FMcpReady));
     LSection.AddPair('setupFlow', 'Preview > Connect / Repair > Test Handshake');
+    if AReadiness.FExternalMcpAvailable then
+    begin
+      LSection.AddPair(
+        'externalConfiguredServers',
+        AReadiness.FExternalMcpStatus.ConfiguredServers
+      );
+      LSection.AddPair(
+        'externalEnabledServers',
+        AReadiness.FExternalMcpStatus.EnabledServers
+      );
+      LSection.AddPair(
+        'externalConnectedServers',
+        AReadiness.FExternalMcpStatus.ConnectedServers
+      );
+      LSection.AddPair(
+        'externalGrantedTools',
+        AReadiness.FExternalMcpStatus.GrantedTools
+      );
+      LSection.AddPair(
+        'externalDiscoveredTools',
+        AReadiness.FExternalMcpStatus.ToolCount
+      );
+      LSection.AddPair(
+        'externalResources',
+        AReadiness.FExternalMcpStatus.ResourceCount
+      );
+      LSection.AddPair(
+        'externalPrompts',
+        AReadiness.FExternalMcpStatus.PromptCount
+      );
+      LSection.AddPair(
+        'externalErrors',
+        AReadiness.FExternalMcpStatus.ErrorCount
+      );
+      LSection.AddPair(
+        'externalRefreshWithoutRestart',
+        TJSONBool.Create(True)
+      );
+    end;
     ARoot.AddPair('mcp', LSection);
   end;
   if Includes('security') then
@@ -416,8 +481,18 @@ begin
   AddCheck('terminal', AReadiness.FTerminalReady, True, 'Use /terminal.');
   AddCheck('chat', AReadiness.FWebReady, True, 'Repair the installation.');
   AddCheck('firstTool', AReadiness.FFirstToolReady, True, 'Repair the package.');
+  if AReadiness.FExternalMcpAvailable then
+    AddCheck(
+      'externalMcp',
+      AReadiness.FExternalMcpStatus.ErrorCount = 0,
+      AReadiness.FExternalMcpStatus.EnabledServers > 0,
+      'Open Settings > CLI & MCP > External MCP Servers.'
+    );
   ARoot.AddPair('readyCheckCount', LReadyCount);
-  ARoot.AddPair('totalCheckCount', 6);
+  ARoot.AddPair(
+    'totalCheckCount',
+    6 + Ord(AReadiness.FExternalMcpAvailable)
+  );
 end;
 
 function TRadIAInstallationHealthProbe.CollectReadiness:
@@ -486,6 +561,9 @@ begin
     TFile.Exists(TPath.Combine(FWebDirectory, 'chat.js')) and
     TFile.Exists(TPath.Combine(FWebDirectory, 'chat.css'));
   Result.FFirstToolReady := IsFirstToolReady;
+  Result.FExternalMcpAvailable := Assigned(FExternalMcpRuntime);
+  if Result.FExternalMcpAvailable then
+    Result.FExternalMcpStatus := FExternalMcpRuntime.GetStatus;
   if Assigned(FRegistry) then
     Result.FToolCount := FRegistry.GetCount
   else
@@ -536,6 +614,13 @@ begin
         'mcp_not_configured',
         'The selected MCP client configuration was not found.',
         'Use Settings > CLI & MCP to preview and provision MCP.'
+    );
+  if AReadiness.FExternalMcpAvailable and
+    (AReadiness.FExternalMcpStatus.ErrorCount > 0) then
+    AddIssue(
+      'external_mcp_attention',
+      'One or more enabled external MCP servers are unavailable.',
+      'Open Settings > CLI & MCP > External MCP Servers and run Refresh or Test.'
     );
   if not AReadiness.FTerminalReady then
     AddIssue(
@@ -604,6 +689,21 @@ begin
     TJSONBool.Create(AReadiness.FFirstToolReady)
   );
   ARoot.AddPair('toolCount', AReadiness.FToolCount);
+  if AReadiness.FExternalMcpAvailable then
+  begin
+    ARoot.AddPair(
+      'externalMcpConfiguredServers',
+      AReadiness.FExternalMcpStatus.ConfiguredServers
+    );
+    ARoot.AddPair(
+      'externalMcpConnectedServers',
+      AReadiness.FExternalMcpStatus.ConnectedServers
+    );
+    ARoot.AddPair(
+      'externalMcpErrors',
+      AReadiness.FExternalMcpStatus.ErrorCount
+    );
+  end;
   LChecks := TJSONObject.Create;
   ARoot.AddPair('checks', LChecks);
   LChecks.AddPair(
@@ -646,6 +746,9 @@ begin
     Exit('configure_cli');
   if not AReadiness.FMcpReady then
     Exit('provision_mcp');
+  if AReadiness.FExternalMcpAvailable and
+    (AReadiness.FExternalMcpStatus.ErrorCount > 0) then
+    Exit('repair_external_mcp');
   if not AReadiness.FTerminalReady then
     Exit('open_terminal_fallback');
   if not AReadiness.FFirstToolReady then

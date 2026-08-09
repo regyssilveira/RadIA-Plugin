@@ -5,6 +5,23 @@
 O servidor MCP do RadIA expõe o catálogo agentivo da IDE para clientes locais. O transporte entre a
 bridge e a IDE usa named pipe do Windows; nenhuma porta TCP é aberta por padrão.
 
+O RadIA também possui o fluxo inverso: ele pode atuar como cliente de servidores MCP externos. Os
+dois papéis são independentes:
+
+- **RadIA como servidor:** disponibiliza as ferramentas da IDE por meio da bridge descrita neste guia;
+- **RadIA como cliente:** descobre tools, resources e prompts de servidores locais e publica somente
+  as tools que possuem concessão explícita no registry compartilhado do RadIA.
+
+O runtime cliente é carregado junto com a IDE e pode trocar seu snapshot sem reiniciar o Delphi. Uma
+falha de configuração, conexão ou descoberta preserva o catálogo interno e o último runtime válido.
+`/status mcp` mostra somente contagens sanitizadas de servidores, concessões, tools, resources,
+prompts e erros; `/doctor` inclui uma verificação separada quando o runtime externo está disponível.
+Comando, argumentos, diretório de trabalho e paths concedidos não aparecem nesses diagnósticos.
+
+> A tela guiada para cadastrar, testar, conceder e remover servidores externos ainda faz parte da
+> fase ativa. Não edite `external-mcp.settings`: o arquivo é um envelope DPAPI do usuário atual e não
+> possui formato de edição manual suportado.
+
 ## Pré-requisitos
 
 - RadIA instalado e carregado em uma IDE compatível.

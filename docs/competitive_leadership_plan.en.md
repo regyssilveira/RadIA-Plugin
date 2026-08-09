@@ -234,8 +234,18 @@ preserving origin and identity. Invalid responses, schemas, URIs, names, descrip
 or arguments cannot replace the last valid catalog. Content catalogs remain optional for backwards
 compatibility with existing integrations.
 
-**Still in this phase:** Settings, `/doctor`, `/status`, and smokes with a complete MCP fixture
-server and one authorized real server.
+**Runtime and diagnostics implemented:** the runtime loads the protected snapshot, connects only
+enabled servers, discovers content, and registers only explicitly granted tools in the shared
+catalog. Replacement is atomic: invalid configuration or registration failure preserves previous
+sessions and tools, while isolated failures never remove the internal catalog. `/doctor` and
+`/status mcp` expose sanitized health and counts, distinguish the CLI bridge from the external
+client, and never reveal commands, arguments, working directories, or paths. The same runtime can
+refresh without restarting Delphi.
+See the
+[Phase 6 runtime and diagnostics evidence](competitive_gap_phase_6_runtime_evidence_2.3.1.json).
+
+**Still in this phase:** the visual Settings experience and smokes with a complete MCP fixture and
+one authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

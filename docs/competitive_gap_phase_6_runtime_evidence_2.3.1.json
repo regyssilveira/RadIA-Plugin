@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhaseRuntime",
+  "product": "RadIA",
+  "productVersion": "2.3.1",
+  "phase": 6,
+  "capability": "externalMcpRuntimeAndDiagnostics",
+  "status": "runtimeIntegrationPassed",
+  "generatedAtUtc": "2026-08-09T11:26:36Z",
+  "implementation": {
+    "protectedSettingsLoad": true,
+    "enabledServerConnection": true,
+    "toolDiscoveryRequired": true,
+    "resourceAndPromptDiscoveryOptional": true,
+    "explicitGrantRegistration": true,
+    "atomicRegistryReplacement": true,
+    "failedRefreshPreservesPreviousRuntime": true,
+    "workspaceRootFollowsActiveProject": true,
+    "doctorIntegration": true,
+    "sanitizedStatusIntegration": true,
+    "refreshWithoutIdeRestart": true
+  },
+  "validation": {
+    "delphi12Win32InstrumentedTests": 972,
+    "delphi12Win32ExternalProcessTests": 7,
+    "delphi13Win32InstrumentedTests": 972,
+    "delphi13Win32ExternalProcessTests": 7,
+    "delphi13Ide64Tests": 979,
+    "memoryLeaks": 0,
+    "documentationTests": 21,
+    "webTests": 55,
+    "eslintErrors": 0
+  },
+  "sonar": {
+    "analysisId": "422342eb-3691-4a2f-a29b-99fc482f0026",
+    "qualityGate": "OK",
+    "newCoveragePercent": 82.6,
+    "newDuplicationPercent": 0.88879,
+    "globalCoveragePercent": 82.9,
+    "globalDuplicationPercent": 1.8,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  },
+  "remainingAcceptance": [
+    "Deliver the guided visual Settings experience for servers and grants.",
+    "Prove a complete fixture workflow on all supported IDE targets.",
+    "Prove one authorized real-server workflow on all supported IDE targets.",
+    "Complete the integrated closure journey and final documentation audit."
+  ]
+}

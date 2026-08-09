@@ -239,7 +239,16 @@ prompts recebem namespace `mcp.<servidor>.prompt.<nome>`, preservando origem e i
 schema, URI, nome, descrição, MIME type ou argumentos inválidos não substituem o último catálogo
 válido. Catálogos de conteúdo são opcionais para manter compatibilidade com integrações existentes.
 
-**Ainda nesta fase:** Configurações, `/doctor`, `/status` e smokes com servidor fixture MCP completo
+**Runtime e diagnóstico implementados:** o runtime carrega o snapshot protegido, conecta apenas
+servidores habilitados, descobre conteúdo e registra no catálogo compartilhado somente tools com
+concessão explícita. A troca é atômica: configuração inválida ou falha de registro preserva sessões e
+tools anteriores; falhas isoladas não removem o catálogo interno. `/doctor` e `/status mcp` exibem
+saúde e contagens sanitizadas, distinguem a ponte de CLI do cliente externo e nunca revelam comando,
+argumentos, diretório ou paths. O mesmo runtime aceita refresh sem reiniciar o Delphi.
+Consulte a
+[evidência do runtime e diagnóstico da Fase 6](competitive_gap_phase_6_runtime_evidence_2.3.1.json).
+
+**Ainda nesta fase:** experiência visual em Configurações e smokes com servidor fixture MCP completo
 e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e

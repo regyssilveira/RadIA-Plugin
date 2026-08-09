@@ -27,7 +27,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/settings` | Opens RadIA settings; equivalent to the chat gear button. | Local user configuration. |
 | `/extensions` | Opens the visual extension manager. | Local extensions and publishers. |
 | `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
-| `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP, terminal, chat, and first tool. |
+| `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP bridge, terminal, chat, first tool, and the external MCP runtime when available. |
 | `/status [filter\|--json]` | Shows a sanitized inventory of RadIA state. | Provider, agent, CLI, MCP, security, editor, project, tools, and logs. |
 | `/status settings` | Shows effective provider, model, executor, and limits with each source. | Project, session, and next request. |
 | `/scope` | Shows effective settings and applied precedence. | Equivalent to **Settings > Scope**. |
@@ -76,9 +76,9 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 
 | Need | Command | Result |
 |---|---|---|
-| Find why RadIA is not ready | `/doctor` | Six checks, issues, recommendations, and the next action. |
+| Find why RadIA is not ready | `/doctor` | Six baseline checks, the external MCP runtime when available, issues, recommendations, and the next action. |
 | Review what is configured and available | `/status` | Every area, without keys, tokens, or sensitive payloads. |
-| Inspect one area | `/status cli`, `/status mcp`, `/status provider` | Only the requested section. It also accepts `agent`, `security`, `editor`, `project`, `tools`, `logging`, and `settings`. |
+| Inspect one area | `/status cli`, `/status mcp`, `/status provider` | Only the requested section. `mcp` separates the CLI bridge from sanitized external-runtime counts. It also accepts `agent`, `security`, `editor`, `project`, `tools`, `logging`, and `settings`. |
 | Copy or process the complete structure | `/status --json` | Complete structured state returned by the tool. |
 | Assess the open Delphi project | `/health` | Project, build, test, compiler, and local-knowledge risks. |
 | Discover executable tools | `/tools` | Effective catalog for the current IDE instance. |

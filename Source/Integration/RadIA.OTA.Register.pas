@@ -111,6 +111,8 @@ uses
   RadIA.Core.KnowledgeTools,
   RadIA.Core.ProjectHealthTools,
   RadIA.Core.InstallationHealthTools,
+  RadIA.Core.ExternalMcpRuntime,
+  RadIA.Core.ExternalMcpSettings,
   RadIA.Core.FastMM5,
   RadIA.Core.MemoryInstrumentation,
   RadIA.Core.FastMM5LogParser,
@@ -852,6 +854,30 @@ begin
   TRadIAContainer.Register<IRadIABlockReviewSession>(LSession);
 end;
 
+procedure RegisterRadIAExternalMcpRuntime;
+var
+  LError: string;
+  LRuntime: IRadIAExternalMcpRuntime;
+begin
+  LRuntime := TRadIAExternalMcpRuntime.Create(
+    TRadIAExternalMcpSettingsStore.Create(
+      TPath.Combine(
+        TPath.Combine(TPath.GetHomePath, 'RadIA'),
+        'external-mcp.settings'
+      )
+    ),
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAExternalMcpWorkspaceRootProvider.Create(
+      TRadIAContainer.Resolve<IRadIAIDEAdapter>
+    ),
+    TRadIAWorkspaceBoundary.Create,
+    TRadIAExternalMcpClientFactory.Create
+  );
+  TRadIAContainer.Register<IRadIAExternalMcpRuntime>(LRuntime);
+  if not LRuntime.Refresh(LError) then
+    LogDebug('External MCP runtime requires configuration attention.');
+end;
+
 initialization
   TRadIAContainer.Register<IRadIAConfig>(TRadIAConfig.GetInstance);
   TRadIAContainer.Register<IRadIALogger>(TConcreteLogger.Create);
@@ -1343,6 +1369,7 @@ initialization
     TRadIAContainer.Resolve<IRadIADUnitXRunner>,
     TRadIAContainer.Resolve<IRadIAKnowledgeService>
   );
+  RegisterRadIAExternalMcpRuntime;
   RegisterRadIAInstallationHealthTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAInstallationHealthProbe.Create(
@@ -1355,7 +1382,8 @@ initialization
         TPath.Combine(TPath.GetHomePath, 'RadIA'),
         'Web'
       ),
-      TRadIAContainer.Resolve<IRadIAToolRegistry>
+      TRadIAContainer.Resolve<IRadIAToolRegistry>,
+      TRadIAContainer.Resolve<IRadIAExternalMcpRuntime>
     )
   );
   RegisterRadIAFastMM5Tools(

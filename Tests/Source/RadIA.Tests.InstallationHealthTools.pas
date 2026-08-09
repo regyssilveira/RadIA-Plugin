@@ -4,7 +4,10 @@ interface
 
 uses
   DUnitX.TestFramework,
+  RadIA.Core.ExternalMcp,
+  RadIA.Core.ExternalMcpSecurity,
   RadIA.Core.InstallationHealthTools,
+  RadIA.Core.ExternalMcpRuntime,
   RadIA.Core.Tools;
 
 type
@@ -28,6 +31,22 @@ type
     ): string;
   end;
 
+  TRadIAInstallationHealthExternalMcpRuntime = class(
+    TInterfacedObject,
+    IRadIAExternalMcpRuntime
+  )
+  public
+    function GetGrants: TArray<TRadIAExternalMcpToolGrant>;
+    function GetServers: TArray<TRadIAExternalMcpServerConfig>;
+    function GetStatus: TRadIAExternalMcpRuntimeStatus;
+    function Refresh(out AError: string): Boolean;
+    function SaveAndRefresh(
+      const AServers: TArray<TRadIAExternalMcpServerConfig>;
+      const AGrants: TArray<TRadIAExternalMcpToolGrant>;
+      out AError: string
+    ): Boolean;
+  end;
+
   [TestFixture]
   TTestRadIAInstallationHealthTools = class
   public
@@ -41,6 +60,8 @@ type
     procedure StatusFiltersSanitizedConfiguration;
     [Test]
     procedure NativeJourneyDoesNotRequireMcpAndExposesNextAction;
+    [Test]
+    procedure StatusSeparatesExternalMcpWithoutExposingConfiguration;
   end;
 
 implementation
@@ -85,6 +106,42 @@ function TRadIAInstallationHealthTestProbe.Status(
 ): string;
 begin
   Result := '{"scope":"' + AFilter + '","sanitized":true}';
+end;
+
+function TRadIAInstallationHealthExternalMcpRuntime.GetGrants:
+  TArray<TRadIAExternalMcpToolGrant>;
+begin
+  Result := nil;
+end;
+
+function TRadIAInstallationHealthExternalMcpRuntime.GetServers:
+  TArray<TRadIAExternalMcpServerConfig>;
+begin
+  Result := nil;
+end;
+
+function TRadIAInstallationHealthExternalMcpRuntime.GetStatus:
+  TRadIAExternalMcpRuntimeStatus;
+begin
+  Result := Default(TRadIAExternalMcpRuntimeStatus);
+end;
+
+function TRadIAInstallationHealthExternalMcpRuntime.Refresh(
+  out AError: string
+): Boolean;
+begin
+  AError := '';
+  Result := True;
+end;
+
+function TRadIAInstallationHealthExternalMcpRuntime.SaveAndRefresh(
+  const AServers: TArray<TRadIAExternalMcpServerConfig>;
+  const AGrants: TArray<TRadIAExternalMcpToolGrant>;
+  out AError: string
+): Boolean;
+begin
+  AError := '';
+  Result := True;
 end;
 
 procedure TTestRadIAInstallationHealthTools.
@@ -275,6 +332,51 @@ begin
     Assert.Contains(LResult, '"mcpBridgeAvailable":true');
     Assert.Contains(LResult, '"webAssetsAvailable":true');
     Assert.DoesNotContain(LResult, 'localhost:11434');
+  finally
+    LProbe := nil;
+    LConfig := nil;
+    LStorage := nil;
+    TRadIAConfig.SetStorage(nil);
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
+end;
+
+procedure TTestRadIAInstallationHealthTools.
+  StatusSeparatesExternalMcpWithoutExposingConfiguration;
+var
+  LConfig: IRadIAConfig;
+  LDirectory: string;
+  LProbe: IRadIAInstallationHealthProbe;
+  LResult: string;
+  LStorage: IRadIASettingsStorage;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIAExternalMcpHealth-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  try
+    LStorage := TRadIAMemorySettingsStorage.Create;
+    TRadIAConfig.SetStorage(LStorage);
+    LConfig := TRadIAConfig.Create;
+    LConfig.SetActiveProvider('Ollama');
+    LConfig.OllamaBaseUrl := 'http://localhost:11434';
+    LProbe := TRadIAInstallationHealthProbe.Create(
+      LConfig,
+      TPath.Combine(LDirectory, 'bridge.exe'),
+      LDirectory,
+      TRadIAToolRegistry.Create,
+      TRadIAInstallationHealthExternalMcpRuntime.Create
+    );
+
+    LResult := LProbe.Status('mcp', False);
+
+    Assert.Contains(LResult, '"externalConfiguredServers":0');
+    Assert.Contains(LResult, '"externalConnectedServers":0');
+    Assert.Contains(LResult, '"externalRefreshWithoutRestart":true');
+    Assert.DoesNotContain(LResult, 'external-mcp.settings');
+    Assert.DoesNotContain(LResult, 'fixture.exe');
   finally
     LProbe := nil;
     LConfig := nil;

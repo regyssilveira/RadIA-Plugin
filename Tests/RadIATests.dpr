@@ -47,6 +47,8 @@ uses
   RadIA.Core.ExternalMcpClient in '..\Source\Core\RadIA.Core.ExternalMcpClient.pas',
   RadIA.Core.ExternalMcpSecurity in '..\Source\Core\RadIA.Core.ExternalMcpSecurity.pas',
   RadIA.Core.ExternalMcpSettings in '..\Source\Core\RadIA.Core.ExternalMcpSettings.pas',
+  RadIA.Core.ExternalMcpRuntime in '..\Source\Core\RadIA.Core.ExternalMcpRuntime.pas',
+  RadIA.Tests.ExternalMcpRuntime in 'Source\RadIA.Tests.ExternalMcpRuntime.pas',
   RadIA.Core.ToolRegistry in '..\Source\Core\RadIA.Core.ToolRegistry.pas',
   RadIA.Core.ToolViews in '..\Source\Core\RadIA.Core.ToolViews.pas',
   RadIA.Core.Extensions in '..\Source\Core\RadIA.Core.Extensions.pas',

@@ -52,6 +52,13 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.Debugger*` | State, control, breakpoint, evaluation, and watch tools. |
 | `RadIA.Core.Knowledge*` | Indexing, persistence, scheduling, search, and bounded reads. |
 | `RadIA.Core.Mcp` | MCP protocol, sessions, cancellation, metrics, and dispatch. |
+| `RadIA.Core.ExternalMcp` | Isolated contracts and catalog for consuming external MCP servers with stable namespaces. |
+| `RadIA.Core.ExternalMcpContent` | Atomic resource and prompt catalogs with federated identities. |
+| `RadIA.Core.ExternalMcpTransport` | Bounded JSONL stdio transport with process isolation, timeout, and tree termination. |
+| `RadIA.Core.ExternalMcpClient` | JSON-RPC lifecycle, correlation, discovery, tools, and active cancellation by request ID. |
+| `RadIA.Core.ExternalMcpSecurity` | Explicit grants, shared policy, consent, audit, and workspace path validation. |
+| `RadIA.Core.ExternalMcpSettings` | Validated, current-user-protected, atomically persisted MCP snapshot. |
+| `RadIA.Core.ExternalMcpRuntime` | Loads protected snapshots, connects enabled servers, discovers content, registers granted adapters, and publishes sanitized health without restart. |
 | `RadIA.Core.HierarchicalSettings` | Values, origins, and precedence across request, session, project, global, and safe defaults. |
 | `RadIA.Core.HierarchicalSettingsStore` | Atomic JSON scope persistence with hashed names and unknown-field preservation. |
 | `RadIA.Core.Extensions` | Versioned API and extension registration lifecycle. |

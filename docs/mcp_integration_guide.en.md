@@ -5,6 +5,23 @@
 RadIA exposes its agentic IDE catalog to local MCP clients. Communication between the bridge and
 the IDE uses a Windows named pipe; no TCP port is opened by default.
 
+RadIA also supports the inverse flow: it can act as a client of external MCP servers. The two roles
+are independent:
+
+- **RadIA as a server:** exposes IDE tools through the bridge documented in this guide;
+- **RadIA as a client:** discovers tools, resources, and prompts from local servers and publishes
+  only explicitly granted tools into RadIA's shared registry.
+
+The client runtime loads with the IDE and can replace its snapshot without restarting Delphi. A
+configuration, connection, or discovery failure preserves the internal catalog and the last valid
+runtime. `/status mcp` returns only sanitized counts for servers, grants, tools, resources, prompts,
+and errors; `/doctor` adds a separate check when the external runtime is available. Commands,
+arguments, working directories, and granted paths never appear in these diagnostics.
+
+> The guided screen for adding, testing, granting, and removing external servers is still part of
+> the active phase. Do not edit `external-mcp.settings`: it is a current-user DPAPI envelope and has
+> no supported manual editing format.
+
 ## Requirements
 
 - RadIA installed and loaded in a supported Delphi IDE.

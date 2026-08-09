@@ -129,6 +129,8 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpClient.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpSecurity.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpSettings.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.ExternalMcpRuntime.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.ExternalMcpRuntime.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolRegistry.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ToolViews.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Extensions.pas"/>
