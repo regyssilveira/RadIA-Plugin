@@ -18,9 +18,25 @@ falha de configuração, conexão ou descoberta preserva o catálogo interno e o
 prompts e erros; `/doctor` inclui uma verificação separada quando o runtime externo está disponível.
 Comando, argumentos, diretório de trabalho e paths concedidos não aparecem nesses diagnósticos.
 
-> A tela guiada para cadastrar, testar, conceder e remover servidores externos ainda faz parte da
-> fase ativa. Não edite `external-mcp.settings`: o arquivo é um envelope DPAPI do usuário atual e não
-> possui formato de edição manual suportado.
+Cadastre servidores em **Configurações > CLI & MCP > External MCP Servers**. Não edite
+`external-mcp.settings`: o arquivo é um envelope DPAPI do usuário atual e não possui formato de
+edição manual suportado.
+
+### Consumir um servidor externo no RadIA
+
+1. Abra **External MCP Servers** e preencha ID, nome, comando, argumentos, diretório e timeout; ou
+   use **Import...** para carregar um JSON com `mcpServers`/`servers` no preview local.
+2. Use **Add / Update** e confira a lista. Nenhum processo ou arquivo muda nessa etapa.
+3. Clique **Test** para conectar e descobrir tools, resources e prompts sem publicar a tool.
+4. Selecione uma tool descoberta e crie a concessão local com risco, consentimento e argumentos de
+   path. Sem concessão, a tool permanece invisível ao agente.
+5. Clique **Apply**, revise as quantidades e confirme. O snapshot é protegido por DPAPI e o runtime
+   atualiza em background sem reiniciar o Delphi.
+6. Confira `/status mcp`; em falha, execute `/doctor` e use **Refresh** depois da correção.
+
+Remover um servidor também remove suas concessões do preview. Se **Apply**, **Refresh** ou a
+descoberta falhar, o runtime anterior permanece ativo. Comandos, argumentos e paths nunca são
+incluídos no diagnóstico sanitizado.
 
 ## Pré-requisitos
 

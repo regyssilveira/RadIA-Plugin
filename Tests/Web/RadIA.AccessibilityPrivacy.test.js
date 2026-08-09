@@ -12,6 +12,10 @@ const configFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigFrame.pas'),
   'utf8'
 );
+const externalMcpFrame = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ExternalMcpFrame.pas'),
+  'utf8'
+);
 const chatFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ChatFrame.pas'),
   'utf8'
@@ -112,11 +116,29 @@ test('configuration separates focused pages and exposes CLI child navigation', (
   assert.match(configForm, /AddChild\(LNodeCli, 'Chat Orchestration'\)/u);
   assert.match(configForm, /AddChild\(LNodeExternalCli, 'Codex CLI'\)/u);
   assert.match(configForm, /AddChild\(LNodeCli, 'MCP Connection'\)/u);
+  assert.match(configForm, /AddChild\(LNodeCli, 'External MCP Servers'\)/u);
   assert.match(configFrame, /Items\.IndexOf\(ACategoryName\)/u);
   assert.match(configFrame, /External CLI: %s installation and authentication/u);
   assert.match(configFrame, /MCP client connection \(independent from chat orchestration\)/u);
   assert.match(configFrame, /SameText\(ACategoryName, 'AI Providers'\)/u);
   assert.match(configFrame, /SameText\(ACategoryName, 'CLI & MCP'\)/u);
+});
+
+test('external MCP settings are separate, guided, and refresh without restart', () => {
+  assert.match(configFrame, /FTsExternalMcp\.Caption := 'External MCP Servers'/u);
+  assert.match(configFrame, /FExternalMcpFrame\.Parent := FTsExternalMcp/u);
+  assert.match(externalMcpFrame, /FBtnServerTest\.Caption := 'Test'/u);
+  assert.match(externalMcpFrame, /FBtnApply\.Caption := 'Apply'/u);
+  assert.match(externalMcpFrame, /FBtnRefresh\.Caption := 'Refresh'/u);
+  assert.match(externalMcpFrame, /FBtnImport\.Caption := 'Import\.\.\.'/u);
+  assert.match(externalMcpFrame, /TRadIAExternalMcpConfigImporter\.ImportJson/u);
+  assert.match(externalMcpFrame, /pending preview only/u);
+  assert.match(externalMcpFrame, /SaveAndRefresh/u);
+  assert.match(externalMcpFrame, /Refresh without restarting Delphi|refreshed without restarting Delphi/u);
+  assert.match(externalMcpFrame, /procedure TRadIAExternalMcpFrame\.AddHint/u);
+  assert.match(externalMcpFrame, /mtConfirmation/u);
+  assert.match(externalMcpFrame, /TTask\.Run/u);
+  assert.match(externalMcpFrame, /FScrollBox\.VertScrollBar\.Range := 860/u);
 });
 
 test('CLI and MCP setup exposes guided and recoverable actions', () => {

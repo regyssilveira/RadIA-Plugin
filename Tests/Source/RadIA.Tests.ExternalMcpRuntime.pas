@@ -15,6 +15,8 @@ type
     procedure FailedRefreshPreservesPreviousRuntime;
     [Test]
     procedure ConnectionFailurePreservesPreviousRuntimeAndReportsHealth;
+    [Test]
+    procedure TestServerDiscoversWithoutPublishingRuntime;
   end;
 
 implementation
@@ -291,6 +293,7 @@ begin
   Assert.AreEqual(1, LStatus.ToolCount);
   Assert.AreEqual(1, LStatus.GrantedTools);
   Assert.AreEqual(0, LStatus.ErrorCount);
+  Assert.AreEqual<Integer>(1, Length(LRuntime.GetDiscoveredTools));
 end;
 
 procedure TRadIAExternalMcpRuntimeTests.FailedRefreshPreservesPreviousRuntime;
@@ -350,6 +353,33 @@ begin
   Assert.IsTrue(LRegistry.TryResolve('mcp.fixture.read_state', LTool));
   Assert.AreEqual(1, LRuntime.GetStatus.ConnectedServers);
   Assert.AreEqual(1, LRuntime.GetStatus.ErrorCount);
+end;
+
+procedure TRadIAExternalMcpRuntimeTests.
+  TestServerDiscoversWithoutPublishingRuntime;
+var
+  LError: string;
+  LRegistry: IRadIAToolRegistry;
+  LRuntime: IRadIAExternalMcpRuntime;
+  LSettings: TRadIAFakeExternalMcpSettings;
+  LStatus: TRadIAExternalMcpRuntimeStatus;
+  LTool: IRadIATool;
+begin
+  LSettings := TRadIAFakeExternalMcpSettings.Create;
+  LRegistry := TRadIAToolRegistry.Create;
+  LRuntime := TRadIAExternalMcpRuntime.Create(
+    LSettings,
+    LRegistry,
+    TRadIAFakeExternalMcpRootProvider.Create,
+    TRadIAWorkspaceBoundary.Create,
+    TRadIAFakeExternalMcpClientFactory.Create
+  );
+
+  Assert.IsTrue(LRuntime.TestServer(ServerConfig, LStatus, LError), LError);
+  Assert.AreEqual(1, LStatus.ConnectedServers);
+  Assert.AreEqual(1, LStatus.ToolCount);
+  Assert.IsFalse(LRegistry.TryResolve('mcp.fixture.read_state', LTool));
+  Assert.AreEqual<Integer>(0, Length(LRuntime.GetServers));
 end;
 
 initialization

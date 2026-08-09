@@ -36,6 +36,7 @@ type
     IRadIAExternalMcpRuntime
   )
   public
+    function GetDiscoveredTools: TArray<TRadIAExternalMcpTool>;
     function GetGrants: TArray<TRadIAExternalMcpToolGrant>;
     function GetServers: TArray<TRadIAExternalMcpServerConfig>;
     function GetStatus: TRadIAExternalMcpRuntimeStatus;
@@ -43,6 +44,11 @@ type
     function SaveAndRefresh(
       const AServers: TArray<TRadIAExternalMcpServerConfig>;
       const AGrants: TArray<TRadIAExternalMcpToolGrant>;
+      out AError: string
+    ): Boolean;
+    function TestServer(
+      const AServer: TRadIAExternalMcpServerConfig;
+      out AStatus: TRadIAExternalMcpRuntimeStatus;
       out AError: string
     ): Boolean;
   end;
@@ -114,6 +120,12 @@ begin
   Result := nil;
 end;
 
+function TRadIAInstallationHealthExternalMcpRuntime.GetDiscoveredTools:
+  TArray<TRadIAExternalMcpTool>;
+begin
+  Result := nil;
+end;
+
 function TRadIAInstallationHealthExternalMcpRuntime.GetServers:
   TArray<TRadIAExternalMcpServerConfig>;
 begin
@@ -140,6 +152,17 @@ function TRadIAInstallationHealthExternalMcpRuntime.SaveAndRefresh(
   out AError: string
 ): Boolean;
 begin
+  AError := '';
+  Result := True;
+end;
+
+function TRadIAInstallationHealthExternalMcpRuntime.TestServer(
+  const AServer: TRadIAExternalMcpServerConfig;
+  out AStatus: TRadIAExternalMcpRuntimeStatus;
+  out AError: string
+): Boolean;
+begin
+  AStatus := Default(TRadIAExternalMcpRuntimeStatus);
   AError := '';
   Result := True;
 end;

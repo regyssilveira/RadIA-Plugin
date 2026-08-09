@@ -85,6 +85,7 @@ allows an external client to use RadIA's protected tool registry.
 The **CLI & MCP** and **External CLI clients** parent nodes show guidance only. Use **Chat
 Orchestration** to choose native or external CLI execution, a specific client to configure its
 installation, or **MCP Connection** to configure MCP connectivity only.
+Use **External MCP Servers** for the inverse flow: consuming local servers inside RadIA.
 
 | Option | When to use | Effect and care |
 |---|---|---|
@@ -105,6 +106,37 @@ installation, or **MCP Connection** to configure MCP connectivity only.
 
 The **MCP connection** block is explicitly independent from the chat executor. Sanitized setup and
 repair history is stored at `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
+
+### External MCP Servers
+
+This page manages servers consumed by RadIA as a client. It is independent from the bridge that
+exposes IDE tools to CLIs. Server and grant edits remain in a local preview until **Apply**; the
+global **Save** button for other settings does not replace this confirmation.
+
+| Option | When to use | Effect and care |
+|---|---|---|
+| Servers | To select an existing configuration | Shows only friendly name and ID; commands, arguments, and paths never enter `/status`. |
+| Stable ID | When adding a server | Defines the `mcp.<server>.*` namespace; use letters, numbers, hyphens, or underscores. |
+| Display name | To aid recognition | Visual name with no protocol effect. |
+| Executable or command | To select a local server | Point to an existing executable or command; RadIA neither requires npm nor silently downloads dependencies. |
+| Arguments | When the server requires parameters | One literal argument per line, with no shell expansion. |
+| Working directory | When the process needs a starting directory | Must be absolute and remains protected inside the DPAPI snapshot. |
+| Timeout | To bound connection and calls | Accepts 1,000 through 600,000 ms. |
+| Enable this server | To activate or pause | A disabled server remains saved but starts no process and publishes no content. |
+| Add / Update | After reviewing fields | Changes only the pending preview. |
+| Remove | To delete a server | Confirms removal and removes that server's grants from the preview. |
+| Test | Before saving | Connects and discovers tools, resources, and prompts without publishing tools or changing the file. |
+| Import | To reuse existing JSON | Reads `mcpServers` or `servers`, validates the whole file, and merges only into the preview. |
+| Tool grants | To authorize a discovered tool | Without an explicit grant, a tool never enters the shared registry. |
+| Risk | When creating the grant | Local classification governs consent; server annotations cannot lower it. |
+| Path arguments | When JSON arguments contain paths | Comma-separated names remain confined to the active project. |
+| Ask on every call | To require recurring confirmation | Ignores remembered session decisions for that tool. |
+| Allow non-path-limited access | Only when no path can be confined | This is an explicit authorization; review it carefully before applying. |
+| Apply | After reviewing servers and grants | Shows counts, confirms, protects with DPAPI, and refreshes without restart. |
+| Refresh | To reconnect the saved snapshot | Discards pending preview and refreshes discovery in the background without restarting Delphi. |
+
+If **Apply** or **Refresh** fails, the previous runtime remains active and the page reports an
+actionable recovery. Use `/status mcp` for sanitized counts and `/doctor` for the next action.
 
 ### Guided flow and recovery
 

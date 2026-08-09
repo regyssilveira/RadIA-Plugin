@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhaseSettings",
+  "product": "RadIA",
+  "productVersion": "2.3.1",
+  "phase": 6,
+  "capability": "guidedExternalMcpSettings",
+  "status": "implementationMatrixPassed",
+  "generatedAtUtc": "2026-08-09T12:48:56Z",
+  "implementation": {
+    "separateExternalMcpPage": true,
+    "guidedServerEditor": true,
+    "guidedGrantEditor": true,
+    "previewOnlyStandardJsonImport": true,
+    "explicitApplyConfirmation": true,
+    "backgroundTestApplyAndRefresh": true,
+    "refreshWithoutIdeRestart": true,
+    "contextualHints": true,
+    "atomicToolRegistryReplacement": true,
+    "previousRuntimePreservedOnFailure": true,
+    "realElapsedTimeWaits": true
+  },
+  "validation": {
+    "delphi12Win32InstrumentedTests": 977,
+    "delphi12Win32ExternalProcessTests": 7,
+    "delphi13Win32InstrumentedTests": 977,
+    "delphi13Win32ExternalProcessTests": 7,
+    "delphi13Ide64Tests": 984,
+    "memoryLeaks": 0,
+    "documentationTests": 21,
+    "webTests": 56,
+    "eslintErrors": 0
+  },
+  "sonar": {
+    "analysisId": "37238991-5776-49d9-8cab-b4da80de6411",
+    "qualityGate": "OK",
+    "newCoveragePercent": 82.6,
+    "newDuplicationPercent": 0.87815,
+    "globalCoveragePercent": 82.9,
+    "globalDuplicationPercent": 1.8,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  },
+  "remainingAcceptance": [
+    "Prove a complete fixture workflow on all supported IDE targets.",
+    "Prove one authorized real-server workflow on all supported IDE targets.",
+    "Complete the integrated closure journey and final documentation audit."
+  ]
+}

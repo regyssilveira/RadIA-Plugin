@@ -36,6 +36,7 @@ type
 
   IRadIAExternalMcpRuntime = interface
     ['{883D325B-804A-49FD-BB09-C3928B59C22C}']
+    function GetDiscoveredTools: TArray<TRadIAExternalMcpTool>;
     function GetGrants: TArray<TRadIAExternalMcpToolGrant>;
     function GetServers: TArray<TRadIAExternalMcpServerConfig>;
     function GetStatus: TRadIAExternalMcpRuntimeStatus;
@@ -43,6 +44,11 @@ type
     function SaveAndRefresh(
       const AServers: TArray<TRadIAExternalMcpServerConfig>;
       const AGrants: TArray<TRadIAExternalMcpToolGrant>;
+      out AError: string
+    ): Boolean;
+    function TestServer(
+      const AServer: TRadIAExternalMcpServerConfig;
+      out AStatus: TRadIAExternalMcpRuntimeStatus;
       out AError: string
     ): Boolean;
   end;
@@ -141,12 +147,18 @@ type
     );
     destructor Destroy; override;
     function GetGrants: TArray<TRadIAExternalMcpToolGrant>;
+    function GetDiscoveredTools: TArray<TRadIAExternalMcpTool>;
     function GetServers: TArray<TRadIAExternalMcpServerConfig>;
     function GetStatus: TRadIAExternalMcpRuntimeStatus;
     function Refresh(out AError: string): Boolean;
     function SaveAndRefresh(
       const AServers: TArray<TRadIAExternalMcpServerConfig>;
       const AGrants: TArray<TRadIAExternalMcpToolGrant>;
+      out AError: string
+    ): Boolean;
+    function TestServer(
+      const AServer: TRadIAExternalMcpServerConfig;
+      out AStatus: TRadIAExternalMcpRuntimeStatus;
       out AError: string
     ): Boolean;
   end;
@@ -364,6 +376,7 @@ function TRadIAExternalMcpRuntime.PublishRuntime(
   out AError: string
 ): Boolean;
 var
+  LAtomicUpdater: IRadIAToolRegistryAtomicUpdater;
   LOldNames: TArray<string>;
   LOldSessions: TArray<TRadIASession>;
   LOldTools: TArray<IRadIATool>;
@@ -374,13 +387,23 @@ begin
     LOldNames := FRegisteredNames;
     LOldSessions := FSessions;
     LOldTools := FRegisteredTools;
-    FRegistry.UnregisterTools(LOldNames);
     try
-      FRegistry.RegisterTools(ATools);
+      if Supports(
+        FRegistry,
+        IRadIAToolRegistryAtomicUpdater,
+        LAtomicUpdater
+      ) then
+        LAtomicUpdater.ReplaceTools(LOldNames, ATools)
+      else
+      begin
+        FRegistry.UnregisterTools(LOldNames);
+        FRegistry.RegisterTools(ATools);
+      end;
     except
       on E: Exception do
       begin
-        FRegistry.RegisterTools(LOldTools);
+        if not Assigned(LAtomicUpdater) then
+          FRegistry.RegisterTools(LOldTools);
         AError := E.Message;
         Exit(False);
       end;
@@ -510,6 +533,29 @@ begin
   end;
 end;
 
+function TRadIAExternalMcpRuntime.GetDiscoveredTools:
+  TArray<TRadIAExternalMcpTool>;
+var
+  LSession: TRadIASession;
+  LTool: TRadIAExternalMcpTool;
+  LTools: TList<TRadIAExternalMcpTool>;
+begin
+  LTools := TList<TRadIAExternalMcpTool>.Create;
+  try
+    TMonitor.Enter(FLock);
+    try
+      for LSession in FSessions do
+        for LTool in LSession.ToolCatalog.GetTools do
+          LTools.Add(LTool);
+    finally
+      TMonitor.Exit(FLock);
+    end;
+    Result := LTools.ToArray;
+  finally
+    LTools.Free;
+  end;
+end;
+
 function TRadIAExternalMcpRuntime.GetGrants:
   TArray<TRadIAExternalMcpToolGrant>;
 begin
@@ -529,6 +575,42 @@ begin
     Result := FStatus;
   finally
     TMonitor.Exit(FLock);
+  end;
+end;
+
+function TRadIAExternalMcpRuntime.TestServer(
+  const AServer: TRadIAExternalMcpServerConfig;
+  out AStatus: TRadIAExternalMcpRuntimeStatus;
+  out AError: string
+): Boolean;
+var
+  LPrompts: TArray<TRadIAExternalMcpPrompt>;
+  LResources: TArray<TRadIAExternalMcpResource>;
+  LSession: TRadIASession;
+begin
+  AStatus := Default(TRadIAExternalMcpRuntimeStatus);
+  AStatus.FConfiguredServers := 1;
+  AStatus.FEnabledServers := Ord(AServer.Enabled);
+  if not AServer.Enabled then
+  begin
+    AError := 'Enable the server before testing it.';
+    Exit(False);
+  end;
+  Result := ConnectServer(AServer, LSession, AError);
+  if not Result then
+  begin
+    AStatus.FErrorCount := 1;
+    Exit;
+  end;
+  try
+    AStatus.FConnectedServers := 1;
+    AStatus.FToolCount := Length(LSession.ToolCatalog.GetTools);
+    LResources := LSession.ContentCatalog.GetResources;
+    LPrompts := LSession.ContentCatalog.GetPrompts;
+    AStatus.FResourceCount := Length(LResources);
+    AStatus.FPromptCount := Length(LPrompts);
+  finally
+    LSession.Client.Disconnect;
   end;
 end;
 

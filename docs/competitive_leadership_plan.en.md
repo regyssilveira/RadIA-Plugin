@@ -244,8 +244,16 @@ refresh without restarting Delphi.
 See the
 [Phase 6 runtime and diagnostics evidence](competitive_gap_phase_6_runtime_evidence_2.3.1.json).
 
-**Still in this phase:** the visual Settings experience and smokes with a complete MCP fixture and
-one authorized real server.
+**Visual experience implemented:** **Settings > CLI & MCP > External MCP Servers** separates the
+external client from the bridge offered to CLIs. The page can add, enable, test, and remove servers,
+import `mcpServers`/`servers` into preview only, classify and grant tools, and apply the protected
+snapshot after confirmation. Test, apply, and refresh run in the background; failures preserve the
+last valid runtime, and every operational control has a contextual hint.
+
+See the
+[Phase 6 visual experience evidence](competitive_gap_phase_6_settings_evidence_2.3.1.json).
+
+**Still in this phase:** smokes with a complete MCP fixture and one authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

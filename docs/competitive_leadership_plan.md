@@ -248,8 +248,16 @@ argumentos, diretório ou paths. O mesmo runtime aceita refresh sem reiniciar o 
 Consulte a
 [evidência do runtime e diagnóstico da Fase 6](competitive_gap_phase_6_runtime_evidence_2.3.1.json).
 
-**Ainda nesta fase:** experiência visual em Configurações e smokes com servidor fixture MCP completo
-e servidor real autorizado.
+**Experiência visual implementada:** **Configurações > CLI & MCP > External MCP Servers** separa o
+cliente externo da ponte oferecida às CLIs. A página permite cadastrar, habilitar, testar e remover
+servidores, importar `mcpServers`/`servers` somente para preview, classificar e conceder tools e
+aplicar o snapshot protegido com confirmação. Teste, apply e refresh executam em background; o
+último runtime válido permanece ativo em falha e todos os controles operacionais possuem hints.
+
+Consulte a
+[evidência da experiência visual da Fase 6](competitive_gap_phase_6_settings_evidence_2.3.1.json).
+
+**Ainda nesta fase:** smokes com servidor fixture MCP completo e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.

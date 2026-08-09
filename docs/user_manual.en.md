@@ -52,7 +52,7 @@ from being clipped.
 | Security & Consent | Risk approval, timeout, and session grants | Before allowing execution or mutations |
 | Knowledge & Embeddings | Local knowledge, exclusions, and remote embeddings | When configuring project context retrieval |
 | Editor Assistance | Ghost text, delay, exclusions, and shortcuts | When configuring editor suggestions |
-| CLI & MCP | Native/external executor, portable executable, and MCP connection | Only when using an external CLI or MCP client |
+| CLI & MCP | Native/external executor, portable executable, bridge, and external MCP servers | When using a CLI, exposing the IDE, or consuming a local MCP server |
 | Memory Diagnostics | FastMM5 path and execution limits | When investigating leaks, double free, or use-after-free |
 
 Every field and button provides a contextual hint. See the [security model](tool_security_model.en.md)

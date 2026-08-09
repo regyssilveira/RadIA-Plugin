@@ -12,7 +12,8 @@ uses  System.Classes,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.McpProvisioning,
   RadIA.Core.FastMM5,
-  RadIA.Core.ResultCompactionSettings;
+  RadIA.Core.ResultCompactionSettings,
+  RadIA.UI.ExternalMcpFrame;
 
 type
   TRadIAFrameAIConfig = class(TFrame, IRadIAConfigView)
@@ -128,6 +129,8 @@ type
     FCliInstallGuard: IInterface;
     FCliInstallOperation: string;
     FCliInstallClientId: string;
+    FTsExternalMcp: TTabSheet;
+    FExternalMcpFrame: TRadIAExternalMcpFrame;
 
     FTsMemoryDiagnostics: TTabSheet;
     FPnlMemoryDiagnostics: TPanel;
@@ -184,6 +187,7 @@ type
     procedure CreateKnowledgeTab;
     procedure CreateEditorAssistanceTab;
     procedure CreateCliMcpTab;
+    procedure CreateExternalMcpTab;
     procedure CreateCliExecutableControls;
     procedure ConfigureCliMcpView(const ASection: Integer);
     procedure ApplyCliMcpControlVisibility(
@@ -1522,6 +1526,17 @@ begin
   CliClientChange(FCmbCliClient);
 end;
 
+procedure TRadIAFrameAIConfig.CreateExternalMcpTab;
+begin
+  FTsExternalMcp := TTabSheet.Create(Self);
+  FTsExternalMcp.PageControl := pgcSettings;
+  FTsExternalMcp.Caption := 'External MCP Servers';
+  FTsExternalMcp.TabVisible := False;
+  FExternalMcpFrame := TRadIAExternalMcpFrame.Create(Self);
+  FExternalMcpFrame.Parent := FTsExternalMcp;
+  FExternalMcpFrame.Align := alClient;
+end;
+
 procedure TRadIAFrameAIConfig.ConfigureCliMcpView(const ASection: Integer);
 begin
   RestoreCliMcpControlPositions;
@@ -1650,6 +1665,7 @@ begin
   CreateKnowledgeTab;
   CreateEditorAssistanceTab;
   CreateCliMcpTab;
+  CreateExternalMcpTab;
   CreateMemoryDiagnosticsTab;
   ConfigureControlHints;
   LoadAgentExecutorSettings;
@@ -3281,6 +3297,11 @@ begin
     ConfigureCliMcpView(3);
     Exit;
   end;
+  if SameText(ACategoryName, 'External MCP Servers') then
+  begin
+    pgcSettings.ActivePage := FTsExternalMcp;
+    Exit;
+  end;
   Result := False;
 end;
 
@@ -3295,7 +3316,8 @@ begin
       'CLI & MCP',
       'Choose Chat Orchestration to select native or external CLI execution. ' +
       'Choose a client under External CLI clients to configure that CLI. ' +
-      'Choose MCP Connection to connect an independent MCP client.'
+      'Choose MCP Connection to expose the IDE to a CLI client. ' +
+      'Choose External MCP Servers to consume independent local servers.'
     );
     Exit;
   end;

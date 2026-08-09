@@ -56,6 +56,10 @@ type
     procedure TestBatchRegistrationIsAtomic;
     [Test]
     procedure TestBatchUnregisterRemovesOnlyNamedTools;
+    [Test]
+    procedure TestAtomicReplacePreservesUnrelatedTools;
+    [Test]
+    procedure TestAtomicReplaceRollsBackOnCollision;
   end;
 
   [TestFixture]
@@ -188,6 +192,53 @@ begin
   Assert.IsFalse(FRegistry.TryResolve('FirstTool', LTool));
   Assert.IsTrue(FRegistry.TryResolve('SecondTool', LTool));
   Assert.IsFalse(FRegistry.TryResolve('ThirdTool', LTool));
+end;
+
+procedure TTestRadIAToolRegistry.TestAtomicReplacePreservesUnrelatedTools;
+var
+  LUpdater: IRadIAToolRegistryAtomicUpdater;
+  LNames: TArray<string>;
+  LTools: TArray<IRadIATool>;
+  LResolved: IRadIATool;
+begin
+  FRegistry.RegisterTool(CreateTool('ExternalOldTool'));
+  FRegistry.RegisterTool(CreateTool('UnrelatedTool'));
+  Assert.IsTrue(Supports(FRegistry, IRadIAToolRegistryAtomicUpdater, LUpdater));
+  LNames := TArray<string>.Create('ExternalOldTool');
+  LTools := TArray<IRadIATool>.Create(CreateTool('ExternalNewTool'));
+
+  LUpdater.ReplaceTools(LNames, LTools);
+
+  Assert.AreEqual(2, FRegistry.Count);
+  Assert.IsFalse(FRegistry.TryResolve('ExternalOldTool', LResolved));
+  Assert.IsTrue(FRegistry.TryResolve('ExternalNewTool', LResolved));
+  Assert.IsTrue(FRegistry.TryResolve('UnrelatedTool', LResolved));
+end;
+
+procedure TTestRadIAToolRegistry.TestAtomicReplaceRollsBackOnCollision;
+var
+  LUpdater: IRadIAToolRegistryAtomicUpdater;
+  LNames: TArray<string>;
+  LTools: TArray<IRadIATool>;
+  LResolved: IRadIATool;
+begin
+  FRegistry.RegisterTool(CreateTool('ExternalOldTool'));
+  FRegistry.RegisterTool(CreateTool('UnrelatedTool'));
+  Assert.IsTrue(Supports(FRegistry, IRadIAToolRegistryAtomicUpdater, LUpdater));
+  LNames := TArray<string>.Create('ExternalOldTool');
+  LTools := TArray<IRadIATool>.Create(CreateTool('UnrelatedTool'));
+
+  Assert.WillRaise(
+    procedure
+    begin
+      LUpdater.ReplaceTools(LNames, LTools);
+    end,
+    ERadIAToolAlreadyRegistered
+  );
+
+  Assert.AreEqual(2, FRegistry.Count);
+  Assert.IsTrue(FRegistry.TryResolve('ExternalOldTool', LResolved));
+  Assert.IsTrue(FRegistry.TryResolve('UnrelatedTool', LResolved));
 end;
 
 procedure TTestRadIAToolRegistry.TestClearRemovesAllTools;

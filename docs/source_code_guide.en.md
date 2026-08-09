@@ -59,6 +59,7 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.ExternalMcpSecurity` | Explicit grants, shared policy, consent, audit, and workspace path validation. |
 | `RadIA.Core.ExternalMcpSettings` | Validated, current-user-protected, atomically persisted MCP snapshot. |
 | `RadIA.Core.ExternalMcpRuntime` | Loads protected snapshots, connects enabled servers, discovers content, registers granted adapters, and publishes sanitized health without restart. |
+| `RadIA.Core.ExternalMcpImport` | Imports `mcpServers`/`servers` as an atomic validated preview without executing or persisting during parsing. |
 | `RadIA.Core.HierarchicalSettings` | Values, origins, and precedence across request, session, project, global, and safe defaults. |
 | `RadIA.Core.HierarchicalSettingsStore` | Atomic JSON scope persistence with hashed names and unknown-field preservation. |
 | `RadIA.Core.Extensions` | Versioned API and extension registration lifecycle. |

@@ -16,10 +16,19 @@ type
 
   TRadIAToolRegistry = class(
     TInterfacedObject,
-    IRadIAToolRegistry
+    IRadIAToolRegistry,
+    IRadIAToolRegistryAtomicUpdater
   )
   private
     FTools: TDictionary<string, IRadIATool>;
+    procedure ApplyReplacementLocked(
+      const AOldNames: TArray<string>;
+      const ANewTools: TArray<IRadIATool>
+    );
+    procedure EnsureReplacementAvailable(
+      const AOldNameSet: TDictionary<string, Byte>;
+      const ANewTools: TArray<IRadIATool>
+    );
     function IsValidToolName(const AName: string): Boolean;
     procedure ValidateJsonSchema(
       const ASchema: string;
@@ -28,11 +37,19 @@ type
     procedure ValidateDescriptor(
       const ADescriptor: TRadIAToolDescriptor
     );
+    procedure ValidateReplacementTools(
+      const ANewTools: TArray<IRadIATool>;
+      const ANewNames: TDictionary<string, Byte>
+    );
   public
     constructor Create;
     destructor Destroy; override;
     procedure RegisterTool(const ATool: IRadIATool);
     procedure RegisterTools(const ATools: TArray<IRadIATool>);
+    procedure ReplaceTools(
+      const AOldNames: TArray<string>;
+      const ANewTools: TArray<IRadIATool>
+    );
     procedure UnregisterTools(const ANames: TArray<string>);
     function Resolve(const AName: string): IRadIATool;
     function TryResolve(
@@ -249,6 +266,84 @@ begin
   end;
 end;
 
+procedure TRadIAToolRegistry.ApplyReplacementLocked(
+  const AOldNames: TArray<string>;
+  const ANewTools: TArray<IRadIATool>
+);
+var
+  LName: string;
+  LOldTools: TDictionary<string, IRadIATool>;
+  LTool: IRadIATool;
+begin
+  LOldTools := TDictionary<string, IRadIATool>.Create(TIStringComparer.Ordinal);
+  try
+    for LName in AOldNames do
+      if FTools.TryGetValue(LName, LTool) then
+        LOldTools.AddOrSetValue(LName, LTool);
+    try
+      for LName in AOldNames do
+        FTools.Remove(LName);
+      for LTool in ANewTools do
+        FTools.Add(LTool.Descriptor.Name, LTool);
+    except
+      for LTool in ANewTools do
+        FTools.Remove(LTool.Descriptor.Name);
+      for LName in LOldTools.Keys do
+        FTools.AddOrSetValue(LName, LOldTools[LName]);
+      raise;
+    end;
+  finally
+    LOldTools.Free;
+  end;
+end;
+
+procedure TRadIAToolRegistry.EnsureReplacementAvailable(
+  const AOldNameSet: TDictionary<string, Byte>;
+  const ANewTools: TArray<IRadIATool>
+);
+var
+  LName: string;
+  LTool: IRadIATool;
+begin
+  for LTool in ANewTools do
+  begin
+    LName := LTool.Descriptor.Name;
+    if FTools.ContainsKey(LName) and not AOldNameSet.ContainsKey(LName) then
+      raise ERadIAToolAlreadyRegistered.CreateFmt(
+        'Tool "%s" is already registered.',
+        [LName]
+      );
+  end;
+end;
+
+procedure TRadIAToolRegistry.ReplaceTools(
+  const AOldNames: TArray<string>;
+  const ANewTools: TArray<IRadIATool>
+);
+var
+  LName: string;
+  LNewNames: TDictionary<string, Byte>;
+  LOldNameSet: TDictionary<string, Byte>;
+begin
+  LNewNames := TDictionary<string, Byte>.Create(TIStringComparer.Ordinal);
+  LOldNameSet := TDictionary<string, Byte>.Create(TIStringComparer.Ordinal);
+  try
+    for LName in AOldNames do
+      LOldNameSet.AddOrSetValue(LName, 0);
+    ValidateReplacementTools(ANewTools, LNewNames);
+    TMonitor.Enter(FTools);
+    try
+      EnsureReplacementAvailable(LOldNameSet, ANewTools);
+      ApplyReplacementLocked(AOldNames, ANewTools);
+    finally
+      TMonitor.Exit(FTools);
+    end;
+  finally
+    LOldNameSet.Free;
+    LNewNames.Free;
+  end;
+end;
+
 procedure TRadIAToolRegistry.UnregisterTools(
   const ANames: TArray<string>
 );
@@ -439,6 +534,29 @@ begin
   end;
 
   Result := TRadIAToolResult.Succeeded('{}');
+end;
+
+procedure TRadIAToolRegistry.ValidateReplacementTools(
+  const ANewTools: TArray<IRadIATool>;
+  const ANewNames: TDictionary<string, Byte>
+);
+var
+  LDescriptor: TRadIAToolDescriptor;
+  LTool: IRadIATool;
+begin
+  for LTool in ANewTools do
+  begin
+    if not Assigned(LTool) then
+      raise ERadIAInvalidToolDescriptor.Create('Tool instance must be assigned.');
+    LDescriptor := LTool.Descriptor;
+    ValidateDescriptor(LDescriptor);
+    if ANewNames.ContainsKey(LDescriptor.Name) then
+      raise ERadIAToolAlreadyRegistered.CreateFmt(
+        'Tool "%s" occurs more than once in the replacement batch.',
+        [LDescriptor.Name]
+      );
+    ANewNames.Add(LDescriptor.Name, 0);
+  end;
 end;
 
 end.

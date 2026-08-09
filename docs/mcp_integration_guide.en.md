@@ -18,9 +18,25 @@ runtime. `/status mcp` returns only sanitized counts for servers, grants, tools,
 and errors; `/doctor` adds a separate check when the external runtime is available. Commands,
 arguments, working directories, and granted paths never appear in these diagnostics.
 
-> The guided screen for adding, testing, granting, and removing external servers is still part of
-> the active phase. Do not edit `external-mcp.settings`: it is a current-user DPAPI envelope and has
-> no supported manual editing format.
+Manage servers under **Settings > CLI & MCP > External MCP Servers**. Do not edit
+`external-mcp.settings`: it is a current-user DPAPI envelope and has no supported manual editing
+format.
+
+### Consume an external server in RadIA
+
+1. Open **External MCP Servers** and enter ID, name, command, arguments, directory, and timeout; or
+   use **Import...** to load `mcpServers`/`servers` JSON into the local preview.
+2. Use **Add / Update** and inspect the list. No process or file changes at this point.
+3. Click **Test** to connect and discover tools, resources, and prompts without publishing a tool.
+4. Select a discovered tool and create its local grant with risk, consent, and path arguments.
+   Without a grant, the tool remains unavailable to the agent.
+5. Click **Apply**, review the counts, and confirm. DPAPI protects the snapshot and the runtime
+   refreshes in the background without restarting Delphi.
+6. Check `/status mcp`; on failure, run `/doctor` and use **Refresh** after correcting the cause.
+
+Removing a server also removes its grants from the preview. If **Apply**, **Refresh**, or discovery
+fails, the previous runtime remains active. Sanitized diagnostics never include commands, arguments,
+or paths.
 
 ## Requirements
 

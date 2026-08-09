@@ -84,7 +84,7 @@ para evitar que controles sejam cortados.
 | Security & Consent | Aprovação por risco, timeout e permissões da sessão | Antes de permitir execução ou mutações |
 | Knowledge & Embeddings | Conhecimento local, exclusões e embeddings remotos | Ao configurar recuperação de contexto do projeto |
 | Editor Assistance | Ghost text, atraso, exclusões e atalhos | Ao configurar sugestões no editor |
-| CLI & MCP | Executor nativo/externo, executável portátil e conexão MCP | Somente ao usar CLI externa ou cliente MCP |
+| CLI & MCP | Executor nativo/externo, executável portátil, bridge e servidores MCP externos | Ao usar CLI, expor a IDE ou consumir um servidor MCP local |
 | Memory Diagnostics | Caminho e limites do FastMM5 | Ao investigar leaks, double free ou use-after-free |
 
 Cada campo e botão possui hint contextual. Para decisões de segurança, consulte o

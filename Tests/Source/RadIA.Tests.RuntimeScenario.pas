@@ -289,7 +289,7 @@ var
   LStatus: TRadIARuntimeScenarioStatus;
 begin
   LPreview := FCoordinator.Prepare(
-    Scenario([Action(rakWait, '', '', 100)], 2, 150)
+    Scenario([Action(rakWait, '', '', 120)], 2, 150)
   );
   LStarted := Now;
   LStatus := FCoordinator.Run(LPreview.PreviewId, FSession, nil);

@@ -154,6 +154,14 @@ type
     property Count: Integer read GetCount;
   end;
 
+  IRadIAToolRegistryAtomicUpdater = interface
+    ['{BC3CFD1F-CF86-4D58-9A41-D34624F8778E}']
+    procedure ReplaceTools(
+      const AOldNames: TArray<string>;
+      const ANewTools: TArray<IRadIATool>
+    );
+  end;
+
   IRadIAToolExecutor = interface
     ['{420F5D33-6C41-4CE9-868D-B6650ED3E096}']
     function Execute(

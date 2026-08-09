@@ -144,6 +144,7 @@ permite que um cliente externo acesse as ferramentas protegidas do RadIA.
 Os nós pais **CLI & MCP** e **External CLI clients** exibem somente orientação. Use **Chat
 Orchestration** para escolher execução nativa ou por CLI externo, um cliente específico para
 configurar sua instalação ou **MCP Connection** para configurar apenas a conexão MCP.
+Use **External MCP Servers** para o fluxo inverso: consumir servidores locais dentro do RadIA.
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
@@ -164,6 +165,37 @@ configurar sua instalação ou **MCP Connection** para configurar apenas a conex
 
 O bloco **MCP connection** é explicitamente independente do executor do chat. O histórico sanitizado
 de instalação e reparo fica em `%USERPROFILE%\RadIA\cli-mcp-setup-history.jsonl`.
+
+### External MCP Servers
+
+Esta página administra servidores que o RadIA consome como cliente. Ela é independente da bridge
+que expõe as ferramentas da IDE para CLIs. Alterações em servidores e concessões ficam em um preview
+local até **Apply**; o botão global **Save** das demais configurações não substitui essa confirmação.
+
+| Opção | Quando usar | Efeito e cuidados |
+|---|---|---|
+| Servers | Para selecionar uma configuração existente | Mostra somente nome amigável e ID; comando, argumentos e paths não entram em `/status`. |
+| Stable ID | Ao adicionar um servidor | Define o namespace `mcp.<servidor>.*`; use apenas letras, números, hífen ou sublinhado. |
+| Display name | Para facilitar identificação | Nome visual sem efeito no protocolo. |
+| Executable or command | Ao apontar para um servidor local | Informe o executável ou comando existente; o RadIA não exige npm nem baixa dependências silenciosamente. |
+| Arguments | Quando o servidor exige parâmetros | Um argumento literal por linha; não há expansão por shell. |
+| Working directory | Quando o processo precisa de uma pasta inicial | Deve ser um caminho absoluto e fica protegido no snapshot DPAPI. |
+| Timeout | Para limitar conexão e chamadas | Aceita 1.000 a 600.000 ms. |
+| Enable this server | Para ativar ou pausar | Um servidor desabilitado permanece salvo, mas não inicia nem publica conteúdo. |
+| Add / Update | Depois de revisar os campos | Altera apenas o preview pendente. |
+| Remove | Para excluir um servidor | Confirma a remoção e retira do preview as concessões pertencentes ao servidor. |
+| Test | Antes de salvar | Conecta e descobre tools, resources e prompts sem publicar tools nem alterar o arquivo. |
+| Import | Para aproveitar um JSON existente | Lê `mcpServers` ou `servers`, valida o arquivo inteiro e mescla o resultado apenas no preview. |
+| Tool grants | Para autorizar uma tool descoberta | Sem concessão explícita, a tool nunca entra no registry compartilhado. |
+| Risk | Ao criar a concessão | A classificação local governa consentimento; anotações do servidor não podem reduzi-la. |
+| Path arguments | Quando argumentos JSON contêm caminhos | Nomes separados por vírgula são confinados ao projeto ativo. |
+| Ask on every call | Para exigir confirmação recorrente | Ignora lembranças de sessão para essa tool. |
+| Allow non-path-limited access | Somente quando não há path confinável | É uma autorização explícita; revise com cuidado antes de aplicar. |
+| Apply | Depois de revisar servidores e concessões | Mostra as quantidades, pede confirmação, protege o snapshot com DPAPI e atualiza sem restart. |
+| Refresh | Para reconectar o snapshot salvo | Descarta o preview pendente e atualiza descoberta em background sem reiniciar o Delphi. |
+
+Se **Apply** ou **Refresh** falhar, o runtime anterior continua ativo e a tela mostra uma ação
+recuperável. Use `/status mcp` para contagens sanitizadas e `/doctor` para a próxima ação.
 
 ### Fluxo guiado e recuperação
 

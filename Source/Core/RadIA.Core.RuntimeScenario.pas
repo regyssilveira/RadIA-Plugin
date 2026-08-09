@@ -592,14 +592,20 @@ function TRadIARuntimeScenarioCoordinator.ExecuteWait(
   const ACancellationToken: IRadIAToolCancellationToken
 ): Boolean;
 var
+  LElapsedMs: Int64;
   LRemainingMs: Cardinal;
   LSliceMs: Cardinal;
+  LStopwatch: TStopwatch;
 begin
-  LRemainingMs := ATimeoutMs;
-  while LRemainingMs > 0 do
+  LStopwatch := TStopwatch.StartNew;
+  while LStopwatch.ElapsedMilliseconds < ATimeoutMs do
   begin
     if CancellationRequested(ACancellationToken) then
       Exit(False);
+    LElapsedMs := LStopwatch.ElapsedMilliseconds;
+    if LElapsedMs >= ATimeoutMs then
+      Break;
+    LRemainingMs := ATimeoutMs - Cardinal(LElapsedMs);
     LSliceMs := LRemainingMs;
     if LSliceMs > CWaitSliceMs then
       LSliceMs := CWaitSliceMs;
@@ -609,7 +615,6 @@ begin
     finally
       TMonitor.Exit(Self);
     end;
-    Dec(LRemainingMs, LSliceMs);
   end;
   Result := not CancellationRequested(ACancellationToken);
 end;

@@ -78,6 +78,7 @@ begin
   tvCategories.Items.AddChild(LNodeExternalCli, 'Gemini CLI');
   tvCategories.Items.AddChild(LNodeExternalCli, 'GitHub Copilot CLI');
   tvCategories.Items.AddChild(LNodeCli, 'MCP Connection');
+  tvCategories.Items.AddChild(LNodeCli, 'External MCP Servers');
   tvCategories.Items.Add(nil, 'Memory Diagnostics');
   tvCategories.Items.Add(nil, 'System Prompt');
   tvCategories.Items.Add(nil, 'Templates');
