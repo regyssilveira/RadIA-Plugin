@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhase3HierarchicalSettingsFoundation",
+  "product": "RadIA",
+  "baselineVersion": "2.3.1",
+  "generatedAtUtc": "2026-08-09T00:31:04Z",
+  "status": "passed",
+  "capabilities": {
+    "precedence": ["request", "session", "project", "global", "default"],
+    "fields": ["provider", "model", "executor", "maxTokens", "timeoutMs", "tokenBudget"],
+    "perValueOrigin": true,
+    "independentInheritance": true,
+    "credentialsOverridable": false,
+    "runtimeIntegrationComplete": false
+  },
+  "targets": [
+    {"delphiVersion": "23.0", "platform": "Win32", "buildPassed": true, "testsFound": 921, "testsPassed": 921, "testsFailed": 0, "testsErrored": 0, "testsLeaked": 0},
+    {"delphiVersion": "37.0", "platform": "Win32", "buildPassed": true, "testsFound": 921, "testsPassed": 921, "testsFailed": 0, "testsErrored": 0, "testsLeaked": 0},
+    {"delphiVersion": "37.0", "platform": "Win64", "buildPassed": true, "testsFound": 921, "testsPassed": 921, "testsFailed": 0, "testsErrored": 0, "testsLeaked": 0}
+  ],
+  "documentation": {
+    "testsFound": 17,
+    "testsPassed": 17
+  },
+  "sonar": {
+    "analysisId": "60262878-130a-40b9-9cf4-6352bcf0fbbf",
+    "qualityGate": "OK",
+    "newCoveragePercent": 83.3,
+    "newDuplicationPercent": 0.966,
+    "globalCoveragePercent": 83.5,
+    "globalDuplicationPercent": 2.0,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  }
+}

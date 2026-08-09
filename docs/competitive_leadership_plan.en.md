@@ -110,6 +110,11 @@ tests per target. See the
 **Acceptance:** two projects and two sessions use distinct settings simultaneously; concurrent
 writes lose no fields and UI, `/status`, and real execution agree on effective values.
 
+**Status:** in progress. The core contract now resolves provider, model, executor, and limits with
+per-value origin and deterministic precedence. Credentials are excluded from overrides. Atomic
+persistence, runtime integration, UI, `/status`, and dynamic scope switching are still pending.
+See the [Phase 3 foundation evidence](competitive_gap_phase_3_foundation_evidence_2.3.1.json).
+
 **Still missing:** FIM, gutter, and external MCP.
 
 ### Phase 4 — FIM-specialized completion
