@@ -42,6 +42,7 @@ uses
   RadIA.Core.McpProvisioning in '..\Source\Core\RadIA.Core.McpProvisioning.pas',
   RadIA.Core.McpHandshake in '..\Source\Core\RadIA.Core.McpHandshake.pas',
   RadIA.Core.ExternalMcp in '..\Source\Core\RadIA.Core.ExternalMcp.pas',
+  RadIA.Core.ExternalMcpTransport in '..\Source\Core\RadIA.Core.ExternalMcpTransport.pas',
   RadIA.Core.ToolRegistry in '..\Source\Core\RadIA.Core.ToolRegistry.pas',
   RadIA.Core.ToolViews in '..\Source\Core\RadIA.Core.ToolViews.pas',
   RadIA.Core.Extensions in '..\Source\Core\RadIA.Core.Extensions.pas',

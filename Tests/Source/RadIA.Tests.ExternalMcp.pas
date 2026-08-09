@@ -21,12 +21,17 @@ type
     procedure CatalogRejectsToolsFromAnotherServer;
     [Test]
     procedure CatalogRejectsDisabledServersAndInvalidSchemas;
+    [Test]
+    [Category('ExternalProcess')]
+    procedure StdioTransportRoundTripsAndStops;
   end;
 
 implementation
 
 uses
-  RadIA.Core.ExternalMcp;
+  System.SysUtils,
+  RadIA.Core.ExternalMcp,
+  RadIA.Core.ExternalMcpTransport;
 
 function ServerConfig: TRadIAExternalMcpServerConfig;
 begin
@@ -34,7 +39,7 @@ begin
     'local-files',
     'Local files',
     'C:\Tools\mcp-files.exe',
-    '--stdio',
+    ['--stdio'],
     'C:\Projects',
     True,
     30000
@@ -50,7 +55,7 @@ begin
     'invalid.id',
     'Invalid',
     'server.exe',
-    '',
+    [],
     '',
     True,
     500
@@ -154,7 +159,7 @@ begin
     'local-files',
     'Local files',
     'server.exe',
-    '',
+    [],
     '',
     False,
     30000
@@ -164,6 +169,36 @@ begin
   ];
   Assert.IsFalse(LCatalog.PublishTools(LConfig, LTools, LError));
   Assert.Contains(LError, 'Disabled');
+end;
+
+procedure TRadIAExternalMcpTests.StdioTransportRoundTripsAndStops;
+const
+  CLoopCommand =
+    'while (($line = [Console]::ReadLine()) -ne $null) { ' +
+    '[Console]::WriteLine($line); [Console]::Out.Flush() }';
+var
+  LConfig: TRadIAExternalMcpServerConfig;
+  LError: string;
+  LMessage: string;
+  LTransport: IRadIAExternalMcpTransport;
+begin
+  LConfig := TRadIAExternalMcpServerConfig.Create(
+    'fixture',
+    'Fixture server',
+    GetEnvironmentVariable('SystemRoot') +
+      '\System32\WindowsPowerShell\v1.0\powershell.exe',
+    ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', CLoopCommand],
+    GetCurrentDir,
+    True,
+    5000
+  );
+  LTransport := TRadIAExternalMcpStdioTransport.Create;
+  Assert.IsTrue(LTransport.Start(LConfig, LError), LError);
+  Assert.IsTrue(LTransport.Send('{"jsonrpc":"2.0","id":1}'));
+  Assert.IsTrue(LTransport.Receive(5000, LMessage), LTransport.LastError);
+  Assert.AreEqual('{"jsonrpc":"2.0","id":1}', LMessage);
+  LTransport.Stop;
+  Assert.IsFalse(LTransport.Running);
 end;
 
 initialization

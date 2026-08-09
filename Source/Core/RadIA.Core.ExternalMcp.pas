@@ -8,7 +8,7 @@ uses
 type
   TRadIAExternalMcpServerConfig = record
   private
-    FArguments: string;
+    FArguments: TArray<string>;
     FCommand: string;
     FDisplayName: string;
     FEnabled: Boolean;
@@ -20,13 +20,13 @@ type
       const AId: string;
       const ADisplayName: string;
       const ACommand: string;
-      const AArguments: string;
+      const AArguments: TArray<string>;
       const AWorkingDirectory: string;
       const AEnabled: Boolean;
       const ATimeoutMs: Integer
     );
     function Validate(out AError: string): Boolean;
-    property Arguments: string read FArguments;
+    property Arguments: TArray<string> read FArguments;
     property Command: string read FCommand;
     property DisplayName: string read FDisplayName;
     property Enabled: Boolean read FEnabled;
@@ -145,7 +145,7 @@ constructor TRadIAExternalMcpServerConfig.Create(
   const AId: string;
   const ADisplayName: string;
   const ACommand: string;
-  const AArguments: string;
+  const AArguments: TArray<string>;
   const AWorkingDirectory: string;
   const AEnabled: Boolean;
   const ATimeoutMs: Integer
@@ -163,6 +163,8 @@ end;
 function TRadIAExternalMcpServerConfig.Validate(
   out AError: string
 ): Boolean;
+var
+  LArgument: string;
 begin
   AError := '';
   if not IsValidServerId(Id) then
@@ -171,15 +173,20 @@ begin
     AError := 'Server display name is required.'
   else if Command = '' then
     AError := 'Server command is required.'
-  else if Arguments.Contains(#0) or Arguments.Contains(#10) or
-          Arguments.Contains(#13) then
-    AError := 'Server arguments cannot contain control line characters.'
   else if (WorkingDirectory <> '') and
           not TPath.IsPathRooted(WorkingDirectory) then
     AError := 'Server working directory must be an absolute path.'
   else if (TimeoutMs < CMinimumTimeoutMs) or
           (TimeoutMs > CMaximumTimeoutMs) then
     AError := 'Server timeout must be between 1000 and 600000 milliseconds.';
+  if AError = '' then
+    for LArgument in Arguments do
+      if LArgument.Contains(#0) or LArgument.Contains(#10) or
+         LArgument.Contains(#13) then
+      begin
+        AError := 'Server arguments cannot contain control line characters.';
+        Break;
+      end;
   Result := AError = '';
 end;
 

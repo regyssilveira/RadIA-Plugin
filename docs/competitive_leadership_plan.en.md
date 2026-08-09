@@ -196,9 +196,14 @@ disabled server are rejected without affecting the internal catalog or the last 
 See the
 [Phase 6 foundation evidence](competitive_gap_phase_6_foundation_evidence_2.3.1.json).
 
-**Still in this phase:** stdio transport, lifecycle, secure persistence, capability discovery,
-consented execution, cancellation, audit, Settings, `/doctor`, `/status`, and smokes with a fixture
-server and one authorized real server.
+**Stdio transport implemented:** every server runs as an isolated process through the job-object
+infrastructure already used by RadIA. The transport sends and receives UTF-8 JSONL, limits every
+message to 8 MiB, captures stderr, bounds stdin and receive waits, and terminates the process tree on
+stop. An external-process test proves a real round trip and shutdown without an orphan process.
+
+**Still in this phase:** protocol lifecycle, secure persistence, capability discovery, consented
+execution, JSON-RPC cancellation, audit, Settings, `/doctor`, `/status`, and smokes with a complete
+MCP fixture server and one authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

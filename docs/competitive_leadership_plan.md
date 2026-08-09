@@ -199,9 +199,14 @@ desabilitado são rejeitados sem afetar o catálogo interno ou o último snapsho
 Consulte a
 [evidência do fundamento da Fase 6](competitive_gap_phase_6_foundation_evidence_2.3.1.json).
 
-**Ainda nesta fase:** transporte stdio, lifecycle, persistência segura, descoberta de capabilities,
-execução com consentimento, cancelamento, auditoria, Configurações, `/doctor`, `/status` e smokes com
-servidor fixture e servidor real autorizado.
+**Transporte stdio implementado:** cada servidor roda como processo isolado na infraestrutura de job
+objects já usada pelo RadIA. O transporte envia e recebe JSONL UTF-8, limita cada mensagem a 8 MiB,
+captura stderr, limita a espera pelo stdin e pelo recebimento e encerra a árvore do processo no stop.
+Um teste de processo externo comprova round-trip real e encerramento sem processo órfão.
+
+**Ainda nesta fase:** lifecycle do protocolo, persistência segura, descoberta de capabilities,
+execução com consentimento, cancelamento JSON-RPC, auditoria, Configurações, `/doctor`, `/status` e
+smokes com servidor fixture MCP completo e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.
