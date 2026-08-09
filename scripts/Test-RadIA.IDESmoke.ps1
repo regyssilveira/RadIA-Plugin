@@ -591,6 +591,35 @@ public static class RadIAKnowledgeSmokeNative
         return result;
     }
 
+    public static IntPtr FindVisibleProcessDescendantByClass(
+        uint processId,
+        string expectedClassName
+    )
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumWindows(
+            delegate(IntPtr topLevelHandle, IntPtr parameter)
+            {
+                uint ownerProcessId;
+                GetWindowThreadProcessId(
+                    topLevelHandle,
+                    out ownerProcessId
+                );
+                if (ownerProcessId != processId)
+                {
+                    return true;
+                }
+                result = FindVisibleChildByClass(
+                    topLevelHandle,
+                    expectedClassName
+                );
+                return result == IntPtr.Zero;
+            },
+            IntPtr.Zero
+        );
+        return result;
+    }
+
     public static IntPtr FindVisibleWindow(
         uint processId,
         string expectedClassName
@@ -1011,6 +1040,14 @@ function Invoke-RadIAEditorRepaint {
             $IDEProcess.MainWindowHandle,
             "TEditControl"
         )
+        if ($editorHandle -eq [IntPtr]::Zero) {
+            $editorHandle = (
+                [RadIAKnowledgeSmokeNative]::FindVisibleProcessDescendantByClass(
+                    [uint32]$IDEProcess.Id,
+                    "TEditControl"
+                )
+            )
+        }
         if ($editorHandle -eq [IntPtr]::Zero) {
             Start-Sleep -Milliseconds 250
         }
@@ -2463,10 +2500,19 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 )
         }
         if ($ExerciseInlineReview) {
-            Open-RadIAEditorFile `
-                -IDEProcess $process `
-                -Path $inlineSmokeUnitPath
-            Start-Sleep -Seconds 2
+            $reviewUnitIsActive = (
+                $editorContent.fileName -and
+                [IO.Path]::GetFullPath($editorContent.fileName).Equals(
+                    [IO.Path]::GetFullPath($inlineSmokeUnitPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+            )
+            if (-not $reviewUnitIsActive) {
+                Open-RadIAEditorFile `
+                    -IDEProcess $process `
+                    -Path $inlineSmokeUnitPath
+                Start-Sleep -Seconds 2
+            }
             $editorContent = Invoke-RadIASmokeTool `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `

@@ -101,6 +101,8 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /function Open-RadIAEditorFile/u);
   assert.match(smoke, /-Path \$inlineSmokeUnitPath/u);
   assert.match(smoke, /reviewFileMatches/u);
+  assert.match(smoke, /reviewUnitIsActive/u);
+  assert.match(smoke, /FindVisibleProcessDescendantByClass/u);
   assert.match(smoke, /\[switch\]\$PreserveCursor/u);
   assert.match(
     smoke,
