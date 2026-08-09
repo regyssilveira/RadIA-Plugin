@@ -445,6 +445,15 @@ public static class RadIAKnowledgeSmokeNative
         public int Y;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Rect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
     [DllImport("user32.dll")]
     public static extern bool EnumWindows(
         EnumCallback callback,
@@ -466,6 +475,9 @@ public static class RadIAKnowledgeSmokeNative
 
     [DllImport("user32.dll")]
     public static extern bool ClientToScreen(IntPtr handle, ref Point point);
+
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr handle, out Rect rectangle);
 
     [DllImport("user32.dll")]
     public static extern bool SetCursorPos(int x, int y);
@@ -529,6 +541,31 @@ public static class RadIAKnowledgeSmokeNative
             IntPtr.Zero,
             invalidate | updateNow | allChildren
         );
+    }
+
+    public static IntPtr FindVisibleChildByClass(
+        IntPtr parent,
+        string expectedClassName
+    )
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumChildWindows(
+            parent,
+            delegate(IntPtr handle, IntPtr parameter)
+            {
+                StringBuilder className = new StringBuilder(128);
+                GetClassName(handle, className, className.Capacity);
+                if (IsWindowVisible(handle) &&
+                    className.ToString() == expectedClassName)
+                {
+                    result = handle;
+                    return false;
+                }
+                return true;
+            },
+            IntPtr.Zero
+        );
+        return result;
     }
 
     public static IntPtr FindVisibleWindow(
@@ -829,8 +866,40 @@ function Invoke-RadIAEditorRepaint {
         $IDEProcess.MainWindowHandle
     )
     Start-Sleep -Milliseconds 250
+    $editorHandle = [RadIAKnowledgeSmokeNative]::FindVisibleChildByClass(
+        $IDEProcess.MainWindowHandle,
+        "TEditControl"
+    )
+    if ($editorHandle -eq [IntPtr]::Zero) {
+        throw "The visible Delphi editor control was not found for repaint."
+    }
+    $editorRectangle = New-Object RadIAKnowledgeSmokeNative+Rect
+    if (-not [RadIAKnowledgeSmokeNative]::GetWindowRect(
+        $editorHandle,
+        [ref]$editorRectangle
+    )) {
+        throw "The Delphi editor rectangle was not available for repaint."
+    }
+    $editorX = [int](($editorRectangle.Left + $editorRectangle.Right) / 2)
+    $editorY = [int](($editorRectangle.Top + $editorRectangle.Bottom) / 2)
+    [void][RadIAKnowledgeSmokeNative]::SetCursorPos($editorX, $editorY)
+    [RadIAKnowledgeSmokeNative]::mouse_event(
+        0x0002,
+        0,
+        0,
+        0,
+        [UIntPtr]::Zero
+    )
+    [RadIAKnowledgeSmokeNative]::mouse_event(
+        0x0004,
+        0,
+        0,
+        0,
+        [UIntPtr]::Zero
+    )
+    Start-Sleep -Milliseconds 250
     [RadIAKnowledgeSmokeNative]::RepaintDescendants(
-        $IDEProcess.MainWindowHandle
+        $editorHandle
     )
     Start-Sleep -Milliseconds 250
     [System.Windows.Forms.SendKeys]::SendWait("{DOWN}{UP}")

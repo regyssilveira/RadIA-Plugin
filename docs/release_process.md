@@ -281,8 +281,8 @@ powershell.exe -ExecutionPolicy Bypass `
 O consolidador falha se as três jornadas, os 30 ciclos ou o MCP autorizado não pertencerem à mesma
 versão e ao mesmo commit limpo. Ele também exige build, testes, debugger, Git, terminal, FIM, revisão
 no gutter, persistência do agente e encerramento sem processos descendentes em todos os targets.
-O aceite visual solicita um repaint nativo do editor e somente passa quando o callback OTA real
-confirma que a completion e as revisões chegaram ao ciclo de pintura.
+O aceite visual ativa o `TEditControl`, solicita seu repaint nativo e somente passa quando o callback
+OTA real confirma que a completion e as revisões chegaram ao ciclo de pintura.
 
 ### Evidência visual do terminal
 
