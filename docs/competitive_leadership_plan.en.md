@@ -292,6 +292,11 @@ Run on all three supported combinations:
 Delphi, web, documentation, and Sonar gates; ten consecutive use and shutdown cycles; documentation
 validated against UI, commands, and runtime catalog.
 
+The executable gate is `scripts/New-RadIA.LeadershipClosureEvidence.ps1`. It does not accept a sum
+of unrelated historical results: the continuous journey, ten-cycle stability run, and consented real
+MCP proof must declare the same version and clean source commit. The complete procedure is in the
+[release process](release_process.en.md#integrated-closure-gate).
+
 **Still missing:** none of the six points in this goal.
 
 ## Order, dependencies, and complexity

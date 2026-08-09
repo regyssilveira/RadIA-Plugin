@@ -16,6 +16,23 @@ if (-not (Get-Command npx.cmd -ErrorAction SilentlyContinue)) {
 }
 
 $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$sourceCommit = (& git -C $repositoryRoot rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $sourceCommit -notmatch "^[0-9a-f]{40}$") {
+    throw "Unable to resolve the source commit for MCP evidence."
+}
+$trackedChanges = @(& git -C $repositoryRoot status --short --untracked-files=no)
+$sourceDirty = $trackedChanges.Count -gt 0
+$versionSource = Get-Content -LiteralPath (
+    Join-Path $repositoryRoot "Source\Core\RadIA.Core.Version.pas"
+) -Raw
+$versionMatch = [regex]::Match(
+    $versionSource,
+    "CRadIAVersion\s*=\s*'([^']+)'"
+)
+if (-not $versionMatch.Success) {
+    throw "Unable to resolve the product version for MCP evidence."
+}
+$productVersion = $versionMatch.Groups[1].Value
 $targets = @(
     [ordered]@{
         name = "Delphi 12 Win32"
@@ -81,7 +98,9 @@ $evidence = [ordered]@{
     schemaVersion = 1
     evidenceKind = "competitiveGapPhaseRealServer"
     product = "RadIA"
-    productVersion = "2.3.1"
+    productVersion = $productVersion
+    sourceCommit = $sourceCommit
+    sourceDirty = $sourceDirty
     phase = 6
     capability = "authorizedRealExternalMcpWorkflow"
     status = "realServerMatrixPassed"

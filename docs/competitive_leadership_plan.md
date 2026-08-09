@@ -296,6 +296,11 @@ Executar nas três combinações suportadas:
 testes Delphi, testes web, testes documentais e Sonar verdes; dez ciclos consecutivos de uso e
 shutdown; documentação navegável validada contra UI, comandos e catálogo runtime.
 
+O gate executável é `scripts/New-RadIA.LeadershipClosureEvidence.ps1`. Ele não aceita a soma de
+resultados históricos independentes: jornada contínua, estabilidade em dez ciclos e MCP real
+consentido precisam declarar a mesma versão e o mesmo commit de origem limpo. O procedimento completo
+está em [Processo de release](release_process.md#gate-integrado-de-encerramento).
+
 **Ainda faltará:** nenhum dos seis pontos deste goal.
 
 ## Ordem, dependências e complexidade

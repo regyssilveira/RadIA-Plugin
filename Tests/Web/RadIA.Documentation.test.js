@@ -334,6 +334,25 @@ test('primary documentation entry points expose task-oriented navigation', () =>
   assert.match(documentationHub, /## Planejamento e histórico/u);
 });
 
+test('leadership closure gate requires current integrated runtime evidence', () => {
+  const gate = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'New-RadIA.LeadershipClosureEvidence.ps1'),
+    'utf8'
+  );
+  [
+    'continuousDelphiJourney',
+    'cyclesRequested',
+    'InlineCompletionAccepted',
+    'BlockReviewGutterPainted',
+    'AgentRuntimePersisted',
+    'realServerMatrixPassed',
+    'sourceCommit',
+    'productVersion'
+  ].forEach(requirement => {
+    assert.ok(gate.includes(requirement), `Closure gate is missing ${requirement}`);
+  });
+});
+
 test('current user-facing documents follow the package version', () => {
   const currentDocuments = [
     path.join(documentationRoot, 'README.md'),

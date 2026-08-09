@@ -246,6 +246,41 @@ tests and Git review. On failure, it first closes the disposable IDE normally
 and, after the configured timeout, terminates only the instance it started. This prevents a leftover
 `[Stopping]` session while preserving the original diagnostic failure.
 
+### Integrated closure gate
+
+After the continuous journey, run ten cycles from the same clean commit for each target. The smoke
+must exercise the terminal, inline completion, block review, and persisted agent resume:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "23.0" `
+  -Cycles 10 `
+  -ExerciseTerminal `
+  -ExerciseInlineCompletion `
+  -ExerciseInlineReview `
+  -ExerciseAgentRuntime `
+  -EvidencePath "Output\Validation\LeadershipClosure\Delphi12-Win32.json"
+```
+
+Repeat with `37.0` for Win32 and with `37.0 -IDE64`, changing the evidence name. Then run the real
+MCP server only after explicit consent and consolidate the matrix:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ExternalMcpRealServer.ps1 `
+  -Consent `
+  -EvidencePath `
+    "docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json"
+
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.LeadershipClosureEvidence.ps1
+```
+
+The consolidator fails unless all three journeys, all 30 cycles, and the authorized MCP proof use
+the same version and clean source commit. It also requires build, tests, debugger, Git, terminal,
+FIM, gutter review, agent persistence, and shutdown without descendant processes on every target.
+
 ### Terminal visual evidence
 
 Use `-TerminalEvidencePath` with `-ExerciseTerminal` to open the real VCL surface and validate

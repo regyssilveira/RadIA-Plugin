@@ -246,6 +246,41 @@ testes e a revisão Git. Em caso de falha, ele tenta fechar normalmente a IDE
 descartável e, após o timeout configurado, encerra somente a instância que ele próprio iniciou. Isso
 evita deixar uma sessão em `[Stopping]` e preserva a falha original para diagnóstico.
 
+### Gate integrado de encerramento
+
+Depois da jornada contínua, execute dez ciclos no mesmo commit limpo para cada target. O smoke deve
+ativar terminal, completion inline, revisão por bloco e retomada persistida do agente:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.IDESmoke.ps1 `
+  -DelphiVersion "23.0" `
+  -Cycles 10 `
+  -ExerciseTerminal `
+  -ExerciseInlineCompletion `
+  -ExerciseInlineReview `
+  -ExerciseAgentRuntime `
+  -EvidencePath "Output\Validation\LeadershipClosure\Delphi12-Win32.json"
+```
+
+Repita com `37.0` para Win32 e com `37.0 -IDE64`, alterando o nome da evidência. Em seguida, execute
+o servidor MCP real somente após consentimento explícito e consolide a matriz:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ExternalMcpRealServer.ps1 `
+  -Consent `
+  -EvidencePath `
+    "docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json"
+
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.LeadershipClosureEvidence.ps1
+```
+
+O consolidador falha se as três jornadas, os 30 ciclos ou o MCP autorizado não pertencerem à mesma
+versão e ao mesmo commit limpo. Ele também exige build, testes, debugger, Git, terminal, FIM, revisão
+no gutter, persistência do agente e encerramento sem processos descendentes em todos os targets.
+
 ### Evidência visual do terminal
 
 Use `-TerminalEvidencePath` com `-ExerciseTerminal` para abrir a superfície VCL real e validar
