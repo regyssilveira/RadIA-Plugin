@@ -1238,6 +1238,12 @@ function Invoke-RadIASmokeTool {
             ($response.error | ConvertTo-Json -Compress)
         )
     }
+    if ($response.result.isError) {
+        throw (
+            "Smoke tool $Name returned an error result: " +
+            ($response.result.content | ConvertTo-Json -Compress)
+        )
+    }
     return $response.result.structuredContent
 }
 
@@ -2286,7 +2292,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                     line = $editorPosition.line
                     column = $editorPosition.column
                 }
-            if (-not $navigation.success) {
+            if (-not $navigation.fileName) {
                 throw "The inline smoke could not activate the editor file."
             }
             Start-Sleep -Milliseconds 500

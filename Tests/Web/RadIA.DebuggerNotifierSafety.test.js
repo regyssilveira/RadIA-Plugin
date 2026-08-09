@@ -102,6 +102,8 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
     smoke,
     /Invoke-RadIASmokeTool[\s\S]*?-Name "NavigateToFile"/u
   );
+  assert.match(smoke, /\$response\.result\.isError/u);
+  assert.match(smoke, /if \(-not \$navigation\.fileName\)/u);
   assert.match(
     smoke,
     /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u
