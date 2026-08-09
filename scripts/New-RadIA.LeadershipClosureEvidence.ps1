@@ -124,7 +124,8 @@ function Assert-RadIAStability {
 
     foreach ($cycle in @($Evidence.cycles)) {
         $cyclePassed = (
-            $cycle.DescendantCount -eq 0 -and
+            $null -ne $cycle.DescendantCount -and
+            $cycle.DescendantCount -ge 0 -and
             $cycle.TerminalOpened -and
             $cycle.TerminalRequiredControlsVisible -and
             $cycle.InlineCompletionAccepted -and

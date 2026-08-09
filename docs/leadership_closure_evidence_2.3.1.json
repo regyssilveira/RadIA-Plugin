@@ -1,0 +1,47 @@
+﻿{
+    "schemaVersion":  1,
+    "evidenceKind":  "leadershipClosureMatrix",
+    "product":  "RadIA",
+    "productVersion":  "2.3.1",
+    "sourceCommit":  "0a0b7c59e15fcba04f0b811e892faaf53c363073",
+    "status":  "passed",
+    "requiredCyclesPerTarget":  10,
+    "targetCount":  3,
+    "externalMcpAuthorized":  true,
+    "generatedAtUtc":  "2026-08-09T23:31:20.3471503Z",
+    "targets":  [
+                    {
+                        "delphiVersion":  "23.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "8037413CAC06F92CB41C1CD828FB42F9F6B66334A0258B911B7A6EEC79CF0E17",
+                        "journeyStatus":  "passed",
+                        "testsPassed":  986,
+                        "debuggerEvents":  3,
+                        "cyclesPassed":  10,
+                        "toolCount":  130,
+                        "orphanProcessesDetected":  false
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win32",
+                        "installedBplSha256":  "181D6EE68F4785831C56140C1ABFEF15229EAEDE5D95AC39B48A67E0BBA3A14B",
+                        "journeyStatus":  "passed",
+                        "testsPassed":  986,
+                        "debuggerEvents":  3,
+                        "cyclesPassed":  10,
+                        "toolCount":  130,
+                        "orphanProcessesDetected":  false
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win64",
+                        "installedBplSha256":  "9D9AC771B92502ACC7DC6AE7C19E734EF4E20375AC00A290708647A734E76503",
+                        "journeyStatus":  "passed",
+                        "testsPassed":  986,
+                        "debuggerEvents":  2,
+                        "cyclesPassed":  10,
+                        "toolCount":  130,
+                        "orphanProcessesDetected":  false
+                    }
+                ]
+}

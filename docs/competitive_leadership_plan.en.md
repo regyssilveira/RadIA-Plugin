@@ -277,6 +277,10 @@ pre-cancellation, workspace boundary, and auditing without bypassing RadIA polic
 
 ### Phase 7 — Integrated journey and goal closure
 
+**Status: completed in 2.3.1.** The final matrix for commit `0a0b7c5` passed all three continuous
+journeys, 30/30 real-IDE cycles, and the consented real MCP server. The consolidated proof is in
+[leadership_closure_evidence_2.3.1.json](leadership_closure_evidence_2.3.1.json).
+
 Run on all three supported combinations:
 
 1. open two projects with distinct settings;

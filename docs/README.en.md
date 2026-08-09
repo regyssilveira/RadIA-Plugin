@@ -79,7 +79,7 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current execution plan:
 
-- [Goal to eliminate the six competitive gaps](competitive_leadership_plan.en.md).
+- [Completed six-gap experience goal](competitive_leadership_plan.en.md).
 
 Research records:
 

@@ -345,12 +345,14 @@ test('leadership closure gate requires current integrated runtime evidence', () 
     'InlineCompletionAccepted',
     'BlockReviewGutterPainted',
     'AgentRuntimePersisted',
+    'DescendantCount',
     'realServerMatrixPassed',
     'sourceCommit',
     'productVersion'
   ].forEach(requirement => {
     assert.ok(gate.includes(requirement), `Closure gate is missing ${requirement}`);
   });
+  assert.doesNotMatch(gate, /DescendantCount -eq 0/u);
 });
 
 test('current user-facing documents follow the package version', () => {

@@ -96,7 +96,7 @@ Estes documentos registram decisões, versões e execução do projeto; não sã
 descrevem necessariamente o comportamento atual:
 
 - [Roadmap](roadmap.md) e [backlog](backlog.md);
-- [goal ativo para eliminar as seis lacunas competitivas](competitive_leadership_plan.md);
+- [goal concluído das seis lacunas de experiência](competitive_leadership_plan.md);
 - [auditorias de release](release_audit_2.2.0.md);
 - [goal da jornada 2.0](radia_2_goal.md) e [goal de experiência 2.0](experience_leadership_goal.md);
 - [planos e marcos do diagnóstico runtime](runtime_debug_automation_plan.md);

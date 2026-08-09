@@ -3,10 +3,12 @@
     "evidenceKind":  "competitiveGapPhaseRealServer",
     "product":  "RadIA",
     "productVersion":  "2.3.1",
+    "sourceCommit":  "0a0b7c59e15fcba04f0b811e892faaf53c363073",
+    "sourceDirty":  false,
     "phase":  6,
     "capability":  "authorizedRealExternalMcpWorkflow",
     "status":  "realServerMatrixPassed",
-    "generatedAtUtc":  "2026-08-09T15:58:14Z",
+    "generatedAtUtc":  "2026-08-09T23:30:04Z",
     "authorization":  {
                           "explicitConsentRequired":  true,
                           "consentProvided":  true,
@@ -51,19 +53,6 @@
                         "leaks":  0
                     }
                 ],
-    "sonar":  {
-                  "analysisId":  "906f1586-1e8e-4b29-9726-8055ea0860da",
-                  "qualityGate":  "OK",
-                  "newCoveragePercent":  82.5,
-                  "newDuplicationPercent":  0.87528,
-                  "globalCoveragePercent":  82.8,
-                  "globalDuplicationPercent":  1.8,
-                  "issues":  0,
-                  "bugs":  0,
-                  "vulnerabilities":  0,
-                  "securityHotspots":  0,
-                  "codeSmells":  0
-              },
     "remainingAcceptance":  [
                                 "Complete the integrated closure journey and final documentation audit."
                             ]

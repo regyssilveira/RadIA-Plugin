@@ -281,6 +281,10 @@ prévio, boundary e auditoria sem contornar a política do RadIA.
 
 ### Fase 7 — Jornada integrada e encerramento do goal
 
+**Estado: concluída em 2.3.1.** A matriz final do commit `0a0b7c5` aprovou as três jornadas
+contínuas, 30/30 ciclos de IDE real e o servidor MCP real consentido. A prova consolidada está em
+[leadership_closure_evidence_2.3.1.json](leadership_closure_evidence_2.3.1.json).
+
 Executar nas três combinações suportadas:
 
 1. abrir dois projetos com configurações diferentes;
@@ -301,7 +305,7 @@ resultados históricos independentes: jornada contínua, estabilidade em dez cic
 consentido precisam declarar a mesma versão e o mesmo commit de origem limpo. O procedimento completo
 está em [Processo de release](release_process.md#gate-integrado-de-encerramento).
 
-**Ainda faltará:** nenhum dos seis pontos deste goal.
+**Ainda falta:** nenhum dos seis pontos deste goal.
 
 ## Ordem, dependências e complexidade
 
