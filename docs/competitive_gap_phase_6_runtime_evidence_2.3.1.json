@@ -45,7 +45,6 @@
     "codeSmells": 0
   },
   "remainingAcceptance": [
-    "Prove one authorized real-server workflow on all supported IDE targets.",
     "Complete the integrated closure journey and final documentation audit."
   ]
 }

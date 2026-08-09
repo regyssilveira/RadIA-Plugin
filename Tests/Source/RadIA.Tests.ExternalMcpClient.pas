@@ -7,7 +7,9 @@ uses
   System.Generics.Collections,
   System.SysUtils,
   RadIA.Core.ExternalMcp,
+  RadIA.Core.ExternalMcpSecurity,
   RadIA.Core.ExternalMcpTransport,
+  RadIA.Core.ToolSecurity,
   RadIA.Core.Tools;
 
 type
@@ -57,6 +59,31 @@ type
     );
   end;
 
+  TRadIARealMcpConsentProvider = class(
+    TInterfacedObject,
+    IRadIAConsentProvider
+  )
+  private
+    FRequestCount: Integer;
+  public
+    function RequestConsent(
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor
+    ): TRadIAConsentDecision;
+    property RequestCount: Integer read FRequestCount;
+  end;
+
+  TRadIARealMcpRootProvider = class(
+    TInterfacedObject,
+    IRadIAExternalMcpWorkspaceRootProvider
+  )
+  private
+    FRoot: string;
+  public
+    constructor Create(const ARoot: string);
+    function GetWorkspaceRoot: string;
+  end;
+
   [TestFixture]
   TRadIAExternalMcpClientTests = class
   public
@@ -79,16 +106,22 @@ type
     [Test]
     [Category('ExternalProcess')]
     procedure RealFixtureCompletesDiscoveryMutationAndCancellation;
+    [Test]
+    [Category('ExternalRealServer')]
+    procedure AuthorizedFilesystemServerRespectsPolicyAndConsent;
   end;
 
 implementation
 
 uses
   System.Classes,
+  System.JSON,
   System.IOUtils,
   System.Threading,
   RadIA.Core.ExternalMcpContent,
-  RadIA.Core.ExternalMcpClient;
+  RadIA.Core.ExternalMcpClient,
+  RadIA.Core.ToolRegistry,
+  RadIA.Core.WorkspaceBoundary;
 
 function ServerConfig: TRadIAExternalMcpServerConfig;
 begin
@@ -109,6 +142,25 @@ begin
     '{"jsonrpc":"2.0","id":1,"result":{' +
     '"protocolVersion":"2025-06-18","capabilities":{},' +
     '"serverInfo":{"name":"fixture","version":"1.0"}}}';
+end;
+
+function FileArgumentsJson(
+  const APath: string;
+  const AContent: string = '';
+  const AIncludeContent: Boolean = False
+): string;
+var
+  LArguments: TJSONObject;
+begin
+  LArguments := TJSONObject.Create;
+  try
+    LArguments.AddPair('path', APath);
+    if AIncludeContent then
+      LArguments.AddPair('content', AContent);
+    Result := LArguments.ToJSON;
+  finally
+    LArguments.Free;
+  end;
 end;
 
 { TRadIAFakeExternalMcpTransport }
@@ -252,6 +304,30 @@ begin
   end;
   if LCallImmediately then
     ACallback();
+end;
+
+{ TRadIARealMcpConsentProvider }
+
+function TRadIARealMcpConsentProvider.RequestConsent(
+  const ARequest: TRadIAToolRequest;
+  const ADescriptor: TRadIAToolDescriptor
+): TRadIAConsentDecision;
+begin
+  Inc(FRequestCount);
+  Result := cdAllowOnce;
+end;
+
+{ TRadIARealMcpRootProvider }
+
+constructor TRadIARealMcpRootProvider.Create(const ARoot: string);
+begin
+  inherited Create;
+  FRoot := ARoot;
+end;
+
+function TRadIARealMcpRootProvider.GetWorkspaceRoot: string;
+begin
+  Result := FRoot;
 end;
 
 { TRadIAExternalMcpClientTests }
@@ -639,6 +715,164 @@ begin
     LClient.Disconnect;
     if TFile.Exists(LStateFile) then
       TFile.Delete(LStateFile);
+  end;
+end;
+
+procedure TRadIAExternalMcpClientTests.AuthorizedFilesystemServerRespectsPolicyAndConsent;
+const
+  CPackage = '@modelcontextprotocol/server-filesystem@2026.7.10';
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LAuditSink: IRadIAToolAuditSink;
+  LBoundary: IRadIAWorkspaceBoundary;
+  LCancellation: TRadIAFakeToolCancellation;
+  LCancellationNotifier: IRadIAToolCancellationNotifier;
+  LCancellationToken: IRadIAToolCancellationToken;
+  LCatalog: IRadIAExternalMcpCatalog;
+  LClient: IRadIAExternalMcpClient;
+  LConfig: TRadIAExternalMcpServerConfig;
+  LConsent: TRadIARealMcpConsentProvider;
+  LConsentApi: IRadIAConsentProvider;
+  LError: string;
+  LExecutor: IRadIAToolExecutor;
+  LInner: IRadIAToolExecutor;
+  LOutsideFile: string;
+  LReadAdapter: IRadIATool;
+  LReadTool: TRadIAExternalMcpTool;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRootProvider: IRadIAExternalMcpWorkspaceRootProvider;
+  LWorkspace: string;
+  LWorkspaceFile: string;
+  LWriteAdapter: IRadIATool;
+  LWriteTool: TRadIAExternalMcpTool;
+begin
+  if not SameText(GetEnvironmentVariable('RADIA_RUN_REAL_MCP_SMOKE'), '1') then
+    Exit;
+  LWorkspace := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-real-mcp-' + TGUID.NewGuid.ToString
+  );
+  LOutsideFile := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-real-mcp-outside-' + TGUID.NewGuid.ToString + '.txt'
+  );
+  TDirectory.CreateDirectory(LWorkspace);
+  LWorkspaceFile := TPath.Combine(LWorkspace, 'consent-proof.txt');
+  TFile.WriteAllText(LWorkspaceFile, 'before', TEncoding.UTF8);
+  TFile.WriteAllText(LOutsideFile, 'outside', TEncoding.UTF8);
+  LConfig := TRadIAExternalMcpServerConfig.Create(
+    'real-filesystem',
+    'Official filesystem reference server',
+    GetEnvironmentVariable('ComSpec'),
+    ['/d', '/c', 'npx.cmd', '-y', CPackage, LWorkspace],
+    LWorkspace,
+    True,
+    30000
+  );
+  LCatalog := TRadIAExternalMcpCatalog.Create;
+  LClient := TRadIAExternalMcpClient.Create(
+    TRadIAExternalMcpStdioTransport.Create,
+    LCatalog
+  );
+  try
+    Assert.IsTrue(LClient.Connect(LConfig, LError), 'Connect: ' + LError);
+    Assert.IsTrue(LClient.DiscoverTools(LError), 'Discovery: ' + LError);
+    Assert.IsTrue(
+      LCatalog.TryResolve('mcp.real-filesystem.read_text_file', LReadTool),
+      'The official read_text_file tool was not discovered.'
+    );
+    Assert.IsTrue(
+      LCatalog.TryResolve('mcp.real-filesystem.write_file', LWriteTool),
+      'The official write_file tool was not discovered.'
+    );
+    LBoundary := TRadIAWorkspaceBoundary.Create;
+    LRootProvider := TRadIARealMcpRootProvider.Create(LWorkspace);
+    LReadAdapter := TRadIAExternalMcpToolAdapter.Create(
+      LClient,
+      LReadTool,
+      TRadIAExternalMcpToolGrant.Create(
+        LReadTool.NamespacedName,
+        trReadOnly,
+        False,
+        ['path'],
+        False
+      ),
+      LRootProvider,
+      LBoundary
+    );
+    LWriteAdapter := TRadIAExternalMcpToolAdapter.Create(
+      LClient,
+      LWriteTool,
+      TRadIAExternalMcpToolGrant.Create(
+        LWriteTool.NamespacedName,
+        trReversibleWrite,
+        True,
+        ['path'],
+        False
+      ),
+      LRootProvider,
+      LBoundary
+    );
+    LRegistry := TRadIAToolRegistry.Create;
+    LRegistry.RegisterTool(LReadAdapter);
+    LRegistry.RegisterTool(LWriteAdapter);
+    LInner := TRadIAToolExecutor.Create(LRegistry);
+    LConsent := TRadIARealMcpConsentProvider.Create;
+    LConsentApi := LConsent;
+    LAudit := TRadIAInMemoryToolAuditSink.Create;
+    LAuditSink := LAudit;
+    LExecutor := TRadIAToolPolicyExecutor.Create(
+      LRegistry,
+      LInner,
+      LConsentApi,
+      LAuditSink,
+      TRadIASecretRedactor.Create
+    );
+
+    LResult := LExecutor.Execute(TRadIAToolRequest.Create(
+      LReadTool.NamespacedName,
+      FileArgumentsJson(LWorkspaceFile),
+      'real-read'
+    ));
+    Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+    Assert.Contains(LResult.ContentJson, 'before');
+    LResult := LExecutor.Execute(TRadIAToolRequest.Create(
+      LWriteTool.NamespacedName,
+      FileArgumentsJson(LWorkspaceFile, 'after', True),
+      'real-write'
+    ));
+    Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+    Assert.AreEqual(1, LConsent.RequestCount);
+    Assert.AreEqual('after', TFile.ReadAllText(LWorkspaceFile, TEncoding.UTF8));
+
+    LResult := LExecutor.Execute(TRadIAToolRequest.Create(
+      LReadTool.NamespacedName,
+      FileArgumentsJson(LOutsideFile),
+      'real-outside'
+    ));
+    Assert.IsFalse(LResult.Success);
+    Assert.AreEqual('external_mcp_path_denied', LResult.ErrorCode);
+    LCancellation := TRadIAFakeToolCancellation.Create;
+    LCancellationNotifier := LCancellation;
+    LCancellationToken := LCancellationNotifier;
+    LCancellation.Request;
+    LResult := LExecutor.Execute(
+      TRadIAToolRequest.Create(
+        LReadTool.NamespacedName,
+        FileArgumentsJson(LWorkspaceFile),
+        'real-cancelled'
+      ).WithCancellation(LCancellationToken)
+    );
+    Assert.IsFalse(LResult.Success);
+    Assert.AreEqual('tool_cancelled', LResult.ErrorCode);
+    Assert.AreEqual<Integer>(4, Length(LAudit.GetEvents));
+  finally
+    LClient.Disconnect;
+    if TFile.Exists(LOutsideFile) then
+      TFile.Delete(LOutsideFile);
+    if TDirectory.Exists(LWorkspace) then
+      TDirectory.Delete(LWorkspace, True);
   end;
 end;
 

@@ -260,10 +260,18 @@ Win32, Delphi 13 Win32, and Delphi 13 IDE64 without orphan processes, leaks, or 
 See the
 [Phase 6 complete fixture evidence](competitive_gap_phase_6_fixture_evidence_2.3.1.json).
 
-**Still in this phase:** smoke with one authorized real MCP server.
+**Real server proven:** after explicit authorization, the official filesystem server pinned to
+`2026.7.10` ran through the isolated `npx` cache, without credentials and restricted to a temporary
+directory. On all three supported combinations, the client discovered real tools, read a file,
+performed one mutation after exactly one consent decision, denied an outside-workspace path,
+rejected a pre-cancelled call, verified four audit events, and removed every temporary artifact.
+The smoke is opt-in and never downloads or executes third-party code without `-Consent`.
+See the
+[Phase 6 real-server evidence](competitive_gap_phase_6_real_server_evidence_2.3.1.json).
 
-**Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
-mutation, cancel correctly, and cannot bypass RadIA policy.
+**Acceptance reached:** the fixture proves lifecycle, content, mutation, active cancellation, and
+late-response disposal; the real server proves discovery, reads, consented mutation,
+pre-cancellation, workspace boundary, and auditing without bypassing RadIA policy.
 
 **Still missing:** only the integrated closure gate.
 

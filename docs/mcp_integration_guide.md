@@ -308,3 +308,20 @@ O diagnóstico só fica verde quando a bridge encerra normalmente, as três resp
 válidas, a negociação retorna uma versão de protocolo e `tools/list` contém um array de
 ferramentas. O painel mostra a quantidade real de tools registradas na instância. O processo possui
 timeout de 30 segundos e sua árvore é encerrada se a tela for fechada.
+
+## Smoke opt-in com servidor externo real
+
+Mantenedores podem reproduzir a matriz com o servidor oficial de filesystem fixado na versão
+`2026.7.10`. O fluxo exige Node.js com `npx`, baixa somente para o cache do `npx`, não usa
+credenciais e cria um workspace temporário diferente em cada execução.
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ExternalMcpRealServer.ps1 `
+  -Consent `
+  -EvidencePath docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json
+```
+
+Sem `-Consent`, o script encerra antes de qualquer download ou execução. Ele exige que os binários
+de teste dos três targets já tenham sido compilados, executa somente a categoria opt-in, verifica a
+limpeza dos artefatos temporários e gera evidência sem caminhos locais nem conteúdo de arquivos.

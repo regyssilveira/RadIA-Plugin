@@ -264,12 +264,20 @@ Delphi 13 Win32 e Delphi 13 IDE64 sem processo órfão, vazamento ou arquivo de 
 Consulte a
 [evidência da fixture completa da Fase 6](competitive_gap_phase_6_fixture_evidence_2.3.1.json).
 
-**Ainda nesta fase:** smoke com um servidor MCP real autorizado.
+**Servidor real comprovado:** após autorização explícita, o servidor oficial de filesystem na versão
+fixada `2026.7.10` foi executado via cache isolado do `npx`, sem credenciais e limitado a uma pasta
+temporária. Nas três combinações suportadas, o cliente descobriu as tools reais, leu um arquivo,
+executou uma mutação após um único consentimento, bloqueou acesso fora do workspace, rejeitou uma
+chamada previamente cancelada, registrou quatro eventos de auditoria e removeu todos os artefatos
+temporários. O smoke é opt-in e nunca baixa nem executa terceiros sem `-Consent`.
+Consulte a
+[evidência do servidor real da Fase 6](competitive_gap_phase_6_real_server_evidence_2.3.1.json).
 
-**Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
-mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.
+**Aceite alcançado:** a fixture comprova lifecycle, conteúdo, mutação, cancelamento ativo e descarte
+de resposta tardia; o servidor real comprova descoberta, leitura, mutação consentida, cancelamento
+prévio, boundary e auditoria sem contornar a política do RadIA.
 
-**Ainda faltará:** somente o gate integrado de encerramento.
+**Ainda falta:** somente o gate integrado de encerramento.
 
 ### Fase 7 — Jornada integrada e encerramento do goal
 

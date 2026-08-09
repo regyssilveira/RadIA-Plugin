@@ -268,3 +268,20 @@ An MCP client can drive the same cycle available in Agent Mode:
 MCP never grants implicit authorization. Build, debugger, visual execution, and write operations
 continue to show IDE consent. See
 [Autonomous Runtime Diagnostics](runtime_debug_automation.en.md).
+
+## Opt-in smoke with a real external server
+
+Maintainers can reproduce the matrix with the official filesystem server pinned to `2026.7.10`.
+The workflow requires Node.js with `npx`, downloads only into the `npx` cache, uses no credentials,
+and creates a distinct temporary workspace for every execution.
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ExternalMcpRealServer.ps1 `
+  -Consent `
+  -EvidencePath docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json
+```
+
+Without `-Consent`, the script exits before any download or execution. It requires the test binaries
+for all three targets to be built, runs only the opt-in category, verifies temporary-artifact cleanup,
+and generates evidence without local paths or file contents.
