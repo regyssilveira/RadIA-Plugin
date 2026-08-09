@@ -39,6 +39,7 @@ Delphi 11 is outside the current support matrix.
 | Area | What RadIA provides | Guide |
 |---|---|---|
 | Chat | Providers, streaming, sessions, templates, history, and commands | [Chat and sessions](docs/user_guide_chat_sessions.en.md) |
+| Scoped settings | Provider, model, executor, and limits by project, session, or next request | [Scoped settings](docs/hierarchical_settings.en.md) |
 | Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/user_guide_editor_generation.en.md) |
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/project_wizard.en.md) |
 | DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/user_guide_dext_journeys.en.md) |
@@ -70,6 +71,7 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - `/tools` shows tools available in the current installation and context.
 - `/help` summarizes the product and links to the applicable documentation.
 - `/journey` lists journeys that collect missing input without losing conversational context.
+- `/scope` shows effective values and overrides or restores inheritance without an IDE restart.
 - The [123-tool runtime catalog](docs/runtime_tool_catalog.md) lists built-in registrations.
 - The [operational reference](docs/internal_tools_reference.md) explains purpose and activation.
 - The [slash command guide](docs/slash_commands.en.md) documents commands and examples.

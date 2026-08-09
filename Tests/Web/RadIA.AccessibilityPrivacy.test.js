@@ -61,6 +61,21 @@ test('model selector remains governed by the active chat executor', () => {
   assert.match(chatJs, /modelSelectionEnabled && !requestInProgress/);
 });
 
+test('execution scopes are visible, explained, and reversible without restarting the IDE', () => {
+  assert.match(chatHtml, /id="btn-execution-scope"[^>]*title="[^"]+"/u);
+  assert.match(chatHtml, /id="execution-scope-dialog"/u);
+  assert.match(chatHtml, /Active project/u);
+  assert.match(chatHtml, /Current chat session/u);
+  assert.match(chatHtml, /Next request only/u);
+  assert.match(chatHtml, /Restore all inheritance/u);
+  assert.match(chatHtml, /id="btn-export-execution-scope"/u);
+  assert.match(chatJs, /action: 'show_execution_scope'/u);
+  assert.match(chatJs, /operation: 'inherit'/u);
+  assert.match(chatJs, /action: 'export_execution_scope'/u);
+  assert.match(chatJs, /Source: \$\{setting\.origin\}/u);
+  assert.match(chatJs, /executionScopeDialog\.showModal\(\)/u);
+});
+
 test('disabled agent token budget is presented as unlimited', () => {
   assert.match(chatJs, /state\.maxTotalTokens > 0/u);
   assert.match(chatJs, /tokens \(unlimited\)/u);

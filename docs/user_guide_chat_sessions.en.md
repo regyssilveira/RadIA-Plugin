@@ -89,3 +89,13 @@ Templates allow you to create custom shortcuts (Slash Commands) containing reusa
 > [!CAUTION]
 > **Warning on Overwriting Templates:**
 > The **Overwrite** option irreversibly deletes all your custom templates and new local commands that are not included in the imported backup JSON file. We strongly recommend making a safety export of your current library before executing an overwrite import.
+
+---
+
+## 6. Conversation-specific settings
+
+Use **Settings > Scope** in the composer to apply a provider, model, executor, or limits only to the
+current conversation. The `session` source confirms that the session overrides project and global
+defaults. Use **Inherit** to restore one field or **Restore all inheritance** to clear the session.
+`/scope session ...` provides the same keyboard flow. See
+[Project, session, and request settings](hierarchical_settings.en.md).

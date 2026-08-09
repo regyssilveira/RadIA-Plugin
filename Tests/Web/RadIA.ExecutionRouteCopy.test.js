@@ -51,7 +51,11 @@ test('chat exposes the effective route independently from agent mode', () => {
   assert.match(chatJs, /action: 'set_agent_executor'/u);
   assert.match(presenter, /procedure TRadIAChatPresenter\.SetAgentExecutor/u);
   assert.match(presenter, /if FAgentModeEnabled then[\s\S]*StartAgentRun\(LProcessed\)/u);
-  assert.match(presenter, /if TryStartCliAgentRun\(LProcessed\) then/u);
+  assert.match(
+    presenter,
+    /if TryStartCliAgentRun\(LProcessed, LEffectiveSettings\) then/u
+  );
+  assert.match(presenter, /LEffective := ResolveEffectiveExecutionSettings/u);
   assert.match(presenter, /if ASettings\.Kind = aekCli then/u);
   assert.match(presenter, /AOrchestrator := 'external-cli'/u);
   assert.match(presenter, /Exit\('Chat \| ' \+ ACliClientId \+ ' CLI direct'\)/u);

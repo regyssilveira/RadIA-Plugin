@@ -13,12 +13,14 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Install on Delphi 12 or 13 | [Installation and configuration](install_config.en.md) | [User manual](user_manual.en.md) |
 | Discover current capabilities | [Capabilities](capabilities.en.md) | [Feature catalog](features.en.md) |
 | Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.en.md) |
+| Use different settings by project or conversation | [Scoped settings](hierarchical_settings.en.md) | [Slash commands](slash_commands.en.md) |
 | Understand every settings tab | [Settings map](user_manual.en.md#21-settings-map) | [Security model](tool_security_model.en.md) |
 | Look up a specific field or button | [Complete settings reference](settings_reference.en.md) | [Troubleshooting](troubleshooting_agentic_platform.en.md) |
 | Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
 | Continue a task across chat, terminal, and editor | [Shared context](shared_journey_context.en.md) | [Chat and sessions](user_guide_chat_sessions.en.md) |
 | Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.en.md) |
 | Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) | [Settings reference](settings_reference.en.md) |
+| Understand effective values, sources, and inheritance | [Project, session, and request settings](hierarchical_settings.en.md) | [Settings reference](settings_reference.en.md) |
 
 ## Complete a development task
 

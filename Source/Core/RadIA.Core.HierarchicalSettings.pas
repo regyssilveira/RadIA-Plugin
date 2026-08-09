@@ -11,6 +11,15 @@ type
     rsoRequest
   );
 
+  TRadIAExecutionSettingField = (
+    resfProvider,
+    resfModel,
+    resfExecutor,
+    resfMaxTokens,
+    resfTimeoutMs,
+    resfTokenBudget
+  );
+
   TRadIAExecutionSettings = record
   private
     FExecutorId: string;
@@ -41,6 +50,13 @@ type
     property ProviderId: string read FProviderId;
     property TimeoutMs: Integer read FTimeoutMs;
     property TokenBudget: Int64 read FTokenBudget;
+  end;
+
+  IRadIAExecutionSettingsAwareProvider = interface
+    ['{04C224E1-61A4-4841-A56D-3D4899B28D5A}']
+    procedure ApplyExecutionSettings(
+      const ASettings: TRadIAExecutionSettings
+    );
   end;
 
   TRadIAResolvedExecutionSettings = record
@@ -76,6 +92,28 @@ type
       const ARequest: TRadIAExecutionSettings
     ): TRadIAResolvedExecutionSettings; static;
     class function OriginName(const AOrigin: TRadIASettingOrigin): string; static;
+  end;
+
+  TRadIAExecutionSettingsEditor = class
+  public
+    class function TryParseField(
+      const AName: string;
+      out AField: TRadIAExecutionSettingField
+    ): Boolean; static;
+    class function FieldName(
+      const AField: TRadIAExecutionSettingField
+    ): string; static;
+    class function TryUpdate(
+      const ACurrent: TRadIAExecutionSettings;
+      const AField: TRadIAExecutionSettingField;
+      const AValue: string;
+      out AUpdated: TRadIAExecutionSettings;
+      out AError: string
+    ): Boolean; static;
+    class function Clear(
+      const ACurrent: TRadIAExecutionSettings;
+      const AField: TRadIAExecutionSettingField
+    ): TRadIAExecutionSettings; static;
   end;
 
 implementation
@@ -231,6 +269,153 @@ begin
   else
     Result := 'default';
   end;
+end;
+
+{ TRadIAExecutionSettingsEditor }
+
+class function TRadIAExecutionSettingsEditor.TryParseField(
+  const AName: string;
+  out AField: TRadIAExecutionSettingField
+): Boolean;
+var
+  LName: string;
+begin
+  LName := LowerCase(Trim(AName));
+  Result := True;
+  if LName = 'provider' then
+    AField := resfProvider
+  else if LName = 'model' then
+    AField := resfModel
+  else if LName = 'executor' then
+    AField := resfExecutor
+  else if (LName = 'max-tokens') or (LName = 'maxtokens') then
+    AField := resfMaxTokens
+  else if (LName = 'timeout-ms') or (LName = 'timeoutms') or
+    (LName = 'timeout') then
+    AField := resfTimeoutMs
+  else if (LName = 'token-budget') or (LName = 'tokenbudget') then
+    AField := resfTokenBudget
+  else
+    Result := False;
+end;
+
+class function TRadIAExecutionSettingsEditor.FieldName(
+  const AField: TRadIAExecutionSettingField
+): string;
+begin
+  case AField of
+    resfProvider:
+      Result := 'provider';
+    resfModel:
+      Result := 'model';
+    resfExecutor:
+      Result := 'executor';
+    resfMaxTokens:
+      Result := 'max-tokens';
+    resfTimeoutMs:
+      Result := 'timeout-ms';
+  else
+    Result := 'token-budget';
+  end;
+end;
+
+class function TRadIAExecutionSettingsEditor.TryUpdate(
+  const ACurrent: TRadIAExecutionSettings;
+  const AField: TRadIAExecutionSettingField;
+  const AValue: string;
+  out AUpdated: TRadIAExecutionSettings;
+  out AError: string
+): Boolean;
+var
+  LExecutor: string;
+  LMaxTokens: Integer;
+  LModel: string;
+  LProvider: string;
+  LTimeoutMs: Integer;
+  LTokenBudget: Int64;
+begin
+  AError := '';
+  LProvider := ACurrent.ProviderId;
+  LModel := ACurrent.ModelId;
+  LExecutor := ACurrent.ExecutorId;
+  LMaxTokens := ACurrent.MaxTokens;
+  LTimeoutMs := ACurrent.TimeoutMs;
+  LTokenBudget := ACurrent.TokenBudget;
+  case AField of
+    resfProvider:
+      LProvider := Trim(AValue);
+    resfModel:
+      LModel := Trim(AValue);
+    resfExecutor:
+      LExecutor := LowerCase(Trim(AValue));
+    resfMaxTokens:
+      if not TryStrToInt(AValue, LMaxTokens) or (LMaxTokens < 0) then
+        AError := 'max-tokens must be a non-negative integer.';
+    resfTimeoutMs:
+      if not TryStrToInt(AValue, LTimeoutMs) or (LTimeoutMs < 1) then
+        AError := 'timeout-ms must be a positive integer.';
+    resfTokenBudget:
+      if not TryStrToInt64(AValue, LTokenBudget) or (LTokenBudget < 0) then
+        AError := 'token-budget must be a non-negative integer.';
+  end;
+  if (AError = '') and
+    (AField in [resfProvider, resfModel, resfExecutor]) and
+    (Trim(AValue) = '') then
+    AError := FieldName(AField) + ' cannot be empty; use inherit instead.';
+  Result := AError = '';
+  if Result then
+    AUpdated := TRadIAExecutionSettings.Create(
+      LProvider,
+      LModel,
+      LExecutor,
+      LMaxTokens,
+      LTimeoutMs,
+      LTokenBudget
+    )
+  else
+    AUpdated := ACurrent;
+end;
+
+class function TRadIAExecutionSettingsEditor.Clear(
+  const ACurrent: TRadIAExecutionSettings;
+  const AField: TRadIAExecutionSettingField
+): TRadIAExecutionSettings;
+var
+  LExecutor: string;
+  LMaxTokens: Integer;
+  LModel: string;
+  LProvider: string;
+  LTimeoutMs: Integer;
+  LTokenBudget: Int64;
+begin
+  LProvider := ACurrent.ProviderId;
+  LModel := ACurrent.ModelId;
+  LExecutor := ACurrent.ExecutorId;
+  LMaxTokens := ACurrent.MaxTokens;
+  LTimeoutMs := ACurrent.TimeoutMs;
+  LTokenBudget := ACurrent.TokenBudget;
+  case AField of
+    resfProvider:
+      LProvider := '';
+    resfModel:
+      LModel := '';
+    resfExecutor:
+      LExecutor := '';
+    resfMaxTokens:
+      LMaxTokens := -1;
+    resfTimeoutMs:
+      LTimeoutMs := -1;
+    resfTokenBudget:
+      LTokenBudget := -1;
+  end;
+  Result := TRadIAExecutionSettings.Create(
+    LProvider,
+    LModel,
+    LExecutor,
+    LMaxTokens,
+    LTimeoutMs,
+    LTokenBudget
+  );
 end;
 
 end.

@@ -173,8 +173,14 @@ recomendações de configuração, provisionamento ou reparo.
 
 `GetRadIAStatus` e `/status` complementam o diagnóstico com um inventário sanitizado da
 configuração e disponibilidade atuais. Use `/status` para a visão completa ou filtre com
-`provider`, `agent`, `cli`, `mcp`, `security`, `editor`, `project`, `tools` ou `logging`. Caminhos
+`provider`, `agent`, `cli`, `mcp`, `security`, `editor`, `project`, `tools`, `logging` ou `settings`.
+Caminhos
 efetivos podem aparecer; chaves de API, tokens OAuth e argumentos de tools nunca são incluídos.
+
+`/scope` e o botão **Settings > Scope** mostram provider, modelo, executor e limites efetivos com a
+origem de cada campo. Overrides independentes podem valer para projeto, sessão ou próxima
+solicitação e podem ser removidos para restaurar herança. Consulte
+[Configurações por escopo](hierarchical_settings.md).
 
 ## Modo agente
 

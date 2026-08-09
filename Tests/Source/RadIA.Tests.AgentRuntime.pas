@@ -8,6 +8,7 @@ uses
   DUnitX.TestFramework,
   RadIA.Core.AgentRuntime,
   RadIA.Core.Interfaces,
+  RadIA.Core.HierarchicalSettings,
   RadIA.Core.TokenUsage,
   RadIA.Core.Types,
   RadIA.Core.Tools;
@@ -123,6 +124,13 @@ type
       const AHistory: TArray<IRadIAChatMessage>;
       const ACallback: TStreamChunkCallback;
       const AProfile: TAIRequestProfile = rpGeneralChat
+    );
+    procedure SendPromptStreamWithSettings(
+      const APrompt: string;
+      const AHistory: TArray<IRadIAChatMessage>;
+      const ACallback: TStreamChunkCallback;
+      const AProfile: TAIRequestProfile;
+      const ASettings: TRadIAExecutionSettings
     );
     procedure CancelCurrentRequest;
     procedure ClearCache;
@@ -504,6 +512,17 @@ procedure TRadIAMockAgentService.SendPromptStream(
 );
 begin
   ACallback(FResponse, True, FError);
+end;
+
+procedure TRadIAMockAgentService.SendPromptStreamWithSettings(
+  const APrompt: string;
+  const AHistory: TArray<IRadIAChatMessage>;
+  const ACallback: TStreamChunkCallback;
+  const AProfile: TAIRequestProfile;
+  const ASettings: TRadIAExecutionSettings
+);
+begin
+  SendPromptStream(APrompt, AHistory, ACallback, AProfile);
 end;
 
 function TRadIAMockAgentService.TrimHistory(

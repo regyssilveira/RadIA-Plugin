@@ -4,7 +4,8 @@ interface
 
 uses
   System.SysUtils, System.Net.URLClient, System.SyncObjs,
-  RadIA.Core.Interfaces, RadIA.Core.TokenUsage;
+  RadIA.Core.Interfaces, RadIA.Core.TokenUsage,
+  RadIA.Core.HierarchicalSettings;
 
 type
   TParserFunc = reference to function(const AResponseJson: string; out AUsage: TTokenUsage): string;
@@ -12,7 +13,11 @@ type
 
   {$RTTI EXPLICIT METHODS([vcPrivate, vcProtected, vcPublic, vcPublished])}
   { Base class for AI Providers implementing IRadIAProvider }
-  TRadIAProviderBase = class(TInterfacedObject, IRadIAProvider)
+  TRadIAProviderBase = class(
+    TInterfacedObject,
+    IRadIAProvider,
+    IRadIAExecutionSettingsAwareProvider
+  )
   protected
     FConfig: IRadIAConfig;
     FProviderId: string;
@@ -20,6 +25,8 @@ type
     FErrorDecoder: IRadIAErrorDecoder;
     FCancelled: Boolean;
     FRefreshLock: TCriticalSection;
+    FModelOverride: string;
+    FTimeoutOverrideMs: Integer;
 
     function GetOAuthTokenUrl: string; virtual;
     function GetOAuthClientId: string; virtual;
@@ -29,6 +36,7 @@ type
 
     function GetApiKey: string;
     function GetActiveModel: string;
+    function GetEffectiveTimeoutMs: Integer;
     function DoPostRequest(const AUrl: string; const AHeaders: TNetHeaders;
       const ARequestBody: string): string;
     procedure DoPostRequestStream(const AUrl: string; const AHeaders: TNetHeaders;
@@ -76,6 +84,9 @@ type
     function GetName: string; virtual; abstract;
     function GetProviderId: string;
     procedure CancelCurrentRequest; virtual;
+    procedure ApplyExecutionSettings(
+      const ASettings: TRadIAExecutionSettings
+    );
   end;
 
   { Ancestor class for OpenAI-compatible providers (OpenAI, DeepSeek, Groq) }
@@ -185,6 +196,7 @@ begin
   inherited Create;
   FConfig := AConfig;
   FRefreshLock := TCriticalSection.Create;
+  FTimeoutOverrideMs := -1;
 
   if not TRadIAContainer.TryResolve<IRadIAHttpClient>(FHTTPClient) then
     FHTTPClient := TRadIAConcreteHttpClient.Create;
@@ -210,7 +222,34 @@ end;
 
 function TRadIAProviderBase.GetActiveModel: string;
 begin
-  Result := FConfig.GetActiveModel(FProviderId);
+  if FModelOverride <> '' then
+    Result := FModelOverride
+  else
+    Result := FConfig.GetActiveModel(FProviderId);
+end;
+
+function TRadIAProviderBase.GetEffectiveTimeoutMs: Integer;
+begin
+  if FTimeoutOverrideMs >= 0 then
+    Result := FTimeoutOverrideMs
+  else
+    Result := FConfig.GetTimeout(FProviderId) * 1000;
+  if Result <= 0 then
+    Result := 60000;
+end;
+
+procedure TRadIAProviderBase.ApplyExecutionSettings(
+  const ASettings: TRadIAExecutionSettings
+);
+begin
+  if ASettings.HasModel then
+    FModelOverride := ASettings.ModelId
+  else
+    FModelOverride := '';
+  if ASettings.HasTimeout then
+    FTimeoutOverrideMs := ASettings.TimeoutMs
+  else
+    FTimeoutOverrideMs := -1;
 end;
 
 function TRadIAProviderBase.GetProviderId: string;
@@ -252,10 +291,7 @@ begin
   if ATimeoutMs > 0 then
     LTimeoutMs := ATimeoutMs
   else
-  begin
-    LTimeoutMs := FConfig.GetTimeout(FProviderId) * 1000;
-    if LTimeoutMs <= 0 then LTimeoutMs := 60000;
-  end;
+    LTimeoutMs := GetEffectiveTimeoutMs;
 
   try
     Result := FHTTPClient.Get(AUrl, AHeaders, LTimeoutMs);
@@ -285,8 +321,7 @@ begin
   LogPayloadSummary('DoPostRequest', 'Request body', ARequestBody);
 
   FCancelled := False;
-  LTimeoutMs := FConfig.GetTimeout(FProviderId) * 1000;
-  if LTimeoutMs <= 0 then LTimeoutMs := 60000;
+  LTimeoutMs := GetEffectiveTimeoutMs;
 
   try
     Result := FHTTPClient.Post(AUrl, AHeaders, ARequestBody, LTimeoutMs);
@@ -316,8 +351,7 @@ begin
   LogPayloadSummary('DoPostRequestStream', 'Request body', ARequestBody);
 
   FCancelled := False;
-  LTimeoutMs := FConfig.GetTimeout(FProviderId) * 1000;
-  if LTimeoutMs <= 0 then LTimeoutMs := 60000;
+  LTimeoutMs := GetEffectiveTimeoutMs;
 
   try
     FHTTPClient.PostStream(AUrl, AHeaders, ARequestBody, AOnWrite, LTimeoutMs);

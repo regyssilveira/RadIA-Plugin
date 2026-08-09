@@ -29,6 +29,11 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
 | `/doctor` | Diagnoses installation and recommends the next action. | Provider, executor, conditional MCP, terminal, chat, and first tool. |
 | `/status [filter\|--json]` | Shows a sanitized inventory of RadIA state. | Provider, agent, CLI, MCP, security, editor, project, tools, and logs. |
+| `/status settings` | Shows effective provider, model, executor, and limits with each source. | Project, session, and next request. |
+| `/scope` | Shows effective settings and applied precedence. | Equivalent to **Settings > Scope**. |
+| `/scope <level> <field> <value>` | Creates an override at `project`, `session`, or `request` level. | Never changes credentials. |
+| `/scope <level> inherit <field>` | Removes one field override and restores inheritance. | Keeps the other fields. |
+| `/scope <level> clear` | Removes every override at that level. | Keeps global configuration. |
 | `/cli session` | Shows whether the current conversation is linked to a resumable CLI session. | Current conversation, executor, and project. |
 | `/cli new` | Detaches the external session; the next request starts a new CLI conversation. | Active conversation; it does not delete vendor data. |
 | `/context` | Shows or links the journey shared by chat, terminal, and editor. | Active conversation and project. |
@@ -73,7 +78,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 |---|---|---|
 | Find why RadIA is not ready | `/doctor` | Six checks, issues, recommendations, and the next action. |
 | Review what is configured and available | `/status` | Every area, without keys, tokens, or sensitive payloads. |
-| Inspect one area | `/status cli`, `/status mcp`, `/status provider` | Only the requested section. It also accepts `agent`, `security`, `editor`, `project`, `tools`, and `logging`. |
+| Inspect one area | `/status cli`, `/status mcp`, `/status provider` | Only the requested section. It also accepts `agent`, `security`, `editor`, `project`, `tools`, `logging`, and `settings`. |
 | Copy or process the complete structure | `/status --json` | Complete structured state returned by the tool. |
 | Assess the open Delphi project | `/health` | Project, build, test, compiler, and local-knowledge risks. |
 | Discover executable tools | `/tools` | Effective catalog for the current IDE instance. |
@@ -86,11 +91,14 @@ configured now?”. Executable paths may appear, but credentials are never inclu
 Rad IA allows you to edit, delete, or add new commands and prompt templates directly from the plugin options inside the IDE (`Tools -> Options -> Rad IA -> Templates`).
 
 The `/agent` command family, `/terminal`, `/settings`, `/extensions`, `/health`, `/doctor`,
-`/status`, `/tools`, `/tool`,
+`/status`, `/scope`, `/tools`, `/tool`,
 `/revoke-tools`, and
 `/extensions reload` are internal
 commands and cannot be replaced by templates.
 See the [Complete RadIA User Manual](user_manual.en.md) for examples.
+
+See [Project, session, and request settings](hierarchical_settings.en.md) for complete precedence,
+accepted fields, persistence, and recovery examples.
 
 Declarative extensions can add commands without recompiling or restarting the IDE. See
 [Declarative extensions](declarative_extensions.en.md).

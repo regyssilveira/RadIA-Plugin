@@ -122,6 +122,20 @@ Cancelling or declining leaves the environment unchanged and keeps a visible alt
 
 See [native and CLI executors](cli_executors.en.md) and [MCP integration](mcp_integration_guide.en.md).
 
+## Effective settings by scope
+
+The **Settings > Scope** button is in the chat composer rather than the global options window. It can
+override provider, model, executor, maximum tokens, timeout, and agent budget for the active project,
+current session, or next request only. Every row exposes **Source**, **Apply**, and **Inherit**;
+**Restore all inheritance** clears the selected level. Credentials remain global.
+**Export scope...** writes a sanitized project or session JSON only after explicit user selection;
+the project path and secrets are excluded.
+
+The same controls are available through `/scope`, while `/status settings` verifies the result. The
+model list and effective route refresh without restarting Delphi. See
+[Project, session, and request settings](hierarchical_settings.en.md) for precedence, formats,
+persistence, and recovery.
+
 ## Memory Diagnostics
 
 | Option | When to use | Effect and care |
@@ -150,5 +164,6 @@ architecture, or lasting constraints. Keep secrets and temporary task details ou
 | Export / Import | For backup or controlled sharing | Review imported content; merge preserves existing entries. |
 | Restore Defaults | To recover distributed templates | Overwrites changed defaults after confirmation. |
 
-For guided usage, return to the [user manual](user_manual.en.md). For failures, use
+For guided usage, return to the [user manual](user_manual.en.md). For scoped overrides, see
+[project, session, and request settings](hierarchical_settings.en.md). For failures, use
 [troubleshooting](troubleshooting_agentic_platform.en.md).

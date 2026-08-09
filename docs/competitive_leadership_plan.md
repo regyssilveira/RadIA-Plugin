@@ -112,11 +112,14 @@ Delphi passou com 916/916 testes por alvo. Consulte a
 **Aceite:** dois projetos e duas sessões usam configurações distintas simultaneamente; concorrência
 não perde campos e a UI, `/status` e a execução real concordam sobre cada valor efetivo.
 
-**Estado:** em andamento. O contrato central já resolve provider, modelo, executor e limites com
-origem individual e precedência determinística. Os escopos de projeto e sessão são persistidos fora
-do repositório por gravação atômica, nomes protegidos por hash e merge que preserva campos futuros.
-Credenciais não fazem parte dos overrides. Ainda faltam integração com execução, UI, `/status` e
-troca dinâmica de escopo.
+**Estado:** concluída. Provider, modelo, executor e limites usam a precedência solicitação > sessão >
+projeto > global > padrão seguro no chat nativo, agente e CLI externo. O botão **Settings > Scope**,
+`/scope`, `/status settings` e a rota do compositor mostram o mesmo valor efetivo e sua origem,
+permitem restaurar herança e atualizam modelos sem reiniciar a IDE. Projeto e sessão persistem fora
+do repositório; a próxima solicitação fica em memória e não atravessa conversa ou workspace. A
+exportação sanitizada é explícita e nunca inclui credenciais ou o caminho do projeto. A matriz
+Delphi passou com 937/937 testes por target. Consulte a
+[evidência final da Fase 3](competitive_gap_phase_3_evidence_2.3.1.json).
 Consulte a [evidência do fundamento da Fase 3](competitive_gap_phase_3_foundation_evidence_2.3.1.json).
 Consulte também a
 [evidência da persistência da Fase 3](competitive_gap_phase_3_persistence_evidence_2.3.1.json).

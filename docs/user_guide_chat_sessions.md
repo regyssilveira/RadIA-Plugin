@@ -90,3 +90,13 @@ Os templates permitem criar atalhos personalizados (Slash Commands) com instruç
 > [!CAUTION]
 > **Atenção ao Sobrescrever Templates:**
 > A opção **Overwrite (Sobrescrever)** apaga de forma irreversível todos os seus templates customizados e novos comandos locais que não estiverem inclusos no arquivo JSON de backup importado. Recomendamos que você faça uma exportação de segurança da sua biblioteca atual antes de executar uma importação por sobrescrita.
+
+---
+
+## 6. Configurações específicas da conversa
+
+Use **Settings > Scope** no compositor para aplicar provider, modelo, executor ou limites somente à
+conversa atual. A origem `session` confirma que a sessão está sobrescrevendo o projeto e o padrão
+global. Use **Inherit** para restaurar um campo ou **Restore all inheritance** para limpar a sessão.
+`/scope session ...` oferece o mesmo fluxo pelo teclado. Consulte
+[Configurações por projeto, sessão e solicitação](hierarchical_settings.md).

@@ -41,6 +41,7 @@ Delphi 11 não faz parte da matriz atual.
 | Área | Capacidades principais | Guia |
 |---|---|---|
 | Chat | Providers, streaming, sessões, templates, histórico e comandos | [Chat e sessões](docs/user_guide_chat_sessions.md) |
+| Configurações por escopo | Provider, modelo, executor e limites por projeto, sessão ou próxima solicitação | [Configurações por escopo](docs/hierarchical_settings.md) |
 | Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/shared_journey_context.md) |
 | Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
@@ -74,6 +75,7 @@ RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja 
 - `/tools` mostra as ferramentas disponíveis na instalação e no contexto atuais.
 - `/help` resume o produto e aponta para a documentação aplicável.
 - `/journey` lista jornadas que coletam dados ausentes sem perder o contexto da conversa.
+- `/scope` mostra valores efetivos e permite sobrescrever ou restaurar herança sem reiniciar a IDE.
 - [Catálogo das 126 ferramentas](docs/runtime_tool_catalog.md) lista o catálogo interno gerado.
 - [Referência operacional](docs/internal_tools_reference.md) explica o que cada ferramenta faz e
   quando pode ser acionada.

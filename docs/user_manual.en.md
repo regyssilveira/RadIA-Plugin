@@ -92,6 +92,17 @@ and the adjacent name identify the effective route and credential path, such as 
 **ChatGPT Pro via Codex CLI**, or **Codex CLI direct**, so the distinction never depends only on color
 or an icon.
 
+### 3.2 Project, session, and next-request settings
+
+The **Settings > Scope** button overrides provider, model, executor, and limits without changing the
+global default. Select project, session, or next request, edit one field, and choose **Apply**. Every
+row shows its effective source; **Inherit** removes only that override and **Restore all
+inheritance** clears the selected level. `/scope` and `/status settings` expose the same information
+from the keyboard. Routes and models refresh without restarting Delphi.
+
+See [Project, session, and request settings](hierarchical_settings.en.md) for precedence, commands,
+formats, persistence, and security.
+
 Before sending, the composer footer shows the route, credential, and selected model when applicable.
 While processing, the route avatar uses a subtle animation and the status text identifies whether
 RadIA is preparing the response, running a tool, or processing its result. After completion, a

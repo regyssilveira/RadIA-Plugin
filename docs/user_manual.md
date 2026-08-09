@@ -126,6 +126,17 @@ transporte nativo, terminal para CLI e nós conectados para MCP. Os marcadores *
 o nome ao lado informam a rota e a credencial efetivas, como **Native API**, **ChatGPT Pro via Codex
 CLI** ou **Codex CLI direct**, evitando depender apenas de cor ou ícone.
 
+### 3.2 Configurações por projeto, sessão e próxima solicitação
+
+O botão **Settings > Scope** permite substituir provider, modelo, executor e limites sem alterar o
+padrão global. Selecione projeto, sessão ou próxima solicitação, edite um campo e use **Apply**. Cada
+linha mostra a origem efetiva; **Inherit** remove somente aquele override e **Restore all
+inheritance** limpa o nível selecionado. `/scope` e `/status settings` oferecem a mesma informação
+pelo teclado. A rota e os modelos são atualizados sem reiniciar o Delphi.
+
+Consulte [Configurações por projeto, sessão e solicitação](hierarchical_settings.md) para a ordem de
+precedência, comandos, formatos, persistência e segurança.
+
 Antes do envio, a linha inferior do compositor permite escolher a rota e mostra a credencial e, quando aplicável, o
 modelo selecionado. Durante o processamento, o avatar da rota recebe uma animação discreta e o texto
 de estado informa se o RadIA está preparando a resposta, executando uma ferramenta ou processando o

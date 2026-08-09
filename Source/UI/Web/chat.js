@@ -171,6 +171,13 @@ const btnTerminal     = document.getElementById('btn-terminal');
 const btnAgentHistory = document.getElementById('btn-agent-history');
 const btnCliNewSession = document.getElementById('btn-cli-new-session');
 const btnJourneyContext = document.getElementById('btn-journey-context');
+const btnExecutionScope = document.getElementById('btn-execution-scope');
+const executionScopeDialog = document.getElementById('execution-scope-dialog');
+const executionScopeKind = document.getElementById('execution-scope-kind');
+const executionScopeFields = document.getElementById('execution-scope-fields');
+const executionScopeNote = document.getElementById('execution-scope-note');
+const btnClearExecutionScope = document.getElementById('btn-clear-execution-scope');
+const btnExportExecutionScope = document.getElementById('btn-export-execution-scope');
 const executionRoute  = document.getElementById('execution-route');
 const composerRoute   = document.getElementById('composer-route');
 const executionRouteSelector = document.getElementById('select-execution-route');
@@ -2449,6 +2456,99 @@ btnJourneyContext?.addEventListener('click', () => {
   postMessageToDelphi({ action: 'toggle_journey_context' });
 });
 
+btnExecutionScope?.addEventListener('click', () => {
+  postMessageToDelphi({ action: 'show_execution_scope' });
+});
+
+btnClearExecutionScope?.addEventListener('click', () => {
+  postMessageToDelphi({
+    action: 'update_execution_scope',
+    operation: 'clear',
+    scope: executionScopeKind.value
+  });
+});
+
+btnExportExecutionScope?.addEventListener('click', () => {
+  postMessageToDelphi({
+    action: 'export_execution_scope',
+    scope: executionScopeKind.value
+  });
+});
+
+const EXECUTION_SCOPE_FIELDS = [
+  ['provider', 'Provider'],
+  ['model', 'Model'],
+  ['executor', 'Executor'],
+  ['maxTokens', 'Maximum tokens'],
+  ['timeoutMs', 'Timeout (ms)'],
+  ['tokenBudget', 'Agent token budget']
+];
+
+function updateExecutionScope(data) {
+  executionScopeFields.replaceChildren();
+  executionScopeKind.querySelector('option[value="project"]').disabled =
+    data.projectAvailable === false;
+  executionScopeKind.querySelector('option[value="session"]').disabled =
+    data.sessionAvailable === false;
+  if (executionScopeKind.selectedOptions[0]?.disabled) {
+    executionScopeKind.value = 'request';
+  }
+  btnExportExecutionScope.disabled = executionScopeKind.value === 'request';
+  executionScopeNote.textContent =
+    'Effective values are shown below. The source identifies the scope currently winning precedence.';
+  EXECUTION_SCOPE_FIELDS.forEach(([field, label]) => {
+    const setting = data[field] || { value: '', origin: 'default' };
+    const row = document.createElement('div');
+    row.className = 'execution-scope-row';
+    const name = document.createElement('strong');
+    name.textContent = label;
+    const value = document.createElement('label');
+    value.className = 'execution-scope-value';
+    const input = document.createElement('input');
+    input.value = setting.value || '';
+    input.setAttribute('aria-label', `${label} override`);
+    input.title = `Effective value from ${setting.origin}. Edit and select Apply to override it.`;
+    const origin = document.createElement('span');
+    origin.className = 'execution-scope-origin';
+    origin.textContent = `Source: ${setting.origin}`;
+    value.append(input, origin);
+    const apply = document.createElement('button');
+    apply.type = 'button';
+    apply.textContent = 'Apply';
+    apply.title = `Override ${label.toLowerCase()} for the selected scope`;
+    apply.addEventListener('click', () => {
+      postMessageToDelphi({
+        action: 'update_execution_scope',
+        operation: 'set',
+        scope: executionScopeKind.value,
+        field,
+        value: input.value
+      });
+    });
+    const inherit = document.createElement('button');
+    inherit.type = 'button';
+    inherit.textContent = 'Inherit';
+    inherit.title = `Remove the selected-scope override for ${label.toLowerCase()}`;
+    inherit.addEventListener('click', () => {
+      postMessageToDelphi({
+        action: 'update_execution_scope',
+        operation: 'inherit',
+        scope: executionScopeKind.value,
+        field
+      });
+    });
+    row.append(name, value, apply, inherit);
+    executionScopeFields.appendChild(row);
+  });
+  if (!executionScopeDialog.open) {
+    executionScopeDialog.showModal();
+  }
+}
+
+executionScopeKind?.addEventListener('change', () => {
+  btnExportExecutionScope.disabled = executionScopeKind.value === 'request';
+});
+
 function setDropdownOpen(wrapper, trigger, open) {
   wrapper.classList.toggle('open', open);
   trigger.setAttribute('aria-expanded', String(open));
@@ -3560,6 +3660,7 @@ if (globalThis.chrome?.webview) {
       case 'tool_result':           renderToolResult(data);                                      break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
       case 'execution_route':       updateExecutionRoute(data);                                  break;
+      case 'execution_scope':       updateExecutionScope(data);                                  break;
       case 'agent_state':           renderAgentState(data);                                      break;
       case 'agent_history':         renderAgentHistory(data);                                    break;
     }

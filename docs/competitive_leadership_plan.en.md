@@ -110,11 +110,14 @@ tests per target. See the
 **Acceptance:** two projects and two sessions use distinct settings simultaneously; concurrent
 writes lose no fields and UI, `/status`, and real execution agree on effective values.
 
-**Status:** in progress. The core contract now resolves provider, model, executor, and limits with
-per-value origin and deterministic precedence. Project and session scopes persist outside the
-repository through atomic writes, hashed names, and a merge that preserves future fields.
-Credentials are excluded from overrides. Runtime integration, UI, `/status`, and dynamic scope
-switching are still pending.
+**Status:** complete. Provider, model, executor, and limits use request > session > project > global
+> safe-default precedence across native chat, the native agent, and external CLIs. **Settings >
+Scope**, `/scope`, `/status settings`, and the composer route show the same effective values and
+sources, restore inheritance, and refresh models without restarting the IDE. Project and session
+scopes persist outside the repository; next-request values remain in memory and never cross a
+conversation or workspace. Sanitized export is explicit and excludes credentials and the project
+path. The Delphi matrix passed 937/937 tests per target. See the
+[final Phase 3 evidence](competitive_gap_phase_3_evidence_2.3.1.json).
 See the [Phase 3 foundation evidence](competitive_gap_phase_3_foundation_evidence_2.3.1.json).
 Also see the
 [Phase 3 persistence evidence](competitive_gap_phase_3_persistence_evidence_2.3.1.json).

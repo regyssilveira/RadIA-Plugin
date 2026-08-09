@@ -2,7 +2,9 @@ unit RadIA.Core.Service;
 
 interface
 
-uses  RadIA.Core.Interfaces, RadIA.Core.Types, RadIA.Core.Cache;
+uses
+  RadIA.Core.Interfaces, RadIA.Core.Types, RadIA.Core.Cache,
+  RadIA.Core.HierarchicalSettings;
 
 type
   { Orchestrator service to manage active provider instantiation }
@@ -16,13 +18,30 @@ type
       const ATrimmedHistory: TArray<IRadIAChatMessage>): TArray<IRadIAChatMessage>;
     function SerializeHistoryToJson(const AHistory: TArray<IRadIAChatMessage>): string;
     function ComputePromptHash(const APrompt: string;
-      const ATrimmedHistory: TArray<IRadIAChatMessage>; const ASystemPrompt: string): string;
+      const ATrimmedHistory: TArray<IRadIAChatMessage>;
+      const ASystemPrompt: string;
+      const AProviderId: string;
+      const AModelId: string
+    ): string;
     function IsLocalQuotaLimitReached: Boolean;
     procedure SetActiveProvider(const AProvider: IRadIAProvider);
     procedure ClearActiveProvider(const AProvider: IRadIAProvider);
     procedure ExecutePromptStreamTask(const APrompt: string;
       const AHistory: TArray<IRadIAChatMessage>; const AProfile: TAIRequestProfile;
-      const ACallback: TStreamChunkCallback);
+      const ACallback: TStreamChunkCallback;
+      const ASettings: TRadIAExecutionSettings);
+    function CreateProviderForSettings(
+      const ASettings: TRadIAExecutionSettings
+    ): IRadIAProvider;
+    procedure HandleStreamProviderChunk(
+      const AChunk: string;
+      const AIsDone: Boolean;
+      const AError: string;
+      const AProvider: IRadIAProvider;
+      const AHash: string;
+      var AAccumulator: string;
+      const ACallback: TStreamChunkCallback
+    );
   public
     constructor Create(const AConfig: IRadIAConfig);
     destructor Destroy; override;
@@ -38,6 +57,13 @@ type
       const ACallback: TCompletionCallback; const AProfile: TAIRequestProfile = rpGeneralChat);
     procedure SendPromptStream(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
       const ACallback: TStreamChunkCallback; const AProfile: TAIRequestProfile = rpGeneralChat);
+    procedure SendPromptStreamWithSettings(
+      const APrompt: string;
+      const AHistory: TArray<IRadIAChatMessage>;
+      const ACallback: TStreamChunkCallback;
+      const AProfile: TAIRequestProfile;
+      const ASettings: TRadIAExecutionSettings
+    );
     procedure CancelCurrentRequest;
     procedure ClearCache;
   end;
@@ -119,6 +145,25 @@ begin
     Result := TProviderRegistry.CreateProvider('WebViewBridge', FConfig)
   else
     Result := TProviderRegistry.CreateProvider(LProviderName, FConfig);
+end;
+
+function TRadIAService.CreateProviderForSettings(
+  const ASettings: TRadIAExecutionSettings
+): IRadIAProvider;
+var
+  LAwareProvider: IRadIAExecutionSettingsAwareProvider;
+  LProviderId: string;
+begin
+  if ASettings.HasProvider then
+    LProviderId := ASettings.ProviderId
+  else
+    LProviderId := FConfig.GetActiveProvider;
+  if FConfig.IsWebLoginProvider(LProviderId) then
+    Result := TProviderRegistry.CreateProvider('WebViewBridge', FConfig)
+  else
+    Result := TProviderRegistry.CreateProvider(LProviderId, FConfig);
+  if Supports(Result, IRadIAExecutionSettingsAwareProvider, LAwareProvider) then
+    LAwareProvider.ApplyExecutionSettings(ASettings);
 end;
 
 function TRadIAService.GetEffectiveSystemPrompt: string;
@@ -219,16 +264,22 @@ begin
 end;
 
 function TRadIAService.ComputePromptHash(const APrompt: string;
-  const ATrimmedHistory: TArray<IRadIAChatMessage>; const ASystemPrompt: string): string;
+  const ATrimmedHistory: TArray<IRadIAChatMessage>;
+  const ASystemPrompt: string;
+  const AProviderId: string;
+  const AModelId: string
+): string;
 var
-  LProviderName: string;
-  LModelName: string;
   LHistoryStr: string;
 begin
-  LProviderName := FConfig.GetActiveProvider;
-  LModelName    := FConfig.GetActiveModel(LProviderName);
   LHistoryStr   := SerializeHistoryToJson(ATrimmedHistory);
-  Result := TRadIACacheManager.GenerateHash(LProviderName, LModelName, ASystemPrompt, APrompt, LHistoryStr);
+  Result := TRadIACacheManager.GenerateHash(
+    AProviderId,
+    AModelId,
+    ASystemPrompt,
+    APrompt,
+    LHistoryStr
+  );
 end;
 
 function TRadIAService.IsLocalQuotaLimitReached: Boolean;
@@ -293,7 +344,13 @@ begin
 
           LSystemPrompt    := GetEffectiveSystemPrompt;
           LTrimmedHistory  := TrimHistory(AHistory);
-          LHash            := ComputePromptHash(APrompt, LTrimmedHistory, LSystemPrompt);
+          LHash := ComputePromptHash(
+            APrompt,
+            LTrimmedHistory,
+            LSystemPrompt,
+            LProvider.GetProviderId,
+            FConfig.GetActiveModel(LProvider.GetProviderId)
+          );
 
           { Query Cache }
           if FCacheManager.Get(LHash, LCachedResponse) then
@@ -347,7 +404,8 @@ end;
 
 procedure TRadIAService.ExecutePromptStreamTask(const APrompt: string;
   const AHistory: TArray<IRadIAChatMessage>; const AProfile: TAIRequestProfile;
-  const ACallback: TStreamChunkCallback);
+  const ACallback: TStreamChunkCallback;
+  const ASettings: TRadIAExecutionSettings);
 var
   LProvider: IRadIAProvider;
   LSystemPrompt: string;
@@ -359,19 +417,30 @@ var
   LTemperature: Double;
   LMaxTokens: Integer;
   LErrMsg: string;
+  LModelId: string;
 begin
   try
     System.Math.SetExceptionMask(System.Math.exAllArithmeticExceptions);
     try
-      LProvider       := CreateActiveProvider;
+      LProvider := CreateProviderForSettings(ASettings);
       SetActiveProvider(LProvider);
 
-      LogService('SendPromptStream: ActiveProvider=' + FConfig.GetActiveProvider +
-        ' Model=' + FConfig.GetActiveModel(FConfig.GetActiveProvider) +
+      if ASettings.HasModel then
+        LModelId := ASettings.ModelId
+      else
+        LModelId := FConfig.GetActiveModel(LProvider.GetProviderId);
+      LogService('SendPromptStream: ActiveProvider=' + LProvider.GetProviderId +
+        ' Model=' + LModelId +
         ' SmartConfig=' + BoolToStr(FConfig.SmartConfigEnabled, True));
       LSystemPrompt   := GetEffectiveSystemPrompt;
       LTrimmedHistory := TrimHistory(AHistory);
-      LHash           := ComputePromptHash(APrompt, LTrimmedHistory, LSystemPrompt);
+      LHash := ComputePromptHash(
+        APrompt,
+        LTrimmedHistory,
+        LSystemPrompt,
+        LProvider.GetProviderId,
+        LModelId
+      );
 
       { R2 FIX: Check cache before streaming }
       if FCacheManager.Get(LHash, LCachedResponse) then
@@ -394,32 +463,23 @@ begin
 
       { Resolve parameters based on config and profile }
       ResolveParameters(LProvider.GetProviderId, AProfile, LTemperature, LMaxTokens);
+      if ASettings.HasMaxTokens then
+        LMaxTokens := ASettings.MaxTokens;
       LogService(Format('SendPromptStream: Params resolved: Temp=%0.2f MaxTokens=%d', [LTemperature, LMaxTokens]));
 
       { R2 FIX: Wrap callback to accumulate chunks and persist to cache on completion }
       LProvider.SendPromptStreamAsync(APrompt, LHistory,
         procedure(const AChunk: string; const AIsDone: Boolean; const AError: string)
         begin
-          LogService(Format('SendPromptStream Callback: ChunkLen=%d IsDone=%s Error="%s"',
-            [Length(AChunk), BoolToStr(AIsDone, True), AError]));
-          if AError.IsEmpty then
-          begin
-            if not AChunk.IsEmpty then
-              LAccumulator := LAccumulator + AChunk;
-            if AIsDone and not LAccumulator.IsEmpty then
-              FCacheManager.Put(LHash, LAccumulator);
-          end;
-
-          if AIsDone or (not AError.IsEmpty) then
-          begin
-            ClearActiveProvider(LProvider);
-          end;
-
-          TThread.Queue(nil,
-            procedure
-            begin
-              ACallback(AChunk, AIsDone, AError);
-            end);
+          HandleStreamProviderChunk(
+            AChunk,
+            AIsDone,
+            AError,
+            LProvider,
+            LHash,
+            LAccumulator,
+            ACallback
+          );
         end, LTemperature, LMaxTokens);
     except
       on E: Exception do
@@ -442,6 +502,55 @@ end;
 procedure TRadIAService.SendPromptStream(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
   const ACallback: TStreamChunkCallback; const AProfile: TAIRequestProfile);
 begin
+  SendPromptStreamWithSettings(
+    APrompt,
+    AHistory,
+    ACallback,
+    AProfile,
+    TRadIAExecutionSettings.Empty
+  );
+end;
+
+procedure TRadIAService.HandleStreamProviderChunk(
+  const AChunk: string;
+  const AIsDone: Boolean;
+  const AError: string;
+  const AProvider: IRadIAProvider;
+  const AHash: string;
+  var AAccumulator: string;
+  const ACallback: TStreamChunkCallback
+);
+begin
+  LogService(Format(
+    'SendPromptStream Callback: ChunkLen=%d IsDone=%s Error="%s"',
+    [Length(AChunk), BoolToStr(AIsDone, True), AError]
+  ));
+  if AError.IsEmpty then
+  begin
+    if not AChunk.IsEmpty then
+      AAccumulator := AAccumulator + AChunk;
+    if AIsDone and not AAccumulator.IsEmpty then
+      FCacheManager.Put(AHash, AAccumulator);
+  end;
+  if AIsDone or not AError.IsEmpty then
+    ClearActiveProvider(AProvider);
+  TThread.Queue(
+    nil,
+    procedure
+    begin
+      ACallback(AChunk, AIsDone, AError);
+    end
+  );
+end;
+
+procedure TRadIAService.SendPromptStreamWithSettings(
+  const APrompt: string;
+  const AHistory: TArray<IRadIAChatMessage>;
+  const ACallback: TStreamChunkCallback;
+  const AProfile: TAIRequestProfile;
+  const ASettings: TRadIAExecutionSettings
+);
+begin
   if IsLocalQuotaLimitReached then
   begin
     ACallback('', True, 'Local monthly token quota exceeded.');
@@ -452,7 +561,13 @@ begin
   TTask.Run(
     procedure
     begin
-      ExecutePromptStreamTask(APrompt, AHistory, AProfile, ACallback);
+      ExecutePromptStreamTask(
+        APrompt,
+        AHistory,
+        AProfile,
+        ACallback,
+        ASettings
+      );
     end);
 end;
 

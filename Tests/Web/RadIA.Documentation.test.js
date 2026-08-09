@@ -211,6 +211,35 @@ test('diagnostic commands are discoverable and clearly separated', () => {
   );
 });
 
+test('scoped execution settings document precedence, safety, UI, and recovery', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'hierarchical_settings.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'hierarchical_settings.en.md'),
+    'utf8'
+  );
+  const commands = fs.readFileSync(
+    path.join(documentationRoot, 'slash_commands.md'),
+    'utf8'
+  );
+  const hub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+
+  assert.match(portuguese, /próxima solicitação;[\s\S]*sessão de chat atual;[\s\S]*projeto ativo/u);
+  assert.match(portuguese, /Settings > Scope/u);
+  assert.match(portuguese, /Restore all inheritance/u);
+  assert.match(portuguese, /Export\s+scope\.\.\./u);
+  assert.match(portuguese, /A exportação nunca é automática/u);
+  assert.match(portuguese, /%APPDATA%\\RadIA\\settings\\scopes/u);
+  assert.match(portuguese, /não o sobrescreve/u);
+  assert.match(portuguese, /Credenciais, tokens e segredos não podem ser substituídos/u);
+  assert.match(english, /Next-request overrides remain only in memory/u);
+  assert.match(commands, /`\/scope <nível> inherit <campo>`/u);
+  assert.match(commands, /`\/status settings`/u);
+  assert.match(hub, /hierarchical_settings\.md/u);
+});
+
 test('primary documentation entry points expose task-oriented navigation', () => {
   const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
   const documentationHub = fs.readFileSync(

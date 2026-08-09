@@ -36,6 +36,10 @@ type
     procedure CorruptedFilesAreNeverOverwritten;
     [Test]
     procedure ScopeFileNamesAreHashedAndLeaveNoTemporaryFile;
+    [Test]
+    procedure EditorUpdatesTypedFieldsAndAliases;
+    [Test]
+    procedure EditorRejectsInvalidValuesAndClearsInheritance;
   end;
 
 implementation
@@ -188,6 +192,57 @@ begin
   Assert.AreEqual('project', TRadIAExecutionSettingsResolver.OriginName(rsoProject));
   Assert.AreEqual('session', TRadIAExecutionSettingsResolver.OriginName(rsoSession));
   Assert.AreEqual('request', TRadIAExecutionSettingsResolver.OriginName(rsoRequest));
+end;
+
+procedure TRadIAHierarchicalSettingsTests.EditorUpdatesTypedFieldsAndAliases;
+var
+  LError: string;
+  LField: TRadIAExecutionSettingField;
+  LUpdated: TRadIAExecutionSettings;
+begin
+  Assert.IsTrue(TRadIAExecutionSettingsEditor.TryParseField('timeoutMs', LField));
+  Assert.AreEqual(resfTimeoutMs, LField);
+  Assert.IsTrue(TRadIAExecutionSettingsEditor.TryUpdate(
+    TRadIAExecutionSettings.Empty,
+    LField,
+    '45000',
+    LUpdated,
+    LError
+  ));
+  Assert.AreEqual(45000, LUpdated.TimeoutMs);
+  Assert.IsEmpty(LError);
+
+  Assert.IsTrue(TRadIAExecutionSettingsEditor.TryParseField('token-budget', LField));
+  Assert.IsTrue(TRadIAExecutionSettingsEditor.TryUpdate(
+    LUpdated,
+    LField,
+    '9000',
+    LUpdated,
+    LError
+  ));
+  Assert.AreEqual(Int64(9000), LUpdated.TokenBudget);
+end;
+
+procedure TRadIAHierarchicalSettingsTests.
+  EditorRejectsInvalidValuesAndClearsInheritance;
+var
+  LError: string;
+  LUpdated: TRadIAExecutionSettings;
+begin
+  Assert.IsFalse(TRadIAExecutionSettingsEditor.TryUpdate(
+    Settings('OpenAI', 'model', 'native', 1000, 30000, 5000),
+    resfTimeoutMs,
+    'invalid',
+    LUpdated,
+    LError
+  ));
+  Assert.Contains(LError, 'positive integer');
+  LUpdated := TRadIAExecutionSettingsEditor.Clear(
+    Settings('OpenAI', 'model', 'native', 1000, 30000, 5000),
+    resfProvider
+  );
+  Assert.IsFalse(LUpdated.HasProvider);
+  Assert.IsTrue(LUpdated.HasModel);
 end;
 
 procedure TRadIAHierarchicalSettingsTests.

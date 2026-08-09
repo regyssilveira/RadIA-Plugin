@@ -183,6 +183,20 @@ Para requisitos, autenticação e limitações de WSL, consulte
 [Orquestração nativa e executores por CLI](cli_executors.md). Para formatos e descoberta, consulte
 [Integração MCP](mcp_integration_guide.md).
 
+## Configurações efetivas por escopo
+
+O botão **Settings > Scope** fica no compositor do chat, não na janela global de opções. Ele permite
+substituir provider, modelo, executor, máximo de tokens, timeout e orçamento do agente para o projeto
+ativo, a sessão atual ou somente a próxima solicitação. Cada linha mostra **Source**, **Apply** e
+**Inherit**; **Restore all inheritance** limpa o nível selecionado. Credenciais continuam globais.
+**Export scope...** grava, somente após escolha explícita do usuário, um JSON sanitizado do projeto
+ou da sessão; o caminho do projeto e segredos não são incluídos.
+
+Os mesmos controles estão disponíveis por `/scope`, e `/status settings` confere o resultado. A
+lista de modelos e a rota efetiva são atualizadas sem reiniciar o Delphi. Consulte
+[Configurações por projeto, sessão e solicitação](hierarchical_settings.md) para precedência,
+formatos, persistência e recuperação.
+
 ## Memory Diagnostics
 
 | Opção | Quando alterar | Efeito e cuidados |
@@ -223,4 +237,5 @@ temporárias; para tarefas pontuais, use a mensagem do chat ou um template.
 | Todas as capacidades | [Mapa de capacidades](capabilities.md) |
 | Ferramentas e consentimento | [Guia das ferramentas agentivas](user_guide_agentic_tools.md) |
 | Comandos do chat | [Comandos de barra](slash_commands.md) |
+| Configurações por projeto, sessão ou solicitação | [Configurações por escopo](hierarchical_settings.md) |
 | Erros e recuperação | [Solução de problemas](troubleshooting_agentic_platform.md) |

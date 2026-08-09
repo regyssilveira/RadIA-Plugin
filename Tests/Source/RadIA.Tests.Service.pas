@@ -196,6 +196,8 @@ type
     [Test]
     procedure TestSendPromptStream_CacheHit;
     [Test]
+    procedure TestScopedStreamUsesEffectiveProviderModelAndLimits;
+    [Test]
     procedure TestCancelCurrentRequest;
   end;
 
@@ -235,12 +237,16 @@ type
 implementation
 
 uses
+  RadIA.Core.HierarchicalSettings,
   System.SysUtils, System.Classes, System.Net.URLClient, RadIA.Core.Types, RadIA.Core.Service, RadIA.Core.ChatMessage,
       RadIA.Core.Config, RadIA.Core.ProviderRegistry, RadIA.Core.SettingsStorage, RadIA.Core.Container;
 
 type
   TMockHttpClient = class(TInterfacedObject, IRadIAHttpClient)
   private
+    FLastRequestBody: string;
+    FLastTimeoutMs: Integer;
+    FLastUrl: string;
     FResponseStr: string;
     FStreamChunks: TArray<string>;
   public
@@ -251,6 +257,9 @@ type
     procedure PostStream(const AUrl: string; const AHeaders: TNetHeaders; const ARequestBody: string;
       const AOnWrite: TProc<TBytes>; const ATimeoutMs: Integer = 0);
     procedure Cancel;
+    property LastRequestBody: string read FLastRequestBody;
+    property LastTimeoutMs: Integer read FLastTimeoutMs;
+    property LastUrl: string read FLastUrl;
   end;
 
 { TMockHttpClient }
@@ -264,12 +273,17 @@ end;
 
 function TMockHttpClient.Get(const AUrl: string; const AHeaders: TNetHeaders; const ATimeoutMs: Integer): string;
 begin
+  FLastUrl := AUrl;
+  FLastTimeoutMs := ATimeoutMs;
   Result := FResponseStr;
 end;
 
 function TMockHttpClient.Post(const AUrl: string; const AHeaders: TNetHeaders;
   const ARequestBody: string; const ATimeoutMs: Integer): string;
 begin
+  FLastUrl := AUrl;
+  FLastRequestBody := ARequestBody;
+  FLastTimeoutMs := ATimeoutMs;
   Result := FResponseStr;
 end;
 
@@ -279,6 +293,9 @@ var
   LChunk: string;
   LBytes: TBytes;
 begin
+  FLastUrl := AUrl;
+  FLastRequestBody := ARequestBody;
+  FLastTimeoutMs := ATimeoutMs;
   for LChunk in FStreamChunks do
   begin
     LBytes := TEncoding.UTF8.GetBytes(LChunk);
@@ -1459,6 +1476,79 @@ begin
     Assert.IsTrue(LFinished, 'Stream request timed out');
     Assert.AreEqual('Hello Stream', LText);
     Assert.IsEmpty(LError);
+  finally
+    LService.Free;
+    TRadIAContainer.Register<IRadIAHttpClient>(nil);
+  end;
+end;
+
+procedure TTestRadIAService.
+  TestScopedStreamUsesEffectiveProviderModelAndLimits;
+var
+  LConfig: IRadIAConfig;
+  LError: string;
+  LFinished: Boolean;
+  LMockClient: TMockHttpClient;
+  LService: TRadIAService;
+  LSettings: TRadIAExecutionSettings;
+  LTimeout: Integer;
+begin
+  LConfig := TMockConfig.Create(5);
+  LConfig.SetActiveProvider('DeepSeek');
+  LConfig.SetApiKey('Groq', 'dummy-key');
+  LConfig.SetActiveModel('Groq', 'global-model');
+  LConfig.SetTimeout('Groq', 60);
+  LMockClient := TMockHttpClient.Create('', [
+    'data: {"choices":[{"delta":{"content":"Scoped"}}]}' + #10,
+    'data: [DONE]' + #10
+  ]);
+  TRadIAContainer.Register<IRadIAHttpClient>(
+    LMockClient as IRadIAHttpClient
+  );
+  LService := TRadIAService.Create(LConfig);
+  LSettings := TRadIAExecutionSettings.Create(
+    'Groq',
+    'scoped-model',
+    'native',
+    3333,
+    43210,
+    -1
+  );
+  LFinished := False;
+  LError := '';
+  try
+    LService.SendPromptStreamWithSettings(
+      'Use scoped settings',
+      [],
+      procedure(
+        const AChunk: string;
+        const AIsDone: Boolean;
+        const AError: string
+      )
+      begin
+        LError := AError;
+        if AIsDone then
+          LFinished := True;
+      end,
+      rpGeneralChat,
+      LSettings
+    );
+    LTimeout := 0;
+    while (not LFinished) and (LTimeout < 2000) do
+    begin
+      Sleep(10);
+      Inc(LTimeout, 10);
+      System.Classes.CheckSynchronize(10);
+    end;
+
+    Assert.IsTrue(LFinished, 'Scoped stream request timed out');
+    Assert.IsEmpty(LError);
+    Assert.Contains(LMockClient.LastUrl, 'groq.com');
+    Assert.Contains(LMockClient.LastRequestBody, '"model":"scoped-model"');
+    Assert.Contains(LMockClient.LastRequestBody, '"max_tokens":3333');
+    Assert.AreEqual(43210, LMockClient.LastTimeoutMs);
+    Assert.AreEqual('DeepSeek', LConfig.GetActiveProvider);
+    Assert.AreEqual('global-model', LConfig.GetActiveModel('Groq'));
   finally
     LService.Free;
     TRadIAContainer.Register<IRadIAHttpClient>(nil);

@@ -109,7 +109,15 @@
           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
           <path
-            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06
+              a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+              A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83
+              l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+              A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83
+              l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+              a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83
+              l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+              a1.65 1.65 0 0 0-1.51 1z">
           </path>
         </svg>
         <span class="btn-label">Settings</span>
@@ -188,6 +196,12 @@
               aria-label="Toggle shared journey context">
               <span class="composer-control-label">Journey</span>
               <span class="btn-label">Link</span>
+            </button>
+            <button type="button" class="composer-mode-toggle" id="btn-execution-scope"
+              title="Inspect or override provider, model, executor, and limits by project, session, or request"
+              aria-label="Open execution settings scopes">
+              <span class="composer-control-label">Settings</span>
+              <span class="btn-label">Scope</span>
             </button>
             <output id="composer-route" class="composer-route" aria-live="polite"
               title="Credential and model for the next message">Auth: Native</output>
@@ -297,6 +311,37 @@
       </main>
     </div>
   </div>
+
+  <dialog id="execution-scope-dialog" class="execution-scope-dialog"
+    aria-labelledby="execution-scope-title">
+    <form method="dialog" class="execution-scope-shell">
+      <header class="execution-scope-header">
+        <div>
+          <h2 id="execution-scope-title">Execution settings</h2>
+          <p>Override only what this project, chat session, or next request needs.</p>
+        </div>
+        <button value="close" class="execution-scope-close" title="Close execution settings"
+          aria-label="Close execution settings">&times;</button>
+      </header>
+      <label class="execution-scope-selector" for="execution-scope-kind">
+        Save changes for
+        <select id="execution-scope-kind">
+          <option value="project">Active project</option>
+          <option value="session">Current chat session</option>
+          <option value="request">Next request only</option>
+        </select>
+      </label>
+      <p class="execution-scope-note" id="execution-scope-note" aria-live="polite"></p>
+      <div id="execution-scope-fields" class="execution-scope-fields"></div>
+      <footer class="execution-scope-footer">
+        <button type="button" id="btn-export-execution-scope"
+          title="Export only the selected scope settings to a sanitized JSON file">Export scope...</button>
+        <button type="button" id="btn-clear-execution-scope"
+          title="Remove every override from the selected scope">Restore all inheritance</button>
+        <button value="close" title="Close and keep the displayed execution settings">Done</button>
+      </footer>
+    </form>
+  </dialog>
 
   <script src="chat-bridge.js"></script>
   <script src="RadIA.UI.AgentDiff.js"></script>

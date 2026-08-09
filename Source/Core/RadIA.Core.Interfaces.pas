@@ -4,7 +4,8 @@ interface
 
 uses
   System.SysUtils, System.Net.URLClient,
-  RadIA.Core.Types, RadIA.Core.TokenUsage;
+  RadIA.Core.Types, RadIA.Core.TokenUsage,
+  RadIA.Core.HierarchicalSettings;
 
 type
   IRadIALifecycleGuard = interface
@@ -257,6 +258,13 @@ type
       const ACallback: TCompletionCallback; const AProfile: TAIRequestProfile = rpGeneralChat);
     procedure SendPromptStream(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
       const ACallback: TStreamChunkCallback; const AProfile: TAIRequestProfile = rpGeneralChat);
+    procedure SendPromptStreamWithSettings(
+      const APrompt: string;
+      const AHistory: TArray<IRadIAChatMessage>;
+      const ACallback: TStreamChunkCallback;
+      const AProfile: TAIRequestProfile;
+      const ASettings: TRadIAExecutionSettings
+    );
     procedure CancelCurrentRequest;
     procedure ClearCache;
   end;

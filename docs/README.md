@@ -13,6 +13,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Instalar no Delphi 12 ou 13 | [Instalação e configuração](install_config.md) | [Primeiros passos](onboarding.md) |
 | Conhecer tudo que está disponível | [Mapa de capacidades](capabilities.md) | [Manual do usuário](user_manual.md) |
 | Configurar provider, agente ou CLI | [Instalação e configuração](install_config.md) | [Executores nativo e CLI](cli_executors.md) |
+| Usar configurações diferentes por projeto ou conversa | [Configurações por escopo](hierarchical_settings.md) | [Comandos de barra](slash_commands.md) |
 | Entender cada aba de configurações | [Mapa das configurações](user_manual.md#24-mapa-das-configurações) | [Modelo de segurança](tool_security_model.md) |
 | Consultar um campo ou botão específico | [Referência completa das configurações](settings_reference.md) | [Solução de problemas](troubleshooting_agentic_platform.md) |
 | Usar o chat no dia a dia | [Chat e sessões](user_guide_chat_sessions.md) | [Comandos de barra](slash_commands.md) |
@@ -44,6 +45,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Entender o agente nativo e executores externos | [Executores nativo e CLI](cli_executors.md) |
 | Consultar capacidades e retomada dos CLIs | [Matriz contratual dos CLIs](cli_capability_matrix.md) |
 | Ver o estado configurado do RadIA | [Doctor, status, health e tools](slash_commands.md#qual-diagnóstico-usar) |
+| Entender valor efetivo, origem e herança | [Configurações por projeto, sessão e solicitação](hierarchical_settings.md) |
 | Ver todas as ferramentas disponíveis | [Catálogo das 126 ferramentas](runtime_tool_catalog.md) |
 | Entender cada ferramenta e quando ela é acionada | [Referência operacional](internal_tools_reference.md) |
 | Entender consentimento, riscos e auditoria | [Modelo de segurança](tool_security_model.md) |

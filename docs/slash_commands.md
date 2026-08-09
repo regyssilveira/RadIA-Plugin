@@ -29,6 +29,11 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/doctor` | Diagnostica a instalação e recomenda a próxima ação. | Provider, executor, MCP condicional, terminal, chat e primeira tool. |
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
+| `/status settings` | Mostra provider, modelo, executor e limites efetivos com a origem de cada valor. | Projeto, sessão e próxima solicitação. |
+| `/scope` | Mostra configurações efetivas e a precedência aplicada. | Equivale ao botão **Settings > Scope**. |
+| `/scope <nível> <campo> <valor>` | Cria um override em `project`, `session` ou `request`. | Nunca altera credenciais. |
+| `/scope <nível> inherit <campo>` | Remove o override de um campo e restaura sua herança. | Mantém os demais campos. |
+| `/scope <nível> clear` | Remove todos os overrides do nível. | Mantém a configuração global. |
 | `/cli session` | Mostra se a conversa atual está vinculada a uma sessão de CLI retomável. | Conversa, executor e projeto atuais. |
 | `/cli new` | Desvincula a sessão externa; a próxima solicitação inicia uma conversa nova no CLI. | Conversa ativa; não apaga dados no fornecedor. |
 | `/context` | Mostra ou vincula a jornada compartilhada por chat, terminal e editor. | Conversa e projeto ativos. |
@@ -73,7 +78,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 |---|---|---|
 | Descobrir por que o RadIA não está pronto | `/doctor` | Seis verificações, problemas, recomendações e próxima ação. |
 | Conferir o que está configurado e disponível | `/status` | Todas as áreas, sem chaves, tokens ou payloads sensíveis. |
-| Investigar somente uma área | `/status cli`, `/status mcp`, `/status provider` | Apenas a seção solicitada. Também aceita `agent`, `security`, `editor`, `project`, `tools` e `logging`. |
+| Investigar somente uma área | `/status cli`, `/status mcp`, `/status provider` | Apenas a seção solicitada. Também aceita `agent`, `security`, `editor`, `project`, `tools`, `logging` e `settings`. |
 | Copiar ou analisar a estrutura completa | `/status --json` | Estado completo no formato estruturado retornado pela tool. |
 | Avaliar o projeto Delphi aberto | `/health` | Score e riscos do projeto, build, testes, compilador e conhecimento local. |
 | Descobrir ferramentas executáveis | `/tools` | Catálogo efetivo da instância atual da IDE. |
@@ -86,11 +91,14 @@ configurado agora?”. Caminhos de executáveis podem aparecer, mas credenciais 
 O Rad IA permite que você edite, exclua ou adicione novos comandos e templates de prompts diretamente nas opções do plugin na IDE (`Tools -> Options -> Rad IA -> Templates`).
 
 Os comandos da família `/agent`, além de `/terminal`, `/settings`, `/extensions`, `/health`,
-`/doctor`, `/status`, `/tools`,
+`/doctor`, `/status`, `/scope`, `/tools`,
 `/tool`, `/revoke-tools` e
 `/extensions reload`, são
 internos e não podem ser substituídos por templates. Consulte o [Manual Completo do RadIA](user_manual.md) para
 exemplos.
+
+Consulte [Configurações por projeto, sessão e solicitação](hierarchical_settings.md) para a
+precedência completa, os campos aceitos, a persistência e os exemplos de recuperação.
 
 Extensões declarativas podem acrescentar comandos próprios sem recompilar ou reiniciar a IDE.
 Consulte [Extensões declarativas](declarative_extensions.md).

@@ -99,6 +99,7 @@ uses
   RadIA.Core.InlineReviews, RadIA.Core.InlineReviewTools,
   RadIA.Core.InlineCompletion,
   RadIA.Core.JourneyContext,
+  RadIA.Core.HierarchicalSettingsStore,
   RadIA.Core.IDENavigation, RadIA.Core.IDENavigationTools,
   RadIA.Core.Knowledge, RadIA.Core.KnowledgeEmbeddings,
   RadIA.Core.KnowledgeEmbeddingSelection,
@@ -839,6 +840,9 @@ initialization
   TRadIAContainer.Register<IRadIAEditorAdapter>(TRadIAOTAEditorAdapter.Create);
   TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(
     TRadIAJourneyContextCoordinator.Create
+  );
+  TRadIAContainer.Register<IRadIAHierarchicalSettingsStore>(
+    TRadIAJsonHierarchicalSettingsStore.Create
   );
   TRadIAContainer.Register<IRadIAToolRegistry>(TRadIAToolRegistry.Create);
   TRadIAContainer.Register<IRadIAResultCompactor>(

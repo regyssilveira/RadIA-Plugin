@@ -25,6 +25,7 @@ This page is the functional map of RadIA 2.3.1.
 | Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
 | Installation doctor | Score provider, executor, conditional MCP, terminal, chat, and first-tool readiness with a next action. |
 | RadIA status | Show a sanitized, filterable inventory of provider, agent, CLI, MCP, security, editor, project, tools, and logging state. |
+| Scoped settings | Resolve provider, model, executor, and limits by request, session, project, global value, and safe default, with visible sources and inheritance controls. |
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints, resource limits, and internal DUnitX/Git diff result compaction. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
 | Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |
@@ -47,6 +48,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 - [Complete user manual](user_manual.en.md)
 - [Feature catalog](features.en.md)
 - [Agent result compaction](agent_result_compaction.en.md)
+- [Project, session, and request settings](hierarchical_settings.en.md)
 - [Documentation center](README.en.md)
 
 The active IDE is authoritative: use `/tools` in chat or `tools/list` over MCP because context and

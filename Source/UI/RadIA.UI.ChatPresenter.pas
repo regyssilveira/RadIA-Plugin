@@ -12,7 +12,9 @@ uses
   RadIA.Core.AgentProvider,
   RadIA.Core.AgentExecutors, RadIA.Core.CliManager, RadIA.Core.CliProcess,
   RadIA.Core.Journeys, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
-  RadIA.Core.Workspace, RadIA.Core.JourneyContext;
+  RadIA.Core.Workspace, RadIA.Core.JourneyContext,
+  RadIA.Core.HierarchicalSettings,
+  RadIA.Core.HierarchicalSettingsStore;
 
 type
   IRadIAChatView = interface
@@ -87,6 +89,10 @@ type
     FToolPolicyExecutor: IRadIAToolPolicyExecutor;
     FWorkspace: IRadIAWorkspaceFacade;
     FJourneyContext: IRadIAJourneyContextCoordinator;
+    FHierarchicalSettingsStore: IRadIAHierarchicalSettingsStore;
+    FPendingRequestSettings: TRadIAExecutionSettings;
+    FPendingRequestConversationId: string;
+    FPendingRequestProjectId: string;
     FAgentModeEnabled: Boolean;
     FAgentController: IRadIAAgentRunController;
     FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
@@ -151,6 +157,10 @@ type
       const AAction: string;
       const AJson: TJSONObject
     ): Boolean;
+    function TryDispatchExecutionScopeInteraction(
+      const AAction: string;
+      const AJson: TJSONObject
+    ): Boolean;
     procedure DispatchWebMessage(const AAction: string; const AJson: TJSONObject);
     function CheckQuotaAvailability: Boolean;
     function DetermineRequestProfile(const APromptText: string): TAIRequestProfile;
@@ -176,6 +186,11 @@ type
     procedure SetAgentExecutor(const AExecutorId: string);
     procedure PostAgentModeToWeb;
     procedure PostExecutionRouteToWeb;
+    procedure PostExecutionScopeToWeb;
+    procedure HandleExecutionScopeAction(
+      const AJson: TJSONObject
+    );
+    procedure ExportExecutionScope(const AScopeName: string);
     procedure ResolveExecutionRoute(
       const AProvider: string;
       const AAuthType: string;
@@ -194,6 +209,9 @@ type
     ): string;
     function BuildExecutionRouteJson: TJSONObject;
     function GetAgentTokenLimit: Integer;
+    function ResolveScopedAgentTokenLimit(
+      const ASettings: TRadIAResolvedExecutionSettings
+    ): Integer;
     procedure ResolveAgentRuntimeSettings(
       const AProvider: string;
       const AModel: string;
@@ -202,7 +220,10 @@ type
       out ALimits: TRadIAAgentLimits
     );
     procedure StartAgentRun(const AObjective: string);
-    function TryStartCliAgentRun(const AObjective: string): Boolean;
+    function TryStartCliAgentRun(
+      const AObjective: string;
+      const ASettings: TRadIAResolvedExecutionSettings
+    ): Boolean;
     procedure HandleCliAgentFinished(
       const AResult: TRadIACliProcessResult;
       const ADefinition: TRadIACliDefinition;
@@ -263,6 +284,28 @@ type
     procedure PostJourneyContextStatus;
     procedure ToggleJourneyContext;
     procedure CompleteJourneyActivity;
+    function BuildGlobalExecutionSettings: TRadIAExecutionSettings;
+    function ResolveEffectiveExecutionSettings:
+      TRadIAResolvedExecutionSettings;
+    procedure ResetPendingRequestSettings;
+    function BuildExecutionSettingsStatus(
+      const ASettings: TRadIAResolvedExecutionSettings
+    ): string;
+    function TryHandleScopeCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
+    function TryUpdateScopeSettings(
+      const AScopeName: string;
+      const AFieldName: string;
+      const AValue: string;
+      out AError: string
+    ): Boolean;
+    function TryClearScopeSettings(
+      const AScopeName: string;
+      const AFieldName: string;
+      out AError: string
+    ): Boolean;
     function TryHandleJourneyContextCommand(
       const APromptText: string;
       const ACommandText: string
@@ -396,6 +439,7 @@ uses
   RadIA.Core.AgentResultStore,
   RadIA.Core.ResultCompactionSettings,
   RadIA.Core.ResultCompactor,
+  RadIA.Core.ConfigDefaults,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
 { Helper Functions }
@@ -454,6 +498,7 @@ begin
   FLoginPopupOpen := False;
   FAgentModeEnabled := True;
   FAgentExecutorSettings := TRadIAAgentExecutorSettingsStore.Create;
+  ResetPendingRequestSettings;
   ResetPendingJourney;
 
   // WebViewBridge events removed
@@ -498,6 +543,9 @@ begin
   TRadIAContainer.TryResolve<IRadIAWorkspaceFacade>(FWorkspace);
   TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
     FJourneyContext
+  );
+  TRadIAContainer.TryResolve<IRadIAHierarchicalSettingsStore>(
+    FHierarchicalSettingsStore
   );
 
   if ADataDir.IsEmpty then
@@ -666,6 +714,7 @@ end;
 procedure TRadIAChatPresenter.HandleUpdateModelsComboResult(AModels: TArray<string>; AProvider: IRadIAProvider);
 var
   LActiveModel: string;
+  LEffective: TRadIAResolvedExecutionSettings;
   LModelState: TRadIAModelSelectionState;
   LProvId: string;
 begin
@@ -681,13 +730,17 @@ begin
   begin
     Self.FActiveModels := AModels;
     LProvId := AProvider.GetProviderId;
-    LActiveModel := Self.FConfig.GetActiveModel(LProvId);
+    LEffective := ResolveEffectiveExecutionSettings;
+    LActiveModel := LEffective.Values.ModelId;
 
     if (Length(AModels) > 0) and (LActiveModel.IsEmpty or (IndexOfString(AModels, LActiveModel) = -1)) then
     begin
       LActiveModel := AModels[0];
-      Self.FConfig.SetActiveModel(LProvId, LActiveModel);
-      Self.FConfig.Save;
+      if LEffective.ModelOrigin = rsoGlobal then
+      begin
+        Self.FConfig.SetActiveModel(LProvId, LActiveModel);
+        Self.FConfig.Save;
+      end;
     end;
 
     Self.FView.UpdateModels(AModels, LActiveModel, True);
@@ -778,7 +831,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..22] of string = (
+  CNativeCommands: array[0..23] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -801,7 +854,8 @@ const
     '/context',
     '/context new',
     '/context detach',
-    '/context switch'
+    '/context switch',
+    '/scope'
   );
 var
   LCommand: string;
@@ -1063,6 +1117,11 @@ begin
     'Switch Journey Context'
   );
   AddCommand(
+    '/scope',
+    'Shows effective execution settings, their sources, and override commands.',
+    'Execution Settings Scope'
+  );
+  AddCommand(
     '/revoke-tools',
     'Revokes all IDE tool permissions granted for this session.',
     'Revoke Tool Permissions'
@@ -1092,6 +1151,8 @@ begin
     '- **Agent:** use `/agent on`, `/agent run <goal>`, pause, resume, inspect, or cancel observable runs.' +
     sLineBreak +
     '- **Project diagnostics:** use `/health`, `/doctor`, and `/status`.' + sLineBreak +
+    '- **Scoped execution:** use `/scope` to inspect or override provider, model, executor, and ' +
+      'limits by project, session, or next request.' + sLineBreak +
     '- **CLI, MCP, and providers:** open `/settings` to discover executables, authenticate, and choose ' +
     'native, CLI, or MCP execution.' + sLineBreak +
     '- **Tools and extensions:** use `/tools` and `/extensions`.' + sLineBreak + sLineBreak +
@@ -1100,7 +1161,8 @@ begin
     '- [Slash commands](' + CDocsRoot + 'slash_commands.md)' + sLineBreak +
     '- [Journeys](' + CDocsRoot + 'user_guide_journeys.md)' + sLineBreak +
     '- [DEXT journeys](' + CDocsRoot + 'user_guide_dext_journeys.md)' + sLineBreak +
-    '- [Settings reference](' + CDocsRoot + 'settings_reference.md)';
+    '- [Settings reference](' + CDocsRoot + 'settings_reference.md)' + sLineBreak +
+    '- [Scoped execution settings](' + CDocsRoot + 'hierarchical_settings.md)';
 end;
 
 function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;
@@ -1140,6 +1202,8 @@ begin
 end;
 procedure TRadIAChatPresenter.UpdateModelsCombo;
 var
+  LAwareProvider: IRadIAExecutionSettingsAwareProvider;
+  LEffective: TRadIAResolvedExecutionSettings;
   LModelState: TRadIAModelSelectionState;
   LProvider: IRadIAProvider;
   LGuard: IRadIALifecycleGuard;
@@ -1169,7 +1233,20 @@ begin
 
     FView.UpdateModels(['Loading...'], 'Loading...', False);
 
-    FModelsProvider := FAIService.CreateActiveProvider;
+    LEffective := ResolveEffectiveExecutionSettings;
+    if FConfig.IsWebLoginProvider(LEffective.Values.ProviderId) then
+      FModelsProvider := TProviderRegistry.CreateProvider('WebViewBridge', FConfig)
+    else
+      FModelsProvider := TProviderRegistry.CreateProvider(
+        LEffective.Values.ProviderId,
+        FConfig
+      );
+    if Supports(
+      FModelsProvider,
+      IRadIAExecutionSettingsAwareProvider,
+      LAwareProvider
+    ) then
+      LAwareProvider.ApplyExecutionSettings(LEffective.Values);
     LProvider := FModelsProvider;
     LProvider.FetchAvailableModelsAsync(
       procedure(AModels: TArray<string>; AError: string)
@@ -1467,6 +1544,7 @@ end;
 
 procedure TRadIAChatPresenter.SendPromptText(const APromptText: string);
 var
+  LEffectiveSettings: TRadIAResolvedExecutionSettings;
   LProcessed: string;
 begin
   if TryHandleToolPrompt(APromptText) then
@@ -1480,7 +1558,8 @@ begin
     StartAgentRun(LProcessed);
     Exit;
   end;
-  if TryStartCliAgentRun(LProcessed) then
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  if TryStartCliAgentRun(LProcessed, LEffectiveSettings) then
     Exit;
   SendPromptToAI(LProcessed);
 end;
@@ -1734,6 +1813,7 @@ var
   LFullResponse: string;
   LProfile: TAIRequestProfile;
   LDoneHandled: Boolean;
+  LEffectiveSettings: TRadIAResolvedExecutionSettings;
   LActiveProvider: string;
   LActiveModel: string;
   LSessionId: string;
@@ -1743,7 +1823,8 @@ begin
   { Settings can persist OAuth credentials even when its modal dialog is closed
     without OK. Reload before every native request to avoid stale credentials. }
   FConfig.Load;
-  LActiveProvider := FConfig.GetActiveProvider;
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  LActiveProvider := LEffectiveSettings.Values.ProviderId;
   if SameText(LActiveProvider, 'Gemini') and SameText(FConfig.GetProviderAuthType('Gemini'), 'oauth') then
   begin
     FView.ShowMessageDialog(
@@ -1764,8 +1845,8 @@ begin
   FCancelledByUser := False;
   FView.SetRequestState(True);
 
-  LActiveProvider := FConfig.GetActiveProvider;
-  LActiveModel := FConfig.GetActiveModel(LActiveProvider);
+  LActiveProvider := LEffectiveSettings.Values.ProviderId;
+  LActiveModel := LEffectiveSettings.Values.ModelId;
   if FConfig.IsWebLoginProvider(LActiveProvider) then
     LActiveModel := 'Web Login';
   LSessionId := FSessionManager.ActiveSessionId;
@@ -1801,7 +1882,14 @@ begin
   end;
 
   try
-    FAIService.SendPromptStream(APromptText, FHistory, HandleStreamCallback, LProfile);
+    FAIService.SendPromptStreamWithSettings(
+      APromptText,
+      FHistory,
+      HandleStreamCallback,
+      LProfile,
+      LEffectiveSettings.Values
+    );
+    ResetPendingRequestSettings;
   except
     on E: Exception do
     begin
@@ -2312,6 +2400,8 @@ var
   LPlan: TJSONValue;
 begin
   Result := True;
+  if TryDispatchExecutionScopeInteraction(AAction, AJson) then
+    Exit;
   if AAction = 'set_agent_mode' then
     SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
   else if AAction = 'set_agent_executor' then
@@ -2517,6 +2607,22 @@ begin
   Result := False;
 end;
 
+function TRadIAChatPresenter.TryDispatchExecutionScopeInteraction(
+  const AAction: string;
+  const AJson: TJSONObject
+): Boolean;
+begin
+  Result := True;
+  if AAction = 'show_execution_scope' then
+    PostExecutionScopeToWeb
+  else if AAction = 'update_execution_scope' then
+    HandleExecutionScopeAction(AJson)
+  else if AAction = 'export_execution_scope' then
+    ExportExecutionScope(AJson.GetValue<string>('scope', 'project'))
+  else
+    Result := False;
+end;
+
 function TRadIAChatPresenter.CurrentExecutorId: string;
 var
   LSettings: TRadIAAgentExecutorSettings;
@@ -2609,6 +2715,342 @@ begin
     FJourneyContext.CompleteActivity;
 end;
 
+function TRadIAChatPresenter.BuildGlobalExecutionSettings:
+  TRadIAExecutionSettings;
+var
+  LProviderId: string;
+begin
+  LProviderId := FConfig.GetActiveProvider;
+  Result := TRadIAExecutionSettings.Create(
+    LProviderId,
+    FConfig.GetActiveModel(LProviderId),
+    CurrentExecutorId,
+    FConfig.GetMaxTokens(LProviderId),
+    FConfig.GetTimeout(LProviderId) * 1000,
+    GetAgentTokenLimit
+  );
+end;
+
+function TRadIAChatPresenter.ResolveEffectiveExecutionSettings:
+  TRadIAResolvedExecutionSettings;
+var
+  LDefaults: TRadIAExecutionSettings;
+  LGlobal: TRadIAExecutionSettings;
+  LGlobalTimeoutMs: Integer;
+  LProject: TRadIAExecutionSettings;
+  LProjectId: string;
+  LRequest: TRadIAExecutionSettings;
+  LSession: TRadIAExecutionSettings;
+  LSessionId: string;
+  LProviderResolution: TRadIAResolvedExecutionSettings;
+begin
+  LProject := TRadIAExecutionSettings.Empty;
+  LRequest := TRadIAExecutionSettings.Empty;
+  LSession := TRadIAExecutionSettings.Empty;
+  LProjectId := CurrentProjectId;
+  LSessionId := FSessionManager.ActiveSessionId;
+  if Assigned(FHierarchicalSettingsStore) then
+  begin
+    if LProjectId <> '' then
+      LProject := FHierarchicalSettingsStore.Load(rssProject, LProjectId);
+    if LSessionId <> '' then
+      LSession := FHierarchicalSettingsStore.Load(rssSession, LSessionId);
+  end;
+  if SameText(FPendingRequestConversationId, LSessionId) and
+    SameText(FPendingRequestProjectId, LProjectId) then
+    LRequest := FPendingRequestSettings;
+  LDefaults := TRadIAExecutionSettings.Create(
+    TConfigDefaults.ActiveProvider,
+    '',
+    'native',
+    TConfigDefaults.MaxTokens,
+    TConfigDefaults.Timeout * 1000,
+    0
+  );
+  LGlobal := BuildGlobalExecutionSettings;
+  LProviderResolution := TRadIAExecutionSettingsResolver.Resolve(
+    LDefaults,
+    LGlobal,
+    LProject,
+    LSession,
+    LRequest
+  );
+  LGlobalTimeoutMs := LGlobal.TimeoutMs;
+  if not SameText(LProviderResolution.Values.ExecutorId, 'native') then
+    LGlobalTimeoutMs := 15 * 60 * 1000;
+  LGlobal := TRadIAExecutionSettings.Create(
+    LGlobal.ProviderId,
+    FConfig.GetActiveModel(LProviderResolution.Values.ProviderId),
+    LGlobal.ExecutorId,
+    LGlobal.MaxTokens,
+    LGlobalTimeoutMs,
+    LGlobal.TokenBudget
+  );
+  Result := TRadIAExecutionSettingsResolver.Resolve(
+    LDefaults,
+    LGlobal,
+    LProject,
+    LSession,
+    LRequest
+  );
+end;
+
+procedure TRadIAChatPresenter.ResetPendingRequestSettings;
+begin
+  FPendingRequestSettings := TRadIAExecutionSettings.Empty;
+  FPendingRequestConversationId := '';
+  FPendingRequestProjectId := '';
+end;
+
+function TRadIAChatPresenter.BuildExecutionSettingsStatus(
+  const ASettings: TRadIAResolvedExecutionSettings
+): string;
+begin
+  Result :=
+    '### Effective execution settings' + sLineBreak + sLineBreak +
+    '| Setting | Effective value | Source |' + sLineBreak +
+    '|---|---|---|' + sLineBreak +
+    '| Provider | `' + ASettings.Values.ProviderId + '` | ' +
+      TRadIAExecutionSettingsResolver.OriginName(ASettings.ProviderOrigin) + ' |' + sLineBreak +
+    '| Model | `' + ASettings.Values.ModelId + '` | ' +
+      TRadIAExecutionSettingsResolver.OriginName(ASettings.ModelOrigin) + ' |' + sLineBreak +
+    '| Executor | `' + ASettings.Values.ExecutorId + '` | ' +
+      TRadIAExecutionSettingsResolver.OriginName(ASettings.ExecutorOrigin) + ' |' + sLineBreak +
+    '| Maximum tokens | `' + ASettings.Values.MaxTokens.ToString + '` | ' +
+      TRadIAExecutionSettingsResolver.OriginName(ASettings.MaxTokensOrigin) + ' |' + sLineBreak +
+    '| Timeout (ms) | `' + ASettings.Values.TimeoutMs.ToString + '` | ' +
+      TRadIAExecutionSettingsResolver.OriginName(ASettings.TimeoutOrigin) + ' |' + sLineBreak +
+    '| Agent token budget | `' + ASettings.Values.TokenBudget.ToString + '` | ' +
+      TRadIAExecutionSettingsResolver.OriginName(ASettings.TokenBudgetOrigin) + ' |' + sLineBreak +
+    sLineBreak +
+    'Use `/scope project|session|request <field> <value>` to override a value, or ' +
+    '`/scope project|session|request inherit <field>` to restore inheritance.';
+end;
+
+function TRadIAChatPresenter.TryUpdateScopeSettings(
+  const AScopeName: string;
+  const AFieldName: string;
+  const AValue: string;
+  out AError: string
+): Boolean;
+var
+  LCurrent: TRadIAExecutionSettings;
+  LDefinition: TRadIACliDefinition;
+  LField: TRadIAExecutionSettingField;
+  LScopeId: string;
+  LScopeKind: TRadIASettingsScopeKind;
+  LUpdated: TRadIAExecutionSettings;
+begin
+  Result := False;
+  AError := '';
+  if not TRadIAExecutionSettingsEditor.TryParseField(AFieldName, LField) then
+  begin
+    AError := 'Unknown field. Use provider, model, executor, max-tokens, timeout-ms, or token-budget.';
+    Exit;
+  end;
+  if (LField = resfProvider) and not TProviderRegistry.HasProvider(AValue) then
+  begin
+    AError := 'The provider is not registered: ' + AValue;
+    Exit;
+  end;
+  if (LField = resfExecutor) and not SameText(AValue, 'native') and
+    not TRadIACliCatalog.FindById(AValue, LDefinition) then
+  begin
+    AError := 'The executor is not supported: ' + AValue;
+    Exit;
+  end;
+  if SameText(AScopeName, 'request') then
+  begin
+    Result := TRadIAExecutionSettingsEditor.TryUpdate(
+      FPendingRequestSettings,
+      LField,
+      AValue,
+      LUpdated,
+      AError
+    );
+    if Result then
+    begin
+      FPendingRequestSettings := LUpdated;
+      FPendingRequestConversationId := FSessionManager.ActiveSessionId;
+      FPendingRequestProjectId := CurrentProjectId;
+    end;
+    Exit;
+  end;
+  if not Assigned(FHierarchicalSettingsStore) then
+  begin
+    AError := 'Hierarchical settings storage is unavailable.';
+    Exit;
+  end;
+  if SameText(AScopeName, 'project') then
+  begin
+    LScopeKind := rssProject;
+    LScopeId := CurrentProjectId;
+  end
+  else if SameText(AScopeName, 'session') then
+  begin
+    LScopeKind := rssSession;
+    LScopeId := FSessionManager.ActiveSessionId;
+  end
+  else
+  begin
+    AError := 'Unknown scope. Use project, session, or request.';
+    Exit;
+  end;
+  if LScopeId = '' then
+  begin
+    AError := 'The selected scope is unavailable. Open a project or chat session first.';
+    Exit;
+  end;
+  LCurrent := FHierarchicalSettingsStore.Load(LScopeKind, LScopeId);
+  Result := TRadIAExecutionSettingsEditor.TryUpdate(
+    LCurrent,
+    LField,
+    AValue,
+    LUpdated,
+    AError
+  );
+  if Result then
+    FHierarchicalSettingsStore.Save(LScopeKind, LScopeId, LUpdated);
+end;
+
+function TRadIAChatPresenter.TryClearScopeSettings(
+  const AScopeName: string;
+  const AFieldName: string;
+  out AError: string
+): Boolean;
+var
+  LCurrent: TRadIAExecutionSettings;
+  LField: TRadIAExecutionSettingField;
+  LScopeId: string;
+  LScopeKind: TRadIASettingsScopeKind;
+begin
+  Result := False;
+  AError := '';
+  if (AFieldName <> '') and
+    not TRadIAExecutionSettingsEditor.TryParseField(AFieldName, LField) then
+  begin
+    AError := 'Unknown field. Use provider, model, executor, max-tokens, timeout-ms, or token-budget.';
+    Exit;
+  end;
+  if SameText(AScopeName, 'request') then
+  begin
+    if AFieldName = '' then
+      ResetPendingRequestSettings
+    else
+      FPendingRequestSettings := TRadIAExecutionSettingsEditor.Clear(
+        FPendingRequestSettings,
+        LField
+      );
+    Exit(True);
+  end;
+  if not Assigned(FHierarchicalSettingsStore) then
+  begin
+    AError := 'Hierarchical settings storage is unavailable.';
+    Exit;
+  end;
+  if SameText(AScopeName, 'project') then
+  begin
+    LScopeKind := rssProject;
+    LScopeId := CurrentProjectId;
+  end
+  else if SameText(AScopeName, 'session') then
+  begin
+    LScopeKind := rssSession;
+    LScopeId := FSessionManager.ActiveSessionId;
+  end
+  else
+  begin
+    AError := 'Unknown scope. Use project, session, or request.';
+    Exit;
+  end;
+  if LScopeId = '' then
+  begin
+    AError := 'The selected scope is unavailable. Open a project or chat session first.';
+    Exit;
+  end;
+  if AFieldName = '' then
+    FHierarchicalSettingsStore.Clear(LScopeKind, LScopeId)
+  else
+  begin
+    LCurrent := FHierarchicalSettingsStore.Load(LScopeKind, LScopeId);
+    FHierarchicalSettingsStore.Save(
+      LScopeKind,
+      LScopeId,
+      TRadIAExecutionSettingsEditor.Clear(LCurrent, LField)
+    );
+  end;
+  Result := True;
+end;
+
+function TRadIAChatPresenter.TryHandleScopeCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+var
+  LAction: string;
+  LError: string;
+  LField: string;
+  LParts: TArray<string>;
+  LScope: string;
+  LValue: string;
+begin
+  Result := SameText(ACommandText, '/scope') or
+    ACommandText.StartsWith('/scope ', True);
+  if not Result then
+    Exit;
+  PostToWebView('add_message', 'user', APromptText);
+  if SameText(ACommandText, '/scope') then
+  begin
+    PostToWebView(
+      'add_message',
+      'assistant',
+      BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
+    );
+    Exit;
+  end;
+  LParts := SplitString(
+    Trim(Copy(ACommandText, Length('/scope') + 1, MaxInt)),
+    ' '
+  );
+  if Length(LParts) < 2 then
+  begin
+    PostToWebView('add_message', 'assistant', 'Usage: /scope project|session|request ' +
+      '<field> <value> | inherit <field> | clear');
+    Exit;
+  end;
+  LScope := LParts[0];
+  LAction := LParts[1];
+  if SameText(LAction, 'clear') then
+    TryClearScopeSettings(LScope, '', LError)
+  else if SameText(LAction, 'inherit') then
+  begin
+    if Length(LParts) < 3 then
+      LError := 'Specify the field that should inherit its value.'
+    else
+      TryClearScopeSettings(LScope, LParts[2], LError);
+  end
+  else if Length(LParts) < 3 then
+    LError := 'Specify a value for the selected field.'
+  else
+  begin
+    LField := LAction;
+    LValue := string.Join(' ', LParts, 2, Length(LParts) - 2);
+    TryUpdateScopeSettings(LScope, LField, LValue, LError);
+  end;
+  if LError <> '' then
+    PostToWebView('add_message', 'assistant', '**Scope was not changed:** ' + LError)
+  else
+  begin
+    PostExecutionRouteToWeb;
+    UpdateModelsCombo;
+    PostToWebView(
+      'add_message',
+      'assistant',
+      BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
+    );
+  end;
+end;
+
 function TRadIAChatPresenter.TryHandleJourneyContextCommand(
   const APromptText: string;
   const ACommandText: string
@@ -2695,6 +3137,8 @@ function TRadIAChatPresenter.TryHandleCatalogCommand(
 ): Boolean;
 begin
   Result := True;
+  if TryHandleScopeCommand(APromptText, ACommandText) then
+    Exit;
   if TryHandleJourneyContextCommand(APromptText, ACommandText) then
     Exit;
   if TryHandleCliCommand(APromptText, ACommandText) then
@@ -2787,7 +3231,7 @@ function TRadIAChatPresenter.TryHandleStatusCommand(
   const ACommandText: string
 ): Boolean;
 const
-  CFilters: array[0..9] of string = (
+  CFilters: array[0..10] of string = (
     'all',
     'provider',
     'agent',
@@ -2797,7 +3241,8 @@ const
     'editor',
     'project',
     'tools',
-    'logging'
+    'logging',
+    'settings'
   );
 var
   LAgentMode: string;
@@ -2827,7 +3272,17 @@ begin
       'add_message',
       'assistant',
       'Usage: /status [provider|agent|cli|mcp|security|editor|' +
-      'project|tools|logging|--json]'
+      'project|tools|logging|settings|--json]'
+    );
+    Exit;
+  end;
+  if SameText(LFilter, 'settings') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView(
+      'add_message',
+      'assistant',
+      BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
     );
     Exit;
   end;
@@ -2842,6 +3297,12 @@ begin
   );
   if SameText(LFilter, 'all') or SameText(LFilter, 'cli') then
     PostCliSessionStatus;
+  if SameText(LFilter, 'all') then
+    PostToWebView(
+      'add_message',
+      'assistant',
+      BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
+    );
 end;
 
 procedure TRadIAChatPresenter.HandleExplicitToolCommand(
@@ -3553,6 +4014,7 @@ var
   LActiveProvider: string;
   LCheckpointDirectory: string;
   LDecisionProvider: IRadIAAgentDecisionProvider;
+  LEffectiveSettings: TRadIAResolvedExecutionSettings;
   LGuard: IRadIALifecycleGuard;
   LAgentTokenLimit: Integer;
   LLimits: TRadIAAgentLimits;
@@ -3565,7 +4027,8 @@ var
   LStore: IRadIAAgentCheckpointStore;
   LUserMessage: IRadIAChatMessage;
 begin
-  if TryStartCliAgentRun(AObjective) then
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  if TryStartCliAgentRun(AObjective, LEffectiveSettings) then
     Exit;
   if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
   begin
@@ -3579,8 +4042,8 @@ begin
   if not CheckQuotaAvailability then
     Exit;
 
-  LActiveProvider := FConfig.GetActiveProvider;
-  LActiveModel := FConfig.GetActiveModel(LActiveProvider);
+  LActiveProvider := LEffectiveSettings.Values.ProviderId;
+  LActiveModel := LEffectiveSettings.Values.ModelId;
   if FConfig.IsWebLoginProvider(LActiveProvider) then
     LActiveModel := 'Web Login';
   LSessionId := FSessionManager.ActiveSessionId;
@@ -3596,7 +4059,7 @@ begin
     LProject := FWorkspace.GetActiveProject;
     LProjectId := LProject.FileName;
   end;
-  LAgentTokenLimit := GetAgentTokenLimit;
+  LAgentTokenLimit := ResolveScopedAgentTokenLimit(LEffectiveSettings);
   ResolveAgentRuntimeSettings(
     LActiveProvider,
     LActiveModel,
@@ -3649,6 +4112,7 @@ begin
     FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
+  ResetPendingRequestSettings;
   FAgentController.Start(
     AObjective,
     LSessionId,
@@ -3727,7 +4191,8 @@ begin
 end;
 
 function TRadIAChatPresenter.TryStartCliAgentRun(
-  const AObjective: string
+  const AObjective: string;
+  const ASettings: TRadIAResolvedExecutionSettings
 ): Boolean;
 var
   LDefinition: TRadIACliDefinition;
@@ -3738,17 +4203,16 @@ var
   LProject: TRadIAProjectSnapshot;
   LSession: TSessionInfo;
   LSessionId: string;
-  LSettings: TRadIAAgentExecutorSettings;
+  LTimeoutMs: Integer;
   LUserMessage: IRadIAChatMessage;
   LWorkingDirectory: string;
 begin
-  LSettings := FAgentExecutorSettings.Load;
-  Result := LSettings.Kind = aekCli;
+  Result := not SameText(ASettings.Values.ExecutorId, 'native');
   if not Result then
     Exit;
   if not CheckQuotaAvailability then
     Exit;
-  if not TRadIACliCatalog.FindById(LSettings.CliClientId, LDefinition) then
+  if not TRadIACliCatalog.FindById(ASettings.Values.ExecutorId, LDefinition) then
   begin
     PostToWebView(
       'add_message',
@@ -3815,10 +4279,14 @@ begin
     FJourneyContext.BeginActivity;
   FCancelledByUser := False;
   FView.SetRequestState(True);
+  ResetPendingRequestSettings;
   LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  LTimeoutMs := ASettings.Values.TimeoutMs;
+  if LTimeoutMs < 1 then
+    LTimeoutMs := 15 * 60 * 1000;
   FCliProcessSession := TRadIACliProcessRunner.Start(
     LInvocation,
-    15 * 60 * 1000,
+    LTimeoutMs,
     nil,
     nil,
     procedure(AResult: TRadIACliProcessResult)
@@ -3927,6 +4395,16 @@ begin
   end;
 end;
 
+function TRadIAChatPresenter.ResolveScopedAgentTokenLimit(
+  const ASettings: TRadIAResolvedExecutionSettings
+): Integer;
+begin
+  if ASettings.Values.TokenBudget > MaxInt then
+    Result := MaxInt
+  else
+    Result := Integer(ASettings.Values.TokenBudget);
+end;
+
 procedure TRadIAChatPresenter.PostAgentModeToWeb;
 var
   LJson: TJSONObject;
@@ -4010,6 +4488,7 @@ var
   LCliClientId: string;
   LDetails: string;
   LDisplayName: string;
+  LEffective: TRadIAResolvedExecutionSettings;
   LLabel: string;
   LJourney: TRadIAJourneyContextSnapshot;
   LJourneyId: string;
@@ -4022,9 +4501,16 @@ var
   LSettings: TRadIAAgentExecutorSettings;
   LTransport: string;
 begin
-  LProvider := FConfig.GetActiveProvider;
+  LEffective := ResolveEffectiveExecutionSettings;
+  LProvider := LEffective.Values.ProviderId;
   LAuthType := FConfig.GetProviderAuthType(LProvider);
-  LSettings := FAgentExecutorSettings.Load;
+  if SameText(LEffective.Values.ExecutorId, 'native') then
+    LSettings := TRadIAAgentExecutorSettings.Create(aekNative, '')
+  else
+    LSettings := TRadIAAgentExecutorSettings.Create(
+      aekCli,
+      LEffective.Values.ExecutorId
+    );
   LCliClientId := LSettings.CliClientId;
   LSessionState := 'new';
   LJourneyId := '';
@@ -4072,6 +4558,12 @@ begin
     '. CLI session: ' + LSessionState +
     '. Journey: ' + LJourneyState +
     '. Journey activity: ' + LActivityState +
+    '. Provider source: ' + TRadIAExecutionSettingsResolver.OriginName(
+      LEffective.ProviderOrigin
+    ) +
+    '. Executor source: ' + TRadIAExecutionSettingsResolver.OriginName(
+      LEffective.ExecutorOrigin
+    ) +
     '. MCP is a separate external tool bridge and is not this chat route.';
   Result := TJSONObject.Create;
   Result.AddPair('label', LLabel);
@@ -4100,6 +4592,178 @@ begin
   finally
     LJson.Free;
   end;
+end;
+
+procedure TRadIAChatPresenter.PostExecutionScopeToWeb;
+var
+  LJson: TJSONObject;
+  LSettings: TRadIAResolvedExecutionSettings;
+  procedure AddSetting(
+    const AName: string;
+    const AValue: string;
+    const AOrigin: TRadIASettingOrigin
+  );
+  var
+    LSetting: TJSONObject;
+  begin
+    LSetting := TJSONObject.Create;
+    LSetting.AddPair('value', AValue);
+    LSetting.AddPair(
+      'origin',
+      TRadIAExecutionSettingsResolver.OriginName(AOrigin)
+    );
+    LJson.AddPair(AName, LSetting);
+  end;
+begin
+  LSettings := ResolveEffectiveExecutionSettings;
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'execution_scope');
+    AddSetting(
+      'provider',
+      LSettings.Values.ProviderId,
+      LSettings.ProviderOrigin
+    );
+    AddSetting('model', LSettings.Values.ModelId, LSettings.ModelOrigin);
+    AddSetting(
+      'executor',
+      LSettings.Values.ExecutorId,
+      LSettings.ExecutorOrigin
+    );
+    AddSetting(
+      'maxTokens',
+      LSettings.Values.MaxTokens.ToString,
+      LSettings.MaxTokensOrigin
+    );
+    AddSetting(
+      'timeoutMs',
+      LSettings.Values.TimeoutMs.ToString,
+      LSettings.TimeoutOrigin
+    );
+    AddSetting(
+      'tokenBudget',
+      LSettings.Values.TokenBudget.ToString,
+      LSettings.TokenBudgetOrigin
+    );
+    LJson.AddPair('projectAvailable', TJSONBool.Create(CurrentProjectId <> ''));
+    LJson.AddPair(
+      'sessionAvailable',
+      TJSONBool.Create(FSessionManager.ActiveSessionId <> '')
+    );
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.HandleExecutionScopeAction(
+  const AJson: TJSONObject
+);
+var
+  LError: string;
+  LField: string;
+  LOperation: string;
+  LScope: string;
+begin
+  LOperation := AJson.GetValue<string>('operation', 'set');
+  LScope := AJson.GetValue<string>('scope', 'session');
+  LField := AJson.GetValue<string>('field', '');
+  try
+    if SameText(LOperation, 'clear') then
+      TryClearScopeSettings(LScope, '', LError)
+    else if SameText(LOperation, 'inherit') then
+      TryClearScopeSettings(LScope, LField, LError)
+    else
+      TryUpdateScopeSettings(
+        LScope,
+        LField,
+        AJson.GetValue<string>('value', ''),
+        LError
+      );
+  except
+    on E: Exception do
+      LError := E.Message;
+  end;
+  if LError <> '' then
+    PostToWebView(
+      'add_message',
+      'assistant',
+      '**Execution settings were not changed:** ' + LError
+    )
+  else
+  begin
+    PostExecutionRouteToWeb;
+    UpdateModelsCombo;
+  end;
+  PostExecutionScopeToWeb;
+end;
+
+procedure TRadIAChatPresenter.ExportExecutionScope(
+  const AScopeName: string
+);
+var
+  LFileName: string;
+  LJson: TJSONObject;
+  LScopeId: string;
+  LScopeKind: TRadIASettingsScopeKind;
+  LSettings: TRadIAExecutionSettings;
+  LSettingsJson: TJSONObject;
+begin
+  if not Assigned(FHierarchicalSettingsStore) then
+  begin
+    PostToWebView('add_message', 'assistant', 'Hierarchical settings storage is unavailable.');
+    Exit;
+  end;
+  if SameText(AScopeName, 'project') then
+  begin
+    LScopeKind := rssProject;
+    LScopeId := CurrentProjectId;
+  end
+  else if SameText(AScopeName, 'session') then
+  begin
+    LScopeKind := rssSession;
+    LScopeId := FSessionManager.ActiveSessionId;
+  end
+  else
+  begin
+    PostToWebView('add_message', 'assistant', 'Only project and session scopes can be exported.');
+    Exit;
+  end;
+  if LScopeId = '' then
+  begin
+    PostToWebView('add_message', 'assistant', 'The selected scope is unavailable.');
+    Exit;
+  end;
+  if not FView.SaveDialogExecute(LFileName) then
+    Exit;
+  LSettings := FHierarchicalSettingsStore.Load(LScopeKind, LScopeId);
+  LJson := TJSONObject.Create;
+  try
+    LSettingsJson := TJSONObject.Create;
+    LJson.AddPair('schemaVersion', TJSONNumber.Create(1));
+    LJson.AddPair('scope', LowerCase(AScopeName));
+    LJson.AddPair('settings', LSettingsJson);
+    if LSettings.HasProvider then
+      LSettingsJson.AddPair('provider', LSettings.ProviderId);
+    if LSettings.HasModel then
+      LSettingsJson.AddPair('model', LSettings.ModelId);
+    if LSettings.HasExecutor then
+      LSettingsJson.AddPair('executor', LSettings.ExecutorId);
+    if LSettings.HasMaxTokens then
+      LSettingsJson.AddPair('maxTokens', TJSONNumber.Create(LSettings.MaxTokens));
+    if LSettings.HasTimeout then
+      LSettingsJson.AddPair('timeoutMs', TJSONNumber.Create(LSettings.TimeoutMs));
+    if LSettings.HasTokenBudget then
+      LSettingsJson.AddPair('tokenBudget', TJSONNumber.Create(LSettings.TokenBudget));
+    TFile.WriteAllText(LFileName, LJson.Format(2), TEncoding.UTF8);
+  finally
+    LJson.Free;
+  end;
+  PostToWebView(
+    'add_message',
+    'assistant',
+    'The sanitized ' + LowerCase(AScopeName) + ' scope was exported to `' + LFileName + '`.'
+  );
 end;
 
 procedure TRadIAChatPresenter.PostToolsCatalogToWeb(
@@ -4536,9 +5200,20 @@ begin
 end;
 
 function TRadIAChatPresenter.GetModelSelectionState: TRadIAModelSelectionState;
+var
+  LEffective: TRadIAResolvedExecutionSettings;
+  LSettings: TRadIAAgentExecutorSettings;
 begin
+  LEffective := ResolveEffectiveExecutionSettings;
+  if SameText(LEffective.Values.ExecutorId, 'native') then
+    LSettings := TRadIAAgentExecutorSettings.Create(aekNative, '')
+  else
+    LSettings := TRadIAAgentExecutorSettings.Create(
+      aekCli,
+      LEffective.Values.ExecutorId
+    );
   Result := TRadIAModelSelectionState.FromExecutor(
-    FAgentExecutorSettings.Load
+    LSettings
   );
 end;
 

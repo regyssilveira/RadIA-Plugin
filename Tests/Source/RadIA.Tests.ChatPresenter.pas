@@ -6,6 +6,7 @@ uses
   DUnitX.TestFramework, System.SysUtils, System.Classes, RadIA.Core.Interfaces, RadIA.Core.Sessions,
   RadIA.Core.ProviderRegistry, RadIA.Core.Tools, RadIA.Core.Workspace,
   RadIA.Core.JourneyContext,
+  RadIA.Core.HierarchicalSettingsStore,
   RadIA.UI.ChatPresenter;
 
 type
@@ -184,6 +185,7 @@ type
     FToolRegistry: IRadIAToolRegistry;
     FToolExecutor: IRadIAToolExecutor;
     FPreviousJourneyContext: IRadIAJourneyContextCoordinator;
+    FPreviousHierarchicalSettingsStore: IRadIAHierarchicalSettingsStore;
     FPreviousWorkspace: IRadIAWorkspaceFacade;
 
     procedure DrainQueuedCalls;
@@ -237,6 +239,22 @@ type
     procedure TestStatusCommandExecutesFilteredStatus;
     [Test]
     procedure TestStatusCommandRejectsUnknownFilter;
+    [Test]
+    procedure TestScopeCommandOverridesAndRestoresProjectProvider;
+    [Test]
+    procedure TestCliScopeUsesCliDefaultTimeoutUntilOverridden;
+    [Test]
+    procedure TestScopeRequestOverrideHasRequestOrigin;
+    [Test]
+    procedure TestRequestScopeDoesNotCrossChatSessions;
+    [Test]
+    procedure TestSessionScopesRemainIndependentWhenSwitchingChats;
+    [Test]
+    procedure TestExecutionScopeWebActionPublishesEffectiveSettings;
+    [Test]
+    procedure TestExecutionScopeExportContainsOnlyKnownSettings;
+    [Test]
+    procedure TestStatusSettingsShowsEffectiveOrigins;
     [Test]
     procedure TestCliSessionCommandShowsLinkedConversation;
     [Test]
@@ -700,11 +718,19 @@ begin
   TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
     FPreviousJourneyContext
   );
+  TRadIAContainer.TryResolve<IRadIAHierarchicalSettingsStore>(
+    FPreviousHierarchicalSettingsStore
+  );
   TRadIAContainer.TryResolve<IRadIAWorkspaceFacade>(FPreviousWorkspace);
   TRadIAContainer.Register<IRadIAJourneyContextCoordinator>(
     TRadIAJourneyContextCoordinator.Create
   );
   TRadIAContainer.Register<IRadIAWorkspaceFacade>(TMockWorkspace.Create);
+  TRadIAContainer.Register<IRadIAHierarchicalSettingsStore>(
+    TRadIAJsonHierarchicalSettingsStore.Create(
+      TPath.Combine(FTempDir, 'hierarchical-settings')
+    )
+  );
   FMockView := TMockChatView.Create;
   FPresenter := TRadIAChatPresenter.Create(
     FMockView,
@@ -727,7 +753,12 @@ begin
     );
   if Assigned(FPreviousWorkspace) then
     TRadIAContainer.Register<IRadIAWorkspaceFacade>(FPreviousWorkspace);
+  if Assigned(FPreviousHierarchicalSettingsStore) then
+    TRadIAContainer.Register<IRadIAHierarchicalSettingsStore>(
+      FPreviousHierarchicalSettingsStore
+    );
   FPreviousJourneyContext := nil;
+  FPreviousHierarchicalSettingsStore := nil;
   FPreviousWorkspace := nil;
   FConfig := nil;
   TRadIAConfig.SetStorage(nil);
@@ -933,6 +964,127 @@ begin
   FPresenter.SendPromptText('/status unknown');
 
   Assert.Contains(FMockView.LastPostedJson, 'Usage: /status');
+end;
+
+procedure TTestChatPresenter.TestScopeCommandOverridesAndRestoresProjectProvider;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/scope project provider OpenAI');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '| Provider | `OpenAI` | project |');
+  Assert.Contains(FMockView.PostedMessages.Text, '"provider":"OpenAI"');
+
+  FPresenter.SendPromptText('/scope project inherit provider');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '| Provider | `Gemini` | global |');
+end;
+
+procedure TTestChatPresenter.TestCliScopeUsesCliDefaultTimeoutUntilOverridden;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/scope project executor claude');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '| Executor | `claude` | project |');
+  Assert.Contains(FMockView.PostedMessages.Text, '| Timeout (ms) | `900000` | global |');
+end;
+
+procedure TTestChatPresenter.TestScopeRequestOverrideHasRequestOrigin;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/scope request model request-model');
+
+  Assert.Contains(
+    FMockView.LastPostedJson,
+    '| Model | `request-model` | request |'
+  );
+end;
+
+procedure TTestChatPresenter.TestRequestScopeDoesNotCrossChatSessions;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/scope request model request-model');
+
+  FPresenter.CreateNewSession;
+  FPresenter.SendPromptText('/scope');
+
+  Assert.Contains(FMockView.LastPostedJson, '| Model | `gemini-1.5-flash` | global |');
+end;
+
+procedure TTestChatPresenter.TestSessionScopesRemainIndependentWhenSwitchingChats;
+var
+  LFirstSessionId: string;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  LFirstSessionId := FPresenter.SessionManager.ActiveSessionId;
+  FPresenter.SendPromptText('/scope session model first-session-model');
+
+  FPresenter.CreateNewSession;
+  FPresenter.SendPromptText('/scope session model second-session-model');
+  FPresenter.SelectSession(LFirstSessionId);
+  FPresenter.SendPromptText('/scope');
+
+  Assert.Contains(
+    FMockView.LastPostedJson,
+    '| Model | `first-session-model` | session |'
+  );
+end;
+
+procedure TTestChatPresenter.TestExecutionScopeWebActionPublishesEffectiveSettings;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.ProcessWebMessage(
+    '{"action":"update_execution_scope","operation":"set",' +
+    '"scope":"session","field":"timeoutMs","value":"45000"}'
+  );
+
+  Assert.Contains(FMockView.LastPostedJson, '"action":"execution_scope"');
+  Assert.Contains(FMockView.LastPostedJson, '"timeoutMs":{');
+  Assert.Contains(FMockView.LastPostedJson, '"value":"45000"');
+  Assert.Contains(FMockView.LastPostedJson, '"origin":"session"');
+end;
+
+procedure TTestChatPresenter.TestExecutionScopeExportContainsOnlyKnownSettings;
+var
+  LExportFile: string;
+  LText: string;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/scope project provider OpenAI');
+  LExportFile := TPath.Combine(FTempDir, 'project-scope.json');
+  FMockView.SaveDialogResult := True;
+  FMockView.SaveDialogSelectedFileName := LExportFile;
+
+  FPresenter.ProcessWebMessage(
+    '{"action":"export_execution_scope","scope":"project"}'
+  );
+
+  Assert.IsTrue(TFile.Exists(LExportFile));
+  LText := TFile.ReadAllText(LExportFile, TEncoding.UTF8);
+  Assert.Contains(LText, '"provider": "OpenAI"');
+  Assert.DoesNotContain(LText, 'apiKey');
+  Assert.DoesNotContain(LText, 'C:\projects\sample');
+end;
+
+procedure TTestChatPresenter.TestStatusSettingsShowsEffectiveOrigins;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('/status settings');
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'Effective execution settings');
+  Assert.Contains(FMockView.PostedMessages.Text, '| Executor | `native` | global |');
 end;
 
 procedure TTestChatPresenter.TestCliSessionCommandShowsLinkedConversation;
