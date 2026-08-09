@@ -98,12 +98,13 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /public static void RepaintDescendants/u);
   assert.match(smoke, /FindVisibleChildByClass/u);
   assert.match(smoke, /"TEditControl"/u);
-  assert.match(
+  assert.match(smoke, /function Open-RadIAEditorFile/u);
+  assert.match(smoke, /-Path \$inlineSmokeUnitPath/u);
+  assert.match(smoke, /\$response\.result\.isError/u);
+  assert.doesNotMatch(
     smoke,
     /Invoke-RadIASmokeTool[\s\S]*?-Name "NavigateToFile"/u
   );
-  assert.match(smoke, /\$response\.result\.isError/u);
-  assert.match(smoke, /if \(-not \$navigation\.fileName\)/u);
   assert.match(
     smoke,
     /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u

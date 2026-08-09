@@ -523,6 +523,25 @@ public static class RadIAKnowledgeSmokeNative
     );
 
     [DllImport("user32.dll")]
+    public static extern IntPtr SendMessage(
+        IntPtr handle,
+        uint message,
+        IntPtr wordParameter,
+        IntPtr longParameter
+    );
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern IntPtr SendMessageText(
+        IntPtr handle,
+        uint message,
+        IntPtr wordParameter,
+        string text
+    );
+
+    [DllImport("user32.dll")]
+    public static extern int GetDlgCtrlID(IntPtr handle);
+
+    [DllImport("user32.dll")]
     public static extern bool RedrawWindow(
         IntPtr handle,
         IntPtr updateRectangle,
@@ -621,8 +640,119 @@ public static class RadIAKnowledgeSmokeNative
         );
         return result;
     }
+
+    public static IntPtr FindChildById(IntPtr parent, int expectedId)
+    {
+        IntPtr result = IntPtr.Zero;
+        EnumChildWindows(
+            parent,
+            delegate(IntPtr handle, IntPtr parameter)
+            {
+                if (GetDlgCtrlID(handle) == expectedId)
+                {
+                    result = handle;
+                    return false;
+                }
+                return true;
+            },
+            IntPtr.Zero
+        );
+        return result;
+    }
 }
 "@
+}
+
+function Open-RadIAEditorFile {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    $IDEProcess.Refresh()
+    $mainWindow = $IDEProcess.MainWindowHandle
+    $menuBar = [RadIAKnowledgeSmokeNative]::FindChildByText(
+        $mainWindow,
+        "Menu bar"
+    )
+    if ($mainWindow -eq [IntPtr]::Zero -or
+        $menuBar -eq [IntPtr]::Zero) {
+        throw "The Delphi File menu is not available for editor smoke."
+    }
+    $mousePosition = [IntPtr]((12 -shl 16) -bor 12)
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $menuBar,
+        0x0201,
+        [IntPtr]1,
+        $mousePosition
+    )
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $menuBar,
+        0x0202,
+        [IntPtr]0,
+        $mousePosition
+    )
+    Start-Sleep -Milliseconds 250
+    foreach ($key in @(0x28, 0x28, 0x0D)) {
+        [void][RadIAKnowledgeSmokeNative]::PostMessage(
+            $mainWindow,
+            0x0100,
+            [IntPtr]$key,
+            [IntPtr]0
+        )
+        [void][RadIAKnowledgeSmokeNative]::PostMessage(
+            $mainWindow,
+            0x0101,
+            [IntPtr]$key,
+            [IntPtr]0
+        )
+    }
+    $dialogDeadline = [DateTime]::UtcNow.AddSeconds(10)
+    $dialog = [IntPtr]::Zero
+    do {
+        $dialog = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+            [uint32]$IDEProcess.Id,
+            "#32770"
+        )
+        if ($dialog -eq [IntPtr]::Zero) {
+            Start-Sleep -Milliseconds 100
+        }
+    } while (
+        $dialog -eq [IntPtr]::Zero -and
+        [DateTime]::UtcNow -lt $dialogDeadline
+    )
+    if ($dialog -eq [IntPtr]::Zero) {
+        throw "The Delphi file dialog did not open for editor smoke."
+    }
+    $fileNameEdit = [RadIAKnowledgeSmokeNative]::FindChildById(
+        $dialog,
+        1148
+    )
+    if ($fileNameEdit -eq [IntPtr]::Zero) {
+        $fileNameEdit = [RadIAKnowledgeSmokeNative]::FindChildById(
+            $dialog,
+            1001
+        )
+    }
+    $confirmButton = [RadIAKnowledgeSmokeNative]::FindChildById($dialog, 1)
+    if ($fileNameEdit -eq [IntPtr]::Zero -or
+        $confirmButton -eq [IntPtr]::Zero) {
+        throw "The Delphi file dialog controls were not found."
+    }
+    [void][RadIAKnowledgeSmokeNative]::SendMessageText(
+        $fileNameEdit,
+        0x000C,
+        [IntPtr]0,
+        $Path
+    )
+    [void][RadIAKnowledgeSmokeNative]::SendMessage(
+        $confirmButton,
+        0x00F5,
+        [IntPtr]0,
+        [IntPtr]0
+    )
 }
 
 function Get-RadIADockInfo {
@@ -2232,6 +2362,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         $inlineDiagnostic = $null
         if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
+            Open-RadIAEditorFile `
+                -IDEProcess $process `
+                -Path $inlineSmokeUnitPath
             $editorRequests = @(
                 (
                     '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
@@ -2282,18 +2415,6 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             }
             if (-not $editorPosition.line) {
                 throw "No active cursor was found for inline diagnostics."
-            }
-            $navigation = Invoke-RadIASmokeTool `
-                -BridgePath $bridgePath `
-                -InstanceFile $instanceFile `
-                -Name "NavigateToFile" `
-                -Arguments @{
-                    fileName = $editorContent.fileName
-                    line = $editorPosition.line
-                    column = $editorPosition.column
-                }
-            if (-not $navigation.fileName) {
-                throw "The inline smoke could not activate the editor file."
             }
             Start-Sleep -Milliseconds 500
         }
