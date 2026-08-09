@@ -196,6 +196,8 @@ comando, argumentos, diretório, habilitação e timeout. Ferramentas descoberta
 estável `mcp.<servidor>.<ferramenta>` e só substituem o snapshot anterior após validação integral.
 Colisões, origem divergente, schema inválido, descrição excessiva e publicação por servidor
 desabilitado são rejeitados sem afetar o catálogo interno ou o último snapshot válido.
+Consulte a
+[evidência do fundamento da Fase 6](competitive_gap_phase_6_foundation_evidence_2.3.1.json).
 
 **Ainda nesta fase:** transporte stdio, lifecycle, persistência segura, descoberta de capabilities,
 execução com consentimento, cancelamento, auditoria, Configurações, `/doctor`, `/status` e smokes com

@@ -193,6 +193,8 @@ arguments, working directory, enabled state, and timeout. Discovered tools recei
 `mcp.<server>.<tool>` namespace and replace the previous snapshot only after complete validation.
 Collisions, mismatched origins, invalid schemas, oversized descriptions, and publication from a
 disabled server are rejected without affecting the internal catalog or the last valid snapshot.
+See the
+[Phase 6 foundation evidence](competitive_gap_phase_6_foundation_evidence_2.3.1.json).
 
 **Still in this phase:** stdio transport, lifecycle, secure persistence, capability discovery,
 consented execution, cancellation, audit, Settings, `/doctor`, `/status`, and smokes with a fixture

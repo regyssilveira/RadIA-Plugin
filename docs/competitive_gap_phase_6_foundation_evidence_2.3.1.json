@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhaseFoundation",
+  "product": "RadIA",
+  "productVersion": "2.3.1",
+  "phase": 6,
+  "capability": "externalMcpFederationContracts",
+  "status": "foundationPassed",
+  "sourceCommit": "ddff3d5db79558f60f2d60ba301b0b00391baa6e",
+  "generatedAtUtc": "2026-08-09T08:05:05Z",
+  "implementation": {
+    "validatedServerIdentity": true,
+    "boundedTimeout": true,
+    "argumentControlCharacterRejection": true,
+    "absoluteWorkingDirectory": true,
+    "stableToolNamespace": true,
+    "atomicCatalogRefresh": true,
+    "collisionRejection": true,
+    "originValidation": true,
+    "boundedJsonObjectSchema": true,
+    "disabledServerIsolation": true
+  },
+  "validation": {
+    "delphi12Win32Tests": 959,
+    "delphi13Win32Tests": 959,
+    "delphi13Ide64Tests": 959,
+    "memoryLeaks": 0,
+    "documentationTests": 21,
+    "webTests": 55,
+    "eslintErrors": 0
+  },
+  "sonar": {
+    "analysisId": "366f9750-d26f-41e9-b053-ebc75018ad27",
+    "qualityGate": "OK",
+    "newCoveragePercent": 83.4,
+    "newDuplicationPercent": 0.92584,
+    "globalCoveragePercent": 83.5,
+    "globalDuplicationPercent": 1.9,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  },
+  "remainingAcceptance": [
+    "Implement bounded stdio transport, lifecycle, and cancellation.",
+    "Persist and manage isolated server configurations without exposing secrets.",
+    "Discover tools, resources, and prompts and execute tools through RadIA policy.",
+    "Expose guided settings, doctor, status, audit, and no-restart refresh.",
+    "Prove fixture and authorized real-server workflows on all supported IDE targets."
+  ]
+}
