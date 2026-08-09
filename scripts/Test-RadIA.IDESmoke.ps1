@@ -530,7 +530,11 @@ public static class RadIAKnowledgeSmokeNative
         IntPtr longParameter
     );
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    [DllImport(
+        "user32.dll",
+        CharSet = CharSet.Unicode,
+        EntryPoint = "SendMessageW"
+    )]
     public static extern IntPtr SendMessageText(
         IntPtr handle,
         uint message,
@@ -672,7 +676,10 @@ function Open-RadIAEditorFile {
     )
 
     $IDEProcess.Refresh()
-    $mainWindow = $IDEProcess.MainWindowHandle
+    $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+        [uint32]$IDEProcess.Id,
+        "TAppBuilder"
+    )
     $menuBar = [RadIAKnowledgeSmokeNative]::FindChildByText(
         $mainWindow,
         "Menu bar"
@@ -981,7 +988,8 @@ function Wait-RadIAInlineReviewDiagnostic {
 function Invoke-RadIAEditorRepaint {
     param(
         [Parameter(Mandatory)]
-        [Diagnostics.Process]$IDEProcess
+        [Diagnostics.Process]$IDEProcess,
+        [switch]$PreserveCursor
     )
 
     $IDEProcess.Refresh()
@@ -1013,31 +1021,37 @@ function Invoke-RadIAEditorRepaint {
     if ($editorHandle -eq [IntPtr]::Zero) {
         throw "The visible Delphi editor control was not found for repaint."
     }
-    $editorRectangle = New-Object RadIAKnowledgeSmokeNative+Rect
-    if (-not [RadIAKnowledgeSmokeNative]::GetWindowRect(
-        $editorHandle,
-        [ref]$editorRectangle
-    )) {
-        throw "The Delphi editor rectangle was not available for repaint."
+    if (-not $PreserveCursor) {
+        $editorRectangle = New-Object RadIAKnowledgeSmokeNative+Rect
+        if (-not [RadIAKnowledgeSmokeNative]::GetWindowRect(
+            $editorHandle,
+            [ref]$editorRectangle
+        )) {
+            throw "The Delphi editor rectangle was not available for repaint."
+        }
+        $editorX = [int](
+            ($editorRectangle.Left + $editorRectangle.Right) / 2
+        )
+        $editorY = [int](
+            ($editorRectangle.Top + $editorRectangle.Bottom) / 2
+        )
+        [void][RadIAKnowledgeSmokeNative]::SetCursorPos($editorX, $editorY)
+        [RadIAKnowledgeSmokeNative]::mouse_event(
+            0x0002,
+            0,
+            0,
+            0,
+            [UIntPtr]::Zero
+        )
+        [RadIAKnowledgeSmokeNative]::mouse_event(
+            0x0004,
+            0,
+            0,
+            0,
+            [UIntPtr]::Zero
+        )
+        Start-Sleep -Milliseconds 250
     }
-    $editorX = [int](($editorRectangle.Left + $editorRectangle.Right) / 2)
-    $editorY = [int](($editorRectangle.Top + $editorRectangle.Bottom) / 2)
-    [void][RadIAKnowledgeSmokeNative]::SetCursorPos($editorX, $editorY)
-    [RadIAKnowledgeSmokeNative]::mouse_event(
-        0x0002,
-        0,
-        0,
-        0,
-        [UIntPtr]::Zero
-    )
-    [RadIAKnowledgeSmokeNative]::mouse_event(
-        0x0004,
-        0,
-        0,
-        0,
-        [UIntPtr]::Zero
-    )
-    Start-Sleep -Milliseconds 250
     [RadIAKnowledgeSmokeNative]::RepaintDescendants(
         $editorHandle
     )
@@ -2362,9 +2376,6 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         $inlineDiagnostic = $null
         if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
-            Open-RadIAEditorFile `
-                -IDEProcess $process `
-                -Path $inlineSmokeUnitPath
             $editorRequests = @(
                 (
                     '{"jsonrpc":"2.0","id":1,"method":"initialize",' +
@@ -2424,6 +2435,31 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -FileName (
                     [IO.Path]::GetFileName($editorContent.fileName)
                 )
+        }
+        if ($ExerciseInlineReview) {
+            Open-RadIAEditorFile `
+                -IDEProcess $process `
+                -Path $inlineSmokeUnitPath
+            Start-Sleep -Seconds 2
+            $editorContent = Invoke-RadIASmokeTool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetEditorContent"
+            $editorPosition = Invoke-RadIASmokeTool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetCursorPosition"
+            $reviewFileMatches = (
+                $editorContent.fileName -and
+                [IO.Path]::GetFullPath($editorContent.fileName).Equals(
+                    [IO.Path]::GetFullPath($inlineSmokeUnitPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+            )
+            if (-not $reviewFileMatches -or
+                -not $editorPosition.line) {
+                throw "The review smoke did not activate the expected unit."
+            }
         }
         $inlineReviewDiagnostic = $null
         $blockReviewDiagnostic = $null
@@ -2485,7 +2521,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             if (-not $publishResponse.result.structuredContent.reviewId) {
                 throw "The inline review tool returned no review identifier."
             }
-            Invoke-RadIAEditorRepaint -IDEProcess $process
+            Invoke-RadIAEditorRepaint `
+                -IDEProcess $process `
+                -PreserveCursor
             $inlineReviewDiagnostic = Wait-RadIAInlineReviewDiagnostic `
                 -EvidencePath $inlineReviewSmokePath
             $reviewId = $publishResponse.result.structuredContent.reviewId
@@ -2616,7 +2654,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             if ($blockResponse.result.isError) {
                 throw "PreparePatch did not publish the block review."
             }
-            Invoke-RadIAEditorRepaint -IDEProcess $process
+            Invoke-RadIAEditorRepaint `
+                -IDEProcess $process `
+                -PreserveCursor
             $blockReviewDiagnostic = Wait-RadIABlockReviewDiagnostic `
                 -EvidencePath $inlineReviewSmokePath
             [System.Windows.Forms.SendKeys]::SendWait("^%{ENTER}")
