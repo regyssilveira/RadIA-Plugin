@@ -220,9 +220,14 @@ server timeout. A late response retains its old ID, is discarded by the correlat
 complete or contaminate the next call. Legacy clients remain compatible through the basic
 interface, while clients exposing the cancellable interface receive the token end to end.
 
-**Still in this phase:** pagination and resource/prompt discovery, secure persistence of settings
-and grants, Settings, `/doctor`, `/status`, and smokes with a complete MCP fixture server and one
-authorized real server.
+**Secure persistence implemented:** servers and grants are validated as one snapshot, fully
+protected with the current user's Windows DPAPI identity, and written through atomic replacement.
+Commands, arguments, working directories, grant paths, and possible secrets never appear as plain
+text in the file. Corrupted, cross-user, oversized, or invalid payloads are rejected without partial
+configuration or replacement of the previous snapshot. Server IDs and grant names must be unique.
+
+**Still in this phase:** pagination and resource/prompt discovery, Settings, `/doctor`, `/status`,
+and smokes with a complete MCP fixture server and one authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

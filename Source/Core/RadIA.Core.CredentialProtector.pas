@@ -7,7 +7,9 @@ type
   public
     class function CleanApiKey(const AValue: string): string; static;
     class function Protect(const AValue: string): string; static;
+    class function ProtectText(const AValue: string): string; static;
     class function Unprotect(const AValue: string): string; static;
+    class function UnprotectText(const AValue: string): string; static;
   end;
 
 implementation
@@ -59,6 +61,11 @@ begin
 end;
 
 class function TCredentialProtector.Protect(const AValue: string): string;
+begin
+  Result := ProtectText(AValue);
+end;
+
+class function TCredentialProtector.ProtectText(const AValue: string): string;
 var
   LInBlob: TDataBlob;
   LOutBlob: TDataBlob;
@@ -84,6 +91,11 @@ begin
 end;
 
 class function TCredentialProtector.Unprotect(const AValue: string): string;
+begin
+  Result := CleanApiKey(UnprotectText(AValue));
+end;
+
+class function TCredentialProtector.UnprotectText(const AValue: string): string;
 var
   LInBlob: TDataBlob;
   LOutBlob: TDataBlob;
@@ -118,10 +130,8 @@ begin
     try
       SetLength(LBytes, LOutBlob.cbData);
       Move(LOutBlob.pbData^, LBytes[0], LOutBlob.cbData);
-      Result := CleanApiKey(TEncoding.UTF8.GetString(LBytes));
-      LogDebug(
-        'TCredentialProtector.Unprotect: Decrypted and cleaned successfully. Result length: ' +
-        IntToStr(Length(Result)));
+      Result := TEncoding.UTF8.GetString(LBytes);
+      LogDebug('TCredentialProtector.UnprotectText: Decrypted successfully.');
     finally
       LocalFree(HLOCAL(LOutBlob.pbData));
     end;

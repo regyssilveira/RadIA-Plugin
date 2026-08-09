@@ -225,9 +225,15 @@ correlator e não pode concluir nem contaminar a chamada seguinte. Clientes lega
 compatíveis pela interface básica, enquanto clientes que oferecem a interface cancelável recebem o
 token de ponta a ponta.
 
-**Ainda nesta fase:** paginação e descoberta de resources/prompts, persistência segura das
-configurações e concessões, Configurações, `/doctor`, `/status` e smokes com servidor fixture MCP
-completo e servidor real autorizado.
+**Persistência segura implementada:** servidores e concessões são validados como um snapshot único,
+protegidos integralmente pelo DPAPI do usuário atual e gravados por substituição atômica. Comando,
+argumentos, diretório, paths das concessões e possíveis segredos nunca aparecem em texto puro no
+arquivo. Payload corrompido, pertencente a outro usuário, acima dos limites ou com servidor, grant,
+risco ou referência inválida é rejeitado sem configuração parcial nem substituição do snapshot
+anterior. IDs de servidor e nomes de grant precisam ser únicos.
+
+**Ainda nesta fase:** paginação e descoberta de resources/prompts, Configurações, `/doctor`,
+`/status` e smokes com servidor fixture MCP completo e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.
