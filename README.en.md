@@ -41,6 +41,7 @@ Delphi 11 is outside the current support matrix.
 | Chat | Providers, streaming, sessions, templates, history, and commands | [Chat and sessions](docs/user_guide_chat_sessions.en.md) |
 | Scoped settings | Provider, model, executor, and limits by project, session, or next request | [Scoped settings](docs/hierarchical_settings.en.md) |
 | Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/user_guide_editor_generation.en.md) |
+| Ghost Text/FIM | Complete at the cursor through a dedicated route or diagnosable fallback | [Inline assistance and FIM](docs/inline_completion.en.md) |
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/project_wizard.en.md) |
 | DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/user_guide_dext_journeys.en.md) |
 | Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/user_guide_journeys.en.md) |

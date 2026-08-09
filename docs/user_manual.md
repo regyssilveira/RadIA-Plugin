@@ -333,6 +333,12 @@ Pelo menu contextual do editor, o RadIA pode:
 
 Sem seleção ativa, ações compatíveis usam a unit inteira como contexto.
 
+O Ghost Text captura prefixo e sufixo limitados sem alterar o buffer. Ollama e LM Studio recebem
+uma solicitação FIM dedicada; outros providers usam fallback tradicional identificado. Use
+**Show Inline Completion Route Status** no submenu Rad IA do editor para ver provider, modelo,
+latência e motivo do fallback. Aceite, aceite parcial, alternativa e rejeição continuam disponíveis
+por atalhos configuráveis. Consulte a [referência completa de FIM](inline_completion.md).
+
 Consulte o [guia de editor e geração](user_guide_editor_generation.md).
 
 ### 4.4 Geração

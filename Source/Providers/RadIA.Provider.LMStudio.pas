@@ -2,11 +2,17 @@ unit RadIA.Provider.LMStudio;
 
 interface
 
-uses  RadIA.Core.Interfaces, RadIA.Provider.Base;
+uses
+  RadIA.Core.InlineCompletion,
+  RadIA.Core.Interfaces,
+  RadIA.Provider.Base;
 
 type
   {$RTTI EXPLICIT METHODS([vcPrivate, vcProtected, vcPublic, vcPublished])}
-  TRadIALMStudioProvider = class(TRadIAOpenAICompatibleProvider)
+  TRadIALMStudioProvider = class(
+    TRadIAOpenAICompatibleProvider,
+    IRadIADedicatedFimProvider
+  )
   protected
     function GetBaseUrl: string; override;
     function GetModelsDiscoveryUrl: string; override;
@@ -19,12 +25,21 @@ type
       const ACallback: TStreamChunkCallback; const ATemperature: Double; const AMaxTokens: Integer); override;
     function GetAvailableModels: TArray<string>; override;
     function GetName: string; override;
+    procedure SendFimAsync(
+      const AContext: TRadIAInlineCompletionContext;
+      const ACallback: TRadIAFimCompletionCallback;
+      const AMaxTokens: Integer
+    );
   end;
 
 implementation
 
 uses
-  System.SysUtils, System.Net.URLClient, RadIA.Core.ProviderRegistry, RadIA.Core.TokenUsage;
+  System.JSON,
+  System.SysUtils,
+  System.Net.URLClient,
+  RadIA.Core.ProviderRegistry,
+  RadIA.Core.TokenUsage;
 
 { TRadIALMStudioProvider }
 
@@ -54,6 +69,89 @@ end;
 function TRadIALMStudioProvider.GetModelsDiscoveryUrl: string;
 begin
   Result := GetBaseUrl.TrimRight(['/']) + '/models';
+end;
+
+procedure TRadIALMStudioProvider.SendFimAsync(
+  const AContext: TRadIAInlineCompletionContext;
+  const ACallback: TRadIAFimCompletionCallback;
+  const AMaxTokens: Integer
+);
+var
+  LApiKey: string;
+  LHeaders: TNetHeaders;
+  LRequest: TJSONObject;
+  LRequestBody: string;
+  LUrl: string;
+begin
+  LApiKey := FConfig.GetApiKey(FProviderId);
+  if LApiKey.IsEmpty then
+    LApiKey := 'lm-studio';
+  SetLength(LHeaders, 1);
+  LHeaders[0] := TNetHeader.Create('Authorization', 'Bearer ' + LApiKey);
+  LRequest := TJSONObject.Create;
+  try
+    LRequest.AddPair('model', GetActiveModel);
+    LRequest.AddPair('prompt', AContext.Prefix);
+    LRequest.AddPair('suffix', AContext.Suffix);
+    LRequest.AddPair('temperature', TJSONNumber.Create(0));
+    if AMaxTokens > 0 then
+      LRequest.AddPair('max_tokens', TJSONNumber.Create(AMaxTokens));
+    LRequestBody := LRequest.ToJSON;
+  finally
+    LRequest.Free;
+  end;
+  LUrl := GetBaseUrl.TrimRight(['/']) + '/completions';
+  ExecuteRequestAsync(
+    LUrl,
+    LHeaders,
+    LRequestBody,
+    function(
+      const AResponseJson: string;
+      out AUsage: TTokenUsage
+    ): string
+    var
+      LChoice: TJSONObject;
+      LChoices: TJSONArray;
+      LRoot: TJSONObject;
+      LUsage: TJSONObject;
+    begin
+      AUsage := TTokenUsage.Empty;
+      LRoot := TJSONObject.ParseJSONValue(AResponseJson) as TJSONObject;
+      if not Assigned(LRoot) then
+        raise EConvertError.Create('Invalid LM Studio FIM response.');
+      try
+        Result := '';
+        LChoices := LRoot.GetValue('choices') as TJSONArray;
+        if Assigned(LChoices) and (LChoices.Count > 0) and
+          (LChoices[0] is TJSONObject) then
+        begin
+          LChoice := LChoices[0] as TJSONObject;
+          Result := LChoice.GetValue<string>('text', '');
+        end;
+        LUsage := LRoot.GetValue('usage') as TJSONObject;
+        if Assigned(LUsage) then
+        begin
+          AUsage.PromptTokens := LUsage.GetValue<Integer>('prompt_tokens', 0);
+          AUsage.CompletionTokens := LUsage.GetValue<Integer>(
+            'completion_tokens',
+            0
+          );
+          AUsage.TotalTokens := LUsage.GetValue<Integer>('total_tokens', 0);
+        end;
+      finally
+        LRoot.Free;
+      end;
+    end,
+    procedure(
+      const AResponse: string;
+      const AError: string;
+      AFromCache: Boolean;
+      const AUsage: TTokenUsage
+    )
+    begin
+      ACallback(AResponse, AError);
+    end
+  );
 end;
 
 procedure TRadIALMStudioProvider.SendPromptAsync(const APrompt: string;

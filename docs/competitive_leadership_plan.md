@@ -135,6 +135,13 @@ Consulte também a
 - Cancelar respostas obsoletas ao mudar cursor, buffer, arquivo, projeto ou jornada.
 - Expor latência local, origem do modelo e motivo do fallback para diagnóstico.
 
+**Progresso:** contrato FIM separado, discovery por capability, rotas dedicadas Ollama/LM Studio,
+fallback, cancelamento por contexto e diagnóstico visual estão implementados. Fixtures de provider e
+o build/teste Delphi 12 passaram; ainda falta fechar o aceite visual nos três targets e versionar a
+evidência antes de considerar a fase concluída.
+Consulte a
+[evidência do fundamento da Fase 4](competitive_gap_phase_4_foundation_evidence_2.3.1.json).
+
 **Aceite:** fixtures provam montagem correta de prefixo/sufixo e um smoke real por target aceita e
 rejeita Ghost Text sem alterar antecipadamente o buffer, com undo único e nenhum vazamento de código.
 

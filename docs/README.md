@@ -25,6 +25,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Tarefa | Guia principal |
 |---|---|
 | Explicar, revisar, refatorar ou gerar código | [Editor e geração](user_guide_editor_generation.md) |
+| Receber e diagnosticar sugestões Ghost Text/FIM | [Assistência inline e FIM](inline_completion.md) |
 | Criar um projeto Delphi | [New Project Wizard](project_wizard.md) |
 | Adicionar ou remover units e forms | [Operações estruturais](project_file_operations.md) |
 | Compilar, corrigir erros e executar testes | [Jornadas ponta a ponta](user_guide_journeys.md) |

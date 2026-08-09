@@ -22,6 +22,29 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 6. A entrega ocorre somente se a geração e a revisão ainda forem atuais.
 7. A camada visual exibe a sugestão sem tocar no buffer.
 
+## Rota FIM dedicada e fallback
+
+O Ghost Text possui um contrato próprio, separado do chat. O RadIA consulta a capability do
+provider em tempo de execução; não presume suporte pelo nome do modelo.
+
+- **Ollama:** usa `POST /api/generate` com `prompt` e `suffix` separados.
+- **LM Studio:** usa `POST /v1/completions` com `prompt` e `suffix` separados.
+- **Demais providers:** usam explicitamente o fallback de completion tradicional, com o contexto
+  FIM delimitado no prompt.
+
+Se uma rota dedicada falhar, o RadIA tenta o fallback tradicional para a mesma solicitação. Uma
+mudança de arquivo, revisão, cursor, projeto ou jornada cancela o pedido anterior; resposta obsoleta
+não pode chegar ao overlay.
+
+O provider e modelo vêm primeiro de `AutocompleteProvider` e `AutocompleteModel`, quando essas
+preferências existirem; caso contrário, usam o provider e modelo globais ativos. A seleção é
+aplicada somente ao pedido inline e não altera a configuração global.
+
+Para inspecionar a última decisão, use **Rad IA > Show Inline Completion Route Status** no menu do
+editor ou **Tools > Rad IA Inline Completion Route Status**. O diálogo informa rota dedicada ou
+fallback, provider, modelo, latência local e motivo do fallback. O mesmo diagnóstico é registrado
+no log sem incluir prefixo, sufixo ou conteúdo sugerido.
+
 ## Ações disponíveis no menu do editor
 
 | Ação | Atalho padrão |
@@ -33,6 +56,9 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 | Rejeitar a sugestão | `Ctrl+Alt+Backspace` |
 | Aceitar revisão na linha atual | `Ctrl+Alt+Enter` |
 | Rejeitar revisão na linha atual | `Ctrl+Alt+R` |
+
+O submenu também oferece **Show Inline Completion Route Status**, sem atalho padrão, para explicar
+como a última sugestão foi executada.
 
 Os atalhos aparecem no submenu **Rad IA** do menu contextual do editor. O primeiro pedido de cada
 sessão informa qual contexto será enviado e exige consentimento explícito.
@@ -110,6 +136,9 @@ não chegam ao provider.
 - `TRadIAInlineCompletionContext`: contexto FIM e chave estável de cache.
 - `TRadIAInlineCompletionOptions`: debounce e limites.
 - `IRadIAInlineCompletionProvider`: abstração para modelos locais e remotos.
+- `IRadIADedicatedFimProvider`: capability opcional para uma rota FIM nativa do provider.
+- `TRadIAFimCapabilityDiscovery`: seleção por contrato, sem heurística de nome de modelo.
+- `TRadIAFimDiagnostic`: rota, provider, modelo, latência e motivo de fallback da última execução.
 - `TRadIAServiceInlineCompletionProvider`: adaptador para o provider ativo do RadIA.
 - `TRadIAInlineCompletionController`: cache, cancelamento, saneamento e ações de aceite.
 - `TRadIAInlineGhostLayout`: separação determinística de sugestões em linhas virtuais.

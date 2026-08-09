@@ -133,6 +133,13 @@ Also see the
 - Cancel stale responses after caret, buffer, file, project, or journey changes.
 - Expose local latency, model origin, and fallback reason for diagnostics.
 
+**Progress:** the separate FIM contract, capability discovery, dedicated Ollama/LM Studio routes,
+fallback, context cancellation, and visual diagnostics are implemented. Provider fixtures and the
+Delphi 12 build/test passed; visual acceptance on all three targets and versioned evidence still
+remain before this phase is complete.
+See the
+[Phase 4 foundation evidence](competitive_gap_phase_4_foundation_evidence_2.3.1.json).
+
 **Acceptance:** fixtures prove prefix/suffix assembly and one real smoke per target accepts and
 rejects Ghost Text without premature writes, with one undo and no unintended code disclosure.
 

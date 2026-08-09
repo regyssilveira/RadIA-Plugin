@@ -72,6 +72,61 @@ type
     property Suffix: string read FSuffix;
   end;
 
+  TRadIAFimRouteKind = (
+    frkDedicated,
+    frkTraditionalFallback
+  );
+
+  TRadIAFimDiagnostic = record
+  private
+    FFallbackReason: string;
+    FLatencyMs: Int64;
+    FModelId: string;
+    FProviderId: string;
+    FRouteKind: TRadIAFimRouteKind;
+  public
+    constructor Create(
+      const AProviderId: string;
+      const AModelId: string;
+      const ARouteKind: TRadIAFimRouteKind;
+      const AFallbackReason: string;
+      const ALatencyMs: Int64
+    );
+    function RouteName: string;
+    property FallbackReason: string read FFallbackReason;
+    property LatencyMs: Int64 read FLatencyMs;
+    property ModelId: string read FModelId;
+    property ProviderId: string read FProviderId;
+  end;
+
+  TRadIAFimCompletionCallback = reference to procedure(
+    const AResponse: string;
+    const AError: string
+  );
+
+  IRadIADedicatedFimProvider = interface
+    ['{7A5D62B0-F99E-4A24-A06E-33746058A24D}']
+    procedure SendFimAsync(
+      const AContext: TRadIAInlineCompletionContext;
+      const ACallback: TRadIAFimCompletionCallback;
+      const AMaxTokens: Integer
+    );
+  end;
+
+  IRadIAInlineCompletionDiagnostics = interface
+    ['{27A28C3D-E286-436D-BE88-D9D061FCADCB}']
+    function GetLastDiagnostic: TRadIAFimDiagnostic;
+  end;
+
+  TRadIAFimCapabilityDiscovery = class
+  public
+    class function TryResolve(
+      const AProvider: IRadIAProvider;
+      out AProviderContract: IRadIADedicatedFimProvider;
+      out AFallbackReason: string
+    ): Boolean; static;
+  end;
+
   TRadIAInlineCompletionOptions = record
   private
     FDebounceMs: Cardinal;
@@ -128,16 +183,32 @@ type
 
   TRadIAServiceInlineCompletionProvider = class(
     TInterfacedObject,
-    IRadIAInlineCompletionProvider
+    IRadIAInlineCompletionProvider,
+    IRadIAInlineCompletionDiagnostics
   )
   private
+    FConfig: IRadIAConfig;
+    FDiagnosticLock: TObject;
+    FLastDiagnostic: TRadIAFimDiagnostic;
     FService: IRadIAService;
     FTimeoutMs: Cardinal;
+    function CompleteWithProvider(
+      const AContext: TRadIAInlineCompletionContext;
+      const ACancellation: IRadIAInlineCompletionCancellationToken;
+      const AProvider: IRadIAProvider;
+      const AModelId: string;
+      const AMaxTokens: Integer
+    ): string;
+    procedure StoreDiagnostic(
+      const ADiagnostic: TRadIAFimDiagnostic
+    );
   public
     constructor Create(
       const AService: IRadIAService;
+      const AConfig: IRadIAConfig;
       const ATimeoutMs: Cardinal
     );
+    destructor Destroy; override;
     class function BuildPrompt(
       const AContext: TRadIAInlineCompletionContext
     ): string; static;
@@ -145,6 +216,7 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ACancellation: IRadIAInlineCompletionCancellationToken
     ): string;
+    function GetLastDiagnostic: TRadIAFimDiagnostic;
   end;
 
   IRadIAInlineCompletionView = interface
@@ -270,9 +342,13 @@ implementation
 
 uses
   System.Classes,
+  System.Diagnostics,
   System.Generics.Collections,
   System.Hash,
   System.SyncObjs,
+  RadIA.Core.HierarchicalSettings,
+  RadIA.Core.Logger,
+  RadIA.Core.ProviderRegistry,
   RadIA.Core.TokenUsage,
   RadIA.Core.Types;
 
@@ -391,6 +467,51 @@ begin
     FSymbolName + #0 +
     FProjectContext
   );
+end;
+
+{ TRadIAFimDiagnostic }
+
+constructor TRadIAFimDiagnostic.Create(
+  const AProviderId: string;
+  const AModelId: string;
+  const ARouteKind: TRadIAFimRouteKind;
+  const AFallbackReason: string;
+  const ALatencyMs: Int64
+);
+begin
+  FProviderId := AProviderId;
+  FModelId := AModelId;
+  FRouteKind := ARouteKind;
+  FFallbackReason := AFallbackReason;
+  FLatencyMs := ALatencyMs;
+end;
+
+{ TRadIAFimCapabilityDiscovery }
+
+class function TRadIAFimCapabilityDiscovery.TryResolve(
+  const AProvider: IRadIAProvider;
+  out AProviderContract: IRadIADedicatedFimProvider;
+  out AFallbackReason: string
+): Boolean;
+begin
+  AProviderContract := nil;
+  AFallbackReason := '';
+  Result := Assigned(AProvider) and Supports(
+    AProvider,
+    IRadIADedicatedFimProvider,
+    AProviderContract
+  );
+  if not Result then
+    AFallbackReason :=
+      'The selected provider does not expose the dedicated FIM contract.';
+end;
+
+function TRadIAFimDiagnostic.RouteName: string;
+begin
+  if FRouteKind = frkDedicated then
+    Result := 'dedicated FIM'
+  else
+    Result := 'traditional completion fallback';
 end;
 
 constructor TRadIAInlineCompletionContext.Create(
@@ -537,66 +658,242 @@ function TRadIAServiceInlineCompletionProvider.Complete(
   const AContext: TRadIAInlineCompletionContext;
   const ACancellation: IRadIAInlineCompletionCancellationToken
 ): string;
+var
+  LAwareProvider: IRadIAExecutionSettingsAwareProvider;
+  LMaxTokens: Integer;
+  LModelId: string;
+  LProvider: IRadIAProvider;
+  LProviderId: string;
+  LTemperature: Double;
+  LSettings: TRadIAExecutionSettings;
+begin
+  LProviderId := Trim(FConfig.AutocompleteProvider);
+  if LProviderId = '' then
+    LProviderId := FConfig.GetActiveProvider;
+  LModelId := Trim(FConfig.AutocompleteModel);
+  if LModelId = '' then
+    LModelId := FConfig.GetActiveModel(LProviderId);
+  if FConfig.QuotaEnabled and
+    not FConfig.IsWebLoginProvider(LProviderId) and
+    (FConfig.QuotaUsed >= FConfig.QuotaLimit) then
+  begin
+    StoreDiagnostic(
+      TRadIAFimDiagnostic.Create(
+        LProviderId,
+        LModelId,
+        frkTraditionalFallback,
+        'The local monthly token quota is exhausted.',
+        0
+      )
+    );
+    Exit('');
+  end;
+  if FConfig.IsWebLoginProvider(LProviderId) then
+    LProvider := TProviderRegistry.CreateProvider('WebViewBridge', FConfig)
+  else
+    LProvider := TProviderRegistry.CreateProvider(LProviderId, FConfig);
+  LSettings := TRadIAExecutionSettings.Create(
+    LProviderId,
+    LModelId,
+    '',
+    -1,
+    FTimeoutMs,
+    -1
+  );
+  if Supports(LProvider, IRadIAExecutionSettingsAwareProvider, LAwareProvider) then
+    LAwareProvider.ApplyExecutionSettings(LSettings);
+  FService.ResolveParameters(
+    LProvider.GetProviderId,
+    rpRefactorCode,
+    LTemperature,
+    LMaxTokens
+  );
+  Result := CompleteWithProvider(
+    AContext,
+    ACancellation,
+    LProvider,
+    LModelId,
+    LMaxTokens
+  );
+end;
+
+function TRadIAServiceInlineCompletionProvider.CompleteWithProvider(
+  const AContext: TRadIAInlineCompletionContext;
+  const ACancellation: IRadIAInlineCompletionCancellationToken;
+  const AProvider: IRadIAProvider;
+  const AModelId: string;
+  const AMaxTokens: Integer
+): string;
 const
   CPollIntervalMs = 50;
 var
+  LDedicatedProvider: IRadIADedicatedFimProvider;
   LCallback: TCompletionCallback;
-  LElapsedMs: Cardinal;
+  LError: string;
+  LFallbackReason: string;
+  LFimCallback: TRadIAFimCompletionCallback;
   LResponse: IRadIAInlineCompletionResponse;
-  LWaitMs: Cardinal;
+  LRouteKind: TRadIAFimRouteKind;
+  LStopwatch: TStopwatch;
+  function WaitForResponse(
+    const AResponse: IRadIAInlineCompletionResponse;
+    out AError: string
+  ): string;
+  var
+    LElapsedMs: Cardinal;
+    LWaitMs: Cardinal;
+  begin
+    Result := '';
+    AError := '';
+    LElapsedMs := 0;
+    while LElapsedMs < FTimeoutMs do
+    begin
+      if ACancellation.IsCancellationRequested then
+      begin
+        AProvider.CancelCurrentRequest;
+        AError := 'cancelled';
+        Exit;
+      end;
+      LWaitMs := CPollIntervalMs;
+      if FTimeoutMs - LElapsedMs < LWaitMs then
+        LWaitMs := FTimeoutMs - LElapsedMs;
+      if AResponse.Wait(LWaitMs) = wrSignaled then
+      begin
+        AError := AResponse.GetError;
+        if AError = '' then
+          Result := AResponse.GetResponse;
+        Exit;
+      end;
+      Inc(LElapsedMs, LWaitMs);
+    end;
+    AProvider.CancelCurrentRequest;
+    AError := 'timeout';
+  end;
+  procedure StartTraditionalCompletion;
+  begin
+    LCallback :=
+      procedure(
+        const AResponse: string;
+        const AError: string;
+        AFromCache: Boolean;
+        const AUsage: TTokenUsage
+      )
+      begin
+        LResponse.Complete(AResponse, AError);
+      end;
+    AProvider.SendPromptAsync(
+      BuildPrompt(AContext),
+      [],
+      LCallback,
+      0.0,
+      AMaxTokens
+    );
+  end;
 begin
   Result := '';
+  LStopwatch := TStopwatch.StartNew;
   LResponse := TRadIAInlineCompletionResponse.Create;
-  LCallback :=
-    procedure(
-      const AResponse: string;
-      const AError: string;
-      AFromCache: Boolean;
-      const AUsage: TTokenUsage
-    )
-    begin
-      LResponse.Complete(AResponse, AError);
-    end;
-  FService.SendPrompt(
-    BuildPrompt(AContext),
-    [],
-    LCallback,
-    rpGeneralChat
-  );
-  LElapsedMs := 0;
-  while LElapsedMs < FTimeoutMs do
+  if TRadIAFimCapabilityDiscovery.TryResolve(
+    AProvider,
+    LDedicatedProvider,
+    LFallbackReason
+  ) then
   begin
-    if ACancellation.IsCancellationRequested then
-    begin
-      FService.CancelCurrentRequest;
-      Exit;
-    end;
-    LWaitMs := CPollIntervalMs;
-    if FTimeoutMs - LElapsedMs < LWaitMs then
-      LWaitMs := FTimeoutMs - LElapsedMs;
-    if LResponse.Wait(LWaitMs) = wrSignaled then
-    begin
-      if LResponse.GetError = '' then
-        Result := LResponse.GetResponse;
-      Exit;
-    end;
-    Inc(LElapsedMs, LWaitMs);
+    LRouteKind := frkDedicated;
+    LFimCallback :=
+      procedure(const AResponse: string; const AError: string)
+      begin
+        LResponse.Complete(AResponse, AError);
+      end;
+    LDedicatedProvider.SendFimAsync(AContext, LFimCallback, AMaxTokens);
+  end
+  else
+  begin
+    LRouteKind := frkTraditionalFallback;
+    StartTraditionalCompletion;
   end;
-  FService.CancelCurrentRequest;
+  Result := WaitForResponse(LResponse, LError);
+  if (LRouteKind = frkDedicated) and
+    (LError <> '') and
+    not SameText(LError, 'cancelled') then
+  begin
+    LRouteKind := frkTraditionalFallback;
+    LFallbackReason := 'Dedicated FIM failed: ' + LError;
+    LResponse := TRadIAInlineCompletionResponse.Create;
+    StartTraditionalCompletion;
+    Result := WaitForResponse(LResponse, LError);
+  end;
+  if SameText(LError, 'cancelled') then
+    LFallbackReason :=
+      'The request was cancelled because the editor context changed.'
+  else if SameText(LError, 'timeout') then
+    LFallbackReason := 'The completion request reached its local timeout.';
+  LStopwatch.Stop;
+  StoreDiagnostic(
+    TRadIAFimDiagnostic.Create(
+      AProvider.GetProviderId,
+      AModelId,
+      LRouteKind,
+      LFallbackReason,
+      LStopwatch.ElapsedMilliseconds
+    )
+  );
+end;
+
+procedure TRadIAServiceInlineCompletionProvider.StoreDiagnostic(
+  const ADiagnostic: TRadIAFimDiagnostic
+);
+begin
+  TMonitor.Enter(FDiagnosticLock);
+  try
+    FLastDiagnostic := ADiagnostic;
+    TLogger.Log(
+      'Inline completion route=' + FLastDiagnostic.RouteName +
+      ' provider=' + FLastDiagnostic.ProviderId +
+      ' model=' + FLastDiagnostic.ModelId +
+      ' latencyMs=' + FLastDiagnostic.LatencyMs.ToString +
+      ' fallbackReason=' + FLastDiagnostic.FallbackReason,
+      'InlineCompletion'
+    );
+  finally
+    TMonitor.Exit(FDiagnosticLock);
+  end;
 end;
 
 constructor TRadIAServiceInlineCompletionProvider.Create(
   const AService: IRadIAService;
+  const AConfig: IRadIAConfig;
   const ATimeoutMs: Cardinal
 );
 begin
   inherited Create;
   if not Assigned(AService) then
     raise EArgumentNilException.Create('AService');
+  if not Assigned(AConfig) then
+    raise EArgumentNilException.Create('AConfig');
   if ATimeoutMs = 0 then
     raise EArgumentOutOfRangeException.Create('ATimeoutMs');
   FService := AService;
+  FConfig := AConfig;
   FTimeoutMs := ATimeoutMs;
+  FDiagnosticLock := TObject.Create;
+end;
+
+destructor TRadIAServiceInlineCompletionProvider.Destroy;
+begin
+  FDiagnosticLock.Free;
+  inherited Destroy;
+end;
+
+function TRadIAServiceInlineCompletionProvider.GetLastDiagnostic:
+  TRadIAFimDiagnostic;
+begin
+  TMonitor.Enter(FDiagnosticLock);
+  try
+    Result := FLastDiagnostic;
+  finally
+    TMonitor.Exit(FDiagnosticLock);
+  end;
 end;
 
 { TRadIAInlineCompletionOptions }

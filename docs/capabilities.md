@@ -53,6 +53,8 @@ Pelo chat e pelo menu contextual do editor, o RadIA pode:
 - gerar DTOs e models a partir de JSON ou DDL;
 - produzir código para Delphi puro, REST.Json, DEXT e TMS Aurelius;
 - apresentar mudanças em Smart Diff e publicar revisões inline;
+- sugerir Ghost Text por FIM dedicado no Ollama e LM Studio, com fallback explícito nos demais
+  providers e diagnóstico de rota sem conteúdo do código;
 - preparar, aplicar e reverter correções revisadas.
 
 Quando uma ação compatível não recebe seleção, ela pode usar a unit ativa como contexto.

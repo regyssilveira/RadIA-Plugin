@@ -22,6 +22,29 @@ accepts the whole suggestion or the next word.
 6. Delivery occurs only while generation and revision are current.
 7. The visual layer shows the suggestion without touching the buffer.
 
+## Dedicated FIM route and fallback
+
+Ghost Text has its own contract, separate from chat. RadIA checks provider capability at runtime;
+it does not infer support from a model name.
+
+- **Ollama:** uses `POST /api/generate` with separate `prompt` and `suffix` fields.
+- **LM Studio:** uses `POST /v1/completions` with separate `prompt` and `suffix` fields.
+- **Other providers:** explicitly use traditional completion fallback with delimited FIM context in
+  the prompt.
+
+If a dedicated route fails, RadIA tries traditional fallback for the same request. Changing the
+file, revision, cursor, project, or journey cancels the previous request; a stale response cannot
+reach the overlay.
+
+Provider and model come first from `AutocompleteProvider` and `AutocompleteModel` when those
+preferences exist; otherwise they use the active global provider and model. Selection applies only
+to the inline request and does not mutate global settings.
+
+To inspect the latest decision, use **Rad IA > Show Inline Completion Route Status** in the editor
+menu or **Tools > Rad IA Inline Completion Route Status**. The dialog reports dedicated route or
+fallback, provider, model, local latency, and fallback reason. The same diagnostic is logged without
+prefix, suffix, or suggested content.
+
 ## Editor menu actions
 
 | Action | Default shortcut |
@@ -33,6 +56,9 @@ accepts the whole suggestion or the next word.
 | Reject the suggestion | `Ctrl+Alt+Backspace` |
 | Accept review at the current line | `Ctrl+Alt+Enter` |
 | Reject review at the current line | `Ctrl+Alt+R` |
+
+The submenu also offers **Show Inline Completion Route Status**, with no default shortcut, to
+explain how the latest suggestion was executed.
 
 The shortcuts appear in the **Rad IA** submenu of the editor context menu. The first request in
 each session explains which context will be sent and requires explicit consent.
@@ -108,6 +134,9 @@ revision, or cursor position changes. Policy-blocked contexts never reach the pr
 - `TRadIAInlineCompletionContext`: FIM context and stable cache key.
 - `TRadIAInlineCompletionOptions`: debounce and limits.
 - `IRadIAInlineCompletionProvider`: abstraction for local and remote models.
+- `IRadIADedicatedFimProvider`: optional capability for a provider-native FIM route.
+- `TRadIAFimCapabilityDiscovery`: contract-based selection without model-name heuristics.
+- `TRadIAFimDiagnostic`: route, provider, model, latency, and fallback reason for the latest run.
 - `TRadIAServiceInlineCompletionProvider`: adapter for the active RadIA provider.
 - `TRadIAInlineCompletionController`: cache, cancellation, sanitization, and acceptance actions.
 - `TRadIAInlineGhostLayout`: deterministic multiline virtual-overlay layout.

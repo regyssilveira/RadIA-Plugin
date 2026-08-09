@@ -266,6 +266,12 @@ tests, create XML documentation, analyze warnings, and generate method bodies fr
 It also generates DTOs and models from JSON or DDL and can create complete Delphi project
 structures. Smart Diff lets users review generated changes before applying them.
 
+Ghost Text captures bounded prefix and suffix without mutating the buffer. Ollama and LM Studio
+receive a dedicated FIM request; other providers use an identified traditional fallback. Use
+**Show Inline Completion Route Status** in the editor Rad IA submenu to see provider, model,
+latency, and fallback reason. Configurable shortcuts still provide full acceptance, partial
+acceptance, alternatives, and rejection. See the [complete FIM reference](inline_completion.en.md).
+
 See the [editor and generation guide](user_guide_editor_generation.en.md).
 
 ### 4.4 IDE and workspace tools

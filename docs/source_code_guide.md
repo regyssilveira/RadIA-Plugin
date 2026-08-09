@@ -34,6 +34,7 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.SettingsStorage.pas` | Contrato `IRadIASettingsStorage`; usa `TRadIARegistrySettingsStorage` em produção e `TRadIAMemorySettingsStorage` nos testes. |
 | [RadIA.Core.Container.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Container.pas) | Container IoC estático e thread-safe para injeção de dependência e desacoplamento do ciclo de vida das classes. |
 | [RadIA.Core.Service.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Service.pas) | Orquestrador principal (`TRadIAService`). Gerencia sessões de chat, ativação de provedores e caching. |
+| [RadIA.Core.InlineCompletion.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.InlineCompletion.pas) | Contratos FIM e fallback, discovery por capability, contexto limitado, cache, cancelamento, diagnóstico e controle do Ghost Text. |
 | [RadIA.Core.Sessions.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Sessions.pas) | Lógica de gerenciamento de sessões de chat histórico e persistência automática em arquivos JSON locais. |
 | [RadIA.Core.PromptTemplates.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.PromptTemplates.pas) | Gerencia o catálogo de prompts reutilizáveis, slash commands e suas substituições dinâmicas de tags. |
 | [RadIA.Core.Localizer.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.Localizer.pas) | Componente de internacionalização (i18n) para localização dinâmica de strings da interface do usuário. |
@@ -64,9 +65,9 @@ Encapsula a comunicação HTTP específica com cada provedor de Inteligência Ar
 | [RadIA.Provider.Base.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.Base.pas) | Classe ancestral abstrata (`TRadIAProviderBase`) que padroniza o ciclo de vida e requisições assíncronas. |
 | [RadIA.Provider.Gemini.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.Gemini.pas) | Integração nativa com a API do Google Gemini (incluindo parsing de stream e chat history). |
 | [RadIA.Provider.GithubCopilot.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.GithubCopilot.pas) | Adaptador para conexão segura, login por dispositivo (OAuth) e consumo das APIs do GitHub Copilot. |
-| [RadIA.Provider.Ollama.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.Ollama.pas) | Cliente para consumo de modelos LLM rodando localmente pelo Ollama. |
+| [RadIA.Provider.Ollama.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.Ollama.pas) | Cliente local Ollama, incluindo FIM dedicado por `/api/generate`. |
 | [RadIA.Provider.Claude.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.Claude.pas) | Conector específico para a API Anthropic Claude. |
-| [RadIA.Provider.LMStudio.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.LMStudio.pas) | Conector específico para a API local do LM Studio. |
+| [RadIA.Provider.LMStudio.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.LMStudio.pas) | Conector local LM Studio, incluindo FIM dedicado por `/v1/completions`. |
 | [RadIA.Provider.DeepSeek.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.DeepSeek.pas) | Adaptador para consumo dos modelos DeepSeek Chat e Coder. |
 | [RadIA.Provider.AzureOpenAI.pas](file:///d:/Projetos/PluginDelphiIA/Source/Providers/RadIA.Provider.AzureOpenAI.pas) | Integração corporativa com endpoints do Azure OpenAI Service. |
 

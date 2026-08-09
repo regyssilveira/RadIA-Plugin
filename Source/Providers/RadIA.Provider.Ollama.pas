@@ -3,11 +3,15 @@ unit RadIA.Provider.Ollama;
 interface
 
 uses
-  System.SysUtils, RadIA.Core.Interfaces, RadIA.Core.TokenUsage, RadIA.Provider.Base;
+  System.SysUtils, RadIA.Core.Interfaces, RadIA.Core.InlineCompletion,
+  RadIA.Core.TokenUsage, RadIA.Provider.Base;
 
 type
   {$RTTI EXPLICIT METHODS([vcPrivate, vcProtected, vcPublic, vcPublished])}
-  TRadIAOllamaProvider = class(TRadIAProviderBase)
+  TRadIAOllamaProvider = class(
+    TRadIAProviderBase,
+    IRadIADedicatedFimProvider
+  )
   private
     function BuildRequestBody(const APrompt: string; const AHistory: TArray<IRadIAChatMessage>;
       const AStream: Boolean; const ATemperature: Double; const AMaxTokens: Integer): string;
@@ -22,6 +26,11 @@ type
     procedure FetchAvailableModelsAsync(const ACallback: TProc<TArray<string>, string>); override;
     function GetAvailableModels: TArray<string>; override;
     function GetName: string; override;
+    procedure SendFimAsync(
+      const AContext: TRadIAInlineCompletionContext;
+      const ACallback: TRadIAFimCompletionCallback;
+      const AMaxTokens: Integer
+    );
     procedure ProcessStreamBuffer(var ABuffer: string; const ACallback: TStreamChunkCallback);
   end;
 
@@ -38,6 +47,75 @@ constructor TRadIAOllamaProvider.Create(const AConfig: IRadIAConfig);
 begin
   inherited Create(AConfig);
   FProviderId := 'Ollama';
+end;
+
+procedure TRadIAOllamaProvider.SendFimAsync(
+  const AContext: TRadIAInlineCompletionContext;
+  const ACallback: TRadIAFimCompletionCallback;
+  const AMaxTokens: Integer
+);
+var
+  LOptions: TJSONObject;
+  LRequest: TJSONObject;
+  LRequestBody: string;
+  LUrl: string;
+begin
+  LRequest := TJSONObject.Create;
+  try
+    LRequest.AddPair('model', GetActiveModel);
+    LRequest.AddPair('prompt', AContext.Prefix);
+    LRequest.AddPair('suffix', AContext.Suffix);
+    LRequest.AddPair('stream', TJSONBool.Create(False));
+    LOptions := TJSONObject.Create;
+    LOptions.AddPair('temperature', TJSONNumber.Create(0));
+    if AMaxTokens > 0 then
+      LOptions.AddPair('num_predict', TJSONNumber.Create(AMaxTokens));
+    LRequest.AddPair('options', LOptions);
+    LRequestBody := LRequest.ToJSON;
+  finally
+    LRequest.Free;
+  end;
+  LUrl := FConfig.OllamaBaseUrl.TrimRight(['/']) + '/api/generate';
+  ExecuteRequestAsync(
+    LUrl,
+    nil,
+    LRequestBody,
+    function(
+      const AResponseJson: string;
+      out AUsage: TTokenUsage
+    ): string
+    var
+      LResponse: TJSONObject;
+    begin
+      AUsage := TTokenUsage.Empty;
+      LResponse := TJSONObject.ParseJSONValue(AResponseJson) as TJSONObject;
+      if not Assigned(LResponse) then
+        raise EConvertError.Create('Invalid Ollama FIM response.');
+      try
+        Result := LResponse.GetValue<string>('response', '');
+        AUsage.PromptTokens := LResponse.GetValue<Integer>(
+          'prompt_eval_count',
+          0
+        );
+        AUsage.CompletionTokens := LResponse.GetValue<Integer>(
+          'eval_count',
+          0
+        );
+        AUsage.TotalTokens := AUsage.PromptTokens + AUsage.CompletionTokens;
+      finally
+        LResponse.Free;
+      end;
+    end,
+    procedure(
+      const AResponse: string;
+      const AError: string;
+      AFromCache: Boolean;
+      const AUsage: TTokenUsage
+    )
+    begin
+      ACallback(AResponse, AError);
+    end
+  );
 end;
 
 function TRadIAOllamaProvider.GetAvailableModels: TArray<string>;

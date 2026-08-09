@@ -171,6 +171,9 @@ begin
   Assert.IsNotNull(LRoot);
   Assert.IsTrue(HasCaption(LRoot, 'Accept Review at Cursor'));
   Assert.IsTrue(HasCaption(LRoot, 'Reject Review at Cursor'));
+  Assert.IsTrue(
+    HasCaption(LRoot, 'Show Inline Completion Route Status')
+  );
 end;
 
 procedure TTestEditorHook.TestUnhooking;

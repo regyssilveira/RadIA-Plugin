@@ -129,12 +129,13 @@ se ele não responder, verifique processo, porta, firewall e URL.
 
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
-| Enable ghost text (inline completion) | Para receber sugestões enquanto edita | Envia contexto limitado do editor ao provider ativo; respeita exclusões e consentimentos aplicáveis. |
+| Enable ghost text (inline completion) | Para receber sugestões enquanto edita | Envia contexto limitado ao provider/modelo inline configurado ou, se vazios, ao provider/modelo globais ativos. Usa FIM dedicado quando a capability existe e fallback explícito nos demais casos. |
 | Idle delay (250–5000 ms) | Para equilibrar rapidez e quantidade de chamadas | Valor menor solicita mais cedo e pode aumentar chamadas; valor maior reduz interrupções. |
 | Excluded languages | Para impedir completação em linguagens específicas | Lista separada por `;`, por exemplo `sql;markdown`. |
 | Excluded file fragments | Para impedir completação em arquivos específicos | Fragmentos de nome ou caminho separados por `;`. |
 | Excluded project fragments | Para impedir completação em projetos específicos | Fragmentos de nome ou caminho separados por `;`. |
 | RadIA shortcuts | Para personalizar atalhos | Pares `ação=atalho` separados por `;`: `request`, `accept`, `nextWord`, `alternative`, `reject` e `terminal`. Conflitos são validados ao salvar. |
+| Show Inline Completion Route Status | Para entender a última solicitação | No menu Rad IA do editor ou em Tools, mostra rota, provider, modelo, latência e motivo do fallback sem expor código. |
 
 ## CLI & MCP
 

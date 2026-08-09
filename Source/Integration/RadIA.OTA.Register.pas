@@ -1356,6 +1356,7 @@ initialization
   TRadIAContainer.Register<IRadIAInlineCompletionProvider>(
     TRadIAServiceInlineCompletionProvider.Create(
       TRadIAContainer.Resolve<IRadIAService>,
+      TRadIAContainer.Resolve<IRadIAConfig>,
       30000
     )
   );

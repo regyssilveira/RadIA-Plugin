@@ -16,6 +16,7 @@ type
   private
     FResponseStr: string;
     FStreamChunks: TArray<string>;
+    FLastRequestBody: string;
     FLastUrl: string;
     FStatusCodeToThrow: Integer;
     FErrorContentToThrow: string;
@@ -33,6 +34,7 @@ type
     procedure Cancel;
 
     property LastUrl: string read FLastUrl;
+    property LastRequestBody: string read FLastRequestBody;
   end;
 
   [TestFixture]
@@ -124,6 +126,8 @@ type
     [Test]
     procedure TestLMStudio_SendPromptStreamAsync;
     [Test]
+    procedure TestLMStudio_DedicatedFim;
+    [Test]
     procedure TestAzureOpenAI_PayloadAndParsing;
     [Test]
     procedure TestAzureOpenAI_StreamingSSE;
@@ -174,6 +178,8 @@ type
     [Test]
     procedure TestOllama_SendPromptStreamAsync;
     [Test]
+    procedure TestOllama_DedicatedFim;
+    [Test]
     procedure TestBedrock_SendPromptAsync;
     [Test]
     procedure TestBedrock_SendPromptStreamAsync;
@@ -193,6 +199,8 @@ type
     procedure TestProviderBase_ErrorParsing;
     [Test]
     procedure TestProviderBase_CancellationAndTimeout;
+    [Test]
+    procedure TestFimCapabilityDiscoveryUsesProviderContract;
   end;
 
 implementation
@@ -200,9 +208,34 @@ implementation
 uses
   System.Classes, System.Rtti, System.JSON, System.Net.HttpClient, System.NetEncoding, RadIA.Core.ChatMessage,
   RadIA.Core.Container, RadIA.Core.Types, RadIA.Core.Config, RadIA.Core.AwsSigner, RadIA.Core.SettingsStorage,
-  RadIA.Provider.OpenAI;
+  RadIA.Core.InlineCompletion, RadIA.Provider.OpenAI;
 
 { TTestRadIAProvidersEx }
+
+procedure TTestRadIAProvidersEx.TestFimCapabilityDiscoveryUsesProviderContract;
+var
+  LContract: IRadIADedicatedFimProvider;
+  LReason: string;
+begin
+  Assert.IsTrue(
+    TRadIAFimCapabilityDiscovery.TryResolve(
+      FOllamaProvRef,
+      LContract,
+      LReason
+    )
+  );
+  Assert.IsNotNull(LContract);
+  Assert.IsEmpty(LReason);
+  Assert.IsFalse(
+    TRadIAFimCapabilityDiscovery.TryResolve(
+      FClaudeProvRef,
+      LContract,
+      LReason
+    )
+  );
+  Assert.IsNull(LContract);
+  Assert.Contains(LReason, 'does not expose');
+end;
 
 procedure TTestRadIAProvidersEx.TestChatMessageProperties;
 var
@@ -970,6 +1003,7 @@ function TMockHttpClient.Post(const AUrl: string; const AHeaders: TNetHeaders;
   const ARequestBody: string; const ATimeoutMs: Integer = 0): string;
 begin
   FLastUrl := AUrl;
+  FLastRequestBody := ARequestBody;
   if FStatusCodeToThrow <> 0 then
   begin
     if FStatusCodeToThrow = -2 then
@@ -1030,6 +1064,67 @@ begin
     '{"choices": [{"message": {"role": "assistant", "content": "LM Studio response text"}}], ' +
     '"usage": {"prompt_tokens": 12, "completion_tokens": 16, "total_tokens": 28}}',
     'LM Studio response text');
+end;
+
+procedure TTestRadIAProvidersEx.TestLMStudio_DedicatedFim;
+var
+  LContext: TRadIAInlineCompletionContext;
+  LError: string;
+  LFinished: Boolean;
+  LFimProvider: IRadIADedicatedFimProvider;
+  LJson: TJSONObject;
+  LResponse: string;
+  LTimeout: Integer;
+begin
+  Assert.IsTrue(
+    Supports(FLMStudioProvRef, IRadIADedicatedFimProvider, LFimProvider)
+  );
+  FMockHttpClient.SetResponse(
+    '{"choices":[{"text":"Result := 42;"}],' +
+    '"usage":{"prompt_tokens":4,"completion_tokens":3,"total_tokens":7}}'
+  );
+  LContext := TRadIAInlineCompletionContext.Create(
+    'Sample.pas',
+    'delphi',
+    'begin ',
+    ' end;',
+    'Calculate',
+    'Project: Sample',
+    'fim-lmstudio'
+  );
+  LFinished := False;
+  LFimProvider.SendFimAsync(
+    LContext,
+    procedure(const AResponse: string; const AError: string)
+    begin
+      LResponse := AResponse;
+      LError := AError;
+      LFinished := True;
+    end,
+    128
+  );
+  LTimeout := 0;
+  while not LFinished and (LTimeout < 2000) do
+  begin
+    Sleep(10);
+    Inc(LTimeout, 10);
+    CheckSynchronize(10);
+  end;
+  Assert.IsTrue(LFinished);
+  Assert.IsEmpty(LError);
+  Assert.AreEqual('Result := 42;', LResponse);
+  Assert.IsTrue(FMockHttpClient.LastUrl.EndsWith('/completions'));
+  LJson := TJSONObject.ParseJSONValue(
+    FMockHttpClient.LastRequestBody
+  ) as TJSONObject;
+  try
+    Assert.IsNotNull(LJson);
+    Assert.AreEqual('begin ', LJson.GetValue<string>('prompt'));
+    Assert.AreEqual(' end;', LJson.GetValue<string>('suffix'));
+    Assert.AreEqual(128, LJson.GetValue<Integer>('max_tokens'));
+  finally
+    LJson.Free;
+  end;
 end;
 
 procedure TTestRadIAProvidersEx.TestLMStudio_SendPromptStreamAsync;
@@ -1206,6 +1301,66 @@ begin
     '{"message": {"content": "Ollama response"}, ' +
     '"prompt_eval_count": 10, "eval_count": 10}',
     'Ollama response');
+end;
+
+procedure TTestRadIAProvidersEx.TestOllama_DedicatedFim;
+var
+  LContext: TRadIAInlineCompletionContext;
+  LError: string;
+  LFinished: Boolean;
+  LFimProvider: IRadIADedicatedFimProvider;
+  LJson: TJSONObject;
+  LResponse: string;
+  LTimeout: Integer;
+begin
+  Assert.IsTrue(
+    Supports(FOllamaProvRef, IRadIADedicatedFimProvider, LFimProvider)
+  );
+  FMockHttpClient.SetResponse(
+    '{"response":"WriteLn(Value);","prompt_eval_count":6,"eval_count":4}'
+  );
+  LContext := TRadIAInlineCompletionContext.Create(
+    'Sample.pas',
+    'delphi',
+    'begin ',
+    ' end;',
+    'Display',
+    'Project: Sample',
+    'fim-ollama'
+  );
+  LFinished := False;
+  LFimProvider.SendFimAsync(
+    LContext,
+    procedure(const AResponse: string; const AError: string)
+    begin
+      LResponse := AResponse;
+      LError := AError;
+      LFinished := True;
+    end,
+    96
+  );
+  LTimeout := 0;
+  while not LFinished and (LTimeout < 2000) do
+  begin
+    Sleep(10);
+    Inc(LTimeout, 10);
+    CheckSynchronize(10);
+  end;
+  Assert.IsTrue(LFinished);
+  Assert.IsEmpty(LError);
+  Assert.AreEqual('WriteLn(Value);', LResponse);
+  Assert.IsTrue(FMockHttpClient.LastUrl.EndsWith('/api/generate'));
+  LJson := TJSONObject.ParseJSONValue(
+    FMockHttpClient.LastRequestBody
+  ) as TJSONObject;
+  try
+    Assert.IsNotNull(LJson);
+    Assert.AreEqual('begin ', LJson.GetValue<string>('prompt'));
+    Assert.AreEqual(' end;', LJson.GetValue<string>('suffix'));
+    Assert.IsFalse(LJson.GetValue<Boolean>('stream'));
+  finally
+    LJson.Free;
+  end;
 end;
 
 procedure TTestRadIAProvidersEx.TestOllama_SendPromptStreamAsync;

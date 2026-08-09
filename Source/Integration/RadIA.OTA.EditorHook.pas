@@ -149,6 +149,7 @@ type
     procedure OnInlineCompletionPreviewDiagnosticExecute(Sender: TObject);
     procedure OnInlineCompletionRequestExecute(Sender: TObject);
     procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
+    procedure OnInlineCompletionStatusExecute(Sender: TObject);
     procedure OnInlineReviewAcceptExecute(Sender: TObject);
     procedure OnInlineReviewRejectExecute(Sender: TObject);
     function ReviewWithSmartDiff(
@@ -1016,6 +1017,11 @@ begin
     0,
     OnInlineCompletionPreviewDiagnosticExecute
   );
+  AddItem(
+    'Show Inline Completion Route Status',
+    0,
+    OnInlineCompletionStatusExecute
+  );
 end;
 
 procedure TRadIAEditorHook.InjectMenuIntoPopupMenu(APopupMenu: TPopupMenu);
@@ -1180,6 +1186,11 @@ begin
   LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Preview Rad IA Ghost Text Diagnostic';
   LItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Inline Completion Route Status';
+  LItem.OnClick := OnInlineCompletionStatusExecute;
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
@@ -1369,6 +1380,45 @@ begin
     Assigned(FInlineCompletionController) then
     FInlineCompletionController.Stop;
   RefreshInlineCompletionWatch;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionStatusExecute(
+  Sender: TObject
+);
+var
+  LDiagnostic: TRadIAFimDiagnostic;
+  LDiagnostics: IRadIAInlineCompletionDiagnostics;
+  LMessage: string;
+  LProvider: IRadIAInlineCompletionProvider;
+begin
+  if not TRadIAContainer.TryResolve<IRadIAInlineCompletionProvider>(
+    LProvider
+  ) or not Supports(
+    LProvider,
+    IRadIAInlineCompletionDiagnostics,
+    LDiagnostics
+  ) then
+  begin
+    ShowMessage('Inline completion diagnostics are not available.');
+    Exit;
+  end;
+  LDiagnostic := LDiagnostics.GetLastDiagnostic;
+  if LDiagnostic.ProviderId = '' then
+  begin
+    ShowMessage(
+      'No inline completion request has finished in this IDE session.'
+    );
+    Exit;
+  end;
+  LMessage :=
+    'Route: ' + LDiagnostic.RouteName + sLineBreak +
+    'Provider: ' + LDiagnostic.ProviderId + sLineBreak +
+    'Model: ' + LDiagnostic.ModelId + sLineBreak +
+    'Local latency: ' + LDiagnostic.LatencyMs.ToString + ' ms';
+  if LDiagnostic.FallbackReason <> '' then
+    LMessage := LMessage + sLineBreak +
+      'Fallback reason: ' + LDiagnostic.FallbackReason;
+  ShowMessage(LMessage);
 end;
 
 procedure TRadIAEditorHook.OnInlineReviewAcceptExecute(
@@ -1645,8 +1695,7 @@ begin
     FConfig.AutocompleteExcludedProjects
   ) then
     Exit;
-  LRequestKey := LContext.FileName.ToLower + '|' +
-    LContext.Revision + '|' +
+  LRequestKey := LContext.CacheKey + '|' +
     LContext.CursorLine.ToString + '|' +
     LContext.CursorColumn.ToString;
   if SameText(LRequestKey, FInlineCompletionLastKey) then

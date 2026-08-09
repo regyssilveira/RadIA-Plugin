@@ -9,7 +9,7 @@ This page is the functional map of RadIA 2.3.1.
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |
 | Journeys | Conversational intake that preserves answers, plus minimal and controller-based DEXT project generation. |
 | Providers | Gemini, OpenAI, Azure OpenAI, Claude, Bedrock, Copilot, DeepSeek, Groq, Qwen, Mistral, OpenRouter, Ollama, LM Studio, OpenAI-compatible and JSON-defined providers. |
-| Editor | Read live buffers and selections, explain, review, refactor, optimize SQL, find bugs, scan warnings, generate tests and XML documentation. |
+| Editor | Read live buffers and selections, explain, review, refactor, optimize SQL, find bugs, scan warnings, generate tests and XML documentation, and show Ghost Text through dedicated FIM on Ollama/LM Studio with explicit fallback elsewhere. |
 | Review | Smart Diff, inline reviews, reviewed fixes, safe apply and controlled revert. |
 | Generation | DTOs and models from JSON or DDL, methods from comments and complete Delphi projects. |
 | Templates | Console, VCL, FMX, Library, Package and DUnitX with preview, staging, validation, open, build and rollback. |

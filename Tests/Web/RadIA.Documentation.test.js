@@ -240,6 +240,26 @@ test('scoped execution settings document precedence, safety, UI, and recovery', 
   assert.match(hub, /hierarchical_settings\.md/u);
 });
 
+test('inline completion documents dedicated FIM, fallback, and diagnostics', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'inline_completion.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'inline_completion.en.md'),
+    'utf8'
+  );
+  [portuguese, english].forEach(document => {
+    assert.match(document, /Ollama/u);
+    assert.match(document, /LM Studio/u);
+    assert.match(document, /api\/generate/u);
+    assert.match(document, /v1\/completions/u);
+    assert.match(document, /Show Inline Completion Route Status/u);
+    assert.match(document, /fallback/iu);
+    assert.match(document, /lat[eê]ncia|latency/iu);
+  });
+});
+
 test('primary documentation entry points expose task-oriented navigation', () => {
   const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
   const documentationHub = fs.readFileSync(
