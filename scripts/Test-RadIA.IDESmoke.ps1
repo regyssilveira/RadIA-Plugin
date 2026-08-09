@@ -659,6 +659,11 @@ function Wait-RadIAInlineCompletionDiagnostic {
     $paintedPattern = (
         "Ghost text painted: lines=2, file=$FileName"
     )
+    $acceptancePattern = (
+        "Inline completion acceptance: previewClean=True, " +
+        "accepted=True, singleUndo=True, undoRestored=True, " +
+        "rejectedClean=True, file=$FileName"
+    )
     $paintDeadline = [DateTime]::UtcNow.AddSeconds(15)
     do {
         $logContent = ""
@@ -667,11 +672,14 @@ function Wait-RadIAInlineCompletionDiagnostic {
         }
         $prepared = $logContent.Contains($preparedPattern)
         $painted = $logContent.Contains($paintedPattern)
-        if (-not ($prepared -and $painted)) {
+        $acceptedAndRestored = $logContent.Contains(
+            $acceptancePattern
+        )
+        if (-not ($prepared -and $painted -and $acceptedAndRestored)) {
             Start-Sleep -Milliseconds 100
         }
     } while (
-        -not ($prepared -and $painted) -and
+        -not ($prepared -and $painted -and $acceptedAndRestored) -and
         [DateTime]::UtcNow -lt $paintDeadline
     )
     if (-not $prepared) {
@@ -680,9 +688,20 @@ function Wait-RadIAInlineCompletionDiagnostic {
     if (-not $painted) {
         throw "The Ghost Text overlay did not reach the OTA paint cycle."
     }
+    if (-not $acceptedAndRestored) {
+        throw (
+            "Inline completion acceptance, single undo, or rejection " +
+            "did not pass on the real editor buffer."
+        )
+    }
     return [pscustomobject]@{
         Prepared = $true
         Painted = $true
+        PreviewClean = $true
+        Accepted = $true
+        SingleUndo = $true
+        UndoRestored = $true
+        RejectedClean = $true
         LineCount = 2
         FileName = $FileName
     }
@@ -2308,6 +2327,26 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 $inlineDiagnostic.Painted
             )
             InlineCompletionLineCount = $inlineLineCount
+            InlineCompletionPreviewClean = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.PreviewClean
+            )
+            InlineCompletionAccepted = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.Accepted
+            )
+            InlineCompletionSingleUndo = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.SingleUndo
+            )
+            InlineCompletionUndoRestored = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.UndoRestored
+            )
+            InlineCompletionRejectedClean = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.RejectedClean
+            )
             InlineReviewExercised = [bool]$ExerciseInlineReview
             InlineReviewPublished = (
                 [bool]$ExerciseInlineReview -and

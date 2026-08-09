@@ -269,7 +269,10 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.InlineCompletionEvidence.ps1
 ```
 
-O resultado versionado fica em `inline_completion_smoke_evidence_2.0.0.json`.
+O resultado versionado atual fica em `inline_completion_smoke_evidence_2.3.1.json`. Além da
+preparação e pintura, cada target deve comprovar preview sem escrita, aceite real, restauração por
+um único undo e rejeição sem alterar o buffer. A evidência registra somente flags, hashes e nomes de
+arquivo, nunca o conteúdo do código ou da sugestão.
 
 ### Evidência visual da revisão inline
 

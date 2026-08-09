@@ -161,6 +161,9 @@ type
       out AReview: TRadIAInlineReview
     ): Boolean;
     function TryPreviewInlineCompletionDiagnostic: Boolean;
+    {$IFNDEF TESTS}
+    function TryRunInlineCompletionAcceptanceDiagnostic: Boolean;
+    {$ENDIF}
     procedure RequestContinuousInlineCompletion;
     procedure RefreshInlineCompletionWatch;
     procedure RefreshKeyboardBinding;
@@ -1382,6 +1385,74 @@ begin
   RefreshInlineCompletionWatch;
 end;
 
+{$IFNDEF TESTS}
+function TRadIAEditorHook.TryRunInlineCompletionAcceptanceDiagnostic:
+  Boolean;
+const
+  CAcceptanceSuggestion =
+    'RadIAFimAcceptanceDiagnostic' + sLineBreak +
+    '// Local acceptance and undo diagnostic.';
+var
+  LAccepted: Boolean;
+  LAcceptedContext: TRadIAInlineCompletionContext;
+  LOriginalContext: TRadIAInlineCompletionContext;
+  LPreviewContext: TRadIAInlineCompletionContext;
+  LPreviewClean: Boolean;
+  LRejectedContext: TRadIAInlineCompletionContext;
+  LRejectedClean: Boolean;
+  LSingleUndo: Boolean;
+  LUndoContext: TRadIAInlineCompletionContext;
+  LUndoRestored: Boolean;
+begin
+  Result := False;
+  if not Assigned(FInlineCompletionController) or
+    not Assigned(FInlineCompletionSession) or
+    not FInlineCompletionSession.Capture(LOriginalContext) then
+    Exit;
+  Result := True;
+  FInlineCompletionController.Preview(
+    LOriginalContext,
+    CAcceptanceSuggestion
+  );
+  LPreviewClean := FInlineCompletionSession.Capture(LPreviewContext) and
+    SameText(LPreviewContext.Revision, LOriginalContext.Revision);
+  LAccepted := FInlineCompletionController.AcceptAll and
+    FInlineCompletionSession.Capture(LAcceptedContext) and
+    not SameText(LAcceptedContext.Revision, LOriginalContext.Revision);
+  LSingleUndo := LAccepted and
+    FInlineCompletionSession.UndoCurrentBuffer;
+  LUndoRestored := LSingleUndo and
+    FInlineCompletionSession.Capture(LUndoContext) and
+    SameText(LUndoContext.Revision, LOriginalContext.Revision);
+  if LUndoRestored then
+  begin
+    FInlineCompletionController.Preview(
+      LUndoContext,
+      CAcceptanceSuggestion
+    );
+    FInlineCompletionController.Reject;
+  end;
+  LRejectedClean := LUndoRestored and
+    FInlineCompletionSession.Capture(LRejectedContext) and
+    SameText(LRejectedContext.Revision, LOriginalContext.Revision);
+  TLogger.Log(
+    Format(
+      'Inline completion acceptance: previewClean=%s, accepted=%s, ' +
+      'singleUndo=%s, undoRestored=%s, rejectedClean=%s, file=%s',
+      [
+        BoolToStr(LPreviewClean, True),
+        BoolToStr(LAccepted, True),
+        BoolToStr(LSingleUndo, True),
+        BoolToStr(LUndoRestored, True),
+        BoolToStr(LRejectedClean, True),
+        ExtractFileName(LOriginalContext.FileName)
+      ]
+    ),
+    'InlineCompletion'
+  );
+end;
+{$ENDIF}
+
 procedure TRadIAEditorHook.OnInlineCompletionStatusExecute(
   Sender: TObject
 );
@@ -1903,7 +1974,7 @@ begin
     Exit;
 
   if FInlineCompletionSmokePending and
-    TryPreviewInlineCompletionDiagnostic then
+    TryRunInlineCompletionAcceptanceDiagnostic then
     FInlineCompletionSmokePending := False;
 
   if not FHookPending then

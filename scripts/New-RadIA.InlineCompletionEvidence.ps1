@@ -1,7 +1,7 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\InlineCompletion",
     [string]$OutputPath = (
-        ".\docs\inline_completion_smoke_evidence_2.0.0.json"
+        ".\docs\inline_completion_smoke_evidence_2.3.1.json"
     ),
     [int]$RequiredToolCount = 126,
     [int]$RequiredLineCount = 2
@@ -109,7 +109,12 @@ foreach ($target in $targets) {
             -Condition (
                 $cycle.InlineCompletionExercised -eq $true -and
                 $cycle.InlineCompletionPrepared -eq $true -and
-                $cycle.InlineCompletionPainted -eq $true
+                $cycle.InlineCompletionPainted -eq $true -and
+                $cycle.InlineCompletionPreviewClean -eq $true -and
+                $cycle.InlineCompletionAccepted -eq $true -and
+                $cycle.InlineCompletionSingleUndo -eq $true -and
+                $cycle.InlineCompletionUndoRestored -eq $true -and
+                $cycle.InlineCompletionRejectedClean -eq $true
             ) `
             -Message (
                 "$($target.evidenceFile) contains an incomplete " +
@@ -133,6 +138,11 @@ foreach ($target in $targets) {
         maximumSeconds = ($seconds | Measure-Object -Maximum).Maximum
         prepared = $true
         painted = $true
+        previewClean = $true
+        accepted = $true
+        singleUndo = $true
+        undoRestored = $true
+        rejectedClean = $true
         lineCount = $RequiredLineCount
         generatedAtUtc = $evidence.generatedAtUtc
     }

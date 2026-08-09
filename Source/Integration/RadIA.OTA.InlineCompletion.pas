@@ -21,6 +21,7 @@ type
       const AEnabled: Boolean;
       const AIdleHandler: TRadIAInlineCompletionIdleHandler
     );
+    function UndoCurrentBuffer: Boolean;
     procedure WatchCurrentView;
   end;
 
@@ -74,6 +75,7 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
+    function UndoCurrentBuffer: Boolean;
     procedure Modified; override;
     procedure EditorIdle(const View: IOTAEditView); override;
     procedure WatchCurrentView;
@@ -456,6 +458,15 @@ begin
       LView.Position.Column
     );
   LView.Paint;
+end;
+
+function TRadIAOTAInlineCompletionSession.UndoCurrentBuffer: Boolean;
+var
+  LView: IOTAEditView;
+begin
+  LView := CurrentView;
+  Result := Assigned(LView) and Assigned(LView.Buffer) and
+    LView.Buffer.Undo;
 end;
 
 procedure TRadIAOTAInlineCompletionSession.WatchCurrentView;

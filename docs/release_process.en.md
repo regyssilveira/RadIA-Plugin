@@ -269,7 +269,10 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.InlineCompletionEvidence.ps1
 ```
 
-The versioned result is stored in `inline_completion_smoke_evidence_2.0.0.json`.
+The current versioned result is stored in `inline_completion_smoke_evidence_2.3.1.json`. Besides
+preparation and painting, every target must prove a write-free preview, real acceptance, restoration
+through one undo, and rejection without changing the buffer. Evidence records only flags, hashes,
+and file names, never code or suggestion content.
 
 ### Agent runtime journey evidence
 

@@ -260,6 +260,30 @@ test('inline completion documents dedicated FIM, fallback, and diagnostics', () 
   });
 });
 
+test('inline completion smoke proves acceptance, one undo, and clean rejection', () => {
+  const smoke = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'Test-RadIA.IDESmoke.ps1'),
+    'utf8'
+  );
+  const consolidator = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'New-RadIA.InlineCompletionEvidence.ps1'),
+    'utf8'
+  );
+  const requiredFields = [
+    'InlineCompletionPreviewClean',
+    'InlineCompletionAccepted',
+    'InlineCompletionSingleUndo',
+    'InlineCompletionUndoRestored',
+    'InlineCompletionRejectedClean'
+  ];
+  requiredFields.forEach(field => {
+    assert.ok(smoke.includes(field), `IDE smoke is missing ${field}`);
+    assert.ok(consolidator.includes(field), `Evidence gate is missing ${field}`);
+  });
+  assert.match(smoke, /singleUndo=True/u);
+  assert.doesNotMatch(smoke, /InlineCompletionSuggestionContent/u);
+});
+
 test('primary documentation entry points expose task-oriented navigation', () => {
   const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
   const documentationHub = fs.readFileSync(
