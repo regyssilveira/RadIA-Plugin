@@ -158,6 +158,14 @@ rejeita Ghost Text sem alterar antecipadamente o buffer, com undo único e nenhu
 - Suportar múltiplos arquivos sem perder navegação, foco ou estado de revisão.
 - Integrar o resultado à timeline e à auditoria, sem duplicar a fonte do diff.
 
+**Fundamento implementado:** `TRadIABlockReviewEngine` agora separa mudanças independentes,
+vincula cada bloco ao arquivo e à revisão-base, atribui identidade estável e recompõe o arquivo
+com decisões individuais de aceitar, rejeitar ou editar. O motor preserva CRLF e limita a matriz
+de comparação; arquivos acima do limite continuam seguros por meio de um bloco agregado. Essa base
+ainda não torna o gutter visível: projeção OTA, comandos, transação e smoke real permanecem nesta fase.
+Consulte a
+[evidência do fundamento da Fase 5](competitive_gap_phase_5_foundation_evidence_2.3.1.json).
+
 **Aceite:** revisão multiarquivo real permite decisões diferentes por bloco, rejeita base obsoleta,
 gera undo previsível e passa por mouse e teclado nos três targets.
 

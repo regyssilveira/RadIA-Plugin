@@ -156,6 +156,14 @@ rejects Ghost Text without premature writes, with one undo and no unintended cod
 - Support multiple files without losing navigation, focus, or review state.
 - Feed results into timeline and audit without duplicating diff truth.
 
+**Foundation implemented:** `TRadIABlockReviewEngine` now separates independent changes, binds each
+block to its file and base revision, assigns a stable identity, and recomposes the file from
+individual accept, reject, or edit decisions. The engine preserves CRLF and bounds its comparison
+matrix; files beyond the limit remain safe through one aggregated block. This foundation does not
+make the gutter visible yet: OTA projection, commands, transactions, and real smoke remain in this
+phase. See the
+[Phase 5 foundation evidence](competitive_gap_phase_5_foundation_evidence_2.3.1.json).
+
 **Acceptance:** a real multi-file review makes different decisions per block, rejects stale bases,
 produces predictable undo, and passes mouse and keyboard validation on all three targets.
 

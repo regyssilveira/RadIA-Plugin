@@ -82,6 +82,7 @@ contains
   RadIA.UI.ExtensionManagerForm in 'Source\UI\RadIA.UI.ExtensionManagerForm.pas',
   RadIA.Core.ToolSecurity in 'Source\Core\RadIA.Core.ToolSecurity.pas',
   RadIA.Core.Patches in 'Source\Core\RadIA.Core.Patches.pas',
+  RadIA.Core.BlockReviews in 'Source\Core\RadIA.Core.BlockReviews.pas',
   RadIA.Core.PatchTools in 'Source\Core\RadIA.Core.PatchTools.pas',
   RadIA.Core.MultiFilePatches in 'Source\Core\RadIA.Core.MultiFilePatches.pas',
   RadIA.Core.MultiFilePatchTools in 'Source\Core\RadIA.Core.MultiFilePatchTools.pas',
