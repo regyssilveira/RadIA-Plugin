@@ -662,10 +662,9 @@ function Complete-RadIADebugSession {
         -InstanceFile $InstanceFile `
         -IDEProcess $IDEProcess `
         -Name "ContinueDebugging"
-    if (-not $continueResult.accepted -or
-        $continueResult.stateAfter -notin @("running", "terminated")) {
+    if (-not $continueResult.accepted) {
         throw (
-            "ContinueDebugging did not start execution: " +
+            "ContinueDebugging was not accepted: " +
             ($continueResult | ConvertTo-Json -Compress)
         )
     }

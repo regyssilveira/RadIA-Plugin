@@ -77,6 +77,19 @@ test('source breakpoint trigger records the authoritative stopped event', () => 
   );
 });
 
+test('continuous journey waits for asynchronous debugger continuation', () => {
+  const smoke = fs.readFileSync(
+    path.join('scripts', 'Test-RadIA.KnowledgeNotifierSmoke.ps1'),
+    'utf8'
+  );
+  assert.match(smoke, /if \(-not \$continueResult\.accepted\)/u);
+  assert.doesNotMatch(
+    smoke,
+    /\$continueResult\.stateAfter -notin @\("running", "terminated"\)/u
+  );
+  assert.match(smoke, /debug process did not finish after ContinueDebugging/u);
+});
+
 test('transient process properties have initializing-safe fallbacks', () => {
   assert.match(
     notifierSource,

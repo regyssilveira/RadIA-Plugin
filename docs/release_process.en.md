@@ -241,7 +241,8 @@ powershell.exe -ExecutionPolicy Bypass `
 
 The debugger uses the VCL project created in the same journey, prepared inside the disposable
 workspace to end naturally. After inspecting the breakpoint, the smoke removes it, uses
-`ContinueDebugging`, and requires the IDE to return to the no-process state before continuing with
+`ContinueDebugging`, accepts the initial asynchronous OTA transition, and requires the IDE to return
+to the no-process state within the time limit before continuing with
 tests and Git review. On failure, it first closes the disposable IDE normally
 and, after the configured timeout, terminates only the instance it started. This prevents a leftover
 `[Stopping]` session while preserving the original diagnostic failure.
