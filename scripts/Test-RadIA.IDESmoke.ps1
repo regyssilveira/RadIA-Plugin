@@ -1834,6 +1834,7 @@ $upgradePackagePath = ""
 $upgradeFromVersion = ""
 $upgradeFromPackageSha256 = ""
 $inlineSmokeUnitPath = ""
+$inlineReviewActivationUnitPath = ""
 $inlineSmokeLogPath = ""
 $terminalSmokeRoot = ""
 $agentSmokeCheckpointDirectory = ""
@@ -2043,10 +2044,17 @@ if ($ExerciseInlineCompletion -or $ExerciseInlineReview -or
         $inlineSmokeUnitPath = Join-Path `
             $repositoryRoot `
             "Tests\Source\RadIA.Tests.TextNormalizer.pas"
+        $inlineReviewActivationUnitPath = Join-Path `
+            $repositoryRoot `
+            "Tests\Source\RadIA.Tests.AgentExecutors.pas"
         if (-not (
             Test-Path -LiteralPath $inlineSmokeProjectPath -PathType Leaf
         ) -or -not (
             Test-Path -LiteralPath $inlineSmokeUnitPath -PathType Leaf
+        ) -or -not (
+            Test-Path `
+                -LiteralPath $inlineReviewActivationUnitPath `
+                -PathType Leaf
         )) {
             throw "Inline editor smoke sources were not found."
         }
@@ -2623,6 +2631,24 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 Where-Object { $_.id -eq 5 }
             if (-not $publishResponse.result.structuredContent.reviewId) {
                 throw "The inline review tool returned no review identifier."
+            }
+            Open-RadIAEditorFile `
+                -IDEProcess $process `
+                -Path $inlineReviewActivationUnitPath
+            Start-Sleep -Seconds 1
+            Open-RadIAEditorFile `
+                -IDEProcess $process `
+                -Path $inlineSmokeUnitPath
+            Start-Sleep -Seconds 2
+            $reactivatedContent = Invoke-RadIASmokeTool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetEditorContent"
+            if (-not $reactivatedContent.revision.Equals(
+                $editorContent.revision,
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+                throw "Native review reactivation changed the editor revision."
             }
             Invoke-RadIAEditorRepaint `
                 -IDEProcess $process `

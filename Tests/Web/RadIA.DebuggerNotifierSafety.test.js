@@ -102,6 +102,7 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /-Path \$inlineSmokeUnitPath/u);
   assert.match(smoke, /reviewFileMatches/u);
   assert.match(smoke, /reviewUnitIsActive/u);
+  assert.match(smoke, /Native review reactivation changed the editor revision/u);
   assert.match(smoke, /FindLargestVisibleProcessDescendantByClass/u);
   assert.match(smoke, /\[switch\]\$PreserveCursor/u);
   assert.match(
