@@ -201,7 +201,13 @@ infrastructure already used by RadIA. The transport sends and receives UTF-8 JSO
 message to 8 MiB, captures stderr, bounds stdin and receive waits, and terminates the process tree on
 stop. An external-process test proves a real round trip and shutdown without an orphan process.
 
-**Still in this phase:** protocol lifecycle, secure persistence, capability discovery, consented
+**Lifecycle and tools implemented:** the client negotiates `initialize` against supported MCP
+versions, sends `notifications/initialized`, correlates responses by ID across notifications,
+translates JSON-RPC errors, discovers `tools/list` without replacing the last valid snapshot after an
+invalid response, and runs `tools/call` with the original name after resolving the federated
+namespace. A server is not considered connected when version, capabilities, or identity is missing.
+
+**Still in this phase:** pagination and resource/prompt discovery, secure persistence, consented
 execution, JSON-RPC cancellation, audit, Settings, `/doctor`, `/status`, and smokes with a complete
 MCP fixture server and one authorized real server.
 

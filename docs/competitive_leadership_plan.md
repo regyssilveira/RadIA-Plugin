@@ -204,9 +204,15 @@ objects já usada pelo RadIA. O transporte envia e recebe JSONL UTF-8, limita ca
 captura stderr, limita a espera pelo stdin e pelo recebimento e encerra a árvore do processo no stop.
 Um teste de processo externo comprova round-trip real e encerramento sem processo órfão.
 
-**Ainda nesta fase:** lifecycle do protocolo, persistência segura, descoberta de capabilities,
-execução com consentimento, cancelamento JSON-RPC, auditoria, Configurações, `/doctor`, `/status` e
-smokes com servidor fixture MCP completo e servidor real autorizado.
+**Lifecycle e tools implementados:** o cliente negocia `initialize` nas versões MCP suportadas,
+envia `notifications/initialized`, correlaciona respostas pelo ID mesmo entre notificações, traduz
+erros JSON-RPC, descobre `tools/list` sem substituir o último snapshot válido em respostas inválidas
+e executa `tools/call` usando o nome original após resolver o namespace federado. O servidor não é
+considerado conectado se omitir versão, capabilities ou identificação.
+
+**Ainda nesta fase:** paginação e descoberta de resources/prompts, persistência segura, execução com
+consentimento, cancelamento JSON-RPC, auditoria, Configurações, `/doctor`, `/status` e smokes com
+servidor fixture MCP completo e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.

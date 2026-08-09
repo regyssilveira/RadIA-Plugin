@@ -66,6 +66,7 @@ contains
   RadIA.Core.McpHandshake in 'Source\Core\RadIA.Core.McpHandshake.pas',
   RadIA.Core.ExternalMcp in 'Source\Core\RadIA.Core.ExternalMcp.pas',
   RadIA.Core.ExternalMcpTransport in 'Source\Core\RadIA.Core.ExternalMcpTransport.pas',
+  RadIA.Core.ExternalMcpClient in 'Source\Core\RadIA.Core.ExternalMcpClient.pas',
   RadIA.Core.ToolRegistry in 'Source\Core\RadIA.Core.ToolRegistry.pas',
   RadIA.Core.ToolViews in 'Source\Core\RadIA.Core.ToolViews.pas',
   RadIA.Core.Extensions in 'Source\Core\RadIA.Core.Extensions.pas',
