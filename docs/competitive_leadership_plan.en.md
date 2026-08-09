@@ -253,7 +253,14 @@ last valid runtime, and every operational control has a contextual hint.
 See the
 [Phase 6 visual experience evidence](competitive_gap_phase_6_settings_evidence_2.3.1.json).
 
-**Still in this phase:** smokes with a complete MCP fixture and one authorized real server.
+**Complete fixture proven:** a versioned stdio MCP server advertises tools, one resource, and one
+prompt, performs reads and mutations against isolated temporary state, and delays a response to
+prove cancellation, late-response disposal, and clean resumption. The smoke passes on Delphi 12
+Win32, Delphi 13 Win32, and Delphi 13 IDE64 without orphan processes, leaks, or residual state files.
+See the
+[Phase 6 complete fixture evidence](competitive_gap_phase_6_fixture_evidence_2.3.1.json).
+
+**Still in this phase:** smoke with one authorized real MCP server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

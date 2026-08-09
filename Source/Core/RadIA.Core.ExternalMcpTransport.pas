@@ -38,6 +38,7 @@ type
     FMessageEvent: TEvent;
     FMessages: TQueue<string>;
     FRunning: Boolean;
+    FSendLock: TObject;
     FSession: IRadIACliProcessSession;
     FStdErr: string;
     FStoppedEvent: TEvent;
@@ -85,11 +86,13 @@ begin
   FMessages := TQueue<string>.Create;
   FMessageEvent := TEvent.Create(nil, False, False, '');
   FStoppedEvent := TEvent.Create(nil, True, True, '');
+  FSendLock := TObject.Create;
 end;
 
 destructor TRadIAExternalMcpStdioTransport.Destroy;
 begin
   Stop;
+  FSendLock.Free;
   FStoppedEvent.Free;
   FMessageEvent.Free;
   FMessages.Free;
@@ -242,21 +245,26 @@ begin
     SetFailure('External MCP messages must be bounded single-line JSON.');
     Exit;
   end;
-  LDeadline := GetTickCount64 + CProcessStartTimeoutMs;
-  repeat
-    TMonitor.Enter(FLock);
-    try
-      LSession := FSession;
-      if not FRunning then
-        Exit;
-    finally
-      TMonitor.Exit(FLock);
-    end;
-    if Assigned(LSession) and LSession.WriteInput(AMessage + sLineBreak) then
-      Exit(True);
-    Sleep(CSendRetryIntervalMs);
-  until GetTickCount64 >= LDeadline;
-  SetFailure('External MCP server standard input did not become available.');
+  TMonitor.Enter(FSendLock);
+  try
+    LDeadline := GetTickCount64 + CProcessStartTimeoutMs;
+    repeat
+      TMonitor.Enter(FLock);
+      try
+        LSession := FSession;
+        if not FRunning then
+          Exit;
+      finally
+        TMonitor.Exit(FLock);
+      end;
+      if Assigned(LSession) and LSession.WriteInput(AMessage + sLineBreak) then
+        Exit(True);
+      Sleep(CSendRetryIntervalMs);
+    until GetTickCount64 >= LDeadline;
+    SetFailure('External MCP server standard input did not become available.');
+  finally
+    TMonitor.Exit(FSendLock);
+  end;
 end;
 
 procedure TRadIAExternalMcpStdioTransport.SetFailure(

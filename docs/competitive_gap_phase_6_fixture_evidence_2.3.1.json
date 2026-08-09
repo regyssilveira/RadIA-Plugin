@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "competitiveGapPhaseFixture",
+  "product": "RadIA",
+  "productVersion": "2.3.1",
+  "phase": 6,
+  "capability": "completeExternalMcpFixtureWorkflow",
+  "status": "fixtureMatrixPassed",
+  "generatedAtUtc": "2026-08-09T13:37:06Z",
+  "fixture": {
+    "versionedStdioServer": true,
+    "initializeHandshake": true,
+    "toolDiscovery": 3,
+    "resourceDiscovery": 1,
+    "promptDiscovery": 1,
+    "isolatedRead": true,
+    "isolatedMutation": true,
+    "activeCancellationNotification": true,
+    "lateResponseDiscarded": true,
+    "cleanCallAfterCancellation": true,
+    "serializedConcurrentInput": true,
+    "orphanProcesses": 0,
+    "residualStateFiles": 0
+  },
+  "validation": {
+    "delphi12Win32InstrumentedTests": 977,
+    "delphi12Win32ExternalProcessTests": 8,
+    "delphi13Win32InstrumentedTests": 977,
+    "delphi13Win32ExternalProcessTests": 8,
+    "delphi13Ide64Tests": 985,
+    "memoryLeaks": 0
+  },
+  "sonar": {
+    "analysisId": "bbf855fe-3e47-4d50-8773-db613741035f",
+    "qualityGate": "OK",
+    "newCoveragePercent": 82.5,
+    "newDuplicationPercent": 0.87695,
+    "globalCoveragePercent": 82.8,
+    "globalDuplicationPercent": 1.8,
+    "issues": 0,
+    "bugs": 0,
+    "vulnerabilities": 0,
+    "securityHotspots": 0,
+    "codeSmells": 0
+  },
+  "remainingAcceptance": [
+    "Prove one authorized real-server workflow on all supported IDE targets.",
+    "Complete the integrated closure journey and final documentation audit."
+  ]
+}

@@ -257,7 +257,14 @@ aplicar o snapshot protegido com confirmação. Teste, apply e refresh executam 
 Consulte a
 [evidência da experiência visual da Fase 6](competitive_gap_phase_6_settings_evidence_2.3.1.json).
 
-**Ainda nesta fase:** smokes com servidor fixture MCP completo e servidor real autorizado.
+**Fixture completa comprovada:** um servidor MCP stdio versionado anuncia tools, resource e prompt,
+executa leitura e mutação sobre estado temporário isolado e atrasa uma resposta para comprovar
+cancelamento, descarte da resposta tardia e retomada limpa. O smoke passa no Delphi 12 Win32,
+Delphi 13 Win32 e Delphi 13 IDE64 sem processo órfão, vazamento ou arquivo de estado residual.
+Consulte a
+[evidência da fixture completa da Fase 6](competitive_gap_phase_6_fixture_evidence_2.3.1.json).
+
+**Ainda nesta fase:** smoke com um servidor MCP real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
 mutação consentida, cancelam corretamente e não contornam nenhuma política do RadIA.

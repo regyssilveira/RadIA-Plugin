@@ -44,8 +44,11 @@ type
   )
   private
     FCallback: TRadIAToolCancellationCallback;
+    FLock: TObject;
     FRequested: Boolean;
   public
+    constructor Create;
+    destructor Destroy; override;
     procedure ClearCancellationCallback;
     function GetCancellationRequested: Boolean;
     procedure Request;
@@ -73,11 +76,17 @@ type
     procedure PaginatedDiscoveryPublishesToolsResourcesAndPrompts;
     [Test]
     procedure RepeatedCursorPreservesLastValidToolCatalog;
+    [Test]
+    [Category('ExternalProcess')]
+    procedure RealFixtureCompletesDiscoveryMutationAndCancellation;
   end;
 
 implementation
 
 uses
+  System.Classes,
+  System.IOUtils,
+  System.Threading,
   RadIA.Core.ExternalMcpContent,
   RadIA.Core.ExternalMcpClient;
 
@@ -181,30 +190,68 @@ end;
 
 { TRadIAFakeToolCancellation }
 
+constructor TRadIAFakeToolCancellation.Create;
+begin
+  inherited Create;
+  FLock := TObject.Create;
+end;
+
+destructor TRadIAFakeToolCancellation.Destroy;
+begin
+  FLock.Free;
+  inherited Destroy;
+end;
+
 procedure TRadIAFakeToolCancellation.ClearCancellationCallback;
 begin
-  FCallback := nil;
+  TMonitor.Enter(FLock);
+  try
+    FCallback := nil;
+  finally
+    TMonitor.Exit(FLock);
+  end;
 end;
 
 function TRadIAFakeToolCancellation.GetCancellationRequested: Boolean;
 begin
-  Result := FRequested;
+  TMonitor.Enter(FLock);
+  try
+    Result := FRequested;
+  finally
+    TMonitor.Exit(FLock);
+  end;
 end;
 
 procedure TRadIAFakeToolCancellation.Request;
+var
+  LCallback: TRadIAToolCancellationCallback;
 begin
-  FRequested := True;
-  if Assigned(FCallback) then
-    FCallback();
+  TMonitor.Enter(FLock);
+  try
+    FRequested := True;
+    LCallback := FCallback;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if Assigned(LCallback) then
+    LCallback();
 end;
 
 procedure TRadIAFakeToolCancellation.SetCancellationCallback(
   const ACallback: TRadIAToolCancellationCallback
 );
+var
+  LCallImmediately: Boolean;
 begin
-  FCallback := ACallback;
-  if FRequested and Assigned(FCallback) then
-    FCallback();
+  TMonitor.Enter(FLock);
+  try
+    FCallback := ACallback;
+    LCallImmediately := FRequested and Assigned(FCallback);
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if LCallImmediately then
+    ACallback();
 end;
 
 { TRadIAExternalMcpClientTests }
@@ -481,6 +528,118 @@ begin
   Assert.Contains(LError, 'repeated cursor');
   Assert.AreEqual<Integer>(1, Length(LCatalog.GetTools));
   Assert.AreEqual('stable', LCatalog.GetTools[0].ToolName);
+end;
+
+procedure TRadIAExternalMcpClientTests.RealFixtureCompletesDiscoveryMutationAndCancellation;
+var
+  LCancelClient: IRadIAExternalMcpCancelableClient;
+  LCancellation: TRadIAFakeToolCancellation;
+  LCancellationNotifier: IRadIAToolCancellationNotifier;
+  LCancellationTask: ITask;
+  LCancellationToken: IRadIAToolCancellationToken;
+  LCatalog: IRadIAExternalMcpCatalog;
+  LClient: IRadIAExternalMcpClient;
+  LConfig: TRadIAExternalMcpServerConfig;
+  LContent: IRadIAExternalMcpContentCatalog;
+  LDiscovery: IRadIAExternalMcpDiscoveryClient;
+  LError: string;
+  LFixturePath: string;
+  LResult: string;
+  LStateFile: string;
+begin
+  LFixturePath := TPath.GetFullPath(
+    TPath.Combine(GetCurrentDir, 'Tests\Fixtures\RadIA.ExternalMcpFixture.ps1')
+  );
+  Assert.IsTrue(TFile.Exists(LFixturePath), 'External MCP fixture script is missing.');
+  LStateFile := TPath.Combine(
+    TPath.GetTempPath,
+    'radia-mcp-fixture-' + TGUID.NewGuid.ToString + '.txt'
+  );
+  LConfig := TRadIAExternalMcpServerConfig.Create(
+    'fixture',
+    'Complete fixture',
+    GetEnvironmentVariable('SystemRoot') +
+      '\System32\WindowsPowerShell\v1.0\powershell.exe',
+    [
+      '-NoLogo',
+      '-NoProfile',
+      '-NonInteractive',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      LFixturePath,
+      '-StateFile',
+      LStateFile
+    ],
+    GetCurrentDir,
+    True,
+    5000
+  );
+  LCatalog := TRadIAExternalMcpCatalog.Create;
+  LContent := TRadIAExternalMcpContentCatalog.Create;
+  LClient := TRadIAExternalMcpClient.Create(
+    TRadIAExternalMcpStdioTransport.Create,
+    LCatalog,
+    LContent
+  );
+  try
+    Assert.IsTrue(LClient.Connect(LConfig, LError), 'Connect: ' + LError);
+    Assert.IsTrue(LClient.DiscoverTools(LError), 'Tools: ' + LError);
+    Assert.AreEqual<Integer>(3, Length(LCatalog.GetTools));
+    Assert.IsTrue(Supports(LClient, IRadIAExternalMcpDiscoveryClient, LDiscovery));
+    Assert.IsTrue(LDiscovery.DiscoverResources(LError), 'Resources: ' + LError);
+    Assert.IsTrue(LDiscovery.DiscoverPrompts(LError), 'Prompts: ' + LError);
+    Assert.AreEqual<Integer>(1, Length(LContent.GetResources));
+    Assert.AreEqual<Integer>(1, Length(LContent.GetPrompts));
+
+    Assert.IsTrue(
+      LClient.CallTool('mcp.fixture.read_state', '{}', LResult, LError),
+      'Initial read: ' + LError
+    );
+    Assert.Contains(LResult, 'initial');
+    Assert.IsTrue(
+      LClient.CallTool(
+        'mcp.fixture.write_state',
+        '{"value":"updated"}',
+        LResult,
+        LError
+      ),
+      'Write: ' + LError
+    );
+    Assert.AreEqual('updated', TFile.ReadAllText(LStateFile, TEncoding.UTF8));
+
+    Assert.IsTrue(Supports(LClient, IRadIAExternalMcpCancelableClient, LCancelClient));
+    LCancellation := TRadIAFakeToolCancellation.Create;
+    LCancellationNotifier := LCancellation;
+    LCancellationToken := LCancellationNotifier;
+    LCancellationTask := TTask.Run(
+      procedure
+      begin
+        TThread.Sleep(150);
+        LCancellation.Request;
+      end
+    );
+    Assert.IsFalse(
+      LCancelClient.CallToolWithCancellation(
+        'mcp.fixture.slow_read',
+        '{}',
+        LCancellationToken,
+        LResult,
+        LError
+      )
+    );
+    LCancellationTask.Wait;
+    Assert.Contains(LError, 'cancelled');
+    Assert.IsTrue(
+      LClient.CallTool('mcp.fixture.read_state', '{}', LResult, LError),
+      'Read after cancellation: ' + LError
+    );
+    Assert.Contains(LResult, 'updated');
+  finally
+    LClient.Disconnect;
+    if TFile.Exists(LStateFile) then
+      TFile.Delete(LStateFile);
+  end;
 end;
 
 initialization
