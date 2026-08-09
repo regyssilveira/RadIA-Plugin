@@ -124,6 +124,22 @@ begin
   end;
 end;
 
+function IsValidToolName(const AValue: string): Boolean;
+var
+  LChar: Char;
+  LIndex: Integer;
+begin
+  Result := (AValue <> '') and (Length(AValue) <= 128);
+  if not Result then
+    Exit;
+  for LIndex := Low(AValue) to High(AValue) do
+  begin
+    LChar := AValue[LIndex];
+    if not (LChar.IsLetterOrDigit or (LChar = '-') or (LChar = '_')) then
+      Exit(False);
+  end;
+end;
+
 function IsValidInputSchema(const AValue: string): Boolean;
 var
   LJson: TJSONValue;
@@ -294,9 +310,9 @@ begin
         AError := 'An external tool belongs to a different server.';
         Exit(False);
       end;
-      if LTool.ToolName = '' then
+      if not IsValidToolName(LTool.ToolName) then
       begin
-        AError := 'External tool name is required.';
+        AError := 'External tool name must use letters, numbers, hyphens, or underscores.';
         Exit(False);
       end;
       if Length(LTool.Description) > 4096 then

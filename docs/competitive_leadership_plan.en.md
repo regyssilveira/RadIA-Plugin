@@ -207,9 +207,16 @@ translates JSON-RPC errors, discovers `tools/list` without replacing the last va
 invalid response, and runs `tools/call` with the original name after resolving the federated
 namespace. A server is not considered connected when version, capabilities, or identity is missing.
 
-**Still in this phase:** pagination and resource/prompt discovery, secure persistence, consented
-execution, JSON-RPC cancellation, audit, Settings, `/doctor`, `/status`, and smokes with a complete
-MCP fixture server and one authorized real server.
+**Execution security implemented:** discovering an external tool does not authorize it. Every tool
+requires an explicit grant that declares risk, per-call consent, and arguments containing paths; an
+empty path list requires an equally explicit unbounded-access grant. The adapter converts the
+external tool into RadIA's shared policy pipeline, so session decisions, consent, redaction, and
+audit follow the same flow as internal tools. Paths outside the workspace are rejected before any
+server call, and server-provided annotations can never reduce the locally defined risk.
+
+**Still in this phase:** active JSON-RPC cancellation, pagination and resource/prompt discovery,
+secure persistence of settings and grants, Settings, `/doctor`, `/status`, and smokes with a
+complete MCP fixture server and one authorized real server.
 
 **Acceptance:** one fixture and one authorized real server are discovered, perform read and consented
 mutation, cancel correctly, and cannot bypass RadIA policy.

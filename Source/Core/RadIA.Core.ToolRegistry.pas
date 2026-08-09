@@ -160,6 +160,22 @@ begin
   Result := False;
   if AName = '' then
     Exit;
+  if AName.StartsWith('mcp.') then
+  begin
+    if (Length(AName) > 256) or AName.EndsWith('.') or
+       AName.Contains('..') then
+      Exit;
+    for LIndex := Low(AName) to High(AName) do
+    begin
+      LChar := AName[LIndex];
+      if not CharInSet(
+        LChar,
+        ['A'..'Z', 'a'..'z', '0'..'9', '_', '-', '.']
+      ) then
+        Exit;
+    end;
+    Exit(True);
+  end;
   if not CharInSet(AName[Low(AName)], ['A'..'Z']) then
     Exit;
 

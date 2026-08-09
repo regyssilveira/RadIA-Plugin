@@ -210,8 +210,16 @@ erros JSON-RPC, descobre `tools/list` sem substituir o último snapshot válido 
 e executa `tools/call` usando o nome original após resolver o namespace federado. O servidor não é
 considerado conectado se omitir versão, capabilities ou identificação.
 
-**Ainda nesta fase:** paginação e descoberta de resources/prompts, persistência segura, execução com
-consentimento, cancelamento JSON-RPC, auditoria, Configurações, `/doctor`, `/status` e smokes com
+**Segurança de execução implementada:** descobrir uma ferramenta externa não a autoriza. Cada tool
+precisa de uma concessão explícita que declara risco, consentimento por chamada e argumentos que
+contêm paths; a ausência dessa lista exige uma concessão igualmente explícita de acesso não
+limitado. O adapter converte a tool externa para a política compartilhada do RadIA, portanto decisão
+de sessão, consentimento, redação e auditoria seguem o mesmo fluxo das tools internas. Paths fora do
+workspace são rejeitados antes de qualquer chamada ao servidor, e anotações fornecidas pelo servidor
+jamais reduzem o risco definido localmente.
+
+**Ainda nesta fase:** cancelamento ativo por JSON-RPC, paginação e descoberta de resources/prompts,
+persistência segura das configurações e concessões, Configurações, `/doctor`, `/status` e smokes com
 servidor fixture MCP completo e servidor real autorizado.
 
 **Aceite:** um servidor fixture e um servidor real autorizado são descobertos, executam leitura e
