@@ -158,6 +158,11 @@
               <textarea id="prompt-textarea" aria-label="Message Rad IA"
                 title="Describe a task, ask a question, or type / to discover commands. Ctrl+Enter sends"
                 placeholder="Ask Rad IA or type / for commands..." rows="1"></textarea>
+              <button id="btn-queue-prompt" class="hidden"
+                title="Queue this message to run after the current response"
+                aria-label="Queue message after current response">
+                <span aria-hidden="true">+1</span>
+              </button>
               <button id="btn-send-prompt" title="Send message (Ctrl+Enter)" aria-label="Send message">
                 <svg class="send-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                   stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -166,6 +171,11 @@
                 </svg>
               </button>
             </div>
+            <output id="queued-prompts" class="hidden" aria-live="polite">
+              <span id="queued-prompts-text"></span>
+              <button id="btn-edit-queued" title="Move the next queued message back to the editor">Edit</button>
+              <button id="btn-clear-queued" title="Discard all queued messages">Clear</button>
+            </output>
           </div>
 
           <div id="model-selectors">

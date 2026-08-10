@@ -144,6 +144,11 @@ resultado. Após a conclusão, um resumo técnico recolhível registra a rota, a
 utilizadas. No modo agente, a economia do RTK é exibida somente quando as métricas reais de compactação
 estão presentes, em caracteres e percentual; o RadIA não estima nem inventa esse valor.
 
+Enquanto o turno está ativo, escreva outra instrução e use **+1** ou `Ctrl + Enter` para enfileirá-la.
+A fila visual comporta cinco mensagens, permite editar a próxima ou limpar todas e envia uma por vez
+após a conclusão. Ela é local ao painel e ainda não faz parte do histórico. Veja
+[Chat e sessões](user_guide_chat_sessions.md).
+
 Respostas do assistente, resultados de ferramentas, argumentos JSON e erros textuais possuem uma
 ação de cópia. A ação usa o conteúdo original do retorno, preservando indentação e quebras de linha
 sem incluir botões, títulos ou outros elementos visuais. Blocos de código mantêm sua cópia própria.

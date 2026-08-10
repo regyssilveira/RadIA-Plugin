@@ -110,6 +110,10 @@ collapsible technical summary records the route, duration, and tools used. In ag
 appear only when actual compaction metrics are present, in characters and percentage; RadIA does not
 estimate or fabricate this value.
 
+While a turn is active, write another instruction and use **+1** or `Ctrl + Enter` to queue it. The
+visible queue holds five messages, lets you edit the next one or clear all, and sends one at a time
+after completion. It is local to the panel and is not history yet. See [Chat and sessions](user_guide_chat_sessions.en.md).
+
 Assistant responses, tool results, JSON arguments, and textual errors provide a copy action. It uses
 the original returned content, preserving indentation and line breaks without including buttons,
 titles, or other visual elements. Code blocks retain their dedicated copy action.

@@ -26,6 +26,21 @@ The Rad IA chat text input area features shortcuts designed to speed up prompt t
 *   Up Arrow `↑` / Down Arrow `↓`: Allows you to quickly navigate through the history of prompts you have typed and sent in this workspace session.
 *   `/` (Slash) character: Opens the floating autocomplete popup listing registered slash command shortcuts.
 
+### Continue writing while RadIA works
+
+During a response, the primary button remains **Cancel request** and a **+1** button appears. Write a
+follow-up and select **+1**, or press `Ctrl + Enter`, to queue it for the current conversation. The
+composer shows the count and a preview of the next message.
+
+- up to five messages may wait;
+- **Edit** returns the next message to the editor without losing the current draft;
+- **Clear** discards the entire local queue;
+- the next message is sent only after the current turn ends;
+- provider, model, executor, and journey remain locked during the turn and are resolved again when
+  the queued message is sent;
+- the queue exists only in panel memory: it does not enter history before sending and does not
+  survive closing or reloading chat.
+
 ---
 
 ## 3. Multiple Sessions & Persistent History

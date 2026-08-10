@@ -4,7 +4,7 @@ This page is the functional map of RadIA 2.3.1.
 
 | Area | What RadIA can do |
 |---|---|
-| Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, sessions, history, exports, templates, token and cost estimates. |
+| Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, a visible five-message follow-up queue, sessions, history, exports, templates, token and cost estimates. |
 | Shared journey | Link chat, terminal, and editor by project-safe identity without copying history or process output. |
 | Terminal | Use dockable multi-tab ConPTY sessions with streaming UTF-8, wide/combining character widths, resize reflow, VT/TUI character operations, history, snippets, consent, and process-tree cancellation. |
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |

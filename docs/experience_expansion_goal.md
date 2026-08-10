@@ -20,7 +20,7 @@ conhecimento e automações com segurança e entender cada controle sem consulta
 | M3 | Sessão visual no chat com captura anterior/posterior, timeline e validação ligada a eventos reais | Concluído; captura real aprovada nos três targets suportados |
 | M4 | Consentimento resiliente entre superfícies e apresentação visual uniforme | Concluído; diálogo central, fila limitada, redação e matriz aprovadas |
 | M5 | Matriz avançada do terminal para Unicode, caracteres largos, reflow e aplicações TUI | Concluído; 1.013 testes nos três targets e Sonar aprovado |
-| M6 | Refinamento incremental do WebView atual, sem trocar sua arquitetura | Pendente |
+| M6 | Refinamento incremental do WebView atual, sem trocar sua arquitetura | Concluído; fila, layout de 280–1000 px, três targets e Sonar aprovados |
 | M7 | Auditoria integral da documentação e gate Delphi 12/13 | Em andamento continuamente; fechamento pendente |
 
 ## Contratos obrigatórios

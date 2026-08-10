@@ -205,6 +205,11 @@ const ROUTE_AVATARS = {
 
 const promptTextarea  = document.getElementById('prompt-textarea');
 const btnSendPrompt   = document.getElementById('btn-send-prompt');
+const btnQueuePrompt  = document.getElementById('btn-queue-prompt');
+const queuedPromptsBar = document.getElementById('queued-prompts');
+const queuedPromptsText = document.getElementById('queued-prompts-text');
+const btnEditQueued = document.getElementById('btn-edit-queued');
+const btnClearQueued = document.getElementById('btn-clear-queued');
 const selectProvider  = document.getElementById('select-provider');
 const selectModel     = document.getElementById('select-model');
 const modelDropdownWrapper = document.getElementById('model-dropdown-wrapper');
@@ -2231,6 +2236,8 @@ let modelSelectionEnabled = true;
 const _promptHistory = [];
 let _promptHistoryIndex = -1;
 let _promptDraft = '';
+const queuedPrompts = [];
+const MAX_QUEUED_PROMPTS = 5;
 
 function canChangeSession() {
   return !requestInProgress;
@@ -2242,10 +2249,70 @@ function showSessionLockedStatus() {
 
 function updateSessionControlsState() {
   const disabled = requestInProgress;
+  const activeComposerButtons = new Set([
+    btnSendPrompt,
+    btnQueuePrompt,
+    btnEditQueued,
+    btnClearQueued
+  ]);
   document.querySelectorAll('button').forEach(button => {
-    button.disabled = disabled && button !== btnSendPrompt;
+    button.disabled = disabled && !activeComposerButtons.has(button);
   });
   sessionsSidebar.classList.toggle('sessions-locked', disabled);
+}
+
+function updateQueuedPrompts() {
+  const count = queuedPrompts.length;
+  queuedPromptsBar.classList.toggle('hidden', count === 0);
+  if (count === 0) {
+    queuedPromptsText.textContent = '';
+    return;
+  }
+  const preview = queuedPrompts[0].replaceAll(/\s+/g, ' ').slice(0, 80);
+  queuedPromptsText.textContent = `${count} queued · Next: ${preview}`;
+}
+
+function rememberPrompt(text) {
+  if (_promptHistory.length === 0 || _promptHistory.at(-1) !== text) {
+    _promptHistory.push(text);
+    if (_promptHistory.length > 100) _promptHistory.shift();
+  }
+  _promptHistoryIndex = -1;
+  _promptDraft = '';
+}
+
+function clearPromptEditor() {
+  promptTextarea.value = '';
+  promptTextarea.style.height = 'auto';
+  hideSlashPopup();
+}
+
+function submitPrompt(text, clearEditor = true) {
+  rememberPrompt(text);
+  hideWelcomeScreen();
+  postMessageToDelphi({ action: 'send_prompt', text: text });
+  if (clearEditor) clearPromptEditor();
+}
+
+function queuePrompt() {
+  const text = promptTextarea.value.trim();
+  if (!text) return;
+  if (queuedPrompts.length >= MAX_QUEUED_PROMPTS) {
+    showTransientStatus(`Queue limit reached (${MAX_QUEUED_PROMPTS} messages).`);
+    return;
+  }
+  queuedPrompts.push(text);
+  clearPromptEditor();
+  updateQueuedPrompts();
+  showTransientStatus('Message queued for the current conversation.');
+  promptTextarea.focus();
+}
+
+function dispatchNextQueuedPrompt() {
+  if (requestInProgress || queuedPrompts.length === 0) return;
+  const text = queuedPrompts.shift();
+  updateQueuedPrompts();
+  submitPrompt(text, false);
 }
 
 promptTextarea.addEventListener('input', () => {
@@ -2349,13 +2416,31 @@ promptTextarea.addEventListener('keydown', (e) => {
     if (handleSlashPopupKeydown(e)) return;
   } else if (e.key === 'Enter' && e.ctrlKey) {
     e.preventDefault();
-    handleSend();
+    if (requestInProgress) queuePrompt();
+    else handleSend();
   } else {
     handleHistoryKeydown(e);
   }
 });
 
 btnSendPrompt.addEventListener('click', handleSend);
+btnQueuePrompt.addEventListener('click', queuePrompt);
+btnEditQueued.addEventListener('click', () => {
+  if (queuedPrompts.length === 0) return;
+  const currentText = promptTextarea.value.trim();
+  const queuedText = queuedPrompts.shift();
+  if (currentText) queuedPrompts.unshift(currentText);
+  promptTextarea.value = queuedText;
+  promptTextarea.dispatchEvent(new Event('input'));
+  updateQueuedPrompts();
+  promptTextarea.focus();
+});
+btnClearQueued.addEventListener('click', () => {
+  queuedPrompts.length = 0;
+  updateQueuedPrompts();
+  showTransientStatus('Queued messages cleared.');
+  promptTextarea.focus();
+});
 
 btnAgentMode.addEventListener('click', () => {
   postMessageToDelphi({
@@ -2372,20 +2457,7 @@ function handleSend() {
 
   const text = promptTextarea.value.trim();
   if (!text) return;
-
-  if (_promptHistory.length === 0 || _promptHistory.at(-1) !== text) {
-    _promptHistory.push(text);
-    if (_promptHistory.length > 100) {
-      _promptHistory.shift();
-    }
-  }
-  _promptHistoryIndex = -1;
-  _promptDraft = '';
-
-  hideWelcomeScreen();
-  postMessageToDelphi({ action: 'send_prompt', text: text });
-  promptTextarea.value = '';
-  promptTextarea.style.height = 'auto';
+  submitPrompt(text);
 }
 
 function showTab(tabName) {
@@ -3470,6 +3542,8 @@ function setRequestState(inProgress) {
     selectProvider.disabled = true;
     providerDropdownWrapper.classList.add('disabled');
     providerDropdownTrigger.setAttribute('aria-disabled', 'true');
+    btnQueuePrompt.classList.remove('hidden');
+    promptTextarea.placeholder = 'Add a follow-up, then select +1 to queue it...';
   } else {
     btnSendPrompt.classList.remove('stop-btn');
     btnSendPrompt.title = 'Send message (Ctrl+Enter)';
@@ -3477,10 +3551,13 @@ function setRequestState(inProgress) {
     selectProvider.disabled = false;
     providerDropdownWrapper.classList.remove('disabled');
     providerDropdownTrigger.setAttribute('aria-disabled', 'false');
+    btnQueuePrompt.classList.add('hidden');
+    promptTextarea.placeholder = 'Ask Rad IA or type / for commands...';
   }
   applyModelSelectionState();
   executionRouteSelector.disabled = inProgress;
   updateComposerRoute();
+  if (!inProgress) setTimeout(dispatchNextQueuedPrompt, 0);
 }
 
 function setContextText(text) {

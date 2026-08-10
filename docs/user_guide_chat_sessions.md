@@ -26,6 +26,21 @@ A área de entrada de texto do chat do Rad IA possui atalhos projetados para ace
 *   Seta para cima `↑` / Seta para baixo `↓`: Permite navegar rapidamente pelo histórico dos prompts que você já digitou e enviou nesta sessão de trabalho.
 *   Caractere `/` (Barra): Abre o popup flutuante de autocompletar contendo a lista de atalhos rápidos (Slash Commands) cadastrados.
 
+### Continuar escrevendo enquanto o RadIA trabalha
+
+Durante uma resposta, o botão principal permanece como **Cancel request** e surge o botão **+1**.
+Escreva uma continuação e clique em **+1**, ou pressione `Ctrl + Enter`, para colocá-la na fila da
+conversa atual. O compositor mostra a quantidade e uma prévia da próxima mensagem.
+
+- até cinco mensagens podem aguardar;
+- **Edit** devolve a próxima mensagem ao campo sem perder o rascunho atual;
+- **Clear** descarta toda a fila local;
+- a próxima mensagem é enviada somente quando o turno atual termina;
+- provider, modelo, executor e jornada permanecem bloqueados durante o turno e são resolvidos de
+  novo no momento do envio;
+- a fila existe somente na memória do painel: não entra no histórico antes do envio e não sobrevive
+  ao fechamento ou recarregamento do chat.
+
 ---
 
 ## 3. Múltiplas Sessões e Histórico Persistente

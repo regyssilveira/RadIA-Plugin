@@ -678,3 +678,19 @@ test('terminal documentation defines Unicode, reflow, and TUI behavior', () => {
   assert.match(manual, /terminal reference/u);
   assert.match(capabilities, /wide\/combining character widths/u);
 });
+
+test('chat documentation explains the bounded follow-up queue', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'user_guide_chat_sessions.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'user_guide_chat_sessions.en.md'),
+    'utf8'
+  );
+
+  assert.match(portuguese, /até cinco mensagens/u);
+  assert.match(portuguese, /não entra no histórico antes do envio/u);
+  assert.match(english, /up to five messages/u);
+  assert.match(english, /does not enter history before sending/u);
+});

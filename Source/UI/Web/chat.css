@@ -366,12 +366,13 @@ textarea:focus-visible,
   }
 
   .header-title,
+  .execution-route,
   .header-action-btn .btn-label {
     display: none;
   }
 
   .header-right {
-    gap: 10px;
+    gap: 6px;
   }
 }
 
@@ -932,6 +933,7 @@ body.light-theme .apply-btn:hover {
 
 #prompt-wrapper {
   display: flex;
+  flex-direction: column;
   width: 100%;
 }
 
@@ -2703,6 +2705,53 @@ body.light-theme .agent-step-git-diff .is-removal {
 .tool-action-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+#btn-queue-prompt {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#btn-queue-prompt:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+#queued-prompts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 7px 16px;
+  color: var(--fg-secondary);
+  font-size: 10px;
+}
+
+#queued-prompts-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#queued-prompts button {
+  padding: 2px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+#queued-prompts.hidden,
+#btn-queue-prompt.hidden {
+  display: none;
 }
 
 .execution-scope-dialog {

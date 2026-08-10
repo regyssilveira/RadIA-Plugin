@@ -14,7 +14,7 @@ Para distinguir implementação de planejamento:
 
 - Painel acoplável à IDE, modo flutuante e persistência de posição.
 - Markdown, realce de sintaxe Pascal e temas claro/escuro.
-- Respostas em streaming e cancelamento.
+- Respostas em streaming, cancelamento e fila visual de até cinco continuações com edição e limpeza.
 - Múltiplas sessões, histórico local e exportação para Markdown ou HTML.
 - Histórico de prompts, envio com `Ctrl + Enter` e seleção de provider e modelo.
 - Estimativas e limites locais de tokens e custo.
