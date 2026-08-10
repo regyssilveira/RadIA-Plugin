@@ -14,6 +14,9 @@ Rad IA docks directly within the Delphi IDE sidebar, providing a modern chat pan
 
 *   **Smart Themes**: The interface automatically detects the active IDE theme (Light or Dark) and adapts its color scheme and styles to maintain visual harmony.
 *   **Markdown & Syntax Highlighting**: AI responses support full Markdown formatting and Object Pascal-optimized syntax highlighting (using locally bundled Marked.js and Prism.js).
+*   **Responsive dock**: When the panel becomes narrow, the composer reorganizes mode, executor,
+    journey, scope, provider, and model into two compact columns. No control requires horizontal
+    scrolling, including docks as narrow as 240 pixels.
 
 ---
 

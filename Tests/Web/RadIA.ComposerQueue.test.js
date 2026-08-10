@@ -30,3 +30,17 @@ test('queued follow-ups remain visible without widening the composer', () => {
   assert.match(chatCss, /#btn-queue-prompt\.hidden[\s\S]*display: none/u);
   assert.match(chatCss, /@media \(max-width: 520px\)[\s\S]*\.execution-route,[\s\S]*display: none/u);
 });
+
+test('composer shrinks and reorganizes controls in narrow dock layouts', () => {
+  assert.match(chatCss, /#chat-wrapper[\s\S]*min-width: 0/u);
+  assert.match(chatCss, /#chat-footer[\s\S]*min-width: 0[\s\S]*width: 100%/u);
+  assert.match(
+    chatCss,
+    /@media \(max-width: 620px\)[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/u
+  );
+  assert.match(chatCss, /\.composer-executor-control select[\s\S]*max-width: none/u);
+  assert.match(
+    chatCss,
+    /@media \(max-width: 360px\)[\s\S]*\.composer-control-label[\s\S]*display: none/u
+  );
+});

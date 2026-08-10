@@ -924,6 +924,8 @@ body.light-theme .apply-btn:hover {
   flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
+  min-width: 0;
+  width: 100%;
 }
 
 #context-bar {
@@ -1372,6 +1374,7 @@ body.light-theme .session-action-btn:disabled:hover {
   flex-direction: column;
   flex: 1;
   height: 100%;
+  min-width: 0;
   overflow: hidden;
   position: relative;
 }
@@ -2006,17 +2009,49 @@ body.light-theme .message-avatar.provider-avatar-badge {
 }
 
 @media (max-width: 620px) {
+  #chat-footer {
+    padding: 8px;
+  }
+
   #model-selectors {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0 8px 8px;
   }
 
   .composer-mode-toggle,
   .composer-executor-control {
-    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .composer-mode-toggle .btn-label,
+  .composer-executor-control select {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .composer-executor-control select {
+    width: 100%;
+    max-width: none;
   }
 
   #model-selectors .selector-wrapper {
-    flex-basis: 42%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .composer-control-label {
+    display: none;
+  }
+
+  #prompt-capsule {
+    padding-left: 10px;
   }
 }
 
