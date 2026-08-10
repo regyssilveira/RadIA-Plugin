@@ -580,6 +580,10 @@ test('release metadata and operational protocols follow the package version', ()
     path.join(documentationRoot, 'cli_capability_matrix.en.md'),
     'utf8'
   );
+  const sonarProject = fs.readFileSync(
+    path.join(repositoryRoot, 'sonar-project.properties'),
+    'utf8'
+  );
 
   assert.doesNotMatch(project, /FileVersion=2\.2\.1\.0/u);
   assert.match(project, new RegExp(`FileVersion=${escapedVersion}\\.0`, 'u'));
@@ -590,6 +594,7 @@ test('release metadata and operational protocols follow the package version', ()
   [cliPortuguese, cliEnglish].forEach(document => {
     assert.match(document, new RegExp(`RadIA ${escapedVersion}`, 'u'));
   });
+  assert.match(sonarProject, new RegExp(`sonar\\.projectVersion=${escapedVersion}`, 'u'));
 });
 
 test('current entry points use the generated tool count and complete task navigation', () => {
