@@ -134,7 +134,7 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | Excluded languages | Para impedir completação em linguagens específicas | Lista separada por `;`, por exemplo `sql;markdown`. |
 | Excluded file fragments | Para impedir completação em arquivos específicos | Fragmentos de nome ou caminho separados por `;`. |
 | Excluded project fragments | Para impedir completação em projetos específicos | Fragmentos de nome ou caminho separados por `;`. |
-| RadIA shortcut profile | Para personalizar completion, terminal e revisão por bloco | Pares `ação=atalho` separados por `;`. Além de `request`, `accept`, `nextWord`, `alternative`, `reject` e `terminal`, aceita `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`, `reviewEdit`, `reviewExplain`, `reviewApply` e `reviewClear`. Perfis antigos herdam novos padrões e conflitos são validados ao salvar. |
+| RadIA shortcut profile | Para personalizar completion, terminal e revisão por bloco | Pares `ação=atalho` separados por `;`. Além de `request`, `accept`, `nextWord`, `alternative`, `completionNext`, `completionPrevious`, `reject` e `terminal`, aceita `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`, `reviewEdit`, `reviewExplain`, `reviewApply` e `reviewClear`. Perfis antigos herdam novos padrões e conflitos são validados ao salvar. |
 | Show Inline Completion Route Status | Para entender a última solicitação | No menu Rad IA do editor ou em Tools, mostra rota, provider, modelo, latência e motivo do fallback sem expor código. |
 
 ## CLI & MCP

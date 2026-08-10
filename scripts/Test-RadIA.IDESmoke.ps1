@@ -949,6 +949,9 @@ function Wait-RadIAInlineCompletionDiagnostic {
     $paintedPattern = (
         "Ghost text painted: lines=2, file=$FileName"
     )
+    $alternativesPattern = (
+        "Inline alternatives painted: count=2, selected=1"
+    )
     $acceptancePattern = (
         "Inline completion acceptance: previewClean=True, " +
         "accepted=True, singleUndo=True, undoRestored=True, " +
@@ -962,14 +965,27 @@ function Wait-RadIAInlineCompletionDiagnostic {
         }
         $prepared = $logContent.Contains($preparedPattern)
         $painted = $logContent.Contains($paintedPattern)
+        $alternativesPainted = $logContent.Contains(
+            $alternativesPattern
+        )
         $acceptedAndRestored = $logContent.Contains(
             $acceptancePattern
         )
-        if (-not ($prepared -and $painted -and $acceptedAndRestored)) {
+        if (-not (
+            $prepared -and
+            $painted -and
+            $alternativesPainted -and
+            $acceptedAndRestored
+        )) {
             Start-Sleep -Milliseconds 100
         }
     } while (
-        -not ($prepared -and $painted -and $acceptedAndRestored) -and
+        -not (
+            $prepared -and
+            $painted -and
+            $alternativesPainted -and
+            $acceptedAndRestored
+        ) -and
         [DateTime]::UtcNow -lt $paintDeadline
     )
     if (-not $prepared) {
@@ -977,6 +993,9 @@ function Wait-RadIAInlineCompletionDiagnostic {
     }
     if (-not $painted) {
         throw "The Ghost Text overlay did not reach the OTA paint cycle."
+    }
+    if (-not $alternativesPainted) {
+        throw "The inline alternatives panel was not painted."
     }
     if (-not $acceptedAndRestored) {
         throw (
@@ -987,6 +1006,8 @@ function Wait-RadIAInlineCompletionDiagnostic {
     return [pscustomobject]@{
         Prepared = $true
         Painted = $true
+        AlternativesPainted = $true
+        AlternativeCount = 2
         PreviewClean = $true
         Accepted = $true
         SingleUndo = $true
@@ -3050,6 +3071,17 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [bool]$ExerciseInlineCompletion -and
                 $inlineDiagnostic.Painted
             )
+            InlineCompletionAlternativesPainted = (
+                [bool]$ExerciseInlineCompletion -and
+                $inlineDiagnostic.AlternativesPainted
+            )
+            InlineCompletionAlternativeCount = if (
+                [bool]$ExerciseInlineCompletion
+            ) {
+                $inlineDiagnostic.AlternativeCount
+            } else {
+                0
+            }
             InlineCompletionLineCount = $inlineLineCount
             InlineCompletionPreviewClean = (
                 [bool]$ExerciseInlineCompletion -and

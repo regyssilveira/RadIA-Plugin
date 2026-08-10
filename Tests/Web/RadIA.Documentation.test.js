@@ -257,6 +257,9 @@ test('inline completion documents dedicated FIM, fallback, and diagnostics', () 
     assert.match(document, /Show Inline Completion Route Status/u);
     assert.match(document, /fallback/iu);
     assert.match(document, /lat[eê]ncia|latency/iu);
+    assert.match(document, /completionNext/u);
+    assert.match(document, /completionPrevious/u);
+    assert.match(document, /painel de alternativas|alternatives panel/iu);
   });
 });
 
@@ -274,7 +277,9 @@ test('inline completion smoke proves acceptance, one undo, and clean rejection',
     'InlineCompletionAccepted',
     'InlineCompletionSingleUndo',
     'InlineCompletionUndoRestored',
-    'InlineCompletionRejectedClean'
+    'InlineCompletionRejectedClean',
+    'InlineCompletionAlternativesPainted',
+    'InlineCompletionAlternativeCount'
   ];
   requiredFields.forEach(field => {
     assert.ok(smoke.includes(field), `IDE smoke is missing ${field}`);

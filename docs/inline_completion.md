@@ -20,7 +20,20 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 4. O cache local evita chamadas repetidas para o mesmo contexto.
 5. A resposta perde cercas Markdown, sobreposição com o sufixo e conteúdo acima do limite.
 6. A entrega ocorre somente se a geração e a revisão ainda forem atuais.
-7. A camada visual exibe a sugestão sem tocar no buffer.
+7. Alternativas distintas permanecem associadas ao mesmo contexto e podem ser percorridas.
+8. A camada visual exibe a sugestão selecionada e um painel compacto sem tocar no buffer.
+
+## Painel de alternativas
+
+Depois de escolher **Solicitar uma alternativa**, o RadIA mantém a sugestão anterior em vez de
+substituí-la silenciosamente. Com duas ou mais respostas distintas, o editor mostra até três
+alternativas em um painel compacto abaixo da linha ativa. A opção selecionada usa a cor de seleção
+da IDE e continua aparecendo como Ghost Text completo.
+
+Use **Próxima sugestão** ou **Sugestão anterior** para comparar respostas. **Aceitar toda a
+sugestão** e **Aceitar somente a próxima palavra** sempre operam sobre a alternativa destacada.
+Editar o buffer, trocar de arquivo ou rejeitar a completion elimina todo o conjunto, evitando que
+uma resposta pertencente a uma revisão antiga seja aplicada.
 
 ## Rota FIM dedicada e fallback
 
@@ -53,6 +66,8 @@ no log sem incluir prefixo, sufixo ou conteúdo sugerido.
 | Aceitar toda a sugestão | `Ctrl+Alt+Direita` |
 | Aceitar somente a próxima palavra | `Ctrl+Alt+Baixo` |
 | Solicitar uma alternativa | `Ctrl+Alt+]` |
+| Próxima sugestão armazenada | `Ctrl+Shift+Baixo` |
+| Sugestão armazenada anterior | `Ctrl+Shift+Cima` |
 | Rejeitar a sugestão | `Ctrl+Alt+Backspace` |
 | Aceitar revisão na linha atual | `Ctrl+Alt+Enter` |
 | Rejeitar revisão na linha atual | `Ctrl+Alt+R` |
@@ -76,6 +91,7 @@ abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Editor Ass
 ```text
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
 nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
+completionNext=Ctrl+Shift+Down; completionPrevious=Ctrl+Shift+Up;
 reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
 reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R;
 reviewNext=Ctrl+Alt+PageDown; reviewPrevious=Ctrl+Alt+PageUp;
@@ -83,7 +99,8 @@ reviewEdit=Ctrl+Alt+E; reviewExplain=Ctrl+Alt+I;
 reviewApply=Ctrl+Alt+A; reviewClear=Ctrl+Alt+Delete
 ```
 
-As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. Terminal e
+As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. Navegação entre
+respostas usa `completionNext` e `completionPrevious`. Terminal e
 decisões de revisão usam `terminal`, `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`,
 `reviewEdit`, `reviewExplain`, `reviewApply` e `reviewClear`; perfis antigos recebem os atalhos padrão
 automaticamente. Consulte a [revisão por bloco](block_reviews.md) para entender marcadores, cores,

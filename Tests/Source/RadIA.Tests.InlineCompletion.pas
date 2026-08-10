@@ -31,6 +31,8 @@ type
     FApplyAllowed: Boolean;
     FAppliedText: string;
     FClearCount: Integer;
+    FAlternativeCount: Integer;
+    FSelectedAlternative: Integer;
     FShownText: string;
   public
     function Apply(
@@ -43,9 +45,16 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
+    procedure ShowAlternatives(
+      const AContext: TRadIAInlineCompletionContext;
+      const AAlternatives: TArray<string>;
+      const ASelectedIndex: Integer
+    );
+    property AlternativeCount: Integer read FAlternativeCount;
     property AppliedText: string read FAppliedText;
     property ApplyAllowed: Boolean read FApplyAllowed write FApplyAllowed;
     property ClearCount: Integer read FClearCount;
+    property SelectedAlternative: Integer read FSelectedAlternative;
     property ShownText: string read FShownText;
   end;
 
@@ -75,6 +84,8 @@ type
     [Test]
     procedure AlternativeRequestsCompletionAgain;
     [Test]
+    procedure NavigatesCollectedAlternatives;
+    [Test]
     procedure InvalidContextDoesNotCallProvider;
     [Test]
     procedure LimitsContextAroundCursor;
@@ -84,6 +95,8 @@ type
     procedure PreservesCursorThroughContextLimit;
     [Test]
     procedure PreviewsLocalSuggestionWithoutProvider;
+    [Test]
+    procedure PreviewsAndSelectsLocalAlternativesWithoutProvider;
     [Test]
     procedure RefusesAcceptanceWhenViewRevisionChanged;
     [Test]
@@ -159,6 +172,21 @@ begin
   FShownText := ASuggestion;
 end;
 
+procedure TRadIAInlineCompletionViewStub.ShowAlternatives(
+  const AContext: TRadIAInlineCompletionContext;
+  const AAlternatives: TArray<string>;
+  const ASelectedIndex: Integer
+);
+begin
+  FAlternativeCount := Length(AAlternatives);
+  FSelectedAlternative := ASelectedIndex;
+  if (ASelectedIndex >= 0) and
+    (ASelectedIndex < Length(AAlternatives)) then
+    FShownText := AAlternatives[ASelectedIndex]
+  else
+    FShownText := '';
+end;
+
 { TRadIAInlineCompletionTests }
 
 procedure TRadIAInlineCompletionTests.AcceptsAllSuggestion;
@@ -210,6 +238,21 @@ begin
   FController.RequestAlternative;
   Assert.AreEqual(2, FProvider.CallCount);
   Assert.AreEqual('Alternative', FView.ShownText);
+  Assert.AreEqual(2, FView.AlternativeCount);
+end;
+
+procedure TRadIAInlineCompletionTests.NavigatesCollectedAlternatives;
+begin
+  FController.Request(Context('alternatives'));
+  FProvider.Response := 'Alternative';
+  FController.RequestAlternative;
+  Assert.AreEqual(1, FView.SelectedAlternative);
+  Assert.IsTrue(FController.SelectPreviousAlternative);
+  Assert.AreEqual('WriteLn(''Hello'');', FView.ShownText);
+  Assert.AreEqual(0, FView.SelectedAlternative);
+  Assert.IsTrue(FController.SelectNextAlternative);
+  Assert.AreEqual('Alternative', FView.ShownText);
+  Assert.AreEqual(1, FView.SelectedAlternative);
 end;
 
 procedure TRadIAInlineCompletionTests.BuildsExplicitFimPrompt;
@@ -321,6 +364,22 @@ begin
   Assert.AreEqual(CLocalSuggestion, FView.ShownText);
   Assert.IsTrue(FController.AcceptAll);
   Assert.AreEqual(CLocalSuggestion, FView.AppliedText);
+end;
+
+procedure TRadIAInlineCompletionTests.
+  PreviewsAndSelectsLocalAlternativesWithoutProvider;
+begin
+  FController.PreviewAlternatives(
+    Context('local-alternatives'),
+    ['First', 'Second', 'Third'],
+    1
+  );
+  Assert.AreEqual(0, FProvider.CallCount);
+  Assert.AreEqual(3, FView.AlternativeCount);
+  Assert.AreEqual(1, FView.SelectedAlternative);
+  Assert.AreEqual('Second', FView.ShownText);
+  Assert.IsTrue(FController.AcceptAll);
+  Assert.AreEqual('Second', FView.AppliedText);
 end;
 
 procedure TRadIAInlineCompletionTests.PolicyAllowsContextOutsideExclusions;

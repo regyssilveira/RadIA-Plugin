@@ -4,7 +4,8 @@ param(
         ".\docs\inline_completion_smoke_evidence_2.3.1.json"
     ),
     [int]$RequiredToolCount = 130,
-    [int]$RequiredLineCount = 2
+    [int]$RequiredLineCount = 2,
+    [int]$RequiredAlternativeCount = 2
 )
 
 $ErrorActionPreference = "Stop"
@@ -110,6 +111,7 @@ foreach ($target in $targets) {
                 $cycle.InlineCompletionExercised -eq $true -and
                 $cycle.InlineCompletionPrepared -eq $true -and
                 $cycle.InlineCompletionPainted -eq $true -and
+                $cycle.InlineCompletionAlternativesPainted -eq $true -and
                 $cycle.InlineCompletionPreviewClean -eq $true -and
                 $cycle.InlineCompletionAccepted -eq $true -and
                 $cycle.InlineCompletionSingleUndo -eq $true -and
@@ -125,6 +127,12 @@ foreach ($target in $targets) {
                 $cycle.InlineCompletionLineCount -eq $RequiredLineCount
             ) `
             -Message "$($target.evidenceFile) has an invalid line count."
+        Assert-RadIACondition `
+            -Condition (
+                $cycle.InlineCompletionAlternativeCount -eq
+                    $RequiredAlternativeCount
+            ) `
+            -Message "$($target.evidenceFile) has an invalid alternative count."
     }
 
     $seconds = @($evidence.cycles | ForEach-Object { $_.Seconds })
@@ -138,6 +146,8 @@ foreach ($target in $targets) {
         maximumSeconds = ($seconds | Measure-Object -Maximum).Maximum
         prepared = $true
         painted = $true
+        alternativesPainted = $true
+        alternativeCount = $RequiredAlternativeCount
         previewClean = $true
         accepted = $true
         singleUndo = $true
@@ -161,6 +171,7 @@ if ($outputDirectory) {
     sourceCommit = $sourceCommit
     requiredToolCount = $RequiredToolCount
     requiredLineCount = $RequiredLineCount
+    requiredAlternativeCount = $RequiredAlternativeCount
     targetCount = $summaries.Count
     status = "passed"
     generatedAtUtc = [DateTime]::UtcNow.ToString("o")

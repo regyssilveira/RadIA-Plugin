@@ -44,6 +44,16 @@ type
       AKeyCode: TShortCut;
       var AResult: TKeyBindingResult
     );
+    procedure CompletionNext(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
+    procedure CompletionPrevious(
+      const AContext: IOTAKeyContext;
+      AKeyCode: TShortCut;
+      var AResult: TKeyBindingResult
+    );
     procedure Reject(
       const AContext: IOTAKeyContext;
       AKeyCode: TShortCut;
@@ -177,6 +187,8 @@ type
     procedure OnShowTerminalExecute(Sender: TObject);
     procedure OnInlineCompletionAcceptExecute(Sender: TObject);
     procedure OnInlineCompletionAlternativeExecute(Sender: TObject);
+    procedure OnInlineCompletionNextAlternativeExecute(Sender: TObject);
+    procedure OnInlineCompletionPreviousAlternativeExecute(Sender: TObject);
     procedure OnInlineCompletionNextWordExecute(Sender: TObject);
     procedure OnInlineCompletionRejectExecute(Sender: TObject);
     procedure OnInlineCompletionPreviewDiagnosticExecute(Sender: TObject);
@@ -345,6 +357,28 @@ begin
   // No persisted state is owned by the OTA binding object.
 end;
 
+procedure TRadIAInlineCompletionKeyboardBinding.CompletionNext(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionNextAlternativeExecute(nil);
+end;
+
+procedure TRadIAInlineCompletionKeyboardBinding.CompletionPrevious(
+  const AContext: IOTAKeyContext;
+  AKeyCode: TShortCut;
+  var AResult: TKeyBindingResult
+);
+begin
+  AResult := krHandled;
+  if Assigned(FOwner) then
+    FOwner.OnInlineCompletionPreviousAlternativeExecute(nil);
+end;
+
 procedure TRadIAInlineCompletionKeyboardBinding.BindKeyboard(
   const ABindingServices: IOTAKeyBindingServices
 );
@@ -383,6 +417,18 @@ begin
     LProfile.ShortcutFor(isaAlternative),
     Alternative,
     'alternative'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaCompletionNext),
+    CompletionNext,
+    'completionNext'
+  );
+  AddBinding(
+    ABindingServices,
+    LProfile.ShortcutFor(isaCompletionPrevious),
+    CompletionPrevious,
+    'completionPrevious'
   );
   AddBinding(
     ABindingServices,
@@ -1056,6 +1102,16 @@ begin
     OnInlineCompletionAlternativeExecute
   );
   AddItem(
+    'Next Inline Suggestion',
+    AProfile.ShortcutFor(isaCompletionNext),
+    OnInlineCompletionNextAlternativeExecute
+  );
+  AddItem(
+    'Previous Inline Suggestion',
+    AProfile.ShortcutFor(isaCompletionPrevious),
+    OnInlineCompletionPreviousAlternativeExecute
+  );
+  AddItem(
     'Reject Inline Suggestion',
     AProfile.ShortcutFor(isaReject),
     OnInlineCompletionRejectExecute
@@ -1370,6 +1426,22 @@ begin
     FInlineCompletionController.RequestAlternative;
 end;
 
+procedure TRadIAEditorHook.OnInlineCompletionNextAlternativeExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.SelectNextAlternative;
+end;
+
+procedure TRadIAEditorHook.OnInlineCompletionPreviousAlternativeExecute(
+  Sender: TObject
+);
+begin
+  if Assigned(FInlineCompletionController) then
+    FInlineCompletionController.SelectPreviousAlternative;
+end;
+
 procedure TRadIAEditorHook.OnInlineCompletionNextWordExecute(
   Sender: TObject
 );
@@ -1396,9 +1468,12 @@ end;
 
 function TRadIAEditorHook.TryPreviewInlineCompletionDiagnostic: Boolean;
 const
-  CDiagnosticSuggestion =
-    'RadIAGhostTextDiagnostic' + sLineBreak +
-    '// Local multiline preview; no context was sent.';
+  CDiagnosticSuggestionOne =
+    'RadIAGhostTextDiagnosticOne' + sLineBreak +
+    '// First local alternative; no context was sent.';
+  CDiagnosticSuggestionTwo =
+    'RadIAGhostTextDiagnosticTwo' + sLineBreak +
+    '// Second local alternative; no context was sent.';
 var
   LContext: TRadIAInlineCompletionContext;
 begin
@@ -1408,9 +1483,10 @@ begin
     Exit;
   if not FInlineCompletionSession.Capture(LContext) then
     Exit;
-  FInlineCompletionController.Preview(
+  FInlineCompletionController.PreviewAlternatives(
     LContext,
-    CDiagnosticSuggestion
+    [CDiagnosticSuggestionOne, CDiagnosticSuggestionTwo],
+    0
   );
   Result := True;
 end;

@@ -1344,7 +1344,8 @@ begin
   SetControlsHint(
     [FEdtInlineShortcutProfile],
     'Configure completion, terminal, and block-review shortcuts as ' +
-    'action=shortcut pairs separated by semicolons. Legacy profiles inherit ' +
+    'action=shortcut pairs separated by semicolons. completionNext and ' +
+    'completionPrevious navigate stored suggestions. Legacy profiles inherit ' +
     'new actions automatically.'
   );
   SetControlsHint(

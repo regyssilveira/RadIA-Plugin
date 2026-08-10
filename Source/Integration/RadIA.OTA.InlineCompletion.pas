@@ -31,11 +31,14 @@ type
     IRadIAOTAInlineCompletionSession
   )
   private
+    FAlternatives: TArray<string>;
     FContext: TRadIAInlineCompletionContext;
     FContinuousEnabled: Boolean;
     FGhostLines: TArray<TRadIAInlineGhostLine>;
     FIdleHandler: TRadIAInlineCompletionIdleHandler;
     FPaintEvidenceLogged: Boolean;
+    FPanelPaintEvidenceLogged: Boolean;
+    FSelectedAlternative: Integer;
     FSuggestion: string;
     function CurrentView: IOTAEditView;
     function GhostHorizontalPosition(
@@ -50,6 +53,9 @@ type
       const ATop: Integer;
       const AClipToLine: Boolean
     ): Boolean;
+    procedure PaintAlternativePanel(
+      const APaintContext: TRadIAEditPaintContext
+    );
     procedure PaintOverflowLines(
       const APaintContext: TRadIAEditPaintContext
     );
@@ -75,6 +81,11 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
+    procedure ShowAlternatives(
+      const AContext: TRadIAInlineCompletionContext;
+      const AAlternatives: TArray<string>;
+      const ASelectedIndex: Integer
+    );
     function UndoCurrentBuffer: Boolean;
     procedure Modified; override;
     procedure EditorIdle(const View: IOTAEditView); override;
@@ -88,6 +99,7 @@ uses
   System.IOUtils,
   System.Math,
   System.SysUtils,
+  System.Types,
   Vcl.Graphics,
   RadIA.Core.Container,
   RadIA.Core.IDENavigation,
@@ -217,6 +229,9 @@ procedure TRadIAOTAInlineCompletionSession.Clear;
 var
   LView: IOTAEditView;
 begin
+  FAlternatives := nil;
+  FSelectedAlternative := -1;
+  FPanelPaintEvidenceLogged := False;
   FSuggestion := '';
   FGhostLines := nil;
   FPaintEvidenceLogged := False;
@@ -312,6 +327,9 @@ end;
 procedure TRadIAOTAInlineCompletionSession.Modified;
 begin
   inherited;
+  FAlternatives := nil;
+  FSelectedAlternative := -1;
+  FPanelPaintEvidenceLogged := False;
   FSuggestion := '';
   FGhostLines := nil;
   FPaintEvidenceLogged := False;
@@ -358,6 +376,91 @@ begin
   end;
 end;
 
+procedure TRadIAOTAInlineCompletionSession.PaintAlternativePanel(
+  const APaintContext: TRadIAEditPaintContext
+);
+const
+  CMaximumVisibleAlternatives = 3;
+  CMaximumSummaryCharacters = 72;
+var
+  LBrushColor: TColor;
+  LBrushStyle: TBrushStyle;
+  LFontColor: TColor;
+  LIndex: Integer;
+  LRowRect: TRect;
+  LSummary: string;
+  LVisibleCount: Integer;
+begin
+  if Length(FAlternatives) < 2 then
+    Exit;
+  LVisibleCount := Min(
+    Length(FAlternatives),
+    CMaximumVisibleAlternatives
+  );
+  LBrushColor := APaintContext.Canvas.Brush.Color;
+  LBrushStyle := APaintContext.Canvas.Brush.Style;
+  LFontColor := APaintContext.Canvas.Font.Color;
+  try
+    for LIndex := 0 to LVisibleCount - 1 do
+    begin
+      LRowRect := Rect(
+        APaintContext.TextRect.Left,
+        APaintContext.TextRect.Bottom + 2 +
+          LIndex * APaintContext.CellSize.cy,
+        APaintContext.TextRect.Right,
+        APaintContext.TextRect.Bottom + 2 +
+          (LIndex + 1) * APaintContext.CellSize.cy
+      );
+      if LIndex = FSelectedAlternative then
+      begin
+        APaintContext.Canvas.Brush.Color := clHighlight;
+        APaintContext.Canvas.Font.Color := clHighlightText;
+      end
+      else
+      begin
+        APaintContext.Canvas.Brush.Color := clInfoBk;
+        APaintContext.Canvas.Font.Color := clInfoText;
+      end;
+      APaintContext.Canvas.Brush.Style := bsSolid;
+      APaintContext.Canvas.FillRect(LRowRect);
+      LSummary := FAlternatives[LIndex]
+        .Replace(#13, ' ')
+        .Replace(#10, ' ');
+      if Length(LSummary) > CMaximumSummaryCharacters then
+        LSummary := Copy(
+          LSummary,
+          1,
+          CMaximumSummaryCharacters - 1
+        ) + #$2026;
+      APaintContext.Canvas.TextRect(
+        LRowRect,
+        LRowRect.Left + 4,
+        LRowRect.Top,
+        Format('%d/%d  %s', [
+          LIndex + 1,
+          Length(FAlternatives),
+          LSummary
+        ])
+      );
+    end;
+    if not FPanelPaintEvidenceLogged then
+    begin
+      FPanelPaintEvidenceLogged := True;
+      TLogger.Log(
+        Format(
+          'Inline alternatives painted: count=%d, selected=%d',
+          [Length(FAlternatives), FSelectedAlternative + 1]
+        ),
+        'InlineCompletion'
+      );
+    end;
+  finally
+    APaintContext.Canvas.Brush.Color := LBrushColor;
+    APaintContext.Canvas.Brush.Style := LBrushStyle;
+    APaintContext.Canvas.Font.Color := LFontColor;
+  end;
+end;
+
 procedure TRadIAOTAInlineCompletionSession.PaintOverlay(
   const APaintContext: TRadIAEditPaintContext
 );
@@ -399,7 +502,10 @@ begin
     );
   end;
   if LLineOffset = 0 then
+  begin
     PaintOverflowLines(APaintContext);
+    PaintAlternativePanel(APaintContext);
+  end;
 end;
 
 procedure TRadIAOTAInlineCompletionSession.PaintOverflowLines(
@@ -458,6 +564,40 @@ begin
       LView.Position.Column
     );
   LView.Paint;
+end;
+
+procedure TRadIAOTAInlineCompletionSession.ShowAlternatives(
+  const AContext: TRadIAInlineCompletionContext;
+  const AAlternatives: TArray<string>;
+  const ASelectedIndex: Integer
+);
+var
+  LSelectedIndex: Integer;
+  LView: IOTAEditView;
+begin
+  if Length(AAlternatives) = 0 then
+  begin
+    Clear;
+    Exit;
+  end;
+  LSelectedIndex := EnsureRange(
+    ASelectedIndex,
+    0,
+    Length(AAlternatives) - 1
+  );
+  FAlternatives := Copy(AAlternatives);
+  FSelectedAlternative := LSelectedIndex;
+  FPanelPaintEvidenceLogged := False;
+  Show(AContext, AAlternatives[LSelectedIndex]);
+  LView := CurrentView;
+  if Assigned(LView) then
+    LView.SetTempMsg(
+      Format(
+        'RadIA suggestion %d of %d. Use the editor menu to navigate, ' +
+        'accept, reject, or generate another.',
+        [LSelectedIndex + 1, Length(AAlternatives)]
+      )
+    );
 end;
 
 function TRadIAOTAInlineCompletionSession.UndoCurrentBuffer: Boolean;

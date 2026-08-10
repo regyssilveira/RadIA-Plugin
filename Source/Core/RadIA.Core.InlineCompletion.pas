@@ -231,6 +231,11 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
+    procedure ShowAlternatives(
+      const AContext: TRadIAInlineCompletionContext;
+      const AAlternatives: TArray<string>;
+      const ASelectedIndex: Integer
+    );
   end;
 
   TRadIAInlineCompletionRunner = reference to procedure(
@@ -250,7 +255,14 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
+    procedure PreviewAlternatives(
+      const AContext: TRadIAInlineCompletionContext;
+      const AAlternatives: TArray<string>;
+      const ASelectedIndex: Integer
+    );
     procedure RequestAlternative;
+    function SelectNextAlternative: Boolean;
+    function SelectPreviousAlternative: Boolean;
     procedure Configure(
       const AOptions: TRadIAInlineCompletionOptions
     );
@@ -275,8 +287,9 @@ type
     public
       procedure Cancel;
       function IsCancellationRequested: Boolean;
-    end;
+  end;
   private
+    FAlternatives: TArray<string>;
     FCache: TObject;
     FCancellation: IRadIAInlineCompletionCancellationSource;
     FContext: TRadIAInlineCompletionContext;
@@ -286,17 +299,20 @@ type
     FOptions: TRadIAInlineCompletionOptions;
     FProvider: IRadIAInlineCompletionProvider;
     FRunner: TRadIAInlineCompletionRunner;
+    FSelectedAlternative: Integer;
     FStopped: Boolean;
     FSuggestion: string;
     FView: IRadIAInlineCompletionView;
     function CachedSuggestion(
       const AContext: TRadIAInlineCompletionContext
     ): string;
+    procedure AddAlternative(const ASuggestion: string);
     procedure Deliver(
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string;
       const AGeneration: Integer
     );
+    procedure DisplaySelection;
     function ExtractNextWord(const AText: string): string;
     function IsCurrent(const AGeneration: Integer): Boolean;
     procedure RunRequest(
@@ -328,7 +344,14 @@ type
       const AContext: TRadIAInlineCompletionContext;
       const ASuggestion: string
     );
+    procedure PreviewAlternatives(
+      const AContext: TRadIAInlineCompletionContext;
+      const AAlternatives: TArray<string>;
+      const ASelectedIndex: Integer
+    );
     procedure RequestAlternative;
+    function SelectNextAlternative: Boolean;
+    function SelectPreviousAlternative: Boolean;
     procedure Configure(
       const AOptions: TRadIAInlineCompletionOptions
     );
@@ -345,6 +368,7 @@ uses
   System.Diagnostics,
   System.Generics.Collections,
   System.Hash,
+  System.Math,
   System.SyncObjs,
   RadIA.Core.HierarchicalSettings,
   RadIA.Core.Logger,
@@ -357,6 +381,7 @@ const
   CDefaultMaxContextCharacters = 24000;
   CDefaultMaxSuggestionCharacters = 4000;
   CMaximumCacheEntries = 64;
+  CMaximumCompletionAlternatives = 3;
 
 type
   IRadIAInlineCompletionResponse = interface
@@ -1054,6 +1079,39 @@ end;
 
 { TRadIAInlineCompletionController }
 
+procedure TRadIAInlineCompletionController.AddAlternative(
+  const ASuggestion: string
+);
+var
+  LAlternative: string;
+  LIndex: Integer;
+begin
+  if ASuggestion = '' then
+    Exit;
+  TMonitor.Enter(FLock);
+  try
+    for LAlternative in FAlternatives do
+      if SameText(LAlternative, ASuggestion) then
+        Exit;
+    if Length(FAlternatives) >= CMaximumCompletionAlternatives then
+    begin
+      for LIndex := 1 to High(FAlternatives) do
+        FAlternatives[LIndex - 1] := FAlternatives[LIndex];
+      SetLength(
+        FAlternatives,
+        CMaximumCompletionAlternatives - 1
+      );
+    end;
+    LIndex := Length(FAlternatives);
+    SetLength(FAlternatives, LIndex + 1);
+    FAlternatives[LIndex] := ASuggestion;
+    FSelectedAlternative := LIndex;
+    FSuggestion := ASuggestion;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
 function TRadIAInlineCompletionController.AcceptAll: Boolean;
 var
   LContext: TRadIAInlineCompletionContext;
@@ -1065,6 +1123,8 @@ begin
     LContext := FContext;
     LSuggestion := FSuggestion;
     FSuggestion := '';
+    FAlternatives := nil;
+    FSelectedAlternative := -1;
   finally
     TMonitor.Exit(FLock);
   end;
@@ -1089,6 +1149,8 @@ begin
     LContext := FContext;
     Delete(FSuggestion, 1, Length(LAcceptedText));
     LRemainingText := FSuggestion;
+    FAlternatives := nil;
+    FSelectedAlternative := -1;
   finally
     TMonitor.Exit(FLock);
   end;
@@ -1111,6 +1173,30 @@ begin
     FView.Clear
   else
     FView.Show(LUpdatedContext, LRemainingText);
+end;
+
+procedure TRadIAInlineCompletionController.DisplaySelection;
+var
+  LAlternatives: TArray<string>;
+  LContext: TRadIAInlineCompletionContext;
+  LSelectedIndex: Integer;
+begin
+  TMonitor.Enter(FLock);
+  try
+    LAlternatives := Copy(FAlternatives);
+    LContext := FContext;
+    LSelectedIndex := FSelectedAlternative;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  if Length(LAlternatives) = 0 then
+    FView.Clear
+  else
+    FView.ShowAlternatives(
+      LContext,
+      LAlternatives,
+      LSelectedIndex
+    );
 end;
 
 function TRadIAInlineCompletionController.CachedSuggestion(
@@ -1163,6 +1249,7 @@ begin
     FOptions := AOptions;
   FRunner := ARunner;
   FDispatcher := ADispatcher;
+  FSelectedAlternative := -1;
   FLock := TObject.Create;
   FCache := TRadIAInlineCompletionCache.Create;
 end;
@@ -1183,14 +1270,16 @@ begin
       TMonitor.Enter(FLock);
       try
         FContext := AContext;
-        FSuggestion := ASuggestion;
       finally
         TMonitor.Exit(FLock);
       end;
       if ASuggestion = '' then
         FView.Clear
       else
-        FView.Show(AContext, ASuggestion);
+      begin
+        AddAlternative(ASuggestion);
+        DisplaySelection;
+      end;
     end;
   if Assigned(FDispatcher) then
     FDispatcher(LAction)
@@ -1246,6 +1335,8 @@ begin
       FCancellation.Cancel;
     FCancellation := nil;
     FSuggestion := '';
+    FAlternatives := nil;
+    FSelectedAlternative := -1;
   finally
     TMonitor.Exit(FLock);
   end;
@@ -1274,13 +1365,18 @@ begin
     FCancellation := nil;
     FContext := AContext;
     FSuggestion := LSuggestion;
+    FAlternatives := nil;
+    FSelectedAlternative := -1;
   finally
     TMonitor.Exit(FLock);
   end;
   if LSuggestion = '' then
     FView.Clear
   else
-    FView.Show(AContext, LSuggestion);
+  begin
+    AddAlternative(LSuggestion);
+    DisplaySelection;
+  end;
 end;
 
 procedure TRadIAInlineCompletionController.Request(
@@ -1308,6 +1404,11 @@ begin
   LContext := AContext.Limited(LMaxContextCharacters);
   TMonitor.Enter(FLock);
   try
+    if FContext.CacheKey <> LContext.CacheKey then
+    begin
+      FAlternatives := nil;
+      FSelectedAlternative := -1;
+    end;
     FStopped := False;
     Inc(FGeneration);
     LGeneration := FGeneration;
@@ -1356,6 +1457,86 @@ begin
     TMonitor.Exit(FLock);
   end;
   Request(LContext);
+end;
+
+procedure TRadIAInlineCompletionController.PreviewAlternatives(
+  const AContext: TRadIAInlineCompletionContext;
+  const AAlternatives: TArray<string>;
+  const ASelectedIndex: Integer
+);
+var
+  LAlternative: string;
+begin
+  if not AContext.IsValid then
+  begin
+    Reject;
+    Exit;
+  end;
+  TMonitor.Enter(FLock);
+  try
+    FStopped := False;
+    Inc(FGeneration);
+    if Assigned(FCancellation) then
+      FCancellation.Cancel;
+    FCancellation := nil;
+    FContext := AContext;
+    FSuggestion := '';
+    FAlternatives := nil;
+    FSelectedAlternative := -1;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  for LAlternative in AAlternatives do
+    AddAlternative(SanitizeSuggestion(AContext, LAlternative));
+  TMonitor.Enter(FLock);
+  try
+    if Length(FAlternatives) > 0 then
+    begin
+      FSelectedAlternative := EnsureRange(
+        ASelectedIndex,
+        0,
+        Length(FAlternatives) - 1
+      );
+      FSuggestion := FAlternatives[FSelectedAlternative];
+    end;
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  DisplaySelection;
+end;
+
+function TRadIAInlineCompletionController.SelectNextAlternative: Boolean;
+begin
+  TMonitor.Enter(FLock);
+  try
+    Result := Length(FAlternatives) > 1;
+    if not Result then
+      Exit;
+    FSelectedAlternative :=
+      (FSelectedAlternative + 1) mod Length(FAlternatives);
+    FSuggestion := FAlternatives[FSelectedAlternative];
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  DisplaySelection;
+end;
+
+function TRadIAInlineCompletionController.SelectPreviousAlternative:
+  Boolean;
+begin
+  TMonitor.Enter(FLock);
+  try
+    Result := Length(FAlternatives) > 1;
+    if not Result then
+      Exit;
+    Dec(FSelectedAlternative);
+    if FSelectedAlternative < 0 then
+      FSelectedAlternative := Length(FAlternatives) - 1;
+    FSuggestion := FAlternatives[FSelectedAlternative];
+  finally
+    TMonitor.Exit(FLock);
+  end;
+  DisplaySelection;
 end;
 
 procedure TRadIAInlineCompletionController.RunRequest(
@@ -1437,6 +1618,8 @@ begin
       FCancellation.Cancel;
     FCancellation := nil;
     FSuggestion := '';
+    FAlternatives := nil;
+    FSelectedAlternative := -1;
   finally
     TMonitor.Exit(FLock);
   end;

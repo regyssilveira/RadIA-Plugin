@@ -8,6 +8,8 @@ type
     isaAcceptAll,
     isaAcceptNextWord,
     isaAlternative,
+    isaCompletionNext,
+    isaCompletionPrevious,
     isaReject,
     isaTerminal,
     isaReviewAccept,
@@ -140,6 +142,8 @@ begin
     begin
       if not (LAction in [
         isaTerminal,
+        isaCompletionNext,
+        isaCompletionPrevious,
         isaReviewAccept,
         isaReviewReject,
         isaReviewNext,
@@ -181,6 +185,10 @@ begin
       Result := 'nextWord';
     isaAlternative:
       Result := 'alternative';
+    isaCompletionNext:
+      Result := 'completionNext';
+    isaCompletionPrevious:
+      Result := 'completionPrevious';
     isaReject:
       Result := 'reject';
     isaTerminal:
@@ -215,6 +223,10 @@ begin
     ShortCut(VK_DOWN, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaAlternative] :=
     ShortCut(VK_OEM_6, [ssCtrl, ssAlt]);
+  Result.FShortcuts[isaCompletionNext] :=
+    ShortCut(VK_DOWN, [ssCtrl, ssShift]);
+  Result.FShortcuts[isaCompletionPrevious] :=
+    ShortCut(VK_UP, [ssCtrl, ssShift]);
   Result.FShortcuts[isaReject] := ShortCut(VK_BACK, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaTerminal] := ShortCut(Ord('T'), [ssCtrl, ssAlt]);
   Result.FShortcuts[isaReviewAccept] :=

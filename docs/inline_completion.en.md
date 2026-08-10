@@ -20,7 +20,20 @@ accepts the whole suggestion or the next word.
 4. A local cache avoids repeated calls for the same context.
 5. Markdown fences, suffix overlap, and over-limit content are removed from the response.
 6. Delivery occurs only while generation and revision are current.
-7. The visual layer shows the suggestion without touching the buffer.
+7. Distinct alternatives remain attached to the same context and can be browsed.
+8. The visual layer shows the selected suggestion and a compact panel without touching the buffer.
+
+## Alternatives panel
+
+After **Request an alternative**, RadIA keeps the previous suggestion instead of silently replacing
+it. With two or more distinct responses, the editor displays up to three alternatives in a compact
+panel below the active line. The selected option uses the IDE selection color and remains visible as
+complete Ghost Text.
+
+Use **Next Inline Suggestion** or **Previous Inline Suggestion** to compare responses. **Accept the
+entire suggestion** and **Accept only the next word** always operate on the highlighted alternative.
+Editing the buffer, changing files, or rejecting completion clears the complete set, preventing a
+response from an old revision from being applied.
 
 ## Dedicated FIM route and fallback
 
@@ -53,6 +66,8 @@ prefix, suffix, or suggested content.
 | Accept the entire suggestion | `Ctrl+Alt+Right` |
 | Accept only the next word | `Ctrl+Alt+Down` |
 | Request an alternative | `Ctrl+Alt+]` |
+| Next stored suggestion | `Ctrl+Shift+Down` |
+| Previous stored suggestion | `Ctrl+Shift+Up` |
 | Reject the suggestion | `Ctrl+Alt+Backspace` |
 | Accept review at the current line | `Ctrl+Alt+Enter` |
 | Reject review at the current line | `Ctrl+Alt+R` |
@@ -76,6 +91,7 @@ opening the context menu. To change them, open **Rad IA > Settings > Editor Assi
 ```text
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
 nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
+completionNext=Ctrl+Shift+Down; completionPrevious=Ctrl+Shift+Up;
 reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
 reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R;
 reviewNext=Ctrl+Alt+PageDown; reviewPrevious=Ctrl+Alt+PageUp;
@@ -83,7 +99,8 @@ reviewEdit=Ctrl+Alt+E; reviewExplain=Ctrl+Alt+I;
 reviewApply=Ctrl+Alt+A; reviewClear=Ctrl+Alt+Delete
 ```
 
-The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. Terminal and
+The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. Alternative
+navigation uses `completionNext` and `completionPrevious`. Terminal and
 review decisions use `terminal`, `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`,
 `reviewEdit`, `reviewExplain`, `reviewApply`, and `reviewClear`; legacy profiles receive the default
 shortcuts automatically. See [block-level review](block_reviews.en.md) for markers, colors,
