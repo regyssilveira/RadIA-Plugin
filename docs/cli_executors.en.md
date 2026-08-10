@@ -55,6 +55,11 @@ use WinGet. Every command is displayed and requires consent before execution. Ge
 requires Node.js on Windows through its official channel; RadIA explains this limitation, offers the
 guided prerequisite installation, and keeps **Browse** available for an existing installation.
 
+RadIA does not copy a CLI into the plugin directory. With npm, the command is commonly placed under
+`%APPDATA%\npm`. WinGet manages packages under `%LOCALAPPDATA%\Microsoft\WinGet\Packages` and
+typically exposes command links under `%LOCALAPPDATA%\Microsoft\WinGet\Links`. A path selected with
+**Browse** stays in its original location; RadIA only stores and uses that path.
+
 Identifiers come from an internal catalog and are validated against metacharacters before
 execution. Rad IA does not download, package, or redistribute binaries from these vendors. Authentication
 continues to be done by the CLI itself after installation.

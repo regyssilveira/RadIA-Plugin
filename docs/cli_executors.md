@@ -55,6 +55,12 @@ WinGet. Cada comando é exibido e exige consentimento antes da execução. O Gem
 Node.js no Windows segundo seu canal oficial; nesse caso o RadIA explica a limitação, oferece a
 instalação guiada do pré-requisito e mantém **Browse** para uma instalação já existente.
 
+O RadIA não copia a CLI para a pasta do plugin. No canal npm, o comando costuma ficar em
+`%APPDATA%\npm`. No canal WinGet, o pacote é administrado em
+`%LOCALAPPDATA%\Microsoft\WinGet\Packages` e seu link de comando costuma ficar em
+`%LOCALAPPDATA%\Microsoft\WinGet\Links`. Um caminho selecionado com **Browse** permanece no local
+original; o RadIA apenas salva e utiliza esse caminho.
+
 Os identificadores vêm de um catálogo interno e são validados contra metacaracteres antes da
 execução. O Rad IA não baixa, empacota ou redistribui binários desses fornecedores. A autenticação
 continua sendo feita pelo próprio CLI depois da instalação.
