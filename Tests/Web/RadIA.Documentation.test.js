@@ -480,6 +480,24 @@ test('declarative extensions document packaged resources end to end', () => {
   });
 });
 
+test('runtime guide separates structured evidence from pending visual capture', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'runtime_debug_automation.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'runtime_debug_automation.en.md'),
+    'utf8'
+  );
+  [portuguese, english].forEach(document => {
+    assert.match(document, /CaptureRuntimeEvidence/u);
+    assert.match(document, /2 MiB/u);
+    assert.match(document, /8 MiB/u);
+    assert.match(document, /dez minutos|ten minutes/iu);
+    assert.match(document, /ainda n[aã]o|must not yet/iu);
+  });
+});
+
 test('every visible settings group has a detailed central reference', () => {
   const portugueseReference = fs.readFileSync(
     path.join(documentationRoot, 'settings_reference.md'),

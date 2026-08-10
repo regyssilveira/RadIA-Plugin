@@ -4,6 +4,22 @@ RadIA can reproduce a visual failure in a VCL application started by the IDE deb
 evidence, prepare a reviewable fix, rebuild, replay the scenario, and prove whether the failure was
 removed.
 
+> **Important:** in this guide, `CaptureRuntimeEvidence` means structured debugger evidence:
+> exception, call stack, state, expressions, and session identity. Before/after screenshots shown
+> directly in chat are being implemented and must not yet be treated as an available feature.
+
+## Visual chat session: implementation status
+
+The internal foundation now maintains a visual session bound to the complete identity created by
+the debugger. It orders real events, accepts only images that belong to the authorized PID, and
+keeps their content exclusively in memory. The session allows at most six captures, 2 MiB per
+capture, and 8 MiB total, expiring after ten minutes. Starting another session or reaching expiry
+discards the previous images.
+
+The authorized-window PNG capture, safe WebView publication, and before/after timeline card remain
+to be connected. Until those links pass the supported matrix, use the structured evidence described
+below.
+
 ## When to use it
 
 Use this workflow for UI-dependent failures such as an Access Violation when a form is opened,

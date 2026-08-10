@@ -17,7 +17,7 @@ understand every control without reading source code.
 |---|---|---|
 | M1 | Panel with up to three completion alternatives, visual navigation, and configurable shortcuts | Complete; final integrated matrix pending |
 | M2 | `.radiaext` references, knowledge, templates, and assets, including Addon Studio and rollback | Completed; integrated final matrix pending |
-| M3 | Visual chat session with before/after captures, timeline, and validation driven by real events | Pending |
+| M3 | Visual chat session with before/after captures, timeline, and validation driven by real events | In-memory foundation completed; capture and chat in progress |
 | M4 | Consent resilient across surfaces with a consistent visual presentation | Pending |
 | M5 | Advanced terminal matrix for Unicode, wide characters, reflow, and TUI applications | Pending |
 | M6 | Incremental refinement of the current WebView without replacing its architecture | Pending |

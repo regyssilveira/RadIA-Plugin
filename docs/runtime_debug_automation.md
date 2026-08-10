@@ -4,6 +4,23 @@ O RadIA pode reproduzir uma falha visual em uma aplicação VCL iniciada pelo de
 evidências, preparar uma correção revisável, recompilar, repetir o cenário e comprovar se a falha
 foi removida.
 
+> **Importante:** neste guia, `CaptureRuntimeEvidence` significa evidência estruturada do debugger:
+> exceção, call stack, estado, expressões e identidade da sessão. A apresentação de screenshots
+> anterior/posterior diretamente no chat está em implementação e ainda não deve ser tratada como
+> funcionalidade disponível.
+
+## Sessão visual no chat: estado da implementação
+
+A fundação interna já mantém uma sessão visual vinculada à identidade completa criada pelo
+debugger. Ela ordena eventos reais, aceita somente imagens pertencentes ao PID autorizado e mantém
+o conteúdo exclusivamente em memória. São permitidas no máximo seis capturas, 2 MiB por captura e
+8 MiB no total, com expiração após dez minutos. Iniciar outra sessão ou atingir a expiração elimina
+as imagens anteriores.
+
+Ainda faltam o capturador PNG da janela autorizada, a publicação segura para o WebView e o card no
+chat com anterior/posterior e timeline. Até essas ligações passarem pela matriz suportada, use as
+evidências estruturadas descritas abaixo.
+
 ## Quando usar
 
 Use este fluxo quando o problema depende de uma sequência na interface, por exemplo:

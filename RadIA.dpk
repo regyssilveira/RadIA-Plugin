@@ -119,6 +119,7 @@ contains
   RadIA.Core.RuntimeRegression in 'Source\Core\RadIA.Core.RuntimeRegression.pas',
   RadIA.Core.RuntimeRegressionTools in 'Source\Core\RadIA.Core.RuntimeRegressionTools.pas',
   RadIA.Core.RuntimeDebugSession in 'Source\Core\RadIA.Core.RuntimeDebugSession.pas',
+  RadIA.Core.VisualRuntimeSession in 'Source\Core\RadIA.Core.VisualRuntimeSession.pas',
   RadIA.Core.RuntimeDebugTools in 'Source\Core\RadIA.Core.RuntimeDebugTools.pas',
   RadIA.Core.RuntimeDiscoveryTools in 'Source\Core\RadIA.Core.RuntimeDiscoveryTools.pas',
   RadIA.Core.MemoryDiagnostics in 'Source\Core\RadIA.Core.MemoryDiagnostics.pas',
