@@ -30,8 +30,8 @@ this goal.
 
 | Milestone | Delivery | Status |
 |---|---|---|
-| M0 | Baseline, contracts, acceptance matrix, and documentation audit | In progress |
-| M1 | Canonical model and CLI-specific skill adapters | Pending |
+| M0 | Baseline, contracts, acceptance matrix, and documentation audit | Complete |
+| M1 | Canonical model and CLI-specific skill adapters | Complete |
 | M2 | Preview, consent, synchronization, and removal in Addon Studio | Pending |
 | M3 | Real format validation and portability documentation | Pending |
 | M4 | Decoupled interface and selected VT core | Pending |
@@ -50,6 +50,11 @@ this goal.
 - Credentials, tokens, unnecessary private paths, and content outside the package are not exported.
 - Diagnostics distinguish missing CLI, incompatible format, conflict, divergence, and success.
 - Changes are discovered without restarting Delphi.
+
+M1 introduced the validated canonical model and four isolated adapters. They produce `SKILL.md`
+with shared frontmatter and project-specific paths: `.agents/skills`, `.claude/skills`,
+`.gemini/skills`, and `.github/skills`. Writes, synchronization, and visual experience belong to M2
+and are not exposed to users yet.
 
 ## Terminal contract
 
@@ -91,4 +96,3 @@ this goal.
 The goal ends only when one skill can be created once and used in all four CLIs without manual
 duplication, and when the terminal runs the defined matrix with fidelity and stability on all three
 Delphi targets. An absence of failures does not replace positive evidence for every contract.
-

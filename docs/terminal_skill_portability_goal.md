@@ -30,8 +30,8 @@ Delphi não fazem parte deste goal.
 
 | Marco | Entrega | Estado |
 |---|---|---|
-| M0 | Baseline, contratos, matriz de aceite e auditoria documental | Em execução |
-| M1 | Modelo canônico e adaptadores de skill por CLI | Pendente |
+| M0 | Baseline, contratos, matriz de aceite e auditoria documental | Concluído |
+| M1 | Modelo canônico e adaptadores de skill por CLI | Concluído |
 | M2 | Preview, consentimento, sincronização e remoção no Addon Studio | Pendente |
 | M3 | Validação real dos formatos e documentação de portabilidade | Pendente |
 | M4 | Interface desacoplada e núcleo VT selecionado | Pendente |
@@ -51,6 +51,11 @@ Delphi não fazem parte deste goal.
 - Credenciais, tokens, caminhos privados desnecessários e conteúdo fora do pacote não são exportados.
 - O diagnóstico diferencia CLI ausente, formato incompatível, conflito, divergência e sucesso.
 - Alterações são descobertas sem reiniciar o Delphi.
+
+O M1 introduziu o modelo canônico validado e quatro adaptadores isolados. Eles produzem `SKILL.md`
+com frontmatter comum e paths de projeto específicos: `.agents/skills`, `.claude/skills`,
+`.gemini/skills` e `.github/skills`. A gravação, sincronização e experiência visual pertencem ao M2
+e ainda não são apresentadas ao usuário.
 
 ## Contrato do terminal
 
@@ -92,4 +97,3 @@ Delphi não fazem parte deste goal.
 O goal termina somente quando uma skill puder ser criada uma vez e utilizada nos quatro CLIs sem
 duplicação manual, e quando o terminal executar a matriz definida com fidelidade e estabilidade nos
 três targets Delphi. A ausência de falha não substitui evidência positiva de cada contrato.
-
