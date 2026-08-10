@@ -6,11 +6,11 @@ This page is the functional map of RadIA 2.3.1.
 |---|---|
 | Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, a visible five-message follow-up queue, sessions, history, exports, templates, token and cost estimates. |
 | Shared journey | Link chat, terminal, and editor by project-safe identity without copying history or process output. |
-| Terminal | Use dockable multi-tab ConPTY sessions with streaming UTF-8, wide/combining character widths, resize reflow, VT/TUI character operations, history, snippets, consent, and process-tree cancellation. |
+| Terminal | Use dockable multi-tab ConPTY sessions with streaming UTF-8, CJK, emoji and combining-character widths, resize reflow, VT/TUI character operations, history, snippets, consent, and process-tree cancellation. |
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |
 | Journeys | Conversational intake that preserves answers, plus minimal and controller-based DEXT project generation. |
 | Providers | Gemini, OpenAI, Azure OpenAI, Claude, Bedrock, Copilot, DeepSeek, Groq, Qwen, Mistral, OpenRouter, Ollama, LM Studio, OpenAI-compatible and JSON-defined providers. |
-| Editor | Read live buffers and selections, explain, review, refactor, optimize SQL, find bugs, scan warnings, generate tests and XML documentation, and show Ghost Text through dedicated FIM on Ollama/LM Studio with explicit fallback elsewhere. |
+| Editor | Read live buffers and selections, explain, review, refactor, optimize SQL, find bugs, scan warnings, generate tests and XML documentation, and compare up to three Ghost Text alternatives through dedicated FIM on Ollama/LM Studio with explicit fallback elsewhere. |
 | Review | Smart Diff, inline reviews, reviewed fixes, safe apply and controlled revert. |
 | Generation | DTOs and models from JSON or DDL, methods from comments and complete Delphi projects. |
 | Templates | Console, VCL, FMX, Library, Package and DUnitX with preview, staging, validation, open, build and rollback. |

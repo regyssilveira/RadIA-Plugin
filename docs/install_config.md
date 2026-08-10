@@ -126,7 +126,7 @@ Insira as chaves obtidas nas configurações do plugin (**Settings** no topo do 
    > [!IMPORTANT]
   > **Permissões IAM e Acesso a Modelos no Bedrock:**
    > * A chave de acesso IAM utilizada deve possuir políticas de segurança anexadas que permitam a execução das ações `bedrock:InvokeModel` e `bedrock:InvokeModelWithResponseStream`.
-   > * Por padrão, a AWS Bedrock exige que você solicite acesso aos modelos individualmente no Console AWS da região desejada (menu *Model Access*). Certifique-se de que o acesso aos modelos que planeja utilizar (como Claude 3 da Anthropic) já foi solicitado e concedido antes de tentar conectá-los no Rad IA.
+   > * Por padrão, a AWS Bedrock exige que você solicite acesso aos modelos individualmente no Console AWS da região desejada (menu *Model Access*). Confirme que o modelo escolhido está liberado para a conta e a região antes de tentar conectá-lo no Rad IA.
 
 > **Nota sobre Provedores Dinâmicos e Corporativos:** Você também pode adicionar de forma dinâmica novos provedores compatíveis com a API OpenAI (incluindo o GitHub Copilot ou proxies de terceiros) salvando arquivos JSON em `%APPDATA%\RadIA\providers\`. Para mais detalhes, consulte o [Guia para Adição de Novos Provedores (docs/new_provider_guide.md)](new_provider_guide.md) e o [Guia de Configuração do GitHub Copilot (docs/copilot_proxy_guide.md)](copilot_proxy_guide.md).
 

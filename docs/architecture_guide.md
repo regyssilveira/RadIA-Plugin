@@ -120,7 +120,7 @@ classDiagram
 
 Para evitar dependências cruzadas acopladas estaticamente na cláusula `uses` do Delphi (que impediriam testes unitários isolados e stubs de rede), o Rad IA utiliza Inversão de Controle (IoC) por meio de um container estático thread-safe (`TRadIAContainer` localizado em `RadIA.Core.Container.pas`).
 
-O boot do container e o auto-registro de todas as abstrações ocorrem na unit de inicialização [RadIA.OTA.Register.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Register.pas):
+O boot do container e o auto-registro de todas as abstrações ocorrem na unit de inicialização [RadIA.OTA.Register.pas](../Source/Integration/RadIA.OTA.Register.pas):
 
 ```mermaid
 graph TD

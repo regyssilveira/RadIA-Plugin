@@ -27,6 +27,28 @@ templates, logs, or screenshots. Saving provider settings refreshes models witho
 Claude, DeepSeek, Groq, OpenRouter, Alibaba Qwen, and Mistral use their API key and the common
 advanced settings above. Provider account, region, plan, and permissions determine model availability.
 
+### Discovery and fallback models
+
+When a provider is saved or selected, RadIA requests the current list from a compatible transport
+and refreshes it without restarting Delphi. If discovery is unavailable or fails, RadIA uses the
+fallbacks below. They do not guarantee access: account, plan, region, and endpoint still determine
+which models can be called.
+
+| Provider | Distributed fallbacks |
+|---|---|
+| Google Gemini | `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite` |
+| OpenAI | `gpt-5.6-terra`, `gpt-5.6-sol`, `gpt-5.6-luna` |
+| Anthropic Claude | `claude-sonnet-5`, `claude-opus-5`, `claude-fable-5` |
+| DeepSeek | `deepseek-chat`, `deepseek-reasoning` |
+| Groq | `llama-3.3-70b-versatile`, `mixtral-8x7b-32768`, `gemma2-9b-it` |
+| OpenRouter | `google/gemini-2.5-pro`, `meta-llama/llama-3.3-70b-instruct`, `deepseek/deepseek-r1` |
+| Alibaba Qwen | `qwen2.5-coder-32b-instruct`, `qwen2.5-coder-7b-instruct`, `qwen2.5-plus` |
+| Mistral AI | `codestral-latest`, `mistral-large-latest`, `open-codestral-7b` |
+
+Ollama and LM Studio always reflect the configured server. Azure uses deployment names, and
+Bedrock depends on model IDs enabled in the region. If the list remains empty, validate credentials,
+endpoint, and permissions; do not restart the IDE as the first recovery step.
+
 ## General / Logs
 
 | Option | When to use | Effect and care |

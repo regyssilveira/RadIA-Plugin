@@ -28,6 +28,9 @@ ou roadmap para descobrir como utilizá-la.
 - `docs/slash_commands.md` é a fonte única para comandos do chat.
 - Guias especializados aprofundam um assunto e devem apontar de volta para a fonte central.
 - Roadmaps, evidências e históricos não devem ser usados como instrução principal para usuários.
+- Links internos devem ser relativos ao repositório; nunca use caminhos locais `file:///`.
+- Listas de modelos fallback devem permanecer sincronizadas com `RadIA.Core.Types.pas`.
+- Contagens do catálogo devem ser derivadas de `runtime_tools.json`, não copiadas de evidências antigas.
 
 ## Critérios de qualidade
 

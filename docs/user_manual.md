@@ -256,7 +256,7 @@ da pilha, transições entre estados, avaliações, watches e eventos recentes. 
 polling nem executa ações adicionais: ela mostra somente o resultado já autorizado e auditado da
 etapa, limitando listas a um tamanho seguro para o WebView.
 
-### 3.2 Consentimento
+### 3.3 Consentimento
 
 Ferramentas de leitura podem ser executadas diretamente. Operações mutáveis ou de execução exibem
 um diálogo com ferramenta, risco e escopo:

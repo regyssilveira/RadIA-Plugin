@@ -38,10 +38,12 @@ Delphi 11 is outside the current support matrix.
 
 | Area | What RadIA provides | Guide |
 |---|---|---|
-| Chat | Providers, streaming, sessions, templates, history, and commands | [Chat and sessions](docs/user_guide_chat_sessions.en.md) |
+| Chat | Providers, streaming, sessions, follow-up queue, templates, history, and commands | [Chat and sessions](docs/user_guide_chat_sessions.en.md) |
 | Scoped settings | Provider, model, executor, and limits by project, session, or next request | [Scoped settings](docs/hierarchical_settings.en.md) |
+| Shared context | Continue one journey across chat, terminal, and editor without copying history | [Shared context](docs/shared_journey_context.en.md) |
 | Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/user_guide_editor_generation.en.md) |
-| Ghost Text/FIM | Complete at the cursor through a dedicated route or diagnosable fallback | [Inline assistance and FIM](docs/inline_completion.en.md) |
+| Ghost Text/FIM | Complete at the cursor, compare up to three alternatives, and diagnose fallback | [Inline assistance and FIM](docs/inline_completion.en.md) |
+| Block review | Accept, reject, edit, explain, and apply reviewed changes from the gutter | [Block-level review](docs/block_reviews.en.md) |
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/project_wizard.en.md) |
 | DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/user_guide_dext_journeys.en.md) |
 | Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/user_guide_journeys.en.md) |
@@ -50,6 +52,7 @@ Delphi 11 is outside the current support matrix.
 | Memory | Instrument Debug builds with FastMM5 and compare a fix | [FastMM5 diagnostics](docs/fastmm5_diagnostic_session.en.md) |
 | Agent | Plan, execute tools, pause, resume, cancel, and restore checkpoints | [User manual](docs/user_manual.en.md) |
 | MCP | Expose IDE tools to authorized local clients | [MCP integration](docs/mcp_integration_guide.en.md) |
+| Terminal | Use interactive ConPTY with Unicode, reflow, profiles, history, timeout, and cancellation | [Terminal](docs/terminal.en.md) |
 | Knowledge | Index and search the local project | [Project knowledge](docs/user_guide_project_knowledge.en.md) |
 
 ## Native agent, CLI, provider, and MCP
@@ -73,10 +76,10 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - `/help` summarizes the product and links to the applicable documentation.
 - `/journey` lists journeys that collect missing input without losing conversational context.
 - `/scope` shows effective values and overrides or restores inheritance without an IDE restart.
-- The [130-tool runtime catalog](docs/runtime_tool_catalog.md) lists built-in registrations.
-- The [operational reference](docs/internal_tools_reference.md) explains purpose and activation.
+- The [131-tool runtime catalog](docs/runtime_tool_catalog.en.md) lists built-in registrations.
+- The [operational reference](docs/internal_tools_reference.en.md) explains purpose and activation.
 - The [slash command guide](docs/slash_commands.en.md) documents commands and examples.
-- The [security model](docs/tool_security_model.md) explains risk, consent, and auditing.
+- The [security model](docs/tool_security_model.en.md) explains risk, consent, and auditing.
 - [Declarative extensions](docs/declarative_extensions.en.md) explains how to share commands, skills,
   knowledge, references, templates, aliases, and workflows in `.radiaext` packages.
 
@@ -111,11 +114,23 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -ID
 Close the IDE before installing or replacing a BPL. See the
 [installation guide](docs/install_config.en.md) for complete instructions.
 
+## Security and privacy
+
+- Compatible credentials are protected locally with Windows DPAPI.
+- Tools are classified by risk, and mutations require consent.
+- Paths remain confined to the authorized workspace.
+- Patches use preview, base hashes, and preconditions to avoid overwriting newer content.
+- MCP reuses the same policies as chat.
+- RadIA does not send code to a provider without a user-initiated action.
+
+See the [tool security model](docs/tool_security_model.en.md) and the
+[privacy and compliance guide](docs/compliance.en.md).
+
 ## Development and contribution
 
 - [Architecture](docs/architecture_guide.en.md)
 - [Source code map](docs/source_code_guide.en.md)
-- [Compatibility matrix](docs/delphi_compatibility_matrix.md)
+- [Compatibility matrix](docs/delphi_compatibility_matrix.en.md)
 - [Branch convention](docs/branch_convention.en.md)
 - [Commit convention](docs/commit_convention.en.md)
 - [Release process](docs/release_process.en.md)

@@ -14,3 +14,7 @@ settings source of truth, `internal_tools_reference.md` the tool source of truth
 location, purpose, usage, effects, dependencies, valid values, security/network/cost/file impact,
 defaults, recovery, and deeper reference. Run `npm run test:docs` before committing.
 
+Internal links must be repository-relative and never use local `file:///` paths. Keep model fallback
+lists synchronized with `RadIA.Core.Types.pas`, and derive current tool counts from
+`runtime_tools.json` instead of copying historical evidence.
+

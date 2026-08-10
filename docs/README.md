@@ -25,10 +25,12 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Tarefa | Guia principal |
 |---|---|
 | Explicar, revisar, refatorar ou gerar código | [Editor e geração](user_guide_editor_generation.md) |
+| Diagnosticar código, warnings, SQL ou stack trace | [Diagnóstico e análise](user_guide_diagnostics_analysis.md) |
 | Receber e diagnosticar sugestões Ghost Text/FIM | [Assistência inline e FIM](inline_completion.md) |
 | Revisar alterações por bloco no gutter | [Revisão por bloco](block_reviews.md) |
 | Criar um projeto Delphi | [New Project Wizard](project_wizard.md) |
 | Adicionar ou remover units e forms | [Operações estruturais](project_file_operations.md) |
+| Coordenar alterações de código, projeto e Designer | [Transações de desenvolvimento](development_transactions.md) |
 | Compilar, corrigir erros e executar testes | [Jornadas ponta a ponta](user_guide_journeys.md) |
 | Criar um servidor DEXT a partir de endpoints | [Jornadas de servidores DEXT](user_guide_dext_journeys.md) |
 | Executar e interpretar testes DUnitX | [Runner DUnitX](dunitx_runner.md) |

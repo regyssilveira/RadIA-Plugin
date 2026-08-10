@@ -40,11 +40,11 @@ Delphi 11 não faz parte da matriz atual.
 
 | Área | Capacidades principais | Guia |
 |---|---|---|
-| Chat | Providers, streaming, sessões, templates, histórico e comandos | [Chat e sessões](docs/user_guide_chat_sessions.md) |
+| Chat | Providers, streaming, sessões, fila de continuações, templates, histórico e comandos | [Chat e sessões](docs/user_guide_chat_sessions.md) |
 | Configurações por escopo | Provider, modelo, executor e limites por projeto, sessão ou próxima solicitação | [Configurações por escopo](docs/hierarchical_settings.md) |
 | Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/shared_journey_context.md) |
 | Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
-| Ghost Text/FIM | Completar no cursor por rota dedicada ou fallback diagnosticável | [Assistência inline e FIM](docs/inline_completion.md) |
+| Ghost Text/FIM | Completar no cursor, comparar até três alternativas e usar fallback diagnosticável | [Assistência inline e FIM](docs/inline_completion.md) |
 | Revisão por bloco | Aceitar, rejeitar, editar e aplicar mudanças pelo gutter | [Revisão por bloco](docs/block_reviews.md) |
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
 | DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/user_guide_dext_journeys.md) |
@@ -55,7 +55,7 @@ Delphi 11 não faz parte da matriz atual.
 | Memória | Instrumentar Debug com FastMM5, analisar leaks e comparar a correção | [Diagnóstico FastMM5](docs/fastmm5_diagnostic_session.md) |
 | Agente | Planejar, executar tools, pausar, retomar, cancelar e restaurar checkpoints | [Modo agente](docs/user_manual.md#3-como-ativar-o-modo-agente) |
 | MCP | Expor as mesmas tools da IDE a clientes locais autorizados | [Integração MCP](docs/mcp_integration_guide.md) |
-| Terminal | Executar processos com streaming, timeout e cancelamento | [Terminal](docs/terminal.md) |
+| Terminal | Usar ConPTY interativo com Unicode, reflow, histórico, perfis, timeout e cancelamento | [Terminal](docs/terminal.md) |
 | Conhecimento | Indexar e pesquisar o projeto localmente | [Conhecimento do projeto](docs/user_guide_project_knowledge.md) |
 
 ## Agente nativo, CLI, provider e MCP

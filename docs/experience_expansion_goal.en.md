@@ -1,6 +1,6 @@
 # Goal — expand RadIA's complete experience
 
-> **Status:** active on `feat/competitive-gap-closure`.
+> **Status:** complete on `feat/competitive-gap-closure`.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Out of scope:** C++Builder, marketplace, mandatory Authenticode signing, generic desktop
 > automation, and replacement of the current WebView2 host.
@@ -15,13 +15,28 @@ understand every control without reading source code.
 
 | Milestone | Delivery | Status |
 |---|---|---|
-| M1 | Panel with up to three completion alternatives, visual navigation, and configurable shortcuts | Complete; final integrated matrix pending |
-| M2 | `.radiaext` references, knowledge, templates, and assets, including Addon Studio and rollback | Completed; integrated final matrix pending |
+| M1 | Panel with up to three completion alternatives, visual navigation, and configurable shortcuts | Complete and approved in the final integrated matrix |
+| M2 | `.radiaext` references, knowledge, templates, and assets, including Addon Studio and rollback | Complete and approved in the final integrated matrix |
 | M3 | Visual chat session with before/after captures, timeline, and validation driven by real events | Complete; real capture passed on all three supported targets |
 | M4 | Consent resilient across surfaces with a consistent visual presentation | Complete; central dialog, bounded queue, redaction, and matrix approved |
 | M5 | Advanced terminal matrix for Unicode, wide characters, reflow, and TUI applications | Complete; 1,013 tests on all three targets and Sonar approved |
 | M6 | Incremental refinement of the current WebView without replacing its architecture | Complete; queue, 280–1,000 px layout, three targets, and Sonar approved |
-| M7 | Complete documentation audit and Delphi 12/13 gate | Continuous work in progress; final gate pending |
+| M7 | Complete documentation audit and Delphi 12/13 gate | Complete; documentation, matrix, and Sonar approved |
+
+## Final M7 evidence
+
+- 184 tracked Markdown documents in 92 complete pt-BR/en-US pairs;
+- task navigation proven for every operational guide, with ADRs, plans, audits, and historical
+  records kept outside the primary user flow;
+- valid repository-relative local links, with no `file:///`, mojibake, or forbidden product
+  references;
+- 131/131 tools with purpose and activation guidance, every native command documented, and model
+  fallbacks automatically synchronized with `RadIA.Core.Types.pas`;
+- 83/83 Web and documentation tests plus a clean ESLint run;
+- 1,013/1,013 tests on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, with no failures,
+  errors, ignored tests, or leaks;
+- SonarQube Quality Gate `OK`, 82.8% coverage, 1.7% duplication, and zero issues, bugs,
+  vulnerabilities, hotspots, or code smells.
 
 ## Required contracts
 

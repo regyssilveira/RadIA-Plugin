@@ -31,6 +31,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Persistent Chat History** | Chat UX | Automatic local JSON storage and on-demand reload of previous chat sessions. | ✅ Completed |
 | **Prompt Navigation (↑/↓)** | Chat UX | Terminal-like keyboard arrow history lookup in prompt input. | ✅ Completed |
 | **Request Cancellation** | Chat UX | Abort active AI HTTP requests asynchronously using a dynamic stop button and lock session actions while processing. | ✅ Completed |
+| **Follow-up Queue** | Chat UX | Write, queue, edit, or clear up to five messages during a response without adding them to history early. | ✅ Completed |
 | **Export Conversation** | Chat UX | Save current active chats to Markdown (.md) or standalone rich HTML formats. | ✅ Completed |
 | **Prompt Templates** | Chat UX | Quick prompt template library with token replacement and the `/template` command. | ✅ Completed |
 | **Dynamic Slash Commands** | Chat UX | Dynamic mapping of templates to slash commands (e.g. `/createprojectarch`), synced and autocompleted in WebView2. | ✅ Completed |
@@ -45,12 +46,13 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Declarative Tool Aliases** | Extensibility | Schema 3 registers safe chat/MCP aliases that inherit internal tool risk, schemas, and consent. | ✅ Completed |
 | **Declarative Workflows** | Extensibility | Schema 5 chains up to 16 internal tools with inherited risk, bounds, and per-step central policy, without arbitrary shells. | ✅ Completed |
 | **Packaged Declarative Resources** | Extensibility | Schema 6 and `.radiaext` v3 carry references, knowledge, templates, and assets with hashes, rollback, and transactional removal. | ✅ Completed |
+| **Runtime Visual Capture** | Debugger | Captures the authorized window before and after a real scenario, sanitizes images, and binds the timeline to actual session events. | ✅ Completed |
 | **Editor Code Rendering in Chat** | Chat UX | Prompts sent from the editor menu preserve fenced Markdown code blocks with Pascal highlighting also in user messages. | ✅ Completed |
 | **Template Backup & Restore** | Chat UX | Transactional JSON import and export with schema validations and merge/overwrite UI options. | ✅ Completed |
-| **Google Gemini** | Provider | Native BYOK integration for Gemini 1.5 Pro and Gemini 1.5 Flash models. | ✅ Completed |
-| **OpenAI ChatGPT** | Provider | Native BYOK integration for GPT-4o, GPT-4o-mini, and others. | ✅ Completed |
+| **Google Gemini** | Provider | BYOK integration with dynamic discovery and documented current model fallbacks. | ✅ Completed |
+| **OpenAI ChatGPT** | Provider | API Key and ChatGPT Pro through Codex, with dynamic discovery and current fallbacks. | ✅ Completed |
 | **Hybrid Login (Web Login)**| Provider | Choose between BYOK (API Keys) or Web Login (Plus/Pro) for OpenAI and Gemini. | ❌ Removed (v0.0.29) |
-| **Anthropic Claude** | Provider | Native BYOK integration for Claude 3 Haiku and Claude 3.5 Sonnet. | ✅ Completed |
+| **Anthropic Claude** | Provider | BYOK integration with dynamic discovery and documented current model fallbacks. | ✅ Completed |
 | **DeepSeek** | Provider | Native BYOK integration for DeepSeek Chat and Reasoning models. | ✅ Completed |
 | **Groq** | Provider | Native BYOK integration for Llama, Mixtral, and Gemma models via Groq's high-speed cloud. | ✅ Completed |
 | **OpenRouter** | Provider | Native OpenRouter support with SSE streaming, dynamic model selection, and complete settings integration. | ✅ Completed |
@@ -86,6 +88,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Editor Hook** | Infrastructure | Resilient editor context-menu integration using an asynchronous VCL hook, compatible with Delphi 12/13 and stable during new project creation. | ✅ Completed |
 | **Agentic Registry** | Agentic | Catalog shared by chat, MCP, and extensions. | ✅ Completed |
 | **Consent and Audit** | Security | Scoped decisions and a sanitized audit trail. | ✅ Completed |
+| **Central Cross-surface Consent** | Security | Chat, agent, MCP, and terminal share one resilient dialog with a bounded queue, source, sanitized arguments, and hints. | ✅ Completed |
 | **Reviewable Patches** | Agentic | Preview, base hash, apply, and reversal with conflict detection. | ✅ Completed |
 | **OTA Workspace** | Integration | Facades for editor, project, build, Designer, and debugger. | ✅ Completed |
 | **Local MCP Server** | Integration | Stdio bridge, named pipe, and per-PID discovery. | ✅ Completed |
@@ -93,6 +96,8 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Agentic Debugger** | Integration | State, control, breakpoints, expression evaluation, and watches. | ✅ Completed |
 | **Inline and block review** | Editor | Gutter markers to accept, reject, edit, explain, navigate, and transactionally apply single- or multi-file changes. | ✅ Completed |
 | **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
+| **Ghost Text Alternatives** | Editor | Up to three suggestions with visual navigation and configurable shortcuts without changing the buffer before acceptance. | ✅ Completed |
+| **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
 | **Signed Declarative Extensions** | Security | RSA-SHA256 packages with fingerprints, first-use trust, and visual revocation. | ✅ Completed |

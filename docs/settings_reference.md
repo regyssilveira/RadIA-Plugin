@@ -81,6 +81,28 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | AWS Region | Sempre que configurar Bedrock | Região que disponibiliza o modelo e na qual a conta possui acesso, por exemplo `us-east-1`. |
 | IAM Console | Para criar ou revisar permissões | Abre o console oficial. O RadIA não altera políticas IAM. |
 
+### Descoberta e modelos de fallback
+
+Ao salvar ou trocar o provider, o RadIA solicita a lista atual ao transporte compatível. A lista é
+atualizada imediatamente, sem reiniciar o Delphi. Se a descoberta não estiver disponível ou
+falhar, o RadIA usa os fallbacks abaixo; eles não garantem acesso, pois conta, plano, região e
+endpoint continuam determinando quais modelos podem ser chamados.
+
+| Provider | Fallbacks distribuídos |
+|---|---|
+| Google Gemini | `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite` |
+| OpenAI | `gpt-5.6-terra`, `gpt-5.6-sol`, `gpt-5.6-luna` |
+| Anthropic Claude | `claude-sonnet-5`, `claude-opus-5`, `claude-fable-5` |
+| DeepSeek | `deepseek-chat`, `deepseek-reasoning` |
+| Groq | `llama-3.3-70b-versatile`, `mixtral-8x7b-32768`, `gemma2-9b-it` |
+| OpenRouter | `google/gemini-2.5-pro`, `meta-llama/llama-3.3-70b-instruct`, `deepseek/deepseek-r1` |
+| Alibaba Qwen | `qwen2.5-coder-32b-instruct`, `qwen2.5-coder-7b-instruct`, `qwen2.5-plus` |
+| Mistral AI | `codestral-latest`, `mistral-large-latest`, `open-codestral-7b` |
+
+Ollama e LM Studio sempre refletem o servidor configurado. Azure usa o nome do deployment, e
+Bedrock depende dos IDs liberados na região. Se a lista continuar vazia, valide credencial,
+endpoint e permissão; não reinicie a IDE como primeira tentativa.
+
 ## General / Logs
 
 | Opção | Quando alterar | Efeito e cuidados |

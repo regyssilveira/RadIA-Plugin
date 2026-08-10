@@ -31,6 +31,7 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Histórico de Chat Persistente** | Chat UX | Salvamento automático em JSON e restauração sob demanda das sessões anteriores de chat. | ✅ Concluído |
 | **Histórico de Prompts (↑/↓)** | Chat UX | Navegação rápida pelos prompts enviados anteriormente usando as setas do teclado. | ✅ Concluído |
 | **Cancelamento de Requisições** | Chat UX | Permite abortar chamadas ativas de IA de forma assíncrona com botão stop e bloqueia ações de sessão durante processamento. | ✅ Concluído |
+| **Fila de Continuações** | Chat UX | Permite escrever, enfileirar, editar ou limpar até cinco mensagens durante uma resposta, sem antecipá-las no histórico. | ✅ Concluído |
 | **Exportação de Conversa** | Chat UX | Botão para salvar histórico nos formatos Markdown (.md) ou HTML autônomo com Prism.js. | ✅ Concluído |
 | **Templates de Prompt** | Chat UX | Biblioteca de templates rápidos de prompt com substituição de código e o comando `/template`. | ✅ Concluído |
 | **Slash Commands Dinâmicos** | Chat UX | Mapeamento dinâmico de templates para comandos de barra (ex: `/createprojectarch`), sincronizados e autocompletados no WebView2. | ✅ Concluído |
@@ -45,12 +46,13 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Aliases Declarativos de Tools** | Extensibilidade | Schema 3 registra aliases seguros no chat e MCP, herdando risco, schemas e consentimento da tool interna. | ✅ Concluído |
 | **Workflows Declarativos** | Extensibilidade | Schema 5 encadeia até 16 tools internas com risco herdado, limites e policy central por etapa, sem shell arbitrário. | ✅ Concluído |
 | **Recursos Declarativos Empacotados** | Extensibilidade | Schema 6 e envelope `.radiaext` v3 transportam referências, conhecimento, templates e assets com hash, rollback e remoção transacional. | ✅ Concluído |
+| **Captura Visual Runtime** | Debugger | Captura a janela autorizada antes e depois de um cenário real, sanitiza imagens e liga a timeline aos eventos efetivos da sessão. | ✅ Concluído |
 | **Renderização de Código do Editor no Chat** | Chat UX | Prompts enviados pelo menu do editor preservam blocos fenced Markdown com realce Pascal também em mensagens do usuário. | ✅ Concluído |
 | **Backup de Templates** | Chat UX | Exportação e importação transacional em JSON de templates com validação estrutural de esquema e opção de mesclagem na UI. | ✅ Concluído |
-| **Google Gemini** | Provedor | Suporte nativo aos modelos Gemini 1.5 Flash e Pro via chaves próprias (BYOK). | ✅ Concluído |
-| **OpenAI ChatGPT** | Provedor | Suporte nativo aos modelos GPT-4o, GPT-4o-mini e outros. | ✅ Concluído |
+| **Google Gemini** | Provedor | Integração BYOK com descoberta dinâmica e fallback documentado de modelos atuais. | ✅ Concluído |
+| **OpenAI ChatGPT** | Provedor | Integração por API Key e ChatGPT Pro via Codex, com descoberta dinâmica e fallback atual. | ✅ Concluído |
 | **Login Híbrido (Web Login)**| Provedor | Permite alternar entre BYOK (API Keys) ou Login Web (Plus/Pro) para OpenAI e Gemini. | ❌ Removido (v0.0.29) |
-| **Anthropic Claude** | Provedor | Suporte nativo aos modelos Claude 3 Haiku e Claude 3.5 Sonnet. | ✅ Concluído |
+| **Anthropic Claude** | Provedor | Integração BYOK com descoberta dinâmica e fallback documentado de modelos atuais. | ✅ Concluído |
 | **DeepSeek** | Provedor | Suporte nativo aos modelos DeepSeek Chat e Reasoning via chaves próprias (BYOK). | ✅ Concluído |
 | **Groq** | Provedor | Suporte nativo aos modelos Llama, Mixtral e Gemma na nuvem ultrarrápida da Groq via chaves próprias (BYOK). | ✅ Concluído |
 | **OpenRouter** | Provedor | Suporte nativo ao OpenRouter com streaming SSE, carregamento de modelos dinâmico e integração completa. | ✅ Concluído |
@@ -86,6 +88,7 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Hook do Editor** | Infraestrutura | Integração resiliente com o menu contextual do editor via hook VCL assíncrono, compatível com Delphi 12/13 e estável durante a criação de novos projetos. | ✅ Concluído |
 | **Registry Agentivo** | Agentivo | Catálogo compartilhado por chat, MCP e extensões. | ✅ Concluído |
 | **Consentimento e Auditoria** | Segurança | Decisões por escopo e trilha sanitizada. | ✅ Concluído |
+| **Consentimento Central entre Superfícies** | Segurança | Chat, agente, MCP e terminal usam o mesmo diálogo resiliente, com fila limitada, origem, argumentos sanitizados e hints. | ✅ Concluído |
 | **Patches Revisáveis** | Agentivo | Preview, hash-base, aplicação e reversão com detecção de conflito. | ✅ Concluído |
 | **Workspace OTA** | Integração | Fachadas para editor, projeto, build, Designer e debugger. | ✅ Concluído |
 | **Servidor MCP Local** | Integração | Bridge stdio, named pipe e discovery por PID. | ✅ Concluído |
@@ -93,6 +96,8 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Debugger Agentivo** | Integração | Estado, controle, breakpoints, avaliação de expressões e watches. | ✅ Concluído |
 | **Revisão Inline e por bloco** | Editor | Marcadores no gutter para aceitar, rejeitar, editar, explicar, navegar e aplicar alterações simples ou multiarquivo de forma transacional. | ✅ Concluído |
 | **Ghost Text Multilinha** | Editor | Overlays virtuais por linha, aceite total ou por palavra e atalhos configuráveis sem alterar o buffer antes do aceite. | ✅ Concluído |
+| **Alternativas de Ghost Text** | Editor | Painel de até três sugestões com navegação visual e atalhos configuráveis, sem alterar o buffer antes do aceite. | ✅ Concluído |
+| **Terminal Unicode e TUI** | Terminal | Decodificação UTF-8 incremental, CJK, emoji, marcas combinantes, reflow e operações ICH/DCH/ECH sobre ConPTY. | ✅ Concluído |
 | **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
 | **Extensões Declarativas Assinadas** | Segurança | Pacotes RSA-SHA256 com fingerprint, confiança no primeiro uso e revogação visual. | ✅ Concluído |

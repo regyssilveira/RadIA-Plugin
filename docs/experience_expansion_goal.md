@@ -1,6 +1,6 @@
 # Goal — expansão da experiência completa do RadIA
 
-> **Estado:** ativo no branch `feat/competitive-gap-closure`.
+> **Estado:** concluído no branch `feat/competitive-gap-closure`.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Fora do escopo:** C++Builder, marketplace, assinatura Authenticode obrigatória, automação
 > genérica do desktop e substituição do host WebView2 atual.
@@ -15,13 +15,28 @@ conhecimento e automações com segurança e entender cada controle sem consulta
 
 | Marco | Entrega | Estado |
 |---|---|---|
-| M1 | Painel de até três alternativas de completion, navegação visual e atalhos configuráveis | Concluído; matriz final integrada pendente |
-| M2 | `.radiaext` com referências, conhecimento, templates e assets, incluindo Addon Studio e rollback | Concluído; matriz final integrada pendente |
+| M1 | Painel de até três alternativas de completion, navegação visual e atalhos configuráveis | Concluído e aprovado na matriz final integrada |
+| M2 | `.radiaext` com referências, conhecimento, templates e assets, incluindo Addon Studio e rollback | Concluído e aprovado na matriz final integrada |
 | M3 | Sessão visual no chat com captura anterior/posterior, timeline e validação ligada a eventos reais | Concluído; captura real aprovada nos três targets suportados |
 | M4 | Consentimento resiliente entre superfícies e apresentação visual uniforme | Concluído; diálogo central, fila limitada, redação e matriz aprovadas |
 | M5 | Matriz avançada do terminal para Unicode, caracteres largos, reflow e aplicações TUI | Concluído; 1.013 testes nos três targets e Sonar aprovado |
 | M6 | Refinamento incremental do WebView atual, sem trocar sua arquitetura | Concluído; fila, layout de 280–1000 px, três targets e Sonar aprovados |
-| M7 | Auditoria integral da documentação e gate Delphi 12/13 | Em andamento continuamente; fechamento pendente |
+| M7 | Auditoria integral da documentação e gate Delphi 12/13 | Concluído; documentação, matriz e Sonar aprovados |
+
+## Evidência final do M7
+
+- 184 documentos Markdown rastreados, em 92 pares completos pt-BR/en-US;
+- navegação por tarefa comprovada para todo guia operacional; ADRs, planos, auditorias e históricos
+  permanecem separados do fluxo principal;
+- links locais válidos e relativos ao repositório, sem `file:///`, mojibake ou referências aos
+  produtos proibidos;
+- 131/131 ferramentas com finalidade e acionamento, comandos nativos documentados e fallbacks de
+  modelos sincronizados automaticamente com `RadIA.Core.Types.pas`;
+- 83/83 testes web e documentais e ESLint aprovados;
+- 1.013/1.013 testes em Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, sem falhas, erros,
+  ignorados ou leaks;
+- SonarQube com Quality Gate `OK`, cobertura 82,8%, duplicação 1,7% e zero issues, bugs,
+  vulnerabilidades, hotspots ou code smells.
 
 ## Contratos obrigatórios
 

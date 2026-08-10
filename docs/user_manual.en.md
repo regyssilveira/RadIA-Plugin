@@ -216,7 +216,7 @@ transitions, evaluations, watches, and recent events. The UI does not poll or ex
 actions: it shows only the already authorized and audited step result, bounding lists to a safe
 WebView size.
 
-### 3.2 Consent
+### 3.3 Consent
 
 Read-only tools may run directly. Mutating and execution tools display their name, risk, and scope:
 

@@ -115,7 +115,7 @@ classDiagram
 
 To avoid cross-coupling dependencies inside Delphi `uses` clauses (which would prevent isolated unit tests and offline network stubs), RadIA utilizes Inversion of Control (IoC) through a global, thread-safe static container (`TRadIAContainer` defined in `RadIA.Core.Container.pas`).
 
-Container boot and automatic registration of all abstractions happen inside the wizard registration unit [RadIA.OTA.Register.pas](file:///d:/Projetos/PluginDelphiIA/Source/Integration/RadIA.OTA.Register.pas):
+Container boot and automatic registration of all abstractions happen inside the wizard registration unit [RadIA.OTA.Register.pas](../Source/Integration/RadIA.OTA.Register.pas):
 
 ```mermaid
 graph TD
