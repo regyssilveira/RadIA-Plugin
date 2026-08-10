@@ -34,7 +34,7 @@ this goal.
 | M1 | Canonical model and CLI-specific skill adapters | Complete |
 | M2 | Preview, consent, synchronization, and removal in Addon Studio | Complete |
 | M3 | Real format validation and portability documentation | Complete |
-| M4 | Decoupled interface and selected VT core | Pending |
+| M4 | Decoupled interface and selected VT core | Complete |
 | M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Pending |
 | M6 | Real shell, CLI, and TUI matrix on all three targets | Pending |
 | M7 | Final audit, documentation, Sonar, and release preparation | Pending |
@@ -73,6 +73,11 @@ credential limitation does not affect format validation and is recorded without 
 - OSC 8 exposes identifiable hyperlinks and opening remains subject to the security policy.
 - Resize preserves cursor, regions, wide characters, combining marks, and explicit line breaks.
 - Closing a tab, panel, or IDE leaves no child process, deadlock, or late UI access.
+
+M4 selected the existing native VT core and isolated it behind `IRadIATerminalEmulator`. The frame
+no longer holds a concrete screen class; it creates, feeds, resizes, renders, and clears only through
+the contract. This decision preserves proven behavior and allows replacing the core without exposing
+dependencies to VCL, ConPTY, or the public API.
 
 ## Acceptance matrix
 

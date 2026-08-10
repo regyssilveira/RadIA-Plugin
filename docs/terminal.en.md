@@ -19,6 +19,10 @@ There are four equivalent forms:
 The button and command call the same native action. The terminal is not inserted inside WebView2:
 it uses its own VCL panel, registered by the Open Tools API as a dockable window.
 
+Internally, ConPTY transport, VT emulation, and the VCL renderer are independent layers. The UI uses
+`IRadIATerminalEmulator` without knowing the parser or third-party types. The current native core is
+behind that interface, allowing evolution and fallback without changing sessions, consent, or docking.
+
 ## Shortcut configuration
 
 Open **Rad IA > Settings > Security & Privacy** and locate **RadIA shortcuts**. The profile contains

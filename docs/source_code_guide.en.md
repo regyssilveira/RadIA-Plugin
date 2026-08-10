@@ -50,6 +50,7 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.ConsentGate` | Serializes dialogs and bounds concurrent-request waiting. |
 | `RadIA.Core.PseudoTerminal` | Manages ConPTY, process trees, resize, UTF-8 input, and streaming output decoding. |
 | `RadIA.Core.TerminalScreen` | Emulates VT state, display-width-aware Unicode cells, and line reflow on resize. |
+| `RadIA.Core.TerminalEmulator` | Contract between UI and VT emulation with a native-core factory. |
 | `RadIA.Core.Workspace*` | Workspace facade and editor and project tools. |
 | `RadIA.Core.Patches` and `PatchTools` | Patch preview, preconditions, application, and reversal. |
 | `RadIA.Core.Build*` | Controlled build-cycle contracts and tools. |

@@ -11,7 +11,7 @@ uses
   Vcl.StdCtrls,
   RadIA.Core.CliProcess,
   RadIA.Core.Terminal,
-  RadIA.Core.TerminalScreen,
+  RadIA.Core.TerminalEmulator,
   RadIA.Core.ToolSecurity,
   RadIA.Core.JourneyContext;
 
@@ -44,7 +44,7 @@ type
     FOutputLabel: TLabel;
     FStatusLabel: TLabel;
     FJourneyLabel: TLabel;
-    FScreen: TRadIATerminalScreen;
+    FScreen: IRadIATerminalEmulator;
     FHistory: TRadIATerminalHistory;
     FHistorySearchIndex: Integer;
     FHistorySearchQuery: string;
@@ -231,7 +231,7 @@ begin
   inherited Create(AOwner);
   Align := alClient;
   FLifecycleGuard := TRadIATerminalLifecycleGuard.Create;
-  FScreen := TRadIATerminalScreen.Create;
+  FScreen := TRadIATerminalEmulatorFactory.CreateNative;
 
   LAppData := GetEnvironmentVariable('APPDATA');
   if LAppData = '' then
@@ -263,7 +263,7 @@ begin
     FSession.Cancel;
     FSession := nil;
   end;
-  FScreen.Free;
+  FScreen := nil;
   FHistory.Free;
   inherited Destroy;
 end;

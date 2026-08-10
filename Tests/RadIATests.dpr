@@ -29,6 +29,7 @@ uses
   RadIA.Core.PseudoTerminal in '..\Source\Core\RadIA.Core.PseudoTerminal.pas',
   RadIA.Core.Terminal in '..\Source\Core\RadIA.Core.Terminal.pas',
   RadIA.Core.TerminalScreen in '..\Source\Core\RadIA.Core.TerminalScreen.pas',
+  RadIA.Core.TerminalEmulator in '..\Source\Core\RadIA.Core.TerminalEmulator.pas',
   RadIA.UI.TerminalFrame in '..\Source\UI\RadIA.UI.TerminalFrame.pas',
   RadIA.Core.Onboarding in '..\Source\Core\RadIA.Core.Onboarding.pas',
   RadIA.UI.OnboardingForm in '..\Source\UI\RadIA.UI.OnboardingForm.pas',

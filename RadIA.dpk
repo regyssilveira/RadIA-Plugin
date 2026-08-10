@@ -56,6 +56,7 @@ contains
   RadIA.Core.PseudoTerminal in 'Source\Core\RadIA.Core.PseudoTerminal.pas',
   RadIA.Core.Terminal in 'Source\Core\RadIA.Core.Terminal.pas',
   RadIA.Core.TerminalScreen in 'Source\Core\RadIA.Core.TerminalScreen.pas',
+  RadIA.Core.TerminalEmulator in 'Source\Core\RadIA.Core.TerminalEmulator.pas',
   RadIA.Core.Onboarding in 'Source\Core\RadIA.Core.Onboarding.pas',
   RadIA.Core.AgentProvider in 'Source\Core\RadIA.Core.AgentProvider.pas',
   RadIA.Core.AgentController in 'Source\Core\RadIA.Core.AgentController.pas',

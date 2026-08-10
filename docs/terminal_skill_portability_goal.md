@@ -34,7 +34,7 @@ Delphi não fazem parte deste goal.
 | M1 | Modelo canônico e adaptadores de skill por CLI | Concluído |
 | M2 | Preview, consentimento, sincronização e remoção no Addon Studio | Concluído |
 | M3 | Validação real dos formatos e documentação de portabilidade | Concluído |
-| M4 | Interface desacoplada e núcleo VT selecionado | Pendente |
+| M4 | Interface desacoplada e núcleo VT selecionado | Concluído |
 | M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Pendente |
 | M6 | Matriz real de shells, CLIs e TUIs nos três targets | Pendente |
 | M7 | Auditoria final, documentação, Sonar e preparação do release | Pendente |
@@ -74,6 +74,11 @@ Essa limitação de credencial não afeta a validação do formato e está regis
 - OSC 8 apresenta hyperlinks identificáveis e abertura submetida à política de segurança.
 - Resize preserva cursor, regiões, caracteres largos, marcas combinantes e quebras explícitas.
 - Fechar aba, painel ou IDE não deixa processo filho, deadlock ou acesso tardio à UI.
+
+O M4 selecionou o núcleo VT nativo existente e o isolou por `IRadIATerminalEmulator`. O frame não
+mantém mais uma classe concreta de tela; cria, alimenta, redimensiona, renderiza e limpa somente pelo
+contrato. Essa decisão preserva o comportamento comprovado e permite substituir o núcleo sem expor
+dependências à VCL, ConPTY ou à API pública.
 
 ## Matriz de aceite
 

@@ -59,6 +59,8 @@ type
     [Test]
     procedure ScreenSupportsTuiInsertDeleteAndEraseCharacters;
     [Test]
+    procedure NativeEmulatorPreservesScreenContract;
+    [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
     [Test]
     procedure HiddenDockHostDoesNotFocusTerminalDuringEmbedding;
@@ -87,6 +89,7 @@ uses
   RadIA.Core.JourneyContext,
   RadIA.Core.PseudoTerminal,
   RadIA.Core.Terminal,
+  RadIA.Core.TerminalEmulator,
   RadIA.Core.TerminalScreen,
   RadIA.UI.TerminalFrame;
 
@@ -357,6 +360,20 @@ begin
   );
   TDirectory.CreateDirectory(FDirectory);
   FFileName := TPath.Combine(FDirectory, 'history.json');
+end;
+
+procedure TRadIATerminalTests.NativeEmulatorPreservesScreenContract;
+var
+  LEmulator: IRadIATerminalEmulator;
+begin
+  LEmulator := TRadIATerminalEmulatorFactory.CreateNative(30);
+  LEmulator.Feed('native');
+  Assert.AreEqual('native', SegmentsText(LEmulator.RenderSegments));
+  Assert.AreEqual(30, LEmulator.Columns);
+  LEmulator.Resize(24);
+  Assert.AreEqual(24, LEmulator.Columns);
+  LEmulator.Clear;
+  Assert.AreEqual('', SegmentsText(LEmulator.RenderSegments).Trim);
 end;
 
 procedure TRadIATerminalTests.ScreenAppliesCursorMovementAndEraseLine;
