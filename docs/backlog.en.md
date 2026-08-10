@@ -219,8 +219,14 @@ version based on the public behavior actually delivered.
 
 ## 🚧 2. Active goal
 
-The [complete-experience expansion goal](experience_expansion_goal.en.md) is the current execution
-line. It covers completion alternatives, knowledge and template packages, visual before/after
+The [skill portability and high-fidelity terminal goal](terminal_skill_portability_goal.en.md) is the
+current execution line. It covers transactional publication of one skill to supported CLI formats
+and terminal evolution toward a high-fidelity VT/TUI matrix on all three official targets. The
+release will be prepared but not published without later authorization.
+
+The [complete-experience expansion goal](experience_expansion_goal.en.md) is complete and records the
+previous execution line. It covers completion alternatives, knowledge and template packages, visual
+before/after
 evidence, cross-surface consent, advanced terminal compatibility, refinement of the current
 WebView, and a complete documentation audit, with mandatory acceptance on Delphi 12 Win32 and
 Delphi 13 Win32/IDE64. The [previous six-gap goal](competitive_leadership_plan.en.md) completed in
