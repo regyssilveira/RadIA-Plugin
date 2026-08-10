@@ -16,6 +16,10 @@ const externalMcpFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ExternalMcpFrame.pas'),
   'utf8'
 );
+const externalMcpFrameDfm = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ExternalMcpFrame.dfm'),
+  'utf8'
+);
 const chatFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ChatFrame.pas'),
   'utf8'
@@ -122,6 +126,14 @@ test('configuration separates focused pages and exposes CLI child navigation', (
   assert.match(configFrame, /MCP client connection \(independent from chat orchestration\)/u);
   assert.match(configFrame, /SameText\(ACategoryName, 'AI Providers'\)/u);
   assert.match(configFrame, /SameText\(ACategoryName, 'CLI & MCP'\)/u);
+});
+
+test('programmatic external MCP frame has the VCL frame resource required at runtime', () => {
+  assert.match(externalMcpFrame, /\{\$R \*\.dfm\}/u);
+  assert.match(
+    externalMcpFrameDfm,
+    /object RadIAExternalMcpFrame: TRadIAExternalMcpFrame/u
+  );
 });
 
 test('external MCP settings are separate, guided, and refresh without restart', () => {

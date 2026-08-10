@@ -103,6 +103,8 @@ type
 
 implementation
 
+{$R *.dfm}
+
 uses
   System.SyncObjs,
   System.IOUtils,
