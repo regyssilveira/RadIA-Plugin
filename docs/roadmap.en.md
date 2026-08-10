@@ -11,12 +11,13 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 ## 📅 Completed Releases History
 
-### v2.4.0 — Candidate: portable skills and high-fidelity terminal
+### v2.4.0 — Portable skills, high-fidelity terminal, and preventive diagnostics
 
 - one canonical skill can be published to four CLIs with preview, consent, and rollback;
 - ownership hashes protect manually changed replicas;
 - terminal with true color, attributes, alternate screen, bracketed paste, SGR mouse, and OSC 8;
-- the candidate stays on the branch until explicit release authorization.
+- Doctor 2.0 with consented deep diagnostics and recovery actions;
+- chat preflight preserves messages and guides setup without making npm mandatory.
 
 ### v2.3.1 — Explicit routes and functional ChatGPT Pro
 

@@ -164,5 +164,5 @@ A matriz automatizada vigente está em
 útil, entrada e saída, os controles **New terminal**, **Close terminal**, **Run**, **Stop** e
 **Clear**, os cinco rótulos acessíveis, pelo menos 11 pontos navegáveis por Tab, dois perfis e uma
 paleta não vazia. A matriz vigente cobre exclusivamente Delphi 12 Win32, Delphi 13 Win32 e Delphi
-13 IDE64, todos com o catálogo atual de 131 ferramentas. A evidência 2.0.0 permanece preservada
+13 IDE64, todos com o catálogo atual de 132 ferramentas. A evidência 2.0.0 permanece preservada
 somente como registro histórico.

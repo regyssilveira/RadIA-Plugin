@@ -538,11 +538,58 @@ test('current release gates use the generated catalog size', () => {
   const toolCount = manifest.groups.flatMap(group => group.tools).length;
   const portuguese = fs.readFileSync(path.join(documentationRoot, 'release_process.md'), 'utf8');
   const english = fs.readFileSync(path.join(documentationRoot, 'release_process.en.md'), 'utf8');
+  const currentDocuments = [
+    'terminal.md',
+    'terminal.en.md',
+    `release_notes_${packageVersion}.md`,
+    `release_notes_${packageVersion}.en.md`,
+    `release_audit_${packageVersion}.md`,
+    `release_audit_${packageVersion}.en.md`
+  ];
 
   assert.match(portuguese, new RegExp(`todos com ${toolCount}\\s+ferramentas`, 'u'));
   assert.match(english, new RegExp(`all with ${toolCount} tools`, 'u'));
   assert.match(portuguese, /catálogo histórico de 95 tools/u);
   assert.match(english, /historical 95-tool catalog/u);
+  currentDocuments.forEach(documentName => {
+    const content = fs.readFileSync(path.join(documentationRoot, documentName), 'utf8');
+    assert.match(
+      content,
+      new RegExp(`${toolCount}\\s+(?:ferramentas|tools)`, 'u'),
+      documentName
+    );
+  });
+});
+
+test('release metadata and operational protocols follow the package version', () => {
+  const escapedVersion = packageVersion.replaceAll('.', '\\.');
+  const project = fs.readFileSync(path.join(repositoryRoot, 'RadIA.dproj'), 'utf8');
+  const mcpPortuguese = fs.readFileSync(
+    path.join(documentationRoot, 'mcp_integration_guide.md'),
+    'utf8'
+  );
+  const mcpEnglish = fs.readFileSync(
+    path.join(documentationRoot, 'mcp_integration_guide.en.md'),
+    'utf8'
+  );
+  const cliPortuguese = fs.readFileSync(
+    path.join(documentationRoot, 'cli_capability_matrix.md'),
+    'utf8'
+  );
+  const cliEnglish = fs.readFileSync(
+    path.join(documentationRoot, 'cli_capability_matrix.en.md'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(project, /FileVersion=2\.2\.1\.0/u);
+  assert.match(project, new RegExp(`FileVersion=${escapedVersion}\\.0`, 'u'));
+  assert.match(project, new RegExp(`ProductVersion=${escapedVersion}\\.0`, 'u'));
+  [mcpPortuguese, mcpEnglish].forEach(document => {
+    assert.match(document, new RegExp(`initialize[^\\n]+${escapedVersion}`, 'u'));
+  });
+  [cliPortuguese, cliEnglish].forEach(document => {
+    assert.match(document, new RegExp(`RadIA ${escapedVersion}`, 'u'));
+  });
 });
 
 test('current entry points use the generated tool count and complete task navigation', () => {
