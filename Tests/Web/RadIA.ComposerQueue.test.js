@@ -51,3 +51,11 @@ test('composer separates execution and context into responsive rows', () => {
     /@media \(max-width: 360px\)[\s\S]*\.composer-control-label[\s\S]*display: none/u
   );
 });
+
+test('composer keeps advanced execution choices out of the initial reading path', () => {
+  assert.match(chatHtml, /id="btn-composer-advanced"[^>]*aria-expanded="false"/u);
+  assert.match(chatHtml, /composer-context-row hidden[\s\S]*id="composer-advanced-options"/u);
+  assert.match(chatHtml, /composer-advanced-options[\s\S]*id="select-execution-route"/u);
+  assert.match(chatJs, /function setComposerAdvancedVisible\(visible\)/u);
+  assert.match(chatJs, /setComposerAdvancedVisible\(visible\)/u);
+});

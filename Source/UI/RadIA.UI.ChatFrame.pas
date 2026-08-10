@@ -67,6 +67,7 @@ type
     FLayoutRefreshQueued: Boolean;
 
     procedure UpdateWebViewNavigation;
+    function TryOpenLocalLinkInIDE(const AFileName: string): Boolean;
     procedure UpdateSendButtonVisual(const AInProgress: Boolean);
     function GetCurrentIDEThemeName: string;
     function GetWebThemeName(const AThemeName: string): string;
@@ -128,7 +129,8 @@ type
 implementation
 
 uses
-  System.IOUtils, System.JSON, ToolsAPI, RadIA.OTA.Helper, RadIA.UI.ConfigForm,
+  System.IOUtils, System.JSON, System.NetEncoding, System.StrUtils, ToolsAPI, RadIA.OTA.Helper,
+  RadIA.UI.ConfigForm,
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
   Winapi.ShellAPI, RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm,
@@ -667,6 +669,8 @@ procedure TRadIAFrameAIChat.EdgeBrowserNavigationStarting(
   Args: TNavigationStartingEventArgs
 );
 var
+  LAllowedChatUrl: string;
+  LLocalPath: string;
   LOpenResult: HINST;
   LUri: PWideChar;
   LUrl: string;
@@ -682,15 +686,64 @@ begin
     CoTaskMemFree(LUri);
   end;
 
-  if not LUrl.StartsWith('http://', True) and
-    not LUrl.StartsWith('https://', True) and
-    not LUrl.StartsWith('mailto:', True) then
+  LAllowedChatUrl := 'file:///' +
+    TPath.Combine(FWebFilesDir, 'chat.html').Replace('\', '/');
+  if LUrl.StartsWith(LAllowedChatUrl, True) then
     Exit;
 
   Args.ArgsInterface.Set_Cancel(1);
+  if LUrl.StartsWith('file:///', True) then
+  begin
+    LLocalPath := TNetEncoding.URL.Decode(LUrl.Substring(8)).Replace('/', '\');
+    if TryOpenLocalLinkInIDE(LLocalPath) then
+    begin
+      Exit;
+    end;
+    LOpenResult := ShellExecute(
+      0,
+      'open',
+      PChar(LLocalPath),
+      nil,
+      nil,
+      SW_SHOWNORMAL
+    );
+    if NativeInt(LOpenResult) <= 32 then
+      TLogger.Log('Unable to open local chat link: ' + LLocalPath, 'UI');
+    Exit;
+  end;
+  if not LUrl.StartsWith('http://', True) and
+    not LUrl.StartsWith('https://', True) and
+    not LUrl.StartsWith('mailto:', True) then
+  begin
+    TLogger.Log('Blocked unsupported chat navigation: ' + LUrl, 'UI');
+    Exit;
+  end;
   LOpenResult := ShellExecute(0, 'open', PChar(LUrl), nil, nil, SW_SHOWNORMAL);
   if NativeInt(LOpenResult) <= 32 then
     TLogger.Log('Unable to open external chat link: ' + LUrl, 'UI');
+end;
+
+function TRadIAFrameAIChat.TryOpenLocalLinkInIDE(const AFileName: string): Boolean;
+var
+  LActionServices: IOTAActionServices;
+  LExtension: string;
+begin
+  LExtension := TPath.GetExtension(AFileName);
+  if SameText(LExtension, '.dproj') or SameText(LExtension, '.groupproj') then
+  begin
+    Result := TRadIAOTAHelper.OpenProjectInIDE(AFileName);
+    if not Result then
+      TLogger.Log('Unable to open project link in Delphi: ' + AFileName, 'UI');
+    Exit;
+  end;
+
+  Result := False;
+  if not MatchText(LExtension, ['.pas', '.dfm', '.dpr', '.dpk', '.inc']) then
+    Exit;
+  if Supports(BorlandIDEServices, IOTAActionServices, LActionServices) then
+    Result := LActionServices.OpenFile(AFileName);
+  if not Result then
+    TLogger.Log('Unable to open source link in Delphi: ' + AFileName, 'UI');
 end;
 
 procedure TRadIAFrameAIChat.btnTemplatesClick(Sender: TObject);

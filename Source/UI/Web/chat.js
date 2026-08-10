@@ -172,6 +172,8 @@ const btnAgentHistory = document.getElementById('btn-agent-history');
 const btnCliNewSession = document.getElementById('btn-cli-new-session');
 const btnJourneyContext = document.getElementById('btn-journey-context');
 const btnExecutionScope = document.getElementById('btn-execution-scope');
+const btnComposerAdvanced = document.getElementById('btn-composer-advanced');
+const composerAdvancedOptions = document.getElementById('composer-advanced-options');
 const executionScopeDialog = document.getElementById('execution-scope-dialog');
 const executionScopeKind = document.getElementById('execution-scope-kind');
 const executionScopeFields = document.getElementById('execution-scope-fields');
@@ -181,6 +183,21 @@ const btnExportExecutionScope = document.getElementById('btn-export-execution-sc
 const executionRoute  = document.getElementById('execution-route');
 const composerRoute   = document.getElementById('composer-route');
 const executionRouteSelector = document.getElementById('select-execution-route');
+
+function setComposerAdvancedVisible(visible) {
+  if (!btnComposerAdvanced || !composerAdvancedOptions) return;
+  composerAdvancedOptions.classList.toggle('hidden', !visible);
+  btnComposerAdvanced.setAttribute('aria-expanded', String(visible));
+  btnComposerAdvanced.setAttribute(
+    'aria-label',
+    visible ? 'Hide advanced execution settings' : 'Show advanced execution settings'
+  );
+  btnComposerAdvanced.title = visible
+    ? 'Hide executor, session, journey, and scope settings'
+    : 'Show executor, session, journey, and scope settings';
+  const label = btnComposerAdvanced.querySelector('.btn-label');
+  if (label) label.textContent = visible ? 'Less' : 'More';
+}
 let activeExecutionRoute = {
   displayName: 'Native',
   label: 'Chat | Native provider',
@@ -2348,6 +2365,57 @@ function getProviderIcon(providerId) {
 }
 
 let requestInProgress = false;
+let cliActivityCard = null;
+let cliActivityLog = null;
+let cliActivityStatus = null;
+let cliActivityStartedAt = 0;
+
+function summarizeCliActivity(text, phase) {
+  if (phase === 'started') return 'Preparing the CLI environment...';
+  if (phase === 'completed') return 'CLI task completed.';
+  if (phase === 'cancelled') return 'CLI task cancelled.';
+  if (phase === 'failed') return 'CLI task failed.';
+  const normalized = String(text || '').toLowerCase();
+  if (normalized.includes('command_execution')) return 'Executing a command...';
+  if (normalized.includes('file_change')) return 'Updating project files...';
+  if (normalized.includes('mcp_tool_call')) return 'Calling an MCP tool...';
+  if (normalized.includes('turn.started')) return 'Analyzing the request...';
+  if (normalized.includes('turn.completed')) return 'Finishing this step...';
+  if (phase === 'warning') return 'CLI reported diagnostic output.';
+  return 'CLI is working...';
+}
+
+function renderCliActivity(data) {
+  if (!cliActivityCard || data.phase === 'started') {
+    cliActivityCard = document.createElement('details');
+    cliActivityCard.className = 'cli-activity-card';
+    const summary = document.createElement('summary');
+    cliActivityStatus = document.createElement('span');
+    cliActivityStatus.className = 'cli-activity-status';
+    summary.appendChild(cliActivityStatus);
+    const meta = document.createElement('span');
+    meta.className = 'cli-activity-meta';
+    meta.textContent = data.cli || 'CLI';
+    summary.appendChild(meta);
+    cliActivityLog = document.createElement('pre');
+    cliActivityLog.className = 'cli-activity-log';
+    cliActivityCard.appendChild(summary);
+    cliActivityCard.appendChild(cliActivityLog);
+    chatContainer.appendChild(cliActivityCard);
+    cliActivityStartedAt = Date.now();
+  }
+  cliActivityStatus.textContent = summarizeCliActivity(data.text, data.phase);
+  cliActivityCard.dataset.phase = data.phase || 'output';
+  if (data.text) {
+    const elapsed = Math.max(0, Math.round((Date.now() - cliActivityStartedAt) / 1000));
+    cliActivityLog.textContent += `[${elapsed}s] ${data.text}`;
+    if (!String(data.text).endsWith('\n')) cliActivityLog.textContent += '\n';
+    if (cliActivityLog.textContent.length > 100000) {
+      cliActivityLog.textContent = cliActivityLog.textContent.slice(-100000);
+    }
+  }
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 let modelSelectionEnabled = true;
 const _promptHistory = [];
 let _promptHistoryIndex = -1;
@@ -2715,6 +2783,11 @@ btnJourneyContext?.addEventListener('click', () => {
 
 btnExecutionScope?.addEventListener('click', () => {
   postMessageToDelphi({ action: 'show_execution_scope' });
+});
+
+btnComposerAdvanced?.addEventListener('click', () => {
+  const visible = btnComposerAdvanced.getAttribute('aria-expanded') !== 'true';
+  setComposerAdvancedVisible(visible);
 });
 
 btnClearExecutionScope?.addEventListener('click', () => {
@@ -3927,6 +4000,7 @@ if (globalThis.chrome?.webview) {
       case 'agent_state':           renderAgentState(data);                                      break;
       case 'agent_history':         renderAgentHistory(data);                                    break;
       case 'visual_runtime_session': renderVisualRuntimeSession(data);                           break;
+      case 'cli_activity':          renderCliActivity(data);                                    break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

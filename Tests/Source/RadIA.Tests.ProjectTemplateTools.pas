@@ -108,6 +108,8 @@ type
     procedure OpeningExceptionRollsProjectBack;
     [Test]
     procedure AuthorizedRootAllowsPreviewWithoutActiveProject;
+    [Test]
+    procedure PreviewToolAcceptsAuthorizedRootWithoutActiveProject;
   end;
 
 implementation
@@ -157,6 +159,48 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.IsFalse(TDirectory.Exists(LDestination));
   Assert.AreEqual(LDestination, LResult.DestinationPath);
+end;
+
+procedure TRadIAProjectTemplateToolTests.
+  PreviewToolAcceptsAuthorizedRootWithoutActiveProject;
+var
+  LArguments: TJSONObject;
+  LBuildFacade: IRadIABuildFacade;
+  LPlatforms: TJSONArray;
+  LResult: TRadIAToolResult;
+begin
+  FRegistry := nil;
+  FService := nil;
+  FOpeningStub := TRadIAProjectOpeningStub.Create;
+  FBuildStub := TRadIAProjectBuildStub.Create;
+  LBuildFacade := FBuildStub;
+  FService := TRadIAProjectTemplateService.Create(
+    TRadIAProjectTemplateWorkspaceStub.Create(''),
+    TRadIAWorkspaceBoundary.Create,
+    FOpeningStub
+  );
+  FRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIAProjectTemplateTools(FRegistry, FService, LBuildFacade);
+  LArguments := TJSONObject.Create;
+  try
+    LArguments.AddPair('projectName', 'NoActiveProject');
+    LArguments.AddPair('template', 'vcl');
+    LArguments.AddPair('delphiVersion', '37.0');
+    LPlatforms := TJSONArray.Create;
+    LPlatforms.Add('Win32');
+    LArguments.AddPair('platforms', LPlatforms);
+    LArguments.AddPair('authorizedRoot', FRootPath);
+    LArguments.AddPair(
+      'destinationPath',
+      TPath.Combine(FRootPath, 'NoActiveProject')
+    );
+    LResult := Execute('PreviewProjectTemplate', LArguments.ToJSON);
+  finally
+    LArguments.Free;
+  end;
+
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LResult.ContentJson, 'NoActiveProject');
 end;
 
 { TRadIAProjectBuildStub }

@@ -42,6 +42,14 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 | `/journey migrate [padrão legado]` | Migrar um padrão delimitado com baseline, transação e rollback. |
 | `/journey release [escopo]` | Verificar gates, diff e preparar preview de commit. |
 
+### Criação automática a partir da conversa
+
+Não é obrigatório conhecer `/journey create`. Quando não há projeto aberto, frases como **“crie uma
+calculadora VCL”** são convertidas automaticamente nessa jornada. O RadIA coleta nome, destino e
+plataforma, muda para execução nativa e mantém a aprovação visível no chat. Após a aprovação, o
+fluxo cria os arquivos apenas na raiz autorizada, abre o projeto na IDE, compila, executa e registra
+as evidências de validação.
+
 ## Como a execução funciona
 
 1. O comando ativa visualmente o modo agente quando necessário.

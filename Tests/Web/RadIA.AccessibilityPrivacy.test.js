@@ -36,6 +36,14 @@ test('external chat links open in the Windows default browser', () => {
   assert.match(chatFrame, /ShellExecute\(0, 'open', PChar\(LUrl\)/u);
 });
 
+test('local chat links cannot replace the main chat surface', () => {
+  assert.match(chatFrame, /LUrl\.StartsWith\(LAllowedChatUrl, True\)/u);
+  assert.match(chatFrame, /if LUrl\.StartsWith\('file:\/\/\/', True\) then/u);
+  assert.match(chatFrame, /TryOpenLocalLinkInIDE\(LLocalPath\)/u);
+  assert.match(chatFrame, /IOTAActionServices[\s\S]*OpenFile\(AFileName\)/u);
+  assert.match(chatFrame, /Blocked unsupported chat navigation/u);
+});
+
 test('chat exposes its primary controls and live regions to assistive technology', () => {
   assert.match(chatHtml, /id="chat-container"[^>]*role="log"/);
   assert.match(chatHtml, /<output id="status-bar"/);

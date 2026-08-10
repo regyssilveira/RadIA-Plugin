@@ -23,6 +23,14 @@ type
     procedure DextJourneyRequestsMissingInputsInOrder;
     [Test]
     procedure JourneysExposeUsageAndExamples;
+    [Test]
+    procedure InfersProjectCreationFromNaturalLanguage;
+    [Test]
+    procedure DoesNotInferOrdinaryCodeGenerationAsProjectCreation;
+    [Test]
+    procedure CreateJourneyCollectsProjectDestinationAndPlatform;
+    [Test]
+    procedure CreateJourneyRequiresRuntimeValidation;
   end;
 
 implementation
@@ -201,6 +209,87 @@ begin
     Assert.Contains(LDefinition.InputHelpText, 'Usage:');
     Assert.Contains(LDefinition.InputHelpText, 'Example:');
   end;
+end;
+
+procedure TTestRadIAJourneys.CreateJourneyRequiresRuntimeValidation;
+var
+  LDefinition: TRadIAJourneyDefinition;
+begin
+  Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
+  Assert.Contains(LDefinition.Objective, 'start the application');
+  Assert.Contains(LDefinition.Objective, 'exercise the primary user scenario');
+  Assert.AreEqual(NativeInt(4), Length(LDefinition.SuccessCriteria));
+  Assert.Contains(LDefinition.SuccessCriteria[2], 'primary user scenario passes');
+end;
+
+procedure TTestRadIAJourneys.InfersProjectCreationFromNaturalLanguage;
+var
+  LCommand: string;
+begin
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.TryInferCreateProject(
+      'crie uma calculadora com operacoes basicas em VCL',
+      LCommand
+    )
+  );
+  Assert.AreEqual(
+    '/journey create crie uma calculadora com operacoes basicas em VCL',
+    LCommand
+  );
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.TryInferCreateProject(
+      'Create a new DUnitX project for the customer service',
+      LCommand
+    )
+  );
+end;
+
+procedure TTestRadIAJourneys.DoesNotInferOrdinaryCodeGenerationAsProjectCreation;
+var
+  LCommand: string;
+begin
+  Assert.IsFalse(
+    TRadIAJourneyCatalog.TryInferCreateProject(
+      'crie uma funcao para somar dois valores',
+      LCommand
+    )
+  );
+  Assert.IsFalse(
+    TRadIAJourneyCatalog.TryInferCreateProject('/createproject', LCommand)
+  );
+end;
+
+procedure TTestRadIAJourneys.CreateJourneyCollectsProjectDestinationAndPlatform;
+var
+  LDefinition: TRadIAJourneyDefinition;
+  LField: string;
+  LQuestion: string;
+begin
+  Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
+  Assert.IsTrue(
+    LDefinition.NextRequiredInput(
+      'crie uma calculadora em VCL',
+      LField,
+      LQuestion
+    )
+  );
+  Assert.AreEqual('project', LField);
+  Assert.IsTrue(
+    LDefinition.NextRequiredInput(
+      'goal="calculator" project="CalculatorApp"',
+      LField,
+      LQuestion
+    )
+  );
+  Assert.AreEqual('destination', LField);
+  Assert.IsFalse(
+    LDefinition.NextRequiredInput(
+      'goal="calculator" project="CalculatorApp" ' +
+      'destination="D:\Projects" platform="Win32"',
+      LField,
+      LQuestion
+    )
+  );
 end;
 
 initialization

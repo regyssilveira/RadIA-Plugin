@@ -9,6 +9,8 @@ uses
     '..\..\Source\Core\RadIA.Core.ApiSpecifications.pas',
   RadIA.Core.DextProjectTemplates in
     '..\..\Source\Core\RadIA.Core.DextProjectTemplates.pas',
+  RadIA.Core.Journeys in
+    '..\..\Source\Core\RadIA.Core.Journeys.pas',
   RadIA.Core.ProjectTemplates in
     '..\..\Source\Core\RadIA.Core.ProjectTemplates.pas',
   RadIA.Core.ProjectTransaction in
@@ -58,6 +60,7 @@ end;
 
 procedure Run;
 var
+  LCommandText: string;
   LDelphiVersion: string;
   LRootPath: string;
 begin
@@ -70,6 +73,20 @@ begin
   TDirectory.CreateDirectory(LRootPath);
   GenerateProject(LRootPath, LDelphiVersion, 'ConsoleApp', ptkConsole);
   GenerateProject(LRootPath, LDelphiVersion, 'VclApp', ptkVcl);
+  if not TRadIAJourneyCatalog.TryInferCreateProject(
+    'crie uma calculadora com operacoes basicas em VCL',
+    LCommandText
+  ) then
+    raise EInvalidOpException.Create(
+      'The calculator prompt was not routed to project creation.'
+    );
+  GenerateProject(
+    LRootPath,
+    LDelphiVersion,
+    'CalculatorApp',
+    ptkVcl,
+    '{"schemaVersion":1,"kind":"calculator"}'
+  );
   GenerateProject(LRootPath, LDelphiVersion, 'FmxApp', ptkFmx);
   GenerateProject(LRootPath, LDelphiVersion, 'LibraryApp', ptkLibrary);
   GenerateProject(LRootPath, LDelphiVersion, 'PackageApp', ptkPackage);

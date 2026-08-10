@@ -85,11 +85,19 @@ Escrever classes de transferência de dados (DTOs) ou mapeamentos ORM manualment
 
 Uma das ferramentas mais poderosas do Rad IA é a habilidade de estruturar e salvar um projeto Delphi do zero a partir de uma descrição textual informal no chat.
 
-### Como Utilizar:
+### Como utilizar
+
+O fluxo funciona mesmo quando o Delphi foi aberto sem projeto. Um pedido natural como **“crie uma
+calculadora com operações básicas em VCL”** inicia automaticamente a jornada guiada de criação. O
+RadIA pergunta somente os dados ausentes — nome, pasta de destino e plataforma — antes de apresentar
+o plano para aprovação.
+
 1. No chat lateral do Rad IA, solicite a criação de um projeto. Exemplo:
    > *"Gere um projeto de console que consuma uma API de clima e salve as informações em arquivos JSON locais."*
    *(Você também pode utilizar o comando barra `/createproject` ou `/createprojectarch` para estruturas seguindo Clean Architecture).*
-2. A IA processará a requisição e retornará a lista completa de arquivos estruturados (projeto `.dpr`, configurações `.dproj`, unidades de lógica `.pas` e telas `.dfm`).
+2. A IA processará a requisição e retornará a lista completa de arquivos estruturados (projeto `.dpr`,
+   configurações `.dproj`, unidades de lógica `.pas` e telas `.dfm`). Para calculadoras VCL, o
+   compositor nativo já fornece visor, teclado e operações básicas funcionais.
 3. O Rad IA exibirá um painel com estilo *glassmorphism* contendo a lista dos arquivos gerados.
 4. **Fluxo de Gravação**:
    * Clique em **Criar Projeto e Abrir na IDE** na UI do chat.
@@ -99,4 +107,14 @@ Uma das ferramentas mais poderosas do Rad IA é a habilidade de estruturar e sal
 > **Gravação Segura de Projetos:**
 > Por medidas de segurança e para evitar sobregravações acidentais de código existente, a pasta selecionada para a geração do projeto **deve estar totalmente vazia**. O Rad IA bloqueará o processo de gravação física no disco caso a pasta possua quaisquer outros arquivos.
 
-5. **Abertura na IDE**: Assim que a gravação é concluída com sucesso, o Rad IA aciona a Open Tools API e **carrega o novo projeto gerado automaticamente** na IDE do Delphi, pronto para compilação.
+5. **Abertura e validação na IDE**: após a gravação, o RadIA abre o `.dproj`, compila pelo próprio
+   Delphi, corrige erros dentro dos limites aprovados e executa projetos que produzam aplicativo.
+   A conclusão informa evidências de criação, build, abertura da janela e validação funcional.
+
+O CLI externo não precisa localizar `msbuild` no `PATH` para esse fluxo. A criação, o build e a
+execução são conduzidos pelas ferramentas nativas do RadIA. Quando um CLI participa da análise, o
+chat mostra uma atividade expansível com etapa atual, tempo decorrido e saída técnica.
+
+Links de projeto abrem o arquivo na IDE. Links web são enviados ao navegador padrão e nunca
+substituem a superfície principal do chat; assim, o usuário não fica preso em uma página sem
+controle de retorno.

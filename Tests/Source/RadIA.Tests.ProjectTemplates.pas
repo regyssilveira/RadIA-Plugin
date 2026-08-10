@@ -27,6 +27,8 @@ type
     procedure TestTransactionStagesCommitsAndRollsBack;
     [Test]
     procedure TestPreparedTransactionCleansStagingOnDestroy;
+    [Test]
+    procedure TestCalculatorCompositionContainsFunctionalVclInterface;
   end;
 
 implementation
@@ -36,6 +38,56 @@ uses
   System.SysUtils,
   RadIA.Core.ProjectTemplates,
   RadIA.Core.ProjectTransaction;
+
+procedure TTestRadIAProjectTemplates.
+  TestCalculatorCompositionContainsFunctionalVclInterface;
+var
+  LEngine: TRadIAProjectTemplateEngine;
+  LFile: TRadIAProjectTemplateFile;
+  LFoundDfm: Boolean;
+  LFoundSource: Boolean;
+  LPlan: TRadIAProjectTemplatePlan;
+begin
+  LEngine := TRadIAProjectTemplateEngine.Create;
+  try
+    LPlan := LEngine.BuildPlan(
+      TRadIAProjectTemplateRequest.Create(
+        'CalculatorApp',
+        ptkVcl,
+        '37.0',
+        ['Win32'],
+        '{"schemaVersion":1,"kind":"calculator"}'
+      )
+    );
+    try
+      LFoundDfm := False;
+      LFoundSource := False;
+      for LFile in LPlan.Files do
+      begin
+        if SameText(LFile.RelativePath, 'MainForm.dfm') then
+        begin
+          LFoundDfm := True;
+          Assert.Contains(LFile.Content, 'object Display: TEdit');
+          Assert.Contains(LFile.Content, 'object EqualsButton: TButton');
+          Assert.Contains(LFile.Content, 'OnClick = EqualsClick');
+        end;
+        if SameText(LFile.RelativePath, 'MainForm.pas') then
+        begin
+          LFoundSource := True;
+          Assert.Contains(LFile.Content, 'procedure TRadIAMainForm.DigitClick');
+          Assert.Contains(LFile.Content, 'procedure TRadIAMainForm.OperatorClick');
+          Assert.Contains(LFile.Content, 'Cannot divide by zero');
+        end;
+      end;
+      Assert.IsTrue(LFoundDfm);
+      Assert.IsTrue(LFoundSource);
+    finally
+      LPlan.Free;
+    end;
+  finally
+    LEngine.Free;
+  end;
+end;
 
 procedure TTestRadIAProjectTemplates.TestAllTemplateKindsProduceProjectFile;
 var

@@ -106,6 +106,13 @@ type
       const ARequest: TRadIAProjectTemplateRequest;
       const ATemplateId: string
     ): TArray<TRadIAProjectTemplateFile>;
+    function BuildVclCalculatorFiles(
+      const AProjectName: string
+    ): TArray<TRadIAProjectTemplateFile>;
+    function BuildCalculatorButtons: string;
+    function IsVclCalculator(
+      const ARequest: TRadIAProjectTemplateRequest
+    ): Boolean;
   public
     function BuildPlan(
       const ARequest: TRadIAProjectTemplateRequest
@@ -310,6 +317,18 @@ begin
       );
       Inc(LDextIndex);
     end;
+    Result := Result + [
+      TRadIAProjectTemplateFile.Create(
+        LProjectName + '.dproj',
+        BuildProjectFile(ARequest, ATemplateId, LMainSource)
+      )
+    ];
+    Exit;
+  end;
+
+  if IsVclCalculator(ARequest) then
+  begin
+    Result := BuildVclCalculatorFiles(LProjectName);
     Result := Result + [
       TRadIAProjectTemplateFile.Create(
         LProjectName + '.dproj',
@@ -561,6 +580,251 @@ begin
       BuildProjectFile(ARequest, ATemplateId, LMainSource)
     )
   ];
+end;
+
+function TRadIAProjectTemplateEngine.IsVclCalculator(
+  const ARequest: TRadIAProjectTemplateRequest
+): Boolean;
+var
+  LJson: TJSONObject;
+begin
+  Result := False;
+  if (ARequest.Kind <> ptkVcl) or
+    ARequest.SpecificationJson.Trim.IsEmpty then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(
+    ARequest.SpecificationJson
+  ) as TJSONObject;
+  try
+    Result := Assigned(LJson) and
+      SameText(LJson.GetValue<string>('kind', ''), 'calculator');
+  finally
+    LJson.Free;
+  end;
+end;
+
+function TRadIAProjectTemplateEngine.BuildVclCalculatorFiles(
+  const AProjectName: string
+): TArray<TRadIAProjectTemplateFile>;
+var
+  LDfm: string;
+  LSource: string;
+begin
+  LSource :=
+    'unit MainForm;' + sLineBreak + sLineBreak +
+    'interface' + sLineBreak + sLineBreak +
+    'uses' + sLineBreak +
+    '  System.Classes,' + sLineBreak +
+    '  System.Math,' + sLineBreak +
+    '  System.SysUtils,' + sLineBreak +
+    '  Vcl.Controls,' + sLineBreak +
+    '  Vcl.Forms,' + sLineBreak +
+    '  Vcl.StdCtrls;' + sLineBreak + sLineBreak +
+    'type' + sLineBreak +
+    '  TRadIAMainForm = class(TForm)' + sLineBreak +
+    '  published' + sLineBreak +
+    '    AddButton: TButton;' + sLineBreak +
+    '    ClearButton: TButton;' + sLineBreak +
+    '    DecimalButton: TButton;' + sLineBreak +
+    '    Display: TEdit;' + sLineBreak +
+    '    DivideButton: TButton;' + sLineBreak +
+    '    EightButton: TButton;' + sLineBreak +
+    '    EqualsButton: TButton;' + sLineBreak +
+    '    FiveButton: TButton;' + sLineBreak +
+    '    FourButton: TButton;' + sLineBreak +
+    '    MultiplyButton: TButton;' + sLineBreak +
+    '    NineButton: TButton;' + sLineBreak +
+    '    OneButton: TButton;' + sLineBreak +
+    '    SevenButton: TButton;' + sLineBreak +
+    '    SixButton: TButton;' + sLineBreak +
+    '    SubtractButton: TButton;' + sLineBreak +
+    '    ThreeButton: TButton;' + sLineBreak +
+    '    TwoButton: TButton;' + sLineBreak +
+    '    ZeroButton: TButton;' + sLineBreak +
+    '    procedure ClearClick(Sender: TObject);' + sLineBreak +
+    '    procedure DigitClick(Sender: TObject);' + sLineBreak +
+    '    procedure EqualsClick(Sender: TObject);' + sLineBreak +
+    '    procedure OperatorClick(Sender: TObject);' + sLineBreak +
+    '  private' + sLineBreak +
+    '    FAccumulator: Double;' + sLineBreak +
+    '    FNewEntry: Boolean;' + sLineBreak +
+    '    FPendingOperator: string;' + sLineBreak +
+    '    function CurrentValue: Double;' + sLineBreak +
+    '    procedure ApplyPendingOperator;' + sLineBreak +
+    '  end;' + sLineBreak + sLineBreak +
+    'var' + sLineBreak +
+    '  RadIAMainForm: TRadIAMainForm;' + sLineBreak + sLineBreak +
+    'implementation' + sLineBreak + sLineBreak +
+    '{$R *.dfm}' + sLineBreak + sLineBreak +
+    'function TRadIAMainForm.CurrentValue: Double;' + sLineBreak +
+    'begin' + sLineBreak +
+    '  if not TryStrToFloat(Display.Text, Result) then' + sLineBreak +
+    '    Result := 0;' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'procedure TRadIAMainForm.ApplyPendingOperator;' + sLineBreak +
+    'var' + sLineBreak +
+    '  LValue: Double;' + sLineBreak +
+    'begin' + sLineBreak +
+    '  LValue := CurrentValue;' + sLineBreak +
+    '  if FPendingOperator = ''+'' then' + sLineBreak +
+    '    FAccumulator := FAccumulator + LValue' + sLineBreak +
+    '  else if FPendingOperator = ''-'' then' + sLineBreak +
+    '    FAccumulator := FAccumulator - LValue' + sLineBreak +
+    '  else if FPendingOperator = ''*'' then' + sLineBreak +
+    '    FAccumulator := FAccumulator * LValue' + sLineBreak +
+    '  else if FPendingOperator = ''/'' then' + sLineBreak +
+    '  begin' + sLineBreak +
+    '    if SameValue(LValue, 0) then' + sLineBreak +
+    '      raise EDivByZero.Create(''Division by zero.'');' + sLineBreak +
+    '    FAccumulator := FAccumulator / LValue;' + sLineBreak +
+    '  end;' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'procedure TRadIAMainForm.ClearClick(Sender: TObject);' + sLineBreak +
+    'begin' + sLineBreak +
+    '  FAccumulator := 0;' + sLineBreak +
+    '  FPendingOperator := '''';' + sLineBreak +
+    '  FNewEntry := True;' + sLineBreak +
+    '  Display.Text := ''0'';' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'procedure TRadIAMainForm.DigitClick(Sender: TObject);' + sLineBreak +
+    'var' + sLineBreak +
+    '  LCaption: string;' + sLineBreak +
+    'begin' + sLineBreak +
+    '  LCaption := TButton(Sender).Caption;' + sLineBreak +
+    '  if LCaption = ''.'' then' + sLineBreak +
+    '    LCaption := FormatSettings.DecimalSeparator;' + sLineBreak +
+    '  if FNewEntry then' + sLineBreak +
+    '  begin' + sLineBreak +
+    '    Display.Text := ''0'';' + sLineBreak +
+    '    FNewEntry := False;' + sLineBreak +
+    '  end;' + sLineBreak +
+    '  if LCaption = FormatSettings.DecimalSeparator then' + sLineBreak +
+    '  begin' + sLineBreak +
+    '    if Pos(LCaption, Display.Text) = 0 then' + sLineBreak +
+    '      Display.Text := Display.Text + LCaption;' + sLineBreak +
+    '  end' + sLineBreak +
+    '  else if Display.Text = ''0'' then' + sLineBreak +
+    '    Display.Text := LCaption' + sLineBreak +
+    '  else' + sLineBreak +
+    '    Display.Text := Display.Text + LCaption;' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'procedure TRadIAMainForm.OperatorClick(Sender: TObject);' + sLineBreak +
+    'begin' + sLineBreak +
+    '  FAccumulator := CurrentValue;' + sLineBreak +
+    '  FPendingOperator := TButton(Sender).Caption;' + sLineBreak +
+    '  FNewEntry := True;' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'procedure TRadIAMainForm.EqualsClick(Sender: TObject);' + sLineBreak +
+    'begin' + sLineBreak +
+    '  try' + sLineBreak +
+    '    ApplyPendingOperator;' + sLineBreak +
+    '    Display.Text := FloatToStr(FAccumulator);' + sLineBreak +
+    '    FPendingOperator := '''';' + sLineBreak +
+    '    FNewEntry := True;' + sLineBreak +
+    '  except' + sLineBreak +
+    '    on E: EDivByZero do' + sLineBreak +
+    '    begin' + sLineBreak +
+    '      Display.Text := ''Cannot divide by zero'';' + sLineBreak +
+    '      FPendingOperator := '''';' + sLineBreak +
+    '      FNewEntry := True;' + sLineBreak +
+    '    end;' + sLineBreak +
+    '  end;' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'end.' + sLineBreak;
+  LDfm :=
+    'object RadIAMainForm: TRadIAMainForm' + sLineBreak +
+    '  Left = 0' + sLineBreak +
+    '  Top = 0' + sLineBreak +
+    '  Caption = ''' + AProjectName + '''' + sLineBreak +
+    '  ClientHeight = 330' + sLineBreak +
+    '  ClientWidth = 260' + sLineBreak +
+    '  Position = poScreenCenter' + sLineBreak +
+    '  object Display: TEdit' + sLineBreak +
+    '    Left = 16' + sLineBreak +
+    '    Top = 16' + sLineBreak +
+    '    Width = 228' + sLineBreak +
+    '    Height = 32' + sLineBreak +
+    '    Alignment = taRightJustify' + sLineBreak +
+    '    ReadOnly = True' + sLineBreak +
+    '    TabOrder = 0' + sLineBreak +
+    '    Text = ''0''' + sLineBreak +
+    '  end' + sLineBreak +
+    BuildCalculatorButtons +
+    'end' + sLineBreak;
+  Result := [
+    TRadIAProjectTemplateFile.Create(
+      AProjectName + '.dpr',
+      'program ' + AProjectName + ';' + sLineBreak + sLineBreak +
+      'uses' + sLineBreak +
+      '  Vcl.Forms,' + sLineBreak +
+      '  MainForm in ''MainForm.pas'' {RadIAMainForm};' + sLineBreak +
+      sLineBreak +
+      'begin' + sLineBreak +
+      '  Application.Initialize;' + sLineBreak +
+      '  Application.MainFormOnTaskbar := True;' + sLineBreak +
+      '  Application.CreateForm(TRadIAMainForm, RadIAMainForm);' +
+      sLineBreak +
+      '  Application.MainForm.Show;' + sLineBreak +
+      '  Application.Run;' + sLineBreak +
+      'end.' + sLineBreak
+    ),
+    TRadIAProjectTemplateFile.Create('MainForm.pas', LSource),
+    TRadIAProjectTemplateFile.Create('MainForm.dfm', LDfm)
+  ];
+end;
+
+function TRadIAProjectTemplateEngine.BuildCalculatorButtons: string;
+const
+  CButtonCaptions: array[0..16] of string = (
+    'C', '/', '*', '-',
+    '7', '8', '9', '+',
+    '4', '5', '6', '=',
+    '1', '2', '3', '.',
+    '0'
+  );
+  CButtonNames: array[0..16] of string = (
+    'ClearButton', 'DivideButton', 'MultiplyButton', 'SubtractButton',
+    'SevenButton', 'EightButton', 'NineButton', 'AddButton',
+    'FourButton', 'FiveButton', 'SixButton', 'EqualsButton',
+    'OneButton', 'TwoButton', 'ThreeButton', 'DecimalButton',
+    'ZeroButton'
+  );
+var
+  LCaption: string;
+  LColumn: Integer;
+  LHandler: string;
+  LIndex: Integer;
+  LRow: Integer;
+  LWidth: Integer;
+begin
+  Result := '';
+  for LIndex := Low(CButtonCaptions) to High(CButtonCaptions) do
+  begin
+    LCaption := CButtonCaptions[LIndex];
+    LColumn := LIndex mod 4;
+    LRow := LIndex div 4;
+    LWidth := 52;
+    if LIndex = High(CButtonCaptions) then
+      LWidth := 228;
+    if LCaption = 'C' then
+      LHandler := 'ClearClick'
+    else if LCaption = '=' then
+      LHandler := 'EqualsClick'
+    else if CharInSet(LCaption[1], ['+', '-', '*', '/']) then
+      LHandler := 'OperatorClick'
+    else
+      LHandler := 'DigitClick';
+    Result := Result +
+      '  object ' + CButtonNames[LIndex] + ': TButton' + sLineBreak +
+      '    Left = ' + (16 + LColumn * 57).ToString + sLineBreak +
+      '    Top = ' + (64 + LRow * 49).ToString + sLineBreak +
+      '    Width = ' + LWidth.ToString + sLineBreak +
+      '    Height = 44' + sLineBreak +
+      '    Caption = ''' + LCaption + '''' + sLineBreak +
+      '    TabOrder = ' + (LIndex + 1).ToString + sLineBreak +
+      '    OnClick = ' + LHandler + sLineBreak +
+      '  end' + sLineBreak;
+  end;
 end;
 
 function TRadIAProjectTemplateEngine.BuildPlan(

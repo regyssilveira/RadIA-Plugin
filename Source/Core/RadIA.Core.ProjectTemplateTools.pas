@@ -131,7 +131,13 @@ const
     '"delphiVersion":{"type":"string","enum":["23.0","37.0"]},' +
     '"platforms":{"type":"array","items":{"type":"string",' +
     '"enum":["Win32","Win64"]},"minItems":1},' +
+    '"authorizedRoot":{"type":"string"},' +
     '"destinationPath":{"type":"string"},' +
+    '"projectSpecification":{"type":"object","properties":{' +
+    '"schemaVersion":{"type":"integer","const":1},' +
+    '"kind":{"type":"string","enum":["calculator"]}},' +
+    '"required":["schemaVersion","kind"],' +
+    '"additionalProperties":false},' +
     '"apiSpecification":{"type":"object","required":[' +
     '"schemaVersion","endpoints"],"properties":{' +
     '"schemaVersion":{"type":"integer","const":1},' +
@@ -450,6 +456,8 @@ function TRadIAPreviewProjectTemplateTool.Execute(
 ): TRadIAToolResult;
 var
   LApiSpecification: string;
+  LAuthorizedRoot: string;
+  LAuthorizedService: IRadIAAuthorizedProjectTemplateService;
   LJson: TJSONObject;
   LRequest: TRadIAProjectTemplateRequest;
 begin
@@ -464,6 +472,8 @@ begin
   try
     if Assigned(LJson.GetValue('apiSpecification')) then
       LApiSpecification := LJson.GetValue('apiSpecification').ToJSON
+    else if Assigned(LJson.GetValue('projectSpecification')) then
+      LApiSpecification := LJson.GetValue('projectSpecification').ToJSON
     else
       LApiSpecification := '';
     LRequest := TRadIAProjectTemplateRequest.Create(
@@ -473,12 +483,33 @@ begin
       ParsePlatforms(LJson),
       LApiSpecification
     );
-    Result := ResultToToolResult(
-      FService.Preview(
-        LRequest,
-        GetRequiredString(LJson, 'destinationPath')
-      )
-    );
+    LAuthorizedRoot := LJson.GetValue<string>('authorizedRoot', '');
+    if LAuthorizedRoot <> '' then
+    begin
+      if not Supports(
+        FService,
+        IRadIAAuthorizedProjectTemplateService,
+        LAuthorizedService
+      ) then
+        Exit(TRadIAToolResult.Failed(
+          'authorized_root_unavailable',
+          'Project creation without an active project is unavailable.'
+        ));
+      Result := ResultToToolResult(
+        LAuthorizedService.PreviewAtAuthorizedRoot(
+          LRequest,
+          LAuthorizedRoot,
+          GetRequiredString(LJson, 'destinationPath')
+        )
+      );
+    end
+    else
+      Result := ResultToToolResult(
+        FService.Preview(
+          LRequest,
+          GetRequiredString(LJson, 'destinationPath')
+        )
+      );
   finally
     LJson.Free;
   end;

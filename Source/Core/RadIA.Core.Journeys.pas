@@ -65,13 +65,61 @@ type
       out ADefinition: TRadIAJourneyDefinition;
       out AContext: string
     ): Boolean; static;
+    class function TryInferCreateProject(
+      const AInput: string;
+      out ACommandText: string
+    ): Boolean; static;
     class function HelpText: string; static;
   end;
 
 implementation
 
 uses
+  System.StrUtils,
   System.SysUtils;
+
+class function TRadIAJourneyCatalog.TryInferCreateProject(
+  const AInput: string;
+  out ACommandText: string
+): Boolean;
+const
+  CCreateTerms: array[0..7] of string = (
+    'create', 'generate', 'build', 'start',
+    'crie', 'criar', 'gere', 'monte'
+  );
+  CProjectTerms: array[0..13] of string = (
+    'project', 'projeto', 'application', 'aplicativo',
+    ' vcl', ' fmx', 'console', 'dunitx', 'service', 'servico',
+    'serviço', 'dext', 'library', 'package'
+  );
+var
+  LHasCreation: Boolean;
+  LHasProjectType: Boolean;
+  LLower: string;
+  LTerm: string;
+begin
+  ACommandText := '';
+  LLower := ' ' + LowerCase(Trim(AInput));
+  if Trim(AInput).StartsWith('/') then
+    Exit(False);
+  LHasCreation := False;
+  for LTerm in CCreateTerms do
+    if ContainsText(LLower, LTerm + ' ') then
+    begin
+      LHasCreation := True;
+      Break;
+    end;
+  LHasProjectType := False;
+  for LTerm in CProjectTerms do
+    if ContainsText(LLower, LTerm) then
+    begin
+      LHasProjectType := True;
+      Break;
+    end;
+  Result := LHasCreation and LHasProjectType;
+  if Result then
+    ACommandText := '/journey create ' + Trim(AInput);
+end;
 
 constructor TRadIAJourneyPhase.Create(
   const AName: string;
@@ -191,6 +239,14 @@ function TRadIAJourneyDefinition.NextRequiredInput(
   out AQuestion: string
 ): Boolean;
 const
+  CCreateFields: array[0..2] of string = (
+    'project', 'destination', 'platform'
+  );
+  CCreateQuestions: array[0..2] of string = (
+    'What should the project be called?',
+    'Which destination folder should receive the project?',
+    'Which target platform should be used: Win32 or Win64?'
+  );
   CDextFields: array[0..5] of string = (
     'project', 'destination', 'platform', 'port', 'health', 'endpoints'
   );
@@ -208,6 +264,24 @@ var
 begin
   AField := '';
   AQuestion := '';
+  LLowerContext := LowerCase(AContext);
+  if SameText(FCommand, '/journey create') then
+  begin
+    if AContext.Trim.IsEmpty then
+    begin
+      AField := 'goal';
+      AQuestion := 'Describe the application you want RadIA to create.';
+      Exit(True);
+    end;
+    for LIndex := Low(CCreateFields) to High(CCreateFields) do
+      if not LLowerContext.Contains(CCreateFields[LIndex] + '=') then
+      begin
+        AField := CCreateFields[LIndex];
+        AQuestion := CCreateQuestions[LIndex];
+        Exit(True);
+      end;
+    Exit(False);
+  end;
   if not (SameText(FCommand, '/journey dext-minimal') or
     SameText(FCommand, '/journey dext-controllers')) then
   begin
@@ -220,7 +294,6 @@ begin
     Exit;
   end;
 
-  LLowerContext := LowerCase(AContext);
   for LIndex := Low(CDextFields) to High(CDextFields) do
     if not LLowerContext.Contains(CDextFields[LIndex] + '=') then
     begin
@@ -243,7 +316,13 @@ begin
       'inspect authorized reference implementations and their licenses when requested, present a ' +
       'reviewable plan, preview every structural change, create and open the project, organize ' +
       'reusable code, update project references, document applicable provenance, then build it ' +
-      'and iterate from compiler evidence until completion or a proven external blocker.',
+      'and iterate from compiler evidence until completion or a proven external blocker. Infer ' +
+      'a deterministic template and project specification when available. Calculator requests ' +
+      'use the VCL template with projectSpecification kind calculator. With no active project, ' +
+      'use the user-approved destination parent as authorizedRoot. Use OpenCreatedProject, ' +
+      'ValidateCreatedProject, and IDE execution tools instead of invoking MSBuild from a CLI. ' +
+      'For executable projects, start the application after a successful build, confirm its main ' +
+      'window, exercise the primary user scenario, and record the observed result.',
       [
         TRadIAJourneyPhase.Create(
           'Discover',
@@ -262,13 +341,14 @@ begin
         ),
         TRadIAJourneyPhase.Create(
           'Verify',
-          'Build the target, inspect diagnostics, repair reviewed defects, and repeat until resolved.',
-          'Provide build iterations, compiler messages, project health, and remaining risks.'
+          'Build the target, repair reviewed defects, run executable output, and test its primary scenario.',
+          'Provide build iterations, compiler messages, visible-window and functional-test evidence.'
         )
       ],
       [
         'The requested project is open in the IDE.',
         'The selected target builds or a specific external blocker is proven.',
+        'Executable output starts and its primary user scenario passes, or a blocker is proven.',
         'Architecture, usage, dependencies, and third-party provenance are documented when applicable.'
       ]
     ),

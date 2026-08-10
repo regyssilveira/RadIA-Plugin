@@ -101,13 +101,19 @@ e os cuidados de cada opção estão na
 ### 3.1 Botão e comandos do modo agente
 
 A infraestrutura agentiva é inicializada automaticamente quando o package do RadIA é carregado.
-No compositor, **Mode: Chat** envia uma conversa comum pela rota escolhida em **Send with**. Com
+No compositor, **Mode: Chat** envia uma conversa comum pela rota escolhida em **Executor**, dentro
+de **More**. Com
 **RadIA native**, usa o provider selecionado sem executar tools registradas do RadIA; com um CLI,
 envia diretamente ao processo externo, que conserva suas próprias capacidades e políticas.
-**Mode: Agent** transforma a próxima mensagem em um objetivo agentivo e também usa **Send with**:
+**Mode: Agent** transforma a próxima mensagem em um objetivo agentivo e também usa **Executor**:
 **RadIA native**, **Codex CLI**, **Claude Code**, **Gemini CLI** ou **GitHub Copilot CLI**. A escolha
 é aplicada à próxima mensagem e salva como padrão. Os comandos `/agent`, `/agent on` e `/agent off`
 continuam disponíveis.
+
+Para o uso comum, não é preciso abrir **More** nem compreender todas as combinações. Um pedido que
+claramente exige ações — por exemplo, criar um projeto VCL — é encaminhado automaticamente para a
+jornada nativa adequada. **More** existe para sessões CLI, vínculo de jornada e sobrescritas de
+configuração destinadas a usuários avançados.
 
 Em **Configurações > CLI & MCP > Chat executor** permanecem o padrão e os caminhos dos executáveis.
 Providers por API key e providers locais não exigem CLI. Para OpenAI, **OpenAI API via API Key** usa

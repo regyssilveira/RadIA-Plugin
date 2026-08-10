@@ -1060,6 +1060,13 @@ body.light-theme .apply-btn:hover {
 
 .composer-context-row {
   min-height: 28px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.composer-advanced-toggle {
+  flex: 0 0 auto;
 }
 
 .selector-wrapper {
@@ -2038,6 +2045,10 @@ body.light-theme .message-avatar.provider-avatar-badge {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .composer-advanced-toggle {
+    grid-column: span 1;
+  }
+
   .composer-context-row {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2326,6 +2337,54 @@ body.light-theme .message-avatar.provider-avatar-badge {
   color: var(--fg-secondary);
   background: var(--bg-secondary);
   text-transform: capitalize;
+}
+
+.cli-activity-card {
+  margin: 10px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  color: var(--fg-primary);
+}
+
+.cli-activity-card > summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.cli-activity-status {
+  flex: 1;
+  font-weight: 600;
+}
+
+.cli-activity-meta {
+  color: var(--fg-secondary);
+  font-size: 12px;
+}
+
+.cli-activity-log {
+  max-height: 260px;
+  margin: 10px 0 0;
+  padding: 10px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-radius: 8px;
+  background: var(--bg-base);
+  color: var(--fg-secondary);
+  font-size: 12px;
+}
+
+.cli-activity-card[data-phase="completed"] {
+  border-color: var(--success, #2e7d32);
+}
+
+.cli-activity-card[data-phase="failed"],
+.cli-activity-card[data-phase="cancelled"] {
+  border-color: var(--danger, #c62828);
 }
 
 .agent-run-objective {

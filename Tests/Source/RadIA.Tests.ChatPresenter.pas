@@ -280,6 +280,8 @@ type
     [Test]
     procedure TestJourneyCommandListsEndToEndRecipes;
     [Test]
+    procedure TestNaturalCalculatorRequestStartsGuidedProjectJourney;
+    [Test]
     procedure TestHelpCommandShowsCapabilitiesAndDocumentation;
     [Test]
     procedure TestWebMessageToggleHistory;
@@ -1241,6 +1243,19 @@ begin
   Assert.Contains(FMockView.PostedMessages.Text, '/journey migrate');
   Assert.Contains(FMockView.PostedMessages.Text, '4 phases');
   Assert.Contains(FMockView.PostedMessages.Text, '3 completion criteria');
+end;
+
+procedure TTestChatPresenter.
+  TestNaturalCalculatorRequestStartsGuidedProjectJourney;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText(
+    'crie uma calculadora com operacoes basicas em VCL'
+  );
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'What should the project be called?');
 end;
 
 procedure TTestChatPresenter.TestHelpCommandShowsCapabilitiesAndDocumentation;

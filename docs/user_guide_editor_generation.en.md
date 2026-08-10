@@ -85,11 +85,19 @@ Writing Data Transfer Objects (DTOs) or ORM mappings manually from JSON payloads
 
 One of Rad IA's most powerful capabilities is structuring and saving a complete Delphi project from scratch using a simple informal chat prompt.
 
-### How to Use:
+### How to use
+
+This workflow also works when Delphi starts without an open project. A natural request such as
+**“create a VCL calculator with basic operations”** automatically starts the guided creation
+journey. RadIA asks only for missing information — name, destination, and platform — before showing
+the approval plan.
+
 1. In the Rad IA sidebar chat, request a new project. Example:
    > *"Generate a console project that consumes a weather API and saves the data in local JSON files."*
    *(You can also use the `/createproject` or `/createprojectarch` slash commands for templates adhering to Clean Architecture).*
-2. The AI will process the request and return the complete list of structured files (project `.dpr`, configuration `.dproj`, logic units `.pas`, and UI forms `.dfm`).
+2. The AI processes the request and returns the complete file set (project `.dpr`, configuration
+   `.dproj`, logic units `.pas`, and UI forms `.dfm`). For VCL calculators, the native composer
+   provides a functional display, keypad, and basic operations.
 3. Rad IA will display a glassmorphism-styled panel showing the list of generated files.
 4. **Saving Workflow**:
    * Click **Criar Projeto e Abrir na IDE** (Create Project and Open in IDE) in the chat UI.
@@ -99,4 +107,13 @@ One of Rad IA's most powerful capabilities is structuring and saving a complete 
 > **Safe Project Generation:**
 > For security reasons and to avoid accidentally overwriting existing code, the selected folder for project generation **must be completely empty**. Rad IA will block the physical saving process if the chosen directory contains any files.
 
-5. **Loading in the IDE**: Once the files are successfully written, Rad IA triggers the Open Tools API and **automatically loads the newly generated project** into the Delphi IDE, ready to compile.
+5. **IDE loading and validation**: after writing the files, RadIA opens the `.dproj`, builds it through
+   Delphi, repairs errors within the approved boundaries, and runs executable projects. Completion
+   reports creation, build, visible-window, and functional-validation evidence.
+
+The external CLI does not need to find `msbuild` on `PATH` for this workflow. RadIA's native tools
+perform project creation, build, and execution. When a CLI assists the analysis, the chat displays
+an expandable activity card with its current stage, elapsed time, and technical output.
+
+Project links open in the IDE. Web links open in the default browser and never replace the main chat
+surface, so users cannot become trapped on a page without a Back control.

@@ -42,6 +42,14 @@ claim success merely because it produced a text response.
 | `/journey migrate [legacy pattern]` | Migrate a bounded pattern with a baseline, transaction, and rollback. |
 | `/journey release [scope]` | Check gates and diff, then prepare a commit preview. |
 
+### Automatic creation from the conversation
+
+Users do not need to know `/journey create`. When no project is open, phrases such as **“create a
+VCL calculator”** are automatically converted into this journey. RadIA collects the name,
+destination, and platform, switches to native execution, and keeps approval visible in the chat.
+After approval, the workflow writes only inside the authorized root, opens the project in the IDE,
+builds and runs it, and records validation evidence.
+
 ## Execution model
 
 1. The command visually enables agent mode when necessary.

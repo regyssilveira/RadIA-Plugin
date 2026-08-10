@@ -30,7 +30,7 @@ test('chat exposes the effective route independently from agent mode', () => {
   assert.match(chatHtml, /id="composer-route"/u);
   assert.match(chatHtml, /id="btn-agent-mode"/u);
   assert.match(chatHtml, /id="select-execution-route"/u);
-  assert.match(chatHtml, /Send with/u);
+  assert.match(chatHtml, /Executor/u);
   assert.match(chatJs, /function updateExecutionRoute\(route\)/u);
   assert.match(chatJs, /case 'execution_route'/u);
   assert.match(presenter, /function TRadIAChatPresenter\.BuildExecutionRouteJson/u);

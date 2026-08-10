@@ -187,16 +187,6 @@
                 <span class="composer-control-label">Mode</span>
                 <span class="btn-label">Agent</span>
               </button>
-              <label class="composer-executor-control" for="select-execution-route">
-                <span class="composer-control-label">Send with</span>
-                <select id="select-execution-route" aria-label="Executor for the next message">
-                  <option value="native">RadIA native</option>
-                  <option value="codex">Codex CLI</option>
-                  <option value="claude">Claude Code</option>
-                  <option value="gemini">Gemini CLI</option>
-                  <option value="copilot">GitHub Copilot CLI</option>
-                </select>
-              </label>
               <div class="selector-wrapper">
                 <select id="select-provider" aria-label="AI provider" style="display: none;">
                   <option value="">Provider...</option>
@@ -233,9 +223,26 @@
                   </div>
                 </div>
               </div>
+              <button type="button" class="composer-mode-toggle composer-advanced-toggle"
+                id="btn-composer-advanced" title="Show executor, session, journey, and scope settings"
+                aria-label="Show advanced execution settings" aria-expanded="false"
+                aria-controls="composer-advanced-options">
+                <span class="btn-label">More</span>
+              </button>
             </div>
-            <div class="composer-control-row composer-context-row"
+            <div class="composer-control-row composer-context-row hidden"
+              id="composer-advanced-options"
               aria-label="Conversation context options">
+              <label class="composer-executor-control" for="select-execution-route">
+                <span class="composer-control-label">Executor</span>
+                <select id="select-execution-route" aria-label="Executor for the next message">
+                  <option value="native">RadIA native</option>
+                  <option value="codex">Codex CLI</option>
+                  <option value="claude">Claude Code</option>
+                  <option value="gemini">Gemini CLI</option>
+                  <option value="copilot">GitHub Copilot CLI</option>
+                </select>
+              </label>
               <button type="button" class="composer-mode-toggle" id="btn-cli-new-session"
                 title="Detach the resumed CLI conversation and start fresh on the next request"
                 aria-label="Start a new external CLI session" hidden>

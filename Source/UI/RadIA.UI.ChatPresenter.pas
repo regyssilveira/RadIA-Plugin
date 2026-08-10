@@ -252,6 +252,23 @@ type
       const AWorkingDirectory: string;
       const AWasResumed: Boolean
     );
+    procedure PostCliActivity(
+      const APhase: string;
+      const AText: string;
+      const ACliName: string;
+      const AWorkingDirectory: string
+    );
+    procedure PostCliCompletionActivity(
+      const AResult: TRadIACliProcessResult;
+      const ADefinition: TRadIACliDefinition;
+      const AWorkingDirectory: string
+    );
+    function BuildCliAgentResponse(
+      const AResult: TRadIACliProcessResult;
+      const ADefinition: TRadIACliDefinition;
+      const ALocalSessionId: string;
+      const AWorkingDirectory: string
+    ): string;
     procedure PauseAgentRun;
     procedure ResumeAgentRun;
     procedure ReplayAgentStep(const AStepIndex: Integer);
@@ -366,6 +383,9 @@ type
       const ACommandText: string
     );
     function TryHandleToolPrompt(const APromptText: string): Boolean;
+    function TryHandleInferredJourney(
+      const APromptText: string
+    ): Boolean;
     procedure ExecuteRegisteredTool(
       const AName: string;
       const AArgumentsJson: string
@@ -3535,6 +3555,8 @@ begin
   LText := Trim(APromptText);
   if TryHandlePendingJourneyInput(APromptText) then
     Exit(True);
+  if TryHandleInferredJourney(APromptText) then
+    Exit(True);
   if TryHandleJourneyCommand(APromptText, LText) then
     Exit(True);
   if TryHandleAgentCommand(APromptText, LText) then
@@ -4479,6 +4501,12 @@ begin
   FCancelledByUser := False;
   FView.SetRequestState(True);
   ResetPendingRequestSettings;
+  PostCliActivity(
+    'started',
+    'Preparing the CLI workspace and starting the requested task.',
+    LDefinition.DisplayName,
+    LWorkingDirectory
+  );
   LGuard := FLifecycleGuard as IRadIALifecycleGuard;
   LTimeoutMs := ASettings.Values.TimeoutMs;
   if LTimeoutMs < 1 then
@@ -4486,8 +4514,36 @@ begin
   FCliProcessSession := TRadIACliProcessRunner.Start(
     LInvocation,
     LTimeoutMs,
-    nil,
-    nil,
+    TProc<string>(
+    procedure(const AChunk: string)
+    begin
+      QueueOnUI(
+        procedure
+        begin
+          PostCliActivity(
+            'output',
+            AChunk,
+            LDefinition.DisplayName,
+            LWorkingDirectory
+          );
+        end
+      );
+    end),
+    TProc<string>(
+    procedure(const AChunk: string)
+    begin
+      QueueOnUI(
+        procedure
+        begin
+          PostCliActivity(
+            'warning',
+            AChunk,
+            LDefinition.DisplayName,
+            LWorkingDirectory
+          );
+        end
+      );
+    end),
     procedure(AResult: TRadIACliProcessResult)
     begin
       TThread.ForceQueue(
@@ -4517,7 +4573,6 @@ procedure TRadIAChatPresenter.HandleCliAgentFinished(
   const AWasResumed: Boolean
 );
 var
-  LExternalSessionId: string;
   LHistory: TArray<IRadIAChatMessage>;
   LIsActiveSession: Boolean;
   LMessage: IRadIAChatMessage;
@@ -4528,37 +4583,13 @@ begin
   FRequestInProgress := False;
   CompleteJourneyActivity;
   FView.SetRequestState(False);
-  if AResult.Cancelled or FCancelledByUser then
-    LResponse := 'CLI execution was cancelled.'
-  else if AResult.TimedOut then
-    LResponse := 'CLI execution exceeded the 15-minute limit.'
-  else if not AResult.Succeeded then
-  begin
-    LResponse := Trim(AResult.StdErr);
-    if LResponse = '' then
-      LResponse := Trim(AResult.StdOut);
-    if LResponse = '' then
-      LResponse := Format(
-        'CLI execution failed with exit code %d.',
-        [AResult.ExitCode]
-      );
-  end
-  else
-  begin
-    LResponse := TRadIACliOutputParser.ExtractFinalText(AResult.StdOut);
-    if TRadIACliOutputParser.TryExtractSessionId(
-      ADefinition.Kind,
-      AResult.StdOut,
-      LExternalSessionId
-    ) then
-      FSessionManager.SetCliConversation(
-        ALocalSessionId,
-        ADefinition.Id,
-        LExternalSessionId,
-        AWorkingDirectory,
-        ''
-      );
-  end;
+  PostCliCompletionActivity(AResult, ADefinition, AWorkingDirectory);
+  LResponse := BuildCliAgentResponse(
+    AResult,
+    ADefinition,
+    ALocalSessionId,
+    AWorkingDirectory
+  );
   if AWasResumed then
     LModelLabel := 'CLI resumed'
   else
@@ -4591,6 +4622,127 @@ begin
     LHistory := FSessionManager.LoadSessionHistory(ALocalSessionId);
     LHistory := LHistory + [LMessage];
     FSessionManager.SaveSessionHistory(ALocalSessionId, LHistory);
+  end;
+end;
+
+procedure TRadIAChatPresenter.PostCliCompletionActivity(
+  const AResult: TRadIACliProcessResult;
+  const ADefinition: TRadIACliDefinition;
+  const AWorkingDirectory: string
+);
+var
+  LMessage: string;
+  LPhase: string;
+begin
+  LPhase := 'failed';
+  if AResult.Cancelled or FCancelledByUser then
+  begin
+    LPhase := 'cancelled';
+    LMessage := 'CLI execution was cancelled.';
+  end
+  else if AResult.TimedOut then
+    LMessage := 'CLI execution exceeded its configured time limit.'
+  else if AResult.Succeeded then
+  begin
+    LPhase := 'completed';
+    LMessage := 'CLI execution completed.';
+  end
+  else
+    LMessage := 'CLI execution failed. Expand the activity log for details.';
+  PostCliActivity(LPhase, LMessage, ADefinition.DisplayName, AWorkingDirectory);
+end;
+
+function TRadIAChatPresenter.BuildCliAgentResponse(
+  const AResult: TRadIACliProcessResult;
+  const ADefinition: TRadIACliDefinition;
+  const ALocalSessionId: string;
+  const AWorkingDirectory: string
+): string;
+var
+  LExternalSessionId: string;
+begin
+  if AResult.Cancelled or FCancelledByUser then
+    Exit('CLI execution was cancelled.');
+  if AResult.TimedOut then
+    Exit('CLI execution exceeded the 15-minute limit.');
+  if not AResult.Succeeded then
+  begin
+    Result := Trim(AResult.StdErr);
+    if Result = '' then
+      Result := Trim(AResult.StdOut);
+    if Result = '' then
+      Result := Format('CLI execution failed with exit code %d.', [AResult.ExitCode]);
+    Exit;
+  end;
+  Result := TRadIACliOutputParser.ExtractFinalText(AResult.StdOut);
+  if TRadIACliOutputParser.TryExtractSessionId(
+    ADefinition.Kind,
+    AResult.StdOut,
+    LExternalSessionId
+  ) then
+    FSessionManager.SetCliConversation(
+      ALocalSessionId,
+      ADefinition.Id,
+      LExternalSessionId,
+      AWorkingDirectory,
+      ''
+    );
+end;
+
+function TRadIAChatPresenter.TryHandleInferredJourney(
+  const APromptText: string
+): Boolean;
+var
+  LCommandText: string;
+  LCurrent: TRadIAResolvedExecutionSettings;
+begin
+  Result := TRadIAJourneyCatalog.TryInferCreateProject(
+    APromptText,
+    LCommandText
+  );
+  if not Result then
+    Exit;
+  LCurrent := ResolveEffectiveExecutionSettings;
+  FPendingRequestSettings := TRadIAExecutionSettings.Create(
+    LCurrent.Values.ProviderId,
+    LCurrent.Values.ModelId,
+    'native',
+    LCurrent.Values.MaxTokens,
+    LCurrent.Values.TimeoutMs,
+    LCurrent.Values.TokenBudget
+  );
+  FPendingRequestConversationId := FSessionManager.ActiveSessionId;
+  FPendingRequestProjectId := CurrentProjectId;
+  if not FAgentModeEnabled then
+    SetAgentModeEnabled(True);
+  TryHandleJourneyCommand(APromptText, LCommandText);
+end;
+
+procedure TRadIAChatPresenter.PostCliActivity(
+  const APhase: string;
+  const AText: string;
+  const ACliName: string;
+  const AWorkingDirectory: string
+);
+const
+  CMaximumActivityChunk = 16384;
+var
+  LJson: TJSONObject;
+  LText: string;
+begin
+  LText := AText;
+  if Length(LText) > CMaximumActivityChunk then
+    LText := LText.Substring(0, CMaximumActivityChunk);
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'cli_activity');
+    LJson.AddPair('phase', APhase);
+    LJson.AddPair('text', LText);
+    LJson.AddPair('cli', ACliName);
+    LJson.AddPair('workingDirectory', AWorkingDirectory);
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
   end;
 end;
 
