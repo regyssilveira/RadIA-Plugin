@@ -3,9 +3,9 @@
     "evidenceKind":  "terminalHighFidelityMatrix",
     "product":  "RadIA",
     "productVersion":  "2.4.0",
-    "sourceCommit":  "f08de5e38c8e3cf94ca134349994a61f75b92ea5",
+    "sourceCommit":  "76d187ccaa4d29864cbb1708ecbf33b3167eed91",
     "sourceDirty":  false,
-    "generatedAtUtc":  "2026-08-10T12:21:16.7968133Z",
+    "generatedAtUtc":  "2026-08-10T12:37:55.0967938Z",
     "status":  "passed",
     "targetCount":  3,
     "executorCount":  4,
@@ -77,5 +77,5 @@
                           "status":  "passed"
                       }
                   ],
-    "visualSmoke":  "pending: an installed IDE target is open"
+    "visualSmoke":  "passed: terminal_smoke_evidence_2.4.0.json"
 }

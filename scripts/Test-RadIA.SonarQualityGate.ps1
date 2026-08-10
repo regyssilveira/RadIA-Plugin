@@ -273,6 +273,12 @@ if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
     $workspaceRoot = [IO.Path]::GetFullPath(
         (Join-Path $PSScriptRoot "..")
     )
+    $productVersion = (
+        Get-Content `
+            -LiteralPath (Join-Path $workspaceRoot "package.json") `
+            -Raw |
+            ConvertFrom-Json
+    ).version
     $sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
     $sourceDirty = @(
         & git -C $workspaceRoot status --porcelain --untracked-files=no
@@ -287,7 +293,7 @@ if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
         schemaVersion = 1
         evidenceKind = "sonarGlobalQuality"
         product = "RadIA"
-        productVersion = "2.0.0"
+        productVersion = $productVersion
         sourceCommit = $sourceCommit
         sourceDirty = $sourceDirty
         analysisId = $task.analysisId
