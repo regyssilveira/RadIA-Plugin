@@ -90,6 +90,9 @@ same semantics on all these surfaces. A session permission is limited to the pro
 be removed in **Security & Consent > Revoke session permissions**. Authorizations are registered
 in the same auditable log as the tools, with secrets removed before persistence.
 
+The request identifies **Terminal** as its source, preserves journey and project in the correct
+fields, and uses the panel-independent native dialog. Arguments are redacted before display.
+
 The working directory and active project identifier make up the authorization scope. In a
 AI profile, the MCP paths configured for that client also enter the audited context;
 the terminal does not read or write the contents of the MCP files during this step.

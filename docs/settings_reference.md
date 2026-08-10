@@ -111,6 +111,11 @@ se ele não responder, verifique processo, porta, firewall e URL.
 | Allow session permission for build, tests, and execution | Somente quando o plano exigir execução repetida | Não autoriza ações destrutivas e não substitui limites, auditoria ou workspace boundary. |
 | Revoke session permissions | Ao terminar uma tarefa ou suspeitar de escopo excessivo | Revoga imediatamente todas as permissões lembradas na sessão atual da IDE. |
 
+O diálogo é único para chat, agente, MCP e terminal. **Source** identifica claramente a superfície,
+os argumentos são sanitizados antes da exibição e solicitações concorrentes aguardam somente até o
+timeout configurado. Tools sensíveis continuam negadas, exceto quando o contrato exige
+`ConsentEveryTime`; essa exceção nunca permite autorização de sessão.
+
 ## Knowledge & Embeddings
 
 | Opção | Quando alterar | Efeito e cuidados |

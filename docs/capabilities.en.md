@@ -28,7 +28,7 @@ This page is the functional map of RadIA 2.3.1.
 | Scoped settings | Resolve provider, model, executor, and limits by request, session, project, global value, and safe default, with visible sources and inheritance controls. |
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints, resource limits, and internal DUnitX/Git diff result compaction. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
-| Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |
+| Security | Risk levels, one queued native dialog for chat, agent, MCP, and terminal, readable source, redacted arguments, hints, revocation, audit, and workspace confinement. |
 | Extensions | Visual creation, sandbox, install, export, signing, and management plus a versioned tool API protected by the policy pipeline. |
 | Declarative extensions | Hot-reloaded commands, skills, journeys, knowledge, references, templates, aliases, and audited workflows with transactional package resources. |
 

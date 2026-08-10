@@ -205,6 +205,9 @@ For reproducible automation, prefer `mcp.<pid>.json`.
 - **Wrong IDE:** pass the intended `mcp.<pid>.json` explicitly.
 - **Tool unavailable:** refresh `tools/list` and verify its required IDE context.
 - **Pending call:** check for a consent dialog in the IDE.
+- The dialog is shared with chat, agent, and terminal, identifies **MCP client** as the source, and
+  remains accessible when the chat panel is closed. Concurrent calls wait for the single slot only
+  until the configured timeout.
 - **Pipe not found:** verify that the PID still exists and restart the bridge.
 - **Invalid schema:** discard the cached catalog and call `tools/list` again.
 - **Wrong project:** select the discovery file for the intended PID.

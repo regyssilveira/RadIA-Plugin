@@ -45,6 +45,8 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | [RadIA.Core.EditorAdapter.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.EditorAdapter.pas) | `IRadIAEditorAdapter` interface and `TRadIAOTAEditorAdapter` implementation of the Adapter pattern to decouple the code editor from the Delphi IDE. |
 | `RadIA.Core.Tools` and `ToolRegistry` | Agentic tool contracts, descriptors, and shared registry. |
 | `RadIA.Core.ToolSecurity` and `WorkspaceBoundary` | Policy, audit, and path confinement. |
+| `RadIA.Core.ConsentPresentation` | Readable source, uniform consent presentation, and redacted arguments. |
+| `RadIA.Core.ConsentGate` | Serializes dialogs and bounds concurrent-request waiting. |
 | `RadIA.Core.Workspace*` | Workspace facade and editor and project tools. |
 | `RadIA.Core.Patches` and `PatchTools` | Patch preview, preconditions, application, and reversal. |
 | `RadIA.Core.Build*` | Controlled build-cycle contracts and tools. |

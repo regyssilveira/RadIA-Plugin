@@ -19,6 +19,9 @@ ao escopo declarado e falhar se suas precondições não forem satisfeitas.
 | Destrutiva | Remover unit ou componente | Confirmar sempre e destacar efeito |
 | Sensível | Credenciais, configuração global | Negar por padrão |
 
+Uma tool sensível só pode substituir a negação padrão quando seu descritor declara
+`ConsentEveryTime`. Nesse caso, cada chamada abre o diálogo e `AllowSession` nunca é reutilizado.
+
 ## 3. Decisões de consentimento
 
 - `AllowOnce`: permite apenas a requisição atual.
@@ -33,6 +36,17 @@ Permissões de sessão:
 - Não ampliam paths ou efeitos.
 - Podem ser revogadas pela UI.
 - Não se aplicam automaticamente a ações destrutivas ou sensíveis.
+
+### Diálogo central e superfícies
+
+Chat, agente nativo, MCP e terminal usam o mesmo provider de consentimento e o mesmo diálogo nativo,
+independente do painel que originou a chamada. O diálogo mostra a origem em linguagem humana,
+projeto, escopo, risco e argumentos já sanitizados. Fechar ou desacoplar chat ou terminal não fecha
+uma solicitação pendente.
+
+Somente um diálogo fica ativo por vez. Solicitações simultâneas aguardam em uma fila limitada pelo
+timeout configurado; se a IDE estiver encerrando ou a espera expirar, a decisão é `Cancel`. Nenhuma
+solicitação é aprovada automaticamente. Todos os botões e a área de argumentos possuem hints.
 
 ## 4. Workspace boundary
 

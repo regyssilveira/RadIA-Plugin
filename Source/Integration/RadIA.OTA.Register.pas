@@ -904,10 +904,15 @@ initialization
   SetRadIAToolExtensionHost(
     TRadIAContainer.Resolve<IRadIAToolExtensionHost>
   );
+  TRadIAContainer.Register<IRadIASecretRedactor>(
+    TRadIASecretRedactor.Create
+  );
   TRadIAContainer.Register<IRadIAConsentProvider>(
     TRadIAOTAConsentProvider.Create(
       0,
-      TRadIAContainer.Resolve<IRadIAConfig>
+      TRadIAContainer.Resolve<IRadIAConfig>,
+      TRadIAContainer.Resolve<IRadIASecretRedactor>,
+      nil
     )
   );
   TRadIAContainer.Register<IRadIAToolAuditSink>(
@@ -917,9 +922,6 @@ initialization
         'audit\tools.jsonl'
       )
     )
-  );
-  TRadIAContainer.Register<IRadIASecretRedactor>(
-    TRadIASecretRedactor.Create
   );
   TRadIAContainer.Register<IRadIAToolExecutor>(
     TRadIAToolPolicyExecutor.Create(

@@ -68,6 +68,8 @@ type
     [Test]
     procedure SensitiveToolIsDeniedWithoutPrompt;
     [Test]
+    procedure SensitiveEveryTimeToolRequiresFreshConsent;
+    [Test]
     procedure AuditRedactsSecrets;
     [Test]
     procedure JsonLinesAuditPersistsStructuredEvent;
@@ -75,6 +77,12 @@ type
     procedure ConsentProviderDeniesDuringShutdown;
     [Test]
     procedure ConsentProviderHonorsSessionRiskPreferences;
+    [Test]
+    procedure ConsentPresentationIdentifiesEverySurface;
+    [Test]
+    procedure ConsentPresentationRedactsArguments;
+    [Test]
+    procedure ConsentGateSerializesAndBoundsPendingRequests;
     [Test]
     procedure UnknownToolIsDeniedAndAudited;
   end;
@@ -84,12 +92,103 @@ implementation
 uses
   System.IOUtils,
   System.SysUtils,
+  RadIA.Core.ConsentGate,
+  RadIA.Core.ConsentPresentation,
   RadIA.Core.Config,
   RadIA.Core.Interfaces,
   RadIA.Core.SettingsStorage,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Types,
   RadIA.OTA.Consent;
+
+procedure TTestRadIAToolSecurity.ConsentGateSerializesAndBoundsPendingRequests;
+var
+  LGate: IRadIAConsentGate;
+begin
+  LGate := TRadIAConsentGate.Create;
+  Assert.IsTrue(LGate.Acquire(100, True));
+  Assert.IsFalse(LGate.Acquire(20, True));
+  LGate.Release;
+  Assert.IsTrue(LGate.Acquire(100, True));
+  LGate.Release;
+end;
+
+procedure TTestRadIAToolSecurity.ConsentPresentationIdentifiesEverySurface;
+const
+  COrigins: array[0..3] of string = ('chat', 'chat-agent', 'mcp', 'terminal');
+  CSources: array[0..3] of string = (
+    'Chat command',
+    'Native agent',
+    'MCP client',
+    'Terminal'
+  );
+var
+  LDescriptor: TRadIAToolDescriptor;
+  LIndex: Integer;
+  LPresentation: TRadIAConsentPresentation;
+  LRequest: TRadIAToolRequest;
+begin
+  LDescriptor := TRadIAToolDescriptor.Create(
+    'BuildProject',
+    '1.0.0',
+    'Builds the active project.',
+    '{}',
+    '{}',
+    trExecution
+  );
+  for LIndex := Low(COrigins) to High(COrigins) do
+  begin
+    LRequest := TRadIAToolRequest.Create(
+      'BuildProject',
+      '{}',
+      'correlation',
+      COrigins[LIndex],
+      'session',
+      'project',
+      'workspace'
+    );
+    LPresentation := TRadIAConsentPresentation.Build(
+      LRequest,
+      LDescriptor,
+      TRadIASecretRedactor.Create,
+      True
+    );
+    Assert.AreEqual(CSources[LIndex], LPresentation.Source);
+  end;
+end;
+
+procedure TTestRadIAToolSecurity.ConsentPresentationRedactsArguments;
+var
+  LDescriptor: TRadIAToolDescriptor;
+  LPresentation: TRadIAConsentPresentation;
+  LRequest: TRadIAToolRequest;
+begin
+  LDescriptor := TRadIAToolDescriptor.Create(
+    'RunTerminalCommand',
+    '1.0.0',
+    'Runs one terminal command.',
+    '{}',
+    '{}',
+    trExecution
+  );
+  LRequest := TRadIAToolRequest.Create(
+    'RunTerminalCommand',
+    '{"command":"build","password":"secret-value"}',
+    'correlation',
+    'terminal',
+    'session',
+    'project',
+    'workspace'
+  );
+  LPresentation := TRadIAConsentPresentation.Build(
+    LRequest,
+    LDescriptor,
+    TRadIASecretRedactor.Create,
+    True
+  );
+  Assert.Contains(LPresentation.Arguments, '[REDACTED]');
+  Assert.DoesNotContain(LPresentation.Arguments, 'secret-value');
+end;
 
 { TTestRadIATool }
 
@@ -542,6 +641,36 @@ begin
   Assert.AreEqual('sensitive_tool_denied', LResult.ErrorCode);
   Assert.AreEqual(0, LTool.ExecutionCount);
   Assert.AreEqual(0, LConsent.RequestCount);
+end;
+
+procedure TTestRadIAToolSecurity.SensitiveEveryTimeToolRequiresFreshConsent;
+var
+  LAudit: IRadIAToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('CaptureRuntimeVisual', trSensitive, True)
+  );
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowSession);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  Assert.IsTrue(
+    LExecutor.Execute(CreateRequest('CaptureRuntimeVisual')).Success
+  );
+  Assert.IsTrue(
+    LExecutor.Execute(CreateRequest('CaptureRuntimeVisual')).Success
+  );
+  Assert.AreEqual(2, LConsent.RequestCount);
 end;
 
 procedure TTestRadIAToolSecurity.SessionConsentIsScopedAndRevocable;

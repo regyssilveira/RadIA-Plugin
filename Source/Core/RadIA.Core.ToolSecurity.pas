@@ -544,7 +544,8 @@ var
 begin
   if ADescriptor.Risk = trReadOnly then
     Exit(cdAllowOnce);
-  if ADescriptor.Risk = trSensitive then
+  if (ADescriptor.Risk = trSensitive) and
+    not ADescriptor.ConsentEveryTime then
     Exit(cdDeny);
 
   LPermissionKey := BuildPermissionKey(ARequest);
@@ -623,7 +624,8 @@ begin
 
   case LDecision of
     cdDeny:
-      if LDescriptor.Risk = trSensitive then
+      if (LDescriptor.Risk = trSensitive) and
+        not LDescriptor.ConsentEveryTime then
         Result := TRadIAToolResult.Failed(
           CSensitiveDenied,
           'Sensitive tools are denied by default.'

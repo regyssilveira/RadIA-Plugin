@@ -78,6 +78,11 @@ advanced settings above. Provider account, region, plan, and permissions determi
 
 See the [security model](tool_security_model.en.md) for risk classes and consent scope.
 
+The same dialog serves chat, native agent, MCP, and terminal. **Source** identifies the surface,
+arguments are redacted before display, and concurrent requests wait only for the configured timeout.
+Sensitive tools remain denied unless their contract requires `ConsentEveryTime`; that exception can
+never create a session permission.
+
 ## CLI & MCP
 
 CLI and MCP are independent. Native orchestration needs no CLI for API-key or local providers. MCP

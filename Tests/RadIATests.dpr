@@ -64,6 +64,8 @@ uses
   RadIA.Core.ExtensionSigning in '..\Source\Core\RadIA.Core.ExtensionSigning.pas',
   RadIA.UI.ExtensionCatalogForm in '..\Source\UI\RadIA.UI.ExtensionCatalogForm.pas',
   RadIA.Core.ToolSecurity in '..\Source\Core\RadIA.Core.ToolSecurity.pas',
+  RadIA.Core.ConsentPresentation in '..\Source\Core\RadIA.Core.ConsentPresentation.pas',
+  RadIA.Core.ConsentGate in '..\Source\Core\RadIA.Core.ConsentGate.pas',
   RadIA.Core.Patches in '..\Source\Core\RadIA.Core.Patches.pas',
   RadIA.Core.BlockReviews in '..\Source\Core\RadIA.Core.BlockReviews.pas',
   RadIA.Core.BlockReviewSessions in '..\Source\Core\RadIA.Core.BlockReviewSessions.pas',

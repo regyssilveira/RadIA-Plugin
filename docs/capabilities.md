@@ -218,6 +218,10 @@ O RadIA aplica classificação de risco, consentimento por chamada ou sessão, r
 auditoria sanitizada, remoção de secrets, recusa de conteúdo desatualizado, cancelamento e
 confinamento de paths. Operações destrutivas ou sensíveis não recebem autorização persistente.
 
+Chat, agente, MCP e terminal usam um único diálogo nativo com fila limitada, origem legível,
+argumentos sanitizados e hints. Tools sensíveis permanecem negadas por padrão; somente contratos
+com `ConsentEveryTime` podem pedir autorização e nunca criam permissão de sessão.
+
 Packages confiáveis podem registrar tools pela API `IRadIAToolExtension`, mas continuam sujeitos
 às mesmas políticas.
 

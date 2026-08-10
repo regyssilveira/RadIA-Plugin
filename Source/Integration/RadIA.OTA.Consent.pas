@@ -4,6 +4,7 @@ interface
 
 uses
   RadIA.Core.Interfaces,
+  RadIA.Core.ConsentGate,
   RadIA.Core.Tools,
   RadIA.Core.ToolSecurity;
 
@@ -14,7 +15,15 @@ type
   )
   private
     FConfig: IRadIAConfig;
+    FConsentGate: IRadIAConsentGate;
+    FRedactor: IRadIASecretRedactor;
     FTimeoutMs: Cardinal;
+    function EffectiveTimeoutMs: Cardinal;
+    procedure InitializeDependencies(
+      const AConfig: IRadIAConfig;
+      const ARedactor: IRadIASecretRedactor;
+      const AConsentGate: IRadIAConsentGate
+    );
     function ShowConsentDialog(
       const ARequest: TRadIAToolRequest;
       const ADescriptor: TRadIAToolDescriptor
@@ -23,7 +32,14 @@ type
     constructor Create(
       const ATimeoutMs: Cardinal = 0;
       const AConfig: IRadIAConfig = nil
-    );
+    ); overload;
+    constructor Create(
+      const ATimeoutMs: Cardinal;
+      const AConfig: IRadIAConfig;
+      const ARedactor: IRadIASecretRedactor;
+      const AConsentGate: IRadIAConsentGate
+    ); overload;
+    destructor Destroy; override;
     function CanRememberForSession(
       const ARisk: TRadIAToolRisk
     ): Boolean;
@@ -44,6 +60,7 @@ uses
   Vcl.Graphics,
   Vcl.StdCtrls,
   Winapi.Windows,
+  RadIA.Core.ConsentPresentation,
   RadIA.Core.Config,
   RadIA.Core.Types;
 
@@ -80,13 +97,10 @@ type
       const AEnabled: Boolean = True
     ): TButton;
     procedure ConfigureContent(
-      const ARequest: TRadIAToolRequest;
-      const ADescriptor: TRadIAToolDescriptor;
-      const AShowArguments: Boolean
+      const APresentation: TRadIAConsentPresentation
     );
     procedure FormResize(Sender: TObject);
     procedure LayoutControls;
-    function RiskName(const ARisk: TRadIAToolRisk): string;
     procedure TimerTick(Sender: TObject);
   public
     constructor CreateConsent(
@@ -94,7 +108,8 @@ type
       const ADescriptor: TRadIAToolDescriptor;
       const ATimeoutMs: Cardinal;
       const AShowArguments: Boolean;
-      const AAllowSession: Boolean
+      const AAllowSession: Boolean;
+      const ARedactor: IRadIASecretRedactor
     );
   end;
 
@@ -116,9 +131,7 @@ begin
 end;
 
 procedure TRadIAConsentForm.ConfigureContent(
-  const ARequest: TRadIAToolRequest;
-  const ADescriptor: TRadIAToolDescriptor;
-  const AShowArguments: Boolean
+  const APresentation: TRadIAConsentPresentation
 );
 begin
   FTitleLabel := TLabel.Create(Self);
@@ -127,26 +140,25 @@ begin
   FTitleLabel.WordWrap := True;
   FTitleLabel.Font.Style := [fsBold];
   FTitleLabel.Font.Size := 12;
-  FTitleLabel.Caption := 'RadIA requests permission to run ' +
-    ADescriptor.Name;
+  FTitleLabel.Caption := APresentation.Title;
 
   FDescriptionLabel := TLabel.Create(Self);
   FDescriptionLabel.Parent := Self;
   FDescriptionLabel.AutoSize := False;
   FDescriptionLabel.WordWrap := True;
-  FDescriptionLabel.Caption := ADescriptor.Description;
+  FDescriptionLabel.Caption := APresentation.Description;
 
   FScopeLabel := TLabel.Create(Self);
   FScopeLabel.Parent := Self;
   FScopeLabel.AutoSize := False;
   FScopeLabel.WordWrap := True;
   FScopeLabel.Caption := Format(
-    'Risk: %s | Origin: %s | Project: %s | Scope: %s',
+    'Risk: %s | Source: %s | Project: %s | Scope: %s',
     [
-      RiskName(ADescriptor.Risk),
-      ARequest.Origin,
-      ARequest.ProjectId,
-      ARequest.Scope
+      APresentation.Risk,
+      APresentation.Source,
+      APresentation.ProjectId,
+      APresentation.Scope
     ]
   );
 
@@ -155,11 +167,10 @@ begin
   FArgumentsMemo.ReadOnly := True;
   FArgumentsMemo.ScrollBars := ssBoth;
   FArgumentsMemo.WordWrap := False;
-  if AShowArguments then
-    FArgumentsMemo.Text := ARequest.ArgumentsJson
-  else
-    FArgumentsMemo.Text :=
-      'Arguments are hidden by your Security & Consent settings.';
+  FArgumentsMemo.ShowHint := True;
+  FArgumentsMemo.Hint :=
+    'Review the sanitized arguments that will be sent to the selected tool.';
+  FArgumentsMemo.Text := APresentation.Arguments;
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := Self;
@@ -238,8 +249,11 @@ constructor TRadIAConsentForm.CreateConsent(
   const ADescriptor: TRadIAToolDescriptor;
   const ATimeoutMs: Cardinal;
   const AShowArguments: Boolean;
-  const AAllowSession: Boolean
+  const AAllowSession: Boolean;
+  const ARedactor: IRadIASecretRedactor
 );
+var
+  LPresentation: TRadIAConsentPresentation;
 begin
   inherited CreateNew(nil);
   BorderStyle := bsDialog;
@@ -249,16 +263,30 @@ begin
   Constraints.MinWidth := CConsentMinimumWidth;
   Constraints.MinHeight := CConsentMinimumHeight;
   Position := poMainFormCenter;
-  ConfigureContent(ARequest, ADescriptor, AShowArguments);
+  PopupMode := pmAuto;
+  PopupParent := Application.MainForm;
+  LPresentation := TRadIAConsentPresentation.Build(
+    ARequest,
+    ADescriptor,
+    ARedactor,
+    AShowArguments
+  );
+  ConfigureContent(LPresentation);
 
   FAllowOnceButton := AddButton('Allow once', CAllowOnceModalResult);
+  FAllowOnceButton.Hint := 'Authorize only this request.';
   FAllowSessionButton := AddButton(
     'Allow session',
     CAllowSessionModalResult,
     AAllowSession
   );
+  FAllowSessionButton.Hint :=
+    'Authorize the same tool and scope until permissions are revoked or the IDE closes.';
   FDenyButton := AddButton('Deny', CDenyModalResult);
+  FDenyButton.Hint := 'Reject this request without performing the action.';
   FCancelButton := AddButton('Cancel', mrCancel);
+  FCancelButton.Hint := 'Cancel the workflow that requested this action.';
+  ShowHint := True;
   OnResize := FormResize;
   LayoutControls;
 
@@ -268,21 +296,6 @@ begin
   FTimer.OnTimer := TimerTick;
   FTimer.Enabled := True;
   TimerTick(nil);
-end;
-
-function TRadIAConsentForm.RiskName(
-  const ARisk: TRadIAToolRisk
-): string;
-begin
-  case ARisk of
-    trReadOnly: Result := 'Read only';
-    trReversibleWrite: Result := 'Reversible write';
-    trStructuralWrite: Result := 'Structural write';
-    trExecution: Result := 'Execution';
-    trDestructive: Result := 'Destructive';
-  else
-    Result := 'Sensitive';
-  end;
 end;
 
 procedure TRadIAConsentForm.TimerTick(Sender: TObject);
@@ -314,10 +327,51 @@ constructor TRadIAOTAConsentProvider.Create(
 );
 begin
   inherited Create;
+  InitializeDependencies(AConfig, nil, nil);
+  FTimeoutMs := ATimeoutMs;
+end;
+
+constructor TRadIAOTAConsentProvider.Create(
+  const ATimeoutMs: Cardinal;
+  const AConfig: IRadIAConfig;
+  const ARedactor: IRadIASecretRedactor;
+  const AConsentGate: IRadIAConsentGate
+);
+begin
+  inherited Create;
+  InitializeDependencies(AConfig, ARedactor, AConsentGate);
+  FTimeoutMs := ATimeoutMs;
+end;
+
+procedure TRadIAOTAConsentProvider.InitializeDependencies(
+  const AConfig: IRadIAConfig;
+  const ARedactor: IRadIASecretRedactor;
+  const AConsentGate: IRadIAConsentGate
+);
+begin
   FConfig := AConfig;
   if not Assigned(FConfig) then
     FConfig := TRadIAConfig.GetInstance;
-  FTimeoutMs := ATimeoutMs;
+  FRedactor := ARedactor;
+  if not Assigned(FRedactor) then
+    FRedactor := TRadIASecretRedactor.Create;
+  FConsentGate := AConsentGate;
+  if not Assigned(FConsentGate) then
+    FConsentGate := TRadIAConsentGate.Create;
+end;
+
+destructor TRadIAOTAConsentProvider.Destroy;
+begin
+  FRedactor := nil;
+  FConsentGate := nil;
+  inherited Destroy;
+end;
+
+function TRadIAOTAConsentProvider.EffectiveTimeoutMs: Cardinal;
+begin
+  Result := FTimeoutMs;
+  if Result = 0 then
+    Result := Cardinal(FConfig.ConsentTimeoutSeconds) * 1000;
 end;
 
 function TRadIAOTAConsentProvider.CanRememberForSession(
@@ -347,21 +401,30 @@ begin
   if GIsShuttingDown or Application.Terminated then
     Exit;
 
-  if GetCurrentThreadId = MainThreadID then
-    Exit(ShowConsentDialog(ARequest, ADescriptor));
+  if not FConsentGate.Acquire(
+    EffectiveTimeoutMs,
+    GetCurrentThreadId <> MainThreadID
+  ) then
+    Exit(cdCancel);
 
-  LDecision := cdDeny;
-  TThread.Synchronize(
-    nil,
-    TThreadProcedure(
-      procedure
-      begin
-        if not GIsShuttingDown and not Application.Terminated then
-          LDecision := ShowConsentDialog(ARequest, ADescriptor);
-      end
-    )
-  );
-  Result := LDecision;
+  try
+    if GetCurrentThreadId = MainThreadID then
+      Exit(ShowConsentDialog(ARequest, ADescriptor));
+    LDecision := cdDeny;
+    TThread.Synchronize(
+      nil,
+      TThreadProcedure(
+        procedure
+        begin
+          if not GIsShuttingDown and not Application.Terminated then
+            LDecision := ShowConsentDialog(ARequest, ADescriptor);
+        end
+      )
+    );
+    Result := LDecision;
+  finally
+    FConsentGate.Release;
+  end;
 end;
 
 function TRadIAOTAConsentProvider.ShowConsentDialog(
@@ -372,15 +435,14 @@ var
   LForm: TRadIAConsentForm;
   LTimeoutMs: Cardinal;
 begin
-  LTimeoutMs := FTimeoutMs;
-  if LTimeoutMs = 0 then
-    LTimeoutMs := Cardinal(FConfig.ConsentTimeoutSeconds) * 1000;
+  LTimeoutMs := EffectiveTimeoutMs;
   LForm := TRadIAConsentForm.CreateConsent(
     ARequest,
     ADescriptor,
     LTimeoutMs,
     FConfig.ConsentShowArguments,
-    CanRememberForSession(ADescriptor.Risk)
+    CanRememberForSession(ADescriptor.Risk),
+    FRedactor
   );
   try
     case LForm.ShowModal of

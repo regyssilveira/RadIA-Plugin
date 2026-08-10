@@ -225,6 +225,9 @@ Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
 - **Instância errada:** passe explicitamente `mcp.<pid>.json`.
 - **Tool indisponível:** execute novamente `tools/list` e verifique o contexto exigido.
 - **Solicitação pendente:** procure o diálogo de consentimento na IDE.
+- O diálogo é o mesmo do chat, agente e terminal, identifica **MCP client** como origem e permanece
+  acessível mesmo que o painel do chat esteja fechado. Chamadas concorrentes aguardam o slot único
+  somente até o timeout configurado.
 - **Pipe não encontrado:** confirme se o PID ainda existe e reinicie a bridge.
 - **Discovery órfão:** feche a bridge, confirme que o PID não existe e reabra a IDE.
 - **Sem resposta após tool mutável:** verifique o diálogo nativo de consentimento.

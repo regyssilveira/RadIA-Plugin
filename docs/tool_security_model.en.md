@@ -19,6 +19,9 @@ to the stated scope and fails if its preconditions are not met.
 |Destructive|Remove unit or component|Always confirm and highlight effect|
 |Sensitive|Credentials, global configuration|Deny by default|
 
+A sensitive tool can override the default denial only when its descriptor declares
+`ConsentEveryTime`. In that case every call opens the dialog and `AllowSession` is never reused.
+
 ## 3. Consent Decisions
 
 - `AllowOnce`: only allows the current request.
@@ -33,6 +36,17 @@ Session permissions:
 - They do not expand paths or effects.
 - They can be revoked by the UI.
 - They do not automatically apply to destructive or sensitive actions.
+
+### Central dialog and surfaces
+
+Chat, native agent, MCP, and terminal use the same consent provider and native dialog, independently
+of the panel that originated the call. The dialog shows a human-readable source, project, scope,
+risk, and already-redacted arguments. Closing or undocking chat or terminal does not close a pending
+request.
+
+Only one dialog is active at a time. Concurrent requests wait in a queue bounded by the configured
+timeout; IDE shutdown or an expired wait produces `Cancel`. No request is approved automatically.
+Every button and the arguments area provide contextual hints.
 
 ## 4. Workspace boundary
 

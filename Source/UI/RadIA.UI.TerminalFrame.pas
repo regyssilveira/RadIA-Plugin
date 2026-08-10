@@ -586,8 +586,8 @@ begin
       'RunTerminalCommand',
       LJson.ToJSON,
       TGUID.NewGuid.ToString,
+      'terminal',
       LSessionId,
-      LProjectId,
       LProjectId,
       AWorkingDirectory
     );

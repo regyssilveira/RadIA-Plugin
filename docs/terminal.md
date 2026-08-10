@@ -90,6 +90,9 @@ mesma semântica em todas essas superfícies. Uma permissão de sessão é limit
 ser removida em **Security & Consent > Revoke session permissions**. Autorizações são registradas
 no mesmo log auditável das ferramentas, com remoção de segredos antes da persistência.
 
+O pedido identifica **Terminal** como origem, preserva a jornada e o projeto nos campos corretos e
+usa o diálogo nativo independente do painel. Os argumentos são sanitizados antes de aparecerem.
+
 O diretório de trabalho e o identificador do projeto ativo compõem o escopo da autorização. Em um
 perfil de IA, os caminhos MCP configurados para aquele cliente também entram no contexto auditado;
 o terminal não lê nem grava o conteúdo dos arquivos MCP durante essa etapa.

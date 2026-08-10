@@ -18,7 +18,7 @@ conhecimento e automações com segurança e entender cada controle sem consulta
 | M1 | Painel de até três alternativas de completion, navegação visual e atalhos configuráveis | Concluído; matriz final integrada pendente |
 | M2 | `.radiaext` com referências, conhecimento, templates e assets, incluindo Addon Studio e rollback | Concluído; matriz final integrada pendente |
 | M3 | Sessão visual no chat com captura anterior/posterior, timeline e validação ligada a eventos reais | Concluído; captura real aprovada nos três targets suportados |
-| M4 | Consentimento resiliente entre superfícies e apresentação visual uniforme | Pendente |
+| M4 | Consentimento resiliente entre superfícies e apresentação visual uniforme | Concluído; diálogo central, fila limitada, redação e matriz aprovadas |
 | M5 | Matriz avançada do terminal para Unicode, caracteres largos, reflow e aplicações TUI | Pendente |
 | M6 | Refinamento incremental do WebView atual, sem trocar sua arquitetura | Pendente |
 | M7 | Auditoria integral da documentação e gate Delphi 12/13 | Em andamento continuamente; fechamento pendente |

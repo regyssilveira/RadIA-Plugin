@@ -46,6 +46,8 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | [RadIA.Core.EditorAdapter.pas](file:///d:/Projetos/PluginDelphiIA/Source/Core/RadIA.Core.EditorAdapter.pas) | Interface `IRadIAEditorAdapter` e implementação `TRadIAOTAEditorAdapter` do padrão Adapter para desacoplamento do editor de código da IDE Delphi. |
 | `RadIA.Core.Tools` e `ToolRegistry` | Contratos, descritores e registry compartilhado de tools. |
 | `RadIA.Core.ToolSecurity` e `WorkspaceBoundary` | Política, auditoria e confinamento de paths. |
+| `RadIA.Core.ConsentPresentation` | Origem legível, apresentação uniforme e argumentos sanitizados do consentimento. |
+| `RadIA.Core.ConsentGate` | Serializa diálogos e limita a espera de solicitações concorrentes. |
 | `RadIA.Core.Workspace*` | Fachada de workspace e tools de editor e projeto. |
 | `RadIA.Core.Patches` e `PatchTools` | Preview, precondições, aplicação e reversão de patches. |
 | `RadIA.Core.Build*` | Contratos e ferramentas do ciclo de build controlado. |

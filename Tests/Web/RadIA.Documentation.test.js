@@ -500,6 +500,35 @@ test('runtime guide separates structured evidence from consented visual capture'
   });
 });
 
+test('central consent is documented and wired consistently across surfaces', () => {
+  const securityPortuguese = fs.readFileSync(
+    path.join(documentationRoot, 'tool_security_model.md'),
+    'utf8'
+  );
+  const securityEnglish = fs.readFileSync(
+    path.join(documentationRoot, 'tool_security_model.en.md'),
+    'utf8'
+  );
+  const consentSource = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Integration', 'RadIA.OTA.Consent.pas'),
+    'utf8'
+  );
+  const terminalSource = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.TerminalFrame.pas'),
+    'utf8'
+  );
+  [securityPortuguese, securityEnglish].forEach(document => {
+    assert.match(document, /chat[\s\S]+MCP[\s\S]+terminal/iu);
+    assert.match(document, /ConsentEveryTime/u);
+    assert.match(document, /sanitiz|redact/iu);
+    assert.match(document, /fila|queue/iu);
+  });
+  assert.match(consentSource, /FConsentGate/u);
+  assert.match(consentSource, /TRadIAConsentPresentation\.Build/u);
+  assert.match(consentSource, /FAllowOnceButton\.Hint/u);
+  assert.match(terminalSource, /'terminal',\s+LSessionId,\s+LProjectId/um);
+});
+
 test('every visible settings group has a detailed central reference', () => {
   const portugueseReference = fs.readFileSync(
     path.join(documentationRoot, 'settings_reference.md'),

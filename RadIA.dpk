@@ -90,6 +90,8 @@ contains
   RadIA.UI.ExtensionSigningForm in 'Source\UI\RadIA.UI.ExtensionSigningForm.pas',
   RadIA.UI.ExtensionManagerForm in 'Source\UI\RadIA.UI.ExtensionManagerForm.pas',
   RadIA.Core.ToolSecurity in 'Source\Core\RadIA.Core.ToolSecurity.pas',
+  RadIA.Core.ConsentPresentation in 'Source\Core\RadIA.Core.ConsentPresentation.pas',
+  RadIA.Core.ConsentGate in 'Source\Core\RadIA.Core.ConsentGate.pas',
   RadIA.Core.Patches in 'Source\Core\RadIA.Core.Patches.pas',
   RadIA.Core.BlockReviews in 'Source\Core\RadIA.Core.BlockReviews.pas',
   RadIA.Core.BlockReviewSessions in 'Source\Core\RadIA.Core.BlockReviewSessions.pas',
