@@ -45,6 +45,7 @@ O [guia do RadIA Doctor](doctor.md) explica a rota efetiva e cada check.
 | Sintoma | Verificação e ação |
 |---|---|
 | ChatGPT Pro retorna 401 ou 429 | Confirme **ChatGPT Pro via Codex CLI**, abra **Configure Codex CLI login** e execute **Diagnose**. Não use API Key esperando consumir a cota Pro. |
+| O modelo exige uma versão mais nova do Codex | Mesmo com **RadIA native**, a opção **ChatGPT Pro via Codex CLI** usa o Codex como transporte. Abra **Configurações > CLI & MCP**, selecione Codex CLI, use **Update channel** ou escolha um executável mais novo, execute **Diagnose**, atualize a lista de modelos e tente novamente. |
 | Codex informa que não gerou resposta | Atualize a lista de modelos e selecione um modelo atual. O RadIA trata essa saída como erro de transporte, preserva a causa e recomenda `/doctor --deep`, em vez de encaminhá-la ao agente como uma decisão JSON. |
 | Login concluído, mas o chat não reconhece | Feche as configurações, reabra e confirme `authentication: ready`; o RadIA recarrega a sessão antes do envio. |
 | Não sei qual rota está ativa | Confira **Send with** e o indicador no cabeçalho da resposta: **RadIA native** mantém a orquestração interna; **CLI direct** delega ao cliente. |

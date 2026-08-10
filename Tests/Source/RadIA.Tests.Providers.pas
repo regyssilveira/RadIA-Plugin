@@ -450,6 +450,21 @@ begin
     'Codex CLI error: Not inside a trusted directory.',
     LParams[2].AsString
   );
+
+  // Test Case 7: an outdated transport explains the hybrid route and recovery
+  LParams[0] :=
+    '{"type":"error","status":400,"error":{"type":"invalid_request_error",' +
+    '"message":"The ''gpt-5.6-sol'' model requires a newer version of Codex."}}';
+  LParams[1] := '';
+  LParams[2] := '';
+  LParams[3] := 0;
+  LParams[4] := 0;
+
+  LMethod.Invoke(FOpenAIProv, LParams);
+  LResponse := LParams[2].AsString;
+  Assert.Contains(LResponse, 'requires a newer Codex CLI');
+  Assert.Contains(LResponse, 'ChatGPT Pro still uses Codex CLI as its transport');
+  Assert.Contains(LResponse, 'Update channel');
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_ReadCodexOutputPipe;
