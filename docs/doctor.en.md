@@ -4,6 +4,15 @@ The `/doctor` command is the starting point when RadIA is installed but a capabi
 It runs a read-only local diagnostic, sends no credentials to a model, and changes no IDE, project,
 or configuration state.
 
+Before a regular message is sent, chat also runs a local preflight for the effective route. If the
+provider, authentication, or a CLI actually required by that route is missing, sending stops and
+RadIA shows **Open Settings** and **Run /doctor**. The original text remains in the composer for a
+retry. This diagnostic never starts an installation.
+
+npm is never a general RadIA requirement. When a route requires a missing CLI, users can select a
+full portable executable with **Browse**, optionally accept guided installation and its displayed
+prerequisites, or choose a native API route that does not depend on CLI, npm, or MCP.
+
 ## What it evaluates
 
 | Area | What the doctor confirms | When it needs attention |

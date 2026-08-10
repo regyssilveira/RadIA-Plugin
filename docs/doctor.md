@@ -4,6 +4,15 @@ O comando `/doctor` é o ponto inicial quando o RadIA está instalado, mas algum
 funciona. Ele executa um diagnóstico local somente leitura, não envia credenciais ao modelo e não
 altera a IDE, o projeto ou configurações.
 
+Antes de uma mensagem comum ser enviada, o chat também executa um preflight local da rota efetiva.
+Se faltar provider, autenticação ou uma CLI realmente exigida pela rota, o envio é interrompido e o
+RadIA mostra **Open Settings** e **Run /doctor**. O texto original permanece no campo para nova
+tentativa. Nenhuma instalação começa nesse diagnóstico.
+
+O npm nunca é requisito geral do RadIA. Quando uma rota exige uma CLI ausente, o usuário pode
+selecionar um executável portátil completo com **Browse**, aceitar opcionalmente a instalação guiada
+e seus pré-requisitos, ou escolher uma rota nativa por API que não dependa de CLI, npm ou MCP.
+
 ## O que é avaliado
 
 | Área | O que o doctor confirma | Quando exige atenção |

@@ -637,6 +637,13 @@ textarea:focus-visible,
   margin-bottom: 0;
 }
 
+.chat-preflight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .message-content ul,
 .message-content ol {
   padding-left: 20px;

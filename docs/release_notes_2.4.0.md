@@ -21,6 +21,8 @@
   genérica.
 - Respostas sem conteúdo causadas por modelo incompatível agora são classificadas como erro de
   transporte acionável, com atualização de modelos e `/doctor --deep` como recuperação.
+- O chat agora valida a rota antes do envio, preserva a mensagem e encaminha máquinas sem CLI para
+  configurações ou `/doctor`, sempre oferecendo executável portátil sem tornar npm obrigatório.
 - `/doctor` 2.0 mostra rota efetiva, dependências distintas de CLI e MCP, checks classificados e
   próxima ação em um cartão visual.
 - `/doctor --deep` solicita consentimento e executa probes reais de versão/autenticação da CLI e
@@ -47,10 +49,10 @@ visual; o ZIP não é necessário para o fluxo normal.
 
 ## Validação da candidata
 
-- 1.030/1.030 testes DUnitX aprovados em cada um dos três targets, sem falhas, erros ou leaks;
+- 1.031/1.031 testes DUnitX aprovados em cada um dos três targets, sem falhas, erros ou leaks;
 - ConPTY real aprovado com streaming, entrada contínua e resize nos três targets;
 - Codex CLI 0.147.0, Claude Code 2.1.226, Gemini CLI 0.54.4 e GitHub Copilot CLI 1.0.78 reconhecidos;
-- 86/86 testes web e documentais aprovados, incluindo links, pares bilíngues, navegação, mojibake e
+- 87/87 testes web e documentais aprovados, incluindo links, pares bilíngues, navegação, mojibake e
   ausência de referências proibidas;
 - ESLint aprovado;
 - SonarQube aprovado com 82,7% de cobertura global e zero issues.

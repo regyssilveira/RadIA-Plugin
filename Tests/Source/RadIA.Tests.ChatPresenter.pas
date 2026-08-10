@@ -208,6 +208,8 @@ type
     [Test]
     procedure TestSendPromptUserMessageIsPosted;
     [Test]
+    procedure TestSendPromptPreflightExplainsCleanMachineWithoutNpm;
+    [Test]
     procedure TestGlobalPromptWithCommandLineBreakUsesTemplate;
     [Test]
     procedure TestDeclarativeExtensionCommandReloadsWithoutRestart;
@@ -695,6 +697,8 @@ begin
   FConfig.Load;
   FConfig.SetProviderAuthType('Gemini', 'api_key');
   FConfig.SetProviderAuthType('OpenAI', 'api_key');
+  FConfig.SetApiKey('Gemini', 'test-key');
+  FConfig.SetApiKey('OpenAI', 'test-key');
 
   FHasOriginalGemini := TProviderRegistry.GetProvider('Gemini', FGeminiOriginalMeta);
   FHasOriginalOpenAI := TProviderRegistry.GetProvider('OpenAI', FOpenAIOriginalMeta);
@@ -1358,6 +1362,25 @@ begin
     end;
   end;
   Assert.IsTrue(LFound);
+end;
+
+procedure TTestChatPresenter.TestSendPromptPreflightExplainsCleanMachineWithoutNpm;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FConfig.SetActiveProvider('OpenAI');
+  FConfig.SetProviderAuthType('OpenAI', 'api_key');
+  FConfig.SetApiKey('OpenAI', '');
+  FConfig.Save;
+  FMockView.PromptInputText := 'Hello from a clean machine';
+
+  FPresenter.SendPrompt;
+
+  Assert.AreEqual('Hello from a clean machine', FMockView.PromptInputText);
+  Assert.Contains(FMockView.PostedMessages.Text, 'RadIA setup required');
+  Assert.Contains(FMockView.PostedMessages.Text, 'not configured');
+  Assert.Contains(FMockView.PostedMessages.Text, 'No CLI, npm, or MCP installation is required');
+  Assert.Contains(FMockView.PostedMessages.Text, 'Your message was not sent');
 end;
 
 procedure TTestChatPresenter.TestGlobalPromptWithCommandLineBreakUsesTemplate;

@@ -21,6 +21,8 @@
   generic JSON-decision failure.
 - Empty responses caused by an incompatible model are now classified as actionable transport
   errors, with model refresh and `/doctor --deep` as recovery.
+- Chat now validates the route before sending, preserves the message, and directs machines without
+  a CLI to Settings or `/doctor`, always offering portable executables without making npm mandatory.
 - `/doctor` 2.0 displays the effective route, separate CLI/MCP dependencies, classified checks, and
   a next action in a dedicated visual card.
 - `/doctor --deep` requests consent and runs real CLI version/authentication probes plus temporary
@@ -47,10 +49,10 @@ required for installation.
 
 ## Candidate validation
 
-- 1,030/1,030 DUnitX tests passed on each target with no failures, errors, or leaks;
+- 1,031/1,031 DUnitX tests passed on each target with no failures, errors, or leaks;
 - real ConPTY streaming, continuous input, and resize passed on all three targets;
 - Codex CLI 0.147.0, Claude Code 2.1.226, Gemini CLI 0.54.4, and GitHub Copilot CLI 1.0.78 detected;
-- 86/86 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,
+- 87/87 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,
   and the absence of prohibited references;
 - ESLint passed;
 - SonarQube passed with 82.7% global coverage and zero issues.

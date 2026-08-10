@@ -138,6 +138,23 @@ type
     function FindTemplateForCommand(const ACommand, AArgument: string; out ATemplate: TPromptTemplate): Boolean;
 
     function IsProviderConfigured(const AProviderId: string): Boolean;
+    function IsProviderAuthenticationConfigured(
+      const AProviderId: string;
+      const AAuthType: string
+    ): Boolean;
+    function CheckChatPreflight(
+      const ASettings: TRadIAResolvedExecutionSettings;
+      out AMessage: string
+    ): Boolean;
+    function CheckRequiredCli(
+      const ACliId: string;
+      out AMessage: string
+    ): Boolean;
+    function ProviderRequiresCodex(const AProviderId: string): Boolean;
+    procedure ShowChatPreflightFailure(
+      const APromptText: string;
+      const AMessage: string
+    );
     function CanChangeSession: Boolean;
 
     procedure SendInitialConfigToWeb;
@@ -661,6 +678,7 @@ end;
 
 function TRadIAChatPresenter.IsProviderConfigured(const AProviderId: string): Boolean;
 var
+  LAuthType: string;
   LMeta: TProviderMetadata;
 begin
   if SameText(AProviderId, 'Ollama') then
@@ -672,18 +690,28 @@ begin
     if TProviderRegistry.GetProvider(AProviderId, LMeta) and LMeta.IsDynamic then
       Exit(True);
 
-    if FConfig.IsWebLoginProvider(AProviderId) then
-      Exit(True);
-
-    if SameText(FConfig.GetProviderAuthType(AProviderId), 'oauth') then
-      Exit(not FConfig.GetOAuthAccessToken(AProviderId).Trim.IsEmpty or
-           not FConfig.GetOAuthRefreshToken(AProviderId).Trim.IsEmpty);
-
-    if SameText(FConfig.GetProviderAuthType(AProviderId), 'oauth_cli') then
-      Exit(True);
+    LAuthType := FConfig.GetProviderAuthType(AProviderId);
+    if not SameText(LAuthType, 'api_key') then
+      Exit(IsProviderAuthenticationConfigured(AProviderId, LAuthType));
 
     Result := not FConfig.GetApiKey(AProviderId).Trim.IsEmpty;
   end;
+end;
+
+function TRadIAChatPresenter.IsProviderAuthenticationConfigured(
+  const AProviderId: string;
+  const AAuthType: string
+): Boolean;
+begin
+  if SameText(AAuthType, 'oauth_cli') or
+    SameText(AAuthType, 'web_login') then
+    Exit(True);
+  if not SameText(AAuthType, 'oauth') then
+    Exit(False);
+  if SameText(AProviderId, 'OpenAI') then
+    Exit(True);
+  Result := not FConfig.GetOAuthAccessToken(AProviderId).Trim.IsEmpty or
+    not FConfig.GetOAuthRefreshToken(AProviderId).Trim.IsEmpty;
 end;
 
 
@@ -1542,6 +1570,8 @@ end;
 
 procedure TRadIAChatPresenter.SendPrompt;
 var
+  LEffectiveSettings: TRadIAResolvedExecutionSettings;
+  LPreflightMessage: string;
   LText: string;
   LProcessed: string;
 begin
@@ -1566,6 +1596,13 @@ begin
     Exit;
 
   LProcessed := PreProcessPrompt(LText);
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  if not CheckChatPreflight(LEffectiveSettings, LPreflightMessage) then
+  begin
+    FView.SetPromptInput(LText);
+    ShowChatPreflightFailure(LText, LPreflightMessage);
+    Exit;
+  end;
   PostToWebView('add_message', 'user', LText);
   SendPromptToAI(LProcessed);
 end;
@@ -1573,6 +1610,7 @@ end;
 procedure TRadIAChatPresenter.SendPromptText(const APromptText: string);
 var
   LEffectiveSettings: TRadIAResolvedExecutionSettings;
+  LPreflightMessage: string;
   LProcessed: string;
 begin
   if TryHandleToolPrompt(APromptText) then
@@ -1580,13 +1618,18 @@ begin
 
   EnsureJourneyProjectBoundary;
   LProcessed := PreProcessPrompt(APromptText);
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  if not CheckChatPreflight(LEffectiveSettings, LPreflightMessage) then
+  begin
+    ShowChatPreflightFailure(APromptText, LPreflightMessage);
+    Exit;
+  end;
   PostToWebView('add_message', 'user', APromptText);
   if FAgentModeEnabled then
   begin
     StartAgentRun(LProcessed);
     Exit;
   end;
-  LEffectiveSettings := ResolveEffectiveExecutionSettings;
   if TryStartCliAgentRun(LProcessed, LEffectiveSettings) then
     Exit;
   SendPromptToAI(LProcessed);
@@ -2633,6 +2676,100 @@ begin
     Exit;
   end;
   Result := False;
+end;
+
+function TRadIAChatPresenter.ProviderRequiresCodex(
+  const AProviderId: string
+): Boolean;
+var
+  LAuthType: string;
+begin
+  Result := False;
+  if not SameText(AProviderId, 'OpenAI') then
+    Exit;
+  LAuthType := FConfig.GetProviderAuthType(AProviderId);
+  Result := SameText(LAuthType, 'oauth_cli') or
+    SameText(LAuthType, 'oauth') or
+    SameText(LAuthType, 'web_login');
+end;
+
+function TRadIAChatPresenter.CheckRequiredCli(
+  const ACliId: string;
+  out AMessage: string
+): Boolean;
+var
+  LDefinition: TRadIACliDefinition;
+  LDetection: TRadIACliDetection;
+begin
+  AMessage := '';
+  Result := TRadIACliCatalog.FindById(ACliId, LDefinition);
+  if not Result then
+  begin
+    AMessage := 'The selected CLI is not supported by this RadIA installation. Open Settings and ' +
+      'choose another execution route.';
+    Exit;
+  end;
+  LDetection := TRadIACliResolver.Resolve(ACliId);
+  Result := LDetection.Installed;
+  if Result then
+    Exit;
+  AMessage := LDefinition.DisplayName + ' is required by the selected route, but it was not found.' +
+    sLineBreak + sLineBreak +
+    '**You do not need npm to use RadIA.** Choose one of these options:' + sLineBreak +
+    '1. Open **Settings > CLI & MCP**, select this CLI, and use **Browse** to point to a portable ' +
+    'executable.' + sLineBreak +
+    '2. Use the optional guided installation only if you accept its displayed prerequisite and ' +
+    'command.' + sLineBreak +
+    '3. Select a native provider route and configure its API key; native routes do not require a ' +
+    'CLI.' + sLineBreak + sLineBreak +
+    'Run `/doctor` for the complete readiness report. Your message was not sent and no installation ' +
+    'was started.';
+end;
+
+function TRadIAChatPresenter.CheckChatPreflight(
+  const ASettings: TRadIAResolvedExecutionSettings;
+  out AMessage: string
+): Boolean;
+var
+  LProviderId: string;
+begin
+  AMessage := '';
+  FConfig.Load;
+  LProviderId := ASettings.Values.ProviderId;
+  if not IsProviderConfigured(LProviderId) then
+  begin
+    AMessage := 'The selected provider is not configured. Open **Settings > Providers**, choose an ' +
+      'authentication method, and complete the fields shown for that method.' + sLineBreak +
+      sLineBreak + 'No CLI, npm, or MCP installation is required when you choose a native API route.' +
+      sLineBreak + sLineBreak +
+      'Run `/doctor` to see the remaining readiness checks. Your message was not sent.';
+    Exit(False);
+  end;
+  if ProviderRequiresCodex(LProviderId) then
+    Exit(CheckRequiredCli('codex', AMessage));
+  if not SameText(ASettings.Values.ExecutorId, 'native') then
+    Exit(CheckRequiredCli(ASettings.Values.ExecutorId, AMessage));
+  Result := True;
+end;
+
+procedure TRadIAChatPresenter.ShowChatPreflightFailure(
+  const APromptText: string;
+  const AMessage: string
+);
+var
+  LJson: TJSONObject;
+begin
+  PostToWebView('add_message', 'user', APromptText);
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'chat_preflight');
+    LJson.AddPair('title', 'RadIA setup required');
+    LJson.AddPair('message', AMessage);
+    LJson.AddPair('pendingPrompt', APromptText);
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
 end;
 
 function TRadIAChatPresenter.TryDispatchExecutionScopeInteraction(

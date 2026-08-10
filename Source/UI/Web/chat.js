@@ -1503,6 +1503,36 @@ function doctorActionCommand(nextAction) {
   return commands[nextAction] || '/status';
 }
 
+function renderChatPreflight(data) {
+  const wrapper = addMessage(
+    'assistant',
+    `### ${data.title || 'RadIA setup required'}\n\n${data.message || ''}`
+  );
+  const content = wrapper.querySelector('.message-content');
+  const actions = document.createElement('div');
+  actions.className = 'chat-preflight-actions';
+
+  const settings = document.createElement('button');
+  settings.type = 'button';
+  settings.className = 'tool-action-button';
+  settings.textContent = 'Open Settings';
+  settings.title = 'Open the RadIA settings required by the selected execution route';
+  settings.addEventListener('click', () => {
+    postMessageToDelphi({ action: 'open_settings' });
+  });
+
+  const doctor = createHealthActionButton('/doctor');
+  doctor.textContent = 'Run /doctor';
+  doctor.title = 'Prepare the complete local readiness diagnostic';
+  actions.appendChild(settings);
+  actions.appendChild(doctor);
+  content.appendChild(actions);
+
+  if (data.pendingPrompt) {
+    setPromptText(data.pendingPrompt);
+  }
+}
+
 function renderInstallationHealth(card, result) {
   const content = card.querySelector('.tool-card-content');
   const checks = Array.isArray(result.checkDetails)
@@ -3883,6 +3913,7 @@ if (globalThis.chrome?.webview) {
       case 'show_tools':            showTools(data.tools);                                       break;
       case 'tool_call':             renderToolCall(data);                                        break;
       case 'tool_result':           renderToolResult(data);                                      break;
+      case 'chat_preflight':        renderChatPreflight(data);                                   break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
       case 'execution_route':       updateExecutionRoute(data);                                  break;
       case 'execution_scope':       updateExecutionScope(data);                                  break;

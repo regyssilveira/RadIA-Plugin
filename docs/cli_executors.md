@@ -94,6 +94,12 @@ Uma resposta atrasada é descartada se o usuário trocar de cliente durante a ve
 diagnóstico não autentica, não altera arquivos e não inicia uma sessão de agente. O login continua
 sendo controlado pelo próprio CLI.
 
+O chat repete essa resolução antes do envio quando a rota efetiva depende de CLI. Se o executável
+não existir, a mensagem não é enviada nem descartada: o RadIA explica a dependência, mantém o texto
+no compositor e oferece acesso às configurações e ao `/doctor`. O usuário pode apontar um
+executável portátil com **Browse**; instalar Node.js/npm é apenas uma opção para canais npm, nunca
+uma condição para usar o RadIA ou uma CLI portátil.
+
 ### Diagnóstico de autenticação
 
 Depois da versão, o RadIA executa um probe somente-leitura quando o fornecedor disponibiliza um

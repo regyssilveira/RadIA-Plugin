@@ -7,6 +7,10 @@ const health = readFileSync(
   'Source/Core/RadIA.Core.InstallationHealthTools.pas',
   'utf8'
 );
+const presenter = readFileSync(
+  'Source/UI/RadIA.UI.ChatPresenter.pas',
+  'utf8'
+);
 
 test('doctor renders readiness checks and the effective execution route', () => {
   assert.match(chat, /function renderInstallationHealth/u);
@@ -39,4 +43,16 @@ test('deep doctor is consented and renders active CLI and MCP checks', () => {
     chat,
     /RunInstallationDeepDiagnostic:\s*\[renderInstallationHealth/u
   );
+});
+
+test('chat preflight directs clean machines without making npm mandatory', () => {
+  assert.match(presenter, /function CheckChatPreflight/u);
+  assert.match(presenter, /function CheckRequiredCli/u);
+  assert.match(presenter, /You do not need npm to use RadIA/u);
+  assert.match(presenter, /portable[\s\S]*Browse/u);
+  assert.match(presenter, /Your message was not sent/u);
+  assert.match(chat, /function renderChatPreflight/u);
+  assert.match(chat, /textContent = 'Open Settings'/u);
+  assert.match(chat, /textContent = 'Run \/doctor'/u);
+  assert.match(chat, /setPromptText\(data\.pendingPrompt\)/u);
 });

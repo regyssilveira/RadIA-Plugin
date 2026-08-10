@@ -94,6 +94,12 @@ A delayed response is discarded if the user switches clients during the check. T
 diagnostics does not authenticate, does not change files, and does not start an agent session. Login continues
 being controlled by the CLI itself.
 
+Chat repeats this resolution before sending whenever the effective route depends on a CLI. If the
+executable is absent, the message is neither sent nor discarded: RadIA explains the dependency,
+keeps the text in the composer, and offers Settings and `/doctor`. Users may point **Browse** to a
+portable executable; installing Node.js/npm is only an option for npm channels, never a condition
+for using RadIA or a portable CLI.
+
 ### Authentication diagnostics
 
 After release, RadIA runs a read-only probe when the vendor makes a
