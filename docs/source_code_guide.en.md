@@ -49,8 +49,8 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.ConsentPresentation` | Readable source, uniform consent presentation, and redacted arguments. |
 | `RadIA.Core.ConsentGate` | Serializes dialogs and bounds concurrent-request waiting. |
 | `RadIA.Core.PseudoTerminal` | Manages ConPTY, process trees, resize, UTF-8 input, and streaming output decoding. |
-| `RadIA.Core.TerminalScreen` | Emulates VT state, display-width-aware Unicode cells, and line reflow on resize. |
-| `RadIA.Core.TerminalEmulator` | Contract between UI and VT emulation with a native-core factory. |
+| `RadIA.Core.TerminalScreen` | Emulates VT, Unicode, reflow, extended colors, alternate screen, OSC 8, paste, and SGR mouse. |
+| `RadIA.Core.TerminalEmulator` | Contract between UI and VT emulation, including negotiated modes, with a native factory. |
 | `RadIA.Core.Workspace*` | Workspace facade and editor and project tools. |
 | `RadIA.Core.Patches` and `PatchTools` | Patch preview, preconditions, application, and reversal. |
 | `RadIA.Core.Build*` | Controlled build-cycle contracts and tools. |
@@ -133,7 +133,7 @@ VCL forms and frames developed under the MVP (Model-View-Presenter) pattern.
 | [RadIA.UI.ConfigFrame.pas](../Source/UI/RadIA.UI.ConfigFrame.pas) | Physical View for configuration settings (API keys, endpoints, themes, limits). |
 | [RadIA.UI.ConfigPresenter.pas](../Source/UI/RadIA.UI.ConfigPresenter.pas) | Configuration Presenter. Loads and saves settings synchronously. |
 | [RadIA.UI.DiffForm.pas](../Source/UI/RadIA.UI.DiffForm.pas) | Side-by-side comparison screen (Smart Diff) with buttons to accept or reject the suggested refactoring. |
-| `RadIA.UI.TerminalFrame` and `TerminalTabsFrame` | ConPTY terminal, tabs, profiles, history, snippets, and Unicode/TUI presentation. |
+| `RadIA.UI.TerminalFrame` and `TerminalTabsFrame` | ConPTY, tabs, profiles, history, and TUI rendering with consent-gated links. |
 | `RadIA.UI.ExternalMcpFrame` | External MCP server registration, testing, grants, and settings application. |
 | `RadIA.UI.ExtensionStudioForm` | Visual creation, testing, installation, export, and signing of declarative extensions. |
 | `RadIA.UI.SkillPortabilityForm` | Destination selection, preview, consent, publication, and replica removal. |

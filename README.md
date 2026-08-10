@@ -55,7 +55,7 @@ Delphi 11 não faz parte da matriz atual.
 | Memória | Instrumentar Debug com FastMM5, analisar leaks e comparar a correção | [Diagnóstico FastMM5](docs/fastmm5_diagnostic_session.md) |
 | Agente | Planejar, executar tools, pausar, retomar, cancelar e restaurar checkpoints | [Modo agente](docs/user_manual.md#3-como-ativar-o-modo-agente) |
 | MCP | Expor as mesmas tools da IDE a clientes locais autorizados | [Integração MCP](docs/mcp_integration_guide.md) |
-| Terminal | Usar ConPTY interativo com Unicode, reflow, histórico, perfis, timeout e cancelamento | [Terminal](docs/terminal.md) |
+| Terminal | Usar ConPTY com Unicode, true color, alternate screen, paste protegido, mouse SGR e OSC 8 | [Terminal](docs/terminal.md) |
 | Conhecimento | Indexar e pesquisar o projeto localmente | [Conhecimento do projeto](docs/user_guide_project_knowledge.md) |
 
 ## Agente nativo, CLI, provider e MCP

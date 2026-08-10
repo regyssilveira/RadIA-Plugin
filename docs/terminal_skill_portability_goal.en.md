@@ -35,7 +35,7 @@ this goal.
 | M2 | Preview, consent, synchronization, and removal in Addon Studio | Complete |
 | M3 | Real format validation and portability documentation | Complete |
 | M4 | Decoupled interface and selected VT core | Complete |
-| M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Pending |
+| M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Complete |
 | M6 | Real shell, CLI, and TUI matrix on all three targets | Pending |
 | M7 | Final audit, documentation, Sonar, and release preparation | Pending |
 
@@ -78,6 +78,13 @@ M4 selected the existing native VT core and isolated it behind `IRadIATerminalEm
 no longer holds a concrete screen class; it creates, feeds, resizes, renders, and clears only through
 the contract. This decision preserves proven behavior and allows replacing the core without exposing
 dependencies to VCL, ConPTY, or the public API.
+
+M5 expanded that contract with negotiated alternate screen, bracketed paste, and SGR mouse input.
+The parser and renderer preserve 256-color and true-color foregrounds and backgrounds, bold, italic,
+underline, inverse video, and OSC 8 hyperlinks. Links accept only known web and email schemes,
+require a double-click, and pass through central policy with mandatory consent for every opening.
+Terminal tests and the Delphi 13 Win32 suite proved primary-screen restoration, input modes, styles,
+links, and leak-free execution; the complete real matrix belongs to M6.
 
 ## Acceptance matrix
 

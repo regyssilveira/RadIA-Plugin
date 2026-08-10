@@ -12,10 +12,23 @@ type
     procedure Feed(const AText: string);
     function GetColumns: Integer;
     function GetCursorColumn: Integer;
+    function GetAlternateScreen: Boolean;
+    function GetBracketedPaste: Boolean;
+    function GetMouseMode: Integer;
+    function PreparePaste(const AText: string): string;
+    function EncodeMouse(
+      const AButton: Integer;
+      const AColumn: Integer;
+      const ARow: Integer;
+      const APressed: Boolean
+    ): string;
     function RenderSegments: TArray<TRadIATerminalTextSegment>;
     procedure Resize(const AColumns: Integer);
     property Columns: Integer read GetColumns;
     property CursorColumn: Integer read GetCursorColumn;
+    property AlternateScreen: Boolean read GetAlternateScreen;
+    property BracketedPaste: Boolean read GetBracketedPaste;
+    property MouseMode: Integer read GetMouseMode;
   end;
 
   TRadIATerminalEmulatorFactory = class
@@ -44,6 +57,16 @@ type
     procedure Feed(const AText: string);
     function GetColumns: Integer;
     function GetCursorColumn: Integer;
+    function GetAlternateScreen: Boolean;
+    function GetBracketedPaste: Boolean;
+    function GetMouseMode: Integer;
+    function PreparePaste(const AText: string): string;
+    function EncodeMouse(
+      const AButton: Integer;
+      const AColumn: Integer;
+      const ARow: Integer;
+      const APressed: Boolean
+    ): string;
     function RenderSegments: TArray<TRadIATerminalTextSegment>;
     procedure Resize(const AColumns: Integer);
   end;
@@ -77,9 +100,41 @@ begin
   Result := FScreen.Columns;
 end;
 
+function TRadIANativeTerminalEmulator.GetAlternateScreen: Boolean;
+begin
+  Result := FScreen.AlternateScreen;
+end;
+
+function TRadIANativeTerminalEmulator.GetBracketedPaste: Boolean;
+begin
+  Result := FScreen.BracketedPaste;
+end;
+
 function TRadIANativeTerminalEmulator.GetCursorColumn: Integer;
 begin
   Result := FScreen.CursorColumn;
+end;
+
+function TRadIANativeTerminalEmulator.GetMouseMode: Integer;
+begin
+  Result := FScreen.MouseMode;
+end;
+
+function TRadIANativeTerminalEmulator.PreparePaste(
+  const AText: string
+): string;
+begin
+  Result := FScreen.PreparePaste(AText);
+end;
+
+function TRadIANativeTerminalEmulator.EncodeMouse(
+  const AButton: Integer;
+  const AColumn: Integer;
+  const ARow: Integer;
+  const APressed: Boolean
+): string;
+begin
+  Result := FScreen.EncodeMouse(AButton, AColumn, ARow, APressed);
 end;
 
 function TRadIANativeTerminalEmulator.RenderSegments:

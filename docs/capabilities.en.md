@@ -6,7 +6,7 @@ This page is the functional map of RadIA 2.3.1.
 |---|---|
 | Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, a visible five-message follow-up queue, sessions, history, exports, templates, token and cost estimates. |
 | Shared journey | Link chat, terminal, and editor by project-safe identity without copying history or process output. |
-| Terminal | Use dockable multi-tab ConPTY sessions with streaming UTF-8, CJK, emoji and combining-character widths, resize reflow, VT/TUI character operations, history, snippets, consent, and process-tree cancellation. |
+| Terminal | Use multi-tab ConPTY with streaming UTF-8, CJK, emoji and combining-character widths, reflow, extended colors, attributes, alternate screen, bracketed paste, SGR mouse, consent-gated OSC 8 links, history, and tree cancellation. |
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |
 | Journeys | Conversational intake that preserves answers, plus minimal and controller-based DEXT project generation. |
 | Providers | Gemini, OpenAI, Azure OpenAI, Claude, Bedrock, Copilot, DeepSeek, Groq, Qwen, Mistral, OpenRouter, Ollama, LM Studio, OpenAI-compatible and JSON-defined providers. |

@@ -9,6 +9,7 @@ uses
   Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.StdCtrls,
+  Winapi.RichEdit,
   RadIA.Core.CliProcess,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalEmulator,
@@ -16,6 +17,12 @@ uses
   RadIA.Core.JourneyContext;
 
 type
+  TRadIATerminalHyperlink = record
+    StartIndex: Integer;
+    TextLength: Integer;
+    Uri: string;
+  end;
+
   IRadIATerminalLifecycleGuard = interface
     ['{81E20293-FA87-486D-BD47-75E0589DDDBC}']
     function IsAlive: Boolean;
@@ -54,6 +61,7 @@ type
     FAuthorizationPolicy: IRadIAToolAuthorizationPolicy;
     FJourneyContext: IRadIAJourneyContextCoordinator;
     FLifecycleGuard: IInterface;
+    FHyperlinks: TArray<TRadIATerminalHyperlink>;
     procedure ApplyDeferredFocus(
       const AGuard: IRadIATerminalLifecycleGuard
     );
@@ -69,6 +77,7 @@ type
       const ACommand: string;
       const AWorkingDirectory: string
     ): Boolean;
+    function CanOpenLink(const AUri: string): Boolean;
     procedure ClearClick(Sender: TObject);
     procedure CommandChange(Sender: TObject);
     procedure CommandKeyDown(
@@ -96,6 +105,27 @@ type
       Shift: TShiftState
     );
     procedure PaletteQueryChange(Sender: TObject);
+    procedure OutputMouseDown(
+      Sender: TObject;
+      Button: TMouseButton;
+      Shift: TShiftState;
+      X: Integer;
+      Y: Integer
+    );
+    procedure OutputDoubleClick(Sender: TObject);
+    procedure OutputMouseUp(
+      Sender: TObject;
+      Button: TMouseButton;
+      Shift: TShiftState;
+      X: Integer;
+      Y: Integer
+    );
+    procedure SendMouseInput(
+      const AButton: TMouseButton;
+      const AX: Integer;
+      const AY: Integer;
+      const APressed: Boolean
+    );
     procedure QueueCompletion(
       const AGuard: IRadIATerminalLifecycleGuard;
       const ACommand: string;
@@ -182,6 +212,7 @@ uses
   System.SyncObjs,
   System.SysUtils,
   Winapi.Messages,
+  Winapi.ShellAPI,
   Winapi.Windows,
   Vcl.Graphics,
   RadIA.Core.AgentExecutors,
@@ -391,6 +422,9 @@ begin
   FOutputEditor.WordWrap := False;
   FOutputEditor.Font.Name := 'Consolas';
   FOutputEditor.Font.Size := 10;
+  FOutputEditor.OnDblClick := OutputDoubleClick;
+  FOutputEditor.OnMouseDown := OutputMouseDown;
+  FOutputEditor.OnMouseUp := OutputMouseUp;
   FOutputLabel.FocusControl := FOutputEditor;
   LoadHistory;
   RefreshJourneyContext;
@@ -448,6 +482,7 @@ begin
   if AText = '' then
     Exit;
   FScreen.Feed(AText);
+  FHyperlinks := nil;
   SendMessage(FOutputEditor.Handle, WM_SETREDRAW, 0, 0);
   try
     FOutputEditor.Clear;
@@ -482,17 +517,73 @@ const
     $00E0E040,
     clWhite
   );
+var
+  LBackground: TColor;
+  LCharacterFormat: TCharFormat2;
+  LForeground: TColor;
+  LSwapColor: TColor;
+  LHyperlink: TRadIATerminalHyperlink;
+  function RgbColor(const ARgb: Integer): TColor;
+  begin
+    Result := RGB(
+      (ARgb shr 16) and $FF,
+      (ARgb shr 8) and $FF,
+      ARgb and $FF
+    );
+  end;
 begin
   FOutputEditor.SelStart := Length(FOutputEditor.Text);
   FOutputEditor.SelLength := 0;
-  if ASegment.Style.Foreground = tcDefault then
-    FOutputEditor.SelAttributes.Color := FOutputEditor.Font.Color
+  if ASegment.Style.ForegroundRgb >= 0 then
+    LForeground := RgbColor(ASegment.Style.ForegroundRgb)
+  else if ASegment.Style.Foreground = tcDefault then
+    LForeground := FOutputEditor.Font.Color
   else
-    FOutputEditor.SelAttributes.Color :=
-      TERMINAL_COLORS[ASegment.Style.Foreground];
+    LForeground := TERMINAL_COLORS[ASegment.Style.Foreground];
+  if ASegment.Style.BackgroundRgb >= 0 then
+    LBackground := RgbColor(ASegment.Style.BackgroundRgb)
+  else if ASegment.Style.Background = tcDefault then
+    LBackground := FOutputEditor.Color
+  else
+    LBackground := TERMINAL_COLORS[ASegment.Style.Background];
+  if ASegment.Style.Inverse then
+  begin
+    LSwapColor := LForeground;
+    LForeground := LBackground;
+    LBackground := LSwapColor;
+  end;
+  if (ASegment.Style.Hyperlink <> '') and
+    (ASegment.Style.Foreground = tcDefault) and
+    (ASegment.Style.ForegroundRgb < 0) then
+    LForeground := clHotLight;
+  FOutputEditor.SelAttributes.Color := LForeground;
   FOutputEditor.SelAttributes.Style := [];
   if ASegment.Style.Bold then
-    FOutputEditor.SelAttributes.Style := [fsBold];
+    FOutputEditor.SelAttributes.Style :=
+      FOutputEditor.SelAttributes.Style + [fsBold];
+  if ASegment.Style.Italic then
+    FOutputEditor.SelAttributes.Style :=
+      FOutputEditor.SelAttributes.Style + [fsItalic];
+  if ASegment.Style.Underline or (ASegment.Style.Hyperlink <> '') then
+    FOutputEditor.SelAttributes.Style :=
+      FOutputEditor.SelAttributes.Style + [fsUnderline];
+  FillChar(LCharacterFormat, SizeOf(LCharacterFormat), 0);
+  LCharacterFormat.cbSize := SizeOf(LCharacterFormat);
+  LCharacterFormat.dwMask := CFM_BACKCOLOR;
+  LCharacterFormat.crBackColor := ColorToRGB(LBackground);
+  SendMessage(
+    FOutputEditor.Handle,
+    EM_SETCHARFORMAT,
+    SCF_SELECTION,
+    LPARAM(@LCharacterFormat)
+  );
+  if ASegment.Style.Hyperlink <> '' then
+  begin
+    LHyperlink.StartIndex := FOutputEditor.SelStart;
+    LHyperlink.TextLength := Length(ASegment.Text);
+    LHyperlink.Uri := ASegment.Style.Hyperlink;
+    FHyperlinks := FHyperlinks + [LHyperlink];
+  end;
   FOutputEditor.SelText := ASegment.Text;
 end;
 
@@ -532,6 +623,49 @@ procedure TRadIATerminalFrame.ClearClick(Sender: TObject);
 begin
   FOutputEditor.Clear;
   FScreen.Clear;
+  FHyperlinks := nil;
+end;
+
+function TRadIATerminalFrame.CanOpenLink(const AUri: string): Boolean;
+var
+  LDecision: TRadIAConsentDecision;
+  LDescriptor: TRadIAToolDescriptor;
+  LJson: TJSONObject;
+  LRequest: TRadIAToolRequest;
+begin
+  Result := False;
+  if not Assigned(FAuthorizationPolicy) then
+  begin
+    FStatusLabel.Caption := 'Link authorization policy is unavailable';
+    Exit;
+  end;
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('uri', AUri);
+    LRequest := TRadIAToolRequest.Create(
+      'OpenTerminalLink',
+      LJson.ToJSON,
+      TGUID.NewGuid.ToString,
+      'terminal',
+      'terminal-link',
+      GetWorkingDirectory,
+      AUri
+    );
+    LDescriptor := TRadIAToolDescriptor.Create(
+      'OpenTerminalLink',
+      '1.0.0',
+      'Opens a terminal hyperlink in the operating system.',
+      '{"type":"object"}',
+      '{"type":"object"}',
+      trExecution
+    ).WithConsentEveryTime;
+    LDecision := FAuthorizationPolicy.Authorize(LRequest, LDescriptor);
+    Result := LDecision in [cdAllowOnce, cdAllowSession];
+    if not Result then
+      FStatusLabel.Caption := 'Terminal link was not authorized';
+  finally
+    LJson.Free;
+  end;
 end;
 
 function TRadIATerminalFrame.CanRunCommand(
@@ -804,7 +938,9 @@ begin
     LLineEnding := #13
   else
     LLineEnding := sLineBreak;
-  if FSession.WriteInput(FCommandEdit.Text + LLineEnding) then
+  if FSession.WriteInput(
+    FScreen.PreparePaste(FCommandEdit.Text) + LLineEnding
+  ) then
   begin
     AppendOutput('> ' + FCommandEdit.Text + sLineBreak);
     FCommandEdit.Clear;
@@ -1050,6 +1186,112 @@ begin
   end;
   if Assigned(FSession) then
     FSession.Cancel;
+end;
+
+procedure TRadIATerminalFrame.OutputMouseDown(
+  Sender: TObject;
+  Button: TMouseButton;
+  Shift: TShiftState;
+  X: Integer;
+  Y: Integer
+);
+begin
+  SendMouseInput(Button, X, Y, True);
+end;
+
+procedure TRadIATerminalFrame.OutputDoubleClick(Sender: TObject);
+var
+  LHyperlink: TRadIATerminalHyperlink;
+  LOpenResult: HINST;
+  LPosition: Integer;
+begin
+  if FScreen.MouseMode <> 0 then
+    Exit;
+  LPosition := FOutputEditor.SelStart;
+  for LHyperlink in FHyperlinks do
+  begin
+    if (LPosition < LHyperlink.StartIndex) or
+      (LPosition >= LHyperlink.StartIndex + LHyperlink.TextLength) then
+      Continue;
+    if not LHyperlink.Uri.StartsWith('https://', True) and
+      not LHyperlink.Uri.StartsWith('http://', True) and
+      not LHyperlink.Uri.StartsWith('mailto:', True) then
+    begin
+      FStatusLabel.Caption := 'Unsupported terminal link scheme';
+      Exit;
+    end;
+    if not CanOpenLink(LHyperlink.Uri) then
+      Exit;
+    LOpenResult := ShellExecute(
+      0,
+      'open',
+      PChar(LHyperlink.Uri),
+      nil,
+      nil,
+      SW_SHOWNORMAL
+    );
+    if NativeInt(LOpenResult) <= 32 then
+      FStatusLabel.Caption := 'Unable to open terminal link';
+    Exit;
+  end;
+end;
+
+procedure TRadIATerminalFrame.OutputMouseUp(
+  Sender: TObject;
+  Button: TMouseButton;
+  Shift: TShiftState;
+  X: Integer;
+  Y: Integer
+);
+begin
+  SendMouseInput(Button, X, Y, False);
+end;
+
+procedure TRadIATerminalFrame.SendMouseInput(
+  const AButton: TMouseButton;
+  const AX: Integer;
+  const AY: Integer;
+  const APressed: Boolean
+);
+var
+  LButtonCode: Integer;
+  LDeviceContext: HDC;
+  LInput: string;
+  LMetrics: TTextMetric;
+  LOldFont: HGDIOBJ;
+begin
+  if not Assigned(FSession) or not FSession.IsRunning or
+    (FScreen.MouseMode = 0) then
+    Exit;
+  case AButton of
+    mbLeft:
+      LButtonCode := 0;
+    mbMiddle:
+      LButtonCode := 1;
+    mbRight:
+      LButtonCode := 2;
+  else
+    Exit;
+  end;
+  LDeviceContext := GetDC(FOutputEditor.Handle);
+  if LDeviceContext = 0 then
+    Exit;
+  LOldFont := SelectObject(LDeviceContext, FOutputEditor.Font.Handle);
+  try
+    if not GetTextMetrics(LDeviceContext, LMetrics) then
+      Exit;
+    LInput := FScreen.EncodeMouse(
+      LButtonCode,
+      (AX div Max(1, LMetrics.tmAveCharWidth)) + 1,
+      (AY div Max(1, LMetrics.tmHeight)) + 1,
+      APressed
+    );
+  finally
+    SelectObject(LDeviceContext, LOldFont);
+    ReleaseDC(FOutputEditor.Handle, LDeviceContext);
+  end;
+  if LInput <> '' then
+    FSession.WriteInput(LInput);
 end;
 
 {$IFDEF TESTS}

@@ -52,7 +52,7 @@ Delphi 11 is outside the current support matrix.
 | Memory | Instrument Debug builds with FastMM5 and compare a fix | [FastMM5 diagnostics](docs/fastmm5_diagnostic_session.en.md) |
 | Agent | Plan, execute tools, pause, resume, cancel, and restore checkpoints | [User manual](docs/user_manual.en.md) |
 | MCP | Expose IDE tools to authorized local clients | [MCP integration](docs/mcp_integration_guide.en.md) |
-| Terminal | Use interactive ConPTY with Unicode, reflow, profiles, history, timeout, and cancellation | [Terminal](docs/terminal.en.md) |
+| Terminal | Use ConPTY with Unicode, true color, alternate screen, protected paste, SGR mouse, and OSC 8 | [Terminal](docs/terminal.en.md) |
 | Knowledge | Index and search the local project | [Project knowledge](docs/user_guide_project_knowledge.en.md) |
 
 ## Native agent, CLI, provider, and MCP

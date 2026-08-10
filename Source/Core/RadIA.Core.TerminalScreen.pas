@@ -35,10 +35,20 @@ type
     TRadIATerminalRow = TArray<TRadIATerminalScreenCell>;
   private
     FColumns: Integer;
+    FAlternateScreen: Boolean;
+    FBracketedPaste: Boolean;
+    FCsiPrivate: Boolean;
     FCsiBuffer: string;
     FCursorColumn: Integer;
     FCursorRow: Integer;
     FHardBreaks: TList<Boolean>;
+    FMouseMode: Integer;
+    FSgrMouse: Boolean;
+    FOscBuffer: string;
+    FPrimaryBreaks: TArray<Boolean>;
+    FPrimaryRows: TArray<TRadIATerminalRow>;
+    FPrimaryCursorColumn: Integer;
+    FPrimaryCursorRow: Integer;
     FRows: TList<TRadIATerminalRow>;
     FSavedColumn: Integer;
     FSavedRow: Integer;
@@ -50,9 +60,12 @@ type
       const AStyle: TRadIATerminalTextStyle
     );
     procedure ApplyCsi(const AFinalCharacter: Char);
+    procedure ApplyPrivateMode(const AEnable: Boolean);
+    procedure ApplyOsc;
     procedure ApplyEraseDisplay(const AMode: Integer);
     procedure ApplyEraseLine(const AMode: Integer);
     procedure ApplySgr(const AParameters: TArray<Integer>);
+    function Color256ToRgb(const AIndex: Integer): Integer;
     procedure ClearCell(const AColumn: Integer; const ARow: Integer);
     procedure ClearRange(
       const ARow: Integer;
@@ -72,6 +85,8 @@ type
     procedure ProcessCharacter(const ACharacter: Char);
     procedure ProcessCsiCharacter(const ACharacter: Char);
     procedure ProcessTextCharacter(const ACharacter: Char);
+    procedure EnterAlternateScreen;
+    procedure LeaveAlternateScreen;
     procedure AppendCombiningMark(const AText: string);
     function CharacterWidth(const ACodePoint: Cardinal): Integer;
     function IsCombiningCodePoint(const ACodePoint: Cardinal): Boolean;
@@ -95,14 +110,25 @@ type
     procedure Feed(const AText: string);
     function RenderSegments: TArray<TRadIATerminalTextSegment>;
     procedure Resize(const AColumns: Integer);
+    function PreparePaste(const AText: string): string;
+    function EncodeMouse(
+      const AButton: Integer;
+      const AColumn: Integer;
+      const ARow: Integer;
+      const APressed: Boolean
+    ): string;
+    property AlternateScreen: Boolean read FAlternateScreen;
+    property BracketedPaste: Boolean read FBracketedPaste;
     property Columns: Integer read FColumns;
     property CursorColumn: Integer read FCursorColumn;
+    property MouseMode: Integer read FMouseMode;
   end;
 
 implementation
 
 uses
   System.Math,
+  System.StrUtils,
   System.SysUtils;
 
 { TRadIATerminalScreenCell }
@@ -151,6 +177,11 @@ var
   LRow: Integer;
 begin
   LParameters := ParseParameters;
+  if FCsiPrivate and CharInSet(AFinalCharacter, ['h', 'l']) then
+  begin
+    ApplyPrivateMode(AFinalCharacter = 'h');
+    Exit;
+  end;
   case AFinalCharacter of
     '@':
       InsertBlankCharacters(GetParameter(LParameters, 0, 1));
@@ -267,42 +298,114 @@ procedure TRadIATerminalScreen.ApplySgr(
 );
 var
   LCode: Integer;
+  LIndex: Integer;
+  LRgb: Integer;
 begin
   if Length(AParameters) = 0 then
   begin
     FStyle := TRadIATerminalTextStyle.Default;
     Exit;
   end;
-  for LCode in AParameters do
+  LIndex := 0;
+  while LIndex < Length(AParameters) do
+  begin
+    LCode := AParameters[LIndex];
     case LCode of
       0:
         FStyle := TRadIATerminalTextStyle.Default;
       1:
-        FStyle := TRadIATerminalTextStyle.Create(
-          FStyle.Foreground,
-          True
-        );
+        FStyle := FStyle.WithBold(True);
+      3:
+        FStyle := FStyle.WithItalic(True);
+      4:
+        FStyle := FStyle.WithUnderline(True);
+      7:
+        FStyle := FStyle.WithInverse(True);
       22:
-        FStyle := TRadIATerminalTextStyle.Create(
-          FStyle.Foreground,
-          False
-        );
+        FStyle := FStyle.WithBold(False);
+      23:
+        FStyle := FStyle.WithItalic(False);
+      24:
+        FStyle := FStyle.WithUnderline(False);
+      27:
+        FStyle := FStyle.WithInverse(False);
       30..37:
-        FStyle := TRadIATerminalTextStyle.Create(
-          TRadIATerminalColor(Ord(tcBlack) + LCode - 30),
-          FStyle.Bold
+        FStyle := FStyle.WithForeground(
+          TRadIATerminalColor(Ord(tcBlack) + LCode - 30)
         );
+      38, 48:
+        begin
+          LRgb := -1;
+          if (LIndex + 2 < Length(AParameters)) and
+            (AParameters[LIndex + 1] = 5) then
+          begin
+            LRgb := Color256ToRgb(AParameters[LIndex + 2]);
+            Inc(LIndex, 2);
+          end
+          else if (LIndex + 4 < Length(AParameters)) and
+            (AParameters[LIndex + 1] = 2) then
+          begin
+            LRgb :=
+              (EnsureRange(AParameters[LIndex + 2], 0, 255) shl 16) or
+              (EnsureRange(AParameters[LIndex + 3], 0, 255) shl 8) or
+              EnsureRange(AParameters[LIndex + 4], 0, 255);
+            Inc(LIndex, 4);
+          end;
+          if LRgb >= 0 then
+            if LCode = 38 then
+              FStyle := FStyle.WithForegroundRgb(LRgb)
+            else
+              FStyle := FStyle.WithBackgroundRgb(LRgb);
+        end;
       39:
-        FStyle := TRadIATerminalTextStyle.Create(
-          tcDefault,
-          FStyle.Bold
+        FStyle := FStyle.WithForeground(tcDefault);
+      40..47:
+        FStyle := FStyle.WithBackground(
+          TRadIATerminalColor(Ord(tcBlack) + LCode - 40)
         );
+      49:
+        FStyle := FStyle.WithBackground(tcDefault);
       90..97:
-        FStyle := TRadIATerminalTextStyle.Create(
-          TRadIATerminalColor(Ord(tcBrightBlack) + LCode - 90),
-          FStyle.Bold
+        FStyle := FStyle.WithForeground(
+          TRadIATerminalColor(Ord(tcBrightBlack) + LCode - 90)
+        );
+      100..107:
+        FStyle := FStyle.WithBackground(
+          TRadIATerminalColor(Ord(tcBrightBlack) + LCode - 100)
         );
     end;
+    Inc(LIndex);
+  end;
+end;
+
+function TRadIATerminalScreen.Color256ToRgb(const AIndex: Integer): Integer;
+const
+  CBasic: array[0..15] of Integer = (
+    $000000, $800000, $008000, $808000,
+    $000080, $800080, $008080, $C0C0C0,
+    $808080, $FF0000, $00FF00, $FFFF00,
+    $0000FF, $FF00FF, $00FFFF, $FFFFFF
+  );
+  CLevels: array[0..5] of Integer = (0, 95, 135, 175, 215, 255);
+var
+  LBlue: Integer;
+  LGreen: Integer;
+  LIndex: Integer;
+  LRed: Integer;
+begin
+  LIndex := EnsureRange(AIndex, 0, 255);
+  if LIndex < 16 then
+    Exit(CBasic[LIndex]);
+  if LIndex >= 232 then
+  begin
+    LRed := 8 + ((LIndex - 232) * 10);
+    Exit((LRed shl 16) or (LRed shl 8) or LRed);
+  end;
+  Dec(LIndex, 16);
+  LRed := CLevels[LIndex div 36];
+  LGreen := CLevels[(LIndex div 6) mod 6];
+  LBlue := CLevels[LIndex mod 6];
+  Result := (LRed shl 16) or (LGreen shl 8) or LBlue;
 end;
 
 procedure TRadIATerminalScreen.Clear;
@@ -364,6 +467,103 @@ begin
   FHardBreaks.Free;
   FRows.Free;
   inherited Destroy;
+end;
+
+function TRadIATerminalScreen.EncodeMouse(
+  const AButton: Integer;
+  const AColumn: Integer;
+  const ARow: Integer;
+  const APressed: Boolean
+): string;
+var
+  LFinal: Char;
+begin
+  Result := '';
+  if (FMouseMode = 0) or not FSgrMouse then
+    Exit;
+  if APressed then
+    LFinal := 'M'
+  else
+    LFinal := 'm';
+  Result := #27'[<' + IntToStr(Max(0, AButton)) + ';' +
+    IntToStr(Max(1, AColumn)) + ';' + IntToStr(Max(1, ARow)) + LFinal;
+end;
+
+procedure TRadIATerminalScreen.EnterAlternateScreen;
+begin
+  if FAlternateScreen then
+    Exit;
+  FPrimaryRows := FRows.ToArray;
+  FPrimaryBreaks := FHardBreaks.ToArray;
+  FPrimaryCursorColumn := FCursorColumn;
+  FPrimaryCursorRow := FCursorRow;
+  FAlternateScreen := True;
+  FRows.Clear;
+  FHardBreaks.Clear;
+  FCursorColumn := 0;
+  FCursorRow := 0;
+  EnsureCursor;
+end;
+
+procedure TRadIATerminalScreen.LeaveAlternateScreen;
+begin
+  if not FAlternateScreen then
+    Exit;
+  FRows.Clear;
+  FHardBreaks.Clear;
+  FRows.AddRange(FPrimaryRows);
+  FHardBreaks.AddRange(FPrimaryBreaks);
+  FCursorColumn := FPrimaryCursorColumn;
+  FCursorRow := FPrimaryCursorRow;
+  FPrimaryRows := nil;
+  FPrimaryBreaks := nil;
+  FAlternateScreen := False;
+  EnsureCursor;
+end;
+
+function TRadIATerminalScreen.PreparePaste(const AText: string): string;
+begin
+  if FBracketedPaste then
+    Result := #27'[200~' + AText + #27'[201~'
+  else
+    Result := AText;
+end;
+
+procedure TRadIATerminalScreen.ApplyPrivateMode(const AEnable: Boolean);
+var
+  LMode: Integer;
+begin
+  for LMode in ParseParameters do
+    case LMode of
+      1000, 1002, 1003:
+        if AEnable then
+          FMouseMode := LMode
+        else if FMouseMode = LMode then
+          FMouseMode := 0;
+      1006:
+        FSgrMouse := AEnable;
+      1047, 1049:
+        if AEnable then
+          EnterAlternateScreen
+        else
+          LeaveAlternateScreen;
+      2004:
+        FBracketedPaste := AEnable;
+    end;
+end;
+
+procedure TRadIATerminalScreen.ApplyOsc;
+var
+  LSeparator: Integer;
+  LUri: string;
+begin
+  if not FOscBuffer.StartsWith('8;') then
+    Exit;
+  LSeparator := PosEx(';', FOscBuffer, 3);
+  if LSeparator = 0 then
+    Exit;
+  LUri := Copy(FOscBuffer, LSeparator + 1, MaxInt);
+  FStyle := FStyle.WithHyperlink(LUri);
 end;
 
 procedure TRadIATerminalScreen.DeleteCharacters(const ACount: Integer);
@@ -505,24 +705,39 @@ begin
       if ACharacter = '[' then
       begin
         FCsiBuffer := '';
+        FCsiPrivate := False;
         FState := psCsi;
       end
       else if ACharacter = ']' then
-        FState := psOsc
+      begin
+        FOscBuffer := '';
+        FState := psOsc;
+      end
       else
         FState := psText;
     psCsi:
       ProcessCsiCharacter(ACharacter);
     psOsc:
       if ACharacter = #7 then
+      begin
+        ApplyOsc;
         FState := psText
+      end
       else if ACharacter = #27 then
-        FState := psOscEscape;
+        FState := psOscEscape
+      else
+        FOscBuffer := FOscBuffer + ACharacter;
     psOscEscape:
       if ACharacter = '\' then
+      begin
+        ApplyOsc;
         FState := psText
+      end
       else
+      begin
+        FOscBuffer := FOscBuffer + #27 + ACharacter;
         FState := psOsc;
+      end;
   end;
 end;
 
@@ -532,13 +747,16 @@ procedure TRadIATerminalScreen.ProcessCsiCharacter(
 begin
   if CharInSet(ACharacter, ['0'..'9', ';', '?']) then
   begin
-    if ACharacter <> '?' then
+    if ACharacter = '?' then
+      FCsiPrivate := True
+    else
       FCsiBuffer := FCsiBuffer + ACharacter;
     Exit;
   end;
   if CharInSet(ACharacter, ['@'..'~']) then
     ApplyCsi(ACharacter);
   FCsiBuffer := '';
+  FCsiPrivate := False;
   FState := psText;
 end;
 
@@ -809,7 +1027,14 @@ function TRadIATerminalScreen.StylesMatch(
 ): Boolean;
 begin
   Result := (ALeft.Foreground = ARight.Foreground) and
-    (ALeft.Bold = ARight.Bold);
+    (ALeft.Background = ARight.Background) and
+    (ALeft.ForegroundRgb = ARight.ForegroundRgb) and
+    (ALeft.BackgroundRgb = ARight.BackgroundRgb) and
+    (ALeft.Bold = ARight.Bold) and
+    (ALeft.Italic = ARight.Italic) and
+    (ALeft.Underline = ARight.Underline) and
+    (ALeft.Inverse = ARight.Inverse) and
+    (ALeft.Hyperlink = ARight.Hyperlink);
 end;
 
 end.

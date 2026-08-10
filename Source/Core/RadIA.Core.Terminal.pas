@@ -31,15 +31,46 @@ type
   TRadIATerminalTextStyle = record
   private
     FForeground: TRadIATerminalColor;
+    FBackground: TRadIATerminalColor;
+    FForegroundRgb: Integer;
+    FBackgroundRgb: Integer;
     FBold: Boolean;
+    FItalic: Boolean;
+    FUnderline: Boolean;
+    FInverse: Boolean;
+    FHyperlink: string;
   public
     constructor Create(
       const AForeground: TRadIATerminalColor;
       const ABold: Boolean
     );
     class function Default: TRadIATerminalTextStyle; static;
+    function WithBackground(
+      const ABackground: TRadIATerminalColor
+    ): TRadIATerminalTextStyle;
+    function WithForeground(
+      const AForeground: TRadIATerminalColor
+    ): TRadIATerminalTextStyle;
+    function WithBold(const AEnabled: Boolean): TRadIATerminalTextStyle;
+    function WithForegroundRgb(
+      const ARgb: Integer
+    ): TRadIATerminalTextStyle;
+    function WithBackgroundRgb(
+      const ARgb: Integer
+    ): TRadIATerminalTextStyle;
+    function WithItalic(const AEnabled: Boolean): TRadIATerminalTextStyle;
+    function WithUnderline(const AEnabled: Boolean): TRadIATerminalTextStyle;
+    function WithInverse(const AEnabled: Boolean): TRadIATerminalTextStyle;
+    function WithHyperlink(const AUri: string): TRadIATerminalTextStyle;
     property Foreground: TRadIATerminalColor read FForeground;
+    property Background: TRadIATerminalColor read FBackground;
+    property ForegroundRgb: Integer read FForegroundRgb;
+    property BackgroundRgb: Integer read FBackgroundRgb;
     property Bold: Boolean read FBold;
+    property Italic: Boolean read FItalic;
+    property Underline: Boolean read FUnderline;
+    property Inverse: Boolean read FInverse;
+    property Hyperlink: string read FHyperlink;
   end;
 
   TRadIATerminalTextSegment = record
@@ -206,14 +237,104 @@ constructor TRadIATerminalTextStyle.Create(
 );
 begin
   FForeground := AForeground;
+  FBackground := tcDefault;
+  FForegroundRgb := -1;
+  FBackgroundRgb := -1;
   FBold := ABold;
+  FItalic := False;
+  FUnderline := False;
+  FInverse := False;
+  FHyperlink := '';
 end;
 
 class function TRadIATerminalTextStyle.Default:
   TRadIATerminalTextStyle;
 begin
   Result.FForeground := tcDefault;
+  Result.FBackground := tcDefault;
+  Result.FForegroundRgb := -1;
+  Result.FBackgroundRgb := -1;
   Result.FBold := False;
+  Result.FItalic := False;
+  Result.FUnderline := False;
+  Result.FInverse := False;
+  Result.FHyperlink := '';
+end;
+
+function TRadIATerminalTextStyle.WithBackground(
+  const ABackground: TRadIATerminalColor
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FBackground := ABackground;
+  Result.FBackgroundRgb := -1;
+end;
+
+function TRadIATerminalTextStyle.WithBackgroundRgb(
+  const ARgb: Integer
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FBackgroundRgb := ARgb and $FFFFFF;
+  Result.FBackground := tcDefault;
+end;
+
+function TRadIATerminalTextStyle.WithBold(
+  const AEnabled: Boolean
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FBold := AEnabled;
+end;
+
+function TRadIATerminalTextStyle.WithForeground(
+  const AForeground: TRadIATerminalColor
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FForeground := AForeground;
+  Result.FForegroundRgb := -1;
+end;
+
+function TRadIATerminalTextStyle.WithForegroundRgb(
+  const ARgb: Integer
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FForegroundRgb := ARgb and $FFFFFF;
+  Result.FForeground := tcDefault;
+end;
+
+function TRadIATerminalTextStyle.WithHyperlink(
+  const AUri: string
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FHyperlink := AUri;
+end;
+
+function TRadIATerminalTextStyle.WithInverse(
+  const AEnabled: Boolean
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FInverse := AEnabled;
+end;
+
+function TRadIATerminalTextStyle.WithItalic(
+  const AEnabled: Boolean
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FItalic := AEnabled;
+end;
+
+function TRadIATerminalTextStyle.WithUnderline(
+  const AEnabled: Boolean
+): TRadIATerminalTextStyle;
+begin
+  Result := Self;
+  Result.FUnderline := AEnabled;
 end;
 
 { TRadIATerminalTextSegment }

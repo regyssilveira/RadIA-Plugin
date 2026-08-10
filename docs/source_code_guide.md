@@ -49,8 +49,8 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.ConsentPresentation` | Origem legível, apresentação uniforme e argumentos sanitizados do consentimento. |
 | `RadIA.Core.ConsentGate` | Serializa diálogos e limita a espera de solicitações concorrentes. |
 | `RadIA.Core.PseudoTerminal` | Gerencia ConPTY, árvore de processos, resize, entrada UTF-8 e decodificação contínua da saída. |
-| `RadIA.Core.TerminalScreen` | Emula estado VT, células Unicode com largura visual e reflow de linhas no resize. |
-| `RadIA.Core.TerminalEmulator` | Contrato entre UI e emulação VT, com factory para o núcleo nativo. |
+| `RadIA.Core.TerminalScreen` | Emula VT, Unicode, reflow, cores estendidas, alternate screen, OSC 8, paste e mouse SGR. |
+| `RadIA.Core.TerminalEmulator` | Contrato entre UI e emulação VT, inclusive modos negociados, com factory nativa. |
 | `RadIA.Core.Workspace*` | Fachada de workspace e tools de editor e projeto. |
 | `RadIA.Core.Patches` e `PatchTools` | Preview, precondições, aplicação e reversão de patches. |
 | `RadIA.Core.Build*` | Contratos e ferramentas do ciclo de build controlado. |
@@ -133,7 +133,7 @@ Formulários e quadros visuais VCL desenvolvidos sob o padrão MVP (Model-View-P
 | [RadIA.UI.ConfigFrame.pas](../Source/UI/RadIA.UI.ConfigFrame.pas) | View física das opções de configuração (chaves de API, endpoints, temas, limites). |
 | [RadIA.UI.ConfigPresenter.pas](../Source/UI/RadIA.UI.ConfigPresenter.pas) | Presenter de configurações. Carrega e salva as opções de forma síncrona. |
 | [RadIA.UI.DiffForm.pas](../Source/UI/RadIA.UI.DiffForm.pas) | Tela de visualização lado a lado (Smart Diff) com botões para aceitar ou recusar a refatoração sugerida. |
-| `RadIA.UI.TerminalFrame` e `TerminalTabsFrame` | Terminal ConPTY, abas, perfis, histórico, snippets e apresentação Unicode/TUI. |
+| `RadIA.UI.TerminalFrame` e `TerminalTabsFrame` | ConPTY, abas, perfis, histórico e renderer TUI com links sob consentimento. |
 | `RadIA.UI.ExternalMcpFrame` | Cadastro, teste, grants e aplicação da configuração de servidores MCP externos. |
 | `RadIA.UI.ExtensionStudioForm` | Criação visual, teste, instalação, exportação e assinatura de extensões declarativas. |
 | `RadIA.UI.SkillPortabilityForm` | Seleção de destinos, preview, consentimento, publicação e remoção de réplicas. |

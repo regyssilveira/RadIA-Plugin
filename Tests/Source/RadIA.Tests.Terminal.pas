@@ -61,6 +61,12 @@ type
     [Test]
     procedure NativeEmulatorPreservesScreenContract;
     [Test]
+    procedure ScreenRestoresPrimaryContentAfterAlternateScreen;
+    [Test]
+    procedure ScreenSupportsExtendedColorsAttributesAndHyperlinks;
+    [Test]
+    procedure ScreenNegotiatesBracketedPasteAndMouseInput;
+    [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
     [Test]
     procedure HiddenDockHostDoesNotFocusTerminalDuringEmbedding;
@@ -374,6 +380,67 @@ begin
   Assert.AreEqual(24, LEmulator.Columns);
   LEmulator.Clear;
   Assert.AreEqual('', SegmentsText(LEmulator.RenderSegments).Trim);
+end;
+
+procedure TRadIATerminalTests.ScreenNegotiatesBracketedPasteAndMouseInput;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(80);
+  try
+    LScreen.Feed(#27'[?2004h' + #27'[?1000h' + #27'[?1006h');
+    Assert.IsTrue(LScreen.BracketedPaste);
+    Assert.AreEqual(#27'[200~text' + #27'[201~', LScreen.PreparePaste('text'));
+    Assert.AreEqual(#27'[<0;4;5M', LScreen.EncodeMouse(0, 4, 5, True));
+    Assert.AreEqual(#27'[<0;4;5m', LScreen.EncodeMouse(0, 4, 5, False));
+    LScreen.Feed(#27'[?2004l' + #27'[?1006l' + #27'[?1000l');
+    Assert.IsFalse(LScreen.BracketedPaste);
+    Assert.AreEqual('', LScreen.EncodeMouse(0, 4, 5, True));
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenRestoresPrimaryContentAfterAlternateScreen;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(80);
+  try
+    LScreen.Feed('primary');
+    LScreen.Feed(#27'[?1049h');
+    Assert.IsTrue(LScreen.AlternateScreen);
+    LScreen.Feed('alternate');
+    Assert.AreEqual('alternate', SegmentsText(LScreen.RenderSegments));
+    LScreen.Feed(#27'[?1049l');
+    Assert.IsFalse(LScreen.AlternateScreen);
+    Assert.AreEqual('primary', SegmentsText(LScreen.RenderSegments));
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenSupportsExtendedColorsAttributesAndHyperlinks;
+var
+  LScreen: TRadIATerminalScreen;
+  LSegments: TArray<TRadIATerminalTextSegment>;
+begin
+  LScreen := TRadIATerminalScreen.Create(80);
+  try
+    LScreen.Feed(
+      #27'[38;2;10;20;30;48;5;196;3;4;7mX' +
+      #27']8;;https://example.test'#7'link' + #27']8;;'#7
+    );
+    LSegments := LScreen.RenderSegments;
+    Assert.AreEqual($0A141E, LSegments[0].Style.ForegroundRgb);
+    Assert.AreEqual($FF0000, LSegments[0].Style.BackgroundRgb);
+    Assert.IsTrue(LSegments[0].Style.Italic);
+    Assert.IsTrue(LSegments[0].Style.Underline);
+    Assert.IsTrue(LSegments[0].Style.Inverse);
+    Assert.AreEqual('https://example.test', LSegments[1].Style.Hyperlink);
+  finally
+    LScreen.Free;
+  end;
 end;
 
 procedure TRadIATerminalTests.ScreenAppliesCursorMovementAndEraseLine;

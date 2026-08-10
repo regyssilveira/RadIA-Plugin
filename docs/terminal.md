@@ -49,7 +49,12 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - execução interativa por ConPTY, com fallback para pipes;
 - entrada contínua para responder prompts de processos ativos;
 - captura incremental de stdout e stderr;
-- ANSI SGR, cores normais e brilhantes, negrito e reset;
+- ANSI SGR com cores normais, brilhantes, 256 cores e true color para texto e fundo;
+- negrito, itálico, sublinhado, vídeo inverso e reset seletivo de atributos;
+- alternate screen com restauração do conteúdo e cursor da tela principal;
+- bracketed paste negociado pelo processo;
+- cliques de mouse em aplicações que habilitam rastreamento SGR;
+- hyperlinks OSC 8 identificáveis, abertos por duplo clique após consentimento;
 - movimentação de cursor, retorno de carro, limpeza de linha e tela;
 - redimensionamento automático da pseudo-console;
 - Unicode por canais UTF-8 com decodificação contínua entre blocos de leitura;
@@ -94,12 +99,22 @@ caractere anterior sem avançar o cursor.
 Ao estreitar ou ampliar o painel, linhas quebradas automaticamente são reorganizadas para a nova
 largura. Quebras enviadas pelo processo continuam sendo quebras reais. O emulador também mantém
 estado entre blocos para CSI e OSC e atende movimentação/salvamento do cursor, limpeza de tela e
-linha, SGR, inserção (`ICH`), exclusão (`DCH`) e apagamento (`ECH`) de caracteres. Isso cobre shells,
-CLIs de IA, barras de progresso e interfaces de texto que usam esse subconjunto VT.
+linha, SGR, inserção (`ICH`), exclusão (`DCH`) e apagamento (`ECH`) de caracteres. Cores de 256
+posições e true color preservam texto e fundo. Negrito, itálico, sublinhado e vídeo inverso são
+renderizados de forma independente.
 
-Aplicações que exigem recursos ainda não emulados, como gráficos de seis pixels, protocolo de mouse
-ou imagens inline, continuam executando, mas podem apresentar saída textual simplificada. Nesse caso,
-abra a aplicação em seu terminal externo preferido; o RadIA não altera nem bloqueia o processo.
+Aplicações TUI podem ativar a alternate screen com `1047` ou `1049`; ao sair, conteúdo e cursor da
+tela principal são restaurados. O terminal envolve a entrada com bracketed paste apenas após o
+processo habilitar `2004`. Cliques são enviados no protocolo SGR somente quando o processo habilita
+um modo de rastreamento (`1000`, `1002` ou `1003`) e o protocolo `1006`.
+
+Links OSC 8 aparecem sublinhados. Dê duplo clique para solicitar autorização e abrir somente URI
+`http`, `https` ou `mailto`; outros esquemas são recusados. A autorização é solicitada em toda
+abertura e utiliza a mesma política central do restante do RadIA.
+
+Aplicações que exigem recursos ainda não emulados, como gráficos sixel, imagens inline ou protocolos
+de mouse diferentes de SGR, continuam executando, mas podem apresentar saída simplificada. Nesse
+caso, abra a aplicação em seu terminal externo preferido; o RadIA não altera nem bloqueia o processo.
 
 ## Segurança e privacidade
 

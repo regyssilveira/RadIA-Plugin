@@ -26,7 +26,7 @@ behind that interface, allowing evolution and fallback without changing sessions
 ## Shortcut configuration
 
 Open **Rad IA > Settings > Security & Privacy** and locate **RadIA shortcuts**. The profile contains
-`ação=atalho` pairs separated by semicolons:
+`action=shortcut` pairs separated by semicolons:
 
 ```text
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T
@@ -49,7 +49,12 @@ automatically defaults to `Ctrl+Alt+T`.
 - interactive execution by ConPTY, with fallback to pipes;
 - continuous input to respond to prompts from active processes;
 - incremental capture of stdout and stderr;
-- ANSI SGR, normal and bright colors, bold and reset;
+- ANSI SGR with normal, bright, 256-color, and true-color foregrounds and backgrounds;
+- bold, italic, underline, inverse video, and selective attribute reset;
+- alternate screen with restoration of primary content and cursor;
+- bracketed paste negotiated by the process;
+- mouse clicks for applications that enable SGR tracking;
+- identifiable OSC 8 hyperlinks opened by double-click after consent;
 - cursor movement, carriage return, line and screen cleaning;
 - automatic resizing of the pseudo-console;
 - Unicode over UTF-8 channels with streaming decoding across read boundaries;
@@ -94,12 +99,21 @@ without advancing the cursor.
 When the panel becomes narrower or wider, automatically wrapped lines are rearranged for the new
 width. Line breaks emitted by the process remain hard breaks. The emulator also preserves CSI and OSC
 state across blocks and supports cursor movement/save, screen and line erase, SGR, character insertion
-(`ICH`), deletion (`DCH`), and erasure (`ECH`). This covers shells, AI CLIs, progress bars, and text
-interfaces that use this VT subset.
+(`ICH`), deletion (`DCH`), and erasure (`ECH`). The 256-color and true-color modes preserve foreground
+and background. Bold, italic, underline, and inverse video are rendered independently.
 
-Applications requiring features not yet emulated, such as sixel graphics, mouse protocols, or inline
-images, continue to run but may show simplified text output. Open them in your preferred external
-terminal when needed; RadIA does not modify or block the process.
+TUI applications may enable the alternate screen with `1047` or `1049`; leaving it restores the
+primary content and cursor. Input is wrapped as bracketed paste only after the process enables `2004`.
+Clicks are sent with the SGR protocol only after a tracking mode (`1000`, `1002`, or `1003`) and
+protocol `1006` have been enabled.
+
+OSC 8 links appear underlined. Double-click one to request authorization and open an `http`, `https`,
+or `mailto` URI; other schemes are rejected. Authorization is requested for every opening through
+the same central policy used by the rest of RadIA.
+
+Applications requiring features not yet emulated, such as sixel graphics, inline images, or mouse
+protocols other than SGR, continue to run but may show simplified output. Open them in your preferred
+external terminal when needed; RadIA does not modify or block the process.
 
 ## Security and privacy
 

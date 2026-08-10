@@ -35,7 +35,7 @@ Delphi não fazem parte deste goal.
 | M2 | Preview, consentimento, sincronização e remoção no Addon Studio | Concluído |
 | M3 | Validação real dos formatos e documentação de portabilidade | Concluído |
 | M4 | Interface desacoplada e núcleo VT selecionado | Concluído |
-| M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Pendente |
+| M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Concluído |
 | M6 | Matriz real de shells, CLIs e TUIs nos três targets | Pendente |
 | M7 | Auditoria final, documentação, Sonar e preparação do release | Pendente |
 
@@ -79,6 +79,13 @@ O M4 selecionou o núcleo VT nativo existente e o isolou por `IRadIATerminalEmul
 mantém mais uma classe concreta de tela; cria, alimenta, redimensiona, renderiza e limpa somente pelo
 contrato. Essa decisão preserva o comportamento comprovado e permite substituir o núcleo sem expor
 dependências à VCL, ConPTY ou à API pública.
+
+O M5 ampliou esse contrato com alternate screen, bracketed paste e mouse SGR negociados. O parser e
+o renderer preservam cores de 256 posições e true color para texto e fundo, negrito, itálico,
+sublinhado, vídeo inverso e hyperlinks OSC 8. Links aceitam somente esquemas web e e-mail conhecidos,
+exigem duplo clique e passam pela política central com consentimento obrigatório em cada abertura.
+Os testes do terminal e a suíte Delphi 13 Win32 comprovaram restauração da tela principal, modos de
+entrada, estilos, links e ausência de vazamentos; a matriz real completa pertence ao M6.
 
 ## Matriz de aceite
 
