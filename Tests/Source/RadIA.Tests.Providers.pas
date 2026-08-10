@@ -419,6 +419,35 @@ begin
   LOutputTokens := LParams[4].AsInteger;
   Assert.AreEqual(10, LInputTokens);
   Assert.AreEqual(20, LOutputTokens);
+
+  // Test Case 5: structured CLI failure
+  LParams[0] :=
+    '{"type":"turn.failed","error":{"message":' +
+    '"Model is not available for this account."}}';
+  LParams[1] := '';
+  LParams[2] := '';
+  LParams[3] := 0;
+  LParams[4] := 0;
+
+  LMethod.Invoke(FOpenAIProv, LParams);
+  LResponse := LParams[2].AsString;
+  Assert.AreEqual(
+    'Codex CLI error: Model is not available for this account.',
+    LResponse
+  );
+
+  // Test Case 6: plain stderr remains actionable
+  LParams[0] := 'Not inside a trusted directory.';
+  LParams[1] := '';
+  LParams[2] := '';
+  LParams[3] := 0;
+  LParams[4] := 0;
+
+  LMethod.Invoke(FOpenAIProv, LParams);
+  Assert.AreEqual(
+    'Codex CLI error: Not inside a trusted directory.',
+    LParams[2].AsString
+  );
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_ReadCodexOutputPipe;

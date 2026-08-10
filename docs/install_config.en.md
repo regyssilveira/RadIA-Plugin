@@ -26,9 +26,10 @@ open. If another Delphi version is in use, cache cleanup is deferred and install
 without interrupting that work; the refreshed assets take full effect after that IDE restarts.
 
 After opening the IDE, use **Tools > Rad IA Getting Started > Run installation doctor** or type
-`/doctor` in chat. The diagnostic verifies the provider, executor, MCP when required, terminal,
-web assets, and the first read-only tool. It returns a score, checks, and next action without
-displaying tokens or credentials.
+`/doctor` in chat. The diagnostic verifies the effective route, provider, CLI and MCP only when
+each is required, terminal, web assets, tools, and the external MCP runtime. It returns a card with
+a score, checks, and next action without displaying tokens or credentials. See
+[RadIA Doctor](doctor.en.md).
 
 ### Build from source
 

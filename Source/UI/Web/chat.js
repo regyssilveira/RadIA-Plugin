@@ -1489,6 +1489,79 @@ function renderProjectHealth(card, result) {
   });
 }
 
+function doctorActionCommand(nextAction) {
+  const commands = {
+    open_provider_settings: '/settings',
+    repair_web_assets: '/settings',
+    configure_cli: '/settings',
+    provision_mcp: '/settings',
+    repair_external_mcp: '/settings',
+    open_terminal_fallback: '/terminal',
+    repair_package: '/doctor',
+    run_first_read_only_tool: '/tool GetIDEState {}'
+  };
+  return commands[nextAction] || '/status';
+}
+
+function renderInstallationHealth(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const checks = Array.isArray(result.checkDetails)
+    ? result.checkDetails
+    : [];
+  const route = result.effectiveRoute || {};
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'doctor-summary';
+  const score = document.createElement('strong');
+  score.className = `doctor-score doctor-${result.status || 'attention'}`;
+  score.textContent = `${Math.max(0, result.readinessScore ?? 0)}/100`;
+  const label = document.createElement('span');
+  label.textContent = result.summary || 'RadIA installation diagnostic';
+  summary.appendChild(score);
+  summary.appendChild(label);
+  content.appendChild(summary);
+
+  const routeSummary = document.createElement('div');
+  routeSummary.className = 'doctor-route';
+  routeSummary.textContent = [
+    `Orchestration: ${route.orchestration || 'unknown'}`,
+    `Transport: ${route.providerTransport || 'unknown'}`,
+    `CLI: ${route.effectiveCli || 'not required'}`,
+    `MCP required: ${route.mcpRequired ? 'yes' : 'no'}`
+  ].join(' · ');
+  content.appendChild(routeSummary);
+
+  checks.forEach(check => {
+    const item = document.createElement('section');
+    item.className = `doctor-check doctor-check-${check.status || 'failed'}`;
+    const title = document.createElement('strong');
+    title.textContent = check.id || 'diagnostic check';
+    const state = document.createElement('span');
+    state.className = 'doctor-check-state';
+    state.textContent = check.status || 'unknown';
+    item.appendChild(title);
+    item.appendChild(state);
+    const message = document.createElement('div');
+    message.textContent = check.message || '';
+    item.appendChild(message);
+    if (!check.ready && check.action) {
+      const action = createHealthActionButton(check.action);
+      action.textContent = 'Show next step';
+      item.appendChild(action);
+    }
+    content.appendChild(item);
+  });
+
+  const nextAction = createHealthActionButton(
+    doctorActionCommand(result.nextAction)
+  );
+  nextAction.textContent = result.status === 'ready'
+    ? 'Test first IDE tool'
+    : 'Prepare recommended action';
+  content.appendChild(nextAction);
+}
+
 function renderPatchPreview(card, result, actionName) {
   const content = card.querySelector('.tool-card-content');
   content.replaceChildren();
@@ -1607,6 +1680,7 @@ function renderComponentPropertyPreview(card, result, actionName) {
 }
 
 const TOOL_RESULT_RENDERERS = {
+  GetInstallationHealth: [renderInstallationHealth, ''],
   GetProjectHealth: [renderProjectHealth, ''],
   SearchProjectKnowledge: [renderKnowledgeSearchResult, ''],
   GetKnowledgeDocument: [renderKnowledgeDocumentResult, ''],

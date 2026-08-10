@@ -64,6 +64,12 @@ type
     procedure ApplyOsc;
     procedure ApplyEraseDisplay(const AMode: Integer);
     procedure ApplyEraseLine(const AMode: Integer);
+    procedure ApplyExtendedSgr(
+      const AParameters: TArray<Integer>;
+      var AIndex: Integer;
+      const ACode: Integer
+    );
+    procedure ApplySimpleSgr(const ACode: Integer);
     procedure ApplySgr(const AParameters: TArray<Integer>);
     function Color256ToRgb(const AIndex: Integer): Integer;
     procedure ClearCell(const AColumn: Integer; const ARow: Integer);
@@ -84,6 +90,8 @@ type
     function ParseParameters: TArray<Integer>;
     procedure ProcessCharacter(const ACharacter: Char);
     procedure ProcessCsiCharacter(const ACharacter: Char);
+    procedure ProcessEscapeCharacter(const ACharacter: Char);
+    procedure ProcessOscCharacter(const ACharacter: Char);
     procedure ProcessTextCharacter(const ACharacter: Char);
     procedure EnterAlternateScreen;
     procedure LeaveAlternateScreen;
@@ -299,7 +307,6 @@ procedure TRadIATerminalScreen.ApplySgr(
 var
   LCode: Integer;
   LIndex: Integer;
-  LRgb: Integer;
 begin
   if Length(AParameters) = 0 then
   begin
@@ -310,71 +317,75 @@ begin
   while LIndex < Length(AParameters) do
   begin
     LCode := AParameters[LIndex];
-    case LCode of
-      0:
-        FStyle := TRadIATerminalTextStyle.Default;
-      1:
-        FStyle := FStyle.WithBold(True);
-      3:
-        FStyle := FStyle.WithItalic(True);
-      4:
-        FStyle := FStyle.WithUnderline(True);
-      7:
-        FStyle := FStyle.WithInverse(True);
-      22:
-        FStyle := FStyle.WithBold(False);
-      23:
-        FStyle := FStyle.WithItalic(False);
-      24:
-        FStyle := FStyle.WithUnderline(False);
-      27:
-        FStyle := FStyle.WithInverse(False);
-      30..37:
-        FStyle := FStyle.WithForeground(
-          TRadIATerminalColor(Ord(tcBlack) + LCode - 30)
-        );
-      38, 48:
-        begin
-          LRgb := -1;
-          if (LIndex + 2 < Length(AParameters)) and
-            (AParameters[LIndex + 1] = 5) then
-          begin
-            LRgb := Color256ToRgb(AParameters[LIndex + 2]);
-            Inc(LIndex, 2);
-          end
-          else if (LIndex + 4 < Length(AParameters)) and
-            (AParameters[LIndex + 1] = 2) then
-          begin
-            LRgb :=
-              (EnsureRange(AParameters[LIndex + 2], 0, 255) shl 16) or
-              (EnsureRange(AParameters[LIndex + 3], 0, 255) shl 8) or
-              EnsureRange(AParameters[LIndex + 4], 0, 255);
-            Inc(LIndex, 4);
-          end;
-          if LRgb >= 0 then
-            if LCode = 38 then
-              FStyle := FStyle.WithForegroundRgb(LRgb)
-            else
-              FStyle := FStyle.WithBackgroundRgb(LRgb);
-        end;
-      39:
-        FStyle := FStyle.WithForeground(tcDefault);
-      40..47:
-        FStyle := FStyle.WithBackground(
-          TRadIATerminalColor(Ord(tcBlack) + LCode - 40)
-        );
-      49:
-        FStyle := FStyle.WithBackground(tcDefault);
-      90..97:
-        FStyle := FStyle.WithForeground(
-          TRadIATerminalColor(Ord(tcBrightBlack) + LCode - 90)
-        );
-      100..107:
-        FStyle := FStyle.WithBackground(
-          TRadIATerminalColor(Ord(tcBrightBlack) + LCode - 100)
-        );
-    end;
+    if (LCode = 38) or (LCode = 48) then
+      ApplyExtendedSgr(AParameters, LIndex, LCode)
+    else
+      ApplySimpleSgr(LCode);
     Inc(LIndex);
+  end;
+end;
+
+procedure TRadIATerminalScreen.ApplyExtendedSgr(
+  const AParameters: TArray<Integer>;
+  var AIndex: Integer;
+  const ACode: Integer
+);
+var
+  LRgb: Integer;
+begin
+  LRgb := -1;
+  if (AIndex + 2 < Length(AParameters)) and
+    (AParameters[AIndex + 1] = 5) then
+  begin
+    LRgb := Color256ToRgb(AParameters[AIndex + 2]);
+    Inc(AIndex, 2);
+  end
+  else if (AIndex + 4 < Length(AParameters)) and
+    (AParameters[AIndex + 1] = 2) then
+  begin
+    LRgb := (EnsureRange(AParameters[AIndex + 2], 0, 255) shl 16) or
+      (EnsureRange(AParameters[AIndex + 3], 0, 255) shl 8) or
+      EnsureRange(AParameters[AIndex + 4], 0, 255);
+    Inc(AIndex, 4);
+  end;
+  if LRgb < 0 then
+    Exit;
+  if ACode = 38 then
+    FStyle := FStyle.WithForegroundRgb(LRgb)
+  else
+    FStyle := FStyle.WithBackgroundRgb(LRgb);
+end;
+
+procedure TRadIATerminalScreen.ApplySimpleSgr(const ACode: Integer);
+begin
+  case ACode of
+    0: FStyle := TRadIATerminalTextStyle.Default;
+    1: FStyle := FStyle.WithBold(True);
+    3: FStyle := FStyle.WithItalic(True);
+    4: FStyle := FStyle.WithUnderline(True);
+    7: FStyle := FStyle.WithInverse(True);
+    22: FStyle := FStyle.WithBold(False);
+    23: FStyle := FStyle.WithItalic(False);
+    24: FStyle := FStyle.WithUnderline(False);
+    27: FStyle := FStyle.WithInverse(False);
+    30..37:
+      FStyle := FStyle.WithForeground(
+        TRadIATerminalColor(Ord(tcBlack) + ACode - 30)
+      );
+    39: FStyle := FStyle.WithForeground(tcDefault);
+    40..47:
+      FStyle := FStyle.WithBackground(
+        TRadIATerminalColor(Ord(tcBlack) + ACode - 40)
+      );
+    49: FStyle := FStyle.WithBackground(tcDefault);
+    90..97:
+      FStyle := FStyle.WithForeground(
+        TRadIATerminalColor(Ord(tcBrightBlack) + ACode - 90)
+      );
+    100..107:
+      FStyle := FStyle.WithBackground(
+        TRadIATerminalColor(Ord(tcBrightBlack) + ACode - 100)
+      );
   end;
 end;
 
@@ -702,36 +713,16 @@ begin
     psText:
       ProcessTextCharacter(ACharacter);
     psEscape:
-      if ACharacter = '[' then
-      begin
-        FCsiBuffer := '';
-        FCsiPrivate := False;
-        FState := psCsi;
-      end
-      else if ACharacter = ']' then
-      begin
-        FOscBuffer := '';
-        FState := psOsc;
-      end
-      else
-        FState := psText;
+      ProcessEscapeCharacter(ACharacter);
     psCsi:
       ProcessCsiCharacter(ACharacter);
     psOsc:
-      if ACharacter = #7 then
-      begin
-        ApplyOsc;
-        FState := psText
-      end
-      else if ACharacter = #27 then
-        FState := psOscEscape
-      else
-        FOscBuffer := FOscBuffer + ACharacter;
+      ProcessOscCharacter(ACharacter);
     psOscEscape:
       if ACharacter = '\' then
       begin
         ApplyOsc;
-        FState := psText
+        FState := psText;
       end
       else
       begin
@@ -786,6 +777,40 @@ begin
     if ACharacter >= ' ' then
       PutCharacter(ACharacter, Ord(ACharacter));
   end;
+end;
+
+procedure TRadIATerminalScreen.ProcessEscapeCharacter(
+  const ACharacter: Char
+);
+begin
+  if ACharacter = '[' then
+  begin
+    FCsiBuffer := '';
+    FCsiPrivate := False;
+    FState := psCsi;
+  end
+  else if ACharacter = ']' then
+  begin
+    FOscBuffer := '';
+    FState := psOsc;
+  end
+  else
+    FState := psText;
+end;
+
+procedure TRadIATerminalScreen.ProcessOscCharacter(
+  const ACharacter: Char
+);
+begin
+  if ACharacter = #7 then
+  begin
+    ApplyOsc;
+    FState := psText;
+  end
+  else if ACharacter = #27 then
+    FState := psOscEscape
+  else
+    FOscBuffer := FOscBuffer + ACharacter;
 end;
 
 procedure TRadIATerminalScreen.AppendCombiningMark(const AText: string);

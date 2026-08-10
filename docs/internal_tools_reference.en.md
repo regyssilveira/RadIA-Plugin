@@ -50,7 +50,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |Tool|What it does|When it is triggered|
 |---|---|---|
 |`GetProjectHealth`|Consolidates configuration, build, messages, tests and maintenance signals from the active project.|At the beginning of a journey, before proposing improvements or to confirm that the project is ready to move forward.|
-|`GetInstallationHealth`|Checks version, platform, BPL, MCP bridge, terminal, chat, executors and installation readiness.|After installing or updating, during onboarding and when diagnosing an unavailable functionality.|
+|`GetInstallationHealth`|Diagnoses the effective route, provider, CLI, MCP, terminal, chat, tools, and installation.|After installing or updating, during onboarding, or when a capability does not work.|
 |`GetRadIAStatus`|Returns a sanitized, filterable inventory of current RadIA configuration, availability, and readiness.|Using the command `/status`, when checking an installation or before providing configuration and support guidance.|
 |`GetMemoryDiagnosticsStatus`|Checks FastMM5 directory, version, license acceptance and diagnostic DLL for current platform.|Before starting a memory diagnostic or when investigating why the resource is not ready.|
 |`ConfigureMemoryDiagnostics`|Saves the user-supplied directory and explicit acceptance of the FastMM5 license, returning the resulting readiness.|Via the configuration wizard or by direct call after structural consent.|

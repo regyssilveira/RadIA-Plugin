@@ -3,7 +3,6 @@ unit RadIA.Core.SkillReplicas;
 interface
 
 uses
-  System.Generics.Collections,
   RadIA.Core.SkillPortability;
 
 type
@@ -19,18 +18,15 @@ type
     FArtifact: TRadIACliSkillArtifact;
     FAbsoluteFileName: string;
     FState: TRadIASkillReplicaState;
-    FReason: string;
   public
     constructor Create(
       const AArtifact: TRadIACliSkillArtifact;
       const AAbsoluteFileName: string;
-      const AState: TRadIASkillReplicaState;
-      const AReason: string
+      const AState: TRadIASkillReplicaState
     );
     property Artifact: TRadIACliSkillArtifact read FArtifact;
     property AbsoluteFileName: string read FAbsoluteFileName;
     property State: TRadIASkillReplicaState read FState;
-    property Reason: string read FReason;
   end;
 
   TRadIASkillReplicaApplyResult = record
@@ -83,6 +79,11 @@ type
     function ManifestFileName: string;
     function LoadOwnedReplicas: TArray<TRadIAOwnedReplica>;
     procedure RestoreBackups(const ABackups: TArray<TRadIAFileBackup>);
+    function ResolveState(
+      const AArtifact: TRadIACliSkillArtifact;
+      const AFileName: string;
+      const AOwnedItems: TArray<TRadIAOwnedReplica>
+    ): TRadIASkillReplicaState;
     procedure SaveOwnedReplicas(const AItems: TArray<TRadIAOwnedReplica>);
     function UpdateOwnedReplicas(
       const AExisting: TArray<TRadIAOwnedReplica>;
@@ -103,13 +104,13 @@ type
     function RemoveOwned(const AExtensionId: string): string;
     class function StateName(const AState: TRadIASkillReplicaState): string;
       static;
-    property ProjectRoot: string read FProjectRoot;
   end;
 
 implementation
 
 uses
   System.Classes,
+  System.Generics.Collections,
   System.Hash,
   System.IOUtils,
   System.JSON,
@@ -121,14 +122,12 @@ uses
 constructor TRadIASkillReplicaPlanItem.Create(
   const AArtifact: TRadIACliSkillArtifact;
   const AAbsoluteFileName: string;
-  const AState: TRadIASkillReplicaState;
-  const AReason: string
+  const AState: TRadIASkillReplicaState
 );
 begin
   FArtifact := AArtifact;
   FAbsoluteFileName := AAbsoluteFileName;
   FState := AState;
-  FReason := AReason;
 end;
 
 { TRadIASkillReplicaApplyResult }
@@ -265,11 +264,8 @@ function TRadIASkillReplicaService.BuildPlan(
 var
   LAdapter: IRadIACliSkillAdapter;
   LArtifact: TRadIACliSkillArtifact;
-  LExistingHash: string;
   LFileName: string;
   LIndex: Integer;
-  LNewHash: string;
-  LOwned: TRadIAOwnedReplica;
   LOwnedItems: TArray<TRadIAOwnedReplica>;
   LState: TRadIASkillReplicaState;
 begin
@@ -286,27 +282,38 @@ begin
       );
     LArtifact := LAdapter.CreateArtifact(ASkill);
     LFileName := AbsoluteFileName(LArtifact.RelativeFileName);
-    LNewHash := HashBytes(TEncoding.UTF8.GetBytes(LArtifact.Content));
-    if not TFile.Exists(LFileName) then
-      LState := srsCreate
-    else
-    begin
-      LExistingHash := HashFile(LFileName);
-      if SameText(LExistingHash, LNewHash) then
-        LState := srsUnchanged
-      else if FindOwnedReplica(LOwnedItems, LArtifact.RelativeFileName, LOwned) and
-        SameText(LExistingHash, LOwned.Hash) then
-        LState := srsUpdate
-      else
-        LState := srsConflict;
-    end;
+    LState := ResolveState(LArtifact, LFileName, LOwnedItems);
     Result[LIndex] := TRadIASkillReplicaPlanItem.Create(
       LArtifact,
       LFileName,
-      LState,
-      StateName(LState)
+      LState
     );
   end;
+end;
+
+function TRadIASkillReplicaService.ResolveState(
+  const AArtifact: TRadIACliSkillArtifact;
+  const AFileName: string;
+  const AOwnedItems: TArray<TRadIAOwnedReplica>
+): TRadIASkillReplicaState;
+var
+  LExistingHash: string;
+  LNewHash: string;
+  LOwned: TRadIAOwnedReplica;
+begin
+  if not TFile.Exists(AFileName) then
+    Exit(srsCreate);
+  LExistingHash := HashFile(AFileName);
+  LNewHash := HashBytes(TEncoding.UTF8.GetBytes(AArtifact.Content));
+  if SameText(LExistingHash, LNewHash) then
+    Exit(srsUnchanged);
+  if FindOwnedReplica(
+    AOwnedItems,
+    AArtifact.RelativeFileName,
+    LOwned
+  ) and SameText(LExistingHash, LOwned.Hash) then
+    Exit(srsUpdate);
+  Result := srsConflict;
 end;
 
 function TRadIASkillReplicaService.FindOwnedReplica(
@@ -373,9 +380,9 @@ begin
     SetLength(Result, LArray.Count);
     for LIndex := 0 to LArray.Count - 1 do
     begin
-      if not (LArray.Items[LIndex] is TJSONObject) then
+      if not (LArray[LIndex] is TJSONObject) then
         raise EInvalidOpException.Create('Skill replica entry is invalid.');
-      LObject := TJSONObject(LArray.Items[LIndex]);
+      LObject := TJSONObject(LArray[LIndex]);
       Result[LIndex].ExtensionId := LObject.GetValue<string>('extensionId');
       Result[LIndex].ExecutorId := LObject.GetValue<string>('executorId');
       Result[LIndex].RelativeFileName := LObject.GetValue<string>('path');

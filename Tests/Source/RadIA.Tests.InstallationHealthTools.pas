@@ -67,6 +67,8 @@ type
     [Test]
     procedure NativeJourneyDoesNotRequireMcpAndExposesNextAction;
     [Test]
+    procedure ChatGptProNativeRouteRequiresCodexButNotMcp;
+    [Test]
     procedure StatusSeparatesExternalMcpWithoutExposingConfiguration;
   end;
 
@@ -79,6 +81,49 @@ uses
   RadIA.Core.Interfaces,
   RadIA.Core.SettingsStorage,
   RadIA.Core.ToolRegistry;
+
+procedure TTestRadIAInstallationHealthTools.
+  ChatGptProNativeRouteRequiresCodexButNotMcp;
+var
+  LConfig: IRadIAConfig;
+  LDirectory: string;
+  LProbe: IRadIAInstallationHealthProbe;
+  LResult: string;
+  LStorage: IRadIASettingsStorage;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIAProRoute-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  try
+    LStorage := TRadIAMemorySettingsStorage.Create;
+    TRadIAConfig.SetStorage(LStorage);
+    LConfig := TRadIAConfig.Create;
+    LConfig.SetActiveProvider('OpenAI');
+    LConfig.SetProviderAuthType('OpenAI', 'oauth_cli');
+    LProbe := TRadIAInstallationHealthProbe.Create(
+      LConfig,
+      TPath.Combine(LDirectory, 'bridge.exe'),
+      LDirectory
+    );
+
+    LResult := LProbe.Diagnose;
+
+    Assert.Contains(LResult, '"providerConfigured":true');
+    Assert.Contains(LResult, '"providerTransport":"codex-cli"');
+    Assert.Contains(LResult, '"effectiveCli":"codex"');
+    Assert.Contains(LResult, '"cliRequired":true');
+    Assert.Contains(LResult, '"mcpRequired":false');
+  finally
+    LProbe := nil;
+    LConfig := nil;
+    LStorage := nil;
+    TRadIAConfig.SetStorage(nil);
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
+end;
 
 function TRadIAFirstReadOnlyTool.Execute(
   const ARequest: TRadIAToolRequest
@@ -351,6 +396,11 @@ begin
       LDirectory
     );
     LResult := LProbe.Diagnose;
+    Assert.Contains(LResult, '"diagnosticVersion":"2.0"');
+    Assert.Contains(LResult, '"profile":"full-local"');
+    Assert.Contains(LResult, '"sanitized":true');
+    Assert.Contains(LResult, '"effectiveRoute"');
+    Assert.Contains(LResult, '"nonGitWorkspaceSupported":true');
     Assert.Contains(LResult, '"providerConfigured":true');
     Assert.Contains(LResult, '"mcpBridgeAvailable":true');
     Assert.Contains(LResult, '"webAssetsAvailable":true');

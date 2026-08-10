@@ -2134,6 +2134,58 @@ body.light-theme .message-avatar.provider-avatar-badge {
   align-self: flex-start;
 }
 
+.doctor-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.doctor-score {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #ffffff;
+}
+
+.doctor-ready {
+  background-color: #15803d;
+}
+
+.doctor-attention {
+  background-color: #b45309;
+}
+
+.doctor-route {
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.doctor-check {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.doctor-check > div,
+.doctor-check > button {
+  grid-column: 1 / -1;
+}
+
+.doctor-check-state {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.doctor-check-failed .doctor-check-state {
+  color: #ef4444;
+}
+
 .knowledge-result-source {
   display: grid;
   gap: 6px;

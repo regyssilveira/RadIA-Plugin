@@ -40,10 +40,6 @@ type
     FInverse: Boolean;
     FHyperlink: string;
   public
-    constructor Create(
-      const AForeground: TRadIATerminalColor;
-      const ABold: Boolean
-    );
     class function Default: TRadIATerminalTextStyle; static;
     function WithBackground(
       const ABackground: TRadIATerminalColor
@@ -230,22 +226,6 @@ uses
   System.SysUtils;
 
 { TRadIATerminalTextStyle }
-
-constructor TRadIATerminalTextStyle.Create(
-  const AForeground: TRadIATerminalColor;
-  const ABold: Boolean
-);
-begin
-  FForeground := AForeground;
-  FBackground := tcDefault;
-  FForegroundRgb := -1;
-  FBackgroundRgb := -1;
-  FBold := ABold;
-  FItalic := False;
-  FUnderline := False;
-  FInverse := False;
-  FHyperlink := '';
-end;
 
 class function TRadIATerminalTextStyle.Default:
   TRadIATerminalTextStyle;

@@ -35,7 +35,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
-| `GetInstallationHealth` | Verifica versão, plataforma, BPL, bridge MCP, terminal, chat, executores e prontidão da instalação. | `RadIA.Core.InstallationHealthTools.pas` |
+| `GetInstallationHealth` | Diagnostica rota efetiva, provider, CLI, MCP, terminal, chat, tools e instalação. | `RadIA.Core.InstallationHealthTools.pas` |
 | `GetRadIAStatus` | Retorna um inventário sanitizado e filtrável da configuração, disponibilidade e prontidão atuais do RadIA. | `RadIA.Core.InstallationHealthTools.pas` |
 
 ## Navegação na IDE e grafo do projeto

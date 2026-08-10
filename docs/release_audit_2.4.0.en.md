@@ -1,6 +1,7 @@
 # 2.4.0 candidate audit
 
-> **Status:** ready for release, without a tag, merge, or publication.
+> **Status:** historical evidence for the candidate produced before the Codex executor and Doctor
+> 2.0 fixes. New artifacts must be generated before publication.
 
 This audit closes the skill portability and high-fidelity terminal goal. Binaries were produced
 from commit `7dce5ca5254243f843f43a1addc46f55fb231472` without signing, according to the open-source

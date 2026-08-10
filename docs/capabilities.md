@@ -169,10 +169,10 @@ preenche o comando recomendado, como `/journey fix-build`, para revisão e envio
 
 ### Diagnóstico da instalação
 
-`GetInstallationHealth` e `/doctor` verificam localmente provider, executor, MCP somente quando
-exigido pela CLI, terminal, recursos web e disponibilidade de `GetIDEState` como primeira tool
-somente leitura. O resultado não expõe credenciais e inclui score, checks, próxima ação e
-recomendações de configuração, provisionamento ou reparo.
+`GetInstallationHealth` e `/doctor` verificam localmente a rota efetiva, provider, CLI quando
+exigida pelo executor ou pelo transporte ChatGPT Pro, MCP somente quando exigido, terminal,
+recursos web, tools internas e runtime MCP externo. O cartão não expõe credenciais e apresenta
+score, checks classificados, rota, próxima ação e recomendações. Consulte [RadIA Doctor](doctor.md).
 
 `GetRadIAStatus` e `/status` complementam o diagnóstico com um inventário sanitizado da
 configuração e disponibilidade atuais. Use `/status` para a visão completa ou filtre com

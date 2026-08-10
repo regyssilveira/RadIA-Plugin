@@ -20,6 +20,8 @@ type
     [Test]
     procedure CodexInvocationUsesExecJson;
     [Test]
+    procedure CodexInvocationSupportsNonGitWorkspace;
+    [Test]
     procedure ClaudeInvocationUsesPrintStreamJson;
     [Test]
     procedure GeminiInvocationUsesPromptStreamJson;
@@ -160,7 +162,7 @@ begin
   LInvocation := BuildInvocation('codex');
   Assert.AreEqual('exec', LInvocation.Arguments[0]);
   Assert.AreEqual('--json', LInvocation.Arguments[1]);
-  Assert.AreEqual('Explain this unit', LInvocation.Arguments[2]);
+  Assert.AreEqual('Explain this unit', LInvocation.Arguments[5]);
 end;
 
 procedure TRadIAAgentExecutorTests.CommandLineQuotesPromptWithoutShellExpansion;
@@ -302,6 +304,16 @@ begin
   );
 end;
 
+procedure TRadIAAgentExecutorTests.CodexInvocationSupportsNonGitWorkspace;
+var
+  LInvocation: TRadIACliInvocation;
+begin
+  LInvocation := BuildInvocation('codex');
+  Assert.AreEqual('--skip-git-repo-check', LInvocation.Arguments[2]);
+  Assert.AreEqual('--cd', LInvocation.Arguments[3]);
+  Assert.AreEqual('C:\Project', LInvocation.Arguments[4]);
+end;
+
 procedure TRadIAAgentExecutorTests.ScopeIdentityRejectsCrossProjectJourney;
 var
   LFirst: TRadIAAgentScopeIdentity;
@@ -370,7 +382,8 @@ begin
     'session-123'
   );
   Assert.AreEqual('resume', LInvocation.Arguments[1]);
-  Assert.AreEqual('session-123', LInvocation.Arguments[3]);
+  Assert.AreEqual('--skip-git-repo-check', LInvocation.Arguments[3]);
+  Assert.AreEqual('session-123', LInvocation.Arguments[4]);
 
   Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
   LInvocation := TRadIACliInvocationBuilder.Build(

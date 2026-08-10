@@ -9,7 +9,6 @@ uses
   Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.StdCtrls,
-  Winapi.RichEdit,
   RadIA.Core.CliProcess,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalEmulator,
@@ -122,8 +121,8 @@ type
     );
     procedure SendMouseInput(
       const AButton: TMouseButton;
-      const AX: Integer;
-      const AY: Integer;
+      const AHorizontalPosition: Integer;
+      const AVerticalPosition: Integer;
       const APressed: Boolean
     );
     procedure QueueCompletion(
@@ -212,6 +211,7 @@ uses
   System.SyncObjs,
   System.SysUtils,
   Winapi.Messages,
+  Winapi.RichEdit,
   Winapi.ShellAPI,
   Winapi.Windows,
   Vcl.Graphics,
@@ -1249,8 +1249,8 @@ end;
 
 procedure TRadIATerminalFrame.SendMouseInput(
   const AButton: TMouseButton;
-  const AX: Integer;
-  const AY: Integer;
+  const AHorizontalPosition: Integer;
+  const AVerticalPosition: Integer;
   const APressed: Boolean
 );
 var
@@ -1282,8 +1282,8 @@ begin
       Exit;
     LInput := FScreen.EncodeMouse(
       LButtonCode,
-      (AX div Max(1, LMetrics.tmAveCharWidth)) + 1,
-      (AY div Max(1, LMetrics.tmHeight)) + 1,
+      (AHorizontalPosition div Max(1, LMetrics.tmAveCharWidth)) + 1,
+      (AVerticalPosition div Max(1, LMetrics.tmHeight)) + 1,
       APressed
     );
   finally

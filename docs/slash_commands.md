@@ -27,7 +27,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/settings` | Abre as configurações do RadIA; equivale ao botão de engrenagem do chat. | Configuração local do usuário. |
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
-| `/doctor` | Diagnostica a instalação e recomenda a próxima ação. | Provider, executor, ponte MCP condicional, terminal, chat, primeira tool e runtime MCP externo quando disponível. |
+| `/doctor` | Executa o diagnóstico local completo e recomenda a próxima ação. | Rota efetiva, provider, CLI condicional, ponte MCP condicional, terminal, chat, tools e runtime MCP externo. |
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/status settings` | Mostra provider, modelo, executor e limites efetivos com a origem de cada valor. | Projeto, sessão e próxima solicitação. |
 | `/scope` | Mostra configurações efetivas e a precedência aplicada. | Equivale ao botão **Settings > Scope**. |
@@ -76,7 +76,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 | Necessidade | Comando | Resultado |
 |---|---|---|
-| Descobrir por que o RadIA não está pronto | `/doctor` | Seis verificações básicas, runtime MCP externo quando disponível, problemas, recomendações e próxima ação. |
+| Descobrir por que o RadIA não está pronto | `/doctor` | Score, rota efetiva, checks classificados, problemas, recomendações e próxima ação preparada. |
 | Conferir o que está configurado e disponível | `/status` | Todas as áreas, sem chaves, tokens ou payloads sensíveis. |
 | Investigar somente uma área | `/status cli`, `/status mcp`, `/status provider` | Apenas a seção solicitada. `mcp` separa a ponte de CLI das contagens sanitizadas do runtime externo. Também aceita `agent`, `security`, `editor`, `project`, `tools`, `logging` e `settings`. |
 | Copiar ou analisar a estrutura completa | `/status --json` | Estado completo no formato estruturado retornado pela tool. |
@@ -85,6 +85,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 
 Comece com `/doctor` quando algo não funciona. Use `/status` quando a pergunta for “o que está
 configurado agora?”. Caminhos de executáveis podem aparecer, mas credenciais nunca são incluídas.
+Consulte o [guia completo do RadIA Doctor](doctor.md) para interpretar cada verificação.
 
 ## Customização e Backups de Comandos
 

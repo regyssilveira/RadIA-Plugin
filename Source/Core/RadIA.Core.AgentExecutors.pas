@@ -77,6 +77,7 @@ type
     class function BuildArguments(
       const AKind: TRadIACliKind;
       const APrompt: string;
+      const AWorkingDirectory: string;
       const AResumeSessionId: string
     ): TArray<string>; static;
     class procedure ValidateSessionId(
@@ -298,7 +299,12 @@ begin
     );
   Result := TRadIACliInvocation.Create(
     Trim(AExecutablePath),
-    BuildArguments(ADefinition.Kind, APrompt, AResumeSessionId),
+    BuildArguments(
+      ADefinition.Kind,
+      APrompt,
+      AWorkingDirectory,
+      AResumeSessionId
+    ),
     Trim(AWorkingDirectory),
     'stream-json'
   );
@@ -307,6 +313,7 @@ end;
 class function TRadIACliInvocationBuilder.BuildArguments(
   const AKind: TRadIACliKind;
   const APrompt: string;
+  const AWorkingDirectory: string;
   const AResumeSessionId: string
 ): TArray<string>;
 begin
@@ -318,6 +325,7 @@ begin
           'exec',
           'resume',
           '--json',
+          '--skip-git-repo-check',
           AResumeSessionId,
           APrompt
         ];
@@ -346,7 +354,14 @@ begin
   end;
   case AKind of
     ckCodex:
-      Result := ['exec', '--json', APrompt];
+      Result := [
+        'exec',
+        '--json',
+        '--skip-git-repo-check',
+        '--cd',
+        AWorkingDirectory,
+        APrompt
+      ];
     ckClaude:
       Result := ['-p', APrompt, '--output-format', 'stream-json'];
     ckGemini:

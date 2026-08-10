@@ -50,6 +50,7 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Enable and operate agent mode | [User manual](user_manual.en.md) |
 | Native agent and external executors | [CLI executors](cli_executors.en.md) |
 | CLI capabilities and resume contracts | [CLI capability matrix](cli_capability_matrix.en.md) |
+| Diagnose installation and the effective route | [RadIA Doctor](doctor.en.md) |
 | Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) |
 | Understand effective values, sources, and inheritance | [Scoped settings](hierarchical_settings.en.md) |
 | Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.en.md) |

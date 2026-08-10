@@ -26,9 +26,9 @@ está aberta. Se outra versão do Delphi estiver em uso, a limpeza é adiada e o
 interromper o trabalho; os recursos atualizados passam a valer integralmente após reiniciar essa IDE.
 
 Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation doctor** ou digite
-`/doctor` no chat. O diagnóstico verifica provider, executor, MCP quando necessário, terminal,
-recursos web e a primeira tool somente leitura. Ele retorna score, checks e próxima ação sem
-mostrar tokens ou credenciais.
+`/doctor` no chat. O diagnóstico verifica a rota efetiva, provider, CLI e MCP somente quando cada
+um é necessário, terminal, recursos web, tools e runtime MCP externo. Ele retorna um cartão com
+score, checks e próxima ação sem mostrar tokens ou credenciais. Consulte [RadIA Doctor](doctor.md).
 
 ### Compilação a partir do código-fonte
 

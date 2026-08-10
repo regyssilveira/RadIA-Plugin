@@ -48,6 +48,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Ativar e operar o modo agente | [Manual do usuário](user_manual.md#3-como-ativar-o-modo-agente) |
 | Entender o agente nativo e executores externos | [Executores nativo e CLI](cli_executors.md) |
 | Consultar capacidades e retomada dos CLIs | [Matriz contratual dos CLIs](cli_capability_matrix.md) |
+| Diagnosticar a instalação e a rota efetiva | [RadIA Doctor](doctor.md) |
 | Ver o estado configurado do RadIA | [Doctor, status, health e tools](slash_commands.md#qual-diagnóstico-usar) |
 | Entender valor efetivo, origem e herança | [Configurações por projeto, sessão e solicitação](hierarchical_settings.md) |
 | Ver todas as ferramentas disponíveis | [Catálogo das 131 ferramentas](runtime_tool_catalog.md) |

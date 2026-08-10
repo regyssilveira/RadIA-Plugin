@@ -12,7 +12,9 @@ type
   TRadIAInstallationReadiness = record
   private
     FCliDetected: Boolean;
+    FCliId: string;
     FCliPath: string;
+    FCliRequired: Boolean;
     FExecutorKind: string;
     FExecutorId: string;
     FExternalMcpAvailable: Boolean;
@@ -23,6 +25,7 @@ type
     FMcpReady: Boolean;
     FMcpRequired: Boolean;
     FProviderId: string;
+    FProviderTransport: string;
     FProviderReady: Boolean;
     FTerminalReady: Boolean;
     FToolCount: Integer;
@@ -69,6 +72,7 @@ type
     );
     function CollectReadiness: TRadIAInstallationReadiness;
     function IsProviderConfigured(const AProviderId: string): Boolean;
+    function ProviderUsesCodex(const AProviderId: string): Boolean;
     function IsFirstToolReady: Boolean;
     function NextAction(
       const AReadiness: TRadIAInstallationReadiness
@@ -143,6 +147,10 @@ type
   end;
 
 const
+  CExecutorKindNames: array[TRadIAAgentExecutorKind] of string = (
+    'native',
+    'external-cli'
+  );
   CEmptyInputSchema =
     '{"type":"object","additionalProperties":false}';
   CStatusInputSchema =
@@ -200,6 +208,8 @@ function TRadIAInstallationHealthProbe.IsProviderConfigured(
   const AProviderId: string
 ): Boolean;
 begin
+  if ProviderUsesCodex(AProviderId) then
+    Exit(True);
   if SameText(AProviderId, 'Ollama') then
     Exit(not FConfig.OllamaBaseUrl.Trim.IsEmpty);
   if SameText(AProviderId, 'LMStudio') then
@@ -213,16 +223,62 @@ begin
   Result := not FConfig.GetApiKey(AProviderId).Trim.IsEmpty;
 end;
 
+function TRadIAInstallationHealthProbe.ProviderUsesCodex(
+  const AProviderId: string
+): Boolean;
+var
+  LAuthType: string;
+begin
+  if not SameText(AProviderId, 'OpenAI') then
+    Exit(False);
+  LAuthType := FConfig.GetProviderAuthType(AProviderId);
+  Result := SameText(LAuthType, 'oauth_cli') or
+    SameText(LAuthType, 'oauth') or
+    SameText(LAuthType, 'web_login');
+end;
+
 function TRadIAInstallationHealthProbe.Diagnose: string;
 var
+  LEvaluatedAreas: TJSONArray;
   LIssues: TJSONArray;
   LReadiness: TRadIAInstallationReadiness;
   LRecommendations: TJSONArray;
   LRoot: TJSONObject;
+  LRoute: TJSONObject;
 begin
   LReadiness := CollectReadiness;
   LRoot := TJSONObject.Create;
   try
+    LRoot.AddPair('diagnosticVersion', '2.0');
+    LRoot.AddPair('profile', 'full-local');
+    LRoot.AddPair('sanitized', TJSONBool.Create(True));
+    LEvaluatedAreas := TJSONArray.Create;
+    LEvaluatedAreas.Add('provider');
+    LEvaluatedAreas.Add('effectiveRoute');
+    LEvaluatedAreas.Add('cli');
+    LEvaluatedAreas.Add('mcp');
+    LEvaluatedAreas.Add('terminal');
+    LEvaluatedAreas.Add('chat');
+    LEvaluatedAreas.Add('tools');
+    LEvaluatedAreas.Add('externalMcp');
+    LRoot.AddPair('evaluatedAreas', LEvaluatedAreas);
+    LRoute := TJSONObject.Create;
+    LRoute.AddPair('orchestration', LReadiness.FExecutorKind);
+    LRoute.AddPair('providerTransport', LReadiness.FProviderTransport);
+    LRoute.AddPair('effectiveCli', LReadiness.FCliId);
+    LRoute.AddPair(
+      'cliRequired',
+      TJSONBool.Create(LReadiness.FCliRequired)
+    );
+    LRoute.AddPair(
+      'mcpRequired',
+      TJSONBool.Create(LReadiness.FMcpRequired)
+    );
+    LRoute.AddPair(
+      'nonGitWorkspaceSupported',
+      TJSONBool.Create(True)
+    );
+    LRoot.AddPair('effectiveRoute', LRoute);
     LIssues := TJSONArray.Create;
     LRecommendations := TJSONArray.Create;
     LRoot.AddPair('issues', LIssues);
@@ -333,7 +389,8 @@ begin
   if Includes('cli') then
   begin
     LSection := TJSONObject.Create;
-    LSection.AddPair('required', TJSONBool.Create(AReadiness.FMcpRequired));
+    LSection.AddPair('required', TJSONBool.Create(AReadiness.FCliRequired));
+    LSection.AddPair('client', AReadiness.FCliId);
     LSection.AddPair('detected', TJSONBool.Create(AReadiness.FCliDetected));
     LSection.AddPair('effectivePath', AReadiness.FCliPath);
     LSection.AddPair('guidedInstallAvailable', TJSONBool.Create(True));
@@ -463,9 +520,23 @@ var
     LCheck.AddPair('ready', TJSONBool.Create(AReady));
     LCheck.AddPair('required', TJSONBool.Create(ARequired));
     if AReady then
-      LCheck.AddPair('message', 'Ready')
+    begin
+      LCheck.AddPair('message', 'Ready');
+      if ARequired then
+        LCheck.AddPair('status', 'passed')
+      else
+        LCheck.AddPair('status', 'not-required');
+      LCheck.AddPair('severity', 'none');
+    end
     else
+    begin
       LCheck.AddPair('message', 'Attention required');
+      LCheck.AddPair('status', 'failed');
+      if ARequired then
+        LCheck.AddPair('severity', 'error')
+      else
+        LCheck.AddPair('severity', 'warning');
+    end;
     LCheck.AddPair('action', AAction);
     LChecks.AddElement(LCheck);
     if AReady then
@@ -476,7 +547,12 @@ begin
   LChecks := TJSONArray.Create;
   ARoot.AddPair('checkDetails', LChecks);
   AddCheck('provider', AReadiness.FProviderReady, True, 'Open /settings.');
-  AddCheck('executor', AReadiness.FCliDetected, True, 'Open Settings > CLI & MCP.');
+  AddCheck(
+    'executor',
+    not AReadiness.FCliRequired or AReadiness.FCliDetected,
+    AReadiness.FCliRequired,
+    'Open Settings > CLI & MCP.'
+  );
   AddCheck('mcp', AReadiness.FMcpReady, AReadiness.FMcpRequired, 'Connect or repair MCP.');
   AddCheck('terminal', AReadiness.FTerminalReady, True, 'Use /terminal.');
   AddCheck('chat', AReadiness.FWebReady, True, 'Repair the installation.');
@@ -505,9 +581,15 @@ var
   LExecutorStore: TRadIAAgentExecutorSettingsStore;
   LMcpSettings: TRadIACliMcpClientSettings;
   LMcpStore: TRadIACliMcpSettings;
+  LProviderUsesCodex: Boolean;
 begin
   Result.FProviderId := FConfig.GetActiveProvider;
   Result.FProviderReady := IsProviderConfigured(Result.FProviderId);
+  LProviderUsesCodex := ProviderUsesCodex(Result.FProviderId);
+  if LProviderUsesCodex then
+    Result.FProviderTransport := 'codex-cli'
+  else
+    Result.FProviderTransport := 'provider-native';
   LExecutorStore := TRadIAAgentExecutorSettingsStore.Create;
   try
     LExecutorSettings := LExecutorStore.Load;
@@ -515,15 +597,18 @@ begin
     LExecutorStore.Free;
   end;
   Result.FExecutorId := LExecutorSettings.CliClientId;
-  if LExecutorSettings.Kind = aekNative then
-    Result.FExecutorKind := 'native'
+  Result.FExecutorKind := CExecutorKindNames[LExecutorSettings.Kind];
+  Result.FCliRequired := LProviderUsesCodex or
+    (LExecutorSettings.Kind = aekCli);
+  if LProviderUsesCodex then
+    Result.FCliId := 'codex'
   else
-    Result.FExecutorKind := 'external-cli';
-  Result.FCliDetected := LExecutorSettings.Kind = aekNative;
+    Result.FCliId := LExecutorSettings.CliClientId;
+  Result.FCliDetected := False;
   Result.FCliPath := '';
   Result.FMcpConfigured := False;
   if TRadIACliCatalog.FindById(
-    LExecutorSettings.CliClientId,
+    Result.FCliId,
     LCliDefinition
   ) then
   begin
@@ -537,7 +622,7 @@ begin
     finally
       LMcpStore.Free;
     end;
-    if LExecutorSettings.Kind = aekCli then
+    if Result.FCliRequired then
     begin
       LCliDetector := TRadIACliDetector.Create;
       try
@@ -595,7 +680,7 @@ begin
         'The active provider is not ready.',
         'Open /settings and configure or authenticate the active provider.'
     );
-  if not AReadiness.FCliDetected then
+  if AReadiness.FCliRequired and not AReadiness.FCliDetected then
     AddIssue(
         'cli_not_detected',
         'The selected CLI executable was not detected.',
@@ -651,14 +736,16 @@ var
   LReadyCount: Integer;
 begin
   ARoot.AddPair('activeProvider', AReadiness.FProviderId);
+  ARoot.AddPair('providerTransport', AReadiness.FProviderTransport);
   ARoot.AddPair(
     'providerConfigured',
     TJSONBool.Create(AReadiness.FProviderReady)
   );
   ARoot.AddPair('executor', AReadiness.FExecutorId);
+  ARoot.AddPair('effectiveCli', AReadiness.FCliId);
   ARoot.AddPair(
     'cliRequired',
-    TJSONBool.Create(AReadiness.FMcpRequired)
+    TJSONBool.Create(AReadiness.FCliRequired)
   );
   ARoot.AddPair(
     'cliDetected',
@@ -712,7 +799,9 @@ begin
   );
   LChecks.AddPair(
     'executor',
-    TJSONBool.Create(AReadiness.FCliDetected)
+    TJSONBool.Create(
+      not AReadiness.FCliRequired or AReadiness.FCliDetected
+    )
   );
   LChecks.AddPair('mcp', TJSONBool.Create(AReadiness.FMcpReady));
   LChecks.AddPair(
@@ -725,7 +814,8 @@ begin
     TJSONBool.Create(AReadiness.FFirstToolReady)
   );
   LReadyCount := Ord(AReadiness.FProviderReady) +
-    Ord(AReadiness.FCliDetected) + Ord(AReadiness.FMcpReady) +
+    Ord(not AReadiness.FCliRequired or AReadiness.FCliDetected) +
+    Ord(AReadiness.FMcpReady) +
     Ord(AReadiness.FTerminalReady) + Ord(AReadiness.FWebReady) +
     Ord(AReadiness.FFirstToolReady);
   ARoot.AddPair(
@@ -742,7 +832,7 @@ begin
     Exit('open_provider_settings');
   if not AReadiness.FWebReady then
     Exit('repair_web_assets');
-  if not AReadiness.FCliDetected then
+  if AReadiness.FCliRequired and not AReadiness.FCliDetected then
     Exit('configure_cli');
   if not AReadiness.FMcpReady then
     Exit('provision_mcp');
@@ -778,8 +868,8 @@ function TRadIAInstallationHealthTool.GetDescriptor:
 begin
   Result := TRadIAToolDescriptor.Create(
     'GetInstallationHealth',
-    '1.1.0',
-    'Scores provider, executor, MCP, terminal, chat, and first-tool readiness.',
+    '2.0.0',
+    'Diagnoses the effective route, CLI, MCP, terminal, chat, tools, and installation readiness.',
     CEmptyInputSchema,
     '{"type":"object"}',
     trReadOnly

@@ -35,7 +35,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 | Tool | Purpose | Source unit |
 |---|---|---|
-| `GetInstallationHealth` | Scores provider, executor, MCP, terminal, chat, and first-tool readiness. | `RadIA.Core.InstallationHealthTools.pas` |
+| `GetInstallationHealth` | Diagnoses the effective route, CLI, MCP, terminal, chat, tools, and installation readiness. | `RadIA.Core.InstallationHealthTools.pas` |
 | `GetRadIAStatus` | Returns a sanitized, filterable snapshot of RadIA configuration and readiness. | `RadIA.Core.InstallationHealthTools.pas` |
 
 ## IDE navigation and project graph

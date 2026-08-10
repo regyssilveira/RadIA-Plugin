@@ -1,6 +1,7 @@
 # Auditoria da candidata 2.4.0
 
-> **Estado:** pronta para release, sem tag, merge ou publicação.
+> **Estado:** evidência histórica da candidata anterior às correções do executor Codex e Doctor 2.0.
+> Novos artefatos precisam ser gerados antes da publicação.
 
 Esta auditoria registra o fechamento do goal de portabilidade de skills e terminal de alta
 fidelidade. Os binários foram produzidos do commit

@@ -15,6 +15,12 @@
 - Alternate screen restores the primary screen; bracketed paste and SGR mouse require negotiation.
 - OSC 8 hyperlinks accept only `http`, `https`, and `mailto`, require a double-click, and request
   consent for every opening.
+- Direct Codex CLI supports non-Git Delphi projects in new and resumed conversations with an
+  explicit working directory.
+- ChatGPT Pro preserves the real Codex error instead of turning it into an empty response or a
+  generic JSON-decision failure.
+- `/doctor` 2.0 displays the effective route, separate CLI/MCP dependencies, classified checks, and
+  a next action in a dedicated visual card.
 
 ## How to use
 
@@ -37,7 +43,7 @@ required for installation.
 
 ## Candidate validation
 
-- 1,024/1,024 DUnitX tests passed on each target with no failures, errors, or leaks;
+- 1,026/1,026 DUnitX tests passed on each target with no failures, errors, or leaks;
 - real ConPTY streaming, continuous input, and resize passed on all three targets;
 - Codex CLI 0.147.0, Claude Code 2.1.226, Gemini CLI 0.54.4, and GitHub Copilot CLI 1.0.78 detected;
 - 83/83 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,
@@ -51,3 +57,6 @@ See the [reproducible terminal evidence](terminal_high_fidelity_evidence_2.4.0.j
 [installed visual matrix](terminal_smoke_evidence_2.4.0.json).
 
 Tagging, merging, and publishing require explicit authorization.
+
+Hashes from the audit produced before these fixes remain historical evidence. Candidate artifacts
+must be regenerated before publication to include the Codex executor and Doctor 2.0 changes.

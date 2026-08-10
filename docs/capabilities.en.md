@@ -24,7 +24,7 @@ This page is the functional map of RadIA 2.4.0.
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
 | Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
-| Installation doctor | Score provider, executor, conditional MCP, terminal, chat, and first-tool readiness with a next action. |
+| Installation doctor | Diagnose the effective route, provider, conditional CLI/MCP, terminal, chat, and tool readiness with a next action. |
 | RadIA status | Show a sanitized, filterable inventory of provider, agent, CLI, MCP, security, editor, project, tools, and logging state. |
 | Scoped settings | Resolve provider, model, executor, and limits by request, session, project, global value, and safe default, with visible sources and inheritance controls. |
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints, resource limits, and internal DUnitX/Git diff result compaction. |
