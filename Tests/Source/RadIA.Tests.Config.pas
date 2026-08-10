@@ -33,6 +33,8 @@ type
     [Test]
     procedure TestConsentPreferencesPersistenceAndSafeDefaults;
     [Test]
+    procedure TestLegacyConsentDefaultsMigrateOnce;
+    [Test]
     procedure TestConsentTimeoutIsClamped;
     [Test]
     procedure TestInlineCompletionSafeDefaultsAndPersistence;
@@ -162,8 +164,8 @@ begin
   Assert.AreEqual(60, FConfig.ConsentTimeoutSeconds);
   Assert.IsTrue(FConfig.ConsentShowArguments);
   Assert.IsTrue(FConfig.ConsentRememberReversible);
-  Assert.IsFalse(FConfig.ConsentRememberStructural);
-  Assert.IsFalse(FConfig.ConsentRememberExecution);
+  Assert.IsTrue(FConfig.ConsentRememberStructural);
+  Assert.IsTrue(FConfig.ConsentRememberExecution);
 
   FConfig.ConsentTimeoutSeconds := 120;
   FConfig.ConsentShowArguments := False;
@@ -178,6 +180,25 @@ begin
   Assert.IsFalse(FConfig.ConsentRememberReversible);
   Assert.IsTrue(FConfig.ConsentRememberStructural);
   Assert.IsTrue(FConfig.ConsentRememberExecution);
+end;
+
+procedure TTestRadIAConfig.TestLegacyConsentDefaultsMigrateOnce;
+begin
+  Assert.IsTrue(FStorage.OpenKey('Software\TestRadIAConfig', True));
+  FStorage.WriteInteger('ConsentRememberStructural', 0);
+  FStorage.WriteInteger('ConsentRememberExecution', 0);
+  FStorage.CloseKey;
+
+  FConfig.Load;
+  Assert.IsTrue(FConfig.ConsentRememberStructural);
+  Assert.IsTrue(FConfig.ConsentRememberExecution);
+
+  FConfig.ConsentRememberStructural := False;
+  FConfig.ConsentRememberExecution := False;
+  FConfig.Save;
+  FConfig.Load;
+  Assert.IsFalse(FConfig.ConsentRememberStructural);
+  Assert.IsFalse(FConfig.ConsentRememberExecution);
 end;
 
 procedure TTestRadIAConfig.TestConsentTimeoutIsClamped;

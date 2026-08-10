@@ -128,9 +128,9 @@ endpoint e permissão; não reinicie a IDE como primeira tentativa.
 |---|---|---|
 | Consent dialog timeout | Para aumentar ou reduzir o tempo de decisão | Aceita 15–600 segundos. Ao expirar, a operação é cancelada; nunca é aprovada automaticamente. |
 | Show tool arguments | Recomendado para revisão detalhada | Mostra JSON sanitizado antes da aprovação. Segredos continuam removidos. |
-| Allow session permission for reversible writes | Para reduzir confirmações em edições reversíveis | Habilita a opção **Allow session** somente no escopo compatível da sessão. |
-| Allow session permission for structural writes | Somente em sessão confiável | Pode abranger criação/remoção estrutural; vem desabilitada por segurança. |
-| Allow session permission for build, tests, and execution | Somente quando o plano exigir execução repetida | Não autoriza ações destrutivas e não substitui limites, auditoria ou workspace boundary. |
+| Allow session permission for reversible writes | Para reduzir confirmações em edições reversíveis | Habilita **Allow session** para tools compatíveis da mesma origem, projeto, escopo e risco. |
+| Allow session permission for structural writes | Durante uma jornada estrutural confiável | Permite que preview, criação e abertura compatíveis compartilhem a aprovação; vem habilitada. |
+| Allow session permission for build, tests, and execution | Quando o plano exigir validação repetida | Compartilha a aprovação apenas dentro da categoria de execução; vem habilitada. |
 | Revoke session permissions | Ao terminar uma tarefa ou suspeitar de escopo excessivo | Revoga imediatamente todas as permissões lembradas na sessão atual da IDE. |
 
 O diálogo é único para chat, agente, MCP e terminal. **Source** identifica claramente a superfície,

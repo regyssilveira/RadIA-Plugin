@@ -684,6 +684,12 @@ begin
   LRegistry.RegisterTool(
     TTestRadIATool.Create('ApplyPatch', trReversibleWrite)
   );
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('WriteEditorFile', trReversibleWrite)
+  );
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('CreateProject', trStructuralWrite)
+  );
   LConsent := TTestRadIAConsentProvider.Create(cdAllowSession);
   LAudit := TRadIAInMemoryToolAuditSink.Create;
   LExecutor := TRadIAToolPolicyExecutor.Create(
@@ -695,12 +701,15 @@ begin
   );
 
   Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
-  Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('WriteEditorFile')).Success);
   Assert.AreEqual(1, LConsent.RequestCount);
+
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('CreateProject')).Success);
+  Assert.AreEqual(2, LConsent.RequestCount);
 
   LExecutor.RevokeSessionPermissions;
   Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
-  Assert.AreEqual(2, LConsent.RequestCount);
+  Assert.AreEqual(3, LConsent.RequestCount);
 end;
 
 procedure TTestRadIAToolSecurity.UnknownToolIsDeniedAndAudited;

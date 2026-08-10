@@ -281,7 +281,8 @@ begin
     AAllowSession
   );
   FAllowSessionButton.Hint :=
-    'Authorize the same tool and scope until permissions are revoked or the IDE closes.';
+    'Authorize compatible tools with the same risk, source, project, and scope until revoked ' +
+    'or the IDE closes.';
   FDenyButton := AddButton('Deny', CDenyModalResult);
   FDenyButton.Hint := 'Reject this request without performing the action.';
   FCancelButton := AddButton('Cancel', mrCancel);

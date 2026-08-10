@@ -1185,6 +1185,12 @@ end;
 procedure TRadIAFrameAIConfig.ConfigureControlHints;
 begin
   SetControlsHint(
+    [FChkConsentRememberReversible, FChkConsentRememberStructural,
+     FChkConsentRememberExecution],
+    'Enable Allow session for this risk category. A grant covers compatible tools only for the ' +
+    'same source, project, and scope, and can be revoked at any time.'
+  );
+  SetControlsHint(
     [edtGeminiKey, edtOpenAIKey, edtClaudeKey, edtDeepSeekKey,
      edtGroqKey, edtOpenRouterKey, edtQwenKey, edtMistralKey],
     'Provider API key. It is protected locally with Windows DPAPI.'

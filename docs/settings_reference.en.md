@@ -71,9 +71,9 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 |---|---|---|
 | Consent dialog timeout | To adjust decision time | Accepts 15–600 seconds. Expiration cancels and never approves. |
 | Show tool arguments | Recommended for review | Shows sanitized JSON before approval. |
-| Session permission for reversible writes | During trusted repeated edits | Offers scoped **Allow session** for compatible reversible operations. |
-| Session permission for structural writes | Only for a trusted structural task | Disabled by default because it covers project structure. |
-| Session permission for build/tests/execution | For repeated validation | Never bypasses auditing, limits, or workspace boundaries. |
+| Session permission for reversible writes | During trusted repeated edits | Offers **Allow session** to compatible tools with the same origin, project, scope, and risk. |
+| Session permission for structural writes | During a trusted structural journey | Lets compatible preview, creation, and opening steps share approval; enabled by default. |
+| Session permission for build/tests/execution | For repeated validation | Shares approval only within the execution category; enabled by default. |
 | Revoke session permissions | After a task or when scope is uncertain | Immediately clears remembered permissions for the current IDE session. |
 
 ## Knowledge & Embeddings

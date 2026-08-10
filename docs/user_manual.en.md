@@ -228,7 +228,10 @@ Read-only tools may run directly. Mutating and execution tools display their nam
 - **Deny:** rejects without changing IDE state;
 - **Cancel:** requests cooperative cancellation.
 
-Session permission is not global. Project, tool, client, and scope are part of the decision.
+Session permission is not global. It is reused only by compatible tools with the same risk category,
+origin, project, and scope. A structural grant may cover preview, creation, and opening for the same
+project without repeating the dialog; it does not cover execution or destructive actions. Tools
+marked for mandatory consent still prompt on every call.
 Use `/revoke-tools` or **Revoke session permissions** to clear every active session grant.
 
 Under **Settings > Security & Consent**, users can configure:
@@ -236,8 +239,12 @@ Under **Settings > Security & Consent**, users can configure:
 - consent dialog timeout from 15 to 600 seconds;
 - whether tool arguments are shown;
 - session permission for reversible writes;
-- session permission, disabled by default, for structural writes;
-- session permission, disabled by default, for builds, tests, and execution.
+- session permission for structural writes;
+- session permission for builds, tests, and execution.
+
+All three categories are enabled by default so **Allow session** is available. Users may disable
+each category independently. Existing installations receive this new default once; subsequent
+saved choices are preserved.
 
 Under **Settings > Knowledge & Embeddings**, users can configure:
 

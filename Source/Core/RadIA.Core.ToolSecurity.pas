@@ -171,7 +171,8 @@ type
     FRedactor: IRadIASecretRedactor;
     FSessionPermissions: TDictionary<string, Boolean>;
     function BuildPermissionKey(
-      const ARequest: TRadIAToolRequest
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor
     ): string;
     function Decide(
       const ARequest: TRadIAToolRequest;
@@ -498,14 +499,16 @@ begin
 end;
 
 function TRadIAToolPolicyExecutor.BuildPermissionKey(
-  const ARequest: TRadIAToolRequest
+  const ARequest: TRadIAToolRequest;
+  const ADescriptor: TRadIAToolDescriptor
 ): string;
 begin
   Result := LowerCase(
     ARequest.SessionId + #31 +
     ARequest.ProjectId + #31 +
-    ARequest.ToolName + #31 +
-    ARequest.Scope
+    ARequest.Origin + #31 +
+    ARequest.Scope + #31 +
+    IntToStr(Ord(ADescriptor.Risk))
   );
 end;
 
@@ -548,7 +551,7 @@ begin
     not ADescriptor.ConsentEveryTime then
     Exit(cdDeny);
 
-  LPermissionKey := BuildPermissionKey(ARequest);
+  LPermissionKey := BuildPermissionKey(ARequest, ADescriptor);
   TMonitor.Enter(FSessionPermissions);
   try
     if not ADescriptor.ConsentEveryTime and

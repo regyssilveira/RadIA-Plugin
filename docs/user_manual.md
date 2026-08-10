@@ -275,7 +275,10 @@ um diálogo com ferramenta, risco e escopo:
 - **Deny:** recusa sem modificar a IDE;
 - **Cancel:** solicita o cancelamento de trabalho em andamento.
 
-Permissão de sessão não é global. Projeto, ferramenta, cliente e escopo fazem parte da decisão.
+Permissão de sessão não é global. Ela é reutilizada somente para tools compatíveis da mesma
+categoria de risco, origem, projeto e escopo. Uma aprovação estrutural pode, por exemplo, cobrir
+preview, criação e abertura do mesmo projeto sem repetir o diálogo; não cobre execução nem ações
+destrutivas. Tools marcadas para consentimento obrigatório continuam perguntando a cada chamada.
 Use `/revoke-tools` ou o botão **Revoke session permissions** para limpar todas as permissões da
 sessão ativa.
 
@@ -284,8 +287,12 @@ Em **Settings > Security & Consent**, é possível configurar:
 - timeout do diálogo entre 15 e 600 segundos;
 - exibição ou ocultação dos argumentos da tool;
 - permissão de sessão para escrita reversível;
-- permissão de sessão, desabilitada por padrão, para escrita estrutural;
-- permissão de sessão, desabilitada por padrão, para build, testes e execução.
+- permissão de sessão para escrita estrutural;
+- permissão de sessão para build, testes e execução.
+
+As três categorias vêm habilitadas para que **Allow session** esteja disponível. Elas podem ser
+desativadas individualmente. Instalações anteriores recebem esse novo padrão uma vez; depois disso,
+as escolhas salvas pelo usuário são preservadas.
 
 Em **Settings > Knowledge & Embeddings**, é possível configurar:
 

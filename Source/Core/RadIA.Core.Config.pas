@@ -275,8 +275,8 @@ begin
   FConsentTimeoutSeconds := 60;
   FConsentShowArguments := True;
   FConsentRememberReversible := True;
-  FConsentRememberStructural := False;
-  FConsentRememberExecution := False;
+  FConsentRememberStructural := True;
+  FConsentRememberExecution := True;
 
   Load;
 end;
@@ -479,12 +479,21 @@ begin
       600
     );
     FConsentShowArguments := ReadRegInt('ConsentShowArguments', 1) <> 0;
-    FConsentRememberReversible :=
-      ReadRegInt('ConsentRememberReversible', 1) <> 0;
-    FConsentRememberStructural :=
-      ReadRegInt('ConsentRememberStructural', 0) <> 0;
-    FConsentRememberExecution :=
-      ReadRegInt('ConsentRememberExecution', 0) <> 0;
+    if FStorage.ValueExists('ConsentSessionPolicyVersion') then
+    begin
+      FConsentRememberReversible :=
+        ReadRegInt('ConsentRememberReversible', 1) <> 0;
+      FConsentRememberStructural :=
+        ReadRegInt('ConsentRememberStructural', 1) <> 0;
+      FConsentRememberExecution :=
+        ReadRegInt('ConsentRememberExecution', 1) <> 0;
+    end
+    else
+    begin
+      FConsentRememberReversible := True;
+      FConsentRememberStructural := True;
+      FConsentRememberExecution := True;
+    end;
 
     FStorage.CloseKey;
 
@@ -778,6 +787,7 @@ begin
       'ConsentRememberExecution',
       IfThen(FConsentRememberExecution, 1, 0)
     );
+    FStorage.WriteInteger('ConsentSessionPolicyVersion', 1);
     FStorage.CloseKey;
 
     TLogger.Configure(FLogEnabled, FLogPath, FLogMaxSizeKB);
