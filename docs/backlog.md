@@ -27,7 +27,7 @@ sem publicar, criar tag ou fazer merge antes de autorização explícita.
 | **Rotas explícitas, login Pro restaurado e cópia universal** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
 | **Goal — Eliminar as seis lacunas competitivas** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
 | **Goal — Expansão da experiência completa** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
-| **Goal — Portabilidade de skills e terminal de alta fidelidade** | 🚧 Em validação final | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
+| **Goal — Portabilidade de skills e terminal de alta fidelidade** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |

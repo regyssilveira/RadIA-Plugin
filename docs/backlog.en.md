@@ -26,7 +26,7 @@ without publishing, tagging, or merging before explicit authorization.
 | **Explicit Routes, Restored Pro Login, and Universal Copy** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
 | **Goal — Eliminate the six competitive gaps** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
 | **Goal — Expand the complete experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
-| **Goal — Skill portability and high-fidelity terminal** | 🚧 Final validation | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
+| **Goal — Skill portability and high-fidelity terminal** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |

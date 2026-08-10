@@ -1,6 +1,6 @@
 # Goal — skill portability and high-fidelity terminal
 
-> **Status:** in progress on branch `feat/competitive-gap-closure`.
+> **Status:** complete on branch `feat/competitive-gap-closure`; candidate ready for release.
 > **Delivery version:** 2.4.0, prepared on this branch and not published yet.
 
 ## Objective
@@ -37,7 +37,7 @@ this goal.
 | M4 | Decoupled interface and selected VT core | Complete |
 | M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Complete |
 | M6 | Real shell, CLI, and TUI matrix on all three targets | Complete |
-| M7 | Final audit, documentation, Sonar, and release preparation | In progress |
+| M7 | Final audit, documentation, Sonar, and release preparation | Complete |
 
 ## Skill portability contract
 

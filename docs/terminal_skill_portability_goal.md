@@ -1,6 +1,6 @@
 # Goal — portabilidade de skills e terminal de alta fidelidade
 
-> **Estado:** em execução no branch `feat/competitive-gap-closure`.
+> **Estado:** concluído no branch `feat/competitive-gap-closure`; candidata pronta para release.
 > **Versão de entrega:** 2.4.0, preparada neste branch e ainda não publicada.
 
 ## Objetivo
@@ -37,7 +37,7 @@ Delphi não fazem parte deste goal.
 | M4 | Interface desacoplada e núcleo VT selecionado | Concluído |
 | M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Concluído |
 | M6 | Matriz real de shells, CLIs e TUIs nos três targets | Concluído |
-| M7 | Auditoria final, documentação, Sonar e preparação do release | Em execução |
+| M7 | Auditoria final, documentação, Sonar e preparação do release | Concluído |
 
 ## Contrato de portabilidade de skills
 

@@ -103,7 +103,8 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current execution plan:
 
-- [Active skill portability and terminal goal](terminal_skill_portability_goal.en.md).
+- [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
+- [2.4.0 candidate audit](release_audit_2.4.0.en.md) and previous audits.
 - [Completed complete-experience expansion goal](experience_expansion_goal.en.md).
 - [Completed six-gap experience goal](competitive_leadership_plan.en.md).
 
