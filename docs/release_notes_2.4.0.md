@@ -55,7 +55,7 @@ visual; o ZIP não é necessário para o fluxo normal.
 - 88/88 testes web e documentais aprovados, incluindo links, pares bilíngues, navegação, mojibake e
   ausência de referências proibidas;
 - ESLint aprovado;
-- SonarQube aprovado com 82,8% de cobertura global e zero issues.
+- SonarQube aprovado com 82,7% de cobertura global e zero issues.
 - smoke visual instalado aprovado no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, com 132
   ferramentas, controles, entrada, saída, paleta, perfis e navegação por teclado.
 

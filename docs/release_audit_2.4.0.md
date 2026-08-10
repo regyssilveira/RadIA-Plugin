@@ -18,7 +18,7 @@ a política do projeto aberto.
 | Matriz visual instalada | Terminal aprovado nos três targets com 132 ferramentas |
 | Portabilidade de skills | Codex, Claude Code, Gemini CLI e GitHub Copilot CLI aprovados |
 | Web, documentação e lint | 88/88 testes e ESLint aprovados |
-| SonarQube | `OK`, cobertura 82,8%, duplicação 1,7% e zero issues |
+| SonarQube | `OK`, cobertura 82,7%, duplicação 1,7% e zero issues |
 | Pacotes | Três ZIPs internos validados; não destinados ao fluxo público normal |
 | Instalador visual | Integridade aprovada; Authenticode `NotSigned` por decisão do projeto |
 

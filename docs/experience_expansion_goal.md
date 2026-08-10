@@ -35,7 +35,7 @@ conhecimento e automações com segurança e entender cada controle sem consulta
 - 83/83 testes web e documentais e ESLint aprovados;
 - 1.013/1.013 testes em Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, sem falhas, erros,
   ignorados ou leaks;
-- SonarQube com Quality Gate `OK`, cobertura 82,8%, duplicação 1,7% e zero issues, bugs,
+- SonarQube com Quality Gate `OK`, cobertura 82,7%, duplicação 1,7% e zero issues, bugs,
   vulnerabilidades, hotspots ou code smells.
 
 ## Contratos obrigatórios

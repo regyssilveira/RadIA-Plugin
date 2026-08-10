@@ -17,7 +17,7 @@ unsigned according to the open-source project policy.
 | Installed visual matrix | Terminal passed on all three targets with 132 tools |
 | Skill portability | Codex, Claude Code, Gemini CLI, and GitHub Copilot CLI passed |
 | Web, documentation, and lint | 88/88 tests and ESLint passed |
-| SonarQube | `OK`, 82.8% coverage, 1.7% duplication, and zero issues |
+| SonarQube | `OK`, 82.7% coverage, 1.7% duplication, and zero issues |
 | Packages | Three internal ZIP files passed validation; not intended for normal public installation |
 | Visual installer | Integrity passed; Authenticode `NotSigned` by project decision |
 

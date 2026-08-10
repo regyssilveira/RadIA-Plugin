@@ -55,7 +55,7 @@ required for installation.
 - 88/88 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,
   and the absence of prohibited references;
 - ESLint passed;
-- SonarQube passed with 82.8% global coverage and zero issues.
+- SonarQube passed with 82.7% global coverage and zero issues.
 - installed visual smoke passed on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 with 132
   tools, controls, input, output, palette, profiles, and keyboard navigation.
 

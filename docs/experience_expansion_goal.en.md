@@ -35,7 +35,7 @@ understand every control without reading source code.
 - 83/83 Web and documentation tests plus a clean ESLint run;
 - 1,013/1,013 tests on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, with no failures,
   errors, ignored tests, or leaks;
-- SonarQube Quality Gate `OK`, 82.8% coverage, 1.7% duplication, and zero issues, bugs,
+- SonarQube Quality Gate `OK`, 82.7% coverage, 1.7% duplication, and zero issues, bugs,
   vulnerabilities, hotspots, or code smells.
 
 ## Required contracts
