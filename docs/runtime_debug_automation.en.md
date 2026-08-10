@@ -21,6 +21,10 @@ captures, 2 MiB each and 8 MiB total, expiring after ten minutes. A new session 
 the prior content. The card complements structured evidence; tool results and debugger state remain
 the authoritative validation.
 
+The timeline is not inferred by the chat: the scenario coordinator publishes the start and finish
+of each action, its repetition, action kind, and final result. Selectors, entered values, and control
+content are not included in these events. A card failure is isolated and never interrupts the scenario.
+
 ## When to use it
 
 Use this workflow for UI-dependent failures such as an Access Violation when a form is opened,
@@ -161,6 +165,13 @@ The user decides when to add the artifact to version control.
 - **Rejected artifact:** regenerate and review the preview because its fingerprint is stale.
 
 ## Version 2.1 acceptance
+
+### Current automated visual-capture matrix
+
+The current implementation opens a real VCL window, obtains its opaque ID through the discovery
+facade, captures the same `HWND` through the production facade, and validates PNG dimensions and
+signature. The test passes on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64. Local web tests
+additionally cover safe card rendering, including the before/after pair and timeline.
 
 The form-cancellation Access Violation laboratory case was proven on Delphi 12 Win32, Delphi 13
 Win32, and Delphi 13 IDE64. Every target completed reproduction, capture, fix, new build, new

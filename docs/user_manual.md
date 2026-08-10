@@ -467,6 +467,9 @@ Use `CaptureRuntimeVisual` com o ID opaco devolvido por `GetRuntimeWindows`: `ph
 a janela antes do roteiro e `phase=after` conclui o card anterior/posterior no chat. Cada captura é
 sensível, exige consentimento próprio e fica somente em memória por até dez minutos.
 
+O card recebe diretamente do executor o início e o término de cada ação, a repetição, o tipo da
+ação e o resultado final. Seletores, valores digitados e conteúdo dos controles não são exibidos.
+
 Depois de corrigir uma falha dependente da interface, o RadIA pode preservar o roteiro em
 `.radia/runtime-scenarios/<id>.json`. O artefato usa schema versionado e fingerprint e não salva
 IDs opacos da sessão: cada alvo precisa de classe, texto e caminho estáveis. Para uma janela raiz,

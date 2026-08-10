@@ -53,6 +53,7 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.Debugger*` | Estado, controle, breakpoints, avaliação e watches. |
 | `RadIA.Core.VisualRuntimeSession` | Sessão visual limitada, vinculada à identidade completa do processo em depuração. |
 | `RadIA.Core.RuntimeVisualTools` | Captura consentida anterior/posterior para o card visual local do chat. |
+| `RadIA.Core.RuntimeScenario` | Executa o roteiro limitado e publica eventos reais para a timeline visual. |
 | `RadIA.Core.Knowledge*` | Indexação, persistência, scheduler, busca e leitura limitada. |
 | `RadIA.Core.Mcp` | Protocolo MCP, sessões, cancelamento, métricas e despacho. |
 | `RadIA.Core.ExternalMcp` | Contratos e catálogo isolado para consumir servidores MCP externos com namespace estável. |

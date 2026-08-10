@@ -1052,7 +1052,9 @@ initialization
   );
   TRadIAContainer.Register<IRadIARuntimeScenarioCoordinator>(
     TRadIARuntimeScenarioCoordinator.Create(
-      TRadIAContainer.Resolve<IRadIARuntimeActionFacade>
+      TRadIAContainer.Resolve<IRadIARuntimeActionFacade>,
+      TRadIAContainer.Resolve<IRadIAVisualRuntimeSession> as
+        IRadIARuntimeScenarioEventSink
     )
   );
   TRadIAContainer.Register<IRadIARuntimeEvidenceCoordinator>(

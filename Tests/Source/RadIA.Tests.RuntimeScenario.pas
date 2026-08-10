@@ -5,7 +5,8 @@ interface
 uses
   DUnitX.TestFramework,
   RadIA.Core.RuntimeAutomation,
-  RadIA.Core.RuntimeScenario;
+  RadIA.Core.RuntimeScenario,
+  RadIA.Core.VisualRuntimeSession;
 
 type
   TMockRadIARuntimeActionFacade = class(
@@ -43,6 +44,7 @@ type
     FCoordinator: IRadIARuntimeScenarioCoordinator;
     FMock: TMockRadIARuntimeActionFacade;
     FSession: TRadIARuntimeSessionIdentity;
+    FVisualSession: IRadIAVisualRuntimeSession;
     function Action(
       const AKind: TRadIARuntimeActionKind;
       const ATargetId: string;
@@ -73,6 +75,8 @@ type
     procedure RunCompletesTenStableRepetitions;
     [Test]
     procedure RunStopsAtGlobalTimeout;
+    [Test]
+    procedure ScenarioEventsFlowIntoVisualTimeline;
     [Test]
     procedure ToolsKeepRunBehindConsentAndCancelImmediate;
   end;
@@ -361,14 +365,40 @@ begin
   );
   FMock := TMockRadIARuntimeActionFacade.Create;
   FActionFacade := FMock;
+  FVisualSession := TRadIAVisualRuntimeSession.Create;
   FCoordinator := TRadIARuntimeScenarioCoordinator.Create(
-    FActionFacade
+    FActionFacade,
+    FVisualSession as IRadIARuntimeScenarioEventSink
   );
+end;
+
+procedure TTestRadIARuntimeScenario.ScenarioEventsFlowIntoVisualTimeline;
+var
+  LPreview: TRadIARuntimeScenarioPreview;
+  LSnapshot: TRadIAVisualSessionSnapshot;
+  LStatus: TRadIARuntimeScenarioStatus;
+begin
+  LPreview := FCoordinator.Prepare(
+    Scenario([
+      Action(rakInvoke, StringOfChar('a', 64)),
+      Action(rakAssert, StringOfChar('b', 64), 'ready')
+    ])
+  );
+  LStatus := FCoordinator.Run(LPreview.PreviewId, FSession, nil);
+  Assert.AreEqual(rssSucceeded, LStatus.State);
+  Assert.IsTrue(FVisualSession.TryGetSnapshot(LSnapshot));
+  Assert.AreEqual<Integer>(6, Length(LSnapshot.Events));
+  Assert.AreEqual(vsekSessionStarted, LSnapshot.Events[0].Kind);
+  Assert.AreEqual(vsekActionStarted, LSnapshot.Events[1].Kind);
+  Assert.AreEqual(vsekActionCompleted, LSnapshot.Events[2].Kind);
+  Assert.AreEqual(vsekValidationRecorded, LSnapshot.Events[5].Kind);
+  Assert.AreEqual('succeeded', LSnapshot.Events[5].Status);
 end;
 
 procedure TTestRadIARuntimeScenario.TearDown;
 begin
   FCoordinator := nil;
+  FVisualSession := nil;
   FActionFacade := nil;
   FMock := nil;
 end;

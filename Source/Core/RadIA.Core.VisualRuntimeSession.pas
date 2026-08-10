@@ -3,7 +3,8 @@ unit RadIA.Core.VisualRuntimeSession;
 interface
 
 uses
-  RadIA.Core.RuntimeAutomation;
+  RadIA.Core.RuntimeAutomation,
+  RadIA.Core.RuntimeScenario;
 
 type
   TRadIAVisualCapturePhase = (
@@ -168,7 +169,8 @@ type
 
   TRadIAVisualRuntimeSession = class(
     TInterfacedObject,
-    IRadIAVisualRuntimeSession
+    IRadIAVisualRuntimeSession,
+    IRadIARuntimeScenarioEventSink
   )
   private
     FCaptures: TArray<TRadIAVisualCapture>;
@@ -220,6 +222,24 @@ type
       const ACaptureId: string;
       out ACapture: TRadIAVisualCapture
     ): Boolean;
+    procedure ScenarioStarted(const ASession: TRadIARuntimeSessionIdentity);
+    procedure ActionStarted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const ARepetition: Integer;
+      const AActionIndex: Integer;
+      const AActionKind: TRadIARuntimeActionKind
+    );
+    procedure ActionCompleted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const ARepetition: Integer;
+      const AActionIndex: Integer;
+      const AActionKind: TRadIARuntimeActionKind;
+      const ASuccess: Boolean
+    );
+    procedure ScenarioCompleted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AStatus: TRadIARuntimeScenarioStatus
+    );
   end;
 
 function RadIAVisualCapturePhaseName(const APhase: TRadIAVisualCapturePhase): string;
@@ -242,6 +262,28 @@ const
   CMaximumEventCount = 200;
   CMaximumTotalCaptureBytes = 8 * 1024 * 1024;
   CRetentionMinutes = 10;
+
+function RuntimeActionKindName(const AKind: TRadIARuntimeActionKind): string;
+begin
+  case AKind of
+    rakInvoke:
+      Result := 'invoke';
+    rakSetValue:
+      Result := 'setValue';
+    rakSelect:
+      Result := 'select';
+    rakClose:
+      Result := 'close';
+    rakCancel:
+      Result := 'cancel';
+    rakWait:
+      Result := 'wait';
+    rakAssert:
+      Result := 'assert';
+  else
+    Result := 'unknown';
+  end;
+end;
 
 type
   TRadIAVisualSessionClock = class(
@@ -674,6 +716,80 @@ begin
   finally
     TMonitor.Exit(FLock);
   end;
+end;
+
+procedure TRadIAVisualRuntimeSession.ScenarioStarted(
+  const ASession: TRadIARuntimeSessionIdentity
+);
+var
+  LSnapshot: TRadIAVisualSessionSnapshot;
+begin
+  if not TryGetSnapshot(LSnapshot) or
+    not SameText(LSnapshot.Session.SessionId, ASession.SessionId) or
+    (LSnapshot.State <> vssActive) then
+    BeginSession(ASession);
+end;
+
+procedure TRadIAVisualRuntimeSession.ActionStarted(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const ARepetition: Integer;
+  const AActionIndex: Integer;
+  const AActionKind: TRadIARuntimeActionKind
+);
+begin
+  RecordEvent(
+    ASession.SessionId,
+    vsekActionStarted,
+    AActionIndex,
+    'started',
+    Format(
+      'Repetition %d started action %s.',
+      [ARepetition, RuntimeActionKindName(AActionKind)]
+    )
+  );
+end;
+
+procedure TRadIAVisualRuntimeSession.ActionCompleted(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const ARepetition: Integer;
+  const AActionIndex: Integer;
+  const AActionKind: TRadIARuntimeActionKind;
+  const ASuccess: Boolean
+);
+var
+  LStatus: string;
+begin
+  if ASuccess then
+    LStatus := 'succeeded'
+  else
+    LStatus := 'failed';
+  RecordEvent(
+    ASession.SessionId,
+    vsekActionCompleted,
+    AActionIndex,
+    LStatus,
+    Format(
+      'Repetition %d completed action %s.',
+      [ARepetition, RuntimeActionKindName(AActionKind)]
+    )
+  );
+end;
+
+procedure TRadIAVisualRuntimeSession.ScenarioCompleted(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AStatus: TRadIARuntimeScenarioStatus
+);
+begin
+  RecordEvent(
+    ASession.SessionId,
+    vsekValidationRecorded,
+    AStatus.ActionIndex,
+    RadIARuntimeScenarioStateName(AStatus.State),
+    Format(
+      'Scenario finished after %d completed actions.',
+      [AStatus.CompletedActions]
+    )
+  );
 end;
 
 class procedure TRadIAVisualRuntimeSession.ValidateCapture(

@@ -69,6 +69,28 @@ type
     property Message: string read FMessage;
   end;
 
+  IRadIARuntimeScenarioEventSink = interface
+    ['{E42F423D-C9CE-44C8-85E6-9740610B91F7}']
+    procedure ScenarioStarted(const ASession: TRadIARuntimeSessionIdentity);
+    procedure ActionStarted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const ARepetition: Integer;
+      const AActionIndex: Integer;
+      const AActionKind: TRadIARuntimeActionKind
+    );
+    procedure ActionCompleted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const ARepetition: Integer;
+      const AActionIndex: Integer;
+      const AActionKind: TRadIARuntimeActionKind;
+      const ASuccess: Boolean
+    );
+    procedure ScenarioCompleted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AStatus: TRadIARuntimeScenarioStatus
+    );
+  end;
+
   IRadIARuntimeScenarioCoordinator = interface
     ['{58F20E2E-999A-42B6-9343-31B774113BCF}']
     function Cancel: Boolean;
@@ -102,6 +124,7 @@ type
     end;
   private
     FActionFacade: IRadIARuntimeActionFacade;
+    FEventSink: IRadIARuntimeScenarioEventSink;
     FCancelRequested: Boolean;
     FPrepared: TRadIAPreparedRuntimeScenario;
     FStatus: TRadIARuntimeScenarioStatus;
@@ -159,12 +182,33 @@ type
     procedure SetStatus(
       const AStatus: TRadIARuntimeScenarioStatus
     );
+    procedure NotifyActionCompleted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const ARepetition: Integer;
+      const AActionIndex: Integer;
+      const AActionKind: TRadIARuntimeActionKind;
+      const ASuccess: Boolean
+    );
+    procedure NotifyActionStarted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const ARepetition: Integer;
+      const AActionIndex: Integer;
+      const AActionKind: TRadIARuntimeActionKind
+    );
+    procedure NotifyScenarioCompleted(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AStatus: TRadIARuntimeScenarioStatus
+    );
+    procedure NotifyScenarioStarted(
+      const ASession: TRadIARuntimeSessionIdentity
+    );
     procedure ValidateScenario(
       const AScenario: TRadIARuntimeScenario
     );
   public
     constructor Create(
-      const AActionFacade: IRadIARuntimeActionFacade
+      const AActionFacade: IRadIARuntimeActionFacade;
+      const AEventSink: IRadIARuntimeScenarioEventSink = nil
     );
     destructor Destroy; override;
     function Cancel: Boolean;
@@ -189,7 +233,8 @@ uses
   System.DateUtils,
   System.Diagnostics,
   System.Hash,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.Logger;
 
 const
   CWaitSliceMs = 100;
@@ -388,13 +433,15 @@ begin
 end;
 
 constructor TRadIARuntimeScenarioCoordinator.Create(
-  const AActionFacade: IRadIARuntimeActionFacade
+  const AActionFacade: IRadIARuntimeActionFacade;
+  const AEventSink: IRadIARuntimeScenarioEventSink
 );
 begin
   inherited Create;
   if not Assigned(AActionFacade) then
     raise EArgumentNilException.Create('AActionFacade');
   FActionFacade := AActionFacade;
+  FEventSink := AEventSink;
   FPrepared := nil;
   FCancelRequested := False;
   FStatus := TRadIARuntimeScenarioStatus.Create(
@@ -406,6 +453,81 @@ begin
     '',
     ''
   );
+end;
+
+procedure TRadIARuntimeScenarioCoordinator.NotifyActionCompleted(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const ARepetition: Integer;
+  const AActionIndex: Integer;
+  const AActionKind: TRadIARuntimeActionKind;
+  const ASuccess: Boolean
+);
+begin
+  if not Assigned(FEventSink) then
+    Exit;
+  try
+    FEventSink.ActionCompleted(
+      ASession,
+      ARepetition,
+      AActionIndex,
+      AActionKind,
+      ASuccess
+    );
+  except
+    on E: Exception do
+      TLogger.Log('Runtime scenario event sink failed: ' + E.Message, 'Warning');
+  end;
+end;
+
+procedure TRadIARuntimeScenarioCoordinator.NotifyActionStarted(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const ARepetition: Integer;
+  const AActionIndex: Integer;
+  const AActionKind: TRadIARuntimeActionKind
+);
+begin
+  if not Assigned(FEventSink) then
+    Exit;
+  try
+    FEventSink.ActionStarted(
+      ASession,
+      ARepetition,
+      AActionIndex,
+      AActionKind
+    );
+  except
+    on E: Exception do
+      TLogger.Log('Runtime scenario event sink failed: ' + E.Message, 'Warning');
+  end;
+end;
+
+procedure TRadIARuntimeScenarioCoordinator.NotifyScenarioCompleted(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AStatus: TRadIARuntimeScenarioStatus
+);
+begin
+  if not Assigned(FEventSink) then
+    Exit;
+  try
+    FEventSink.ScenarioCompleted(ASession, AStatus);
+  except
+    on E: Exception do
+      TLogger.Log('Runtime scenario event sink failed: ' + E.Message, 'Warning');
+  end;
+end;
+
+procedure TRadIARuntimeScenarioCoordinator.NotifyScenarioStarted(
+  const ASession: TRadIARuntimeSessionIdentity
+);
+begin
+  if not Assigned(FEventSink) then
+    Exit;
+  try
+    FEventSink.ScenarioStarted(ASession);
+  except
+    on E: Exception do
+      TLogger.Log('Runtime scenario event sink failed: ' + E.Message, 'Warning');
+  end;
 end;
 
 destructor TRadIARuntimeScenarioCoordinator.Destroy;
@@ -499,6 +621,12 @@ begin
         ''
       ));
       LAction := APrepared.Scenario.Actions[LActionIndex];
+      NotifyActionStarted(
+        APrepared.Scenario.Session,
+        LRepetition,
+        LActionIndex + 1,
+        LAction.Kind
+      );
       LRemainingMs :=
         APrepared.Scenario.Limits.MaxDurationMs -
         Cardinal(LStopwatch.ElapsedMilliseconds);
@@ -507,6 +635,13 @@ begin
         APrepared.Scenario.Session,
         LAction,
         ACancellationToken
+      );
+      NotifyActionCompleted(
+        APrepared.Scenario.Session,
+        LRepetition,
+        LActionIndex + 1,
+        LAction.Kind,
+        LActionResult.Success
       );
       if TryGetInterruption(
         APrepared,
@@ -732,8 +867,10 @@ begin
       end
     );
   try
+    NotifyScenarioStarted(LPrepared.Scenario.Session);
     Result := ExecuteScenario(LPrepared, ACancellationToken);
     SetStatus(Result);
+    NotifyScenarioCompleted(LPrepared.Scenario.Session, Result);
   finally
     if Assigned(LCancellationNotifier) then
       LCancellationNotifier.ClearCancellationCallback;

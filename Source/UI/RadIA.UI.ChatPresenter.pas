@@ -3683,7 +3683,8 @@ procedure TRadIAChatPresenter.PostDirectToolResultToWeb(
 );
 begin
   FView.PostMessageToWeb(AResultJson);
-  if SameText(AName, 'CaptureRuntimeVisual') then
+  if SameText(AName, 'CaptureRuntimeVisual') or
+    SameText(AName, 'RunRuntimeScenario') then
     PostVisualRuntimeSessionToWeb;
 end;
 

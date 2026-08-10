@@ -353,6 +353,9 @@ Use `CaptureRuntimeVisual` with an opaque ID returned by `GetRuntimeWindows`: `p
 captures the window before the script and `phase=after` completes the before/after chat card. Every
 capture is sensitive, requires its own consent, and remains only in memory for up to ten minutes.
 
+The card receives each action start and finish, repetition, action kind, and final result directly
+from the executor. Selectors, entered values, and control content are not displayed.
+
 After correcting a UI-dependent failure, RadIA can preserve its script under
 `.radia/runtime-scenarios/<id>.json`. The artifact has a versioned schema and fingerprint and does
 not store session-bound opaque IDs: every target needs a stable class, text, and path. Use

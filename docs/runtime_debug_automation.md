@@ -21,6 +21,10 @@ em memória: no máximo seis capturas, 2 MiB cada e 8 MiB no total, com expiraç
 Outra sessão ou a expiração elimina o conteúdo anterior. O card é evidência visual complementar;
 valores e sucesso continuam sendo confirmados pelas tools estruturadas e pelo debugger.
 
+A timeline não é inferida pelo chat: o coordenador do cenário publica o início e o término de cada
+ação, a repetição, o tipo da ação e o resultado final. Seletores, valores digitados e conteúdo dos
+controles não entram nesses eventos. Uma falha no card é isolada e nunca interrompe o cenário.
+
 ## Quando usar
 
 Use este fluxo quando o problema depende de uma sequência na interface, por exemplo:
@@ -181,6 +185,13 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 - **Artefato recusado:** o fingerprint não corresponde ao conteúdo; gere e revise um novo preview.
 
 ## Evidência histórica de aceite inicial
+
+### Matriz automatizada atual da captura visual
+
+A implementação atual abre uma janela VCL real, obtém seu ID opaco pelo facade de descoberta,
+captura o mesmo `HWND` pelo facade de produção e valida dimensões e assinatura PNG. O teste passou
+no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. A renderização segura do card, incluindo o
+par anterior/posterior e a timeline, é coberta adicionalmente pelos testes web locais.
 
 O caso-laboratório de Access Violation ao cancelar um formulário foi comprovado em Delphi 12 Win32,
 Delphi 13 Win32 e Delphi 13 IDE64. Em cada alvo houve reprodução, captura, correção, novo build,

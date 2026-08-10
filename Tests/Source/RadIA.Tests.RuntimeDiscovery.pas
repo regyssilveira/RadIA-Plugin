@@ -38,6 +38,8 @@ type
     [Test]
     procedure DiscoversAuthorizedFormAndControl;
     [Test]
+    procedure CapturesAuthorizedFormAsPng;
+    [Test]
     procedure ExecutesOnlyAuthorizedRuntimeActions;
     [Test]
     procedure RejectsPasswordRuntimeAction;
@@ -59,6 +61,7 @@ uses
   Winapi.Windows,
   RadIA.Core.RuntimeDiscoveryTools,
   RadIA.Core.RuntimeScenarioTools,
+  RadIA.Core.VisualRuntimeSession,
   RadIA.Core.ToolRegistry,
   RadIA.OTA.RuntimeDiscovery,
   RadIA.OTA.RuntimeProcess;
@@ -70,6 +73,33 @@ const
   CTestPasswordValue = 'must-not-be-disclosed';
   CTestEditableValue = 'editable runtime value';
   CTestUpdatedValue = 'updated runtime value';
+
+procedure TTestRadIARuntimeDiscovery.CapturesAuthorizedFormAsPng;
+var
+  LCapture: TRadIAVisualCapture;
+  LCaptureFacade: IRadIARuntimeVisualCaptureFacade;
+  LWindow: TRadIARuntimeWindowSnapshot;
+begin
+  Assert.IsTrue(FindLaboratoryWindow(LWindow));
+  Assert.IsTrue(Supports(
+    FDiscovery,
+    IRadIARuntimeVisualCaptureFacade,
+    LCaptureFacade
+  ));
+  LCapture := LCaptureFacade.CaptureWindow(
+    FSession,
+    LWindow.WindowId,
+    vcpBefore
+  );
+  Assert.AreEqual('image/png', LCapture.MimeType);
+  Assert.AreEqual(FForm.Width, LCapture.Width);
+  Assert.AreEqual(FForm.Height, LCapture.Height);
+  Assert.IsTrue(Length(LCapture.Bytes) > 8);
+  Assert.AreEqual<Integer>($89, LCapture.Bytes[0]);
+  Assert.AreEqual<Integer>($50, LCapture.Bytes[1]);
+  Assert.AreEqual<Integer>($4E, LCapture.Bytes[2]);
+  Assert.AreEqual<Integer>($47, LCapture.Bytes[3]);
+end;
 
 function TTestRadIARuntimeDiscovery.FindLaboratoryWindow(
   out AWindow: TRadIARuntimeWindowSnapshot
