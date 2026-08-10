@@ -154,6 +154,14 @@ type
     ): TRadIAToolResult;
   end;
 
+  TMockDeepInstallationHealthTool = class(TInterfacedObject, IRadIATool)
+  public
+    function GetDescriptor: TRadIAToolDescriptor;
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+  end;
+
   TMockWorkspace = class(TInterfacedObject, IRadIAWorkspaceFacade)
   public
     function GetIDEState: TRadIAIDEState;
@@ -235,6 +243,8 @@ type
     procedure TestHealthCommandExecutesProjectHealth;
     [Test]
     procedure TestDoctorCommandExecutesInstallationHealth;
+    [Test]
+    procedure TestDeepDoctorCommandExecutesActiveDiagnostic;
     [Test]
     procedure TestStatusCommandExecutesFilteredStatus;
     [Test]
@@ -713,6 +723,7 @@ begin
   FToolRegistry.RegisterTool(TMockReadOnlyTool.Create);
   FToolRegistry.RegisterTool(TMockProjectHealthTool.Create);
   FToolRegistry.RegisterTool(TMockInstallationHealthTool.Create);
+  FToolRegistry.RegisterTool(TMockDeepInstallationHealthTool.Create);
   FToolRegistry.RegisterTool(TMockRadIAStatusTool.Create);
   FToolExecutor := TRadIAToolExecutor.Create(FToolRegistry);
   TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
@@ -955,6 +966,36 @@ begin
     '"agentModeEnabled":true'
   );
   Assert.Contains(FMockView.PostedMessages.Text, 'CLI conversation link:');
+end;
+
+procedure TTestChatPresenter.TestDeepDoctorCommandExecutesActiveDiagnostic;
+begin
+  FPresenter.SendPromptText('/doctor --deep');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'deep-active');
+end;
+
+function TMockDeepInstallationHealthTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(
+    '{"status":"ready","profile":"deep-active"}'
+  );
+end;
+
+function TMockDeepInstallationHealthTool.GetDescriptor:
+  TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'RunInstallationDeepDiagnostic',
+    '1.0.0',
+    'Returns mock deep installation health.',
+    '{"type":"object"}',
+    '{"type":"object"}',
+    trReadOnly
+  );
 end;
 
 procedure TTestChatPresenter.TestStatusCommandRejectsUnknownFilter;

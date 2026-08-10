@@ -168,7 +168,7 @@ apply, or discard; commands and configurable shortcuts provide the same actions 
 across blocks and files. Decisions do not write to the editor before application.
 `ApplyBlockReviews` requires every block to be resolved and uses the existing multi-file
 transaction, with SHA preflight and compensation. `ListBlockReviews`, `DecideBlockReview`,
-`ApplyBlockReviews`, and `ClearBlockReviews` are part of the 131-tool catalog. See the
+`ApplyBlockReviews`, and `ClearBlockReviews` are part of the 132-tool catalog. See the
 [Phase 5 transaction evidence](competitive_gap_phase_5_transaction_evidence_2.3.1.json).
 
 **Acceptance proven:** 953 tests pass without failures or leaks on every target. Real smokes on

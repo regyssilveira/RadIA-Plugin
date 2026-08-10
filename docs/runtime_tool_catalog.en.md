@@ -36,6 +36,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | Tool | Purpose | Source unit |
 |---|---|---|
 | `GetInstallationHealth` | Diagnoses the effective route, CLI, MCP, terminal, chat, tools, and installation readiness. | `RadIA.Core.InstallationHealthTools.pas` |
+| `RunInstallationDeepDiagnostic` | Runs consented CLI version and authentication probes plus external MCP handshakes. | `RadIA.Core.InstallationHealthTools.pas` |
 | `GetRadIAStatus` | Returns a sanitized, filterable snapshot of RadIA configuration and readiness. | `RadIA.Core.InstallationHealthTools.pas` |
 
 ## IDE navigation and project graph
@@ -328,6 +329,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 38
-- Registered built-in tools: 131
+- Registered built-in tools: 132
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -36,18 +36,27 @@ The Codex executor supplies the project directory explicitly and supports Delphi
 Git repository in both new and resumed sessions. If an older version displays `Not inside a trusted
 directory`, update RadIA and run `/cli new` before testing again.
 
-## Current limits
+## Consented deep diagnostic
 
-The `full-local` profile verifies installation and configuration without making external calls. A
-detected CLI may still require login, model access, or connectivity. Use **Settings > CLI & MCP >
-Diagnose** for version and authentication-specific checks. Open-project, build, test, and local-index
-problems belong to `/health`.
+Use `/doctor --deep` when the local diagnostic is correct but execution still fails. RadIA displays
+execution consent before starting. When approved, the `deep-active` profile:
+
+- runs `--version` against the effective selected CLI;
+- uses the non-interactive authentication status command when the CLI provides one;
+- opens a temporary handshake with every enabled external MCP server;
+- closes test sessions and shows each result in the same doctor card.
+
+The diagnostic does not install, authenticate, repair, or change configuration. It also does not
+send a billable model message merely to test a provider. CLIs without a non-interactive auth check
+are reported as `not-supported` with the correct manual action. Results are sanitized: tokens, keys,
+server arguments, and raw authentication command output are never included.
 
 ## Related commands
 
 | Need | Command |
 |---|---|
 | Diagnose why something does not work | `/doctor` |
+| Validate CLI and MCP through real execution | `/doctor --deep` |
 | Inventory everything currently configured | `/status` |
 | Isolate one area | `/status provider`, `/status cli`, or `/status mcp` |
 | Diagnose the open project | `/health` |

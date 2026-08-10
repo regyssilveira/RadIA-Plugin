@@ -36,18 +36,27 @@ O executor Codex informa o diretório do projeto explicitamente e aceita pastas 
 repositório Git, tanto em sessões novas quanto retomadas. Se uma versão antiga mostrar `Not inside
 a trusted directory`, atualize o RadIA e execute `/cli new` antes de testar novamente.
 
-## Limites atuais
+## Diagnóstico profundo com consentimento
 
-O perfil `full-local` verifica instalação e configuração sem realizar chamadas externas. Portanto,
-uma CLI detectada ainda pode precisar de login, acesso ao modelo ou conectividade. Use **Settings >
-CLI & MCP > Diagnose** para o teste específico de versão e autenticação. Problemas do projeto
-Delphi, build, testes e índice local pertencem ao comando `/health`.
+Use `/doctor --deep` quando o diagnóstico local estiver correto, mas a execução ainda falhar. Antes
+de começar, o RadIA mostra o consentimento de execução. Se autorizado, o perfil `deep-active`:
+
+- executa `--version` na CLI efetivamente selecionada;
+- usa o comando não interativo de status de autenticação quando a CLI o oferece;
+- abre um handshake temporário com cada servidor MCP externo habilitado;
+- encerra as sessões de teste e apresenta cada resultado no mesmo cartão do doctor.
+
+O diagnóstico não instala, autentica, repara ou altera configurações. Também não envia uma mensagem
+faturável ao modelo apenas para testar o provider. CLIs sem comando não interativo de autenticação
+aparecem como `not-supported`, com a ação manual correta. O resultado é sanitizado: não inclui
+tokens, chaves, argumentos de servidores ou a saída bruta do comando de autenticação.
 
 ## Comandos relacionados
 
 | Necessidade | Comando |
 |---|---|
 | Diagnosticar por que algo não funciona | `/doctor` |
+| Validar CLI e MCP por execução real | `/doctor --deep` |
 | Inventariar tudo que está configurado | `/status` |
 | Isolar uma área | `/status provider`, `/status cli` ou `/status mcp` |
 | Diagnosticar o projeto aberto | `/health` |

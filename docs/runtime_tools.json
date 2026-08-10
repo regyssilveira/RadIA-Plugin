@@ -37,6 +37,7 @@
       "source": "Source/Core/RadIA.Core.InstallationHealthTools.pas",
       "tools": [
         "GetInstallationHealth",
+        "RunInstallationDeepDiagnostic",
         "GetRadIAStatus"
       ]
     },

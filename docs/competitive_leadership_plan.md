@@ -171,7 +171,7 @@ rejeitar, editar, explicar, aplicar ou descartar; comandos e atalhos configuráv
 ações e navegação entre blocos e arquivos. As decisões não escrevem no editor até a aplicação.
 `ApplyBlockReviews` exige todos os blocos resolvidos e usa a transação multiarquivo existente, com
 preflight de SHA e compensação. `ListBlockReviews`, `DecideBlockReview`, `ApplyBlockReviews` e
-`ClearBlockReviews` estão no catálogo de 131 ferramentas. Consulte a
+`ClearBlockReviews` estão no catálogo de 132 ferramentas. Consulte a
 [evidência transacional da Fase 5](competitive_gap_phase_5_transaction_evidence_2.3.1.json).
 
 **Aceite comprovado:** 953 testes passam sem falhas ou vazamentos em cada target. Smokes reais no

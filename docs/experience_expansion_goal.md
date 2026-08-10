@@ -30,7 +30,7 @@ conhecimento e automações com segurança e entender cada controle sem consulta
   permanecem separados do fluxo principal;
 - links locais válidos e relativos ao repositório, sem `file:///`, mojibake ou referências aos
   produtos proibidos;
-- 131/131 ferramentas com finalidade e acionamento, comandos nativos documentados e fallbacks de
+- 132/132 ferramentas com finalidade e acionamento, comandos nativos documentados e fallbacks de
   modelos sincronizados automaticamente com `RadIA.Core.Types.pas`;
 - 83/83 testes web e documentais e ESLint aprovados;
 - 1.013/1.013 testes em Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, sem falhas, erros,

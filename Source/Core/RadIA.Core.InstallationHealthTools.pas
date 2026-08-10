@@ -35,6 +35,7 @@ type
   IRadIAInstallationHealthProbe = interface
     ['{8188E3A4-B0B1-4708-B310-060E9E961635}']
     function Diagnose: string;
+    function DiagnoseDeep: string;
     function Status(
       const AFilter: string;
       const AAgentModeEnabled: Boolean
@@ -74,6 +75,11 @@ type
     function IsProviderConfigured(const AProviderId: string): Boolean;
     function ProviderUsesCodex(const AProviderId: string): Boolean;
     function IsFirstToolReady: Boolean;
+    procedure AddDeepCliChecks(
+      const ARoot: TJSONObject;
+      const AReadiness: TRadIAInstallationReadiness
+    );
+    procedure AddDeepExternalMcpChecks(const ARoot: TJSONObject);
     function NextAction(
       const AReadiness: TRadIAInstallationReadiness
     ): string;
@@ -97,6 +103,7 @@ type
       const AExternalMcpRuntime: IRadIAExternalMcpRuntime
     ); overload;
     function Diagnose: string;
+    function DiagnoseDeep: string;
     function Status(
       const AFilter: string;
       const AAgentModeEnabled: Boolean
@@ -112,15 +119,40 @@ implementation
 
 uses
   System.IOUtils,
+  System.SyncObjs,
   System.SysUtils,
   RadIA.Core.ResultCompactionSettings,
   RadIA.Core.ResultCompactor,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliManager,
   RadIA.Core.CliMcpSettings,
+  RadIA.Core.CliProcess,
+  RadIA.Core.ExternalMcp,
   RadIA.Core.PseudoTerminal;
 
 type
+  IRadIADeepProbeWaiter = interface
+    ['{A68168D5-F19E-46EF-AD2C-EEC730151EDA}']
+    procedure Complete(const AResult: TRadIACliProcessResult);
+    function GetResult: TRadIACliProcessResult;
+    function WaitFor(const ATimeoutMs: Cardinal): Boolean;
+  end;
+
+  TRadIADeepProbeWaiter = class(
+    TInterfacedObject,
+    IRadIADeepProbeWaiter
+  )
+  private
+    FEvent: TEvent;
+    FResult: TRadIACliProcessResult;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Complete(const AResult: TRadIACliProcessResult);
+    function GetResult: TRadIACliProcessResult;
+    function WaitFor(const ATimeoutMs: Cardinal): Boolean;
+  end;
+
   TRadIAInstallationHealthTool = class(
     TInterfacedObject,
     IRadIATool
@@ -146,6 +178,20 @@ type
     function GetDescriptor: TRadIAToolDescriptor;
   end;
 
+  TRadIADeepInstallationHealthTool = class(
+    TInterfacedObject,
+    IRadIATool
+  )
+  private
+    FProbe: IRadIAInstallationHealthProbe;
+  public
+    constructor Create(const AProbe: IRadIAInstallationHealthProbe);
+    function Execute(
+      const ARequest: TRadIAToolRequest
+    ): TRadIAToolResult;
+    function GetDescriptor: TRadIAToolDescriptor;
+  end;
+
 const
   CExecutorKindNames: array[TRadIAAgentExecutorKind] of string = (
     'native',
@@ -158,6 +204,39 @@ const
     '"filter":{"type":"string","enum":["all","provider","agent",' +
     '"cli","mcp","security","editor","project","tools","logging"]},' +
     '"agentModeEnabled":{"type":"boolean"}}}';
+  CDeepProbeTimeoutMs = 10000;
+
+constructor TRadIADeepProbeWaiter.Create;
+begin
+  inherited Create;
+  FEvent := TEvent.Create(nil, True, False, '');
+end;
+
+destructor TRadIADeepProbeWaiter.Destroy;
+begin
+  FEvent.Free;
+  inherited;
+end;
+
+procedure TRadIADeepProbeWaiter.Complete(
+  const AResult: TRadIACliProcessResult
+);
+begin
+  FResult := AResult;
+  FEvent.SetEvent;
+end;
+
+function TRadIADeepProbeWaiter.GetResult: TRadIACliProcessResult;
+begin
+  Result := FResult;
+end;
+
+function TRadIADeepProbeWaiter.WaitFor(
+  const ATimeoutMs: Cardinal
+): Boolean;
+begin
+  Result := FEvent.WaitFor(ATimeoutMs) = wrSignaled;
+end;
 
 constructor TRadIAInstallationHealthProbe.Create(
   const AConfig: IRadIAConfig;
@@ -235,6 +314,263 @@ begin
   Result := SameText(LAuthType, 'oauth_cli') or
     SameText(LAuthType, 'oauth') or
     SameText(LAuthType, 'web_login');
+end;
+
+function RunSynchronousCliProbe(
+  const AExecutablePath: string;
+  const AArguments: TArray<string>;
+  out AResult: TRadIACliProcessResult
+): Boolean;
+var
+  LSession: IRadIACliProcessSession;
+  LWaiter: IRadIADeepProbeWaiter;
+begin
+  AResult := Default(TRadIACliProcessResult);
+  LWaiter := TRadIADeepProbeWaiter.Create;
+  LSession := TRadIACliProcessRunner.Start(
+    TRadIACliInvocation.Create(
+      AExecutablePath,
+      AArguments,
+      GetCurrentDir,
+      'text'
+    ),
+    CDeepProbeTimeoutMs,
+    nil,
+    nil,
+    procedure(AProcessResult: TRadIACliProcessResult)
+    begin
+      LWaiter.Complete(AProcessResult);
+    end
+  );
+  Result := LWaiter.WaitFor(CDeepProbeTimeoutMs + 1000);
+  if not Result and Assigned(LSession) then
+    LSession.Cancel;
+  if Result then
+    AResult := LWaiter.GetResult;
+end;
+
+procedure AddDeepCheck(
+  const AChecks: TJSONArray;
+  const AId: string;
+  const AStatus: string;
+  const AMessage: string;
+  const AAction: string
+);
+var
+  LCheck: TJSONObject;
+begin
+  LCheck := TJSONObject.Create;
+  LCheck.AddPair('id', AId);
+  LCheck.AddPair('status', AStatus);
+  LCheck.AddPair('message', AMessage);
+  LCheck.AddPair('action', AAction);
+  if SameText(AStatus, 'failed') then
+    LCheck.AddPair('severity', 'error')
+  else
+    LCheck.AddPair('severity', 'none');
+  AChecks.AddElement(LCheck);
+end;
+
+procedure TRadIAInstallationHealthProbe.AddDeepCliChecks(
+  const ARoot: TJSONObject;
+  const AReadiness: TRadIAInstallationReadiness
+);
+var
+  LChecks: TJSONArray;
+  LDefinition: TRadIACliDefinition;
+  LResult: TRadIACliProcessResult;
+  LVersion: string;
+begin
+  LChecks := ARoot.GetValue<TJSONArray>('activeChecks');
+  if not AReadiness.FCliRequired then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'cli-runtime',
+      'not-required',
+      'The effective route does not require a CLI.',
+      ''
+    );
+    Exit;
+  end;
+  if not AReadiness.FCliDetected or
+    not TRadIACliCatalog.FindById(AReadiness.FCliId, LDefinition) then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'cli-runtime',
+      'failed',
+      'The effective CLI could not be executed.',
+      '/settings'
+    );
+    Exit;
+  end;
+  if RunSynchronousCliProbe(AReadiness.FCliPath, ['--version'], LResult) and
+    LResult.Succeeded then
+  begin
+    LVersion := TRadIACliHealth.NormalizeVersionOutput(
+      LResult.StdOut,
+      LResult.StdErr
+    );
+    AddDeepCheck(
+      LChecks,
+      'cli-version',
+      'passed',
+      'CLI version probe succeeded: ' + LVersion,
+      ''
+    );
+  end
+  else
+    AddDeepCheck(
+      LChecks,
+      'cli-version',
+      'failed',
+      'The CLI was detected but its version probe failed.',
+      '/settings'
+    );
+  if Length(LDefinition.AuthStatusArguments) = 0 then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'cli-authentication',
+      'not-supported',
+      'This CLI requires a manual authentication check: ' +
+        LDefinition.AuthLoginHint,
+      ''
+    );
+    Exit;
+  end;
+  if RunSynchronousCliProbe(
+    AReadiness.FCliPath,
+    LDefinition.AuthStatusArguments,
+    LResult
+  ) and LResult.Succeeded then
+    AddDeepCheck(
+      LChecks,
+      'cli-authentication',
+      'passed',
+      'CLI authentication is ready.',
+      ''
+    )
+  else
+    AddDeepCheck(
+      LChecks,
+      'cli-authentication',
+      'failed',
+      'CLI authentication is not ready. Login command: ' +
+        LDefinition.AuthLoginHint,
+      '/settings'
+    );
+end;
+
+procedure TRadIAInstallationHealthProbe.AddDeepExternalMcpChecks(
+  const ARoot: TJSONObject
+);
+var
+  LChecks: TJSONArray;
+  LEnabledCount: Integer;
+  LError: string;
+  LServer: TRadIAExternalMcpServerConfig;
+  LServers: TArray<TRadIAExternalMcpServerConfig>;
+  LStatus: TRadIAExternalMcpRuntimeStatus;
+begin
+  LChecks := ARoot.GetValue<TJSONArray>('activeChecks');
+  if not Assigned(FExternalMcpRuntime) then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'external-mcp-handshake',
+      'not-required',
+      'The external MCP runtime is not active.',
+      ''
+    );
+    Exit;
+  end;
+  LServers := FExternalMcpRuntime.GetServers;
+  LEnabledCount := 0;
+  for LServer in LServers do
+  begin
+    if not LServer.Enabled then
+      Continue;
+    Inc(LEnabledCount);
+    if FExternalMcpRuntime.TestServer(LServer, LStatus, LError) then
+      AddDeepCheck(
+        LChecks,
+        'external-mcp-' + LServer.Id,
+        'passed',
+        Format(
+          'MCP handshake succeeded with %d tools, %d resources, and %d prompts.',
+          [LStatus.ToolCount, LStatus.ResourceCount, LStatus.PromptCount]
+        ),
+        ''
+      )
+    else
+      AddDeepCheck(
+        LChecks,
+        'external-mcp-' + LServer.Id,
+        'failed',
+        'The MCP handshake failed. Details remain in the local RadIA log.',
+        '/settings'
+      );
+  end;
+  if LEnabledCount = 0 then
+    AddDeepCheck(
+      LChecks,
+      'external-mcp-handshake',
+      'not-required',
+      'No external MCP server is configured.',
+      ''
+    );
+end;
+
+function TRadIAInstallationHealthProbe.DiagnoseDeep: string;
+var
+  LActiveChecks: TJSONArray;
+  LFailedCount: Integer;
+  LIndex: Integer;
+  LPair: TJSONPair;
+  LReadiness: TRadIAInstallationReadiness;
+  LRoot: TJSONObject;
+begin
+  LReadiness := CollectReadiness;
+  LRoot := TJSONObject.ParseJSONValue(Diagnose) as TJSONObject;
+  try
+    LPair := LRoot.RemovePair('profile');
+    LPair.Free;
+    LRoot.AddPair('profile', 'deep-active');
+    LPair := LRoot.RemovePair('diagnosticVersion');
+    LPair.Free;
+    LRoot.AddPair('diagnosticVersion', '2.1');
+    LRoot.AddPair('consentRequired', TJSONBool.Create(True));
+    LActiveChecks := TJSONArray.Create;
+    LRoot.AddPair('activeChecks', LActiveChecks);
+    AddDeepCliChecks(LRoot, LReadiness);
+    AddDeepExternalMcpChecks(LRoot);
+    LFailedCount := 0;
+    for LIndex := 0 to LActiveChecks.Count - 1 do
+      if SameText(
+        LActiveChecks[LIndex].GetValue<string>('status'),
+        'failed'
+      ) then
+        Inc(LFailedCount);
+    LRoot.AddPair('activeCheckCount', LActiveChecks.Count);
+    LRoot.AddPair('activeFailureCount', LFailedCount);
+    if LFailedCount > 0 then
+    begin
+      LPair := LRoot.RemovePair('status');
+      LPair.Free;
+      LRoot.AddPair('status', 'attention');
+      LPair := LRoot.RemovePair('summary');
+      LPair.Free;
+      LRoot.AddPair(
+        'summary',
+        Format('%d active diagnostic checks require attention.', [LFailedCount])
+      );
+    end;
+    Result := LRoot.ToJSON;
+  finally
+    LRoot.Free;
+  end;
 end;
 
 function TRadIAInstallationHealthProbe.Diagnose: string;
@@ -876,6 +1212,36 @@ begin
   );
 end;
 
+constructor TRadIADeepInstallationHealthTool.Create(
+  const AProbe: IRadIAInstallationHealthProbe
+);
+begin
+  inherited Create;
+  if not Assigned(AProbe) then
+    raise EArgumentNilException.Create('AProbe');
+  FProbe := AProbe;
+end;
+
+function TRadIADeepInstallationHealthTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+begin
+  Result := TRadIAToolResult.Succeeded(FProbe.DiagnoseDeep);
+end;
+
+function TRadIADeepInstallationHealthTool.GetDescriptor:
+  TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'RunInstallationDeepDiagnostic',
+    '1.0.0',
+    'Runs consented CLI version and authentication probes plus external MCP handshakes.',
+    CEmptyInputSchema,
+    '{"type":"object"}',
+    trExecution
+  ).WithExecutionOptions(120000, False).WithConsentEveryTime;
+end;
+
 constructor TRadIAStatusTool.Create(
   const AProbe: IRadIAInstallationHealthProbe
 );
@@ -934,6 +1300,7 @@ begin
   if not Assigned(ARegistry) then
     raise EArgumentNilException.Create('ARegistry');
   ARegistry.RegisterTool(TRadIAInstallationHealthTool.Create(AProbe));
+  ARegistry.RegisterTool(TRadIADeepInstallationHealthTool.Create(AProbe));
   ARegistry.RegisterTool(TRadIAStatusTool.Create(AProbe));
 end;
 

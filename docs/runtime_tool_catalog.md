@@ -36,6 +36,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
 | `GetInstallationHealth` | Diagnostica rota efetiva, provider, CLI, MCP, terminal, chat, tools e instalação. | `RadIA.Core.InstallationHealthTools.pas` |
+| `RunInstallationDeepDiagnostic` | Executa probes sanitizados de versão e autenticação da CLI efetiva e handshakes temporários de MCP externo. | `RadIA.Core.InstallationHealthTools.pas` |
 | `GetRadIAStatus` | Retorna um inventário sanitizado e filtrável da configuração, disponibilidade e prontidão atuais do RadIA. | `RadIA.Core.InstallationHealthTools.pas` |
 
 ## Navegação na IDE e grafo do projeto
@@ -328,6 +329,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 38
-- Ferramentas internas registradas: 131
+- Ferramentas internas registradas: 132
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

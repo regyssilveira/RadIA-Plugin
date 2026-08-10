@@ -326,6 +326,10 @@ type
       const APromptText: string;
       const ACommandText: string
     ): Boolean;
+    function TryHandleDoctorCommand(
+      const APromptText: string;
+      const ACommandText: string
+    ): Boolean;
     function TryHandleJourneyCommand(
       const APromptText: string;
       const ACommandText: string
@@ -849,7 +853,7 @@ end;
 function TRadIAChatPresenter.BuildReservedSlashCommands:
   TArray<string>;
 const
-  CNativeCommands: array[0..23] of string = (
+  CNativeCommands: array[0..24] of string = (
     '/agent',
     '/agent run',
     '/agent plan',
@@ -864,6 +868,7 @@ const
     '/extensions',
     '/health',
     '/doctor',
+    '/doctor --deep',
     '/status',
     '/tools',
     '/revoke-tools',
@@ -1097,6 +1102,11 @@ begin
     '/doctor',
     'Checks readiness and recommends the next corrective action.',
     'Installation Doctor'
+  );
+  AddCommand(
+    '/doctor --deep',
+    'Runs consented active CLI and MCP readiness probes.',
+    'Deep Installation Doctor'
   );
   AddCommand(
     '/status',
@@ -3155,6 +3165,8 @@ function TRadIAChatPresenter.TryHandleCatalogCommand(
 ): Boolean;
 begin
   Result := True;
+  if TryHandleDoctorCommand(APromptText, ACommandText) then
+    Exit;
   if TryHandleScopeCommand(APromptText, ACommandText) then
     Exit;
   if TryHandleJourneyContextCommand(APromptText, ACommandText) then
@@ -3193,15 +3205,6 @@ begin
     HandleExplicitToolCommand(
       APromptText,
       '/tool GetProjectHealth {}'
-    );
-    Exit;
-  end;
-
-  if SameText(ACommandText, '/doctor') then
-  begin
-    HandleExplicitToolCommand(
-      APromptText,
-      '/tool GetInstallationHealth {}'
     );
     Exit;
   end;
@@ -3294,6 +3297,7 @@ begin
     );
     Exit;
   end;
+
   if SameText(LFilter, 'settings') then
   begin
     PostToWebView('add_message', 'user', APromptText);
@@ -3320,6 +3324,27 @@ begin
       'add_message',
       'assistant',
       BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
+    );
+end;
+
+function TRadIAChatPresenter.TryHandleDoctorCommand(
+  const APromptText: string;
+  const ACommandText: string
+): Boolean;
+begin
+  Result := SameText(ACommandText, '/doctor') or
+    SameText(ACommandText, '/doctor --deep');
+  if not Result then
+    Exit;
+  if SameText(ACommandText, '/doctor --deep') then
+    HandleExplicitToolCommand(
+      APromptText,
+      '/tool RunInstallationDeepDiagnostic {}'
+    )
+  else
+    HandleExplicitToolCommand(
+      APromptText,
+      '/tool GetInstallationHealth {}'
     );
 end;
 

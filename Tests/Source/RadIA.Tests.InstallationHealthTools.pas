@@ -25,6 +25,7 @@ type
   )
   public
     function Diagnose: string;
+    function DiagnoseDeep: string;
     function Status(
       const AFilter: string;
       const AAgentModeEnabled: Boolean
@@ -60,6 +61,10 @@ type
     procedure RegistersReadOnlyDiagnosticTool;
     [Test]
     procedure RegistersReadOnlyStatusTool;
+    [Test]
+    procedure RegistersConsentedDeepDiagnosticTool;
+    [Test]
+    procedure DeepDiagnosticRunsApplicableActiveChecks;
     [Test]
     procedure ConcreteProbeReportsLocalReadinessWithoutSecrets;
     [Test]
@@ -157,6 +162,11 @@ function TRadIAInstallationHealthTestProbe.Status(
 ): string;
 begin
   Result := '{"scope":"' + AFilter + '","sanitized":true}';
+end;
+
+function TRadIAInstallationHealthTestProbe.DiagnoseDeep: string;
+begin
+  Result := '{"status":"ready","profile":"deep-active"}';
 end;
 
 function TRadIAInstallationHealthExternalMcpRuntime.GetGrants:
@@ -405,6 +415,77 @@ begin
     Assert.Contains(LResult, '"mcpBridgeAvailable":true');
     Assert.Contains(LResult, '"webAssetsAvailable":true');
     Assert.DoesNotContain(LResult, 'localhost:11434');
+  finally
+    LProbe := nil;
+    LConfig := nil;
+    LStorage := nil;
+    TRadIAConfig.SetStorage(nil);
+    if TDirectory.Exists(LDirectory) then
+      TDirectory.Delete(LDirectory, True);
+  end;
+end;
+
+procedure TTestRadIAInstallationHealthTools.
+  RegistersConsentedDeepDiagnosticTool;
+var
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LTool: IRadIATool;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIAInstallationHealthTools(
+    LRegistry,
+    TRadIAInstallationHealthTestProbe.Create
+  );
+  LTool := LRegistry.Resolve('RunInstallationDeepDiagnostic');
+  Assert.AreEqual(trExecution, LTool.Descriptor.Risk);
+  Assert.IsTrue(LTool.Descriptor.ConsentEveryTime);
+  Assert.IsFalse(LTool.Descriptor.Idempotent);
+  LResult := LTool.Execute(
+    TRadIAToolRequest.Create(
+      'RunInstallationDeepDiagnostic',
+      '{}',
+      'deep-doctor-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'deep-active');
+end;
+
+procedure TTestRadIAInstallationHealthTools.
+  DeepDiagnosticRunsApplicableActiveChecks;
+var
+  LConfig: IRadIAConfig;
+  LDirectory: string;
+  LProbe: IRadIAInstallationHealthProbe;
+  LResult: string;
+  LStorage: IRadIASettingsStorage;
+begin
+  LDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIADeepDoctor-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(LDirectory);
+  try
+    LStorage := TRadIAMemorySettingsStorage.Create;
+    TRadIAConfig.SetStorage(LStorage);
+    LConfig := TRadIAConfig.Create;
+    LConfig.SetActiveProvider('OpenAI');
+    LConfig.SetApiKey('OpenAI', 'secret-value');
+    LProbe := TRadIAInstallationHealthProbe.Create(
+      LConfig,
+      TPath.Combine(LDirectory, 'bridge.exe'),
+      LDirectory
+    );
+
+    LResult := LProbe.DiagnoseDeep;
+
+    Assert.Contains(LResult, '"profile":"deep-active"');
+    Assert.Contains(LResult, '"consentRequired":true');
+    Assert.Contains(LResult, '"id":"cli-runtime"');
+    Assert.Contains(LResult, '"status":"not-required"');
+    Assert.Contains(LResult, '"id":"external-mcp-handshake"');
+    Assert.DoesNotContain(LResult, 'secret-value');
   finally
     LProbe := nil;
     LConfig := nil;

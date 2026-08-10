@@ -1508,6 +1508,9 @@ function renderInstallationHealth(card, result) {
   const checks = Array.isArray(result.checkDetails)
     ? result.checkDetails
     : [];
+  const activeChecks = Array.isArray(result.activeChecks)
+    ? result.activeChecks
+    : [];
   const route = result.effectiveRoute || {};
   content.replaceChildren();
 
@@ -1532,7 +1535,7 @@ function renderInstallationHealth(card, result) {
   ].join(' · ');
   content.appendChild(routeSummary);
 
-  checks.forEach(check => {
+  [...checks, ...activeChecks].forEach(check => {
     const item = document.createElement('section');
     item.className = `doctor-check doctor-check-${check.status || 'failed'}`;
     const title = document.createElement('strong');
@@ -1545,7 +1548,8 @@ function renderInstallationHealth(card, result) {
     const message = document.createElement('div');
     message.textContent = check.message || '';
     item.appendChild(message);
-    if (!check.ready && check.action) {
+    if (check.status !== 'passed' &&
+      check.status !== 'not-required' && check.action) {
       const action = createHealthActionButton(check.action);
       action.textContent = 'Show next step';
       item.appendChild(action);
@@ -1681,6 +1685,7 @@ function renderComponentPropertyPreview(card, result, actionName) {
 
 const TOOL_RESULT_RENDERERS = {
   GetInstallationHealth: [renderInstallationHealth, ''],
+  RunInstallationDeepDiagnostic: [renderInstallationHealth, ''],
   GetProjectHealth: [renderProjectHealth, ''],
   SearchProjectKnowledge: [renderKnowledgeSearchResult, ''],
   GetKnowledgeDocument: [renderKnowledgeDocumentResult, ''],

@@ -28,6 +28,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/doctor` | Executa o diagnóstico local completo e recomenda a próxima ação. | Rota efetiva, provider, CLI condicional, ponte MCP condicional, terminal, chat, tools e runtime MCP externo. |
+| `/doctor --deep` | Após consentimento, executa probes reais de versão/autenticação da CLI e handshake MCP. | CLI efetiva e servidores MCP externos habilitados; não altera configurações. |
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/status settings` | Mostra provider, modelo, executor e limites efetivos com a origem de cada valor. | Projeto, sessão e próxima solicitação. |
 | `/scope` | Mostra configurações efetivas e a precedência aplicada. | Equivale ao botão **Settings > Scope**. |
@@ -77,6 +78,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | Necessidade | Comando | Resultado |
 |---|---|---|
 | Descobrir por que o RadIA não está pronto | `/doctor` | Score, rota efetiva, checks classificados, problemas, recomendações e próxima ação preparada. |
+| Confirmar se CLI e MCP funcionam de fato | `/doctor --deep` | Checks ativos sanitizados, sempre precedidos por consentimento. |
 | Conferir o que está configurado e disponível | `/status` | Todas as áreas, sem chaves, tokens ou payloads sensíveis. |
 | Investigar somente uma área | `/status cli`, `/status mcp`, `/status provider` | Apenas a seção solicitada. `mcp` separa a ponte de CLI das contagens sanitizadas do runtime externo. Também aceita `agent`, `security`, `editor`, `project`, `tools`, `logging` e `settings`. |
 | Copiar ou analisar a estrutura completa | `/status --json` | Estado completo no formato estruturado retornado pela tool. |

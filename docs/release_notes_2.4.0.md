@@ -21,6 +21,8 @@
   genérica.
 - `/doctor` 2.0 mostra rota efetiva, dependências distintas de CLI e MCP, checks classificados e
   próxima ação em um cartão visual.
+- `/doctor --deep` solicita consentimento e executa probes reais de versão/autenticação da CLI e
+  handshakes temporários nos servidores MCP externos habilitados, sem alterar configurações.
 
 ## Como usar
 
@@ -43,13 +45,13 @@ visual; o ZIP não é necessário para o fluxo normal.
 
 ## Validação da candidata
 
-- 1.026/1.026 testes DUnitX aprovados em cada um dos três targets, sem falhas, erros ou leaks;
+- 1.029/1.029 testes DUnitX aprovados em cada um dos três targets, sem falhas, erros ou leaks;
 - ConPTY real aprovado com streaming, entrada contínua e resize nos três targets;
 - Codex CLI 0.147.0, Claude Code 2.1.226, Gemini CLI 0.54.4 e GitHub Copilot CLI 1.0.78 reconhecidos;
-- 83/83 testes web e documentais aprovados, incluindo links, pares bilíngues, navegação, mojibake e
+- 86/86 testes web e documentais aprovados, incluindo links, pares bilíngues, navegação, mojibake e
   ausência de referências proibidas;
 - ESLint aprovado;
-- SonarQube aprovado com 82,8% de cobertura global e zero issues.
+- SonarQube aprovado com 82,7% de cobertura global e zero issues.
 - smoke visual instalado aprovado no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, com 131
   ferramentas, controles, entrada, saída, paleta, perfis e navegação por teclado.
 
@@ -59,4 +61,4 @@ Consulte a [evidência reproduzível do terminal](terminal_high_fidelity_evidenc
 Tag, merge e publicação dependem de autorização explícita.
 
 Os hashes da auditoria anterior a estas correções permanecem como evidência histórica. Os artefatos
-da candidata devem ser regenerados antes da publicação para incluir o executor Codex e o Doctor 2.0.
+da candidata devem ser regenerados antes da publicação para incluir o executor Codex e o Doctor 2.1.

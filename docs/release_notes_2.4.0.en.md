@@ -21,6 +21,8 @@
   generic JSON-decision failure.
 - `/doctor` 2.0 displays the effective route, separate CLI/MCP dependencies, classified checks, and
   a next action in a dedicated visual card.
+- `/doctor --deep` requests consent and runs real CLI version/authentication probes plus temporary
+  handshakes against enabled external MCP servers without changing configuration.
 
 ## How to use
 
@@ -43,13 +45,13 @@ required for installation.
 
 ## Candidate validation
 
-- 1,026/1,026 DUnitX tests passed on each target with no failures, errors, or leaks;
+- 1,029/1,029 DUnitX tests passed on each target with no failures, errors, or leaks;
 - real ConPTY streaming, continuous input, and resize passed on all three targets;
 - Codex CLI 0.147.0, Claude Code 2.1.226, Gemini CLI 0.54.4, and GitHub Copilot CLI 1.0.78 detected;
-- 83/83 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,
+- 86/86 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,
   and the absence of prohibited references;
 - ESLint passed;
-- SonarQube passed with 82.8% global coverage and zero issues.
+- SonarQube passed with 82.7% global coverage and zero issues.
 - installed visual smoke passed on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 with 131
   tools, controls, input, output, palette, profiles, and keyboard navigation.
 
@@ -59,4 +61,4 @@ See the [reproducible terminal evidence](terminal_high_fidelity_evidence_2.4.0.j
 Tagging, merging, and publishing require explicit authorization.
 
 Hashes from the audit produced before these fixes remain historical evidence. Candidate artifacts
-must be regenerated before publication to include the Codex executor and Doctor 2.0 changes.
+must be regenerated before publication to include the Codex executor and Doctor 2.1 changes.

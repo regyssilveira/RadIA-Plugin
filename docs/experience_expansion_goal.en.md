@@ -30,7 +30,7 @@ understand every control without reading source code.
   records kept outside the primary user flow;
 - valid repository-relative local links, with no `file:///`, mojibake, or forbidden product
   references;
-- 131/131 tools with purpose and activation guidance, every native command documented, and model
+- 132/132 tools with purpose and activation guidance, every native command documented, and model
   fallbacks automatically synchronized with `RadIA.Core.Types.pas`;
 - 83/83 Web and documentation tests plus a clean ESLint run;
 - 1,013/1,013 tests on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, with no failures,

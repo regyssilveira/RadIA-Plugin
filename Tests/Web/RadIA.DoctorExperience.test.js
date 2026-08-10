@@ -27,3 +27,16 @@ test('doctor distinguishes provider transport, CLI, and MCP requirements', () =>
   assert.match(health, /'mcpRequired'/u);
   assert.match(health, /'nonGitWorkspaceSupported'/u);
 });
+
+test('deep doctor is consented and renders active CLI and MCP checks', () => {
+  assert.match(health, /RunInstallationDeepDiagnostic/u);
+  assert.match(health, /\.WithConsentEveryTime/u);
+  assert.match(health, /'profile', 'deep-active'/u);
+  assert.match(health, /AuthStatusArguments/u);
+  assert.match(health, /TestServer\(LServer/u);
+  assert.match(chat, /result\.activeChecks/u);
+  assert.match(
+    chat,
+    /RunInstallationDeepDiagnostic:\s*\[renderInstallationHealth/u
+  );
+});
