@@ -172,6 +172,10 @@ Open the integrated terminal with the **Terminal** (`>_`) button in the chat hea
 `/terminal` command. Both paths open the same dockable terminal, supporting visual and
 keyboard-driven workflows.
 
+The screen model handles fragmented Unicode output, CJK, emoji, combining marks, resize reflow, and
+common TUI operations. Graphics or mouse protocols may require an external terminal. See the full
+[terminal reference](terminal.en.md).
+
 Chat, terminal, and the context sent to editor actions can share a journey identity without
 duplicating conversation history or terminal output. The **Journey** button links or detaches it
 visually; `/context`, `/context new`, `/context detach`, and `/context switch <id>` provide the same

@@ -48,7 +48,10 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - ANSI SGR, cores normais e brilhantes, negrito e reset;
 - movimentação de cursor, retorno de carro, limpeza de linha e tela;
 - redimensionamento automático da pseudo-console;
-- Unicode por canais UTF-8;
+- Unicode por canais UTF-8 com decodificação contínua entre blocos de leitura;
+- largura visual correta para CJK, emoji e marcas combinantes;
+- reflow ao redimensionar, preservando quebras de linha explícitas;
+- operações TUI de inserir, excluir e apagar caracteres, inclusive com sequências VT fragmentadas;
 - histórico persistente dos últimos 200 comandos;
 - busca reversa incremental com `Ctrl+R`;
 - snippets para build, testes e Git;
@@ -76,6 +79,23 @@ Para procurar por finalidade ou pelo próprio texto do comando, pressione `Ctrl+
 comando. Digite na caixa **Command palette** e selecione um resultado identificado como
 `[snippet]` ou `[history]`. A paleta elimina duplicidades: quando um snippet e o histórico possuem
 o mesmo comando, a versão documentada do snippet aparece uma única vez.
+
+## Unicode, resize e aplicações TUI
+
+O transporte ConPTY mantém bytes UTF-8 incompletos até a próxima leitura. Assim, um emoji ou
+ideograma dividido pelo Windows entre dois blocos não vira o caractere de substituição. A tela
+trabalha com a largura exibida: CJK e emoji ocupam duas colunas; uma marca combinante é anexada ao
+caractere anterior sem avançar o cursor.
+
+Ao estreitar ou ampliar o painel, linhas quebradas automaticamente são reorganizadas para a nova
+largura. Quebras enviadas pelo processo continuam sendo quebras reais. O emulador também mantém
+estado entre blocos para CSI e OSC e atende movimentação/salvamento do cursor, limpeza de tela e
+linha, SGR, inserção (`ICH`), exclusão (`DCH`) e apagamento (`ECH`) de caracteres. Isso cobre shells,
+CLIs de IA, barras de progresso e interfaces de texto que usam esse subconjunto VT.
+
+Aplicações que exigem recursos ainda não emulados, como gráficos de seis pixels, protocolo de mouse
+ou imagens inline, continuam executando, mas podem apresentar saída textual simplificada. Nesse caso,
+abra a aplicação em seu terminal externo preferido; o RadIA não altera nem bloqueia o processo.
 
 ## Segurança e privacidade
 

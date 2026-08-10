@@ -664,3 +664,17 @@ test('internal RTK plan defines measurable gates and an executable sequence', ()
   assert.match(plan, /Gate F6 — viabilidade/u);
   assert.match(hub, /rtk_execution_plan\.md/u);
 });
+
+test('terminal documentation defines Unicode, reflow, and TUI behavior', () => {
+  const portuguese = fs.readFileSync(path.join(documentationRoot, 'terminal.md'), 'utf8');
+  const english = fs.readFileSync(path.join(documentationRoot, 'terminal.en.md'), 'utf8');
+  const manual = fs.readFileSync(path.join(documentationRoot, 'user_manual.en.md'), 'utf8');
+  const capabilities = fs.readFileSync(path.join(documentationRoot, 'capabilities.en.md'), 'utf8');
+
+  ['UTF-8', 'CJK', 'emoji', 'reflow', 'ICH', 'DCH', 'ECH']
+    .forEach(term => assert.ok(portuguese.includes(term), `terminal.md is missing ${term}`));
+  ['streaming decoding', 'combining marks', 'reflow', 'TUI']
+    .forEach(term => assert.ok(english.includes(term), `terminal.en.md is missing ${term}`));
+  assert.match(manual, /terminal reference/u);
+  assert.match(capabilities, /wide\/combining character widths/u);
+});

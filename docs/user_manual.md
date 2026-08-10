@@ -208,6 +208,10 @@ O terminal integrado pode ser aberto pelo botão **Terminal** (`>_`) no cabeçal
 comando `/terminal`. Os dois caminhos abrem o mesmo terminal acoplável e preservam a preferência
 entre interação visual e comandos digitados.
 
+Saída Unicode fragmentada, caracteres CJK, emoji, marcas combinantes, resize com reflow e operações
+comuns de aplicações TUI são tratados pelo modelo de tela. Recursos gráficos ou protocolo de mouse
+podem exigir um terminal externo. Veja a referência completa em [Terminal](terminal.md).
+
 O chat, o terminal e o contexto enviado às ações do editor podem compartilhar uma identidade de
 jornada sem duplicar o histórico da conversa nem a saída do terminal. O botão **Journey** permite
 vincular ou desvincular visualmente; `/context`, `/context new`, `/context detach` e

@@ -9,15 +9,18 @@ uses
 type
   TRadIATerminalScreenCell = record
   private
-    FCharacter: Char;
+    FCharacter: string;
     FStyle: TRadIATerminalTextStyle;
+    FWidth: Integer;
   public
     constructor Create(
-      const ACharacter: Char;
-      const AStyle: TRadIATerminalTextStyle
+      const ACharacter: string;
+      const AStyle: TRadIATerminalTextStyle;
+      const AWidth: Integer = 1
     );
-    property Character: Char read FCharacter;
+    property Character: string read FCharacter;
     property Style: TRadIATerminalTextStyle read FStyle;
+    property Width: Integer read FWidth;
   end;
 
   TRadIATerminalScreen = class
@@ -35,6 +38,7 @@ type
     FCsiBuffer: string;
     FCursorColumn: Integer;
     FCursorRow: Integer;
+    FHardBreaks: TList<Boolean>;
     FRows: TList<TRadIATerminalRow>;
     FSavedColumn: Integer;
     FSavedRow: Integer;
@@ -57,6 +61,8 @@ type
     );
     procedure EnsureCursor;
     procedure EnsureRow(const ARow: Integer);
+    procedure DeleteCharacters(const ACount: Integer);
+    procedure InsertBlankCharacters(const ACount: Integer);
     function GetParameter(
       const AParameters: TArray<Integer>;
       const AIndex: Integer;
@@ -66,7 +72,18 @@ type
     procedure ProcessCharacter(const ACharacter: Char);
     procedure ProcessCsiCharacter(const ACharacter: Char);
     procedure ProcessTextCharacter(const ACharacter: Char);
-    procedure PutCharacter(const ACharacter: Char);
+    procedure AppendCombiningMark(const AText: string);
+    function CharacterWidth(const ACodePoint: Cardinal): Integer;
+    function IsCombiningCodePoint(const ACodePoint: Cardinal): Boolean;
+    function IsWideBmpFirstRange(const ACodePoint: Cardinal): Boolean;
+    function IsWideBmpSecondRange(const ACodePoint: Cardinal): Boolean;
+    procedure ReflowCell(const ACell: TRadIATerminalScreenCell);
+    procedure ReflowHardBreak;
+    procedure ReflowRow(
+      const ARow: TRadIATerminalRow;
+      const AHardBreak: Boolean
+    );
+    procedure PutCharacter(const AText: string; const ACodePoint: Cardinal);
     function StylesMatch(
       const ALeft: TRadIATerminalTextStyle;
       const ARight: TRadIATerminalTextStyle
@@ -91,12 +108,14 @@ uses
 { TRadIATerminalScreenCell }
 
 constructor TRadIATerminalScreenCell.Create(
-  const ACharacter: Char;
-  const AStyle: TRadIATerminalTextStyle
+  const ACharacter: string;
+  const AStyle: TRadIATerminalTextStyle;
+  const AWidth: Integer
 );
 begin
   FCharacter := ACharacter;
   FStyle := AStyle;
+  FWidth := AWidth;
 end;
 
 { TRadIATerminalScreen }
@@ -133,6 +152,8 @@ var
 begin
   LParameters := ParseParameters;
   case AFinalCharacter of
+    '@':
+      InsertBlankCharacters(GetParameter(LParameters, 0, 1));
     'A':
       FCursorRow := Max(
         0,
@@ -140,6 +161,14 @@ begin
       );
     'B':
       Inc(FCursorRow, GetParameter(LParameters, 0, 1));
+    'P':
+      DeleteCharacters(GetParameter(LParameters, 0, 1));
+    'X':
+      ClearRange(
+        FCursorRow,
+        FCursorColumn,
+        FCursorColumn + GetParameter(LParameters, 0, 1) - 1
+      );
     'C':
       FCursorColumn := Min(
         FColumns - 1,
@@ -279,6 +308,7 @@ end;
 procedure TRadIATerminalScreen.Clear;
 begin
   FRows.Clear;
+  FHardBreaks.Clear;
   FCsiBuffer := '';
   FCursorColumn := 0;
   FCursorRow := 0;
@@ -324,14 +354,34 @@ constructor TRadIATerminalScreen.Create(const AColumns: Integer);
 begin
   inherited Create;
   FRows := TList<TRadIATerminalRow>.Create;
+  FHardBreaks := TList<Boolean>.Create;
   Resize(AColumns);
   Clear;
 end;
 
 destructor TRadIATerminalScreen.Destroy;
 begin
+  FHardBreaks.Free;
   FRows.Free;
   inherited Destroy;
+end;
+
+procedure TRadIATerminalScreen.DeleteCharacters(const ACount: Integer);
+var
+  LColumn: Integer;
+  LOffset: Integer;
+  LRow: TRadIATerminalRow;
+begin
+  LOffset := Min(Max(1, ACount), FColumns - FCursorColumn);
+  LRow := FRows[FCursorRow];
+  for LColumn := FCursorColumn to FColumns - LOffset - 1 do
+    LRow[LColumn] := LRow[LColumn + LOffset];
+  for LColumn := FColumns - LOffset to FColumns - 1 do
+    LRow[LColumn] := TRadIATerminalScreenCell.Create(
+      ' ',
+      TRadIATerminalTextStyle.Default
+    );
+  FRows[FCursorRow] := LRow;
 end;
 
 procedure TRadIATerminalScreen.EnsureCursor;
@@ -355,15 +405,62 @@ begin
         TRadIATerminalTextStyle.Default
       );
     FRows.Add(LRow);
+    FHardBreaks.Add(False);
   end;
 end;
 
 procedure TRadIATerminalScreen.Feed(const AText: string);
 var
+  LCodePoint: Cardinal;
   LCharacter: Char;
+  LIndex: Integer;
+  LText: string;
 begin
-  for LCharacter in AText do
+  LIndex := Low(AText);
+  while LIndex <= High(AText) do
+  begin
+    LCharacter := AText[LIndex];
+    if (LCharacter >= #$D800) and (LCharacter <= #$DBFF) and
+      (LIndex < High(AText)) and (AText[LIndex + 1] >= #$DC00) and
+      (AText[LIndex + 1] <= #$DFFF) then
+    begin
+      LCodePoint := $10000 +
+        (Cardinal(Ord(LCharacter) - $D800) shl 10) +
+        Cardinal(Ord(AText[LIndex + 1]) - $DC00);
+      LText := Copy(AText, LIndex, 2);
+      Inc(LIndex, 2);
+      if FState = psText then
+        PutCharacter(LText, LCodePoint)
+      else
+      begin
+        ProcessCharacter(LCharacter);
+        ProcessCharacter(AText[LIndex - 1]);
+      end;
+      Continue;
+    end;
     ProcessCharacter(LCharacter);
+    Inc(LIndex);
+  end;
+end;
+
+procedure TRadIATerminalScreen.InsertBlankCharacters(
+  const ACount: Integer
+);
+var
+  LColumn: Integer;
+  LOffset: Integer;
+  LRow: TRadIATerminalRow;
+begin
+  LOffset := Min(Max(1, ACount), FColumns - FCursorColumn);
+  LRow := FRows[FCursorRow];
+  for LColumn := FColumns - 1 downto FCursorColumn + LOffset do
+    LRow[LColumn] := LRow[LColumn - LOffset];
+  for LColumn := FCursorColumn to FCursorColumn + LOffset - 1 do
+    LRow[LColumn] := TRadIATerminalScreenCell.Create(
+      ' ',
+      TRadIATerminalTextStyle.Default
+    );
+  FRows[FCursorRow] := LRow;
 end;
 
 function TRadIATerminalScreen.GetParameter(
@@ -459,6 +556,7 @@ begin
       );
     #10:
       begin
+        FHardBreaks[FCursorRow] := True;
         Inc(FCursorRow);
         EnsureCursor;
       end;
@@ -468,24 +566,109 @@ begin
       FState := psEscape;
   else
     if ACharacter >= ' ' then
-      PutCharacter(ACharacter);
+      PutCharacter(ACharacter, Ord(ACharacter));
   end;
 end;
 
+procedure TRadIATerminalScreen.AppendCombiningMark(const AText: string);
+var
+  LCell: TRadIATerminalScreenCell;
+  LColumn: Integer;
+  LRow: TRadIATerminalRow;
+begin
+  LColumn := FCursorColumn - 1;
+  if LColumn < 0 then
+    Exit;
+  LRow := FRows[FCursorRow];
+  while (LColumn > 0) and (LRow[LColumn].Width = 0) do
+    Dec(LColumn);
+  LCell := LRow[LColumn];
+  LRow[LColumn] := TRadIATerminalScreenCell.Create(
+    LCell.Character + AText,
+    LCell.Style,
+    LCell.Width
+  );
+  FRows[FCursorRow] := LRow;
+end;
+
+function TRadIATerminalScreen.CharacterWidth(
+  const ACodePoint: Cardinal
+): Integer;
+begin
+  if IsCombiningCodePoint(ACodePoint) then
+    Exit(0);
+  if IsWideBmpFirstRange(ACodePoint) or
+    IsWideBmpSecondRange(ACodePoint) or
+    ((ACodePoint >= $1F300) and (ACodePoint <= $1FAFF)) then
+    Exit(2);
+  Result := 1;
+end;
+
+function TRadIATerminalScreen.IsWideBmpFirstRange(
+  const ACodePoint: Cardinal
+): Boolean;
+begin
+  Result := ((ACodePoint >= $1100) and (ACodePoint <= $115F)) or
+    ((ACodePoint >= $2E80) and (ACodePoint <= $A4CF)) or
+    ((ACodePoint >= $AC00) and (ACodePoint <= $D7A3));
+end;
+
+function TRadIATerminalScreen.IsWideBmpSecondRange(
+  const ACodePoint: Cardinal
+): Boolean;
+begin
+  Result := ((ACodePoint >= $F900) and (ACodePoint <= $FAFF)) or
+    ((ACodePoint >= $FE10) and (ACodePoint <= $FE6F)) or
+    ((ACodePoint >= $FF00) and (ACodePoint <= $FF60)) or
+    ((ACodePoint >= $FFE0) and (ACodePoint <= $FFE6));
+end;
+
+function TRadIATerminalScreen.IsCombiningCodePoint(
+  const ACodePoint: Cardinal
+): Boolean;
+begin
+  Result := ((ACodePoint >= $0300) and (ACodePoint <= $036F)) or
+    ((ACodePoint >= $1AB0) and (ACodePoint <= $1AFF)) or
+    ((ACodePoint >= $1DC0) and (ACodePoint <= $1DFF)) or
+    ((ACodePoint >= $20D0) and (ACodePoint <= $20FF)) or
+    ((ACodePoint >= $FE20) and (ACodePoint <= $FE2F));
+end;
+
 procedure TRadIATerminalScreen.PutCharacter(
-  const ACharacter: Char
+  const AText: string;
+  const ACodePoint: Cardinal
 );
 var
   LRow: TRadIATerminalRow;
+  LWidth: Integer;
 begin
+  LWidth := CharacterWidth(ACodePoint);
+  if LWidth = 0 then
+  begin
+    AppendCombiningMark(AText);
+    Exit;
+  end;
   EnsureCursor;
+  if (LWidth = 2) and (FCursorColumn = FColumns - 1) then
+  begin
+    FCursorColumn := 0;
+    Inc(FCursorRow);
+    EnsureCursor;
+  end;
   LRow := FRows[FCursorRow];
   LRow[FCursorColumn] := TRadIATerminalScreenCell.Create(
-    ACharacter,
-    FStyle
+    AText,
+    FStyle,
+    LWidth
   );
+  if LWidth = 2 then
+    LRow[FCursorColumn + 1] := TRadIATerminalScreenCell.Create(
+      '',
+      FStyle,
+      0
+    );
   FRows[FCursorRow] := LRow;
-  Inc(FCursorColumn);
+  Inc(FCursorColumn, LWidth);
   if FCursorColumn >= FColumns then
   begin
     FCursorColumn := 0;
@@ -537,30 +720,87 @@ end;
 
 procedure TRadIATerminalScreen.Resize(const AColumns: Integer);
 var
-  LColumn: Integer;
-  LIndex: Integer;
-  LOldLength: Integer;
-  LRow: TRadIATerminalRow;
+  LOldBreaks: TArray<Boolean>;
+  LOldRows: TArray<TRadIATerminalRow>;
+  LRowIndex: Integer;
 begin
   if AColumns < 20 then
     raise EArgumentOutOfRangeException.Create(
       'The terminal width must be at least 20 columns.'
     );
+  if (FColumns = AColumns) and (FRows.Count > 0) then
+    Exit;
+  LOldRows := FRows.ToArray;
+  LOldBreaks := FHardBreaks.ToArray;
+  FRows.Clear;
+  FHardBreaks.Clear;
   FColumns := AColumns;
-  for LIndex := 0 to FRows.Count - 1 do
+  FCursorColumn := 0;
+  FCursorRow := 0;
+  EnsureCursor;
+  for LRowIndex := 0 to High(LOldRows) do
+    ReflowRow(
+      LOldRows[LRowIndex],
+      (LRowIndex <= High(LOldBreaks)) and LOldBreaks[LRowIndex]
+    );
+end;
+
+procedure TRadIATerminalScreen.ReflowCell(
+  const ACell: TRadIATerminalScreenCell
+);
+var
+  LRow: TRadIATerminalRow;
+begin
+  if ACell.Width = 0 then
+    Exit;
+  if FCursorColumn + ACell.Width > FColumns then
   begin
-    LRow := FRows[LIndex];
-    LOldLength := Length(LRow);
-    SetLength(LRow, FColumns);
-    for LColumn := LOldLength to FColumns - 1 do
-      LRow[LColumn] := TRadIATerminalScreenCell.Create(
-        ' ',
-        TRadIATerminalTextStyle.Default
-      );
-    FRows[LIndex] := LRow;
+    FCursorColumn := 0;
+    Inc(FCursorRow);
+    EnsureCursor;
   end;
-  if FCursorColumn >= FColumns then
-    FCursorColumn := FColumns - 1;
+  LRow := FRows[FCursorRow];
+  LRow[FCursorColumn] := ACell;
+  if ACell.Width = 2 then
+    LRow[FCursorColumn + 1] := TRadIATerminalScreenCell.Create(
+      '',
+      ACell.Style,
+      0
+    );
+  FRows[FCursorRow] := LRow;
+  Inc(FCursorColumn, ACell.Width);
+  if FCursorColumn < FColumns then
+    Exit;
+  FCursorColumn := 0;
+  Inc(FCursorRow);
+  EnsureCursor;
+end;
+
+procedure TRadIATerminalScreen.ReflowHardBreak;
+begin
+  FHardBreaks[FCursorRow] := True;
+  FCursorColumn := 0;
+  Inc(FCursorRow);
+  EnsureCursor;
+end;
+
+procedure TRadIATerminalScreen.ReflowRow(
+  const ARow: TRadIATerminalRow;
+  const AHardBreak: Boolean
+);
+var
+  LColumn: Integer;
+  LLastColumn: Integer;
+begin
+  LLastColumn := High(ARow);
+  while (LLastColumn >= 0) and
+    ((ARow[LLastColumn].Character = ' ') or
+    (ARow[LLastColumn].Width = 0)) do
+    Dec(LLastColumn);
+  for LColumn := 0 to LLastColumn do
+    ReflowCell(ARow[LColumn]);
+  if AHardBreak then
+    ReflowHardBreak;
 end;
 
 function TRadIATerminalScreen.StylesMatch(

@@ -185,6 +185,15 @@ origem de cada campo. Overrides independentes podem valer para projeto, sessão 
 solicitação e podem ser removidos para restaurar herança. Consulte
 [Configurações por escopo](hierarchical_settings.md).
 
+## Terminal integrado
+
+O terminal VCL acoplável oferece múltiplas abas, perfis detectados, ConPTY interativo, entrada
+contínua, histórico, snippets, paleta, cancelamento da árvore de processos e consentimento comum às
+demais superfícies. O modelo de tela decodifica UTF-8 entre blocos, calcula largura de CJK, emoji e
+marcas combinantes, reorganiza quebras automáticas no resize e interpreta o subconjunto VT usado por
+shells, CLIs, barras de progresso e aplicações TUI. Consulte [Terminal](terminal.md) para abertura,
+atalhos, limites de emulação e solução alternativa.
+
 ## Modo agente
 
 O modo agente oferece:

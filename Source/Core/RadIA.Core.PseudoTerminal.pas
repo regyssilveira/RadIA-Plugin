@@ -8,6 +8,15 @@ uses
   RadIA.Core.CliProcess;
 
 type
+  TRadIAUtf8StreamDecoder = class
+  private
+    FPending: TBytes;
+    function CompleteLength(const ABytes: TBytes): Integer;
+  public
+    function Decode(const ABytes: TBytes; const ACount: Integer): string;
+    function Flush: string;
+  end;
+
   TRadIAPseudoTerminalRunner = class
   public
     class function IsSupported: Boolean; static;
@@ -125,6 +134,7 @@ type
     FPseudoConsole: THandle;
     FRunning: Boolean;
     FCancelRequested: Boolean;
+    FDecoder: TRadIAUtf8StreamDecoder;
     procedure AppendCaptured(
       var ATarget: string;
       const AChunk: string
@@ -183,6 +193,63 @@ function RadIACoord(
 begin
   Result := Cardinal(Word(AColumns)) or
     (Cardinal(Word(ARows)) shl 16);
+end;
+
+{ TRadIAUtf8StreamDecoder }
+
+function TRadIAUtf8StreamDecoder.CompleteLength(
+  const ABytes: TBytes
+): Integer;
+var
+  LExpected: Integer;
+  LIndex: Integer;
+begin
+  Result := Length(ABytes);
+  if Result = 0 then
+    Exit;
+  LIndex := Result - 1;
+  while (LIndex >= 0) and ((ABytes[LIndex] and $C0) = $80) do
+    Dec(LIndex);
+  if LIndex < 0 then
+    Exit(0);
+  case ABytes[LIndex] of
+    $C2..$DF: LExpected := 2;
+    $E0..$EF: LExpected := 3;
+    $F0..$F4: LExpected := 4;
+  else
+    Exit;
+  end;
+  if Result - LIndex < LExpected then
+    Result := LIndex;
+end;
+
+function TRadIAUtf8StreamDecoder.Decode(
+  const ABytes: TBytes;
+  const ACount: Integer
+): string;
+var
+  LCompleteLength: Integer;
+  LIndex: Integer;
+  LInput: TBytes;
+begin
+  if (ACount < 0) or (ACount > Length(ABytes)) then
+    raise EArgumentOutOfRangeException.Create('Invalid UTF-8 byte count.');
+  SetLength(LInput, Length(FPending) + ACount);
+  for LIndex := 0 to High(FPending) do
+    LInput[LIndex] := FPending[LIndex];
+  for LIndex := 0 to ACount - 1 do
+    LInput[Length(FPending) + LIndex] := ABytes[LIndex];
+  LCompleteLength := CompleteLength(LInput);
+  Result := TEncoding.UTF8.GetString(LInput, 0, LCompleteLength);
+  SetLength(FPending, Length(LInput) - LCompleteLength);
+  for LIndex := 0 to High(FPending) do
+    FPending[LIndex] := LInput[LCompleteLength + LIndex];
+end;
+
+function TRadIAUtf8StreamDecoder.Flush: string;
+begin
+  Result := TEncoding.UTF8.GetString(FPending);
+  FPending := nil;
 end;
 
 { TRadIAConPtyApi }
@@ -244,6 +311,7 @@ begin
   FInvocation := AInvocation;
   FColumns := AColumns;
   FRows := ARows;
+  FDecoder := TRadIAUtf8StreamDecoder.Create;
   FTimeoutMs := ATimeoutMs;
   FOnOutput := AOnOutput;
   FOnComplete := AOnComplete;
@@ -254,6 +322,7 @@ destructor TRadIAPseudoTerminalSession.Destroy;
 begin
   TerminateProcessTree;
   FLock.Free;
+  FDecoder.Free;
   inherited Destroy;
 end;
 
@@ -355,7 +424,9 @@ begin
       nil
     ) or (LBytesRead = 0) then
       Exit;
-    LChunk := TEncoding.UTF8.GetString(LBuffer, 0, LBytesRead);
+    LChunk := FDecoder.Decode(LBuffer, LBytesRead);
+    if LChunk = '' then
+      Continue;
     AppendCaptured(AOutput, LChunk);
     if Assigned(FOnOutput) then
       try

@@ -19,7 +19,7 @@ understand every control without reading source code.
 | M2 | `.radiaext` references, knowledge, templates, and assets, including Addon Studio and rollback | Completed; integrated final matrix pending |
 | M3 | Visual chat session with before/after captures, timeline, and validation driven by real events | Complete; real capture passed on all three supported targets |
 | M4 | Consent resilient across surfaces with a consistent visual presentation | Complete; central dialog, bounded queue, redaction, and matrix approved |
-| M5 | Advanced terminal matrix for Unicode, wide characters, reflow, and TUI applications | Pending |
+| M5 | Advanced terminal matrix for Unicode, wide characters, reflow, and TUI applications | Complete; 1,013 tests on all three targets and Sonar approved |
 | M6 | Incremental refinement of the current WebView without replacing its architecture | Pending |
 | M7 | Complete documentation audit and Delphi 12/13 gate | Continuous work in progress; final gate pending |
 

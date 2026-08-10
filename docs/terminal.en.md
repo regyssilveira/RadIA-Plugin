@@ -48,7 +48,10 @@ automatically defaults to `Ctrl+Alt+T`.
 - ANSI SGR, normal and bright colors, bold and reset;
 - cursor movement, carriage return, line and screen cleaning;
 - automatic resizing of the pseudo-console;
-- Unicode via UTF-8 channels;
+- Unicode over UTF-8 channels with streaming decoding across read boundaries;
+- correct display width for CJK, emoji, and combining marks;
+- reflow on resize while preserving explicit line breaks;
+- TUI insert, delete, and erase character operations, including fragmented VT sequences;
 - persistent history of the last 200 commands;
 - incremental reverse search with `Ctrl+R`;
 - snippets for build, tests and Git;
@@ -76,6 +79,23 @@ To search by purpose or by the command text itself, press `Ctrl+P` in the search
 command. Type in the **Command palette** box and select a result labeled
 `[snippet]` or `[history]`. The palette eliminates duplicates: when a snippet and history have
 the same command, the documented version of the snippet appears only once.
+
+## Unicode, resize, and TUI applications
+
+The ConPTY transport retains incomplete UTF-8 bytes until the next read. An emoji or ideograph split
+by Windows across two blocks therefore does not become a replacement character. The screen uses
+display width: CJK and emoji occupy two columns, while a combining mark joins the previous character
+without advancing the cursor.
+
+When the panel becomes narrower or wider, automatically wrapped lines are rearranged for the new
+width. Line breaks emitted by the process remain hard breaks. The emulator also preserves CSI and OSC
+state across blocks and supports cursor movement/save, screen and line erase, SGR, character insertion
+(`ICH`), deletion (`DCH`), and erasure (`ECH`). This covers shells, AI CLIs, progress bars, and text
+interfaces that use this VT subset.
+
+Applications requiring features not yet emulated, such as sixel graphics, mouse protocols, or inline
+images, continue to run but may show simplified text output. Open them in your preferred external
+terminal when needed; RadIA does not modify or block the process.
 
 ## Security and privacy
 

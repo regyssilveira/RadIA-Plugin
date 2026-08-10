@@ -51,6 +51,14 @@ type
     [Test]
     procedure ScreenResizesAndRejectsInvalidWidth;
     [Test]
+    procedure Utf8DecoderPreservesCharactersSplitAcrossReads;
+    [Test]
+    procedure ScreenUsesDisplayWidthForWideAndCombiningCharacters;
+    [Test]
+    procedure ScreenReflowsSoftWrapsAndPreservesHardBreaks;
+    [Test]
+    procedure ScreenSupportsTuiInsertDeleteAndEraseCharacters;
+    [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
     [Test]
     procedure HiddenDockHostDoesNotFocusTerminalDuringEmbedding;
@@ -77,6 +85,7 @@ uses
   RadIA.Core.InlineShortcuts,
   RadIA.Core.Container,
   RadIA.Core.JourneyContext,
+  RadIA.Core.PseudoTerminal,
   RadIA.Core.Terminal,
   RadIA.Core.TerminalScreen,
   RadIA.UI.TerminalFrame;
@@ -497,6 +506,86 @@ begin
     end;
   finally
     LHost.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.Utf8DecoderPreservesCharactersSplitAcrossReads;
+var
+  LBytes: TBytes;
+  LDecoder: TRadIAUtf8StreamDecoder;
+begin
+  LBytes := TEncoding.UTF8.GetBytes('A' + #$D83D#$DE80 + #$754C);
+  LDecoder := TRadIAUtf8StreamDecoder.Create;
+  try
+    Assert.AreEqual('A', LDecoder.Decode(Copy(LBytes, 0, 3), 3));
+    Assert.AreEqual(
+      #$D83D#$DE80 + #$754C,
+      LDecoder.Decode(Copy(LBytes, 3, Length(LBytes) - 3), Length(LBytes) - 3)
+    );
+    Assert.AreEqual('', LDecoder.Flush);
+  finally
+    LDecoder.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.
+  ScreenUsesDisplayWidthForWideAndCombiningCharacters;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('A' + #$754C + 'e'#$0301 + #$D83D#$DE80);
+    Assert.AreEqual<Integer>(6, LScreen.CursorColumn);
+    Assert.AreEqual(
+      'A' + #$754C + 'e'#$0301 + #$D83D#$DE80,
+      SegmentsText(LScreen.RenderSegments)
+    );
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenReflowsSoftWrapsAndPreservesHardBreaks;
+const
+  CFirstLine = '123456789012345678901234567890';
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed(CFirstLine + sLineBreak + 'hard break');
+    LScreen.Resize(20);
+    Assert.AreEqual(
+      '12345678901234567890' + sLineBreak +
+      '1234567890' + sLineBreak + 'hard break',
+      SegmentsText(LScreen.RenderSegments)
+    );
+    LScreen.Resize(40);
+    Assert.AreEqual(
+      CFirstLine + sLineBreak + 'hard break',
+      SegmentsText(LScreen.RenderSegments)
+    );
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.
+  ScreenSupportsTuiInsertDeleteAndEraseCharacters;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('abcdef'#13#27'[3C'#27'[2@XY');
+    Assert.AreEqual('abcXYdef', SegmentsText(LScreen.RenderSegments));
+    LScreen.Feed(#13#27'[3C'#27'[2P');
+    Assert.AreEqual('abcdef', SegmentsText(LScreen.RenderSegments));
+    LScreen.Feed(#13#27'[2C'#27'[2X');
+    Assert.AreEqual('ab  ef', SegmentsText(LScreen.RenderSegments));
+  finally
+    LScreen.Free;
   end;
 end;
 
