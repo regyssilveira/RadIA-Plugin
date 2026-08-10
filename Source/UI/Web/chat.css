@@ -2796,3 +2796,86 @@ body.light-theme .agent-step-git-diff .is-removal {
   }
 }
 
+.visual-runtime-card {
+  margin: 12px 18px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.visual-runtime-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.visual-runtime-state {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.visual-runtime-state[data-state="completed"] {
+  color: #4caf50;
+}
+
+.visual-runtime-state[data-state="failed"],
+.visual-runtime-state[data-state="cancelled"] {
+  color: #ef5350;
+}
+
+.visual-runtime-captures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.visual-runtime-capture {
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-primary);
+}
+
+.visual-runtime-capture figcaption {
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.visual-runtime-capture img {
+  display: block;
+  width: 100%;
+  max-height: 360px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #111;
+}
+
+.visual-runtime-capture small {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+
+.visual-runtime-timeline {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding-left: 22px;
+}
+
+.visual-runtime-timeline li span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+

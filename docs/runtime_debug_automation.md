@@ -4,22 +4,22 @@ O RadIA pode reproduzir uma falha visual em uma aplicação VCL iniciada pelo de
 evidências, preparar uma correção revisável, recompilar, repetir o cenário e comprovar se a falha
 foi removida.
 
-> **Importante:** neste guia, `CaptureRuntimeEvidence` significa evidência estruturada do debugger:
-> exceção, call stack, estado, expressões e identidade da sessão. A apresentação de screenshots
-> anterior/posterior diretamente no chat está em implementação e ainda não deve ser tratada como
-> funcionalidade disponível.
+> **Importante:** `CaptureRuntimeEvidence` continua significando evidência estruturada do debugger:
+> exceção, call stack, estado, expressões e identidade da sessão. `CaptureRuntimeVisual` é a tool
+> separada que captura uma janela autorizada e apresenta o PNG no chat.
 
-## Sessão visual no chat: estado da implementação
+## Sessão visual no chat
 
-A fundação interna já mantém uma sessão visual vinculada à identidade completa criada pelo
-debugger. Ela ordena eventos reais, aceita somente imagens pertencentes ao PID autorizado e mantém
-o conteúdo exclusivamente em memória. São permitidas no máximo seis capturas, 2 MiB por captura e
-8 MiB no total, com expiração após dez minutos. Iniciar outra sessão ou atingir a expiração elimina
-as imagens anteriores.
+A sessão visual é vinculada à identidade completa criada pelo debugger. `CaptureRuntimeVisual`
+recebe apenas o ID opaco devolvido por `GetRuntimeWindows`, revalida executável, instante de criação,
+sessão e PID, e recusa janelas invisíveis, minimizadas, de outro processo ou maiores que 2560×1440.
+Cada chamada exige consentimento porque a imagem pode conter dados da aplicação.
 
-Ainda faltam o capturador PNG da janela autorizada, a publicação segura para o WebView e o card no
-chat com anterior/posterior e timeline. Até essas ligações passarem pela matriz suportada, use as
-evidências estruturadas descritas abaixo.
+O resultado entregue ao agente contém somente metadados. O PNG segue por um canal local separado
+para um card do chat que apresenta **Antes**, **Depois**, estado e timeline. As imagens ficam apenas
+em memória: no máximo seis capturas, 2 MiB cada e 8 MiB no total, com expiração após dez minutos.
+Outra sessão ou a expiração elimina o conteúdo anterior. O card é evidência visual complementar;
+valores e sucesso continuam sendo confirmados pelas tools estruturadas e pelo debugger.
 
 ## Quando usar
 
@@ -52,14 +52,16 @@ continuam válidas.
 3. `WaitForDebuggerEvent` observa parada ou exceção sem bloquear a thread principal da IDE.
 4. A sessão correlaciona PID, instante de criação, executável, projeto e build.
 5. `GetRuntimeWindows` e `GetRuntimeControlTree` localizam somente elementos do processo autorizado.
-6. `PrepareRuntimeScenario` cria um preview limitado e com fingerprint.
-7. Após consentimento, `RunRuntimeScenario` executa o roteiro.
-8. Ao ocorrer a falha, `CaptureRuntimeEvidence` registra exceção, pilha, estado e expressões.
-9. O RadIA prepara uma hipótese e um diff; nenhuma alteração é aplicada sem revisão.
-10. Depois do aceite, o projeto é recompilado e uma nova sessão de debug é iniciada.
-11. O mesmo cenário é repetido e uma evidência `verification` é capturada.
-12. `CompareRuntimeEvidence` exige o mesmo projeto, mas sessões e builds distintos.
-13. Com `outcome=fixed`, o cenário pode ser salvo como regressão e repetido em ciclos futuros.
+6. `CaptureRuntimeVisual` com `phase=before` registra a janela antes da interação.
+7. `PrepareRuntimeScenario` cria um preview limitado e com fingerprint.
+8. Após consentimento, `RunRuntimeScenario` executa o roteiro.
+9. `CaptureRuntimeVisual` com `phase=after` completa o par visual no mesmo card.
+10. Ao ocorrer a falha, `CaptureRuntimeEvidence` registra exceção, pilha, estado e expressões.
+11. O RadIA prepara uma hipótese e um diff; nenhuma alteração é aplicada sem revisão.
+12. Depois do aceite, o projeto é recompilado e uma nova sessão de debug é iniciada.
+13. O mesmo cenário é repetido e uma evidência `verification` é capturada.
+14. `CompareRuntimeEvidence` exige o mesmo projeto, mas sessões e builds distintos.
+15. Com `outcome=fixed`, o cenário pode ser salvo como regressão e repetido em ciclos futuros.
 
 ### Observação confiável do depurador
 
@@ -87,6 +89,7 @@ O plano aparece antes da primeira execução. Cada tool com risco mantém seu pr
 | Build | `BuildProject`, `GetBuildStatus`, `CancelBuild` |
 | Sessão | `StartDebugging`, `GetDebuggerState`, `GetRuntimeDebugSession`, `StopDebugging` |
 | Descoberta | `GetRuntimeWindows`, `GetRuntimeControlTree` |
+| Visual | `CaptureRuntimeVisual` antes e depois do cenário |
 | Cenário | `PrepareRuntimeScenario`, `RunRuntimeScenario`, `GetRuntimeScenarioStatus`, `CancelRuntimeScenario` |
 | Evidência | `WaitForDebuggerEvent`, `CaptureRuntimeEvidence`, `CompareRuntimeEvidence` |
 | Correção | `PreparePatch`, `ApplyPatch`, `RevertPatch` |
@@ -147,6 +150,8 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 
 - A automação fica confinada ao processo depurado e seus descendentes.
 - Campos de senha são redigidos e não entram em evidências.
+- A captura visual é `sensitive`, exige consentimento em toda chamada e pode conter qualquer texto
+  visível dentro da janela autorizada.
 - Build, debug, cenário e escrita preservam o diálogo de consentimento.
 - O usuário pode cancelar o cenário sem novo consentimento.
 - Troca de projeto, término do processo ou shutdown invalida a sessão.
@@ -156,6 +161,7 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 
 - Controles VCL sem janela própria não podem ser automatizados por este mecanismo.
 - Aplicações elevadas em outro nível de integridade podem ser inacessíveis.
+- Janelas minimizadas, invisíveis ou acima de 2560×1440 não são capturadas.
 - A execução usa identidade semântica e não visão computacional ou coordenadas.
 - Uma execução visual bem-sucedida não prova sozinha ausência de vazamento ou correção lógica geral.
 - Compilação, DUnitX, análise estática e revisão humana continuam fazendo parte do gate.
@@ -165,6 +171,8 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 - **Nenhuma janela encontrada:** aguarde a aplicação entrar em `running` e confirme
   `GetRuntimeDebugSession.complete=true`.
 - **`runtime_target_not_found`:** atualize a descoberta e verifique classe, texto e caminho.
+- **`runtime_capture_unavailable`:** restaure e deixe visível a janela, confirme o PID e repita
+  `GetRuntimeWindows` antes de gerar um novo ID opaco.
 - **Sessão incomparável:** pare, recompile e inicie uma nova sessão antes da verificação.
 - **Exceção de software de segurança no startup:** confirme a pilha; continue apenas quando ela não
   pertencer ao código do projeto.

@@ -414,7 +414,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado versionado fica em `declarative_workflow_smoke_evidence_2.0.0.json`.
-O gate exige exatamente os três targets suportados, 130 ferramentas e o workflow
+O gate exige exatamente os três targets suportados, 131 ferramentas e o workflow
 `RadIADiagnosticInspection` carregado, registrado e executado por hot reload. A evidência também
 confirma a classificação `readOnly` e a conclusão das duas etapas do workflow.
 

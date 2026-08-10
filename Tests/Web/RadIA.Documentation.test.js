@@ -145,7 +145,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 130);
+  assert.equal(registeredTools.length, 131);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -480,7 +480,7 @@ test('declarative extensions document packaged resources end to end', () => {
   });
 });
 
-test('runtime guide separates structured evidence from pending visual capture', () => {
+test('runtime guide separates structured evidence from consented visual capture', () => {
   const portuguese = fs.readFileSync(
     path.join(documentationRoot, 'runtime_debug_automation.md'),
     'utf8'
@@ -494,7 +494,9 @@ test('runtime guide separates structured evidence from pending visual capture', 
     assert.match(document, /2 MiB/u);
     assert.match(document, /8 MiB/u);
     assert.match(document, /dez minutos|ten minutes/iu);
-    assert.match(document, /ainda n[aã]o|must not yet/iu);
+    assert.match(document, /CaptureRuntimeVisual/u);
+    assert.match(document, /consentimento|consent/iu);
+    assert.match(document, /antes e depois|before and after/iu);
   });
 });
 

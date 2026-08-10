@@ -93,6 +93,7 @@ uses
   RadIA.Core.RuntimeDebugSession,
   RadIA.Core.RuntimeDebugTools,
   RadIA.Core.RuntimeAutomation, RadIA.Core.RuntimeDiscoveryTools,
+  RadIA.Core.RuntimeVisualTools, RadIA.Core.VisualRuntimeSession,
   RadIA.Core.RuntimeScenario, RadIA.Core.RuntimeScenarioTools,
   RadIA.Core.RuntimeEvidence, RadIA.Core.RuntimeEvidenceTools,
   RadIA.Core.RuntimeRegression, RadIA.Core.RuntimeRegressionTools,
@@ -1042,6 +1043,13 @@ initialization
     TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade> as
       IRadIARuntimeActionFacade
   );
+  TRadIAContainer.Register<IRadIARuntimeVisualCaptureFacade>(
+    TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade> as
+      IRadIARuntimeVisualCaptureFacade
+  );
+  TRadIAContainer.Register<IRadIAVisualRuntimeSession>(
+    TRadIAVisualRuntimeSession.Create
+  );
   TRadIAContainer.Register<IRadIARuntimeScenarioCoordinator>(
     TRadIARuntimeScenarioCoordinator.Create(
       TRadIAContainer.Resolve<IRadIARuntimeActionFacade>
@@ -1342,6 +1350,12 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
     TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade>
+  );
+  RegisterRadIARuntimeVisualTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+    TRadIAContainer.Resolve<IRadIARuntimeVisualCaptureFacade>,
+    TRadIAContainer.Resolve<IRadIAVisualRuntimeSession>
   );
   RegisterRadIARuntimeScenarioTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

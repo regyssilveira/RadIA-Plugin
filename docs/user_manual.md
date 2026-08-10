@@ -463,6 +463,10 @@ recentes permanecem disponíveis em memória, enquanto uma trilha JSON Lines é 
 
 #### 4.11.1 Regressões visuais runtime
 
+Use `CaptureRuntimeVisual` com o ID opaco devolvido por `GetRuntimeWindows`: `phase=before` captura
+a janela antes do roteiro e `phase=after` conclui o card anterior/posterior no chat. Cada captura é
+sensível, exige consentimento próprio e fica somente em memória por até dez minutos.
+
 Depois de corrigir uma falha dependente da interface, o RadIA pode preservar o roteiro em
 `.radia/runtime-scenarios/<id>.json`. O artefato usa schema versionado e fingerprint e não salva
 IDs opacos da sessão: cada alvo precisa de classe, texto e caminho estáveis. Para uma janela raiz,
@@ -576,7 +580,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 130 tools internas registradas.
+- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 131 tools internas registradas.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

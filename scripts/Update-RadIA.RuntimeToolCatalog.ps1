@@ -55,6 +55,7 @@ $portugueseGroupNames = @{
     "Runtime debugger correlation" = "Correlação do debugger em runtime"
     "Runtime window discovery" = "Descoberta de janelas em runtime"
     "Bounded runtime scenarios" = "Cenários limitados de runtime"
+    "Runtime visual capture" = "Captura visual runtime"
     "Runtime diagnostic evidence" = "Evidências de diagnóstico em runtime"
     "Versioned runtime regressions" = "Regressões versionadas de runtime"
     "Reviewable local Git commits" = "Commits Git locais revisáveis"

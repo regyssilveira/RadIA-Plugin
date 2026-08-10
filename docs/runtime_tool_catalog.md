@@ -256,6 +256,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `CancelRuntimeScenario` | Interrompe a execução ou uma espera ativa sem solicitar consentimento. | `RadIA.Core.RuntimeScenarioTools.pas` |
 | `GetRuntimeScenarioStatus` | Retorna estado, repetição, ação atual, total concluído e eventual falha. | `RadIA.Core.RuntimeScenarioTools.pas` |
 
+## Captura visual runtime
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `CaptureRuntimeVisual` | Captura um PNG limitado da janela visível e restaurada pertencente ao PID da sessão atual, mantém a imagem em memória e publica anterior/posterior no card local do chat. | `RadIA.Core.RuntimeVisualTools.pas` |
+
 ## Evidências de diagnóstico em runtime
 
 | Ferramenta | O que faz | Unit de origem |
@@ -321,7 +327,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 37
-- Ferramentas internas registradas: 130
+- Grupos registrados: 38
+- Ferramentas internas registradas: 131
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

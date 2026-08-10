@@ -256,6 +256,12 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CancelRuntimeScenario` | Immediately stop the active runtime scenario without consent. | `RadIA.Core.RuntimeScenarioTools.pas` |
 | `GetRuntimeScenarioStatus` | Return progress and outcome for the current runtime scenario. | `RadIA.Core.RuntimeScenarioTools.pas` |
 
+## Runtime visual capture
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `CaptureRuntimeVisual` | Capture a bounded PNG of one visible window owned by the active runtime process. | `RadIA.Core.RuntimeVisualTools.pas` |
+
 ## Runtime diagnostic evidence
 
 | Tool | Purpose | Source unit |
@@ -321,7 +327,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 37
-- Registered built-in tools: 130
+- Registered groups: 38
+- Registered built-in tools: 131
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -51,6 +51,8 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.Build*` | Contratos e ferramentas do ciclo de build controlado. |
 | `RadIA.Core.Designer*` | Facades e tools de componentes, propriedades, eventos e layout. |
 | `RadIA.Core.Debugger*` | Estado, controle, breakpoints, avaliação e watches. |
+| `RadIA.Core.VisualRuntimeSession` | Sessão visual limitada, vinculada à identidade completa do processo em depuração. |
+| `RadIA.Core.RuntimeVisualTools` | Captura consentida anterior/posterior para o card visual local do chat. |
 | `RadIA.Core.Knowledge*` | Indexação, persistência, scheduler, busca e leitura limitada. |
 | `RadIA.Core.Mcp` | Protocolo MCP, sessões, cancelamento, métricas e despacho. |
 | `RadIA.Core.ExternalMcp` | Contratos e catálogo isolado para consumir servidores MCP externos com namespace estável. |
@@ -95,6 +97,7 @@ Usa as APIs de extensão da IDE Delphi (**Open Tools API - OTA**) para acoplar o
 | `RadIA.OTA.Build` | Adapter do build e captura estruturada de resultados. |
 | `RadIA.OTA.Designer` | Adapter do Form Designer vivo na thread principal. |
 | `RadIA.OTA.Debugger` | Adapter de estado e controle do debugger. |
+| `RadIA.OTA.RuntimeDiscovery` | Descoberta autorizada de janelas e captura PNG limitada do processo em depuração. |
 | `RadIA.OTA.InlineReviews` | Apresentação e ciclo das revisões inline pela API moderna `INTACodeEditorEvents`. |
 | `RadIA.OTA.Knowledge*` | Índice local e notificações de edit, save, rename e close. |
 | `RadIA.MCP.NamedPipe` | Servidor local, ACL, discovery por PID e transporte. |

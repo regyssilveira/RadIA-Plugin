@@ -13,6 +13,7 @@ uses
   RadIA.Core.AgentExecutors, RadIA.Core.CliManager, RadIA.Core.CliProcess,
   RadIA.Core.Journeys, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
   RadIA.Core.Workspace, RadIA.Core.JourneyContext,
+  RadIA.Core.VisualRuntimeSession,
   RadIA.Core.HierarchicalSettings,
   RadIA.Core.HierarchicalSettingsStore;
 
@@ -103,6 +104,9 @@ type
     FPendingJourneyDefinition: TRadIAJourneyDefinition;
     FPendingJourneyField: string;
     FPendingJourneyNative: Boolean;
+    FVisualRuntimeSession: IRadIAVisualRuntimeSession;
+    FLastVisualSessionId: string;
+    FLastVisualSequence: Int64;
 
     procedure UpdateModelsCombo;
 
@@ -237,6 +241,14 @@ type
     procedure UpdateAgentPlan(const APlanJson: string);
     procedure PostAgentHistoryToWeb(const AQuery: string);
     procedure PostAgentStateToWeb(const ASnapshotJson: string);
+    procedure PostVisualRuntimeSessionToWeb;
+    procedure PostDirectToolResultToWeb(
+      const AName: string;
+      const AResultJson: string
+    );
+    function BuildVisualRuntimeSessionJson(
+      const ASnapshot: TRadIAVisualSessionSnapshot
+    ): TJSONObject;
     procedure HandleAgentFinished(
       const AResult: TRadIAAgentRunResult;
       const AProvider: string;
@@ -431,7 +443,8 @@ type
 implementation
 
 uses
-  System.IOUtils, System.StrUtils, RadIA.Core.Config, RadIA.Core.Logger,
+  System.IOUtils, System.NetEncoding, System.StrUtils,
+  RadIA.Core.Config, RadIA.Core.Logger,
   RadIA.Core.ProviderRegistry, RadIA.Core.ConversationExporter,
   RadIA.Core.DTO.Generator, RadIA.Core.ProjectGenerator,
   System.SyncObjs, RadIA.Core.Container, RadIA.Core.ChatMessage, RadIA.Core.Service,
@@ -547,6 +560,11 @@ begin
   TRadIAContainer.TryResolve<IRadIAHierarchicalSettingsStore>(
     FHierarchicalSettingsStore
   );
+  TRadIAContainer.TryResolve<IRadIAVisualRuntimeSession>(
+    FVisualRuntimeSession
+  );
+  FLastVisualSessionId := '';
+  FLastVisualSequence := 0;
 
   if ADataDir.IsEmpty then
     FDataDir := TPath.Combine(TPath.GetHomePath, 'RadIA')
@@ -3645,7 +3663,9 @@ begin
               if LGuard.IsAlive then
               begin
                 if not GIsShuttingDown then
-                  Self.FView.PostMessageToWeb(LResultJson);
+                begin
+                  Self.PostDirectToolResultToWeb(AName, LResultJson);
+                end;
               end;
             end
           )
@@ -3655,6 +3675,16 @@ begin
       end;
     end
   ).Start;
+end;
+
+procedure TRadIAChatPresenter.PostDirectToolResultToWeb(
+  const AName: string;
+  const AResultJson: string
+);
+begin
+  FView.PostMessageToWeb(AResultJson);
+  if SameText(AName, 'CaptureRuntimeVisual') then
+    PostVisualRuntimeSessionToWeb;
 end;
 
 procedure TRadIAChatPresenter.PostJsonToWeb(
@@ -3704,6 +3734,8 @@ begin
   FView.PostMessageToWeb(
     SerializeToolResult(AName, ACorrelationId, AResult)
   );
+  if SameText(AName, 'CaptureRuntimeVisual') and AResult.Success then
+    PostVisualRuntimeSessionToWeb;
 end;
 
 class function TRadIAChatPresenter.SerializeToolResult(
@@ -3864,6 +3896,7 @@ begin
           LJson.AddPair('action', 'agent_state');
           LJson.AddPair('state', LState);
           PostJsonToWeb(LJson);
+          PostVisualRuntimeSessionToWeb;
         finally
           LJson.Free;
         end;
@@ -4392,6 +4425,77 @@ begin
     LHistory := FSessionManager.LoadSessionHistory(ALocalSessionId);
     LHistory := LHistory + [LMessage];
     FSessionManager.SaveSessionHistory(ALocalSessionId, LHistory);
+  end;
+end;
+
+function TRadIAChatPresenter.BuildVisualRuntimeSessionJson(
+  const ASnapshot: TRadIAVisualSessionSnapshot
+): TJSONObject;
+var
+  LCapture: TRadIAVisualCapture;
+  LCaptureArray: TJSONArray;
+  LCaptureJson: TJSONObject;
+  LEvent: TRadIAVisualSessionEvent;
+  LEventArray: TJSONArray;
+  LEventJson: TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('action', 'visual_runtime_session');
+  Result.AddPair('sessionId', ASnapshot.Session.SessionId);
+  Result.AddPair('state', RadIAVisualSessionStateName(ASnapshot.State));
+  LEventArray := TJSONArray.Create;
+  Result.AddPair('events', LEventArray);
+  for LEvent in ASnapshot.Events do
+  begin
+    LEventJson := TJSONObject.Create;
+    LEventJson.AddPair('sequence', TJSONNumber.Create(LEvent.Sequence));
+    LEventJson.AddPair('kind', RadIAVisualSessionEventKindName(LEvent.Kind));
+    LEventJson.AddPair('actionIndex', TJSONNumber.Create(LEvent.ActionIndex));
+    LEventJson.AddPair('status', LEvent.Status);
+    LEventJson.AddPair('details', LEvent.Details);
+    LEventArray.AddElement(LEventJson);
+  end;
+  LCaptureArray := TJSONArray.Create;
+  Result.AddPair('captures', LCaptureArray);
+  for LCapture in ASnapshot.Captures do
+  begin
+    LCaptureJson := TJSONObject.Create;
+    LCaptureJson.AddPair('captureId', LCapture.CaptureId);
+    LCaptureJson.AddPair('phase', RadIAVisualCapturePhaseName(LCapture.Phase));
+    LCaptureJson.AddPair('mimeType', LCapture.MimeType);
+    LCaptureJson.AddPair('width', TJSONNumber.Create(LCapture.Width));
+    LCaptureJson.AddPair('height', TJSONNumber.Create(LCapture.Height));
+    LCaptureJson.AddPair(
+      'dataUrl',
+      'data:image/png;base64,' +
+      TNetEncoding.Base64.EncodeBytesToString(LCapture.Bytes)
+    );
+    LCaptureArray.AddElement(LCaptureJson);
+  end;
+end;
+
+procedure TRadIAChatPresenter.PostVisualRuntimeSessionToWeb;
+var
+  LJson: TJSONObject;
+  LLastSequence: Int64;
+  LSnapshot: TRadIAVisualSessionSnapshot;
+begin
+  if not Assigned(FVisualRuntimeSession) or
+    not FVisualRuntimeSession.TryGetSnapshot(LSnapshot) then
+    Exit;
+  LLastSequence := 0;
+  if Length(LSnapshot.Events) > 0 then
+    LLastSequence := LSnapshot.Events[High(LSnapshot.Events)].Sequence;
+  if SameText(FLastVisualSessionId, LSnapshot.Session.SessionId) and
+    (FLastVisualSequence = LLastSequence) then
+    Exit;
+  LJson := BuildVisualRuntimeSessionJson(LSnapshot);
+  try
+    PostJsonToWeb(LJson);
+    FLastVisualSessionId := LSnapshot.Session.SessionId;
+    FLastVisualSequence := LLastSequence;
+  finally
+    LJson.Free;
   end;
 end;
 

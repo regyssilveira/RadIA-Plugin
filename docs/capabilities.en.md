@@ -19,7 +19,7 @@ This page is the functional map of RadIA 2.3.1.
 | Build | Make, build, check, clean, structured diagnostics, status, timeout and cancellation. |
 | DUnitX | Run, filter and cancel tests, parse NUnit XML and return structured failures and stack traces. |
 | Debugger | Start, stop, pause, continue, step, manage breakpoints and watches, evaluate expressions, inspect call stacks and read the timeline. |
-| Autonomous runtime diagnostics | Build and start under the IDE debugger, run a bounded visual scenario, capture an exception and stack, rebuild, compare evidence across distinct sessions and builds, and preserve a versioned regression. |
+| Autonomous runtime diagnostics | Build and start under the IDE debugger, capture the authorized window before and after a bounded visual scenario, record an exception and stack, rebuild, compare evidence across distinct sessions and builds, and preserve a versioned regression. |
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
 | Project health | Score IDE, compiler, build, tests, and local knowledge risks, then prepare a reviewed next action without running mutations. |
@@ -42,7 +42,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 130 registered built-in tools](runtime_tool_catalog.en.md)
+- [All 131 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.en.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)

@@ -284,6 +284,13 @@
       ]
     },
     {
+      "name": "Runtime visual capture",
+      "source": "Source/Core/RadIA.Core.RuntimeVisualTools.pas",
+      "tools": [
+        "CaptureRuntimeVisual"
+      ]
+    },
+    {
       "name": "Runtime diagnostic evidence",
       "source": "Source/Core/RadIA.Core.RuntimeEvidenceTools.pas",
       "tools": [

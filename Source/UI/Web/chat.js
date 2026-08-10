@@ -1665,6 +1665,75 @@ function renderToolResult(data) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+const VISUAL_RUNTIME_CARDS = new Map();
+
+function createVisualRuntimeCard(sessionId) {
+  const card = document.createElement('section');
+  card.className = 'visual-runtime-card';
+  card.dataset.sessionId = sessionId;
+
+  const header = document.createElement('header');
+  header.className = 'visual-runtime-header';
+  const title = document.createElement('strong');
+  title.textContent = 'Runtime visual validation';
+  const state = document.createElement('span');
+  state.className = 'visual-runtime-state';
+  header.append(title, state);
+
+  const captures = document.createElement('div');
+  captures.className = 'visual-runtime-captures';
+  const timeline = document.createElement('ol');
+  timeline.className = 'visual-runtime-timeline';
+  card.append(header, captures, timeline);
+  chatContainer.appendChild(card);
+  VISUAL_RUNTIME_CARDS.set(sessionId, card);
+  return card;
+}
+
+function renderVisualRuntimeCapture(container, capture) {
+  const figure = document.createElement('figure');
+  figure.className = `visual-runtime-capture capture-${capture.phase || 'unknown'}`;
+  const caption = document.createElement('figcaption');
+  caption.textContent = capture.phase === 'after' ? 'After' : 'Before';
+  const image = document.createElement('img');
+  image.alt = `${caption.textContent} capture of the authorized runtime window`;
+  image.loading = 'lazy';
+  if (typeof capture.dataUrl === 'string' &&
+      capture.dataUrl.startsWith('data:image/png;base64,')) {
+    image.src = capture.dataUrl;
+  }
+  const dimensions = document.createElement('small');
+  dimensions.textContent = `${capture.width || 0} x ${capture.height || 0}`;
+  figure.append(caption, image, dimensions);
+  container.appendChild(figure);
+}
+
+function renderVisualRuntimeSession(data) {
+  if (!data?.sessionId) return;
+  const card = VISUAL_RUNTIME_CARDS.get(data.sessionId) ||
+    createVisualRuntimeCard(data.sessionId);
+  const state = card.querySelector('.visual-runtime-state');
+  const captures = card.querySelector('.visual-runtime-captures');
+  const timeline = card.querySelector('.visual-runtime-timeline');
+  state.textContent = data.state || 'active';
+  state.dataset.state = data.state || 'active';
+  captures.replaceChildren();
+  (Array.isArray(data.captures) ? data.captures : []).forEach(capture => {
+    renderVisualRuntimeCapture(captures, capture);
+  });
+  timeline.replaceChildren();
+  (Array.isArray(data.events) ? data.events : []).forEach(event => {
+    const item = document.createElement('li');
+    const label = document.createElement('strong');
+    label.textContent = event.status || event.kind || 'event';
+    const details = document.createElement('span');
+    details.textContent = event.details || '';
+    item.append(label, details);
+    timeline.appendChild(item);
+  });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
 let slashPopupVisible = false;
 let slashPopupSelectedIndex = 0;
 let filteredSlashCommands = [];
@@ -3663,6 +3732,7 @@ if (globalThis.chrome?.webview) {
       case 'execution_scope':       updateExecutionScope(data);                                  break;
       case 'agent_state':           renderAgentState(data);                                      break;
       case 'agent_history':         renderAgentHistory(data);                                    break;
+      case 'visual_runtime_session': renderVisualRuntimeSession(data);                           break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

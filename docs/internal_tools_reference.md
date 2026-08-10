@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 130 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 131 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -285,6 +285,12 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `RunRuntimeScenario` | Revalida a sessão e executa exatamente o preview aprovado, restringindo seletores à janela raiz visível e habilitada do processo correlacionado. | Após o usuário revisar o roteiro; exige novo consentimento em toda execução. |
 | `CancelRuntimeScenario` | Interrompe a execução ou uma espera ativa sem solicitar consentimento. | Pelo botão ou comando de parada de emergência, pelo agente ou pelo MCP. |
 | `GetRuntimeScenarioStatus` | Retorna estado, repetição, ação atual, total concluído e eventual falha. | Para acompanhar o roteiro e coletar seu resultado estruturado. |
+
+## Captura visual runtime
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `CaptureRuntimeVisual` | Captura um PNG limitado da janela visível e restaurada pertencente ao PID da sessão atual, mantém a imagem em memória e publica anterior/posterior no card local do chat. | Depois de `GetRuntimeWindows`: use `phase=before` antes da interação e `phase=after` depois; exige consentimento em toda chamada. |
 
 ## Evidências de diagnóstico runtime
 

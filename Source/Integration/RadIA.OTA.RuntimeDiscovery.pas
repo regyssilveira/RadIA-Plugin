@@ -3,19 +3,26 @@ unit RadIA.OTA.RuntimeDiscovery;
 interface
 
 uses
-  RadIA.Core.RuntimeAutomation;
+  RadIA.Core.RuntimeAutomation,
+  RadIA.Core.VisualRuntimeSession;
 
 type
   TRadIAWindowsRuntimeDiscoveryFacade = class(
     TInterfacedObject,
     IRadIARuntimeDiscoveryFacade,
-    IRadIARuntimeActionFacade
+    IRadIARuntimeActionFacade,
+    IRadIARuntimeVisualCaptureFacade
   )
   private
     function ValidateSession(
       const ASession: TRadIARuntimeSessionIdentity
     ): Boolean;
   public
+    function CaptureWindow(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AWindowId: string;
+      const APhase: TRadIAVisualCapturePhase
+    ): TRadIAVisualCapture;
     function ExecuteAction(
       const ASession: TRadIARuntimeSessionIdentity;
       const AAction: TRadIARuntimeScenarioAction
@@ -36,6 +43,7 @@ type
 implementation
 
 uses
+  System.Classes,
   System.DateUtils,
   System.Generics.Collections,
   System.Hash,
@@ -44,6 +52,8 @@ uses
   Winapi.Messages,
   Winapi.TlHelp32,
   Winapi.Windows,
+  Vcl.Graphics,
+  Vcl.Imaging.pngimage,
   RadIA.Core.Logger,
   RadIA.OTA.RuntimeProcess;
 
@@ -52,6 +62,8 @@ const
   CMaxRuntimeMessageTimeoutMs = 1000;
   CPasswordStyle = $0020;
   CMessageTimeoutError = 'runtime_action_timeout';
+  CMaximumVisualCaptureHeight = 1440;
+  CMaximumVisualCaptureWidth = 2560;
 
 type
   TRadIAWindowEnumerationContext = class
@@ -91,6 +103,12 @@ type
     Text: string;
   end;
 
+function RadIAPrintWindow(
+  const AWindow: HWND;
+  const ADeviceContext: HDC;
+  const AFlags: Cardinal
+): BOOL; stdcall; external user32 name 'PrintWindow';
+
 function WindowProcessId(const AWindow: HWND): LongWord;
 var
   LProcessId: DWORD;
@@ -98,6 +116,76 @@ begin
   LProcessId := 0;
   GetWindowThreadProcessId(AWindow, @LProcessId);
   Result := LProcessId;
+end;
+
+function CaptureWindowPng(
+  const AWindow: HWND;
+  const AWidth: Integer;
+  const AHeight: Integer
+): TArray<Byte>;
+const
+  CCaptureBlt = $40000000;
+  PW_RENDERFULLCONTENT = $00000002;
+var
+  LBitmap: TBitmap;
+  LCaptured: Boolean;
+  LDeviceContext: HDC;
+  LPng: TPngImage;
+  LStream: TMemoryStream;
+begin
+  Result := nil;
+  LBitmap := TBitmap.Create;
+  try
+    LBitmap.PixelFormat := pf32bit;
+    LBitmap.SetSize(AWidth, AHeight);
+    LCaptured := RadIAPrintWindow(
+      AWindow,
+      LBitmap.Canvas.Handle,
+      PW_RENDERFULLCONTENT
+    );
+    if not LCaptured then
+    begin
+      LDeviceContext := GetWindowDC(AWindow);
+      if LDeviceContext <> 0 then
+      try
+        LCaptured := BitBlt(
+          LBitmap.Canvas.Handle,
+          0,
+          0,
+          AWidth,
+          AHeight,
+          LDeviceContext,
+          0,
+          0,
+          SRCCOPY or CCaptureBlt
+        );
+      finally
+        ReleaseDC(AWindow, LDeviceContext);
+      end;
+    end;
+    if not LCaptured then
+      raise EInvalidOp.Create('The authorized runtime window could not be captured.');
+    LPng := TPngImage.Create;
+    try
+      LPng.Assign(LBitmap);
+      LStream := TMemoryStream.Create;
+      try
+        LPng.SaveToStream(LStream);
+        SetLength(Result, LStream.Size);
+        if LStream.Size > 0 then
+        begin
+          LStream.Position := 0;
+          LStream.ReadBuffer(Result[0], LStream.Size);
+        end;
+      finally
+        LStream.Free;
+      end;
+    finally
+      LPng.Free;
+    end;
+  finally
+    LBitmap.Free;
+  end;
 end;
 
 function WindowClassName(const AWindow: HWND): string;
@@ -829,6 +917,64 @@ begin
       CMessageTimeoutError,
       'Cancelling the runtime window timed out.'
     );
+end;
+
+function TRadIAWindowsRuntimeDiscoveryFacade.CaptureWindow(
+  const ASession: TRadIARuntimeSessionIdentity;
+  const AWindowId: string;
+  const APhase: TRadIAVisualCapturePhase
+): TRadIAVisualCapture;
+var
+  LAllowedProcessIds: TDictionary<LongWord, Boolean>;
+  LBytes: TArray<Byte>;
+  LRect: TRect;
+  LWindow: HWND;
+begin
+  if not ValidateSession(ASession) then
+    raise EInvalidOp.Create('Runtime debug session identity changed.');
+  LAllowedProcessIds := BuildAllowedProcessIds(
+    ASession.ProcessId,
+    ASession.CreatedAtUtc
+  );
+  try
+    LWindow := FindWindowById(
+      ASession.SessionId,
+      Trim(AWindowId),
+      LAllowedProcessIds
+    );
+    if (LWindow = 0) or (WindowProcessId(LWindow) <> ASession.ProcessId) then
+      raise EArgumentException.Create(
+        'Window id does not belong to the active runtime process.'
+      );
+    if not IsWindowVisible(LWindow) or IsIconic(LWindow) then
+      raise EInvalidOp.Create(
+        'The authorized runtime window must be visible and restored for capture.'
+      );
+    if not GetWindowRect(LWindow, LRect) then
+      raise EInvalidOp.Create('The authorized runtime window bounds are unavailable.');
+    if (LRect.Width <= 0) or (LRect.Height <= 0) or
+      (LRect.Width > CMaximumVisualCaptureWidth) or
+      (LRect.Height > CMaximumVisualCaptureHeight) then
+      raise EArgumentOutOfRangeException.Create(
+        'The runtime window exceeds the bounded 2560x1440 capture viewport.'
+      );
+    LBytes := CaptureWindowPng(LWindow, LRect.Width, LRect.Height);
+    Result := TRadIAVisualCapture.Create(
+      TGUID.NewGuid.ToString,
+      ASession.ProcessId,
+      Trim(AWindowId),
+      APhase,
+      TRadIAVisualCaptureContent.Create(
+        'image/png',
+        LRect.Width,
+        LRect.Height,
+        LBytes
+      ),
+      TTimeZone.Local.ToUniversalTime(Now)
+    );
+  finally
+    LAllowedProcessIds.Free;
+  end;
 end;
 
 function AssertRuntimeValue(

@@ -48,7 +48,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Consultar capacidades e retomada dos CLIs | [Matriz contratual dos CLIs](cli_capability_matrix.md) |
 | Ver o estado configurado do RadIA | [Doctor, status, health e tools](slash_commands.md#qual-diagnóstico-usar) |
 | Entender valor efetivo, origem e herança | [Configurações por projeto, sessão e solicitação](hierarchical_settings.md) |
-| Ver todas as ferramentas disponíveis | [Catálogo das 130 ferramentas](runtime_tool_catalog.md) |
+| Ver todas as ferramentas disponíveis | [Catálogo das 131 ferramentas](runtime_tool_catalog.md) |
 | Entender cada ferramenta e quando ela é acionada | [Referência operacional](internal_tools_reference.md) |
 | Entender consentimento, riscos e auditoria | [Modelo de segurança](tool_security_model.md) |
 | Consultar custos e limites do agente | [Custos do agente](agent_pricing.md) |

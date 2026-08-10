@@ -86,6 +86,15 @@ type
     property WindowId: string read FWindowId;
   end;
 
+  IRadIARuntimeVisualCaptureFacade = interface
+    ['{3737FCB4-AD4B-42B4-9FD0-B690E613932E}']
+    function CaptureWindow(
+      const ASession: TRadIARuntimeSessionIdentity;
+      const AWindowId: string;
+      const APhase: TRadIAVisualCapturePhase
+    ): TRadIAVisualCapture;
+  end;
+
   TRadIAVisualSessionEvent = record
   private
     FActionIndex: Integer;
@@ -150,6 +159,10 @@ type
       const ADetails: string
     ): Boolean;
     function TryGetSnapshot(out ASnapshot: TRadIAVisualSessionSnapshot): Boolean;
+    function TryGetCapture(
+      const ACaptureId: string;
+      out ACapture: TRadIAVisualCapture
+    ): Boolean;
     procedure Clear;
   end;
 
@@ -203,6 +216,10 @@ type
       const ADetails: string
     ): Boolean;
     function TryGetSnapshot(out ASnapshot: TRadIAVisualSessionSnapshot): Boolean;
+    function TryGetCapture(
+      const ACaptureId: string;
+      out ACapture: TRadIAVisualCapture
+    ): Boolean;
   end;
 
 function RadIAVisualCapturePhaseName(const APhase: TRadIAVisualCapturePhase): string;
@@ -631,6 +648,29 @@ begin
         FEvents,
         FCaptures
       );
+  finally
+    TMonitor.Exit(FLock);
+  end;
+end;
+
+function TRadIAVisualRuntimeSession.TryGetCapture(
+  const ACaptureId: string;
+  out ACapture: TRadIAVisualCapture
+): Boolean;
+var
+  LCapture: TRadIAVisualCapture;
+begin
+  ACapture := Default(TRadIAVisualCapture);
+  TMonitor.Enter(FLock);
+  try
+    PurgeIfExpired;
+    Result := False;
+    for LCapture in FCaptures do
+      if SameText(LCapture.CaptureId, Trim(ACaptureId)) then
+      begin
+        ACapture := LCapture.Clone;
+        Exit(True);
+      end;
   finally
     TMonitor.Exit(FLock);
   end;

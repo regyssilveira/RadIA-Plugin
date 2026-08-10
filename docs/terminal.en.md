@@ -122,4 +122,4 @@ The automated matrix is ​​in
 useful input and output controls, **New terminal**, **Close terminal**, **Run**, **Stop** and
 **Clear**, the five accessible labels, at least 11 navigable points per Tab, two profiles and one
 non-empty palette. The current matrix exclusively covers Delphi 12 Win32, Delphi 13 Win32 and Delphi
-13 IDE64, all with the current catalog of 130 tools.
+13 IDE64, all with the current catalog of 131 tools.

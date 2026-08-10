@@ -349,6 +349,10 @@ See the [Designer and debugger guide](user_guide_designer_debugger.en.md).
 
 #### 4.10.1 Visual runtime regressions
 
+Use `CaptureRuntimeVisual` with an opaque ID returned by `GetRuntimeWindows`: `phase=before`
+captures the window before the script and `phase=after` completes the before/after chat card. Every
+capture is sensitive, requires its own consent, and remains only in memory for up to ten minutes.
+
 After correcting a UI-dependent failure, RadIA can preserve its script under
 `.radia/runtime-scenarios/<id>.json`. The artifact has a versioned schema and fingerprint and does
 not store session-bound opaque IDs: every target needs a stable class, text, and path. Use
@@ -444,7 +448,7 @@ See the [security model](tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.en.md) lists the 130 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.en.md) lists the 131 registered built-in tools.
 - Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
   capability.
 - RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user

@@ -4,21 +4,22 @@ RadIA can reproduce a visual failure in a VCL application started by the IDE deb
 evidence, prepare a reviewable fix, rebuild, replay the scenario, and prove whether the failure was
 removed.
 
-> **Important:** in this guide, `CaptureRuntimeEvidence` means structured debugger evidence:
-> exception, call stack, state, expressions, and session identity. Before/after screenshots shown
-> directly in chat are being implemented and must not yet be treated as an available feature.
+> **Important:** `CaptureRuntimeEvidence` still means structured debugger evidence: exception,
+> call stack, state, expressions, and session identity. `CaptureRuntimeVisual` is the separate tool
+> that captures an authorized window and presents its PNG in chat.
 
-## Visual chat session: implementation status
+## Visual chat session
 
-The internal foundation now maintains a visual session bound to the complete identity created by
-the debugger. It orders real events, accepts only images that belong to the authorized PID, and
-keeps their content exclusively in memory. The session allows at most six captures, 2 MiB per
-capture, and 8 MiB total, expiring after ten minutes. Starting another session or reaching expiry
-discards the previous images.
+The visual session is bound to the complete identity created by the debugger. `CaptureRuntimeVisual`
+accepts only an opaque ID returned by `GetRuntimeWindows`, revalidates executable, creation time,
+session, and PID, and rejects invisible, minimized, foreign-process, or larger-than-2560×1440
+windows. Every call requires consent because the image may contain application data.
 
-The authorized-window PNG capture, safe WebView publication, and before/after timeline card remain
-to be connected. Until those links pass the supported matrix, use the structured evidence described
-below.
+The agent receives metadata only. The PNG travels through a separate local channel to a chat card
+that presents **Before**, **After**, state, and timeline. Images remain in memory: at most six
+captures, 2 MiB each and 8 MiB total, expiring after ten minutes. A new session or expiry discards
+the prior content. The card complements structured evidence; tool results and debugger state remain
+the authoritative validation.
 
 ## When to use it
 
@@ -47,14 +48,16 @@ An MCP client can also drive the workflow. The same consent and security rules a
 3. `WaitForDebuggerEvent` observes stops or exceptions without blocking the IDE main thread.
 4. The session correlates PID, creation time, executable, project, and build.
 5. `GetRuntimeWindows` and `GetRuntimeControlTree` discover only authorized process elements.
-6. `PrepareRuntimeScenario` creates a bounded, fingerprinted preview.
-7. After consent, `RunRuntimeScenario` executes the script.
-8. `CaptureRuntimeEvidence` records the exception, stack, state, and expressions.
-9. RadIA prepares a hypothesis and diff; no change is applied without review.
-10. After approval, the project is rebuilt and a new debug session starts.
-11. The same scenario is replayed and `verification` evidence is captured.
-12. `CompareRuntimeEvidence` requires the same project but distinct sessions and builds.
-13. After `outcome=fixed`, the scenario can be saved and replayed as a regression.
+6. `CaptureRuntimeVisual` with `phase=before` records the window before interaction.
+7. `PrepareRuntimeScenario` creates a bounded, fingerprinted preview.
+8. After consent, `RunRuntimeScenario` executes the script.
+9. `CaptureRuntimeVisual` with `phase=after` completes the visual pair in the same card.
+10. `CaptureRuntimeEvidence` records the exception, stack, state, and expressions.
+11. RadIA prepares a hypothesis and diff; no change is applied without review.
+12. After approval, the project is rebuilt and a new debug session starts.
+13. The same scenario is replayed and `verification` evidence is captured.
+14. `CompareRuntimeEvidence` requires the same project but distinct sessions and builds.
+15. After `outcome=fixed`, the scenario can be saved and replayed as a regression.
 
 ### Reliable debugger observation
 
@@ -82,6 +85,7 @@ The plan is shown before the first execution. Every risky tool keeps its own con
 | Build | `BuildProject`, `GetBuildStatus`, `CancelBuild` |
 | Session | `StartDebugging`, `GetDebuggerState`, `GetRuntimeDebugSession`, `StopDebugging` |
 | Discovery | `GetRuntimeWindows`, `GetRuntimeControlTree` |
+| Visual | `CaptureRuntimeVisual` before and after the scenario |
 | Scenario | `PrepareRuntimeScenario`, `RunRuntimeScenario`, `GetRuntimeScenarioStatus`, `CancelRuntimeScenario` |
 | Evidence | `WaitForDebuggerEvent`, `CaptureRuntimeEvidence`, `CompareRuntimeEvidence` |
 | Fix | `PreparePatch`, `ApplyPatch`, `RevertPatch` |
@@ -127,6 +131,8 @@ The user decides when to add the artifact to version control.
 
 - Automation is confined to the debugged process and its descendants.
 - Password controls are redacted.
+- Visual capture is `sensitive`, requires consent on every call, and may contain any text visible
+  inside the authorized window.
 - Build, debug, scenario execution, and writes preserve IDE consent.
 - Scenario cancellation does not require new consent.
 - Project changes, process termination, and IDE shutdown invalidate the session.
@@ -136,6 +142,7 @@ The user decides when to add the artifact to version control.
 
 - VCL controls without their own window cannot be automated by this mechanism.
 - Applications running at a different integrity level may be inaccessible.
+- Minimized, invisible, or larger-than-2560×1440 windows are not captured.
 - Execution uses semantic identity, not computer vision or screen coordinates.
 - A passing visual run alone does not prove leak freedom or general logical correctness.
 - Compilation, DUnitX, static analysis, and human review remain part of the gate.
@@ -144,6 +151,8 @@ The user decides when to add the artifact to version control.
 
 - **No windows:** wait for `running` and confirm `GetRuntimeDebugSession.complete=true`.
 - **`runtime_target_not_found`:** refresh discovery and inspect class, text, and path.
+- **`runtime_capture_unavailable`:** restore and expose the window, confirm its PID, and call
+  `GetRuntimeWindows` again before using a fresh opaque ID.
 - **Not comparable:** stop, rebuild, and start a new session before verification.
 - **Security-software startup exception:** inspect the stack and continue only when it is outside
   project code.

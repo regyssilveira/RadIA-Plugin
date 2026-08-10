@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 130 internal tools: what each one does and at what stage
+This page explains RadIA's 131 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -285,6 +285,12 @@ passes `execution` classification and does not accept arbitrary names received f
 |`RunRuntimeScenario`|Revalidates the session and executes exactly the approved preview, restricting selectors to the visible and enabled root window of the correlated process.|After the user reviews the script; requires new consent for every execution.|
 |`CancelRuntimeScenario`|Stops execution or an active wait without requesting consent.|By emergency stop button or command, by the agent or by the MCP.|
 |`GetRuntimeScenarioStatus`|Returns state, repetition, current action, total completed and eventual failure.|To follow the script and collect its structured result.|
+
+## Runtime visual capture
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`CaptureRuntimeVisual`|Captures a bounded PNG of the visible, restored window owned by the current session PID, retains it in memory, and publishes before/after in the local chat card.|After `GetRuntimeWindows`: use `phase=before` before interaction and `phase=after` afterwards; every call requires consent.|
 
 ## Runtime diagnostic evidence
 

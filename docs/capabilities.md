@@ -132,6 +132,7 @@ O RadIA pode transformar uma falha visual reproduzível em uma prova verificáve
 - descobrir somente janelas e controles do processo depurado e seus descendentes;
 - preparar um roteiro visual com preview, limites, fingerprint e consentimento;
 - reproduzir uma exceção, capturar a pilha e registrar evidência sanitizada;
+- capturar a janela autorizada antes e depois da interação e apresentar o par no chat;
 - aplicar uma correção revisada, recompilar e repetir o mesmo roteiro;
 - comparar falha e verificação entre sessões e builds distintos;
 - versionar o cenário em `.radia/runtime-scenarios` e executá-lo repetidamente como regressão.
@@ -243,7 +244,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 130 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 131 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)
