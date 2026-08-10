@@ -287,6 +287,17 @@ ao ciclo de pintura. A navegação protegida do RadIA não recebe bypass de cons
 
 ### Evidência visual do terminal
 
+Antes da UI, valide os XMLs DUnitX dos três targets, os contratos VT/TUI, o processo ConPTY real e
+as versões executáveis dos quatro CLIs:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.TerminalHighFidelityEvidence.ps1
+```
+
+O gate gera `terminal_high_fidelity_evidence_2.4.0.json`; ele complementa, mas não substitui, o
+smoke visual instalado abaixo.
+
 Use `-TerminalEvidencePath` com `-ExerciseTerminal` para abrir a superfície VCL real e validar
 geometria, controles essenciais, perfis, paleta de comandos, entrada, saída e navegação por Tab:
 
@@ -307,7 +318,8 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.TerminalEvidence.ps1
 ```
 
-O resultado versionado fica em `terminal_smoke_evidence_2.0.0.json`.
+O resultado vigente fica em `terminal_smoke_evidence_2.4.0.json`. O arquivo 2.0.0 permanece como
+evidência histórica daquela versão.
 
 ### Evidência visual do Ghost Text
 

@@ -1,7 +1,7 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\Terminal",
     [string]$OutputPath = (
-        ".\docs\terminal_smoke_evidence_2.0.0.json"
+        ".\docs\terminal_smoke_evidence_2.4.0.json"
     ),
     [int]$RequiredToolCount = 131,
     [int]$MinimumTabStopCount = 11,

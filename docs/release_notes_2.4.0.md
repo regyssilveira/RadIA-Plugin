@@ -45,6 +45,7 @@ visual; o ZIP não é necessário para o fluxo normal.
 - ESLint aprovado;
 - SonarQube aprovado com 82,8% de cobertura global e zero issues.
 
+Consulte a [evidência reproduzível do terminal](terminal_high_fidelity_evidence_2.4.0.json).
+
 A matriz visual instalada será anexada antes de declarar a candidata pronta. Tag, merge e publicação
 dependem de autorização explícita.
-

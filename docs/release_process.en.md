@@ -288,6 +288,17 @@ RadIA navigation.
 
 ### Terminal visual evidence
 
+Before the UI check, validate all three DUnitX XML files, the VT/TUI contracts, the real ConPTY
+process, and executable versions of all four CLIs:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.TerminalHighFidelityEvidence.ps1
+```
+
+The gate creates `terminal_high_fidelity_evidence_2.4.0.json`; it complements but does not replace
+the installed visual smoke below.
+
 Use `-TerminalEvidencePath` with `-ExerciseTerminal` to open the real VCL surface and validate
 geometry, required controls, profiles, the command palette, input, output, and keyboard tab navigation:
 
@@ -308,7 +319,8 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.TerminalEvidence.ps1
 ```
 
-The versioned result is stored in `terminal_smoke_evidence_2.0.0.json`.
+The current result is stored in `terminal_smoke_evidence_2.4.0.json`. The 2.0.0 file remains the
+historical evidence for that release.
 
 ### Ghost Text visual evidence
 

@@ -90,6 +90,8 @@ M6 has passed 1,024 tests, including real ConPTY streaming, input, and resize, o
 Delphi 13 Win32, and Delphi 13 IDE64. It also confirmed the current Codex, Claude Code, Gemini CLI,
 and GitHub Copilot CLI versions. Only the installed visual evidence must still be regenerated on all
 three targets; the smoke does not close an already-open IDE or treat compilation alone as visual proof.
+The completed reproducible proof is the
+[2.4.0 high-fidelity matrix](terminal_high_fidelity_evidence_2.4.0.json).
 
 ## Acceptance matrix
 

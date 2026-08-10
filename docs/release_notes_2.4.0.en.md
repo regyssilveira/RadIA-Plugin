@@ -45,6 +45,7 @@ required for installation.
 - ESLint passed;
 - SonarQube passed with 82.8% global coverage and zero issues.
 
+See the [reproducible terminal evidence](terminal_high_fidelity_evidence_2.4.0.json).
+
 The installed visual matrix will be attached before declaring the candidate ready. Tagging, merging,
 and publishing require explicit authorization.
-
