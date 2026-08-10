@@ -33,7 +33,7 @@ this goal.
 | M0 | Baseline, contracts, acceptance matrix, and documentation audit | Complete |
 | M1 | Canonical model and CLI-specific skill adapters | Complete |
 | M2 | Preview, consent, synchronization, and removal in Addon Studio | Complete |
-| M3 | Real format validation and portability documentation | Pending |
+| M3 | Real format validation and portability documentation | Complete |
 | M4 | Decoupled interface and selected VT core | Pending |
 | M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Pending |
 | M6 | Real shell, CLI, and TUI matrix on all three targets | Pending |
@@ -55,6 +55,12 @@ M1 introduced the validated canonical model and four isolated adapters. They pro
 with shared frontmatter and project-specific paths: `.agents/skills`, `.claude/skills`,
 `.gemini/skills`, and `.github/skills`. Writes, synchronization, and visual experience belong to M2
 and are not exposed to users yet.
+
+M3 ran current versions of all four CLI runtimes. Codex and Copilot recognized and invoked the
+skill; Gemini listed the project skill; Claude confirmed discovery of the project skills directory.
+The remaining two model invocations were not sent because the temporary runtimes had no login. This
+credential limitation does not affect format validation and is recorded without ambiguity in the
+[M3 evidence](skill_portability_m3_evidence.json).
 
 ## Terminal contract
 

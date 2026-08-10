@@ -33,7 +33,7 @@ Delphi não fazem parte deste goal.
 | M0 | Baseline, contratos, matriz de aceite e auditoria documental | Concluído |
 | M1 | Modelo canônico e adaptadores de skill por CLI | Concluído |
 | M2 | Preview, consentimento, sincronização e remoção no Addon Studio | Concluído |
-| M3 | Validação real dos formatos e documentação de portabilidade | Pendente |
+| M3 | Validação real dos formatos e documentação de portabilidade | Concluído |
 | M4 | Interface desacoplada e núcleo VT selecionado | Pendente |
 | M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Pendente |
 | M6 | Matriz real de shells, CLIs e TUIs nos três targets | Pendente |
@@ -56,6 +56,12 @@ O M1 introduziu o modelo canônico validado e quatro adaptadores isolados. Eles 
 com frontmatter comum e paths de projeto específicos: `.agents/skills`, `.claude/skills`,
 `.gemini/skills` e `.github/skills`. A gravação, sincronização e experiência visual pertencem ao M2
 e ainda não são apresentadas ao usuário.
+
+O M3 executou runtimes atuais dos quatro CLIs. Codex e Copilot reconheceram e invocaram a skill;
+Gemini listou a skill do projeto; Claude confirmou a descoberta do diretório de skills. As duas
+invocações restantes não foram enviadas a modelos porque os runtimes temporários não possuíam login.
+Essa limitação de credencial não afeta a validação do formato e está registrada, sem ambiguidade, na
+[evidência do M3](skill_portability_m3_evidence.json).
 
 ## Contrato do terminal
 
