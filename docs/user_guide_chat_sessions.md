@@ -14,9 +14,9 @@ O Rad IA se acopla diretamente à barra lateral da IDE do Delphi, fornecendo um 
 
 *   **Temas Inteligentes**: A interface detecta automaticamente o tema ativo da IDE (Claro ou Escuro) e adapta seus esquemas de cores e estilos para manter a harmonia visual.
 *   **Markdown & Realce de Código**: As respostas da IA suportam formatação Markdown completa e realce de sintaxe (*syntax highlighting*) otimizado para Object Pascal (usando Marked.js e Prism.js integrados localmente).
-*   **Dock responsivo**: Ao reduzir a largura do painel, o compositor reorganiza modo, executor,
-    jornada, escopo, provider e modelo em duas colunas compactas. Nenhum controle exige rolagem
-    horizontal, inclusive em docks com 240 pixels de largura.
+*   **Dock responsivo**: O compositor separa execução — modo, executor, provider e modelo — de
+    contexto — sessão CLI, jornada, escopo e rota efetiva — em duas linhas. Ao reduzir a largura,
+    cada linha se reorganiza independentemente em colunas compactas, sem exigir rolagem horizontal.
 
 ---
 

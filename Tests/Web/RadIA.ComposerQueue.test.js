@@ -31,13 +31,20 @@ test('queued follow-ups remain visible without widening the composer', () => {
   assert.match(chatCss, /@media \(max-width: 520px\)[\s\S]*\.execution-route,[\s\S]*display: none/u);
 });
 
-test('composer shrinks and reorganizes controls in narrow dock layouts', () => {
+test('composer separates execution and context into responsive rows', () => {
   assert.match(chatCss, /#chat-wrapper[\s\S]*min-width: 0/u);
   assert.match(chatCss, /#chat-footer[\s\S]*min-width: 0[\s\S]*width: 100%/u);
+  assert.match(chatHtml, /composer-control-row composer-execution-row/u);
+  assert.match(chatHtml, /composer-control-row composer-context-row/u);
   assert.match(
     chatCss,
-    /@media \(max-width: 620px\)[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/u
+    /\.composer-execution-row[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/u
   );
+  assert.match(
+    chatCss,
+    /\.composer-context-row[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/u
+  );
+  assert.match(chatCss, /\.composer-context-row \.composer-route[\s\S]*grid-column: 1 \/ -1/u);
   assert.match(chatCss, /\.composer-executor-control select[\s\S]*max-width: none/u);
   assert.match(
     chatCss,

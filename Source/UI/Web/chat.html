@@ -179,77 +179,83 @@
           </div>
 
           <div id="model-selectors">
-            <button type="button" class="composer-mode-toggle agent-mode-enabled" id="btn-agent-mode"
-              title="Agent mode is on: tools may be used after policy and consent checks"
-              aria-label="Mode: Agent" aria-pressed="true">
-              <span class="composer-control-label">Mode</span>
-              <span class="btn-label">Agent</span>
-            </button>
-            <label class="composer-executor-control" for="select-execution-route">
-              <span class="composer-control-label">Send with</span>
-              <select id="select-execution-route" aria-label="Executor for the next message">
-                <option value="native">RadIA native</option>
-                <option value="codex">Codex CLI</option>
-                <option value="claude">Claude Code</option>
-                <option value="gemini">Gemini CLI</option>
-                <option value="copilot">GitHub Copilot CLI</option>
-              </select>
-            </label>
-            <button type="button" class="composer-mode-toggle" id="btn-cli-new-session"
-              title="Detach the resumed CLI conversation and start fresh on the next request"
-              aria-label="Start a new external CLI session" hidden>
-              <span class="composer-control-label">CLI</span>
-              <span class="btn-label">New session</span>
-            </button>
-            <button type="button" class="composer-mode-toggle" id="btn-journey-context"
-              title="Link or detach the journey shared by chat, terminal, and editor"
-              aria-label="Toggle shared journey context">
-              <span class="composer-control-label">Journey</span>
-              <span class="btn-label">Link</span>
-            </button>
-            <button type="button" class="composer-mode-toggle" id="btn-execution-scope"
-              title="Inspect or override provider, model, executor, and limits by project, session, or request"
-              aria-label="Open execution settings scopes">
-              <span class="composer-control-label">Settings</span>
-              <span class="btn-label">Scope</span>
-            </button>
-            <output id="composer-route" class="composer-route" aria-live="polite"
-              title="Credential and model for the next message">Auth: Native</output>
-            <div class="selector-wrapper">
-              <select id="select-provider" aria-label="AI provider" style="display: none;">
-                <option value="">Provider...</option>
-              </select>
-              <div class="custom-dropdown-wrapper" id="provider-dropdown-wrapper">
-                <button type="button" class="custom-dropdown-trigger" id="provider-dropdown-trigger"
-                  title="Select the AI provider used by native chat requests"
-                  aria-label="AI provider" aria-expanded="false"
-                  aria-haspopup="listbox" aria-controls="provider-options-list">
-                  <span id="provider-dropdown-value">Provider...</span>
-                </button>
-                <div class="custom-dropdown-content" id="provider-dropdown-content">
-                  <ul class="custom-dropdown-options" id="provider-options-list"></ul>
+            <div class="composer-control-row composer-execution-row"
+              aria-label="Execution options">
+              <button type="button" class="composer-mode-toggle agent-mode-enabled" id="btn-agent-mode"
+                title="Agent mode is on: tools may be used after policy and consent checks"
+                aria-label="Mode: Agent" aria-pressed="true">
+                <span class="composer-control-label">Mode</span>
+                <span class="btn-label">Agent</span>
+              </button>
+              <label class="composer-executor-control" for="select-execution-route">
+                <span class="composer-control-label">Send with</span>
+                <select id="select-execution-route" aria-label="Executor for the next message">
+                  <option value="native">RadIA native</option>
+                  <option value="codex">Codex CLI</option>
+                  <option value="claude">Claude Code</option>
+                  <option value="gemini">Gemini CLI</option>
+                  <option value="copilot">GitHub Copilot CLI</option>
+                </select>
+              </label>
+              <div class="selector-wrapper">
+                <select id="select-provider" aria-label="AI provider" style="display: none;">
+                  <option value="">Provider...</option>
+                </select>
+                <div class="custom-dropdown-wrapper" id="provider-dropdown-wrapper">
+                  <button type="button" class="custom-dropdown-trigger" id="provider-dropdown-trigger"
+                    title="Select the AI provider used by native chat requests"
+                    aria-label="AI provider" aria-expanded="false"
+                    aria-haspopup="listbox" aria-controls="provider-options-list">
+                    <span id="provider-dropdown-value">Provider...</span>
+                  </button>
+                  <div class="custom-dropdown-content" id="provider-dropdown-content">
+                    <ul class="custom-dropdown-options" id="provider-options-list"></ul>
+                  </div>
+                </div>
+              </div>
+              <div class="selector-wrapper">
+                <select id="select-model" aria-label="AI model" style="display: none;">
+                  <option value="">Model...</option>
+                </select>
+                <div class="custom-dropdown-wrapper" id="model-dropdown-wrapper">
+                  <button type="button" class="custom-dropdown-trigger" id="model-dropdown-trigger"
+                    title="Select a provider model; external CLI executors manage their own model"
+                    aria-label="AI model" aria-expanded="false"
+                    aria-haspopup="listbox" aria-controls="model-options-list">
+                    <span id="model-dropdown-value">Model...</span>
+                  </button>
+                  <div class="custom-dropdown-content" id="model-dropdown-content">
+                    <div class="custom-dropdown-search">
+                      <input type="text" id="model-search-input" aria-label="Search AI models"
+                        placeholder="Search model..." autocomplete="off">
+                    </div>
+                    <ul class="custom-dropdown-options" id="model-options-list"></ul>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="selector-wrapper">
-              <select id="select-model" aria-label="AI model" style="display: none;">
-                <option value="">Model...</option>
-              </select>
-              <div class="custom-dropdown-wrapper" id="model-dropdown-wrapper">
-                <button type="button" class="custom-dropdown-trigger" id="model-dropdown-trigger"
-                  title="Select a provider model; external CLI executors manage their own model"
-                  aria-label="AI model" aria-expanded="false"
-                  aria-haspopup="listbox" aria-controls="model-options-list">
-                  <span id="model-dropdown-value">Model...</span>
-                </button>
-                <div class="custom-dropdown-content" id="model-dropdown-content">
-                  <div class="custom-dropdown-search">
-                    <input type="text" id="model-search-input" aria-label="Search AI models"
-                      placeholder="Search model..." autocomplete="off">
-                  </div>
-                  <ul class="custom-dropdown-options" id="model-options-list"></ul>
-                </div>
-              </div>
+            <div class="composer-control-row composer-context-row"
+              aria-label="Conversation context options">
+              <button type="button" class="composer-mode-toggle" id="btn-cli-new-session"
+                title="Detach the resumed CLI conversation and start fresh on the next request"
+                aria-label="Start a new external CLI session" hidden>
+                <span class="composer-control-label">CLI</span>
+                <span class="btn-label">New session</span>
+              </button>
+              <button type="button" class="composer-mode-toggle" id="btn-journey-context"
+                title="Link or detach the journey shared by chat, terminal, and editor"
+                aria-label="Toggle shared journey context">
+                <span class="composer-control-label">Journey</span>
+                <span class="btn-label">Link</span>
+              </button>
+              <button type="button" class="composer-mode-toggle" id="btn-execution-scope"
+                title="Inspect or override provider, model, executor, and limits by project, session, or request"
+                aria-label="Open execution settings scopes">
+                <span class="composer-control-label">Settings</span>
+                <span class="btn-label">Scope</span>
+              </button>
+              <output id="composer-route" class="composer-route" aria-live="polite"
+                title="Credential and model for the next message">Auth: Native</output>
             </div>
           </div>
         </div>
