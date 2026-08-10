@@ -19,6 +19,8 @@
   explicit working directory.
 - ChatGPT Pro preserves the real Codex error instead of turning it into an empty response or a
   generic JSON-decision failure.
+- Empty responses caused by an incompatible model are now classified as actionable transport
+  errors, with model refresh and `/doctor --deep` as recovery.
 - `/doctor` 2.0 displays the effective route, separate CLI/MCP dependencies, classified checks, and
   a next action in a dedicated visual card.
 - `/doctor --deep` requests consent and runs real CLI version/authentication probes plus temporary
@@ -45,7 +47,7 @@ required for installation.
 
 ## Candidate validation
 
-- 1,029/1,029 DUnitX tests passed on each target with no failures, errors, or leaks;
+- 1,030/1,030 DUnitX tests passed on each target with no failures, errors, or leaks;
 - real ConPTY streaming, continuous input, and resize passed on all three targets;
 - Codex CLI 0.147.0, Claude Code 2.1.226, Gemini CLI 0.54.4, and GitHub Copilot CLI 1.0.78 detected;
 - 86/86 web and documentation tests passed, including links, bilingual pairs, navigation, mojibake,

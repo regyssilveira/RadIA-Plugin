@@ -45,6 +45,7 @@ The [RadIA Doctor guide](doctor.en.md) explains the effective route and every ch
 | Symptom | Check and action |
 |---|---|
 | ChatGPT Pro returns 401 or 429 | Select **ChatGPT Pro via Codex CLI**, open **Configure Codex CLI login**, and run **Diagnose**. An API key does not consume the Pro quota. |
+| Codex reports that no response was generated | Refresh the model list and select a current model. RadIA treats this output as a transport error, preserves the cause, and recommends `/doctor --deep` instead of forwarding it to the agent as a JSON decision. |
 | Login completed but chat does not recognize it | Close and reopen settings, then verify `authentication: ready`; RadIA reloads the session before sending. |
 | Active route is unclear | Check **Send with** and the response header: **RadIA native** keeps internal orchestration; **CLI direct** delegates to the client. |
 | Codex reports an untrusted directory | Update RadIA. The executor supplies the directory explicitly and supports non-Git Delphi projects in new and resumed sessions. Run `/doctor` to confirm the route and executable. |
