@@ -36,8 +36,8 @@ this goal.
 | M3 | Real format validation and portability documentation | Complete |
 | M4 | Decoupled interface and selected VT core | Complete |
 | M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Complete |
-| M6 | Real shell, CLI, and TUI matrix on all three targets | In progress; visual smoke pending |
-| M7 | Final audit, documentation, Sonar, and release preparation | Pending |
+| M6 | Real shell, CLI, and TUI matrix on all three targets | Complete |
+| M7 | Final audit, documentation, Sonar, and release preparation | In progress |
 
 ## Skill portability contract
 
@@ -86,12 +86,12 @@ require a double-click, and pass through central policy with mandatory consent f
 Terminal tests and the Delphi 13 Win32 suite proved primary-screen restoration, input modes, styles,
 links, and leak-free execution; the complete real matrix belongs to M6.
 
-M6 has passed 1,024 tests, including real ConPTY streaming, input, and resize, on Delphi 12 Win32,
+M6 passed 1,024 tests, including real ConPTY streaming, input, and resize, on Delphi 12 Win32,
 Delphi 13 Win32, and Delphi 13 IDE64. It also confirmed the current Codex, Claude Code, Gemini CLI,
-and GitHub Copilot CLI versions. Only the installed visual evidence must still be regenerated on all
-three targets; the smoke does not close an already-open IDE or treat compilation alone as visual proof.
-The completed reproducible proof is the
-[2.4.0 high-fidelity matrix](terminal_high_fidelity_evidence_2.4.0.json).
+and GitHub Copilot CLI versions. The installed visual smoke opened the native terminal on all three
+targets and proved controls, input, output, palette, profiles, and keyboard navigation. See the
+[2.4.0 high-fidelity matrix](terminal_high_fidelity_evidence_2.4.0.json) and the
+[2.4.0 installed visual matrix](terminal_smoke_evidence_2.4.0.json).
 
 ## Acceptance matrix
 

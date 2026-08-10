@@ -471,8 +471,8 @@ Publish the catalog after the executable and its SHA-256 are available through H
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath Output\Installer\RadIA-v2.2.0-Setup.exe `
-  -DownloadUrl "https://downloads.example.com/RadIA-v2.2.0-Setup.exe"
+  -InstallerPath Output\Installer\RadIA-v<version>-Setup.exe `
+  -DownloadUrl "https://downloads.example.com/RadIA-v<version>-Setup.exe"
 ```
 
 The `stable` catalog requires HTTPS and records hash and Authenticode state. See

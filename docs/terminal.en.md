@@ -158,9 +158,10 @@ The IDE itself persists position, size, visibility, and coupled state.
 
 ## Evidence
 
-The automated matrix is ​​in
-[`terminal_smoke_evidence_2.0.0.json`](terminal_smoke_evidence_2.0.0.json). Smoke requires geometry
-useful input and output controls, **New terminal**, **Close terminal**, **Run**, **Stop** and
+The current automated matrix is in
+[`terminal_smoke_evidence_2.4.0.json`](terminal_smoke_evidence_2.4.0.json). Smoke requires useful
+geometry, input and output, the **New terminal**, **Close terminal**, **Run**, **Stop**, and
 **Clear**, the five accessible labels, at least 11 navigable points per Tab, two profiles and one
 non-empty palette. The current matrix exclusively covers Delphi 12 Win32, Delphi 13 Win32 and Delphi
-13 IDE64, all with the current catalog of 131 tools.
+13 IDE64, all with the current catalog of 131 tools. The 2.0.0 evidence remains available only as a
+historical record.

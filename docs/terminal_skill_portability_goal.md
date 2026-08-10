@@ -36,8 +36,8 @@ Delphi não fazem parte deste goal.
 | M3 | Validação real dos formatos e documentação de portabilidade | Concluído |
 | M4 | Interface desacoplada e núcleo VT selecionado | Concluído |
 | M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Concluído |
-| M6 | Matriz real de shells, CLIs e TUIs nos três targets | Em execução; smoke visual pendente |
-| M7 | Auditoria final, documentação, Sonar e preparação do release | Pendente |
+| M6 | Matriz real de shells, CLIs e TUIs nos três targets | Concluído |
+| M7 | Auditoria final, documentação, Sonar e preparação do release | Em execução |
 
 ## Contrato de portabilidade de skills
 
@@ -87,12 +87,12 @@ exigem duplo clique e passam pela política central com consentimento obrigatór
 Os testes do terminal e a suíte Delphi 13 Win32 comprovaram restauração da tela principal, modos de
 entrada, estilos, links e ausência de vazamentos; a matriz real completa pertence ao M6.
 
-O M6 já aprovou 1.024 testes, incluindo ConPTY real com streaming, input e resize, no Delphi 12
-Win32, Delphi 13 Win32 e Delphi 13 IDE64. Também confirmou as versões atuais de Codex, Claude Code,
-Gemini CLI e GitHub Copilot CLI. Falta somente regenerar a evidência visual instalada nos três
-targets; o smoke não fecha uma IDE já aberta e não considera apenas a compilação como prova visual.
-A prova reproduzível já concluída está na
-[matriz de alta fidelidade 2.4.0](terminal_high_fidelity_evidence_2.4.0.json).
+O M6 aprovou 1.024 testes, incluindo ConPTY real com streaming, input e resize, no Delphi 12 Win32,
+Delphi 13 Win32 e Delphi 13 IDE64. Também confirmou as versões atuais de Codex, Claude Code, Gemini
+CLI e GitHub Copilot CLI. O smoke visual instalado abriu o terminal nativo nos três targets e
+comprovou controles, entrada, saída, paleta, perfis e navegação por teclado. Consulte a
+[matriz de alta fidelidade 2.4.0](terminal_high_fidelity_evidence_2.4.0.json) e a
+[matriz visual instalada 2.4.0](terminal_smoke_evidence_2.4.0.json).
 
 ## Matriz de aceite
 

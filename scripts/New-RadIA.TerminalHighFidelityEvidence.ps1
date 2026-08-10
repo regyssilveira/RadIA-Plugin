@@ -2,7 +2,10 @@ param(
     [string]$OutputPath = (
         ".\docs\terminal_high_fidelity_evidence_2.4.0.json"
     ),
-    [int]$ExpectedTestCount = 1024
+    [int]$ExpectedTestCount = 1024,
+    [string]$VisualSmokeEvidencePath = (
+        ".\docs\terminal_smoke_evidence_2.4.0.json"
+    )
 )
 
 $ErrorActionPreference = "Stop"
@@ -120,6 +123,26 @@ foreach ($definition in $executorDefinitions) {
 }
 
 $resolvedOutputPath = [IO.Path]::GetFullPath($OutputPath)
+$resolvedVisualSmokePath = [IO.Path]::GetFullPath(
+    $VisualSmokeEvidencePath
+)
+$visualSmokeStatus = "pending: installed IDE matrix not found"
+if (Test-Path -LiteralPath $resolvedVisualSmokePath -PathType Leaf) {
+    $visualSmokeEvidence = Get-Content `
+        -LiteralPath $resolvedVisualSmokePath `
+        -Raw `
+        -Encoding UTF8 |
+        ConvertFrom-Json
+    if (
+        $visualSmokeEvidence.status -eq "passed" -and
+        $visualSmokeEvidence.targetCount -eq 3
+    ) {
+        $visualSmokeStatus = (
+            "passed: " +
+            [IO.Path]::GetFileName($resolvedVisualSmokePath)
+        )
+    }
+}
 $outputDirectory = Split-Path -Parent $resolvedOutputPath
 if ($outputDirectory) {
     New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
@@ -138,7 +161,7 @@ if ($outputDirectory) {
     requiredTests = $requiredTests
     targets = $targets
     executors = $executors
-    visualSmoke = "pending: an installed IDE target is open"
+    visualSmoke = $visualSmokeStatus
 } |
     ConvertTo-Json -Depth 6 |
     Set-Content -LiteralPath $resolvedOutputPath -Encoding UTF8

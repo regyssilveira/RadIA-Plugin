@@ -44,8 +44,10 @@ required for installation.
   and the absence of prohibited references;
 - ESLint passed;
 - SonarQube passed with 82.8% global coverage and zero issues.
+- installed visual smoke passed on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 with 131
+  tools, controls, input, output, palette, profiles, and keyboard navigation.
 
-See the [reproducible terminal evidence](terminal_high_fidelity_evidence_2.4.0.json).
+See the [reproducible terminal evidence](terminal_high_fidelity_evidence_2.4.0.json) and the
+[installed visual matrix](terminal_smoke_evidence_2.4.0.json).
 
-The installed visual matrix will be attached before declaring the candidate ready. Tagging, merging,
-and publishing require explicit authorization.
+Tagging, merging, and publishing require explicit authorization.

@@ -44,8 +44,10 @@ visual; o ZIP não é necessário para o fluxo normal.
   ausência de referências proibidas;
 - ESLint aprovado;
 - SonarQube aprovado com 82,8% de cobertura global e zero issues.
+- smoke visual instalado aprovado no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, com 131
+  ferramentas, controles, entrada, saída, paleta, perfis e navegação por teclado.
 
-Consulte a [evidência reproduzível do terminal](terminal_high_fidelity_evidence_2.4.0.json).
+Consulte a [evidência reproduzível do terminal](terminal_high_fidelity_evidence_2.4.0.json) e a
+[matriz visual instalada](terminal_smoke_evidence_2.4.0.json).
 
-A matriz visual instalada será anexada antes de declarar a candidata pronta. Tag, merge e publicação
-dependem de autorização explícita.
+Tag, merge e publicação dependem de autorização explícita.
