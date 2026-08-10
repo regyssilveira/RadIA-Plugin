@@ -608,6 +608,20 @@ test('current entry points use the generated tool count and complete task naviga
     ['terminal', 'git_workflow', 'internal_tools_reference', 'settings_reference']
       .forEach(target => assert.ok(hub.includes(target), `Documentation hub is missing ${target}`));
   });
+
+  const evidenceScripts = fs.readdirSync(path.join(repositoryRoot, 'scripts'))
+    .filter(fileName => /^New-RadIA\..*Evidence\.ps1$/u.test(fileName));
+  evidenceScripts.forEach(fileName => {
+    const script = fs.readFileSync(path.join(repositoryRoot, 'scripts', fileName), 'utf8');
+    const configuredCount = script.match(/\$RequiredToolCount\s*=\s*(\d+)/u);
+    if (configuredCount) {
+      assert.equal(
+        Number(configuredCount[1]),
+        toolCount,
+        `${fileName} uses a stale required tool count`
+      );
+    }
+  });
 });
 
 test('documented model fallbacks stay synchronized with source constants', () => {

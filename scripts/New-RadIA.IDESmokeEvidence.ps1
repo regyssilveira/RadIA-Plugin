@@ -4,7 +4,7 @@ param(
     [string]$ReleaseEvidencePath = ".\docs\release_evidence_2.0.0.json",
     [string]$OutputPath = ".\docs\ide_smoke_evidence_2.0.0.json",
     [int]$RequiredCycles = 10,
-    [int]$RequiredToolCount = 131,
+    [int]$RequiredToolCount = 132,
     [string]$UpgradeFromVersion = "1.0.0"
 )
 

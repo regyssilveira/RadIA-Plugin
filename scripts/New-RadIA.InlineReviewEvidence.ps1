@@ -3,7 +3,7 @@ param(
     [string]$OutputPath = (
         ".\docs\competitive_gap_phase_5_gutter_evidence_2.3.1.json"
     ),
-    [int]$RequiredToolCount = 131
+    [int]$RequiredToolCount = 132
 )
 
 $ErrorActionPreference = "Stop"
