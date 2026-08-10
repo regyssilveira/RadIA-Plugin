@@ -2272,6 +2272,7 @@ var
   LGuard: IRadIAConfigLifecycleGuard;
   LInvocation: TRadIACliInvocation;
   LPlan: TRadIACliInstallPlan;
+  LPrerequisites: string;
   LPrompt: string;
 begin
   if Assigned(FCliInstallSession) then
@@ -2284,6 +2285,10 @@ begin
   if not PrepareCliInstallPlan(LDefinition, LPlan) then
     Exit;
   FCliInstallClientId := LDefinition.Id;
+  if LPlan.Preview.StartsWith('winget ', True) then
+    LPrerequisites := 'Windows Package Manager; Node.js/npm is not required'
+  else
+    LPrerequisites := string.Join(', ', LDefinition.Prerequisites);
   LPrompt := Format(
     'Run the next approved setup step for %s?' + sLineBreak +
     'You can cancel and select an existing portable executable instead.' + sLineBreak +
@@ -2293,7 +2298,7 @@ begin
     [
       LDefinition.DisplayName,
       LPlan.Preview,
-      string.Join(', ', LDefinition.Prerequisites),
+      LPrerequisites,
       LDefinition.DocumentationUrl
     ]
   );
@@ -2384,7 +2389,29 @@ function TRadIAFrameAIConfig.PrepareCliInstallPlan(
 ): Boolean;
 var
   LDiagnostic: TRadIACliSetupDiagnostic;
+  LNpmPath: string;
+  LWingetPath: string;
 begin
+  LNpmPath := FileSearch('npm.cmd', GetEnvironmentVariable('PATH'));
+  if LNpmPath = '' then
+    LNpmPath := FileSearch('npm.exe', GetEnvironmentVariable('PATH'));
+  LWingetPath := FileSearch('winget.exe', GetEnvironmentVariable('PATH'));
+  if TRadIACliInstaller.BuildPreferredPlan(
+    ADefinition,
+    LNpmPath,
+    LWingetPath,
+    APlan
+  ) then
+  begin
+    FCliInstallOperation := 'cli-install';
+    if LNpmPath <> '' then
+      AppendCliInstallOutput('npm detected at ' + LNpmPath + sLineBreak)
+    else
+      AppendCliInstallOutput(
+        'npm is not installed; using the official WinGet package.' + sLineBreak
+      );
+    Exit(True);
+  end;
   LDiagnostic := TRadIACliSetupAdvisor.DiagnosePrerequisite(ADefinition);
   FCliInstallOperation := 'cli-install';
   if LDiagnostic.Ready then

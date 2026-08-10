@@ -44,10 +44,16 @@ processes. This channel is optional: the **Browse...** button allows you to sele
 
 |Executor|Channel used by Rad IA|Official package|
 |---|---|---|
-|Codex CLI|npm|`@openai/codex`|
-|Claude Code|npm|`@anthropic-ai/claude-code`|
+|Codex CLI|npm when available; WinGet without npm|`@openai/codex` / `OpenAI.Codex`|
+|Claude Code|npm when available; WinGet without npm|`@anthropic-ai/claude-code` / `Anthropic.ClaudeCode`|
 |Gemini CLI|npm|`@google/gemini-cli`|
 |GitHub Copilot CLI|WinGet|`GitHub.Copilot`|
+
+**Install/Update** selects the channel automatically. When npm is available, RadIA keeps the npm
+flow. Without npm, Codex and Claude use their official WinGet packages, while Copilot continues to
+use WinGet. Every command is displayed and requires consent before execution. Gemini CLI still
+requires Node.js on Windows through its official channel; RadIA explains this limitation, offers the
+guided prerequisite installation, and keeps **Browse** available for an existing installation.
 
 Identifiers come from an internal catalog and are validated against metacharacters before
 execution. Rad IA does not download, package, or redistribute binaries from these vendors. Authentication

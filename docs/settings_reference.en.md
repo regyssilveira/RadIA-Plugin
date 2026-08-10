@@ -171,7 +171,7 @@ actionable recovery. Use `/status mcp` for sanitized counts and `/doctor` for th
 |---|---|---|
 | Everything is configured | Detects path, version, and available authentication; installs nothing. | Use the executor or test the MCP handshake. |
 | CLI is missing | Offers the official channel after showing command, source, and prerequisites. | Approve it or use **Browse...** for an existing executable. |
-| Node.js/npm is missing | Offers Node.js LTS through WinGet under separate consent. | After success, RadIA revalidates and offers the CLI installation. |
+| Node.js/npm is missing | Uses WinGet directly for Codex and Claude; offers Node.js LTS only when the selected CLI actually requires npm, such as Gemini. | Shows the channel and command, requests consent, and revalidates after installation. |
 | User declines | Makes no change. | Use **Manual steps**, **Browse...**, or keep native orchestration. |
 | Installation fails | Shows actionable guidance, keeps output visible, and stores sanitized metadata. | Fix the reported cause, run **Diagnose**, and resume. |
 | Manual installation | Searches override, `PATH`, npm, Node.js, and WinGet links. | Click **Diagnose**; Delphi does not need a restart. |

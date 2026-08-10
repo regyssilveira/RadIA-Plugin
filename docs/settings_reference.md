@@ -230,7 +230,7 @@ recuperável. Use `/status mcp` para contagens sanitizadas e `/doctor` para a pr
 |---|---|---|
 | Tudo já configurado | Detecta caminho, versão e autenticação disponível; não instala nada. | Use o executor ou teste o handshake MCP. |
 | CLI ausente | Oferece o canal oficial após mostrar comando, origem e pré-requisitos. | Autorize ou use **Browse...** para um executável existente. |
-| Node.js/npm ausente | Oferece Node.js LTS via WinGet em uma confirmação separada. | Após sucesso, revalida e oferece instalar a CLI. |
+| Node.js/npm ausente | Usa WinGet diretamente para Codex e Claude; oferece Node.js LTS somente quando a CLI escolhida realmente exige npm, como Gemini. | Exibe o canal e o comando, pede consentimento e revalida após a instalação. |
 | Usuário recusa | Nenhuma alteração é feita. | Use **Manual steps**, **Browse...** ou mantenha o agente nativo. |
 | Instalação falha | Mostra erro acionável, preserva saída visível e registra metadados sanitizados. | Corrija a causa indicada, execute **Diagnose** e retome. |
 | Instalação manual | Procura override, `PATH`, npm, Node.js e links do WinGet. | Clique **Diagnose**; não é necessário reiniciar o Delphi. |

@@ -37,6 +37,12 @@ type
     [Test]
     procedure NpmInstallPlansUseOfficialPackages;
     [Test]
+    procedure PrefersNpmWhenBothChannelsAreAvailable;
+    [Test]
+    procedure UsesWingetWhenNpmIsUnavailable;
+    [Test]
+    procedure ReportsNoAutomaticPlanWhenNoSupportedChannelExists;
+    [Test]
     procedure CopilotInstallPlanUsesOfficialWingetPackage;
     [Test]
     procedure InstallPlanRejectsShellMetacharacters;
@@ -285,6 +291,7 @@ begin
   LGuidance := TRadIACliSetupAdvisor.ManualGuidance(LDefinition);
   Assert.Contains(LGuidance, 'https://github.com/openai/codex');
   Assert.Contains(LGuidance, 'npm install --global @openai/codex@latest');
+  Assert.Contains(LGuidance, 'winget install --id OpenAI.Codex --exact');
   Assert.Contains(LGuidance, 'codex.exe');
   Assert.Contains(LGuidance, 'portable');
 end;
@@ -489,6 +496,63 @@ begin
   Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
   LPlan := TRadIACliInstaller.BuildPlan(LDefinition);
   Assert.Contains(LPlan.Preview, '@google/gemini-cli@latest');
+end;
+
+procedure TRadIACliManagerTests.PrefersNpmWhenBothChannelsAreAvailable;
+var
+  LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  Assert.IsTrue(
+    TRadIACliInstaller.BuildPreferredPlan(
+      LDefinition,
+      'C:\Program Files\nodejs\npm.cmd',
+      'C:\Windows\winget.exe',
+      LPlan
+    )
+  );
+  Assert.Contains(LPlan.Preview, 'npm install');
+end;
+
+procedure TRadIACliManagerTests.UsesWingetWhenNpmIsUnavailable;
+var
+  LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('codex', LDefinition));
+  Assert.IsTrue(
+    TRadIACliInstaller.BuildPreferredPlan(
+      LDefinition,
+      '',
+      'C:\Windows\winget.exe',
+      LPlan
+    )
+  );
+  Assert.Contains(LPlan.Preview, 'winget install');
+  Assert.Contains(LPlan.Preview, 'OpenAI.Codex');
+
+  Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
+  Assert.IsTrue(
+    TRadIACliInstaller.BuildPreferredPlan(
+      LDefinition,
+      '',
+      'C:\Windows\winget.exe',
+      LPlan
+    )
+  );
+  Assert.Contains(LPlan.Preview, 'Anthropic.ClaudeCode');
+end;
+
+procedure TRadIACliManagerTests.ReportsNoAutomaticPlanWhenNoSupportedChannelExists;
+var
+  LDefinition: TRadIACliDefinition;
+  LPlan: TRadIACliInstallPlan;
+begin
+  Assert.IsTrue(TRadIACliCatalog.FindById('gemini', LDefinition));
+  Assert.IsFalse(
+    TRadIACliInstaller.BuildPreferredPlan(LDefinition, '', '', LPlan)
+  );
 end;
 
 procedure TRadIACliManagerTests.NormalizesCliVersionOutput;

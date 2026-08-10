@@ -24,6 +24,7 @@ type
     FExecutableNames: TArray<string>;
     FPrimaryChannel: TRadIACliInstallChannel;
     FPackageId: string;
+    FWingetPackageId: string;
     FDocumentationUrl: string;
     FPrerequisites: TArray<string>;
     FAuthStatusArguments: TArray<string>;
@@ -41,6 +42,9 @@ type
     function WithPrerequisites(
       const APrerequisites: TArray<string>
     ): TRadIACliDefinition;
+    function WithWingetAlternative(
+      const APackageId: string
+    ): TRadIACliDefinition;
     function WithAuthentication(
       const AStatusArguments: TArray<string>;
       const ALoginHint: string
@@ -52,6 +56,7 @@ type
     property ExecutableNames: TArray<string> read FExecutableNames;
     property PrimaryChannel: TRadIACliInstallChannel read FPrimaryChannel;
     property PackageId: string read FPackageId;
+    property WingetPackageId: string read FWingetPackageId;
     property DocumentationUrl: string read FDocumentationUrl;
     property Prerequisites: TArray<string> read FPrerequisites;
     property AuthStatusArguments: TArray<string> read FAuthStatusArguments;
@@ -181,7 +186,7 @@ type
       const ADefinition: TRadIACliDefinition
     ): TRadIACliInstallPlan; static;
     class function BuildWingetPlan(
-      const ADefinition: TRadIACliDefinition
+      const APackageId: string
     ): TRadIACliInstallPlan; static;
     class procedure ValidatePackageId(
       const APackageId: string
@@ -190,6 +195,12 @@ type
     class function BuildPlan(
       const ADefinition: TRadIACliDefinition
     ): TRadIACliInstallPlan; static;
+    class function BuildPreferredPlan(
+      const ADefinition: TRadIACliDefinition;
+      const ANpmExecutable: string;
+      const AWingetExecutable: string;
+      out APlan: TRadIACliInstallPlan
+    ): Boolean; static;
     class function BuildPrerequisitePlan(
       const ADefinition: TRadIACliDefinition
     ): TRadIACliInstallPlan; static;
@@ -381,10 +392,19 @@ begin
   FExecutableNames := AExecutableNames;
   FPrimaryChannel := APrimaryChannel;
   FPackageId := APackageId;
+  FWingetPackageId := '';
   FDocumentationUrl := ADocumentationUrl;
   FPrerequisites := [];
   FAuthStatusArguments := [];
   FAuthLoginHint := '';
+end;
+
+function TRadIACliDefinition.WithWingetAlternative(
+  const APackageId: string
+): TRadIACliDefinition;
+begin
+  Result := Self;
+  Result.FWingetPackageId := APackageId;
 end;
 
 function TRadIACliDefinition.WithAuthentication(
@@ -408,7 +428,7 @@ end;
 function TRadIACliDefinition.ToDiagnosticText: string;
 begin
   Result := Format(
-    '%d|%s|%s|%d|%d|%s|%s|%d|%d|%s',
+    '%d|%s|%s|%d|%d|%s|%s|%s|%d|%d|%s',
     [
       Ord(Kind),
       Id,
@@ -416,6 +436,7 @@ begin
       Length(ExecutableNames),
       Ord(PrimaryChannel),
       PackageId,
+      WingetPackageId,
       DocumentationUrl,
       Length(Prerequisites),
       Length(AuthStatusArguments),
@@ -519,7 +540,9 @@ begin
       cicNpm,
       '@openai/codex',
       'https://github.com/openai/codex'
-    ).WithPrerequisites(['Node.js 20 or later']).WithAuthentication(
+    ).WithWingetAlternative('OpenAI.Codex').WithPrerequisites(
+      ['Node.js 20 or later for the npm channel only']
+    ).WithAuthentication(
       ['login', 'status'],
       'codex login'
     ),
@@ -531,8 +554,8 @@ begin
       cicNpm,
       '@anthropic-ai/claude-code',
       'https://docs.anthropic.com/en/docs/claude-code'
-    ).WithPrerequisites(
-      ['Node.js 18 or later', 'Git Bash or WSL']
+    ).WithWingetAlternative('Anthropic.ClaudeCode').WithPrerequisites(
+      ['Git Bash or WSL', 'Node.js 18 or later for the npm channel only']
     ).WithAuthentication(
       ['auth', 'status'],
       'claude auth login'
@@ -662,11 +685,34 @@ begin
     cicNpm:
       Result := BuildNpmPlan(ADefinition);
     cicWinget:
-      Result := BuildWingetPlan(ADefinition);
+      Result := BuildWingetPlan(ADefinition.PackageId);
   else
     raise EInvalidOpException.Create(
       'Automated installation is unavailable for this official channel.'
     );
+  end;
+end;
+
+class function TRadIACliInstaller.BuildPreferredPlan(
+  const ADefinition: TRadIACliDefinition;
+  const ANpmExecutable: string;
+  const AWingetExecutable: string;
+  out APlan: TRadIACliInstallPlan
+): Boolean;
+begin
+  Result := True;
+  if (ADefinition.PrimaryChannel = cicNpm) and (Trim(ANpmExecutable) <> '') then
+    APlan := BuildNpmPlan(ADefinition)
+  else if (Trim(AWingetExecutable) <> '') and
+    (Trim(ADefinition.WingetPackageId) <> '') then
+    APlan := BuildWingetPlan(ADefinition.WingetPackageId)
+  else if (ADefinition.PrimaryChannel = cicWinget) and
+    (Trim(AWingetExecutable) <> '') then
+    APlan := BuildWingetPlan(ADefinition.PackageId)
+  else
+  begin
+    APlan := Default(TRadIACliInstallPlan);
+    Result := False;
   end;
 end;
 
@@ -735,13 +781,14 @@ begin
 end;
 
 class function TRadIACliInstaller.BuildWingetPlan(
-  const ADefinition: TRadIACliDefinition
+  const APackageId: string
 ): TRadIACliInstallPlan;
 var
   LCommand: string;
 begin
+  ValidatePackageId(APackageId);
   LCommand :=
-    'winget install --id ' + ADefinition.PackageId +
+    'winget install --id ' + APackageId +
     ' --exact --source winget --accept-source-agreements ' +
     '--accept-package-agreements --disable-interactivity';
   Result := TRadIACliInstallPlan.Create(
@@ -813,19 +860,25 @@ class function TRadIACliSetupAdvisor.ManualGuidance(
   const ADefinition: TRadIACliDefinition
 ): string;
 var
+  LAlternative: string;
   LPlan: TRadIACliInstallPlan;
 begin
   LPlan := TRadIACliInstaller.BuildPlan(ADefinition);
+  LAlternative := '';
+  if ADefinition.WingetPackageId <> '' then
+    LAlternative := sLineBreak + 'Without npm: winget install --id ' +
+      ADefinition.WingetPackageId + ' --exact';
   Result := Format(
     '%s installation options:' + sLineBreak +
     'Official documentation: %s' + sLineBreak +
-    'Official command: %s' + sLineBreak +
+    'Preferred command when npm is available: %s%s' + sLineBreak +
     'Expected executable names: %s' + sLineBreak +
     'Portable alternative: select the full executable path with Browse.',
     [
       ADefinition.DisplayName,
       ADefinition.DocumentationUrl,
       LPlan.Preview,
+      LAlternative,
       string.Join(', ', ADefinition.ExecutableNames)
     ]
   );
