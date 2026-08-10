@@ -6,6 +6,9 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
+Version 2.4.0 note: portable skill publication and terminal true color, attributes, alternate screen,
+bracketed paste, SGR mouse, and consent-gated OSC 8 hyperlinks.
+
 Version 2.3.1 note: explicit RadIA native versus direct CLI selection, route-specific identity,
 copy actions on every textual response, and ChatGPT Pro restored exclusively through Codex CLI.
 
@@ -98,6 +101,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
 | **Ghost Text Alternatives** | Editor | Up to three suggestions with visual navigation and configurable shortcuts without changing the buffer before acceptance. | ✅ Completed |
 | **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
+| **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed (v2.4.0) |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
 | **Signed Declarative Extensions** | Security | RSA-SHA256 packages with fingerprints, first-use trust, and visual revocation. | ✅ Completed |

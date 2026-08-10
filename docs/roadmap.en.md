@@ -11,6 +11,13 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 
 ## 📅 Completed Releases History
 
+### v2.4.0 — Candidate: portable skills and high-fidelity terminal
+
+- one canonical skill can be published to four CLIs with preview, consent, and rollback;
+- ownership hashes protect manually changed replicas;
+- terminal with true color, attributes, alternate screen, bracketed paste, SGR mouse, and OSC 8;
+- the candidate stays on the branch until explicit release authorization.
+
 ### v2.3.1 — Explicit routes and functional ChatGPT Pro
 
 - independent Chat/Agent and RadIA native/direct CLI selection;

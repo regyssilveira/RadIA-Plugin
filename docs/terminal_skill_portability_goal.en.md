@@ -1,7 +1,7 @@
 # Goal — skill portability and high-fidelity terminal
 
 > **Status:** in progress on branch `feat/competitive-gap-closure`.
-> **Delivery version:** determined by the public behavior actually completed.
+> **Delivery version:** 2.4.0, prepared on this branch and not published yet.
 
 ## Objective
 
@@ -36,7 +36,7 @@ this goal.
 | M3 | Real format validation and portability documentation | Complete |
 | M4 | Decoupled interface and selected VT core | Complete |
 | M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Complete |
-| M6 | Real shell, CLI, and TUI matrix on all three targets | Pending |
+| M6 | Real shell, CLI, and TUI matrix on all three targets | In progress; visual smoke pending |
 | M7 | Final audit, documentation, Sonar, and release preparation | Pending |
 
 ## Skill portability contract
@@ -85,6 +85,11 @@ underline, inverse video, and OSC 8 hyperlinks. Links accept only known web and 
 require a double-click, and pass through central policy with mandatory consent for every opening.
 Terminal tests and the Delphi 13 Win32 suite proved primary-screen restoration, input modes, styles,
 links, and leak-free execution; the complete real matrix belongs to M6.
+
+M6 has passed 1,024 tests, including real ConPTY streaming, input, and resize, on Delphi 12 Win32,
+Delphi 13 Win32, and Delphi 13 IDE64. It also confirmed the current Codex, Claude Code, Gemini CLI,
+and GitHub Copilot CLI versions. Only the installed visual evidence must still be regenerated on all
+three targets; the smoke does not close an already-open IDE or treat compilation alone as visual proof.
 
 ## Acceptance matrix
 

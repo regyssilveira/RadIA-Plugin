@@ -12,8 +12,8 @@ Este documento registra o status de desenvolvimento, planejamento futuro e o his
 
 O quadro abaixo separa entregas, pendências reais e itens ainda sem compromisso de versão. Números
 da linha `0.x` são preservados somente nas entregas históricas. Uma pendência não recebe versão
-nova até ser selecionada para um goal. O goal de expansão da experiência parte do RadIA 2.3.1 e terá a
-versão definida pelo comportamento público efetivamente entregue.
+nova até ser selecionada para um goal. O goal atual parte do RadIA 2.3.1 e prepara a versão 2.4.0,
+sem publicar, criar tag ou fazer merge antes de autorização explícita.
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
@@ -26,7 +26,8 @@ versão definida pelo comportamento público efetivamente entregue.
 | **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
 | **Rotas explícitas, login Pro restaurado e cópia universal** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
 | **Goal — Eliminar as seis lacunas competitivas** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
-| **Goal — Expansão da experiência completa** | 🚧 Plano ativo | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | A definir após a primeira entrega pública |
+| **Goal — Expansão da experiência completa** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
+| **Goal — Portabilidade de skills e terminal de alta fidelidade** | 🚧 Em validação final | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |

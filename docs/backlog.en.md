@@ -11,8 +11,8 @@ This document registers the development status, future planning, and technical i
 
 The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
 numbers are retained only for historical deliveries. A pending item does not receive a new version
-until selected for a goal. The active experience-expansion goal starts from RadIA 2.3.1 and receives a
-version based on the public behavior actually delivered.
+until selected for a goal. The current goal starts from RadIA 2.3.1 and prepares version 2.4.0,
+without publishing, tagging, or merging before explicit authorization.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
@@ -25,7 +25,8 @@ version based on the public behavior actually delivered.
 | **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
 | **Explicit Routes, Restored Pro Login, and Universal Copy** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
 | **Goal — Eliminate the six competitive gaps** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
-| **Goal — Expand the complete experience** | 🚧 Active plan | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Set after the first public delivery |
+| **Goal — Expand the complete experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
+| **Goal — Skill portability and high-fidelity terminal** | 🚧 Final validation | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |

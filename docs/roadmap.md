@@ -15,6 +15,13 @@ Este documento descreve o planejamento estratégico e a visão de futuro do assi
 
 ## 📅 Histórico de Versões Concluídas
 
+### v2.4.0 — Candidata: skills portáveis e terminal de alta fidelidade
+
+- uma skill canônica pode ser publicada para quatro CLIs com preview, consentimento e rollback;
+- réplicas possuem hashes de propriedade e preservam alterações manuais;
+- terminal com true color, atributos, alternate screen, bracketed paste, mouse SGR e OSC 8;
+- a candidata permanece no branch até autorização explícita para release.
+
 ### v2.3.1 — Rotas explícitas e ChatGPT Pro funcional
 
 - seleção independente de Chat/Agent e RadIA native/CLI direto;
