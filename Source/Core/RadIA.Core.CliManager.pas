@@ -235,6 +235,10 @@ type
       const AStdOut: string;
       const AStdErr: string
     ): string; static;
+    class function VersionMeetsMinimum(
+      const AVersionOutput: string;
+      const AMinimumVersion: string
+    ): Boolean; static;
   end;
 
 implementation
@@ -249,6 +253,43 @@ uses
   RadIA.Core.CliMcpSettings;
 
 { TRadIACliHealth }
+
+function TryParseVersionCore(
+  const AText: string;
+  out AMajor: Integer;
+  out AMinor: Integer;
+  out APatch: Integer
+): Boolean;
+var
+  LIndex: Integer;
+  LPart: Integer;
+  LStart: Integer;
+  LValues: array[0..2] of Integer;
+begin
+  Result := False;
+  LIndex := Low(AText);
+  while (LIndex <= High(AText)) and not CharInSet(AText[LIndex], ['0'..'9']) do
+    Inc(LIndex);
+  for LPart := Low(LValues) to High(LValues) do
+  begin
+    LStart := LIndex;
+    while (LIndex <= High(AText)) and CharInSet(AText[LIndex], ['0'..'9']) do
+      Inc(LIndex);
+    if (LStart = LIndex) or
+      not TryStrToInt(Copy(AText, LStart, LIndex - LStart), LValues[LPart]) then
+      Exit;
+    if LPart < High(LValues) then
+    begin
+      if (LIndex > High(AText)) or (AText[LIndex] <> '.') then
+        Exit;
+      Inc(LIndex);
+    end;
+  end;
+  AMajor := LValues[0];
+  AMinor := LValues[1];
+  APatch := LValues[2];
+  Result := True;
+end;
 
 class function TRadIACliHealth.DescribeFailure(
   const AStdOut: string;
@@ -293,6 +334,33 @@ begin
   finally
     LLines.Free;
   end;
+end;
+
+class function TRadIACliHealth.VersionMeetsMinimum(
+  const AVersionOutput: string;
+  const AMinimumVersion: string
+): Boolean;
+var
+  LMajor: Integer;
+  LMinimumMajor: Integer;
+  LMinimumMinor: Integer;
+  LMinimumPatch: Integer;
+  LMinor: Integer;
+  LPatch: Integer;
+begin
+  Result := TryParseVersionCore(AVersionOutput, LMajor, LMinor, LPatch) and
+    TryParseVersionCore(
+      AMinimumVersion,
+      LMinimumMajor,
+      LMinimumMinor,
+      LMinimumPatch
+    );
+  if not Result then
+    Exit;
+  Result := (LMajor > LMinimumMajor) or
+    ((LMajor = LMinimumMajor) and (LMinor > LMinimumMinor)) or
+    ((LMajor = LMinimumMajor) and (LMinor = LMinimumMinor) and
+      (LPatch >= LMinimumPatch));
 end;
 
 { TRadIACliDefinition }

@@ -51,6 +51,8 @@ type
     [Test]
     procedure NormalizesCliVersionOutput;
     [Test]
+    procedure ComparesCliSemanticVersions;
+    [Test]
     procedure ResolverUsesPortableOverrideWithoutPackageManager;
     [Test]
     procedure ResolverUsesPathWhenOverrideIsMissing;
@@ -503,6 +505,23 @@ begin
     TRadIACliHealth.NormalizeVersionOutput('', 'claude 4.5.0')
   );
   Assert.AreEqual('', TRadIACliHealth.NormalizeVersionOutput('', ''));
+end;
+
+procedure TRadIACliManagerTests.ComparesCliSemanticVersions;
+begin
+  Assert.IsFalse(
+    TRadIACliHealth.VersionMeetsMinimum(
+      'codex-cli 0.130.0-alpha.5',
+      '0.144.0'
+    )
+  );
+  Assert.IsTrue(
+    TRadIACliHealth.VersionMeetsMinimum('codex-cli 0.144.0', '0.144.0')
+  );
+  Assert.IsTrue(
+    TRadIACliHealth.VersionMeetsMinimum('codex-cli 0.145.0-alpha.13', '0.144.0')
+  );
+  Assert.IsFalse(TRadIACliHealth.VersionMeetsMinimum('unknown', '0.144.0'));
 end;
 
 procedure TRadIACliManagerTests.InstallPlanRejectsShellMetacharacters;

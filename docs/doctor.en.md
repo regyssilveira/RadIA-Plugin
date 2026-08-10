@@ -30,6 +30,10 @@ ChatGPT Pro via Codex CLI is a composed route: orchestration may remain **RadIA 
 provider transport requires the Codex executable. That does not make MCP mandatory. The doctor
 reports these three states separately.
 
+The deep diagnostic also compares the Codex version with the selected model family requirement.
+For `gpt-5.6-*` models, versions earlier than `0.144.4` fail the check, reduce the score, and direct
+the user to update the CLI before the first request.
+
 ## Reading the card
 
 - **Score** summarizes applicable checks; an optional item is `not-required`.

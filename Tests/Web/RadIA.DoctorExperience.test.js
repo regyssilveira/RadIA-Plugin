@@ -45,6 +45,13 @@ test('deep doctor is consented and renders active CLI and MCP checks', () => {
   );
 });
 
+test('deep doctor rejects an outdated Codex transport for current models', () => {
+  assert.match(health, /VersionMeetsMinimum\(LVersion, '0\.144\.4'\)/u);
+  assert.match(health, /LActiveModel\.StartsWith\('gpt-5\.6-'/u);
+  assert.match(health, /'nextAction', 'configure_cli'/u);
+  assert.match(health, /run Diagnose and refresh the model list/u);
+});
+
 test('chat preflight directs clean machines without making npm mandatory', () => {
   assert.match(presenter, /function CheckChatPreflight/u);
   assert.match(presenter, /function CheckRequiredCli/u);

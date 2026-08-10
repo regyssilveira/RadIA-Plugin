@@ -30,6 +30,10 @@ ChatGPT Pro via Codex CLI é tratado como uma rota composta: a orquestração po
 **RadIA native**, mas o transporte exige o executável Codex. Isso não torna MCP obrigatório. O
 doctor mostra esses três estados separadamente.
 
+No diagnóstico profundo, a versão do Codex também é comparada com o requisito da família de modelo
+selecionada. Para os modelos `gpt-5.6-*`, versões anteriores a `0.144.4` recebem estado de falha,
+reduzem o score e direcionam para atualização do CLI antes do primeiro envio.
+
 ## Como interpretar o cartão
 
 - **Score** resume os checks aplicáveis; um item opcional aparece como `not-required`.

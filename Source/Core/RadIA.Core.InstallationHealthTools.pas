@@ -376,6 +376,7 @@ procedure TRadIAInstallationHealthProbe.AddDeepCliChecks(
   const AReadiness: TRadIAInstallationReadiness
 );
 var
+  LActiveModel: string;
   LChecks: TJSONArray;
   LDefinition: TRadIACliDefinition;
   LResult: TRadIACliProcessResult;
@@ -412,13 +413,28 @@ begin
       LResult.StdOut,
       LResult.StdErr
     );
-    AddDeepCheck(
-      LChecks,
-      'cli-version',
-      'passed',
-      'CLI version probe succeeded: ' + LVersion,
-      ''
-    );
+    LActiveModel := FConfig.GetActiveModel(AReadiness.FProviderId);
+    if SameText(AReadiness.FCliId, 'codex') and
+      SameText(AReadiness.FProviderTransport, 'codex-cli') and
+      LActiveModel.StartsWith('gpt-5.6-', True) and
+      not TRadIACliHealth.VersionMeetsMinimum(LVersion, '0.144.4') then
+      AddDeepCheck(
+        LChecks,
+        'cli-version',
+        'failed',
+        'Codex CLI ' + LVersion + ' is too old for the selected ' +
+          LActiveModel + ' model. Update to version 0.144.4 or newer, ' +
+          'then run Diagnose and refresh the model list.',
+        '/settings'
+      )
+    else
+      AddDeepCheck(
+        LChecks,
+        'cli-version',
+        'passed',
+        'CLI version probe succeeded: ' + LVersion,
+        ''
+      );
   end
   else
     AddDeepCheck(
@@ -526,6 +542,7 @@ end;
 function TRadIAInstallationHealthProbe.DiagnoseDeep: string;
 var
   LActiveChecks: TJSONArray;
+  LBaseScore: Integer;
   LFailedCount: Integer;
   LIndex: Integer;
   LPair: TJSONPair;
@@ -540,7 +557,7 @@ begin
     LRoot.AddPair('profile', 'deep-active');
     LPair := LRoot.RemovePair('diagnosticVersion');
     LPair.Free;
-    LRoot.AddPair('diagnosticVersion', '2.1');
+    LRoot.AddPair('diagnosticVersion', '2.2');
     LRoot.AddPair('consentRequired', TJSONBool.Create(True));
     LActiveChecks := TJSONArray.Create;
     LRoot.AddPair('activeChecks', LActiveChecks);
@@ -566,6 +583,17 @@ begin
         'summary',
         Format('%d active diagnostic checks require attention.', [LFailedCount])
       );
+      LPair := LRoot.RemovePair('nextAction');
+      LPair.Free;
+      LRoot.AddPair('nextAction', 'configure_cli');
+      LBaseScore := LRoot.GetValue<Integer>('readinessScore', 0);
+      LPair := LRoot.RemovePair('readinessScore');
+      LPair.Free;
+      if LBaseScore > 15 then
+        Dec(LBaseScore, 15)
+      else
+        LBaseScore := 0;
+      LRoot.AddPair('readinessScore', LBaseScore);
     end;
     Result := LRoot.ToJSON;
   finally

@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.4.1
+# Manual completo do RadIA 2.4.2
 
 ## 1. O que é o RadIA
 
