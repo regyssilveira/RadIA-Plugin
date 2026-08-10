@@ -85,6 +85,8 @@ RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja 
 - [Modelo de segurança](docs/tool_security_model.md) explica riscos, consentimento e auditoria.
 - [Extensões declarativas](docs/declarative_extensions.md) ensina a compartilhar comandos, skills,
   conhecimento, referências, templates, aliases e workflows em pacotes `.radiaext`.
+- [Portabilidade de skills](docs/skill_portability.md) publica uma definição nos quatro CLIs com
+  preview, consentimento, rollback e preservação de conflitos.
 
 O catálogo retornado por `/tools` é a fonte mais precisa em runtime. Documentos de roadmap e
 catálogos arquiteturais podem incluir propostas ainda não disponíveis.

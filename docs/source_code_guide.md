@@ -76,6 +76,8 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.DeclarativeExtensions` | Parser, validação e hot reload de comandos, skills, aliases, jornadas e workflows. |
 | `RadIA.Core.DeclarativeExtensionPackages` | Integridade, instalação e rollback transacional de pacotes e recursos `.radiaext`. |
 | `RadIA.Core.ExtensionStudio` | Draft, preview e validação usados pelo editor visual de extensões. |
+| `RadIA.Core.SkillPortability` | Modelo canônico e adaptadores de formato e path para skills de CLI. |
+| `RadIA.Core.SkillReplicas` | Preview, hashes de propriedade, gravação atômica, rollback e remoção segura. |
 | `RadIA.Core.Extensions` | API versionada e ciclo de registro de extensões. |
 
 ### 2.2 Camada de Provedores (`Source/Providers/`)
@@ -133,6 +135,7 @@ Formulários e quadros visuais VCL desenvolvidos sob o padrão MVP (Model-View-P
 | `RadIA.UI.TerminalFrame` e `TerminalTabsFrame` | Terminal ConPTY, abas, perfis, histórico, snippets e apresentação Unicode/TUI. |
 | `RadIA.UI.ExternalMcpFrame` | Cadastro, teste, grants e aplicação da configuração de servidores MCP externos. |
 | `RadIA.UI.ExtensionStudioForm` | Criação visual, teste, instalação, exportação e assinatura de extensões declarativas. |
+| `RadIA.UI.SkillPortabilityForm` | Seleção de destinos, preview, consentimento, publicação e remoção de réplicas. |
 
 
 ---

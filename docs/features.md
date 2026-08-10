@@ -102,4 +102,5 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
 | **Extensões Declarativas Assinadas** | Segurança | Pacotes RSA-SHA256 com fingerprint, confiança no primeiro uso e revogação visual. | ✅ Concluído |
 | **Addon Studio** | Extensibilidade | Criação, sandbox, instalação, exportação e assinatura visual de comandos, skills, conhecimento, templates, aliases, journeys e workflows. | ✅ Concluído |
+| **Portabilidade de Skills** | Extensibilidade | Publicação transacional para quatro CLIs com preview, consentimento, hashes e preservação de conflitos. | ✅ Concluído |
 | **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |

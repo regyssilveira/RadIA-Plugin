@@ -225,6 +225,9 @@ configurações protegidas de cada instalação e nunca devem fazer parte de man
 O gerenciador visual conclui o ciclo local de instalação, atualização, ativação, diagnóstico e
 remoção de manifestos.
 
+Skills também podem ser publicadas, com preview e consentimento, nos diretórios de projeto dos
+quatro CLIs suportados. Consulte [Portabilidade de skills](skill_portability.md).
+
 ## Pacote distribuível `.radiaext`
 
 Para distribuir uma extensão como artefato único, gere um pacote:

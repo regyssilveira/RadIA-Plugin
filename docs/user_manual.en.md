@@ -417,6 +417,10 @@ For shared content, select **Resources folder** and enter a relative **Content f
 `references/`, `templates/`, or `knowledge/`. The manager updates, enables, disables, diagnoses,
 and removes manifests and resources without restarting the IDE.
 
+When editing a **Skill**, use **Publish skill to CLIs...** to select the four destinations, review
+paths and conflicts, and publish with central consent. Updates use ownership hashes and preserve
+manually changed files. See [Skill portability](skill_portability.en.md).
+
 See the [MCP guide](mcp_integration_guide.en.md) and
 [extension guide](tool_extension_guide.en.md), plus
 [declarative extensions](declarative_extensions.en.md).

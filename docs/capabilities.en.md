@@ -32,6 +32,7 @@ This page is the functional map of RadIA 2.3.1.
 | Security | Risk levels, one queued native dialog for chat, agent, MCP, and terminal, readable source, redacted arguments, hints, revocation, audit, and workspace confinement. |
 | Extensions | Visual creation, sandbox, install, export, signing, and management plus a versioned tool API protected by the policy pipeline. |
 | Declarative extensions | Hot-reloaded commands, skills, journeys, knowledge, references, templates, aliases, and audited workflows with transactional package resources. |
+| Skill portability | Project-scoped publication to four CLIs with preview, central consent, ownership hashes, rollback, and conflict preservation. |
 
 Use the visual Agent On/Off button or `/agent on` and `/agent off`. Start an autonomous run with:
 

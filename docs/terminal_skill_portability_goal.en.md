@@ -32,7 +32,7 @@ this goal.
 |---|---|---|
 | M0 | Baseline, contracts, acceptance matrix, and documentation audit | Complete |
 | M1 | Canonical model and CLI-specific skill adapters | Complete |
-| M2 | Preview, consent, synchronization, and removal in Addon Studio | Pending |
+| M2 | Preview, consent, synchronization, and removal in Addon Studio | Complete |
 | M3 | Real format validation and portability documentation | Pending |
 | M4 | Decoupled interface and selected VT core | Pending |
 | M5 | Alternate screen, colors, input, mouse, paste, OSC 8, and renderer | Pending |

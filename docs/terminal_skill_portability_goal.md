@@ -32,7 +32,7 @@ Delphi não fazem parte deste goal.
 |---|---|---|
 | M0 | Baseline, contratos, matriz de aceite e auditoria documental | Concluído |
 | M1 | Modelo canônico e adaptadores de skill por CLI | Concluído |
-| M2 | Preview, consentimento, sincronização e remoção no Addon Studio | Pendente |
+| M2 | Preview, consentimento, sincronização e remoção no Addon Studio | Concluído |
 | M3 | Validação real dos formatos e documentação de portabilidade | Pendente |
 | M4 | Interface desacoplada e núcleo VT selecionado | Pendente |
 | M5 | Alternate screen, cores, input, mouse, paste, OSC 8 e renderer | Pendente |

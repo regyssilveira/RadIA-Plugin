@@ -16,6 +16,7 @@ implementation
 
 uses
   System.Classes,
+  System.IOUtils,
   System.SysUtils,
   ToolsAPI,
   Vcl.Controls,
@@ -23,7 +24,9 @@ uses
   Vcl.ExtCtrls,
   Vcl.StdCtrls,
   RadIA.Core.ExtensionStudio,
-  RadIA.UI.ExtensionSigningForm;
+  RadIA.Core.SkillPortability,
+  RadIA.UI.ExtensionSigningForm,
+  RadIA.UI.SkillPortabilityForm;
 
 type
   TRadIAExtensionStudioForm = class(TForm)
@@ -37,6 +40,7 @@ type
     FKindCombo: TComboBox;
     FNameEdit: TEdit;
     FPreviewEdit: TMemo;
+    FPublishSkillButton: TButton;
     FResourcesButton: TButton;
     FResourcesDialog: TFileOpenDialog;
     FResourcesEdit: TEdit;
@@ -60,6 +64,7 @@ type
     procedure InputChanged(Sender: TObject);
     procedure ExportClick(Sender: TObject);
     procedure KindChanged(Sender: TObject);
+    procedure PublishSkillClick(Sender: TObject);
     procedure RefreshPreview;
     procedure ResourcesClick(Sender: TObject);
     procedure SignClick(Sender: TObject);
@@ -184,12 +189,23 @@ begin
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := LLeftPanel;
-  FStatusLabel.SetBounds(8, 594, 406, 42);
+  FStatusLabel.SetBounds(8, 588, 406, 26);
   FStatusLabel.Anchors := [akLeft, akRight, akBottom];
   FStatusLabel.AutoSize := False;
   FStatusLabel.WordWrap := True;
 
   CreateActionControls(LLeftPanel);
+
+  FPublishSkillButton := TButton.Create(Self);
+  FPublishSkillButton.Parent := LLeftPanel;
+  FPublishSkillButton.SetBounds(8, 620, 406, 26);
+  FPublishSkillButton.Anchors := [akLeft, akRight, akBottom];
+  FPublishSkillButton.Caption := 'Publish skill to CLIs...';
+  FPublishSkillButton.Hint :=
+    'Preview project paths and publish this skill with central consent';
+  FPublishSkillButton.ShowHint := True;
+  FPublishSkillButton.OnClick := PublishSkillClick;
+  FPublishSkillButton.Visible := False;
 
   LLabel := TLabel.Create(Self);
   LLabel.Parent := Self;
@@ -382,7 +398,54 @@ begin
     FTriggerEdit.Text := '/my-command';
     FContentEdit.Text := 'Explain or transform: {argument}';
   end;
+  FPublishSkillButton.Visible :=
+    TRadIAExtensionStudioKind(FKindCombo.ItemIndex) = eskSkill;
   RefreshPreview;
+end;
+
+procedure TRadIAExtensionStudioForm.PublishSkillClick(Sender: TObject);
+var
+  LContentFileName: string;
+  LInstructions: string;
+  LModuleServices: IOTAModuleServices;
+  LProject: IOTAProject;
+  LProjectRoot: string;
+begin
+  try
+    if not Supports(BorlandIDEServices, IOTAModuleServices, LModuleServices) then
+      raise EInvalidOpException.Create('IDE project services are unavailable.');
+    LProject := LModuleServices.GetActiveProject;
+    if not Assigned(LProject) or (Trim(LProject.FileName) = '') then
+      raise EInvalidOpException.Create(
+        'Open or create a project before publishing a skill.'
+      );
+    LProjectRoot := ExtractFileDir(LProject.FileName);
+    LInstructions := Trim(FContentEdit.Text);
+    if Trim(FContentFileEdit.Text) <> '' then
+    begin
+      LContentFileName := TPath.GetFullPath(
+        TPath.Combine(FResourcesEdit.Text, FContentFileEdit.Text)
+      );
+      if not TFile.Exists(LContentFileName) then
+        raise EFileNotFoundException.Create(
+          'The selected skill content file was not found.'
+        );
+      LInstructions := TFile.ReadAllText(LContentFileName, TEncoding.UTF8);
+    end;
+    ShowRadIASkillPortability(
+      Self,
+      LProjectRoot,
+      TRadIACanonicalSkill.Create(
+        FExtensionIdEdit.Text,
+        FNameEdit.Text,
+        FDescriptionEdit.Text,
+        LInstructions
+      )
+    );
+  except
+    on E: Exception do
+      FStatusLabel.Caption := 'Unable to publish skill: ' + E.Message;
+  end;
 end;
 
 function TRadIAExtensionStudioForm.Manifest: string;
@@ -405,6 +468,9 @@ begin
     FExportButton.Enabled := True;
     FSignButton.Enabled := True;
     FTestButton.Enabled := True;
+    if Assigned(FPublishSkillButton) then
+      FPublishSkillButton.Enabled :=
+        TRadIAExtensionStudioKind(FKindCombo.ItemIndex) = eskSkill;
   except
     on E: Exception do
     begin
@@ -415,6 +481,8 @@ begin
       FExportButton.Enabled := False;
       FSignButton.Enabled := False;
       FTestButton.Enabled := False;
+      if Assigned(FPublishSkillButton) then
+        FPublishSkillButton.Enabled := False;
     end;
   end;
 end;

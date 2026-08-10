@@ -69,6 +69,7 @@ autenticação que declare uma CLI como transporte, como o login ChatGPT via Cod
 | Objetivo | Guia |
 |---|---|
 | Compartilhar comandos, skills, conhecimento, templates, aliases e workflows | [Extensões declarativas](declarative_extensions.md) |
+| Publicar uma skill nos CLIs suportados | [Portabilidade de skills](skill_portability.md) |
 | Registrar tools por package | [API de extensões](tool_extension_guide.md) |
 | Adicionar um provider | [Guia de providers](new_provider_guide.md) |
 | Integrar um cliente MCP | [Integração MCP](mcp_integration_guide.md) |
@@ -99,7 +100,8 @@ descrevem necessariamente o comportamento atual:
 
 - [Roadmap](roadmap.md) e [backlog](backlog.md);
 - [goal concluído das seis lacunas de experiência](competitive_leadership_plan.md);
-- [goal ativo de expansão da experiência completa](experience_expansion_goal.md);
+- [goal concluído de expansão da experiência completa](experience_expansion_goal.md);
+- [goal ativo de portabilidade de skills e terminal](terminal_skill_portability_goal.md);
 - [auditorias de release](release_audit_2.2.0.md);
 - [goal da jornada 2.0](radia_2_goal.md) e [goal de experiência 2.0](experience_leadership_goal.md);
 - [planos e marcos do diagnóstico runtime](runtime_debug_automation_plan.md);

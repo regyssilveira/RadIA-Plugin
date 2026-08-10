@@ -134,6 +134,9 @@ example uses `Examples/DeclarativeExtension/team-knowledge.radia.json` and the
 
 The visual manager completes the local install, update, activation, diagnostics, and removal cycle.
 
+Skills can also be published, with preview and consent, to the project directories used by the four
+supported CLIs. See [Skill portability](skill_portability.en.md).
+
 ## Distributable `.radiaext` package
 
 Create a single-file package with:

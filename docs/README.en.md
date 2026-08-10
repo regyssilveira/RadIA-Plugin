@@ -70,6 +70,7 @@ such as ChatGPT login through Codex, is the explicit exception.
 | Goal | Guide |
 |---|---|
 | Share commands, skills, knowledge, templates, aliases, and workflows | [Declarative extensions](declarative_extensions.en.md) |
+| Publish one skill to supported CLIs | [Skill portability](skill_portability.en.md) |
 | Register tools from a package | [Tool extension API](tool_extension_guide.en.md) |
 | Add a provider | [Provider guide](new_provider_guide.en.md) |
 | Integrate an MCP client | [MCP integration](mcp_integration_guide.en.md) |
@@ -101,7 +102,8 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current execution plan:
 
-- [Active complete-experience expansion goal](experience_expansion_goal.en.md).
+- [Active skill portability and terminal goal](terminal_skill_portability_goal.en.md).
+- [Completed complete-experience expansion goal](experience_expansion_goal.en.md).
 - [Completed six-gap experience goal](competitive_leadership_plan.en.md).
 
 Research records:

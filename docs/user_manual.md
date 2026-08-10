@@ -545,6 +545,11 @@ compartilhado, selecione **Resources folder** e informe um **Content file** rela
 `references/`, `templates/` ou `knowledge/`. O gerenciador permite atualizar, habilitar,
 desabilitar, diagnosticar e remover manifesto e recursos sem reiniciar.
 
+Ao editar uma **Skill**, use **Publish skill to CLIs...** para selecionar os quatro destinos,
+revisar paths e conflitos e publicar com consentimento central. Atualizações usam hashes de
+propriedade e arquivos alterados manualmente são preservados. Consulte
+[Portabilidade de skills](skill_portability.md).
+
 Consulte o [guia de extensões](tool_extension_guide.md) e
 [extensões declarativas](declarative_extensions.md).
 

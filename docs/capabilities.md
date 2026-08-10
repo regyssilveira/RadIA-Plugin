@@ -240,6 +240,10 @@ cria, testa, instala, exporta e assina esses pacotes; atualização e remoção 
 recursos como uma unidade transacional, sem reiniciar. Consulte
 [Extensões declarativas](declarative_extensions.md).
 
+Uma skill criada no Addon Studio pode ser publicada para Codex, Claude Code, Gemini CLI e GitHub
+Copilot CLI com preview, consentimento central, hashes de propriedade, rollback e preservação de
+divergências manuais. Consulte [Portabilidade de skills](skill_portability.md).
+
 Consulte [Modelo de segurança](tool_security_model.md) e
 [Extensões](tool_extension_guide.md).
 

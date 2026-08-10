@@ -82,6 +82,8 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - The [security model](docs/tool_security_model.en.md) explains risk, consent, and auditing.
 - [Declarative extensions](docs/declarative_extensions.en.md) explains how to share commands, skills,
   knowledge, references, templates, aliases, and workflows in `.radiaext` packages.
+- [Skill portability](docs/skill_portability.en.md) publishes one definition to four CLIs with
+  preview, consent, rollback, and conflict preservation.
 
 The runtime `/tools` response is authoritative. Roadmaps and architectural catalogs may include
 proposals that are not yet available.
