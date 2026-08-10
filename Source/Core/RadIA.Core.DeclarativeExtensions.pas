@@ -7,7 +7,7 @@ uses
   System.JSON;
 
 const
-  CRadIADeclarativeExtensionSchemaVersion = 5;
+  CRadIADeclarativeExtensionSchemaVersion = 6;
 
 type
   TRadIADeclarativeCommand = record
@@ -113,6 +113,10 @@ type
       const AFileName: string;
       const AContent: TArray<Byte>
     );
+    procedure CopyCandidateResources(
+      const AExtensionId: string;
+      const ADestinationDirectory: string
+    );
     function FindDiagnostic(
       const AExtensionId: string;
       out ADiagnostic: TRadIADeclarativeExtensionDiagnostic
@@ -132,6 +136,7 @@ type
       const ACommand: string;
       const AReservedCommands: TArray<string>
     ): Boolean;
+    function ResourceDirectory(const AExtensionId: string): string;
     procedure LoadManifest(
       const AFileName: string;
       const AReservedCommands: TArray<string>
@@ -142,16 +147,27 @@ type
       const AReservedCommands: TArray<string>;
       const AExistingCommands: TArray<TRadIADeclarativeCommand>;
       const AKind: string;
-      const APromptField: string
+      const APromptField: string;
+      const ASchemaVersion: Integer
     ): TRadIADeclarativeCommand;
+    function ReadCapabilityContent(
+      const AJson: TJSONObject;
+      const AExtensionId: string;
+      const APromptField: string;
+      const ASchemaVersion: Integer
+    ): string;
+    procedure ValidateContentFilePath(const AContentFile: string);
+    function HasContentReparsePoint(
+      const ARoot: string;
+      const AFileName: string
+    ): Boolean;
     procedure ParseCapabilityArray(
       const AJson: TJSONObject;
       const AArrayName: string;
-      const AKind: string;
-      const APromptField: string;
       const AExtensionId: string;
       const AReservedCommands: TArray<string>;
-      const ACommands: TList<TRadIADeclarativeCommand>
+      const ACommands: TList<TRadIADeclarativeCommand>;
+      const ASchemaVersion: Integer
     );
     function ParseCommands(
       const AJson: TJSONObject;
@@ -250,6 +266,7 @@ type
       out ACommand: TRadIADeclarativeCommand;
       out AArgument: string
     ): Boolean;
+    property Directory: string read FDirectory;
   end;
 
 implementation
@@ -533,6 +550,8 @@ function TRadIADeclarativeExtensionManager.ValidateCandidate(
   out AMessage: string
 ): Boolean;
 var
+  LCandidateJson: TJSONObject;
+  LCandidateText: string;
   LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
   LFileName: string;
   LManager: TRadIADeclarativeExtensionManager;
@@ -563,6 +582,24 @@ begin
       'candidate.radia.json'
     );
     TFile.Copy(ASourceFileName, LFileName);
+    LCandidateText := TFile.ReadAllText(LFileName, TEncoding.UTF8);
+    LCandidateJson := TJSONObject.ParseJSONValue(
+      LCandidateText
+    ) as TJSONObject;
+    if not Assigned(LCandidateJson) then
+    begin
+      AMessage := 'The selected manifest must be a JSON object.';
+      Exit;
+    end;
+    try
+      AExtensionId := Trim(
+        LCandidateJson.GetValue<string>('id', '')
+      );
+    finally
+      LCandidateJson.Free;
+    end;
+    if AExtensionId <> '' then
+      CopyCandidateResources(AExtensionId, LTemporaryDirectory);
     LManager := TRadIADeclarativeExtensionManager.Create(
       LTemporaryDirectory
     );
@@ -633,7 +670,9 @@ function TRadIADeclarativeExtensionManager.Remove(
   out AMessage: string
 ): Boolean;
 var
+  LBackupDirectory: string;
   LDiagnostic: TRadIADeclarativeExtensionDiagnostic;
+  LResourceDirectory: string;
 begin
   Result := False;
   Reload(AReservedCommands);
@@ -642,10 +681,83 @@ begin
     AMessage := 'The extension was not found.';
     Exit;
   end;
-  Result := RemoveManifest(
-    LDiagnostic.FileName,
-    AReservedCommands,
-    AMessage
+  LResourceDirectory := ResourceDirectory(AExtensionId);
+  LBackupDirectory := LResourceDirectory + '.remove-' +
+    TGUID.NewGuid.ToString;
+  try
+    if TDirectory.Exists(LResourceDirectory) then
+      TDirectory.Move(LResourceDirectory, LBackupDirectory);
+    Result := RemoveManifest(
+      LDiagnostic.FileName,
+      AReservedCommands,
+      AMessage
+    );
+    if not Result and TDirectory.Exists(LBackupDirectory) then
+      TDirectory.Move(LBackupDirectory, LResourceDirectory);
+    if Result and TDirectory.Exists(LBackupDirectory) then
+      TDirectory.Delete(LBackupDirectory, True);
+  except
+    on E: Exception do
+    begin
+      if not TDirectory.Exists(LResourceDirectory) and
+        TDirectory.Exists(LBackupDirectory) then
+        TDirectory.Move(LBackupDirectory, LResourceDirectory);
+      AMessage := 'Unable to remove extension resources: ' + E.Message;
+      Result := False;
+    end;
+  end;
+end;
+
+procedure TRadIADeclarativeExtensionManager.CopyCandidateResources(
+  const AExtensionId: string;
+  const ADestinationDirectory: string
+);
+var
+  LDestinationFile: string;
+  LDestinationRoot: string;
+  LFileName: string;
+  LRelativeFileName: string;
+  LSourceRoot: string;
+begin
+  LSourceRoot := IncludeTrailingPathDelimiter(
+    ResourceDirectory(AExtensionId)
+  );
+  if not TDirectory.Exists(LSourceRoot) then
+    Exit;
+  LDestinationRoot := IncludeTrailingPathDelimiter(
+    TPath.Combine(
+      TPath.Combine(ADestinationDirectory, '.resources'),
+      AExtensionId
+    )
+  );
+  for LFileName in TDirectory.GetFiles(
+    LSourceRoot,
+    '*',
+    TSearchOption.soAllDirectories
+  ) do
+  begin
+    if (GetFileAttributes(PChar(LFileName)) and
+      FILE_ATTRIBUTE_REPARSE_POINT) <> 0 then
+      raise EArgumentException.Create(
+        'Capability contentFile reparse points are not allowed.'
+      );
+    LRelativeFileName := LFileName.Substring(Length(LSourceRoot));
+    LDestinationFile := TPath.Combine(
+      LDestinationRoot,
+      LRelativeFileName
+    );
+    TDirectory.CreateDirectory(ExtractFilePath(LDestinationFile));
+    TFile.Copy(LFileName, LDestinationFile);
+  end;
+end;
+
+function TRadIADeclarativeExtensionManager.ResourceDirectory(
+  const AExtensionId: string
+): string;
+begin
+  Result := TPath.Combine(
+    TPath.Combine(FDirectory, '.resources'),
+    AExtensionId
   );
 end;
 
@@ -800,13 +912,105 @@ begin
   end;
 end;
 
+function TRadIADeclarativeExtensionManager.ReadCapabilityContent(
+  const AJson: TJSONObject;
+  const AExtensionId: string;
+  const APromptField: string;
+  const ASchemaVersion: Integer
+): string;
+var
+  LContentFile: string;
+  LFullPath: string;
+  LInlineContent: string;
+  LRoot: string;
+begin
+  LInlineContent := Trim(
+    AJson.GetValue<string>(APromptField, '')
+  );
+  LContentFile := Trim(
+    AJson.GetValue<string>('contentFile', '')
+  );
+  if LContentFile = '' then
+    Exit(LInlineContent);
+  if ASchemaVersion < 6 then
+    raise EArgumentException.Create(
+      'External capability content requires schema version 6.'
+    );
+  if LInlineContent <> '' then
+    raise EArgumentException.Create(
+      'Capability must use inline content or contentFile, not both.'
+    );
+  ValidateContentFilePath(LContentFile);
+  LRoot := IncludeTrailingPathDelimiter(
+    TPath.GetFullPath(ResourceDirectory(AExtensionId))
+  );
+  LFullPath := TPath.GetFullPath(
+    TPath.Combine(
+      LRoot,
+      LContentFile.Replace('/', PathDelim)
+    )
+  );
+  if not LFullPath.StartsWith(LRoot, True) then
+    raise EArgumentException.Create(
+      'Capability contentFile escaped the extension resources.'
+    );
+  if not TFile.Exists(LFullPath) then
+    raise EFileNotFoundException.Create(
+      'Capability contentFile was not installed.'
+    );
+  if HasContentReparsePoint(LRoot, LFullPath) then
+    raise EArgumentException.Create(
+      'Capability contentFile reparse points are not allowed.'
+    );
+  if TFile.GetSize(LFullPath) > CMaximumPromptLength then
+    raise EArgumentException.Create(
+      'Capability contentFile exceeds the 32768 byte limit.'
+    );
+  Result := Trim(TFile.ReadAllText(LFullPath, TEncoding.UTF8));
+end;
+
+function TRadIADeclarativeExtensionManager.HasContentReparsePoint(
+  const ARoot: string;
+  const AFileName: string
+): Boolean;
+begin
+  Result :=
+    ((GetFileAttributes(PChar(ARoot)) and
+      FILE_ATTRIBUTE_REPARSE_POINT) <> 0) or
+    ((GetFileAttributes(PChar(AFileName)) and
+      FILE_ATTRIBUTE_REPARSE_POINT) <> 0);
+end;
+
+procedure TRadIADeclarativeExtensionManager.ValidateContentFilePath(
+  const AContentFile: string
+);
+var
+  LSegment: string;
+begin
+  if AContentFile.Contains('\') or AContentFile.Contains(':') or
+    AContentFile.StartsWith('/') or AContentFile.EndsWith('/') or
+    not (
+      AContentFile.StartsWith('references/', True) or
+      AContentFile.StartsWith('templates/', True) or
+      AContentFile.StartsWith('knowledge/', True)
+    ) then
+    raise EArgumentException.Create('Capability contentFile path is invalid.');
+  for LSegment in AContentFile.Split(['/']) do
+    if (LSegment = '') or SameText(LSegment, '.') or
+      SameText(LSegment, '..') then
+      raise EArgumentException.Create(
+        'Capability contentFile path is invalid.'
+      );
+end;
+
 function TRadIADeclarativeExtensionManager.ParseCommand(
   const AJson: TJSONObject;
   const AExtensionId: string;
   const AReservedCommands: TArray<string>;
   const AExistingCommands: TArray<TRadIADeclarativeCommand>;
   const AKind: string;
-  const APromptField: string
+  const APromptField: string;
+  const ASchemaVersion: Integer
 ): TRadIADeclarativeCommand;
 var
   LDescription: string;
@@ -820,7 +1024,12 @@ begin
   LSlashCommand := LowerCase(
     Trim(AJson.GetValue<string>('command', ''))
   );
-  LPrompt := Trim(AJson.GetValue<string>(APromptField, ''));
+  LPrompt := ReadCapabilityContent(
+    AJson,
+    AExtensionId,
+    APromptField,
+    ASchemaVersion
+  );
   ValidateCommandFields(
     LName,
     LDescription,
@@ -852,17 +1061,29 @@ end;
 procedure TRadIADeclarativeExtensionManager.ParseCapabilityArray(
   const AJson: TJSONObject;
   const AArrayName: string;
-  const AKind: string;
-  const APromptField: string;
   const AExtensionId: string;
   const AReservedCommands: TArray<string>;
-  const ACommands: TList<TRadIADeclarativeCommand>
+  const ACommands: TList<TRadIADeclarativeCommand>;
+  const ASchemaVersion: Integer
 );
 var
   LArray: TJSONArray;
   LIndex: Integer;
+  LKind: string;
+  LPromptField: string;
   LValue: TJSONValue;
 begin
+  if SameText(AArrayName, 'commands') or
+    SameText(AArrayName, 'templates') then
+    LPromptField := 'prompt'
+  else if SameText(AArrayName, 'journeys') then
+    LPromptField := 'objective'
+  else
+    LPromptField := 'instructions';
+  if SameText(AArrayName, 'policies') then
+    LKind := 'policy'
+  else
+    LKind := AArrayName.Substring(0, Length(AArrayName) - 1);
   LValue := AJson.GetValue(AArrayName);
   if not Assigned(LValue) then
     Exit;
@@ -875,7 +1096,7 @@ begin
   begin
     if not (LArray[LIndex] is TJSONObject) then
       raise EArgumentException.Create(
-        'Each ' + AKind + ' must be a JSON object.'
+        'Each ' + LKind + ' must be a JSON object.'
       );
     ACommands.Add(
       ParseCommand(
@@ -883,8 +1104,9 @@ begin
         AExtensionId,
         AReservedCommands,
         ACommands.ToArray,
-        AKind,
-        APromptField
+        LKind,
+        LPromptField,
+        ASchemaVersion
       )
     );
   end;
@@ -904,31 +1126,28 @@ begin
     ParseCapabilityArray(
       AJson,
       'commands',
-      'command',
-      'prompt',
       AExtensionId,
       AReservedCommands,
-      LCommands
+      LCommands,
+      ASchemaVersion
     );
     if ASchemaVersion >= 2 then
     begin
       ParseCapabilityArray(
         AJson,
         'templates',
-        'template',
-        'prompt',
         AExtensionId,
         AReservedCommands,
-        LCommands
+        LCommands,
+        ASchemaVersion
       );
       ParseCapabilityArray(
         AJson,
         'skills',
-        'skill',
-        'instructions',
         AExtensionId,
         AReservedCommands,
-        LCommands
+        LCommands,
+        ASchemaVersion
       );
     end;
     if ASchemaVersion >= 4 then
@@ -936,20 +1155,18 @@ begin
       ParseCapabilityArray(
         AJson,
         'journeys',
-        'journey',
-        'objective',
         AExtensionId,
         AReservedCommands,
-        LCommands
+        LCommands,
+        ASchemaVersion
       );
       ParseCapabilityArray(
         AJson,
         'policies',
-        'policy',
-        'instructions',
         AExtensionId,
         AReservedCommands,
-        LCommands
+        LCommands,
+        ASchemaVersion
       );
     end;
     if LCommands.Count > CMaximumCommandsPerExtension then

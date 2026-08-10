@@ -29,8 +29,8 @@ This page is the functional map of RadIA 2.3.1.
 | Agent Mode | Plan approval, iterative tools, live progress, pause, resume, cancel, checkpoints, resource limits, and internal DUnitX/Git diff result compaction. |
 | MCP | stdio bridge, named pipe, IDE discovery by PID, tool calls, cancellation and sanitized metrics. |
 | Security | Risk levels, consent, revocation, audit, secret redaction and workspace confinement. |
-| Extensions | Visual manifest/package manager plus a versioned tool API protected by the policy pipeline. |
-| Declarative extensions | Hot-reloaded commands, aliases, and audited tool workflows with explicit minimal permissions. |
+| Extensions | Visual creation, sandbox, install, export, signing, and management plus a versioned tool API protected by the policy pipeline. |
+| Declarative extensions | Hot-reloaded commands, skills, journeys, knowledge, references, templates, aliases, and audited workflows with transactional package resources. |
 
 Use the visual Agent On/Off button or `/agent on` and `/agent off`. Start an autonomous run with:
 

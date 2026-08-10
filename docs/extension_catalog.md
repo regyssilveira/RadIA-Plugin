@@ -1,9 +1,10 @@
 # Catálogo remoto de extensões
 
-O RadIA 2.0 possui uma camada segura para descobrir e baixar extensões declarativas a partir de um
+O RadIA possui uma camada segura para descobrir e baixar extensões declarativas a partir de um
 catálogo remoto. O catálogo é uma fonte de metadados; ele não concede confiança automaticamente ao
 publicador. Todo artefato distribuído pelo catálogo precisa continuar sendo um pacote `.radiaext`
-versão 2 com assinatura RSA-SHA256 válida.
+assinado: envelope v2 para manifesto sem recursos ou v3 quando transporta referências,
+conhecimento, templates ou assets.
 
 ## Schema versão 1
 
@@ -42,11 +43,11 @@ maiúsculas e minúsculas equivalentes.
 O cliente do catálogo:
 
 1. aceita somente HTTPS e desabilita redirects automáticos;
-2. limita catálogo a 1 MiB e pacote a 4 MiB durante o próprio streaming;
+2. limita catálogo a 1 MiB e pacote a 20 MiB durante o próprio streaming;
 3. confere tamanho e SHA-256 anunciados;
 4. abre o pacote com o verificador `.radiaext`, incluindo lista fechada, ZIP bomb, paths, manifesto
    e assinatura RSA-SHA256;
-5. exige pacote v2 assinado;
+5. exige pacote v2 ou v3 assinado;
 6. compara ID, versão, ID do publicador e fingerprint com a entrada do catálogo;
 7. valida em arquivo temporário e somente então faz a troca atômica do destino;
 8. preserva um arquivo anterior quando download ou validação falha.

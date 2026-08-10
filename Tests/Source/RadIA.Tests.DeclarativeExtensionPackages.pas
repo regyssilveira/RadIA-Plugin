@@ -27,6 +27,12 @@ type
     function CreateSignedPackage(
       const ATamperedSignature: Boolean = False
     ): string;
+    function CreateResourcePackage(
+      const AResourcePath: string;
+      const AResourceContent: TArray<Byte>;
+      const ADeclaredHash: string = ''
+    ): string;
+    function HashBytes(const AContent: TArray<Byte>): string;
   public
     [Setup]
     procedure Setup;
@@ -62,11 +68,20 @@ type
     procedure RejectsCompressedOversizedEntry;
     [Test]
     procedure ReadsSchemaTwoTemplatePackage;
+    [Test]
+    procedure ReadsInstallsAndRemovesResourcePackage;
+    [Test]
+    procedure FailedResourceUpdateRestoresPreviousVersion;
+    [Test]
+    procedure RejectsUnsafeResourcePath;
+    [Test]
+    procedure RejectsTamperedResourceHash;
   end;
 
 implementation
 
 uses
+  System.Classes,
   System.Hash,
   System.IOUtils,
   System.JSON,
@@ -90,6 +105,12 @@ const
     '"name":"Package plan","description":"Plan from a verified package.",' +
     '"command":"/package-plan","prompt":"Plan package input: {argument}"' +
     '}]}';
+  CSchemaSixResourceManifest =
+    '{"schemaVersion":6,"id":"PackagedCommands","version":"1.2.0",' +
+    '"enabled":true,"permissions":["chat.prompt"],"skills":[{' +
+    '"name":"Team architecture","description":"Use shared knowledge.",' +
+    '"command":"/team-architecture","contentFile":' +
+    '"knowledge/team/architecture.md"}]}';
   CRsaModulus =
     'teUwBI7/eDWLlI0bCfZ72J6Rn+PjH1KcLuRE7Lbjuetb6WHPGgdjgYJWWx8I' +
     'PsI9Y+DhYmUclupV3/8zIft3VuanrmgXCUKE5NhoIHCKIquv8uzog347ln' +
@@ -253,6 +274,100 @@ begin
   );
 end;
 
+function TRadIADeclarativeExtensionPackageTests.HashBytes(
+  const AContent: TArray<Byte>
+): string;
+var
+  LByte: Byte;
+  LHash: TArray<Byte>;
+  LStream: TBytesStream;
+begin
+  Result := '';
+  LStream := TBytesStream.Create(AContent);
+  try
+    LHash := THashSHA2.GetHashBytes(LStream);
+  finally
+    LStream.Free;
+  end;
+  for LByte in LHash do
+    Result := Result + Format('%.2x', [LByte]);
+end;
+
+function TRadIADeclarativeExtensionPackageTests.CreateResourcePackage(
+  const AResourcePath: string;
+  const AResourceContent: TArray<Byte>;
+  const ADeclaredHash: string
+): string;
+var
+  LArchive: TZipFile;
+  LFiles: TJSONArray;
+  LManifestBytes: TArray<Byte>;
+  LManifestFile: string;
+  LMetadata: TJSONObject;
+  LMetadataFile: string;
+  LResourceFile: string;
+  LResourceHash: string;
+  procedure AddFile(
+    const APath: string;
+    const ASize: Int64;
+    const AHash: string
+  );
+  var
+    LFile: TJSONObject;
+  begin
+    LFile := TJSONObject.Create;
+    LFile.AddPair('path', APath);
+    LFile.AddPair('size', TJSONNumber.Create(ASize));
+    LFile.AddPair('sha256', AHash);
+    LFiles.AddElement(LFile);
+  end;
+begin
+  LManifestBytes := TEncoding.UTF8.GetBytes(CSchemaSixResourceManifest);
+  LResourceHash := ADeclaredHash;
+  if LResourceHash = '' then
+    LResourceHash := HashBytes(AResourceContent);
+  LMetadata := TJSONObject.Create;
+  try
+    LMetadata.AddPair('schemaVersion', TJSONNumber.Create(3));
+    LMetadata.AddPair('id', 'PackagedCommands');
+    LMetadata.AddPair('version', '1.2.0');
+    LMetadata.AddPair('manifest', 'PackagedCommands.radia.json');
+    LFiles := TJSONArray.Create;
+    AddFile(
+      'PackagedCommands.radia.json',
+      Length(LManifestBytes),
+      HashBytes(LManifestBytes)
+    );
+    AddFile(AResourcePath, Length(AResourceContent), LResourceHash);
+    LMetadata.AddPair('files', LFiles);
+    LMetadataFile := TPath.Combine(FDirectory, 'resource-package.json');
+    TFile.WriteAllText(
+      LMetadataFile,
+      LMetadata.ToJSON,
+      TEncoding.UTF8
+    );
+  finally
+    LMetadata.Free;
+  end;
+  LManifestFile := TPath.Combine(FDirectory, 'resource-manifest.json');
+  LResourceFile := TPath.Combine(FDirectory, 'resource-content.bin');
+  TFile.WriteAllBytes(LManifestFile, LManifestBytes);
+  TFile.WriteAllBytes(LResourceFile, AResourceContent);
+  Result := TPath.Combine(
+    FDirectory,
+    TGUID.NewGuid.ToString + '.radiaext'
+  );
+  LArchive := TZipFile.Create;
+  try
+    LArchive.Open(Result, zmWrite);
+    LArchive.Add(LMetadataFile, 'package.json');
+    LArchive.Add(LManifestFile, 'PackagedCommands.radia.json');
+    LArchive.Add(LResourceFile, AResourcePath);
+  finally
+    LArchive.Free;
+  end;
+end;
+
 procedure TRadIADeclarativeExtensionPackageTests.
   VerifiesRsaSha256PublisherSignature;
 begin
@@ -320,6 +435,160 @@ begin
   finally
     LManager.Free;
   end;
+end;
+
+procedure TRadIADeclarativeExtensionPackageTests.
+  ReadsInstallsAndRemovesResourcePackage;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LExtensionId: string;
+  LInstallDirectory: string;
+  LManager: TRadIADeclarativeExtensionManager;
+  LMessage: string;
+  LPackage: TRadIADeclarativeExtensionPackage;
+  LPackageFileName: string;
+  LResourceBytes: TArray<Byte>;
+  LResourceFile: string;
+begin
+  LResourceBytes := TEncoding.UTF8.GetBytes('# Team architecture');
+  LPackageFileName := CreateResourcePackage(
+    'knowledge/team/architecture.md',
+    LResourceBytes
+  );
+  LPackage := TRadIADeclarativeExtensionPackageReader.Read(
+    LPackageFileName
+  );
+  Assert.AreEqual<Integer>(3, LPackage.SchemaVersion);
+  Assert.IsFalse(LPackage.IsSigned);
+  Assert.AreEqual<Integer>(1, Length(LPackage.Resources));
+  LInstallDirectory := TPath.Combine(FDirectory, 'resource-installed');
+  LManager := TRadIADeclarativeExtensionManager.Create(
+    LInstallDirectory
+  );
+  try
+    Assert.IsTrue(
+      TRadIADeclarativeExtensionPackageInstaller.Install(
+        LPackageFileName,
+        LManager,
+        [],
+        LExtensionId,
+        LMessage
+      ),
+      LMessage
+    );
+    LResourceFile := TPath.Combine(
+      TPath.Combine(
+        TPath.Combine(LInstallDirectory, '.resources'),
+        'PackagedCommands'
+      ),
+      'knowledge\team\architecture.md'
+    );
+    Assert.IsTrue(TFile.Exists(LResourceFile));
+    Assert.AreEqual(
+      '# Team architecture',
+      TFile.ReadAllText(LResourceFile, TEncoding.UTF8)
+    );
+    Assert.IsTrue(LManager.TryResolve('/team-architecture', LCommand));
+    Assert.AreEqual('# Team architecture', LCommand.Prompt);
+    Assert.IsTrue(LManager.Remove(LExtensionId, [], LMessage), LMessage);
+    Assert.IsFalse(TFile.Exists(LResourceFile));
+  finally
+    LManager.Free;
+  end;
+end;
+
+procedure TRadIADeclarativeExtensionPackageTests.
+  FailedResourceUpdateRestoresPreviousVersion;
+var
+  LCommand: TRadIADeclarativeCommand;
+  LExtensionId: string;
+  LInstallDirectory: string;
+  LManager: TRadIADeclarativeExtensionManager;
+  LMessage: string;
+  LOriginalPackage: string;
+  LReplacementPackage: string;
+  LResourceFile: string;
+begin
+  LOriginalPackage := CreateResourcePackage(
+    'knowledge/team/architecture.md',
+    TEncoding.UTF8.GetBytes('# Original architecture')
+  );
+  LInstallDirectory := TPath.Combine(FDirectory, 'rollback-installed');
+  LManager := TRadIADeclarativeExtensionManager.Create(LInstallDirectory);
+  try
+    Assert.IsTrue(
+      TRadIADeclarativeExtensionPackageInstaller.Install(
+        LOriginalPackage,
+        LManager,
+        [],
+        LExtensionId,
+        LMessage
+      ),
+      LMessage
+    );
+    LReplacementPackage := CreateResourcePackage(
+      'knowledge/team/replacement.md',
+      TEncoding.UTF8.GetBytes('# Invalid replacement')
+    );
+    Assert.IsFalse(
+      TRadIADeclarativeExtensionPackageInstaller.Install(
+        LReplacementPackage,
+        LManager,
+        [],
+        LExtensionId,
+        LMessage
+      )
+    );
+    LResourceFile := TPath.Combine(
+      TPath.Combine(
+        TPath.Combine(LInstallDirectory, '.resources'),
+        'PackagedCommands'
+      ),
+      'knowledge\team\architecture.md'
+    );
+    Assert.IsTrue(TFile.Exists(LResourceFile));
+    Assert.IsTrue(LManager.TryResolve('/team-architecture', LCommand));
+    Assert.AreEqual('# Original architecture', LCommand.Prompt);
+  finally
+    LManager.Free;
+  end;
+end;
+
+procedure TRadIADeclarativeExtensionPackageTests.RejectsTamperedResourceHash;
+var
+  LPackageFileName: string;
+begin
+  LPackageFileName := CreateResourcePackage(
+    'references/rules.md',
+    TEncoding.UTF8.GetBytes('rules'),
+    StringOfChar('0', 64)
+  );
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      TRadIADeclarativeExtensionPackageReader.Read(LPackageFileName);
+    end,
+    EArgumentException,
+    'Package file SHA-256 does not match metadata.'
+  );
+end;
+
+procedure TRadIADeclarativeExtensionPackageTests.RejectsUnsafeResourcePath;
+var
+  LPackageFileName: string;
+begin
+  LPackageFileName := CreateResourcePackage(
+    'references/../escape.md',
+    TEncoding.UTF8.GetBytes('escape')
+  );
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      TRadIADeclarativeExtensionPackageReader.Read(LPackageFileName);
+    end,
+    EArgumentException,
+    'Package contains an unsafe entry path.'
+  );
 end;
 
 procedure TRadIADeclarativeExtensionPackageTests.
@@ -662,7 +931,7 @@ begin
       TRadIADeclarativeExtensionPackageReader.Read(LPackageFileName);
     end,
     EArgumentException,
-    'Manifest SHA-256 does not match package metadata.'
+    'Package file SHA-256 does not match metadata.'
   );
 end;
 

@@ -1,6 +1,6 @@
 # Declarative extensions
 
-RadIA 2.0 can load chat commands, templates, skills, journeys, policies, safe tool aliases, and
+RadIA can load chat commands, templates, skills, journeys, policies, safe tool aliases, and
 audited tool workflows without rebuilding the plugin or restarting Delphi. Each extension is a
 `*.radia.json` manifest
 stored under:
@@ -24,8 +24,17 @@ refreshes its catalog, while chats opened later load the current state directly.
 Use **Addon Studio...** in the same manager to create a command, skill, safe tool alias, journey,
 or audited workflow without editing JSON. The form continuously validates the extension identity,
 semantic version, names, slash commands, permissions, namespace rules, and workflow step JSON. It
-shows the exact schema 5 manifest before installation. **Install** then sends that manifest through
-the regular transactional validator, reserved-command checks, activation, diagnostics, and chat
+shows the exact manifest before installation. For commands, skills, and journeys, choose either
+**Inline content** or **Content file**, never both. A content file is a package-relative UTF-8 path
+such as `knowledge/team/architecture.md`. **Resources folder** selects a local root containing:
+
+- `references` for rules, contracts, and supporting documents;
+- `knowledge` for shared team or framework knowledge;
+- `templates` for scaffolds and structural files;
+- `assets` for transported images and artifacts, which cannot be used directly as prompt content.
+
+**Test**, **Install**, **Export...**, and **Sign...** all use the selected folder. Installation sends
+the manifest and resources through one transactional validation, activation, diagnostics, and chat
 reload path.
 
 **Audit** shows the minimum permission, execution boundaries, credential restrictions, and central
@@ -45,20 +54,21 @@ available.
 The RadIA installer deploys the visual flow's packager beside the BPL, verifies its hash during
 `Install` and `Repair`, and removes it during `Uninstall`.
 
-Use **Test** before installation to activate the manifest in an isolated temporary directory. The
+Use **Test** before installation to activate the package in an isolated temporary directory. The
 sandbox runs the complete parser, permission rules, reserved-command collision checks, and
 transactional reload. Its report shows the activated commands, aliases, and workflows. It never
 changes installed extensions and removes the temporary directory afterward. The sandbox validates
-activation; it does not execute prompts or side-effecting tools.
+activation, resources, and `contentFile`; it does not execute prompts or side-effecting tools.
 
 Schema 2 supports templates and skills. Schema 3 adds safe aliases, schema 4 adds team journeys and
-policies, and schema 5 adds audited workflows of internal tools. Permissions must exactly match the
-capabilities present: `chat.prompt`, `tool.alias`, and `tool.workflow`. Schemas 1–4 remain
+policies, schema 5 adds audited workflows of internal tools, and schema 6 allows prompt content in
+package files under `references/`, `templates/`, or `knowledge/`. Permissions must exactly match
+the capabilities present: `chat.prompt`, `tool.alias`, and `tool.workflow`. Schemas 1–5 remain
 compatible. The combined total is limited to 100 capabilities.
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 6,
   "id": "TeamDelivery",
   "version": "4.0.0",
   "permissions": ["chat.prompt"],
@@ -75,7 +85,7 @@ compatible. The combined total is limited to 100 capabilities.
       "name": "Team architecture",
       "description": "Review using the shared architecture policy.",
       "command": "/team-architecture",
-      "instructions": "Review API stability, ownership, thread safety, testability, and Delphi compatibility."
+      "contentFile": "knowledge/team/architecture.md"
     }
   ]
 }
@@ -118,7 +128,9 @@ Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 See `Examples/DeclarativeExtension/team-workflow.radia.json` for schema 2,
 `Examples/DeclarativeExtension/team-tools.radia.json` for schema 3, and
 `Examples/DeclarativeExtension/team-journeys.radia.json` for schema 4. See
-`Examples/DeclarativeExtension/team-tool-workflow.radia.json` for schema 5.
+`Examples/DeclarativeExtension/team-tool-workflow.radia.json` for schema 5. The external-knowledge
+example uses `Examples/DeclarativeExtension/team-knowledge.radia.json` and the
+`Examples/DeclarativeExtension/team-knowledge-resources` root.
 
 The visual manager completes the local install, update, activation, diagnostics, and removal cycle.
 
@@ -132,16 +144,37 @@ powershell.exe -ExecutionPolicy Bypass `
   -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json
 ```
 
-The packager accepts manifests from schemas 1 through 5, including aliases, journeys, policies,
+The packager accepts manifests from schemas 1 through 6, including aliases, journeys, policies,
 and audited workflows.
 
-The package contains exactly `package.json` and `<ExtensionId>.radia.json`. Metadata records the
-schema, ID, version, closed file list, UTF-8 size, and SHA-256. The visual manager imports
+To include resources, pass their root directory:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.DeclarativeExtensionPackage.ps1 `
+  -ManifestPath .\TeamKnowledge.radia.json `
+  -ResourcesPath .\extension-content
+```
+
+The same parameter can be combined with signing. In Addon Studio, select **Resources folder**;
+running the script manually is optional.
+
+The package contains a closed list with `package.json`, `<ExtensionId>.radia.json`, and optionally
+up to 128 files under `references/`, `templates/`, `knowledge/`, or `assets/`. Metadata records the
+schema, ID, version, UTF-8 size, and SHA-256 of every entry. The visual manager imports
 `.radiaext` from **Install / Update...** and rejects extra or duplicate entries, unsafe paths,
 oversized entries, identity mismatches, size mismatches, and tampered hashes before transactional
 manifest validation and activation.
 
-The command above creates an unsigned version 1 package. To create a signed version 2 package, use
+Unsigned packages without resources use envelope v1; signed packages without resources use v2.
+Packages with resources use v3, signed or unsigned. A v3 signature covers every resource path,
+size, and SHA-256. Each entry is limited to 1 MiB, total uncompressed content to 16 MiB, the archive
+to 20 MiB, and declared paths to 240 characters. Updates clean-replace obsolete resources. A
+failed `contentFile` load or activation restores both the previous manifest and resources. Removing
+an extension also removes its `.resources/<ExtensionId>` directory.
+
+Without resources, the first command creates an unsigned version 1 package. To create a signed
+version 2 package, use
 an RSA certificate with at least 2,048 bits and a private key in `Cert:\CurrentUser\My`:
 
 ```powershell
@@ -160,7 +193,9 @@ name, and SHA-256 key fingerprint. Approval stores trust in
 `%USERPROFILE%\RadIA\trusted-extension-publishers.json`; later key changes require a new explicit
 decision. Use **Trusted publishers...** to inspect fingerprints and revoke trust.
 
-Version 1 remains compatible but is integrity-only and requires a one-time warning. The trust store
+Version 1 remains compatible but is integrity-only and requires a one-time warning. Unsigned v3
+packages use the same explicit warning. Signed v3 packages bind every resource to the publisher
+identity. The trust store
 uses atomic writes, validates IDs and fingerprints, rejects duplicates and reparse points, and does
 not silently replace invalid state. A signed package proves possession of its private key; users
 should still verify the fingerprint through an independent channel. Distributed publication and

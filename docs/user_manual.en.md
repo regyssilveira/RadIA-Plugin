@@ -393,11 +393,14 @@ the same consent and workspace policies.
 Trusted packages can add tools through the versioned `IRadIAToolExtension` API without bypassing
 policy, audit, or cancellation.
 
-Declarative commands, aliases, and workflows can be installed from
+Declarative commands, skills, journeys, knowledge, references, templates, aliases, and workflows
+can be installed from
 **Tools > Rad IA Extensions...** as a `*.radia.json` manifest or integrity-checked `.radiaext`
 package. Workflows execute only internal tools through central policy and never interpret shell
-code or binaries. The manager updates, enables, disables, diagnoses, and removes them without
-restarting the IDE.
+code or binaries. **Addon Studio...** creates, sandboxes, installs, exports, and signs the package.
+For shared content, select **Resources folder** and enter a relative **Content file** under
+`references/`, `templates/`, or `knowledge/`. The manager updates, enables, disables, diagnoses,
+and removes manifests and resources without restarting the IDE.
 
 See the [MCP guide](mcp_integration_guide.en.md) and
 [extension guide](tool_extension_guide.en.md), plus

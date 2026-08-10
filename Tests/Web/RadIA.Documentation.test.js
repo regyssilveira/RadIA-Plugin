@@ -442,6 +442,44 @@ test('documentation hubs expose the settings map and security guidance', () => {
   assert.match(englishManual, /tool_security_model\.en\.md/u);
 });
 
+test('declarative extensions document packaged resources end to end', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, 'declarative_extensions.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, 'declarative_extensions.en.md'),
+    'utf8'
+  );
+  const catalogPortuguese = fs.readFileSync(
+    path.join(documentationRoot, 'extension_catalog.md'),
+    'utf8'
+  );
+  const catalogEnglish = fs.readFileSync(
+    path.join(documentationRoot, 'extension_catalog.en.md'),
+    'utf8'
+  );
+  const packager = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'New-RadIA.DeclarativeExtensionPackage.ps1'),
+    'utf8'
+  );
+  const requiredTerms = [
+    'schema 6', 'contentFile', 'Resources folder', 'references/',
+    'templates/', 'knowledge/', 'assets/', '128', '16 MiB', 'rollback'
+  ];
+
+  requiredTerms.forEach(term => {
+    assert.ok(portuguese.includes(term), `Portuguese extension guide is missing ${term}`);
+    assert.ok(english.includes(term), `English extension guide is missing ${term}`);
+  });
+  assert.ok(packager.includes('[string]$ResourcesPath'));
+  assert.ok(packager.includes('$packageSchemaVersion = if ($hasResources) { 3 } else { 1 }'));
+  [catalogPortuguese, catalogEnglish].forEach(document => {
+    assert.match(document, /20 MiB/u);
+    assert.match(document, /v2[^\n]+v3|version 2 or 3/iu);
+  });
+});
+
 test('every visible settings group has a detailed central reference', () => {
   const portugueseReference = fs.readFileSync(
     path.join(documentationRoot, 'settings_reference.md'),

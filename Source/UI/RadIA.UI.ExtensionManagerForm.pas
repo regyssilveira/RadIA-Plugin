@@ -77,6 +77,7 @@ uses
   ToolsAPI,
   Vcl.Controls,
   RadIA.Core.DeclarativeExtensionPackages,
+  RadIA.Core.ExtensionStudio,
   RadIA.Core.Mediator,
   RadIA.Core.PromptTemplates,
   RadIA.UI.ExtensionCatalogForm,
@@ -688,11 +689,18 @@ begin
     0
   ) <> mrYes then
     Exit;
-  FManager.RemoveManifest(
-    LDiagnostic.FileName,
-    FReservedCommands,
-    LMessage
-  );
+  if LDiagnostic.ExtensionId.IsEmpty then
+    FManager.RemoveManifest(
+      LDiagnostic.FileName,
+      FReservedCommands,
+      LMessage
+    )
+  else
+    FManager.Remove(
+      LDiagnostic.ExtensionId,
+      FReservedCommands,
+      LMessage
+    );
   SetStatus(LMessage);
   RefreshList;
   NotifyChat;
@@ -708,19 +716,29 @@ var
   LExtensionId: string;
   LManifest: string;
   LMessage: string;
+  LResourcesPath: string;
   LTempFileName: string;
 begin
   if not CreateRadIAExtensionManifest(
     Self,
     FReservedCommands,
-    LManifest
+    LManifest,
+    LResourcesPath
   ) then
     Exit;
-  LTempFileName := TPath.GetTempFileName;
+  LTempFileName := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-StudioInstall-' + TGUID.NewGuid.ToString + '.radiaext'
+  );
   try
-    TFile.WriteAllText(LTempFileName, LManifest, TEncoding.UTF8);
-    FManager.InstallOrUpdate(
+    TRadIAExtensionStudioPackager.ExportUnsigned(
+      LManifest,
       LTempFileName,
+      LResourcesPath
+    );
+    TRadIADeclarativeExtensionPackageInstaller.Install(
+      LTempFileName,
+      FManager,
       FReservedCommands,
       LExtensionId,
       LMessage

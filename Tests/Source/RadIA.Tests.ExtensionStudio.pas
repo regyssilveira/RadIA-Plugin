@@ -20,6 +20,8 @@ type
     [Test]
     procedure ExportsVerifiedUnsignedPackage;
     [Test]
+    procedure ExportsAndTestsResourcePackage;
+    [Test]
     procedure TestsManifestInIsolatedSandbox;
     [Test]
     procedure RejectsInvalidDrafts;
@@ -238,6 +240,68 @@ begin
   finally
     if TFile.Exists(LPackageFileName) then
       TFile.Delete(LPackageFileName);
+  end;
+end;
+
+procedure TRadIAExtensionStudioTests.ExportsAndTestsResourcePackage;
+var
+  LManifest: string;
+  LPackage: TRadIADeclarativeExtensionPackage;
+  LPackageFileName: string;
+  LResourceDirectory: string;
+  LResourceFileName: string;
+  LResult: string;
+  LRoot: string;
+begin
+  LRoot := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-StudioResources-' + TGUID.NewGuid.ToString
+  );
+  LResourceDirectory := TPath.Combine(LRoot, 'resources');
+  LResourceFileName := TPath.Combine(
+    LResourceDirectory,
+    'knowledge\team\rules.md'
+  );
+  TDirectory.CreateDirectory(ExtractFilePath(LResourceFileName));
+  TFile.WriteAllText(
+    LResourceFileName,
+    '# Team rules',
+    TEncoding.UTF8
+  );
+  LPackageFileName := TPath.Combine(LRoot, 'studio.radiaext');
+  try
+    LManifest := TRadIAExtensionStudioBuilder.BuildManifest(
+      TRadIAExtensionStudioDraft.Create(
+        eskSkill,
+        'StudioKnowledge',
+        '1.0.0',
+        'Team knowledge',
+        'Load shared team knowledge.',
+        '/team-knowledge',
+        ''
+      ).WithContentFile('knowledge/team/rules.md')
+    );
+    Assert.Contains(LManifest, '"schemaVersion": 6');
+    Assert.Contains(LManifest, '"contentFile": "knowledge/team/rules.md"');
+    TRadIAExtensionStudioPackager.ExportUnsigned(
+      LManifest,
+      LPackageFileName,
+      LResourceDirectory
+    );
+    LPackage := TRadIADeclarativeExtensionPackageReader.Read(
+      LPackageFileName
+    );
+    Assert.AreEqual<Integer>(3, LPackage.SchemaVersion);
+    Assert.AreEqual<Integer>(1, Length(LPackage.Resources));
+    LResult := TRadIAExtensionStudioSandbox.TestManifest(
+      LManifest,
+      [],
+      LResourceDirectory
+    );
+    Assert.Contains(LResult, 'Sandbox result: activated');
+  finally
+    if TDirectory.Exists(LRoot) then
+      TDirectory.Delete(LRoot, True);
   end;
 end;
 

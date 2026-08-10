@@ -62,6 +62,10 @@ type
     procedure RejectsPublisherMismatch;
     [Test]
     procedure PersistsValidatedCatalogUrl;
+    [Test]
+    procedure AcceptsPackageSizeUpToTwentyMiB;
+    [Test]
+    procedure RejectsPackageSizeAboveTwentyMiB;
   end;
 
 implementation
@@ -123,6 +127,30 @@ begin
 end;
 
 { TRadIAExtensionCatalogTests }
+
+procedure TRadIAExtensionCatalogTests.AcceptsPackageSizeUpToTwentyMiB;
+var
+  LCatalog: TRadIAExtensionCatalog;
+  LCatalogJson: string;
+  LFingerprint: string;
+  LPackageBytes: TArray<Byte>;
+begin
+  LPackageBytes := CreateSignedPackage;
+  LFingerprint := TRadIARsaSignature.Fingerprint(
+    CPackageModulus,
+    'AQAB'
+  );
+  LCatalogJson := BuildCatalog(
+    LPackageBytes,
+    HashBytes(LPackageBytes),
+    LFingerprint
+  ).Replace(
+    '"size":' + Length(LPackageBytes).ToString,
+    '"size":' + (20 * 1024 * 1024).ToString
+  );
+  LCatalog := TRadIAExtensionCatalogClient.Parse(LCatalogJson);
+  Assert.AreEqual(20 * 1024 * 1024, LCatalog.Entries[0].PackageSize);
+end;
 
 function TRadIAExtensionCatalogTests.BuildCatalog(
   const APackageBytes: TArray<Byte>;
@@ -427,6 +455,35 @@ begin
     'Downloaded package publisher does not match the catalog.'
   );
   Assert.IsFalse(TFile.Exists(LOutputFileName));
+end;
+
+procedure TRadIAExtensionCatalogTests.RejectsPackageSizeAboveTwentyMiB;
+var
+  LCatalogJson: string;
+  LFingerprint: string;
+  LPackageBytes: TArray<Byte>;
+begin
+  LPackageBytes := CreateSignedPackage;
+  LFingerprint := TRadIARsaSignature.Fingerprint(
+    CPackageModulus,
+    'AQAB'
+  );
+  LCatalogJson := BuildCatalog(
+    LPackageBytes,
+    HashBytes(LPackageBytes),
+    LFingerprint
+  ).Replace(
+    '"size":' + Length(LPackageBytes).ToString,
+    '"size":' + (20 * 1024 * 1024 + 1).ToString
+  );
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      TRadIAExtensionCatalogClient.Parse(LCatalogJson);
+    end,
+    EArgumentException,
+    'Catalog package size is invalid.'
+  );
 end;
 
 procedure TRadIAExtensionCatalogTests.Setup;

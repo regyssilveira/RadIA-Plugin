@@ -1,6 +1,6 @@
 # Extensões declarativas
 
-O RadIA 2.0 pode carregar comandos, templates, skills, jornadas, políticas, aliases e workflows
+O RadIA pode carregar comandos, templates, skills, jornadas, políticas, aliases e workflows
 seguros de tools sem recompilar o plugin ou reiniciar o Delphi. Cada extensão é um manifesto
 `*.radia.json`
 armazenado em:
@@ -35,6 +35,19 @@ Use **Addon Studio...** no gerenciador para criar visualmente um comando, skill,
 journey ou workflow auditado. O preview valida continuamente a identidade, versão semântica,
 namespace, slash command, permissão mínima e JSON dos passos.
 
+Para comandos, skills e journeys, escolha entre **Inline content** e **Content file**; nunca
+preencha os dois. **Content file** referencia um arquivo UTF-8 do pacote, por exemplo
+`knowledge/team/architecture.md`. **Resources folder** seleciona a raiz local que contém uma ou
+mais destas pastas:
+
+- `references`: regras, contratos e documentos consultados pela capacidade;
+- `knowledge`: conhecimento compartilhado da equipe ou de um framework;
+- `templates`: scaffolds e arquivos estruturais usados pela capacidade;
+- `assets`: imagens e artefatos transportados; não podem ser usados diretamente como prompt.
+
+Os botões **Test**, **Install**, **Export...** e **Sign...** usam a mesma pasta selecionada. O teste
+instala o pacote em sandbox, e a instalação copia manifesto e recursos como uma única transação.
+
 O botão **Audit** apresenta os limites de execução, a permissão solicitada e a aplicação obrigatória
 do consentimento e da auditoria centrais. **Export...** cria um pacote `.radiaext` sem assinatura,
 calcula seu SHA-256 e relê o artefato pelo mesmo verificador usado durante a instalação. Se a
@@ -52,17 +65,18 @@ a criação, teste ou exportação sem assinatura.
 O instalador entrega o empacotador usado pelo fluxo visual ao lado da BPL, valida seu hash durante
 `Install` e `Repair` e o remove durante `Uninstall`.
 
-Antes de instalar, use **Test** para ativar o manifesto em um diretório temporário isolado. O teste
+Antes de instalar, use **Test** para ativar o pacote em um diretório temporário isolado. O teste
 executa o parser completo, as regras de permissões, colisões com comandos reservados e o reload
 transacional. O relatório mostra quantos comandos, aliases e workflows foram ativados. Nenhuma
-extensão instalada é alterada e o diretório temporário é removido ao final. O sandbox valida a
+extensão instalada é alterada e o diretório temporário é removido ao final. Recursos e
+`contentFile` também são verificados. O sandbox valida a
 ativação; ele não executa prompts nem ferramentas com efeitos colaterais.
 
-## Manifesto versão 5
+## Manifesto versão 6
 
 ```json
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "id": "TeamWorkflow",
   "version": "5.0.0",
   "enabled": true,
@@ -80,7 +94,7 @@ ativação; ele não executa prompts nem ferramentas com efeitos colaterais.
       "name": "Team Delphi style",
       "description": "Apply the team's Delphi conventions.",
       "command": "/team-style",
-      "instructions": "Review this code using the team conventions:\n\n```pascal\n{code}\n```"
+      "contentFile": "knowledge/team/delphi-style.md"
     }
   ],
   "journeys": [
@@ -122,14 +136,16 @@ ativação; ele não executa prompts nem ferramentas com efeitos colaterais.
 Os exemplos completos estão em `Examples/DeclarativeExtension/team-workflow.radia.json`,
 `Examples/DeclarativeExtension/team-tools.radia.json` e
 `Examples/DeclarativeExtension/team-journeys.radia.json`. O workflow completo está em
-`Examples/DeclarativeExtension/team-tool-workflow.radia.json`. Manifestos schema 1–4 continuam
+`Examples/DeclarativeExtension/team-tool-workflow.radia.json`. O pacote com conhecimento externo
+usa `Examples/DeclarativeExtension/team-knowledge.radia.json` e a raiz
+`Examples/DeclarativeExtension/team-knowledge-resources`. Manifestos schema 1–5 continuam
 compatíveis sem migração.
 
 ## Campos e validação
 
 | Campo | Regra |
 |---|---|
-| `schemaVersion` | `1` comandos, `2` templates/skills, `3` aliases, `4` jornadas/políticas e `5` workflows. |
+| `schemaVersion` | `1` comandos, `2` templates/skills, `3` aliases, `4` jornadas/políticas, `5` workflows e `6` conteúdo em arquivos. |
 | `id` | Identificador PascalCase alfanumérico e exclusivo. |
 | `version` | Versão semântica `major.minor.patch`. |
 | `enabled` | Opcional; `false` mantém o manifesto instalado, mas inativo. |
@@ -141,9 +157,10 @@ compatíveis sem migração.
 | `policies` | Políticas explícitas de prompt; usa `instructions` e requer schema 4. |
 | `tools` | Aliases de tools internas; requer schema 3, `tool.alias`, `name`, `description` e `targetTool`. |
 | `workflows` | Sequência de 1–16 tools internas com argumentos JSON fixos; requer schema 5 e `tool.workflow`. |
+| `contentFile` | Alternativa aos campos inline; requer schema 6 e caminho em `references/`, `templates/` ou `knowledge/`. |
 | limite total | Entre 1 e 100 itens somando todas as capacidades. |
 | `command` | `/` seguido de letras, números ou hífens; máximo de 32 caracteres após a barra. |
-| `prompt` | Texto não vazio com até 32.768 caracteres. |
+| conteúdo | Campo inline ou `contentFile` UTF-8, nunca ambos; resultado limitado a 32.768 bytes/caracteres. |
 
 Comandos internos, templates do usuário e comandos de outra extensão não podem ser substituídos.
 Arquivos inválidos não carregam parcialmente: o diagnóstico indica `loaded`, `disabled` ou
@@ -218,10 +235,23 @@ powershell.exe -ExecutionPolicy Bypass `
   -ManifestPath Examples\DeclarativeExtension\team-commands.radia.json
 ```
 
-O empacotador aceita manifestos dos schemas 1 a 5, inclusive aliases, jornadas, políticas e
+O empacotador aceita manifestos dos schemas 1 a 6, inclusive aliases, jornadas, políticas e
 workflows auditados.
 
-Esse comando gera um pacote versão 1 sem assinatura. Para produzir um pacote versão 2 assinado,
+Para incluir recursos, informe a raiz que contém as pastas permitidas:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\New-RadIA.DeclarativeExtensionPackage.ps1 `
+  -ManifestPath .\TeamKnowledge.radia.json `
+  -ResourcesPath .\extension-content
+```
+
+O mesmo parâmetro pode ser combinado com a assinatura. No Addon Studio, use **Resources folder**;
+não é necessário executar o script manualmente.
+
+Sem recursos, esse comando gera um pacote versão 1 sem assinatura. Para produzir um pacote versão
+2 assinado,
 use um certificado RSA de pelo menos 2.048 bits, com chave privada disponível em
 `Cert:\CurrentUser\My`:
 
@@ -238,16 +268,26 @@ O script não exporta nem grava a chave privada: a assinatura RSA-SHA256 é prod
 provedor criptográfico do Windows. O terminal exibe o fingerprint SHA-256 da chave pública; o
 publicador deve divulgá-lo por um canal independente para que o usuário possa compará-lo.
 
-O resultado usa a extensão `.radiaext` e contém exatamente:
+O resultado usa a extensão `.radiaext` e contém uma lista fechada formada por:
 
 - `package.json`, com schema, ID, versão e lista fechada de arquivos;
-- `<ExtensionId>.radia.json`, com tamanho e SHA-256 registrados nos metadados.
+- `<ExtensionId>.radia.json`, com tamanho e SHA-256 registrados nos metadados;
+- opcionalmente até 128 recursos sob `references/`, `templates/`, `knowledge/` ou `assets/`.
+
+Pacotes sem recursos usam envelope v1 quando não assinados e v2 quando assinados. Pacotes com
+recursos usam envelope v3, assinado ou não; quando há assinatura, ela cobre também caminho,
+tamanho e SHA-256 de cada arquivo. Cada entrada pode ter até 1 MiB, o total descompactado é limitado
+a 16 MiB, o arquivo ZIP é limitado a 20 MiB e os paths declarados têm no máximo 240 caracteres.
 
 O gerenciador visual aceita o pacote no mesmo botão **Install / Update...**. Antes de ativar, ele
-recusa arquivos extras, nomes duplicados, paths com diretórios ou traversal, entradas acima dos
-limites, divergência de ID/versão, tamanho incorreto e SHA-256 inválido. A descompressão também
+recusa arquivos extras, nomes duplicados, paths fora das quatro raízes permitidas ou com traversal,
+reparse points, entradas acima dos limites, divergência de ID/versão, tamanho incorreto e SHA-256
+inválido. A descompressão também
 verifica o tamanho declarado no cabeçalho antes de alocar o conteúdo, reduzindo risco de ZIP bomb.
-Depois dessa verificação, o manifesto ainda passa por toda a validação e pelo rollback transacional.
+Depois dessa verificação, o manifesto e seus recursos passam pela ativação transacional. Atualizar
+substitui integralmente o conjunto anterior, removendo recursos obsoletos. Se o novo manifesto não
+conseguir carregar seu `contentFile` ou qualquer validação falhar, o RadIA restaura o manifesto e
+os recursos anteriores. Remover a extensão também remove sua pasta em `.resources/<ExtensionId>`.
 
 ### Integridade e identidade
 
@@ -269,6 +309,10 @@ Instalações posteriores do mesmo ID e da mesma chave são reconhecidas automat
 chave para um ID já conhecido produz um alerta destacado e exige nova decisão. Use
 **Tools > Rad IA Extensions... > Trusted publishers...** para consultar fingerprints e revogar
 confiança. A revogação impede novas instalações; ela não remove extensões que já foram instaladas.
+
+No envelope v3, a mesma identidade RSA pode assinar pacotes com recursos; todos os arquivos entram
+no payload assinado. Um pacote v3 sem publicador continua oferecendo integridade, mas exige a mesma
+confirmação explícita aplicada ao envelope v1.
 
 O arquivo de confiança tem schema versionado, limite de tamanho, validação de IDs e fingerprints,
 rejeição de duplicidades e gravação atômica. Reparse points são recusados para evitar redirecionar

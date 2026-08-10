@@ -44,6 +44,7 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Skills e Templates Declarativos** | Extensibilidade | Manifesto schema 2 com hot reload, autocomplete e permissão mínima `chat.prompt`. | ✅ Concluído |
 | **Aliases Declarativos de Tools** | Extensibilidade | Schema 3 registra aliases seguros no chat e MCP, herdando risco, schemas e consentimento da tool interna. | ✅ Concluído |
 | **Workflows Declarativos** | Extensibilidade | Schema 5 encadeia até 16 tools internas com risco herdado, limites e policy central por etapa, sem shell arbitrário. | ✅ Concluído |
+| **Recursos Declarativos Empacotados** | Extensibilidade | Schema 6 e envelope `.radiaext` v3 transportam referências, conhecimento, templates e assets com hash, rollback e remoção transacional. | ✅ Concluído |
 | **Renderização de Código do Editor no Chat** | Chat UX | Prompts enviados pelo menu do editor preservam blocos fenced Markdown com realce Pascal também em mensagens do usuário. | ✅ Concluído |
 | **Backup de Templates** | Chat UX | Exportação e importação transacional em JSON de templates com validação estrutural de esquema e opção de mesclagem na UI. | ✅ Concluído |
 | **Google Gemini** | Provedor | Suporte nativo aos modelos Gemini 1.5 Flash e Pro via chaves próprias (BYOK). | ✅ Concluído |
@@ -95,5 +96,5 @@ Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra du
 | **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
 | **Extensões Declarativas Assinadas** | Segurança | Pacotes RSA-SHA256 com fingerprint, confiança no primeiro uso e revogação visual. | ✅ Concluído |
-| **Addon Studio** | Extensibilidade | Criação visual com preview validado para comandos, skills, aliases, journeys e workflows auditados. | ✅ Concluído |
+| **Addon Studio** | Extensibilidade | Criação, sandbox, instalação, exportação e assinatura visual de comandos, skills, conhecimento, templates, aliases, journeys e workflows. | ✅ Concluído |
 | **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |

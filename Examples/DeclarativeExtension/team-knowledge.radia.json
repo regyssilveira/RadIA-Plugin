@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 6,
+  "id": "TeamKnowledge",
+  "version": "1.0.0",
+  "enabled": true,
+  "permissions": [
+    "chat.prompt"
+  ],
+  "skills": [
+    {
+      "name": "Team Delphi review",
+      "description": "Review code using the shared Delphi rules in this package.",
+      "command": "/team-delphi-review",
+      "contentFile": "knowledge/team/delphi-style.md"
+    }
+  ]
+}

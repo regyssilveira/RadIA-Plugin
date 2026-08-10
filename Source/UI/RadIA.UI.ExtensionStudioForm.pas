@@ -8,7 +8,8 @@ uses
 function CreateRadIAExtensionManifest(
   AOwner: TForm;
   const AReservedCommands: TArray<string>;
-  out AManifest: string
+  out AManifest: string;
+  out AResourcesPath: string
 ): Boolean;
 
 implementation
@@ -28,6 +29,7 @@ type
   TRadIAExtensionStudioForm = class(TForm)
   private
     FContentEdit: TMemo;
+    FContentFileEdit: TEdit;
     FAuditButton: TButton;
     FDescriptionEdit: TEdit;
     FExtensionIdEdit: TEdit;
@@ -35,6 +37,9 @@ type
     FKindCombo: TComboBox;
     FNameEdit: TEdit;
     FPreviewEdit: TMemo;
+    FResourcesButton: TButton;
+    FResourcesDialog: TFileOpenDialog;
+    FResourcesEdit: TEdit;
     FExportButton: TButton;
     FReservedCommands: TArray<string>;
     FSaveDialog: TSaveDialog;
@@ -56,6 +61,7 @@ type
     procedure ExportClick(Sender: TObject);
     procedure KindChanged(Sender: TObject);
     procedure RefreshPreview;
+    procedure ResourcesClick(Sender: TObject);
     procedure SignClick(Sender: TObject);
     procedure TestClick(Sender: TObject);
   protected
@@ -66,22 +72,28 @@ type
       const AReservedCommands: TArray<string>
     ); reintroduce;
     function Manifest: string;
+    function ResourcesPath: string;
   end;
 
 function CreateRadIAExtensionManifest(
   AOwner: TForm;
   const AReservedCommands: TArray<string>;
-  out AManifest: string
+  out AManifest: string;
+  out AResourcesPath: string
 ): Boolean;
 var
   LForm: TRadIAExtensionStudioForm;
 begin
   AManifest := '';
+  AResourcesPath := '';
   LForm := TRadIAExtensionStudioForm.Create(AOwner, AReservedCommands);
   try
     Result := LForm.ShowModal = mrOk;
     if Result then
+    begin
       AManifest := LForm.Manifest;
+      AResourcesPath := LForm.ResourcesPath;
+    end;
   finally
     LForm.Free;
   end;
@@ -101,9 +113,9 @@ begin
   Position := poOwnerFormCenter;
   BorderStyle := bsSizeable;
   ClientWidth := 980;
-  ClientHeight := 620;
+  ClientHeight := 700;
   Constraints.MinWidth := 800;
-  Constraints.MinHeight := 560;
+  Constraints.MinHeight := 640;
 
   LLeftPanel := TPanel.Create(Self);
   LLeftPanel.Parent := Self;
@@ -138,14 +150,32 @@ begin
   FDescriptionEdit.Text := 'Describe what this capability does.';
   FTriggerLabel := CreateEdit('Slash command', 178, FTriggerEdit);
   FTriggerEdit.Text := '/my-command';
+  CreateEdit('Content file', 212, FContentFileEdit);
+  FContentFileEdit.Hint :=
+    'Optional UTF-8 file under references, templates, or knowledge';
+  FContentFileEdit.ShowHint := True;
+  CreateEdit('Resources folder', 246, FResourcesEdit);
+  FResourcesEdit.Width := 204;
+  FResourcesEdit.Hint :=
+    'Root containing references, templates, knowledge, or assets subfolders';
+  FResourcesEdit.ShowHint := True;
+  FResourcesButton := TButton.Create(Self);
+  FResourcesButton.Parent := LLeftPanel;
+  FResourcesButton.SetBounds(350, 246, 64, 25);
+  FResourcesButton.Anchors := [akTop, akRight];
+  FResourcesButton.Caption := 'Browse...';
+  FResourcesButton.Hint :=
+    'Select the root folder whose allowed resources will be packaged';
+  FResourcesButton.ShowHint := True;
+  FResourcesButton.OnClick := ResourcesClick;
 
   LLabel := TLabel.Create(Self);
   LLabel.Parent := LLeftPanel;
-  LLabel.SetBounds(8, 216, 120, 20);
-  LLabel.Caption := 'Content';
+  LLabel.SetBounds(8, 284, 360, 20);
+  LLabel.Caption := 'Inline content (empty when using a content file)';
   FContentEdit := TMemo.Create(Self);
   FContentEdit.Parent := LLeftPanel;
-  FContentEdit.SetBounds(8, 238, 406, 280);
+  FContentEdit.SetBounds(8, 306, 406, 280);
   FContentEdit.Anchors := [akLeft, akTop, akRight, akBottom];
   FContentEdit.ScrollBars := ssBoth;
   FContentEdit.WordWrap := False;
@@ -154,7 +184,7 @@ begin
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := LLeftPanel;
-  FStatusLabel.SetBounds(8, 526, 406, 34);
+  FStatusLabel.SetBounds(8, 594, 406, 42);
   FStatusLabel.Anchors := [akLeft, akRight, akBottom];
   FStatusLabel.AutoSize := False;
   FStatusLabel.WordWrap := True;
@@ -167,11 +197,15 @@ begin
   LLabel.Caption := 'Validated manifest preview';
   FPreviewEdit := TMemo.Create(Self);
   FPreviewEdit.Parent := Self;
-  FPreviewEdit.SetBounds(438, 34, 534, 568);
+  FPreviewEdit.SetBounds(438, 34, 534, 648);
   FPreviewEdit.Anchors := [akLeft, akTop, akRight, akBottom];
   FPreviewEdit.ReadOnly := True;
   FPreviewEdit.ScrollBars := ssBoth;
   FPreviewEdit.WordWrap := False;
+
+  FResourcesDialog := TFileOpenDialog.Create(Self);
+  FResourcesDialog.Options := [fdoPickFolders, fdoPathMustExist];
+  FResourcesDialog.Title := 'Select extension resources root';
 
   RefreshPreview;
 end;
@@ -198,7 +232,7 @@ begin
     FDescriptionEdit.Text,
     FTriggerEdit.Text,
     FContentEdit.Text
-  );
+  ).WithContentFile(FContentFileEdit.Text);
 end;
 
 procedure TRadIAExtensionStudioForm.CreateWnd;
@@ -239,42 +273,42 @@ var
 begin
   FInstallButton := TButton.Create(Self);
   FInstallButton.Parent := AParent;
-  FInstallButton.SetBounds(272, 574, 60, 28);
+  FInstallButton.SetBounds(272, 654, 60, 28);
   FInstallButton.Anchors := [akRight, akBottom];
   FInstallButton.Caption := 'Install';
   FInstallButton.ModalResult := mrOk;
 
   FAuditButton := TButton.Create(Self);
   FAuditButton.Parent := AParent;
-  FAuditButton.SetBounds(8, 574, 58, 28);
+  FAuditButton.SetBounds(8, 654, 58, 28);
   FAuditButton.Anchors := [akLeft, akBottom];
   FAuditButton.Caption := 'Audit';
   FAuditButton.OnClick := AuditClick;
 
   FTestButton := TButton.Create(Self);
   FTestButton.Parent := AParent;
-  FTestButton.SetBounds(74, 574, 58, 28);
+  FTestButton.SetBounds(74, 654, 58, 28);
   FTestButton.Anchors := [akLeft, akBottom];
   FTestButton.Caption := 'Test';
   FTestButton.OnClick := TestClick;
 
   FExportButton := TButton.Create(Self);
   FExportButton.Parent := AParent;
-  FExportButton.SetBounds(140, 574, 58, 28);
+  FExportButton.SetBounds(140, 654, 58, 28);
   FExportButton.Anchors := [akLeft, akBottom];
   FExportButton.Caption := 'Export...';
   FExportButton.OnClick := ExportClick;
 
   FSignButton := TButton.Create(Self);
   FSignButton.Parent := AParent;
-  FSignButton.SetBounds(206, 574, 58, 28);
+  FSignButton.SetBounds(206, 654, 58, 28);
   FSignButton.Anchors := [akLeft, akBottom];
   FSignButton.Caption := 'Sign...';
   FSignButton.OnClick := SignClick;
 
   LCancelButton := TButton.Create(Self);
   LCancelButton.Parent := AParent;
-  LCancelButton.SetBounds(340, 574, 74, 28);
+  LCancelButton.SetBounds(340, 654, 74, 28);
   LCancelButton.Anchors := [akRight, akBottom];
   LCancelButton.Caption := 'Cancel';
   LCancelButton.ModalResult := mrCancel;
@@ -302,7 +336,8 @@ begin
   try
     LHash := TRadIAExtensionStudioPackager.ExportUnsigned(
       Manifest,
-      FSaveDialog.FileName
+      FSaveDialog.FileName,
+      FResourcesEdit.Text
     );
     FStatusLabel.Caption := 'Package exported and verified. SHA-256: ' + LHash;
   except
@@ -311,9 +346,18 @@ begin
   end;
 end;
 
+procedure TRadIAExtensionStudioForm.ResourcesClick(Sender: TObject);
+begin
+  if Trim(FResourcesEdit.Text) <> '' then
+    FResourcesDialog.DefaultFolder := FResourcesEdit.Text;
+  if FResourcesDialog.Execute then
+    FResourcesEdit.Text := FResourcesDialog.FileName;
+end;
+
 procedure TRadIAExtensionStudioForm.KindChanged(Sender: TObject);
 begin
   FContentEdit.Enabled := True;
+  FContentFileEdit.Enabled := True;
   case TRadIAExtensionStudioKind(FKindCombo.ItemIndex) of
     eskAlias:
       begin
@@ -321,6 +365,8 @@ begin
         FTriggerEdit.Text := 'GetIDEState';
         FContentEdit.Clear;
         FContentEdit.Enabled := False;
+        FContentFileEdit.Clear;
+        FContentFileEdit.Enabled := False;
       end;
     eskWorkflow:
       begin
@@ -328,6 +374,8 @@ begin
         FTriggerEdit.Clear;
         FContentEdit.Text :=
           '[{"tool":"GetIDEState","arguments":{}}]';
+        FContentFileEdit.Clear;
+        FContentFileEdit.Enabled := False;
       end;
   else
     FTriggerLabel.Caption := 'Slash command';
@@ -340,6 +388,11 @@ end;
 function TRadIAExtensionStudioForm.Manifest: string;
 begin
   Result := TRadIAExtensionStudioBuilder.BuildManifest(BuildDraft);
+end;
+
+function TRadIAExtensionStudioForm.ResourcesPath: string;
+begin
+  Result := Trim(FResourcesEdit.Text);
 end;
 
 procedure TRadIAExtensionStudioForm.RefreshPreview;
@@ -372,7 +425,8 @@ begin
     ShowRadIAExtensionSigning(
       Self,
       Manifest,
-      FExtensionIdEdit.Text + '-' + FVersionEdit.Text + '-signed.radiaext'
+      FExtensionIdEdit.Text + '-' + FVersionEdit.Text + '-signed.radiaext',
+      FResourcesEdit.Text
     );
   except
     on E: Exception do
@@ -385,7 +439,8 @@ begin
   try
     FPreviewEdit.Text := TRadIAExtensionStudioSandbox.TestManifest(
       Manifest,
-      FReservedCommands
+      FReservedCommands,
+      FResourcesEdit.Text
     );
     FStatusLabel.Caption :=
       'Sandbox completed. Installed extensions were not changed.';

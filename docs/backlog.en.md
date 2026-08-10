@@ -11,7 +11,7 @@ This document registers the development status, future planning, and technical i
 
 The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
 numbers are retained only for historical deliveries. A pending item does not receive a new version
-until selected for a goal. The active competitive goal starts from RadIA 2.3.0 and receives a
+until selected for a goal. The active experience-expansion goal starts from RadIA 2.3.1 and receives a
 version based on the public behavior actually delivered.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
@@ -24,7 +24,8 @@ version based on the public behavior actually delivered.
 | **Diagnostics, CLI/MCP UX, and Centralized Documentation** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.2.1 |
 | **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
 | **Explicit Routes, Restored Pro Login, and Universal Copy** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
-| **Goal — Eliminate the six competitive gaps** | 🚧 Active plan | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Set after the first public delivery |
+| **Goal — Eliminate the six competitive gaps** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
+| **Goal — Expand the complete experience** | 🚧 Active plan | 🔴 High | ⭐⭐⭐⭐⭐ Critical | Set after the first public delivery |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -131,6 +132,9 @@ version based on the public behavior actually delivered.
     *   M4 delivered in this stage: schema 5 provides audited workflows of up to 16 internal tools
         without arbitrary shells, with inherited maximum risk, bounds, fail-fast, and per-step
         policy enforcement.
+    *   M4 expansion implemented on the current branch: schema 6 and `.radiaext` v3 carry
+        references, knowledge, templates, and assets; Addon Studio sandboxes, installs, exports,
+        and signs the set with clean replacement, removal, and manifest/resource rollback.
     *   M4 validated in real IDEs: hot-load, shared registration, and audited two-step execution
         passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
     *   M5 delivered in this stage: search and rebuild expose local latency, status reports the
@@ -215,10 +219,12 @@ version based on the public behavior actually delivered.
 
 ## 🚧 2. Active goal
 
-The [goal to eliminate the six competitive gaps](competitive_leadership_plan.en.md) is the current
-execution line. It covers CLI continuity, unified context, hierarchical settings, FIM, block-level
-gutter review, and an external MCP client, with mandatory acceptance on Delphi 12 Win32 and Delphi
-13 Win32/IDE64.
+The [complete-experience expansion goal](experience_expansion_goal.en.md) is the current execution
+line. It covers completion alternatives, knowledge and template packages, visual before/after
+evidence, cross-surface consent, advanced terminal compatibility, refinement of the current
+WebView, and a complete documentation audit, with mandatory acceptance on Delphi 12 Win32 and
+Delphi 13 Win32/IDE64. The [previous six-gap goal](competitive_leadership_plan.en.md) completed in
+2.3.1 and remains only as an execution and evidence record.
 
 Other pending work remains uncommitted until a new triage. See the
 [prioritization matrix](feature_prioritization_matrix.en.md) and [roadmap](roadmap.en.md).

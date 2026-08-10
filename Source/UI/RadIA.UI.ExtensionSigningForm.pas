@@ -8,7 +8,8 @@ uses
 procedure ShowRadIAExtensionSigning(
   AOwner: TForm;
   const AManifest: string;
-  const ASuggestedFileName: string
+  const ASuggestedFileName: string;
+  const AResourcesPath: string = ''
 );
 
 implementation
@@ -37,6 +38,7 @@ type
     FPackagerPath: string;
     FPublisherIdEdit: TEdit;
     FPublisherNameEdit: TEdit;
+    FResourcesPath: string;
     FRefreshButton: TButton;
     FSession: IRadIACliProcessSession;
     FSignButton: TButton;
@@ -59,7 +61,8 @@ type
     constructor Create(
       AOwner: TComponent;
       const AManifest: string;
-      const ASuggestedFileName: string
+      const ASuggestedFileName: string;
+      const AResourcesPath: string
     ); reintroduce;
     destructor Destroy; override;
   end;
@@ -67,7 +70,8 @@ type
 procedure ShowRadIAExtensionSigning(
   AOwner: TForm;
   const AManifest: string;
-  const ASuggestedFileName: string
+  const ASuggestedFileName: string;
+  const AResourcesPath: string
 );
 var
   LForm: TRadIAExtensionSigningForm;
@@ -75,7 +79,8 @@ begin
   LForm := TRadIAExtensionSigningForm.Create(
     AOwner,
     AManifest,
-    ASuggestedFileName
+    ASuggestedFileName,
+    AResourcesPath
   );
   try
     LForm.ShowModal;
@@ -87,11 +92,13 @@ end;
 constructor TRadIAExtensionSigningForm.Create(
   AOwner: TComponent;
   const AManifest: string;
-  const ASuggestedFileName: string
+  const ASuggestedFileName: string;
+  const AResourcesPath: string
 );
 begin
   inherited CreateNew(AOwner);
   FManifest := AManifest;
+  FResourcesPath := Trim(AResourcesPath);
   FPackagerPath := TRadIAExtensionSigningService.FindPackager;
   FLifecycleGuard := TLifecycleGuard.Create;
   Caption := 'Rad IA - Sign extension package';
@@ -324,7 +331,8 @@ begin
     FPackagerPath,
     FPublisherIdEdit.Text,
     FPublisherNameEdit.Text,
-    FCertificates[FCertificateCombo.ItemIndex].Thumbprint
+    FCertificates[FCertificateCombo.ItemIndex].Thumbprint,
+    FResourcesPath
   );
   LGuard := FLifecycleGuard as IRadIALifecycleGuard;
   SetBusy(True, 'Signing and verifying extension package...');

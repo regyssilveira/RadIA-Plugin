@@ -520,10 +520,14 @@ Consulte o [guia de integração MCP](mcp_integration_guide.md).
 Packages confiáveis podem registrar novas ferramentas pela API versionada
 `IRadIAToolExtension`. Extensões não contornam política, consentimento, auditoria ou cancelamento.
 
-Comandos, aliases e workflows declarativos podem ser instalados em
+Comandos, skills, jornadas, conhecimento, referências, templates, aliases e workflows declarativos
+podem ser instalados em
 **Tools > Rad IA Extensions...** como manifesto `*.radia.json` ou pacote íntegro `.radiaext`.
 Workflows executam somente tools internas pela policy central; não interpretam shell ou binários.
-O gerenciador permite atualizar, habilitar, desabilitar, diagnosticar e remover sem reiniciar.
+O **Addon Studio...** cria, testa em sandbox, instala, exporta e assina o pacote. Para conteúdo
+compartilhado, selecione **Resources folder** e informe um **Content file** relativo em
+`references/`, `templates/` ou `knowledge/`. O gerenciador permite atualizar, habilitar,
+desabilitar, diagnosticar e remover manifesto e recursos sem reiniciar.
 
 Consulte o [guia de extensões](tool_extension_guide.md) e
 [extensões declarativas](declarative_extensions.md).

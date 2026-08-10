@@ -64,7 +64,7 @@ such as ChatGPT login through Codex, is the explicit exception.
 
 | Subject | Guide |
 |---|---|
-| Declarative extensions | [Commands and workflows](declarative_extensions.en.md) |
+| Share commands, skills, knowledge, templates, aliases, and workflows | [Declarative extensions](declarative_extensions.en.md) |
 | Register tools from a package | [Tool extension API](tool_extension_guide.en.md) |
 | Add a provider | [Provider guide](new_provider_guide.en.md) |
 | Architecture | [Architecture guide](architecture_guide.en.md) |
@@ -79,6 +79,7 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current execution plan:
 
+- [Active complete-experience expansion goal](experience_expansion_goal.en.md).
 - [Completed six-gap experience goal](competitive_leadership_plan.en.md).
 
 Research records:

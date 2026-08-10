@@ -2,6 +2,10 @@ unit RadIA.Core.ExtensionStudio;
 
 interface
 
+uses
+  System.JSON,
+  System.Zip;
+
 type
   TRadIAExtensionStudioKind = (
     eskCommand,
@@ -20,6 +24,7 @@ type
     FDescription: string;
     FTriggerOrTarget: string;
     FContent: string;
+    FContentFile: string;
   public
     constructor Create(
       const AKind: TRadIAExtensionStudioKind;
@@ -30,6 +35,9 @@ type
       const ATriggerOrTarget: string;
       const AContent: string
     );
+    function WithContentFile(
+      const AContentFile: string
+    ): TRadIAExtensionStudioDraft;
     property Kind: TRadIAExtensionStudioKind read FKind;
     property ExtensionId: string read FExtensionId;
     property Version: string read FVersion;
@@ -37,6 +45,7 @@ type
     property Description: string read FDescription;
     property TriggerOrTarget: string read FTriggerOrTarget;
     property Content: string read FContent;
+    property ContentFile: string read FContentFile;
   end;
 
   TRadIAExtensionStudioBuilder = class
@@ -68,13 +77,40 @@ type
 
   TRadIAExtensionStudioPackager = class
   private
+    type
+      TRadIAResource = record
+        SourceFileName: string;
+        PackagePath: string;
+        Size: Int64;
+        Hash: string;
+      end;
+    class function CollectResources(
+      const AResourcesPath: string;
+      const AManifestSize: Int64
+    ): TArray<TRadIAResource>; static;
+    class function CreateMetadata(
+      const AId: string;
+      const AVersion: string;
+      const AManifestName: string;
+      const AManifestSize: Int64;
+      const AManifestHash: string;
+      const AResources: TArray<TRadIAResource>
+    ): TJSONObject; static;
+    class function IsAllowedResourcePath(
+      const APath: string
+    ): Boolean; static;
+    class procedure AddResourcesToArchive(
+      const AArchive: TZipFile;
+      const AResources: TArray<TRadIAResource>
+    ); static;
     class procedure ValidateOutputFileName(
       const AOutputFileName: string
     ); static;
   public
     class function ExportUnsigned(
       const AManifest: string;
-      const AOutputFileName: string
+      const AOutputFileName: string;
+      const AResourcesPath: string = ''
     ): string; static;
   end;
 
@@ -82,21 +118,40 @@ type
   public
     class function TestManifest(
       const AManifest: string;
-      const AReservedCommands: TArray<string>
+      const AReservedCommands: TArray<string>;
+      const AResourcesPath: string = ''
     ): string; static;
   end;
 
 implementation
 
 uses
+  System.Classes,
+  System.Generics.Collections,
   System.Hash,
   System.IOUtils,
-  System.JSON,
   System.RegularExpressions,
   System.SysUtils,
-  System.Zip,
+  Winapi.Windows,
   RadIA.Core.DeclarativeExtensionPackages,
   RadIA.Core.DeclarativeExtensions;
+
+function HashExtensionStudioBytes(const ABytes: TArray<Byte>): string;
+var
+  LByte: Byte;
+  LHash: TBytes;
+  LStream: TBytesStream;
+begin
+  Result := '';
+  LStream := TBytesStream.Create(ABytes);
+  try
+    LHash := THashSHA2.GetHashBytes(LStream);
+  finally
+    LStream.Free;
+  end;
+  for LByte in LHash do
+    Result := Result + Format('%.2x', [LByte]);
+end;
 
 { TRadIAExtensionStudioDraft }
 
@@ -117,6 +172,15 @@ begin
   FDescription := Trim(ADescription);
   FTriggerOrTarget := Trim(ATriggerOrTarget);
   FContent := Trim(AContent);
+  FContentFile := '';
+end;
+
+function TRadIAExtensionStudioDraft.WithContentFile(
+  const AContentFile: string
+): TRadIAExtensionStudioDraft;
+begin
+  Result := Self;
+  Result.FContentFile := Trim(AContentFile);
 end;
 
 { TRadIAExtensionStudioBuilder }
@@ -171,13 +235,19 @@ begin
       begin
         TJSONObject(ARoot).AddPair('commands', LArray);
         LCapability.AddPair('command', ADraft.TriggerOrTarget);
-        LCapability.AddPair('prompt', ADraft.Content);
+        if ADraft.ContentFile <> '' then
+          LCapability.AddPair('contentFile', ADraft.ContentFile)
+        else
+          LCapability.AddPair('prompt', ADraft.Content);
       end;
     eskSkill:
       begin
         TJSONObject(ARoot).AddPair('skills', LArray);
         LCapability.AddPair('command', ADraft.TriggerOrTarget);
-        LCapability.AddPair('instructions', ADraft.Content);
+        if ADraft.ContentFile <> '' then
+          LCapability.AddPair('contentFile', ADraft.ContentFile)
+        else
+          LCapability.AddPair('instructions', ADraft.Content);
       end;
     eskAlias:
       begin
@@ -188,7 +258,10 @@ begin
       begin
         TJSONObject(ARoot).AddPair('journeys', LArray);
         LCapability.AddPair('command', ADraft.TriggerOrTarget);
-        LCapability.AddPair('objective', ADraft.Content);
+        if ADraft.ContentFile <> '' then
+          LCapability.AddPair('contentFile', ADraft.ContentFile)
+        else
+          LCapability.AddPair('objective', ADraft.Content);
       end;
     eskWorkflow:
       begin
@@ -213,7 +286,10 @@ begin
   Validate(ADraft);
   LRoot := TJSONObject.Create;
   try
-    LRoot.AddPair('schemaVersion', TJSONNumber.Create(5));
+    if ADraft.ContentFile <> '' then
+      LRoot.AddPair('schemaVersion', TJSONNumber.Create(6))
+    else
+      LRoot.AddPair('schemaVersion', TJSONNumber.Create(5));
     LRoot.AddPair('id', ADraft.ExtensionId);
     LRoot.AddPair('version', ADraft.Version);
     LRoot.AddPair('enabled', TJSONBool.Create(True));
@@ -286,26 +362,184 @@ begin
     raise EArgumentException.Create(
       'Slash command must use lowercase letters, digits, and hyphens.'
     );
-  if ADraft.Content = '' then
-    raise EArgumentException.Create('Capability content cannot be empty.');
+  if (ADraft.Content = '') and (ADraft.ContentFile = '') then
+    raise EArgumentException.Create(
+      'Capability content or content file cannot be empty.'
+    );
+  if (ADraft.Content <> '') and (ADraft.ContentFile <> '') then
+    raise EArgumentException.Create(
+      'Capability must use inline content or one content file.'
+    );
+  if (ADraft.ContentFile <> '') and
+    (
+      ADraft.ContentFile.Contains('\') or
+      ADraft.ContentFile.Contains(':') or
+      ADraft.ContentFile.StartsWith('/') or
+      ADraft.ContentFile.EndsWith('/') or
+      TRegEx.IsMatch(ADraft.ContentFile, '(^|/)\.\.?(/|$)') or
+      not (
+        ADraft.ContentFile.StartsWith('references/', True) or
+        ADraft.ContentFile.StartsWith('templates/', True) or
+        ADraft.ContentFile.StartsWith('knowledge/', True)
+      )
+    ) then
+    raise EArgumentException.Create(
+      'Content file must be under references, templates, or knowledge.'
+    );
 end;
 
 { TRadIAExtensionStudioPackager }
 
+class procedure TRadIAExtensionStudioPackager.AddResourcesToArchive(
+  const AArchive: TZipFile;
+  const AResources: TArray<TRadIAResource>
+);
+var
+  LResource: TRadIAResource;
+begin
+  for LResource in AResources do
+    AArchive.Add(LResource.SourceFileName, LResource.PackagePath);
+end;
+
+class function TRadIAExtensionStudioPackager.CollectResources(
+  const AResourcesPath: string;
+  const AManifestSize: Int64
+): TArray<TRadIAResource>;
+var
+  LBytes: TArray<Byte>;
+  LFileName: string;
+  LPackagePath: string;
+  LResource: TRadIAResource;
+  LResources: TList<TRadIAResource>;
+  LRoot: string;
+  LTotalSize: Int64;
+begin
+  Result := [];
+  if Trim(AResourcesPath) = '' then
+    Exit;
+  LRoot := IncludeTrailingPathDelimiter(TPath.GetFullPath(AResourcesPath));
+  if not TDirectory.Exists(LRoot) then
+    raise EDirectoryNotFoundException.Create(
+      'Resources directory was not found.'
+    );
+  LResources := TList<TRadIAResource>.Create;
+  try
+    LTotalSize := AManifestSize;
+    for LFileName in TDirectory.GetFiles(
+      LRoot,
+      '*',
+      TSearchOption.soAllDirectories
+    ) do
+    begin
+      if (GetFileAttributes(PChar(LFileName)) and
+        FILE_ATTRIBUTE_REPARSE_POINT) <> 0 then
+        raise EArgumentException.Create(
+          'Resource reparse points are not allowed.'
+        );
+      LPackagePath := LFileName.Substring(
+        Length(LRoot)
+      ).Replace(PathDelim, '/');
+      if not IsAllowedResourcePath(LPackagePath) then
+        raise EArgumentException.Create(
+          'Resources must be under references, templates, knowledge, or assets.'
+        );
+      LBytes := TFile.ReadAllBytes(LFileName);
+      if Length(LBytes) > 1024 * 1024 then
+        raise EArgumentException.Create(
+          'Each resource must not exceed 1 MiB.'
+        );
+      LResource.SourceFileName := LFileName;
+      LResource.PackagePath := LPackagePath;
+      LResource.Size := Length(LBytes);
+      LResource.Hash := HashExtensionStudioBytes(LBytes);
+      LResources.Add(LResource);
+      Inc(LTotalSize, Length(LBytes));
+    end;
+    if LResources.Count > 128 then
+      raise EArgumentException.Create(
+        'A package supports at most 128 resources.'
+      );
+    if LTotalSize > 16 * 1024 * 1024 then
+      raise EArgumentException.Create(
+        'Package content exceeds the 16 MiB total size limit.'
+      );
+    Result := LResources.ToArray;
+  finally
+    LResources.Free;
+  end;
+end;
+
+class function TRadIAExtensionStudioPackager.IsAllowedResourcePath(
+  const APath: string
+): Boolean;
+begin
+  Result :=
+    (Length(APath) <= 240) and
+    not APath.Contains('\') and
+    not APath.Contains(':') and
+    not APath.StartsWith('/') and
+    not APath.EndsWith('/') and
+    not TRegEx.IsMatch(APath, '(^|/)\.\.?(/|$)') and
+    (
+      APath.StartsWith('references/', True) or
+      APath.StartsWith('templates/', True) or
+      APath.StartsWith('knowledge/', True) or
+      APath.StartsWith('assets/', True)
+    );
+end;
+
+class function TRadIAExtensionStudioPackager.CreateMetadata(
+  const AId: string;
+  const AVersion: string;
+  const AManifestName: string;
+  const AManifestSize: Int64;
+  const AManifestHash: string;
+  const AResources: TArray<TRadIAResource>
+): TJSONObject;
+var
+  LFile: TJSONObject;
+  LFiles: TJSONArray;
+  LResource: TRadIAResource;
+begin
+  Result := TJSONObject.Create;
+  if Length(AResources) = 0 then
+    Result.AddPair('schemaVersion', TJSONNumber.Create(1))
+  else
+    Result.AddPair('schemaVersion', TJSONNumber.Create(3));
+  Result.AddPair('id', AId);
+  Result.AddPair('version', AVersion);
+  Result.AddPair('manifest', AManifestName);
+  LFiles := TJSONArray.Create;
+  LFile := TJSONObject.Create;
+  LFile.AddPair('path', AManifestName);
+  LFile.AddPair('size', TJSONNumber.Create(AManifestSize));
+  LFile.AddPair('sha256', AManifestHash);
+  LFiles.AddElement(LFile);
+  for LResource in AResources do
+  begin
+    LFile := TJSONObject.Create;
+    LFile.AddPair('path', LResource.PackagePath);
+    LFile.AddPair('size', TJSONNumber.Create(LResource.Size));
+    LFile.AddPair('sha256', LResource.Hash);
+    LFiles.AddElement(LFile);
+  end;
+  Result.AddPair('files', LFiles);
+end;
+
 class function TRadIAExtensionStudioPackager.ExportUnsigned(
   const AManifest: string;
-  const AOutputFileName: string
+  const AOutputFileName: string;
+  const AResourcesPath: string
 ): string;
 var
   LArchive: TZipFile;
-  LFile: TJSONObject;
-  LFiles: TJSONArray;
   LId: string;
   LManifestBytes: TArray<Byte>;
   LManifestFileName: string;
   LManifestJson: TJSONObject;
   LMetadata: TJSONObject;
   LMetadataFileName: string;
+  LResources: TArray<TRadIAResource>;
   LRoot: string;
   LVersion: string;
 begin
@@ -322,7 +556,7 @@ begin
   LManifestBytes := TEncoding.UTF8.GetBytes(AManifest);
   if Length(LManifestBytes) > 1024 * 1024 then
     raise EArgumentException.Create('Manifest exceeds the 1 MiB size limit.');
-  Result := LowerCase(THashSHA2.GetHashString(AManifest));
+  Result := HashExtensionStudioBytes(LManifestBytes);
   LManifestFileName := LId + '.radia.json';
   LRoot := TPath.Combine(
     TPath.GetTempPath,
@@ -330,23 +564,20 @@ begin
   );
   TDirectory.CreateDirectory(LRoot);
   try
+    LResources := CollectResources(AResourcesPath, Length(LManifestBytes));
     TFile.WriteAllBytes(
       TPath.Combine(LRoot, LManifestFileName),
       LManifestBytes
     );
-    LMetadata := TJSONObject.Create;
+    LMetadata := CreateMetadata(
+      LId,
+      LVersion,
+      LManifestFileName,
+      Length(LManifestBytes),
+      Result,
+      LResources
+    );
     try
-      LMetadata.AddPair('schemaVersion', TJSONNumber.Create(1));
-      LMetadata.AddPair('id', LId);
-      LMetadata.AddPair('version', LVersion);
-      LMetadata.AddPair('manifest', LManifestFileName);
-      LFiles := TJSONArray.Create;
-      LFile := TJSONObject.Create;
-      LFile.AddPair('path', LManifestFileName);
-      LFile.AddPair('size', TJSONNumber.Create(Length(LManifestBytes)));
-      LFile.AddPair('sha256', Result);
-      LFiles.AddElement(LFile);
-      LMetadata.AddPair('files', LFiles);
       LMetadataFileName := TPath.Combine(LRoot, 'package.json');
       TFile.WriteAllText(
         LMetadataFileName,
@@ -367,6 +598,7 @@ begin
           TPath.Combine(LRoot, LManifestFileName),
           LManifestFileName
         );
+        AddResourcesToArchive(LArchive, LResources);
       finally
         LArchive.Free;
       end;
@@ -397,7 +629,8 @@ end;
 
 class function TRadIAExtensionStudioSandbox.TestManifest(
   const AManifest: string;
-  const AReservedCommands: TArray<string>
+  const AReservedCommands: TArray<string>;
+  const AResourcesPath: string
 ): string;
 var
   LDiagnostics: TArray<TRadIADeclarativeExtensionDiagnostic>;
@@ -405,7 +638,7 @@ var
   LManager: TRadIADeclarativeExtensionManager;
   LMessage: string;
   LRoot: string;
-  LSourceFileName: string;
+  LPackageFileName: string;
 begin
   LRoot := TPath.Combine(
     TPath.GetTempPath,
@@ -416,10 +649,15 @@ begin
     TPath.Combine(LRoot, 'installed')
   );
   try
-    LSourceFileName := TPath.Combine(LRoot, 'draft.radia.json');
-    TFile.WriteAllText(LSourceFileName, AManifest, TEncoding.UTF8);
-    if not LManager.InstallOrUpdate(
-      LSourceFileName,
+    LPackageFileName := TPath.Combine(LRoot, 'draft.radiaext');
+    TRadIAExtensionStudioPackager.ExportUnsigned(
+      AManifest,
+      LPackageFileName,
+      AResourcesPath
+    );
+    if not TRadIADeclarativeExtensionPackageInstaller.Install(
+      LPackageFileName,
+      LManager,
       AReservedCommands,
       LExtensionId,
       LMessage

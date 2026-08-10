@@ -220,9 +220,10 @@ confinamento de paths. Operações destrutivas ou sensíveis não recebem autori
 Packages confiáveis podem registrar tools pela API `IRadIAToolExtension`, mas continuam sujeitos
 às mesmas políticas.
 
-Manifestos locais `*.radia.json` e pacotes íntegros `*.radiaext` podem adicionar comandos de chat,
-aliases e workflows auditados de tools, com permissões mínimas, validação atômica e recarga sem
-reiniciar. Consulte
+Manifestos locais `*.radia.json` e pacotes íntegros `*.radiaext` podem adicionar comandos, skills,
+jornadas, conhecimento, referências, templates, aliases e workflows auditados. O Addon Studio
+cria, testa, instala, exporta e assina esses pacotes; atualização e remoção tratam manifesto e
+recursos como uma unidade transacional, sem reiniciar. Consulte
 [Extensões declarativas](declarative_extensions.md).
 
 Consulte [Modelo de segurança](tool_security_model.md) e

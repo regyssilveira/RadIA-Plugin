@@ -12,7 +12,7 @@ Este documento registra o status de desenvolvimento, planejamento futuro e o his
 
 O quadro abaixo separa entregas, pendências reais e itens ainda sem compromisso de versão. Números
 da linha `0.x` são preservados somente nas entregas históricas. Uma pendência não recebe versão
-nova até ser selecionada para um goal. O goal competitivo ativo parte do RadIA 2.3.0 e terá a
+nova até ser selecionada para um goal. O goal de expansão da experiência parte do RadIA 2.3.1 e terá a
 versão definida pelo comportamento público efetivamente entregue.
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
@@ -25,7 +25,8 @@ versão definida pelo comportamento público efetivamente entregue.
 | **Diagnóstico, UX CLI/MCP e Documentação Centralizada** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.2.1 |
 | **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
 | **Rotas explícitas, login Pro restaurado e cópia universal** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
-| **Goal — Eliminar as seis lacunas competitivas** | 🚧 Plano ativo | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | A definir após a primeira entrega pública |
+| **Goal — Eliminar as seis lacunas competitivas** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
+| **Goal — Expansão da experiência completa** | 🚧 Plano ativo | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | A definir após a primeira entrega pública |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -131,6 +132,9 @@ versão definida pelo comportamento público efetivamente entregue.
         cadeias e rollback do catálogo quando o target ou o registro é inválido.
     *   M4 entregue nesta etapa: schema 5 oferece workflows auditados de até 16 tools internas,
         sem shell arbitrário, com risco máximo herdado, limites, fail-fast e policy por etapa.
+    *   Expansão M4 implementada no branch atual: schema 6 e envelope `.radiaext` v3 transportam
+        referências, conhecimento, templates e assets; Addon Studio testa, instala, exporta e assina
+        o conjunto, com substituição limpa, remoção e rollback de manifesto e recursos.
     *   M4 validado em IDE real: hot-load, registro compartilhado e execução auditada de duas
         etapas passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
     *   M5 entregue nesta etapa: busca e reconstrução expõem latência local, o status informa
@@ -217,10 +221,12 @@ versão definida pelo comportamento público efetivamente entregue.
 
 ## 🚧 2. Goal ativo
 
-O [goal para eliminar as seis lacunas competitivas](competitive_leadership_plan.md) é a linha de
-execução atual. Ele cobre continuidade CLI, contexto único, configuração hierárquica, FIM, revisão
-por bloco no gutter e cliente MCP externo, com aceite obrigatório no Delphi 12 Win32 e Delphi 13
-Win32/IDE64.
+O [goal de expansão da experiência completa](experience_expansion_goal.md) é a linha de execução
+atual. Ele cobre alternativas de completion, pacotes de conhecimento e templates, evidência visual
+antes/depois, consentimento entre superfícies, compatibilidade avançada do terminal, refinamento do
+WebView atual e revisão documental integral, com aceite obrigatório no Delphi 12 Win32 e Delphi 13
+Win32/IDE64. O [goal anterior das seis lacunas](competitive_leadership_plan.md) foi concluído em
+2.3.1 e permanece somente como registro de execução e evidências.
 
 As demais pendências continuam sem versão comprometida até nova triagem. Para impactos e
 referências, consulte a [matriz de priorização](feature_prioritization_matrix.md) e o

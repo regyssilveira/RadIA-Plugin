@@ -160,7 +160,7 @@ uses
 const
   CMaximumCatalogBytes = 1024 * 1024;
   CMaximumCatalogEntries = 500;
-  CMaximumPackageBytes = 4 * 1024 * 1024;
+  CMaximumPackageBytes = 20 * 1024 * 1024;
 
 type
   TRadIALimitedMemoryStream = class(TMemoryStream)
@@ -582,7 +582,7 @@ class procedure TRadIAExtensionCatalogClient.ValidatePackage(
 begin
   if not APackage.IsSigned then
     raise EArgumentException.Create(
-      'Catalog packages must use signed schema version 2.'
+      'Catalog packages must use signed schema version 2 or 3.'
     );
   if not SameText(AEntry.ExtensionId, APackage.ExtensionId) or
     not SameText(AEntry.Version, APackage.Version) then

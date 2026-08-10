@@ -4,7 +4,8 @@ param(
     [string]$OutputPath,
     [string]$SigningCertificateThumbprint,
     [string]$PublisherId,
-    [string]$PublisherName
+    [string]$PublisherName,
+    [string]$ResourcesPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,8 +20,8 @@ if ([IO.Path]::GetExtension($resolvedManifest) -ne ".json") {
 $utf8 = [Text.UTF8Encoding]::new($false)
 $manifestText = [IO.File]::ReadAllText($resolvedManifest, [Text.Encoding]::UTF8)
 $manifest = $manifestText | ConvertFrom-Json
-if ($manifest.schemaVersion -notin @(1, 2, 3, 4, 5)) {
-    throw "Only declarative extension schema versions 1 through 5 can be packaged."
+if ($manifest.schemaVersion -notin @(1, 2, 3, 4, 5, 6)) {
+    throw "Only declarative extension schema versions 1 through 6 can be packaged."
 }
 if ([string]$manifest.id -notmatch "^[A-Z][A-Za-z0-9]*$") {
     throw "Extension ID must use alphanumeric PascalCase."
@@ -46,6 +47,67 @@ finally {
     $sha256.Dispose()
 }
 
+$packageFiles = @(
+    [ordered]@{
+        path = $manifestName
+        size = $manifestBytes.Length
+        sha256 = $hash
+        sourcePath = $resolvedManifest
+    }
+)
+$totalContentBytes = $manifestBytes.Length
+if (-not [string]::IsNullOrWhiteSpace($ResourcesPath)) {
+    $resolvedResources = [IO.Path]::GetFullPath($ResourcesPath)
+    if (-not [IO.Directory]::Exists($resolvedResources)) {
+        throw "Resources directory not found: $resolvedResources"
+    }
+    $resourceRoot = $resolvedResources.TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar
+    )
+    $resourceFiles = @(
+        Get-ChildItem -LiteralPath $resourceRoot -Recurse -File |
+            Sort-Object FullName
+    )
+    foreach ($resourceFile in $resourceFiles) {
+        if (($resourceFile.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Resource reparse points are not allowed: $($resourceFile.FullName)"
+        }
+        $relativePath = $resourceFile.FullName.Substring(
+            $resourceRoot.Length
+        ).TrimStart('\', '/').Replace('\', '/')
+        if ($relativePath -notmatch '^(references|templates|knowledge|assets)/') {
+            throw "Resource must be inside references, templates, knowledge, or assets: $relativePath"
+        }
+        if (
+            $relativePath.Length -gt 240 -or
+            $relativePath -match '(^|/)\.\.?(/|$)' -or
+            $relativePath.Contains(':')
+        ) {
+            throw "Unsafe resource path: $relativePath"
+        }
+        if ($resourceFile.Length -gt 1MB) {
+            throw "Resource exceeds the 1 MiB size limit: $relativePath"
+        }
+        $resourceHash = (
+            Get-FileHash -LiteralPath $resourceFile.FullName -Algorithm SHA256
+        ).Hash.ToLowerInvariant()
+        $packageFiles += [ordered]@{
+            path = $relativePath
+            size = $resourceFile.Length
+            sha256 = $resourceHash
+            sourcePath = $resourceFile.FullName
+        }
+        $totalContentBytes += $resourceFile.Length
+    }
+}
+if ($packageFiles.Count -gt 129) {
+    throw "A package supports at most 128 resources plus its manifest."
+}
+if ($totalContentBytes -gt 16MB) {
+    throw "Package content exceeds the 16 MiB total size limit."
+}
+
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $outputDirectory = [IO.Path]::GetDirectoryName($resolvedManifest)
     $OutputPath = [IO.Path]::Combine(
@@ -60,9 +122,13 @@ if ([IO.Path]::GetExtension($resolvedOutput) -ne ".radiaext") {
 $resolvedOutputDirectory = [IO.Path]::GetDirectoryName($resolvedOutput)
 [IO.Directory]::CreateDirectory($resolvedOutputDirectory) | Out-Null
 
-$packageSchemaVersion = 1
+$hasResources = $packageFiles.Count -gt 1
+$packageSchemaVersion = if ($hasResources) { 3 } else { 1 }
 $publisher = $null
 if (-not [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
+    if (-not $hasResources) {
+        $packageSchemaVersion = 2
+    }
     if ($PublisherId -notmatch "^[A-Za-z0-9][A-Za-z0-9.-]{1,63}$") {
         throw "PublisherId must contain 2-64 letters, digits, dots, or hyphens."
     }
@@ -104,10 +170,8 @@ if (-not [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
         finally {
             $fingerprintHash.Dispose()
         }
-        $signaturePayload = [string]::Join(
-            "`n",
-            @(
-                "schemaVersion=2",
+        $signatureLines = @(
+                "schemaVersion=$packageSchemaVersion",
                 "id=$([string]$manifest.id)",
                 "version=$([string]$manifest.version)",
                 "manifest=$manifestName",
@@ -117,8 +181,16 @@ if (-not [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
                 "publisherName=$PublisherName",
                 "modulus=$modulus",
                 "exponent=$exponent"
-            )
         )
+        if ($hasResources) {
+            foreach ($packageFile in $packageFiles) {
+                $signatureLines += (
+                    "file=$($packageFile.path)|$($packageFile.size)|" +
+                    "$($packageFile.sha256)"
+                )
+            }
+        }
+        $signaturePayload = [string]::Join("`n", $signatureLines)
         $signature = [Convert]::ToBase64String(
             $rsa.SignData(
                 $utf8.GetBytes($signaturePayload),
@@ -134,7 +206,6 @@ if (-not [string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
             exponent = $exponent
             signature = $signature
         }
-        $packageSchemaVersion = 2
     }
     finally {
         $rsa.Dispose()
@@ -152,13 +223,13 @@ $package = [ordered]@{
     id = [string]$manifest.id
     version = [string]$manifest.version
     manifest = $manifestName
-    files = @(
+    files = @($packageFiles | ForEach-Object {
         [ordered]@{
-            path = $manifestName
-            size = $manifestBytes.Length
-            sha256 = $hash
+            path = $_.path
+            size = $_.size
+            sha256 = $_.sha256
         }
-    )
+    })
 }
 if ($null -ne $publisher) {
     $package.publisher = $publisher
@@ -174,6 +245,16 @@ try {
         [IO.Path]::Combine($temporaryDirectory, $manifestName),
         $manifestBytes
     )
+    foreach ($packageFile in $packageFiles | Select-Object -Skip 1) {
+        $destination = [IO.Path]::Combine(
+            $temporaryDirectory,
+            $packageFile.path.Replace('/', [IO.Path]::DirectorySeparatorChar)
+        )
+        [IO.Directory]::CreateDirectory(
+            [IO.Path]::GetDirectoryName($destination)
+        ) | Out-Null
+        [IO.File]::Copy($packageFile.sourcePath, $destination, $true)
+    }
     $metadataBytes = $utf8.GetBytes(
         ($package | ConvertTo-Json -Depth 5)
     )
@@ -200,7 +281,7 @@ finally {
 
 Write-Host "Extension package created: $resolvedOutput" -ForegroundColor Green
 Write-Host "Manifest SHA-256: $hash" -ForegroundColor Green
-if ($packageSchemaVersion -eq 2) {
+if ($null -ne $publisher) {
     Write-Host "Publisher fingerprint: $fingerprint" -ForegroundColor Green
 }
 else {

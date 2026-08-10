@@ -25,6 +25,7 @@ type
     FPublisherId: string;
     FPublisherName: string;
     FThumbprint: string;
+    FResourcesPath: string;
   public
     constructor Create(
       const AManifestPath: string;
@@ -32,7 +33,8 @@ type
       const APackagerPath: string;
       const APublisherId: string;
       const APublisherName: string;
-      const AThumbprint: string
+      const AThumbprint: string;
+      const AResourcesPath: string = ''
     );
     property ManifestPath: string read FManifestPath;
     property OutputPath: string read FOutputPath;
@@ -40,6 +42,7 @@ type
     property PublisherId: string read FPublisherId;
     property PublisherName: string read FPublisherName;
     property Thumbprint: string read FThumbprint;
+    property ResourcesPath: string read FResourcesPath;
   end;
 
   TRadIAExtensionSigningService = class
@@ -79,7 +82,8 @@ constructor TRadIAExtensionSigningRequest.Create(
   const APackagerPath: string;
   const APublisherId: string;
   const APublisherName: string;
-  const AThumbprint: string
+  const AThumbprint: string;
+  const AResourcesPath: string
 );
 begin
   FManifestPath := Trim(AManifestPath);
@@ -88,6 +92,7 @@ begin
   FPublisherId := Trim(APublisherId);
   FPublisherName := Trim(APublisherName);
   FThumbprint := UpperCase(Trim(AThumbprint));
+  FResourcesPath := Trim(AResourcesPath);
 end;
 
 { TRadIAExtensionSigningService }
@@ -113,9 +118,34 @@ class function TRadIAExtensionSigningService.BuildSigningInvocation(
 ): TRadIACliInvocation;
 begin
   ValidateRequest(ARequest);
-  Result := TRadIACliInvocation.Create(
-    'powershell.exe',
-    [
+  if ARequest.ResourcesPath = '' then
+    Result := TRadIACliInvocation.Create(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        ARequest.PackagerPath,
+        '-ManifestPath',
+        ARequest.ManifestPath,
+        '-OutputPath',
+        ARequest.OutputPath,
+        '-SigningCertificateThumbprint',
+        ARequest.Thumbprint,
+        '-PublisherId',
+        ARequest.PublisherId,
+        '-PublisherName',
+        ARequest.PublisherName
+      ],
+      ExtractFilePath(ARequest.ManifestPath),
+      'text'
+    )
+  else
+    Result := TRadIACliInvocation.Create(
+      'powershell.exe',
+      [
       '-NoProfile',
       '-NonInteractive',
       '-ExecutionPolicy',
@@ -131,11 +161,13 @@ begin
       '-PublisherId',
       ARequest.PublisherId,
       '-PublisherName',
-      ARequest.PublisherName
-    ],
-    ExtractFilePath(ARequest.ManifestPath),
-    'text'
-  );
+      ARequest.PublisherName,
+      '-ResourcesPath',
+      ARequest.ResourcesPath
+      ],
+      ExtractFilePath(ARequest.ManifestPath),
+      'text'
+    );
 end;
 
 class function TRadIAExtensionSigningService.CertificateQueryScript: string;
@@ -229,6 +261,11 @@ begin
     raise EArgumentException.Create('The publisher name is required.');
   if ARequest.Thumbprint = '' then
     raise EArgumentException.Create('A signing certificate is required.');
+  if (ARequest.ResourcesPath <> '') and
+    not TDirectory.Exists(ARequest.ResourcesPath) then
+    raise EDirectoryNotFoundException.Create(
+      'The extension resources directory was not found.'
+    );
 end;
 
 class function TRadIAExtensionSigningService.ValidateSignedPackage(

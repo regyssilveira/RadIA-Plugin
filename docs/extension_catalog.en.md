@@ -1,8 +1,9 @@
 # Remote extension catalog
 
-RadIA 2.0 includes a secure layer for discovering and downloading declarative extensions from a
-remote catalog. A catalog provides metadata; it never grants publisher trust automatically. Every
-artifact must remain a version 2 `.radiaext` package with a valid RSA-SHA256 signature.
+RadIA includes a secure layer for discovering and downloading declarative extensions from a remote
+catalog. A catalog provides metadata; it never grants publisher trust automatically. Every artifact
+must remain a signed `.radiaext` package: envelope v2 for a manifest without resources or v3 when
+it carries references, knowledge, templates, or assets.
 
 ## Schema version 1
 
@@ -40,11 +41,11 @@ absolute HTTPS URLs without credentials or fragments. Duplicate IDs are rejected
 The catalog client:
 
 1. accepts HTTPS only and disables automatic redirects;
-2. limits the catalog to 1 MiB and packages to 4 MiB during streaming;
+2. limits the catalog to 1 MiB and packages to 20 MiB during streaming;
 3. verifies declared size and SHA-256;
 4. applies the complete `.radiaext` verifier, including closed entries, ZIP bomb and path defenses,
    manifest validation, and RSA-SHA256;
-5. requires a signed version 2 package;
+5. requires a signed version 2 or 3 package;
 6. matches extension ID, version, publisher ID, and fingerprint against the catalog entry;
 7. validates a temporary file before atomically replacing the destination;
 8. preserves an existing file when download or validation fails.
