@@ -8,6 +8,19 @@
 - Keeps the plan approval card as the last visible result and offers `/agent resume` as a text
   alternative, preventing a duplicated message from hiding **Approve plan**.
 - Adds a direct Chat, Agent, CLI, and MCP comparison table to the README and `/help`.
+- Recognizes natural project-creation requests without requiring users to choose the executor first.
+- Extracts absolute Windows paths, derives the name from the folder, and defaults to Win32 when no
+  platform is specified, asking only for information that is actually missing.
+- Shows live CLI activity and prevents external links from replacing the chat surface.
+- Keeps advanced executor, session, journey, and scope controls behind **More**.
+
+## Project creation and consent
+
+- Adds deterministic composition for a functional VCL calculator.
+- Opens, builds, runs, and validates the primary scenario before completing the journey.
+- Reuses **Allow session** across compatible tools with the same origin, project, scope, and risk
+  category, reducing repeated prompts without widening destructive permissions.
+- Keeps `/revoke-tools` and category preferences as immediate revocation and opt-out controls.
 
 ## CLI installation
 
@@ -32,7 +45,7 @@ The visual installer remains the only artifact required by end users.
 
 ## Validation
 
-- 1,037 Delphi tests passed on Win32 targets, with no failures, errors, or leaks;
-- 93 web tests, 36 documentation tests, and ESLint passed;
+- 1,046 Delphi tests passed on Win32 targets, with no failures, errors, or leaks;
+- 97 web tests, 36 documentation tests, and ESLint passed;
 - runtime catalog validated with 132 tools;
 - SonarQube Quality Gate `OK`, with zero issues.

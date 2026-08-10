@@ -8,6 +8,19 @@
 - Mantém o cartão de aprovação do plano como último conteúdo visível e oferece `/agent resume` como
   alternativa textual, evitando que uma mensagem duplicada esconda o botão **Approve plan**.
 - Exibe no README e no `/help` uma tabela direta das combinações Chat, Agent, CLI e MCP.
+- Reconhece pedidos naturais de criação de projetos sem exigir a escolha prévia do executor.
+- Extrai caminhos Windows absolutos, deriva o nome pela pasta e usa Win32 quando a plataforma não
+  foi informada, perguntando somente pelos dados realmente ausentes.
+- Mostra atividade do CLI em tempo real e impede que links externos substituam a tela do chat.
+- Mantém opções avançadas de executor, sessão, jornada e escopo atrás de **More**.
+
+## Criação e consentimento
+
+- Inclui composição determinística de uma calculadora VCL funcional.
+- Abre, compila, executa e valida o cenário principal antes de concluir a jornada.
+- Reutiliza **Allow session** entre tools compatíveis da mesma origem, projeto, escopo e categoria
+  de risco, reduzindo confirmações repetidas sem ampliar permissões destrutivas.
+- Mantém `/revoke-tools` e as preferências por categoria como revogação e opt-out imediatos.
 
 ## Instalação de CLIs
 
@@ -33,7 +46,7 @@ O instalador visual continua sendo o único artefato necessário para o usuário
 
 ## Validação
 
-- 1.037 testes Delphi aprovados nos alvos Win32, sem falhas, erros ou vazamentos;
-- 93 testes web, 36 testes documentais e ESLint aprovados;
+- 1.046 testes Delphi aprovados nos alvos Win32, sem falhas, erros ou vazamentos;
+- 97 testes web, 36 testes documentais e ESLint aprovados;
 - catálogo runtime validado com 132 ferramentas;
 - SonarQube Quality Gate `OK`, sem issues.
