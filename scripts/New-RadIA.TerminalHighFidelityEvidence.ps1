@@ -1,10 +1,10 @@
 param(
     [string]$OutputPath = (
-        ".\docs\terminal_high_fidelity_evidence_2.4.0.json"
+        ".\docs\terminal_high_fidelity_evidence_2.4.1.json"
     ),
     [int]$ExpectedTestCount = 1024,
     [string]$VisualSmokeEvidencePath = (
-        ".\docs\terminal_smoke_evidence_2.4.0.json"
+        ".\docs\terminal_smoke_evidence_2.4.1.json"
     )
 )
 

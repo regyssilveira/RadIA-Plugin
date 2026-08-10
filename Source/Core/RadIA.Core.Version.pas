@@ -3,7 +3,7 @@ unit RadIA.Core.Version;
 interface
 
 const
-  CRadIAVersion = '2.4.0';
+  CRadIAVersion = '2.4.1';
 
 implementation
 
