@@ -3666,18 +3666,22 @@ function TRadIAChatPresenter.TryBeginJourneyIntake(
   const AContext: string
 ): Boolean;
 var
+  LContext: string;
   LField: string;
   LQuestion: string;
 begin
+  LContext := AContext;
+  if AIsNative and SameText(ADefinition.Command, '/journey create') then
+    LContext := TRadIAJourneyCatalog.NormalizeCreateContext(AContext);
   Result := AIsNative and ADefinition.NextRequiredInput(
-    AContext,
+    LContext,
     LField,
     LQuestion
   );
   if Result then
   begin
     FPendingJourneyActive := True;
-    FPendingJourneyContext := AContext;
+    FPendingJourneyContext := LContext;
     FPendingJourneyDefinition := ADefinition;
     FPendingJourneyField := LField;
     FPendingJourneyNative := True;

@@ -1255,7 +1255,7 @@ begin
     'crie uma calculadora com operacoes basicas em VCL'
   );
 
-  Assert.Contains(FMockView.PostedMessages.Text, 'What should the project be called?');
+  Assert.Contains(FMockView.PostedMessages.Text, 'Which destination folder');
 end;
 
 procedure TTestChatPresenter.TestHelpCommandShowsCapabilitiesAndDocumentation;

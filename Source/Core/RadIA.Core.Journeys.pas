@@ -69,14 +69,53 @@ type
       const AInput: string;
       out ACommandText: string
     ): Boolean; static;
+    class function NormalizeCreateContext(
+      const AContext: string
+    ): string; static;
     class function HelpText: string; static;
   end;
 
 implementation
 
 uses
+  System.IOUtils,
+  System.RegularExpressions,
   System.StrUtils,
   System.SysUtils;
+
+class function TRadIAJourneyCatalog.NormalizeCreateContext(
+  const AContext: string
+): string;
+var
+  LDestination: string;
+  LLowerContext: string;
+  LMatch: TMatch;
+  LProjectName: string;
+begin
+  Result := AContext.Trim;
+  if Result.IsEmpty then
+    Exit;
+  LLowerContext := LowerCase(Result);
+  LMatch := TRegEx.Match(Result, '[A-Za-z]:\\[^\s,;"'']+');
+  if LMatch.Success and not LLowerContext.Contains('destination=') then
+  begin
+    LDestination := LMatch.Value.TrimRight(['.', ':']);
+    Result := Result + ' destination="' + LDestination + '"';
+  end;
+  if not LLowerContext.Contains('project=') then
+  begin
+    LProjectName := '';
+    if not LDestination.IsEmpty then
+      LProjectName := TPath.GetFileName(LDestination.TrimRight(['\']));
+    if LProjectName.IsEmpty and
+      (LLowerContext.Contains('calculadora') or LLowerContext.Contains('calculator')) then
+      LProjectName := 'CalculatorApp';
+    if not LProjectName.IsEmpty then
+      Result := Result + ' project="' + LProjectName.Replace('"', '') + '"';
+  end;
+  if not LLowerContext.Contains('platform=') then
+    Result := Result + ' platform="Win32"';
+end;
 
 class function TRadIAJourneyCatalog.TryInferCreateProject(
   const AInput: string;
@@ -87,10 +126,11 @@ const
     'create', 'generate', 'build', 'start',
     'crie', 'criar', 'gere', 'monte'
   );
-  CProjectTerms: array[0..13] of string = (
+  CProjectTerms: array[0..20] of string = (
     'project', 'projeto', 'application', 'aplicativo',
     ' vcl', ' fmx', 'console', 'dunitx', 'service', 'servico',
-    'serviço', 'dext', 'library', 'package'
+    'serviço', 'dext', 'library', 'package', ' sistema', ' programa',
+    ' software', ' app ', ' unit test', ' teste unitário', ' teste unitario'
   );
 var
   LHasCreation: Boolean;

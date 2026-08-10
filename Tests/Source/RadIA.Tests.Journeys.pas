@@ -31,6 +31,8 @@ type
     procedure CreateJourneyCollectsProjectDestinationAndPlatform;
     [Test]
     procedure CreateJourneyRequiresRuntimeValidation;
+    [Test]
+    procedure NaturalCreateContextExtractsDestinationNameAndDefaultPlatform;
   end;
 
 implementation
@@ -242,6 +244,18 @@ begin
       LCommand
     )
   );
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.TryInferCreateProject(
+      'crie um sistema de estoque em D:\Projetos\Estoque',
+      LCommand
+    )
+  );
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.TryInferCreateProject(
+      'generate a desktop app in C:\Work\CustomerApp',
+      LCommand
+    )
+  );
 end;
 
 procedure TTestRadIAJourneys.DoesNotInferOrdinaryCodeGenerationAsProjectCreation;
@@ -290,6 +304,25 @@ begin
       LQuestion
     )
   );
+end;
+
+procedure TTestRadIAJourneys.
+  NaturalCreateContextExtractsDestinationNameAndDefaultPlatform;
+var
+  LContext: string;
+  LDefinition: TRadIAJourneyDefinition;
+  LField: string;
+  LQuestion: string;
+begin
+  LContext := TRadIAJourneyCatalog.NormalizeCreateContext(
+    'crie uma calculadora vcl com as 4 operacoes basicas em d:\calculadora, ' +
+    'crie o diretorio se necessario'
+  );
+  Assert.Contains(LContext, 'destination="d:\calculadora"');
+  Assert.Contains(LContext, 'project="calculadora"');
+  Assert.Contains(LContext, 'platform="Win32"');
+  Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
+  Assert.IsFalse(LDefinition.NextRequiredInput(LContext, LField, LQuestion));
 end;
 
 initialization
