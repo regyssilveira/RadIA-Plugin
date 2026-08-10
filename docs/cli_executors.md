@@ -61,6 +61,12 @@ O RadIA não copia a CLI para a pasta do plugin. No canal npm, o comando costuma
 `%LOCALAPPDATA%\Microsoft\WinGet\Links`. Um caminho selecionado com **Browse** permanece no local
 original; o RadIA apenas salva e utiliza esse caminho.
 
+Sem projeto Delphi aberto, conversas e agentes CLI continuam disponíveis em um workspace privado
+sob a pasta de dados do RadIA (`RadIA\cli-workspace`). Isso permite solicitar a criação de um novo
+projeto VCL diretamente no modo Agent. Depois que um projeto é criado ou aberto, novas execuções
+usam a pasta real do projeto. Somente ferramentas que realmente dependem de um projeto existente,
+como build, debug e testes, informam esse pré-requisito quando acionadas.
+
 Os identificadores vêm de um catálogo interno e são validados contra metacaracteres antes da
 execução. O Rad IA não baixa, empacota ou redistribui binários desses fornecedores. A autenticação
 continua sendo feita pelo próprio CLI depois da instalação.

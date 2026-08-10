@@ -43,6 +43,10 @@ type
     [Test]
     procedure ReportsNoAutomaticPlanWhenNoSupportedChannelExists;
     [Test]
+    procedure UsesProjectDirectoryAsCliWorkspace;
+    [Test]
+    procedure CreatesPrivateCliWorkspaceWithoutOpenProject;
+    [Test]
     procedure CopilotInstallPlanUsesOfficialWingetPackage;
     [Test]
     procedure InstallPlanRejectsShellMetacharacters;
@@ -553,6 +557,33 @@ begin
   Assert.IsFalse(
     TRadIACliInstaller.BuildPreferredPlan(LDefinition, '', '', LPlan)
   );
+end;
+
+procedure TRadIACliManagerTests.UsesProjectDirectoryAsCliWorkspace;
+begin
+  Assert.AreEqual(
+    'C:\Projects\Sample',
+    TRadIACliWorkspace.Resolve(
+      'C:\Projects\Sample\Sample.dproj',
+      'C:\RadIA'
+    )
+  );
+end;
+
+procedure TRadIACliManagerTests.CreatesPrivateCliWorkspaceWithoutOpenProject;
+var
+  LRoot: string;
+  LWorkspace: string;
+begin
+  LRoot := TPath.Combine(TPath.GetTempPath, TPath.GetRandomFileName);
+  try
+    LWorkspace := TRadIACliWorkspace.Resolve('', LRoot);
+    Assert.AreEqual(TPath.Combine(LRoot, 'cli-workspace'), LWorkspace);
+    Assert.IsTrue(TDirectory.Exists(LWorkspace));
+  finally
+    if TDirectory.Exists(LRoot) then
+      TDirectory.Delete(LRoot, True);
+  end;
 end;
 
 procedure TRadIACliManagerTests.NormalizesCliVersionOutput;

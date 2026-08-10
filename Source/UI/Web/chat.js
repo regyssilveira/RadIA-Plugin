@@ -993,6 +993,13 @@ function renderAgentState(data) {
 
   const controls = card.querySelector('.agent-run-controls');
   controls.replaceChildren();
+  if (status === 'awaitingApproval') {
+    const approvalHint = document.createElement('p');
+    approvalHint.className = 'agent-approval-hint';
+    approvalHint.textContent =
+      'Review the plan, then select Approve plan or type /agent resume to continue.';
+    controls.appendChild(approvalHint);
+  }
   controls.appendChild(createAgentControl(
     'Approve plan',
     'approve_agent',

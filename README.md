@@ -26,6 +26,21 @@ Se você quer primeiro entender o alcance do produto, veja [tudo que o RadIA pod
 No chat, digite `/help` para ver um resumo das capacidades, os comandos principais e links para a
 documentação. Os links são abertos no navegador padrão do Windows.
 
+## Qual modo usar?
+
+| Combinação | Use para | Ferramentas da IDE | Precisa abrir um projeto? |
+|---|---|---|---|
+| **Chat + RadIA native** | Perguntas, explicações e ideias de código | Não | Não |
+| **Agent + RadIA native** | Criar projetos, editar, compilar, testar e debugar | Sim, com consentimento | Não; somente a ferramenta específica pode exigir |
+| **Chat + CLI externo** | Conversar diretamente pelo Codex, Claude, Gemini ou Copilot | Recursos do CLI | Não |
+| **Agent + CLI externo** | Delegar um objetivo completo ao CLI escolhido | Recursos do CLI | Não |
+| **MCP** | Expor ou consumir ferramentas registradas | Conforme a política da tool | Depende da tool |
+
+**Provider** escolhe o modelo e a forma de autenticação; **modo** define se há execução agentiva;
+**executor** define quem conduz a solicitação; **MCP** é uma ponte de ferramentas independente.
+Quando um plano aguardar aprovação, clique em **Approve plan** ou digite `/agent resume`.
+Veja a [explicação completa dos executores](docs/cli_executors.md).
+
 ## Compatibilidade
 
 | IDE | Arquitetura | Estado |

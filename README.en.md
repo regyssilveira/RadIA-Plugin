@@ -24,6 +24,21 @@ evidence that validates a fix, with consent and workspace boundaries.
 Type `/help` in chat for a capability summary, primary commands, and documentation links. Links open
 in the Windows default browser.
 
+## Which mode should I use?
+
+| Combination | Use it for | IDE tools | Must a project be open? |
+|---|---|---|---|
+| **Chat + RadIA native** | Questions, explanations, and code ideas | No | No |
+| **Agent + RadIA native** | Create projects, edit, build, test, and debug | Yes, with consent | No; only a specific tool may require one |
+| **Chat + external CLI** | Talk directly through Codex, Claude, Gemini, or Copilot | CLI capabilities | No |
+| **Agent + external CLI** | Delegate a complete objective to the selected CLI | CLI capabilities | No |
+| **MCP** | Expose or consume registered tools | According to tool policy | Depends on the tool |
+
+The **provider** selects the model and authentication; **mode** controls agent execution; the
+**executor** determines who conducts the request; **MCP** is an independent tool bridge. When a plan
+awaits approval, select **Approve plan** or type `/agent resume`. See the
+[complete executor guide](docs/cli_executors.en.md).
+
 ## Compatibility
 
 | IDE | Architecture | Status |

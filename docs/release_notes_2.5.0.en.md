@@ -5,6 +5,9 @@
 - Organizes composer controls into two semantic rows: execution and conversation context.
 - Reflows selectors, actions, and effective status according to the docked panel width.
 - Preserves existing commands, shortcuts, and identifiers without changing the chat workflow.
+- Keeps the plan approval card as the last visible result and offers `/agent resume` as a text
+  alternative, preventing a duplicated message from hiding **Approve plan**.
+- Adds a direct Chat, Agent, CLI, and MCP comparison table to the README and `/help`.
 
 ## CLI installation
 
@@ -13,6 +16,8 @@
 - Keeps GitHub Copilot CLI on WinGet and displays the command before any execution.
 - Explains that Gemini CLI still requires Node.js on Windows through its official channel.
 - Preserves **Browse** for existing executables, per-step consent, and automatic post-install checks.
+- Allows Agent mode to chat and create a new VCL project without an open project, using a private
+  workspace until the project is created or opened.
 
 CLIs are not bundled into the RadIA installer. The manager uses official channels to reduce
 obsolescence, installer size, and third-party software redistribution risks.
@@ -27,7 +32,7 @@ The visual installer remains the only artifact required by end users.
 
 ## Validation
 
-- 1,035 Delphi tests passed on Win32 targets, with no failures, errors, or leaks;
-- 91 web tests, 36 documentation tests, and ESLint passed;
+- 1,037 Delphi tests passed on Win32 targets, with no failures, errors, or leaks;
+- 93 web tests, 36 documentation tests, and ESLint passed;
 - runtime catalog validated with 132 tools;
 - SonarQube Quality Gate `OK`, with zero issues.

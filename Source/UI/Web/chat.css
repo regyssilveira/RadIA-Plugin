@@ -2305,6 +2305,17 @@ body.light-theme .message-avatar.provider-avatar-badge {
   gap: 8px;
 }
 
+.agent-run-controls {
+  flex-wrap: wrap;
+}
+
+.agent-approval-hint {
+  flex: 1 0 100%;
+  margin: 8px 0 0;
+  color: var(--fg-primary);
+  font-size: 12px;
+}
+
 .agent-run-header {
   justify-content: space-between;
 }

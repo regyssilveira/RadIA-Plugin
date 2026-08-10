@@ -1,5 +1,8 @@
 # Manual completo do RadIA 2.5.0
 
+> Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
+> **Approve plan** ou digite `/agent resume`.
+
 ## 1. O que é o RadIA
 
 O RadIA é um assistente de IA integrado ao Delphi 12 e 13. Ele combina:

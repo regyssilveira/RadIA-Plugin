@@ -1212,6 +1212,18 @@ begin
     '- **CLI, MCP, and providers:** open `/settings` to discover executables, authenticate, and choose ' +
     'native, CLI, or MCP execution.' + sLineBreak +
     '- **Tools and extensions:** use `/tools` and `/extensions`.' + sLineBreak + sLineBreak +
+    '### Which mode should I use?' + sLineBreak + sLineBreak +
+    '| Mode | Best for | IDE tools | Project required |' + sLineBreak +
+    '|---|---|---|---|' + sLineBreak +
+    '| Chat + RadIA native | Questions and explanations | No | No |' + sLineBreak +
+    '| Agent + RadIA native | Create, edit, build, test, debug | With consent | Only for ' +
+      'project-specific tools |' + sLineBreak +
+    '| Chat + external CLI | Direct CLI conversation | CLI capabilities | No |' + sLineBreak +
+    '| Agent + external CLI | Delegate an objective to a CLI | CLI capabilities | No |' + sLineBreak +
+    '| MCP | Expose or consume registered tools | By tool policy | Depends on the tool |' +
+      sLineBreak + sLineBreak +
+    'To approve a pending plan, select **Approve plan** or type `/agent resume`.' +
+      sLineBreak + sLineBreak +
     '### Documentation' + sLineBreak + sLineBreak +
     '- [Getting started](https://github.com/regyssilveira/RadIA-Plugin#readme)' + sLineBreak +
     '- [Slash commands](' + CDocsRoot + 'slash_commands.md)' + sLineBreak +
@@ -4016,13 +4028,14 @@ begin
         );
         FHistory := FHistory + [LAssistantMessage];
         SaveChatHistory;
-        PostToWebView(
-          'add_message',
-          'assistant',
-          AResult.Message,
-          AProvider,
-          AModel
-        );
+        if AResult.Status <> asAwaitingApproval then
+          PostToWebView(
+            'add_message',
+            'assistant',
+            AResult.Message,
+            AProvider,
+            AModel
+          );
       end
     )
   );
@@ -4420,20 +4433,10 @@ begin
   LProject := Default(TRadIAProjectSnapshot);
   if Assigned(FWorkspace) then
     LProject := FWorkspace.GetActiveProject;
-  LWorkingDirectory := ExtractFileDir(LProject.FileName);
-  if LWorkingDirectory = '' then
-  begin
-    if FAgentModeEnabled then
-    begin
-      PostToWebView(
-        'add_message',
-        'assistant',
-        'Open a Delphi project before starting an external CLI agent.'
-      );
-      Exit;
-    end;
-    LWorkingDirectory := GetCurrentDir;
-  end;
+  LWorkingDirectory := TRadIACliWorkspace.Resolve(
+    LProject.FileName,
+    FDataDir
+  );
 
   LDetection := TRadIACliResolver.Resolve(LDefinition.Id);
   if not LDetection.Installed then

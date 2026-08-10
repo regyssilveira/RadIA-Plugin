@@ -60,6 +60,12 @@ RadIA does not copy a CLI into the plugin directory. With npm, the command is co
 typically exposes command links under `%LOCALAPPDATA%\Microsoft\WinGet\Links`. A path selected with
 **Browse** stays in its original location; RadIA only stores and uses that path.
 
+Without an open Delphi project, CLI conversations and agents remain available in a private workspace
+under the RadIA data directory (`RadIA\cli-workspace`). This allows Agent mode to create a new VCL
+project from scratch. After a project is created or opened, new executions use its actual directory.
+Only tools that genuinely depend on an existing project, such as build, debug, and tests, report that
+prerequisite when invoked.
+
 Identifiers come from an internal catalog and are validated against metacharacters before
 execution. Rad IA does not download, package, or redistribute binaries from these vendors. Authentication
 continues to be done by the CLI itself after installation.

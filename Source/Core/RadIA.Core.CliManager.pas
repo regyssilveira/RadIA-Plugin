@@ -180,6 +180,14 @@ type
     ): TRadIACliDetection; overload; static;
   end;
 
+  TRadIACliWorkspace = class
+  public
+    class function Resolve(
+      const AProjectFileName: string;
+      const ADataDirectory: string
+    ): string; static;
+  end;
+
   TRadIACliInstaller = class
   private
     class function BuildNpmPlan(
@@ -714,6 +722,7 @@ begin
     APlan := Default(TRadIACliInstallPlan);
     Result := False;
   end;
+
 end;
 
 function TRadIACliDetector.FindInKnownLocations(
@@ -977,6 +986,20 @@ begin
         Exit(LCandidate);
     end;
   Result := '';
+end;
+
+{ TRadIACliWorkspace }
+
+class function TRadIACliWorkspace.Resolve(
+  const AProjectFileName: string;
+  const ADataDirectory: string
+): string;
+begin
+  Result := ExtractFileDir(Trim(AProjectFileName));
+  if Result <> '' then
+    Exit;
+  Result := TPath.Combine(ADataDirectory, 'cli-workspace');
+  TDirectory.CreateDirectory(Result);
 end;
 
 { TRadIACliResolver }
