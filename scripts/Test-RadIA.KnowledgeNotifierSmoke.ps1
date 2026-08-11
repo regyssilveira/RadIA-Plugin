@@ -905,6 +905,9 @@ $generatedProjectSourcePath = Join-Path $generatedProjectDirectory (
 $generatedFormSourcePath = Join-Path $generatedProjectDirectory (
     "MainForm.pas"
 )
+$generatedCalculatorTestExecutable = Join-Path $generatedProjectDirectory (
+    "bin\Win32\Debug\RadIAJourneyAppTests.exe"
+)
 $testExecutableCandidates = @(
     (Join-Path $smokeDirectory (
         "Tests\Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
@@ -929,10 +932,12 @@ $designerChanged = $false
 $editorChanged = $false
 $buildPassed = $false
 $testsPassed = $false
+$generatedTestsPassed = $false
 $correctionPassed = -not $ExerciseCorrection
 $debugPassed = -not $ExerciseDebugger
 $gitPassed = -not $ExerciseGit
 $testSummary = $null
+$generatedTestSummary = $null
 $debugSummary = $null
 $gitSummary = $null
 
@@ -980,6 +985,10 @@ try {
             delphiVersion = $DelphiVersion
             platforms = @("Win32")
             destinationPath = $generatedProjectDirectory
+            projectSpecification = @{
+                schemaVersion = 1
+                kind = "calculator"
+            }
         }
     if (-not $templatePreview.previewId) {
         throw "The VCL template preview did not return a preview ID."
@@ -1059,14 +1068,18 @@ try {
         $generatedFormContent = Get-Content `
             -LiteralPath $generatedFormSourcePath `
             -Raw
-        $formTerminator = "{`$R *.dfm}`r`n`r`nend."
-        if (-not $generatedFormContent.Contains($formTerminator)) {
+        $unitTerminator = "(?s)\r?\nend\.\s*$"
+        if (-not [regex]::IsMatch(
+            $generatedFormContent,
+            $unitTerminator
+        )) {
             throw "The generated debug form has an unexpected terminator."
         }
-        $generatedFormContent = $generatedFormContent.Replace(
-            $formTerminator,
-            "{`$R *.dfm}`r`n`r`ninitialization`r`n" +
-                "  TThread.Sleep(15000);`r`n`r`nend."
+        $generatedFormContent = [regex]::Replace(
+            $generatedFormContent,
+            $unitTerminator,
+            "`r`ninitialization`r`n" +
+                "  TThread.Sleep(15000);`r`n`r`nend.`r`n"
         )
         Set-Content `
             -LiteralPath $generatedFormSourcePath `
@@ -1102,6 +1115,40 @@ try {
                 "The generated VCL project failed validation: " +
                 $validationDetails
             )
+        }
+        if (-not (Test-Path -LiteralPath $generatedCalculatorTestExecutable)) {
+            throw (
+                "The calculator build did not produce its companion " +
+                "DUnitX executable."
+            )
+        }
+        $generatedTestResult = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "RunDUnitXTests" `
+            -Arguments @{
+                executablePath = $generatedCalculatorTestExecutable
+                timeoutMs = 600000
+            }
+        if ($generatedTestResult.status -ne "succeeded" -or
+            -not $generatedTestResult.report.allPassed) {
+            $generatedTestDetails = $generatedTestResult |
+                ConvertTo-Json -Depth 8 -Compress
+            throw (
+                "The generated calculator DUnitX suite failed: " +
+                $generatedTestDetails
+            )
+        }
+        $generatedTestsPassed = $true
+        $generatedTestSummary = [PSCustomObject]@{
+            status = $generatedTestResult.status
+            executablePath = $generatedCalculatorTestExecutable
+            total = $generatedTestResult.report.total
+            passed = $generatedTestResult.report.passed
+            failed = $generatedTestResult.report.failed
+            errors = $generatedTestResult.report.errors
+            allPassed = $generatedTestResult.report.allPassed
         }
     }
     $generatedActiveProject = Invoke-RadIATool `
@@ -1775,11 +1822,13 @@ if ($EvidencePath) {
             compilerFailureObservedAndFixed = $correctionPassed
             buildPassed = $buildPassed
             testsPassed = $testsPassed
+            generatedTestsPassed = $generatedTestsPassed
             debuggerPassed = $debugPassed
             reviewedCommitCreated = $gitPassed
             shutdownPassed = $journeySucceeded
         }
         tests = $testSummary
+        generatedProjectTests = $generatedTestSummary
         debugger = $debugSummary
         git = $gitSummary
     } |

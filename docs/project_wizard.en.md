@@ -82,5 +82,6 @@ selection are implemented. Visual authorization does not broaden agent or MCP to
 
 Beyond unit tests, `scripts/Test-RadIA.GeneratedProjects.ps1` generates the templates through the
 real engine and builds every `.dproj`. For the VCL calculator prompt, it also generates a DUnitX
-project, runs five tests for the operations and division by zero, and validates the running UI.
-The current matrix covers Delphi 12 and 13.
+project, makes the main build compile that companion project, exposes its executable in the preview,
+runs five operation and division-by-zero tests through the RadIA runner, and validates the running
+UI. The current matrix covers Delphi 12 Win32 and Delphi 13 Win32/IDE64.

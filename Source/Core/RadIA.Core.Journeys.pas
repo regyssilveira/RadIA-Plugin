@@ -362,7 +362,9 @@ begin
       'use the user-approved destination parent as authorizedRoot. Use OpenCreatedProject, ' +
       'ValidateCreatedProject, and IDE execution tools instead of invoking MSBuild from a CLI. ' +
       'For executable projects, start the application after a successful build, confirm its main ' +
-      'window, exercise the primary user scenario, and record the observed result.',
+      'window, exercise the primary user scenario, and record the observed result. When the ' +
+      'reviewed preview declares a companionTestExecutable, run that executable through ' +
+      'RunDUnitXTests after the build and include its report in the completion evidence.',
       [
         TRadIAJourneyPhase.Create(
           'Discover',

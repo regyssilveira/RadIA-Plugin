@@ -309,6 +309,17 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "Generated project failed: $($project.FullName)"
         }
+        if ($project.BaseName -eq "CalculatorApp") {
+            $companionTestExecutable = Join-Path `
+                $validationRoot `
+                "CalculatorApp\bin\Win32\Debug\CalculatorAppTests.exe"
+            if (-not (Test-Path -LiteralPath $companionTestExecutable)) {
+                throw (
+                    "Calculator application build did not compile its " +
+                    "companion DUnitX project."
+                )
+            }
+        }
         $templateResults += [PSCustomObject]@{
             template = $project.BaseName
             projectFile = $project.Name

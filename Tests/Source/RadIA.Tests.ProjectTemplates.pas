@@ -46,7 +46,9 @@ var
   LFile: TRadIAProjectTemplateFile;
   LFoundDfm: Boolean;
   LFoundEngine: Boolean;
+  LFoundMainProject: Boolean;
   LFoundSource: Boolean;
+  LFoundTestRunner: Boolean;
   LFoundTestProject: Boolean;
   LFoundTests: Boolean;
   LPlan: TRadIAProjectTemplatePlan;
@@ -65,7 +67,9 @@ begin
     try
       LFoundDfm := False;
       LFoundEngine := False;
+      LFoundMainProject := False;
       LFoundSource := False;
+      LFoundTestRunner := False;
       LFoundTestProject := False;
       LFoundTests := False;
       for LFile in LPlan.Files do
@@ -84,6 +88,12 @@ begin
           Assert.Contains(LFile.Content, 'procedure TRadIAMainForm.OperatorClick');
           Assert.Contains(LFile.Content, 'Cannot divide by zero');
         end;
+        if SameText(LFile.RelativePath, 'CalculatorApp.dproj') then
+        begin
+          LFoundMainProject := True;
+          Assert.Contains(LFile.Content, 'RadIABuildCompanionTests');
+          Assert.Contains(LFile.Content, 'CalculatorAppTests.dproj');
+        end;
         if SameText(LFile.RelativePath, 'CalculatorEngine.pas') then
         begin
           LFoundEngine := True;
@@ -96,6 +106,11 @@ begin
           Assert.Contains(LFile.Content, 'CalculatorAppTests.dpr');
           Assert.Contains(LFile.Content, 'Tests.CalculatorEngine.pas');
         end;
+        if SameText(LFile.RelativePath, 'CalculatorAppTests.dpr') then
+        begin
+          LFoundTestRunner := True;
+          Assert.Contains(LFile.Content, 'TDUnitX.CheckCommandLine;');
+        end;
         if SameText(LFile.RelativePath, 'Tests.CalculatorEngine.pas') then
         begin
           LFoundTests := True;
@@ -105,9 +120,20 @@ begin
       end;
       Assert.IsTrue(LFoundDfm);
       Assert.IsTrue(LFoundEngine);
+      Assert.IsTrue(LFoundMainProject);
       Assert.IsTrue(LFoundSource);
       Assert.IsTrue(LFoundTestProject);
+      Assert.IsTrue(LFoundTestRunner);
       Assert.IsTrue(LFoundTests);
+      Assert.Contains(
+        LPlan.PreviewJson,
+        '"companionTestProject":"CalculatorAppTests.dproj"'
+      );
+      Assert.Contains(
+        LPlan.PreviewJson,
+        '"companionTestExecutable":"bin\\$(Platform)\\$(Config)\\' +
+        'CalculatorAppTests.exe"'
+      );
     finally
       LPlan.Free;
     end;

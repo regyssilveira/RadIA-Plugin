@@ -32,7 +32,7 @@ Os marcos abaixo pertencem à mesma versão 2.6.0; não representam releases int
 | M1 | Leitura segura de janelas e controles da aplicação depurada | Pendente |
 | M2 | Interação segura e cancelável com controles | Pendente |
 | M3 | Reprodução, diagnóstico, correção e revalidação de falhas | Pendente |
-| M4 | Calculadora por prompt com build, debug, teste visual e DUnitX | Em execução |
+| M4 | Calculadora por prompt com build, debug, teste visual e DUnitX | Em execução; matriz técnica comprovada |
 | M5 | Conhecimento semântico aprofundado do projeto Delphi | Pendente |
 | M6 | Experiência inline unificada e opções progressivamente reveladas | Pendente |
 | M7 | SIXEL no terminal integrado | Pendente |
@@ -55,7 +55,12 @@ O teste `scripts/Test-RadIA.GeneratedProjects.ps1` comprova, por alvo:
 - relatório estruturado para a matriz de evidências.
 
 Essa evidência ainda não encerra M4. Falta executar o mesmo fluxo por uma sessão real do RadIA dentro
-da IDE, iniciar pelo depurador e validar a matriz completa de alvos.
+da IDE a partir da superfície de conversa, sem o harness invocar as tools diretamente.
+
+O harness real já comprovou no Delphi 12 Win32 e no Delphi 13 Win32/IDE64 que o RadIA cria e abre a
+calculadora, compila a aplicação e o projeto DUnitX companion pela IDE, executa os cinco testes pelo
+`RunDUnitXTests`, inicia pelo depurador, obtém sessão, pilha e timeline e encerra sem discovery órfão.
+O teste do presenter comprova separadamente que o prompt natural inicia a jornada guiada correta.
 
 ## Gates finais da 2.6.0
 
@@ -68,4 +73,3 @@ da IDE, iniciar pelo depurador e validar a matriz completa de alvos.
 - instalação, atualização, reparo e desinstalação validados no Delphi 12 e 13;
 - documentação PT/EN auditada quanto a versão, links, clareza, localização, mojibake e conteúdo obsoleto;
 - `develop` integrada à `main` somente depois de todos os gates.
-

@@ -52,6 +52,11 @@ para execução nativa e mantém a aprovação visível no chat. Após a aprova�
 fluxo cria os arquivos apenas na raiz autorizada, abre o projeto na IDE, compila, executa e registra
 as evidências de validação.
 
+Para uma calculadora VCL, o preview informa `companionTestProject` e
+`companionTestExecutable`. O build principal também compila a suíte DUnitX companion. Em seguida, a
+jornada inicia a aplicação pelo depurador, verifica o cenário principal e executa os testes com
+`RunDUnitXTests`. A conclusão apresenta separadamente build, debugger, interface e relatório DUnitX.
+
 ## Como a execução funciona
 
 1. O comando ativa visualmente o modo agente quando necessário.

@@ -114,6 +114,11 @@ type
       const ARequest: TRadIAProjectTemplateRequest;
       const ATemplateId: string
     ): string;
+    function BuildCalculatorApplicationProjectFile(
+      const ARequest: TRadIAProjectTemplateRequest;
+      const ATemplateId: string;
+      const AMainSource: string
+    ): string;
     function BuildCalculatorButtons: string;
     function IsVclCalculator(
       const ARequest: TRadIAProjectTemplateRequest
@@ -237,6 +242,7 @@ end;
 
 function TRadIAProjectTemplatePlan.PreviewJson: string;
 var
+  LCompanionTestProject: string;
   LFile: TRadIAProjectTemplateFile;
   LFileJson: TJSONObject;
   LFiles: TJSONArray;
@@ -244,6 +250,7 @@ var
   LPlatforms: TJSONArray;
   LRoot: TJSONObject;
 begin
+  LCompanionTestProject := '';
   LRoot := TJSONObject.Create;
   try
     LRoot.AddPair('schemaVersion', TJSONNumber.Create(1));
@@ -270,6 +277,17 @@ begin
         LowerCase(THashSHA2.GetHashString(LFile.Content))
       );
       LFiles.AddElement(LFileJson);
+      if EndsText('Tests.dproj', LFile.RelativePath) then
+        LCompanionTestProject := LFile.RelativePath;
+    end;
+    if LCompanionTestProject <> '' then
+    begin
+      LRoot.AddPair('companionTestProject', LCompanionTestProject);
+      LRoot.AddPair(
+        'companionTestExecutable',
+        'bin\$(Platform)\$(Config)\' +
+        ChangeFileExt(LCompanionTestProject, '.exe')
+      );
     end;
     Result := LRoot.ToJSON;
   finally
@@ -337,7 +355,11 @@ begin
     Result := Result + [
       TRadIAProjectTemplateFile.Create(
         LProjectName + '.dproj',
-        BuildProjectFile(ARequest, ATemplateId, LMainSource)
+        BuildCalculatorApplicationProjectFile(
+          ARequest,
+          ATemplateId,
+          LMainSource
+        )
       )
     ];
     Exit;
@@ -482,6 +504,7 @@ begin
           'var' + sLineBreak +
           '  Runner: ITestRunner;' + sLineBreak +
           'begin' + sLineBreak +
+          '  TDUnitX.CheckCommandLine;' + sLineBreak +
           '  Runner := TDUnitX.CreateRunner;' + sLineBreak +
           '  Runner.AddLogger(TDUnitXConsoleLogger.Create(True));' +
           sLineBreak +
@@ -819,6 +842,7 @@ begin
       'var' + sLineBreak +
       '  Runner: ITestRunner;' + sLineBreak +
       'begin' + sLineBreak +
+      '  TDUnitX.CheckCommandLine;' + sLineBreak +
       '  Runner := TDUnitX.CreateRunner;' + sLineBreak +
       '  Runner.AddLogger(TDUnitXConsoleLogger.Create(True));' + sLineBreak +
       '  Runner.AddLogger(TDUnitXXMLNUnitFileLogger.Create(' + sLineBreak +
@@ -909,6 +933,34 @@ begin
     'Tests.CalculatorEngine.pas',
     [rfReplaceAll]
   );
+end;
+
+function TRadIAProjectTemplateEngine.BuildCalculatorApplicationProjectFile(
+  const ARequest: TRadIAProjectTemplateRequest;
+  const ATemplateId: string;
+  const AMainSource: string
+): string;
+const
+  CImportMarker =
+    '  <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" ';
+var
+  LBuildTarget: string;
+  LMarkerIndex: Integer;
+begin
+  Result := BuildProjectFile(ARequest, ATemplateId, AMainSource);
+  LMarkerIndex := Pos(CImportMarker, Result);
+  if LMarkerIndex = 0 then
+    raise EInvalidOpException.Create(
+      'The generated project import marker was not found.'
+    );
+  LBuildTarget :=
+    '  <Target Name="RadIABuildCompanionTests" AfterTargets="Build">' +
+    sLineBreak +
+    '    <MSBuild Projects="' + ARequest.ProjectName + 'Tests.dproj" ' +
+    'Targets="Build" Properties="Config=$(Config);Platform=$(Platform)" />' +
+    sLineBreak +
+    '  </Target>' + sLineBreak;
+  Insert(LBuildTarget, Result, LMarkerIndex);
 end;
 
 function TRadIAProjectTemplateEngine.BuildCalculatorButtons: string;
