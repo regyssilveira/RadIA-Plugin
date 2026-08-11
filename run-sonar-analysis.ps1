@@ -98,8 +98,38 @@ Write-Host "Starting SonarQube analysis..." -ForegroundColor Cyan
 Write-Host "Host URL: $HostUrl" -ForegroundColor Gray
 Write-Host "Project Key: radia" -ForegroundColor Gray
 
+$EffectiveDelphiVersion = $DelphiVersion
+if ([string]::IsNullOrWhiteSpace($EffectiveDelphiVersion)) {
+    if (Test-Path "HKCU:\Software\Embarcadero\BDS\37.0") {
+        $EffectiveDelphiVersion = "37.0"
+    } else {
+        $EffectiveDelphiVersion = "23.0"
+    }
+}
+$DelphiKey = "HKCU:\Software\Embarcadero\BDS\$EffectiveDelphiVersion"
+$DelphiRoot = (
+    Get-ItemProperty `
+        -Path $DelphiKey `
+        -Name "RootDir" `
+        -ErrorAction Stop
+).RootDir
+$CompilerVersion = switch ($EffectiveDelphiVersion) {
+    "23.0" { "VER360" }
+    "37.0" { "VER370" }
+    default {
+        throw "Unsupported Delphi version for SonarQube: $EffectiveDelphiVersion"
+    }
+}
+Write-Host (
+    "Delphi analyzer: $EffectiveDelphiVersion ($CompilerVersion)"
+) -ForegroundColor Gray
+
 # Run the scanner
-& sonar-scanner -D"sonar.token=$ResolvedToken" -D"sonar.host.url=$HostUrl"
+& sonar-scanner `
+    -D"sonar.token=$ResolvedToken" `
+    -D"sonar.host.url=$HostUrl" `
+    -D"sonar.delphi.installationPath=$DelphiRoot" `
+    -D"sonar.delphi.compilerVersion=$CompilerVersion"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "SonarQube analysis completed successfully!" -ForegroundColor Green

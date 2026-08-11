@@ -275,6 +275,7 @@ var
   LMedianReduction: Double;
   LOriginalContext: string;
   LOriginalTotal: Int64;
+  LPercentileIndex: NativeInt;
   LRoot: TJSONObject;
   LReductions: TList<Double>;
   LScenario: TRadIABenchmarkScenario;
@@ -371,11 +372,13 @@ begin
       'medianEligibleReductionPercent',
       TJSONNumber.Create(LMedianReduction)
     );
+    LPercentileIndex :=
+      ((LDurations.Count * 95) + 99) div 100 - 1;
+    if LPercentileIndex >= LDurations.Count then
+      LPercentileIndex := LDurations.Count - 1;
     LRoot.AddPair(
       'p95DurationMicroseconds',
-      TJSONNumber.Create(
-        LDurations[Min(LDurations.Count - 1, Ceil(LDurations.Count * 0.95) - 1)]
-      )
+      TJSONNumber.Create(LDurations[LPercentileIndex])
     );
     LOriginalContext := BuildDecisionContextReplay(False);
     LCompactedContext := BuildDecisionContextReplay(True);

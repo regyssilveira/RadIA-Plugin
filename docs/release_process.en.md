@@ -67,6 +67,8 @@ powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1 `
 
 The command fails when SonarQube processing fails, times out, or any Quality Gate condition is
 rejected. Do not prepare a merge, tag, or release package in that state.
+The script also overrides the Delphi installation and compiler used by the analyzer according to
+`-DelphiVersion`; this prevents an old server setting from analyzing the release as Delphi 11.
 
 The `SonarQube release gate` workflow repeats this barrier for pull requests targeting `develop` and
 `main`, pushes to those branches, and every `v*` tag. The self-hosted Windows runner must have the

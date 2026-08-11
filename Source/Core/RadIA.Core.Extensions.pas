@@ -279,10 +279,14 @@ begin
 end;
 
 function TRadIAToolExtensionHost.GetCount: Integer;
+var
+  LPair: TPair<string, TRadIARegisteredExtension>;
 begin
   TMonitor.Enter(FExtensions);
   try
-    Result := FExtensions.Count;
+    Result := 0;
+    for LPair in FExtensions do
+      Inc(Result);
   finally
     TMonitor.Exit(FExtensions);
   end;
@@ -296,10 +300,11 @@ var
 begin
   TMonitor.Enter(FExtensions);
   try
-    SetLength(Result, FExtensions.Count);
+    Result := [];
     LIndex := 0;
     for LPair in FExtensions do
     begin
+      SetLength(Result, Length(Result) + 1);
       Result[LIndex] := LPair.Value.Descriptor;
       Inc(LIndex);
     end;

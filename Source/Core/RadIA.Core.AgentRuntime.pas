@@ -1156,7 +1156,9 @@ var
   LStep: TRadIAAgentStep;
 begin
   LStep := Default(TRadIAAgentStep);
-  LStep.Index := FSteps.Count + 1;
+  LStep.Index := 1;
+  if FSteps.Count > 0 then
+    LStep.Index := FSteps.Last.Index + 1;
   LStep.ToolName := ADecision.ToolName;
   LStep.ArgumentsJson := ADecision.ArgumentsJson;
   LStep.CorrelationId := ACorrelationId;
@@ -1609,14 +1611,18 @@ function TRadIAAgentRuntime.BuildStepsJson(
 var
   LResultBudget: Integer;
   LStep: TRadIAAgentStep;
+  LStepCount: Integer;
 begin
   AMetrics := Default(TRadIAAgentCompactionMetrics);
+  LStepCount := 0;
+  for LStep in FSteps do
+    Inc(LStepCount);
   LResultBudget := Min(
     24000,
     Max(
       512,
       (FLimits.MaxDecisionContextCharacters - 40000) div
-        Max(1, FSteps.Count)
+        Max(1, LStepCount)
     )
   );
   if AProfile = cpBalanced then

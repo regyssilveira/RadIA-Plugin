@@ -926,8 +926,8 @@ var
   LCell: TRadIATerminalScreenCell;
   LColumn: Integer;
   LLastColumn: Integer;
-  LLastRow: Integer;
-  LRow: Integer;
+  LLastRow: NativeInt;
+  LRow: NativeInt;
 begin
   Result := [];
   LLastRow := FRows.Count - 1;

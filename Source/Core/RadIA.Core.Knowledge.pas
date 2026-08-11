@@ -1010,6 +1010,7 @@ function TRadIALocalKnowledgeService.GetStatus(
 var
   LChunk: TRadIAKnowledgeChunkEntry;
   LChunkCount: Integer;
+  LChunkEntry: TRadIAKnowledgeChunkEntry;
   LEstimatedIndexBytes: Int64;
   LFile: TRadIAKnowledgeFileEntry;
   LFileCount: Integer;
@@ -1027,10 +1028,12 @@ begin
     LLoaded := FLoadedProjects.ContainsKey(AProjectId);
     if FProjects.TryGetValue(AProjectId, LIndex) then
     begin
-      LFileCount := LIndex.Files.Count;
+      LFileCount := 0;
       for LFile in LIndex.Files.Values do
       begin
-        Inc(LChunkCount, LFile.Chunks.Count);
+        Inc(LFileCount);
+        for LChunkEntry in LFile.Chunks do
+          Inc(LChunkCount);
         Inc(
           LEstimatedIndexBytes,
           Length(LFile.Revision) * SizeOf(Char)
@@ -1333,6 +1336,7 @@ procedure TRadIALocalKnowledgeService.RemoveStaleFiles(
   out ARemovedFiles: Integer
 );
 var
+  LFileEntry: TRadIAKnowledgeFileEntry;
   LIndex: TRadIAKnowledgeProjectIndex;
   LStoredFile: string;
   LToRemove: TList<string>;
@@ -1351,7 +1355,9 @@ begin
         LIndex.Files.Remove(LStoredFile);
         Inc(ARemovedFiles);
       end;
-      AIndexedFiles := LIndex.Files.Count;
+      AIndexedFiles := 0;
+      for LFileEntry in LIndex.Files.Values do
+        Inc(AIndexedFiles);
       FLoadedProjects.AddOrSetValue(AProjectId, True);
     finally
       TMonitor.Exit(FProjects);

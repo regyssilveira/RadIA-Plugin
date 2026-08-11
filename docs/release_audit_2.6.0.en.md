@@ -19,8 +19,8 @@
 - [x] Complete build and 1,047 DUnitX tests on Delphi 13 Win32.
 - [x] Complete build and 1,047 DUnitX tests on Delphi 13 IDE64.
 - [x] 99 Web tests, ESLint, and 38 documentation tests pass.
-- [ ] Current SonarQube Quality Gate passes with no new issues. Blocked: the local REST API at
-  `http://localhost:9000` refused the connection during the final audit.
+- [x] Current SonarQube Quality Gate passes with 82.6% new-code coverage, 0.92% new duplication,
+  and zero new violations.
 - [x] All three DUnitX suites confirm no memory leaks.
 
 ## Distribution gates
@@ -50,3 +50,6 @@ that operating-system permission.
 Primary navigation remains task-oriented. Historical references were consolidated under planning and
 historical records without making old documents unreachable. Operational documentation uses version
 2.6.0, the Delphi 12/13 matrix, and the generated catalog of 132 tools.
+
+The analyzer ran with Delphi 12/`VER360`. The official script now explicitly overrides the selected
+Delphi installation and compiler version instead of inheriting stale server settings.

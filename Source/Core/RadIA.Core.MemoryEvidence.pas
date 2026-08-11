@@ -266,11 +266,13 @@ begin
 end;
 
 function TRadIAMemoryEvidenceSummary.GroupCount: Integer;
+var
+  LPair: TPair<string, Int64>;
 begin
+  Result := 0;
   if Assigned(FGroupBytes) then
-    Result := FGroupBytes.Count
-  else
-    Result := 0;
+    for LPair in FGroupBytes do
+      Inc(Result);
 end;
 
 function TRadIAMemoryEvidenceSummary.HasNewGroupComparedWith(

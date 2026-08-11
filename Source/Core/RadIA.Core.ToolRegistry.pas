@@ -125,10 +125,14 @@ begin
 end;
 
 function TRadIAToolRegistry.GetCount: Integer;
+var
+  LPair: TPair<string, IRadIATool>;
 begin
   TMonitor.Enter(FTools);
   try
-    Result := FTools.Count;
+    Result := 0;
+    for LPair in FTools do
+      Inc(Result);
   finally
     TMonitor.Exit(FTools);
   end;
@@ -142,10 +146,11 @@ var
 begin
   TMonitor.Enter(FTools);
   try
-    SetLength(Result, FTools.Count);
+    Result := [];
     LIndex := 0;
     for LPair in FTools do
     begin
+      SetLength(Result, Length(Result) + 1);
       Result[LIndex] := LPair.Value.Descriptor;
       Inc(LIndex);
     end;

@@ -12,7 +12,7 @@ type
   TPromptHistoryManager = class
   private
     FHistory: TList<string>;
-    FCurrentIndex: Integer;
+    FCurrentIndex: NativeInt;
     FMaxSize: Integer;
   public
     constructor Create(const AMaxSize: Integer = DEFAULT_MAX_PROMPT_HISTORY);
@@ -131,8 +131,12 @@ begin
 end;
 
 function TPromptHistoryManager.Count: Integer;
+var
+  LItem: string;
 begin
-  Result := FHistory.Count;
+  Result := 0;
+  for LItem in FHistory do
+    Inc(Result);
 end;
 
 function TPromptHistoryManager.GetItem(const AIndex: Integer): string;

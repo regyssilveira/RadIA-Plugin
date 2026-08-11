@@ -19,8 +19,8 @@
 - [x] Build e 1.047 testes DUnitX completos no Delphi 13 Win32.
 - [x] Build e 1.047 testes DUnitX completos no Delphi 13 IDE64.
 - [x] 99 testes Web, ESLint e 38 testes documentais aprovados.
-- [ ] SonarQube atual com Quality Gate aprovado e sem novas issues. Bloqueado: a API REST local em
-  `http://localhost:9000` recusou conexão na auditoria final.
+- [x] SonarQube atual com Quality Gate aprovado: cobertura nova de 82,6%, duplicação nova de
+  0,92% e zero novas violações.
 - [x] Ausência de vazamentos confirmada nas três suítes DUnitX.
 
 ## Gates de distribuição
@@ -51,3 +51,6 @@ A navegação principal permanece organizada por tarefa. Referências histórica
 na seção de planejamento e histórico, sem perder a alcançabilidade dos documentos antigos. A
 documentação operacional usa a versão 2.6.0, a matriz Delphi 12/13 e o catálogo gerado de 132
 ferramentas.
+
+O analisador foi executado com Delphi 12/`VER360`. O script oficial agora sobrepõe explicitamente
+a instalação e a versão do compilador selecionadas, evitando herdar configurações antigas do servidor.

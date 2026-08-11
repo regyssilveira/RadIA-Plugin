@@ -769,6 +769,7 @@ function TRadIATerminalHistory.FindPrevious(
   out ANextIndex: Integer
 ): Boolean;
 var
+  LEntry: TRadIATerminalHistoryEntry;
   LIndex: Integer;
   LQuery: string;
 begin
@@ -782,7 +783,11 @@ begin
 
   LIndex := AStartIndex;
   if (LIndex = -1) or (LIndex >= FEntries.Count) then
-    LIndex := FEntries.Count - 1;
+  begin
+    LIndex := -1;
+    for LEntry in FEntries do
+      Inc(LIndex);
+  end;
   LQuery := Trim(AQuery).ToLower;
   while LIndex >= 0 do
   begin
