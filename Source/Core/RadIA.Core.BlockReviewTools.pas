@@ -79,8 +79,9 @@ const
   CDecisionInputSchema =
     '{"type":"object","required":["blockId","decision"],' +
     '"properties":{"blockId":{"type":"string"},"decision":{' +
-    '"type":"string","enum":["accept","reject","edit"]},' +
-    '"editedText":{"type":"string"}},"additionalProperties":false}';
+    '"type":"string","enum":["accept","reject","edit","request-changes"]},' +
+    '"editedText":{"type":"string"},"comment":{"type":"string",' +
+    '"maxLength":8192}},"additionalProperties":false}';
   CResultSchema =
     '{"type":"object","required":["success"],"properties":{' +
     '"success":{"type":"boolean"},"transactionId":{"type":"string"}}}';
@@ -91,6 +92,7 @@ begin
     brdAccepted: Result := 'accepted';
     brdRejected: Result := 'rejected';
     brdEdited: Result := 'edited';
+    brdChangesRequested: Result := 'changes-requested';
   else
     Result := 'pending';
   end;
@@ -168,6 +170,7 @@ begin
         TJSONNumber.Create(LBlock.ProposedLineCount)
       );
       LItem.AddPair('decision', DecisionName(LBlock.Decision));
+      LItem.AddPair('comment', LBlock.Comment);
       LItem.AddPair('originalText', LBlock.OriginalText);
       LItem.AddPair('proposedText', LBlock.ProposedText);
       LArray.AddElement(LItem);
@@ -198,6 +201,7 @@ function TRadIADecideBlockReviewTool.Execute(
 ): TRadIAToolResult;
 var
   LBlockId: string;
+  LComment: string;
   LDecision: TRadIABlockReviewDecision;
   LDecisionText: string;
   LEditedText: string;
@@ -213,13 +217,14 @@ begin
     LBlockId := LJson.GetValue<string>('blockId', '');
     LDecisionText := LJson.GetValue<string>('decision', '');
     LEditedText := LJson.GetValue<string>('editedText', '');
+    LComment := LJson.GetValue<string>('comment', '');
     if (LBlockId = '') or not ParseDecision(LDecisionText, LDecision) then
       Exit(TRadIAToolResult.Failed(
         'invalid_request',
-        'Block id and a valid accept, reject, or edit decision are required.'
+        'Block id and a valid review decision are required.'
       ));
     Result := ResultToToolResult(
-      FSession.Decide(LBlockId, LDecision, LEditedText)
+      FSession.Decide(LBlockId, LDecision, LEditedText, LComment)
     );
   finally
     LJson.Free;
@@ -232,7 +237,7 @@ begin
   Result := TRadIAToolDescriptor.Create(
     'DecideBlockReview',
     '1.0.0',
-    'Records an accept, reject, or edited decision without changing any editor buffer.',
+    'Records accept, reject, edit, or commented change requests without buffer mutation.',
     CDecisionInputSchema,
     CResultSchema,
     trReadOnly
@@ -251,6 +256,8 @@ begin
     ADecision := brdRejected
   else if SameText(AValue, 'edit') then
     ADecision := brdEdited
+  else if SameText(AValue, 'request-changes') then
+    ADecision := brdChangesRequested
   else
     Result := False;
 end;

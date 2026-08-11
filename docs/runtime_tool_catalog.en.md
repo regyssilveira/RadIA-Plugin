@@ -73,7 +73,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | Tool | Purpose | Source unit |
 |---|---|---|
 | `ListBlockReviews` | Lists revision-bound patch blocks and their pending review decisions. | `RadIA.Core.BlockReviewTools.pas` |
-| `DecideBlockReview` | Records an accept, reject, or edited decision without changing any editor buffer. | `RadIA.Core.BlockReviewTools.pas` |
+| `DecideBlockReview` | Records accept, reject, edit, or commented change requests without buffer mutation. | `RadIA.Core.BlockReviewTools.pas` |
 | `ApplyBlockReviews` | Applies all resolved block decisions as one preconditioned multi-file transaction. | `RadIA.Core.BlockReviewTools.pas` |
 | `ClearBlockReviews` | Discards the active review session without changing editor buffers. | `RadIA.Core.BlockReviewTools.pas` |
 

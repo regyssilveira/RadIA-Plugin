@@ -143,6 +143,7 @@ type
     procedure OnEditBlock(Sender: TObject);
     procedure OnExplainBlock(Sender: TObject);
     procedure OnRejectBlock(Sender: TObject);
+    procedure OnRequestChangesBlock(Sender: TObject);
     procedure ShowBlockMenu(
       const AEditor: TWinControl;
       const X: Integer;
@@ -309,6 +310,8 @@ begin
       Result := clGray;
     brdEdited:
       Result := TColor($00C060A0);
+    brdChangesRequested:
+      Result := TColor($004040D0);
   else
     Result := TColor($0000A5FF);
   end;
@@ -786,6 +789,33 @@ begin
       LResult.ErrorMessage);
 end;
 
+procedure TRadIAOTAInlineReviewFacade.OnRequestChangesBlock(Sender: TObject);
+var
+  LComment: string;
+  LResult: TRadIABlockReviewSessionResult;
+  LSession: IRadIABlockReviewSession;
+begin
+  LComment := FSelectedBlock.Comment;
+  if not InputQuery(
+    'Request changes',
+    'Explain what must change before this block can be accepted:',
+    LComment
+  ) then
+    Exit;
+  if not TRadIAContainer.TryResolve<IRadIABlockReviewSession>(LSession) then
+    Exit;
+  LResult := LSession.Decide(
+    FSelectedBlock.Id,
+    brdChangesRequested,
+    '',
+    LComment
+  );
+  if not LResult.Success then
+    ShowMessage(
+      'The change request could not be saved: ' + LResult.ErrorMessage
+    );
+end;
+
 procedure TRadIAOTAInlineReviewFacade.ShowBlockMenu(
   const AEditor: TWinControl;
   const X: Integer;
@@ -810,6 +840,7 @@ begin
   FBlockMenu.Items.Clear;
   AddItem('&Accept block', OnAcceptBlock);
   AddItem('&Reject block', OnRejectBlock);
+  AddItem('Request &changes...', OnRequestChangesBlock);
   AddItem('&Edit block...', OnEditBlock);
   AddItem('E&xplain block', OnExplainBlock);
   AddItem('-', nil);

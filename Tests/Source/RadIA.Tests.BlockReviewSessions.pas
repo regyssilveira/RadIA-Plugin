@@ -58,6 +58,10 @@ type
     procedure RegistersBlockReviewToolsWithSafeRisks;
     [Test]
     procedure RefreshesAndClearsVisualProjection;
+    [Test]
+    procedure RequestsChangesWithCommentWithoutWriting;
+    [Test]
+    procedure ToolRecordsAndListsChangeRequestComment;
   end;
 
 implementation
@@ -216,6 +220,86 @@ begin
   Assert.IsTrue(FService.Apply.Success);
   Assert.AreEqual(1, FVisual.ClearCount);
   Assert.AreEqual<Integer>(0, Length(FVisual.Blocks));
+end;
+
+procedure TTestRadIABlockReviewSessions.RequestsChangesWithCommentWithoutWriting;
+var
+  LBlock: TRadIABlockReview;
+  LOriginal: string;
+  LResult: TRadIABlockReviewSessionResult;
+begin
+  LOriginal := FWorkspace.ContentOf(FFirstFile);
+  Assert.IsTrue(FService.PublishFile(
+    FFirstFile,
+    RevisionOf(FFirstFile),
+    LOriginal,
+    LOriginal.Replace('old a', 'new a')
+  ).Success);
+  LBlock := FService.ListBlocks[0];
+  LResult := FService.Decide(
+    LBlock.Id,
+    brdChangesRequested,
+    '',
+    'Keep the public behavior and add a boundary test.'
+  );
+  Assert.IsTrue(LResult.Success);
+  LBlock := FService.ListBlocks[0];
+  Assert.AreEqual<Integer>(
+    Ord(brdChangesRequested),
+    Ord(LBlock.Decision)
+  );
+  Assert.AreEqual(
+    'Keep the public behavior and add a boundary test.',
+    LBlock.Comment
+  );
+  Assert.AreEqual(1, FService.GetStatus.PendingCount);
+  Assert.AreEqual(LOriginal, FWorkspace.ContentOf(FFirstFile));
+  LResult := FService.Apply;
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('pending_decisions', LResult.ErrorCode);
+end;
+
+procedure TTestRadIABlockReviewSessions.ToolRecordsAndListsChangeRequestComment;
+var
+  LArguments: string;
+  LBlock: TRadIABlockReview;
+  LResult: TRadIAToolResult;
+begin
+  Assert.IsTrue(FService.PublishFile(
+    FFirstFile,
+    RevisionOf(FFirstFile),
+    FWorkspace.ContentOf(FFirstFile),
+    FWorkspace.ContentOf(FFirstFile).Replace('old a', 'new a')
+  ).Success);
+  LBlock := FService.ListBlocks[0];
+  LArguments := Format(
+    '{"blockId":"%s","decision":"request-changes",' +
+    '"comment":"Add a regression test."}',
+    [LBlock.Id]
+  );
+  LResult := FRegistry.Resolve('DecideBlockReview').Execute(
+    TRadIAToolRequest.Create('DecideBlockReview', LArguments, 'test')
+  );
+  Assert.IsTrue(LResult.Success);
+  LResult := FRegistry.Resolve('ListBlockReviews').Execute(
+    TRadIAToolRequest.Create('ListBlockReviews', '{}', 'test')
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'changes-requested');
+  Assert.Contains(LResult.ContentJson, 'Add a regression test.');
+
+  LResult := FRegistry.Resolve('DecideBlockReview').Execute(
+    TRadIAToolRequest.Create(
+      'DecideBlockReview',
+      Format(
+        '{"blockId":"%s","decision":"request-changes"}',
+        [LBlock.Id]
+      ),
+      'test'
+    )
+  );
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('comment_required', LResult.ErrorCode);
 end;
 
 procedure TTestRadIABlockReviewSessions.RegistersBlockReviewToolsWithSafeRisks;

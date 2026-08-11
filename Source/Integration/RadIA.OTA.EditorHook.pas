@@ -200,6 +200,7 @@ type
     procedure OnBlockReviewNextExecute(Sender: TObject);
     procedure OnBlockReviewPreviousExecute(Sender: TObject);
     procedure OnBlockReviewEditExecute(Sender: TObject);
+    procedure OnBlockReviewRequestChangesExecute(Sender: TObject);
     procedure OnBlockReviewExplainExecute(Sender: TObject);
     procedure OnBlockReviewApplyExecute(Sender: TObject);
     procedure OnBlockReviewClearExecute(Sender: TObject);
@@ -1133,6 +1134,11 @@ begin
     AProfile.ShortcutFor(isaReviewPrevious), OnBlockReviewPreviousExecute);
   AddItem('Edit Review Block at Cursor',
     AProfile.ShortcutFor(isaReviewEdit), OnBlockReviewEditExecute);
+  AddItem(
+    'Request Changes for Review Block...',
+    0,
+    OnBlockReviewRequestChangesExecute
+  );
   AddItem('Explain Review Block at Cursor',
     AProfile.ShortcutFor(isaReviewExplain), OnBlockReviewExplainExecute);
   AddItem('Apply Resolved Block Review',
@@ -1867,6 +1873,37 @@ begin
     'Original:' + sLineBreak + LReview.OriginalText + sLineBreak +
     'Proposed:' + sLineBreak + LReview.ProposedText
   );
+end;
+
+procedure TRadIAEditorHook.OnBlockReviewRequestChangesExecute(Sender: TObject);
+var
+  LComment: string;
+  LResult: TRadIABlockReviewSessionResult;
+  LReview: TRadIABlockReview;
+  LSession: IRadIABlockReviewSession;
+begin
+  if not TryGetBlockReviewAtCursor(LSession, LReview) then
+  begin
+    ShowMessage('No block review is available at the current line.');
+    Exit;
+  end;
+  LComment := LReview.Comment;
+  if not InputQuery(
+    'Request changes',
+    'Explain what must change before this block can be accepted:',
+    LComment
+  ) then
+    Exit;
+  LResult := LSession.Decide(
+    LReview.Id,
+    brdChangesRequested,
+    '',
+    LComment
+  );
+  if not LResult.Success then
+    ShowMessage(
+      'The change request could not be saved: ' + LResult.ErrorMessage
+    );
 end;
 
 procedure TRadIAEditorHook.OnBlockReviewApplyExecute(Sender: TObject);

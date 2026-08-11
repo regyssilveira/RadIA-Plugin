@@ -18,7 +18,7 @@ As ferramentas relacionadas são:
 | `PreparePatch` | Prepara um arquivo e publica seus blocos. | Antes de revisar uma alteração simples. |
 | `PrepareMultiFilePatch` | Prepara uma transação com vários arquivos. | Quando a mudança atravessa units. |
 | `ListBlockReviews` | Lista blocos, arquivos, linhas e decisões atuais. | Para o agente ou `/tool` consultar o estado. |
-| `DecideBlockReview` | Aceita, rejeita ou edita um bloco sem escrever no arquivo. | Para automatizar a mesma decisão disponível no gutter. |
+| `DecideBlockReview` | Aceita, rejeita, edita ou solicita alterações com comentário, sem escrever. | Para usar a decisão do gutter pelo agente, chat ou MCP. |
 | `ApplyBlockReviews` | Aplica todos os blocos resolvidos como uma transação. | Depois que não houver decisão pendente. |
 | `ClearBlockReviews` | Descarta a sessão sem alterar arquivos. | Para abandonar toda a proposta. |
 
@@ -30,16 +30,20 @@ As ferramentas relacionadas são:
 | Verde | Aceito | Usa o texto proposto. |
 | Cinza | Rejeitado | Mantém o texto original. |
 | Roxo | Editado | Usa o texto ajustado no comparador visual. |
+| Vermelho | Alterações solicitadas | Registra o comentário e impede a aplicação. |
 
-Clique com o botão esquerdo no marcador para abrir as ações **Accept block**, **Reject block**,
-**Edit block**, **Explain block**, **Apply resolved review** e **Discard review session**. A edição
+Clique com o botão esquerdo no marcador para abrir **Accept block**, **Reject block**, **Request
+changes**, **Edit block**, **Explain block**, **Apply resolved review** e **Discard review session**.
+**Request changes** exige um comentário, não altera o buffer e mantém o bloco pendente. O comentário
+aparece em `ListBlockReviews`, para que agente, chat ou MCP recuperem o feedback. A edição
 abre o comparador visual com o original e a proposta, permitindo ajustar o resultado antes de salvar
 a decisão.
 
 ## Teclado e menu do editor
 
-Todas as ações visuais têm equivalente no submenu **Rad IA** do menu contextual do editor e em
-bindings configuráveis da Open Tools API:
+As ações também aparecem no submenu **Rad IA** do menu contextual. As ações recorrentes possuem
+bindings configuráveis da Open Tools API; solicitar alterações abre o campo de comentário pelo menu
+ou pelo marcador:
 
 | Ação | Nome no perfil | Atalho padrão |
 |---|---|---|
@@ -73,7 +77,7 @@ já existente mantém prioridade.
 1. Peça a alteração no chat ou no modo agente.
 2. Aguarde a preparação e abra o primeiro arquivo indicado.
 3. Percorra os marcadores com mouse, menu ou `reviewNext`/`reviewPrevious`.
-4. Aceite, rejeite ou edite cada bloco.
+4. Aceite, rejeite, edite ou solicite alterações com comentário em cada bloco.
 5. Use **Apply resolved review** somente depois de revisar todos os arquivos.
 6. Compile e execute os testes; se necessário, use o checkpoint ou a ferramenta de reversão da
    transação.

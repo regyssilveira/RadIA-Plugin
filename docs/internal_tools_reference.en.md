@@ -103,7 +103,7 @@ passes `execution` classification and does not accept arbitrary names received f
 |Tool|What it does|When it is triggered|
 |---|---|---|
 |`ListBlockReviews`|Lists revision-bound blocks and their current decisions.|After a single or multi-file preview publishes a review session.|
-|`DecideBlockReview`|Records accept, reject, or edit without changing a buffer.|From an editor action, command, chat, or MCP during review.|
+|`DecideBlockReview`|Records accept, reject, edit, or commented change requests without buffer mutation.|From gutter, menu, agent, chat, or MCP during review.|
 |`ApplyBlockReviews`|Composes all decisions and applies files in one transaction.|When no block remains pending and write consent is granted.|
 |`ClearBlockReviews`|Discards the session and decisions without changing files.|To cancel review or abandon a stale preview.|
 

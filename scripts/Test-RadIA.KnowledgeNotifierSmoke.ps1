@@ -960,6 +960,7 @@ $developmentSurfaceCancellationPassed = $false
 $developmentSurfaceCodePassed = $false
 $developmentSurfaceDesignPassed = $false
 $developmentSurfaceErrorPassed = $false
+$reviewChangeRequestPassed = $false
 $editorChanged = $false
 $buildPassed = $false
 $testsPassed = $false
@@ -1697,6 +1698,46 @@ try {
             originalText = $originalText
             replacementText = $replacementText
         }
+    $reviewBlocks = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "ListBlockReviews"
+    if ($reviewBlocks.blocks.Count -lt 1) {
+        throw "The prepared patch did not publish a block review."
+    }
+    $reviewComment = "Preserve behavior and add regression evidence."
+    [void](Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "DecideBlockReview" `
+        -Arguments @{
+            blockId = $reviewBlocks.blocks[0].id
+            decision = "request-changes"
+            comment = $reviewComment
+        }
+    )
+    $reviewBlocks = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "ListBlockReviews"
+    if ($reviewBlocks.blocks[0].decision -ne "changes-requested" -or
+        $reviewBlocks.blocks[0].comment -ne $reviewComment -or
+        $reviewBlocks.pendingCount -lt 1) {
+        throw "The block review did not retain the requested changes."
+    }
+    $contentAfterComment = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "GetEditorContent"
+    if ($contentAfterComment.content.Contains($marker)) {
+        throw "Requesting block changes modified the editor buffer."
+    }
+    [void](Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "ClearBlockReviews"
+    )
+    $reviewChangeRequestPassed = $true
     [void](Invoke-RadIAToolWithConsent `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
@@ -2071,6 +2112,7 @@ if ($EvidencePath) {
             developmentSurfaceCancellation = (
                 $developmentSurfaceCancellationPassed
             )
+            reviewChangeRequest = $reviewChangeRequestPassed
             sourceEdited = $editorChanged
             compilerFailureObservedAndFixed = $correctionPassed
             buildPassed = $buildPassed

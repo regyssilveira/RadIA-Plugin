@@ -64,7 +64,8 @@ type
     function Decide(
       const ABlockId: string;
       const ADecision: TRadIABlockReviewDecision;
-      const AEditedText: string = ''
+      const AEditedText: string = '';
+      const AComment: string = ''
     ): TRadIABlockReviewSessionResult;
     function Apply: TRadIABlockReviewSessionResult;
     function GetStatus: TRadIABlockReviewSessionStatus;
@@ -124,7 +125,8 @@ type
     function Decide(
       const ABlockId: string;
       const ADecision: TRadIABlockReviewDecision;
-      const AEditedText: string = ''
+      const AEditedText: string = '';
+      const AComment: string = ''
     ): TRadIABlockReviewSessionResult;
     function Apply: TRadIABlockReviewSessionResult;
     function GetStatus: TRadIABlockReviewSessionStatus;
@@ -140,6 +142,7 @@ uses
 const
   CMaximumFiles = 32;
   CMaximumEditedCharacters = 2 * 1024 * 1024;
+  CMaximumCommentCharacters = 8192;
 
 { TRadIABlockReviewSessionStatus }
 
@@ -255,10 +258,10 @@ begin
     for LFile in FFiles.Values do
     begin
       for LBlock in LFile.Blocks do
-        if LBlock.Decision = brdPending then
+        if LBlock.Decision in [brdPending, brdChangesRequested] then
           Exit(TRadIABlockReviewSessionResult.Failed(
             'pending_decisions',
-            'Every review block must be accepted, rejected, or edited before apply.'
+            'Resolve pending blocks and requested changes before apply.'
           ));
       LProposedContent := TRadIABlockReviewEngine.Compose(
         LFile.OriginalContent,
@@ -311,7 +314,8 @@ end;
 function TRadIABlockReviewSession.Decide(
   const ABlockId: string;
   const ADecision: TRadIABlockReviewDecision;
-  const AEditedText: string
+  const AEditedText: string;
+  const AComment: string
 ): TRadIABlockReviewSessionResult;
 var
   LBlockIndex: Integer;
@@ -329,6 +333,16 @@ begin
       'resource_limit',
       'Edited block content exceeds the configured safety limit.'
     ));
+  if (ADecision = brdChangesRequested) and (Trim(AComment) = '') then
+    Exit(TRadIABlockReviewSessionResult.Failed(
+      'comment_required',
+      'A comment is required when requesting changes.'
+    ));
+  if Length(AComment) > CMaximumCommentCharacters then
+    Exit(TRadIABlockReviewSessionResult.Failed(
+      'resource_limit',
+      'Review comment exceeds the configured safety limit.'
+    ));
   TMonitor.Enter(FFiles);
   try
     if not FindBlock(ABlockId, LFile, LBlockIndex) then
@@ -339,7 +353,8 @@ begin
     LBlocks := LFile.Blocks;
     LBlocks[LBlockIndex] := LBlocks[LBlockIndex].WithDecision(
       ADecision,
-      AEditedText
+      AEditedText,
+      AComment
     );
     LFile.Blocks := LBlocks;
     Result := TRadIABlockReviewSessionResult.Succeeded('');
@@ -393,7 +408,7 @@ begin
       for LBlock in LFile.Blocks do
       begin
         Inc(LBlockCount);
-        if LBlock.Decision = brdPending then
+        if LBlock.Decision in [brdPending, brdChangesRequested] then
           Inc(LPendingCount);
       end;
     Result := TRadIABlockReviewSessionStatus.Create(

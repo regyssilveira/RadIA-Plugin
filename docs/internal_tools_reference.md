@@ -103,7 +103,7 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `ListBlockReviews` | Lista blocos ligados ao arquivo e à revisão-base, incluindo a decisão atual. | Depois que um preview simples ou multiarquivo publica uma sessão revisável. |
-| `DecideBlockReview` | Registra aceitar, rejeitar ou editar sem alterar o buffer. | Por uma ação no editor, comando, chat ou MCP durante a revisão. |
+| `DecideBlockReview` | Registra aceitar, rejeitar, editar ou solicitar alterações com comentário sem mudar o buffer. | Pelo gutter, menu, agente, chat ou MCP durante a revisão. |
 | `ApplyBlockReviews` | Compõe as decisões e aplica os arquivos em uma transação. | Quando nenhum bloco continua pendente e após consentimento de escrita. |
 | `ClearBlockReviews` | Descarta a sessão e suas decisões sem alterar arquivos. | Para cancelar a revisão ou abandonar um preview obsoleto. |
 

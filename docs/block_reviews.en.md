@@ -18,7 +18,7 @@ The related tools are:
 | `PreparePatch` | Prepares one file and publishes its blocks. | Before reviewing a simple change. |
 | `PrepareMultiFilePatch` | Prepares a transaction across multiple files. | When the change spans units. |
 | `ListBlockReviews` | Lists current blocks, files, lines, and decisions. | For the agent or `/tool` to inspect state. |
-| `DecideBlockReview` | Accepts, rejects, or edits one block without writing the file. | To automate the same decision offered in the gutter. |
+| `DecideBlockReview` | Accepts, rejects, edits, or requests changes with a comment, without writing. | To use the gutter decision from agent, chat, or MCP. |
 | `ApplyBlockReviews` | Applies every resolved block as one transaction. | After no decision remains pending. |
 | `ClearBlockReviews` | Discards the session without changing files. | To abandon the whole proposal. |
 
@@ -30,15 +30,19 @@ The related tools are:
 | Green | Accepted | Uses the proposed text. |
 | Gray | Rejected | Keeps the original text. |
 | Purple | Edited | Uses the text adjusted in the visual diff. |
+| Red | Changes requested | Records the comment and blocks application. |
 
-Left-click the marker to open **Accept block**, **Reject block**, **Edit block**, **Explain block**,
-**Apply resolved review**, and **Discard review session**. Editing opens the visual diff with the
-original and proposed text so you can adjust the result before saving the decision.
+Left-click the marker to open **Accept block**, **Reject block**, **Request changes**, **Edit block**,
+**Explain block**, **Apply resolved review**, and **Discard review session**. **Request changes**
+requires a comment, does not mutate the buffer, and keeps the block pending. `ListBlockReviews`
+returns the comment so the agent, chat, or MCP client can recover the feedback. Editing opens the
+visual diff so you can adjust the result before saving the decision.
 
 ## Keyboard and editor menu
 
-Every visual action has an equivalent in the editor context menu's **Rad IA** submenu and in
-configurable Open Tools API bindings:
+The actions also appear in the editor context menu's **Rad IA** submenu. Recurring actions have
+configurable Open Tools API bindings; requesting changes opens the comment field from the menu or
+marker:
 
 | Action | Profile name | Default shortcut |
 |---|---|---|
@@ -72,7 +76,7 @@ priority.
 1. Request the change in chat or agent mode.
 2. Wait for preparation and open the first indicated file.
 3. Move through markers with the mouse, menu, or `reviewNext`/`reviewPrevious`.
-4. Accept, reject, or edit every block.
+4. Accept, reject, edit, or request changes with a comment for every block.
 5. Use **Apply resolved review** only after reviewing all files.
 6. Build and run tests; when necessary, use the checkpoint or transaction-revert tool.
 

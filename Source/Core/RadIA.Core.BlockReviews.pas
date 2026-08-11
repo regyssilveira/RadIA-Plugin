@@ -7,7 +7,8 @@ type
     brdPending,
     brdAccepted,
     brdRejected,
-    brdEdited
+    brdEdited,
+    brdChangesRequested
   );
 
   TRadIABlockReviewLocation = record
@@ -42,6 +43,7 @@ type
     FProposedText: string;
     FDecision: TRadIABlockReviewDecision;
     FEditedText: string;
+    FComment: string;
   public
     constructor Create(
       const ATargetFile: string;
@@ -52,7 +54,8 @@ type
     );
     function WithDecision(
       const ADecision: TRadIABlockReviewDecision;
-      const AEditedText: string = ''
+      const AEditedText: string = '';
+      const AComment: string = ''
     ): TRadIABlockReview;
     property Id: string read FId;
     property TargetFile: string read FTargetFile;
@@ -65,6 +68,7 @@ type
     property ProposedText: string read FProposedText;
     property Decision: TRadIABlockReviewDecision read FDecision;
     property EditedText: string read FEditedText;
+    property Comment: string read FComment;
   end;
 
   TRadIABlockReviewEngine = class
@@ -339,6 +343,7 @@ begin
   FProposedText := AProposedText;
   FDecision := brdPending;
   FEditedText := '';
+  FComment := '';
   LIdentity := ATargetFile + #0 + ABaseRevision + #0 +
     FOriginalStartLine.ToString + #0 + FOriginalLineCount.ToString + #0 +
     FProposedStartLine.ToString + #0 + FProposedLineCount.ToString + #0 +
@@ -348,7 +353,8 @@ end;
 
 function TRadIABlockReview.WithDecision(
   const ADecision: TRadIABlockReviewDecision;
-  const AEditedText: string
+  const AEditedText: string;
+  const AComment: string
 ): TRadIABlockReview;
 begin
   Result := Self;
@@ -357,6 +363,10 @@ begin
     Result.FEditedText := AEditedText
   else
     Result.FEditedText := '';
+  if ADecision = brdChangesRequested then
+    Result.FComment := Trim(AComment)
+  else
+    Result.FComment := '';
 end;
 
 { TRadIABlockReviewEngine }

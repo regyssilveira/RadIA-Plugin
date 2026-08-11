@@ -73,7 +73,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
 | `ListBlockReviews` | Lista blocos ligados ao arquivo e à revisão-base, incluindo a decisão atual. | `RadIA.Core.BlockReviewTools.pas` |
-| `DecideBlockReview` | Registra aceitar, rejeitar ou editar sem alterar o buffer. | `RadIA.Core.BlockReviewTools.pas` |
+| `DecideBlockReview` | Registra aceitar, rejeitar, editar ou solicitar alterações com comentário sem mudar o buffer. | `RadIA.Core.BlockReviewTools.pas` |
 | `ApplyBlockReviews` | Compõe as decisões e aplica os arquivos em uma transação. | `RadIA.Core.BlockReviewTools.pas` |
 | `ClearBlockReviews` | Descarta a sessão e suas decisões sem alterar arquivos. | `RadIA.Core.BlockReviewTools.pas` |
 
