@@ -53,6 +53,10 @@ para execução nativa e mantém a aprovação visível no chat. Após a aprova�
 fluxo cria os arquivos apenas na raiz autorizada, abre o projeto na IDE, compila, executa e registra
 as evidências de validação.
 
+O tipo também é inferido sem exigir o comando: Console, VCL, FireMonkey/FMX, Library/DLL, Package/BPL,
+DUnitX ou Windows Service. Os termos equivalentes em português e inglês são aceitos. Se o pedido não
+identificar um desses tipos com segurança, o RadIA pergunta qual template usar antes do preview.
+
 Para uma calculadora VCL, o preview informa `companionTestProject` e
 `companionTestExecutable`. O build principal também compila a suíte DUnitX companion. Em seguida, a
 jornada inicia a aplicação pelo depurador, verifica o cenário principal e executa os testes com

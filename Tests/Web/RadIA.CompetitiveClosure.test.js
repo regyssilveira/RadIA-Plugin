@@ -49,7 +49,7 @@ test('competitive closure baseline is fixed and contains only explicit gaps', ()
   assert.equal(closureBaseline.targetVersion, '2.7.0');
   assert.deepEqual(
     closureBaseline.items.map(item => `${item.id}:${item.status}`),
-    ['CC-01:passed', 'CC-02:open', 'CC-03:open', 'CC-04:open']
+    ['CC-01:passed', 'CC-02:passed', 'CC-03:open', 'CC-04:open']
   );
   assert.equal(closureBaseline.closureRule.open, 0);
   assert.ok(closureBaseline.permanentExclusions.includes('webview-replacement'));

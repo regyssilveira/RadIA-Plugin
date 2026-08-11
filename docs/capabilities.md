@@ -66,7 +66,7 @@ Consulte [Editor e geração](user_guide_editor_generation.md) e
 
 O RadIA pode:
 
-- criar projetos pelos templates Console, VCL, FMX, Library, Package e DUnitX;
+- criar projetos pelos templates Console, VCL, FMX, Library, Package, DUnitX e Windows Service;
 - visualizar antecipadamente os arquivos;
 - criar em staging e validar hashes e precondições;
 - abrir, compilar, validar e reverter o projeto criado;

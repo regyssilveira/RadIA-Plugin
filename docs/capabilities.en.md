@@ -13,7 +13,7 @@ This page is the functional map of RadIA 2.6.2.
 | Editor | Read live buffers and selections, explain, review, refactor, optimize SQL, find bugs, scan warnings, generate tests and XML documentation, and compare up to three Ghost Text alternatives through dedicated FIM on Ollama/LM Studio with explicit fallback elsewhere. |
 | Review | Smart Diff, inline reviews, reviewed fixes, safe apply and controlled revert. |
 | Generation | DTOs and models from JSON or DDL, methods from comments and complete Delphi projects. |
-| Templates | Console, VCL, FMX, Library, Package and DUnitX with preview, staging, validation, open, build and rollback. |
+| Templates | Console, VCL, FMX, Library, Package, DUnitX, and Windows Service with preview, staging, validation, open, build, and rollback. |
 | Safe editing | Single-file and multi-file patches, base hashes, preconditions, previews, rollback and compound transactions. |
 | Project structure | Reviewable addition and removal of units and forms. |
 | Form Designer | Inspect forms and components, change layout and properties, add or remove components and create event handlers. |

@@ -31,7 +31,7 @@ These points are explicit product decisions and must never return as gaps in thi
 | ID | Requirement | Status | Required evidence |
 |---|---|---|---|
 | CC-01 | Generated projects | Passed | Delphi 12/13, 11 projects, and 5/5 tests |
-| CC-02 | Prompt per template | Open | PT/EN matrix through the real conversation |
+| CC-02 | Prompt per template | Passed | PT/EN matrix through the real conversation |
 | CC-03 | Intent and IDE view | Open | Design, Code, error, and cancellation smoke |
 | CC-04 | Review comment | Open | Audited feedback without mutation |
 
@@ -57,3 +57,10 @@ The
 matrix was produced from commit `58faee7` with `sourceDirty=false`. Delphi 12 and Delphi 13 built all
 11 projects, exercised the calculator, and passed all five DUnitX tests with no failures, errors,
 ignored tests, or leaks.
+
+## CC-02 evidence
+
+The [natural_project_prompts_evidence_2.7.0.json](natural_project_prompts_evidence_2.7.0.json) matrix
+was produced from commit `5d217aa` with `sourceDirty=false`. All seven templates were requested with
+natural Portuguese and English prompts through the real conversation, for 14 passing scenarios on
+Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.

@@ -53,6 +53,10 @@ to native execution, and keeps approval visible in the chat.
 After approval, the workflow writes only inside the authorized root, opens the project in the IDE,
 builds and runs it, and records validation evidence.
 
+The type is also inferred without requiring the command: Console, VCL, FireMonkey/FMX, Library/DLL,
+Package/BPL, DUnitX, or Windows Service. Equivalent Portuguese and English terms are accepted. If the
+request does not safely identify one of these types, RadIA asks which template to use before preview.
+
 For a VCL calculator, the preview reports `companionTestProject` and
 `companionTestExecutable`. The main build also compiles the companion DUnitX suite. The journey then
 starts the application under the debugger, verifies its primary scenario, and runs the tests with
