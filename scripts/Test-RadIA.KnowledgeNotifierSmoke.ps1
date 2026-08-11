@@ -413,10 +413,7 @@ function Invoke-RadIATool {
         [string]$InstanceFile,
         [Parameter(Mandatory = $true)]
         [string]$Name,
-        [hashtable]$Arguments = @{},
-        [ValidateSet("Allow once", "Deny", "Cancel")]
-        [string]$ConsentButtonText = "Allow once",
-        [switch]$ExpectRejection
+        [hashtable]$Arguments = @{}
     )
 
     $initialize = @{
@@ -495,7 +492,10 @@ function Invoke-RadIAToolWithConsent {
         [Diagnostics.Process]$IDEProcess,
         [Parameter(Mandatory = $true)]
         [string]$Name,
-        [hashtable]$Arguments = @{}
+        [hashtable]$Arguments = @{},
+        [ValidateSet("Allow once", "Deny", "Cancel")]
+        [string]$ConsentButtonText = "Allow once",
+        [switch]$ExpectRejection
     )
 
     $requestKey = [Guid]::NewGuid().ToString("N")
