@@ -117,23 +117,29 @@ data by default.
 To find and understand any settings field or button, see the
 [complete settings reference](docs/settings_reference.en.md).
 
-## Build from source
+## Build and install from source
 
-The commands below are intended for contributors:
+To install without the visual installer, clone the repository, open PowerShell at its root, close
+every Delphi instance, and run the matching command. Use an elevated session if Windows needs to
+authorize copying `WebView2Loader.dll`:
 
 ```powershell
 # Delphi 12 Win32
-powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0" -Test
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "23.0" -Release -Install
 
 # Delphi 13 Win32
-powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -Test
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -Release -Install
 
 # Delphi 13 IDE64
-powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -IDE64 -Test
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Release -Install
 ```
 
-Close the IDE before installing or replacing a BPL. See the
-[installation guide](docs/install_config.en.md) for complete instructions.
+`-Test` builds and runs the tests, but does not install without `-Install`. After installation, open
+the IDE and run `/doctor`. See the [installation guide](docs/install_config.en.md) for build, test,
+package installation, and troubleshooting instructions.
 
 ## Security and privacy
 

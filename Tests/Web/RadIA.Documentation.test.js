@@ -914,3 +914,38 @@ test('chat documentation explains the bounded follow-up queue', () => {
   assert.match(english, /up to five messages/u);
   assert.match(english, /does not enter history before sending/u);
 });
+
+test('source installation distinguishes build, test, and IDE registration', () => {
+  const portugueseReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
+  const englishReadme = fs.readFileSync(path.join(repositoryRoot, 'README.en.md'), 'utf8');
+  const portugueseGuide = fs.readFileSync(
+    path.join(documentationRoot, 'install_config.md'),
+    'utf8'
+  );
+  const englishGuide = fs.readFileSync(
+    path.join(documentationRoot, 'install_config.en.md'),
+    'utf8'
+  );
+
+  [portugueseReadme, portugueseGuide].forEach(document => {
+    assert.match(document, /"23\.0" -Release -Install/u);
+    assert.match(document, /"37\.0" -Release -Install/u);
+    assert.match(document, /"37\.0" -IDE64 -Release -Install/u);
+    assert.match(document, /instala[\s\S]{0,100}sem\s+`-Install`/u);
+  });
+  [englishReadme, englishGuide].forEach(document => {
+    assert.match(document, /"23\.0" -Release -Install/u);
+    assert.match(document, /"37\.0" -Release -Install/u);
+    assert.match(document, /"37\.0" -IDE64 -Release -Install/u);
+    assert.match(document, /does not install[\s\S]{0,100}without\s+`-Install`/u);
+  });
+});
+
+test('source installation deploys extension tooling and preserves shared Web assets', () => {
+  const buildScript = fs.readFileSync(path.join(repositoryRoot, 'build.ps1'), 'utf8');
+
+  assert.match(buildScript, /New-RadIA\.DeclarativeExtensionPackage\.ps1/u);
+  assert.match(buildScript, /\$targetExtensionPackager/u);
+  assert.match(buildScript, /\$win32Package/u);
+  assert.match(buildScript, /\$win64Package/u);
+});

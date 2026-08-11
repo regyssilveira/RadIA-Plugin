@@ -124,23 +124,29 @@ O instalador verifica os binários, o registro do pacote, o loader e todos os re
 manifesto. O reparo reaplica esses componentes preservando configurações, e a desinstalação mantém
 os dados do usuário por padrão.
 
-## Compilar do código-fonte
+## Compilar e instalar do código-fonte
 
-Os comandos abaixo são destinados a contribuidores:
+Para instalar sem usar o instalador visual, clone o repositório, abra o PowerShell na raiz, feche
+todas as instâncias do Delphi e execute o comando correspondente. Use uma sessão elevada caso o
+Windows precise autorizar a cópia do `WebView2Loader.dll`:
 
 ```powershell
 # Delphi 12 Win32
-powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0" -Test
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "23.0" -Release -Install
 
 # Delphi 13 Win32
-powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -Test
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -Release -Install
 
 # Delphi 13 IDE64
-powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -IDE64 -Test
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Release -Install
 ```
 
-Feche a IDE antes de instalar ou substituir uma BPL. O procedimento completo, incluindo o fluxo do
-usuário, build para contribuidores, providers e solução de problemas, está no
+`-Test` compila e executa os testes, mas não instala sem `-Install`. Depois da instalação, abra a IDE
+e execute `/doctor`. O procedimento completo, incluindo build, teste, instalação por pacote e
+solução de problemas, está no
 [guia de instalação e configuração](docs/install_config.md).
 
 Para localizar e entender qualquer campo ou botão de configuração, consulte a

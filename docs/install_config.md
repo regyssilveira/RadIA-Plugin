@@ -41,12 +41,35 @@ score, checks e próxima ação sem mostrar tokens ou credenciais. Consulte [Rad
 Este fluxo é destinado a contribuidores e usuários que escolheram compilar o projeto aberto.
 Ele não é o procedimento normal de instalação de uma release.
 
-1. Clone o repositório em sua máquina.
-2. Abra o grupo de projetos `RadIA.groupproj` no Delphi.
-3. Clique com o botão direito em `RadIA.bpl` no Project Manager e selecione **Build**.
-4. Clique novamente com o botão direito em `RadIA.bpl` e selecione **Install**.
-5. A janela de confirmação de instalação da IDE será exibida, e o painel do **Rad IA** aparecerá acoplado na lateral da IDE.
-6. Acesse o menu **Tools ➔ Rad IA Chat Panel** para exibir o chat, e clique no botão **Settings** no topo do painel para configurar suas chaves de API e começar.
+1. Clone o repositório e abra o PowerShell na raiz do projeto.
+2. Feche todas as instâncias do Delphi; uma BPL carregada não pode ser substituída com segurança.
+3. Execute um dos comandos abaixo:
+
+```powershell
+# Delphi 12 Win32
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "23.0" -Release -Install
+
+# Delphi 13 Win32
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -Release -Install
+
+# Delphi 13 IDE64
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
+  -DelphiVersion "37.0" -IDE64 -Release -Install
+```
+
+4. Se o Windows solicitar permissão para copiar `WebView2Loader.dll`, aprove a elevação ou repita o
+   PowerShell como administrador.
+5. Abra a IDE, acesse **Tools > Rad IA Chat Panel** e execute `/doctor` antes do primeiro uso.
+
+`-Test` é independente: compila e executa a suíte DUnitX, mas não instala o RadIA na IDE sem
+`-Install`. Para testar e instalar em uma única execução, combine `-Test -Install`; para instalar uma
+compilação otimizada destinada ao uso normal, prefira `-Release -Install`.
+
+Também é possível abrir `RadIA.groupproj`, compilar e instalar `RadIA.bpl` pelo Project Manager. Esse
+fluxo manual da IDE não sincroniza automaticamente todos os recursos auxiliares; por isso,
+`build.ps1 -Install` é o procedimento recomendado para uma instalação completa a partir do código.
 
 ---
 
@@ -149,7 +172,7 @@ O script `.\build.ps1` aceita os seguintes parâmetros:
 * `-Uninstall`: Desinstala o plugin de forma limpa apagando arquivos e chaves de registro.
 * `-Release`: Ativa as otimizações do compilador Delphi e gera uma BPL menor.
 * `-IDE64`: Compila e instala o plugin especificamente para a IDE de 64 bits do Delphi 13 Florence.
-* `-DelphiVersion "<versao>"`: Opcional. Permite forçar o uso de uma versão específica do Delphi instalada no sistema (ex: `"23.0"`, `"37.0"`, `"Athens"`).
+* `-DelphiVersion "<versao>"`: Opcional. Use `"23.0"` para Delphi 12 ou `"37.0"` para Delphi 13.
 * `-Test`: Opcional. Compila e executa a suíte de testes unitários (DUnitX). Por padrão, os testes são omitidos do processo de compilação.
 * `-Package`: Gera um arquivo ZIP autocontido em `Output\Packages`, com manifesto SHA-256,
   instalador, BPL, DCP, bridge MCP, WebView2Loader, recursos web, documentação e exemplo de extensão.
@@ -158,7 +181,9 @@ O script `.\build.ps1` aceita os seguintes parâmetros:
 > **Suporte a Múltiplas Versões da IDE:** Se você possuir mais de uma versão do Delphi instalada no Windows e executar o script com `-Install` ou `-Uninstall` sem passar o parâmetro `-DelphiVersion`, o script listará automaticamente as versões instaladas encontradas no registro e exibirá um menu no console para que você selecione de forma interativa qual deseja utilizar.
 
 > [!NOTE]
-> **Autodetecção do DUnitX:** Se o parâmetro `-Test` for fornecido, o instalador verifica automaticamente se o framework DUnitX está instalado no Delphi selecionado. Se o DUnitX não for encontrado, o script exibirá um aviso no console, desativará a execução dos testes de forma automática e prosseguirá normalmente com a compilação e instalação do plugin principal.
+> **Autodetecção do DUnitX:** Se `-Test` for fornecido, o script verifica o DUnitX. Se ele não for
+> encontrado, exibe um aviso, omite os testes e continua a compilação. A instalação só acontece
+> quando `-Install` também está presente.
 
 ### Pacotes internos de validação
 

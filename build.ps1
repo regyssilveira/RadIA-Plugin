@@ -234,6 +234,9 @@ if ($Uninstall) {
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
     $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
+    $targetExtensionPackager = (
+        "$targetBplDir\New-RadIA.DeclarativeExtensionPackage.ps1"
+    )
     $targetDcp = "$targetDcpDir\RadIA.dcp"
     $targetWeb = "$publicBplDir\Web"
 
@@ -256,10 +259,19 @@ if ($Uninstall) {
     if (Test-Path $targetBridge) {
         Remove-Item -Path $targetBridge -Force | Out-Null
     }
+    if (Test-Path $targetExtensionPackager) {
+        Remove-Item -Path $targetExtensionPackager -Force | Out-Null
+    }
     if (Test-Path $targetDcp) {
         Remove-Item -Path $targetDcp -Force | Out-Null
     }
-    if (Test-Path $targetWeb) {
+    $win32Package = Join-Path $publicBplDir "RadIA.bpl"
+    $win64Package = Join-Path (Join-Path $publicBplDir "Win64") "RadIA.bpl"
+    if (
+        -not (Test-Path $win32Package) -and
+        -not (Test-Path $win64Package) -and
+        (Test-Path $targetWeb)
+    ) {
         Remove-Item -Path $targetWeb -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
     }
 
@@ -778,6 +790,9 @@ if ($Install) {
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
     $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
+    $targetExtensionPackager = (
+        "$targetBplDir\New-RadIA.DeclarativeExtensionPackage.ps1"
+    )
     $targetDcp = "$targetDcpDir\RadIA.dcp"
 
     # 9.1 Garantir existencia de WebView2Loader.dll na pasta da IDE correspondente a arquitetura
@@ -835,6 +850,10 @@ if ($Install) {
     Copy-Item `
         -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.MCP.Bridge.exe" `
         -Destination $targetBridge `
+        -Force
+    Copy-Item `
+        -LiteralPath ".\scripts\New-RadIA.DeclarativeExtensionPackage.ps1" `
+        -Destination $targetExtensionPackager `
         -Force
     Copy-Item -Path ".\Output\$delphiVer\dcp\$platform\RadIA.dcp" -Destination $targetDcp -Force
 
