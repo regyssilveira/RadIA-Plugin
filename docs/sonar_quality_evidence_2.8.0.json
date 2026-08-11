@@ -1,0 +1,22 @@
+﻿{
+    "schemaVersion":  1,
+    "evidenceKind":  "sonarGlobalQuality",
+    "product":  "RadIA",
+    "productVersion":  "2.8.0",
+    "sourceCommit":  "2a22c463c4b6df38d6aed119ae7d743dd659ba2d",
+    "sourceDirty":  false,
+    "analysisId":  "3b2314fe-cab6-46f8-9d98-3847041c1877",
+    "qualityGate":  "OK",
+    "bugs":  0,
+    "vulnerabilities":  0,
+    "securityHotspots":  0,
+    "codeSmells":  0,
+    "unresolvedIssues":  0,
+    "coverage":  83.2,
+    "duplicatedLinesDensity":  1.8,
+    "reliabilityRating":  1.0,
+    "securityRating":  1.0,
+    "maintainabilityRating":  1.0,
+    "generatedAtUtc":  "2026-08-11T21:37:42.0271754Z",
+    "status":  "passed"
+}
