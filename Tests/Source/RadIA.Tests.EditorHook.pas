@@ -183,6 +183,7 @@ begin
   Assert.IsTrue(
     HasCaption(LRoot, 'Show Inline Completion Route Status')
   );
+  Assert.IsTrue(HasCaption(LRoot, 'Show Semantic Editor Context'));
 end;
 
 procedure TTestEditorHook.TestUnhooking;

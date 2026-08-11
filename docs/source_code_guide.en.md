@@ -35,6 +35,7 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | [RadIA.Core.Container.pas](../Source/Core/RadIA.Core.Container.pas) | Static and thread-safe IoC container for dependency injection and class lifecycle decoupling. |
 | [RadIA.Core.Service.pas](../Source/Core/RadIA.Core.Service.pas) | Main orchestrator (`TRadIAService`). Manages chat sessions, provider activation, and caching. |
 | [RadIA.Core.InlineCompletion.pas](../Source/Core/RadIA.Core.InlineCompletion.pas) | FIM and fallback contracts, capability discovery, bounded context, cache, cancellation, diagnostics, and Ghost Text control. |
+| [RadIA.Core.EditorContext.pas](../Source/Core/RadIA.Core.EditorContext.pas) | Extracts the unit, current symbol, imports, and nearby declarations for Ghost Text, editor actions, and the agent. |
 | [RadIA.Core.Sessions.pas](../Source/Core/RadIA.Core.Sessions.pas) | Business logic for managing historical chat sessions and automatic local persistence in JSON files. |
 | [RadIA.Core.PromptTemplates.pas](../Source/Core/RadIA.Core.PromptTemplates.pas) | Manages the reusable prompt catalog, slash commands, and dynamic tag replacement. |
 | [RadIA.Core.Localizer.pas](../Source/Core/RadIA.Core.Localizer.pas) | Internationalization (i18n) component for dynamic localization of user interface strings. |

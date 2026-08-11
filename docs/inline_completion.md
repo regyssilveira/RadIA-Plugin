@@ -58,6 +58,12 @@ editor ou **Tools > Rad IA Inline Completion Route Status**. O diálogo informa 
 fallback, provider, modelo, latência local e motivo do fallback. O mesmo diagnóstico é registrado
 no log sem incluir prefixo, sufixo ou conteúdo sugerido.
 
+Use **Rad IA > Show Semantic Editor Context** no menu do editor ou **Tools > Rad IA Semantic Editor
+Context** para conferir antes da solicitação os metadados limitados compartilhados entre Ghost Text,
+ações contextuais e agente: unit ativa, símbolo no cursor, imports e declarações próximas. A inspeção
+é somente leitura e não altera o buffer. Quando uma ação como explicar, testar ou procurar bugs é
+acionada pelo menu, esse mesmo contexto acompanha o trecho selecionado ou a unit ativa.
+
 ## Ações disponíveis no menu do editor
 
 | Ação | Atalho padrão |

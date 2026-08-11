@@ -305,6 +305,7 @@ test('inline completion documents dedicated FIM, fallback, and diagnostics', () 
     assert.match(document, /api\/generate/u);
     assert.match(document, /v1\/completions/u);
     assert.match(document, /Show Inline Completion Route Status/u);
+    assert.match(document, /Show Semantic Editor Context/u);
     assert.match(document, /fallback/iu);
     assert.match(document, /lat[eê]ncia|latency/iu);
     assert.match(document, /completionNext/u);

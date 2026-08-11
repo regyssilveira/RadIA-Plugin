@@ -1340,7 +1340,8 @@ begin
   );
   SetControlsHint(
     [FChkInlineCompletionEnabled, FEdtInlineCompletionDelay],
-    'Enable inline suggestions and configure the idle delay before a request starts.'
+    'Enable inline suggestions and configure the idle delay before a request starts. ' +
+    'The bounded context includes the unit, current symbol, imports, and nearby declarations.'
   );
   SetControlsHint(
     [FEdtInlineCompletionExcludedLanguages, FEdtInlineCompletionExcludedFiles,

@@ -168,6 +168,7 @@ timeout configurado. Tools sensíveis continuam negadas, exceto quando o contrat
 | Excluded project fragments | Para impedir completação em projetos específicos | Fragmentos de nome ou caminho separados por `;`. |
 | RadIA shortcut profile | Para personalizar completion, terminal e revisão por bloco | Pares `ação=atalho` separados por `;`. Além de `request`, `accept`, `nextWord`, `alternative`, `completionNext`, `completionPrevious`, `reject` e `terminal`, aceita `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`, `reviewEdit`, `reviewExplain`, `reviewApply` e `reviewClear`. Perfis antigos herdam novos padrões e conflitos são validados ao salvar. |
 | Show Inline Completion Route Status | Para entender a última solicitação | No menu Rad IA do editor ou em Tools, mostra rota, provider, modelo, latência e motivo do fallback sem expor código. |
+| Show Semantic Editor Context | Para conferir o contexto antes do envio | No menu Rad IA do editor ou em Tools, mostra unit, símbolo no cursor, imports e declarações próximas; é somente leitura e não altera o buffer. |
 
 ## CLI & MCP
 

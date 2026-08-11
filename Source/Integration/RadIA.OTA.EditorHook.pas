@@ -195,6 +195,7 @@ type
     procedure OnInlineCompletionRequestExecute(Sender: TObject);
     procedure OnInlineCompletionSessionToggleExecute(Sender: TObject);
     procedure OnInlineCompletionStatusExecute(Sender: TObject);
+    procedure OnEditorSemanticContextStatusExecute(Sender: TObject);
     procedure OnInlineReviewAcceptExecute(Sender: TObject);
     procedure OnInlineReviewRejectExecute(Sender: TObject);
     procedure OnBlockReviewNextExecute(Sender: TObject);
@@ -230,6 +231,7 @@ type
     procedure RemoveKeyboardBinding;
 
     function BuildCreateExamplePrompt(const ASourceCode: string; const AContext: TMethodExampleContext): string;
+    function GetEditorSemanticContext(out AContext: string): Boolean;
     function GetEditorCodeContext(out ACode: string; out AUsedSelection: Boolean): Boolean;
     procedure SendCommandToChat(const ACommand: string; const APromptPrefix: string);
     {$IFNDEF TESTS}
@@ -251,6 +253,7 @@ type
 implementation
 
 uses
+  RadIA.Core.EditorContext,
   RadIA.Core.Patches,
   RadIA.Core.IDENavigation,
   System.Generics.Collections,
@@ -1261,6 +1264,12 @@ begin
   LRootItem.Add(LSubItem);
 
   LSubItem := TMenuItem.Create(LRootItem);
+  LSubItem.Caption := 'Show Semantic Editor Context';
+  LSubItem.Hint := 'Shows the bounded editor context shared with AI assistance.';
+  LSubItem.OnClick := OnEditorSemanticContextStatusExecute;
+  LRootItem.Add(LSubItem);
+
+  LSubItem := TMenuItem.Create(LRootItem);
   LSubItem.Caption := '-';
   LRootItem.Add(LSubItem);
 
@@ -1332,6 +1341,12 @@ begin
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Semantic Editor Context';
+  LItem.Hint := 'Shows the bounded editor context shared with AI assistance.';
+  LItem.OnClick := OnEditorSemanticContextStatusExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Fix Last Compiler Error';
   LItem.OnClick := OnFixErrorExecute;
   AMenuItem.Add(LItem);
@@ -1359,9 +1374,29 @@ begin
     Exit(True);
 end;
 
+function TRadIAEditorHook.GetEditorSemanticContext(
+  out AContext: string
+): Boolean;
+var
+  LCode: string;
+  LContext: TRadIAEditorSemanticContext;
+begin
+  AContext := '';
+  Result := FIDEAdapter.GetActiveEditorText(LCode, False);
+  if not Result or LCode.Trim.IsEmpty then
+    Exit(False);
+  LContext := TRadIAEditorContextAnalyzer.Analyze(
+    LCode,
+    FIDEAdapter.GetCurrentCursorLine
+  );
+  AContext := LContext.ToPromptContext;
+  Result := not AContext.Trim.IsEmpty;
+end;
+
 procedure TRadIAEditorHook.SendCommandToChat(const ACommand: string; const APromptPrefix: string);
 var
   LCode: string;
+  LContext: string;
   LUsedSelection: Boolean;
   LPrompt: string;
 begin
@@ -1377,11 +1412,43 @@ begin
   ShowRadIAChat;
 
   LPrompt := ACommand + sLineBreak +
-    APromptPrefix + sLineBreak + sLineBreak +
+    APromptPrefix;
+  if GetEditorSemanticContext(LContext) then
+  begin
+    LPrompt := LPrompt + sLineBreak + sLineBreak +
+      'Editor semantic context:' + sLineBreak + LContext;
+    TLogger.Log(
+      Format('Semantic editor context attached: Chars=%d', [Length(LContext)]),
+      'EditorHook'
+    );
+  end;
+  LPrompt := LPrompt + sLineBreak + sLineBreak +
     '```pascal' + sLineBreak +
     LCode.TrimRight + sLineBreak +
     '```';
   FMediator.RequestPrompt(LPrompt, True);
+end;
+
+procedure TRadIAEditorHook.OnEditorSemanticContextStatusExecute(
+  Sender: TObject
+);
+var
+  LContext: string;
+begin
+  if not GetEditorSemanticContext(LContext) then
+  begin
+    ShowMessage('Open a Delphi source file to inspect its semantic context.');
+    Exit;
+  end;
+  TLogger.Log(
+    'Semantic editor context inspected by the user.',
+    'EditorHook'
+  );
+  ShowMessage(
+    'Bounded context available to Ghost Text and agent tools:' +
+    sLineBreak + sLineBreak + LContext + sLineBreak + sLineBreak +
+    'This diagnostic does not change the editor buffer.'
+  );
 end;
 
 procedure TRadIAEditorHook.OnExplainExecute(Sender: TObject);

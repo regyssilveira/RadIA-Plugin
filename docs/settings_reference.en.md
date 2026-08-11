@@ -102,6 +102,7 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 | Excluded languages/files/projects | To suppress inline requests | Semicolon-separated language, name, or path fragments. |
 | RadIA shortcut profile | To customize completion, terminal, and block review | Use semicolon-separated `action=shortcut` entries. In addition to `request`, `accept`, `nextWord`, `alternative`, `completionNext`, `completionPrevious`, `reject`, and `terminal`, it accepts `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`, `reviewEdit`, `reviewExplain`, `reviewApply`, and `reviewClear`. Legacy profiles inherit new defaults and conflicts are validated on save. |
 | Show Inline Completion Route Status | To understand the latest request | In the editor Rad IA menu or Tools, reports route, provider, model, latency, and fallback reason without exposing code. |
+| Show Semantic Editor Context | To inspect context before submission | In the editor Rad IA menu or Tools, shows the unit, symbol at the cursor, imports, and nearby declarations; it is read-only and does not change the buffer. |
 
 See the [security model](tool_security_model.en.md) for risk classes and consent scope.
 
