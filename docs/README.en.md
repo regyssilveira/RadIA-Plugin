@@ -82,7 +82,7 @@ inspect what the installed version actually provides.
 ## Develop and contribute
 
 - [Required documentation policy](documentation_policy.en.md)
-- [Active 2.6.0 goal](radia_2.6_goal.en.md)
+- [Current status and verified pending work](backlog.en.md#canonical-active-backlog)
 
 | Subject | Guide |
 |---|---|
@@ -101,7 +101,7 @@ Roadmaps, backlogs, goals, milestone reports, release audits, and `*_evidence_*.
 project history. They are not current user instructions. If historical content differs from a
 primary guide, the current code, `/tools`, and the primary guides above take precedence.
 
-Current execution plan:
+Current planning status:
 
 - [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
 - [2.8.0 release audit](release_audit_2.8.0.en.md) and previous audits.

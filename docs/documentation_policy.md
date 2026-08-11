@@ -19,6 +19,11 @@ commit ou pull request:
 Uma funcionalidade não está concluída quando o usuário precisa ler código-fonte, histórico de commits
 ou roadmap para descobrir como utilizá-la.
 
+Afirmações sobre o comportamento atual devem ser verificadas contra o código, o catálogo runtime ou
+o workflow vigente. Infraestrutura preparatória, planos e registros históricos devem ser rotulados
+como tal e nunca descritos como capacidade disponível. Backlog e hubs devem declarar explicitamente
+quando não existe goal ativo.
+
 ## Fonte única e navegação
 
 - `docs/README.md` é a central de navegação por tarefa.

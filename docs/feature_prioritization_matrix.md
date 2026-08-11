@@ -1,7 +1,7 @@
 # Rad IA - Matriz de Priorização e Viabilidade de Features
 
 Este documento preserva a avaliação de esforço e impacto das ideias herdadas, reclassificada contra
-o estado da versão 2.2.2. Ele não atribui versão futura: essa decisão ocorre somente quando um item
+o estado da versão 2.8.0. Ele não atribui versão futura: essa decisão ocorre somente quando um item
 é selecionado para um novo goal.
 
 A análise é estruturada sob a perspectiva de um **Arquiteto de Software Sênior**, avaliando a complexidade de implementação no ecossistema do Embarcadero Delphi (usando a Open Tools API e Windows) contra o impacto gerado no dia a dia do desenvolvedor.
@@ -93,7 +93,7 @@ Features que envolvem manipulação estrutural de código Object Pascal (reescri
 
 ### 2.7. Gerador de Documentação OpenAPI/Swagger (Nova)
 * **Benefício:** **Alto**. Essencial para times que usam Delphi no backend com Horse ou RAD Server, economizando dias de digitação manual de especificações.
-* **Estado atual:** a versão 2.2.2 gera novos projetos DEXT com Swagger. O escopo residual precisa
+* **Estado atual:** desde a versão 2.2.2, novos projetos DEXT podem incluir Swagger. O escopo residual precisa
   varrer rotas de projetos Horse ou RAD Server existentes, ler DTOs e produzir JSON/YAML.
 
 ### 2.8. Análise Semântica Bidirecional (DFM vs PAS) (Nova)

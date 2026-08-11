@@ -243,23 +243,16 @@ continuam abaixo apenas como histórico; não devem ser reabertos por mudança d
 
 ---
 
-## 🚧 2. Goal ativo
+## 2. Estado do planejamento
 
-O [goal de portabilidade de skills e terminal de alta fidelidade](terminal_skill_portability_goal.md)
-é a linha de execução atual. Ele cobre publicação transacional de uma skill para os formatos dos
-CLIs suportados e evolução do terminal para uma matriz VT/TUI de alta fidelidade nos três targets
-oficiais. O release será preparado, mas não publicado sem autorização posterior.
+Não há goal de execução ativo após a publicação da versão 2.8.0. O próximo ciclo deve ser escolhido
+do [backlog ativo canônico](#backlog-ativo-canônico), receber escopo e critérios de aceite e somente
+então ganhar uma versão-alvo.
 
-O [goal de expansão da experiência completa](experience_expansion_goal.md) foi concluído e registra
-o ciclo anterior de execução. Ele cobre alternativas de completion, pacotes de conhecimento e
-templates, evidência visual
-antes/depois, consentimento entre superfícies, compatibilidade avançada do terminal, refinamento do
-WebView atual e revisão documental integral, com aceite obrigatório no Delphi 12 Win32 e Delphi 13
-Win32/IDE64. O ciclo anterior de seis lacunas de experiência foi concluído em 2.3.1.
-
-As demais pendências continuam sem versão comprometida até nova triagem. Para impactos e
-referências, consulte a [matriz de priorização](feature_prioritization_matrix.md) e o
-[roadmap](roadmap.md).
+Os goals de [portabilidade de skills e terminal](terminal_skill_portability_goal.md) e de
+[expansão da experiência completa](experience_expansion_goal.md) estão concluídos e permanecem como
+registros históricos. As demais pendências continuam sem compromisso até nova triagem. Consulte a
+[matriz de priorização](feature_prioritization_matrix.md) e o [roadmap](roadmap.md).
 
 ---
 

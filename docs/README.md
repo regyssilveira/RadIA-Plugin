@@ -81,7 +81,7 @@ versão instalada, use `/tools` ou o [catálogo gerado](runtime_tool_catalog.md)
 ## Desenvolver e contribuir
 
 - [Política obrigatória de documentação](documentation_policy.md)
-- [Goal ativo da versão 2.6.0](radia_2.6_goal.md)
+- [Estado atual e pendências verificadas](backlog.md#backlog-ativo-canônico)
 
 | Assunto | Documento |
 |---|---|

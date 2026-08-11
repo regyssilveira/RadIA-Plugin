@@ -8,6 +8,11 @@ change must update in the same work: the affected central reference, applicable 
 existing translation, and documentation tests. A feature is incomplete when users must inspect
 source code, commit history, or a roadmap to learn how to use it.
 
+Claims about current behavior must be verified against the code, runtime catalog, or current
+workflow. Preparatory infrastructure, plans, and historical records must be labeled as such and
+never described as available capabilities. The backlog and hubs must explicitly state when no
+execution goal is active.
+
 `docs/README.md` is the task hub, `user_manual.md` the guided manual, `settings_reference.md` the
 settings source of truth, `internal_tools_reference.md` the tool source of truth, and
 `slash_commands.md` the command source of truth. Each option must document its visible name,

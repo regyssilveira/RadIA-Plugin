@@ -241,21 +241,15 @@ as history and must not be reopened merely because numbering changed.
 
 ---
 
-## 🚧 2. Active goal
+## 2. Planning status
 
-The [skill portability and high-fidelity terminal goal](terminal_skill_portability_goal.en.md) is the
-current execution line. It covers transactional publication of one skill to supported CLI formats
-and terminal evolution toward a high-fidelity VT/TUI matrix on all three official targets. The
-release will be prepared but not published without later authorization.
+There is no active execution goal after the 2.8.0 release. The next cycle must be selected from the
+[canonical active backlog](#canonical-active-backlog), receive scope and acceptance criteria, and
+only then receive a target version.
 
-The [complete-experience expansion goal](experience_expansion_goal.en.md) is complete and records the
-previous execution line. It covers completion alternatives, knowledge and template packages, visual
-before/after
-evidence, cross-surface consent, advanced terminal compatibility, refinement of the current
-WebView, and a complete documentation audit, with mandatory acceptance on Delphi 12 Win32 and
-Delphi 13 Win32/IDE64. The previous six-gap experience cycle completed in 2.3.1.
-
-Other pending work remains uncommitted until a new triage. See the
+The [skill portability and terminal goal](terminal_skill_portability_goal.en.md) and the
+[complete-experience expansion goal](experience_expansion_goal.en.md) are completed historical
+records. Other pending work remains uncommitted until a new triage. See the
 [prioritization matrix](feature_prioritization_matrix.en.md) and [roadmap](roadmap.en.md).
 
 ---

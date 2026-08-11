@@ -907,11 +907,17 @@ test('documentation maintenance is an explicit project rule', () => {
     path.join(documentationRoot, 'documentation_policy.md'),
     'utf8'
   );
+  const englishPolicy = fs.readFileSync(
+    path.join(documentationRoot, 'documentation_policy.en.md'),
+    'utf8'
+  );
   const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
   const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
 
   assert.match(agentRules, /Documentação como parte do produto/u);
   assert.match(portuguesePolicy, /Toda mudança que adicione, remova, renomeie/u);
+  assert.match(portuguesePolicy, /Afirmações sobre o comportamento atual devem ser verificadas/u);
+  assert.match(englishPolicy, /Claims about current behavior must be verified/u);
   assert.match(portugueseHub, /settings_reference\.md/u);
   assert.match(englishHub, /settings_reference\.en\.md/u);
 });
@@ -1011,4 +1017,41 @@ test('source installation deploys extension tooling and preserves shared Web ass
   assert.match(buildScript, /\$targetExtensionPackager/u);
   assert.match(buildScript, /\$win32Package/u);
   assert.match(buildScript, /\$win64Package/u);
+});
+
+test('current planning and update documentation match the released product', () => {
+  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
+  const portugueseBacklog = fs.readFileSync(path.join(documentationRoot, 'backlog.md'), 'utf8');
+  const englishBacklog = fs.readFileSync(path.join(documentationRoot, 'backlog.en.md'), 'utf8');
+  const portugueseInstaller = fs.readFileSync(
+    path.join(documentationRoot, 'visual_installer.md'),
+    'utf8'
+  );
+  const englishInstaller = fs.readFileSync(
+    path.join(documentationRoot, 'visual_installer.en.md'),
+    'utf8'
+  );
+  const releaseWorkflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github', 'workflows', 'release.yml'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(portugueseHub, /Goal ativo da versão 2\.6\.0/u);
+  assert.doesNotMatch(englishHub, /Active 2\.6\.0 goal/u);
+  assert.match(
+    portugueseBacklog,
+    /Não há goal de execução ativo após a publicação da versão 2\.8\.0/u
+  );
+  assert.match(englishBacklog, /There is no active execution goal after the 2\.8\.0 release/u);
+  assert.match(
+    portugueseInstaller,
+    /não verifica, baixa ou instala novas versões automaticamente/u
+  );
+  assert.match(
+    englishInstaller,
+    /does not automatically check for, download, or install new versions/u
+  );
+  assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
+  assert.doesNotMatch(releaseWorkflow, /New-RadIA\.ReleaseChannel\.ps1/u);
 });

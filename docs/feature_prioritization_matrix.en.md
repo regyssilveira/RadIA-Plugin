@@ -1,7 +1,7 @@
 # Rad IA - Feature Prioritization and Feasibility Matrix
 
 This document preserves the effort and impact assessment of inherited ideas, reclassified against
-version 2.2.2. It does not assign a future version; that happens only when an item is selected for a
+version 2.8.0. It does not assign a future version; that happens only when an item is selected for a
 new goal.
 
 The analysis is structured from the perspective of a **Senior Software Architect**, evaluating the complexity of implementation in the Embarcadero Delphi ecosystem (using the Open Tools API and Windows) against the impact generated in the daily life of the developer.
@@ -93,7 +93,7 @@ Features that involve structural manipulation of Object Pascal code (rewriting c
 
 ### 2.7. OpenAPI/Swagger Documentation Generator (New)
 * **Benefit:** **High**. Essential for backend teams using Delphi with Horse or RAD Server, saving days of manual specification writing.
-* **Current state:** version 2.2.2 generates new DEXT projects with Swagger. The residual scope must
+* **Current state:** since version 2.2.2, new DEXT projects can include Swagger. The residual scope must
   scan existing Horse or RAD Server routes, read DTOs, and produce JSON/YAML.
 
 ### 2.8. Bidirectional Semantic Analysis (DFM vs PAS) (New)
