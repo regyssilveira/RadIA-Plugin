@@ -32,7 +32,7 @@ Esses pontos são decisões explícitas de produto e nunca devem voltar como lac
 |---|---|---|---|
 | CC-01 | Projetos gerados | Aprovado | Delphi 12/13, 11 projetos e 5/5 testes |
 | CC-02 | Prompt por template | Aprovado | Matriz PT/EN pela conversa real |
-| CC-03 | Intenção e visão da IDE | Aberto | Smoke de Design, Code, erro e cancelamento |
+| CC-03 | Intenção e visão da IDE | Aprovado | Smoke de Design, Code, erro e cancelamento |
 | CC-04 | Comentário na revisão | Aberto | Feedback sem mutação e com auditoria |
 
 ## Regra de aprovação
@@ -64,3 +64,10 @@ A matriz [natural_project_prompts_evidence_2.7.0.json](natural_project_prompts_e
 foi produzida pelo commit `5d217aa`, com `sourceDirty=false`. Os sete templates foram solicitados por
 prompts naturais em português e inglês pela conversa real, totalizando 14 cenários aprovados no
 Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+
+## Evidência de CC-03
+
+A matriz [ide_intent_navigation_evidence_2.7.0.json](ide_intent_navigation_evidence_2.7.0.json) foi
+produzida pelo commit `4604508`, com `sourceDirty=false`. Em uma IDE real, os três alvos mapearam
+intenções para Design e Code, recusaram intenção inválida, cancelaram sem executar e encerraram a IDE
+sem deixar a descoberta MCP ativa.

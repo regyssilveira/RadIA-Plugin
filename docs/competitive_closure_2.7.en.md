@@ -32,7 +32,7 @@ These points are explicit product decisions and must never return as gaps in thi
 |---|---|---|---|
 | CC-01 | Generated projects | Passed | Delphi 12/13, 11 projects, and 5/5 tests |
 | CC-02 | Prompt per template | Passed | PT/EN matrix through the real conversation |
-| CC-03 | Intent and IDE view | Open | Design, Code, error, and cancellation smoke |
+| CC-03 | Intent and IDE view | Passed | Design, Code, error, and cancellation smoke |
 | CC-04 | Review comment | Open | Audited feedback without mutation |
 
 ## Approval rule
@@ -64,3 +64,10 @@ The [natural_project_prompts_evidence_2.7.0.json](natural_project_prompts_eviden
 was produced from commit `5d217aa` with `sourceDirty=false`. All seven templates were requested with
 natural Portuguese and English prompts through the real conversation, for 14 passing scenarios on
 Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+
+## CC-03 evidence
+
+The [ide_intent_navigation_evidence_2.7.0.json](ide_intent_navigation_evidence_2.7.0.json) matrix was
+produced from commit `4604508` with `sourceDirty=false`. In a real IDE, all three targets mapped
+intents to Design and Code, rejected an invalid intent, cancelled without execution, and shut down
+without leaving MCP discovery active.

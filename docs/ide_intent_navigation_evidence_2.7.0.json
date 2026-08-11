@@ -1,0 +1,46 @@
+﻿{
+    "schemaVersion":  1,
+    "evidenceKind":  "ideIntentNavigationMatrix",
+    "product":  "RadIA",
+    "productVersion":  "2.6.2",
+    "sourceCommit":  "4604508eb74568b6f54813c5beebf896ad284430",
+    "sourceDirty":  false,
+    "targetCount":  3,
+    "status":  "passed",
+    "generatedAtUtc":  "2026-08-11T16:54:28.8402189Z",
+    "targets":  [
+                    {
+                        "delphiVersion":  "23.0",
+                        "platform":  "Win32",
+                        "design":  true,
+                        "code":  true,
+                        "invalidIntent":  true,
+                        "cancellation":  true,
+                        "shutdown":  true,
+                        "status":  "passed",
+                        "completedAtUtc":  "2026-08-11T16:45:40.3606712Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win32",
+                        "design":  true,
+                        "code":  true,
+                        "invalidIntent":  true,
+                        "cancellation":  true,
+                        "shutdown":  true,
+                        "status":  "passed",
+                        "completedAtUtc":  "2026-08-11T16:50:57.2716442Z"
+                    },
+                    {
+                        "delphiVersion":  "37.0",
+                        "platform":  "Win64",
+                        "design":  true,
+                        "code":  true,
+                        "invalidIntent":  true,
+                        "cancellation":  true,
+                        "shutdown":  true,
+                        "status":  "passed",
+                        "completedAtUtc":  "2026-08-11T16:53:24.0187037Z"
+                    }
+                ]
+}

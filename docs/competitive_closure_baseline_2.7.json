@@ -33,7 +33,11 @@
       "status": "passed",
       "evidence": "natural_project_prompts_evidence_2.7.0.json"
     },
-    { "id": "CC-03", "status": "open" },
+    {
+      "id": "CC-03",
+      "status": "passed",
+      "evidence": "ide_intent_navigation_evidence_2.7.0.json"
+    },
     { "id": "CC-04", "status": "open" }
   ],
   "closureRule": {
