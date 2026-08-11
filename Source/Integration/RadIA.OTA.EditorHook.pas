@@ -11,7 +11,6 @@ uses
   RadIA.Core.InlineShortcuts,
   RadIA.Core.BlockReviews,
   RadIA.Core.BlockReviewSessions,
-  RadIA.OTA.CodeInsight,
   RadIA.OTA.ContextParser,
   RadIA.OTA.InlineCompletion;
 
@@ -127,7 +126,6 @@ type
     FIDENotifierIndex: Integer;
     FEditorNotifiers: TInterfaceList;
     FConfig: IRadIAConfig;
-    FCodeInsightRegistration: TRadIACodeInsightRegistration;
     FIDEAdapter: IRadIAIDEAdapter;
     FInlineCompletionConsentGranted: Boolean;
     FInlineCompletionController: IRadIAInlineCompletionController;
@@ -560,7 +558,6 @@ begin
     FMediator := TRadIAMediator.Instance;
   TRadIAContainer.TryResolve<IRadIAConfig>(FConfig);
   FOldActiveFormChange := nil;
-  FCodeInsightRegistration := TRadIACodeInsightRegistration.Create;
   FInlineCompletionConsentGranted := False;
   FInlineCompletionSessionEnabled := True;
   FInlineCompletionLastKey := '';
@@ -628,7 +625,6 @@ begin
   FInlineCompletionController := nil;
   FInlineCompletionSession.ConfigureContinuous(False, nil);
   FInlineCompletionSession := nil;
-  FreeAndNil(FCodeInsightRegistration);
   FEditorNotifiers.Free;
   inherited Destroy;
 end;
@@ -646,7 +642,6 @@ begin
   FOldActiveFormChange := Screen.OnActiveFormChange;
   Screen.OnActiveFormChange := ActiveFormChange;
   InstallEditorNotifiers;
-  FCodeInsightRegistration.Install;
   RefreshKeyboardBinding;
 
 {$IFNDEF TESTS}
@@ -733,7 +728,6 @@ begin
   {$ENDIF}
 
   RestoreScreenOnActiveFormChange;
-  FCodeInsightRegistration.Uninstall;
   RemoveKeyboardBinding;
   FInstalled := False;
   RemoveEditorNotifiers;
