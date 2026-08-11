@@ -1,6 +1,6 @@
 # Notas de release - RadIA 2.7.0
 
-> **Estado:** candidata em validação final em 11 de agosto de 2026.
+> **Estado:** liberada em 11 de agosto de 2026.
 
 RadIA 2.7.0 fecha uma baseline funcional determinística para a experiência completa no Delphi 12 e
 13. A release não substitui o WebView, não inclui C++ ou Lazarus e não adiciona instalação comercial.

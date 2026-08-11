@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "product": "RadIA",
+  "productVersion": "2.7.0",
+  "sourceCommit": "b6b6a2c2a11ee40cb95d2c14535e02b705e39bb4",
+  "fileName": "RadIA-v2.7.0-Setup.exe",
+  "size": 11914561,
+  "sha256": "92EA4A6599736F348394CE22872672A27314A51FDF574BFEC7117045BFB980EB",
+  "signatureStatus": "NotSigned",
+  "signerSubject": "",
+  "signerThumbprint": "",
+  "timestampSubject": "",
+  "generatedAtUtc": "2026-08-11T17:46:15.3329304Z"
+}
