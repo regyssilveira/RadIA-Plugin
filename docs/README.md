@@ -58,11 +58,6 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Planejar a evolução do compactador interno | [Plano de execução do RTK](rtk_execution_plan.md) |
 | Usar e diagnosticar o RTK interno | [Compactação e recuperação de resultados](agent_result_compaction.md) |
 | Revisar a release 2.6.0 | [Notas de release](release_notes_2.6.0.md) |
-| Revisar a release 2.4.2 | [Notas de release](release_notes_2.4.2.md) |
-| Revisar a release 2.4.1 | [Notas de release](release_notes_2.4.1.md) |
-| Revisar a release 2.4.0 | [Notas de release](release_notes_2.4.0.md) |
-| Revisar a versão 2.3.1 | [Notas de release](release_notes_2.3.1.md) |
-| Revisar o RTK da 2.3.0 | [Notas de release](release_notes_2.3.0.md) e [auditoria](result_compaction_release_audit_2.3.0.md) |
 | Usar as ferramentas por outro cliente | [Integração MCP](mcp_integration_guide.md) |
 
 MCP, executor CLI e provider são configurações independentes. A exceção é um método de
@@ -109,7 +104,11 @@ descrevem necessariamente o comportamento atual:
 - [goal concluído de expansão da experiência completa](experience_expansion_goal.md);
 - [goal concluído de portabilidade de skills e terminal](terminal_skill_portability_goal.md);
 - [auditoria da release 2.6.0](release_audit_2.6.0.md) e auditorias anteriores;
-- [notas da release 2.5.0](release_notes_2.5.0.md) e notas anteriores;
+- notas de release: [2.6.0](release_notes_2.6.0.md), [2.5.0](release_notes_2.5.0.md),
+  [2.4.2](release_notes_2.4.2.md), [2.4.1](release_notes_2.4.1.md),
+  [2.4.0](release_notes_2.4.0.md), [2.3.1](release_notes_2.3.1.md) e
+  [2.3.0](release_notes_2.3.0.md), com sua
+  [auditoria do RTK](result_compaction_release_audit_2.3.0.md);
 - [goal da jornada 2.0](radia_2_goal.md) e [goal de experiência 2.0](experience_leadership_goal.md);
 - [planos e marcos do diagnóstico runtime](runtime_debug_automation_plan.md);
 - [planos e marcos do diagnóstico de memória](fastmm5_memory_diagnostics_plan.md);

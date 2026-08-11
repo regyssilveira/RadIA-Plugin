@@ -60,11 +60,6 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Plan internal result compaction | [Internal RTK execution plan](rtk_execution_plan.en.md) |
 | Use and diagnose the internal RTK | [Agent result compaction and recovery](agent_result_compaction.en.md) |
 | Review release 2.6.0 | [Release notes](release_notes_2.6.0.en.md) |
-| Review release 2.4.2 | [Release notes](release_notes_2.4.2.en.md) |
-| Review release 2.4.1 | [Release notes](release_notes_2.4.1.en.md) |
-| Review release 2.4.0 | [Release notes](release_notes_2.4.0.en.md) |
-| Review version 2.3.1 | [Release notes](release_notes_2.3.1.en.md) |
-| Review the 2.3.0 RTK | [Release notes](release_notes_2.3.0.en.md) and [audit](result_compaction_release_audit_2.3.0.en.md) |
 | Use tools from another client | [MCP integration](mcp_integration_guide.en.md) |
 
 Provider, CLI executor, and MCP are independent settings. A declared authentication transport,
@@ -110,7 +105,11 @@ Current execution plan:
 
 - [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
 - [2.6.0 release audit](release_audit_2.6.0.en.md) and previous audits.
-- [2.5.0 release notes](release_notes_2.5.0.en.md) and earlier notes.
+- release notes: [2.6.0](release_notes_2.6.0.en.md), [2.5.0](release_notes_2.5.0.en.md),
+  [2.4.2](release_notes_2.4.2.en.md), [2.4.1](release_notes_2.4.1.en.md),
+  [2.4.0](release_notes_2.4.0.en.md), [2.3.1](release_notes_2.3.1.en.md), and
+  [2.3.0](release_notes_2.3.0.en.md), including its
+  [RTK audit](result_compaction_release_audit_2.3.0.en.md).
 - [Completed complete-experience expansion goal](experience_expansion_goal.en.md).
 - [Completed six-gap experience goal](competitive_leadership_plan.en.md).
 

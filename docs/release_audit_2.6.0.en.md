@@ -24,13 +24,28 @@
 
 ## Distribution gates
 
-- [ ] The visual installer is created and validated.
-- [ ] Installation and update pass on Delphi 12 and 13.
-- [ ] Repair and removal pass.
+- [x] The visual installer is created, validated, and intentionally unsigned under the project policy.
+- [x] Installation passes on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+- [x] Repair and removal pass on all three targets through the automated package lifecycle.
 - [ ] Release artifacts and hashes are verified.
+
+Reproducible evidence for the `Uninstall` → `Install` → `Repair` → IDE startup cycles:
+
+- `Output/Validation/Release2.6Install/Delphi12-Win32.json`;
+- `Output/Validation/Release2.6Install/Delphi13-Win32.json`;
+- `Output/Validation/Release2.6Install/Delphi13-IDE64.json`.
+
+On each target, the installed BPL had the same SHA-256 as the BPL inside the proven package. The visual
+installer requires the user to confirm the Windows UAC prompt; neither the project nor its tests automate
+that operating-system permission.
 
 ## Documentation gate
 
-- [ ] The PT/EN audit covers every tracked documentation file.
-- [ ] Links, versions, discoverability, clarity, and mojibake pass validation.
-- [ ] README, manuals, installation, tools, commands, and notes are synchronized.
+- [x] The PT/EN audit covers all 214 tracked Markdown files.
+- [x] The 38 documentation tests validate links, versions, discoverability, clarity, and mojibake.
+- [x] README, manuals, installation, tools, commands, and notes are synchronized.
+- [x] All 49 tracked JSON files under `docs` pass syntax parsing.
+
+Primary navigation remains task-oriented. Historical references were consolidated under planning and
+historical records without making old documents unreachable. Operational documentation uses version
+2.6.0, the Delphi 12/13 matrix, and the generated catalog of 132 tools.

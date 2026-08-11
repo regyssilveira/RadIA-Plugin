@@ -32,8 +32,7 @@ $installer = "Output\Installer\RadIA-v$version-Setup.exe"
 `VisualInstallerEvidence.json` registra versão, tamanho, SHA-256 e o estado Authenticode
 informativo.
 
-A evidência de cada release fica em `visual_installer_evidence_<versão>.json`. Consulte, por
-exemplo, [`visual_installer_evidence_2.2.0.json`](visual_installer_evidence_2.2.0.json). O estado
+A evidência de cada release fica em `visual_installer_evidence_<versão>.json`. O estado
 `NotSigned` é intencional: o RadIA é aberto, pode ser compilado pelo usuário e não exige
 certificado para publicação.
 
