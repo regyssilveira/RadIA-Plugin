@@ -1,6 +1,6 @@
 # Documentação do RadIA
 
-Este é o ponto de entrada da documentação do RadIA 2.5.0. Escolha primeiro o que você deseja
+Este é o ponto de entrada da documentação do RadIA 2.6.0. Escolha primeiro o que você deseja
 fazer; cada assunto tem um guia principal para evitar informações duplicadas ou contraditórias.
 
 > A referência mais precisa da instalação atual é o comando `/tools`, pois o catálogo pode variar
@@ -57,7 +57,7 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Consultar custos e limites do agente | [Custos do agente](agent_pricing.md) |
 | Planejar a evolução do compactador interno | [Plano de execução do RTK](rtk_execution_plan.md) |
 | Usar e diagnosticar o RTK interno | [Compactação e recuperação de resultados](agent_result_compaction.md) |
-| Revisar a release 2.5.0 | [Notas de release](release_notes_2.5.0.md) |
+| Revisar a release 2.6.0 | [Notas de release](release_notes_2.6.0.md) |
 | Revisar a release 2.4.2 | [Notas de release](release_notes_2.4.2.md) |
 | Revisar a release 2.4.1 | [Notas de release](release_notes_2.4.1.md) |
 | Revisar a release 2.4.0 | [Notas de release](release_notes_2.4.0.md) |
@@ -108,7 +108,8 @@ descrevem necessariamente o comportamento atual:
 - [goal concluído das seis lacunas de experiência](competitive_leadership_plan.md);
 - [goal concluído de expansão da experiência completa](experience_expansion_goal.md);
 - [goal concluído de portabilidade de skills e terminal](terminal_skill_portability_goal.md);
-- [auditoria da release 2.5.0](release_audit_2.5.0.md) e auditorias anteriores;
+- [auditoria da release 2.6.0](release_audit_2.6.0.md) e auditorias anteriores;
+- [notas da release 2.5.0](release_notes_2.5.0.md) e notas anteriores;
 - [goal da jornada 2.0](radia_2_goal.md) e [goal de experiência 2.0](experience_leadership_goal.md);
 - [planos e marcos do diagnóstico runtime](runtime_debug_automation_plan.md);
 - [planos e marcos do diagnóstico de memória](fastmm5_memory_diagnostics_plan.md);

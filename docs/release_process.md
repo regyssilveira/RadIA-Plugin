@@ -295,7 +295,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.TerminalHighFidelityEvidence.ps1
 ```
 
-O gate gera `terminal_high_fidelity_evidence_2.5.0.json`; ele complementa, mas não substitui, o
+O gate gera `terminal_high_fidelity_evidence_2.6.0.json`; ele complementa, mas não substitui, o
 smoke visual instalado abaixo.
 
 Use `-TerminalEvidencePath` com `-ExerciseTerminal` para abrir a superfície VCL real e validar
@@ -318,7 +318,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.TerminalEvidence.ps1
 ```
 
-O resultado vigente fica em `terminal_smoke_evidence_2.5.0.json`. O arquivo 2.0.0 permanece como
+O resultado vigente fica em `terminal_smoke_evidence_2.6.0.json`. O arquivo 2.0.0 permanece como
 evidência histórica daquela versão.
 
 ### Evidência visual do Ghost Text

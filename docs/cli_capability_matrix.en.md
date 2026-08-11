@@ -1,6 +1,6 @@
 # CLI executor contractual capability matrix
 
-> **Baseline:** RadIA 2.5.0, updated August 10, 2026.
+> **Baseline:** RadIA 2.6.0, updated August 11, 2026.
 > **Nature:** technical implementation and test contract. A capability declared by a CLI does not
 > mean RadIA already exposes it in the UI.
 
@@ -16,7 +16,7 @@
 
 ## Versioned matrix
 
-| Executor | Structured output | Session ID | Stable resume | Model | MCP | Dedicated FIM | RadIA 2.5.0 use |
+| Executor | Structured output | Session ID | Stable resume | Model | MCP | Dedicated FIM | RadIA 2.6.0 use |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Codex CLI | Yes, JSONL | Structured event | `exec resume <id>` | Yes | Yes | Not declared | New execution per message |
 | Claude Code | Yes, stream JSON | Structured event | `--resume <id>` | Yes | Yes | Not declared | New execution per message |

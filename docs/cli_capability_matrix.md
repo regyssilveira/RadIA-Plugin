@@ -1,6 +1,6 @@
 # Matriz contratual de capacidades dos executores CLI
 
-> **Baseline:** RadIA 2.5.0, atualizada em 10 de agosto de 2026.
+> **Baseline:** RadIA 2.6.0, atualizada em 11 de agosto de 2026.
 > **Natureza:** contrato técnico para implementação e testes. Uma capacidade declarada pelo CLI
 > não significa que o RadIA já a exponha na interface.
 
@@ -16,7 +16,7 @@
 
 ## Matriz versionada
 
-| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.5.0 |
+| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.6.0 |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Codex CLI | Sim, JSONL | Evento estruturado | `exec resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
 | Claude Code | Sim, stream JSON | Evento estruturado | `--resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
