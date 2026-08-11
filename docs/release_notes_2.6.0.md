@@ -1,6 +1,6 @@
 # Notas de release — RadIA 2.6.0
 
-> **Estado:** aprovada para publicação após a conclusão de todos os gates.
+> **Estado:** publicada em 11 de agosto de 2026 após a conclusão de todos os gates.
 
 O RadIA 2.6.0 fecha o ciclo de criação de uma aplicação Delphi a partir de linguagem natural. O
 cenário de aceite cria uma calculadora VCL sem projeto aberto, preserva destino, nome e plataforma,

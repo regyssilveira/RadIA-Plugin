@@ -1,6 +1,6 @@
 # Release notes — RadIA 2.6.0
 
-> **Status:** approved for publication after all gates passed.
+> **Status:** published on August 11, 2026, after all gates passed.
 
 RadIA 2.6.0 closes the loop for creating a Delphi application from natural language. The acceptance
 scenario creates a VCL calculator with no open project, preserves destination, name, and platform,
