@@ -560,7 +560,7 @@ begin
     FMediator := TRadIAMediator.Instance;
   TRadIAContainer.TryResolve<IRadIAConfig>(FConfig);
   FOldActiveFormChange := nil;
-  FCodeInsightRegistration := nil;
+  FCodeInsightRegistration := TRadIACodeInsightRegistration.Create;
   FInlineCompletionConsentGranted := False;
   FInlineCompletionSessionEnabled := True;
   FInlineCompletionLastKey := '';
@@ -602,11 +602,6 @@ begin
       LOptions,
       LRunner,
       LDispatcher
-    );
-    FCodeInsightRegistration := TRadIACodeInsightRegistration.Create(
-      LProvider,
-      FInlineCompletionSession,
-      not Assigned(FConfig) or FConfig.AutocompleteEnabled
     );
     RefreshInlineCompletionWatch;
   end;
@@ -651,8 +646,7 @@ begin
   FOldActiveFormChange := Screen.OnActiveFormChange;
   Screen.OnActiveFormChange := ActiveFormChange;
   InstallEditorNotifiers;
-  if Assigned(FCodeInsightRegistration) then
-    FCodeInsightRegistration.Install;
+  FCodeInsightRegistration.Install;
   RefreshKeyboardBinding;
 
 {$IFNDEF TESTS}
@@ -739,8 +733,7 @@ begin
   {$ENDIF}
 
   RestoreScreenOnActiveFormChange;
-  if Assigned(FCodeInsightRegistration) then
-    FCodeInsightRegistration.Uninstall;
+  FCodeInsightRegistration.Uninstall;
   RemoveKeyboardBinding;
   FInstalled := False;
   RemoveEditorNotifiers;

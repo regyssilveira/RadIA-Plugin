@@ -3,24 +3,15 @@ unit RadIA.OTA.CodeInsight;
 interface
 
 uses
-  ToolsAPI,
-  RadIA.Core.InlineCompletion,
-  RadIA.OTA.InlineCompletion;
+  ToolsAPI;
 
 type
   TRadIACodeInsightRegistration = class
   private
-    FEnabled: Boolean;
     FIndex: Integer;
     FManager: IOTACodeInsightManager;
-    FProvider: IRadIAInlineCompletionProvider;
-    FSession: IRadIAOTAInlineCompletionSession;
   public
-    constructor Create(
-      const AProvider: IRadIAInlineCompletionProvider;
-      const ASession: IRadIAOTAInlineCompletionSession;
-      const AEnabled: Boolean
-    );
+    constructor Create;
     destructor Destroy; override;
     function Install: Boolean;
     procedure Uninstall;
@@ -36,57 +27,6 @@ uses
   RadIA.Core.Logger;
 
 type
-  IRadIACodeInsightCancellation = interface(
-    IRadIAInlineCompletionCancellationToken
-  )
-    ['{4C443668-14EC-4C56-A376-52147A0A57E0}']
-    procedure Cancel;
-  end;
-
-  IRadIACodeInsightLifecycle = interface
-    ['{178188EB-2FD0-48BC-9C98-840D740DA554}']
-    procedure Stop;
-  end;
-
-  TRadIACodeInsightCancellation = class(
-    TInterfacedObject,
-    IRadIAInlineCompletionCancellationToken,
-    IRadIACodeInsightCancellation
-  )
-  private
-    FCanceled: Integer;
-  public
-    procedure Cancel;
-    function IsCancellationRequested: Boolean;
-  end;
-
-  TRadIACodeInsightRequest = class
-  private
-    FCallback: TOTACodeCompleteCallBack;
-    FCancellation: IRadIACodeInsightCancellation;
-    FContext: TRadIAInlineCompletionContext;
-    FError: string;
-    FId: Integer;
-    FKeepAlive: IRadIACodeInsightLifecycle;
-    FSuggestion: string;
-  public
-    constructor Create(
-      const AId: Integer;
-      const AContext: TRadIAInlineCompletionContext;
-      const ACancellation: IRadIACodeInsightCancellation;
-      const ACallback: TOTACodeCompleteCallBack;
-      const AKeepAlive: IRadIACodeInsightLifecycle
-    );
-    destructor Destroy; override;
-    procedure SetResult(const ASuggestion, AError: string);
-    property Callback: TOTACodeCompleteCallBack read FCallback;
-    property Cancellation: IRadIACodeInsightCancellation read FCancellation;
-    property Context: TRadIAInlineCompletionContext read FContext;
-    property Error: string read FError;
-    property Id: Integer read FId;
-    property Suggestion: string read FSuggestion;
-  end;
-
   TRadIACodeInsightSymbolList = class(
     TInterfacedObject,
     IOTACodeInsightSymbolList,
@@ -119,32 +59,17 @@ type
   TRadIACodeInsightManager = class(
     TInterfacedObject,
     IOTACodeInsightManager,
-    IOTAAsyncCodeInsightManager,
-    IRadIACodeInsightLifecycle
+    IOTAAsyncCodeInsightManager
   )
   private
-    FActiveCancellation: IRadIACodeInsightCancellation;
-    FActiveId: Integer;
+    FCanceledId: Integer;
     FEnabled: Boolean;
-    FLock: TObject;
     FNextId: Integer;
-    FProvider: IRadIAInlineCompletionProvider;
-    FSession: IRadIAOTAInlineCompletionSession;
-    FStopping: Integer;
     FSymbols: TRadIACodeInsightSymbolList;
     FSymbolList: IOTACodeInsightSymbolList;
-    procedure CompleteRequest(const ARequest: TRadIACodeInsightRequest);
-    procedure ExecuteRequest(const ARequest: TRadIACodeInsightRequest);
-    function IsStopping: Boolean;
     function NewRequestId: Integer;
-    function NormalizeSuggestion(const AValue: string): string;
   public
-    constructor Create(
-      const AProvider: IRadIAInlineCompletionProvider;
-      const ASession: IRadIAOTAInlineCompletionSession;
-      const AEnabled: Boolean
-    );
-    destructor Destroy; override;
+    constructor Create;
     procedure AllowCodeInsight(var Allow: Boolean; const Key: Char);
     procedure AsyncAllowCodeInsight(var AAllow: Boolean; const AKey: Char);
     function AsyncCanInvoke(AInsightType: TOTACodeInsightType): Boolean;
@@ -220,49 +145,7 @@ type
     function PreValidateCodeInsight(const Str: string): Boolean;
     procedure SetEnabled(Value: Boolean);
     function ShowCalculating: Boolean;
-    procedure Stop;
   end;
-
-procedure TRadIACodeInsightCancellation.Cancel;
-begin
-  TInterlocked.Exchange(FCanceled, 1);
-end;
-
-function TRadIACodeInsightCancellation.IsCancellationRequested: Boolean;
-begin
-  Result := TInterlocked.CompareExchange(FCanceled, 0, 0) <> 0;
-end;
-
-constructor TRadIACodeInsightRequest.Create(
-  const AId: Integer;
-  const AContext: TRadIAInlineCompletionContext;
-  const ACancellation: IRadIACodeInsightCancellation;
-  const ACallback: TOTACodeCompleteCallBack;
-  const AKeepAlive: IRadIACodeInsightLifecycle
-);
-begin
-  inherited Create;
-  FId := AId;
-  FContext := AContext;
-  FCancellation := ACancellation;
-  FCallback := ACallback;
-  FKeepAlive := AKeepAlive;
-end;
-
-procedure TRadIACodeInsightRequest.SetResult(
-  const ASuggestion, AError: string
-);
-begin
-  FSuggestion := ASuggestion;
-  FError := AError;
-end;
-
-destructor TRadIACodeInsightRequest.Destroy;
-begin
-  FKeepAlive := nil;
-  FCancellation := nil;
-  inherited Destroy;
-end;
 
 procedure TRadIACodeInsightSymbolList.Clear;
 begin
@@ -371,30 +254,15 @@ begin
   FSuggestion := AValue;
 end;
 
-constructor TRadIACodeInsightManager.Create(
-  const AProvider: IRadIAInlineCompletionProvider;
-  const ASession: IRadIAOTAInlineCompletionSession;
-  const AEnabled: Boolean
-);
+constructor TRadIACodeInsightManager.Create;
 begin
   inherited Create;
-  FProvider := AProvider;
-  FSession := ASession;
-  FEnabled := AEnabled;
-  FLock := TObject.Create;
+  FEnabled := SameText(
+    GetEnvironmentVariable('RADIA_CODEINSIGHT_SPIKE'),
+    '1'
+  );
   FSymbols := TRadIACodeInsightSymbolList.Create;
   FSymbolList := FSymbols;
-end;
-
-destructor TRadIACodeInsightManager.Destroy;
-begin
-  Stop;
-  FSymbolList := nil;
-  FSymbols := nil;
-  FSession := nil;
-  FProvider := nil;
-  FLock.Free;
-  inherited Destroy;
 end;
 
 procedure TRadIACodeInsightManager.AllowCodeInsight(
@@ -451,91 +319,18 @@ function TRadIACodeInsightManager.AsyncInvokeCodeCompletion(
   ACallback: TOTACodeCompleteCallBack
 ): Integer;
 var
-  LCancellation: IRadIACodeInsightCancellation;
-  LContext: TRadIAInlineCompletionContext;
   LId: Integer;
-  LKeepAlive: IRadIACodeInsightLifecycle;
-  LRequest: TRadIACodeInsightRequest;
 begin
   LId := NewRequestId;
   Result := LId;
-  if IsStopping or not Assigned(FProvider) or not Assigned(FSession) or
-    not FSession.Capture(LContext) then
-  begin
-    ACallback(Self, LId, True, 'No active Delphi editor context is available.');
-    Exit;
-  end;
-  LCancellation := TRadIACodeInsightCancellation.Create;
-  TMonitor.Enter(FLock);
-  try
-    if Assigned(FActiveCancellation) then
-      FActiveCancellation.Cancel;
-    FActiveCancellation := LCancellation;
-    FActiveId := LId;
-  finally
-    TMonitor.Exit(FLock);
-  end;
-  LKeepAlive := Self;
-  LRequest := TRadIACodeInsightRequest.Create(
-    LId,
-    LContext,
-    LCancellation,
-    ACallback,
-    LKeepAlive
-  );
-  TThread.CreateAnonymousThread(
-    procedure
-    begin
-      ExecuteRequest(LRequest);
-    end
-  ).Start;
-end;
-
-procedure TRadIACodeInsightManager.CompleteRequest(
-  const ARequest: TRadIACodeInsightRequest
-);
-var
-  LError: string;
-  LSuggestion: string;
-begin
-  try
-    if IsStopping or ARequest.Cancellation.IsCancellationRequested then
-      Exit;
-    LError := ARequest.Error;
-    LSuggestion := NormalizeSuggestion(ARequest.Suggestion);
-    if (LError = '') and (LSuggestion = '') then
-      LError := 'The completion provider returned no suggestion.';
-    if LError = '' then
-      FSymbols.SetSuggestion(LSuggestion);
-    ARequest.Callback(Self, ARequest.Id, LError <> '', LError);
-  finally
-    ARequest.Free;
-  end;
-end;
-
-procedure TRadIACodeInsightManager.ExecuteRequest(
-  const ARequest: TRadIACodeInsightRequest
-);
-var
-  LError: string;
-  LSuggestion: string;
-begin
-  LError := '';
-  try
-    LSuggestion := FProvider.Complete(
-      ARequest.Context,
-      ARequest.Cancellation
-    );
-  except
-    on E: Exception do
-      LError := E.Message;
-  end;
-  ARequest.SetResult(LSuggestion, LError);
   TThread.Queue(
     nil,
     procedure
     begin
-      CompleteRequest(ARequest);
+      if TInterlocked.CompareExchange(FCanceledId, 0, 0) = LId then
+        Exit;
+      FSymbols.SetSuggestion('RadIACompletionProbe');
+      ACallback(Self, LId, False, '');
     end
   );
 end;
@@ -553,13 +348,7 @@ end;
 
 procedure TRadIACodeInsightManager.AsyncOperationCanceled(AId: Integer);
 begin
-  TMonitor.Enter(FLock);
-  try
-    if (FActiveId = AId) and Assigned(FActiveCancellation) then
-      FActiveCancellation.Cancel;
-  finally
-    TMonitor.Exit(FLock);
-  end;
+  TInterlocked.Exchange(FCanceledId, AId);
 end;
 
 procedure TRadIACodeInsightManager.AsyncParameterCodeInsightParamIndex(
@@ -706,27 +495,6 @@ begin
   Result := TInterlocked.Increment(FNextId);
 end;
 
-function TRadIACodeInsightManager.IsStopping: Boolean;
-begin
-  Result := TInterlocked.CompareExchange(FStopping, 0, 0) <> 0;
-end;
-
-function TRadIACodeInsightManager.NormalizeSuggestion(
-  const AValue: string
-): string;
-var
-  LBreakAt: Integer;
-begin
-  Result := AValue.Trim;
-  LBreakAt := Pos(#13, Result);
-  if LBreakAt = 0 then
-    LBreakAt := Pos(#10, Result);
-  if LBreakAt > 0 then
-    Result := Result.Substring(0, LBreakAt - 1).Trim;
-  if Result.Length > 512 then
-    SetLength(Result, 512);
-end;
-
 procedure TRadIACodeInsightManager.OnEditorKey(
   Key: Char;
   var CloseViewer: Boolean;
@@ -760,7 +528,10 @@ end;
 
 procedure TRadIACodeInsightManager.SetEnabled(Value: Boolean);
 begin
-  FEnabled := Value;
+  FEnabled := Value and SameText(
+    GetEnvironmentVariable('RADIA_CODEINSIGHT_SPIKE'),
+    '1'
+  );
 end;
 
 function TRadIACodeInsightManager.ShowCalculating: Boolean;
@@ -768,30 +539,9 @@ begin
   Result := True;
 end;
 
-procedure TRadIACodeInsightManager.Stop;
-begin
-  TInterlocked.Exchange(FStopping, 1);
-  TMonitor.Enter(FLock);
-  try
-    if Assigned(FActiveCancellation) then
-      FActiveCancellation.Cancel;
-    FActiveCancellation := nil;
-    FActiveId := 0;
-  finally
-    TMonitor.Exit(FLock);
-  end;
-end;
-
-constructor TRadIACodeInsightRegistration.Create(
-  const AProvider: IRadIAInlineCompletionProvider;
-  const ASession: IRadIAOTAInlineCompletionSession;
-  const AEnabled: Boolean
-);
+constructor TRadIACodeInsightRegistration.Create;
 begin
   inherited Create;
-  FProvider := AProvider;
-  FSession := ASession;
-  FEnabled := AEnabled;
   FIndex := -1;
 end;
 
@@ -810,11 +560,7 @@ begin
     Exit;
   if not Supports(BorlandIDEServices, IOTACodeInsightServices, LServices) then
     Exit(False);
-  FManager := TRadIACodeInsightManager.Create(
-    FProvider,
-    FSession,
-    FEnabled
-  );
+  FManager := TRadIACodeInsightManager.Create;
   FIndex := LServices.AddCodeInsightManager(FManager);
   Result := FIndex >= 0;
   if Result then
@@ -823,11 +569,8 @@ end;
 
 procedure TRadIACodeInsightRegistration.Uninstall;
 var
-  LLifecycle: IRadIACodeInsightLifecycle;
   LServices: IOTACodeInsightServices;
 begin
-  if Supports(FManager, IRadIACodeInsightLifecycle, LLifecycle) then
-    LLifecycle.Stop;
   if (FIndex >= 0) and
     Supports(BorlandIDEServices, IOTACodeInsightServices, LServices) then
     LServices.RemoveCodeInsightManager(FIndex);
