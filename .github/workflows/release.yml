@@ -134,13 +134,9 @@ jobs:
               ".\Output\Distribution\VisualInstallerEvidence.json"
             )
 
-      - name: Create stable release channel
+      - name: Stage the public installer
         shell: powershell
         run: |
-          .\scripts\New-RadIA.ReleaseChannel.ps1 `
-            -InstallerPath ".\Output\Installer\$env:INSTALLER_NAME" `
-            -DownloadUrl $env:DOWNLOAD_URL `
-            -OutputPath ".\Output\Distribution\stable.json"
           Copy-Item `
             -LiteralPath ".\Output\Installer\$env:INSTALLER_NAME" `
             -Destination ".\Output\Distribution\$env:INSTALLER_NAME"
@@ -174,6 +170,5 @@ jobs:
           gh release upload `
             $env:RELEASE_TAG `
             ".\Output\Distribution\$env:INSTALLER_NAME" `
-            ".\Output\Distribution\stable.json" `
             --clobber
 

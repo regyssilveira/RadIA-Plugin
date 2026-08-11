@@ -13,7 +13,6 @@ $requiredFragments = @(
     "New-RadIA.ReleaseEvidence.ps1",
     "New-RadIA.VisualInstaller.ps1",
     "Test-RadIA.VisualInstaller.ps1",
-    "New-RadIA.ReleaseChannel.ps1",
     "Prepare a clean distribution directory",
     "https://github.com/",
     "actions/upload-artifact@v4",
@@ -55,13 +54,11 @@ if (
 if ($workflow.Contains('".\Output\Distribution\*"')) {
     throw "GitHub Release cannot publish the internal evidence bundle."
 }
-foreach ($publicAsset in @(
-    '".\Output\Distribution\$env:INSTALLER_NAME"',
-    '".\Output\Distribution\stable.json"'
-)) {
-    if (-not $workflow.Contains($publicAsset)) {
-        throw "GitHub Release is missing public asset: $publicAsset"
-    }
+if (-not $workflow.Contains('".\Output\Distribution\$env:INSTALLER_NAME"')) {
+    throw "GitHub Release is missing the public installer."
+}
+if ($workflow.Contains('".\Output\Distribution\stable.json"')) {
+    throw "GitHub Release cannot publish an unused update catalog."
 }
 
 $packageInstallerPath = ".\scripts\Install-RadIA.Package.ps1"
@@ -96,7 +93,7 @@ foreach ($fragment in $visualInstallerFragments) {
 
 Write-Host (
     "Release workflow validation succeeded with three internal Delphi inputs, " +
-    "one public installer, one update catalog, internal evidence, " +
+    "one public installer, internal evidence, no unused update catalog, " +
     "no certificate dependency, and " +
     "Delphi-open installer gates."
 )

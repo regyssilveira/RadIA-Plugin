@@ -53,19 +53,12 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.VisualInstaller.ps1
 ```
 
-## Publicar o canal
+## Atualizações do RadIA
 
-O catálogo estável exige HTTPS e publica tamanho, SHA-256 e estado Authenticode para verificação:
-
-```powershell
-powershell.exe -ExecutionPolicy Bypass `
-  -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath $installer `
-  -DownloadUrl (
-    "https://github.com/regyssilveira/RadIA-Plugin/releases/" +
-    "download/v$version/RadIA-v$version-Setup.exe"
-  )
-```
+O RadIA 2.8.0 não verifica, baixa ou instala novas versões automaticamente. O usuário deve baixar o
+instalador da release, fechar todas as instâncias do Delphi e executá-lo manualmente. O script
+`New-RadIA.ReleaseChannel.ps1` permanece apenas como preparação técnica para um atualizador futuro;
+seu `stable.json` não é consumido pelo produto nem publicado na release atual.
 
 ## Pipeline de release
 
@@ -77,14 +70,12 @@ Delphi:
 3. recompila os três pacotes Release a partir do commit da tag;
 4. confirma que os pacotes compartilham versão, commit limpo e hashes válidos;
 5. gera e valida o instalador sem depender de certificado;
-6. cria o catálogo `stable` com a URL HTTPS da GitHub Release;
-7. publica somente o instalador e o catálogo estável; as evidências permanecem no artefato interno
-   da execução do workflow e na auditoria versionada.
+6. preserva as evidências no artefato interno da execução e na auditoria versionada;
+7. publica somente o instalador para o usuário.
 
 Os três ZIPs continuam sendo gerados temporariamente como entradas verificáveis do instalador.
 Eles não são anexados à GitHub Release: o instalador visual é o único artefato de instalação
-oferecido ao usuário. O catálogo `stable.json` permanece público para a atualização automática.
-Quem preferir compilar ou empacotar manualmente pode usar `build.ps1`. Essa separação evita
+oferecido ao usuário. Quem preferir compilar ou empacotar manualmente pode usar `build.ps1`. Essa separação evita
 downloads técnicos redundantes sem remover a validação individual de versão, arquitetura,
 manifesto e SHA-256 feita antes de montar o instalador.
 

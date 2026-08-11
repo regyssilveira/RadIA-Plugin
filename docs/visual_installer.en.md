@@ -52,20 +52,12 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.VisualInstaller.ps1
 ```
 
-## Publish the channel
+## RadIA updates
 
-The stable catalog requires HTTPS and publishes size, SHA-256, and Authenticode state for
-verification:
-
-```powershell
-powershell.exe -ExecutionPolicy Bypass `
-  -File scripts\New-RadIA.ReleaseChannel.ps1 `
-  -InstallerPath $installer `
-  -DownloadUrl (
-    "https://github.com/regyssilveira/RadIA-Plugin/releases/" +
-    "download/v$version/RadIA-v$version-Setup.exe"
-  )
-```
+RadIA 2.8.0 does not automatically check for, download, or install new versions. Users must download
+the release installer, close every Delphi instance, and run it manually. The
+`New-RadIA.ReleaseChannel.ps1` script remains only as technical preparation for a future updater;
+its `stable.json` is neither consumed by the product nor published in the current release.
 
 ## Release pipeline
 
@@ -76,14 +68,12 @@ The `.github/workflows/release.yml` workflow runs the complete chain on a Window
 3. rebuilds the three Release packages from the tag commit;
 4. verifies that all packages share the version, clean commit, and valid hashes;
 5. builds and validates the installer without a certificate dependency;
-6. creates the `stable` catalog with the GitHub Release HTTPS URL;
-7. publishes only the installer and stable catalog; evidence remains in the workflow's internal
-   artifact and in the versioned audit.
+6. preserves evidence in the workflow's internal artifact and in the versioned audit;
+7. publishes only the installer to users.
 
 The three ZIP files are still generated temporarily as verified installer inputs. They are not
 attached to the GitHub Release: the visual installer is the only installation artifact offered to
-users. The `stable.json` catalog remains public for automatic updates. Contributors who prefer
-manual builds or packaging can use `build.ps1`. This avoids redundant technical downloads while
+users. Contributors who prefer manual builds or packaging can use `build.ps1`. This avoids redundant technical downloads while
 preserving per-target version, architecture, manifest, and SHA-256 validation before the installer
 is assembled.
 
