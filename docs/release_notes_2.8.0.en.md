@@ -1,6 +1,6 @@
 # Release notes - RadIA 2.8.0
 
-> **Status:** validated candidate for publication on August 11, 2026.
+> **Status:** released on August 11, 2026.
 
 RadIA 2.8.0 integrates bounded semantic assistance with the editor without replacing Delphi's native
 provider. This version documents 133 built-in tools.

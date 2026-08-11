@@ -1,6 +1,6 @@
 # Notas de release - RadIA 2.8.0
 
-> **Estado:** candidata validada para publicação em 11 de agosto de 2026.
+> **Estado:** publicada em 11 de agosto de 2026.
 
 RadIA 2.8.0 integra assistência semântica limitada ao editor sem substituir o provider nativo do
 Delphi. O catálogo desta versão documenta 133 ferramentas internas.
