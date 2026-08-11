@@ -12,6 +12,10 @@ const generatedProjectsEvidence = fs.readFileSync(
   path.join(repositoryRoot, 'scripts', 'New-RadIA.GeneratedProjectsEvidence.ps1'),
   'utf8'
 );
+const closureBaseline = JSON.parse(fs.readFileSync(
+  path.join(repositoryRoot, 'docs', 'competitive_closure_baseline_2.7.json'),
+  'utf8'
+));
 
 test('generated-project certification uses the supported DUnitX arguments', () => {
   assert.match(generatedProjectsScript, /"--hidebanner"/u);
@@ -35,4 +39,15 @@ test('generated-project certification proves test counts and a clean source tree
   });
   assert.match(generatedProjectsEvidence, /sourceDirty -eq \$false/u);
   assert.match(generatedProjectsEvidence, /calculatorUnitTests\.total -eq 5/u);
+});
+
+test('competitive closure baseline is fixed and contains only explicit gaps', () => {
+  assert.equal(closureBaseline.targetVersion, '2.7.0');
+  assert.deepEqual(
+    closureBaseline.items.map(item => `${item.id}:${item.status}`),
+    ['CC-01:passed', 'CC-02:open', 'CC-03:open', 'CC-04:open']
+  );
+  assert.equal(closureBaseline.closureRule.open, 0);
+  assert.ok(closureBaseline.permanentExclusions.includes('webview-replacement'));
+  assert.ok(closureBaseline.permanentExclusions.includes('mandatory-cli-bundling'));
 });

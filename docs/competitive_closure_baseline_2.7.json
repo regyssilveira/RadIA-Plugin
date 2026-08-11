@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "baselineDate": "2026-08-11",
+  "targetVersion": "2.7.0",
+  "radiaBaseline": {
+    "version": "2.6.2",
+    "commit": "1b2dd78cd360b8b10a3ec5c765ce0dbc7882c285"
+  },
+  "externalReferences": [
+    { "alias": "cli-ide-suite", "revision": "9e4416f" },
+    { "alias": "extension-suite", "revision": "26698ff" },
+    { "alias": "knowledge-suite", "revision": "f8b8f5d" },
+    { "alias": "ide-integrated-suite", "revision": "public-docs-2026-08-11" }
+  ],
+  "permanentExclusions": [
+    "cpp",
+    "lazarus",
+    "marketplace",
+    "signing",
+    "commercial-installation",
+    "webview-replacement",
+    "mandatory-cli-bundling",
+    "vendor-exclusive-features"
+  ],
+  "items": [
+    {
+      "id": "CC-01",
+      "status": "passed",
+      "evidence": "generated_project_templates_evidence_2.6.2.json"
+    },
+    { "id": "CC-02", "status": "open" },
+    { "id": "CC-03", "status": "open" },
+    { "id": "CC-04", "status": "open" }
+  ],
+  "closureRule": {
+    "open": 0,
+    "failed": 0,
+    "unverified": 0
+  }
+}

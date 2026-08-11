@@ -103,6 +103,7 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current execution plan:
 
+- [Deterministic competitive closure 2.7](competitive_closure_2.7.en.md).
 - [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
 - [2.6.2 release audit](release_audit_2.6.2.en.md) and previous audits.
 - release notes: [2.6.2](release_notes_2.6.2.en.md), [2.6.1](release_notes_2.6.1.en.md),
