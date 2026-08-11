@@ -38,9 +38,11 @@ as etapas que já tinham sido desfeitas são reaplicadas, evitando um estado par
 última etapa ainda aplicada pode ser revertida; etapas anteriores ficam disponíveis depois que as
 posteriores forem desfeitas. O plano passa a `partiallyReverted` e continua mostrando cada estado.
 
-Durante a jornada, `NavigateToDevelopmentSurface` ativa explicitamente o editor de código ou o Form
-Designer vivo para um arquivo do projeto. A tool recusa arquivos externos e falha quando a
-superfície solicitada não existe.
+Durante a jornada, `NavigateToDevelopmentSurface` ativa o editor de código ou o Form Designer vivo
+para um arquivo do projeto. A chamada pode informar a superfície ou a intenção. Inspecionar form,
+editar layout ou propriedades e criar componentes abrem Design. Editar código, implementar evento,
+depurar ou testar abrem Code. A tool recusa arquivos externos, intenções inválidas e superfícies
+indisponíveis; cancelar o consentimento mantém a visão atual.
 
 Depois da última mutação, a timeline reúne as evidências de `BuildProject`, `RunDUnitXTests`,
 `GetCoverageSummary`, `StartDebugging`, `GetDebuggerState` e `GetDebugTimeline`. O card da jornada

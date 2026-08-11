@@ -37,9 +37,11 @@ already reverted are applied again, avoiding a partially reverted state.
 last operation still applied can be reverted. Earlier steps become eligible after later ones are
 undone. The plan enters `partiallyReverted` and keeps every step state visible.
 
-During the journey, `NavigateToDevelopmentSurface` explicitly activates the code editor or live
-Form Designer for a project-owned file. The tool rejects external files and fails when the requested
-surface is unavailable.
+During the journey, `NavigateToDevelopmentSurface` activates the code editor or live Form Designer
+for a project-owned file. A call may provide the surface or the intent. Inspecting a form, editing
+layout or properties, and creating components open Design. Editing code, implementing an event,
+debugging, and testing open Code. The tool rejects external files, invalid intents, and unavailable
+surfaces; cancelling consent preserves the current view.
 
 After the latest mutation, the timeline combines evidence from `BuildProject`, `RunDUnitXTests`,
 `GetCoverageSummary`, `StartDebugging`, `GetDebuggerState`, and `GetDebugTimeline`. The journey card

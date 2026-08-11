@@ -48,7 +48,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `GetUnitSymbols` | Extrai classes, records, interfaces e rotinas do buffer ativo com suas linhas. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToFile` | Abre um arquivo pertencente a um projeto carregado e posiciona o cursor. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToSymbol` | Posiciona o editor em um símbolo da unit ativa. | `RadIA.Core.IDENavigationTools.pas` |
-| `NavigateToDevelopmentSurface` | Ativa Code ou Design no arquivo do projeto. | `RadIA.Core.IDENavigationTools.pas` |
+| `NavigateToDevelopmentSurface` | Mapeia uma intenção ou superfície para Code ou Design. | `RadIA.Core.IDENavigationTools.pas` |
 | `ListIDEActions` | Lista somente ações disponíveis na allowlist segura. | `RadIA.Core.IDENavigationTools.pas` |
 | `ExecuteIDEAction` | Executa uma ação allowlisted após consentimento. | `RadIA.Core.IDENavigationTools.pas` |
 

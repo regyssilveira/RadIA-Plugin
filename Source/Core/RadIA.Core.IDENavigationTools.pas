@@ -105,10 +105,13 @@ const
     '{"type":"object","required":["symbol"],"properties":{' +
     '"symbol":{"type":"string","minLength":1}},"additionalProperties":false}';
   CDevelopmentSurfaceInputSchema =
-    '{"type":"object","required":["fileName","surface"],"properties":{' +
+    '{"type":"object","required":["fileName"],"properties":{' +
     '"fileName":{"type":"string","minLength":1},' +
-    '"surface":{"type":"string","enum":["code","design"]}},' +
-    '"additionalProperties":false}';
+    '"surface":{"type":"string","enum":["code","design"]},' +
+    '"intent":{"type":"string","enum":["inspect-form","edit-layout",' +
+    '"edit-properties","create-component","edit-code","implement-event",' +
+    '"debug","test"]}},"additionalProperties":false,' +
+    '"oneOf":[{"required":["surface"]},{"required":["intent"]}]}';
   CActionInputSchema =
     '{"type":"object","required":["actionName"],"properties":{' +
     '"actionName":{"type":"string","minLength":1}},"additionalProperties":false}';
@@ -327,18 +330,34 @@ function TRadIAIDENavigationTool.ExecuteNavigateToDevelopmentSurface(
   const AArguments: TJSONObject
 ): TRadIAToolResult;
 var
+  LIntent: TRadIADevelopmentIntent;
+  LIntentValue: string;
   LSurface: string;
   LSurfaceKind: TRadIADevelopmentSurface;
 begin
-  LSurface := GetRequiredString(AArguments, 'surface');
-  if SameText(LSurface, 'code') then
-    LSurfaceKind := dsCode
-  else if SameText(LSurface, 'design') then
-    LSurfaceKind := dsDesign
+  LSurface := '';
+  if Assigned(AArguments.GetValue('surface')) then
+    LSurface := GetRequiredString(AArguments, 'surface');
+  if LSurface <> '' then
+  begin
+    if SameText(LSurface, 'code') then
+      LSurfaceKind := dsCode
+    else if SameText(LSurface, 'design') then
+      LSurfaceKind := dsDesign
+    else
+      raise EArgumentException.Create(
+        'Argument "surface" must be "code" or "design".'
+      );
+  end
   else
-    raise EArgumentException.Create(
-      'Argument "surface" must be "code" or "design".'
-    );
+  begin
+    LIntentValue := GetRequiredString(AArguments, 'intent');
+    if not TryParseRadIADevelopmentIntent(LIntentValue, LIntent) then
+      raise EArgumentException.Create(
+        'Argument "intent" is not a supported development intent.'
+      );
+    LSurfaceKind := RadIADevelopmentIntentSurface(LIntent);
+  end;
   Result := NavigationResultToToolResult(
     FNavigation.NavigateToDevelopmentSurface(
       GetRequiredString(AArguments, 'fileName'),
@@ -389,7 +408,7 @@ begin
     intkNavigateToDevelopmentSurface:
       Result := BuildDescriptor(
         'NavigateToDevelopmentSurface',
-        'Activates the Code editor or live Form Designer for a project file.',
+        'Activates Code or Design from an explicit surface or development intent.',
         CDevelopmentSurfaceInputSchema,
         trReversibleWrite
       );

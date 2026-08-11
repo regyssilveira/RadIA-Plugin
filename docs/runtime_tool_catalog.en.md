@@ -48,7 +48,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `GetUnitSymbols` | Lists declarations and source lines from the active unit. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToFile` | Opens a source file owned by an open project and selects a position. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToSymbol` | Moves the active editor to a declared symbol. | `RadIA.Core.IDENavigationTools.pas` |
-| `NavigateToDevelopmentSurface` | Activates the Code editor or live Form Designer for a project file. | `RadIA.Core.IDENavigationTools.pas` |
+| `NavigateToDevelopmentSurface` | Activates Code or Design from an explicit surface or development intent. | `RadIA.Core.IDENavigationTools.pas` |
 | `ListIDEActions` | Lists available IDE actions from the safe allowlist. | `RadIA.Core.IDENavigationTools.pas` |
 | `ExecuteIDEAction` | Executes a consented IDE action from the safe allowlist. | `RadIA.Core.IDENavigationTools.pas` |
 

@@ -75,7 +75,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`GetUnitSymbols`|Extracts classes, records, interfaces and routines from the active buffer with their lines.|To find statements without blindly searching text.|
 |`NavigateToFile`|Opens a file belonging to a loaded project and positions the cursor.|When an analysis, error, or plan points to a specific file, row, and column.|
 |`NavigateToSymbol`|Positions the editor on a symbol of the active unit.|After `GetUnitSymbols` or when the user asks to show a statement.|
-|`NavigateToDevelopmentSurface`|Activates Code or Design in the project file.|Between Code/Design stages.|
+|`NavigateToDevelopmentSurface`|Maps an intent or surface to Code or Design.|Between Code/Design stages.|
 |`ListIDEActions`|Lists only actions available in the safe allowlist.|Before offering a visual action from the IDE.|
 |`ExecuteIDEAction`|Performs an allowlisted action upon consent.|To open IDE panels or searches without fragile UI automation.|
 

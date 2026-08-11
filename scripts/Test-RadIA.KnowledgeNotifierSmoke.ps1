@@ -413,7 +413,10 @@ function Invoke-RadIATool {
         [string]$InstanceFile,
         [Parameter(Mandatory = $true)]
         [string]$Name,
-        [hashtable]$Arguments = @{}
+        [hashtable]$Arguments = @{},
+        [ValidateSet("Allow once", "Deny", "Cancel")]
+        [string]$ConsentButtonText = "Allow once",
+        [switch]$ExpectRejection
     )
 
     $initialize = @{
@@ -566,15 +569,15 @@ function Invoke-RadIAToolWithConsent {
             [uint32]$IDEProcess.Id,
             "TRadIAConsentForm"
         )
-        $allowOnce = [RadIAWindowNative]::FindChildByText(
+        $consentButton = [RadIAWindowNative]::FindChildByText(
             $consentWindow,
-            "Allow once"
+            $ConsentButtonText
         )
-        if ($allowOnce -eq [IntPtr]::Zero) {
-            throw "The Allow once consent button was not found."
+        if ($consentButton -eq [IntPtr]::Zero) {
+            throw "The $ConsentButtonText consent button was not found."
         }
         [void][RadIAWindowNative]::SendMessage(
-            $allowOnce,
+            $consentButton,
             0x00F5,
             [IntPtr]0,
             [IntPtr]0
@@ -608,6 +611,13 @@ function Invoke-RadIAToolWithConsent {
                 -Raw `
                 -ErrorAction SilentlyContinue
             throw "The MCP bridge failed while executing $Name`: $bridgeError"
+        }
+        if ($ExpectRejection) {
+            if (-not $response -or
+                (-not $response.error -and -not $response.result.isError)) {
+                throw "Tool $Name executed after rejected consent."
+            }
+            return $response
         }
         if (-not $response -or
             $response.error -or
@@ -946,6 +956,10 @@ $instanceFile = Join-Path (
 $journeySucceeded = $false
 $templateCreated = $false
 $designerChanged = $false
+$developmentSurfaceCancellationPassed = $false
+$developmentSurfaceCodePassed = $false
+$developmentSurfaceDesignPassed = $false
+$developmentSurfaceErrorPassed = $false
 $editorChanged = $false
 $buildPassed = $false
 $testsPassed = $false
@@ -1189,6 +1203,69 @@ try {
     if (-not $activeForm.available -or
         $activeForm.name -ne "RadIAMainForm") {
         throw "The generated VCL form did not become active in the Designer."
+    }
+    $designNavigation = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "NavigateToDevelopmentSurface" `
+        -Arguments @{
+            fileName = $generatedFormSourcePath
+            intent = "edit-layout"
+        }
+    if (-not $designNavigation.message) {
+        throw "The edit-layout intent did not activate the Form Designer."
+    }
+    $developmentSurfaceDesignPassed = $true
+    $codeNavigation = Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "NavigateToDevelopmentSurface" `
+        -Arguments @{
+            fileName = $generatedFormSourcePath
+            intent = "implement-event"
+        }
+    if (-not $codeNavigation.message) {
+        throw "The implement-event intent did not activate the Code editor."
+    }
+    $developmentSurfaceCodePassed = $true
+    try {
+        [void](Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "NavigateToDevelopmentSurface" `
+            -Arguments @{
+                fileName = $generatedFormSourcePath
+                intent = "unsupported-intent"
+            }
+        )
+        throw "An unsupported development intent was accepted."
+    } catch {
+        if ($_.Exception.Message -notmatch "unsupported-intent|invalid") {
+            throw
+        }
+        $developmentSurfaceErrorPassed = $true
+    }
+    [void](Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "NavigateToDevelopmentSurface" `
+        -Arguments @{
+            fileName = $generatedFormSourcePath
+            intent = "edit-layout"
+        } `
+        -ConsentButtonText "Cancel" `
+        -ExpectRejection
+    )
+    $developmentSurfaceCancellationPassed = $true
+    $activeForm = Invoke-RadIATool `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -Name "GetActiveForm"
+    if ($activeForm.available) {
+        throw "Cancelled Code/Design navigation changed the active surface."
     }
     $propertyPreview = Invoke-RadIATool `
         -BridgePath $bridgePath `
@@ -2000,6 +2077,12 @@ if ($EvidencePath) {
         phases = [PSCustomObject]@{
             projectCreated = $templateCreated
             formDesigned = $designerChanged
+            developmentSurfaceDesign = $developmentSurfaceDesignPassed
+            developmentSurfaceCode = $developmentSurfaceCodePassed
+            developmentSurfaceError = $developmentSurfaceErrorPassed
+            developmentSurfaceCancellation = (
+                $developmentSurfaceCancellationPassed
+            )
             sourceEdited = $editorChanged
             compilerFailureObservedAndFixed = $correctionPassed
             buildPassed = $buildPassed

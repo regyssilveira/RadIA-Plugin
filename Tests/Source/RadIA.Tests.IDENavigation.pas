@@ -72,6 +72,8 @@ type
     [Test]
     procedure NavigatesBetweenCodeAndDesign;
     [Test]
+    procedure MapsDevelopmentIntentToTheCorrectSurface;
+    [Test]
     procedure ListsAndExecutesSafeActions;
     [Test]
     procedure RejectsInvalidArguments;
@@ -286,6 +288,25 @@ begin
   LResult := ExecuteTool(
     'NavigateToDevelopmentSurface',
     '{"fileName":"C:\\Work\\Main.pas","surface":"code"}'
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(dsCode, FFacade.NavigatedSurface);
+end;
+
+procedure TRadIAIDENavigationTests.MapsDevelopmentIntentToTheCorrectSurface;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := ExecuteTool(
+    'NavigateToDevelopmentSurface',
+    '{"fileName":"C:\\Work\\Main.pas","intent":"edit-layout"}'
+  );
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(dsDesign, FFacade.NavigatedSurface);
+
+  LResult := ExecuteTool(
+    'NavigateToDevelopmentSurface',
+    '{"fileName":"C:\\Work\\Main.pas","intent":"implement-event"}'
   );
   Assert.IsTrue(LResult.Success);
   Assert.AreEqual(dsCode, FFacade.NavigatedSurface);

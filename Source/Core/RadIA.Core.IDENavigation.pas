@@ -8,6 +8,27 @@ type
     dsDesign
   );
 
+  TRadIADevelopmentIntent = (
+    diInspectForm,
+    diEditLayout,
+    diEditProperties,
+    diCreateComponent,
+    diEditCode,
+    diImplementEvent,
+    diDebug,
+    diTest
+  );
+
+function RadIADevelopmentIntentSurface(
+  const AIntent: TRadIADevelopmentIntent
+): TRadIADevelopmentSurface;
+
+function TryParseRadIADevelopmentIntent(
+  const AValue: string;
+  out AIntent: TRadIADevelopmentIntent
+): Boolean;
+
+type
   TRadIAUnitSymbol = record
   private
     FKind: string;
@@ -123,6 +144,50 @@ uses
   System.Generics.Collections,
   System.StrUtils,
   System.SysUtils;
+
+function RadIADevelopmentIntentSurface(
+  const AIntent: TRadIADevelopmentIntent
+): TRadIADevelopmentSurface;
+begin
+  case AIntent of
+    diInspectForm,
+    diEditLayout,
+    diEditProperties,
+    diCreateComponent:
+      Result := dsDesign;
+  else
+    Result := dsCode;
+  end;
+end;
+
+function TryParseRadIADevelopmentIntent(
+  const AValue: string;
+  out AIntent: TRadIADevelopmentIntent
+): Boolean;
+var
+  LValue: string;
+begin
+  LValue := LowerCase(Trim(AValue));
+  Result := True;
+  if LValue = 'inspect-form' then
+    AIntent := diInspectForm
+  else if LValue = 'edit-layout' then
+    AIntent := diEditLayout
+  else if LValue = 'edit-properties' then
+    AIntent := diEditProperties
+  else if LValue = 'create-component' then
+    AIntent := diCreateComponent
+  else if LValue = 'edit-code' then
+    AIntent := diEditCode
+  else if LValue = 'implement-event' then
+    AIntent := diImplementEvent
+  else if LValue = 'debug' then
+    AIntent := diDebug
+  else if LValue = 'test' then
+    AIntent := diTest
+  else
+    Result := False;
+end;
 
 { TRadIAUnitSymbol }
 
