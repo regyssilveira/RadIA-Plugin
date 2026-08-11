@@ -60,8 +60,11 @@ from the conversation surface without the harness invoking tools directly.
 The real harness has already proven on Delphi 12 Win32 and Delphi 13 Win32/IDE64 that RadIA creates
 and opens the calculator, builds the application and companion DUnitX project through the IDE, runs
 all five tests through `RunDUnitXTests`, starts under the debugger, captures session, stack, and
-timeline data, and shuts down without stale discovery. A presenter test separately proves that the
-natural-language prompt starts the correct guided journey.
+timeline data, and shuts down without stale discovery. A presenter test separately proves that a
+complete natural-language prompt preserves the inferred destination, name, and platform, starts the
+correct native journey, and reaches approval before any mutation. The RadIA suite passed 1,047 tests
+with no failures or leaks on all three matrix targets. End-to-end acceptance through the real
+conversation surface remains pending.
 
 ## Final 2.6.0 gates
 

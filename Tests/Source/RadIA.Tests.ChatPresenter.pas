@@ -282,6 +282,8 @@ type
     [Test]
     procedure TestNaturalCalculatorRequestStartsGuidedProjectJourney;
     [Test]
+    procedure TestCompleteCalculatorPromptStartsGuardedAgentJourney;
+    [Test]
     procedure TestHelpCommandShowsCapabilitiesAndDocumentation;
     [Test]
     procedure TestWebMessageToggleHistory;
@@ -1256,6 +1258,49 @@ begin
   );
 
   Assert.Contains(FMockView.PostedMessages.Text, 'Which destination folder');
+end;
+
+procedure TTestChatPresenter.
+  TestCompleteCalculatorPromptStartsGuardedAgentJourney;
+var
+  LAttempt: Integer;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText(
+    'crie uma calculadora VCL em D:\CalculatorAcceptance'
+  );
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'projectSpecification kind calculator'
+  );
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'companionTestExecutable'
+  );
+  Assert.Contains(FMockView.PostedMessages.Text, 'RunDUnitXTests');
+  Assert.Contains(FMockView.PostedMessages.Text, 'start the application');
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'destination=\"D:\\CalculatorAcceptance\"'
+  );
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'project=\"CalculatorAcceptance\"'
+  );
+  Assert.Contains(FMockView.PostedMessages.Text, 'platform=\"Win32\"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
 end;
 
 procedure TTestChatPresenter.TestHelpCommandShowsCapabilitiesAndDocumentation;

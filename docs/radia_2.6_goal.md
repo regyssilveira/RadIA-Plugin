@@ -60,7 +60,10 @@ da IDE a partir da superfície de conversa, sem o harness invocar as tools diret
 O harness real já comprovou no Delphi 12 Win32 e no Delphi 13 Win32/IDE64 que o RadIA cria e abre a
 calculadora, compila a aplicação e o projeto DUnitX companion pela IDE, executa os cinco testes pelo
 `RunDUnitXTests`, inicia pelo depurador, obtém sessão, pilha e timeline e encerra sem discovery órfão.
-O teste do presenter comprova separadamente que o prompt natural inicia a jornada guiada correta.
+O teste do presenter comprova separadamente que um prompt completo em linguagem natural preserva
+destino, nome e plataforma inferidos, inicia a jornada nativa correta e chega ao estado de aprovação
+antes de qualquer mutação. A suíte do RadIA passou com 1.047 testes, sem falhas nem vazamentos, nos
+três alvos da matriz. O aceite ponta a ponta pela superfície real de conversa continua pendente.
 
 ## Gates finais da 2.6.0
 

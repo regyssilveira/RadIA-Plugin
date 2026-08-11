@@ -3741,6 +3741,9 @@ begin
       LDefinition,
       LContext
     );
+    if LIsNativeJourney and
+      SameText(LDefinition.Command, '/journey create') then
+      LContext := TRadIAJourneyCatalog.NormalizeCreateContext(LContext);
     if not LIsNativeJourney then
     begin
       ReloadDeclarativeExtensions;
