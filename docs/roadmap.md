@@ -6,8 +6,9 @@
 
 Este documento descreve o planejamento estratégico e a visão de futuro do assistente de IA **Rad IA**, focado em trazer produtividade e resolver as dores reais do desenvolvedor Delphi no seu dia a dia.
 
-O desenvolvimento ativo está concentrado no [goal único da versão 2.6.0](radia_2.6_goal.md): criar,
-compilar, depurar e testar um projeto completo a partir de um prompt, com evidências nos três alvos suportados.
+O fechamento da versão 2.7.0 usa o
+[baseline competitivo determinístico](competitive_closure_2.7.md), com quatro requisitos e
+evidências nos três alvos suportados.
 
 > [!NOTE]
 > O Rad IA segue um modelo de desenvolvimento **open-source orientado à comunidade**.
@@ -17,6 +18,13 @@ compilar, depurar e testar um projeto completo a partir de um prompt, com evidê
 ---
 
 ## 📅 Histórico de Versões Concluídas
+
+### v2.7.0 - Fechamento funcional determinístico
+
+- prompts naturais cobrem todos os templates em português e inglês;
+- intenções de desenvolvimento ativam Code ou Design com erro e cancelamento seguros;
+- revisão por bloco registra solicitações de alteração comentadas sem modificar o buffer;
+- baseline versionado impede reabrir diferenças já comprovadas apenas por opinião.
 
 ### v2.6.2 - Usabilidade do chat e criação de projetos
 

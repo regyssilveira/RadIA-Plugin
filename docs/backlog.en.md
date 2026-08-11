@@ -10,9 +10,8 @@ This document registers the development status, future planning, and technical i
 ## 📊 Kanban Dashboard
 
 The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
-numbers are retained only for historical deliveries. A pending item does not receive a new version
-until selected for a goal. The current goal starts from RadIA 2.3.1 and prepares version 2.4.0,
-without publishing, tagging, or merging before explicit authorization.
+numbers are retained only for historical deliveries. The 2.7.0 line closes a deterministic baseline;
+new items require a later formal baseline without reopening passed requirements.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
@@ -28,6 +27,7 @@ without publishing, tagging, or merging before explicit authorization.
 | **Goal — Expand the complete experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Goal — Skill portability and high-fidelity terminal** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Patch 2.6.2 — Chat usability and project creation** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v2.6.2 |
+| **Deterministic competitive closure** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |

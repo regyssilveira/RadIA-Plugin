@@ -1,4 +1,4 @@
-# Complete RadIA 2.6.2 user manual
+# Complete RadIA 2.7.0 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -26,7 +26,7 @@ panel. Configure a provider under `Tools > Options > Rad IA`, select a model, cr
 send a prompt with `Ctrl + Enter`.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.6.2`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.7.0`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](install_config.en.md).

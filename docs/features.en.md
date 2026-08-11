@@ -6,6 +6,9 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
+Version 2.7.0 note: natural creation covers every template, intents switch Code/Design
+deterministically, and block review accepts commented change requests without mutation.
+
 Version 2.6.2 note: stabilized editor menus, wider web scrollbars, versioned captions, natural
 calculator creation, and generated projects validated with `$(BDS)` on Delphi 13.
 

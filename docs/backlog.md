@@ -11,9 +11,8 @@ Este documento registra o status de desenvolvimento, planejamento futuro e o his
 ## 📊 Kanban Dashboard
 
 O quadro abaixo separa entregas, pendências reais e itens ainda sem compromisso de versão. Números
-da linha `0.x` são preservados somente nas entregas históricas. Uma pendência não recebe versão
-nova até ser selecionada para um goal. O goal atual parte do RadIA 2.3.1 e prepara a versão 2.4.0,
-sem publicar, criar tag ou fazer merge antes de autorização explícita.
+da linha `0.x` são preservados somente nas entregas históricas. A linha 2.7.0 fecha um baseline
+determinístico; novos itens exigem uma baseline posterior formal, sem reabrir requisitos aprovados.
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
@@ -29,6 +28,7 @@ sem publicar, criar tag ou fazer merge antes de autorização explícita.
 | **Goal — Expansão da experiência completa** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Goal — Portabilidade de skills e terminal de alta fidelidade** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Patch 2.6.2 — Usabilidade do chat e criação de projetos** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v2.6.2 |
+| **Fechamento competitivo determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
