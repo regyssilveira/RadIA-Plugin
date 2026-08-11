@@ -33,7 +33,7 @@ Esses pontos são decisões explícitas de produto e nunca devem voltar como lac
 | CC-01 | Projetos gerados | Aprovado | Delphi 12/13, 11 projetos e 5/5 testes |
 | CC-02 | Prompt por template | Aprovado | Matriz PT/EN pela conversa real |
 | CC-03 | Intenção e visão da IDE | Aprovado | Smoke de Design, Code, erro e cancelamento |
-| CC-04 | Comentário na revisão | Aberto | Feedback sem mutação e com auditoria |
+| CC-04 | Comentário na revisão | Aprovado | Feedback sem mutação e com auditoria |
 
 ## Regra de aprovação
 
@@ -71,3 +71,10 @@ A matriz [ide_intent_navigation_evidence_2.7.0.json](ide_intent_navigation_evide
 produzida pelo commit `4604508`, com `sourceDirty=false`. Em uma IDE real, os três alvos mapearam
 intenções para Design e Code, recusaram intenção inválida, cancelaram sem executar e encerraram a IDE
 sem deixar a descoberta MCP ativa.
+
+## Evidência de CC-04
+
+A matriz [block_review_feedback_evidence_2.7.0.json](block_review_feedback_evidence_2.7.0.json) foi
+produzida pelo commit `2a13819`, com `sourceDirty=false`. Nos três alvos reais, a revisão registrou o
+comentário, expôs `changes-requested`, permaneceu pendente, não alterou o buffer e encerrou a IDE sem
+deixar descoberta MCP ativa.

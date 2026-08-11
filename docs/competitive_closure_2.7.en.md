@@ -33,7 +33,7 @@ These points are explicit product decisions and must never return as gaps in thi
 | CC-01 | Generated projects | Passed | Delphi 12/13, 11 projects, and 5/5 tests |
 | CC-02 | Prompt per template | Passed | PT/EN matrix through the real conversation |
 | CC-03 | Intent and IDE view | Passed | Design, Code, error, and cancellation smoke |
-| CC-04 | Review comment | Open | Audited feedback without mutation |
+| CC-04 | Review comment | Passed | Audited feedback without mutation |
 
 ## Approval rule
 
@@ -71,3 +71,10 @@ The [ide_intent_navigation_evidence_2.7.0.json](ide_intent_navigation_evidence_2
 produced from commit `4604508` with `sourceDirty=false`. In a real IDE, all three targets mapped
 intents to Design and Code, rejected an invalid intent, cancelled without execution, and shut down
 without leaving MCP discovery active.
+
+## CC-04 evidence
+
+The [block_review_feedback_evidence_2.7.0.json](block_review_feedback_evidence_2.7.0.json) matrix was
+produced from commit `2a13819` with `sourceDirty=false`. On all three real targets, review stored the
+comment, exposed `changes-requested`, remained pending, did not mutate the buffer, and shut down the
+IDE without leaving MCP discovery active.

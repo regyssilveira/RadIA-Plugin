@@ -38,7 +38,11 @@
       "status": "passed",
       "evidence": "ide_intent_navigation_evidence_2.7.0.json"
     },
-    { "id": "CC-04", "status": "open" }
+    {
+      "id": "CC-04",
+      "status": "passed",
+      "evidence": "block_review_feedback_evidence_2.7.0.json"
+    }
   ],
   "closureRule": {
     "open": 0,
