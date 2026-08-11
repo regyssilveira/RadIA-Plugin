@@ -28,6 +28,11 @@ stack frames e otimização desativada. Assim, breakpoints de código-fonte pode
 depois de `Create & Open`, sem editar manualmente o `.dproj`. A configuração `Release` permanece
 separada para builds otimizados.
 
+Os `.dproj` gerados resolvem a RTL e as DCUs do Delphi por `$(BDS)\lib\$(Platform)\release`, pois
+essa variável é definida pelo `rsvars.bat` carregado pela IDE. Projetos DUnitX também incluem
+`$(BDS)\source\DUnitX` no search path para que a validação funcione em instalações limpas do
+Delphi 12 e 13.
+
 ## Preview
 
 O preview JSON contém:

@@ -1124,7 +1124,9 @@ begin
     else if SameText(LPlatform, 'Win64') then
       LTargetedPlatforms := LTargetedPlatforms or 2;
   end;
-  LUnitSearchPath := '$(BDSLIB)\$(Platform)\release';
+  LUnitSearchPath := '$(BDS)\lib\$(Platform)\release';
+  if ARequest.Kind = ptkDUnitX then
+    LUnitSearchPath := LUnitSearchPath + ';$(BDS)\source\DUnitX';
   if ARequest.Kind in [ptkDextMinimalApi, ptkDextControllerApi] then
     LUnitSearchPath := LUnitSearchPath +
       ';$(DEXT_ROOT)\Output\' + ARequest.DelphiVersion +
@@ -1160,7 +1162,7 @@ begin
     '    <DCC_ExeOutput>.\bin\$(Platform)\$(Config)</DCC_ExeOutput>' +
     sLineBreak +
     '    <DCC_ForceExecute>true</DCC_ForceExecute>' + sLineBreak +
-    '    <DelphiLibraryPath>$(BDSLIB)\$(Platform)\release' +
+    '    <DelphiLibraryPath>$(BDS)\lib\$(Platform)\release' +
     '</DelphiLibraryPath>' + sLineBreak +
     '    <DCC_UnitSearchPath>' + LUnitSearchPath +
     '</DCC_UnitSearchPath>' + sLineBreak +

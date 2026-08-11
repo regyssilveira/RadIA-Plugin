@@ -360,8 +360,8 @@ try {
         $validationRoot `
         "CalculatorApp\bin\Win32\Debug\CalculatorAppTests.exe"
     & $calculatorTestExecutable `
-        "--no-logo" `
-        "--xml=$validationRoot\calculator-tests.xml"
+        "--hidebanner" `
+        "--xmlfile:$validationRoot\calculator-tests.xml"
     if ($LASTEXITCODE -ne 0) {
         throw "Generated calculator unit tests failed."
     }

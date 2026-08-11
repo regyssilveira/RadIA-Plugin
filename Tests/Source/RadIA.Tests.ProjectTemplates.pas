@@ -187,12 +187,17 @@ begin
             );
             Assert.Contains(
               LFile.Content,
-              '<DCC_UnitSearchPath>$(BDSLIB)\$(Platform)\release'
+              '<DCC_UnitSearchPath>$(BDS)\lib\$(Platform)\release'
             );
             Assert.Contains(
               LFile.Content,
-              '<DelphiLibraryPath>$(BDSLIB)\$(Platform)\release'
+              '<DelphiLibraryPath>$(BDS)\lib\$(Platform)\release'
             );
+            if LKind = ptkDUnitX then
+              Assert.Contains(
+                LFile.Content,
+                '$(BDS)\source\DUnitX'
+              );
             Assert.Contains(
               LFile.Content,
               '<PropertyGroup Condition="&apos;$(Config)&apos;==&apos;Base&apos;'

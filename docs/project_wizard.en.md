@@ -28,6 +28,11 @@ stack frames, and optimization disabled. Source breakpoints therefore work immed
 `Create & Open`, without manually editing the `.dproj`. The `Release` configuration remains
 separate for optimized builds.
 
+Generated `.dproj` files resolve the Delphi RTL and DCUs through
+`$(BDS)\lib\$(Platform)\release`, because that variable is defined by the `rsvars.bat` loaded by
+the IDE. DUnitX projects also include `$(BDS)\source\DUnitX` in the search path so validation works
+on clean Delphi 12 and 13 installations.
+
 ## Preview
 
 The JSON preview contains:
