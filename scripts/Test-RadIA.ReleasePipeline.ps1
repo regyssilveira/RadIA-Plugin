@@ -53,7 +53,38 @@ if (
     throw "Internal package ZIP files cannot be published in the distribution."
 }
 
+$packageInstallerPath = ".\scripts\Install-RadIA.Package.ps1"
+$packageInstaller = Get-Content -LiteralPath $packageInstallerPath -Raw
+$packageInstallerFragments = @(
+    "Get-Process bds",
+    "Close all Delphi IDE instances before changing RadIA",
+    '$runningIDEs.Count -gt 0'
+)
+foreach ($fragment in $packageInstallerFragments) {
+    if (-not $packageInstaller.Contains($fragment)) {
+        throw "Package installer is missing required IDE-open gate: $fragment"
+    }
+}
+if ($packageInstaller.Contains("Close all instances of the target Delphi IDE")) {
+    throw "Package installer must block every Delphi IDE instance, not only the target IDE."
+}
+
+$visualInstallerPath = ".\installer\RadIA.iss"
+$visualInstaller = Get-Content -LiteralPath $visualInstallerPath -Raw
+$visualInstallerFragments = @(
+    "PrepareToInstall",
+    "InitializeUninstall",
+    "Win32_Process WHERE Name = ""bds.exe""",
+    "Close all Delphi IDE instances before installing"
+)
+foreach ($fragment in $visualInstallerFragments) {
+    if (-not $visualInstaller.Contains($fragment)) {
+        throw "Visual installer is missing required IDE-open gate: $fragment"
+    }
+}
+
 Write-Host (
     "Release workflow validation succeeded with three internal Delphi inputs, " +
-    "one public installer, SHA-256 evidence, and no certificate dependency."
+    "one public installer, SHA-256 evidence, no certificate dependency, and " +
+    "Delphi-open installer gates."
 )

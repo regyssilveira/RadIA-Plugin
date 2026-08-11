@@ -245,25 +245,22 @@ if ($Mode -ne "Uninstall" -and -not (Test-Path -LiteralPath $ideBin)) {
     throw "Delphi IDE binary directory was not found: $ideBin"
 }
 
-$targetBds = Join-Path $ideBin "bds.exe"
 $runningIDEs = @(Get-Process bds -ErrorAction SilentlyContinue)
-$runningTargetIDEs = @(
+$runningIDEPaths = @(
     $runningIDEs |
-        Where-Object {
-            try {
-                [IO.Path]::GetFullPath($_.Path).Equals(
-                    [IO.Path]::GetFullPath($targetBds),
-                    [StringComparison]::OrdinalIgnoreCase
-                )
-            } catch {
-                $false
+        ForEach-Object {
+            if ($_.Path) {
+                $_.Path
+            } else {
+                "PID $($_.Id)"
             }
         }
 )
-if ($runningTargetIDEs.Count -gt 0) {
+if ($runningIDEs.Count -gt 0) {
     throw (
-        "Close all instances of the target Delphi IDE before changing " +
-        "RadIA: $targetBds"
+        "Close all Delphi IDE instances before changing RadIA. " +
+        "Running bds.exe process(es): " +
+        ($runningIDEPaths -join "; ")
     )
 }
 
@@ -406,14 +403,7 @@ if (-not $webViewCache.StartsWith(
     throw "Unexpected WebView2 cache target."
 }
 if (Test-Path -LiteralPath $webViewCache) {
-    if ($runningIDEs.Count -eq 0) {
-        Remove-Item -LiteralPath $webViewCache -Recurse -Force
-    } else {
-        Write-Warning (
-            "WebView2 cache cleanup was skipped because another Delphi " +
-            "IDE is running. Refreshed assets will load after its restart."
-        )
-    }
+    Remove-Item -LiteralPath $webViewCache -Recurse -Force
 }
 
 if ($loaderNeedsUpdate) {

@@ -8,6 +8,10 @@ Cada componente contém o pacote específico daquela combinação e reutiliza
 `Install-RadIA.Package.ps1`. O fluxo preserva validação do manifesto, hashes, instalação, reparo e
 desinstalação com preservação de dados por padrão.
 
+O instalador visual recusa instalação, reparo e desinstalação enquanto qualquer processo `bds.exe`
+estiver aberto. O script interno repete a mesma barreira antes de copiar BPL, DCP, bridge, assets
+Web, `WebView2Loader.dll` ou alterar o Registro.
+
 Antes de copiar uma versão, o instalador remove somente a pasta interna do target selecionado,
 evitando arquivos residuais de releases anteriores. Uma falha do instalador interno interrompe a
 instalação visual e devolve um exit code diferente de zero.

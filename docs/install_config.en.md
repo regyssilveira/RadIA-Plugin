@@ -213,6 +213,7 @@ powershell -ExecutionPolicy Bypass `
 Add `-RemoveUserData` only when settings, sessions, audit, knowledge, and caches under
 `%APPDATA%\RadIA` must also be removed. The shared IDE `WebView2Loader.dll` is always preserved.
 Public web assets are removed only when no RadIA architecture remains installed for that Delphi
-version. Every mutating operation requires the IDE to be closed.
+version. Every mutating operation requires all Delphi IDE instances to be closed, even when the
+operation targets only one version or architecture.
 
 

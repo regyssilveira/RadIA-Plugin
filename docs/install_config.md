@@ -194,7 +194,7 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
   -DelphiVersion "23.0" -Release -Package
 ```
 
-Para validar internamente o pacote extraído, feche todas as IDEs e execute:
+Para validar internamente o pacote extraído, feche todas as instâncias do Delphi e execute:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -259,7 +259,8 @@ Somente acrescente `-RemoveUserData` ao modo `Uninstall` quando também quiser r
 configurações, sessões, auditoria, conhecimento e caches em `%APPDATA%\RadIA`. O loader
 `WebView2Loader.dll` da IDE é sempre preservado. Recursos web públicos só são removidos quando
 nenhuma arquitetura do RadIA permanece instalada naquela versão do Delphi. Toda operação que
-altera o sistema exige a IDE fechada.
+altera o sistema exige todas as instâncias do Delphi fechadas, mesmo quando a operação mira apenas
+uma versão ou arquitetura.
 
 A bridge MCP é instalada ao lado da BPL como `RadIA.MCP.Bridge.exe`. Clientes externos podem usar
 esse executável sem depender da árvore de fontes ou do diretório `Output`.
