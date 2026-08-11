@@ -46,6 +46,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ListProjectGroupProjects` | Lists every project in the active Delphi project group. | `RadIA.Core.IDENavigationTools.pas` |
 | `GetProjectDependencies` | Lists project dependencies configured by the active project group. | `RadIA.Core.IDENavigationTools.pas` |
 | `GetUnitSymbols` | Lists declarations and source lines from the active unit. | `RadIA.Core.IDENavigationTools.pas` |
+| `GetEditorSemanticContext` | Returns the active unit, symbol, imports, and nearby declarations. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToFile` | Opens a source file owned by an open project and selects a position. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToSymbol` | Moves the active editor to a declared symbol. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToDevelopmentSurface` | Activates Code or Design from an explicit surface or development intent. | `RadIA.Core.IDENavigationTools.pas` |
@@ -329,6 +330,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 38
-- Registered built-in tools: 132
+- Registered built-in tools: 133
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

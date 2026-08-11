@@ -5,7 +5,7 @@
 RadIA 2.7.0 closes a deterministic functional baseline for the complete Delphi 12 and 13
 experience. The release does not replace the WebView, include C++ or Lazarus, or add commercial
 installation.
-This version's catalog documents 132 tools with their internal operation and activation guidance.
+This version's catalog documents 133 tools with their internal operation and activation guidance.
 
 ## Project creation
 

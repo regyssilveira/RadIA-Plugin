@@ -24,6 +24,7 @@ type
     function GetUnitSymbols(
       const AMaxSymbols: Integer
     ): TArray<TRadIAUnitSymbol>;
+    function GetEditorSemanticContext: string;
     function NavigateToFile(
       const AFileName: string;
       const ALine: Integer;
@@ -52,6 +53,7 @@ uses
   ToolsAPI,
   Vcl.ActnList,
   Winapi.Windows,
+  RadIA.Core.EditorContext,
   RadIA.Core.Types;
 
 const
@@ -294,6 +296,25 @@ begin
         FEditorAdapter.GetText,
         AMaxSymbols
       );
+    end
+  );
+  Result := LResult;
+end;
+
+function TRadIAOTAIDENavigationFacade.GetEditorSemanticContext: string;
+var
+  LResult: string;
+begin
+  RunOnMainThread(
+    procedure
+    var
+      LContext: TRadIAEditorSemanticContext;
+    begin
+      LContext := TRadIAEditorContextAnalyzer.Analyze(
+        FEditorAdapter.GetText,
+        FEditorAdapter.GetCursorLine
+      );
+      LResult := LContext.ToPromptContext;
     end
   );
   Result := LResult;

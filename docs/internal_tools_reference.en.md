@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 132 internal tools: what each one does and at what stage
+This page explains RadIA's 133 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -73,6 +73,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`ListProjectGroupProjects`|Lists projects loaded into the current project group.|To understand solutions with separate executables, packages, libraries or tests.|
 |`GetProjectDependencies`|Query the actual dependencies of the active project via OTA.|Before deciding build order, impact or relationship between projects.|
 |`GetUnitSymbols`|Extracts classes, records, interfaces and routines from the active buffer with their lines.|To find statements without blindly searching text.|
+|`GetEditorSemanticContext`|Summarizes the active unit, current symbol, imports, and nearby declarations.|Before explaining, fixing, testing, or completing code at the current editor position.|
 |`NavigateToFile`|Opens a file belonging to a loaded project and positions the cursor.|When an analysis, error, or plan points to a specific file, row, and column.|
 |`NavigateToSymbol`|Positions the editor on a symbol of the active unit.|After `GetUnitSymbols` or when the user asks to show a statement.|
 |`NavigateToDevelopmentSurface`|Maps an intent or surface to Code or Design.|Between Code/Design stages.|

@@ -46,6 +46,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ListProjectGroupProjects` | Lista os projetos carregados no project group atual. | `RadIA.Core.IDENavigationTools.pas` |
 | `GetProjectDependencies` | Consulta as dependências reais do projeto ativo pela OTA. | `RadIA.Core.IDENavigationTools.pas` |
 | `GetUnitSymbols` | Extrai classes, records, interfaces e rotinas do buffer ativo com suas linhas. | `RadIA.Core.IDENavigationTools.pas` |
+| `GetEditorSemanticContext` | Resume a unit ativa, o símbolo atual, imports e declarações próximas. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToFile` | Abre um arquivo pertencente a um projeto carregado e posiciona o cursor. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToSymbol` | Posiciona o editor em um símbolo da unit ativa. | `RadIA.Core.IDENavigationTools.pas` |
 | `NavigateToDevelopmentSurface` | Mapeia uma intenção ou superfície para Code ou Design. | `RadIA.Core.IDENavigationTools.pas` |
@@ -329,6 +330,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 38
-- Ferramentas internas registradas: 132
+- Ferramentas internas registradas: 133
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

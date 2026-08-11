@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 132 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 133 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -73,6 +73,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `ListProjectGroupProjects` | Lista os projetos carregados no project group atual. | Para entender soluções com executável, packages, bibliotecas ou testes separados. |
 | `GetProjectDependencies` | Consulta as dependências reais do projeto ativo pela OTA. | Antes de decidir ordem de build, impacto ou relacionamento entre projetos. |
 | `GetUnitSymbols` | Extrai classes, records, interfaces e rotinas do buffer ativo com suas linhas. | Para localizar declarações sem pesquisar texto cegamente. |
+| `GetEditorSemanticContext` | Resume a unit ativa, o símbolo atual, imports e declarações próximas. | Antes de explicar, corrigir, testar ou completar código no ponto atual do editor. |
 | `NavigateToFile` | Abre um arquivo pertencente a um projeto carregado e posiciona o cursor. | Quando uma análise, erro ou plano aponta para arquivo, linha e coluna específicos. |
 | `NavigateToSymbol` | Posiciona o editor em um símbolo da unit ativa. | Depois de `GetUnitSymbols` ou quando o usuário pede para mostrar uma declaração. |
 | `NavigateToDevelopmentSurface` | Mapeia uma intenção ou superfície para Code ou Design. | Entre etapas Code/Design. |

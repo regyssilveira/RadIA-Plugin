@@ -8,7 +8,7 @@
 - [x] Natural PT/EN prompts certified for every template.
 - [x] Code/Design intents, error, and cancellation certified in a real IDE.
 - [x] Commented change request without mutation certified in a real IDE.
-- [x] Generated catalog with 132 tools documented and synchronized.
+- [x] Generated catalog with 133 tools documented and synchronized.
 
 ## Final gates
 

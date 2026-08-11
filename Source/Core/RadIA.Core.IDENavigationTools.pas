@@ -22,6 +22,7 @@ type
     intkListProjectGroupProjects,
     intkGetProjectDependencies,
     intkGetUnitSymbols,
+    intkGetEditorSemanticContext,
     intkNavigateToFile,
     intkNavigateToSymbol,
     intkNavigateToDevelopmentSurface,
@@ -46,6 +47,7 @@ type
     function ExecuteGetUnitSymbols(
       const AArguments: TJSONObject
     ): TRadIAToolResult;
+    function ExecuteGetEditorSemanticContext: TRadIAToolResult;
     function ExecuteListIDEActions: TRadIAToolResult;
     function ExecuteListProjectGroupProjects: TRadIAToolResult;
     function ExecuteNavigateToFile(
@@ -188,6 +190,8 @@ begin
           Result := ExecuteGetProjectDependencies;
         intkGetUnitSymbols:
           Result := ExecuteGetUnitSymbols(TJSONObject(LArguments));
+        intkGetEditorSemanticContext:
+          Result := ExecuteGetEditorSemanticContext;
         intkNavigateToFile:
           Result := ExecuteNavigateToFile(TJSONObject(LArguments));
         intkNavigateToSymbol:
@@ -215,6 +219,23 @@ begin
     end;
   finally
     LArguments.Free;
+  end;
+end;
+
+function TRadIAIDENavigationTool.ExecuteGetEditorSemanticContext:
+  TRadIAToolResult;
+var
+  LRoot: TJSONObject;
+begin
+  LRoot := TJSONObject.Create;
+  try
+    LRoot.AddPair(
+      'context',
+      FNavigation.GetEditorSemanticContext
+    );
+    Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
+  finally
+    LRoot.Free;
   end;
 end;
 
@@ -389,6 +410,13 @@ begin
         'GetUnitSymbols',
         'Lists declarations and source lines from the active unit.',
         CSymbolsInputSchema,
+        trReadOnly
+      );
+    intkGetEditorSemanticContext:
+      Result := BuildDescriptor(
+        'GetEditorSemanticContext',
+        'Returns the active unit, symbol, imports, and nearby declarations.',
+        CEmptyInputSchema,
         trReadOnly
       );
     intkNavigateToFile:

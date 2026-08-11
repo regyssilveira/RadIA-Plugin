@@ -93,6 +93,7 @@ type
     function GetUnitSymbols(
       const AMaxSymbols: Integer
     ): TArray<TRadIAUnitSymbol>;
+    function GetEditorSemanticContext: string;
     function NavigateToFile(
       const AFileName: string;
       const ALine: Integer;

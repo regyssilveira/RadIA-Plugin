@@ -81,6 +81,7 @@ The returned content must indicate truncation, original size and revision/hash w
 - `FindInEditor`
 - `FindInProject`
 - `GetUnitSymbols`
+- `GetEditorSemanticContext`
 - `NavigateToFile`
 - `NavigateToSymbol`
 

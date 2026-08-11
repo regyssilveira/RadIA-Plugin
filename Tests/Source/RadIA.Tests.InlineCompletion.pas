@@ -121,11 +121,18 @@ type
     procedure AcceptsMultilineSuggestionExactly;
     [Test]
     procedure AcceptsNextWordAcrossLineBreak;
+    [Test]
+    procedure BuildsSemanticEditorContext;
+    [Test]
+    procedure LimitsSemanticImportsAndNearbySymbols;
+    [Test]
+    procedure HandlesUnitWithoutSymbols;
   end;
 
 implementation
 
 uses
+  RadIA.Core.EditorContext,
   RadIA.Core.InlineShortcuts,
   System.SysUtils;
 
@@ -570,6 +577,60 @@ begin
   FProvider.Response := 'LongSuggestion';
   FController.Request(Context('runtime-options'));
   Assert.AreEqual('Long', FView.ShownText);
+end;
+
+procedure TRadIAInlineCompletionTests.BuildsSemanticEditorContext;
+var
+  LContext: TRadIAEditorSemanticContext;
+  LSource: string;
+begin
+  LSource := 'unit Demo.Unit1;' + sLineBreak + sLineBreak +
+    'interface' + sLineBreak + sLineBreak +
+    'uses' + sLineBreak +
+    '  System.SysUtils, Vcl.Forms;' + sLineBreak + sLineBreak +
+    'implementation' + sLineBreak + sLineBreak +
+    'procedure TDemoForm.Calculate;' + sLineBreak +
+    'begin' + sLineBreak +
+    'end;' + sLineBreak + sLineBreak +
+    'end.';
+  LContext := TRadIAEditorContextAnalyzer.Analyze(LSource, 12);
+  Assert.AreEqual('Demo.Unit1', LContext.UnitName);
+  Assert.AreEqual('TDemoForm.Calculate', LContext.CurrentSymbol);
+  Assert.AreEqual(2, Length(LContext.Imports));
+  Assert.Contains(LContext.ToPromptContext, 'System.SysUtils');
+  Assert.Contains(LContext.ToPromptContext, 'Calculate');
+end;
+
+procedure TRadIAInlineCompletionTests.HandlesUnitWithoutSymbols;
+var
+  LContext: TRadIAEditorSemanticContext;
+begin
+  LContext := TRadIAEditorContextAnalyzer.Analyze(
+    'unit EmptyUnit;' + sLineBreak + 'interface' + sLineBreak + 'end.',
+    2
+  );
+  Assert.AreEqual('EmptyUnit', LContext.UnitName);
+  Assert.AreEqual('', LContext.CurrentSymbol);
+  Assert.AreEqual(0, Length(LContext.NearbySymbols));
+end;
+
+procedure TRadIAInlineCompletionTests.LimitsSemanticImportsAndNearbySymbols;
+var
+  LContext: TRadIAEditorSemanticContext;
+  LSource: string;
+begin
+  LSource := 'unit LimitedUnit;' + sLineBreak +
+    'interface' + sLineBreak +
+    'uses UnitA, UnitB, UnitC;' + sLineBreak +
+    'procedure First;' + sLineBreak +
+    'procedure Second;' + sLineBreak +
+    'implementation' + sLineBreak +
+    'procedure First; begin end;' + sLineBreak +
+    'procedure Second; begin end;' + sLineBreak +
+    'end.';
+  LContext := TRadIAEditorContextAnalyzer.Analyze(LSource, 8, 2, 1);
+  Assert.AreEqual(2, Length(LContext.Imports));
+  Assert.AreEqual(1, Length(LContext.NearbySymbols));
 end;
 
 procedure TRadIAInlineCompletionTests.TearDown;

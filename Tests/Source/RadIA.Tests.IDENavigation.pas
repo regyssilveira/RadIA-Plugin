@@ -23,6 +23,7 @@ type
     function GetUnitSymbols(
       const AMaxSymbols: Integer
     ): TArray<TRadIAUnitSymbol>;
+    function GetEditorSemanticContext: string;
     function NavigateToFile(
       const AFileName: string;
       const ALine: Integer;
@@ -67,6 +68,8 @@ type
     procedure ListsProjectGroupAndDependencies;
     [Test]
     procedure ListsStructuredUnitSymbols;
+    [Test]
+    procedure GetsEditorSemanticContext;
     [Test]
     procedure NavigatesToFileAndSymbol;
     [Test]
@@ -117,6 +120,12 @@ function TRadIAFakeIDENavigationFacade.GetProjectDependencies:
   TArray<string>;
 begin
   Result := ['C:\Work\Library.dproj'];
+end;
+
+function TRadIAFakeIDENavigationFacade.GetEditorSemanticContext: string;
+begin
+  Result := 'Unit: Demo' + sLineBreak +
+    'Current symbol: procedure TDemo.Run';
 end;
 
 function TRadIAFakeIDENavigationFacade.GetUnitSymbols(
@@ -243,6 +252,16 @@ begin
   Assert.Contains(LResult.ContentJson, 'Library.dproj');
 end;
 
+procedure TRadIAIDENavigationTests.GetsEditorSemanticContext;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := ExecuteTool('GetEditorSemanticContext', '{}');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'Unit: Demo');
+  Assert.Contains(LResult.ContentJson, 'TDemo.Run');
+end;
+
 procedure TRadIAIDENavigationTests.ListsStructuredUnitSymbols;
 var
   LResult: TRadIAToolResult;
@@ -331,7 +350,7 @@ procedure TRadIAIDENavigationTests.RegistersCompleteNavigationCatalog;
 var
   LTool: IRadIATool;
 begin
-  Assert.AreEqual(8, FRegistry.Count);
+  Assert.AreEqual(9, FRegistry.Count);
   Assert.IsTrue(FRegistry.TryResolve('ListProjectGroupProjects', LTool));
   Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
   Assert.IsTrue(FRegistry.TryResolve('NavigateToFile', LTool));

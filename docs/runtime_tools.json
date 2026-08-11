@@ -48,6 +48,7 @@
         "ListProjectGroupProjects",
         "GetProjectDependencies",
         "GetUnitSymbols",
+        "GetEditorSemanticContext",
         "NavigateToFile",
         "NavigateToSymbol",
         "NavigateToDevelopmentSurface",

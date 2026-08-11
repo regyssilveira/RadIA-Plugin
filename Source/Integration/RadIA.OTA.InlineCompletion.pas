@@ -102,7 +102,7 @@ uses
   System.Types,
   Vcl.Graphics,
   RadIA.Core.Container,
-  RadIA.Core.IDENavigation,
+  RadIA.Core.EditorContext,
   RadIA.Core.Interfaces,
   RadIA.Core.JourneyContext,
   RadIA.Core.Logger,
@@ -148,7 +148,7 @@ var
   LProjectContext: string;
   LProjectName: string;
   LProjectFolder: string;
-  LSymbol: TRadIAUnitSymbol;
+  LSemanticContext: TRadIAEditorSemanticContext;
   LSymbolName: string;
   LSuffix: string;
   LView: IOTAEditView;
@@ -201,18 +201,14 @@ begin
       LProjectFolder,
       LJourneyContext
     );
-  LSymbolName := '';
-  if TRadIAUnitSymbolScanner.TryFindAtLine(
+  LSemanticContext := TRadIAEditorContextAnalyzer.Analyze(
     LContent,
-    LView.Position.Row,
-    LSymbol
-  ) then
-  begin
-    LSymbolName := LSymbol.Name;
+    LView.Position.Row
+  );
+  LSymbolName := LSemanticContext.CurrentSymbol;
+  if LSemanticContext.ToPromptContext <> '' then
     LProjectContext := LProjectContext + sLineBreak +
-      'Current symbol: ' + LSymbol.Kind + ' ' + LSymbol.Name +
-      ' at line ' + LSymbol.Line.ToString;
-  end;
+      LSemanticContext.ToPromptContext;
   AContext := TRadIAInlineCompletionContext.Create(
     LFileName,
     LanguageForFile(LFileName),

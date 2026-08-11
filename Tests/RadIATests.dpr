@@ -128,6 +128,7 @@ uses
   RadIA.OTA.MemoryDiagnostic in '..\Source\Integration\RadIA.OTA.MemoryDiagnostic.pas',
   RadIA.Core.InlineReviews in '..\Source\Core\RadIA.Core.InlineReviews.pas',
   RadIA.Core.InlineCompletion in '..\Source\Core\RadIA.Core.InlineCompletion.pas',
+  RadIA.Core.EditorContext in '..\Source\Core\RadIA.Core.EditorContext.pas',
   RadIA.Core.InlineShortcuts in '..\Source\Core\RadIA.Core.InlineShortcuts.pas',
   RadIA.Core.InlineReviewTools in '..\Source\Core\RadIA.Core.InlineReviewTools.pas',
   RadIA.Core.IDENavigation in '..\Source\Core\RadIA.Core.IDENavigation.pas',

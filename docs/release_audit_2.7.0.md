@@ -8,7 +8,7 @@
 - [x] Prompts naturais PT/EN certificados para todos os templates.
 - [x] Intenções Code/Design, erro e cancelamento certificados em IDE real.
 - [x] Solicitação de alterações comentada, sem mutação, certificada em IDE real.
-- [x] Catálogo gerado com 132 ferramentas documentadas e sincronizadas.
+- [x] Catálogo gerado com 133 ferramentas documentadas e sincronizadas.
 
 ## Gates finais
 
