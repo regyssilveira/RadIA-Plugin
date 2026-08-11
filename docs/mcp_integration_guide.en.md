@@ -282,7 +282,7 @@ and creates a distinct temporary workspace for every execution.
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.ExternalMcpRealServer.ps1 `
   -Consent `
-  -EvidencePath docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json
+  -EvidencePath Output\Validation\ExternalMcp\real-server.json
 ```
 
 Without `-Consent`, the script exits before any download or execution. It requires the test binaries

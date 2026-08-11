@@ -25,5 +25,5 @@ This version's catalog documents 132 tools with their internal operation and act
 
 ## Evidence
 
-The [2.7 competitive closure](competitive_closure_2.7.en.md) records four passed requirements and
-reproducible matrices for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+The [release audit](release_audit_2.7.0.en.md) records the passed requirements and reproducible
+matrices for Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.

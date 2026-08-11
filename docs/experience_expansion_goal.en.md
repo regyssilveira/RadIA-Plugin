@@ -1,6 +1,6 @@
 # Goal — expand RadIA's complete experience
 
-> **Status:** complete on `feat/competitive-gap-closure`.
+> **Status:** complete and integrated into the product.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 > **Out of scope:** C++Builder, marketplace, mandatory Authenticode signing, generic desktop
 > automation, and replacement of the current WebView2 host.

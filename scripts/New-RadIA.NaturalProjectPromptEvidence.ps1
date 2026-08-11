@@ -1,5 +1,5 @@
 param(
-    [string]$ValidationPath = ".\Output\Validation\CompetitiveClosure",
+    [string]$ValidationPath = ".\Output\Validation\FunctionalClosure",
     [string]$OutputPath = ".\docs\natural_project_prompts_evidence_2.7.0.json"
 )
 

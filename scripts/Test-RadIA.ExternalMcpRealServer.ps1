@@ -96,7 +96,7 @@ if ($residual.Count -gt 0) {
 
 $evidence = [ordered]@{
     schemaVersion = 1
-    evidenceKind = "competitiveGapPhaseRealServer"
+    evidenceKind = "externalMcpRealServer"
     product = "RadIA"
     productVersion = $productVersion
     sourceCommit = $sourceCommit

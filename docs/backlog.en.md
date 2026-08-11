@@ -23,11 +23,11 @@ new items require a later formal baseline without reopening passed requirements.
 | **Diagnostics, CLI/MCP UX, and Centralized Documentation** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.2.1 |
 | **DEXT Journeys, Integrated Help, and Conversational Intake** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.2.2 |
 | **Explicit Routes, Restored Pro Login, and Universal Copy** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
-| **Goal — Eliminate the six competitive gaps** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
+| **Goal — Close six experience gaps** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.3.1 |
 | **Goal — Expand the complete experience** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Goal — Skill portability and high-fidelity terminal** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Patch 2.6.2 — Chat usability and project creation** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v2.6.2 |
-| **Deterministic competitive closure** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
+| **Deterministic functional closure** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -231,8 +231,7 @@ previous execution line. It covers completion alternatives, knowledge and templa
 before/after
 evidence, cross-surface consent, advanced terminal compatibility, refinement of the current
 WebView, and a complete documentation audit, with mandatory acceptance on Delphi 12 Win32 and
-Delphi 13 Win32/IDE64. The [previous six-gap goal](competitive_leadership_plan.en.md) completed in
-2.3.1 and remains only as an execution and evidence record.
+Delphi 13 Win32/IDE64. The previous six-gap experience cycle completed in 2.3.1.
 
 Other pending work remains uncommitted until a new triage. See the
 [prioritization matrix](feature_prioritization_matrix.en.md) and [roadmap](roadmap.en.md).

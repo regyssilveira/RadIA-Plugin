@@ -4,10 +4,10 @@
 
 ## Baseline funcional
 
-- [x] CC-01: projetos gerados certificados.
-- [x] CC-02: prompts naturais PT/EN certificados para todos os templates.
-- [x] CC-03: intenções Code/Design, erro e cancelamento certificados em IDE real.
-- [x] CC-04: solicitação de alterações comentada, sem mutação, certificada em IDE real.
+- [x] Projetos gerados certificados.
+- [x] Prompts naturais PT/EN certificados para todos os templates.
+- [x] Intenções Code/Design, erro e cancelamento certificados em IDE real.
+- [x] Solicitação de alterações comentada, sem mutação, certificada em IDE real.
 - [x] Catálogo gerado com 132 ferramentas documentadas e sincronizadas.
 
 ## Gates finais

@@ -2,7 +2,7 @@
 
 > **Estado histórico:** goal concluído e versão 2.0.0 publicada.
 > Evidências registradas neste documento comprovam o baseline já implementado, mas não substituem
-> os gates adicionais definidos na seção "Expansão competitiva antes da release".
+> os gates adicionais definidos na seção "Expansão funcional antes da release".
 
 ## Objetivo
 
@@ -205,7 +205,7 @@ Essas evidências validam instalação, carga, catálogo, renderização, ediç�
 encerramento, além de criação por template e edição segura do Designer. A jornada contínua com
 debug, correção validada e commit Git revisável também foi aprovada no Delphi 13.
 
-## Expansão competitiva antes da release
+## Expansão funcional antes da release
 
 Os itens abaixo pertencem à versão 2.0.0 e reabrem o gate de release:
 
@@ -267,7 +267,7 @@ discovery `mcp.<pid>.json` da IDE atual, envia `initialize`, `notifications/init
 `tools/list` por stdin, valida as respostas JSON-RPC e apresenta versão do protocolo e contagem real
 de tools. O teste E2E da suíte inicia servidor named pipe e bridge reais e comprova o ciclo completo.
 
-Estado da expansão competitiva: concluída. Os nove itens foram implementados; a matriz final e os
+Estado da expansão funcional: concluída. Os nove itens foram implementados; a matriz final e os
 artefatos reproduzíveis permanecem como gates de preparação, sem publicar tag ou release.
 
 ## Cenário E2E obrigatório

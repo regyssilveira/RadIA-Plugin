@@ -4,10 +4,10 @@
 
 ## Functional baseline
 
-- [x] CC-01: generated projects certified.
-- [x] CC-02: natural PT/EN prompts certified for every template.
-- [x] CC-03: Code/Design intents, error, and cancellation certified in a real IDE.
-- [x] CC-04: commented change request without mutation certified in a real IDE.
+- [x] Generated projects certified.
+- [x] Natural PT/EN prompts certified for every template.
+- [x] Code/Design intents, error, and cancellation certified in a real IDE.
+- [x] Commented change request without mutation certified in a real IDE.
 - [x] Generated catalog with 132 tools documented and synchronized.
 
 ## Final gates

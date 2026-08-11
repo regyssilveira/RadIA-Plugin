@@ -88,7 +88,9 @@ test('tracked documentation has complete Portuguese and English pairs', () => {
     'git',
     ['ls-files', 'docs/*.md', 'docs/**/*.md'],
     { cwd: repositoryRoot, encoding: 'utf8' }
-  ).trim().split(/\r?\n/u).filter(Boolean);
+  ).trim().split(/\r?\n/u).filter(Boolean).filter(fileName => (
+    fs.existsSync(path.join(repositoryRoot, fileName))
+  ));
   const trackedSet = new Set(trackedMarkdown);
 
   trackedMarkdown.forEach(fileName => {
@@ -229,7 +231,9 @@ test('tracked textual documentation contains no competitor product references', 
     'git',
     ['ls-files', 'README.md', 'README.en.md', 'docs/*.md', 'docs/**/*.md'],
     { cwd: repositoryRoot, encoding: 'utf8' }
-  ).trim().split(/\r?\n/u).filter(Boolean);
+  ).trim().split(/\r?\n/u).filter(Boolean).filter(fileName => (
+    fs.existsSync(path.join(repositoryRoot, fileName))
+  ));
   const forbiddenProducts = /aefos|(^|[^\p{L}\p{N}_])kai([^\p{L}\p{N}_]|$)/iu;
 
   trackedMarkdown.forEach(fileName => {
@@ -390,7 +394,8 @@ test('every operational guide is reachable from a documentation hub', () => {
     'git',
     ['ls-files', 'docs/*.md', 'docs/**/*.md'],
     { cwd: repositoryRoot, encoding: 'utf8' }
-  ).trim().split(/\r?\n/u).filter(Boolean).map(fileName => fileName.replaceAll('\\', '/'));
+  ).trim().split(/\r?\n/u).filter(Boolean).map(fileName => fileName.replaceAll('\\', '/'))
+    .filter(fileName => fs.existsSync(path.join(repositoryRoot, fileName)));
   const trackedSet = new Set(tracked);
   const linksByFile = new Map();
   const historicalName = /(?:^docs\/adr\/|roadmap|backlog|goal|audit|checklist|migration|strategy|prioritization|_m\d+|_plan)/iu;

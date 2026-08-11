@@ -6,9 +6,8 @@
 
 Este documento descreve o planejamento estratégico e a visão de futuro do assistente de IA **Rad IA**, focado em trazer produtividade e resolver as dores reais do desenvolvedor Delphi no seu dia a dia.
 
-O fechamento da versão 2.7.0 usa o
-[baseline competitivo determinístico](competitive_closure_2.7.md), com quatro requisitos e
-evidências nos três alvos suportados.
+O fechamento da versão 2.7.0 usa requisitos funcionais determinísticos e evidências reproduzíveis
+nos três alvos suportados.
 
 > [!NOTE]
 > O Rad IA segue um modelo de desenvolvimento **open-source orientado à comunidade**.
@@ -24,7 +23,7 @@ evidências nos três alvos suportados.
 - prompts naturais cobrem todos os templates em português e inglês;
 - intenções de desenvolvimento ativam Code ou Design com erro e cancelamento seguros;
 - revisão por bloco registra solicitações de alteração comentadas sem modificar o buffer;
-- baseline versionado impede reabrir diferenças já comprovadas apenas por opinião.
+- evidências versionadas preservam os requisitos funcionais já comprovados.
 
 ### v2.6.2 - Usabilidade do chat e criação de projetos
 

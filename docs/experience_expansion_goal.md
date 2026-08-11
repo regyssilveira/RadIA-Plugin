@@ -1,6 +1,6 @@
 # Goal — expansão da experiência completa do RadIA
 
-> **Estado:** concluído no branch `feat/competitive-gap-closure`.
+> **Estado:** concluído e integrado ao produto.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 > **Fora do escopo:** C++Builder, marketplace, assinatura Authenticode obrigatória, automação
 > genérica do desktop e substituição do host WebView2 atual.

@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
   "capturedAt": "2026-08-10T08:38:00-03:00",
-  "branch": "feat/competitive-gap-closure",
   "contract": "One canonical SKILL.md is recognized from each supported project directory.",
   "executors": [
     {

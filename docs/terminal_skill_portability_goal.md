@@ -1,6 +1,6 @@
 # Goal — portabilidade de skills e terminal de alta fidelidade
 
-> **Estado:** goal concluído no branch `feat/competitive-gap-closure`. Correções posteriores exigem
+> **Estado:** goal concluído e integrado. Correções posteriores exigem
 > regenerar os artefatos antes do release.
 > **Versão de entrega:** 2.4.0, preparada neste branch e ainda não publicada.
 

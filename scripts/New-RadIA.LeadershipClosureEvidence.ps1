@@ -2,7 +2,7 @@ param(
     [string]$JourneyPath = ".\Output\Validation\ContinuousJourney",
     [string]$StabilityPath = ".\Output\Validation\LeadershipClosure",
     [string]$ExternalMcpEvidencePath = (
-        ".\docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json"
+        ".\Output\Validation\ExternalMcp\real-server.json"
     ),
     [string]$OutputPath = (
         ".\docs\leadership_closure_evidence_2.3.1.json"

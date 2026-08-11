@@ -24,11 +24,11 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
 | **Diagnóstico, UX CLI/MCP e Documentação Centralizada** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.2.1 |
 | **Jornadas DEXT, ajuda integrada e coleta conversacional** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.2.2 |
 | **Rotas explícitas, login Pro restaurado e cópia universal** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
-| **Goal — Eliminar as seis lacunas competitivas** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
+| **Goal — Fechar seis lacunas de experiência** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.3.1 |
 | **Goal — Expansão da experiência completa** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Goal — Portabilidade de skills e terminal de alta fidelidade** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Patch 2.6.2 — Usabilidade do chat e criação de projetos** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v2.6.2 |
-| **Fechamento competitivo determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
+| **Fechamento funcional determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -233,8 +233,7 @@ o ciclo anterior de execução. Ele cobre alternativas de completion, pacotes de
 templates, evidência visual
 antes/depois, consentimento entre superfícies, compatibilidade avançada do terminal, refinamento do
 WebView atual e revisão documental integral, com aceite obrigatório no Delphi 12 Win32 e Delphi 13
-Win32/IDE64. O [goal anterior das seis lacunas](competitive_leadership_plan.md) foi concluído em
-2.3.1 e permanece somente como registro de execução e evidências.
+Win32/IDE64. O ciclo anterior de seis lacunas de experiência foi concluído em 2.3.1.
 
 As demais pendências continuam sem versão comprometida até nova triagem. Para impactos e
 referências, consulte a [matriz de priorização](feature_prioritization_matrix.md) e o

@@ -3,8 +3,7 @@
 > **Status:** completed and accepted end to end on all three supported targets.
 > **Target version:** 2.1.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
-> **Status:** completed in version 2.1.0. Current execution follows the
-> [goal to eliminate the six competitive gaps](competitive_leadership_plan.en.md).
+> **Status:** completed in version 2.1.0 and preserved as a historical reference.
 
 ## Goal
 

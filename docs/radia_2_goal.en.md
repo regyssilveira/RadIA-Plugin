@@ -204,7 +204,7 @@ This evidence validates installation, loading, catalog discovery, rendering, edi
 shutdown, template creation, and safe Designer editing. The continuous journey with debugging, a
 validated fix, and a reviewable Git commit also passed on Delphi 13.
 
-## Competitive expansion before release
+## Functional expansion before release
 
 The following items belong to version 2.0.0 and reopen its release gate:
 
@@ -253,7 +253,7 @@ current IDE's `mcp.<pid>.json`, sends `initialize`, `notifications/initialized`,
 `tools/list`, validates JSON-RPC responses, and reports protocol version and the live tool count.
 The E2E test starts a real named-pipe server and bridge for the complete cycle.
 
-Competitive expansion status: complete. All nine items are implemented; the final matrix and
+Functional expansion status: complete. All nine items are implemented; the final matrix and
 reproducible artifacts remain preparation gates, without publishing a tag or release.
 
 ## Required E2E scenario

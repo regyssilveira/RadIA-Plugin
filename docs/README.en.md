@@ -103,7 +103,6 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current execution plan:
 
-- [Deterministic competitive closure 2.7](competitive_closure_2.7.en.md).
 - [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
 - [2.7.0 release audit](release_audit_2.7.0.en.md) and previous audits.
 - release notes: [2.7.0](release_notes_2.7.0.en.md), [2.6.2](release_notes_2.6.2.en.md),
@@ -115,7 +114,6 @@ Current execution plan:
   [2.3.0](release_notes_2.3.0.en.md), including its
   [RTK audit](result_compaction_release_audit_2.3.0.en.md).
 - [Completed complete-experience expansion goal](experience_expansion_goal.en.md).
-- [Completed six-gap experience goal](competitive_leadership_plan.en.md).
 
 Research records:
 

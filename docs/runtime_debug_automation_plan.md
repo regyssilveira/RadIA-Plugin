@@ -3,8 +3,7 @@
 > **Estado:** concluído e aceito ponta a ponta nos três alvos suportados.
 > **Versão-alvo:** 2.1.0.
 > **Escopo:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
-> **Estado:** concluído na versão 2.1.0. A execução atual está no
-> [goal para eliminar as seis lacunas competitivas](competitive_leadership_plan.md).
+> **Estado:** concluído na versão 2.1.0 e preservado como referência histórica.
 
 ## Goal
 

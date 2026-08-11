@@ -276,7 +276,7 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.ExternalMcpRealServer.ps1 `
   -Consent `
   -EvidencePath `
-    "docs\competitive_gap_phase_6_real_server_evidence_2.3.1.json"
+    "Output\Validation\ExternalMcp\real-server.json"
 
 powershell.exe -ExecutionPolicy Bypass `
   -File scripts\New-RadIA.LeadershipClosureEvidence.ps1

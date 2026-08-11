@@ -2,9 +2,8 @@
 
 This document outlines the strategic planning and long-term vision of the **Rad IA** AI assistant, focusing on bringing productivity and solving real pain points for Delphi developers in their daily workflows.
 
-The 2.7.0 closure uses the
-[deterministic competitive baseline](competitive_closure_2.7.en.md), with four requirements and
-evidence on all three supported targets.
+The 2.7.0 closure uses deterministic functional requirements and reproducible evidence on all
+three supported targets.
 
 > [!NOTE]
 > Rad IA follows a **community-driven open-source development model**.
@@ -20,7 +19,7 @@ evidence on all three supported targets.
 - natural prompts cover every template in Portuguese and English;
 - development intents activate Code or Design with safe error and cancellation paths;
 - block review stores commented change requests without mutating the buffer;
-- a versioned baseline prevents proven differences from reopening by opinion alone.
+- versioned evidence preserves the functional requirements already proven.
 
 ### v2.6.2 - Chat usability and project creation
 

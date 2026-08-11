@@ -24,5 +24,5 @@ O catálogo desta versão documenta 132 ferramentas internas.
 
 ## Evidência
 
-O [fechamento competitivo 2.7](competitive_closure_2.7.md) registra quatro requisitos aprovados e
-matrizes reproduzíveis para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+A [auditoria da release](release_audit_2.7.0.md) registra os requisitos aprovados e as matrizes
+reproduzíveis para Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.

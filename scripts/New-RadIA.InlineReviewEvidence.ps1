@@ -1,8 +1,6 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\InlineReview",
-    [string]$OutputPath = (
-        ".\docs\competitive_gap_phase_5_gutter_evidence_2.3.1.json"
-    ),
+    [string]$OutputPath = ".\Output\Validation\InlineReview\evidence.json",
     [int]$RequiredToolCount = 132
 )
 

@@ -99,9 +99,7 @@ versão instalada, use `/tools` ou o [catálogo gerado](runtime_tool_catalog.md)
 Estes documentos registram decisões, versões e execução do projeto; não são manuais de uso nem
 descrevem necessariamente o comportamento atual:
 
-- [fechamento competitivo determinístico 2.7](competitive_closure_2.7.md);
 - [Roadmap](roadmap.md) e [backlog](backlog.md);
-- [goal concluído das seis lacunas de experiência](competitive_leadership_plan.md);
 - [goal concluído de expansão da experiência completa](experience_expansion_goal.md);
 - [goal concluído de portabilidade de skills e terminal](terminal_skill_portability_goal.md);
 - [auditoria da release 2.7.0](release_audit_2.7.0.md) e auditorias anteriores;

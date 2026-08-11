@@ -1,6 +1,6 @@
 # Goal — skill portability and high-fidelity terminal
 
-> **Status:** complete on branch `feat/competitive-gap-closure`. Later fixes require candidate
+> **Status:** complete and integrated. Later fixes require candidate
 > artifacts to be regenerated before release.
 > **Delivery version:** 2.4.0, prepared on this branch and not published yet.
 
