@@ -6,8 +6,8 @@
 
 Este documento descreve o planejamento estratégico e a visão de futuro do assistente de IA **Rad IA**, focado em trazer produtividade e resolver as dores reais do desenvolvedor Delphi no seu dia a dia.
 
-O fechamento da versão 2.7.0 usa requisitos funcionais determinísticos e evidências reproduzíveis
-nos três alvos suportados.
+A versão 2.8.0 acrescenta contexto semântico compartilhado à baseline determinística da 2.7.0 e
+preserva evidências reproduzíveis nos três alvos suportados.
 
 > [!NOTE]
 > O Rad IA segue um modelo de desenvolvimento **open-source orientado à comunidade**.
@@ -17,6 +17,14 @@ nos três alvos suportados.
 ---
 
 ## 📅 Histórico de Versões Concluídas
+
+### v2.8.0 - Assistência semântica integrada ao editor
+
+- Ghost Text, ações do editor e agente usam o mesmo analisador semântico limitado;
+- unit, símbolo no cursor, imports e declarações próximas podem ser inspecionados em modo somente leitura;
+- a ferramenta `GetEditorSemanticContext` expõe o contexto vigente ao agente sem substituir o
+  provider nativo do editor;
+- catálogo, documentação, backlogs e gates de release permanecem sincronizados com 133 ferramentas.
 
 ### v2.7.0 - Fechamento funcional determinístico
 

@@ -6,6 +6,9 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
+Version 2.8.0 note: Ghost Text, contextual actions, and the agent share bounded semantic context;
+users can inspect the unit, symbol, imports, and nearby declarations without changing the buffer.
+
 Version 2.7.0 note: natural creation covers every template, intents switch Code/Design
 deterministically, and block review accepts commented change requests without mutation.
 

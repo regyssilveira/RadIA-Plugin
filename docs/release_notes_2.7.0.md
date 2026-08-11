@@ -4,7 +4,7 @@
 
 RadIA 2.7.0 fecha uma baseline funcional determinística para a experiência completa no Delphi 12 e
 13. A release não substitui o WebView, não inclui C++ ou Lazarus e não adiciona instalação comercial.
-O catálogo desta versão documenta 133 ferramentas internas.
+O catálogo desta versão documenta 132 ferramentas internas.
 
 ## Criação de projetos
 
@@ -20,9 +20,7 @@ O catálogo desta versão documenta 133 ferramentas internas.
 - intenções de código, eventos, debug e testes ativam Code;
 - navegação inválida falha de forma estruturada e o cancelamento não executa a ação;
 - a revisão por bloco permite solicitar alterações com comentário pelo gutter, menu ou tool;
-- o comentário não modifica o buffer, permanece consultável e bloqueia Apply até ser resolvido;
-- Ghost Text, ações contextuais e agente compartilham unit, símbolo, imports e declarações próximas;
-- o menu do editor permite inspecionar esse contexto sem alterar o buffer.
+- o comentário não modifica o buffer, permanece consultável e bloqueia Apply até ser resolvido.
 
 ## Evidência
 

@@ -2,8 +2,8 @@
 
 This document outlines the strategic planning and long-term vision of the **Rad IA** AI assistant, focusing on bringing productivity and solving real pain points for Delphi developers in their daily workflows.
 
-The 2.7.0 closure uses deterministic functional requirements and reproducible evidence on all
-three supported targets.
+Version 2.8.0 adds shared semantic context to the deterministic 2.7.0 baseline and preserves
+reproducible evidence on all three supported targets.
 
 > [!NOTE]
 > Rad IA follows a **community-driven open-source development model**.
@@ -13,6 +13,14 @@ three supported targets.
 ---
 
 ## 📅 Completed Releases History
+
+### v2.8.0 - Semantic assistance integrated with the editor
+
+- Ghost Text, editor actions, and agent use the same bounded semantic analyzer;
+- unit, symbol at the cursor, imports, and nearby declarations are available through read-only inspection;
+- `GetEditorSemanticContext` exposes the current context to the agent without replacing the native
+  editor provider;
+- catalog, documentation, backlogs, and release gates remain synchronized with 133 tools.
 
 ### v2.7.0 - Deterministic functional closure
 

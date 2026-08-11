@@ -8,15 +8,14 @@
 - [x] Natural PT/EN prompts certified for every template.
 - [x] Code/Design intents, error, and cancellation certified in a real IDE.
 - [x] Commented change request without mutation certified in a real IDE.
-- [x] Generated catalog with 133 tools documented and synchronized.
-- [x] Shared semantic context and read-only inspection documented and tested.
+- [x] Generated catalog with 132 tools documented and synchronized.
 
 ## Final gates
 
-- [x] Delphi 12 Win32: 1061 instrumented tests and 8 external tests without leaks.
-- [x] Delphi 13 Win32: 1061 instrumented tests and 8 external tests without leaks.
-- [x] Delphi 13 IDE64: 1069 direct tests without leaks.
-- [x] Web 105/105, ESLint, and documentation 41/41.
+- [x] Delphi 12 Win32 Release and DUnitX.
+- [x] Delphi 13 Win32 Release and DUnitX.
+- [x] Delphi 13 IDE64 Release and DUnitX: 1065/1065 without leaks.
+- [x] Web 105/105, ESLint, and documentation 38/38.
 - [x] SonarQube: gate OK, 83.2% coverage, 1.8% duplication, and zero issues.
 - [x] Packages, installer, and final installation on all three targets.
 

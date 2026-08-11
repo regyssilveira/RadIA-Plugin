@@ -5,7 +5,7 @@
 RadIA 2.7.0 closes a deterministic functional baseline for the complete Delphi 12 and 13
 experience. The release does not replace the WebView, include C++ or Lazarus, or add commercial
 installation.
-This version's catalog documents 133 tools with their internal operation and activation guidance.
+This version's catalog documents 132 tools with their internal operation and activation guidance.
 
 ## Project creation
 
@@ -21,9 +21,7 @@ This version's catalog documents 133 tools with their internal operation and act
 - code, event, debug, and test intents activate Code;
 - invalid navigation fails structurally, and cancellation does not execute the action;
 - block review can request changes with a comment through gutter, menu, or tool;
-- the comment does not mutate the buffer, remains discoverable, and blocks Apply until resolved;
-- Ghost Text, contextual actions, and the agent share unit, symbol, imports, and nearby declarations;
-- the editor menu can inspect this context without changing the buffer.
+- the comment does not mutate the buffer, remains discoverable, and blocks Apply until resolved.
 
 ## Evidence
 

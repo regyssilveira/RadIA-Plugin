@@ -11,8 +11,8 @@ Este documento registra o status de desenvolvimento, planejamento futuro e o his
 ## 📊 Kanban Dashboard
 
 O quadro abaixo separa entregas, pendências reais e itens ainda sem compromisso de versão. Números
-da linha `0.x` são preservados somente nas entregas históricas. A linha 2.7.0 fecha um baseline
-determinístico; novos itens exigem uma baseline posterior formal, sem reabrir requisitos aprovados.
+da linha `0.x` são preservados somente nas entregas históricas. A linha 2.8.0 acrescenta assistência
+semântica ao baseline determinístico da 2.7.0, sem reabrir requisitos aprovados.
 
 | Funcionalidade / Tarefa | Status | Dificuldade | Prioridade | Versão Alvo |
 | :--- | :---: | :---: | :---: | :---: |
@@ -29,7 +29,7 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
 | **Goal — Portabilidade de skills e terminal de alta fidelidade** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Patch 2.6.2 — Usabilidade do chat e criação de projetos** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v2.6.2 |
 | **Fechamento funcional determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
-| **Contexto Semântico Compartilhado do Editor** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
+| **Contexto Semântico Compartilhado do Editor** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.8.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -69,7 +69,7 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
 
 ## Backlog ativo canônico
 
-Revisado em **11 de agosto de 2026** contra o código da versão 2.7.0. Nenhum item abaixo possui
+Revisado em **11 de agosto de 2026** contra o código da versão 2.8.0. Nenhum item abaixo possui
 versão prometida; uma versão-alvo só deve ser preenchida quando houver escopo e critérios de aceite
 aprovados.
 

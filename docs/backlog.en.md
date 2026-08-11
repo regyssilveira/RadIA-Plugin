@@ -10,8 +10,8 @@ This document registers the development status, future planning, and technical i
 ## 📊 Kanban Dashboard
 
 The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
-numbers are retained only for historical deliveries. The 2.7.0 line closes a deterministic baseline;
-new items require a later formal baseline without reopening passed requirements.
+numbers are retained only for historical deliveries. The 2.8.0 line adds semantic assistance to
+the deterministic 2.7.0 baseline without reopening passed requirements.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
@@ -28,7 +28,7 @@ new items require a later formal baseline without reopening passed requirements.
 | **Goal — Skill portability and high-fidelity terminal** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Patch 2.6.2 — Chat usability and project creation** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v2.6.2 |
 | **Deterministic functional closure** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
-| **Shared Semantic Editor Context** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
+| **Shared Semantic Editor Context** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.8.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -68,7 +68,7 @@ new items require a later formal baseline without reopening passed requirements.
 
 ## Canonical active backlog
 
-Reviewed on **August 11, 2026** against the version 2.7.0 codebase. None of the items below has a
+Reviewed on **August 11, 2026** against the version 2.8.0 codebase. None of the items below has a
 promised version; a target version should be assigned only after scope and acceptance criteria are
 approved.
 

@@ -6,6 +6,9 @@ Este documento contém o checklist completo de recursos, categorização e statu
 
 ## Tabela Completa de Recursos
 
+Nota v2.8.0: Ghost Text, ações contextuais e agente compartilham contexto semântico limitado; o
+usuário pode inspecionar unit, símbolo, imports e declarações próximas sem alterar o buffer.
+
 Nota v2.7.0: criação natural cobre todos os templates, intenções alternam Code/Design de forma
 determinística e a revisão por bloco aceita comentários para solicitar alterações sem mutação.
 
