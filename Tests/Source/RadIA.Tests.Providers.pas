@@ -285,6 +285,10 @@ begin
     LMessages := LJson.GetValue('messages') as TJSONArray;
     Assert.IsNotNull(LMessages);
     Assert.AreEqual(2, LMessages.Count);
+    Assert.IsNull(
+      LJson.GetValue('temperature'),
+      'Claude payloads must omit sampling parameters rejected by current models.'
+    );
   finally
     LJson.Free;
   end;

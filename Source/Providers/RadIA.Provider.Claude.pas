@@ -67,8 +67,6 @@ begin
     else
       LRootObj.AddPair('max_tokens', TJSONNumber.Create(4096));
 
-    if ATemperature >= 0.0 then
-      LRootObj.AddPair('temperature', TJSONNumber.Create(ATemperature));
     if AStream then
       LRootObj.AddPair('stream', TJSONBool.Create(True));
 

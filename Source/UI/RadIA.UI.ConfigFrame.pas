@@ -1753,17 +1753,31 @@ begin
   LLabel.Parent := LGroupBox;
   LLabel.Left := 16;
   LLabel.Top := 24;
-  LLabel.Caption := 'Temperature (0.0 - 1.0):';
+  if SameText(AProviderId, 'Claude') then
+    LLabel.Caption := 'Temperature (not sent):'
+  else
+    LLabel.Caption := 'Temperature (0.0 - 1.0):';
 
   LEdtTemp := TEdit.Create(Self);
   LEdtTemp.Parent := LGroupBox;
   LEdtTemp.Left := 16;
   LEdtTemp.Top := 42;
   LEdtTemp.Width := 100;
-  SetControlsHint(
-    [LEdtTemp],
-    'Controls output randomness. Lower values are more deterministic.'
-  );
+  if SameText(AProviderId, 'Claude') then
+  begin
+    LEdtTemp.Enabled := False;
+    SetControlsHint(
+      [LEdtTemp],
+      'Claude 5 rejects non-default sampling parameters. RadIA keeps this value local and does not send it.'
+    );
+  end
+  else
+  begin
+    SetControlsHint(
+      [LEdtTemp],
+      'Controls output randomness. Lower values are more deterministic.'
+    );
+  end;
   FEdtTemperatures.Add(AProviderId, LEdtTemp);
 
   LLabel := TLabel.Create(Self);

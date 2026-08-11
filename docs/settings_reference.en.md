@@ -27,6 +27,11 @@ templates, logs, or screenshots. Saving provider settings refreshes models witho
 Claude, DeepSeek, Groq, OpenRouter, Alibaba Qwen, and Mistral use their API key and the common
 advanced settings above. Provider account, region, plan, and permissions determine model availability.
 
+For Claude 5 models, RadIA does not send `temperature`, `top_p`, or `top_k` because Anthropic rejects
+non-default sampling parameters on these models. Use system prompt instructions to guide style,
+creativity, or determinism when working with Claude. On the Claude tab, the temperature field is
+disabled and kept only as a legacy local value.
+
 ### Discovery and fallback models
 
 When a provider is saved or selected, RadIA requests the current list from a compatible transport

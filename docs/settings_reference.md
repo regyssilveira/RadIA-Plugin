@@ -46,6 +46,11 @@ consulte o [manual do usuário](user_manual.md); para problemas, consulte a
 Essas abas usam **API Key** e as três opções avançadas comuns. Selecione o provider somente depois de
 salvar uma chave válida. O link **Obter API Key** abre a página oficial correspondente.
 
+Nos modelos Claude 5, o RadIA não envia `temperature`, `top_p` ou `top_k`, porque a API da
+Anthropic rejeita parâmetros de amostragem não padrão nesses modelos. Use instruções no prompt do
+sistema para orientar estilo, criatividade ou determinismo ao trabalhar com Claude. Na aba Claude,
+o campo de temperatura fica desabilitado e é mantido apenas como valor local legado.
+
 ### Ollama e LM Studio
 
 | Opção | Quando alterar | Efeito e cuidados |
