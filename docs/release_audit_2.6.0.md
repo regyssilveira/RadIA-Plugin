@@ -11,7 +11,8 @@
 - [x] Depurador fornece sessão, breakpoint, pilha e timeline nos três alvos.
 - [x] Cenário visual `2 + 3 = 5` passa nos três alvos.
 - [x] Catálogo documental corresponde às 132 ferramentas registradas.
-- [x] Aceite final repetido sobre o commit `1856992` da 2.6.0 com `sourceDirty=false`.
+- [x] Aceite final repetido sobre o código definitivo da 2.6.0; os pacotes finais estão vinculados ao
+  commit `d3d8187` com `sourceDirty=false`.
 
 ## Gates de regressão e qualidade
 

@@ -11,7 +11,8 @@
 - [x] The debugger provides a session, breakpoint, call stack, and timeline on all three targets.
 - [x] The `2 + 3 = 5` visual scenario passes on all three targets.
 - [x] The documentation catalog matches all 132 tools registered at runtime.
-- [x] Final acceptance repeated on the definitive 2.6.0 commit `1856992` with `sourceDirty=false`.
+- [x] Final acceptance was repeated on the definitive 2.6.0 code; the final packages are bound to
+  commit `d3d8187` with `sourceDirty=false`.
 
 ## Regression and quality gates
 
