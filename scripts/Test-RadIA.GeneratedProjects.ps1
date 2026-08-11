@@ -365,9 +365,39 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Generated calculator unit tests failed."
     }
+    $calculatorTestReport = Join-Path `
+        $validationRoot `
+        "calculator-tests.xml"
+    if (-not (Test-Path -LiteralPath $calculatorTestReport -PathType Leaf)) {
+        throw "Generated calculator unit-test report was not created."
+    }
+    [xml]$calculatorTestXml = Get-Content `
+        -LiteralPath $calculatorTestReport `
+        -Raw
+    $calculatorTestResults = $calculatorTestXml.'test-results'
+    if (-not $calculatorTestResults) {
+        throw "Generated calculator unit-test report has an invalid root."
+    }
+    $calculatorTestTotal = [int]$calculatorTestResults.total
+    $calculatorTestErrors = [int]$calculatorTestResults.errors
+    $calculatorTestFailures = [int]$calculatorTestResults.failures
+    $calculatorTestIgnored = [int]$calculatorTestResults.ignored
+    if (
+        $calculatorTestTotal -ne 5 -or
+        $calculatorTestErrors -ne 0 -or
+        $calculatorTestFailures -ne 0 -or
+        $calculatorTestIgnored -ne 0
+    ) {
+        throw "Generated calculator unit-test report did not prove 5 passing tests."
+    }
     $calculatorUnitTests = [PSCustomObject]@{
         executable = "CalculatorAppTests.exe"
         report = "calculator-tests.xml"
+        total = $calculatorTestTotal
+        passed = $calculatorTestTotal
+        errors = $calculatorTestErrors
+        failures = $calculatorTestFailures
+        ignored = $calculatorTestIgnored
         status = "passed"
     }
 
@@ -388,6 +418,10 @@ try {
         ) {
             throw "Unable to resolve the source commit."
         }
+        & git -C $repositoryRoot diff --quiet --exit-code
+        $sourceDirty = $LASTEXITCODE -ne 0
+        & git -C $repositoryRoot diff --cached --quiet --exit-code
+        $sourceDirty = $sourceDirty -or ($LASTEXITCODE -ne 0)
         $productVersion = (
             Get-Content `
                 -LiteralPath (Join-Path $repositoryRoot "package.json") `
@@ -400,6 +434,7 @@ try {
             product = "RadIA"
             productVersion = $productVersion
             sourceCommit = $sourceCommit
+            sourceDirty = $sourceDirty
             delphiVersion = $DelphiVersion
             compilerProductVersion = (
                 Get-Item -LiteralPath $compilerPath

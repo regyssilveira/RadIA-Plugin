@@ -75,6 +75,9 @@ foreach ($target in $targets) {
         -Condition ($evidence.sourceCommit -match "^[0-9a-f]{40}$") `
         -Message "$($target.evidenceFile) has an invalid source commit."
     Assert-RadIACondition `
+        -Condition ($evidence.sourceDirty -eq $false) `
+        -Message "$($target.evidenceFile) was not generated from a clean source tree."
+    Assert-RadIACondition `
         -Condition ($evidence.delphiVersion -eq $target.delphiVersion) `
         -Message "$($target.evidenceFile) has an invalid Delphi version."
     Assert-RadIACondition `
@@ -87,6 +90,16 @@ foreach ($target in $targets) {
             @($evidence.templates).Count -eq $requiredTemplates.Count
         ) `
         -Message "$($target.evidenceFile) has an incomplete template set."
+    Assert-RadIACondition `
+        -Condition (
+            $evidence.calculatorUnitTests.status -eq "passed" -and
+            $evidence.calculatorUnitTests.total -eq 5 -and
+            $evidence.calculatorUnitTests.passed -eq 5 -and
+            $evidence.calculatorUnitTests.errors -eq 0 -and
+            $evidence.calculatorUnitTests.failures -eq 0 -and
+            $evidence.calculatorUnitTests.ignored -eq 0
+        ) `
+        -Message "$($target.evidenceFile) has invalid calculator test evidence."
 
     if (-not $sourceCommit) {
         $sourceCommit = $evidence.sourceCommit
@@ -147,6 +160,7 @@ if ($outputDirectory) {
     product = "RadIA"
     productVersion = $productVersion
     sourceCommit = $sourceCommit
+    sourceDirty = $false
     targetCount = $summaries.Count
     requiredTemplates = $requiredTemplates
     status = "passed"
