@@ -117,6 +117,14 @@ $DelphiRoot = (
         -Name "RootDir" `
         -ErrorAction Stop
 ).RootDir
+$ScannerDelphiRoot = $DelphiRoot
+if ($ScannerDelphiRoot.Contains(" ")) {
+    $ShortPathCommand = 'for %I in ("{0}") do @echo %~sI' -f $ScannerDelphiRoot
+    $ScannerDelphiRoot = (& cmd.exe /d /s /c $ShortPathCommand | Select-Object -First 1).Trim()
+    if (-not (Test-Path -LiteralPath $ScannerDelphiRoot)) {
+        throw "Could not resolve the Delphi installation path for SonarQube."
+    }
+}
 $CompilerVersion = switch ($EffectiveDelphiVersion) {
     "23.0" { "VER360" }
     "37.0" { "VER370" }
@@ -133,7 +141,7 @@ Write-Host (
 $ScannerArguments = @(
     "-Dsonar.token=$ResolvedToken"
     "-Dsonar.host.url=$HostUrl"
-    "-Dsonar.delphi.installationPath=$DelphiRoot"
+    "-Dsonar.delphi.installationPath=$ScannerDelphiRoot"
     "-Dsonar.delphi.compilerVersion=$CompilerVersion"
 )
 & $ScannerCmd.Source @ScannerArguments
