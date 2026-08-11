@@ -11,7 +11,7 @@
 - [x] The debugger provides a session, breakpoint, call stack, and timeline on all three targets.
 - [x] The `2 + 3 = 5` visual scenario passes on all three targets.
 - [x] The documentation catalog matches all 132 tools registered at runtime.
-- [ ] Final acceptance repeated on the definitive 2.6.0 commit with `sourceDirty=false`.
+- [x] Final acceptance repeated on the definitive 2.6.0 commit `1856992` with `sourceDirty=false`.
 
 ## Regression and quality gates
 
@@ -19,7 +19,8 @@
 - [x] Complete build and 1,047 DUnitX tests on Delphi 13 Win32.
 - [x] Complete build and 1,047 DUnitX tests on Delphi 13 IDE64.
 - [x] 99 Web tests, ESLint, and 38 documentation tests pass.
-- [ ] Current SonarQube Quality Gate passes with no new issues.
+- [ ] Current SonarQube Quality Gate passes with no new issues. Blocked: the local REST API at
+  `http://localhost:9000` refused the connection during the final audit.
 - [x] All three DUnitX suites confirm no memory leaks.
 
 ## Distribution gates
@@ -27,7 +28,7 @@
 - [x] The visual installer is created, validated, and intentionally unsigned under the project policy.
 - [x] Installation passes on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
 - [x] Repair and removal pass on all three targets through the automated package lifecycle.
-- [ ] Release artifacts and hashes are verified.
+- [x] Release artifacts and hashes are verified in `release_evidence_2.6.0.json`.
 
 Reproducible evidence for the `Uninstall` → `Install` → `Repair` → IDE startup cycles:
 
@@ -44,7 +45,7 @@ that operating-system permission.
 - [x] The PT/EN audit covers all 214 tracked Markdown files.
 - [x] The 38 documentation tests validate links, versions, discoverability, clarity, and mojibake.
 - [x] README, manuals, installation, tools, commands, and notes are synchronized.
-- [x] All 49 tracked JSON files under `docs` pass syntax parsing.
+- [x] All 50 tracked JSON files under `docs` pass syntax parsing.
 
 Primary navigation remains task-oriented. Historical references were consolidated under planning and
 historical records without making old documents unreachable. Operational documentation uses version

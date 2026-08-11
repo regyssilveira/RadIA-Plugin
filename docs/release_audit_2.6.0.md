@@ -11,7 +11,7 @@
 - [x] Depurador fornece sessão, breakpoint, pilha e timeline nos três alvos.
 - [x] Cenário visual `2 + 3 = 5` passa nos três alvos.
 - [x] Catálogo documental corresponde às 132 ferramentas registradas.
-- [ ] Aceite final repetido sobre o commit definitivo da 2.6.0 com `sourceDirty=false`.
+- [x] Aceite final repetido sobre o commit `1856992` da 2.6.0 com `sourceDirty=false`.
 
 ## Gates de regressão e qualidade
 
@@ -19,7 +19,8 @@
 - [x] Build e 1.047 testes DUnitX completos no Delphi 13 Win32.
 - [x] Build e 1.047 testes DUnitX completos no Delphi 13 IDE64.
 - [x] 99 testes Web, ESLint e 38 testes documentais aprovados.
-- [ ] SonarQube atual com Quality Gate aprovado e sem novas issues.
+- [ ] SonarQube atual com Quality Gate aprovado e sem novas issues. Bloqueado: a API REST local em
+  `http://localhost:9000` recusou conexão na auditoria final.
 - [x] Ausência de vazamentos confirmada nas três suítes DUnitX.
 
 ## Gates de distribuição
@@ -27,7 +28,7 @@
 - [x] Instalador visual criado, validado e mantido sem assinatura conforme a política do projeto.
 - [x] Instalação validada no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 - [x] Reparo e desinstalação validados nos três alvos pelo ciclo automatizado do pacote.
-- [ ] Artefatos e hashes da release conferidos.
+- [x] Artefatos e hashes da release conferidos em `release_evidence_2.6.0.json`.
 
 Evidências reproduzíveis dos ciclos `Uninstall` → `Install` → `Repair` → abertura da IDE:
 
@@ -44,7 +45,7 @@ automatizada pelo projeto nem pelos testes.
 - [x] Pente-fino PT/EN concluído nos 214 arquivos Markdown rastreados.
 - [x] Links, versões, descoberta, clareza e mojibake validados pelos 38 testes documentais.
 - [x] README, manuais, instalação, ferramentas, comandos e notas sincronizados.
-- [x] Os 49 arquivos JSON rastreados em `docs` foram analisados sintaticamente.
+- [x] Os 50 arquivos JSON rastreados em `docs` foram analisados sintaticamente.
 
 A navegação principal permanece organizada por tarefa. Referências históricas foram concentradas
 na seção de planejamento e histórico, sem perder a alcançabilidade dos documentos antigos. A
