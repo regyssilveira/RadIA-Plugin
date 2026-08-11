@@ -83,8 +83,12 @@ if ($Test) {
 
 Write-Host "Checking for sonar-scanner executable..." -ForegroundColor Cyan
 
-# Check if sonar-scanner is available in PATH
-$ScannerCmd = Get-Command "sonar-scanner" -ErrorAction SilentlyContinue
+# The npm PowerShell shim forwards its own $args as one value on Windows PowerShell 5.1.
+# Prefer the CMD shim because it preserves arguments that contain paths with spaces.
+$ScannerCmd = Get-Command "sonar-scanner.cmd" -ErrorAction SilentlyContinue
+if ($null -eq $ScannerCmd) {
+    $ScannerCmd = Get-Command "sonar-scanner" -ErrorAction SilentlyContinue
+}
 
 if ($null -eq $ScannerCmd) {
     Write-Error (
