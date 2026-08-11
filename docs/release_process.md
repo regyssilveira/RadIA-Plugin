@@ -61,7 +61,7 @@ Execute também a análise e aguarde o resultado do Quality Gate da análise exa
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File run-sonar-analysis.ps1 `
   -Test `
-  -DelphiVersion "37.0" `
+  -DelphiVersion "23.0" `
   -QualityGate
 ```
 
@@ -69,10 +69,12 @@ O comando termina com erro se o processamento do SonarQube falhar, exceder o tim
 condição do Quality Gate estiver reprovada. Não prepare merge, tag ou pacote de release nesse estado.
 O script também sobrepõe a instalação e o compilador usados pelo analisador Delphi conforme
 `-DelphiVersion`; isso impede que uma configuração antiga do servidor analise a release como Delphi 11.
+Use Delphi 12 (`VER360`) no Sonar enquanto o analisador comunitário não interpretar integralmente a
+RTL do Delphi 13. Os builds e testes continuam obrigatórios nas duas versões e no IDE64.
 
 O workflow `SonarQube release gate` repete essa barreira em pull requests para `develop` e `main`, nos
 pushes dessas branches e em toda tag `v*`. O runner Windows self-hosted deve possuir o label
-`radia-delphi`, Delphi 13 e `sonar-scanner`; configure `SONAR_TOKEN` como secret e `SONAR_HOST_URL`
+`radia-delphi`, Delphi 12 e `sonar-scanner`; configure `SONAR_TOKEN` como secret e `SONAR_HOST_URL`
 como variável do repositório. Configure o job como status check obrigatório nas regras de proteção de
 `develop` e `main`.
 

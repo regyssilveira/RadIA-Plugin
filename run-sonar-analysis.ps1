@@ -104,10 +104,10 @@ Write-Host "Project Key: radia" -ForegroundColor Gray
 
 $EffectiveDelphiVersion = $DelphiVersion
 if ([string]::IsNullOrWhiteSpace($EffectiveDelphiVersion)) {
-    if (Test-Path "HKCU:\Software\Embarcadero\BDS\37.0") {
-        $EffectiveDelphiVersion = "37.0"
-    } else {
+    if (Test-Path "HKCU:\Software\Embarcadero\BDS\23.0") {
         $EffectiveDelphiVersion = "23.0"
+    } else {
+        $EffectiveDelphiVersion = "37.0"
     }
 }
 $DelphiKey = "HKCU:\Software\Embarcadero\BDS\$EffectiveDelphiVersion"
