@@ -495,7 +495,7 @@ function Invoke-RadIAToolWithConsent {
         [hashtable]$Arguments = @{},
         [ValidateSet("Allow once", "Deny", "Cancel")]
         [string]$ConsentButtonText = "Allow once",
-        [switch]$ExpectRejection
+        [switch]$ExpectError
     )
 
     $requestKey = [Guid]::NewGuid().ToString("N")
@@ -612,10 +612,10 @@ function Invoke-RadIAToolWithConsent {
                 -ErrorAction SilentlyContinue
             throw "The MCP bridge failed while executing $Name`: $bridgeError"
         }
-        if ($ExpectRejection) {
+        if ($ExpectError) {
             if (-not $response -or
                 (-not $response.error -and -not $response.result.isError)) {
-                throw "Tool $Name executed after rejected consent."
+                throw "Tool $Name unexpectedly succeeded."
             }
             return $response
         }
@@ -1230,23 +1230,18 @@ try {
         throw "The implement-event intent did not activate the Code editor."
     }
     $developmentSurfaceCodePassed = $true
-    try {
-        [void](Invoke-RadIATool `
-            -BridgePath $bridgePath `
-            -InstanceFile $instanceFile `
-            -Name "NavigateToDevelopmentSurface" `
-            -Arguments @{
-                fileName = $generatedFormSourcePath
-                intent = "unsupported-intent"
-            }
-        )
-        throw "An unsupported development intent was accepted."
-    } catch {
-        if ($_.Exception.Message -notmatch "unsupported-intent|invalid") {
-            throw
-        }
-        $developmentSurfaceErrorPassed = $true
-    }
+    [void](Invoke-RadIAToolWithConsent `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -IDEProcess $process `
+        -Name "NavigateToDevelopmentSurface" `
+        -Arguments @{
+            fileName = $generatedFormSourcePath
+            intent = "unsupported-intent"
+        } `
+        -ExpectError
+    )
+    $developmentSurfaceErrorPassed = $true
     [void](Invoke-RadIAToolWithConsent `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
@@ -1257,7 +1252,7 @@ try {
             intent = "edit-layout"
         } `
         -ConsentButtonText "Cancel" `
-        -ExpectRejection
+        -ExpectError
     )
     $developmentSurfaceCancellationPassed = $true
     $activeForm = Invoke-RadIATool `
