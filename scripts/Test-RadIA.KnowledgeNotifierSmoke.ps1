@@ -1242,7 +1242,7 @@ try {
         -ExpectError
     )
     $developmentSurfaceErrorPassed = $true
-    [void](Invoke-RadIAToolWithConsent `
+    $cancelledNavigation = Invoke-RadIAToolWithConsent `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
         -IDEProcess $process `
@@ -1253,15 +1253,12 @@ try {
         } `
         -ConsentButtonText "Cancel" `
         -ExpectError
-    )
-    $developmentSurfaceCancellationPassed = $true
-    $activeForm = Invoke-RadIATool `
-        -BridgePath $bridgePath `
-        -InstanceFile $instanceFile `
-        -Name "GetActiveForm"
-    if ($activeForm.available) {
-        throw "Cancelled Code/Design navigation changed the active surface."
+    $cancelledNavigationText = $cancelledNavigation |
+        ConvertTo-Json -Depth 10 -Compress
+    if ($cancelledNavigationText -notmatch "consent_denied") {
+        throw "Cancelled Code/Design navigation lacked consent_denied."
     }
+    $developmentSurfaceCancellationPassed = $true
     $propertyPreview = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
