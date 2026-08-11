@@ -6,6 +6,9 @@ Este documento contém o checklist completo de recursos, categorização e statu
 
 ## Tabela Completa de Recursos
 
+Nota v2.6.2: menus do editor estabilizados, scrollbars web mais largas, captions com versao,
+criacao de calculadora por linguagem natural e projetos gerados validados com `$(BDS)` no Delphi 13.
+
 Nota v2.4.0: publicação portável de skills e terminal com true color, atributos, alternate screen,
 bracketed paste, mouse SGR e hyperlinks OSC 8 protegidos por consentimento.
 

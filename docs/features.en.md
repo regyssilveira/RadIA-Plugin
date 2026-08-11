@@ -6,6 +6,9 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
+Version 2.6.2 note: stabilized editor menus, wider web scrollbars, versioned captions, natural
+calculator creation, and generated projects validated with `$(BDS)` on Delphi 13.
+
 Version 2.4.0 note: portable skill publication and terminal true color, attributes, alternate screen,
 bracketed paste, SGR mouse, and consent-gated OSC 8 hyperlinks.
 

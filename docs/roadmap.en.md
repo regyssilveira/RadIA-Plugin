@@ -14,6 +14,13 @@ debug, and test a complete project from a prompt, with evidence on all three sup
 
 ## 📅 Completed Releases History
 
+### v2.6.2 - Chat usability and project creation
+
+- editor context menu stabilized at the top;
+- wider clickable scrollbars on web selectors;
+- window captions show the installed version;
+- natural calculator creation and generated projects validated with `$(BDS)`.
+
 ### v2.4.0 — Portable skills, high-fidelity terminal, and preventive diagnostics
 
 - one canonical skill can be published to four CLIs with preview, consent, and rollback;

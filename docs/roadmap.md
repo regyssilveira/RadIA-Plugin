@@ -18,6 +18,13 @@ compilar, depurar e testar um projeto completo a partir de um prompt, com evidê
 
 ## 📅 Histórico de Versões Concluídas
 
+### v2.6.2 - Usabilidade do chat e criação de projetos
+
+- menu contextual do editor estabilizado no topo;
+- scrollbars dos seletores web mais largas e clicáveis;
+- captions das janelas exibem a versão instalada;
+- criação natural de calculadora e projetos gerados validados com `$(BDS)`.
+
 ### v2.4.0 — Skills portáveis, terminal de alta fidelidade e diagnóstico preventivo
 
 - uma skill canônica pode ser publicada para quatro CLIs com preview, consentimento e rollback;
