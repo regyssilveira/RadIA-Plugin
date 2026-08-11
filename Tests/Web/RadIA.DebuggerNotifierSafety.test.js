@@ -207,12 +207,13 @@ test('inline review registration defers paint until the notifier is active', () 
   assert.doesNotMatch(inlineReviewSource, /Application\.ProcessMessages/u);
 });
 
-test('CodeInsight spike uses only public asynchronous ToolsAPI contracts', () => {
+test('CodeInsight uses the shared provider through public asynchronous ToolsAPI contracts', () => {
   assert.match(codeInsightSource, /IOTACodeInsightManager/u);
   assert.match(codeInsightSource, /IOTAAsyncCodeInsightManager/u);
   assert.match(codeInsightSource, /AddCodeInsightManager/u);
   assert.match(codeInsightSource, /RemoveCodeInsightManager/u);
   assert.match(codeInsightSource, /AsyncOperationCanceled/u);
-  assert.match(codeInsightSource, /RADIA_CODEINSIGHT_SPIKE/u);
+  assert.match(codeInsightSource, /FSession\.Capture\(LContext\)/u);
+  assert.match(codeInsightSource, /FProvider\.Complete\(LContext, LCancellation\)/u);
   assert.doesNotMatch(codeInsightSource, /INTA(?:CodeInsight|EditView)/u);
 });
