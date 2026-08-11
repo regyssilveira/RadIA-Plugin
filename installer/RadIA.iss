@@ -70,6 +70,50 @@ Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
   Flags: runhidden waituntilterminated; Components: d13win64; RunOnceId: "RadIA-D13-Win64"
 
 [Code]
+function IsAnyDelphiIDEOpen(): Boolean;
+var
+  Locator: Variant;
+  Services: Variant;
+  Processes: Variant;
+begin
+  Result := False;
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Services := Locator.ConnectServer('.', 'root\CIMV2');
+    Processes := Services.ExecQuery(
+      'SELECT ProcessId FROM Win32_Process WHERE Name = "bds.exe"'
+    );
+    Result := Processes.Count > 0;
+  except
+    Result := False;
+  end;
+end;
+
+function BuildDelphiRunningMessage(): String;
+begin
+  Result :=
+    'Close all Delphi IDE instances before installing, repairing, or ' +
+    'uninstalling RadIA. This prevents locked BPL files, stale WebView2 ' +
+    'assets, and packages already loaded in memory.';
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := '';
+  if IsAnyDelphiIDEOpen() then
+    Result := BuildDelphiRunningMessage();
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := True;
+  if IsAnyDelphiIDEOpen() then
+  begin
+    MsgBox(BuildDelphiRunningMessage(), mbError, MB_OK);
+    Result := False;
+  end;
+end;
+
 function BuildPackageParameters(
   const PackageName: String;
   const Version: String;

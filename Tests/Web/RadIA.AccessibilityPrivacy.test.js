@@ -41,6 +41,14 @@ const versionUnit = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.Version.pas'),
   'utf8'
 );
+const packageInstaller = fs.readFileSync(
+  path.join(repositoryRoot, 'scripts', 'Install-RadIA.Package.ps1'),
+  'utf8'
+);
+const visualInstaller = fs.readFileSync(
+  path.join(repositoryRoot, 'installer', 'RadIA.iss'),
+  'utf8'
+);
 
 test('web surfaces do not contact external origins during startup', () => {
   assert.doesNotMatch(chatHtml, /(?:src|href)="https?:\/\//i);
@@ -92,6 +100,17 @@ test('primary RadIA windows expose the package version in their captions', () =>
   assert.match(dockableForm, /Result := RadIAVersionedCaption\(FCaption\)/u);
   assert.match(configForm, /Caption := RadIAVersionedCaption\('Rad IA Configuration'\)/u);
   assert.match(projectWizard, /Caption := RadIAVersionedCaption\('RadIA New Project'\)/u);
+});
+
+test('installers block when any Delphi IDE process is open', () => {
+  assert.match(packageInstaller, /Get-Process bds/u);
+  assert.match(packageInstaller, /Close all Delphi IDE instances before changing RadIA/u);
+  assert.match(packageInstaller, /\$runningIDEs\.Count -gt 0/u);
+  assert.doesNotMatch(packageInstaller, /Close all instances of the target Delphi IDE/u);
+  assert.match(visualInstaller, /function PrepareToInstall/u);
+  assert.match(visualInstaller, /function InitializeUninstall/u);
+  assert.match(visualInstaller, /Win32_Process WHERE Name = "bds\.exe"/u);
+  assert.match(visualInstaller, /Close all Delphi IDE instances before installing/u);
 });
 
 test('every static chat button provides contextual help', () => {

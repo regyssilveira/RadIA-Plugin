@@ -8,6 +8,10 @@ Each component contains the package for that combination and reuses `Install-Rad
 The flow preserves manifest validation, hashes, installation, repair, and removal with user data
 preserved by default.
 
+The visual installer refuses installation, repair, and uninstall while any `bds.exe` process is
+open. The internal script repeats the same barrier before copying the BPL, DCP, bridge, Web assets,
+`WebView2Loader.dll`, or changing the Registry.
+
 Before copying a version, the installer removes only the internal folder for the selected target,
 preventing files left by earlier releases. An internal installer failure aborts the visual setup
 and returns a nonzero exit code.
