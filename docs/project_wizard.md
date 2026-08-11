@@ -87,5 +87,7 @@ recusados.
 Engine, preview, transação, tela visual, opções e seleção autorizada sem projeto ativo estão
 implementados. A concessão visual não amplia a autorização das tools.
 
-Além dos testes unitários, `scripts/Test-RadIA.GeneratedProjects.ps1` gera os sete tipos usando o
-engine real e compila cada `.dproj`. A matriz vigente abrange Delphi 12 e 13.
+Além dos testes unitários, `scripts/Test-RadIA.GeneratedProjects.ps1` gera os templates usando o
+engine real e compila cada `.dproj`. Para o prompt de calculadora VCL, também gera um projeto DUnitX,
+executa cinco testes das operações e divisão por zero e valida a interface em execução. A matriz
+vigente abrange Delphi 12 e 13.

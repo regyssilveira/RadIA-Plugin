@@ -107,8 +107,13 @@ type
       const ATemplateId: string
     ): TArray<TRadIAProjectTemplateFile>;
     function BuildVclCalculatorFiles(
-      const AProjectName: string
+      const ARequest: TRadIAProjectTemplateRequest;
+      const ATemplateId: string
     ): TArray<TRadIAProjectTemplateFile>;
+    function BuildCalculatorTestProjectFile(
+      const ARequest: TRadIAProjectTemplateRequest;
+      const ATemplateId: string
+    ): string;
     function BuildCalculatorButtons: string;
     function IsVclCalculator(
       const ARequest: TRadIAProjectTemplateRequest
@@ -328,7 +333,7 @@ begin
 
   if IsVclCalculator(ARequest) then
   begin
-    Result := BuildVclCalculatorFiles(LProjectName);
+    Result := BuildVclCalculatorFiles(ARequest, ATemplateId);
     Result := Result + [
       TRadIAProjectTemplateFile.Create(
         LProjectName + '.dproj',
@@ -604,19 +609,22 @@ begin
 end;
 
 function TRadIAProjectTemplateEngine.BuildVclCalculatorFiles(
-  const AProjectName: string
+  const ARequest: TRadIAProjectTemplateRequest;
+  const ATemplateId: string
 ): TArray<TRadIAProjectTemplateFile>;
 var
   LDfm: string;
+  LProjectName: string;
   LSource: string;
 begin
+  LProjectName := ARequest.ProjectName;
   LSource :=
     'unit MainForm;' + sLineBreak + sLineBreak +
     'interface' + sLineBreak + sLineBreak +
     'uses' + sLineBreak +
     '  System.Classes,' + sLineBreak +
-    '  System.Math,' + sLineBreak +
     '  System.SysUtils,' + sLineBreak +
+    '  CalculatorEngine,' + sLineBreak +
     '  Vcl.Controls,' + sLineBreak +
     '  Vcl.Forms,' + sLineBreak +
     '  Vcl.StdCtrls;' + sLineBreak + sLineBreak +
@@ -666,18 +674,9 @@ begin
     '  LValue: Double;' + sLineBreak +
     'begin' + sLineBreak +
     '  LValue := CurrentValue;' + sLineBreak +
-    '  if FPendingOperator = ''+'' then' + sLineBreak +
-    '    FAccumulator := FAccumulator + LValue' + sLineBreak +
-    '  else if FPendingOperator = ''-'' then' + sLineBreak +
-    '    FAccumulator := FAccumulator - LValue' + sLineBreak +
-    '  else if FPendingOperator = ''*'' then' + sLineBreak +
-    '    FAccumulator := FAccumulator * LValue' + sLineBreak +
-    '  else if FPendingOperator = ''/'' then' + sLineBreak +
-    '  begin' + sLineBreak +
-    '    if SameValue(LValue, 0) then' + sLineBreak +
-    '      raise EDivByZero.Create(''Division by zero.'');' + sLineBreak +
-    '    FAccumulator := FAccumulator / LValue;' + sLineBreak +
-    '  end;' + sLineBreak +
+    '  if FPendingOperator <> '''' then' + sLineBreak +
+    '    FAccumulator := TRadIACalculatorMath.Calculate(' + sLineBreak +
+    '      FAccumulator, LValue, FPendingOperator);' + sLineBreak +
     'end;' + sLineBreak + sLineBreak +
     'procedure TRadIAMainForm.ClearClick(Sender: TObject);' + sLineBreak +
     'begin' + sLineBreak +
@@ -735,7 +734,7 @@ begin
     'object RadIAMainForm: TRadIAMainForm' + sLineBreak +
     '  Left = 0' + sLineBreak +
     '  Top = 0' + sLineBreak +
-    '  Caption = ''' + AProjectName + '''' + sLineBreak +
+    '  Caption = ''' + LProjectName + '''' + sLineBreak +
     '  ClientHeight = 330' + sLineBreak +
     '  ClientWidth = 260' + sLineBreak +
     '  Position = poScreenCenter' + sLineBreak +
@@ -753,8 +752,8 @@ begin
     'end' + sLineBreak;
   Result := [
     TRadIAProjectTemplateFile.Create(
-      AProjectName + '.dpr',
-      'program ' + AProjectName + ';' + sLineBreak + sLineBreak +
+      LProjectName + '.dpr',
+      'program ' + LProjectName + ';' + sLineBreak + sLineBreak +
       'uses' + sLineBreak +
       '  Vcl.Forms,' + sLineBreak +
       '  MainForm in ''MainForm.pas'' {RadIAMainForm};' + sLineBreak +
@@ -769,8 +768,147 @@ begin
       'end.' + sLineBreak
     ),
     TRadIAProjectTemplateFile.Create('MainForm.pas', LSource),
-    TRadIAProjectTemplateFile.Create('MainForm.dfm', LDfm)
+    TRadIAProjectTemplateFile.Create('MainForm.dfm', LDfm),
+    TRadIAProjectTemplateFile.Create(
+      'CalculatorEngine.pas',
+      'unit CalculatorEngine;' + sLineBreak + sLineBreak +
+      'interface' + sLineBreak + sLineBreak +
+      'type' + sLineBreak +
+      '  TRadIACalculatorMath = class sealed' + sLineBreak +
+      '  public' + sLineBreak +
+      '    class function Calculate(' + sLineBreak +
+      '      const ALeft, ARight: Double;' + sLineBreak +
+      '      const AOperator: string' + sLineBreak +
+      '    ): Double; static;' + sLineBreak +
+      '  end;' + sLineBreak + sLineBreak +
+      'implementation' + sLineBreak + sLineBreak +
+      'uses' + sLineBreak +
+      '  System.SysUtils;' + sLineBreak + sLineBreak +
+      'class function TRadIACalculatorMath.Calculate(' + sLineBreak +
+      '  const ALeft, ARight: Double;' + sLineBreak +
+      '  const AOperator: string' + sLineBreak +
+      '): Double;' + sLineBreak +
+      'begin' + sLineBreak +
+      '  if AOperator = ''+'' then' + sLineBreak +
+      '    Result := ALeft + ARight' + sLineBreak +
+      '  else if AOperator = ''-'' then' + sLineBreak +
+      '    Result := ALeft - ARight' + sLineBreak +
+      '  else if AOperator = ''*'' then' + sLineBreak +
+      '    Result := ALeft * ARight' + sLineBreak +
+      '  else if AOperator = ''/'' then' + sLineBreak +
+      '  begin' + sLineBreak +
+      '    if ARight = 0 then' + sLineBreak +
+      '      raise EDivByZero.Create(''Division by zero.'');' + sLineBreak +
+      '    Result := ALeft / ARight;' + sLineBreak +
+      '  end' + sLineBreak +
+      '  else' + sLineBreak +
+      '    raise EArgumentException.Create(''Unsupported operator.'');' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak +
+      'end.' + sLineBreak
+    ),
+    TRadIAProjectTemplateFile.Create(
+      LProjectName + 'Tests.dpr',
+      'program ' + LProjectName + 'Tests;' + sLineBreak + sLineBreak +
+      '{$APPTYPE CONSOLE}' + sLineBreak + sLineBreak +
+      'uses' + sLineBreak +
+      '  DUnitX.Loggers.Console,' + sLineBreak +
+      '  DUnitX.Loggers.XML.NUnit,' + sLineBreak +
+      '  DUnitX.TestFramework,' + sLineBreak +
+      '  Tests.CalculatorEngine in ''Tests.CalculatorEngine.pas'';' + sLineBreak +
+      sLineBreak +
+      'var' + sLineBreak +
+      '  Runner: ITestRunner;' + sLineBreak +
+      'begin' + sLineBreak +
+      '  Runner := TDUnitX.CreateRunner;' + sLineBreak +
+      '  Runner.AddLogger(TDUnitXConsoleLogger.Create(True));' + sLineBreak +
+      '  Runner.AddLogger(TDUnitXXMLNUnitFileLogger.Create(' + sLineBreak +
+      '    TDUnitX.Options.XMLOutputFile));' + sLineBreak +
+      '  System.ExitCode := Ord(not Runner.Execute.AllPassed);' + sLineBreak +
+      'end.' + sLineBreak
+    ),
+    TRadIAProjectTemplateFile.Create(
+      'Tests.CalculatorEngine.pas',
+      'unit Tests.CalculatorEngine;' + sLineBreak + sLineBreak +
+      'interface' + sLineBreak + sLineBreak +
+      'uses' + sLineBreak +
+      '  DUnitX.TestFramework;' + sLineBreak + sLineBreak +
+      'type' + sLineBreak +
+      '  [TestFixture]' + sLineBreak +
+      '  TRadIACalculatorTests = class' + sLineBreak +
+      '  public' + sLineBreak +
+      '    [TestCase(''Add'', ''7,5,+,12'')]' + sLineBreak +
+      '    [TestCase(''Subtract'', ''7,5,-,2'')]' + sLineBreak +
+      '    [TestCase(''Multiply'', ''7,5,*,35'')]' + sLineBreak +
+      '    [TestCase(''Divide'', ''10,5,/,2'')]' + sLineBreak +
+      '    procedure Calculates(' + sLineBreak +
+      '      const ALeft, ARight: Double;' + sLineBreak +
+      '      const AOperator: string;' + sLineBreak +
+      '      const AExpected: Double' + sLineBreak +
+      '    );' + sLineBreak +
+      '    [Test]' + sLineBreak +
+      '    procedure RejectsDivisionByZero;' + sLineBreak +
+      '  end;' + sLineBreak + sLineBreak +
+      'implementation' + sLineBreak + sLineBreak +
+      'uses' + sLineBreak +
+      '  System.SysUtils,' + sLineBreak +
+      '  CalculatorEngine;' + sLineBreak + sLineBreak +
+      'procedure TRadIACalculatorTests.Calculates(' + sLineBreak +
+      '  const ALeft, ARight: Double;' + sLineBreak +
+      '  const AOperator: string;' + sLineBreak +
+      '  const AExpected: Double' + sLineBreak +
+      ');' + sLineBreak +
+      'begin' + sLineBreak +
+      '  Assert.AreEqual(' + sLineBreak +
+      '    AExpected,' + sLineBreak +
+      '    TRadIACalculatorMath.Calculate(ALeft, ARight, AOperator)' + sLineBreak +
+      '  );' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak +
+      'procedure TRadIACalculatorTests.RejectsDivisionByZero;' + sLineBreak +
+      'begin' + sLineBreak +
+      '  Assert.WillRaise(' + sLineBreak +
+      '    procedure' + sLineBreak +
+      '    begin' + sLineBreak +
+      '      TRadIACalculatorMath.Calculate(1, 0, ''/'');' + sLineBreak +
+      '    end,' + sLineBreak +
+      '    EDivByZero' + sLineBreak +
+      '  );' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak +
+      'initialization' + sLineBreak +
+      '  TDUnitX.RegisterTestFixture(TRadIACalculatorTests);' + sLineBreak +
+      sLineBreak +
+      'end.' + sLineBreak
+    ),
+    TRadIAProjectTemplateFile.Create(
+      LProjectName + 'Tests.dproj',
+      BuildCalculatorTestProjectFile(ARequest, ATemplateId)
+    )
   ];
+end;
+
+function TRadIAProjectTemplateEngine.BuildCalculatorTestProjectFile(
+  const ARequest: TRadIAProjectTemplateRequest;
+  const ATemplateId: string
+): string;
+var
+  LTestRequest: TRadIAProjectTemplateRequest;
+begin
+  LTestRequest := TRadIAProjectTemplateRequest.Create(
+    ARequest.ProjectName + 'Tests',
+    ptkDUnitX,
+    ARequest.DelphiVersion,
+    ARequest.Platforms
+  );
+  Result := BuildProjectFile(
+    LTestRequest,
+    ATemplateId + '-tests',
+    ARequest.ProjectName + 'Tests.dpr'
+  );
+  Result := StringReplace(
+    Result,
+    'Tests.Sample.pas',
+    'Tests.CalculatorEngine.pas',
+    [rfReplaceAll]
+  );
 end;
 
 function TRadIAProjectTemplateEngine.BuildCalculatorButtons: string;

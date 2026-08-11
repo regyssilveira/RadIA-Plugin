@@ -41,6 +41,7 @@ $previousBdsBin = $env:BDSBIN
 $templateResults = @()
 $expectedTemplates = @(
     "CalculatorApp",
+    "CalculatorAppTests",
     "ConsoleApp",
     "DUnitXApp",
     "DextControllerApi",
@@ -271,8 +272,8 @@ try {
             -Recurse `
             -Filter "*.dproj"
     )
-    if ($projects.Count -ne 10) {
-        throw "Expected ten generated projects, found $($projects.Count)."
+    if ($projects.Count -ne 11) {
+        throw "Expected eleven generated projects, found $($projects.Count)."
     }
     $projectNames = @($projects | ForEach-Object { $_.BaseName })
     foreach ($expectedTemplate in $expectedTemplates) {
@@ -344,6 +345,20 @@ try {
                 $validationRoot `
                 "CalculatorApp\bin\Win32\Debug\CalculatorApp.exe"
         )
+    $calculatorTestExecutable = Join-Path `
+        $validationRoot `
+        "CalculatorApp\bin\Win32\Debug\CalculatorAppTests.exe"
+    & $calculatorTestExecutable `
+        "--no-logo" `
+        "--xml=$validationRoot\calculator-tests.xml"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Generated calculator unit tests failed."
+    }
+    $calculatorUnitTests = [PSCustomObject]@{
+        executable = "CalculatorAppTests.exe"
+        report = "calculator-tests.xml"
+        status = "passed"
+    }
 
     if ($EvidencePath) {
         $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)
@@ -384,6 +399,7 @@ try {
             generatedAtUtc = [DateTime]::UtcNow.ToString("o")
             templates = $templateResults
             calculatorInterface = $calculatorInterface
+            calculatorUnitTests = $calculatorUnitTests
         } |
             ConvertTo-Json -Depth 5 |
             Set-Content `
@@ -392,7 +408,7 @@ try {
     }
 
     Write-Host (
-        "All ten generated projects passed on Delphi $DelphiVersion."
+        "All eleven generated projects passed on Delphi $DelphiVersion."
     ) -ForegroundColor Green
 }
 finally {

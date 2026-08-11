@@ -6,6 +6,9 @@
 
 Este documento descreve o planejamento estratégico e a visão de futuro do assistente de IA **Rad IA**, focado em trazer produtividade e resolver as dores reais do desenvolvedor Delphi no seu dia a dia.
 
+O desenvolvimento ativo está concentrado no [goal único da versão 2.6.0](radia_2.6_goal.md): criar,
+compilar, depurar e testar um projeto completo a partir de um prompt, com evidências nos três alvos suportados.
+
 > [!NOTE]
 > O Rad IA segue um modelo de desenvolvimento **open-source orientado à comunidade**.
 > *   Para uma visualização detalhada das prioridades, estimativas de esforço e impacto de cada recurso, consulte a [Matriz de Priorização (feature_prioritization_matrix.md)](feature_prioritization_matrix.md).

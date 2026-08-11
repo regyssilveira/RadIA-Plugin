@@ -87,6 +87,7 @@ inspect what the installed version actually provides.
 ## Develop and contribute
 
 - [Required documentation policy](documentation_policy.en.md)
+- [Active 2.6.0 goal](radia_2.6_goal.en.md)
 
 | Subject | Guide |
 |---|---|

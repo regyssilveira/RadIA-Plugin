@@ -2,6 +2,9 @@
 
 This document outlines the strategic planning and long-term vision of the **Rad IA** AI assistant, focusing on bringing productivity and solving real pain points for Delphi developers in their daily workflows.
 
+Active development is concentrated in the [single 2.6.0 goal](radia_2.6_goal.en.md): create, build,
+debug, and test a complete project from a prompt, with evidence on all three supported targets.
+
 > [!NOTE]
 > Rad IA follows a **community-driven open-source development model**.
 > *   For a detailed view of feature priorities, effort estimates, and impacts, check the [Feature Prioritization Matrix (feature_prioritization_matrix.md)](feature_prioritization_matrix.en.md).

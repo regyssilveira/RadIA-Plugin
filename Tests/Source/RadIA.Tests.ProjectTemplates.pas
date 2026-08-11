@@ -45,7 +45,10 @@ var
   LEngine: TRadIAProjectTemplateEngine;
   LFile: TRadIAProjectTemplateFile;
   LFoundDfm: Boolean;
+  LFoundEngine: Boolean;
   LFoundSource: Boolean;
+  LFoundTestProject: Boolean;
+  LFoundTests: Boolean;
   LPlan: TRadIAProjectTemplatePlan;
 begin
   LEngine := TRadIAProjectTemplateEngine.Create;
@@ -61,7 +64,10 @@ begin
     );
     try
       LFoundDfm := False;
+      LFoundEngine := False;
       LFoundSource := False;
+      LFoundTestProject := False;
+      LFoundTests := False;
       for LFile in LPlan.Files do
       begin
         if SameText(LFile.RelativePath, 'MainForm.dfm') then
@@ -78,9 +84,30 @@ begin
           Assert.Contains(LFile.Content, 'procedure TRadIAMainForm.OperatorClick');
           Assert.Contains(LFile.Content, 'Cannot divide by zero');
         end;
+        if SameText(LFile.RelativePath, 'CalculatorEngine.pas') then
+        begin
+          LFoundEngine := True;
+          Assert.Contains(LFile.Content, 'TRadIACalculatorMath.Calculate');
+          Assert.Contains(LFile.Content, 'raise EDivByZero');
+        end;
+        if SameText(LFile.RelativePath, 'CalculatorAppTests.dproj') then
+        begin
+          LFoundTestProject := True;
+          Assert.Contains(LFile.Content, 'CalculatorAppTests.dpr');
+          Assert.Contains(LFile.Content, 'Tests.CalculatorEngine.pas');
+        end;
+        if SameText(LFile.RelativePath, 'Tests.CalculatorEngine.pas') then
+        begin
+          LFoundTests := True;
+          Assert.Contains(LFile.Content, '[TestCase(''Add''');
+          Assert.Contains(LFile.Content, 'RejectsDivisionByZero');
+        end;
       end;
       Assert.IsTrue(LFoundDfm);
+      Assert.IsTrue(LFoundEngine);
       Assert.IsTrue(LFoundSource);
+      Assert.IsTrue(LFoundTestProject);
+      Assert.IsTrue(LFoundTests);
     finally
       LPlan.Free;
     end;

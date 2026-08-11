@@ -80,5 +80,7 @@ Non-empty destinations, filesystem roots, existing files, and paths escaping sta
 The engine, preview, transaction, visual UI, option selection, and no-project authorized root
 selection are implemented. Visual authorization does not broaden agent or MCP tool permissions.
 
-Beyond unit tests, `scripts/Test-RadIA.GeneratedProjects.ps1` generates all seven kinds through the
-real engine and builds every `.dproj`. The current matrix covers Delphi 12 and 13.
+Beyond unit tests, `scripts/Test-RadIA.GeneratedProjects.ps1` generates the templates through the
+real engine and builds every `.dproj`. For the VCL calculator prompt, it also generates a DUnitX
+project, runs five tests for the operations and division by zero, and validates the running UI.
+The current matrix covers Delphi 12 and 13.

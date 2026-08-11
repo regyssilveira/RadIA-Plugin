@@ -18,7 +18,11 @@ $targets = @(
     }
 )
 $requiredTemplates = @(
+    "CalculatorApp",
+    "CalculatorAppTests",
     "ConsoleApp",
+    "DextControllerApi",
+    "DextMinimalApi",
     "DUnitXApp",
     "FmxApp",
     "LibraryApp",
@@ -109,7 +113,7 @@ foreach ($target in $targets) {
         $template = $matches[0]
         Assert-RadIACondition `
             -Condition (
-                $template.status -eq "passed" -and
+                $template.status -in @("passed", "not-required") -and
                 $template.platform -eq "Win32" -and
                 $template.configuration -eq "Debug" -and
                 $template.durationMs -ge 0
@@ -127,6 +131,8 @@ foreach ($target in $targets) {
         status = $evidence.status
         generatedAtUtc = $evidence.generatedAtUtc
         templates = $templates
+        calculatorInterface = $evidence.calculatorInterface
+        calculatorUnitTests = $evidence.calculatorUnitTests
     }
 }
 
