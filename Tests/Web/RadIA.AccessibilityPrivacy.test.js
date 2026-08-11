@@ -81,8 +81,8 @@ test('custom selectors support keyboard activation and synchronized ARIA state',
 test('scrollable selector surfaces expose visible scrollbar affordances', () => {
   assert.match(chatCss, /\.custom-dropdown-options,[\s\S]*#slash-commands-popup,[\s\S]*\.radia-project-files-list/u);
   assert.match(chatCss, /scrollbar-color: var\(--scrollbar\) var\(--scrollbar-track\)/u);
-  assert.match(chatCss, /scrollbar-width: thin/u);
-  assert.match(chatCss, /::-webkit-scrollbar[\s\S]*width: 10px/u);
+  assert.match(chatCss, /scrollbar-width: auto/u);
+  assert.match(chatCss, /::-webkit-scrollbar[\s\S]*width: 14px/u);
   assert.match(chatCss, /::-webkit-scrollbar-track[\s\S]*background: var\(--scrollbar-track\)/u);
   assert.match(chatCss, /::-webkit-scrollbar-thumb[\s\S]*min-height: 32px/u);
 });

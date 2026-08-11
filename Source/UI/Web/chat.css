@@ -77,7 +77,7 @@ textarea:focus-visible,
 #generators-wrapper,
 .radia-project-files-list {
   scrollbar-color: var(--scrollbar) var(--scrollbar-track);
-  scrollbar-width: thin;
+  scrollbar-width: auto;
 }
 
 .custom-dropdown-options::-webkit-scrollbar,
@@ -85,7 +85,7 @@ textarea:focus-visible,
 #slash-commands-popup::-webkit-scrollbar,
 #generators-wrapper::-webkit-scrollbar,
 .radia-project-files-list::-webkit-scrollbar {
-  width: 10px;
+  width: 14px;
 }
 
 .custom-dropdown-options::-webkit-scrollbar-track,
@@ -94,7 +94,7 @@ textarea:focus-visible,
 #generators-wrapper::-webkit-scrollbar-track,
 .radia-project-files-list::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
-  border-radius: 5px;
+  border-radius: 7px;
 }
 
 .custom-dropdown-options::-webkit-scrollbar-thumb,
@@ -104,8 +104,8 @@ textarea:focus-visible,
 .radia-project-files-list::-webkit-scrollbar-thumb {
   min-height: 32px;
   background-color: var(--scrollbar);
-  border: 2px solid var(--scrollbar-track);
-  border-radius: 5px;
+  border: 3px solid var(--scrollbar-track);
+  border-radius: 7px;
 }
 
 .custom-dropdown-options::-webkit-scrollbar-thumb:hover,
