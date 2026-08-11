@@ -173,6 +173,7 @@ jobs:
           }
           gh release upload `
             $env:RELEASE_TAG `
-            ".\Output\Distribution\*" `
+            ".\Output\Distribution\$env:INSTALLER_NAME" `
+            ".\Output\Distribution\stable.json" `
             --clobber
 

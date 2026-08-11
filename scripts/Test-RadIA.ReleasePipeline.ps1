@@ -52,6 +52,17 @@ if (
 ) {
     throw "Internal package ZIP files cannot be published in the distribution."
 }
+if ($workflow.Contains('".\Output\Distribution\*"')) {
+    throw "GitHub Release cannot publish the internal evidence bundle."
+}
+foreach ($publicAsset in @(
+    '".\Output\Distribution\$env:INSTALLER_NAME"',
+    '".\Output\Distribution\stable.json"'
+)) {
+    if (-not $workflow.Contains($publicAsset)) {
+        throw "GitHub Release is missing public asset: $publicAsset"
+    }
+}
 
 $packageInstallerPath = ".\scripts\Install-RadIA.Package.ps1"
 $packageInstaller = Get-Content -LiteralPath $packageInstallerPath -Raw
@@ -85,6 +96,7 @@ foreach ($fragment in $visualInstallerFragments) {
 
 Write-Host (
     "Release workflow validation succeeded with three internal Delphi inputs, " +
-    "one public installer, SHA-256 evidence, no certificate dependency, and " +
+    "one public installer, one update catalog, internal evidence, " +
+    "no certificate dependency, and " +
     "Delphi-open installer gates."
 )
