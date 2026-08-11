@@ -16,6 +16,10 @@ const closureBaseline = JSON.parse(fs.readFileSync(
   path.join(repositoryRoot, 'docs', 'competitive_closure_baseline_2.7.json'),
   'utf8'
 ));
+const promptMatrixScript = fs.readFileSync(
+  path.join(repositoryRoot, 'scripts', 'Test-RadIA.NaturalProjectPrompts.ps1'),
+  'utf8'
+);
 
 test('generated-project certification uses the supported DUnitX arguments', () => {
   assert.match(generatedProjectsScript, /"--hidebanner"/u);
@@ -50,4 +54,21 @@ test('competitive closure baseline is fixed and contains only explicit gaps', ()
   assert.equal(closureBaseline.closureRule.open, 0);
   assert.ok(closureBaseline.permanentExclusions.includes('webview-replacement'));
   assert.ok(closureBaseline.permanentExclusions.includes('mandatory-cli-bundling'));
+});
+
+test('natural-project prompt evidence requires every template in both languages', () => {
+  [
+    'Console',
+    'Vcl',
+    'Fmx',
+    'Library',
+    'Package',
+    'DUnitX',
+    'Service'
+  ].forEach(templateName => {
+    assert.ok(promptMatrixScript.includes(`TestNatural${templateName}PromptPt`));
+    assert.ok(promptMatrixScript.includes(`TestNatural${templateName}PromptEn`));
+  });
+  assert.match(promptMatrixScript, /sourceDirty = \$sourceDirty/u);
+  assert.match(promptMatrixScript, /templateCount = 7/u);
 });

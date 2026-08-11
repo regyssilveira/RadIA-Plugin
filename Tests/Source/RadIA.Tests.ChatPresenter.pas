@@ -196,6 +196,10 @@ type
     FPreviousHierarchicalSettingsStore: IRadIAHierarchicalSettingsStore;
     FPreviousWorkspace: IRadIAWorkspaceFacade;
 
+    procedure AssertNaturalProjectPrompt(
+      const APrompt: string;
+      const AExpectedType: string
+    );
     procedure DrainQueuedCalls;
   public
     [Setup]
@@ -283,6 +287,34 @@ type
     procedure TestNaturalCalculatorRequestStartsGuidedProjectJourney;
     [Test]
     procedure TestCompleteCalculatorPromptStartsGuardedAgentJourney;
+    [Test]
+    procedure TestNaturalConsolePromptPt;
+    [Test]
+    procedure TestNaturalConsolePromptEn;
+    [Test]
+    procedure TestNaturalVclPromptPt;
+    [Test]
+    procedure TestNaturalVclPromptEn;
+    [Test]
+    procedure TestNaturalFmxPromptPt;
+    [Test]
+    procedure TestNaturalFmxPromptEn;
+    [Test]
+    procedure TestNaturalLibraryPromptPt;
+    [Test]
+    procedure TestNaturalLibraryPromptEn;
+    [Test]
+    procedure TestNaturalPackagePromptPt;
+    [Test]
+    procedure TestNaturalPackagePromptEn;
+    [Test]
+    procedure TestNaturalDUnitXPromptPt;
+    [Test]
+    procedure TestNaturalDUnitXPromptEn;
+    [Test]
+    procedure TestNaturalServicePromptPt;
+    [Test]
+    procedure TestNaturalServicePromptEn;
     [Test]
     procedure TestHelpCommandShowsCapabilitiesAndDocumentation;
     [Test]
@@ -686,6 +718,32 @@ begin
   begin
     CheckSynchronize(1);
   end;
+end;
+
+procedure TTestChatPresenter.AssertNaturalProjectPrompt(
+  const APrompt: string;
+  const AExpectedType: string
+);
+var
+  LAttempt: Integer;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText(APrompt);
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'type=\"' + AExpectedType + '\"'
+  );
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
 end;
 
 procedure TTestChatPresenter.Setup;
@@ -1301,6 +1359,118 @@ begin
   );
   Assert.Contains(FMockView.PostedMessages.Text, 'platform=\"Win32\"');
   Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+end;
+
+procedure TTestChatPresenter.TestNaturalConsolePromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie um aplicativo console em D:\PromptMatrix\ConsolePt',
+    'Console'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalConsolePromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create a console application in D:\PromptMatrix\ConsoleEn',
+    'Console'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalVclPromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie uma aplicacao VCL em D:\PromptMatrix\VclPt',
+    'VCL'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalVclPromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create a Windows desktop application in D:\PromptMatrix\VclEn',
+    'VCL'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalFmxPromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie uma aplicacao FireMonkey em D:\PromptMatrix\FmxPt',
+    'FMX'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalFmxPromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create an FMX application in D:\PromptMatrix\FmxEn',
+    'FMX'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalLibraryPromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie uma biblioteca dinamica DLL em D:\PromptMatrix\LibraryPt',
+    'Library'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalLibraryPromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create a library DLL in D:\PromptMatrix\LibraryEn',
+    'Library'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalPackagePromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie um pacote de componentes BPL em D:\PromptMatrix\PackagePt',
+    'Package'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalPackagePromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create a package BPL in D:\PromptMatrix\PackageEn',
+    'Package'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalDUnitXPromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie um projeto de testes unitarios DUnitX em D:\PromptMatrix\DUnitXPt',
+    'DUnitX'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalDUnitXPromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create a DUnitX unit test project in D:\PromptMatrix\DUnitXEn',
+    'DUnitX'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalServicePromptPt;
+begin
+  AssertNaturalProjectPrompt(
+    'crie um servico Windows em D:\PromptMatrix\ServicePt',
+    'Service'
+  );
+end;
+
+procedure TTestChatPresenter.TestNaturalServicePromptEn;
+begin
+  AssertNaturalProjectPrompt(
+    'create a Windows service application in D:\PromptMatrix\ServiceEn',
+    'Service'
+  );
 end;
 
 procedure TTestChatPresenter.TestHelpCommandShowsCapabilitiesAndDocumentation;

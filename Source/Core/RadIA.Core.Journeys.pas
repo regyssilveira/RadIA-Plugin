@@ -177,12 +177,13 @@ const
     'crie', 'criar', 'gere', 'monte',
     'faca', 'faça', 'fazer', 'faz'
   );
-  CProjectTerms: array[0..22] of string = (
+  CProjectTerms: array[0..27] of string = (
     'project', 'projeto', 'application', 'aplicativo',
     ' vcl', ' fmx', 'console', 'dunitx', 'service', 'servico',
     'serviço', 'dext', 'library', 'package', ' sistema', ' programa',
     ' software', ' app ', ' unit test', ' teste unitário', ' teste unitario',
-    'calculadora', 'calculator'
+    'calculadora', 'calculator', 'firemonkey', 'biblioteca',
+    ' dll', 'pacote', ' bpl'
   );
 var
   LHasCreation: Boolean;
