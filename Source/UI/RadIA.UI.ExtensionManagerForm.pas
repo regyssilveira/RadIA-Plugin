@@ -80,6 +80,7 @@ uses
   RadIA.Core.ExtensionStudio,
   RadIA.Core.Mediator,
   RadIA.Core.PromptTemplates,
+  RadIA.Core.Version,
   RadIA.UI.ExtensionCatalogForm,
   RadIA.UI.ExtensionStudioForm;
 
@@ -126,7 +127,7 @@ constructor TRadIATrustedPublishersForm.Create(
 begin
   inherited CreateNew(AOwner);
   FTrustStore := ATrustStore;
-  Caption := 'Rad IA - Trusted Extension Publishers';
+  Caption := RadIAVersionedCaption('Rad IA - Trusted Extension Publishers');
   Position := poOwnerFormCenter;
   BorderStyle := bsSizeable;
   ClientWidth := 760;
@@ -226,7 +227,7 @@ var
   LTrustStoreMessage: string;
 begin
   inherited CreateNew(AOwner);
-  Caption := 'Rad IA - Declarative Extensions';
+  Caption := RadIAVersionedCaption('Rad IA - Declarative Extensions');
   Position := poScreenCenter;
   BorderStyle := bsSizeable;
   ClientWidth := 920;

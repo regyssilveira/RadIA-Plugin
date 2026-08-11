@@ -26,7 +26,8 @@ uses
   RadIA.Core.Container,
   RadIA.Core.SkillReplicas,
   RadIA.Core.ToolSecurity,
-  RadIA.Core.Tools;
+  RadIA.Core.Tools,
+  RadIA.Core.Version;
 
 type
   TRadIASkillPortabilityForm = class(TForm)
@@ -89,7 +90,7 @@ begin
   inherited CreateNew(AOwner);
   FProjectRoot := AProjectRoot;
   FSkill := ASkill;
-  Caption := 'Rad IA - Publish skill to CLIs';
+  Caption := RadIAVersionedCaption('Rad IA - Publish skill to CLIs');
   Position := poOwnerFormCenter;
   BorderStyle := bsSizeable;
   ClientWidth := 760;

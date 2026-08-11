@@ -8,7 +8,8 @@ uses
   Vcl.Forms,
   Vcl.StdCtrls,
   RadIA.Core.ProjectTemplateService,
-  RadIA.Core.ProjectTemplates;
+  RadIA.Core.ProjectTemplates,
+  RadIA.Core.Version;
 
 type
   TRadIAProjectWizardForm = class(TForm)
@@ -219,7 +220,7 @@ begin
     raise EArgumentNilException.Create('AAuthorizedService');
   FService := AService;
   FAuthorizedService := AAuthorizedService;
-  Caption := 'RadIA New Project';
+  Caption := RadIAVersionedCaption('RadIA New Project');
   BorderStyle := bsSizeable;
   Position := poScreenCenter;
   ClientWidth := 700;

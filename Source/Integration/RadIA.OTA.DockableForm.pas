@@ -24,6 +24,7 @@ uses
   ToolsAPI,
   RadIA.Core.Logger,
   RadIA.Core.Types,
+  RadIA.Core.Version,
   RadIA.UI.ChatFrame,
   RadIA.UI.TerminalFrame;
 
@@ -314,7 +315,7 @@ end;
 
 function TRadIACustomDockableForm.GetCaption: string;
 begin
-  Result := FCaption;
+  Result := RadIAVersionedCaption(FCaption);
 end;
 
 function TRadIACustomDockableForm.GetEditState: TEditState;
@@ -402,6 +403,7 @@ begin
       Exit;
     end;
     FForm.FreeNotification(FObserver);
+    FForm.Caption := GetCaption;
     FForm.Width := FDefaultWidth;
     FForm.Height := FDefaultHeight;
     TLogger.Log(

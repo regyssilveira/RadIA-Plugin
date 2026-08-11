@@ -2250,6 +2250,8 @@ begin
     SameText(AToolName, 'CommitProjectFile') or
     SameText(AToolName, 'RemoveProjectFile') or
     SameText(AToolName, 'CommitProjectTemplate') or
+    SameText(AToolName, 'CreateProjectFromTemplate') or
+    SameText(AToolName, 'RevertCreatedProject') or
     SameText(AToolName, 'ApplyDesignerLayout') or
     SameText(AToolName, 'ApplyDesignerProperty') or
     SameText(AToolName, 'AddDesignerComponent') or

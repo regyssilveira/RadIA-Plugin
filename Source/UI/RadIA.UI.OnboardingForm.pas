@@ -50,12 +50,13 @@ uses
   ToolsAPI,
   Vcl.Controls,
   Vcl.Graphics,
+  RadIA.Core.Version,
   RadIA.UI.Resources;
 
 constructor TRadIAOnboardingForm.Create(AOwner: TComponent);
 begin
   inherited CreateNew(AOwner);
-  Caption := 'Rad IA - Getting Started';
+  Caption := RadIAVersionedCaption('Rad IA - Getting Started');
   BorderStyle := bsSizeable;
   Position := poScreenCenter;
   ClientWidth := 620;

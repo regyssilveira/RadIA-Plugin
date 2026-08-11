@@ -122,15 +122,17 @@ class function TRadIAJourneyCatalog.TryInferCreateProject(
   out ACommandText: string
 ): Boolean;
 const
-  CCreateTerms: array[0..7] of string = (
+  CCreateTerms: array[0..11] of string = (
     'create', 'generate', 'build', 'start',
-    'crie', 'criar', 'gere', 'monte'
+    'crie', 'criar', 'gere', 'monte',
+    'faca', 'faça', 'fazer', 'faz'
   );
-  CProjectTerms: array[0..20] of string = (
+  CProjectTerms: array[0..22] of string = (
     'project', 'projeto', 'application', 'aplicativo',
     ' vcl', ' fmx', 'console', 'dunitx', 'service', 'servico',
     'serviço', 'dext', 'library', 'package', ' sistema', ' programa',
-    ' software', ' app ', ' unit test', ' teste unitário', ' teste unitario'
+    ' software', ' app ', ' unit test', ' teste unitário', ' teste unitario',
+    'calculadora', 'calculator'
   );
 var
   LHasCreation: Boolean;

@@ -24,7 +24,8 @@ uses
   Vcl.StdCtrls,
   RadIA.Core.CliProcess,
   RadIA.Core.ExtensionSigning,
-  RadIA.Core.Interfaces;
+  RadIA.Core.Interfaces,
+  RadIA.Core.Version;
 
 type
   TRadIAExtensionSigningForm = class(TForm)
@@ -101,7 +102,7 @@ begin
   FResourcesPath := Trim(AResourcesPath);
   FPackagerPath := TRadIAExtensionSigningService.FindPackager;
   FLifecycleGuard := TLifecycleGuard.Create;
-  Caption := 'Rad IA - Sign extension package';
+  Caption := RadIAVersionedCaption('Rad IA - Sign extension package');
   Position := poOwnerFormCenter;
   BorderStyle := bsDialog;
   ClientWidth := 650;

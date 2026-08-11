@@ -32,7 +32,8 @@ implementation
 
 
 uses
-  System.SysUtils, Vcl.Dialogs, ToolsAPI, RadIA.UI.Resources;
+  System.SysUtils, Vcl.Dialogs, ToolsAPI, RadIA.Core.Version,
+  RadIA.UI.Resources;
 
 {$R *.dfm}
 
@@ -46,6 +47,7 @@ var
   LUseIDETheme: Boolean;
 begin
   inherited Create(AOwner);
+  Caption := RadIAVersionedCaption('Rad IA Configuration');
 
   FFrameConfig := TRadIAFrameAIConfig.Create(Self);
   FFrameConfig.Parent := Self;

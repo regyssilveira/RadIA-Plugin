@@ -25,6 +25,9 @@ After installing the package for the intended IDE architecture, open Delphi and 
 panel. Configure a provider under `Tools > Options > Rad IA`, select a model, create a session, and
 send a prompt with `Ctrl + Enter`.
 
+The chat panel caption and primary RadIA windows show the loaded version, for example
+`Rad IA Chat v2.6.1`, so support can confirm the installed build quickly.
+
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](install_config.en.md).
 

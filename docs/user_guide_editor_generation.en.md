@@ -88,9 +88,9 @@ One of Rad IA's most powerful capabilities is structuring and saving a complete 
 ### How to use
 
 This workflow also works when Delphi starts without an open project. A natural request such as
-**“create a VCL calculator with basic operations”** automatically starts the guided creation
-journey. RadIA asks only for missing information — name, destination, and platform — before showing
-the approval plan.
+**“make a basic calculator”** or **“create a VCL calculator with basic operations”** automatically
+starts the guided creation journey. RadIA asks only for missing information — name, destination,
+and platform — before showing the approval plan.
 
 1. In the Rad IA sidebar chat, request a new project. Example:
    > *"Generate a console project that consumes a weather API and saves the data in local JSON files."*

@@ -75,7 +75,7 @@ implementation
 uses
   Winapi.Windows, System.SysUtils, RadIA.Core.Types, RadIA.Core.Config, RadIA.Core.Service, RadIA.Core.TokenUsage,
       System.IOUtils, System.JSON, System.Math, System.Win.Registry, ToolsAPI, RadIA.UI.Resources,
-  RadIA.Core.Container;
+  RadIA.Core.Container, RadIA.Core.Version;
 
 {$R *.dfm}
 
@@ -113,6 +113,7 @@ procedure TRadIAFormAIDiff.FormCreate(Sender: TObject);
 var
   LThemingServices: IOTAIDEThemingServices;
 begin
+  Caption := RadIAVersionedCaption('Rad IA - Smart Diff');
   FBrowserInitialized := False;
   FPageReady := False;
   FRequestStarted := False;

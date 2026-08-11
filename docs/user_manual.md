@@ -34,6 +34,9 @@ Depois de instalar o pacote correspondente à IDE, abra o Delphi. O RadIA é car
 da IDE e disponibiliza seu painel acoplável. Posicione o painel como uma aba lateral ou janela
 flutuante.
 
+O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
+`Rad IA Chat v2.6.1`, para facilitar suporte e conferência de instalação.
+
 Se o painel ou package não aparecer:
 
 1. confirme o registro do RadIA em `Component > Install Packages`;

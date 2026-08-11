@@ -26,7 +26,8 @@ uses
   Vcl.StdCtrls,
   RadIA.Core.ExtensionCatalog,
   RadIA.Core.Interfaces,
-  RadIA.Core.Types;
+  RadIA.Core.Types,
+  RadIA.Core.Version;
 
 type
   TRadIAExtensionCatalogBrowserForm = class(TForm)
@@ -132,7 +133,7 @@ var
   LPreferencesError: string;
 begin
   inherited CreateNew(AOwner);
-  Caption := 'Rad IA - Extension Catalog';
+  Caption := RadIAVersionedCaption('Rad IA - Extension Catalog');
   Position := poOwnerFormCenter;
   BorderStyle := bsSizeable;
   ClientWidth := 900;

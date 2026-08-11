@@ -6,7 +6,8 @@ uses
   RadIA.Core.Interfaces,
   RadIA.Core.ConsentGate,
   RadIA.Core.Tools,
-  RadIA.Core.ToolSecurity;
+  RadIA.Core.ToolSecurity,
+  RadIA.Core.Version;
 
 type
   TRadIAOTAConsentProvider = class(
@@ -257,7 +258,7 @@ var
 begin
   inherited CreateNew(nil);
   BorderStyle := bsDialog;
-  Caption := 'RadIA Tool Consent';
+  Caption := RadIAVersionedCaption('RadIA Tool Consent');
   ClientWidth := CConsentDefaultWidth;
   ClientHeight := CConsentDefaultHeight;
   Constraints.MinWidth := CConsentMinimumWidth;

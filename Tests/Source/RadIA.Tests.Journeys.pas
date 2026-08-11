@@ -240,6 +240,16 @@ begin
   );
   Assert.IsTrue(
     TRadIAJourneyCatalog.TryInferCreateProject(
+      'faça uma calculadora básica',
+      LCommand
+    )
+  );
+  Assert.AreEqual(
+    '/journey create faça uma calculadora básica',
+    LCommand
+  );
+  Assert.IsTrue(
+    TRadIAJourneyCatalog.TryInferCreateProject(
       'Create a new DUnitX project for the customer service',
       LCommand
     )

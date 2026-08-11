@@ -39,7 +39,7 @@ implementation
 
 uses
   Winapi.Windows, System.SysUtils, Vcl.Graphics, Vcl.Dialogs, System.Threading, RadIA.Provider.GithubCopilot,
-      Winapi.ShellAPI, ToolsAPI, RadIA.UI.Resources;
+      Winapi.ShellAPI, ToolsAPI, RadIA.Core.Version, RadIA.UI.Resources;
 
 {$R *.dfm}
 
@@ -94,6 +94,7 @@ var
   LColors: TRadIAThemeColors;
 begin
   inherited Create(AOwner);
+  Caption := RadIAVersionedCaption('GitHub Copilot Authentication');
   FCancelled := False;
   FAccessToken := '';
 

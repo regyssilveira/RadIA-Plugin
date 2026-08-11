@@ -25,6 +25,7 @@ uses
   Vcl.StdCtrls,
   RadIA.Core.ExtensionStudio,
   RadIA.Core.SkillPortability,
+  RadIA.Core.Version,
   RadIA.UI.ExtensionSigningForm,
   RadIA.UI.SkillPortabilityForm;
 
@@ -114,7 +115,7 @@ var
 begin
   inherited CreateNew(AOwner);
   FReservedCommands := Copy(AReservedCommands);
-  Caption := 'Rad IA - Addon Studio';
+  Caption := RadIAVersionedCaption('Rad IA - Addon Studio');
   Position := poOwnerFormCenter;
   BorderStyle := bsSizeable;
   ClientWidth := 980;

@@ -44,8 +44,9 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 
 ### Criação automática a partir da conversa
 
-Não é obrigatório conhecer `/journey create`. Quando não há projeto aberto, frases como **“crie uma
-calculadora VCL em D:\Projetos\Calculadora”** são convertidas automaticamente nessa jornada. O RadIA
+Não é obrigatório conhecer `/journey create`. Quando não há projeto aberto, frases como **“faça uma
+calculadora básica”** ou **“crie uma calculadora VCL em D:\Projetos\Calculadora”** são convertidas
+automaticamente nessa jornada. O RadIA
 extrai caminhos Windows absolutos, infere o nome pelo destino ou tipo da aplicação e assume Win32
 quando a plataforma não é informada. Somente dados realmente ausentes geram perguntas. O fluxo muda
 para execução nativa e mantém a aprovação visível no chat. Após a aprovação, o

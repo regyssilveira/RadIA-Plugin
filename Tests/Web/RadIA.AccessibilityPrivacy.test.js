@@ -25,6 +25,22 @@ const chatFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ChatFrame.pas'),
   'utf8'
 );
+const dockableForm = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'Integration', 'RadIA.OTA.DockableForm.pas'),
+  'utf8'
+);
+const configForm = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigForm.pas'),
+  'utf8'
+);
+const projectWizard = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ProjectWizard.pas'),
+  'utf8'
+);
+const versionUnit = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.Version.pas'),
+  'utf8'
+);
 
 test('web surfaces do not contact external origins during startup', () => {
   assert.doesNotMatch(chatHtml, /(?:src|href)="https?:\/\//i);
@@ -69,6 +85,13 @@ test('scrollable selector surfaces expose visible scrollbar affordances', () => 
   assert.match(chatCss, /::-webkit-scrollbar[\s\S]*width: 10px/u);
   assert.match(chatCss, /::-webkit-scrollbar-track[\s\S]*background: var\(--scrollbar-track\)/u);
   assert.match(chatCss, /::-webkit-scrollbar-thumb[\s\S]*min-height: 32px/u);
+});
+
+test('primary RadIA windows expose the package version in their captions', () => {
+  assert.match(versionUnit, /function RadIAVersionedCaption/u);
+  assert.match(dockableForm, /Result := RadIAVersionedCaption\(FCaption\)/u);
+  assert.match(configForm, /Caption := RadIAVersionedCaption\('Rad IA Configuration'\)/u);
+  assert.match(projectWizard, /Caption := RadIAVersionedCaption\('RadIA New Project'\)/u);
 });
 
 test('every static chat button provides contextual help', () => {

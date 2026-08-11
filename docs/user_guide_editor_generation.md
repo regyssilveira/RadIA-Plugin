@@ -87,10 +87,10 @@ Uma das ferramentas mais poderosas do Rad IA é a habilidade de estruturar e sal
 
 ### Como utilizar
 
-O fluxo funciona mesmo quando o Delphi foi aberto sem projeto. Um pedido natural como **“crie uma
-calculadora com operações básicas em VCL”** inicia automaticamente a jornada guiada de criação. O
-RadIA pergunta somente os dados ausentes — nome, pasta de destino e plataforma — antes de apresentar
-o plano para aprovação.
+O fluxo funciona mesmo quando o Delphi foi aberto sem projeto. Um pedido natural como **“faça uma
+calculadora básica”** ou **“crie uma calculadora com operações básicas em VCL”** inicia
+automaticamente a jornada guiada de criação. O RadIA pergunta somente os dados ausentes — nome,
+pasta de destino e plataforma — antes de apresentar o plano para aprovação.
 
 1. No chat lateral do Rad IA, solicite a criação de um projeto. Exemplo:
    > *"Gere um projeto de console que consuma uma API de clima e salve as informações em arquivos JSON locais."*
