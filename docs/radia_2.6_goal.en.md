@@ -28,9 +28,9 @@ All milestones belong to version 2.6.0 and are not intermediate public releases.
 
 | Milestone | Delivery | Status |
 |---|---|---|
-| M0 | Session, security, consent, and evidence contracts | Pending |
-| M1 | Safe inspection of windows and controls in the debugged application | Pending |
-| M2 | Safe and cancellable control interaction | Pending |
+| M0 | Session, security, consent, and evidence contracts | Completed |
+| M1 | Safe inspection of windows and controls in the debugged application | Completed |
+| M2 | Safe and cancellable control interaction | Completed |
 | M3 | Failure reproduction, diagnosis, repair, and revalidation | Pending |
 | M4 | Prompt-driven calculator with build, debug, UI test, and DUnitX | In progress; technical matrix proven |
 | M5 | Deeper semantic knowledge of Delphi projects | Pending |
@@ -65,6 +65,25 @@ complete natural-language prompt preserves the inferred destination, name, and p
 correct native journey, and reaches approval before any mutation. The RadIA suite passed 1,047 tests
 with no failures or leaks on all three matrix targets. End-to-end acceptance through the real
 conversation surface remains pending.
+
+The real smoke now also continues the application after the breakpoint, discovers the authorized
+window by its control structure, invokes `2`, `+`, `3`, and `=`, and confirms `5` in the display
+through a stable selector. The flow passed on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64,
+with 18 controls confined to the session, real consent, and clean shutdown. This matrix closes
+M0–M2 and adds functional debugger-driven UI evidence to M4.
+
+To repeat the scenario on one target, run:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.KnowledgeNotifierSmoke.ps1 `
+  -DelphiVersion "23.0" `
+  -ExerciseDebugger `
+  -ExerciseCalculatorRuntime `
+  -SkipBuildAndTests
+```
+
+Use `37.0` for Delphi 13 and add `-IDE64` for the 64-bit host.
 
 ## Final 2.6.0 gates
 

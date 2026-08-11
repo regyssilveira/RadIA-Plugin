@@ -8,6 +8,7 @@ param(
     [switch]$SkipBuildAndTests,
     [switch]$SkipTemplateBuild,
     [switch]$ExerciseDebugger,
+    [switch]$ExerciseCalculatorRuntime,
     [switch]$ExerciseCorrection,
     [switch]$ExerciseGit,
     [switch]$IDE64,
@@ -745,6 +746,22 @@ $bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
 if ($IDE64 -and $DelphiVersion -ne "37.0") {
     throw "IDE64 is supported only for Delphi 13 (37.0)."
 }
+
+function Test-RadIAFileExists {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    try {
+        return [IO.File]::Exists($Path)
+    } catch {
+        return $false
+    }
+}
+if ($ExerciseCalculatorRuntime -and -not $ExerciseDebugger) {
+    throw "ExerciseCalculatorRuntime requires ExerciseDebugger."
+}
 $rootDirectory = (
     Get-ItemProperty -Path $bdsRegistry -Name "RootDir"
 ).RootDir
@@ -1041,10 +1058,12 @@ try {
         ).Count -ne 1) {
             throw "The generated debug target has an unexpected run statement."
         }
-        $generatedProjectContent = $generatedProjectContent.Replace(
-            $runStatement,
-            "  Application.Terminate;`r`n" + $runStatement
-        )
+        if (-not $ExerciseCalculatorRuntime) {
+            $generatedProjectContent = $generatedProjectContent.Replace(
+                $runStatement,
+                "  Application.Terminate;`r`n" + $runStatement
+            )
+        }
         $formsUnit = "  Vcl.Forms,"
         if (-not $generatedProjectContent.Contains($formsUnit)) {
             throw "The generated debug target lacks the VCL Forms unit."
@@ -1356,12 +1375,169 @@ try {
         if ($timeline.events.Count -lt 1) {
             throw "The generated-project debug timeline was empty."
         }
-        Complete-RadIADebugSession `
-            -BridgePath $bridgePath `
-            -InstanceFile $instanceFile `
-            -IDEProcess $process `
-            -FileName $generatedFormSourcePath `
-            -LineNumber $generatedBreakpointLine
+        if ($ExerciseCalculatorRuntime) {
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RemoveBreakpoint" `
+                -Arguments @{
+                    fileName = $generatedFormSourcePath
+                    lineNumber = $generatedBreakpointLine
+                }
+            )
+            $continueResult = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "ContinueDebugging"
+            if (-not $continueResult.accepted) {
+                throw "The calculator debug session did not continue."
+            }
+            Wait-RadIACondition -TimeoutSeconds 45 -Condition {
+                try {
+                    $runtimeWindows = Invoke-RadIATool `
+                        -BridgePath $bridgePath `
+                        -InstanceFile $instanceFile `
+                        -Name "GetRuntimeWindows"
+                    $calculatorReady = $false
+                    foreach ($runtimeWindow in @($runtimeWindows.windows)) {
+                        $candidateTree = Invoke-RadIATool `
+                            -BridgePath $bridgePath `
+                            -InstanceFile $instanceFile `
+                            -Name "GetRuntimeControlTree" `
+                            -Arguments @{
+                                windowId = $runtimeWindow.windowId
+                            }
+                        if ($candidateTree.count -ge 18) {
+                            $calculatorReady = $true
+                            break
+                        }
+                    }
+                    $calculatorReady
+                } catch {
+                    $false
+                }
+            } -FailureMessage "The calculator window was not discovered."
+            $runtimeWindows = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetRuntimeWindows"
+            $calculatorWindow = $null
+            $controlTree = $null
+            foreach ($runtimeWindow in @($runtimeWindows.windows)) {
+                $candidateTree = Invoke-RadIATool `
+                    -BridgePath $bridgePath `
+                    -InstanceFile $instanceFile `
+                    -Name "GetRuntimeControlTree" `
+                    -Arguments @{
+                        windowId = $runtimeWindow.windowId
+                    }
+                if ($candidateTree.count -ge 18) {
+                    $calculatorWindow = $runtimeWindow
+                    $controlTree = $candidateTree
+                    break
+                }
+            }
+            if (-not $calculatorWindow -or -not $controlTree) {
+                throw "The calculator control tree was not discovered."
+            }
+            $requiredControls = @("2", "+", "3", "=")
+            $controlsByText = @{}
+            foreach ($controlText in $requiredControls) {
+                $control = @(
+                    $controlTree.controls |
+                        Where-Object {
+                            $_.className -eq "TButton" -and
+                            $_.text -eq $controlText
+                        }
+                ) | Select-Object -First 1
+                if (-not $control) {
+                    $controlDetails = @($controlTree.controls) |
+                        Select-Object className, text, path |
+                        ConvertTo-Json -Depth 4 -Compress
+                    throw (
+                        "Calculator control '$controlText' was not discovered: " +
+                        $controlDetails
+                    )
+                }
+                $controlsByText[$controlText] = $control
+            }
+            $displayControl = @(
+                $controlTree.controls |
+                    Where-Object {
+                        $_.className -eq "TEdit" -and
+                        $_.text -eq "0"
+                    }
+            ) | Select-Object -First 1
+            if (-not $displayControl) {
+                throw "The calculator display was not discovered."
+            }
+            $scenarioActions = @()
+            foreach ($buttonText in @("2", "+", "3", "=")) {
+                $scenarioActions += @{
+                    kind = "invoke"
+                    targetId = $controlsByText[$buttonText].controlId
+                    timeoutMs = 1000
+                }
+            }
+            $scenarioActions += @{
+                kind = "wait"
+                timeoutMs = 100
+            }
+            $scenarioActions += @{
+                kind = "assert"
+                selector = @{
+                    className = "TEdit"
+                    text = "5"
+                    parentPath = $displayControl.path
+                }
+                value = "5"
+                timeoutMs = 1000
+            }
+            $scenarioPreview = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "PrepareRuntimeScenario" `
+                -Arguments @{
+                    name = "Validate calculator primary scenario"
+                    limits = @{
+                        maxActions = 6
+                        maxDurationMs = 15000
+                        maxRepetitions = 1
+                    }
+                    actions = $scenarioActions
+                }
+            $scenarioResult = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RunRuntimeScenario" `
+                -Arguments @{
+                    previewId = $scenarioPreview.previewId
+                }
+            if ($scenarioResult.state -ne "succeeded") {
+                throw (
+                    "The calculator runtime scenario failed: " +
+                    ($scenarioResult | ConvertTo-Json -Depth 8 -Compress)
+                )
+            }
+            $stopResult = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "StopDebugging"
+            if (-not $stopResult.accepted) {
+                throw "The calculator debug session did not stop."
+            }
+        } else {
+            Complete-RadIADebugSession `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -FileName $generatedFormSourcePath `
+                -LineNumber $generatedBreakpointLine
+        }
         $debugPassed = $true
         $debugSummary = [PSCustomObject]@{
             target = "generated-vcl-$($idePlatform.ToLowerInvariant())"
@@ -1369,6 +1545,12 @@ try {
             callStackAccessible = $callStack.accessible
             callStackFrameCount = $callStack.frames.Count
             timelineEventCount = $timeline.events.Count
+            runtimeScenarioPassed = $ExerciseCalculatorRuntime.IsPresent
+            runtimeControlCount = if ($ExerciseCalculatorRuntime) {
+                $controlTree.count
+            } else {
+                0
+            }
         }
     }
 
@@ -1773,11 +1955,11 @@ try {
         }
     }
     $cleanupDeadline = [DateTime]::UtcNow.AddSeconds(5)
-    while ((Test-Path -LiteralPath $instanceFile) -and
+    while ((Test-RadIAFileExists -Path $instanceFile) -and
         [DateTime]::UtcNow -lt $cleanupDeadline) {
         Start-Sleep -Milliseconds 100
     }
-    if (Test-Path -LiteralPath $instanceFile) {
+    if (Test-RadIAFileExists -Path $instanceFile) {
         if ($journeySucceeded) {
             throw "The MCP discovery remained after the smoke test."
         }

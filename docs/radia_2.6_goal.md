@@ -28,9 +28,9 @@ Os marcos abaixo pertencem à mesma versão 2.6.0; não representam releases int
 
 | Marco | Entrega | Estado |
 |---|---|---|
-| M0 | Contratos de sessão, segurança, consentimento e evidência | Pendente |
-| M1 | Leitura segura de janelas e controles da aplicação depurada | Pendente |
-| M2 | Interação segura e cancelável com controles | Pendente |
+| M0 | Contratos de sessão, segurança, consentimento e evidência | Concluído |
+| M1 | Leitura segura de janelas e controles da aplicação depurada | Concluído |
+| M2 | Interação segura e cancelável com controles | Concluído |
 | M3 | Reprodução, diagnóstico, correção e revalidação de falhas | Pendente |
 | M4 | Calculadora por prompt com build, debug, teste visual e DUnitX | Em execução; matriz técnica comprovada |
 | M5 | Conhecimento semântico aprofundado do projeto Delphi | Pendente |
@@ -64,6 +64,25 @@ O teste do presenter comprova separadamente que um prompt completo em linguagem 
 destino, nome e plataforma inferidos, inicia a jornada nativa correta e chega ao estado de aprovação
 antes de qualquer mutação. A suíte do RadIA passou com 1.047 testes, sem falhas nem vazamentos, nos
 três alvos da matriz. O aceite ponta a ponta pela superfície real de conversa continua pendente.
+
+O smoke real agora também continua a aplicação depois do breakpoint, descobre a janela autorizada
+pela estrutura de controles, aciona os botões `2`, `+`, `3` e `=`, e confirma o resultado `5` no
+visor por um seletor estável. O fluxo passou no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64,
+com 18 controles confinados à sessão, consentimento real e shutdown limpo. Essa matriz fecha M0–M2
+e adiciona ao M4 evidência funcional da interface executada sob o depurador.
+
+Para repetir o cenário em um alvo, execute:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.KnowledgeNotifierSmoke.ps1 `
+  -DelphiVersion "23.0" `
+  -ExerciseDebugger `
+  -ExerciseCalculatorRuntime `
+  -SkipBuildAndTests
+```
+
+Use `37.0` no Delphi 13 e acrescente `-IDE64` para o host de 64 bits.
 
 ## Gates finais da 2.6.0
 
