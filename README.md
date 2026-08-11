@@ -66,7 +66,7 @@ Delphi 11 não faz parte da matriz atual.
 | Configurações por escopo | Provider, modelo, executor e limites por projeto, sessão ou próxima solicitação | [Configurações por escopo](docs/hierarchical_settings.md) |
 | Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/shared_journey_context.md) |
 | Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
-| Ghost Text/FIM | Completar no cursor, comparar até três alternativas e usar fallback diagnosticável | [Assistência inline e FIM](docs/inline_completion.md) |
+| Ghost Text/FIM | Completar no cursor, comparar alternativas e inspecionar o contexto semântico compartilhado | [Assistência inline e FIM](docs/inline_completion.md) |
 | Revisão por bloco | Aceitar, rejeitar, editar e aplicar mudanças pelo gutter | [Revisão por bloco](docs/block_reviews.md) |
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
 | DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/user_guide_dext_journeys.md) |

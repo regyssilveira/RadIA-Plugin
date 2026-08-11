@@ -55,6 +55,8 @@ Pelo chat e pelo menu contextual do editor, o RadIA pode:
 - apresentar mudanças em Smart Diff e publicar revisões inline;
 - sugerir Ghost Text por FIM dedicado no Ollama e LM Studio, com fallback explícito nos demais
   providers e diagnóstico de rota sem conteúdo do código;
+- compartilhar unit, símbolo vigente, imports e declarações próximas entre Ghost Text, ações
+  contextuais e agente, com inspeção somente leitura pelo menu do editor;
 - preparar, aplicar e reverter correções revisadas.
 
 Quando uma ação compatível não recebe seleção, ela pode usar a unit ativa como contexto.

@@ -106,6 +106,7 @@ v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against dupli
 | **Inline and block review** | Editor | Gutter markers to accept, reject, edit, explain, navigate, and transactionally apply single- or multi-file changes. | ✅ Completed |
 | **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
 | **Ghost Text Alternatives** | Editor | Up to three suggestions with visual navigation and configurable shortcuts without changing the buffer before acceptance. | ✅ Completed |
+| **Semantic editor context** | Editor | Unit, symbol, imports, and nearby declarations shared by Ghost Text, actions, and agent, with read-only inspection. | ✅ Completed |
 | **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
 | **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed (v2.4.0) |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |

@@ -57,7 +57,7 @@ Delphi 11 is outside the current support matrix.
 | Scoped settings | Provider, model, executor, and limits by project, session, or next request | [Scoped settings](docs/hierarchical_settings.en.md) |
 | Shared context | Continue one journey across chat, terminal, and editor without copying history | [Shared context](docs/shared_journey_context.en.md) |
 | Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/user_guide_editor_generation.en.md) |
-| Ghost Text/FIM | Complete at the cursor, compare up to three alternatives, and diagnose fallback | [Inline assistance and FIM](docs/inline_completion.en.md) |
+| Ghost Text/FIM | Complete at the cursor, compare alternatives, and inspect shared semantic context | [Inline assistance and FIM](docs/inline_completion.en.md) |
 | Block review | Accept, reject, edit, explain, and apply reviewed changes from the gutter | [Block-level review](docs/block_reviews.en.md) |
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/project_wizard.en.md) |
 | DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/user_guide_dext_journeys.en.md) |
