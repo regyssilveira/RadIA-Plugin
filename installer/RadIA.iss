@@ -53,16 +53,10 @@ Source: "{#PackageRoot37Win32}\*"; DestDir: "{app}\Packages\37.0-Win32"; \
 Source: "{#PackageRoot37Win64}\*"; DestDir: "{app}\Packages\37.0-Win64"; \
   Flags: ignoreversion recursesubdirs createallsubdirs; Components: d13win64
 
-[Run]
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
-  Parameters: "{code:GetD12InstallParameters}"; \
-  StatusMsg: "Installing RadIA for Delphi 12..."; Flags: runhidden waituntilterminated; Components: d12
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
-  Parameters: "{code:GetD13Win32InstallParameters}"; \
-  StatusMsg: "Installing RadIA for Delphi 13 Win32..."; Flags: runhidden waituntilterminated; Components: d13win32
-Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
-  Parameters: "{code:GetD13Win64InstallParameters}"; \
-  StatusMsg: "Installing RadIA for Delphi 13 IDE64..."; Flags: runhidden waituntilterminated; Components: d13win64
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\Packages\23.0-Win32"; Components: d12
+Type: filesandordirs; Name: "{app}\Packages\37.0-Win32"; Components: d13win32
+Type: filesandordirs; Name: "{app}\Packages\37.0-Win64"; Components: d13win64
 
 [UninstallRun]
 Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
@@ -126,6 +120,46 @@ end;
 function GetD13Win64UninstallParameters(Param: String): String;
 begin
   Result := BuildPackageParameters('37.0-Win64', '37.0', 'Uninstall', True);
+end;
+
+procedure ExecutePackageInstaller(
+  const Parameters: String;
+  const Description: String
+);
+var
+  ResultCode: Integer;
+begin
+  WizardForm.StatusLabel.Caption := Description;
+  if not Exec(
+    ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    Parameters,
+    '',
+    SW_HIDE,
+    ewWaitUntilTerminated,
+    ResultCode
+  ) or (ResultCode <> 0) then
+    RaiseException(Description + ' failed with exit code ' + IntToStr(ResultCode) + '.');
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep <> ssPostInstall then
+    Exit;
+  if WizardIsComponentSelected('d12') then
+    ExecutePackageInstaller(
+      GetD12InstallParameters(''),
+      'Installing RadIA for Delphi 12'
+    );
+  if WizardIsComponentSelected('d13win32') then
+    ExecutePackageInstaller(
+      GetD13Win32InstallParameters(''),
+      'Installing RadIA for Delphi 13 Win32'
+    );
+  if WizardIsComponentSelected('d13win64') then
+    ExecutePackageInstaller(
+      GetD13Win64InstallParameters(''),
+      'Installing RadIA for Delphi 13 IDE64'
+    );
 end;
 
 function IsDelphiInstalled(const Version: String; const IDE64: Boolean): Boolean;
