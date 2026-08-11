@@ -1,6 +1,6 @@
 # Release audit 2.6.0
 
-> **Status:** in progress. No pending item may be interpreted as approved.
+> **Status:** approved on August 11, 2026, from a clean tree.
 
 ## Functional gates
 
@@ -13,6 +13,8 @@
 - [x] The documentation catalog matches all 132 tools registered at runtime.
 - [x] Final acceptance was repeated on the definitive 2.6.0 code; the final packages are bound to
   commit `d3d8187` with `sourceDirty=false`.
+- [x] The definitive journey was repeated after the documentation update at commit `2e561dc`, also
+  with `sourceDirty=false`, on all three supported targets.
 
 ## Regression and quality gates
 

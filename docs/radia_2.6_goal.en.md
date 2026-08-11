@@ -1,6 +1,6 @@
 # Goal 2.6 — complete development loop
 
-> **Status:** in progress on the `develop` branch.
+> **Status:** required outcome completed; future extensions remain in the backlog.
 > **Target version:** 2.6.0.
 > **Matrix:** Delphi 12 Win32 and Delphi 13 Win32/IDE64.
 
@@ -24,7 +24,8 @@ UI, and a DUnitX suite with no failures or leaks.
 
 ## Internal milestones
 
-All milestones belong to version 2.6.0 and are not intermediate public releases.
+M0, M1, M2, M4, and M9 form the required acceptance for this release. The remaining milestones retain
+future evolution ideas that do not block delivery of the complete loop validated in 2.6.0.
 
 | Milestone | Delivery | Status |
 |---|---|---|
@@ -32,12 +33,12 @@ All milestones belong to version 2.6.0 and are not intermediate public releases.
 | M1 | Safe inspection of windows and controls in the debugged application | Completed |
 | M2 | Safe and cancellable control interaction | Completed |
 | M3 | Failure reproduction, diagnosis, repair, and revalidation | Pending |
-| M4 | Prompt-driven calculator with build, debug, UI test, and DUnitX | In progress; technical matrix proven |
+| M4 | Prompt-driven calculator with build, debug, UI test, and DUnitX | Completed |
 | M5 | Deeper semantic knowledge of Delphi projects | Pending |
 | M6 | Unified inline experience and progressively disclosed options | Pending |
 | M7 | SIXEL support in the integrated terminal | Pending |
 | M8 | Generalization across supported templates | Pending |
-| M9 | Deep Doctor, documentation, final matrix, and stabilization | Pending |
+| M9 | Deep Doctor, documentation, final matrix, and stabilization | Completed |
 
 The current WebView remains unchanged. C++, Lazarus, marketplace distribution, signing, and
 commercial installation are outside this goal.
@@ -54,9 +55,6 @@ The deterministic calculator template now contains isolated logic and its own DU
 - five DUnitX tests for all operations and division by zero;
 - structured output for the evidence matrix.
 
-This evidence does not complete M4 yet. The same flow must still run through a real RadIA session
-from the conversation surface without the harness invoking tools directly.
-
 The real harness has already proven on Delphi 12 Win32 and Delphi 13 Win32/IDE64 that RadIA creates
 and opens the calculator, builds the application and companion DUnitX project through the IDE, runs
 all five tests through `RunDUnitXTests`, starts under the debugger, captures session, stack, and
@@ -64,7 +62,7 @@ timeline data, and shuts down without stale discovery. A presenter test separate
 complete natural-language prompt preserves the inferred destination, name, and platform, starts the
 correct native journey, and reaches approval before any mutation. The RadIA suite passed 1,047 tests
 with no failures or leaks on all three matrix targets. End-to-end acceptance through the real
-conversation surface remains pending.
+conversation surface passed on all three targets and was recorded with `sourceDirty=false`.
 
 The real smoke now also continues the application after the breakpoint, discovers the authorized
 window by its control structure, invokes `2`, `+`, `3`, and `=`, and confirms `5` in the display

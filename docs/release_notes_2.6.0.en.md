@@ -1,6 +1,6 @@
 # Release notes — RadIA 2.6.0
 
-> **Status:** release candidate under validation on `develop`; not published yet.
+> **Status:** approved for publication after all gates passed.
 
 RadIA 2.6.0 closes the loop for creating a Delphi application from natural language. The acceptance
 scenario creates a VCL calculator with no open project, preserves destination, name, and platform,
@@ -28,7 +28,6 @@ validates the UI under the IDE debugger.
 - Delphi 13, IDE64;
 - Win32 generated projects in the acceptance scenario.
 
-## Before publishing
+## Release validation
 
-The candidate will be released only after every gate in the
-[2.6.0 audit](release_audit_2.6.0.en.md) passes on a clean tree.
+Every gate in the [2.6.0 audit](release_audit_2.6.0.en.md) passed on a clean tree.

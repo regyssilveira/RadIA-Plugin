@@ -1,6 +1,6 @@
 # Auditoria da release 2.6.0
 
-> **Estado:** em andamento. Nenhum item pendente pode ser interpretado como aprovado.
+> **Estado:** aprovado em 11 de agosto de 2026 sobre uma árvore limpa.
 
 ## Gates funcionais
 
@@ -13,6 +13,8 @@
 - [x] Catálogo documental corresponde às 132 ferramentas registradas.
 - [x] Aceite final repetido sobre o código definitivo da 2.6.0; os pacotes finais estão vinculados ao
   commit `d3d8187` com `sourceDirty=false`.
+- [x] Jornada definitiva repetida após a atualização documental no commit `2e561dc`, também com
+  `sourceDirty=false`, nos três alvos suportados.
 
 ## Gates de regressão e qualidade
 

@@ -1,6 +1,6 @@
 # Notas de release — RadIA 2.6.0
 
-> **Estado:** candidata em validação na branch `develop`; ainda não publicada.
+> **Estado:** aprovada para publicação após a conclusão de todos os gates.
 
 O RadIA 2.6.0 fecha o ciclo de criação de uma aplicação Delphi a partir de linguagem natural. O
 cenário de aceite cria uma calculadora VCL sem projeto aberto, preserva destino, nome e plataforma,
@@ -28,7 +28,6 @@ valida a interface sob o depurador da IDE.
 - Delphi 13, IDE64;
 - projetos gerados para Win32 no cenário de aceite.
 
-## Antes de publicar
+## Validação da release
 
-A candidata somente será liberada depois de todos os gates da
-[auditoria 2.6.0](release_audit_2.6.0.md) estarem aprovados sobre uma árvore limpa.
+Todos os gates da [auditoria 2.6.0](release_audit_2.6.0.md) foram aprovados sobre uma árvore limpa.

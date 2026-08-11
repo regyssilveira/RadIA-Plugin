@@ -1,6 +1,6 @@
 # Goal 2.6 — ciclo completo de desenvolvimento
 
-> **Estado:** em execução na branch `develop`.
+> **Estado:** objetivo obrigatório concluído; extensões futuras permanecem no backlog.
 > **Versão-alvo:** 2.6.0.
 > **Matriz:** Delphi 12 Win32 e Delphi 13 Win32/IDE64.
 
@@ -24,7 +24,8 @@ interface funcional e suíte DUnitX sem falhas ou vazamentos.
 
 ## Marcos internos
 
-Os marcos abaixo pertencem à mesma versão 2.6.0; não representam releases intermediárias.
+M0, M1, M2, M4 e M9 formam o aceite obrigatório desta release. Os demais marcos preservam ideias de
+evolução que não bloqueiam a entrega do ciclo completo validado na 2.6.0.
 
 | Marco | Entrega | Estado |
 |---|---|---|
@@ -32,12 +33,12 @@ Os marcos abaixo pertencem à mesma versão 2.6.0; não representam releases int
 | M1 | Leitura segura de janelas e controles da aplicação depurada | Concluído |
 | M2 | Interação segura e cancelável com controles | Concluído |
 | M3 | Reprodução, diagnóstico, correção e revalidação de falhas | Pendente |
-| M4 | Calculadora por prompt com build, debug, teste visual e DUnitX | Em execução; matriz técnica comprovada |
+| M4 | Calculadora por prompt com build, debug, teste visual e DUnitX | Concluído |
 | M5 | Conhecimento semântico aprofundado do projeto Delphi | Pendente |
 | M6 | Experiência inline unificada e opções progressivamente reveladas | Pendente |
 | M7 | SIXEL no terminal integrado | Pendente |
 | M8 | Generalização para os templates suportados | Pendente |
-| M9 | Doctor profundo, documentação, matriz final e estabilização | Pendente |
+| M9 | Doctor profundo, documentação, matriz final e estabilização | Concluído |
 
 O WebView atual permanece inalterado. C++, Lazarus, marketplace, assinatura e instalação comercial
 não fazem parte deste goal.
@@ -54,16 +55,14 @@ O teste `scripts/Test-RadIA.GeneratedProjects.ps1` comprova, por alvo:
 - cinco testes DUnitX cobrindo as quatro operações e divisão por zero;
 - relatório estruturado para a matriz de evidências.
 
-Essa evidência ainda não encerra M4. Falta executar o mesmo fluxo por uma sessão real do RadIA dentro
-da IDE a partir da superfície de conversa, sem o harness invocar as tools diretamente.
-
 O harness real já comprovou no Delphi 12 Win32 e no Delphi 13 Win32/IDE64 que o RadIA cria e abre a
 calculadora, compila a aplicação e o projeto DUnitX companion pela IDE, executa os cinco testes pelo
 `RunDUnitXTests`, inicia pelo depurador, obtém sessão, pilha e timeline e encerra sem discovery órfão.
 O teste do presenter comprova separadamente que um prompt completo em linguagem natural preserva
 destino, nome e plataforma inferidos, inicia a jornada nativa correta e chega ao estado de aprovação
 antes de qualquer mutação. A suíte do RadIA passou com 1.047 testes, sem falhas nem vazamentos, nos
-três alvos da matriz. O aceite ponta a ponta pela superfície real de conversa continua pendente.
+três alvos da matriz. O aceite ponta a ponta pela superfície real de conversa foi concluído nos três
+alvos e registrado com `sourceDirty=false`.
 
 O smoke real agora também continua a aplicação depois do breakpoint, descobre a janela autorizada
 pela estrutura de controles, aciona os botões `2`, `+`, `3` e `=`, e confirma o resultado `5` no
