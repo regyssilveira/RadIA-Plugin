@@ -596,7 +596,7 @@ begin
   LContext := TRadIAEditorContextAnalyzer.Analyze(LSource, 12);
   Assert.AreEqual('Demo.Unit1', LContext.UnitName);
   Assert.AreEqual('TDemoForm.Calculate', LContext.CurrentSymbol);
-  Assert.AreEqual(2, Integer(Length(LContext.Imports)));
+  Assert.AreEqual(2, Length(LContext.Imports));
   Assert.Contains(LContext.ToPromptContext, 'System.SysUtils');
   Assert.Contains(LContext.ToPromptContext, 'Calculate');
 end;
@@ -611,7 +611,7 @@ begin
   );
   Assert.AreEqual('EmptyUnit', LContext.UnitName);
   Assert.AreEqual('', LContext.CurrentSymbol);
-  Assert.AreEqual(0, Integer(Length(LContext.NearbySymbols)));
+  Assert.AreEqual(0, Length(LContext.NearbySymbols));
 end;
 
 procedure TRadIAInlineCompletionTests.LimitsSemanticImportsAndNearbySymbols;
@@ -629,8 +629,8 @@ begin
     'procedure Second; begin end;' + sLineBreak +
     'end.';
   LContext := TRadIAEditorContextAnalyzer.Analyze(LSource, 8, 2, 1);
-  Assert.AreEqual(2, Integer(Length(LContext.Imports)));
-  Assert.AreEqual(1, Integer(Length(LContext.NearbySymbols)));
+  Assert.AreEqual(2, Length(LContext.Imports));
+  Assert.AreEqual(1, Length(LContext.NearbySymbols));
 end;
 
 procedure TRadIAInlineCompletionTests.TearDown;

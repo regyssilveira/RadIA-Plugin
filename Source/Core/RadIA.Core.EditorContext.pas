@@ -20,7 +20,6 @@ type
     );
     function ToPromptContext: string;
     property CurrentSymbol: string read FCurrentSymbol;
-    property CurrentSymbolKind: string read FCurrentSymbolKind;
     property Imports: TArray<string> read FImports;
     property NearbySymbols: TArray<string> read FNearbySymbols;
     property UnitName: string read FUnitName;
@@ -28,11 +27,21 @@ type
 
   TRadIAEditorContextAnalyzer = class
   private
+    class procedure AddImports(
+      const AUsesText: string;
+      const AMaxImports: Integer;
+      var AItems: TArray<string>
+    ); static;
     class function ExtractImports(
       const AContent: string;
       const AMaxImports: Integer
     ): TArray<string>; static;
     class function ExtractUnitName(const AContent: string): string; static;
+    class function TryCompleteUsesClause(
+      const ALine: string;
+      var ACollecting: Boolean;
+      var AUsesText: string
+    ): Boolean; static;
     class function NearbySymbols(
       const AContent: string;
       const ACursorLine: Integer;
@@ -72,6 +81,38 @@ begin
   FCurrentSymbolKind := ACurrentSymbolKind;
   FImports := AImports;
   FNearbySymbols := ANearbySymbols;
+end;
+
+class procedure TRadIAEditorContextAnalyzer.AddImports(
+  const AUsesText: string;
+  const AMaxImports: Integer;
+  var AItems: TArray<string>
+);
+var
+  LIndex: Integer;
+  LItem: string;
+  LItems: TList<string>;
+  LPart: string;
+begin
+  LItems := TList<string>.Create;
+  try
+    for LItem in AItems do
+      LItems.Add(LItem);
+    for LItem in AUsesText.Split([',']) do
+    begin
+      LPart := Trim(LItem);
+      LIndex := Pos(' in ', LowerCase(LPart));
+      if LIndex > 0 then
+        LPart := Trim(Copy(LPart, 1, LIndex - 1));
+      if (LPart <> '') and (LItems.IndexOf(LPart) < 0) then
+        LItems.Add(LPart);
+      if LItems.Count >= AMaxImports then
+        Break;
+    end;
+    AItems := LItems.ToArray;
+  finally
+    LItems.Free;
+  end;
 end;
 
 function TRadIAEditorSemanticContext.ToPromptContext: string;
@@ -120,18 +161,13 @@ class function TRadIAEditorContextAnalyzer.ExtractImports(
 ): TArray<string>;
 var
   LCollecting: Boolean;
-  LIndex: Integer;
-  LItem: string;
-  LItems: TList<string>;
+  LItems: TArray<string>;
   LLine: string;
   LLines: TStringList;
-  LPart: string;
-  LParts: TArray<string>;
   LUsesText: string;
 begin
   if AMaxImports <= 0 then
     Exit(nil);
-  LItems := TList<string>.Create;
   LLines := TStringList.Create;
   try
     LLines.Text := AContent;
@@ -139,41 +175,43 @@ begin
     LUsesText := '';
     for LLine in LLines do
     begin
-      LPart := Trim(LLine);
-      if not LCollecting and
-        (SameText(LPart, 'uses') or StartsText('uses ', LPart)) then
-      begin
-        LCollecting := True;
-        Delete(LPart, 1, Length('uses'));
-      end;
-      if not LCollecting then
+      if not TryCompleteUsesClause(LLine, LCollecting, LUsesText) then
         Continue;
-      LUsesText := LUsesText + ' ' + LPart;
-      if Pos(';', LPart) = 0 then
-        Continue;
-      LUsesText := Copy(LUsesText, 1, Pos(';', LUsesText) - 1);
-      LParts := LUsesText.Split([',']);
-      for LItem in LParts do
-      begin
-        LPart := Trim(LItem);
-        LIndex := Pos(' in ', LowerCase(LPart));
-        if LIndex > 0 then
-          LPart := Trim(Copy(LPart, 1, LIndex - 1));
-        if (LPart <> '') and (LItems.IndexOf(LPart) < 0) then
-          LItems.Add(LPart);
-        if LItems.Count >= AMaxImports then
-          Break;
-      end;
+      AddImports(LUsesText, AMaxImports, LItems);
       LCollecting := False;
       LUsesText := '';
-      if LItems.Count >= AMaxImports then
+      if Length(LItems) >= AMaxImports then
         Break;
     end;
-    Result := LItems.ToArray;
+    Result := LItems;
   finally
     LLines.Free;
-    LItems.Free;
   end;
+end;
+
+class function TRadIAEditorContextAnalyzer.TryCompleteUsesClause(
+  const ALine: string;
+  var ACollecting: Boolean;
+  var AUsesText: string
+): Boolean;
+var
+  LPart: string;
+  LTerminator: Integer;
+begin
+  LPart := Trim(ALine);
+  if not ACollecting and
+    (SameText(LPart, 'uses') or StartsText('uses ', LPart)) then
+  begin
+    ACollecting := True;
+    Delete(LPart, 1, Length('uses'));
+  end;
+  if not ACollecting then
+    Exit(False);
+  AUsesText := AUsesText + ' ' + LPart;
+  LTerminator := Pos(';', AUsesText);
+  Result := LTerminator > 0;
+  if Result then
+    AUsesText := Copy(AUsesText, 1, LTerminator - 1);
 end;
 
 class function TRadIAEditorContextAnalyzer.ExtractUnitName(
