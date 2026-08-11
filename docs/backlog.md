@@ -29,6 +29,7 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
 | **Goal — Portabilidade de skills e terminal de alta fidelidade** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.4.0 |
 | **Patch 2.6.2 — Usabilidade do chat e criação de projetos** | ✅ Concluído | 🟢 Baixa | ⭐⭐⭐⭐ Alta | v2.6.2 |
 | **Fechamento funcional determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
+| **Contexto Semântico Compartilhado do Editor** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v2.7.0 |
 | **Baseline e Catálogo Runtime Verificável** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | v1.0.x |
 | **Agent Runtime Nativo e Observável** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.1.0 |
 | **New Project Wizard Determinístico** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v1.2.0 |
@@ -52,7 +53,7 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
 | **Gerador de Mocks para Testes Unitários** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Smart Multi-Unit Trace Resolver** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Sem versão comprometida |
 | **MadExcept / EurekaLog Context Extractor** | 🔀 Fundir com diagnóstico de traces | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Sem versão comprometida |
-| **Gerador OpenAPI/Swagger para projetos existentes** | 🟨 Parcial; novos projetos DEXT atendidos | 🟡 Média | ⭐⭐⭐⭐ Alta | Parcial em v2.2.2; residual não comprometido |
+| **Gerador OpenAPI/Swagger para projetos existentes** | 🟨 Parcial; novos projetos DEXT atendidos | 🟡 Média | ⭐⭐⭐⭐ Alta | Parcial em v2.2.2; restante sem versão comprometida |
 | **Análise Semântica Bidirecional (DFM vs PAS)** | 🟨 Parcial; mutações preservam consistência | 🟡 Média | ⭐⭐⭐⭐ Alta | Residual sem versão comprometida |
 | **Assistente de Migração (Smart Migrate)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Painel de Gerenciamento do Cache** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Sem versão comprometida |
@@ -63,6 +64,27 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
 | **Autocompletar Inline (Ghost Text)** | ✅ Concluído | 🔴 Alta | ⭐⭐⭐⭐⭐ Crítica | v2.0.0 |
 | **Geração de Docs de Projeto (API.md)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Sem versão comprometida |
 | **Suporte Nativo macOS/Linux (Lazarus)** | 🚫 Descartado | 🔴 Alta | 🟢 Baixa | Fora do escopo |
+
+---
+
+## Backlog ativo canônico
+
+Revisado em **11 de agosto de 2026** contra o código da versão 2.7.0. Nenhum item abaixo possui
+versão prometida; uma versão-alvo só deve ser preenchida quando houver escopo e critérios de aceite
+aprovados.
+
+| Grupo | Itens ainda abertos | Estado verificável atual |
+| :--- | :--- | :--- |
+| Assistência de código | revisão automática ao salvar; Clean Uses; gerador de mocks | Não há implementação dedicada registrada no código. |
+| Diagnóstico entre units | trace multiarquivo e ingestão de MadExcept/EurekaLog | O comando de stack trace existe; correlação especializada e importadores ainda não. |
+| APIs existentes | OpenAPI/Swagger para projetos já criados | Swagger está disponível na criação DEXT; retrofit permanece aberto. |
+| Consistência visual | análise semântica bidirecional DFM/PAS | Mutações atuais preservam consistência, mas não existe auditor completo. |
+| Modernização | Smart Migrate; BDE/ADO/dbExpress para DEXT/FireDAC; decomposição de forms | Oportunidades sem jornada dedicada implementada. |
+| Operação | painel de cache; assistente de threads/PPL | Infraestrutura existe parcialmente; as experiências guiadas permanecem abertas. |
+| Produtividade | wizard de i18n; geração de `API.md` | Sem wizard ou gerador dedicado no catálogo atual. |
+
+O suporte a Lazarus permanece explicitamente fora do escopo. Itens concluídos e versões antigas
+continuam abaixo apenas como histórico; não devem ser reabertos por mudança de numeração.
 
 ---
 
@@ -113,7 +135,7 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
     *   M3 validado em IDE real: aprovação, pausa, checkpoint persistido, retomada em nova instância
         e conclusão com `GetIDEState` passaram no Delphi 11, 12, 13 Win32 e Delphi 13 IDE64.
     *   M4–M6: simplificar extensões, conhecimento semântico e instalação guiada.
-    *   M4 em execução: manifestos `*.radia.json` adicionam comandos de chat com schema versionado,
+    *   M4 concluído: manifestos `*.radia.json` adicionam comandos de chat com schema versionado,
         permissão mínima, validação atômica, diagnóstico e recarga sem reiniciar a IDE.
     *   M4 entregue nesta etapa: **Tools > Rad IA Extensions...** instala, atualiza, habilita,
         desabilita, diagnostica e remove manifestos; escrita atômica e rollback preservam a versão
@@ -134,7 +156,7 @@ determinístico; novos itens exigem uma baseline posterior formal, sem reabrir r
         cadeias e rollback do catálogo quando o target ou o registro é inválido.
     *   M4 entregue nesta etapa: schema 5 oferece workflows auditados de até 16 tools internas,
         sem shell arbitrário, com risco máximo herdado, limites, fail-fast e policy por etapa.
-    *   Expansão M4 implementada no branch atual: schema 6 e envelope `.radiaext` v3 transportam
+    *   Expansão M4 concluída: schema 6 e envelope `.radiaext` v3 transportam
         referências, conhecimento, templates e assets; Addon Studio testa, instala, exporta e assina
         o conjunto, com substituição limpa, remoção e rollback de manifesto e recursos.
     *   M4 validado em IDE real: hot-load, registro compartilhado e execução auditada de duas

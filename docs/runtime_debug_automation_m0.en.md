@@ -1,6 +1,6 @@
 # M0 — Runtime automation baseline and contracts
 
-> **Status:** in progress.
+> **Historical status:** completed and accepted as part of version 2.1.0.
 > **Goal:** [Autonomous runtime failure reproduction](runtime_debug_automation_plan.en.md).
 
 ## Implemented deliveries

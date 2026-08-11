@@ -1,6 +1,6 @@
 # M0 — Baseline e contratos da automação runtime
 
-> **Estado:** em andamento.
+> **Estado histórico:** concluído e aceito como parte da versão 2.1.0.
 > **Goal:** [Reprodução autônoma de falhas runtime](runtime_debug_automation_plan.md).
 
 ## Entregas implementadas

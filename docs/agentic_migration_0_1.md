@@ -8,7 +8,7 @@
 
 ## Compatibilidade
 
-A evolução mantém suporte ao Delphi 11, Delphi 12 e Delphi 13. No Delphi 13 são produzidos pacotes
+A linha 1.x mantinha suporte ao Delphi 11, Delphi 12 e Delphi 13. No Delphi 13 eram produzidos pacotes
 separados para IDE Win32 e IDE64. Não carregue uma BPL Win32 no `bin64\bds.exe`, nem uma BPL Win64
 na IDE Win32.
 

@@ -668,6 +668,63 @@ test('feature catalog exposes every current experience-expansion milestone', () 
   englishFeatures.forEach(feature => assert.ok(english.includes(feature), feature));
 });
 
+test('current backlog separates active work from historical deliveries', () => {
+  const portuguese = fs.readFileSync(path.join(documentationRoot, 'backlog.md'), 'utf8');
+  const english = fs.readFileSync(path.join(documentationRoot, 'backlog.en.md'), 'utf8');
+  const rowPattern = /^\| \*\*/gmu;
+
+  assert.match(portuguese, /## Backlog ativo canônico/u);
+  assert.match(english, /## Canonical active backlog/u);
+  assert.match(portuguese, /Contexto Semântico Compartilhado do Editor/u);
+  assert.match(english, /Shared Semantic Editor Context/u);
+  assert.doesNotMatch(portuguese, /M4 em execução|branch atual/u);
+  assert.doesNotMatch(english, /M4 in progress|current branch/u);
+  assert.equal([...portuguese.matchAll(rowPattern)].length, [...english.matchAll(rowPattern)].length);
+});
+
+test('current release audit matches the validated matrix', () => {
+  const portuguese = fs.readFileSync(
+    path.join(documentationRoot, `release_audit_${packageVersion}.md`),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    path.join(documentationRoot, `release_audit_${packageVersion}.en.md`),
+    'utf8'
+  );
+
+  [portuguese, english].forEach(document => {
+    assert.match(document, /1061/u);
+    assert.match(document, /1069/u);
+    assert.match(document, /105\/105/u);
+    assert.match(document, /41\/41/u);
+    assert.match(document, /133/u);
+  });
+});
+
+test('completed historical goals do not claim to remain in progress', () => {
+  const completedDocuments = [
+    'experience_leadership_goal.md',
+    'experience_leadership_goal.en.md',
+    'runtime_debug_automation_m0.md',
+    'runtime_debug_automation_m0.en.md',
+    'runtime_debug_automation_m1.md',
+    'runtime_debug_automation_m1.en.md',
+    'runtime_debug_automation_m2.md',
+    'runtime_debug_automation_m2.en.md',
+    'runtime_debug_automation_m3.md',
+    'runtime_debug_automation_m3.en.md'
+  ];
+
+  completedDocuments.forEach(fileName => {
+    const document = fs.readFileSync(path.join(documentationRoot, fileName), 'utf8');
+    assert.doesNotMatch(
+      document,
+      /planejado e em execução|planned and in progress|validação dentro da IDE pendente|in-IDE validation pending/u,
+      fileName
+    );
+  });
+});
+
 test('declarative extensions document packaged resources end to end', () => {
   const portuguese = fs.readFileSync(
     path.join(documentationRoot, 'declarative_extensions.md'),

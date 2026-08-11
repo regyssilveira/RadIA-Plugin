@@ -178,7 +178,7 @@ legacy owner across multiple IDEs.
 - Smoke test in Delphi 13 confirmed handshake, `tools/list`, live buffer read, consent
 native and audit by bridge stdio.
 - HTTP loopback and targeted integration with CLI providers were kept as optional.
-- Current baseline on Delphi 11, 12 and 13 Win32: 442/442 tests, no failures or leaks.
+- Baseline recorded at that milestone on Delphi 11, 12, and 13 Win32: 442/442 tests, no failures or leaks.
 
 Gate:
 
@@ -224,7 +224,7 @@ managed by RadIA and evaluated by the native debugger.
 - `StartDebugging` exclusively compiles and starts the active project target.
 - Inline revisions are anchored to the buffer revision, rendered by severity, and invalidated by
 any competing edition; suggestions reuse the reversible patch cycle.
-- Current baseline on Delphi 11, 12 and 13 Win32: 442/442 tests, no failures or leaks.
+- Baseline recorded at that milestone on Delphi 11, 12, and 13 Win32: 442/442 tests, no failures or leaks.
 - The current BPL loaded automatically in three valid cycles per version: Delphi 11 terminated between
 0.80 s and 0.86 s; Delphi 12, between 1.52 s and 1.99 s; Delphi 13, between 1.98 s and 2.63 s. There was no
 crash or deadlock.
@@ -272,7 +272,7 @@ content and truncation flag.
 deterministic statements that confirm marking the index as changed.
 - Smoke in Delphi 13 confirmed automatic package loading, MCP handshake, local indexing
 initial and traceable search. Automated live buffer editing remains manual validation.
-- Current baseline on Delphi 11, 12 and 13 Win32: 442/442 tests, no failures or leaks.
+- Baseline recorded at that milestone on Delphi 11, 12, and 13 Win32: 442/442 tests, no failures or leaks.
 
 Gate:
 

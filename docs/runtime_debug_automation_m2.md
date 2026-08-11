@@ -1,6 +1,6 @@
 # M2 — Descoberta runtime segura
 
-> **Estado:** implementação e testes automatizados concluídos; validação dentro da IDE pendente.
+> **Estado histórico:** implementação, testes e validação na IDE concluídos para a versão 2.1.0.
 > **Goal:** [Reprodução autônoma de falhas runtime](runtime_debug_automation_plan.md).
 
 ## Entregas

@@ -1,6 +1,6 @@
 # Goal 2.2 — Dynamic memory diagnostics with FastMM5
 
-> **Status:** in progress; M0, M1, M2, and M3 completed.
+> **Status:** completed; M0 through M6 passed for release 2.2.0.
 > **Target version:** 2.2.0.
 > **Scope:** Delphi 12 Win32 and Delphi 13 Win32/IDE64, diagnosing Win32 and Win64 applications.
 > **Dependency:** optional, user-supplied and user-licensed FastMM5.

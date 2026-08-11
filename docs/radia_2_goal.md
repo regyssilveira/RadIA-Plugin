@@ -219,15 +219,15 @@ Os itens abaixo pertencem à versão 2.0.0 e reabrem o gate de release:
 8. oferecer instalação opcional pelos canais oficiais, diagnóstico e onboarding;
 9. validar novamente Delphi 12 Win32 e Delphi 13 Win32/IDE64 antes de publicar os artefatos finais.
 
-Expansão OTA entregue nesta branch: sete tools cobrem project groups, dependências nativas,
+Expansão OTA entregue naquele branch: sete tools passaram a cobrir project groups, dependências nativas,
 símbolos do buffer vivo, navegação confinada por arquivo ou símbolo e ações da IDE protegidas por
 allowlist e consentimento.
 
-Experiência de revisão entregue nesta branch: resultados JSON bem-sucedidos agora carregam uma
+Experiência de revisão entregue naquele branch: resultados JSON bem-sucedidos passaram a carregar uma
 intenção visual uniforme para chat e MCP, e o Smart Diff permite aceitar ou rejeitar cada bloco
 antes de aplicar a composição selecionada ao editor.
 
-Executores híbridos entregues nesta branch: a configuração permite persistir o agente
+Executores híbridos entregues naquele branch: a configuração passou a permitir persistir o agente
 nativo ou um dos quatro CLIs suportados sem reiniciar a IDE. Os perfis não interativos constroem
 argumentos separados, solicitam saída estruturada e não habilitam aprovação automática. O item
 agora inclui transporte assíncrono, captura incremental, normalização de JSONL, timeout e

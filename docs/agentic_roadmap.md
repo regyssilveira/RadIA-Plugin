@@ -178,7 +178,7 @@ Resultado parcial:
 - Smoke test no Delphi 13 confirmou handshake, `tools/list`, leitura do buffer vivo, consentimento
   nativo e auditoria pelo bridge stdio.
 - HTTP loopback e integração dirigida com providers CLI foram mantidos como opcionais.
-- Baseline atual no Delphi 11, 12 e 13 Win32: 442/442 testes, sem falhas ou vazamentos.
+- Baseline registrada naquele marco no Delphi 11, 12 e 13 Win32: 442/442 testes, sem falhas ou vazamentos.
 
 Gate:
 
@@ -224,7 +224,7 @@ Resultado parcial:
 - `StartDebugging` compila e inicia exclusivamente o target do projeto ativo.
 - Revisões inline são ancoradas à revisão do buffer, renderizadas por severidade e invalidadas por
   qualquer edição concorrente; sugestões reutilizam o ciclo de patches reversíveis.
-- Baseline atual no Delphi 11, 12 e 13 Win32: 442/442 testes, sem falhas ou vazamentos.
+- Baseline registrada naquele marco no Delphi 11, 12 e 13 Win32: 442/442 testes, sem falhas ou vazamentos.
 - A BPL atual carregou automaticamente em três ciclos válidos por versão: Delphi 11 encerrou entre
   0,80 s e 0,86 s; Delphi 12, entre 1,52 s e 1,99 s; Delphi 13, entre 1,98 s e 2,63 s. Não houve
   crash ou deadlock.
@@ -272,7 +272,7 @@ Resultado parcial:
   determinísticos que confirmam a marcação do índice como alterado.
 - O smoke no Delphi 13 confirmou carregamento automático do pacote, handshake MCP, indexação local
   inicial e busca rastreável. A edição automatizada do buffer vivo permanece como validação manual.
-- Baseline atual no Delphi 11, 12 e 13 Win32: 442/442 testes, sem falhas ou vazamentos.
+- Baseline registrada naquele marco no Delphi 11, 12 e 13 Win32: 442/442 testes, sem falhas ou vazamentos.
 
 Gate:
 

@@ -1,6 +1,5 @@
 # RadIA 2.0 goal: leading the Delphi experience
 
-> **Status:** planned and in progress.
 > **Historical status:** goal completed and published in version 2.0.0.
 
 ## Objective
@@ -121,7 +120,7 @@ bugs, vulnerabilities, security hotspots, code smells, and unresolved issues; 82
 **Outcome:** continuous, fast, reversible suggestions in the Delphi editor.
 
 The `inline_completion_smoke_evidence_2.0.0.json` matrix proves multiline Ghost Text preparation
-and OTA painting on Delphi 12 Win32 and Delphi 13 Win32/IDE64 with the current 95-tool catalog.
+and OTA painting on Delphi 12 Win32 and Delphi 13 Win32/IDE64 with the then-current 95-tool catalog.
 Visual positioning accounts for the first visible column after horizontal scrolling, and the
 cursor is harmlessly reactivated to start the IDE64 paint cycle as well.
 
@@ -168,7 +167,7 @@ The runtime journey is proven on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The 
 deterministic local provider, executes `GetIDEState` through the real registry and policy, pauses
 after the step, persists the checkpoint, destroys the runtime, and resumes in another instance
 until completion. The versioned matrix is stored in `agent_runtime_smoke_evidence_2.0.0.json` and
-binds all three targets to the current 95-tool catalog.
+binds all three targets to the then-current 95-tool catalog.
 
 - Build one timeline for intent, plan, model, tools, consent, and results.
 - Include block diffs, build, tests, coverage, debugging, and Git.
@@ -324,7 +323,7 @@ matrix. All were built from commit `20a9f996c10c76ecfc925bb80029debb307cd117`, w
 validation, independent SHA-256 hashes, and a clean tracked worktree.
 
 The matrix in `ide_smoke_evidence_2.0.0.json` proves Delphi 12 Win32 and Delphi 13 Win32/IDE64 with
-10/10 cycles per target, 30/30 overall, and the current 95-tool catalog. Every target exercised native
+10/10 cycles per target, 30/30 overall, and the then-current 95-tool catalog. Every target exercised native
 `TOTADockForm` docking, restored the desktop state, and exited without
 orphan processes. Every cycle ran `Uninstall`, installed version 1.0.0, upgraded to 2.0.0, and ran
 `Repair`, while preserving user data and revalidating the manifest, hashes, registry, and installed

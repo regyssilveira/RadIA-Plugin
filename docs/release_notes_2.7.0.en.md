@@ -21,7 +21,9 @@ This version's catalog documents 133 tools with their internal operation and act
 - code, event, debug, and test intents activate Code;
 - invalid navigation fails structurally, and cancellation does not execute the action;
 - block review can request changes with a comment through gutter, menu, or tool;
-- the comment does not mutate the buffer, remains discoverable, and blocks Apply until resolved.
+- the comment does not mutate the buffer, remains discoverable, and blocks Apply until resolved;
+- Ghost Text, contextual actions, and the agent share unit, symbol, imports, and nearby declarations;
+- the editor menu can inspect this context without changing the buffer.
 
 ## Evidence
 

@@ -218,15 +218,15 @@ The following items belong to version 2.0.0 and reopen its release gate:
 8. provide optional official-channel installation, diagnostics, and onboarding;
 9. validate Delphi 12 Win32 and Delphi 13 Win32/IDE64 before publishing the final artifacts.
 
-OTA expansion delivered on this branch: seven tools now cover project groups, native dependencies,
+OTA expansion delivered on that branch: seven tools began covering project groups, native dependencies,
 live-buffer symbols, confined file or symbol navigation, and IDE actions protected by an allowlist
 and consent.
 
-Review experience delivered on this branch: successful JSON results now carry a uniform visual
+Review experience delivered on that branch: successful JSON results began carrying a uniform visual
 intent for chat and MCP, while Smart Diff allows accepting or rejecting each block before applying
 the selected composition to the editor.
 
-Hybrid executors delivered on this branch: settings persist the native agent or one of four supported
+Hybrid executors delivered on that branch: settings began persisting the native agent or one of four supported
 CLIs without restarting the IDE. Non-interactive profiles use separated arguments and structured
 output, with asynchronous streaming, JSONL normalization, timeout, and Job Object cancellation.
 The dockable terminal, bounded history, snippets, and onboarding are also integrated.

@@ -74,9 +74,9 @@ corrigida.
 | `runtime_scenario_timeout` | A janela ou controle não surgiu dentro do limite. | Confirme o caminho reproduzível e ajuste uma espera limitada. |
 | `sensitive_runtime_target` | O alvo é um campo de senha. | Remova a ação; segredos não fazem parte de regressões runtime. |
 
-## Evidência pendente para aceite
+## Evidência histórica do aceite M5
 
-Evidência automatizada desta entrega:
+Evidência automatizada registrada quando esta entrega foi aceita:
 
 - catálogo verificável com 111 ferramentas;
 - Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64: 802/802 testes por alvo, sem falhas,

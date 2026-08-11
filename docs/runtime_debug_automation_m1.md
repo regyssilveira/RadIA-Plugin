@@ -1,6 +1,6 @@
 # M1 — Correlação e espera do depurador
 
-> **Estado:** implementação concluída; validação dentro da IDE pendente.
+> **Estado histórico:** implementação e validação na IDE concluídas para a versão 2.1.0.
 > **Goal:** [Reprodução autônoma de falhas runtime](runtime_debug_automation_plan.md).
 
 ## Entregas

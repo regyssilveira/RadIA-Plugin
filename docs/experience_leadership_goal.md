@@ -1,6 +1,5 @@
 # Goal RadIA 2.0: liderança da experiência Delphi
 
-> **Estado:** planejado e em execução.
 > **Estado histórico:** goal concluído e publicado na versão 2.0.0.
 
 ## Objetivo
@@ -124,7 +123,7 @@ de 82,3%, duplicação de 2,3% e ratings A para confiabilidade, segurança e man
 **Saída:** sugestões contínuas, rápidas e reversíveis no editor Delphi.
 
 A matriz `inline_completion_smoke_evidence_2.0.0.json` comprova Ghost Text multilinha preparado e
-pintado pela OTA no Delphi 12 Win32 e no Delphi 13 Win32/IDE64, com o catálogo vigente de 95
+pintado pela OTA no Delphi 12 Win32 e no Delphi 13 Win32/IDE64, com o catálogo daquele marco de 95
 ferramentas. A posição visual considera a primeira coluna visível após rolagem horizontal e o
 cursor é reativado de forma inócua para iniciar o ciclo de pintura também na IDE64.
 
@@ -173,7 +172,7 @@ A jornada do runtime é comprovada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64
 um provider local determinístico, executa `GetIDEState` pelo registry e pela policy reais, pausa
 após a etapa, persiste o checkpoint, destrói o runtime e retoma em outra instância até a conclusão.
 A matriz versionada está em `agent_runtime_smoke_evidence_2.0.0.json` e vincula os três alvos ao
-catálogo vigente de 95 ferramentas.
+catálogo daquele marco de 95 ferramentas.
 
 - Criar uma timeline única para intenção, plano, modelo, tools, consentimentos e resultados.
 - Incorporar diffs por bloco, build, testes, cobertura, debug e Git na mesma jornada.
@@ -326,12 +325,12 @@ registrado e executado por hot reload. O workflow `RadIADiagnosticInspection`, c
 
 **Saída:** candidato 2.0.0 comprovado, reproduzível e pronto para decisão de publicação.
 
-A prova reproduzível em `release_evidence_2.0.0.json` contém os três ZIPs da matriz vigente, todos
+A prova reproduzível em `release_evidence_2.0.0.json` contém os três ZIPs da matriz daquele marco, todos
 gerados do commit `20a9f996c10c76ecfc925bb80029debb307cd117`, com validação interna,
 SHA-256 independente e árvore rastreada limpa.
 
 A matriz em `ide_smoke_evidence_2.0.0.json` comprova Delphi 12 Win32 e Delphi 13 Win32/IDE64 com
-10/10 ciclos por target, 30/30 no total, e o catálogo vigente de 95 tools. Cada target exercitou o docking nativo
+10/10 ciclos por target, 30/30 no total, e o catálogo daquele marco de 95 tools. Cada target exercitou o docking nativo
 `TOTADockForm`, restaurou o estado do desktop e terminou sem
 processos órfãos. Cada ciclo executou `Uninstall`, instalou a versão 1.0.0, atualizou para 2.0.0 e
 executou `Repair`, preservando dados do usuário e revalidando manifesto, hashes, registro e arquivos

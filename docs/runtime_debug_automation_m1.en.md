@@ -1,6 +1,6 @@
 # M1 — Debugger correlation and waiting
 
-> **Status:** implementation complete; in-IDE validation pending.
+> **Historical status:** implementation and in-IDE validation completed for version 2.1.0.
 > **Goal:** [Autonomous runtime failure reproduction](runtime_debug_automation_plan.en.md).
 
 ## Deliveries

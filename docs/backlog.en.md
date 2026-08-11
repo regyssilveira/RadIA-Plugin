@@ -28,6 +28,7 @@ new items require a later formal baseline without reopening passed requirements.
 | **Goal — Skill portability and high-fidelity terminal** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.4.0 |
 | **Patch 2.6.2 — Chat usability and project creation** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v2.6.2 |
 | **Deterministic functional closure** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
+| **Shared Semantic Editor Context** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -51,7 +52,7 @@ new items require a later formal baseline without reopening passed requirements.
 | **Mock Generator for Unit Tests** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
 | **Smart Multi-Unit Trace Resolver** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | No committed version |
 | **MadExcept / EurekaLog Context Extractor** | 🔀 Merge with trace diagnostics | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | No committed version |
-| **OpenAPI/Swagger for existing projects** | 🟨 Partial; new DEXT projects covered | 🟡 Medium | ⭐⭐⭐⭐ High | Partial in v2.2.2; residual uncommitted |
+| **OpenAPI/Swagger for existing projects** | 🟨 Partial; new DEXT projects covered | 🟡 Medium | ⭐⭐⭐⭐ High | Partial in v2.2.2; remainder has no committed version |
 | **Bidirectional Semantic Analysis (DFM x PAS)** | 🟨 Partial; mutations preserve consistency | 🟡 Medium | ⭐⭐⭐⭐ High | Residual has no committed version |
 | **Version Migration Assistant (Smart Migrate)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
 | **Cache Management Panel** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | No committed version |
@@ -62,6 +63,27 @@ new items require a later formal baseline without reopening passed requirements.
 | **Smart Inline Autocomplete (Ghost Text)** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.0.0 |
 | **Project Docs Auto Generation (API.md)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | No committed version |
 | **Native macOS/Linux Support (Lazarus)** | 🚫 Discarded | 🔴 High | 🟢 Low | Out of scope |
+
+---
+
+## Canonical active backlog
+
+Reviewed on **August 11, 2026** against the version 2.7.0 codebase. None of the items below has a
+promised version; a target version should be assigned only after scope and acceptance criteria are
+approved.
+
+| Group | Items still open | Current verifiable state |
+| :--- | :--- | :--- |
+| Code assistance | automatic review on save; Clean Uses; mock generator | No dedicated implementation is registered in the codebase. |
+| Cross-unit diagnostics | multi-file trace and MadExcept/EurekaLog ingestion | The stack-trace command exists; specialized correlation and importers do not. |
+| Existing APIs | OpenAPI/Swagger for existing projects | Swagger is available during DEXT creation; retrofit remains open. |
+| Visual consistency | bidirectional DFM/PAS semantic analysis | Current mutations preserve consistency, but no complete auditor exists. |
+| Modernization | Smart Migrate; BDE/ADO/dbExpress to DEXT/FireDAC; form decomposition | Opportunities without a dedicated implemented journey. |
+| Operations | cache panel; threads/PPL assistant | Infrastructure exists in part; guided experiences remain open. |
+| Productivity | i18n wizard; `API.md` generation | No dedicated wizard or generator exists in the current catalog. |
+
+Lazarus support remains explicitly out of scope. Completed items and old versions remain below only
+as history and must not be reopened merely because numbering changed.
 
 ---
 
@@ -112,7 +134,7 @@ new items require a later formal baseline without reopening passed requirements.
     *   M3 validated in real IDEs: approval, pause, persisted checkpoint, new-instance resume, and
         completion with `GetIDEState` passed on Delphi 11, 12, 13 Win32, and Delphi 13 IDE64.
     *   M4–M6: simplify extensions, semantic knowledge, and guided installation.
-    *   M4 in progress: `*.radia.json` manifests add chat commands with a versioned schema, minimal
+    *   M4 completed: `*.radia.json` manifests add chat commands with a versioned schema, minimal
         permission, atomic validation, diagnostics, and reload without restarting the IDE.
     *   M4 delivered in this increment: **Tools > Rad IA Extensions...** installs, updates, enables,
         disables, diagnoses, and removes manifests; atomic writes and rollback preserve the working
@@ -134,7 +156,7 @@ new items require a later formal baseline without reopening passed requirements.
     *   M4 delivered in this stage: schema 5 provides audited workflows of up to 16 internal tools
         without arbitrary shells, with inherited maximum risk, bounds, fail-fast, and per-step
         policy enforcement.
-    *   M4 expansion implemented on the current branch: schema 6 and `.radiaext` v3 carry
+    *   M4 expansion completed: schema 6 and `.radiaext` v3 carry
         references, knowledge, templates, and assets; Addon Studio sandboxes, installs, exports,
         and signs the set with clean replacement, removal, and manifest/resource rollback.
     *   M4 validated in real IDEs: hot-load, shared registration, and audited two-step execution

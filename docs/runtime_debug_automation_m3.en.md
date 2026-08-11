@@ -1,6 +1,6 @@
 # M3 — Bounded declarative execution
 
-> **Status:** implementation and automated tests complete; in-IDE validation pending.
+> **Historical status:** implementation, tests, and in-IDE validation completed for version 2.1.0.
 > **Goal:** [Autonomous runtime failure reproduction](runtime_debug_automation_plan.en.md).
 
 ## Deliveries

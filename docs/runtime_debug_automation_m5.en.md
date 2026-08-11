@@ -73,9 +73,9 @@ failing scenario once to capture the exception; ten repetitions belong to correc
 | `runtime_scenario_timeout` | The expected window or control did not appear in time. | Confirm the reproducible path and adjust a bounded wait. |
 | `sensitive_runtime_target` | The target is a password field. | Remove the action; secrets do not belong in runtime regressions. |
 
-## Evidence still required
+## Historical M5 acceptance evidence
 
-Automated evidence for this delivery:
+Automated evidence recorded when this delivery was accepted:
 
 - verifiable catalog with 111 tools;
 - Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64: 802/802 tests per target, with no failures,
