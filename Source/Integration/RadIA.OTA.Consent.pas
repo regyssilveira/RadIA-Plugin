@@ -6,8 +6,7 @@ uses
   RadIA.Core.Interfaces,
   RadIA.Core.ConsentGate,
   RadIA.Core.Tools,
-  RadIA.Core.ToolSecurity,
-  RadIA.Core.Version;
+  RadIA.Core.ToolSecurity;
 
 type
   TRadIAOTAConsentProvider = class(
@@ -63,7 +62,8 @@ uses
   Winapi.Windows,
   RadIA.Core.ConsentPresentation,
   RadIA.Core.Config,
-  RadIA.Core.Types;
+  RadIA.Core.Types,
+  RadIA.Core.Version;
 
 const
   CAllowOnceModalResult = 101;

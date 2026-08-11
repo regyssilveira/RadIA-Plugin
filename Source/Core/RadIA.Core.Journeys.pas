@@ -54,6 +54,25 @@ type
   end;
 
   TRadIAJourneyCatalog = class
+  private
+    class procedure AppendCreateContextValue(
+      var AContext: string;
+      const ALowerContext: string;
+      const AName: string;
+      const AValue: string
+    ); static;
+    class function ContainsAnyText(
+      const AText: string;
+      const ATerms: array of string
+    ): Boolean; static;
+    class function ExtractCreateDestination(
+      const AContext: string;
+      const ALowerContext: string
+    ): string; static;
+    class function InferCreateProjectName(
+      const ALowerContext: string;
+      const ADestination: string
+    ): string; static;
   public
     class function All: TArray<TRadIAJourneyDefinition>; static;
     class function Find(
@@ -86,6 +105,61 @@ uses
   System.StrUtils,
   System.SysUtils;
 
+class procedure TRadIAJourneyCatalog.AppendCreateContextValue(
+  var AContext: string;
+  const ALowerContext: string;
+  const AName: string;
+  const AValue: string
+);
+begin
+  if AValue.IsEmpty or ALowerContext.Contains(AName + '=') then
+    Exit;
+  AContext := AContext + ' ' + AName + '="' + AValue.Replace('"', '') + '"';
+end;
+
+class function TRadIAJourneyCatalog.ContainsAnyText(
+  const AText: string;
+  const ATerms: array of string
+): Boolean;
+var
+  LTerm: string;
+begin
+  for LTerm in ATerms do
+    if ContainsText(AText, LTerm) then
+      Exit(True);
+  Result := False;
+end;
+
+class function TRadIAJourneyCatalog.ExtractCreateDestination(
+  const AContext: string;
+  const ALowerContext: string
+): string;
+var
+  LMatch: TMatch;
+begin
+  Result := '';
+  if ALowerContext.Contains('destination=') then
+    Exit;
+  LMatch := TRegEx.Match(AContext, '[A-Za-z]:\\[^\s,;"'']+');
+  if LMatch.Success then
+    Result := LMatch.Value.TrimRight(['.', ':']);
+end;
+
+class function TRadIAJourneyCatalog.InferCreateProjectName(
+  const ALowerContext: string;
+  const ADestination: string
+): string;
+begin
+  Result := '';
+  if not ADestination.IsEmpty then
+    Result := TPath.GetFileName(ADestination.TrimRight(['\']));
+  if Result.IsEmpty and ContainsAnyText(
+    ALowerContext,
+    ['calculadora', 'calculator']
+  ) then
+    Result := 'CalculatorApp';
+end;
+
 class function TRadIAJourneyCatalog.InferCreateProjectType(
   const AContext: string
 ): string;
@@ -93,35 +167,34 @@ var
   LContext: string;
 begin
   LContext := ' ' + LowerCase(AContext) + ' ';
-  if ContainsText(LContext, ' dunitx') or
-    ContainsText(LContext, ' unit test') or
-    ContainsText(LContext, ' teste unit') then
+  if ContainsAnyText(LContext, [' dunitx', ' unit test', ' teste unit']) then
     Exit('DUnitX');
-  if ContainsText(LContext, ' firemonkey') or
-    ContainsText(LContext, ' fmx') or
-    ContainsText(LContext, ' multiplatform') or
-    ContainsText(LContext, ' multiplataforma') then
+  if ContainsAnyText(
+    LContext,
+    [' firemonkey', ' fmx', ' multiplatform', ' multiplataforma']
+  ) then
     Exit('FMX');
-  if ContainsText(LContext, ' package') or
-    ContainsText(LContext, ' bpl') or
-    ContainsText(LContext, ' pacote de componentes') then
+  if ContainsAnyText(
+    LContext,
+    [' package', ' bpl', ' pacote de componentes']
+  ) then
     Exit('Package');
-  if ContainsText(LContext, ' library') or
-    ContainsText(LContext, ' dll') or
-    ContainsText(LContext, ' biblioteca dinâmica') or
-    ContainsText(LContext, ' biblioteca dinamica') then
+  if ContainsAnyText(
+    LContext,
+    [' library', ' dll', ' biblioteca dinâmica', ' biblioteca dinamica']
+  ) then
     Exit('Library');
-  if ContainsText(LContext, ' windows service') or
-    ContainsText(LContext, ' service application') or
-    ContainsText(LContext, ' serviço windows') or
-    ContainsText(LContext, ' servico windows') then
+  if ContainsAnyText(
+    LContext,
+    [' windows service', ' service application', ' serviço windows', ' servico windows']
+  ) then
     Exit('Service');
   if ContainsText(LContext, ' console') then
     Exit('Console');
-  if ContainsText(LContext, ' vcl') or
-    ContainsText(LContext, ' calculadora') or
-    ContainsText(LContext, ' calculator') or
-    ContainsText(LContext, ' windows desktop') then
+  if ContainsAnyText(
+    LContext,
+    [' vcl', ' calculadora', ' calculator', ' windows desktop']
+  ) then
     Exit('VCL');
   Result := '';
 end;
@@ -132,7 +205,6 @@ class function TRadIAJourneyCatalog.NormalizeCreateContext(
 var
   LDestination: string;
   LLowerContext: string;
-  LMatch: TMatch;
   LProjectName: string;
   LProjectType: string;
 begin
@@ -140,31 +212,13 @@ begin
   if Result.IsEmpty then
     Exit;
   LLowerContext := LowerCase(Result);
-  LMatch := TRegEx.Match(Result, '[A-Za-z]:\\[^\s,;"'']+');
-  if LMatch.Success and not LLowerContext.Contains('destination=') then
-  begin
-    LDestination := LMatch.Value.TrimRight(['.', ':']);
-    Result := Result + ' destination="' + LDestination + '"';
-  end;
-  if not LLowerContext.Contains('project=') then
-  begin
-    LProjectName := '';
-    if not LDestination.IsEmpty then
-      LProjectName := TPath.GetFileName(LDestination.TrimRight(['\']));
-    if LProjectName.IsEmpty and
-      (LLowerContext.Contains('calculadora') or LLowerContext.Contains('calculator')) then
-      LProjectName := 'CalculatorApp';
-    if not LProjectName.IsEmpty then
-      Result := Result + ' project="' + LProjectName.Replace('"', '') + '"';
-  end;
-  if not LLowerContext.Contains('type=') then
-  begin
-    LProjectType := InferCreateProjectType(AContext);
-    if not LProjectType.IsEmpty then
-      Result := Result + ' type="' + LProjectType + '"';
-  end;
-  if not LLowerContext.Contains('platform=') then
-    Result := Result + ' platform="Win32"';
+  LDestination := ExtractCreateDestination(Result, LLowerContext);
+  LProjectName := InferCreateProjectName(LLowerContext, LDestination);
+  LProjectType := InferCreateProjectType(AContext);
+  AppendCreateContextValue(Result, LLowerContext, 'destination', LDestination);
+  AppendCreateContextValue(Result, LLowerContext, 'project', LProjectName);
+  AppendCreateContextValue(Result, LLowerContext, 'type', LProjectType);
+  AppendCreateContextValue(Result, LLowerContext, 'platform', 'Win32');
 end;
 
 class function TRadIAJourneyCatalog.TryInferCreateProject(

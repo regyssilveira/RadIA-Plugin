@@ -8,8 +8,7 @@ uses
   Vcl.Forms,
   Vcl.StdCtrls,
   RadIA.Core.ProjectTemplateService,
-  RadIA.Core.ProjectTemplates,
-  RadIA.Core.Version;
+  RadIA.Core.ProjectTemplates;
 
 type
   TRadIAProjectWizardForm = class(TForm)
@@ -53,7 +52,8 @@ uses
   System.SysUtils,
   Vcl.Controls,
   Vcl.Dialogs,
-  Vcl.Graphics;
+  Vcl.Graphics,
+  RadIA.Core.Version;
 
 function DefaultDelphiVersion: string;
 begin
