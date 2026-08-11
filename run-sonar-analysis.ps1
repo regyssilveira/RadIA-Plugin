@@ -132,7 +132,7 @@ $ScannerArguments = @(
     "-Dsonar.delphi.installationPath=$DelphiRoot"
     "-Dsonar.delphi.compilerVersion=$CompilerVersion"
 )
-& $ScannerCmd.Source $ScannerArguments
+& $ScannerCmd.Source @ScannerArguments
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "SonarQube analysis completed successfully!" -ForegroundColor Green
