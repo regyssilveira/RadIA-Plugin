@@ -25,6 +25,12 @@ During installation, the installer also updates the HTML/CSS/JS assets used by W
 open. If another Delphi version is in use, cache cleanup is deferred and installation continues
 without interrupting that work; the refreshed assets take full effect after that IDE restarts.
 
+The installer validates every Web resource declared by the manifest, not only the main page. It
+also compares `WebView2Loader.dll` with the packaged copy and updates the file when required.
+**Repair** reapplies and verifies the BPL, DCP, MCP Bridge, extension packager, loader, Delphi
+registration, and every Web asset. Uninstall remains able to remove RadIA artifacts even when the
+corresponding Delphi installation has already been removed.
+
 After opening the IDE, use **Tools > Rad IA Getting Started > Run installation doctor** or type
 `/doctor` in chat. The diagnostic verifies the effective route, provider, CLI and MCP only when
 each is required, terminal, web assets, tools, and the external MCP runtime. It returns a card with

@@ -8,6 +8,11 @@ Each component contains the package for that combination and reuses `Install-Rad
 The flow preserves manifest validation, hashes, installation, repair, and removal with user data
 preserved by default.
 
+The package script discovers the IDE directory from user or machine registry locations, validates
+every Web asset in the manifest, checks whether `WebView2Loader.dll` must be updated, and confirms
+the BPL registration after install or repair. Uninstall does not require the IDE to remain on disk
+and preserves `%APPDATA%\RadIA` unless explicit user-data removal is requested.
+
 ## Build the installer
 
 Install Inno Setup 6 and generate the three Release ZIP files from the same commit. Then run:

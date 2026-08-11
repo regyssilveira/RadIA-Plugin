@@ -641,8 +641,15 @@ if ($Package) {
     Copy-Item `
         -LiteralPath ".\Redist\$platform\WebView2Loader.dll" `
         -Destination (Join-Path $stagingRoot "Redist\WebView2Loader.dll")
-    Get-ChildItem -LiteralPath ".\docs" -File -Filter "*.md" |
-        Copy-Item -Destination (Join-Path $stagingRoot "Docs")
+    $trackedDocumentation = @(& git ls-files -- "docs/*.md")
+    if ($LASTEXITCODE -ne 0 -or $trackedDocumentation.Count -eq 0) {
+        throw "Unable to resolve tracked documentation for packaging."
+    }
+    foreach ($documentationFile in $trackedDocumentation) {
+        Copy-Item `
+            -LiteralPath $documentationFile `
+            -Destination (Join-Path $stagingRoot "Docs")
+    }
     Copy-Item `
         -LiteralPath ".\scripts\Install-RadIA.Package.ps1" `
         -Destination (Join-Path $stagingRoot "Scripts\Install-RadIA.Package.ps1")

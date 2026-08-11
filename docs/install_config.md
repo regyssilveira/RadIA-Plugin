@@ -25,6 +25,12 @@ Durante a instalação, o instalador também atualiza os recursos HTML/CSS/JS us
 está aberta. Se outra versão do Delphi estiver em uso, a limpeza é adiada e o instalador continua sem
 interromper o trabalho; os recursos atualizados passam a valer integralmente após reiniciar essa IDE.
 
+O instalador valida todos os recursos Web descritos pelo manifesto, e não apenas a página principal.
+Ele também compara `WebView2Loader.dll` com a cópia do pacote e atualiza o arquivo quando necessário.
+O modo **Repair** reaplica e verifica BPL, DCP, MCP Bridge, empacotador de extensões, loader, registro
+do Delphi e todos os assets Web. A desinstalação continua disponível para limpar os artefatos do
+RadIA mesmo quando a instalação correspondente do Delphi já tiver sido removida.
+
 Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation doctor** ou digite
 `/doctor` no chat. O diagnóstico verifica a rota efetiva, provider, CLI e MCP somente quando cada
 um é necessário, terminal, recursos web, tools e runtime MCP externo. Ele retorna um cartão com

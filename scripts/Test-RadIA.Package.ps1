@@ -156,6 +156,15 @@ try {
             "$DelphiVersion $expectedPlatform."
         )
 
+    $positiveManifest = Read-Manifest -PackageRoot $positiveRoot
+    $webManifestFiles = @(
+        $positiveManifest.files |
+            Where-Object { $_.path -like "Web/*" }
+    )
+    if ($webManifestFiles.Count -lt 3) {
+        throw "Package does not contain the expected Web asset set."
+    }
+
     $repairPlan = Read-PackagePlan `
         -PackageRoot $positiveRoot `
         -Mode "Repair"
@@ -175,6 +184,9 @@ try {
         $uninstallPlan.removeUserData
     ) {
         throw "Default uninstall plan must preserve user data."
+    }
+    if (-not $uninstallPlan.registryPath -or -not $uninstallPlan.package) {
+        throw "Uninstall plan does not identify registry and package targets."
     }
 
     $purgePlan = Read-PackagePlan `

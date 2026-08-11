@@ -120,6 +120,10 @@ Para usar o Rad IA, baixe somente `RadIA-v<versão>-Setup.exe` na
 Delphi, execute o instalador e selecione as IDEs desejadas. Não é necessário baixar ZIP, instalar
 PowerShell/npm ou compilar o projeto.
 
+O instalador verifica os binários, o registro do pacote, o loader e todos os recursos Web do
+manifesto. O reparo reaplica esses componentes preservando configurações, e a desinstalação mantém
+os dados do usuário por padrão.
+
 ## Compilar do código-fonte
 
 Os comandos abaixo são destinados a contribuidores:

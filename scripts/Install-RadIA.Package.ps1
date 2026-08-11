@@ -138,29 +138,56 @@ function Assert-InstalledFile {
         throw "Installed file verification failed: $Target"
     }
 }
+
+function Resolve-DelphiRootDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Version
+    )
+
+    $defaultRoot = "C:\Program Files (x86)\Embarcadero\Studio\$Version"
+    $registryPaths = @(
+        "HKCU:\Software\Embarcadero\BDS\$Version",
+        "HKLM:\Software\Embarcadero\BDS\$Version",
+        "HKLM:\Software\WOW6432Node\Embarcadero\BDS\$Version"
+    )
+    foreach ($registryPath in $registryPaths) {
+        $registeredRoot = (
+            Get-ItemProperty `
+                -Path $registryPath `
+                -Name "RootDir" `
+                -ErrorAction SilentlyContinue
+        ).RootDir
+        if ($registeredRoot -and (Test-Path -LiteralPath $registeredRoot)) {
+            return $registeredRoot
+        }
+    }
+    return $defaultRoot
+}
+
+function Test-FilesDiffer {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [Parameter(Mandatory = $true)]
+        [string]$Target
+    )
+
+    if (-not (Test-Path -LiteralPath $Target -PathType Leaf)) {
+        return $true
+    }
+    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash
+    $targetHash = (Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash
+    return $sourceHash -ne $targetHash
+}
 if ($RemoveUserData -and $Mode -ne "Uninstall") {
     throw "RemoveUserData is available only in Uninstall mode."
 }
 
-$rootDirectory = "C:\Program Files (x86)\Embarcadero\Studio\$DelphiVersion"
-$bdsRegistry = "HKCU:\Software\Embarcadero\BDS\$DelphiVersion"
-if (Test-Path $bdsRegistry) {
-    $registeredRoot = (
-        Get-ItemProperty `
-            -Path $bdsRegistry `
-            -Name "RootDir" `
-            -ErrorAction SilentlyContinue
-    ).RootDir
-    if ($registeredRoot -and (Test-Path -LiteralPath $registeredRoot)) {
-        $rootDirectory = $registeredRoot
-    }
-}
+$rootDirectory = Resolve-DelphiRootDirectory -Version $DelphiVersion
 $ideBin = Join-Path $rootDirectory "bin"
 if ($IDE64) {
     $ideBin = Join-Path $rootDirectory "bin64"
-}
-if (-not (Test-Path -LiteralPath $ideBin)) {
-    throw "Delphi IDE binary directory was not found: $ideBin"
 }
 $loaderTarget = Join-Path $ideBin "WebView2Loader.dll"
 $loaderSource = Resolve-PackageFile "Redist\WebView2Loader.dll"
@@ -212,6 +239,10 @@ $plan = [PSCustomObject]@{
 if ($PlanOnly) {
     $plan | ConvertTo-Json -Depth 3
     exit 0
+}
+
+if ($Mode -ne "Uninstall" -and -not (Test-Path -LiteralPath $ideBin)) {
+    throw "Delphi IDE binary directory was not found: $ideBin"
 }
 
 $targetBds = Join-Path $ideBin "bds.exe"
@@ -284,14 +315,17 @@ if ($Mode -eq "Uninstall") {
     exit 0
 }
 
-if (-not (Test-Path -LiteralPath $loaderTarget)) {
+$loaderNeedsUpdate = Test-FilesDiffer `
+    -Source $loaderSource `
+    -Target $loaderTarget
+if ($loaderNeedsUpdate -and $Mode -ne "Uninstall") {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     $administrator =
         [Security.Principal.WindowsBuiltInRole]::Administrator
     if (-not $principal.IsInRole($administrator)) {
         throw (
-            "WebView2Loader.dll is absent. Run this installer " +
+            "WebView2Loader.dll must be installed or updated. Run this installer " +
             "from an elevated PowerShell session."
         )
     }
@@ -382,7 +416,7 @@ if (Test-Path -LiteralPath $webViewCache) {
     }
 }
 
-if (-not (Test-Path -LiteralPath $loaderTarget)) {
+if ($loaderNeedsUpdate) {
     try {
         Copy-Item `
             -LiteralPath $loaderSource `
@@ -406,6 +440,18 @@ New-ItemProperty `
     -PropertyType String `
     -Force |
     Out-Null
+$registeredPackageProperties = (
+    Get-ItemProperty `
+        -LiteralPath $registryPath `
+        -Name $targetBpl `
+        -ErrorAction Stop
+)
+$registeredPackage = $registeredPackageProperties.PSObject.Properties[
+    $targetBpl
+].Value
+if ($registeredPackage -ne "Rad IA - AI Assistant for Delphi IDE") {
+    throw "Installed package registration verification failed: $targetBpl"
+}
 
 Assert-InstalledFile `
     -Source (Resolve-PackageFile "Bpl\RadIA.bpl") `
@@ -422,14 +468,23 @@ Assert-InstalledFile `
 Assert-InstalledFile `
     -Source (Resolve-PackageFile "Dcp\RadIA.dcp") `
     -Target $targetDcp
-foreach ($webFile in @("chat.html", "chat.js", "chat.css")) {
+$webManifestFiles = @(
+    $manifest.files |
+        Where-Object { $_.path -like "Web/*" }
+)
+foreach ($webManifestFile in $webManifestFiles) {
+    $relativeWebPath = $webManifestFile.path.Substring(4).Replace(
+        "/",
+        [IO.Path]::DirectorySeparatorChar
+    )
     Assert-InstalledFile `
-        -Source (Join-Path $sourceWeb $webFile) `
-        -Target (Join-Path $resolvedWeb $webFile)
+        -Source (Join-Path $sourceWeb $relativeWebPath) `
+        -Target (Join-Path $resolvedWeb $relativeWebPath)
     Assert-InstalledFile `
-        -Source (Join-Path $sourceWeb $webFile) `
-        -Target (Join-Path $userWeb $webFile)
+        -Source (Join-Path $sourceWeb $relativeWebPath) `
+        -Target (Join-Path $userWeb $relativeWebPath)
 }
+Assert-InstalledFile -Source $loaderSource -Target $loaderTarget
 
 if ($Mode -eq "Repair") {
     Write-Host "RadIA was repaired successfully for Delphi $DelphiVersion $platform."
