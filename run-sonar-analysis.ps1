@@ -124,12 +124,15 @@ Write-Host (
     "Delphi analyzer: $EffectiveDelphiVersion ($CompilerVersion)"
 ) -ForegroundColor Gray
 
-# Run the scanner
-& sonar-scanner `
-    -D"sonar.token=$ResolvedToken" `
-    -D"sonar.host.url=$HostUrl" `
-    -D"sonar.delphi.installationPath=$DelphiRoot" `
-    -D"sonar.delphi.compilerVersion=$CompilerVersion"
+# Keep every scanner property as one native-process argument. PowerShell can otherwise
+# concatenate adjacent -D values when a property contains a quoted path with spaces.
+$ScannerArguments = @(
+    "-Dsonar.token=$ResolvedToken"
+    "-Dsonar.host.url=$HostUrl"
+    "-Dsonar.delphi.installationPath=$DelphiRoot"
+    "-Dsonar.delphi.compilerVersion=$CompilerVersion"
+)
+& $ScannerCmd.Source $ScannerArguments
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "SonarQube analysis completed successfully!" -ForegroundColor Green
