@@ -15,6 +15,10 @@ const inlineReviewSource = fs.readFileSync(
   path.join('Source', 'Integration', 'RadIA.OTA.InlineReviews.pas'),
   'utf8'
 );
+const codeInsightSource = fs.readFileSync(
+  path.join('Source', 'Integration', 'RadIA.OTA.CodeInsight.pas'),
+  'utf8'
+);
 
 test('debug start queues the official IDE Run action asynchronously', () => {
   assert.match(
@@ -201,4 +205,14 @@ test('inline review registration defers paint until the notifier is active', () 
     /procedure TRadIAOTAInlineReviewFacade\.RepaintTimerTick[\s\S]*?FView\.Paint;/u,
   );
   assert.doesNotMatch(inlineReviewSource, /Application\.ProcessMessages/u);
+});
+
+test('CodeInsight spike uses only public asynchronous ToolsAPI contracts', () => {
+  assert.match(codeInsightSource, /IOTACodeInsightManager/u);
+  assert.match(codeInsightSource, /IOTAAsyncCodeInsightManager/u);
+  assert.match(codeInsightSource, /AddCodeInsightManager/u);
+  assert.match(codeInsightSource, /RemoveCodeInsightManager/u);
+  assert.match(codeInsightSource, /AsyncOperationCanceled/u);
+  assert.match(codeInsightSource, /RADIA_CODEINSIGHT_SPIKE/u);
+  assert.doesNotMatch(codeInsightSource, /INTA(?:CodeInsight|EditView)/u);
 });
