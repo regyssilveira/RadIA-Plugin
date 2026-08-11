@@ -7,6 +7,7 @@ const repositoryRoot = path.resolve('.');
 const webRoot = path.join(repositoryRoot, 'Source', 'UI', 'Web');
 const chatHtml = fs.readFileSync(path.join(webRoot, 'chat.html'), 'utf8');
 const chatJs = fs.readFileSync(path.join(webRoot, 'chat.js'), 'utf8');
+const chatCss = fs.readFileSync(path.join(webRoot, 'chat.css'), 'utf8');
 const diffHtml = fs.readFileSync(path.join(webRoot, 'diff.html'), 'utf8');
 const configFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigFrame.pas'),
@@ -59,6 +60,15 @@ test('custom selectors support keyboard activation and synchronized ARIA state',
   assert.match(chatJs, /providerDropdownTrigger\.addEventListener\('keydown'/);
   assert.match(chatJs, /trigger\.setAttribute\('aria-expanded', String\(open\)\)/);
   assert.match(chatJs, /div\.setAttribute\('aria-pressed'/);
+});
+
+test('scrollable selector surfaces expose visible scrollbar affordances', () => {
+  assert.match(chatCss, /\.custom-dropdown-options,[\s\S]*#slash-commands-popup,[\s\S]*\.radia-project-files-list/u);
+  assert.match(chatCss, /scrollbar-color: var\(--scrollbar\) var\(--scrollbar-track\)/u);
+  assert.match(chatCss, /scrollbar-width: thin/u);
+  assert.match(chatCss, /::-webkit-scrollbar[\s\S]*width: 10px/u);
+  assert.match(chatCss, /::-webkit-scrollbar-track[\s\S]*background: var\(--scrollbar-track\)/u);
+  assert.match(chatCss, /::-webkit-scrollbar-thumb[\s\S]*min-height: 32px/u);
 });
 
 test('every static chat button provides contextual help', () => {

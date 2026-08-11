@@ -28,6 +28,8 @@ The Rad IA chat text input area features shortcuts designed to speed up prompt t
 *   `Enter`: Inserts a line break in the current prompt.
 *   Up Arrow `↑` / Down Arrow `↓`: Allows you to quickly navigate through the history of prompts you have typed and sent in this workspace session.
 *   `/` (Slash) character: Opens the floating autocomplete popup listing registered slash command shortcuts.
+*   Long chat lists, including selectors and the command popup, expose a visible scrollbar for
+    navigation without a mouse wheel.
 
 ### Continue writing while RadIA works
 

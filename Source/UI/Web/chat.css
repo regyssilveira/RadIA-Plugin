@@ -71,6 +71,51 @@ textarea:focus-visible,
   padding: 0;
 }
 
+.custom-dropdown-options,
+#sessions-list,
+#slash-commands-popup,
+#generators-wrapper,
+.radia-project-files-list {
+  scrollbar-color: var(--scrollbar) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+.custom-dropdown-options::-webkit-scrollbar,
+#sessions-list::-webkit-scrollbar,
+#slash-commands-popup::-webkit-scrollbar,
+#generators-wrapper::-webkit-scrollbar,
+.radia-project-files-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-dropdown-options::-webkit-scrollbar-track,
+#sessions-list::-webkit-scrollbar-track,
+#slash-commands-popup::-webkit-scrollbar-track,
+#generators-wrapper::-webkit-scrollbar-track,
+.radia-project-files-list::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 5px;
+}
+
+.custom-dropdown-options::-webkit-scrollbar-thumb,
+#sessions-list::-webkit-scrollbar-thumb,
+#slash-commands-popup::-webkit-scrollbar-thumb,
+#generators-wrapper::-webkit-scrollbar-thumb,
+.radia-project-files-list::-webkit-scrollbar-thumb {
+  min-height: 32px;
+  background-color: var(--scrollbar);
+  border: 2px solid var(--scrollbar-track);
+  border-radius: 5px;
+}
+
+.custom-dropdown-options::-webkit-scrollbar-thumb:hover,
+#sessions-list::-webkit-scrollbar-thumb:hover,
+#slash-commands-popup::-webkit-scrollbar-thumb:hover,
+#generators-wrapper::-webkit-scrollbar-thumb:hover,
+.radia-project-files-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-hover);
+}
+
 .header-action-btn.agent-mode-enabled {
   color: var(--accent);
 }
@@ -1253,17 +1298,6 @@ body.light-theme .apply-btn:hover {
   gap: 6px;
 }
 
-#sessions-list::-webkit-scrollbar {
-  width: 4px;
-}
-#sessions-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-#sessions-list::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar);
-  border-radius: 2px;
-}
-
 .session-item {
   display: flex;
   align-items: center;
@@ -1498,14 +1532,7 @@ body.light-theme .session-action-btn:disabled:hover {
   display: flex;
   flex-direction: column;
   background-color: var(--bg-panel);
-}
-
-.custom-dropdown-options::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-dropdown-options::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar);
-  border-radius: 3px;
+  padding-right: 2px;
 }
 
 .custom-dropdown-option {
@@ -1700,17 +1727,6 @@ body.light-theme .session-action-btn:disabled:hover {
   flex-direction: column;
 }
 
-#slash-commands-popup::-webkit-scrollbar {
-  width: 4px;
-}
-#slash-commands-popup::-webkit-scrollbar-track {
-  background: transparent;
-}
-#slash-commands-popup::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar);
-  border-radius: 2px;
-}
-
 .slash-command-item {
   display: flex;
   align-items: center;
@@ -1824,14 +1840,6 @@ body.light-theme .radia-project-panel {
   max-height: 240px;
   overflow-y: auto;
   padding-right: 4px;
-}
-
-.radia-project-files-list::-webkit-scrollbar {
-  width: 4px;
-}
-.radia-project-files-list::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar);
-  border-radius: 2px;
 }
 
 .radia-project-file-item {

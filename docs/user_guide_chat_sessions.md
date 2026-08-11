@@ -28,6 +28,8 @@ A área de entrada de texto do chat do Rad IA possui atalhos projetados para ace
 *   `Enter`: Insere uma quebra de linha no prompt atual.
 *   Seta para cima `↑` / Seta para baixo `↓`: Permite navegar rapidamente pelo histórico dos prompts que você já digitou e enviou nesta sessão de trabalho.
 *   Caractere `/` (Barra): Abre o popup flutuante de autocompletar contendo a lista de atalhos rápidos (Slash Commands) cadastrados.
+*   Listas longas do chat, incluindo seletores e popup de comandos, exibem barra de rolagem visível
+    para navegação sem roda do mouse.
 
 ### Continuar escrevendo enquanto o RadIA trabalha
 
