@@ -8,6 +8,10 @@ Cada componente contém o pacote específico daquela combinação e reutiliza
 `Install-RadIA.Package.ps1`. O fluxo preserva validação do manifesto, hashes, instalação, reparo e
 desinstalação com preservação de dados por padrão.
 
+Antes de copiar uma versão, o instalador remove somente a pasta interna do target selecionado,
+evitando arquivos residuais de releases anteriores. Uma falha do instalador interno interrompe a
+instalação visual e devolve um exit code diferente de zero.
+
 O script do pacote descobre o diretório da IDE nos registros do usuário ou da máquina, valida todos
 os assets Web presentes no manifesto, verifica a atualização do `WebView2Loader.dll` e confirma o
 registro da BPL após instalar ou reparar. O modo de desinstalação não depende de a IDE continuar
