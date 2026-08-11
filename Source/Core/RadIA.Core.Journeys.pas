@@ -69,6 +69,9 @@ type
       const AInput: string;
       out ACommandText: string
     ): Boolean; static;
+    class function InferCreateProjectType(
+      const AContext: string
+    ): string; static;
     class function NormalizeCreateContext(
       const AContext: string
     ): string; static;
@@ -83,6 +86,46 @@ uses
   System.StrUtils,
   System.SysUtils;
 
+class function TRadIAJourneyCatalog.InferCreateProjectType(
+  const AContext: string
+): string;
+var
+  LContext: string;
+begin
+  LContext := ' ' + LowerCase(AContext) + ' ';
+  if ContainsText(LContext, ' dunitx') or
+    ContainsText(LContext, ' unit test') or
+    ContainsText(LContext, ' teste unit') then
+    Exit('DUnitX');
+  if ContainsText(LContext, ' firemonkey') or
+    ContainsText(LContext, ' fmx') or
+    ContainsText(LContext, ' multiplatform') or
+    ContainsText(LContext, ' multiplataforma') then
+    Exit('FMX');
+  if ContainsText(LContext, ' package') or
+    ContainsText(LContext, ' bpl') or
+    ContainsText(LContext, ' pacote de componentes') then
+    Exit('Package');
+  if ContainsText(LContext, ' library') or
+    ContainsText(LContext, ' dll') or
+    ContainsText(LContext, ' biblioteca dinâmica') or
+    ContainsText(LContext, ' biblioteca dinamica') then
+    Exit('Library');
+  if ContainsText(LContext, ' windows service') or
+    ContainsText(LContext, ' service application') or
+    ContainsText(LContext, ' serviço windows') or
+    ContainsText(LContext, ' servico windows') then
+    Exit('Service');
+  if ContainsText(LContext, ' console') then
+    Exit('Console');
+  if ContainsText(LContext, ' vcl') or
+    ContainsText(LContext, ' calculadora') or
+    ContainsText(LContext, ' calculator') or
+    ContainsText(LContext, ' windows desktop') then
+    Exit('VCL');
+  Result := '';
+end;
+
 class function TRadIAJourneyCatalog.NormalizeCreateContext(
   const AContext: string
 ): string;
@@ -91,6 +134,7 @@ var
   LLowerContext: string;
   LMatch: TMatch;
   LProjectName: string;
+  LProjectType: string;
 begin
   Result := AContext.Trim;
   if Result.IsEmpty then
@@ -112,6 +156,12 @@ begin
       LProjectName := 'CalculatorApp';
     if not LProjectName.IsEmpty then
       Result := Result + ' project="' + LProjectName.Replace('"', '') + '"';
+  end;
+  if not LLowerContext.Contains('type=') then
+  begin
+    LProjectType := InferCreateProjectType(AContext);
+    if not LProjectType.IsEmpty then
+      Result := Result + ' type="' + LProjectType + '"';
   end;
   if not LLowerContext.Contains('platform=') then
     Result := Result + ' platform="Win32"';
@@ -220,7 +270,8 @@ end;
 function TRadIAJourneyDefinition.Usage: string;
 begin
   if SameText(FCommand, '/journey create') then
-    Exit('/journey create project=<name> type=<VCL|FMX|Console> ' +
+    Exit('/journey create project=<name> ' +
+      'type=<Console|VCL|FMX|Library|Package|DUnitX|Service> ' +
       'destination=<folder> platform=<Win32|Win64> requirements="<details>"');
   if SameText(FCommand, '/journey dext-minimal') or
     SameText(FCommand, '/journey dext-controllers') then
@@ -281,11 +332,12 @@ function TRadIAJourneyDefinition.NextRequiredInput(
   out AQuestion: string
 ): Boolean;
 const
-  CCreateFields: array[0..2] of string = (
-    'project', 'destination', 'platform'
+  CCreateFields: array[0..3] of string = (
+    'project', 'type', 'destination', 'platform'
   );
-  CCreateQuestions: array[0..2] of string = (
+  CCreateQuestions: array[0..3] of string = (
     'What should the project be called?',
+    'Which project type should be used: Console, VCL, FMX, Library, Package, DUnitX, or Service?',
     'Which destination folder should receive the project?',
     'Which target platform should be used: Win32 or Win64?'
   );

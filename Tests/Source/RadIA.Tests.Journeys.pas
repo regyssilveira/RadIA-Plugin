@@ -33,6 +33,8 @@ type
     procedure CreateJourneyRequiresRuntimeValidation;
     [Test]
     procedure NaturalCreateContextExtractsDestinationNameAndDefaultPlatform;
+    [Test]
+    procedure NaturalPromptsNormalizeEverySupportedTemplate;
   end;
 
 implementation
@@ -305,10 +307,18 @@ begin
       LQuestion
     )
   );
+  Assert.AreEqual('type', LField);
+  Assert.IsTrue(
+    LDefinition.NextRequiredInput(
+      'goal="calculator" project="CalculatorApp" type="VCL"',
+      LField,
+      LQuestion
+    )
+  );
   Assert.AreEqual('destination', LField);
   Assert.IsFalse(
     LDefinition.NextRequiredInput(
-      'goal="calculator" project="CalculatorApp" ' +
+      'goal="calculator" project="CalculatorApp" type="VCL" ' +
       'destination="D:\Projects" platform="Win32"',
       LField,
       LQuestion
@@ -330,9 +340,54 @@ begin
   );
   Assert.Contains(LContext, 'destination="d:\calculadora"');
   Assert.Contains(LContext, 'project="calculadora"');
+  Assert.Contains(LContext, 'type="VCL"');
   Assert.Contains(LContext, 'platform="Win32"');
   Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
   Assert.IsFalse(LDefinition.NextRequiredInput(LContext, LField, LQuestion));
+end;
+
+procedure TTestRadIAJourneys.NaturalPromptsNormalizeEverySupportedTemplate;
+const
+  CPrompts: array[0..13] of string = (
+    'crie um aplicativo console',
+    'create a console application',
+    'crie uma aplicação VCL',
+    'create a Windows desktop application',
+    'crie uma aplicação FireMonkey multiplataforma',
+    'create an FMX application',
+    'crie uma biblioteca dinâmica DLL',
+    'create a library DLL',
+    'crie um pacote de componentes BPL',
+    'create a package BPL',
+    'crie um projeto de testes unitários DUnitX',
+    'create a DUnitX unit test project',
+    'crie um serviço Windows',
+    'create a Windows service application'
+  );
+  CExpectedTypes: array[0..13] of string = (
+    'Console', 'Console',
+    'VCL', 'VCL',
+    'FMX', 'FMX',
+    'Library', 'Library',
+    'Package', 'Package',
+    'DUnitX', 'DUnitX',
+    'Service', 'Service'
+  );
+var
+  LIndex: Integer;
+  LNormalized: string;
+begin
+  for LIndex := Low(CPrompts) to High(CPrompts) do
+  begin
+    LNormalized := TRadIAJourneyCatalog.NormalizeCreateContext(
+      CPrompts[LIndex]
+    );
+    Assert.Contains(
+      LNormalized,
+      'type="' + CExpectedTypes[LIndex] + '"',
+      CPrompts[LIndex]
+    );
+  end;
 end;
 
 initialization
