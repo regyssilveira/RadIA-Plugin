@@ -371,7 +371,20 @@ if ($LASTEXITCODE -ne 0) {
     throw "Compilacao do bridge MCP stdio falhou."
 }
 
-# 6.3 Verificar disponibilidade do DUnitX caso os testes tenham sido explicitamente solicitados
+# 6.3 Compilar motor semantico isolado
+Write-Host "Compilando motor semantico ($platform)..." -ForegroundColor Yellow
+$semanticEngineParams = @("-Q", "-NU$dcuPath", "-E$binPath")
+if ($Release) {
+    $semanticEngineParams += @('-$D-', '-$L-', '-O+', '-DRELEASE')
+} else {
+    $semanticEngineParams += @('-$D+', '-$L+', '-O-', '-DDEBUG')
+}
+& $compiler $semanticEngineParams "Source\Semantic\RadIA.Semantic.Engine.dpr"
+if ($LASTEXITCODE -ne 0) {
+    throw "Compilacao do motor semantico falhou."
+}
+
+# 6.4 Verificar disponibilidade do DUnitX caso os testes tenham sido explicitamente solicitados
 $runTests = $Test
 if ($runTests) {
     $dunitxPath = ""
