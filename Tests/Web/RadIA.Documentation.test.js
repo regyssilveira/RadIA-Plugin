@@ -694,10 +694,14 @@ test('current backlog contains only open work', () => {
   const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
 
-  assert.ok(portuguese.includes('| Parser estrutural |'));
-  assert.ok(english.includes('| Structural parser |'));
+  assert.ok(portuguese.includes('| Membros ausentes |'));
+  assert.ok(english.includes('| Missing members |'));
   assert.ok(portuguese.includes('somente trabalho aberto'));
   assert.match(english, /This file contains open work only/u);
+  assert.doesNotMatch(portuguese, /\| Concluído \|/u);
+  assert.doesNotMatch(english, /\| Complete(?:d)? \|/u);
+  assert.doesNotMatch(portuguese, /\| Parser estrutural \|/u);
+  assert.doesNotMatch(english, /\| Structural parser \|/u);
   assert.doesNotMatch(portuguese, /Registro hist/u);
   assert.doesNotMatch(english, /Version History|Historical execution/u);
 });

@@ -269,7 +269,18 @@ When closing the Delphi IDE, the WebView2 engine (`TEdgeBrowser`) can cause seve
 
 ---
 
-## 5. Validate the semantic engine corpus
+## 5. Semantic workspace synchronization
+
+`RadIA.OTA.SemanticWorkspace.pas` captures only OTA-authorized data on the main thread: the active
+project, other projects in the group, open buffers, and the effective compiler profile. Installed
+RTL/VCL sources use separate scopes. Unsaved editor content takes precedence over the disk file.
+
+`RadIA.Semantic.Workspace.pas` compares per-unit fingerprints and sends only new or changed files to
+the external process. Disk reads, parsing, and index updates run in the background. Removed units
+leave every lookup; a process restart replays the complete snapshot. Never access `ToolsAPI` from
+the worker or implement semantic resolution inside the BPL.
+
+## 6. Validate the semantic engine corpus
 
 Compile `RadIA.Semantic.Engine.exe` before running the validation. The commands below analyze every
 Pascal unit available under `source/rtl` and `source/vcl` in the corresponding installation:

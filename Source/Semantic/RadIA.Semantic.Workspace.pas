@@ -51,6 +51,23 @@ type
     procedure Reset;
   end;
 
+  IRadIASemanticWorkspaceSource = interface
+    ['{C25AC7AC-CBB8-4ED1-B36F-5E73C495033E}']
+    function Capture(
+      out AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      out ADefines: TArray<string>;
+      out AError: string
+    ): Boolean;
+  end;
+
+  IRadIASemanticWorkspaceCoordinator = interface
+    ['{8AA0F069-55A2-4BA1-B478-BB25DFEB2BD6}']
+    function IsRunning: Boolean;
+    procedure MarkDirty;
+    procedure Poll;
+    procedure Stop;
+  end;
+
   TRadIASemanticWorkspaceSynchronizer = class(
     TInterfacedObject,
     IRadIASemanticWorkspaceSynchronizer
@@ -75,6 +92,9 @@ type
       const AFiles: TArray<TRadIASemanticWorkspaceFile>;
       out AError: string
     ): Boolean;
+    function ResolveContent(
+      const AFile: TRadIASemanticWorkspaceFile
+    ): TRadIASemanticWorkspaceFile;
   public
     constructor Create(const AClient: IRadIASemanticRequestClient);
     destructor Destroy; override;
@@ -86,11 +106,39 @@ type
     ): Boolean;
   end;
 
+  TRadIASemanticWorkspaceCoordinator = class(
+    TInterfacedObject,
+    IRadIASemanticWorkspaceCoordinator
+  )
+  private
+    FDefines: TArray<string>;
+    FDirty: Boolean;
+    FFiles: TArray<TRadIASemanticWorkspaceFile>;
+    FRunning: Boolean;
+    FSource: IRadIASemanticWorkspaceSource;
+    FStopped: Boolean;
+    FSynchronizer: IRadIASemanticWorkspaceSynchronizer;
+    procedure ExecuteSync;
+  public
+    constructor Create(
+      const ASource: IRadIASemanticWorkspaceSource;
+      const ASynchronizer: IRadIASemanticWorkspaceSynchronizer
+    );
+    function IsRunning: Boolean;
+    procedure MarkDirty;
+    procedure Poll;
+    procedure Stop;
+  end;
+
 implementation
 
 uses
+  System.Classes,
+  System.IOUtils,
   System.JSON,
-  System.SysUtils;
+  System.SyncObjs,
+  System.SysUtils,
+  RadIA.Core.Types;
 
 function ScopeName(const AScope: TRadIASemanticUnitScope): string;
 begin
@@ -176,6 +224,7 @@ function TRadIASemanticWorkspaceSynchronizer.IndexChangedFiles(
 ): Boolean;
 var
   LFile: TRadIASemanticWorkspaceFile;
+  LResolvedFile: TRadIASemanticWorkspaceFile;
   LFingerprint: string;
   LRestartCount: Integer;
   LResponse: string;
@@ -188,10 +237,11 @@ begin
       SameText(LFingerprint, LFile.Fingerprint) then
       Continue;
     Inc(FNextRevision);
+    LResolvedFile := ResolveContent(LFile);
     LRestartCount := FClient.RestartCount;
     if not FClient.Request(
       'indexUnit',
-      BuildIndexParameters(LFile, ADefines, FNextRevision),
+      BuildIndexParameters(LResolvedFile, ADefines, FNextRevision),
       LResponse,
       AError
     ) then
@@ -201,6 +251,24 @@ begin
       ARestarted := True;
   end;
   Result := True;
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.ResolveContent(
+  const AFile: TRadIASemanticWorkspaceFile
+): TRadIASemanticWorkspaceFile;
+var
+  LContent: string;
+begin
+  if (AFile.Content <> '') or not TFile.Exists(AFile.FileName) then
+    Exit(AFile);
+  LContent := TFile.ReadAllText(AFile.FileName, TEncoding.UTF8);
+  Result := TRadIASemanticWorkspaceFile.Create(
+    AFile.UnitKey,
+    AFile.FileName,
+    AFile.Scope,
+    AFile.Fingerprint,
+    LContent
+  );
 end;
 
 function TRadIASemanticWorkspaceSynchronizer.RemoveMissingFiles(
@@ -279,6 +347,115 @@ begin
   Result := RemoveMissingFiles(AFiles, AError);
   if Result then
     FLastRestartCount := FClient.RestartCount;
+end;
+
+{ TRadIASemanticWorkspaceCoordinator }
+
+constructor TRadIASemanticWorkspaceCoordinator.Create(
+  const ASource: IRadIASemanticWorkspaceSource;
+  const ASynchronizer: IRadIASemanticWorkspaceSynchronizer
+);
+begin
+  inherited Create;
+  if not Assigned(ASource) then
+    raise EArgumentNilException.Create('ASource');
+  if not Assigned(ASynchronizer) then
+    raise EArgumentNilException.Create('ASynchronizer');
+  FSource := ASource;
+  FSynchronizer := ASynchronizer;
+  FDirty := True;
+end;
+
+procedure TRadIASemanticWorkspaceCoordinator.ExecuteSync;
+var
+  LError: string;
+begin
+  try
+    FSynchronizer.Synchronize(FFiles, FDefines, LError);
+  finally
+    TMonitor.Enter(Self);
+    try
+      FRunning := False;
+    finally
+      TMonitor.Exit(Self);
+    end;
+    TInterlocked.Decrement(GActiveThreadCount);
+  end;
+end;
+
+function TRadIASemanticWorkspaceCoordinator.IsRunning: Boolean;
+begin
+  TMonitor.Enter(Self);
+  try
+    Result := FRunning;
+  finally
+    TMonitor.Exit(Self);
+  end;
+end;
+
+procedure TRadIASemanticWorkspaceCoordinator.MarkDirty;
+begin
+  TMonitor.Enter(Self);
+  try
+    if not FStopped then
+      FDirty := True;
+  finally
+    TMonitor.Exit(Self);
+  end;
+end;
+
+procedure TRadIASemanticWorkspaceCoordinator.Poll;
+var
+  LAction: TProc;
+  LError: string;
+  LKeepAlive: IRadIASemanticWorkspaceCoordinator;
+  LThread: TThread;
+begin
+  TMonitor.Enter(Self);
+  try
+    if FStopped or FRunning or not FDirty then
+      Exit;
+    if not FSource.Capture(FFiles, FDefines, LError) then
+      Exit;
+    FDirty := False;
+    FRunning := True;
+  finally
+    TMonitor.Exit(Self);
+  end;
+  LKeepAlive := Self;
+  LAction :=
+    procedure
+    begin
+      LKeepAlive.IsRunning;
+      ExecuteSync;
+    end;
+  TInterlocked.Increment(GActiveThreadCount);
+  try
+    LThread := TThread.CreateAnonymousThread(LAction);
+    LThread.FreeOnTerminate := True;
+    LThread.Start;
+  except
+    TMonitor.Enter(Self);
+    try
+      FRunning := False;
+      FDirty := True;
+    finally
+      TMonitor.Exit(Self);
+    end;
+    TInterlocked.Decrement(GActiveThreadCount);
+    raise;
+  end;
+end;
+
+procedure TRadIASemanticWorkspaceCoordinator.Stop;
+begin
+  TMonitor.Enter(Self);
+  try
+    FStopped := True;
+    FDirty := False;
+  finally
+    TMonitor.Exit(Self);
+  end;
 end;
 
 end.

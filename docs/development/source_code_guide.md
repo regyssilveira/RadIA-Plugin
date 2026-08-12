@@ -269,7 +269,19 @@ Ao fechar a IDE do Delphi, o motor WebView2 (`TEdgeBrowser`) pode gerar deadlock
 
 ---
 
-## 5. Validar o corpus do motor semântico
+## 5. Sincronização do workspace semântico
+
+`RadIA.OTA.SemanticWorkspace.pas` captura na thread principal somente dados permitidos pela OTA:
+projeto ativo, demais projetos do grupo, buffers abertos e perfil efetivo do compilador. As fontes
+instaladas de RTL/VCL recebem escopos separados. O conteúdo não salvo do editor tem precedência
+sobre o arquivo em disco.
+
+`RadIA.Semantic.Workspace.pas` compara fingerprints por unit e envia ao processo externo somente
+arquivos novos ou alterados. Leitura de disco, parsing e atualização do índice acontecem em
+background. Units removidas saem de todos os lookups; se o processo reiniciar, o snapshot completo
+é reenviado. Não acesse `ToolsAPI` no worker nem implemente resolução semântica na BPL.
+
+## 6. Validar o corpus do motor semântico
 
 O processo `RadIA.Semantic.Engine.exe` deve ser compilado antes da validação. Os comandos abaixo
 analisam todas as units Pascal disponíveis nas pastas `source/rtl` e `source/vcl` da instalação

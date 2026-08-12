@@ -272,6 +272,7 @@ contains
   RadIA.Semantic.Parser in 'Source\Semantic\RadIA.Semantic.Parser.pas',
   RadIA.Semantic.Index in 'Source\Semantic\RadIA.Semantic.Index.pas',
   RadIA.Semantic.Workspace in 'Source\Semantic\RadIA.Semantic.Workspace.pas',
+  RadIA.OTA.SemanticWorkspace in 'Source\Integration\RadIA.OTA.SemanticWorkspace.pas',
   RadIA.OTA.DockableForm in 'Source\Integration\RadIA.OTA.DockableForm.pas',
   RadIA.OTA.Onboarding in 'Source\Integration\RadIA.OTA.Onboarding.pas',
   RadIA.OTA.Options in 'Source\Integration\RadIA.OTA.Options.pas',

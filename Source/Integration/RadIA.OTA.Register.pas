@@ -12,6 +12,7 @@ type
     FEditorHook: TObject;
     FKnowledgeNotifier: TObject;
     FDebugTimelineNotifier: TObject;
+    FSemanticMonitor: TObject;
     FTimer: TTimer;
     FOptionsPages: TInterfaceList;
     procedure RegisterMenus;
@@ -26,6 +27,7 @@ type
     procedure ReleaseDebugTimelineNotifier;
     procedure ReleaseEditorHook;
     procedure ReleaseKnowledgeNotifier;
+    procedure ReleaseSemanticMonitor;
     procedure ReleasePinnedModule;
   public
     constructor Create;
@@ -131,8 +133,11 @@ uses
   RadIA.OTA.DebugTimelineStore,
   RadIA.OTA.Knowledge,
   RadIA.OTA.KnowledgeNotifier, RadIA.OTA.InlineReviews,
+  RadIA.OTA.SemanticWorkspace,
   RadIA.OTA.IDENavigation,
-  RadIA.MCP.NamedPipe;
+  RadIA.MCP.NamedPipe,
+  RadIA.Semantic.Client,
+  RadIA.Semantic.Workspace;
 
 const
   GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = $00000004;
@@ -273,6 +278,10 @@ end;
 
 constructor TRadIAWizard.Create;
 var
+  LSemanticClient: IRadIASemanticRequestClient;
+  LSemanticCoordinator: IRadIASemanticWorkspaceCoordinator;
+  LSemanticSource: IRadIASemanticWorkspaceSource;
+  LSemanticSynchronizer: IRadIASemanticWorkspaceSynchronizer;
   LThemingServices: IOTAIDEThemingServices;
 begin
   LogDebug('TRadIAWizard.Create called');
@@ -310,6 +319,24 @@ begin
     TRadIAContainer.Resolve<IRadIAKnowledgeRefreshScheduler>
   );
   TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Install;
+  LSemanticClient := TRadIASemanticEngineSupervisor.Create(
+    TRadIASemanticEngineClient.DefaultExecutablePath
+  );
+  LSemanticSynchronizer := TRadIASemanticWorkspaceSynchronizer.Create(
+    LSemanticClient
+  );
+  LSemanticSource := TRadIAOTASemanticWorkspaceSource.Create(
+    TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>
+  );
+  LSemanticCoordinator := TRadIASemanticWorkspaceCoordinator.Create(
+    LSemanticSource,
+    LSemanticSynchronizer
+  );
+  FSemanticMonitor := TRadIAOTASemanticWorkspaceMonitor.Create(
+    nil,
+    LSemanticCoordinator
+  );
+  TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).Install;
   FDebugTimelineNotifier := TRadIAOTADebugTimelineNotifier.Create(
     TRadIAContainer.Resolve<IRadIADebugTimeline>,
     TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>
@@ -366,6 +393,14 @@ begin
   end;
 end;
 
+procedure TRadIAWizard.ReleaseSemanticMonitor;
+begin
+  if not Assigned(FSemanticMonitor) then
+    Exit;
+  TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).Stop;
+  FreeAndNil(FSemanticMonitor);
+end;
+
 procedure TRadIAWizard.ReleasePinnedModule;
 begin
   if GIsShuttingDown or (GModuleHandle = 0) then
@@ -412,6 +447,8 @@ begin
   LogDebug('TRadIAWizard.Destroy timer released');
   ReleaseKnowledgeNotifier;
   LogDebug('TRadIAWizard.Destroy knowledge notifier released');
+  ReleaseSemanticMonitor;
+  LogDebug('TRadIAWizard.Destroy semantic monitor released');
   ReleaseDebugTimelineNotifier;
   LogDebug('TRadIAWizard.Destroy debug notifier released');
   UnregisterOptions;
@@ -492,7 +529,8 @@ end;
 
 procedure TRadIAWizard.AfterSave;
 begin
-  // Intentionally empty: IOTANotifier implementation
+  if Assigned(FSemanticMonitor) then
+    TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
 end;
 
 procedure TRadIAWizard.BeforeSave;
@@ -502,12 +540,14 @@ end;
 
 procedure TRadIAWizard.Destroyed;
 begin
-  // Intentionally empty: IOTANotifier implementation
+  if Assigned(FSemanticMonitor) then
+    TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
 end;
 
 procedure TRadIAWizard.Modified;
 begin
-  // Intentionally empty: IOTANotifier implementation
+  if Assigned(FSemanticMonitor) then
+    TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
 end;
 
 function TRadIAWizard.GetIDString: string;

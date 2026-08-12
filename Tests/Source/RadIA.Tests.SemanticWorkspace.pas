@@ -6,6 +6,7 @@ implementation
 
 uses
   System.Generics.Collections,
+  System.SyncObjs,
   System.SysUtils,
   DUnitX.TestFramework,
   RadIA.Semantic.Index,
@@ -40,6 +41,38 @@ type
     procedure RestartOnNextRequest;
   end;
 
+  TRadIAFakeSemanticWorkspaceSource = class(
+    TInterfacedObject,
+    IRadIASemanticWorkspaceSource
+  )
+  public
+    function Capture(
+      out AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      out ADefines: TArray<string>;
+      out AError: string
+    ): Boolean;
+  end;
+
+  TRadIAFakeSemanticWorkspaceSynchronizer = class(
+    TInterfacedObject,
+    IRadIASemanticWorkspaceSynchronizer
+  )
+  private
+    FCompleted: TEvent;
+    FSyncCount: Integer;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Reset;
+    function Synchronize(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      const ADefines: TArray<string>;
+      out AError: string
+    ): Boolean;
+    property Completed: TEvent read FCompleted;
+    property SyncCount: Integer read FSyncCount;
+  end;
+
   [TestFixture]
   TRadIASemanticWorkspaceTests = class
   private
@@ -60,6 +93,8 @@ type
     procedure RemovesUnitsMissingFromSnapshot;
     [Test]
     procedure ReplaysSnapshotAfterEngineRestart;
+    [Test]
+    procedure CoordinatorCapturesBeforeBackgroundSynchronization;
   end;
 
 { TRadIAFakeSemanticRequestClient }
@@ -125,6 +160,60 @@ end;
 procedure TRadIAFakeSemanticRequestClient.RestartOnNextRequest;
 begin
   FRestartOnNextRequest := True;
+end;
+
+{ TRadIAFakeSemanticWorkspaceSource }
+
+function TRadIAFakeSemanticWorkspaceSource.Capture(
+  out AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  out ADefines: TArray<string>;
+  out AError: string
+): Boolean;
+begin
+  AFiles := [TRadIASemanticWorkspaceFile.Create(
+    'sample',
+    'Sample.pas',
+    susProject,
+    'revision-1',
+    'unit Sample; interface implementation end.'
+  )];
+  ADefines := ['DEBUG'];
+  AError := '';
+  Result := True;
+end;
+
+{ TRadIAFakeSemanticWorkspaceSynchronizer }
+
+constructor TRadIAFakeSemanticWorkspaceSynchronizer.Create;
+begin
+  inherited Create;
+  FCompleted := TEvent.Create(nil, True, False, '');
+end;
+
+destructor TRadIAFakeSemanticWorkspaceSynchronizer.Destroy;
+begin
+  FCompleted.Free;
+  inherited Destroy;
+end;
+
+procedure TRadIAFakeSemanticWorkspaceSynchronizer.Reset;
+begin
+  FSyncCount := 0;
+  FCompleted.ResetEvent;
+end;
+
+function TRadIAFakeSemanticWorkspaceSynchronizer.Synchronize(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  const ADefines: TArray<string>;
+  out AError: string
+): Boolean;
+begin
+  Assert.AreEqual(1, Length(AFiles));
+  Assert.AreEqual('DEBUG', ADefines[0]);
+  Inc(FSyncCount);
+  AError := '';
+  FCompleted.SetEvent;
+  Result := True;
 end;
 
 { TRadIASemanticWorkspaceTests }
@@ -245,6 +334,33 @@ begin
   FClient.RestartOnNextRequest;
   Assert.IsTrue(FSynchronizer.Synchronize(LFiles, nil, LError), LError);
   Assert.AreEqual(9, FClient.CountMethod('indexUnit'));
+end;
+
+procedure TRadIASemanticWorkspaceTests.
+  CoordinatorCapturesBeforeBackgroundSynchronization;
+var
+  LCoordinator: IRadIASemanticWorkspaceCoordinator;
+  LSource: IRadIASemanticWorkspaceSource;
+  LSynchronizer: TRadIAFakeSemanticWorkspaceSynchronizer;
+  LSynchronizerInterface: IRadIASemanticWorkspaceSynchronizer;
+begin
+  LSource := TRadIAFakeSemanticWorkspaceSource.Create;
+  LSynchronizer := TRadIAFakeSemanticWorkspaceSynchronizer.Create;
+  LSynchronizerInterface := LSynchronizer;
+  LCoordinator := TRadIASemanticWorkspaceCoordinator.Create(
+    LSource,
+    LSynchronizerInterface
+  );
+  LCoordinator.Poll;
+  Assert.AreEqual(
+    TWaitResult.wrSignaled,
+    LSynchronizer.Completed.WaitFor(5000)
+  );
+  Assert.AreEqual(1, LSynchronizer.SyncCount);
+  LCoordinator.Stop;
+  LCoordinator := nil;
+  LSynchronizerInterface := nil;
+  LSource := nil;
 end;
 
 initialization
