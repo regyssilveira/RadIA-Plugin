@@ -244,7 +244,7 @@ function CurrentActivity(
 begin
   if AStack.Count = 0 then
     Exit(saActive);
-  Result := AStack[AStack.Count - 1].CurrentActivity;
+  Result := AStack.Last.CurrentActivity;
 end;
 
 procedure OpenConditional(

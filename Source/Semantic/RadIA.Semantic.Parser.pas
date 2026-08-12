@@ -2,9 +2,6 @@ unit RadIA.Semantic.Parser;
 
 interface
 
-uses
-  RadIA.Semantic.Preprocessor;
-
 type
   TRadIASemanticSymbolKind = (
     sskModule,
@@ -86,7 +83,8 @@ implementation
 uses
   System.Generics.Collections,
   System.SysUtils,
-  RadIA.Semantic.Lexer;
+  RadIA.Semantic.Lexer,
+  RadIA.Semantic.Preprocessor;
 
 type
   TRadIASemanticParserWorker = class
@@ -100,9 +98,24 @@ type
     function Current: TRadIASemanticToken;
     function IsCurrent(const AText: string): Boolean;
     function IsMethodKeyword: Boolean;
+    function IsStructuralKindAt(const AIndex: Integer): Boolean;
     function IsStructuralTypeStart: Boolean;
     function IsTypeBoundary: Boolean;
+    function LookAheadAfterGeneric(const AIndex: Integer): Integer;
     function ParseQualifiedName: string;
+    procedure ParseStructuredTypeBody(
+      const AName: string;
+      const AStart: Integer
+    );
+    procedure ParseTypeBodyItem(
+      const AName: string;
+      var AVisibility: TRadIASemanticVisibility
+    );
+    function ReadStructuralKind(
+      out AKind: TRadIASemanticSymbolKind
+    ): Boolean;
+    function ReadTypeHeaderEnd: Integer;
+    procedure SkipGenericParameters;
     procedure AddSymbol(
       const AName: string;
       const AKind: TRadIASemanticSymbolKind;
@@ -260,47 +273,62 @@ begin
     IsCurrent('operator');
 end;
 
-function TRadIASemanticParserWorker.IsStructuralTypeStart: Boolean;
+function TRadIASemanticParserWorker.LookAheadAfterGeneric(
+  const AIndex: Integer
+): Integer;
 var
   LDepth: Integer;
+begin
+  Result := AIndex;
+  if (Result >= Length(FTokens)) or (FTokens[Result].Text <> '<') then
+    Exit;
+  LDepth := 0;
+  while Result < Length(FTokens) do
+  begin
+    if FTokens[Result].Text = '<' then
+      Inc(LDepth)
+    else if FTokens[Result].Text = '>' then
+    begin
+      Dec(LDepth);
+      if LDepth = 0 then
+      begin
+        Inc(Result);
+        Exit;
+      end;
+    end;
+    Inc(Result);
+  end;
+end;
+
+function TRadIASemanticParserWorker.IsStructuralKindAt(
+  const AIndex: Integer
+): Boolean;
+begin
+  Result := False;
+  if AIndex >= Length(FTokens) then
+    Exit;
+  Result := SameText(FTokens[AIndex].Text, 'record') or
+    SameText(FTokens[AIndex].Text, 'interface') or
+    SameText(FTokens[AIndex].Text, 'dispinterface') or
+    (SameText(FTokens[AIndex].Text, 'class') and
+     ((AIndex + 1 >= Length(FTokens)) or
+      not SameText(FTokens[AIndex + 1].Text, 'of')));
+end;
+
+function TRadIASemanticParserWorker.IsStructuralTypeStart: Boolean;
+var
   LIndex: Integer;
 begin
   Result := False;
   if (FIndex >= Length(FTokens)) or (Current.Kind <> stkIdentifier) then
     Exit;
-  LIndex := FIndex + 1;
-  if (LIndex < Length(FTokens)) and (FTokens[LIndex].Text = '<') then
-  begin
-    LDepth := 0;
-    while LIndex < Length(FTokens) do
-    begin
-      if FTokens[LIndex].Text = '<' then
-        Inc(LDepth)
-      else if FTokens[LIndex].Text = '>' then
-      begin
-        Dec(LDepth);
-        if LDepth = 0 then
-        begin
-          Inc(LIndex);
-          Break;
-        end;
-      end;
-      Inc(LIndex);
-    end;
-  end;
+  LIndex := LookAheadAfterGeneric(FIndex + 1);
   if (LIndex >= Length(FTokens)) or (FTokens[LIndex].Text <> '=') then
     Exit;
   Inc(LIndex);
   if (LIndex < Length(FTokens)) and SameText(FTokens[LIndex].Text, 'packed') then
     Inc(LIndex);
-  if LIndex >= Length(FTokens) then
-    Exit;
-  Result := SameText(FTokens[LIndex].Text, 'record') or
-    SameText(FTokens[LIndex].Text, 'interface') or
-    SameText(FTokens[LIndex].Text, 'dispinterface') or
-    (SameText(FTokens[LIndex].Text, 'class') and
-     ((LIndex + 1 >= Length(FTokens)) or
-      not SameText(FTokens[LIndex + 1].Text, 'of')));
+  Result := IsStructuralKindAt(LIndex);
 end;
 
 function TRadIASemanticParserWorker.IsTypeBoundary: Boolean;
@@ -399,81 +427,148 @@ begin
   end;
 end;
 
-procedure TRadIASemanticParserWorker.ParseTypeDeclaration(
-  const AContainer: string
-);
+procedure TRadIASemanticParserWorker.SkipGenericParameters;
 var
   LDepth: Integer;
-  LHeaderEnd: Integer;
-  LKind: TRadIASemanticSymbolKind;
-  LName: string;
-  LStart: Integer;
-  LVisibility: TRadIASemanticVisibility;
 begin
-  LName := Current.Text;
-  LStart := Current.StartOffset;
-  Advance;
-  if IsCurrent('<') then
-  begin
-    LDepth := 0;
-    while FIndex < Length(FTokens) do
-    begin
-      if IsCurrent('<') then
-        Inc(LDepth)
-      else if IsCurrent('>') then
-      begin
-        Dec(LDepth);
-        Advance;
-        if LDepth = 0 then
-          Break;
-        Continue;
-      end;
-      Advance;
-    end;
-  end;
-  if not IsCurrent('=') then
-  begin
-    FDiagnostics.Add(Format('Offset %d: Type declaration has no equals sign.', [LStart]));
+  if not IsCurrent('<') then
     Exit;
+  LDepth := 0;
+  while FIndex < Length(FTokens) do
+  begin
+    if IsCurrent('<') then
+      Inc(LDepth)
+    else if IsCurrent('>') then
+    begin
+      Dec(LDepth);
+      Advance;
+      if LDepth = 0 then
+        Exit;
+      Continue;
+    end;
+    Advance;
   end;
+end;
+
+function TRadIASemanticParserWorker.ReadStructuralKind(
+  out AKind: TRadIASemanticSymbolKind
+): Boolean;
+begin
+  Result := False;
+  if not IsCurrent('=') then
+    Exit;
   Advance;
   if IsCurrent('packed') then
     Advance;
   if IsCurrent('class') then
-    LKind := sskClass
+    AKind := sskClass
   else if IsCurrent('record') then
-    LKind := sskRecord
+    AKind := sskRecord
   else if IsCurrent('interface') or IsCurrent('dispinterface') then
-    LKind := sskInterface
+    AKind := sskInterface
   else
     Exit;
   Advance;
   if IsCurrent('helper') then
   begin
-    LKind := sskHelper;
+    AKind := sskHelper;
     Advance;
   end;
-  LHeaderEnd := Current.StartOffset;
-  if IsCurrent('(') then
+  Result := True;
+end;
+
+function TRadIASemanticParserWorker.ReadTypeHeaderEnd: Integer;
+var
+  LDepth: Integer;
+begin
+  if FIndex >= Length(FTokens) then
+    Exit(Length(FSource));
+  Result := Current.StartOffset;
+  if not IsCurrent('(') then
+    Exit;
+  LDepth := 0;
+  while FIndex < Length(FTokens) do
   begin
-    LDepth := 0;
-    while FIndex < Length(FTokens) do
+    if IsCurrent('(') then
+      Inc(LDepth)
+    else if IsCurrent(')') then
     begin
-      if IsCurrent('(') then
-        Inc(LDepth)
-      else if IsCurrent(')') then
-      begin
-        Dec(LDepth);
-        Advance;
-        if LDepth = 0 then
-          Break;
-        Continue;
-      end;
+      Dec(LDepth);
       Advance;
+      if LDepth = 0 then
+        Break;
+      Continue;
     end;
-    if FIndex > 0 then
-      LHeaderEnd := FTokens[FIndex - 1].StartOffset + FTokens[FIndex - 1].Length;
+    Advance;
   end;
+  if FIndex > 0 then
+    Result := FTokens[FIndex - 1].StartOffset + FTokens[FIndex - 1].Length;
+end;
+
+procedure TRadIASemanticParserWorker.ParseStructuredTypeBody(
+  const AName: string;
+  const AStart: Integer
+);
+var
+  LVisibility: TRadIASemanticVisibility;
+begin
+  LVisibility := svUnspecified;
+  while FIndex < Length(FTokens) do
+  begin
+    if IsCurrent('end') then
+    begin
+      Advance;
+      if IsCurrent(';') then
+        Advance;
+      Exit;
+    end;
+    ParseTypeBodyItem(AName, LVisibility);
+  end;
+  FDiagnostics.Add(Format('Offset %d: Type declaration is not closed.', [AStart]));
+end;
+
+procedure TRadIASemanticParserWorker.ParseTypeBodyItem(
+  const AName: string;
+  var AVisibility: TRadIASemanticVisibility
+);
+begin
+  if ReadVisibility(AVisibility) then
+    Exit;
+  if IsStructuralTypeStart then
+  begin
+    ParseTypeDeclaration(AName);
+    Exit;
+  end;
+  if IsCurrent('class') and
+    (FIndex + 1 < Length(FTokens)) and
+    (SameText(FTokens[FIndex + 1].Text, 'procedure') or
+     SameText(FTokens[FIndex + 1].Text, 'function')) then
+    Advance;
+  if IsMethodKeyword then
+    ParseMethod(AName, AVisibility)
+  else
+    Advance;
+end;
+
+procedure TRadIASemanticParserWorker.ParseTypeDeclaration(
+  const AContainer: string
+);
+var
+  LHeaderEnd: Integer;
+  LKind: TRadIASemanticSymbolKind;
+  LName: string;
+  LStart: Integer;
+begin
+  LName := Current.Text;
+  LStart := Current.StartOffset;
+  Advance;
+  SkipGenericParameters;
+  if not ReadStructuralKind(LKind) then
+  begin
+    FDiagnostics.Add(Format('Offset %d: Structural type is invalid.', [LStart]));
+    Exit;
+  end;
+  LHeaderEnd := ReadTypeHeaderEnd;
   AddSymbol(
     LName,
     LKind,
@@ -488,34 +583,7 @@ begin
     Advance;
     Exit;
   end;
-  LVisibility := svUnspecified;
-  while FIndex < Length(FTokens) do
-  begin
-    if IsCurrent('end') then
-    begin
-      Advance;
-      if IsCurrent(';') then
-        Advance;
-      Exit;
-    end;
-    if ReadVisibility(LVisibility) then
-      Continue;
-    if IsStructuralTypeStart then
-    begin
-      ParseTypeDeclaration(LName);
-      Continue;
-    end;
-    if IsCurrent('class') and
-      (FIndex + 1 < Length(FTokens)) and
-      (SameText(FTokens[FIndex + 1].Text, 'procedure') or
-       SameText(FTokens[FIndex + 1].Text, 'function')) then
-      Advance;
-    if IsMethodKeyword then
-      ParseMethod(LName, LVisibility)
-    else
-      Advance;
-  end;
-  FDiagnostics.Add(Format('Offset %d: Type declaration is not closed.', [LStart]));
+  ParseStructuredTypeBody(LName, LStart);
 end;
 
 procedure TRadIASemanticParserWorker.ParseTypeSection;

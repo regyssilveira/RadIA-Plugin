@@ -8,7 +8,8 @@ uses
   System.SysUtils,
   RadIA.Semantic.Lexer in 'RadIA.Semantic.Lexer.pas',
   RadIA.Semantic.Preprocessor in 'RadIA.Semantic.Preprocessor.pas',
-  RadIA.Semantic.Parser in 'RadIA.Semantic.Parser.pas';
+  RadIA.Semantic.Parser in 'RadIA.Semantic.Parser.pas',
+  RadIA.Semantic.Index in 'RadIA.Semantic.Index.pas';
 
 const
   CEngineName = 'RadIA Semantic Engine';
@@ -75,7 +76,7 @@ begin
   LArray := TJSONArray(LValue);
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
-    Result[LIndex] := LArray.Items[LIndex].Value;
+    Result[LIndex] := LArray[LIndex].Value;
 end;
 
 function BuildPreprocessResult(
@@ -157,8 +158,130 @@ begin
   LCapabilities.Add('preprocess');
   LCapabilities.Add('parse');
   LCapabilities.Add('analyze');
+  LCapabilities.Add('indexUnit');
+  LCapabilities.Add('removeUnit');
+  LCapabilities.Add('findSymbols');
+  LCapabilities.Add('findMembers');
+  LCapabilities.Add('indexStatus');
+  LCapabilities.Add('clearIndex');
+  LCapabilities.Add('loadIndexCache');
+  LCapabilities.Add('saveIndexCache');
   LCapabilities.Add('shutdown');
   LResult.AddPair('capabilities', LCapabilities);
+  Result.AddPair('result', LResult);
+end;
+
+function BuildCacheResult(
+  const AId: TJSONValue;
+  const ASucceeded: Boolean;
+  const AError: string;
+  const AIndex: TRadIASemanticIndex
+): TJSONObject;
+var
+  LResult: TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LResult.AddPair('succeeded', TJSONBool.Create(ASucceeded));
+  LResult.AddPair('error', AError);
+  LResult.AddPair('unitCount', TJSONNumber.Create(AIndex.UnitCount));
+  LResult.AddPair('symbolCount', TJSONNumber.Create(AIndex.SymbolCount));
+  Result.AddPair('result', LResult);
+end;
+
+function ReadScope(const AValue: string): TRadIASemanticUnitScope;
+begin
+  if SameText(AValue, 'group') then
+    Result := susGroup
+  else if SameText(AValue, 'rtl') then
+    Result := susRTL
+  else if SameText(AValue, 'vcl') then
+    Result := susVCL
+  else
+    Result := susProject;
+end;
+
+function ScopeName(const AValue: TRadIASemanticUnitScope): string;
+begin
+  case AValue of
+    susGroup: Result := 'group';
+    susRTL: Result := 'rtl';
+    susVCL: Result := 'vcl';
+  else
+    Result := 'project';
+  end;
+end;
+
+function BuildIndexStatusResult(
+  const AId: TJSONValue;
+  const AIndex: TRadIASemanticIndex
+): TJSONObject;
+var
+  LResult: TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LResult.AddPair('unitCount', TJSONNumber.Create(AIndex.UnitCount));
+  LResult.AddPair('symbolCount', TJSONNumber.Create(AIndex.SymbolCount));
+  Result.AddPair('result', LResult);
+end;
+
+function BuildIndexMutationResult(
+  const AId: TJSONValue;
+  const AChanged: Boolean;
+  const AIndex: TRadIASemanticIndex
+): TJSONObject;
+var
+  LResult: TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LResult.AddPair('changed', TJSONBool.Create(AChanged));
+  LResult.AddPair('unitCount', TJSONNumber.Create(AIndex.UnitCount));
+  LResult.AddPair('symbolCount', TJSONNumber.Create(AIndex.SymbolCount));
+  Result.AddPair('result', LResult);
+end;
+
+function BuildIndexedSymbolsResult(
+  const AId: TJSONValue;
+  const ASymbols: TArray<TRadIASemanticIndexedSymbol>
+): TJSONObject;
+var
+  LArray: TJSONArray;
+  LItem: TJSONObject;
+  LResult: TJSONObject;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LArray := TJSONArray.Create;
+  for LSymbol in ASymbols do
+  begin
+    LItem := TJSONObject.Create;
+    LItem.AddPair('unitKey', LSymbol.UnitKey);
+    LItem.AddPair('fileName', LSymbol.FileName);
+    LItem.AddPair('scope', ScopeName(LSymbol.Scope));
+    LItem.AddPair('name', LSymbol.Name);
+    LItem.AddPair('kind', TRadIASemanticParser.SymbolKindName(LSymbol.Kind));
+    LItem.AddPair('container', LSymbol.ContainerName);
+    LItem.AddPair(
+      'visibility',
+      TRadIASemanticParser.VisibilityName(LSymbol.Visibility)
+    );
+    LItem.AddPair('startOffset', TJSONNumber.Create(LSymbol.StartOffset));
+    LItem.AddPair('length', TJSONNumber.Create(LSymbol.Length));
+    LItem.AddPair('signature', LSymbol.Signature);
+    LArray.AddElement(LItem);
+  end;
+  LResult.AddPair('symbols', LArray);
   Result.AddPair('result', LResult);
 end;
 
@@ -254,14 +377,140 @@ begin
   Result.AddPair('result', LResult);
 end;
 
+function RequireParameters(const ARequest: TJSONObject): TJSONObject;
+begin
+  Result := ARequest.GetValue<TJSONObject>('params');
+  if not Assigned(Result) then
+    raise EArgumentException.Create('The request requires params.');
+end;
+
+function IsAnalysisMethod(const AMethod: string): Boolean;
+begin
+  Result := SameText(AMethod, 'tokenize') or
+    SameText(AMethod, 'preprocess') or SameText(AMethod, 'parse') or
+    SameText(AMethod, 'analyze');
+end;
+
+function HandleAnalysisRequest(
+  const AMethod: string;
+  const AId: TJSONValue;
+  const AParameters: TJSONObject
+): TJSONObject;
+begin
+  if SameText(AMethod, 'tokenize') then
+    Exit(BuildTokenizeResult(
+      AId,
+      AParameters.GetValue<string>('source', '')
+    ));
+  if SameText(AMethod, 'preprocess') then
+    Exit(BuildPreprocessResult(
+      AId,
+      AParameters.GetValue<string>('source', ''),
+      ReadStringArray(AParameters, 'defines')
+    ));
+  if SameText(AMethod, 'parse') then
+    Exit(BuildParseResult(
+      AId,
+      AParameters.GetValue<string>('source', ''),
+      ReadStringArray(AParameters, 'defines')
+    ));
+  Result := BuildAnalyzeResult(
+    AId,
+    AParameters.GetValue<string>('source', ''),
+    ReadStringArray(AParameters, 'defines')
+  );
+end;
+
+function HandleIndexRequest(
+  const ARequest: TJSONObject;
+  const AMethod: string;
+  const AId: TJSONValue;
+  const AIndex: TRadIASemanticIndex
+): TJSONObject;
+var
+  LCacheError: string;
+  LParameters: TJSONObject;
+begin
+  if SameText(AMethod, 'indexUnit') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexMutationResult(
+      AId,
+      AIndex.IndexUnit(
+        TRadIASemanticUnitDescriptor.Create(
+          LParameters.GetValue<string>('unitKey', ''),
+          LParameters.GetValue<string>('fileName', ''),
+          ReadScope(LParameters.GetValue<string>('scope', 'project')),
+          LParameters.GetValue<Int64>('revision', 0)
+        ),
+        LParameters.GetValue<string>('source', ''),
+        ReadStringArray(LParameters, 'defines')
+      ),
+      AIndex
+    ));
+  end;
+  if SameText(AMethod, 'removeUnit') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexMutationResult(
+      AId,
+      AIndex.RemoveUnit(LParameters.GetValue<string>('unitKey', '')),
+      AIndex
+    ));
+  end;
+  if SameText(AMethod, 'findSymbols') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.FindSymbols(LParameters.GetValue<string>('name', ''))
+    ));
+  end;
+  if SameText(AMethod, 'findMembers') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.FindMembers(LParameters.GetValue<string>('container', ''))
+    ));
+  end;
+  if SameText(AMethod, 'indexStatus') then
+    Exit(BuildIndexStatusResult(AId, AIndex));
+  if SameText(AMethod, 'clearIndex') then
+  begin
+    AIndex.Clear;
+    Exit(BuildIndexMutationResult(AId, True, AIndex));
+  end;
+  if SameText(AMethod, 'loadIndexCache') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildCacheResult(
+      AId,
+      AIndex.LoadCache(
+        LParameters.GetValue<string>('fileName', ''),
+        LCacheError
+      ),
+      LCacheError,
+      AIndex
+    ));
+  end;
+  if SameText(AMethod, 'saveIndexCache') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    AIndex.SaveCache(LParameters.GetValue<string>('fileName', ''));
+    Exit(BuildCacheResult(AId, True, '', AIndex));
+  end;
+  Result := BuildError(AId, -32601, 'Unknown semantic engine method.');
+end;
+
 function HandleRequest(
   const ARequest: TJSONObject;
+  const AIndex: TRadIASemanticIndex;
   out AShutdown: Boolean
 ): TJSONObject;
 var
   LId: TJSONValue;
   LMethod: string;
-  LParameters: TJSONObject;
 begin
   AShutdown := False;
   LId := ARequest.GetValue('id');
@@ -275,80 +524,63 @@ begin
     AShutdown := True;
     Exit(BuildInitializeResult(LId));
   end;
-  if SameText(LMethod, 'tokenize') then
-  begin
-    LParameters := ARequest.GetValue<TJSONObject>('params');
-    if not Assigned(LParameters) then
-      Exit(BuildError(LId, -32602, 'Tokenize requires params.'));
-    Exit(BuildTokenizeResult(
+  if IsAnalysisMethod(LMethod) then
+    Exit(HandleAnalysisRequest(
+      LMethod,
       LId,
-      LParameters.GetValue<string>('source', '')
+      RequireParameters(ARequest)
     ));
+  Result := HandleIndexRequest(ARequest, LMethod, LId, AIndex);
+end;
+
+function HandleRequestSafely(
+  const ARequest: TJSONObject;
+  const AIndex: TRadIASemanticIndex;
+  out AShutdown: Boolean
+): TJSONObject;
+begin
+  try
+    Result := HandleRequest(ARequest, AIndex, AShutdown);
+  except
+    on E: Exception do
+      Result := BuildError(ARequest.GetValue('id'), -32603, E.Message);
   end;
-  if SameText(LMethod, 'preprocess') then
-  begin
-    LParameters := ARequest.GetValue<TJSONObject>('params');
-    if not Assigned(LParameters) then
-      Exit(BuildError(LId, -32602, 'Preprocess requires params.'));
-    Exit(BuildPreprocessResult(
-      LId,
-      LParameters.GetValue<string>('source', ''),
-      ReadStringArray(LParameters, 'defines')
-    ));
-  end;
-  if SameText(LMethod, 'parse') then
-  begin
-    LParameters := ARequest.GetValue<TJSONObject>('params');
-    if not Assigned(LParameters) then
-      Exit(BuildError(LId, -32602, 'Parse requires params.'));
-    Exit(BuildParseResult(
-      LId,
-      LParameters.GetValue<string>('source', ''),
-      ReadStringArray(LParameters, 'defines')
-    ));
-  end;
-  if SameText(LMethod, 'analyze') then
-  begin
-    LParameters := ARequest.GetValue<TJSONObject>('params');
-    if not Assigned(LParameters) then
-      Exit(BuildError(LId, -32602, 'Analyze requires params.'));
-    Exit(BuildAnalyzeResult(
-      LId,
-      LParameters.GetValue<string>('source', ''),
-      ReadStringArray(LParameters, 'defines')
-    ));
-  end;
-  Result := BuildError(LId, -32601, 'Unknown semantic engine method.');
 end;
 
 procedure RunServer;
 var
+  LIndex: TRadIASemanticIndex;
   LInput: string;
   LRequest: TJSONObject;
   LResponse: TJSONObject;
   LShutdown: Boolean;
 begin
   LShutdown := False;
-  while not Eof(Input) and not LShutdown do
-  begin
-    ReadLn(LInput);
-    if Trim(LInput) = '' then
-      Continue;
-    LRequest := TJSONObject.ParseJSONValue(LInput) as TJSONObject;
-    try
-      if not Assigned(LRequest) then
-        LResponse := BuildError(nil, -32700, 'Invalid JSON request.')
-      else
-        LResponse := HandleRequest(LRequest, LShutdown);
+  LIndex := TRadIASemanticIndex.Create;
+  try
+    while not Eof(Input) and not LShutdown do
+    begin
+      ReadLn(LInput);
+      if Trim(LInput) = '' then
+        Continue;
+      LRequest := TJSONObject.ParseJSONValue(LInput) as TJSONObject;
       try
-        WriteLn(LResponse.ToJSON);
-        Flush(Output);
+        if not Assigned(LRequest) then
+          LResponse := BuildError(nil, -32700, 'Invalid JSON request.')
+        else
+          LResponse := HandleRequestSafely(LRequest, LIndex, LShutdown);
+        try
+          WriteLn(LResponse.ToJSON);
+          Flush(Output);
+        finally
+          LResponse.Free;
+        end;
       finally
-        LResponse.Free;
+        LRequest.Free;
       end;
-    finally
-      LRequest.Free;
     end;
+  finally
+    LIndex.Free;
   end;
 end;
 

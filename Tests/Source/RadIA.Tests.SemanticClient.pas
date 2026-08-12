@@ -19,6 +19,8 @@ type
     procedure SupervisorKeepsEngineAliveAcrossRequests;
     [Test]
     procedure SupervisorRestartsAfterTransportFailure;
+    [Test]
+    procedure SupervisorIndexesAndInvalidatesUnits;
   end;
 
 implementation
@@ -213,6 +215,48 @@ begin
     );
     Assert.Contains(LResponse, '"tokens"');
     Assert.AreEqual(1, LSupervisor.RestartCount);
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.SupervisorIndexesAndInvalidatesUnits;
+var
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(LPath);
+  try
+    Assert.IsTrue(LSupervisor.Request(
+      'indexUnit',
+      '{"unitKey":"sample","fileName":"Sample.pas",' +
+      '"scope":"project","revision":1,"source":' +
+      '"unit Sample; interface type TWorker = class ' +
+      'procedure Execute; end; implementation end."}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.Contains(LResponse, '"changed":true');
+    Assert.IsTrue(LSupervisor.Request(
+      'findMembers',
+      '{"container":"TWorker"}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.Contains(LResponse, '"name":"Execute"');
+    Assert.IsTrue(LSupervisor.Request(
+      'removeUnit',
+      '{"unitKey":"sample"}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.Contains(LResponse, '"symbolCount":0');
   finally
     LSupervisor.Free;
   end;

@@ -134,6 +134,143 @@ begin
   );
 end;
 
+function TryReadWhitespace(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := ASource[AIndex].IsWhiteSpace;
+  if Result then
+  begin
+    AKind := stkWhitespace;
+    AEnd := ReadWhitespace(ASource, AIndex);
+  end;
+end;
+
+function TryReadIdentifierToken(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := TRadIASemanticLexer.IsIdentifierStart(ASource[AIndex]);
+  if Result then
+  begin
+    AKind := stkIdentifier;
+    AEnd := ReadIdentifier(ASource, AIndex);
+  end;
+end;
+
+function TryReadNumberToken(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := ASource[AIndex].IsNumber;
+  if Result then
+  begin
+    AKind := stkNumber;
+    AEnd := ReadNumber(ASource, AIndex);
+  end;
+end;
+
+function TryReadStringToken(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := ASource[AIndex] = '''';
+  if Result then
+  begin
+    AKind := stkString;
+    AEnd := ReadStringLiteral(ASource, AIndex);
+  end;
+end;
+
+function TryReadLineComment(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := (ASource[AIndex] = '/') and
+    (AIndex < Length(ASource)) and (ASource[AIndex + 1] = '/');
+  if not Result then
+    Exit;
+  AKind := stkComment;
+  AEnd := AIndex + 2;
+  while (AEnd <= Length(ASource)) and not IsLineBreak(ASource[AEnd]) do
+    Inc(AEnd);
+end;
+
+function TryReadBraceToken(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := ASource[AIndex] = '{';
+  if not Result then
+    Exit;
+  AEnd := ReadBraceBlock(ASource, AIndex);
+  if (AIndex < Length(ASource)) and (ASource[AIndex + 1] = '$') then
+    AKind := stkDirective
+  else
+    AKind := stkComment;
+end;
+
+function TryReadParenToken(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+): Boolean;
+begin
+  Result := (ASource[AIndex] = '(') and
+    (AIndex < Length(ASource)) and (ASource[AIndex + 1] = '*');
+  if not Result then
+    Exit;
+  AEnd := ReadParenComment(ASource, AIndex);
+  if (AIndex + 1 < Length(ASource)) and (ASource[AIndex + 2] = '$') then
+    AKind := stkDirective
+  else
+    AKind := stkComment;
+end;
+
+procedure ReadToken(
+  const ASource: string;
+  const AIndex: Integer;
+  out AEnd: Integer;
+  out AKind: TRadIASemanticTokenKind
+);
+begin
+  if TryReadWhitespace(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  if TryReadIdentifierToken(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  if TryReadNumberToken(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  if TryReadStringToken(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  if TryReadLineComment(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  if TryReadBraceToken(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  if TryReadParenToken(ASource, AIndex, AEnd, AKind) then
+    Exit;
+  AKind := stkSymbol;
+  AEnd := AIndex + 1;
+end;
+
 { TRadIASemanticToken }
 
 constructor TRadIASemanticToken.Create(
@@ -173,57 +310,7 @@ begin
     while LIndex <= Length(ASource) do
     begin
       LStart := LIndex;
-      LKind := stkSymbol;
-      if ASource[LIndex].IsWhiteSpace then
-      begin
-        LKind := stkWhitespace;
-        LEnd := ReadWhitespace(ASource, LIndex);
-      end
-      else if IsIdentifierStart(ASource[LIndex]) then
-      begin
-        LKind := stkIdentifier;
-        LEnd := ReadIdentifier(ASource, LIndex);
-      end
-      else if ASource[LIndex].IsNumber then
-      begin
-        LKind := stkNumber;
-        LEnd := ReadNumber(ASource, LIndex);
-      end
-      else if ASource[LIndex] = '''' then
-      begin
-        LKind := stkString;
-        LEnd := ReadStringLiteral(ASource, LIndex);
-      end
-      else if (ASource[LIndex] = '/') and
-        (LIndex < Length(ASource)) and
-        (ASource[LIndex + 1] = '/') then
-      begin
-        LKind := stkComment;
-        LEnd := LIndex + 2;
-        while (LEnd <= Length(ASource)) and not IsLineBreak(ASource[LEnd]) do
-          Inc(LEnd);
-      end
-      else if ASource[LIndex] = '{' then
-      begin
-        LEnd := ReadBraceBlock(ASource, LIndex);
-        if (LIndex < Length(ASource)) and (ASource[LIndex + 1] = '$') then
-          LKind := stkDirective
-        else
-          LKind := stkComment;
-      end
-      else if (ASource[LIndex] = '(') and
-        (LIndex < Length(ASource)) and
-        (ASource[LIndex + 1] = '*') then
-      begin
-        if (LIndex + 1 < Length(ASource)) and
-          (ASource[LIndex + 2] = '$') then
-          LKind := stkDirective
-        else
-          LKind := stkComment;
-        LEnd := ReadParenComment(ASource, LIndex);
-      end
-      else
-        LEnd := LIndex + 1;
+      ReadToken(ASource, LIndex, LEnd, LKind);
       AddToken(LTokens, ASource, LKind, LStart, LEnd);
       LIndex := LEnd;
     end;

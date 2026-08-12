@@ -19,6 +19,8 @@ uses
   RadIA.Tests.SemanticPreprocessor in 'Source\RadIA.Tests.SemanticPreprocessor.pas',
   RadIA.Semantic.Parser in '..\Source\Semantic\RadIA.Semantic.Parser.pas',
   RadIA.Tests.SemanticParser in 'Source\RadIA.Tests.SemanticParser.pas',
+  RadIA.Semantic.Index in '..\Source\Semantic\RadIA.Semantic.Index.pas',
+  RadIA.Tests.SemanticIndex in 'Source\RadIA.Tests.SemanticIndex.pas',
   RadIA.Semantic.Client in '..\Source\Semantic\RadIA.Semantic.Client.pas',
   RadIA.Tests.SemanticClient in 'Source\RadIA.Tests.SemanticClient.pas',
   RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',

@@ -5,7 +5,6 @@ interface
 implementation
 
 uses
-  System.SysUtils,
   DUnitX.TestFramework,
   RadIA.Semantic.Lexer;
 
