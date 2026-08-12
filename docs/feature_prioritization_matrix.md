@@ -24,7 +24,7 @@ A tabela abaixo cruza o **Esforço (Dificuldade)** com o **Impacto (Benefício)*
 | **8. Revisão Automática de Código no Save** | Backlog | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **9. Assistente de Migração (Smart Migrate)** | Backlog | 🟡 Média | 🔴 Alto | **Projeto Principal** |
 | **10. OpenAPI/Swagger para projetos existentes** | Parcial na 2.2.2 | 🟡 Média | 🔴 Alto | **Escopo residual** |
-| **11. Análise Semântica Bidirecional (DFM x PAS)** | Parcial | 🟡 Média | 🟡 Médio-Alto | **Escopo residual** |
+| **11. Análise Semântica Bidirecional (DFM x PAS)** | Concluída | 🟡 Média | 🟡 Médio-Alto | **Entregue na v2.9.0** |
 | **12. Geração de Docs de Projeto (API.md)** | Backlog | 🟡 Média | 🟡 Médio-Alto | **Projeto Principal** |
 | **13. Painel de Gerenciamento do Cache** | Backlog | 🟡 Média | 🟡 Médio | **Tarefa de Apoio** |
 | **14. Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC** | Nova | 🔴 Alta | 🔴 Alto | **Aposta Estratégica** |
@@ -96,10 +96,10 @@ Features que envolvem manipulação estrutural de código Object Pascal (reescri
 * **Estado atual:** desde a versão 2.2.2, novos projetos DEXT podem incluir Swagger. O escopo residual precisa
   varrer rotas de projetos Horse ou RAD Server existentes, ler DTOs e produzir JSON/YAML.
 
-### 2.8. Análise Semântica Bidirecional (DFM vs PAS) (Nova)
+### 2.8. Análise Semântica Bidirecional (DFM vs PAS) (concluída na v2.9.0)
 * **Benefício:** **Médio-Alto**. Remove o lixo acumulado em formulários legados (declarações invisíveis de componentes removidos e eventos órfãos).
-* **Estado atual:** tools transacionais mantêm PAS e DFM consistentes durante mutações. Ainda falta
-  a auditoria dedicada de componentes, declarações e eventos órfãos preexistentes.
+* **Estado atual:** a auditoria dedicada detecta componentes, declarações e eventos órfãos preexistentes
+  e produz correções transacionais com preview, consentimento e rollback.
 
 ### 2.9. Geração de Documentação de Projeto (pendente, sem versão)
 * **Benefício:** **Médio-Alto**. Gera sumários arquiteturais e mapeia as units do projeto em um arquivo de documentação centralizado (ex: `docs/API.md`).
@@ -115,7 +115,10 @@ Features que envolvem manipulação estrutural de código Object Pascal (reescri
 
 Features que alteram profundamente a estrutura de múltiplos arquivos simultaneamente (DFM + PAS), necessitam de manipulação complexa de programação concorrente (multithreading), dependem de engenharia de UI intrusiva no editor do Delphi ou de ports multiplataforma.
 
-### 3.1. Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC (Nova)
+### 3.1. Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC (parcialmente entregue)
+* **Estado atual:** o RadIA já inventaria BDE, ADO e dbExpress, classifica riscos, mapeia equivalentes
+  FireDAC, prepara lotes reversíveis, exige evidências de build/testes e reverte lotes reprovados. A etapa
+  DEXT e a decomposição de forms são planos explícitos posteriores, sem reescrita automática.
 * **Benefício:** **Alto**. Modernização completa da infraestrutura de dados de sistemas legados. Em vez de apenas substituir componentes pontuais de acesso, migra toda a estrutura relacional manual acoplada para um modelo ORM de alta produtividade (DEXT ORM) utilizando o FireDAC por baixo como mecanismo físico de transporte.
 * **Complexidade:** **Alta**.
   * **No DFM:** Mapear e remover queries manuais e tabelas obsoletas (ex: `TTable`, `TQuery`, `TSQLQuery`, `TADOQuery`), além de limpar conexões legadas (`TSQLConnection`, `TDatabase`, `TADOConnection`).
@@ -135,7 +138,7 @@ Features que alteram profundamente a estrutura de múltiplos arquivos simultanea
 * **Complexidade:** **Alta**. Demanda varrer exaustivamente o DFM (para traduzir Captions, Hints, e labels estáticos) e o PAS (para localizar strings literais de ShowMessages, mensagens de erro e exceções). O plugin precisa criar o arquivo externo de localização e injetar funções de tradução de runtime em centenas de locais sem introduzir bugs de sintaxe.
 
 ### 3.5. Autocompletar Inline Inteligente (Ghost Text) (concluído na v2.0.0)
-* **Benefício:** **Alto**. Fornece a experiência premium de co-pilotagem de código em tempo real no editor do Delphi, semelhante ao VS Code.
+* **Benefício:** **Alto**. Fornece assistência de código em tempo real diretamente no editor do Delphi.
 * **Estado atual:** entregue com overlay virtual, alternativas, atalhos configuráveis, descarte de
   respostas obsoletas e buffer preservado até o aceite.
 

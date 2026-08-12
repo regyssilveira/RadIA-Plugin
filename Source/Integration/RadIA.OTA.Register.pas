@@ -72,8 +72,14 @@ uses
   RadIA.Core.ResultCompactor,
   RadIA.Core.Extensions, RadIA.Core.Version,
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
+  RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
+  RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
+  RadIA.Core.DelphiMentor,
+  RadIA.Core.DfmPasAudit, RadIA.Core.DfmPasAuditTools,
+  RadIA.Core.DesignerVisualDiff, RadIA.Core.DesignerVisualDiffTools,
   RadIA.Core.ToolSecurity, RadIA.Core.Patches, RadIA.Core.PatchTools,
   RadIA.Core.MultiFilePatches, RadIA.Core.MultiFilePatchTools,
+  RadIA.Core.LegacyDataMigrationTools,
   RadIA.Core.BlockReviewSessions,
   RadIA.Core.BlockReviewTools,
   RadIA.Core.DevelopmentTransactions,
@@ -1222,9 +1228,49 @@ initialization
     TRadIAContainer.Resolve<IRadIAProjectTemplateService> as
       IRadIAAuthorizedProjectTemplateService
   );
+  TRadIAContainer.Register<IRadIADelphiEnvironmentService>(
+    TRadIADelphiEnvironmentService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIADelphiGuidanceCatalog>(
+    TRadIADelphiGuidanceCatalog.Create
+  );
+  TRadIAContainer.Register<IRadIADfmPasAuditor>(
+    TRadIADfmPasAuditor.Create
+  );
+  TRadIAContainer.Register<IRadIADesignerVisualDiffService>(
+    TRadIADesignerVisualDiffService.Create(
+      TRadIAContainer.Resolve<IRadIAFormDesignerFacade>
+    )
+  );
   RegisterRadIAWorkspaceTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
+  );
+  RegisterRadIADelphiEnvironmentTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>
+  );
+  RegisterRadIADelphiGuidanceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADelphiGuidanceCatalog>
+  );
+  RegisterRadIADelphiMentorTool(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIADelphiGuidanceCatalog>
+  );
+  RegisterRadIADfmPasAuditTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAFormDesignerFacade>,
+    TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+    TRadIAContainer.Resolve<IRadIADfmPasAuditor>,
+    TRadIAContainer.Resolve<IRadIAPatchService>
+  );
+  RegisterRadIADesignerVisualDiffTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADesignerVisualDiffService>
   );
   RegisterRadIAAgentResultTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
@@ -1271,6 +1317,12 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
     TRadIAContainer.Resolve<IRadIABlockReviewSession>
+  );
+  RegisterRadIALegacyDataMigrationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
   );
   RegisterRadIABlockReviewTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

@@ -27,6 +27,10 @@ $englishPurposeOverrides = @{
 }
 $portugueseGroupNames = @{
     "Workspace" = "Workspace e editor"
+    "Delphi environment" = "Ambiente Delphi"
+    "Curated Delphi guidance" = "Orientação Delphi curada"
+    "DFM and Pascal consistency" = "Consistência entre DFM e Pascal"
+    "Designer visual diff" = "Diff visual do Designer"
     "Agent result recovery" = "Recuperação de resultados do agente"
     "Project health" = "Saúde do projeto"
     "Installation health" = "Saúde da instalação"
@@ -64,6 +68,8 @@ $portugueseGroupNames = @{
     "FastMM5 log evidence" = "Evidências de logs do FastMM5"
     "Composed memory diagnostic sessions" = "Sessões compostas de diagnóstico de memória"
     "Memory evidence correction workflow" = "Correção orientada por evidências de memória"
+    "Legacy data migration" = "Migração de acesso a dados legado"
+    "Delphi mentor" = "Mentor Delphi"
 }
 
 function Read-PascalStringArgument {

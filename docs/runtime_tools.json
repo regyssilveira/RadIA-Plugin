@@ -18,6 +18,38 @@
       ]
     },
     {
+      "name": "Delphi environment",
+      "source": "Source/Core/RadIA.Core.DelphiEnvironmentTools.pas",
+      "tools": [
+        "GetDelphiEnvironmentProfile"
+      ]
+    },
+    {
+      "name": "Curated Delphi guidance",
+      "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
+      "tools": [
+        "GetDelphiGuidance"
+      ]
+    },
+    {
+      "name": "DFM and Pascal consistency",
+      "source": "Source/Core/RadIA.Core.DfmPasAuditTools.pas",
+      "tools": [
+        "AuditActiveDfmPasConsistency",
+        "PrepareDfmPasAuditFix"
+      ]
+    },
+    {
+      "name": "Designer visual diff",
+      "source": "Source/Core/RadIA.Core.DesignerVisualDiffTools.pas",
+      "tools": [
+        "CaptureDesignerVisualSnapshot",
+        "CompareDesignerVisualSnapshots",
+        "DecideDesignerVisualDiff",
+        "ClearDesignerVisualDiffArtifacts"
+      ]
+    },
+    {
       "name": "Agent result recovery",
       "source": "Source/Core/RadIA.Core.AgentResultTools.pas",
       "tools": [
@@ -353,6 +385,25 @@
         "RunMemoryDiagnosticSession",
         "CancelMemoryDiagnosticSession",
         "GetMemoryDiagnosticSessionStatus"
+      ]
+    },
+    {
+      "name": "Delphi mentor",
+      "source": "Source/Core/RadIA.Core.DelphiMentor.pas",
+      "tools": [
+        "ExplainSelectedDelphiCode"
+      ]
+    },
+    {
+      "name": "Legacy data migration",
+      "source": "Source/Core/RadIA.Core.LegacyDataMigrationTools.pas",
+      "tools": [
+        "InventoryLegacyDataAccess",
+        "PlanLegacyMigrationBatches",
+        "PrepareLegacyMigrationBatch",
+        "RecordLegacyMigrationGate",
+        "GetLegacyMigrationReport",
+        "PlanDextAndFormModernization"
       ]
     },
     {

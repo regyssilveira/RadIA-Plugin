@@ -14,6 +14,7 @@ type
   private
     FVersionName: string;
     FPlatform: string;
+    FSKU: string;
     FShuttingDown: Boolean;
     FCapabilities: TArray<string>;
   public
@@ -22,9 +23,17 @@ type
       const APlatform: string;
       const AShuttingDown: Boolean;
       const ACapabilities: TArray<string>
-    );
+    ); overload;
+    constructor Create(
+      const AVersionName: string;
+      const APlatform: string;
+      const ASKU: string;
+      const AShuttingDown: Boolean;
+      const ACapabilities: TArray<string>
+    ); overload;
     property VersionName: string read FVersionName;
     property Platform: string read FPlatform;
+    property SKU: string read FSKU;
     property ShuttingDown: Boolean read FShuttingDown;
     property Capabilities: TArray<string> read FCapabilities;
   end;
@@ -155,8 +164,26 @@ constructor TRadIAIDEState.Create(
   const ACapabilities: TArray<string>
 );
 begin
+  Create(
+    AVersionName,
+    APlatform,
+    'unknown',
+    AShuttingDown,
+    ACapabilities
+  );
+end;
+
+constructor TRadIAIDEState.Create(
+  const AVersionName: string;
+  const APlatform: string;
+  const ASKU: string;
+  const AShuttingDown: Boolean;
+  const ACapabilities: TArray<string>
+);
+begin
   FVersionName := AVersionName;
   FPlatform := APlatform;
+  FSKU := ASKU;
   FShuttingDown := AShuttingDown;
   FCapabilities := Copy(ACapabilities);
 end;

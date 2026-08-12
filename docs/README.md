@@ -1,6 +1,6 @@
 # Documentação do RadIA
 
-Este é o ponto de entrada da documentação do RadIA 2.8.0. Escolha primeiro o que você deseja
+Este é o ponto de entrada da documentação do RadIA 2.9.0. Escolha primeiro o que você deseja
 fazer; cada assunto tem um guia principal para evitar informações duplicadas ou contraditórias.
 
 > A referência mais precisa da instalação atual é o comando `/tools`, pois o catálogo pode variar
@@ -26,15 +26,19 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 |---|---|
 | Explicar, revisar, refatorar ou gerar código | [Editor e geração](user_guide_editor_generation.md) |
 | Diagnosticar código, warnings, SQL ou stack trace | [Diagnóstico e análise](user_guide_diagnostics_analysis.md) |
+| Aprender Delphi a partir do código selecionado | [Mentor Delphi](delphi_mentor.md) |
 | Receber e diagnosticar sugestões Ghost Text/FIM | [Assistência inline e FIM](inline_completion.md) |
 | Revisar alterações por bloco no gutter | [Revisão por bloco](block_reviews.md) |
 | Criar um projeto Delphi | [New Project Wizard](project_wizard.md) |
 | Adicionar ou remover units e forms | [Operações estruturais](project_file_operations.md) |
 | Coordenar alterações de código, projeto e Designer | [Transações de desenvolvimento](development_transactions.md) |
+| Migrar BDE, ADO ou dbExpress para FireDAC | [Migração de acesso a dados legado](legacy_data_migration.md) |
 | Compilar, corrigir erros e executar testes | [Jornadas ponta a ponta](user_guide_journeys.md) |
 | Criar um servidor DEXT a partir de endpoints | [Jornadas de servidores DEXT](user_guide_dext_journeys.md) |
 | Executar e interpretar testes DUnitX | [Runner DUnitX](dunitx_runner.md) |
 | Trabalhar com Form Designer ou debugger | [Designer e debugger](user_guide_designer_debugger.md) |
+| Auditar divergências entre DFM e Pascal | [Auditoria DFM/PAS](dfm_pas_audit.md) |
+| Comparar mudanças antes/depois no Designer | [Diff visual do Designer](designer_visual_diff.md) |
 | Reproduzir uma falha visual automaticamente | [Diagnóstico runtime](runtime_debug_automation.md) |
 | Diagnosticar vazamentos com FastMM5 | [Diagnóstico de memória](fastmm5_diagnostic_session.md) |
 | Usar o terminal integrado | [Terminal](terminal.md) |
@@ -46,18 +50,23 @@ fazer; cada assunto tem um guia principal para evitar informações duplicadas o
 | Assunto | Documento autoritativo |
 |---|---|
 | Ativar e operar o modo agente | [Manual do usuário](user_manual.md#3-como-ativar-o-modo-agente) |
+| Entender limites, gates, pausas e retomada | [Contrato de execução autônoma](autonomous_execution_contract.md) |
 | Entender o agente nativo e executores externos | [Executores nativo e CLI](cli_executors.md) |
 | Consultar capacidades e retomada dos CLIs | [Matriz contratual dos CLIs](cli_capability_matrix.md) |
 | Diagnosticar a instalação e a rota efetiva | [RadIA Doctor](doctor.md) |
+| Conferir versão, framework, packages e bibliotecas | [Perfil do ambiente Delphi](delphi_environment_profile.md) |
+| Consultar regras Delphi aplicáveis e suas citações | [Orientação Delphi curada](delphi_guidance.md) |
 | Ver o estado configurado do RadIA | [Doctor, status, health e tools](slash_commands.md#qual-diagnóstico-usar) |
 | Entender valor efetivo, origem e herança | [Configurações por projeto, sessão e solicitação](hierarchical_settings.md) |
-| Ver todas as ferramentas disponíveis | [Catálogo das 133 ferramentas](runtime_tool_catalog.md) |
+| Ver todas as ferramentas disponíveis | [Catálogo das 148 ferramentas](runtime_tool_catalog.md) |
 | Entender cada ferramenta e quando ela é acionada | [Referência operacional](internal_tools_reference.md) |
 | Entender consentimento, riscos e auditoria | [Modelo de segurança](tool_security_model.md) |
+| Avaliar fluxos e garantias para uso corporativo | [Ficha corporativa de segurança](corporate_security_brief.md) |
 | Consultar custos e limites do agente | [Custos do agente](agent_pricing.md) |
 | Planejar a evolução do compactador interno | [Plano de execução do RTK](rtk_execution_plan.md) |
+| Medir as capacidades Delphi localmente | [Benchmark reproduzível](delphi_experience_benchmark.md) |
 | Usar e diagnosticar o RTK interno | [Compactação e recuperação de resultados](agent_result_compaction.md) |
-| Revisar a release 2.8.0 | [Notas de release](release_notes_2.8.0.md) |
+| Revisar a release 2.9.0 | [Notas de release](release_notes_2.9.0.md) |
 | Usar as ferramentas por outro cliente | [Integração MCP](mcp_integration_guide.md) |
 
 MCP, executor CLI e provider são configurações independentes. A exceção é um método de
@@ -102,8 +111,8 @@ descrevem necessariamente o comportamento atual:
 - [Roadmap](roadmap.md) e [backlog](backlog.md);
 - [goal concluído de expansão da experiência completa](experience_expansion_goal.md);
 - [goal concluído de portabilidade de skills e terminal](terminal_skill_portability_goal.md);
-- [auditoria da release 2.8.0](release_audit_2.8.0.md) e auditorias anteriores;
-- notas de release: [2.8.0](release_notes_2.8.0.md), [2.7.0](release_notes_2.7.0.md),
+- [auditoria da release 2.9.0](release_audit_2.9.0.md) e auditorias anteriores;
+- notas de release: [2.9.0](release_notes_2.9.0.md), [2.8.0](release_notes_2.8.0.md), [2.7.0](release_notes_2.7.0.md),
   [2.6.2](release_notes_2.6.2.md),
   [2.6.1](release_notes_2.6.1.md),
   [2.6.0](release_notes_2.6.0.md),
@@ -115,7 +124,10 @@ descrevem necessariamente o comportamento atual:
 - [goal da jornada 2.0](radia_2_goal.md) e [goal de experiência 2.0](experience_leadership_goal.md);
 - [planos e marcos do diagnóstico runtime](runtime_debug_automation_plan.md);
 - [planos e marcos do diagnóstico de memória](fastmm5_memory_diagnostics_plan.md);
-- [auditoria de ideias do Free Claude Code aplicáveis ao RadIA](research/free-claude-code-radia-analysis.md);
+- [programa de experiência agentiva Delphi](delphi_agent_experience_plan.md), que planeja nove
+  evoluções ainda sujeitas aos respectivos gates de implementação;
+- [lista de tasks da experiência agentiva Delphi](delphi_agent_experience_tasks.md), com ordem,
+  dependências e critérios de conclusão;
 - arquivos `*_evidence_*.json`, que são evidências imutáveis de releases anteriores.
 
 Se uma informação histórica divergir de um guia principal, prevalecem o código da versão atual,

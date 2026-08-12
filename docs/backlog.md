@@ -54,10 +54,10 @@ semântica ao baseline determinístico da 2.7.0, sem reabrir requisitos aprovado
 | **Smart Multi-Unit Trace Resolver** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Sem versão comprometida |
 | **MadExcept / EurekaLog Context Extractor** | 🔀 Fundir com diagnóstico de traces | 🟡 Média | ⭐⭐⭐⭐⭐ Crítica | Sem versão comprometida |
 | **Gerador OpenAPI/Swagger para projetos existentes** | 🟨 Parcial; novos projetos DEXT atendidos | 🟡 Média | ⭐⭐⭐⭐ Alta | Parcial em v2.2.2; restante sem versão comprometida |
-| **Análise Semântica Bidirecional (DFM vs PAS)** | 🟨 Parcial; mutações preservam consistência | 🟡 Média | ⭐⭐⭐⭐ Alta | Residual sem versão comprometida |
+| **Análise Semântica Bidirecional (DFM vs PAS)** | ✅ Concluído | 🟡 Média | ⭐⭐⭐⭐ Alta | v2.9.0 |
 | **Assistente de Migração (Smart Migrate)** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Painel de Gerenciamento do Cache** | 🔲 Pendente | 🟡 Média | ⭐⭐⭐ Média | Sem versão comprometida |
-| **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
+| **Conversão BDE/ADO/dbExpress ➔ FireDAC** | ✅ Concluído; DEXT permanece residual | 🔴 Alta | ⭐⭐⭐⭐ Alta | v2.9.0 |
 | **Decompositor de Forms (Code-Behind)** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Assistente de Threads e PPL** | 💡 Oportunidade estratégica | 🔴 Alta | ⭐⭐⭐⭐ Alta | Sem versão comprometida |
 | **Internacionalização Automática (i18n Wizard)** | 🟨 Infraestrutura pronta; wizard pendente | 🔴 Alta | ⭐⭐⭐⭐ Alta | Residual sem versão comprometida |
@@ -69,7 +69,7 @@ semântica ao baseline determinístico da 2.7.0, sem reabrir requisitos aprovado
 
 ## Backlog ativo canônico
 
-Revisado em **11 de agosto de 2026** contra o código da versão 2.8.0. Nenhum item abaixo possui
+Revisado em **12 de agosto de 2026** contra o código da versão 2.9.0. Nenhum item abaixo possui
 versão prometida; uma versão-alvo só deve ser preenchida quando houver escopo e critérios de aceite
 aprovados.
 
@@ -78,8 +78,7 @@ aprovados.
 | Assistência de código | revisão automática ao salvar; Clean Uses; gerador de mocks | Não há implementação dedicada registrada no código. |
 | Diagnóstico entre units | trace multiarquivo e ingestão de MadExcept/EurekaLog | O comando de stack trace existe; correlação especializada e importadores ainda não. |
 | APIs existentes | OpenAPI/Swagger para projetos já criados | Swagger está disponível na criação DEXT; retrofit permanece aberto. |
-| Consistência visual | análise semântica bidirecional DFM/PAS | Mutações atuais preservam consistência, mas não existe auditor completo. |
-| Modernização | Smart Migrate; BDE/ADO/dbExpress para DEXT/FireDAC; decomposição de forms | Oportunidades sem jornada dedicada implementada. |
+| Modernização | Smart Migrate; migração posterior para DEXT; decomposição de forms | A jornada reversível BDE/ADO/dbExpress para FireDAC foi entregue; DEXT e decomposição permanecem como planos sem reescrita automática. |
 | Operação | painel de cache; assistente de threads/PPL | Infraestrutura existe parcialmente; as experiências guiadas permanecem abertas. |
 | Produtividade | wizard de i18n; geração de `API.md` | Sem wizard ou gerador dedicado no catálogo atual. |
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://radia.local/schemas/delphi-experience-scenario-v1.json",
+  "type": "object",
+  "required": ["schemaVersion", "id", "category", "action", "target", "expected"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "category": { "type": "string" },
+    "action": { "enum": ["dunitx", "build"] },
+    "target": { "type": "string" },
+    "expected": { "enum": ["passed"] },
+    "platform": { "enum": ["Win32", "IDE64"] },
+    "rollbackExpected": { "type": "boolean" },
+    "estimatedCostUnits": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

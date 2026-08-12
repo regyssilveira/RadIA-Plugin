@@ -24,7 +24,7 @@ The table below crosses **Effort (Difficulty)** with **Impact (Benefit)** to hel
 | **8. Automatic Code Review on Save** | Backlog | 🟡 Medium | 🔴 High | **Main Project** |
 | **9. Version Migration Assistant (Smart Migrate)** | Backlog | 🟡 Medium | 🔴 High | **Main Project** |
 | **10. OpenAPI/Swagger for existing projects** | Partial in 2.2.2 | 🟡 Medium | 🔴 High | **Residual scope** |
-| **11. Bidirectional Semantic Analysis (DFM vs PAS)** | Partial | 🟡 Medium | 🟡 Medium-High | **Residual scope** |
+| **11. Bidirectional Semantic Analysis (DFM vs PAS)** | Completed | 🟡 Medium | 🟡 Medium-High | **Delivered in v2.9.0** |
 | **12. Project Docs Generation (API.md)** | Backlog | 🟡 Medium | 🟡 Medium-High | **Main Project** |
 | **13. Cache Management Panel** | Backlog | 🟡 Medium | 🟡 Medium | **Support Task** |
 | **14. BDE/ADO/dbExpress ➔ DEXT with FireDAC Conversion** | New | 🔴 High | 🔴 High | **Strategic Bet** |
@@ -96,10 +96,10 @@ Features that involve structural manipulation of Object Pascal code (rewriting c
 * **Current state:** since version 2.2.2, new DEXT projects can include Swagger. The residual scope must
   scan existing Horse or RAD Server routes, read DTOs, and produce JSON/YAML.
 
-### 2.8. Bidirectional Semantic Analysis (DFM vs PAS) (New)
+### 2.8. Bidirectional Semantic Analysis (DFM vs PAS) (completed in v2.9.0)
 * **Benefit:** **Medium-High**. Removes accumulated cruft in legacy forms (invisible declarations of deleted components and orphan events).
-* **Current state:** transactional tools keep PAS and DFM consistent during mutations. A dedicated
-  audit of preexisting orphan components, declarations, and events remains pending.
+* **Current state:** the dedicated auditor detects preexisting orphan components, declarations, and
+  events and produces transactional fixes with preview, consent, and rollback.
 
 ### 2.9. Project Documentation Generation (pending, no version)
 * **Benefit:** **Medium-High**. Generates architectural summaries and maps project units into a centralized documentation file (e.g., `docs/API.md`).
@@ -115,7 +115,10 @@ Features that involve structural manipulation of Object Pascal code (rewriting c
 
 Features that deeply modify the structure of multiple files simultaneously (DFM + PAS), require complex concurrency handling (multithreading), depend on intrusive editor UI engineering, or involve cross-platform ports.
 
-### 3.1. BDE/ADO/dbExpress ➔ DEXT with FireDAC Conversion (New)
+### 3.1. BDE/ADO/dbExpress ➔ DEXT with FireDAC Conversion (partially delivered)
+* **Current state:** RadIA now inventories BDE, ADO, and dbExpress, classifies risks, maps FireDAC
+  equivalents, prepares reversible batches, requires build/test evidence, and reverts failed batches.
+  DEXT and form decomposition remain explicit later plans without automatic rewriting.
 * **Benefit:** **High**. Complete database access modernization. Instead of just replacing query components, migrates the entire coupled relational model to a high-productivity ORM (DEXT ORM) using FireDAC as the physical transport layer.
 * **Complexity:** **High**.
   * **In the DFM:** Map and remove legacy queries and tables (e.g., `TTable`, `TQuery`, `TSQLQuery`, `TADOQuery`), and clean up legacy connections (`TSQLConnection`, `TDatabase`, `TADOConnection`).
@@ -135,7 +138,7 @@ Features that deeply modify the structure of multiple files simultaneously (DFM 
 * **Complexity:** **High**. Requires scanning both the DFM (to translate Captions, Hints, and static labels) and the PAS (to find hardcoded strings in ShowMessage, error messages, and exceptions). The plugin must create the external localization file and inject translation functions in runtime across hundreds of locations without introducing syntax bugs.
 
 ### 3.5. Inline Autocomplete (Ghost Text) (completed in v2.0.0)
-* **Benefit:** **High**. Provides the premium experience of real-time inline code copilot suggestions (similar to VS Code) inside the Delphi editor.
+* **Benefit:** **High**. Provides real-time code assistance directly inside the Delphi editor.
 * **Current state:** delivered with virtual overlays, alternatives, configurable shortcuts, stale
   response rejection, and buffer preservation until acceptance.
 

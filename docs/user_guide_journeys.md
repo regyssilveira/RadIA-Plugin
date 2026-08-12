@@ -91,4 +91,9 @@ faz push nem publica artefatos sem uma instrução explícita do usuário.
 - Use **debug** quando a causa exige estado de execução, breakpoints, stack, watches ou avaliação.
 - Use **modernize** para evoluir estrutura e práticas preservando comportamento e contratos públicos.
 - Use **migrate** para substituir tecnologia legada em lotes independentes e reversíveis.
+
+Para BDE, ADO e dbExpress, a jornada `migrate` usa o
+[fluxo dedicado de migração para FireDAC](legacy_data_migration.md): inventário, risco, preview por
+arquivo, build, testes e reversão obrigatória quando um gate falha. DEXT e decomposição de forms só
+entram no plano posterior à estabilização dos lotes FireDAC.
 - Use **release** antes de uma entrega para reunir gates técnicos e revisar o escopo do commit.

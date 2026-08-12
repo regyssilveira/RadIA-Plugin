@@ -1,6 +1,6 @@
 # RadIA documentation
 
-This is the documentation entry point for RadIA 2.8.0. Start with the task you want to complete;
+This is the documentation entry point for RadIA 2.9.0. Start with the task you want to complete;
 each subject has one primary guide to prevent duplicated or conflicting instructions.
 
 > The `/tools` command is the most accurate reference for the current installation because the
@@ -28,15 +28,19 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 |---|---|
 | Explain, review, refactor, or generate code | [Editor and generation](user_guide_editor_generation.en.md) |
 | Diagnose code, warnings, SQL, or a stack trace | [Diagnostics and analysis](user_guide_diagnostics_analysis.en.md) |
+| Learn Delphi from selected code | [Delphi mentor](delphi_mentor.en.md) |
 | Receive and diagnose Ghost Text/FIM suggestions | [Inline assistance and FIM](inline_completion.en.md) |
 | Review changes block by block in the gutter | [Block-level review](block_reviews.en.md) |
 | Create a Delphi project | [New Project Wizard](project_wizard.en.md) |
 | Add or remove units and forms | [Project operations](project_file_operations.en.md) |
 | Coordinate code, project, and Designer changes | [Development transactions](development_transactions.en.md) |
+| Migrate BDE, ADO, or dbExpress to FireDAC | [Legacy data migration](legacy_data_migration.en.md) |
 | Build, fix errors, and run tests | [End-to-end journeys](user_guide_journeys.en.md) |
 | Create a DEXT server from endpoints | [DEXT server journeys](user_guide_dext_journeys.en.md) |
 | Run DUnitX tests | [DUnitX runner](dunitx_runner.en.md) |
 | Use Form Designer or debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
+| Audit mismatches between DFM and Pascal | [DFM/PAS audit](dfm_pas_audit.en.md) |
+| Compare before and after Designer changes | [Designer visual diff](designer_visual_diff.en.md) |
 | Reproduce a visual failure | [Runtime diagnostics](runtime_debug_automation.en.md) |
 | Diagnose memory problems | [FastMM5 diagnostics](fastmm5_diagnostic_session.en.md) |
 | Use the integrated terminal | [Terminal](terminal.en.md) |
@@ -48,18 +52,23 @@ each subject has one primary guide to prevent duplicated or conflicting instruct
 | Subject | Authoritative document |
 |---|---|
 | Enable and operate agent mode | [User manual](user_manual.en.md) |
+| Understand limits, gates, pauses, and resume | [Autonomous execution contract](autonomous_execution_contract.en.md) |
 | Native agent and external executors | [CLI executors](cli_executors.en.md) |
 | CLI capabilities and resume contracts | [CLI capability matrix](cli_capability_matrix.en.md) |
 | Diagnose installation and the effective route | [RadIA Doctor](doctor.en.md) |
+| Inspect version, framework, packages, and libraries | [Delphi environment profile](delphi_environment_profile.en.md) |
+| Query applicable Delphi rules and citations | [Curated Delphi guidance](delphi_guidance.en.md) |
 | Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) |
 | Understand effective values, sources, and inheritance | [Scoped settings](hierarchical_settings.en.md) |
 | Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.en.md) |
 | Understand every tool and when it runs | [Operational tool reference](internal_tools_reference.en.md) |
 | Consent, risk, and auditing | [Tool security model](tool_security_model.en.md) |
+| Assess routes and guarantees for corporate use | [Corporate security brief](corporate_security_brief.en.md) |
 | Agent cost and limits | [Agent pricing](agent_pricing.en.md) |
 | Plan internal result compaction | [Internal RTK execution plan](rtk_execution_plan.en.md) |
+| Measure Delphi capabilities locally | [Reproducible benchmark](delphi_experience_benchmark.en.md) |
 | Use and diagnose the internal RTK | [Agent result compaction and recovery](agent_result_compaction.en.md) |
-| Review release 2.8.0 | [Release notes](release_notes_2.8.0.en.md) |
+| Review release 2.9.0 | [Release notes](release_notes_2.9.0.en.md) |
 | Use tools from another client | [MCP integration](mcp_integration_guide.en.md) |
 
 Provider, CLI executor, and MCP are independent settings. A declared authentication transport,
@@ -104,8 +113,8 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 Current planning status:
 
 - [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
-- [2.8.0 release audit](release_audit_2.8.0.en.md) and previous audits.
-- release notes: [2.8.0](release_notes_2.8.0.en.md), [2.7.0](release_notes_2.7.0.en.md),
+- [2.9.0 release audit](release_audit_2.9.0.en.md) and previous audits.
+- release notes: [2.9.0](release_notes_2.9.0.en.md), [2.8.0](release_notes_2.8.0.en.md), [2.7.0](release_notes_2.7.0.en.md),
   [2.6.2](release_notes_2.6.2.en.md),
   [2.6.1](release_notes_2.6.1.en.md),
   [2.6.0](release_notes_2.6.0.en.md),
@@ -116,9 +125,10 @@ Current planning status:
   [RTK audit](result_compaction_release_audit_2.3.0.en.md).
 - [Completed complete-experience expansion goal](experience_expansion_goal.en.md).
 
-Research records:
-
-- [Free Claude Code ideas applicable to RadIA (pt-BR)](research/free-claude-code-radia-analysis.en.md).
+- [Delphi agent experience program](delphi_agent_experience_plan.en.md), which plans nine
+  improvements that remain subject to their implementation gates.
+- [Delphi agent experience task list](delphi_agent_experience_tasks.en.md), with delivery order,
+  dependencies, and completion criteria.
 
 ## Current compatibility
 

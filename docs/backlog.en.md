@@ -53,10 +53,10 @@ the deterministic 2.7.0 baseline without reopening passed requirements.
 | **Smart Multi-Unit Trace Resolver** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | No committed version |
 | **MadExcept / EurekaLog Context Extractor** | 🔀 Merge with trace diagnostics | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | No committed version |
 | **OpenAPI/Swagger for existing projects** | 🟨 Partial; new DEXT projects covered | 🟡 Medium | ⭐⭐⭐⭐ High | Partial in v2.2.2; remainder has no committed version |
-| **Bidirectional Semantic Analysis (DFM x PAS)** | 🟨 Partial; mutations preserve consistency | 🟡 Medium | ⭐⭐⭐⭐ High | Residual has no committed version |
+| **Bidirectional Semantic Analysis (DFM x PAS)** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐ High | v2.9.0 |
 | **Version Migration Assistant (Smart Migrate)** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐⭐ High | No committed version |
 | **Cache Management Panel** | 🔲 Pending | 🟡 Medium | ⭐⭐⭐ Medium | No committed version |
-| **BDE/ADO/dbExpress ➔ DEXT with FireDAC Migration** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
+| **BDE/ADO/dbExpress ➔ FireDAC Migration** | ✅ Completed; DEXT remains residual | 🔴 High | ⭐⭐⭐⭐ High | v2.9.0 |
 | **Legacy Form Decomposer (Code-Behind)** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
 | **Threads and PPL Assistant** | 💡 Strategic opportunity | 🔴 High | ⭐⭐⭐⭐ High | No committed version |
 | **Automated Internationalization (i18n Wizard)** | 🟨 Infrastructure ready; wizard pending | 🔴 High | ⭐⭐⭐⭐ High | Residual has no committed version |
@@ -68,7 +68,7 @@ the deterministic 2.7.0 baseline without reopening passed requirements.
 
 ## Canonical active backlog
 
-Reviewed on **August 11, 2026** against the version 2.8.0 codebase. None of the items below has a
+Reviewed on **August 12, 2026** against the version 2.9.0 codebase. None of the items below has a
 promised version; a target version should be assigned only after scope and acceptance criteria are
 approved.
 
@@ -77,8 +77,7 @@ approved.
 | Code assistance | automatic review on save; Clean Uses; mock generator | No dedicated implementation is registered in the codebase. |
 | Cross-unit diagnostics | multi-file trace and MadExcept/EurekaLog ingestion | The stack-trace command exists; specialized correlation and importers do not. |
 | Existing APIs | OpenAPI/Swagger for existing projects | Swagger is available during DEXT creation; retrofit remains open. |
-| Visual consistency | bidirectional DFM/PAS semantic analysis | Current mutations preserve consistency, but no complete auditor exists. |
-| Modernization | Smart Migrate; BDE/ADO/dbExpress to DEXT/FireDAC; form decomposition | Opportunities without a dedicated implemented journey. |
+| Modernization | Smart Migrate; later DEXT migration; form decomposition | The reversible BDE/ADO/dbExpress to FireDAC journey is delivered; DEXT and decomposition remain plans without automatic rewriting. |
 | Operations | cache panel; threads/PPL assistant | Infrastructure exists in part; guided experiences remain open. |
 | Productivity | i18n wizard; `API.md` generation | No dedicated wizard or generator exists in the current catalog. |
 

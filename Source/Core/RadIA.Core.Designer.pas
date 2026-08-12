@@ -80,6 +80,7 @@ type
     FLeft: Integer;
     FName: string;
     FParentName: string;
+    FProperties: TArray<TRadIAComponentPropertyValue>;
     FSelected: Boolean;
     FTop: Integer;
     FWidth: Integer;
@@ -97,6 +98,9 @@ type
       const AWidth: Integer;
       const AHeight: Integer
     );
+    procedure SetProperties(
+      const AProperties: TArray<TRadIAComponentPropertyValue>
+    );
     property Name: string read FName;
     property ClassName: string read FClassName;
     property ParentName: string read FParentName;
@@ -106,6 +110,8 @@ type
     property Top: Integer read FTop;
     property Width: Integer read FWidth;
     property Height: Integer read FHeight;
+    property Properties: TArray<TRadIAComponentPropertyValue>
+      read FProperties;
   end;
 
   IRadIAFormDesignerFacade = interface
@@ -267,6 +273,13 @@ procedure TRadIAFormComponentSnapshot.SetSize(
 begin
   FWidth := AWidth;
   FHeight := AHeight;
+end;
+
+procedure TRadIAFormComponentSnapshot.SetProperties(
+  const AProperties: TArray<TRadIAComponentPropertyValue>
+);
+begin
+  FProperties := Copy(AProperties);
 end;
 
 end.

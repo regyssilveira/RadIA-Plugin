@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 133 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 148 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -37,6 +37,34 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetEditorSelection` | Lê a seleção atual do editor. | Em ações direcionadas a um trecho, como explicar, revisar, testar ou refatorar. |
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | Para contextualizar erros, símbolos, inserções e revisões ancoradas. |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | Depois de um build ou quando o objetivo envolve corrigir falhas de compilação. |
+
+## Ambiente Delphi
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetDelphiEnvironmentProfile` | Retorna perfil sanitizado da IDE, projeto, paths, packages e bibliotecas. | Antes de sugerir APIs, componentes ou migrações dependentes do ambiente Delphi. |
+
+## Orientação Delphi curada
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetDelphiGuidance` | Retorna regras Delphi versionadas e citáveis filtradas pelo ambiente e tópico. | Antes de gerar ou revisar código cuja correção dependa de linguagem, memória, threads, VCL, FMX, Designer ou IDE64. |
+
+## Consistência entre DFM e Pascal
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `AuditActiveDfmPasConsistency` | Audita componentes, campos, classes e eventos do form ativo sem alterar arquivos. | Antes de modificar um form ou ao investigar erros de streaming, handlers e campos divergentes. |
+| `PrepareDfmPasAuditFix` | Prepara um patch revisável para um handler ou campo ausente suportado. | Depois da auditoria, somente quando o achado tem correção automática segura; aplicação e rollback usam as tools de patch existentes. |
+
+## Diff visual do Designer
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `CaptureDesignerVisualSnapshot` | Captura em memória componentes, bounds, parent, seleção e propriedades permitidas do form ativo. | Antes e depois de uma proposta visual autorizada no Form Designer. |
+| `CompareDesignerVisualSnapshots` | Produz uma comparação antes/depois pronta para a timeline, incluindo estrutura, layout e propriedades. | Depois das duas capturas, antes de decidir sobre a proposta visual. |
+| `DecideDesignerVisualDiff` | Registra aceite ou rejeição final sem modificar o Designer. | Após revisar a comparação; a rejeição mantém o Designer intacto. |
+| `ClearDesignerVisualDiffArtifacts` | Limpa snapshots e comparações mantidos somente em memória. | Ao encerrar a jornada ou quando artefatos visuais locais não forem mais necessários. |
 
 ## Recuperação de resultados compactados
 
@@ -319,6 +347,26 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `GetGitDiff` | Retorna o diff permitido para revisão. | Para verificar o resultado das mudanças e selecionar caminhos. |
 | `PreviewGitCommit` | Prepara mensagem, arquivos e fingerprint sem criar o commit. | Quando o objetivo solicita um commit local revisável. |
 | `CommitChanges` | Revalida o preview e cria somente o commit local. | Depois da revisão, consentimento e confirmação do fingerprint. |
+
+## Mentor Delphi
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `ExplainSelectedDelphiCode` | Monta uma explicação por nível, ancorada na seleção atual e em regras citadas. | No editor ou chat, quando o usuário pede ensino contextual de Delphi. |
+
+O conteúdo selecionado é usado somente na resposta corrente. A ferramenta retorna `retained: false` e
+não grava a seleção como material didático.
+
+## Migração de acesso a dados legado
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `InventoryLegacyDataAccess` | Inventaria referências a BDE, ADO e dbExpress no projeto ativo. | Antes de planejar uma migração para FireDAC. |
+| `PlanLegacyMigrationBatches` | Agrupa os achados por tecnologia e arquivo em lotes limitados. | Depois do inventário, sem iniciar uma reescrita total. |
+| `PrepareLegacyMigrationBatch` | Prepara um preview reversível somente para substituições determinísticas. | Após revisar riscos e ações manuais do lote. |
+| `RecordLegacyMigrationGate` | Registra evidências de build e testes e reverte o lote aplicado se um gate falhar. | Depois de aplicar e validar cada lote. |
+| `GetLegacyMigrationReport` | Consolida compatibilidade, gates e ações manuais pendentes. | Durante e ao encerrar a migração. |
+| `PlanDextAndFormModernization` | Planeja DEXT e decomposição de forms sem reescrita automática. | Depois de estabilizar os lotes FireDAC. |
 
 ## Exemplos de acionamento
 

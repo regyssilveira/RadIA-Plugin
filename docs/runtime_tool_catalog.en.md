@@ -18,6 +18,34 @@ This list contains only the built-in tools registered by the current package. Ar
 | `GetCursorPosition` | Returns the active editor cursor position. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCompilerMessages` | Returns structured compiler messages from the IDE. | `RadIA.Core.WorkspaceTools.pas` |
 
+## Delphi environment
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `GetDelphiEnvironmentProfile` | Returns a sanitized profile of the active Delphi IDE and project. | `RadIA.Core.DelphiEnvironmentTools.pas` |
+
+## Curated Delphi guidance
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `GetDelphiGuidance` | Returns cited Delphi guidance filtered by environment and topic. | `RadIA.Core.DelphiGuidanceTools.pas` |
+
+## DFM and Pascal consistency
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `AuditActiveDfmPasConsistency` | Audits the active DFM and Pascal pair without modifying either file. | `RadIA.Core.DfmPasAuditTools.pas` |
+| `PrepareDfmPasAuditFix` | Prepares a reviewable Pascal patch for a supported DFM audit finding. | `RadIA.Core.DfmPasAuditTools.pas` |
+
+## Designer visual diff
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `CaptureDesignerVisualSnapshot` | Captures a bounded in-memory snapshot of the active Form Designer. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+| `CompareDesignerVisualSnapshots` | Returns a timeline-ready before and after Designer comparison. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+| `DecideDesignerVisualDiff` | Accepts or rejects a visual comparison without mutating the Designer. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+| `ClearDesignerVisualDiffArtifacts` | Clears bounded in-memory Designer snapshots and comparisons. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+
 ## Agent result recovery
 
 | Tool | Purpose | Source unit |
@@ -320,6 +348,23 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CancelMemoryDiagnosticSession` | Cancels the active memory diagnostic, debugger, build, and runtime scenario. | `RadIA.Core.MemoryDiagnosticSession.pas` |
 | `GetMemoryDiagnosticSessionStatus` | Returns the current composed memory diagnostic phase and cancellation state. | `RadIA.Core.MemoryDiagnosticSession.pas` |
 
+## Delphi mentor
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `ExplainSelectedDelphiCode` | Builds a level-aware explanation anchored to selected Delphi code and cited rules. | `RadIA.Core.DelphiMentor.pas` |
+
+## Legacy data migration
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `InventoryLegacyDataAccess` | Inventories BDE, ADO and dbExpress references in the active project. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `PlanLegacyMigrationBatches` | Groups legacy data findings into bounded technology and file batches. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `PrepareLegacyMigrationBatch` | Prepares a reversible preview for deterministic changes in one batch. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `RecordLegacyMigrationGate` | Records build and test evidence, reverting a failed applied batch. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `GetLegacyMigrationReport` | Reports batch compatibility, gate evidence and required manual actions. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `PlanDextAndFormModernization` | Plans DEXT adoption and form decomposition after data migration. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+
 ## Memory evidence correction workflow
 
 | Tool | Purpose | Source unit |
@@ -329,7 +374,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 38
-- Registered built-in tools: 133
+- Registered groups: 44
+- Registered built-in tools: 148
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

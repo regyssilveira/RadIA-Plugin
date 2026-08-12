@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://radia.local/schemas/delphi-experience-result-v1.json",
+  "type": "object",
+  "required": ["schemaVersion", "startedAtUtc", "durationMs", "telemetrySent", "summary", "results"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "startedAtUtc": { "type": "string" },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "telemetrySent": { "const": false },
+    "summary": { "type": "object" },
+    "results": { "type": "array" }
+  },
+  "additionalProperties": false
+}

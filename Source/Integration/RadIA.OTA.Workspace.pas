@@ -57,6 +57,7 @@ uses
   System.Hash,
   System.IOUtils,
   System.SysUtils,
+  System.Win.Registry,
   ToolsAPI,
   Winapi.Windows,
   RadIA.Core.Types,
@@ -64,6 +65,46 @@ uses
 
 const
   CWorkspaceUnavailable = 'The IDE workspace is shutting down.';
+
+function ReadIDESKUFromRoot(
+  const ARootKey: HKEY;
+  const ABaseRegistryKey: string
+): string;
+const
+  CValueNames: array[0..1] of string = ('Edition', 'ProductName');
+var
+  LRegistry: TRegistry;
+  LValueName: string;
+begin
+  Result := '';
+  LRegistry := TRegistry.Create(KEY_READ);
+  try
+    LRegistry.RootKey := ARootKey;
+    if not LRegistry.OpenKeyReadOnly(ABaseRegistryKey) then
+      Exit;
+    for LValueName in CValueNames do
+      if LRegistry.ValueExists(LValueName) then
+        Exit(Trim(LRegistry.ReadString(LValueName)));
+  finally
+    LRegistry.Free;
+  end;
+end;
+
+function GetIDESKU: string;
+var
+  LBaseRegistryKey: string;
+  LOTAServices: IOTAServices;
+begin
+  Result := 'unknown';
+  if not Supports(BorlandIDEServices, IOTAServices, LOTAServices) then
+    Exit;
+  LBaseRegistryKey := LOTAServices.GetBaseRegistryKey;
+  Result := ReadIDESKUFromRoot(HKEY_CURRENT_USER, LBaseRegistryKey);
+  if Result = '' then
+    Result := ReadIDESKUFromRoot(HKEY_LOCAL_MACHINE, LBaseRegistryKey);
+  if Result = '' then
+    Result := 'unknown';
+end;
 
 function FindSourceEditor(
   const AFileName: string
@@ -509,6 +550,7 @@ begin
       LResult := TRadIAIDEState.Create(
         FIDEAdapter.GetDelphiVersionName,
         LPlatform,
+        GetIDESKU,
         GIsShuttingDown,
         LCapabilities
       );

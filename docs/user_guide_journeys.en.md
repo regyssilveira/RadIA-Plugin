@@ -86,3 +86,8 @@ pushes or publishes artifacts without an explicit user instruction.
 Use **modernize** when structure and practices should evolve while behavior and public contracts
 remain stable. Use **migrate** when replacing a bounded legacy technology in independently
 reversible batches.
+
+For BDE, ADO, and dbExpress, the `migrate` journey uses the dedicated
+[FireDAC migration flow](legacy_data_migration.en.md): inventory, risk, per-file preview, build, tests,
+and mandatory rollback when a gate fails. DEXT and form decomposition enter the plan only after the
+FireDAC batches are stable.

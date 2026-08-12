@@ -182,6 +182,8 @@ type
     [Test]
     procedure TestDelphiVersionInjectionWithMockAdapter;
     [Test]
+    procedure TestCuratedDelphiGuidanceInjection;
+    [Test]
     procedure TestGetEffectiveSystemPrompt;
     [Test]
     procedure TestClearCache;
@@ -237,6 +239,8 @@ type
 implementation
 
 uses
+  RadIA.Core.DelphiEnvironment,
+  RadIA.Core.DelphiGuidance,
   RadIA.Core.HierarchicalSettings,
   System.SysUtils, System.Classes, System.Net.URLClient, RadIA.Core.Types, RadIA.Core.Service, RadIA.Core.ChatMessage,
       RadIA.Core.Config, RadIA.Core.ProviderRegistry, RadIA.Core.SettingsStorage, RadIA.Core.Container;
@@ -1146,7 +1150,30 @@ type
     function GetLastCompilerError(out AErrorMsg: string; out AFileName: string; out ALine: Integer): Boolean;
   end;
 
+  TMockDelphiEnvironmentService = class(
+    TInterfacedObject,
+    IRadIADelphiEnvironmentService
+  )
+  public
+    function BuildProfile: TRadIADelphiEnvironmentProfile;
+  end;
+
 { TMockIDEAdapter }
+
+function TMockDelphiEnvironmentService.BuildProfile:
+  TRadIADelphiEnvironmentProfile;
+begin
+  Result := TRadIADelphiEnvironmentProfile.Create(
+    'Delphi 13',
+    'IDE64',
+    'Enterprise',
+    'MockProject',
+    'VCL',
+    'Debug',
+    'Win64'
+  );
+  Result.SetCollections([], [], [], []);
+end;
 
 function TMockIDEAdapter.GetActiveEditorText(out AText: string; const ASelectedOnly: Boolean): Boolean;
 begin
@@ -1232,6 +1259,37 @@ begin
       LPrompt := LService.GetEffectiveSystemPrompt;
       Assert.IsTrue(LPrompt.Contains('Delphi 99 Special'), 'Prompt should contain mock Delphi version info');
       Assert.IsTrue(LPrompt.Contains('Please reply in Klingon.'), 'Prompt should contain mock language instruction');
+    finally
+      LService.Free;
+    end;
+  finally
+    TRadIAContainer.Clear;
+  end;
+end;
+
+procedure TTestRadIAService.TestCuratedDelphiGuidanceInjection;
+var
+  LConfig: IRadIAConfig;
+  LPrompt: string;
+  LService: TRadIAService;
+begin
+  TRadIAContainer.Clear;
+  TRadIAContainer.Register<IRadIADelphiEnvironmentService>(
+    TMockDelphiEnvironmentService.Create
+  );
+  TRadIAContainer.Register<IRadIADelphiGuidanceCatalog>(
+    TRadIADelphiGuidanceCatalog.Create
+  );
+  try
+    LConfig := TMockConfig.Create(5, 'Base Prompt');
+    LService := TRadIAService.Create(LConfig);
+    try
+      LConfig.InjectDelphiVersion := False;
+      LConfig.ConciseResponses := False;
+      LPrompt := LService.GetEffectiveSystemPrompt;
+      Assert.Contains(LPrompt, 'Applicable curated Delphi guidance:');
+      Assert.Contains(LPrompt, '[radia-delphi:ide64-pointer-safety@1]');
+      Assert.Contains(LPrompt, 'Preserve each citation');
     finally
       LService.Free;
     end;

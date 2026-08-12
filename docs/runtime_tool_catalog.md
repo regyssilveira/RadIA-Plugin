@@ -18,6 +18,34 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | `RadIA.Core.WorkspaceTools.pas` |
 
+## Ambiente Delphi
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `GetDelphiEnvironmentProfile` | Retorna perfil sanitizado da IDE, projeto, paths, packages e bibliotecas. | `RadIA.Core.DelphiEnvironmentTools.pas` |
+
+## Orientação Delphi curada
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `GetDelphiGuidance` | Retorna regras Delphi versionadas e citáveis filtradas pelo ambiente e tópico. | `RadIA.Core.DelphiGuidanceTools.pas` |
+
+## Consistência entre DFM e Pascal
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `AuditActiveDfmPasConsistency` | Audita componentes, campos, classes e eventos do form ativo sem alterar arquivos. | `RadIA.Core.DfmPasAuditTools.pas` |
+| `PrepareDfmPasAuditFix` | Prepara um patch revisável para um handler ou campo ausente suportado. | `RadIA.Core.DfmPasAuditTools.pas` |
+
+## Diff visual do Designer
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `CaptureDesignerVisualSnapshot` | Captura em memória componentes, bounds, parent, seleção e propriedades permitidas do form ativo. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+| `CompareDesignerVisualSnapshots` | Produz uma comparação antes/depois pronta para a timeline, incluindo estrutura, layout e propriedades. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+| `DecideDesignerVisualDiff` | Registra aceite ou rejeição final sem modificar o Designer. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+| `ClearDesignerVisualDiffArtifacts` | Limpa snapshots e comparações mantidos somente em memória. | `RadIA.Core.DesignerVisualDiffTools.pas` |
+
 ## Recuperação de resultados do agente
 
 | Ferramenta | O que faz | Unit de origem |
@@ -320,6 +348,23 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `CancelMemoryDiagnosticSession` | Cancela build, cenário e somente o processo supervisionado pela sessão de memória ativa. | `RadIA.Core.MemoryDiagnosticSession.pas` |
 | `GetMemoryDiagnosticSessionStatus` | Informa a fase atual, mensagem operacional, preview e estado de cancelamento. | `RadIA.Core.MemoryDiagnosticSession.pas` |
 
+## Mentor Delphi
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `ExplainSelectedDelphiCode` | Monta uma explicação por nível, ancorada na seleção atual e em regras citadas. | `RadIA.Core.DelphiMentor.pas` |
+
+## Migração de acesso a dados legado
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `InventoryLegacyDataAccess` | Inventaria referências a BDE, ADO e dbExpress no projeto ativo. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `PlanLegacyMigrationBatches` | Agrupa os achados por tecnologia e arquivo em lotes limitados. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `PrepareLegacyMigrationBatch` | Prepara um preview reversível somente para substituições determinísticas. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `RecordLegacyMigrationGate` | Registra evidências de build e testes e reverte o lote aplicado se um gate falhar. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `GetLegacyMigrationReport` | Consolida compatibilidade, gates e ações manuais pendentes. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `PlanDextAndFormModernization` | Planeja DEXT e decomposição de forms sem reescrita automática. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+
 ## Correção orientada por evidências de memória
 
 | Ferramenta | O que faz | Unit de origem |
@@ -329,7 +374,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 38
-- Ferramentas internas registradas: 133
+- Grupos registrados: 44
+- Ferramentas internas registradas: 148
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

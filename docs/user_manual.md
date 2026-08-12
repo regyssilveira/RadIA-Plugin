@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.8.0
+# Manual completo do RadIA 2.9.0
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -35,7 +35,7 @@ da IDE e disponibiliza seu painel acoplável. Posicione o painel como uma aba la
 flutuante.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.8.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.9.0`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -208,6 +208,8 @@ build e testes. Cada etapa da timeline pode ser expandida para inspecionar argum
 erro, correlação, duração e se a operação foi uma mutação. Seus botões ou os comandos
 `/agent pause`, `/agent resume` e `/agent cancel` controlam a execução. Cada mudança de estado é
 persistida em `RadIA\agent-checkpoints`, permitindo retomar a sessão depois de uma pausa.
+O [contrato de execução autônoma](autonomous_execution_contract.md) preserva no mesmo checkpoint os
+limites de arquivos e operações, critérios de conclusão, gates de build/testes e resumos periódicos.
 Enquanto o plano aguarda aprovação, use **Edit plan** para revisar títulos e descrições antes de
 qualquer tool. O equivalente digitável é `/agent plan [{"title":"Inspecionar","description":"..."}]`.
 O RadIA aceita de 1 a 50 etapas, valida os limites e bloqueia edições depois do início da execução.
@@ -616,7 +618,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 133 tools internas registradas.
+- O [catálogo gerado do runtime](runtime_tool_catalog.md) lista as 148 tools internas registradas.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

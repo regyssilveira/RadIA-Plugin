@@ -6,8 +6,8 @@
 
 Este documento descreve o planejamento estratégico e a visão de futuro do assistente de IA **Rad IA**, focado em trazer produtividade e resolver as dores reais do desenvolvedor Delphi no seu dia a dia.
 
-A versão 2.8.0 acrescenta contexto semântico compartilhado à baseline determinística da 2.7.0 e
-preserva evidências reproduzíveis nos três alvos suportados.
+A versão 2.9.0 amplia a experiência Delphi com contexto de ambiente, conhecimento curado, auditoria
+DFM/PAS, comparação visual, execução autônoma governada, modernização e evidências reproduzíveis.
 
 > [!NOTE]
 > O Rad IA segue um modelo de desenvolvimento **open-source orientado à comunidade**.
@@ -18,13 +18,22 @@ preserva evidências reproduzíveis nos três alvos suportados.
 
 ## 📅 Histórico de Versões Concluídas
 
+### v2.9.0 - Experiência Delphi completa e verificável
+
+- perfil sanitizado do ambiente e orientação Delphi curada e citável;
+- auditoria bidirecional DFM/PAS e comparação antes/depois do Form Designer;
+- contrato de execução autônoma com limites, gates, pausa, retomada e rollback;
+- migração reversível de BDE, ADO e dbExpress para FireDAC, com plano residual para DEXT e forms;
+- mentor Delphi por nível, ficha corporativa de segurança e benchmark local reproduzível;
+- catálogo sincronizado com 148 ferramentas e documentação operacional bilíngue.
+
 ### v2.8.0 - Assistência semântica integrada ao editor
 
 - Ghost Text, ações do editor e agente usam o mesmo analisador semântico limitado;
 - unit, símbolo no cursor, imports e declarações próximas podem ser inspecionados em modo somente leitura;
 - a ferramenta `GetEditorSemanticContext` expõe o contexto vigente ao agente sem substituir o
   provider nativo do editor;
-- catálogo, documentação, backlogs e gates de release permanecem sincronizados com 133 ferramentas.
+- catálogo, documentação, backlogs e gates de release permanecem sincronizados com 148 ferramentas.
 
 ### v2.7.0 - Fechamento funcional determinístico
 
@@ -352,7 +361,7 @@ novo goal antes de receber versão.
 *   **Otimizador de Cláusula Uses (Clean Uses)**: ainda não implementado.
 *   **Gerador de Mocks para Testes**: ainda não implementado como jornada própria.
 *   **Swagger/OpenAPI para projetos existentes**: novos projetos DEXT foram atendidos na 2.2.2; a leitura de rotas Horse/RAD Server existentes permanece pendente.
-*   **Análise Semântica DFM vs PAS**: mutações atuais preservam consistência, mas a auditoria de órfãos permanece pendente.
+*   **Análise Semântica DFM vs PAS**: auditoria de componentes, declarações e eventos órfãos concluída na v2.9.0.
 *   **Smart Migrate**, **painel de cache** e **geração de API.md**: permanecem pendentes e não priorizados.
 
 ### Capacidade absorvida
@@ -360,7 +369,8 @@ novo goal antes de receber versão.
 *   **Histórico de Refatorações Aplicadas**: absorvido na 2.0.0 por patches reversíveis, timeline, auditoria e checkpoints.
 
 ### Oportunidades estratégicas
-*   **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC**: Assistente interativo de migração estrutural que converte componentes visuais obsoletos do DFM e reescreve a lógica do código Pascal para o DEXT ORM com FireDAC.
+*   **Conversão BDE/ADO/dbExpress ➔ DEXT com FireDAC**: a migração reversível para FireDAC foi
+    concluída na v2.9.0; a conversão automática para DEXT e a decomposição de forms permanecem abertas.
 *   **Decompositor de Formulários (Code-Behind Extractor)**: Extração cirúrgica de lógica de negócios acoplada nos eventos de cliques de telas para classes de serviços limpas separadas.
 *   **Assistente de Threads e PPL**: Auxiliar a reescrever rotinas pesadas síncronas para rodarem de forma assíncrona segura e sem travar a interface da aplicação.
 *   **Internacionalização Automática (i18n Wizard)**: a infraestrutura de localização existe; falta o wizard para projetos do usuário.

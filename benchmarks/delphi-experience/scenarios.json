@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    { "schemaVersion": 1, "id": "dfm-pas-audit", "category": "dfm-pas", "action": "dunitx", "target": "RadIA.Tests.DfmPasAudit.TTestRadIADfmPasAudit", "expected": "passed", "platform": "Win32", "rollbackExpected": false, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "designer-visual-diff", "category": "designer", "action": "dunitx", "target": "RadIA.Tests.DesignerVisualDiff.TTestRadIADesignerVisualDiff", "expected": "passed", "platform": "Win32", "rollbackExpected": false, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "memory-evidence", "category": "memory", "action": "dunitx", "target": "RadIA.Tests.MemoryEvidence.TRadIAMemoryEvidenceTests", "expected": "passed", "platform": "Win32", "rollbackExpected": true, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "legacy-data-migration", "category": "migration", "action": "dunitx", "target": "RadIA.Tests.LegacyDataMigrationTools.TRadIALegacyDataMigrationToolTests", "expected": "passed", "platform": "Win32", "rollbackExpected": true, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "dunitx-baseline", "category": "dunitx", "action": "dunitx", "target": "RadIA.Tests.DelphiEnvironment.TTestRadIADelphiEnvironment", "expected": "passed", "platform": "Win32", "rollbackExpected": false, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "resume-contract", "category": "resume", "action": "dunitx", "target": "RadIA.Tests.AgentExecutionContract.TTestRadIAAgentExecutionContract", "expected": "passed", "platform": "Win32", "rollbackExpected": false, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "workspace-confinement", "category": "confinement", "action": "dunitx", "target": "RadIA.Tests.WorkspaceBoundary.TTestRadIAWorkspaceBoundary", "expected": "passed", "platform": "Win32", "rollbackExpected": false, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "delphi12-win32-build", "category": "build", "action": "build", "target": "23.0", "expected": "passed", "platform": "Win32", "rollbackExpected": false, "estimatedCostUnits": 0 },
+    { "schemaVersion": 1, "id": "delphi13-ide64-build", "category": "ide64", "action": "build", "target": "37.0", "expected": "passed", "platform": "IDE64", "rollbackExpected": false, "estimatedCostUnits": 0 }
+  ]
+}

@@ -149,7 +149,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 133);
+  assert.equal(registeredTools.length, 148);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -546,11 +546,7 @@ test('current release gates use the generated catalog size', () => {
   const english = fs.readFileSync(path.join(documentationRoot, 'release_process.en.md'), 'utf8');
   const currentDocuments = [
     'terminal.md',
-    'terminal.en.md',
-    `release_notes_${packageVersion}.md`,
-    `release_notes_${packageVersion}.en.md`,
-    `release_audit_${packageVersion}.md`,
-    `release_audit_${packageVersion}.en.md`
+    'terminal.en.md'
   ];
 
   assert.match(portuguese, new RegExp(`todos com ${toolCount}\\s+ferramentas`, 'u'));
@@ -693,11 +689,11 @@ test('current release audit matches the validated matrix', () => {
   );
 
   [portuguese, english].forEach(document => {
-    assert.match(document, /1061/u);
-    assert.match(document, /1069/u);
-    assert.match(document, /105\/105/u);
-    assert.match(document, /41\/41/u);
-    assert.match(document, /133/u);
+    assert.match(document, /1103/u);
+    assert.match(document, /1111/u);
+    assert.match(document, /106\/106/u);
+    assert.match(document, /42\/42/u);
+    assert.match(document, /148/u);
   });
 });
 

@@ -402,6 +402,10 @@ var
   LControl: TControl;
   LNative: TComponent;
   LParent: IOTAComponent;
+  LProperties: TArray<TRadIAComponentPropertyValue>;
+  LProperty: TRadIAComponentPropertyValue;
+  LPropertyNames: TArray<string>;
+  LPropertyName: string;
 begin
   LNative := GetNativeComponent(AComponent);
   LParent := AComponent.GetParent;
@@ -428,6 +432,25 @@ begin
       LControl.Top
     );
     Result.SetSize(LControl.Width, LControl.Height);
+  end;
+  if Assigned(LNative) then
+  begin
+    LPropertyNames := [
+      'Caption',
+      'Text',
+      'Align',
+      'Visible',
+      'Enabled',
+      'TabOrder'
+    ];
+    SetLength(LProperties, 0);
+    for LPropertyName in LPropertyNames do
+      if TryReadProperty(LNative, LPropertyName, LProperty) then
+      begin
+        SetLength(LProperties, Length(LProperties) + 1);
+        LProperties[High(LProperties)] := LProperty;
+      end;
+    Result.SetProperties(LProperties);
   end;
 end;
 

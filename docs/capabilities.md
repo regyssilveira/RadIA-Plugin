@@ -1,6 +1,6 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.8.0. Ela reúne as capacidades disponíveis e aponta para
+Esta página é o mapa funcional do RadIA 2.9.0. Ela reúne as capacidades disponíveis e aponta para
 as instruções detalhadas.
 
 Para distinguir implementação de planejamento:
@@ -9,6 +9,10 @@ Para distinguir implementação de planejamento:
 - `/tools` mostra o catálogo disponível na instância atual da IDE;
 - o [catálogo arquitetural](tool_catalog.md) também contém contratos e evoluções planejadas;
 - o [backlog](backlog.md) não deve ser interpretado como funcionalidade entregue.
+
+O agente combina o [perfil sanitizado do ambiente Delphi](delphi_environment_profile.md) com a
+[orientação Delphi curada](delphi_guidance.md). Assim, regras de linguagem, memória, VCL, FMX,
+Delphi 12, Delphi 13 e IDE64 entram no contexto com citações estáveis e consultáveis.
 
 ## Chat e produtividade
 
@@ -65,6 +69,11 @@ Consulte [Editor e geração](user_guide_editor_generation.md) e
 [Diagnóstico e análise](user_guide_diagnostics_analysis.md).
 
 ## Projetos e estrutura
+
+`GetDelphiEnvironmentProfile` inventaria versão, arquitetura, edição, capacidades, framework,
+configuração, plataforma, search paths, packages e bibliotecas do projeto ativo. Caminhos externos
+são sanitizados e a operação permanece somente leitura. Consulte
+[Perfil do ambiente Delphi](delphi_environment_profile.md).
 
 O RadIA pode:
 
@@ -263,7 +272,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 133 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 148 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](user_manual.md)
 - [Recursos e funcionalidades](features.md)

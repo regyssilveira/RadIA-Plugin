@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 133 internal tools: what each one does and at what stage
+This page explains RadIA's 148 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -37,6 +37,34 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`GetEditorSelection`|Reads the current editor selection.|In actions directed at a snippet, such as explaining, reviewing, testing or refactoring.|
 |`GetCursorPosition`|Returns cursor file, row and column.|To contextualize errors, symbols, insertions and anchored revisions.|
 |`GetCompilerMessages`|Collects structured errors and warnings.|After a build or when the objective involves fixing build failures.|
+
+## Delphi environment
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`GetDelphiEnvironmentProfile`|Returns a sanitized IDE, project, path, package, and library profile.|Before suggesting APIs, components, or migrations that depend on the Delphi environment.|
+
+## Curated Delphi guidance
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`GetDelphiGuidance`|Returns versioned, citable Delphi rules filtered by environment and topic.|Before generating or reviewing code whose correctness depends on language, memory, threads, VCL, FMX, Designer, or IDE64.|
+
+## DFM and Pascal consistency
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`AuditActiveDfmPasConsistency`|Audits components, fields, classes, and events in the active form without changing files.|Before changing a form or when investigating streaming, handler, and field mismatch errors.|
+|`PrepareDfmPasAuditFix`|Prepares a reviewable patch for a supported missing handler or field.|After the audit, only when a finding has a safe automatic fix; application and rollback use the existing patch tools.|
+
+## Designer visual diff
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`CaptureDesignerVisualSnapshot`|Captures active-form components, bounds, parent, selection, and allowlisted properties in memory.|Before and after an authorized visual proposal in the Form Designer.|
+|`CompareDesignerVisualSnapshots`|Produces a timeline-ready before and after comparison of structure, layout, and properties.|After both captures and before deciding on the visual proposal.|
+|`DecideDesignerVisualDiff`|Records a final acceptance or rejection without changing the Designer.|After reviewing the comparison; rejection leaves the Designer untouched.|
+|`ClearDesignerVisualDiffArtifacts`|Clears snapshots and comparisons kept only in memory.|When ending the journey or when local visual artifacts are no longer needed.|
 
 ## Recovering compressed results
 
@@ -319,6 +347,26 @@ passes `execution` classification and does not accept arbitrary names received f
 |`GetGitDiff`|Returns the diff allowed for review.|To check the result of changes and select paths.|
 |`PreviewGitCommit`|Prepares message, files and fingerprint without creating the commit.|When the target requests a reviewable local commit.|
 |`CommitChanges`|Revalidates the preview and creates only the local commit.|After review, consent and fingerprint confirmation.|
+
+## Delphi mentor
+
+| Tool | What it does | When it is triggered |
+|---|---|---|
+| `ExplainSelectedDelphiCode` | Builds a level-aware explanation anchored to the current selection and cited rules. | From editor or chat when contextual Delphi teaching is requested. |
+
+Selected content is used only for the current response. The tool returns `retained: false` and does not
+store the selection as learning material.
+
+## Legacy data access migration
+
+| Tool | What it does | When it is triggered |
+|---|---|---|
+| `InventoryLegacyDataAccess` | Inventories BDE, ADO, and dbExpress references in the active project. | Before planning a FireDAC migration. |
+| `PlanLegacyMigrationBatches` | Groups findings by technology and file into bounded batches. | After inventory, without starting a full rewrite. |
+| `PrepareLegacyMigrationBatch` | Prepares a reversible preview only for deterministic replacements. | After reviewing batch risks and manual actions. |
+| `RecordLegacyMigrationGate` | Records build and test evidence and reverts an applied batch when a gate fails. | After applying and validating each batch. |
+| `GetLegacyMigrationReport` | Consolidates compatibility, gates, and pending manual actions. | During and at the end of migration. |
+| `PlanDextAndFormModernization` | Plans DEXT and form decomposition without automatic rewriting. | After stabilizing the FireDAC batches. |
 
 ## Trigger examples
 

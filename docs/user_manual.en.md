@@ -1,4 +1,4 @@
-# Complete RadIA 2.8.0 user manual
+# Complete RadIA 2.9.0 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -166,6 +166,8 @@ change, build, and test indicators. Each timeline step expands to show arguments
 correlation, duration, and whether it mutated the workspace. Use its controls or `/agent pause`,
 `/agent resume`, and `/agent cancel`. Every state transition is persisted under
 `RadIA\agent-checkpoints`, so a paused session can be resumed.
+The [autonomous execution contract](autonomous_execution_contract.en.md) preserves file and operation
+limits, completion criteria, build/test gates, and periodic summaries in the same checkpoint.
 While a plan awaits approval, use **Edit plan** to revise titles and descriptions before any tool
 runs. The keyboard equivalent is `/agent plan [{"title":"Inspect","description":"..."}]`. RadIA
 accepts 1–50 steps, validates field limits, and blocks edits after execution starts.
@@ -476,7 +478,7 @@ See the [security model](tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](runtime_tool_catalog.en.md) lists the 133 registered built-in tools.
+- The [generated runtime catalog](runtime_tool_catalog.en.md) lists the 148 registered built-in tools.
 - Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
   capability.
 - RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user

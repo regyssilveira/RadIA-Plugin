@@ -24,6 +24,7 @@ type
       const AModelId: string
     ): string;
     function IsLocalQuotaLimitReached: Boolean;
+    function BuildDelphiGuidancePrompt: string;
     procedure SetActiveProvider(const AProvider: IRadIAProvider);
     procedure ClearActiveProvider(const AProvider: IRadIAProvider);
     procedure ExecutePromptStreamTask(const APrompt: string;
@@ -73,15 +74,62 @@ implementation
 uses  System.JSON, System.Threading, System.Math, RadIA.Core.Container, RadIA.Core.ProjectContext,
   RadIA.Core.ProviderRegistry, RadIA.Core.Logger, System.SyncObjs, System.SysUtils,
       System.Classes, RadIA.Core.TokenUsage,
-      RadIA.Core.ChatMessage;
+      RadIA.Core.ChatMessage, RadIA.Core.DelphiEnvironment,
+      RadIA.Core.DelphiGuidance;
 
 procedure LogService(const AMsg: string);
 begin
   TLogger.Log(AMsg, 'Service');
 end;
 
+procedure AppendSystemPrompt(
+  var ASystemPrompt: string;
+  const AAddition: string
+);
+begin
+  if AAddition = '' then
+    Exit;
+  if ASystemPrompt = '' then
+    ASystemPrompt := AAddition
+  else
+    ASystemPrompt := ASystemPrompt + sLineBreak + sLineBreak + AAddition;
+end;
+
 
 { TRadIAService }
+
+function TRadIAService.BuildDelphiGuidancePrompt: string;
+var
+  LCatalog: IRadIADelphiGuidanceCatalog;
+  LEnvironment: IRadIADelphiEnvironmentService;
+  LProfile: TRadIADelphiEnvironmentProfile;
+begin
+  Result := '';
+  if not TRadIAContainer.TryResolve<IRadIADelphiEnvironmentService>(
+    LEnvironment
+  ) or not TRadIAContainer.TryResolve<IRadIADelphiGuidanceCatalog>(
+    LCatalog
+  ) then
+    Exit;
+  try
+    LProfile := LEnvironment.BuildProfile;
+    Result := LCatalog.BuildPromptContext(
+      LProfile.IDEVersion,
+      LProfile.Framework,
+      LProfile.IDEArchitecture,
+      6
+    );
+    if Result <> '' then
+      Result := 'Applicable curated Delphi guidance:' + sLineBreak + Result +
+        sLineBreak + 'Preserve each citation when the associated rule affects the answer.';
+  except
+    on E: Exception do
+    begin
+      LogService('Curated Delphi guidance unavailable: ' + E.Message);
+      Result := '';
+    end;
+  end;
+end;
 
 constructor TRadIAService.Create(const AConfig: IRadIAConfig);
 begin
@@ -176,6 +224,7 @@ var
   LAdapter: IRadIAIDEAdapter;
   LDelphiVersionName: string;
   LPreferredLanguage: string;
+  LGuidancePrompt: string;
 begin
   LSystemPrompt := FConfig.SystemPrompt;
 
@@ -183,10 +232,7 @@ begin
   begin
     LConcisePrompt := 'Default response style: be concise. Prefer short bullet lists, avoid long explanations, ' +
                       'and include only the minimum context needed to act safely. Preserve code formatting exactly.';
-    if LSystemPrompt.IsEmpty then
-      LSystemPrompt := LConcisePrompt
-    else
-      LSystemPrompt := LSystemPrompt + sLineBreak + sLineBreak + LConcisePrompt;
+    AppendSystemPrompt(LSystemPrompt, LConcisePrompt);
   end;
 
   LDelphiVersionName := 'Delphi';
@@ -210,18 +256,17 @@ begin
     if not LPreferredLanguage.IsEmpty then
       LDelphiVersionPrompt := LDelphiVersionPrompt + LPreferredLanguage;
 
-    if LSystemPrompt.IsEmpty then
-      LSystemPrompt := LDelphiVersionPrompt
-    else
-      LSystemPrompt := LSystemPrompt + sLineBreak + sLineBreak + LDelphiVersionPrompt;
+    AppendSystemPrompt(LSystemPrompt, LDelphiVersionPrompt);
   end;
+
+  LGuidancePrompt := BuildDelphiGuidancePrompt;
+  AppendSystemPrompt(LSystemPrompt, LGuidancePrompt);
 
   if not LProjectFolder.IsEmpty then
   begin
-    if TProjectContextLoader.LoadContext(LProjectFolder, LProjectContext) and not LProjectContext.IsEmpty then
-    begin
+    if TProjectContextLoader.LoadContext(LProjectFolder, LProjectContext) and
+      not LProjectContext.IsEmpty then
       LSystemPrompt := LProjectContext + sLineBreak + sLineBreak + LSystemPrompt;
-    end;
   end;
   Result := LSystemPrompt;
 end;

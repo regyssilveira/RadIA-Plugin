@@ -110,6 +110,32 @@ type
       read FMaxDecisionContextCharacters;
   end;
 
+  TRadIAAgentExecutionContract = record
+  private
+    FCompletionCriteria: string;
+    FMaxFiles: Integer;
+    FMaxOperations: Integer;
+    FRequireBuild: Boolean;
+    FRequireTests: Boolean;
+    FSummaryEverySteps: Integer;
+  public
+    constructor Create(
+      const AMaxFiles: Integer;
+      const AMaxOperations: Integer;
+      const ASummaryEverySteps: Integer;
+      const ARequireBuild: Boolean;
+      const ARequireTests: Boolean;
+      const ACompletionCriteria: string
+    );
+    class function Default: TRadIAAgentExecutionContract; static;
+    property MaxFiles: Integer read FMaxFiles;
+    property MaxOperations: Integer read FMaxOperations;
+    property SummaryEverySteps: Integer read FSummaryEverySteps;
+    property RequireBuild: Boolean read FRequireBuild;
+    property RequireTests: Boolean read FRequireTests;
+    property CompletionCriteria: string read FCompletionCriteria;
+  end;
+
   TRadIAAgentRunResult = record
   private
     FStatus: TRadIAAgentStatus;
@@ -299,6 +325,8 @@ type
     FPlanJson: string;
     FPlanApproved: Boolean;
     FLimits: TRadIAAgentLimits;
+    FExecutionContract: TRadIAAgentExecutionContract;
+    FPeriodicSummary: string;
     FPauseRequested: Integer;
     FCancelRequested: Integer;
     FLastCallSignature: string;
@@ -389,6 +417,15 @@ type
     function HasValidPlan: Boolean;
     function ElapsedMilliseconds: Int64;
     function CheckBudgets: Boolean;
+    function CheckExecutionContract: Boolean;
+    function CountAffectedFiles: Integer;
+    function CountMutationOperations: Integer;
+    function WouldExceedFileLimit(
+      const ADecision: TRadIAAgentDecision
+    ): Boolean;
+    procedure UpdatePeriodicSummary;
+    function BuildFinalReportJson: TJSONObject;
+    function IsAmbiguityError(const AErrorCode: string): Boolean;
     function EffectivePromptTokens: Integer;
     function EffectiveCompletionTokens: Integer;
     function EffectiveTotalTokens: Integer;
@@ -461,7 +498,14 @@ type
       const ASessionId: string;
       const AProjectId: string;
       const ALimits: TRadIAAgentLimits
-    ): TRadIAAgentRunResult;
+    ): TRadIAAgentRunResult; overload;
+    function Start(
+      const AObjective: string;
+      const ASessionId: string;
+      const AProjectId: string;
+      const ALimits: TRadIAAgentLimits;
+      const AExecutionContract: TRadIAAgentExecutionContract
+    ): TRadIAAgentRunResult; overload;
     function Resume(
       const ASessionId: string
     ): TRadIAAgentRunResult;
@@ -674,6 +718,54 @@ end;
 class function TRadIAAgentLimits.Default: TRadIAAgentLimits;
 begin
   Result := TRadIAAgentLimits.Create(20, 3);
+end;
+
+{ TRadIAAgentExecutionContract }
+
+constructor TRadIAAgentExecutionContract.Create(
+  const AMaxFiles: Integer;
+  const AMaxOperations: Integer;
+  const ASummaryEverySteps: Integer;
+  const ARequireBuild: Boolean;
+  const ARequireTests: Boolean;
+  const ACompletionCriteria: string
+);
+begin
+  if (AMaxFiles < 1) or (AMaxFiles > 1000) then
+    raise EArgumentOutOfRangeException.Create(
+      'Agent file limit must be between 1 and 1000.'
+    );
+  if (AMaxOperations < 1) or (AMaxOperations > 100) then
+    raise EArgumentOutOfRangeException.Create(
+      'Agent operation limit must be between 1 and 100.'
+    );
+  if (ASummaryEverySteps < 1) or (ASummaryEverySteps > 100) then
+    raise EArgumentOutOfRangeException.Create(
+      'Agent summary interval must be between 1 and 100 steps.'
+    );
+  if Trim(ACompletionCriteria) = '' then
+    raise EArgumentException.Create(
+      'Agent completion criteria must not be empty.'
+    );
+  FMaxFiles := AMaxFiles;
+  FMaxOperations := AMaxOperations;
+  FSummaryEverySteps := ASummaryEverySteps;
+  FRequireBuild := ARequireBuild;
+  FRequireTests := ARequireTests;
+  FCompletionCriteria := Trim(ACompletionCriteria);
+end;
+
+class function TRadIAAgentExecutionContract.Default:
+  TRadIAAgentExecutionContract;
+begin
+  Result := TRadIAAgentExecutionContract.Create(
+    32,
+    20,
+    5,
+    True,
+    False,
+    'Complete the approved plan and satisfy every required validation gate.'
+  );
 end;
 
 { TRadIAAgentRunResult }
@@ -1136,6 +1228,7 @@ begin
   FSteps := TList<TRadIAAgentStep>.Create;
   FStatus := asIdle;
   FLimits := TRadIAAgentLimits.Default;
+  FExecutionContract := TRadIAAgentExecutionContract.Default;
 end;
 
 destructor TRadIAAgentRuntime.Destroy;
@@ -1715,6 +1808,7 @@ function TRadIAAgentRuntime.BuildSnapshotJson(
   const ACompactResults: Boolean
 ): string;
 var
+  LContractJson: TJSONObject;
   LMetricsJson: TJSONObject;
   LMetrics: TRadIAAgentCompactionMetrics;
   LProfile: TRadIACompactionProfile;
@@ -1762,6 +1856,33 @@ begin
       'maxDecisionContextCharacters',
       TJSONNumber.Create(FLimits.MaxDecisionContextCharacters)
     );
+    LContractJson := TJSONObject.Create;
+    LContractJson.AddPair(
+      'maxFiles',
+      TJSONNumber.Create(FExecutionContract.MaxFiles)
+    );
+    LContractJson.AddPair(
+      'maxOperations',
+      TJSONNumber.Create(FExecutionContract.MaxOperations)
+    );
+    LContractJson.AddPair(
+      'summaryEverySteps',
+      TJSONNumber.Create(FExecutionContract.SummaryEverySteps)
+    );
+    LContractJson.AddPair(
+      'requireBuild',
+      TJSONBool.Create(FExecutionContract.RequireBuild)
+    );
+    LContractJson.AddPair(
+      'requireTests',
+      TJSONBool.Create(FExecutionContract.RequireTests)
+    );
+    LContractJson.AddPair(
+      'completionCriteria',
+      FExecutionContract.CompletionCriteria
+    );
+    LRoot.AddPair('executionContract', LContractJson);
+    LRoot.AddPair('periodicSummary', FPeriodicSummary);
     LRoot.AddPair(
       'elapsedMilliseconds',
       TJSONNumber.Create(ElapsedMilliseconds)
@@ -1790,6 +1911,8 @@ begin
       )
     );
     LRoot.AddPair('validation', BuildValidationJson);
+    if FStatus in [asCompleted, asFailed, asCancelled] then
+      LRoot.AddPair('finalReport', BuildFinalReportJson);
     LStepArray := BuildStepsJson(ACompactResults, LProfile, LMetrics);
     LRoot.AddPair('steps', LStepArray);
     if ACompactResults then
@@ -1843,6 +1966,130 @@ begin
   FStatus := AStatus;
   FMessage := AMessage;
   NotifyAndCheckpoint;
+end;
+
+function TRadIAAgentRuntime.BuildFinalReportJson: TJSONObject;
+var
+  LValidation: TRadIAAgentValidationState;
+begin
+  LValidation := AnalyzeValidationState;
+  Result := TJSONObject.Create;
+  Result.AddPair('status', RadIAAgentStatusName(FStatus));
+  Result.AddPair('message', FMessage);
+  Result.AddPair('stepCount', TJSONNumber.Create(FSteps.Count));
+  Result.AddPair(
+    'operationCount',
+    TJSONNumber.Create(CountMutationOperations)
+  );
+  Result.AddPair('affectedFileCount', TJSONNumber.Create(CountAffectedFiles));
+  Result.AddPair('buildPassed', TJSONBool.Create(LValidation.BuildPassed));
+  Result.AddPair('testsRun', TJSONBool.Create(LValidation.TestsRun));
+  Result.AddPair('testsPassed', TJSONBool.Create(LValidation.TestsPassed));
+  Result.AddPair('testTotal', TJSONNumber.Create(LValidation.TestTotal));
+  Result.AddPair('testFailed', TJSONNumber.Create(LValidation.TestFailed));
+  Result.AddPair('testErrors', TJSONNumber.Create(LValidation.TestErrors));
+  Result.AddPair('pendingItems', TJSONArray.Create);
+end;
+
+function TRadIAAgentRuntime.CheckExecutionContract: Boolean;
+begin
+  Result := False;
+  if CountAffectedFiles > FExecutionContract.MaxFiles then
+  begin
+    ChangeStatus(
+      asPaused,
+      'Agent paused after reaching the execution contract file limit.'
+    );
+    Exit;
+  end;
+  if CountMutationOperations > FExecutionContract.MaxOperations then
+  begin
+    ChangeStatus(
+      asPaused,
+      'Agent paused after reaching the execution contract operation limit.'
+    );
+    Exit;
+  end;
+  Result := True;
+end;
+
+function TRadIAAgentRuntime.CountAffectedFiles: Integer;
+var
+  LFileName: string;
+  LFiles: TList<string>;
+  LStep: TRadIAAgentStep;
+begin
+  LFiles := TList<string>.Create;
+  try
+    for LStep in FSteps do
+      for LFileName in LStep.AffectedFiles do
+        AddUniqueFilePath(LFileName, LFiles);
+    Result := 0;
+    for LFileName in LFiles do
+      Inc(Result);
+  finally
+    LFiles.Free;
+  end;
+end;
+
+function TRadIAAgentRuntime.CountMutationOperations: Integer;
+var
+  LStep: TRadIAAgentStep;
+begin
+  Result := 0;
+  for LStep in FSteps do
+    if LStep.Mutation then
+      Inc(Result);
+end;
+
+function TRadIAAgentRuntime.WouldExceedFileLimit(
+  const ADecision: TRadIAAgentDecision
+): Boolean;
+var
+  LFileName: string;
+  LFiles: TList<string>;
+  LStep: TRadIAAgentStep;
+begin
+  LFiles := TList<string>.Create;
+  try
+    for LStep in FSteps do
+      for LFileName in LStep.AffectedFiles do
+        AddUniqueFilePath(LFileName, LFiles);
+    for LFileName in ExtractAffectedFiles(
+      ADecision.ArgumentsJson,
+      ''
+    ) do
+      AddUniqueFilePath(LFileName, LFiles);
+    Result := LFiles.Count > FExecutionContract.MaxFiles;
+  finally
+    LFiles.Free;
+  end;
+end;
+
+function TRadIAAgentRuntime.IsAmbiguityError(
+  const AErrorCode: string
+): Boolean;
+begin
+  Result := SameText(AErrorCode, 'ambiguous_original') or
+    SameText(AErrorCode, 'invalid_request') or
+    SameText(AErrorCode, 'precondition_failed') or
+    SameText(AErrorCode, 'conflict');
+end;
+
+procedure TRadIAAgentRuntime.UpdatePeriodicSummary;
+begin
+  if (FSteps.Count = 0) or
+    ((FSteps.Count mod FExecutionContract.SummaryEverySteps) <> 0) then
+    Exit;
+  FPeriodicSummary := Format(
+    '%d steps, %d mutation operations, %d affected files; latest tool: %s.',
+    [
+      FSteps.Count,
+      CountMutationOperations,
+      CountAffectedFiles,
+      FSteps.Last.ToolName
+    ]
+  );
 end;
 
 function TRadIAAgentRuntime.CheckBudgets: Boolean;
@@ -1939,6 +2186,8 @@ function TRadIAAgentRuntime.CanContinueLoop: Boolean;
 begin
   Result := False;
   if not CheckBudgets then
+    Exit;
+  if not CheckExecutionContract then
     Exit;
   if TInterlocked.CompareExchange(FCancelRequested, 0, 0) <> 0 then
   begin
@@ -2101,6 +2350,24 @@ begin
     );
     Exit;
   end;
+  if IsMutationTool(ADecision.ToolName) and
+    (CountMutationOperations >= FExecutionContract.MaxOperations) then
+  begin
+    ChangeStatus(
+      asPaused,
+      'Agent paused before exceeding the execution contract operation limit.'
+    );
+    Exit;
+  end;
+  if IsMutationTool(ADecision.ToolName) and
+    WouldExceedFileLimit(ADecision) then
+  begin
+    ChangeStatus(
+      asPaused,
+      'Agent paused before exceeding the execution contract file limit.'
+    );
+    Exit;
+  end;
 
   LCorrelationId := TGUID.NewGuid.ToString;
   LRequest := TRadIAToolRequest.Create(
@@ -2123,6 +2390,18 @@ begin
     LStartedElapsedMilliseconds,
     LDurationMilliseconds
   );
+  UpdatePeriodicSummary;
+  if not LResult.Success and IsAmbiguityError(LResult.ErrorCode) then
+  begin
+    ChangeStatus(
+      asPaused,
+      'Agent paused because the tool result requires clarification: ' +
+        LResult.ErrorCode + '.'
+    );
+    Exit(True);
+  end;
+  if not CheckExecutionContract then
+    Exit(True);
   NotifyAndCheckpoint;
   Result := True;
 end;
@@ -2278,6 +2557,7 @@ procedure TRadIAAgentRuntime.LoadSnapshot(
   const ASnapshotJson: string
 );
 var
+  LContract: TJSONObject;
   LRoot: TJSONObject;
   LPlan: TJSONValue;
   LStepArray: TJSONArray;
@@ -2314,6 +2594,25 @@ begin
       LRoot.GetValue<Int64>('maxEstimatedCostMicros', 0),
       LRoot.GetValue<Integer>('maxDecisionContextCharacters', 120000)
     );
+    LContract := nil;
+    LPlan := LRoot.GetValue('executionContract');
+    if LPlan is TJSONObject then
+      LContract := TJSONObject(LPlan);
+    if Assigned(LContract) then
+      FExecutionContract := TRadIAAgentExecutionContract.Create(
+        LContract.GetValue<Integer>('maxFiles', 32),
+        LContract.GetValue<Integer>('maxOperations', 20),
+        LContract.GetValue<Integer>('summaryEverySteps', 5),
+        LContract.GetValue<Boolean>('requireBuild', True),
+        LContract.GetValue<Boolean>('requireTests', False),
+        LContract.GetValue<string>(
+          'completionCriteria',
+          'Complete the approved plan and validation gates.'
+        )
+      )
+    else
+      FExecutionContract := TRadIAAgentExecutionContract.Default;
+    FPeriodicSummary := LRoot.GetValue<string>('periodicSummary', '');
     FElapsedBeforeRunMilliseconds := LRoot.GetValue<Int64>(
       'elapsedMilliseconds',
       0
@@ -2457,6 +2756,8 @@ begin
   FEstimatedCostMicrosBeforeRun := 0;
   FValidationRejectionCount := 0;
   FReplayOfStepIndex := 0;
+  FExecutionContract := TRadIAAgentExecutionContract.Default;
+  FPeriodicSummary := '';
   FCancellationToken := TRadIAAgentCancellationToken.Create;
 end;
 
@@ -2467,11 +2768,20 @@ var
   LValidation: TRadIAAgentValidationState;
 begin
   LValidation := AnalyzeValidationState;
-  if LValidation.MutationPending and not LValidation.BuildPassed then
+  if LValidation.MutationPending and FExecutionContract.RequireBuild and
+    not LValidation.BuildPassed then
   begin
     AMessage :=
       'Validation gate rejected completion: run BuildProject successfully ' +
       'after the latest source or Designer mutation.';
+    Exit(False);
+  end;
+  if LValidation.MutationPending and FExecutionContract.RequireTests and
+    not LValidation.TestsRun then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: run the required tests after ' +
+      'the latest mutation.';
     Exit(False);
   end;
   if LValidation.TestsRun and not LValidation.TestsPassed then
@@ -2630,12 +2940,30 @@ function TRadIAAgentRuntime.Start(
   const ALimits: TRadIAAgentLimits
 ): TRadIAAgentRunResult;
 begin
+  Result := Start(
+    AObjective,
+    ASessionId,
+    AProjectId,
+    ALimits,
+    TRadIAAgentExecutionContract.Default
+  );
+end;
+
+function TRadIAAgentRuntime.Start(
+  const AObjective: string;
+  const ASessionId: string;
+  const AProjectId: string;
+  const ALimits: TRadIAAgentLimits;
+  const AExecutionContract: TRadIAAgentExecutionContract
+): TRadIAAgentRunResult;
+begin
   ValidateStart(AObjective, ASessionId);
   ResetRun;
   FObjective := Trim(AObjective);
   FSessionId := ASessionId;
   FProjectId := AProjectId;
   FLimits := ALimits;
+  FExecutionContract := AExecutionContract;
   FRunStartedTimestamp := TStopwatch.GetTimeStamp;
   Result := ExecuteLoop;
 end;

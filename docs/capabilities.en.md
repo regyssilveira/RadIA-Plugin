@@ -1,6 +1,10 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.8.0.
+This page is the functional map of RadIA 2.9.0.
+
+The agent combines the [sanitized Delphi environment profile](delphi_environment_profile.en.md) with
+[curated Delphi guidance](delphi_guidance.en.md). Language, memory, VCL, FMX, Delphi 12, Delphi 13,
+and IDE64 rules therefore enter the context with stable, queryable citations.
 
 | Area | What RadIA can do |
 |---|---|
@@ -16,6 +20,7 @@ This page is the functional map of RadIA 2.8.0.
 | Templates | Console, VCL, FMX, Library, Package, DUnitX, and Windows Service with preview, staging, validation, open, build, and rollback. |
 | Safe editing | Single-file and multi-file patches, base hashes, preconditions, previews, rollback and compound transactions. |
 | Project structure | Reviewable addition and removal of units and forms. |
+| Delphi environment | Sanitized IDE, framework, search path, package, and library inventory. |
 | Form Designer | Inspect forms and components, change layout and properties, add or remove components and create event handlers. |
 | Build | Make, build, check, clean, structured diagnostics, status, timeout and cancellation. |
 | DUnitX | Run, filter and cancel tests, parse NUnit XML and return structured failures and stack traces. |
@@ -44,13 +49,14 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 133 registered built-in tools](runtime_tool_catalog.en.md)
+- [All 148 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.en.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](user_manual.en.md)
 - [Feature catalog](features.en.md)
 - [Agent result compaction](agent_result_compaction.en.md)
 - [Project, session, and request settings](hierarchical_settings.en.md)
+- [Delphi environment profile](delphi_environment_profile.en.md)
 - [Documentation center](README.en.md)
 
 The active IDE is authoritative: use `/tools` in chat or `tools/list` over MCP because context and
