@@ -155,6 +155,18 @@ begin
     FindSymbol(LResult, 'TGeneric', sskClass).Signature,
     'TForward, IInterface'
   );
+  Assert.AreEqual(
+    2,
+    Length(FindSymbol(LResult, 'TGeneric', sskClass).AncestorNames)
+  );
+  Assert.AreEqual(
+    'TForward',
+    FindSymbol(LResult, 'TGeneric', sskClass).AncestorNames[0]
+  );
+  Assert.AreEqual(
+    'IInterface',
+    FindSymbol(LResult, 'TGeneric', sskClass).AncestorNames[1]
+  );
   LNested := FindSymbol(LResult, 'TNested', sskRecord);
   Assert.AreEqual('TGeneric', LNested.ContainerName);
   FindSymbol(LResult, 'Implicit', sskMethod);

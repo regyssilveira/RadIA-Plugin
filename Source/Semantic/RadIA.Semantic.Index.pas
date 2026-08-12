@@ -35,6 +35,7 @@ type
 
   TRadIASemanticIndexedSymbol = record
   private
+    FAncestorNames: TArray<string>;
     FContainerName: string;
     FFileName: string;
     FKind: TRadIASemanticSymbolKind;
@@ -50,6 +51,7 @@ type
       const AUnit: TRadIASemanticUnitDescriptor;
       const ASymbol: TRadIASemanticSymbol
     );
+    property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
     property FileName: string read FFileName;
     property Kind: TRadIASemanticSymbolKind read FKind;
@@ -88,6 +90,11 @@ type
       const ASymbol: TRadIASemanticIndexedSymbol
     );
     procedure AddUnitSymbols(const AUnit: TRadIASemanticIndexedUnit);
+    procedure CollectResolvedMembers(
+      const AContainerName: string;
+      const AVisited: TDictionary<string, Boolean>;
+      const AResult: TList<TRadIASemanticIndexedSymbol>
+    );
     procedure RemoveLookup(
       const ALookup: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
       const AKey: string;
@@ -103,6 +110,9 @@ type
     destructor Destroy; override;
     procedure Clear;
     function FindMembers(
+      const AContainerName: string
+    ): TArray<TRadIASemanticIndexedSymbol>;
+    function FindResolvedMembers(
       const AContainerName: string
     ): TArray<TRadIASemanticIndexedSymbol>;
     function FindSymbols(
@@ -151,6 +161,9 @@ end;
 
 function ReadCacheParserSymbol(const AObject: TJSONObject): TRadIASemanticSymbol;
 var
+  LAncestorArray: TJSONArray;
+  LAncestorIndex: Integer;
+  LAncestorNames: TArray<string>;
   LKindValue: Integer;
   LVisibilityValue: Integer;
 begin
@@ -161,6 +174,13 @@ begin
     (LVisibilityValue < Ord(Low(TRadIASemanticVisibility))) or
     (LVisibilityValue > Ord(High(TRadIASemanticVisibility))) then
     raise EInvalidOpException.Create('Semantic cache symbol metadata is invalid.');
+  LAncestorArray := AObject.GetValue<TJSONArray>('ancestors');
+  if Assigned(LAncestorArray) then
+  begin
+    SetLength(LAncestorNames, LAncestorArray.Count);
+    for LAncestorIndex := 0 to LAncestorArray.Count - 1 do
+      LAncestorNames[LAncestorIndex] := LAncestorArray[LAncestorIndex].Value;
+  end;
   Result := TRadIASemanticSymbol.Create(
     AObject.GetValue<string>('name', ''),
     TRadIASemanticSymbolKind(LKindValue),
@@ -169,7 +189,7 @@ begin
     AObject.GetValue<Integer>('startOffset', 0),
     AObject.GetValue<Integer>('length', 0),
     AObject.GetValue<string>('signature', '')
-  );
+  ).WithAncestors(LAncestorNames);
 end;
 
 function ReadCacheSymbols(
@@ -223,6 +243,7 @@ begin
   FStartOffset := ASymbol.StartOffset;
   FLength := ASymbol.Length;
   FSignature := ASymbol.Signature;
+  FAncestorNames := Copy(ASymbol.AncestorNames);
 end;
 
 constructor TRadIASemanticIndexedUnit.Create(
@@ -290,6 +311,29 @@ begin
   end;
 end;
 
+procedure TRadIASemanticIndex.CollectResolvedMembers(
+  const AContainerName: string;
+  const AVisited: TDictionary<string, Boolean>;
+  const AResult: TList<TRadIASemanticIndexedSymbol>
+);
+var
+  LAncestorName: string;
+  LContainerKey: string;
+  LMember: TRadIASemanticIndexedSymbol;
+  LTypeSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LContainerKey := Normalize(AContainerName);
+  if (LContainerKey = '') or AVisited.ContainsKey(LContainerKey) then
+    Exit;
+  AVisited.Add(LContainerKey, True);
+  for LTypeSymbol in FindSymbols(AContainerName) do
+    if LTypeSymbol.Kind in [sskClass, sskRecord, sskInterface, sskHelper] then
+      for LAncestorName in LTypeSymbol.AncestorNames do
+        CollectResolvedMembers(LAncestorName, AVisited, AResult);
+  for LMember in FindMembers(AContainerName) do
+    AResult.Add(LMember);
+end;
+
 procedure TRadIASemanticIndex.RemoveLookup(
   const ALookup: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
   const AKey: string;
@@ -342,6 +386,24 @@ begin
     Result := LList.ToArray
   else
     Result := nil;
+end;
+
+function TRadIASemanticIndex.FindResolvedMembers(
+  const AContainerName: string
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LResult: TList<TRadIASemanticIndexedSymbol>;
+  LVisited: TDictionary<string, Boolean>;
+begin
+  LResult := TList<TRadIASemanticIndexedSymbol>.Create;
+  LVisited := TDictionary<string, Boolean>.Create;
+  try
+    CollectResolvedMembers(AContainerName, LVisited, LResult);
+    Result := LResult.ToArray;
+  finally
+    LVisited.Free;
+    LResult.Free;
+  end;
 end;
 
 function TRadIASemanticIndex.FindSymbols(
@@ -495,6 +557,8 @@ end;
 
 procedure TRadIASemanticIndex.SaveCache(const AFileName: string);
 var
+  LAncestor: string;
+  LAncestors: TJSONArray;
   LDocument: TJSONObject;
   LPair: TPair<string, TRadIASemanticIndexedUnit>;
   LSymbol: TRadIASemanticIndexedSymbol;
@@ -541,6 +605,10 @@ begin
         );
         LSymbolItem.AddPair('length', TJSONNumber.Create(LSymbol.Length));
         LSymbolItem.AddPair('signature', LSymbol.Signature);
+        LAncestors := TJSONArray.Create;
+        for LAncestor in LSymbol.AncestorNames do
+          LAncestors.Add(LAncestor);
+        LSymbolItem.AddPair('ancestors', LAncestors);
         LSymbols.AddElement(LSymbolItem);
       end;
       LUnitItem.AddPair('symbols', LSymbols);

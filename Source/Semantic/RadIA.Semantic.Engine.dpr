@@ -162,6 +162,7 @@ begin
   LCapabilities.Add('removeUnit');
   LCapabilities.Add('findSymbols');
   LCapabilities.Add('findMembers');
+  LCapabilities.Add('findResolvedMembers');
   LCapabilities.Add('indexStatus');
   LCapabilities.Add('clearIndex');
   LCapabilities.Add('loadIndexCache');
@@ -253,6 +254,8 @@ function BuildIndexedSymbolsResult(
   const ASymbols: TArray<TRadIASemanticIndexedSymbol>
 ): TJSONObject;
 var
+  LAncestor: string;
+  LAncestors: TJSONArray;
   LArray: TJSONArray;
   LItem: TJSONObject;
   LResult: TJSONObject;
@@ -279,6 +282,10 @@ begin
     LItem.AddPair('startOffset', TJSONNumber.Create(LSymbol.StartOffset));
     LItem.AddPair('length', TJSONNumber.Create(LSymbol.Length));
     LItem.AddPair('signature', LSymbol.Signature);
+    LAncestors := TJSONArray.Create;
+    for LAncestor in LSymbol.AncestorNames do
+      LAncestors.Add(LAncestor);
+    LItem.AddPair('ancestors', LAncestors);
     LArray.AddElement(LItem);
   end;
   LResult.AddPair('symbols', LArray);
@@ -340,6 +347,8 @@ function BuildParseResult(
   const ADefines: TArray<string>
 ): TJSONObject;
 var
+  LAncestor: string;
+  LAncestors: TJSONArray;
   LArray: TJSONArray;
   LDiagnostics: TJSONArray;
   LItem: TJSONObject;
@@ -367,6 +376,10 @@ begin
     LItem.AddPair('startOffset', TJSONNumber.Create(LSymbol.StartOffset));
     LItem.AddPair('length', TJSONNumber.Create(LSymbol.Length));
     LItem.AddPair('signature', LSymbol.Signature);
+    LAncestors := TJSONArray.Create;
+    for LAncestor in LSymbol.AncestorNames do
+      LAncestors.Add(LAncestor);
+    LItem.AddPair('ancestors', LAncestors);
     LArray.AddElement(LItem);
   end;
   LResult.AddPair('symbols', LArray);
@@ -472,6 +485,16 @@ begin
     Exit(BuildIndexedSymbolsResult(
       AId,
       AIndex.FindMembers(LParameters.GetValue<string>('container', ''))
+    ));
+  end;
+  if SameText(AMethod, 'findResolvedMembers') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.FindResolvedMembers(
+        LParameters.GetValue<string>('container', '')
+      )
     ));
   end;
   if SameText(AMethod, 'indexStatus') then

@@ -33,6 +33,8 @@ type
     procedure DiscardsCorruptedIndexCache;
     [Test]
     procedure WarmQueriesMeetLatencyBudget;
+    [Test]
+    procedure ResolvesInheritedAndInterfaceMembersAcrossUnits;
   end;
 
 procedure TRadIASemanticIndexTests.Setup;
@@ -201,6 +203,31 @@ begin
     LStopwatch.ElapsedMilliseconds < 50,
     'Warm semantic queries exceeded 50 ms.'
   );
+end;
+
+procedure TRadIASemanticIndexTests.ResolvesInheritedAndInterfaceMembersAcrossUnits;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create('contracts', '', susGroup, 1);
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Contracts; interface type IWorker = interface ' +
+    'procedure Work; end; TBase = class procedure Reset; end; ' +
+    'implementation end.',
+    nil
+  );
+  LDescriptor := TRadIASemanticUnitDescriptor.Create('worker', '', susProject, 1);
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Worker; interface type TWorker = class(TBase, IWorker) ' +
+    'procedure Execute; end; implementation end.',
+    nil
+  );
+  Assert.AreEqual(3, Length(FIndex.FindResolvedMembers('TWorker')));
+  Assert.AreEqual('Reset', FIndex.FindResolvedMembers('TWorker')[0].Name);
+  Assert.AreEqual('Work', FIndex.FindResolvedMembers('TWorker')[1].Name);
+  Assert.AreEqual('Execute', FIndex.FindResolvedMembers('TWorker')[2].Name);
 end;
 
 initialization

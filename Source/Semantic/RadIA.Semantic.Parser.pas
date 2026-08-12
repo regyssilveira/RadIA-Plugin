@@ -25,6 +25,7 @@ type
 
   TRadIASemanticSymbol = record
   private
+    FAncestorNames: TArray<string>;
     FContainerName: string;
     FKind: TRadIASemanticSymbolKind;
     FLength: Integer;
@@ -42,6 +43,10 @@ type
       const ALength: Integer;
       const ASignature: string
     );
+    function WithAncestors(
+      const AAncestorNames: TArray<string>
+    ): TRadIASemanticSymbol;
+    property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
     property Kind: TRadIASemanticSymbolKind read FKind;
     property Length: Integer read FLength;
@@ -114,7 +119,9 @@ type
     function ReadStructuralKind(
       out AKind: TRadIASemanticSymbolKind
     ): Boolean;
-    function ReadTypeHeaderEnd: Integer;
+    function ReadTypeHeader(
+      out AAncestorNames: TArray<string>
+    ): Integer;
     procedure SkipGenericParameters;
     procedure AddSymbol(
       const AName: string;
@@ -125,6 +132,19 @@ type
       const AEnd: Integer;
       const ASignature: string = ''
     );
+    procedure AddTypeSymbol(
+      const AName: string;
+      const AKind: TRadIASemanticSymbolKind;
+      const AContainer: string;
+      const AStart: Integer;
+      const AEnd: Integer;
+      const ASignature: string;
+      const AAncestorNames: TArray<string>
+    );
+    function ConsumeTypeHeaderToken(
+      var ADepth: Integer;
+      const AAncestors: TList<string>
+    ): Boolean;
     procedure Advance;
     procedure ParseMethod(
       const AContainer: string;
@@ -163,6 +183,14 @@ begin
   FStartOffset := AStartOffset;
   FLength := ALength;
   FSignature := ASignature;
+end;
+
+function TRadIASemanticSymbol.WithAncestors(
+  const AAncestorNames: TArray<string>
+): TRadIASemanticSymbol;
+begin
+  Result := Self;
+  Result.FAncestorNames := Copy(AAncestorNames);
 end;
 
 constructor TRadIASemanticParseResult.Create(
@@ -225,6 +253,29 @@ begin
       AEnd - AStart,
       ASignature
     )
+  );
+end;
+
+procedure TRadIASemanticParserWorker.AddTypeSymbol(
+  const AName: string;
+  const AKind: TRadIASemanticSymbolKind;
+  const AContainer: string;
+  const AStart: Integer;
+  const AEnd: Integer;
+  const ASignature: string;
+  const AAncestorNames: TArray<string>
+);
+begin
+  FSymbols.Add(
+    TRadIASemanticSymbol.Create(
+      AName,
+      AKind,
+      AContainer,
+      svUnspecified,
+      AStart,
+      AEnd - AStart,
+      ASignature
+    ).WithAncestors(AAncestorNames)
   );
 end;
 
@@ -477,29 +528,59 @@ begin
   Result := True;
 end;
 
-function TRadIASemanticParserWorker.ReadTypeHeaderEnd: Integer;
+function TRadIASemanticParserWorker.ConsumeTypeHeaderToken(
+  var ADepth: Integer;
+  const AAncestors: TList<string>
+): Boolean;
 var
+  LName: string;
+begin
+  Result := False;
+  if IsCurrent('(') then
+  begin
+    Inc(ADepth);
+    Advance;
+    Exit;
+  end;
+  if IsCurrent(')') then
+  begin
+    Dec(ADepth);
+    Advance;
+    Exit(ADepth = 0);
+  end;
+  if (ADepth = 1) and (Current.Kind = stkIdentifier) then
+  begin
+    LName := ParseQualifiedName;
+    if LName <> '' then
+      AAncestors.Add(LName);
+    SkipGenericParameters;
+    Exit;
+  end;
+  Advance;
+end;
+
+function TRadIASemanticParserWorker.ReadTypeHeader(
+  out AAncestorNames: TArray<string>
+): Integer;
+var
+  LAncestors: TList<string>;
   LDepth: Integer;
 begin
+  AAncestorNames := nil;
   if FIndex >= Length(FTokens) then
     Exit(Length(FSource));
   Result := Current.StartOffset;
   if not IsCurrent('(') then
     Exit;
-  LDepth := 0;
-  while FIndex < Length(FTokens) do
-  begin
-    if IsCurrent('(') then
-      Inc(LDepth)
-    else if IsCurrent(')') then
-    begin
-      Dec(LDepth);
-      Advance;
-      if LDepth = 0 then
+  LAncestors := TList<string>.Create;
+  try
+    LDepth := 0;
+    while FIndex < Length(FTokens) do
+      if ConsumeTypeHeaderToken(LDepth, LAncestors) then
         Break;
-      Continue;
-    end;
-    Advance;
+    AAncestorNames := LAncestors.ToArray;
+  finally
+    LAncestors.Free;
   end;
   if FIndex > 0 then
     Result := FTokens[FIndex - 1].StartOffset + FTokens[FIndex - 1].Length;
@@ -554,6 +635,7 @@ procedure TRadIASemanticParserWorker.ParseTypeDeclaration(
   const AContainer: string
 );
 var
+  LAncestorNames: TArray<string>;
   LHeaderEnd: Integer;
   LKind: TRadIASemanticSymbolKind;
   LName: string;
@@ -568,15 +650,15 @@ begin
     FDiagnostics.Add(Format('Offset %d: Structural type is invalid.', [LStart]));
     Exit;
   end;
-  LHeaderEnd := ReadTypeHeaderEnd;
-  AddSymbol(
+  LHeaderEnd := ReadTypeHeader(LAncestorNames);
+  AddTypeSymbol(
     LName,
     LKind,
     AContainer,
-    svUnspecified,
     LStart,
     LStart + Length(LName),
-    Copy(FSource, LStart + 1, LHeaderEnd - LStart)
+    Copy(FSource, LStart + 1, LHeaderEnd - LStart),
+    LAncestorNames
   );
   if IsCurrent(';') then
   begin
