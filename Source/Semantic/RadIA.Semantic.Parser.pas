@@ -92,6 +92,7 @@ type
   TRadIASemanticParserWorker = class
   private
     FDiagnostics: TList<string>;
+    FHasModule: Boolean;
     FIndex: Integer;
     FSource: string;
     FSymbols: TList<TRadIASemanticSymbol>;
@@ -99,6 +100,7 @@ type
     function Current: TRadIASemanticToken;
     function IsCurrent(const AText: string): Boolean;
     function IsMethodKeyword: Boolean;
+    function IsStructuralTypeStart: Boolean;
     function IsTypeBoundary: Boolean;
     function ParseQualifiedName: string;
     procedure AddSymbol(
@@ -116,7 +118,7 @@ type
       const AVisibility: TRadIASemanticVisibility
     );
     procedure ParseModule;
-    procedure ParseTypeDeclaration;
+    procedure ParseTypeDeclaration(const AContainer: string);
     procedure ParseTypeSection;
     procedure ParseUses;
     function ReadVisibility(
@@ -227,8 +229,9 @@ function TRadIASemanticParserWorker.Execute: TRadIASemanticParseResult;
 begin
   while FIndex < Length(FTokens) do
   begin
-    if IsCurrent('unit') or IsCurrent('program') or
-      IsCurrent('library') or IsCurrent('package') then
+    if (not FHasModule) and
+      (IsCurrent('unit') or IsCurrent('program') or
+       IsCurrent('library') or IsCurrent('package')) then
       ParseModule
     else if IsCurrent('uses') then
       ParseUses
@@ -257,6 +260,49 @@ begin
     IsCurrent('operator');
 end;
 
+function TRadIASemanticParserWorker.IsStructuralTypeStart: Boolean;
+var
+  LDepth: Integer;
+  LIndex: Integer;
+begin
+  Result := False;
+  if (FIndex >= Length(FTokens)) or (Current.Kind <> stkIdentifier) then
+    Exit;
+  LIndex := FIndex + 1;
+  if (LIndex < Length(FTokens)) and (FTokens[LIndex].Text = '<') then
+  begin
+    LDepth := 0;
+    while LIndex < Length(FTokens) do
+    begin
+      if FTokens[LIndex].Text = '<' then
+        Inc(LDepth)
+      else if FTokens[LIndex].Text = '>' then
+      begin
+        Dec(LDepth);
+        if LDepth = 0 then
+        begin
+          Inc(LIndex);
+          Break;
+        end;
+      end;
+      Inc(LIndex);
+    end;
+  end;
+  if (LIndex >= Length(FTokens)) or (FTokens[LIndex].Text <> '=') then
+    Exit;
+  Inc(LIndex);
+  if (LIndex < Length(FTokens)) and SameText(FTokens[LIndex].Text, 'packed') then
+    Inc(LIndex);
+  if LIndex >= Length(FTokens) then
+    Exit;
+  Result := SameText(FTokens[LIndex].Text, 'record') or
+    SameText(FTokens[LIndex].Text, 'interface') or
+    SameText(FTokens[LIndex].Text, 'dispinterface') or
+    (SameText(FTokens[LIndex].Text, 'class') and
+     ((LIndex + 1 >= Length(FTokens)) or
+      not SameText(FTokens[LIndex + 1].Text, 'of')));
+end;
+
 function TRadIASemanticParserWorker.IsTypeBoundary: Boolean;
 begin
   Result := IsCurrent('var') or IsCurrent('const') or
@@ -271,6 +317,10 @@ begin
   Result := '';
   while FIndex < Length(FTokens) do
   begin
+    if IsCurrent('&') then
+      Advance;
+    if FIndex >= Length(FTokens) then
+      Break;
     if Current.Kind <> stkIdentifier then
       Break;
     if Result <> '' then
@@ -294,6 +344,15 @@ var
 begin
   LStart := Current.StartOffset;
   Advance;
+  if (FIndex >= Length(FTokens)) or
+    ((Current.Kind <> stkIdentifier) and not IsCurrent('&')) then
+  begin
+    while (FIndex < Length(FTokens)) and not IsCurrent(';') do
+      Advance;
+    if FIndex < Length(FTokens) then
+      Advance;
+    Exit;
+  end;
   LName := ParseQualifiedName;
   while (FIndex < Length(FTokens)) and not IsCurrent(';') do
     Advance;
@@ -334,11 +393,18 @@ begin
   if LName = '' then
     FDiagnostics.Add(Format('Offset %d: Module name is missing.', [LStart]))
   else
+  begin
+    FHasModule := True;
     AddSymbol(LName, sskModule, '', svUnspecified, LStart, Current.StartOffset);
+  end;
 end;
 
-procedure TRadIASemanticParserWorker.ParseTypeDeclaration;
+procedure TRadIASemanticParserWorker.ParseTypeDeclaration(
+  const AContainer: string
+);
 var
+  LDepth: Integer;
+  LHeaderEnd: Integer;
   LKind: TRadIASemanticSymbolKind;
   LName: string;
   LStart: Integer;
@@ -347,6 +413,24 @@ begin
   LName := Current.Text;
   LStart := Current.StartOffset;
   Advance;
+  if IsCurrent('<') then
+  begin
+    LDepth := 0;
+    while FIndex < Length(FTokens) do
+    begin
+      if IsCurrent('<') then
+        Inc(LDepth)
+      else if IsCurrent('>') then
+      begin
+        Dec(LDepth);
+        Advance;
+        if LDepth = 0 then
+          Break;
+        Continue;
+      end;
+      Advance;
+    end;
+  end;
   if not IsCurrent('=') then
   begin
     FDiagnostics.Add(Format('Offset %d: Type declaration has no equals sign.', [LStart]));
@@ -369,7 +453,41 @@ begin
     LKind := sskHelper;
     Advance;
   end;
-  AddSymbol(LName, LKind, '', svUnspecified, LStart, LStart + Length(LName));
+  LHeaderEnd := Current.StartOffset;
+  if IsCurrent('(') then
+  begin
+    LDepth := 0;
+    while FIndex < Length(FTokens) do
+    begin
+      if IsCurrent('(') then
+        Inc(LDepth)
+      else if IsCurrent(')') then
+      begin
+        Dec(LDepth);
+        Advance;
+        if LDepth = 0 then
+          Break;
+        Continue;
+      end;
+      Advance;
+    end;
+    if FIndex > 0 then
+      LHeaderEnd := FTokens[FIndex - 1].StartOffset + FTokens[FIndex - 1].Length;
+  end;
+  AddSymbol(
+    LName,
+    LKind,
+    AContainer,
+    svUnspecified,
+    LStart,
+    LStart + Length(LName),
+    Copy(FSource, LStart + 1, LHeaderEnd - LStart)
+  );
+  if IsCurrent(';') then
+  begin
+    Advance;
+    Exit;
+  end;
   LVisibility := svUnspecified;
   while FIndex < Length(FTokens) do
   begin
@@ -382,6 +500,11 @@ begin
     end;
     if ReadVisibility(LVisibility) then
       Continue;
+    if IsStructuralTypeStart then
+    begin
+      ParseTypeDeclaration(LName);
+      Continue;
+    end;
     if IsCurrent('class') and
       (FIndex + 1 < Length(FTokens)) and
       (SameText(FTokens[FIndex + 1].Text, 'procedure') or
@@ -402,10 +525,8 @@ begin
   begin
     if IsTypeBoundary then
       Exit;
-    if (Current.Kind = stkIdentifier) and
-      (FIndex + 1 < Length(FTokens)) and
-      (FTokens[FIndex + 1].Text = '=') then
-      ParseTypeDeclaration
+    if IsStructuralTypeStart then
+      ParseTypeDeclaration('')
     else
       Advance;
   end;

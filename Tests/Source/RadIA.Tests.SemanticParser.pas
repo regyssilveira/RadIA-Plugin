@@ -25,6 +25,12 @@ type
     procedure IgnoresInactiveDeclarations;
     [Test]
     procedure PreservesPartialUnitWhenTypeIsUnclosed;
+    [Test]
+    procedure ParsesEscapedMethodNames;
+    [Test]
+    procedure SkipsProceduralTypeDeclarations;
+    [Test]
+    procedure ParsesGenericForwardAndNestedTypes;
   end;
 
 function TRadIASemanticParserTests.FindSymbol(
@@ -103,6 +109,56 @@ begin
   FindSymbol(LResult, 'Run', sskMethod);
   Assert.IsTrue(Length(LResult.Diagnostics) > 0);
   Assert.Contains(LResult.Diagnostics[0], 'not closed');
+end;
+
+procedure TRadIASemanticParserTests.ParsesEscapedMethodNames;
+var
+  LResult: TRadIASemanticParseResult;
+begin
+  LResult := TRadIASemanticParser.Parse(
+    'unit Escaped; interface type TSample = class function &get: Integer; end;' +
+    'implementation end.',
+    nil
+  );
+  FindSymbol(LResult, 'get', sskMethod);
+  Assert.AreEqual(0, Length(LResult.Diagnostics));
+end;
+
+procedure TRadIASemanticParserTests.SkipsProceduralTypeDeclarations;
+var
+  LResult: TRadIASemanticParseResult;
+begin
+  LResult := TRadIASemanticParser.Parse(
+    'unit Callbacks; interface type TCallback = procedure(AValue: Integer);' +
+    ' TObjectCallback = procedure of object; implementation end.',
+    nil
+  );
+  FindSymbol(LResult, 'Callbacks', sskModule);
+  Assert.AreEqual(0, Length(LResult.Diagnostics));
+end;
+
+procedure TRadIASemanticParserTests.ParsesGenericForwardAndNestedTypes;
+var
+  LNested: TRadIASemanticSymbol;
+  LResult: TRadIASemanticParseResult;
+begin
+  LResult := TRadIASemanticParser.Parse(
+    'unit Modern; interface type TForward = class;' +
+    ' TGeneric<T: class> = class(TForward, IInterface)' +
+    ' public type TNested = record end;' +
+    ' class operator Implicit(AValue: Integer): TGeneric<T>;' +
+    ' end; implementation end.',
+    nil
+  );
+  FindSymbol(LResult, 'TForward', sskClass);
+  Assert.Contains(
+    FindSymbol(LResult, 'TGeneric', sskClass).Signature,
+    'TForward, IInterface'
+  );
+  LNested := FindSymbol(LResult, 'TNested', sskRecord);
+  Assert.AreEqual('TGeneric', LNested.ContainerName);
+  FindSymbol(LResult, 'Implicit', sskMethod);
+  Assert.AreEqual(0, Length(LResult.Diagnostics));
 end;
 
 initialization

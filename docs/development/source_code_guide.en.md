@@ -266,3 +266,21 @@ When closing the Delphi IDE, the WebView2 engine (`TEdgeBrowser`) can cause seve
         FEdgeBrowser.Parent := nil; // Detach visually without forcing synchronous COM release
     end;
     ```
+
+---
+
+## 5. Validate the semantic engine corpus
+
+Compile `RadIA.Semantic.Engine.exe` before running the validation. The commands below analyze every
+Pascal unit available under `source/rtl` and `source/vcl` in the corresponding installation:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0"
+npm run test:semantic-corpus:12
+
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
+npm run test:semantic-corpus:13
+```
+
+The gate requires exact offset coverage for 100% of the files and structural parsing for at least
+99%. Reproducible reports are written to `Output/Evidence`, outside user documentation.

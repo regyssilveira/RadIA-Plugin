@@ -9,7 +9,7 @@ belong in the backlog.
 |---|---|---|
 | Delphi profile | active-configuration defines, scopes, includes, and paths | Complete |
 | Process and lexical analysis | isolated process, protocol, supervision, lexer, and preprocessor | Complete |
-| Structural parser | modern declarations and partial error recovery | In progress |
+| Structural parser | modern declarations, partial recovery, and RTL/VCL corpus | Completed |
 | Incremental index | queryable project, group, RTL, and VCL with per-unit invalidation | Pending |
 | Missing members | idempotent preview, consent, undo, and compilation | Pending |
 | Consumers | agent, navigation, Ghost Text, and DFM/PAS use the index with fallback | Pending |

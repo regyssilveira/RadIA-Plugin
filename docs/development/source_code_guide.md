@@ -266,3 +266,22 @@ Ao fechar a IDE do Delphi, o motor WebView2 (`TEdgeBrowser`) pode gerar deadlock
         FEdgeBrowser.Parent := nil; // Desassocia visualmente sem forçar liberação COM síncrona
     end;
     ```
+
+---
+
+## 5. Validar o corpus do motor semântico
+
+O processo `RadIA.Semantic.Engine.exe` deve ser compilado antes da validação. Os comandos abaixo
+analisam todas as units Pascal disponíveis nas pastas `source/rtl` e `source/vcl` da instalação
+correspondente:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0"
+npm run test:semantic-corpus:12
+
+powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
+npm run test:semantic-corpus:13
+```
+
+O gate exige cobertura exata de offsets em 100% dos arquivos e parsing estrutural de pelo menos 99%.
+O relatório reproduzível é gravado em `Output/Evidence`, fora da documentação de usuário.

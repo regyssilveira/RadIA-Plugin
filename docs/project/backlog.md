@@ -9,7 +9,7 @@ release não pertencem ao backlog.
 |---|---|---|
 | Perfil Delphi | defines, scopes, includes e paths da configuração ativa | Concluído |
 | Processo e análise lexical | processo isolado, protocolo, supervisão, lexer e pré-processador | Concluído |
-| Parser estrutural | declarações modernas e recuperação parcial de erros | Em execução |
+| Parser estrutural | declarações modernas, recuperação parcial e corpus RTL/VCL | Concluído |
 | Índice incremental | projeto, grupo, RTL e VCL consultáveis com invalidação por unit | Pendente |
 | Membros ausentes | preview idempotente, consentimento, undo e compilação | Pendente |
 | Consumidores | agente, navegação, Ghost Text e DFM/PAS usam índice com fallback | Pendente |

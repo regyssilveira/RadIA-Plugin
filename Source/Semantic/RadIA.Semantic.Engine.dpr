@@ -156,8 +156,58 @@ begin
   LCapabilities.Add('tokenize');
   LCapabilities.Add('preprocess');
   LCapabilities.Add('parse');
+  LCapabilities.Add('analyze');
   LCapabilities.Add('shutdown');
   LResult.AddPair('capabilities', LCapabilities);
+  Result.AddPair('result', LResult);
+end;
+
+function BuildAnalyzeResult(
+  const AId: TJSONValue;
+  const ASource: string;
+  const ADefines: TArray<string>
+): TJSONObject;
+var
+  LContiguous: Boolean;
+  LDiagnostics: TJSONArray;
+  LExpectedOffset: Integer;
+  LHasModule: Boolean;
+  LParsed: TRadIASemanticParseResult;
+  LResult: TJSONObject;
+  LSymbol: TRadIASemanticSymbol;
+  LText: string;
+  LToken: TRadIASemanticToken;
+begin
+  LExpectedOffset := 0;
+  LContiguous := True;
+  for LToken in TRadIASemanticLexer.Tokenize(ASource) do
+  begin
+    if (LToken.StartOffset <> LExpectedOffset) or (LToken.Length < 1) then
+      LContiguous := False;
+    Inc(LExpectedOffset, LToken.Length);
+  end;
+  LParsed := TRadIASemanticParser.Parse(ASource, ADefines);
+  LHasModule := False;
+  for LSymbol in LParsed.Symbols do
+    if LSymbol.Kind = sskModule then
+    begin
+      LHasModule := True;
+      Break;
+    end;
+
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LResult.AddPair('sourceLength', TJSONNumber.Create(Length(ASource)));
+  LResult.AddPair('coveredLength', TJSONNumber.Create(LExpectedOffset));
+  LResult.AddPair('tokensContiguous', TJSONBool.Create(LContiguous));
+  LResult.AddPair('hasModule', TJSONBool.Create(LHasModule));
+  LResult.AddPair('symbolCount', TJSONNumber.Create(Length(LParsed.Symbols)));
+  LDiagnostics := TJSONArray.Create;
+  for LText in LParsed.Diagnostics do
+    LDiagnostics.Add(LText);
+  LResult.AddPair('diagnostics', LDiagnostics);
   Result.AddPair('result', LResult);
 end;
 
@@ -252,6 +302,17 @@ begin
     if not Assigned(LParameters) then
       Exit(BuildError(LId, -32602, 'Parse requires params.'));
     Exit(BuildParseResult(
+      LId,
+      LParameters.GetValue<string>('source', ''),
+      ReadStringArray(LParameters, 'defines')
+    ));
+  end;
+  if SameText(LMethod, 'analyze') then
+  begin
+    LParameters := ARequest.GetValue<TJSONObject>('params');
+    if not Assigned(LParameters) then
+      Exit(BuildError(LId, -32602, 'Analyze requires params.'));
+    Exit(BuildAnalyzeResult(
       LId,
       LParameters.GetValue<string>('source', ''),
       ReadStringArray(LParameters, 'defines')
