@@ -1,7 +1,7 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\ContinuousJourney",
     [string]$OutputPath = (
-        ".\docs\continuous_journey_smoke_evidence_2.3.1.json"
+        ".\Output\Evidence\continuous_journey_smoke_evidence_2.3.1.json"
     )
 )
 

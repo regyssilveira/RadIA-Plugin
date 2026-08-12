@@ -5,10 +5,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$manifestPath = Join-Path $repositoryRoot "docs\runtime_tools.json"
-$catalogPath = Join-Path $repositoryRoot "docs\runtime_tool_catalog.md"
-$englishCatalogPath = Join-Path $repositoryRoot "docs\runtime_tool_catalog.en.md"
-$referencePath = Join-Path $repositoryRoot "docs\internal_tools_reference.md"
+$manifestPath = Join-Path $repositoryRoot "docs\reference\runtime_tools.json"
+$catalogPath = Join-Path $repositoryRoot "docs\reference\runtime_tool_catalog.md"
+$englishCatalogPath = Join-Path $repositoryRoot "docs\reference\runtime_tool_catalog.en.md"
+$referencePath = Join-Path $repositoryRoot "docs\reference\internal_tools_reference.md"
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 |
     ConvertFrom-Json
 $seenTools = @{}

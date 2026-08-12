@@ -1,7 +1,7 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\GeneratedProjects",
     [string]$OutputPath = (
-        ".\docs\generated_project_templates_evidence_2.0.0.json"
+        ".\Output\Evidence\generated_project_templates_evidence_2.0.0.json"
     )
 )
 

@@ -5,7 +5,7 @@ param(
         ".\Output\Validation\ExternalMcp\real-server.json"
     ),
     [string]$OutputPath = (
-        ".\docs\leadership_closure_evidence_2.3.1.json"
+        ".\Output\Evidence\leadership_closure_evidence_2.3.1.json"
     ),
     [ValidateRange(1, 50)]
     [int]$RequiredCycles = 10,

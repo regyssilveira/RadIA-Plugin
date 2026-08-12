@@ -1,0 +1,15 @@
+# Desenvolvimento e contribuição
+
+- [Arquitetura geral](architecture_guide.md)
+- [Arquitetura agentiva](agentic_architecture.md)
+- [Guia do código-fonte](source_code_guide.md)
+- [Catálogo arquitetural de ferramentas](tool_catalog.md)
+- [API de extensões](tool_extension_guide.md)
+- [Guia para novos providers](new_provider_guide.md)
+- [Convenção de branches](branch_convention.md)
+- [Convenção de commits](commit_convention.md)
+- [Política de documentação](documentation_policy.md)
+- [Processo de release](release_process.md)
+- [Compliance](compliance.md)
+- [Migração interna agentiva](agentic_migration_0_1.md)
+- [Decisões arquiteturais](adr/README.md)

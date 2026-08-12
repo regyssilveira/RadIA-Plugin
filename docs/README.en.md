@@ -1,144 +1,84 @@
 # RadIA documentation
 
-This is the documentation entry point for RadIA 2.9.0. Start with the task you want to complete;
-each subject has one primary guide to prevent duplicated or conflicting instructions.
+This is the entry point for RadIA documentation. Choose a goal; documents are organized by task,
+not by release.
 
-> The `/tools` command is the most accurate reference for the current installation because the
-> catalog may vary with IDE version, context, and installed extensions.
+> Use `/tools` to inspect the exact tools available in the current installation. Use
+> `/doctor --deep` to validate configuration and prerequisites.
 
-## Start using RadIA
+## Get started
 
-| Goal | Start here | Continue with |
-|---|---|---|
-| Install on Delphi 12 or 13 | [Installation and configuration](install_config.en.md) | [Onboarding](onboarding.en.md) |
-| Discover current capabilities | [Capabilities](capabilities.en.md) | [Feature catalog](features.en.md) |
-| Configure a provider, agent, or CLI | [Installation](install_config.en.md) | [CLI executors](cli_executors.en.md) |
-| Use different settings by project or conversation | [Scoped settings](hierarchical_settings.en.md) | [Slash commands](slash_commands.en.md) |
-| Understand every settings tab | [Settings map](user_manual.en.md#21-settings-map) | [Security model](tool_security_model.en.md) |
-| Look up a specific field or button | [Complete settings reference](settings_reference.en.md) | [Troubleshooting](troubleshooting_agentic_platform.en.md) |
-| Use chat and sessions | [Chat and sessions](user_guide_chat_sessions.en.md) | [Slash commands](slash_commands.en.md) |
-| Continue a task across chat, terminal, and editor | [Shared context](shared_journey_context.en.md) | [Chat and sessions](user_guide_chat_sessions.en.md) |
-| Troubleshoot a problem | [Troubleshooting](troubleshooting_agentic_platform.en.md) | [Compatibility](delphi_compatibility_matrix.en.md) |
-| Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) | [Settings reference](settings_reference.en.md) |
-| Understand effective values, sources, and inheritance | [Project, session, and request settings](hierarchical_settings.en.md) | [Settings reference](settings_reference.en.md) |
+[Open the getting-started path](getting-started/README.en.md).
 
-## Complete a development task
-
-| Task | Primary guide |
+| Goal | Document |
 |---|---|
-| Explain, review, refactor, or generate code | [Editor and generation](user_guide_editor_generation.en.md) |
-| Diagnose code, warnings, SQL, or a stack trace | [Diagnostics and analysis](user_guide_diagnostics_analysis.en.md) |
-| Learn Delphi from selected code | [Delphi mentor](delphi_mentor.en.md) |
-| Receive and diagnose Ghost Text/FIM suggestions | [Inline assistance and FIM](inline_completion.en.md) |
-| Review changes block by block in the gutter | [Block-level review](block_reviews.en.md) |
-| Create a Delphi project | [New Project Wizard](project_wizard.en.md) |
-| Add or remove units and forms | [Project operations](project_file_operations.en.md) |
-| Coordinate code, project, and Designer changes | [Development transactions](development_transactions.en.md) |
-| Migrate BDE, ADO, or dbExpress to FireDAC | [Legacy data migration](legacy_data_migration.en.md) |
-| Build, fix errors, and run tests | [End-to-end journeys](user_guide_journeys.en.md) |
-| Create a DEXT server from endpoints | [DEXT server journeys](user_guide_dext_journeys.en.md) |
-| Run DUnitX tests | [DUnitX runner](dunitx_runner.en.md) |
-| Use Form Designer or debugger | [Designer and debugger](user_guide_designer_debugger.en.md) |
-| Audit mismatches between DFM and Pascal | [DFM/PAS audit](dfm_pas_audit.en.md) |
-| Compare before and after Designer changes | [Designer visual diff](designer_visual_diff.en.md) |
-| Reproduce a visual failure | [Runtime diagnostics](runtime_debug_automation.en.md) |
-| Diagnose memory problems | [FastMM5 diagnostics](fastmm5_diagnostic_session.en.md) |
-| Use the integrated terminal | [Terminal](terminal.en.md) |
-| Search project knowledge | [Project knowledge](user_guide_project_knowledge.en.md) |
-| Review and create a local Git commit | [Git workflow](git_workflow.en.md) |
+| Install on Delphi 12 or 13 | [Installation and configuration](getting-started/install_config.en.md) |
+| Complete the first configuration | [Getting started](getting-started/onboarding.en.md) |
+| Use the visual installer | [Visual installer](getting-started/visual_installer.en.md) |
+| Migrate version 1 settings | [Version 2 migration](getting-started/migration_1_to_2.en.md) |
 
-## Agent, tools, and security
+## Use RadIA
 
-| Subject | Authoritative document |
+[See all usage guides](guides/README.en.md).
+
+| I want to... | Document |
 |---|---|
-| Enable and operate agent mode | [User manual](user_manual.en.md) |
-| Understand limits, gates, pauses, and resume | [Autonomous execution contract](autonomous_execution_contract.en.md) |
-| Native agent and external executors | [CLI executors](cli_executors.en.md) |
-| CLI capabilities and resume contracts | [CLI capability matrix](cli_capability_matrix.en.md) |
-| Diagnose installation and the effective route | [RadIA Doctor](doctor.en.md) |
-| Inspect version, framework, packages, and libraries | [Delphi environment profile](delphi_environment_profile.en.md) |
-| Query applicable Delphi rules and citations | [Curated Delphi guidance](delphi_guidance.en.md) |
-| Inspect configured RadIA state | [Doctor, status, health, and tools](slash_commands.en.md#which-diagnostic-command-to-use) |
-| Understand effective values, sources, and inheritance | [Scoped settings](hierarchical_settings.en.md) |
-| Available runtime tools | [Runtime tool catalog](runtime_tool_catalog.en.md) |
-| Understand every tool and when it runs | [Operational tool reference](internal_tools_reference.en.md) |
-| Consent, risk, and auditing | [Tool security model](tool_security_model.en.md) |
-| Assess routes and guarantees for corporate use | [Corporate security brief](corporate_security_brief.en.md) |
-| Agent cost and limits | [Agent pricing](agent_pricing.en.md) |
-| Plan internal result compaction | [Internal RTK execution plan](rtk_execution_plan.en.md) |
-| Measure Delphi capabilities locally | [Reproducible benchmark](delphi_experience_benchmark.en.md) |
-| Use and diagnose the internal RTK | [Agent result compaction and recovery](agent_result_compaction.en.md) |
-| Review release 2.9.0 | [Release notes](release_notes_2.9.0.en.md) |
-| Use tools from another client | [MCP integration](mcp_integration_guide.en.md) |
+| Understand modes, chat, agent, and consent | [User manual](guides/user_manual.en.md) |
+| Understand request, session, and project precedence | [Scoped settings](guides/hierarchical_settings.en.md) |
+| Create, edit, build, and test projects | [End-to-end journeys](guides/user_guide_journeys.en.md) |
+| Create a project from chat | [New Project Wizard](guides/project_wizard.en.md) |
+| Use chat and sessions | [Chat and sessions](guides/user_guide_chat_sessions.en.md) |
+| Work with the editor and generate code | [Editor and generation](guides/user_guide_editor_generation.en.md) |
+| Work with the Designer and debugger | [Designer and debugger](guides/user_guide_designer_debugger.en.md) |
+| Diagnose problems and stack traces | [Diagnostics and analysis](guides/user_guide_diagnostics_analysis.en.md) |
+| Reproduce runtime failures | [Runtime diagnostic automation](guides/runtime_debug_automation.en.md) |
+| Diagnose leaks with FastMM5 | [Memory diagnostics](guides/fastmm5_diagnostic_session.en.md) |
+| Use the integrated terminal | [Terminal](guides/terminal.en.md) |
+| Configure and use CLIs | [Native and CLI executors](guides/cli_executors.en.md) |
+| Configure and use MCP | [MCP integration](guides/mcp_integration_guide.en.md) |
+| Troubleshoot installation or usage | [Troubleshooting](guides/troubleshooting_agentic_platform.en.md) |
 
-Provider, CLI executor, and MCP are independent settings. A declared authentication transport,
-such as ChatGPT login through Codex, is the explicit exception.
+## Reference
 
-## Extend and integrate
+[Open the complete reference index](reference/README.en.md).
 
-| Goal | Guide |
+| Information | Reference |
 |---|---|
-| Share commands, skills, knowledge, templates, aliases, and workflows | [Declarative extensions](declarative_extensions.en.md) |
-| Publish one skill to supported CLIs | [Skill portability](skill_portability.en.md) |
-| Register tools from a package | [Tool extension API](tool_extension_guide.en.md) |
-| Add a provider | [Provider guide](new_provider_guide.en.md) |
-| Integrate an MCP client | [MCP integration](mcp_integration_guide.en.md) |
-| Inspect future tool contracts | [Architectural catalog](tool_catalog.en.md) |
-
-The architectural catalog includes proposals. Use `/tools` or the generated runtime catalog to
-inspect what the installed version actually provides.
+| Everything RadIA can do | [Capability map](reference/capabilities.en.md) |
+| Settings fields and buttons | [Settings](reference/settings_reference.en.md) |
+| Understand settings tabs | [Settings map](guides/user_manual.en.md#21-settings-map) |
+| Slash commands and diagnostics | [Commands](reference/slash_commands.en.md#which-diagnostic-command-to-use) |
+| Complete state and diagnostics | [Doctor](reference/doctor.en.md) |
+| Internal tools and when they run | [Internal tools](reference/internal_tools_reference.en.md) |
+| Generated catalog for the current version | [Runtime catalog](reference/runtime_tool_catalog.en.md) |
+| Delphi compatibility | [Compatibility matrix](reference/delphi_compatibility_matrix.en.md) |
+| Providers, models, and CLI routes | [CLI capability matrix](reference/cli_capability_matrix.en.md) |
+| Security and consent | [Security model](reference/tool_security_model.en.md) |
 
 ## Develop and contribute
 
-- [Required documentation policy](documentation_policy.en.md)
-- [Current status and verified pending work](backlog.en.md#canonical-active-backlog)
+[Open the development index](development/README.en.md).
 
-| Subject | Guide |
+| Subject | Document |
 |---|---|
-| Architecture | [Architecture guide](architecture_guide.en.md) |
-| Agent architecture | [Agent architecture](agentic_architecture.en.md) |
-| Source map | [Source code guide](source_code_guide.en.md) |
-| Supported compatibility | [Delphi matrix](delphi_compatibility_matrix.en.md) |
-| Build and tests | [Installation and configuration](install_config.en.md) |
-| Branch and commit conventions | [Branches](branch_convention.en.md) · [Commits](commit_convention.en.md) |
-| Release process | [Release guide](release_process.en.md) |
-| Privacy and licenses | [Compliance](compliance.en.md) |
+| Architecture | [Architecture guide](development/architecture_guide.en.md) |
+| Units and responsibilities | [Source code guide](development/source_code_guide.en.md) |
+| Build, tests, and contribution | [Installation and configuration](getting-started/install_config.en.md) |
+| Create providers | [Provider guide](development/new_provider_guide.en.md) |
+| Create tool extensions | [Extension API](development/tool_extension_guide.en.md) |
+| Conventions | [Branches](development/branch_convention.en.md) · [Commits](development/commit_convention.en.md) |
+| Work with Git | [Git workflow](guides/git_workflow.en.md) |
+| Documentation policy | [Documentation as product](development/documentation_policy.en.md) |
+| Release process | [Release](development/release_process.en.md) |
 
-## Planning and historical records
+## Project direction
 
-Roadmaps, backlogs, goals, milestone reports, release audits, and `*_evidence_*.json` files preserve
-project history. They are not current user instructions. If historical content differs from a
-primary guide, the current code, `/tools`, and the primary guides above take precedence.
+- [Project direction index](project/README.en.md).
+- [Roadmap](project/roadmap.en.md): direction and future outcomes.
+- [Backlog](project/backlog.en.md): only open, verifiable work.
 
-Current planning status:
+Release notes, downloads, and publication evidence live in
+[GitHub Releases](https://github.com/regyssilveira/RadIA-Plugin/releases). Removed historical files
+remain available through Git history.
 
-- [Active 2.10.0 structural semantic engine goal](semantic_engine_goal.en.md).
-- [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
-- [2.9.0 release audit](release_audit_2.9.0.en.md) and previous audits.
-- release notes: [2.9.0](release_notes_2.9.0.en.md), [2.8.0](release_notes_2.8.0.en.md), [2.7.0](release_notes_2.7.0.en.md),
-  [2.6.2](release_notes_2.6.2.en.md),
-  [2.6.1](release_notes_2.6.1.en.md),
-  [2.6.0](release_notes_2.6.0.en.md),
-  [2.5.0](release_notes_2.5.0.en.md),
-  [2.4.2](release_notes_2.4.2.en.md), [2.4.1](release_notes_2.4.1.en.md),
-  [2.4.0](release_notes_2.4.0.en.md), [2.3.1](release_notes_2.3.1.en.md), and
-  [2.3.0](release_notes_2.3.0.en.md), including its
-  [RTK audit](result_compaction_release_audit_2.3.0.en.md).
-- [Completed complete-experience expansion goal](experience_expansion_goal.en.md).
-
-- [Delphi agent experience program](delphi_agent_experience_plan.en.md), which plans nine
-  improvements that remain subject to their implementation gates.
-- [Delphi agent experience task list](delphi_agent_experience_tasks.en.md), with delivery order,
-  dependencies, and completion criteria.
-
-## Current compatibility
-
-| IDE | Architecture | Support |
-|---|---|---|
-| Delphi 12 Athens | Win32 | Supported and validated |
-| Delphi 13 | Win32 | Supported and validated |
-| Delphi 13 | IDE64 | Supported and validated |
-
-Delphi 11 appears only in historical records and is outside the current support matrix.
-
-Documentação em português: [Centro de documentação](README.md).
+Documentação em português: [Central de documentação](README.md).

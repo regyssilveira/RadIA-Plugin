@@ -17,6 +17,28 @@ function markdownFiles(directory) {
   });
 }
 
+function documentationPath(...segments) {
+  const direct = path.join(documentationRoot, ...segments);
+  if (fs.existsSync(direct) || segments.length !== 1) {
+    return direct;
+  }
+  const expectedName = segments[0];
+  const matches = [];
+  const visit = directory => {
+    fs.readdirSync(directory, { withFileTypes: true }).forEach(entry => {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        visit(entryPath);
+      } else if (entry.isFile() && entry.name === expectedName) {
+        matches.push(entryPath);
+      }
+    });
+  };
+  visit(documentationRoot);
+  assert.ok(matches.length <= 1, `Ambiguous documentation file: ${expectedName}`);
+  return matches[0] || direct;
+}
+
 function headingSlug(heading) {
   return heading
     .trim()
@@ -134,8 +156,8 @@ test('English documentation links to English counterparts when available', () =>
 });
 
 test('every built-in tool has an operational description and activation guidance', () => {
-  const manifestPath = path.join(documentationRoot, 'runtime_tools.json');
-  const referencePath = path.join(documentationRoot, 'internal_tools_reference.md');
+  const manifestPath = documentationPath('runtime_tools.json');
+  const referencePath = documentationPath('internal_tools_reference.md');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const reference = fs.readFileSync(referencePath, 'utf8');
   const documentedTools = new Map();
@@ -161,17 +183,17 @@ test('every built-in tool has an operational description and activation guidance
 
 test('generated runtime tool catalogs describe every tool in both languages', () => {
   const manifest = JSON.parse(
-    fs.readFileSync(path.join(documentationRoot, 'runtime_tools.json'), 'utf8')
+    fs.readFileSync(documentationPath('runtime_tools.json'), 'utf8')
   );
   const toolNames = manifest.groups.flatMap(group => group.tools);
   const catalogs = [
     {
-      path: path.join(documentationRoot, 'runtime_tool_catalog.md'),
+      path: documentationPath('runtime_tool_catalog.md'),
       header: '| Ferramenta | O que faz | Unit de origem |',
       forbiddenHeading: '# RadIA built-in tool catalog'
     },
     {
-      path: path.join(documentationRoot, 'runtime_tool_catalog.en.md'),
+      path: documentationPath('runtime_tool_catalog.en.md'),
       header: '| Tool | Purpose | Source unit |',
       forbiddenHeading: '# Catálogo de ferramentas internas do RadIA'
     }
@@ -193,12 +215,12 @@ test('generated runtime tool catalogs describe every tool in both languages', ()
 
 test('diagnostic commands are discoverable and clearly separated', () => {
   const commands = fs.readFileSync(
-    path.join(documentationRoot, 'slash_commands.md'),
+    documentationPath('slash_commands.md'),
     'utf8'
   );
-  const hub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+  const hub = fs.readFileSync(documentationPath('README.md'), 'utf8');
   const englishHub = fs.readFileSync(
-    path.join(documentationRoot, 'README.en.md'),
+    documentationPath('README.en.md'),
     'utf8'
   );
 
@@ -243,8 +265,8 @@ test('tracked textual documentation contains no competitor product references', 
 });
 
 test('every native slash command is explained in both command guides', () => {
-  const portuguese = fs.readFileSync(path.join(documentationRoot, 'slash_commands.md'), 'utf8');
-  const english = fs.readFileSync(path.join(documentationRoot, 'slash_commands.en.md'), 'utf8');
+  const portuguese = fs.readFileSync(documentationPath('slash_commands.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('slash_commands.en.md'), 'utf8');
   const nativeCommands = [
     '/agent', '/agent run', '/agent plan', '/agent replay', '/agent pause', '/agent resume',
     '/agent cancel', '/agent history', '/help', '/terminal', '/settings', '/extensions',
@@ -263,18 +285,18 @@ test('every native slash command is explained in both command guides', () => {
 
 test('scoped execution settings document precedence, safety, UI, and recovery', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'hierarchical_settings.md'),
+    documentationPath('hierarchical_settings.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'hierarchical_settings.en.md'),
+    documentationPath('hierarchical_settings.en.md'),
     'utf8'
   );
   const commands = fs.readFileSync(
-    path.join(documentationRoot, 'slash_commands.md'),
+    documentationPath('slash_commands.md'),
     'utf8'
   );
-  const hub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
+  const hub = fs.readFileSync(documentationPath('README.md'), 'utf8');
 
   assert.match(portuguese, /próxima solicitação;[\s\S]*sessão de chat atual;[\s\S]*projeto ativo/u);
   assert.match(portuguese, /Settings > Scope/u);
@@ -292,11 +314,11 @@ test('scoped execution settings document precedence, safety, UI, and recovery', 
 
 test('inline completion documents dedicated FIM, fallback, and diagnostics', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'inline_completion.md'),
+    documentationPath('inline_completion.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'inline_completion.en.md'),
+    documentationPath('inline_completion.en.md'),
     'utf8'
   );
   [portuguese, english].forEach(document => {
@@ -342,11 +364,11 @@ test('inline completion smoke proves acceptance, one undo, and clean rejection',
 
 test('block review documents every decision surface and real gutter evidence', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'block_reviews.md'),
+    documentationPath('block_reviews.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'block_reviews.en.md'),
+    documentationPath('block_reviews.en.md'),
     'utf8'
   );
   const smoke = fs.readFileSync(
@@ -377,17 +399,13 @@ test('block review documents every decision surface and real gutter evidence', (
 
 test('primary documentation entry points expose task-oriented navigation', () => {
   const rootReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
-  const documentationHub = fs.readFileSync(
-    path.join(documentationRoot, 'README.md'),
-    'utf8'
-  );
+  const documentationHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
 
-  assert.match(rootReadme, /\[Documentação\]\(docs\/README\.md\)/u);
-  assert.match(documentationHub, /## Quero começar a usar/u);
-  assert.match(documentationHub, /## Quero realizar uma tarefa/u);
-  assert.match(documentationHub, /## Agente, ferramentas e segurança/u);
-  assert.match(documentationHub, /## Desenvolver e contribuir/u);
-  assert.match(documentationHub, /## Planejamento e histórico/u);
+  assert.match(rootReadme, /docs\/README\.md/u);
+  ['## Usar o RadIA', '## Consultar', '## Desenvolver e contribuir'].forEach(heading => {
+    assert.ok(documentationHub.includes(heading), heading);
+  });
+  assert.ok(documentationHub.includes('project/README.md'));
 });
 
 test('every operational guide is reachable from a documentation hub', () => {
@@ -399,7 +417,7 @@ test('every operational guide is reachable from a documentation hub', () => {
     .filter(fileName => fs.existsSync(path.join(repositoryRoot, fileName)));
   const trackedSet = new Set(tracked);
   const linksByFile = new Map();
-  const historicalName = /(?:^docs\/adr\/|roadmap|backlog|goal|audit|checklist|migration|strategy|prioritization|_m\d+|_plan)/iu;
+  const historicalName = /(?:^docs\/development\/adr\/|roadmap|backlog|migration|strategy)/iu;
 
   tracked.forEach(fileName => {
     const links = [];
@@ -452,32 +470,40 @@ test('leadership closure gate requires current integrated runtime evidence', () 
   assert.doesNotMatch(gate, /DescendantCount -eq 0/u);
 });
 
-test('current user-facing documents follow the package version', () => {
-  const currentDocuments = [
-    path.join(documentationRoot, 'README.md'),
-    path.join(documentationRoot, 'README.en.md'),
-    path.join(documentationRoot, 'user_manual.md'),
-    path.join(documentationRoot, 'user_manual.en.md'),
-    path.join(documentationRoot, 'capabilities.md'),
-    path.join(documentationRoot, 'capabilities.en.md')
+test('user-facing documentation is not organized by release', () => {
+  const hubs = [
+    documentationPath('README.md'),
+    documentationPath('README.en.md')
   ];
-
-  currentDocuments.forEach(fileName => {
+  hubs.forEach(fileName => {
     const content = fs.readFileSync(fileName, 'utf8');
-    assert.match(
-      content,
-      new RegExp(`RadIA ${packageVersion.replaceAll('.', '\\\.')}`),
-      path.relative(repositoryRoot, fileName)
-    );
+    assert.doesNotMatch(content, /release_notes_|release_audit_|smoke_evidence_/u);
+  });
+});
+
+test('tracked docs exclude release history and operational evidence', () => {
+  const tracked = childProcess.execFileSync(
+    'git',
+    ['ls-files', 'docs'],
+    { cwd: repositoryRoot, encoding: 'utf8' }
+  ).trim().split(/\r?\n/u).filter(Boolean);
+  const operationalName = /(?:release_(?:notes|audit|evidence)|smoke_evidence|quality_evidence|_goal\.|_plan\.|_m\d+\.)/iu;
+
+  tracked.forEach(fileName => {
+    assert.doesNotMatch(fileName, operationalName, fileName);
+    const relative = path.relative(documentationRoot, path.join(repositoryRoot, fileName));
+    if (!relative.includes(path.sep) && fileName.endsWith('.md')) {
+      assert.match(fileName, /docs\/README(?:\.en)?\.md$/u, fileName);
+    }
   });
 });
 
 test('operational release guides do not pin obsolete artifact names', () => {
   const operationalGuides = [
-    path.join(documentationRoot, 'install_config.md'),
-    path.join(documentationRoot, 'visual_installer.md'),
-    path.join(documentationRoot, 'install_config.en.md'),
-    path.join(documentationRoot, 'visual_installer.en.md')
+    documentationPath('install_config.md'),
+    documentationPath('visual_installer.md'),
+    documentationPath('install_config.en.md'),
+    documentationPath('visual_installer.en.md')
   ];
 
   operationalGuides.forEach(fileName => {
@@ -492,11 +518,11 @@ test('operational release guides do not pin obsolete artifact names', () => {
 
 test('end-user installation guidance prioritizes the visual installer', () => {
   const portugueseGuide = fs.readFileSync(
-    path.join(documentationRoot, 'install_config.md'),
+    documentationPath('install_config.md'),
     'utf8'
   );
   const englishGuide = fs.readFileSync(
-    path.join(documentationRoot, 'install_config.en.md'),
+    documentationPath('install_config.en.md'),
     'utf8'
   );
 
@@ -511,10 +537,10 @@ test('end-user installation guidance prioritizes the visual installer', () => {
 });
 
 test('documentation hubs expose the settings map and security guidance', () => {
-  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
-  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
-  const portugueseManual = fs.readFileSync(path.join(documentationRoot, 'user_manual.md'), 'utf8');
-  const englishManual = fs.readFileSync(path.join(documentationRoot, 'user_manual.en.md'), 'utf8');
+  const portugueseHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
+  const englishHub = fs.readFileSync(documentationPath('README.en.md'), 'utf8');
+  const portugueseManual = fs.readFileSync(documentationPath('user_manual.md'), 'utf8');
+  const englishManual = fs.readFileSync(documentationPath('user_manual.en.md'), 'utf8');
   const settings = [
     'Providers',
     'System',
@@ -539,11 +565,11 @@ test('documentation hubs expose the settings map and security guidance', () => {
 
 test('current release gates use the generated catalog size', () => {
   const manifest = JSON.parse(
-    fs.readFileSync(path.join(documentationRoot, 'runtime_tools.json'), 'utf8')
+    fs.readFileSync(documentationPath('runtime_tools.json'), 'utf8')
   );
   const toolCount = manifest.groups.flatMap(group => group.tools).length;
-  const portuguese = fs.readFileSync(path.join(documentationRoot, 'release_process.md'), 'utf8');
-  const english = fs.readFileSync(path.join(documentationRoot, 'release_process.en.md'), 'utf8');
+  const portuguese = fs.readFileSync(documentationPath('release_process.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('release_process.en.md'), 'utf8');
   const currentDocuments = [
     'terminal.md',
     'terminal.en.md'
@@ -554,7 +580,7 @@ test('current release gates use the generated catalog size', () => {
   assert.match(portuguese, /catálogo histórico de 95 tools/u);
   assert.match(english, /historical 95-tool catalog/u);
   currentDocuments.forEach(documentName => {
-    const content = fs.readFileSync(path.join(documentationRoot, documentName), 'utf8');
+    const content = fs.readFileSync(documentationPath(documentName), 'utf8');
     assert.match(
       content,
       new RegExp(`${toolCount}\\s+(?:ferramentas|tools)`, 'u'),
@@ -567,19 +593,19 @@ test('release metadata and operational protocols follow the package version', ()
   const escapedVersion = packageVersion.replaceAll('.', '\\.');
   const project = fs.readFileSync(path.join(repositoryRoot, 'RadIA.dproj'), 'utf8');
   const mcpPortuguese = fs.readFileSync(
-    path.join(documentationRoot, 'mcp_integration_guide.md'),
+    documentationPath('mcp_integration_guide.md'),
     'utf8'
   );
   const mcpEnglish = fs.readFileSync(
-    path.join(documentationRoot, 'mcp_integration_guide.en.md'),
+    documentationPath('mcp_integration_guide.en.md'),
     'utf8'
   );
   const cliPortuguese = fs.readFileSync(
-    path.join(documentationRoot, 'cli_capability_matrix.md'),
+    documentationPath('cli_capability_matrix.md'),
     'utf8'
   );
   const cliEnglish = fs.readFileSync(
-    path.join(documentationRoot, 'cli_capability_matrix.en.md'),
+    documentationPath('cli_capability_matrix.en.md'),
     'utf8'
   );
   const sonarProject = fs.readFileSync(
@@ -601,13 +627,13 @@ test('release metadata and operational protocols follow the package version', ()
 
 test('current entry points use the generated tool count and complete task navigation', () => {
   const manifest = JSON.parse(
-    fs.readFileSync(path.join(documentationRoot, 'runtime_tools.json'), 'utf8')
+    fs.readFileSync(documentationPath('runtime_tools.json'), 'utf8')
   );
   const toolCount = manifest.groups.flatMap(group => group.tools).length;
   const portugueseReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
   const englishReadme = fs.readFileSync(path.join(repositoryRoot, 'README.en.md'), 'utf8');
-  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
-  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
+  const portugueseHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
+  const englishHub = fs.readFileSync(documentationPath('README.en.md'), 'utf8');
 
   assert.ok(portugueseReadme.includes(`Catálogo das ${toolCount} ferramentas`));
   assert.ok(englishReadme.includes(`${toolCount}-tool runtime catalog`));
@@ -636,8 +662,8 @@ test('documented model fallbacks stay synchronized with source constants', () =>
     path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.Types.pas'),
     'utf8'
   );
-  const portuguese = fs.readFileSync(path.join(documentationRoot, 'settings_reference.md'), 'utf8');
-  const english = fs.readFileSync(path.join(documentationRoot, 'settings_reference.en.md'), 'utf8');
+  const portuguese = fs.readFileSync(documentationPath('settings_reference.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('settings_reference.en.md'), 'utf8');
   const fallbackModels = [...modelTypes.matchAll(/MODEL_[A-Z0-9_]+\s*=\s*'([^']+)'/gu)]
     .map(match => match[1]);
 
@@ -649,8 +675,8 @@ test('documented model fallbacks stay synchronized with source constants', () =>
 });
 
 test('feature catalog exposes every current experience-expansion milestone', () => {
-  const portuguese = fs.readFileSync(path.join(documentationRoot, 'features.md'), 'utf8');
-  const english = fs.readFileSync(path.join(documentationRoot, 'features.en.md'), 'utf8');
+  const portuguese = fs.readFileSync(documentationPath('features.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('features.en.md'), 'utf8');
   const portugueseFeatures = [
     'Fila de Continuações', 'Alternativas de Ghost Text', 'Recursos Declarativos Empacotados',
     'Captura Visual Runtime', 'Consentimento Central entre Superfícies', 'Terminal Unicode e TUI'
@@ -664,78 +690,33 @@ test('feature catalog exposes every current experience-expansion milestone', () 
   englishFeatures.forEach(feature => assert.ok(english.includes(feature), feature));
 });
 
-test('current backlog separates active work from historical deliveries', () => {
-  const portuguese = fs.readFileSync(path.join(documentationRoot, 'backlog.md'), 'utf8');
-  const english = fs.readFileSync(path.join(documentationRoot, 'backlog.en.md'), 'utf8');
-  const rowPattern = /^\| \*\*/gmu;
+test('current backlog contains only open work', () => {
+  const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
 
-  assert.match(portuguese, /## Backlog ativo canônico/u);
-  assert.match(english, /## Canonical active backlog/u);
-  assert.match(portuguese, /Contexto Semântico Compartilhado do Editor/u);
-  assert.match(english, /Shared Semantic Editor Context/u);
-  assert.doesNotMatch(portuguese, /M4 em execução|branch atual/u);
-  assert.doesNotMatch(english, /M4 in progress|current branch/u);
-  assert.equal([...portuguese.matchAll(rowPattern)].length, [...english.matchAll(rowPattern)].length);
-});
-
-test('current release audit matches the validated matrix', () => {
-  const portuguese = fs.readFileSync(
-    path.join(documentationRoot, `release_audit_${packageVersion}.md`),
-    'utf8'
-  );
-  const english = fs.readFileSync(
-    path.join(documentationRoot, `release_audit_${packageVersion}.en.md`),
-    'utf8'
-  );
-
-  [portuguese, english].forEach(document => {
-    assert.match(document, /1103/u);
-    assert.match(document, /1111/u);
-    assert.match(document, /106\/106/u);
-    assert.match(document, /42\/42/u);
-    assert.match(document, /148/u);
-  });
-});
-
-test('completed historical goals do not claim to remain in progress', () => {
-  const completedDocuments = [
-    'experience_leadership_goal.md',
-    'experience_leadership_goal.en.md',
-    'runtime_debug_automation_m0.md',
-    'runtime_debug_automation_m0.en.md',
-    'runtime_debug_automation_m1.md',
-    'runtime_debug_automation_m1.en.md',
-    'runtime_debug_automation_m2.md',
-    'runtime_debug_automation_m2.en.md',
-    'runtime_debug_automation_m3.md',
-    'runtime_debug_automation_m3.en.md'
-  ];
-
-  completedDocuments.forEach(fileName => {
-    const document = fs.readFileSync(path.join(documentationRoot, fileName), 'utf8');
-    assert.doesNotMatch(
-      document,
-      /planejado e em execução|planned and in progress|validação dentro da IDE pendente|in-IDE validation pending/u,
-      fileName
-    );
-  });
+  assert.ok(portuguese.includes('| Parser estrutural |'));
+  assert.ok(english.includes('| Structural parser |'));
+  assert.ok(portuguese.includes('somente trabalho aberto'));
+  assert.match(english, /This file contains open work only/u);
+  assert.doesNotMatch(portuguese, /Registro hist/u);
+  assert.doesNotMatch(english, /Version History|Historical execution/u);
 });
 
 test('declarative extensions document packaged resources end to end', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'declarative_extensions.md'),
+    documentationPath('declarative_extensions.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'declarative_extensions.en.md'),
+    documentationPath('declarative_extensions.en.md'),
     'utf8'
   );
   const catalogPortuguese = fs.readFileSync(
-    path.join(documentationRoot, 'extension_catalog.md'),
+    documentationPath('extension_catalog.md'),
     'utf8'
   );
   const catalogEnglish = fs.readFileSync(
-    path.join(documentationRoot, 'extension_catalog.en.md'),
+    documentationPath('extension_catalog.en.md'),
     'utf8'
   );
   const packager = fs.readFileSync(
@@ -761,11 +742,11 @@ test('declarative extensions document packaged resources end to end', () => {
 
 test('runtime guide separates structured evidence from consented visual capture', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'runtime_debug_automation.md'),
+    documentationPath('runtime_debug_automation.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'runtime_debug_automation.en.md'),
+    documentationPath('runtime_debug_automation.en.md'),
     'utf8'
   );
   [portuguese, english].forEach(document => {
@@ -781,11 +762,11 @@ test('runtime guide separates structured evidence from consented visual capture'
 
 test('central consent is documented and wired consistently across surfaces', () => {
   const securityPortuguese = fs.readFileSync(
-    path.join(documentationRoot, 'tool_security_model.md'),
+    documentationPath('tool_security_model.md'),
     'utf8'
   );
   const securityEnglish = fs.readFileSync(
-    path.join(documentationRoot, 'tool_security_model.en.md'),
+    documentationPath('tool_security_model.en.md'),
     'utf8'
   );
   const consentSource = fs.readFileSync(
@@ -810,11 +791,11 @@ test('central consent is documented and wired consistently across surfaces', () 
 
 test('every visible settings group has a detailed central reference', () => {
   const portugueseReference = fs.readFileSync(
-    path.join(documentationRoot, 'settings_reference.md'),
+    documentationPath('settings_reference.md'),
     'utf8'
   );
   const englishReference = fs.readFileSync(
-    path.join(documentationRoot, 'settings_reference.en.md'),
+    documentationPath('settings_reference.en.md'),
     'utf8'
   );
   const visibleOptions = [
@@ -863,11 +844,11 @@ test('every visible settings group has a detailed central reference', () => {
 
 test('CLI and MCP guidance covers every recovery outcome', () => {
   const portugueseReference = fs.readFileSync(
-    path.join(documentationRoot, 'settings_reference.md'),
+    documentationPath('settings_reference.md'),
     'utf8'
   );
   const englishReference = fs.readFileSync(
-    path.join(documentationRoot, 'settings_reference.en.md'),
+    documentationPath('settings_reference.en.md'),
     'utf8'
   );
   const portugueseScenarios = [
@@ -900,15 +881,15 @@ test('CLI and MCP guidance covers every recovery outcome', () => {
 test('documentation maintenance is an explicit project rule', () => {
   const agentRules = fs.readFileSync(path.join(repositoryRoot, 'AGENTS.md'), 'utf8');
   const portuguesePolicy = fs.readFileSync(
-    path.join(documentationRoot, 'documentation_policy.md'),
+    documentationPath('documentation_policy.md'),
     'utf8'
   );
   const englishPolicy = fs.readFileSync(
-    path.join(documentationRoot, 'documentation_policy.en.md'),
+    documentationPath('documentation_policy.en.md'),
     'utf8'
   );
-  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
-  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
+  const portugueseHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
+  const englishHub = fs.readFileSync(documentationPath('README.en.md'), 'utf8');
 
   assert.match(agentRules, /Documentação como parte do produto/u);
   assert.match(portuguesePolicy, /Toda mudança que adicione, remova, renomeie/u);
@@ -920,11 +901,11 @@ test('documentation maintenance is an explicit project rule', () => {
 
 test('agent result compaction documents preservation and fallback', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'agent_result_compaction.md'),
+    documentationPath('agent_result_compaction.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'agent_result_compaction.en.md'),
+    documentationPath('agent_result_compaction.en.md'),
     'utf8'
   );
 
@@ -934,27 +915,11 @@ test('agent result compaction documents preservation and fallback', () => {
   assert.match(english, /falls\s+back to the original JSON/u);
 });
 
-test('internal RTK plan defines measurable gates and an executable sequence', () => {
-  const plan = fs.readFileSync(
-    path.join(documentationRoot, 'rtk_execution_plan.md'),
-    'utf8'
-  );
-  const hub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
-
-  ['Fase 0', 'Fase 1', 'Fase 2', 'Fase 3', 'Fase 4', 'Fase 5', 'Fase 6', 'Fase 7']
-    .forEach(phase => assert.ok(plan.includes(phase), `RTK plan is missing ${phase}`));
-  assert.match(plan, /Redução mediana de pelo menos 30%/u);
-  assert.match(plan, /GetToolResultRange/u);
-  assert.match(plan, /RTK-001/u);
-  assert.match(plan, /Gate F6 — viabilidade/u);
-  assert.match(hub, /rtk_execution_plan\.md/u);
-});
-
 test('terminal documentation defines Unicode, reflow, and TUI behavior', () => {
-  const portuguese = fs.readFileSync(path.join(documentationRoot, 'terminal.md'), 'utf8');
-  const english = fs.readFileSync(path.join(documentationRoot, 'terminal.en.md'), 'utf8');
-  const manual = fs.readFileSync(path.join(documentationRoot, 'user_manual.en.md'), 'utf8');
-  const capabilities = fs.readFileSync(path.join(documentationRoot, 'capabilities.en.md'), 'utf8');
+  const portuguese = fs.readFileSync(documentationPath('terminal.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('terminal.en.md'), 'utf8');
+  const manual = fs.readFileSync(documentationPath('user_manual.en.md'), 'utf8');
+  const capabilities = fs.readFileSync(documentationPath('capabilities.en.md'), 'utf8');
 
   ['UTF-8', 'CJK', 'emoji', 'reflow', 'ICH', 'DCH', 'ECH']
     .forEach(term => assert.ok(portuguese.includes(term), `terminal.md is missing ${term}`));
@@ -966,11 +931,11 @@ test('terminal documentation defines Unicode, reflow, and TUI behavior', () => {
 
 test('chat documentation explains the bounded follow-up queue', () => {
   const portuguese = fs.readFileSync(
-    path.join(documentationRoot, 'user_guide_chat_sessions.md'),
+    documentationPath('user_guide_chat_sessions.md'),
     'utf8'
   );
   const english = fs.readFileSync(
-    path.join(documentationRoot, 'user_guide_chat_sessions.en.md'),
+    documentationPath('user_guide_chat_sessions.en.md'),
     'utf8'
   );
 
@@ -984,11 +949,11 @@ test('source installation distinguishes build, test, and IDE registration', () =
   const portugueseReadme = fs.readFileSync(path.join(repositoryRoot, 'README.md'), 'utf8');
   const englishReadme = fs.readFileSync(path.join(repositoryRoot, 'README.en.md'), 'utf8');
   const portugueseGuide = fs.readFileSync(
-    path.join(documentationRoot, 'install_config.md'),
+    documentationPath('install_config.md'),
     'utf8'
   );
   const englishGuide = fs.readFileSync(
-    path.join(documentationRoot, 'install_config.en.md'),
+    documentationPath('install_config.en.md'),
     'utf8'
   );
 
@@ -1015,41 +980,19 @@ test('source installation deploys extension tooling and preserves shared Web ass
   assert.match(buildScript, /\$win64Package/u);
 });
 
-test('current planning and update documentation match the released product', () => {
-  const portugueseHub = fs.readFileSync(path.join(documentationRoot, 'README.md'), 'utf8');
-  const englishHub = fs.readFileSync(path.join(documentationRoot, 'README.en.md'), 'utf8');
-  const portugueseBacklog = fs.readFileSync(path.join(documentationRoot, 'backlog.md'), 'utf8');
-  const englishBacklog = fs.readFileSync(path.join(documentationRoot, 'backlog.en.md'), 'utf8');
-  const portugueseInstaller = fs.readFileSync(
-    path.join(documentationRoot, 'visual_installer.md'),
-    'utf8'
-  );
-  const englishInstaller = fs.readFileSync(
-    path.join(documentationRoot, 'visual_installer.en.md'),
-    'utf8'
-  );
+test('planning and update documentation follow the new separation', () => {
+  const portugueseHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
+  const englishHub = fs.readFileSync(documentationPath('README.en.md'), 'utf8');
+  const portugueseBacklog = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
+  const englishBacklog = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
   const releaseWorkflow = fs.readFileSync(
     path.join(repositoryRoot, '.github', 'workflows', 'release.yml'),
     'utf8'
   );
 
-  assert.doesNotMatch(portugueseHub, /Goal ativo da versão 2\.6\.0/u);
-  assert.doesNotMatch(englishHub, /Active 2\.6\.0 goal/u);
-  assert.match(portugueseHub, /goal ativo do motor semântico estrutural 2\.10\.0/u);
-  assert.match(englishHub, /Active 2\.10\.0 structural semantic engine goal/u);
-  assert.match(
-    portugueseBacklog,
-    /O goal ativo é o \*\*RadIA 2\.10\.0 — Motor Semântico Estrutural/u
-  );
-  assert.match(englishBacklog, /The active goal is \*\*RadIA 2\.10\.0 — Structural Semantic Engine/u);
-  assert.match(
-    portugueseInstaller,
-    /não verifica, baixa ou instala novas versões automaticamente/u
-  );
-  assert.match(
-    englishInstaller,
-    /does not automatically check for, download, or install new versions/u
-  );
+  assert.ok(portugueseHub.includes('organizados por tarefa'));
+  assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
+  assert.match(portugueseBacklog, /\.planning\/semantic_engine_goal\.md/u);
+  assert.match(englishBacklog, /\.planning\/semantic_engine_goal\.en\.md/u);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
-  assert.doesNotMatch(releaseWorkflow, /New-RadIA\.ReleaseChannel\.ps1/u);
 });

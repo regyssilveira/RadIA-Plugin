@@ -1,0 +1,18 @@
+# Referência
+
+- [Capacidades](capabilities.md)
+- [Funcionalidades](features.md)
+- [Configurações](settings_reference.md)
+- [Comandos de barra](slash_commands.md)
+- [Doctor](doctor.md)
+- [Ferramentas internas](internal_tools_reference.md)
+- [Catálogo runtime](runtime_tool_catalog.md)
+- [Catálogo runtime em JSON](runtime_tools.json)
+- [Matriz de capacidades CLI](cli_capability_matrix.md)
+- [Perfil do ambiente Delphi](delphi_environment_profile.md)
+- [Compatibilidade Delphi](delphi_compatibility_matrix.md)
+- [Orientação Delphi](delphi_guidance.md)
+- [Modelo de segurança](tool_security_model.md)
+- [Ficha corporativa de segurança](corporate_security_brief.md)
+- [Custos do agente](agent_pricing.md)
+- [Catálogo de extensões](extension_catalog.md)
