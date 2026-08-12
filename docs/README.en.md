@@ -112,6 +112,7 @@ primary guide, the current code, `/tools`, and the primary guides above take pre
 
 Current planning status:
 
+- [Active 2.10.0 structural semantic engine goal](semantic_engine_goal.en.md).
 - [Completed skill portability and terminal goal](terminal_skill_portability_goal.en.md).
 - [2.9.0 release audit](release_audit_2.9.0.en.md) and previous audits.
 - release notes: [2.9.0](release_notes_2.9.0.en.md), [2.8.0](release_notes_2.8.0.en.md), [2.7.0](release_notes_2.7.0.en.md),

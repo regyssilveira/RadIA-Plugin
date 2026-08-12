@@ -109,6 +109,7 @@ Estes documentos registram decisões, versões e execução do projeto; não sã
 descrevem necessariamente o comportamento atual:
 
 - [Roadmap](roadmap.md) e [backlog](backlog.md);
+- [goal ativo do motor semântico estrutural 2.10.0](semantic_engine_goal.md);
 - [goal concluído de expansão da experiência completa](experience_expansion_goal.md);
 - [goal concluído de portabilidade de skills e terminal](terminal_skill_portability_goal.md);
 - [auditoria da release 2.9.0](release_audit_2.9.0.md) e auditorias anteriores;

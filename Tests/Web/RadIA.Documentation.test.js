@@ -1035,11 +1035,13 @@ test('current planning and update documentation match the released product', () 
 
   assert.doesNotMatch(portugueseHub, /Goal ativo da versão 2\.6\.0/u);
   assert.doesNotMatch(englishHub, /Active 2\.6\.0 goal/u);
+  assert.match(portugueseHub, /goal ativo do motor semântico estrutural 2\.10\.0/u);
+  assert.match(englishHub, /Active 2\.10\.0 structural semantic engine goal/u);
   assert.match(
     portugueseBacklog,
-    /Não há goal de execução ativo após a publicação da versão 2\.8\.0/u
+    /O goal ativo é o \*\*RadIA 2\.10\.0 — Motor Semântico Estrutural/u
   );
-  assert.match(englishBacklog, /There is no active execution goal after the 2\.8\.0 release/u);
+  assert.match(englishBacklog, /The active goal is \*\*RadIA 2\.10\.0 — Structural Semantic Engine/u);
   assert.match(
     portugueseInstaller,
     /não verifica, baixa ou instala novas versões automaticamente/u

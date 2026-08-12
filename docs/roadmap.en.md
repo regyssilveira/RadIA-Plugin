@@ -5,6 +5,9 @@ This document outlines the strategic planning and long-term vision of the **Rad 
 Version 2.9.0 expands the Delphi experience with environment context, curated knowledge, DFM/PAS
 auditing, visual comparison, governed autonomous execution, modernization, and reproducible evidence.
 
+The active cycle is version 2.10.0, which adds a structural semantic engine isolated from the IDE
+process. See the [semantic engine goal](semantic_engine_goal.en.md) for scope and gates.
+
 > [!NOTE]
 > Rad IA follows a **community-driven open-source development model**.
 > *   For a detailed view of feature priorities, effort estimates, and impacts, check the [Feature Prioritization Matrix (feature_prioritization_matrix.md)](feature_prioritization_matrix.en.md).
@@ -13,6 +16,17 @@ auditing, visual comparison, governed autonomous execution, modernization, and r
 ---
 
 ## 📅 Completed Releases History
+
+## Version in development
+
+### v2.10.0 - Structural semantic engine
+
+- supervised helper process with no parser running inside `bds.exe`;
+- effective Delphi 12 and 13 profiles, including defines, scopes, includes, and paths;
+- lexer, conditional preprocessor, declaration parser, and incremental index;
+- deterministic implementation of missing members;
+- structural context for the agent, navigation, and Ghost Text with the existing fallback;
+- resolved completion and diagnostics integrated into `/doctor --deep`.
 
 ### v2.9.0 - Complete and verifiable Delphi experience
 

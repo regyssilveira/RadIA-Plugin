@@ -9,6 +9,9 @@ Este documento descreve o planejamento estratégico e a visão de futuro do assi
 A versão 2.9.0 amplia a experiência Delphi com contexto de ambiente, conhecimento curado, auditoria
 DFM/PAS, comparação visual, execução autônoma governada, modernização e evidências reproduzíveis.
 
+O ciclo ativo é a versão 2.10.0, que acrescenta um motor semântico estrutural isolado do processo da
+IDE. Consulte o [goal do motor semântico](semantic_engine_goal.md) para escopo e gates.
+
 > [!NOTE]
 > O Rad IA segue um modelo de desenvolvimento **open-source orientado à comunidade**.
 > *   Para uma visualização detalhada das prioridades, estimativas de esforço e impacto de cada recurso, consulte a [Matriz de Priorização (feature_prioritization_matrix.md)](feature_prioritization_matrix.md).
@@ -17,6 +20,17 @@ DFM/PAS, comparação visual, execução autônoma governada, modernização e e
 ---
 
 ## 📅 Histórico de Versões Concluídas
+
+## Versão em desenvolvimento
+
+### v2.10.0 - Motor semântico estrutural
+
+- processo auxiliar supervisionado, sem parser dentro do `bds.exe`;
+- perfil efetivo para Delphi 12 e 13, incluindo defines, scopes, includes e paths;
+- lexer, pré-processador condicional, parser de declarações e índice incremental;
+- implementação determinística de membros ausentes;
+- contexto estrutural para agente, navegação e Ghost Text, com fallback existente;
+- completion resolvida e diagnóstico integrado ao `/doctor --deep`.
 
 ### v2.9.0 - Experiência Delphi completa e verificável
 

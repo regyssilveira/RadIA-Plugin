@@ -10,8 +10,9 @@ This document registers the development status, future planning, and technical i
 ## 📊 Kanban Dashboard
 
 The board below separates delivered work, actual gaps, and items with no committed release. `0.x`
-numbers are retained only for historical deliveries. The 2.8.0 line adds semantic assistance to
-the deterministic 2.7.0 baseline without reopening passed requirements.
+numbers are retained only for historical deliveries. Version 2.9.0 is the published baseline;
+the 2.10.0 goal evolves its Delphi context into a structural semantic engine without reopening
+passed requirements.
 
 | Feature / Task | Status | Difficulty | Priority | Target Version |
 | :--- | :---: | :---: | :---: | :---: |
@@ -29,6 +30,7 @@ the deterministic 2.7.0 baseline without reopening passed requirements.
 | **Patch 2.6.2 — Chat usability and project creation** | ✅ Completed | 🟢 Low | ⭐⭐⭐⭐ High | v2.6.2 |
 | **Deterministic functional closure** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.7.0 |
 | **Shared Semantic Editor Context** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v2.8.0 |
+| **2.10 Goal — Structural Semantic Engine** | 🔄 In progress | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v2.10.0 |
 | **Verifiable Runtime Baseline and Catalog** | ✅ Completed | 🟡 Medium | ⭐⭐⭐⭐⭐ Critical | v1.0.x |
 | **Native Observable Agent Runtime** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.1.0 |
 | **Deterministic New Project Wizard** | ✅ Completed | 🔴 High | ⭐⭐⭐⭐⭐ Critical | v1.2.0 |
@@ -68,12 +70,13 @@ the deterministic 2.7.0 baseline without reopening passed requirements.
 
 ## Canonical active backlog
 
-Reviewed on **August 12, 2026** against the version 2.9.0 codebase. None of the items below has a
-promised version; a target version should be assigned only after scope and acceptance criteria are
-approved.
+Reviewed on **August 12, 2026** against the version 2.9.0 codebase. The structural semantic engine
+has approved scope and acceptance criteria for version 2.10.0. The remaining items below still have
+no promised version.
 
 | Group | Items still open | Current verifiable state |
 | :--- | :--- | :--- |
+| 2.10 semantic engine | external process; profiles; lexer; preprocessor; parser; index; missing members; completion | Active goal documented in the [semantic engine plan](semantic_engine_goal.en.md). |
 | Code assistance | automatic review on save; Clean Uses; mock generator | No dedicated implementation is registered in the codebase. |
 | Cross-unit diagnostics | multi-file trace and MadExcept/EurekaLog ingestion | The stack-trace command exists; specialized correlation and importers do not. |
 | Existing APIs | OpenAPI/Swagger for existing projects | Swagger is available during DEXT creation; retrofit remains open. |
@@ -242,9 +245,9 @@ as history and must not be reopened merely because numbering changed.
 
 ## 2. Planning status
 
-There is no active execution goal after the 2.8.0 release. The next cycle must be selected from the
-[canonical active backlog](#canonical-active-backlog), receive scope and acceptance criteria, and
-only then receive a target version.
+The active goal is **RadIA 2.10.0 — Structural Semantic Engine for Delphi 12 and 13**, with scope,
+exclusions, stages, and acceptance criteria defined in the [canonical plan](semantic_engine_goal.en.md).
+All other backlog items remain uncommitted until a new triage.
 
 The [skill portability and terminal goal](terminal_skill_portability_goal.en.md) and the
 [complete-experience expansion goal](experience_expansion_goal.en.md) are completed historical
