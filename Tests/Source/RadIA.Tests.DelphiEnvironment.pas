@@ -160,6 +160,7 @@ begin
   Assert.Contains(string.Join(';', LProfile.Packages), 'designide');
   Assert.Contains(string.Join(';', LProfile.Defines), 'DEBUG');
   Assert.Contains(string.Join(';', LProfile.Defines), 'TRACE');
+  Assert.DoesNotContain(string.Join(';', LProfile.Defines), 'RELEASE');
   Assert.Contains(string.Join(';', LProfile.UnitScopes), 'System');
   Assert.Contains(string.Join(';', LProfile.UnitScopes), 'Vcl');
   Assert.Contains(string.Join(';', LProfile.SearchPaths), '{workspace}');
@@ -237,18 +238,25 @@ begin
   LWorkspaceLibrary := TPath.Combine(FTemporaryDirectory, 'lib');
   LContent :=
     '<Project>' + sLineBreak +
-    '  <FrameworkType>VCL</FrameworkType>' + sLineBreak +
-    '  <DCC_UnitSearchPath>' + LWorkspaceLibrary +
+    '  <PropertyGroup>' + sLineBreak +
+    '    <FrameworkType>VCL</FrameworkType>' + sLineBreak +
+    '    <DCC_UnitSearchPath>' + LWorkspaceLibrary +
     ';C:\PrivateLibrary;$(BDS)\lib</DCC_UnitSearchPath>' + sLineBreak +
-    '  <DCC_IncludePath>include;$(BDS)\include</DCC_IncludePath>' +
+    '    <DCC_IncludePath>include;$(BDS)\include</DCC_IncludePath>' +
     sLineBreak +
-    '  <DCC_LibraryPath>$(BDS)\lib;C:\PrivateLibrary</DCC_LibraryPath>' +
+    '    <DCC_LibraryPath>$(BDS)\lib;C:\PrivateLibrary</DCC_LibraryPath>' +
     sLineBreak +
-    '  <DCC_Define>TRACE;DEBUG;$(DCC_Define)</DCC_Define>' + sLineBreak +
-    '  <DCC_Namespace>System;Vcl;$(DCC_Namespace)</DCC_Namespace>' +
+    '    <DCC_Namespace>System;Vcl;$(DCC_Namespace)</DCC_Namespace>' +
     sLineBreak +
-    '  <DCC_UsePackage>designide;vcl;$(DCC_UsePackage)</DCC_UsePackage>' +
+    '    <DCC_UsePackage>designide;vcl;$(DCC_UsePackage)</DCC_UsePackage>' +
     sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
+    '  <PropertyGroup Condition="''$(Config)''==''Debug''">' + sLineBreak +
+    '    <DCC_Define>TRACE;DEBUG;$(DCC_Define)</DCC_Define>' + sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
+    '  <PropertyGroup Condition="''$(Config)''==''Release''">' + sLineBreak +
+    '    <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>' + sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
     '  <Unit>FireDAC.Comp.Client</Unit>' + sLineBreak +
     '  <Unit>DUnitX.TestFramework</Unit>' + sLineBreak +
     '</Project>';

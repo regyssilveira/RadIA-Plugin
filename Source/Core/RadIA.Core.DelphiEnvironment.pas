@@ -82,16 +82,22 @@ type
     ): TArray<string>;
     function ExtractCompilerValues(
       const AProjectContent: string;
-      const ATagName: string
+      const ATagName: string;
+      const AConfiguration: string;
+      const APlatform: string
     ): TArray<string>;
     function ExtractPaths(
       const AProjectContent: string;
       const AProjectRoot: string;
-      const ATagName: string
+      const ATagName: string;
+      const AConfiguration: string;
+      const APlatform: string
     ): TArray<string>;
     function ExtractSearchPaths(
       const AProjectContent: string;
-      const AProjectRoot: string
+      const AProjectRoot: string;
+      const AConfiguration: string;
+      const APlatform: string
     ): TArray<string>;
     function ReadProjectContent(const AFileName: string): string;
   public
@@ -108,7 +114,9 @@ uses
   System.Math,
   System.RegularExpressions,
   System.StrUtils,
-  System.SysUtils;
+  System.SysUtils,
+  Xml.XMLDoc,
+  Xml.XMLIntf;
 
 const
   CMaximumProjectCharacters = 2 * 1024 * 1024;
@@ -230,6 +238,124 @@ begin
   FLibraries := Copy(ALibraries);
 end;
 
+function ExpandProjectProperties(
+  const AValue: string;
+  const AProperties: TDictionary<string, string>
+): string;
+var
+  LIndex: Integer;
+  LMatch: TMatch;
+  LMatches: TMatchCollection;
+  LName: string;
+  LValue: string;
+begin
+  Result := AValue;
+  LMatches := TRegEx.Matches(Result, '\$\(([^)]+)\)');
+  for LIndex := LMatches.Count - 1 downto 0 do
+  begin
+    LMatch := LMatches[LIndex];
+    LName := LMatch.Groups[1].Value;
+    if AProperties.TryGetValue(LName, LValue) then
+      Result := Result.Remove(LMatch.Index - 1, LMatch.Length).Insert(
+        LMatch.Index - 1,
+        LValue
+      );
+  end;
+end;
+
+function EvaluateComparison(const AExpression: string): Boolean;
+var
+  LMatch: TMatch;
+begin
+  LMatch := TRegEx.Match(
+    Trim(AExpression).Trim(['(', ')', ' ']),
+    '^''([^'']*)''\s*(==|!=)\s*''([^'']*)''$',
+    [roIgnoreCase]
+  );
+  if not LMatch.Success then
+    Exit(False);
+  Result := SameText(LMatch.Groups[1].Value, LMatch.Groups[3].Value);
+  if LMatch.Groups[2].Value = '!=' then
+    Result := not Result;
+end;
+
+function EvaluateProjectCondition(
+  const ACondition: string;
+  const AProperties: TDictionary<string, string>
+): Boolean;
+var
+  LAndExpression: string;
+  LAndParts: TArray<string>;
+  LExpanded: string;
+  LOrExpression: string;
+  LOrParts: TArray<string>;
+begin
+  if Trim(ACondition) = '' then
+    Exit(True);
+  LExpanded := ExpandProjectProperties(ACondition, AProperties);
+  LOrParts := TRegEx.Split(LExpanded, '\s+or\s+', [roIgnoreCase]);
+  for LOrExpression in LOrParts do
+  begin
+    Result := True;
+    LAndParts := TRegEx.Split(LOrExpression, '\s+and\s+', [roIgnoreCase]);
+    for LAndExpression in LAndParts do
+      if not EvaluateComparison(LAndExpression) then
+      begin
+        Result := False;
+        Break;
+      end;
+    if Result then
+      Exit;
+  end;
+  Result := False;
+end;
+
+function BuildProjectProperties(
+  const AContent: string;
+  const AConfiguration: string;
+  const APlatform: string
+): TDictionary<string, string>;
+var
+  LChild: IXMLNode;
+  LCondition: string;
+  LDocument: IXMLDocument;
+  LGroup: IXMLNode;
+  LGroupIndex: Integer;
+  LNodeIndex: Integer;
+  LValue: string;
+begin
+  Result := TDictionary<string, string>.Create;
+  try
+    Result.AddOrSetValue('Config', AConfiguration);
+    Result.AddOrSetValue('Platform', APlatform);
+    Result.AddOrSetValue('Base', 'true');
+    Result.AddOrSetValue('Base_' + APlatform, 'true');
+    LDocument := LoadXMLData(AContent);
+    for LGroupIndex := 0 to LDocument.DocumentElement.ChildNodes.Count - 1 do
+    begin
+      LGroup := LDocument.DocumentElement.ChildNodes[LGroupIndex];
+      if not SameText(LGroup.LocalName, 'PropertyGroup') then
+        Continue;
+      LCondition := '';
+      if LGroup.HasAttribute('Condition') then
+        LCondition := LGroup.Attributes['Condition'];
+      if not EvaluateProjectCondition(LCondition, Result) then
+        Continue;
+      for LNodeIndex := 0 to LGroup.ChildNodes.Count - 1 do
+      begin
+        LChild := LGroup.ChildNodes[LNodeIndex];
+        if LChild.NodeType <> ntElement then
+          Continue;
+        LValue := ExpandProjectProperties(LChild.Text, Result);
+        Result.AddOrSetValue(LChild.LocalName, LValue);
+      end;
+    end;
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
 procedure TRadIADelphiEnvironmentProfile.SetCompilerCollections(
   const ADefines: TArray<string>;
   const AUnitScopes: TArray<string>;
@@ -276,15 +402,42 @@ begin
   );
   Result.SetCollections(
     LIDE.Capabilities,
-    ExtractSearchPaths(LContent, LProject.RootPath),
+    ExtractSearchPaths(
+      LContent,
+      LProject.RootPath,
+      LProject.Configuration,
+      LProject.Platform
+    ),
     ExtractPackages(LContent),
     DetectLibraries(LContent)
   );
   Result.SetCompilerCollections(
-    ExtractCompilerValues(LContent, 'DCC_Define'),
-    ExtractCompilerValues(LContent, 'DCC_Namespace'),
-    ExtractPaths(LContent, LProject.RootPath, 'DCC_IncludePath'),
-    ExtractPaths(LContent, LProject.RootPath, 'DCC_LibraryPath')
+    ExtractCompilerValues(
+      LContent,
+      'DCC_Define',
+      LProject.Configuration,
+      LProject.Platform
+    ),
+    ExtractCompilerValues(
+      LContent,
+      'DCC_Namespace',
+      LProject.Configuration,
+      LProject.Platform
+    ),
+    ExtractPaths(
+      LContent,
+      LProject.RootPath,
+      'DCC_IncludePath',
+      LProject.Configuration,
+      LProject.Platform
+    ),
+    ExtractPaths(
+      LContent,
+      LProject.RootPath,
+      'DCC_LibraryPath',
+      LProject.Configuration,
+      LProject.Platform
+    )
   );
 end;
 
@@ -354,40 +507,61 @@ end;
 
 function TRadIADelphiEnvironmentService.ExtractCompilerValues(
   const AProjectContent: string;
-  const ATagName: string
+  const ATagName: string;
+  const AConfiguration: string;
+  const APlatform: string
 ): TArray<string>;
 var
+  LProperties: TDictionary<string, string>;
   LResult: TList<string>;
-  LTagValues: TArray<string>;
+  LRawValue: string;
   LValue: string;
 begin
-  LTagValues := ExtractTagValues(AProjectContent, ATagName);
+  LProperties := BuildProjectProperties(
+    AProjectContent,
+    AConfiguration,
+    APlatform
+  );
   LResult := TList<string>.Create;
   try
-    for LValue in JoinValues(LTagValues).Split([';', ',']) do
+    if not LProperties.TryGetValue(ATagName, LRawValue) then
+      LRawValue := '';
+    for LValue in LRawValue.Split([';', ',']) do
       if not ContainsText(LValue, '$(') then
         LResult.Add(LValue);
     Result := UniqueValues(LResult.ToArray);
   finally
     LResult.Free;
+    LProperties.Free;
   end;
 end;
 
 function TRadIADelphiEnvironmentService.ExtractPaths(
   const AProjectContent: string;
   const AProjectRoot: string;
-  const ATagName: string
+  const ATagName: string;
+  const AConfiguration: string;
+  const APlatform: string
 ): TArray<string>;
 var
   LIndex: Integer;
   LPath: string;
   LPaths: TArray<string>;
+  LProperties: TDictionary<string, string>;
+  LRawValue: string;
   LSanitizedPath: string;
   LSanitized: TList<string>;
 begin
-  LPaths := JoinValues(ExtractTagValues(AProjectContent, ATagName)).Split([';']);
+  LProperties := BuildProjectProperties(
+    AProjectContent,
+    AConfiguration,
+    APlatform
+  );
   LSanitized := TList<string>.Create;
   try
+    if not LProperties.TryGetValue(ATagName, LRawValue) then
+      LRawValue := '';
+    LPaths := LRawValue.Split([';']);
     for LPath in LPaths do
     begin
       LSanitizedPath := SanitizeSearchPath(LPath, AProjectRoot);
@@ -398,6 +572,7 @@ begin
     Result := UniqueValues(LSanitized.ToArray);
   finally
     LSanitized.Free;
+    LProperties.Free;
   end;
   for LIndex := Low(Result) to High(Result) do
     Result[LIndex] := StringReplace(Result[LIndex], '/', '\', [rfReplaceAll]);
@@ -405,13 +580,17 @@ end;
 
 function TRadIADelphiEnvironmentService.ExtractSearchPaths(
   const AProjectContent: string;
-  const AProjectRoot: string
+  const AProjectRoot: string;
+  const AConfiguration: string;
+  const APlatform: string
 ): TArray<string>;
 begin
   Result := ExtractPaths(
     AProjectContent,
     AProjectRoot,
-    'DCC_UnitSearchPath'
+    'DCC_UnitSearchPath',
+    AConfiguration,
+    APlatform
   );
 end;
 
