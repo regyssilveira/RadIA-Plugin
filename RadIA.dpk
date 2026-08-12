@@ -267,6 +267,7 @@ contains
   RadIA.OTA.MessageViewHook in 'Source\Integration\RadIA.OTA.MessageViewHook.pas',
   RadIA.OTA.ContextParser in 'Source\Integration\RadIA.OTA.ContextParser.pas',
   RadIA.Semantic.Lexer in 'Source\Semantic\RadIA.Semantic.Lexer.pas',
+  RadIA.Semantic.Preprocessor in 'Source\Semantic\RadIA.Semantic.Preprocessor.pas',
   RadIA.OTA.DockableForm in 'Source\Integration\RadIA.OTA.DockableForm.pas',
   RadIA.OTA.Onboarding in 'Source\Integration\RadIA.OTA.Onboarding.pas',
   RadIA.OTA.Options in 'Source\Integration\RadIA.OTA.Options.pas',

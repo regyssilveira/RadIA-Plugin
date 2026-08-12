@@ -215,7 +215,11 @@ begin
         (LIndex < Length(ASource)) and
         (ASource[LIndex + 1] = '*') then
       begin
-        LKind := stkComment;
+        if (LIndex + 1 < Length(ASource)) and
+          (ASource[LIndex + 2] = '$') then
+          LKind := stkDirective
+        else
+          LKind := stkComment;
         LEnd := ReadParenComment(ASource, LIndex);
       end
       else

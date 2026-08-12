@@ -15,6 +15,8 @@ uses
   RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',
   RadIA.Semantic.Lexer in '..\Source\Semantic\RadIA.Semantic.Lexer.pas',
   RadIA.Tests.SemanticLexer in 'Source\RadIA.Tests.SemanticLexer.pas',
+  RadIA.Semantic.Preprocessor in '..\Source\Semantic\RadIA.Semantic.Preprocessor.pas',
+  RadIA.Tests.SemanticPreprocessor in 'Source\RadIA.Tests.SemanticPreprocessor.pas',
   RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in '..\Source\Core\RadIA.Core.AgentRuntime.pas',
   RadIA.Core.ResultCompactor in '..\Source\Core\RadIA.Core.ResultCompactor.pas',

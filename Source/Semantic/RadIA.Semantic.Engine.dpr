@@ -3,9 +3,11 @@ program RadIASemanticEngine;
 {$APPTYPE CONSOLE}
 
 uses
+  System.Generics.Collections,
   System.JSON,
   System.SysUtils,
-  RadIA.Semantic.Lexer in 'RadIA.Semantic.Lexer.pas';
+  RadIA.Semantic.Lexer in 'RadIA.Semantic.Lexer.pas',
+  RadIA.Semantic.Preprocessor in 'RadIA.Semantic.Preprocessor.pas';
 
 const
   CEngineName = 'RadIA Semantic Engine';
@@ -57,6 +59,71 @@ begin
   Result.AddPair('result', LResult);
 end;
 
+function ReadStringArray(
+  const AObject: TJSONObject;
+  const AName: string
+): TArray<string>;
+var
+  LArray: TJSONArray;
+  LIndex: Integer;
+begin
+  LArray := AObject.GetValue<TJSONArray>(AName);
+  if not Assigned(LArray) then
+    Exit(nil);
+  SetLength(Result, LArray.Count);
+  for LIndex := 0 to LArray.Count - 1 do
+    Result[LIndex] := LArray.Items[LIndex].Value;
+end;
+
+function BuildPreprocessResult(
+  const AId: TJSONValue;
+  const ASource: string;
+  const ADefines: TArray<string>
+): TJSONObject;
+var
+  LDiagnostics: TJSONArray;
+  LItem: TJSONObject;
+  LProcessed: TRadIASemanticProcessedToken;
+  LPreprocessResult: TRadIASemanticPreprocessResult;
+  LResult: TJSONObject;
+  LText: string;
+  LTokens: TJSONArray;
+begin
+  LPreprocessResult := TRadIASemanticPreprocessor.Process(
+    ASource,
+    ADefines
+  );
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LTokens := TJSONArray.Create;
+  for LProcessed in LPreprocessResult.Tokens do
+  begin
+    LItem := TJSONObject.Create;
+    LItem.AddPair(
+      'kind',
+      TRadIASemanticLexer.TokenKindName(LProcessed.Token.Kind)
+    );
+    LItem.AddPair(
+      'activity',
+      TRadIASemanticPreprocessor.ActivityName(LProcessed.Activity)
+    );
+    LItem.AddPair(
+      'startOffset',
+      TJSONNumber.Create(LProcessed.Token.StartOffset)
+    );
+    LItem.AddPair('length', TJSONNumber.Create(LProcessed.Token.Length));
+    LTokens.AddElement(LItem);
+  end;
+  LResult.AddPair('tokens', LTokens);
+  LDiagnostics := TJSONArray.Create;
+  for LText in LPreprocessResult.Diagnostics do
+    LDiagnostics.Add(LText);
+  LResult.AddPair('diagnostics', LDiagnostics);
+  Result.AddPair('result', LResult);
+end;
+
 function BuildInitializeResult(const AId: TJSONValue): TJSONObject;
 var
   LCapabilities: TJSONArray;
@@ -69,6 +136,7 @@ begin
   LResult.AddPair('protocolVersion', CProtocolVersion);
   LCapabilities := TJSONArray.Create;
   LCapabilities.Add('tokenize');
+  LCapabilities.Add('preprocess');
   LCapabilities.Add('shutdown');
   LResult.AddPair('capabilities', LCapabilities);
   Result.AddPair('result', LResult);
@@ -103,6 +171,17 @@ begin
     Exit(BuildTokenizeResult(
       LId,
       LParameters.GetValue<string>('source', '')
+    ));
+  end;
+  if SameText(LMethod, 'preprocess') then
+  begin
+    LParameters := ARequest.GetValue<TJSONObject>('params');
+    if not Assigned(LParameters) then
+      Exit(BuildError(LId, -32602, 'Preprocess requires params.'));
+    Exit(BuildPreprocessResult(
+      LId,
+      LParameters.GetValue<string>('source', ''),
+      ReadStringArray(LParameters, 'defines')
     ));
   end;
   Result := BuildError(LId, -32601, 'Unknown semantic engine method.');
