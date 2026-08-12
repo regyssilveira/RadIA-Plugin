@@ -3,6 +3,10 @@
 Este é o ponto de entrada da documentação do RadIA. Escolha o objetivo; os documentos são
 organizados por tarefa, e não por versão.
 
+As pastas separam primeiros passos, guias de uso, referências, desenvolvimento e direção do
+projeto. Planos internos, auditorias, resultados de testes e notas de versão não pertencem a esta
+árvore.
+
 > Para saber exatamente quais ferramentas estão disponíveis na instalação atual, use `/tools`.
 > Para verificar configuração e pré-requisitos, use `/doctor --deep`.
 

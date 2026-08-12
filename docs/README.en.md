@@ -3,6 +3,9 @@
 This is the entry point for RadIA documentation. Choose a goal; documents are organized by task,
 not by release.
 
+Folders separate getting started, usage guides, reference, development, and project direction.
+Internal plans, audits, test results, and release notes do not belong in this tree.
+
 > Use `/tools` to inspect the exact tools available in the current installation. Use
 > `/doctor --deep` to validate configuration and prerequisites.
 

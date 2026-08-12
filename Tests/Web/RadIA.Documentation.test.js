@@ -496,6 +496,20 @@ test('tracked docs exclude release history and operational evidence', () => {
       assert.match(fileName, /docs\/README(?:\.en)?\.md$/u, fileName);
     }
   });
+
+  const rootFiles = fs.readdirSync(documentationRoot, { withFileTypes: true })
+    .filter(entry => entry.isFile())
+    .map(entry => entry.name)
+    .sort();
+  assert.deepEqual(rootFiles, ['README.en.md', 'README.md']);
+
+  markdownFiles(documentationRoot).forEach(fileName => {
+    assert.doesNotMatch(
+      path.basename(fileName),
+      operationalName,
+      path.relative(repositoryRoot, fileName)
+    );
+  });
 });
 
 test('operational release guides do not pin obsolete artifact names', () => {
@@ -694,8 +708,8 @@ test('current backlog contains only open work', () => {
   const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
 
-  assert.ok(portuguese.includes('| Membros ausentes |'));
-  assert.ok(english.includes('| Missing members |'));
+  assert.ok(portuguese.includes('| Completar membros ausentes |'));
+  assert.ok(english.includes('| Complete missing members |'));
   assert.ok(portuguese.includes('somente trabalho aberto'));
   assert.match(english, /This file contains open work only/u);
   assert.doesNotMatch(portuguese, /\| Concluído \|/u);
@@ -996,7 +1010,9 @@ test('planning and update documentation follow the new separation', () => {
 
   assert.ok(portugueseHub.includes('organizados por tarefa'));
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
-  assert.match(portugueseBacklog, /\.planning\/semantic_engine_goal\.md/u);
-  assert.match(englishBacklog, /\.planning\/semantic_engine_goal\.en\.md/u);
+  assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
+  assert.doesNotMatch(englishBacklog, /\.planning\//u);
+  assert.match(portugueseBacklog, /não registra versões, entregas concluídas, evidências/u);
+  assert.match(englishBacklog, /does not record versions, completed deliveries, evidence/u);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
 });

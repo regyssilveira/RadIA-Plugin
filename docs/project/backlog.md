@@ -3,16 +3,14 @@
 Este arquivo contém somente trabalho aberto. Histórico, marcos concluídos, métricas e notas de
 release não pertencem ao backlog.
 
-## Em execução — motor semântico estrutural
+## Em execução
 
-| Marco | Resultado verificável | Estado |
-|---|---|---|
-| Membros ausentes | preview idempotente, consentimento, undo e compilação | Em execução |
-| Consumidores | agente, navegação, Ghost Text e DFM/PAS usam índice com fallback | Pendente |
-| Completion e diagnóstico | resposta local cancelável, métricas e `/doctor --deep` | Pendente |
-| Candidato de release | Delphi 12/13, testes, Sonar, instalador e documentação | Pendente |
+| Resultado aberto | Critério de conclusão |
+|---|---|
+| Completar membros ausentes | Preview idempotente, consentimento, undo e compilação no Delphi 12 e 13 |
+| Integrar o índice semântico | Agente, navegação, Ghost Text e DFM/PAS usam o índice com fallback seguro |
+| Concluir completion e diagnóstico | Resposta local cancelável, métricas e validação pelo `/doctor --deep` |
+| Validar a entrega | Testes, Sonar, instalador e documentação aprovados no Delphi 12 e 13 |
 
-O contrato e o histórico dos marcos do ciclo ficam em
-[`.planning/semantic_engine_goal.md`](../../.planning/semantic_engine_goal.md), fora da documentação
-de uso. Ideias ainda não aprovadas não são backlog; a direção de longo prazo fica no
-[roadmap](roadmap.md).
+O backlog não registra versões, entregas concluídas, evidências ou ideias ainda não aprovadas. A
+direção de longo prazo fica no [roadmap](roadmap.md).
