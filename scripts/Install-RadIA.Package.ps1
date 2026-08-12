@@ -100,6 +100,7 @@ $requiredFiles = @(
     "Bpl/RadIA.bpl",
     "Dcp/RadIA.dcp",
     "Bin/RadIA.MCP.Bridge.exe",
+    "Bin/RadIA.Semantic.Engine.exe",
     "Redist/WebView2Loader.dll",
     "Scripts/Install-RadIA.Package.ps1",
     "Scripts/New-RadIA.DeclarativeExtensionPackage.ps1",
@@ -204,6 +205,9 @@ if ($IDE64) {
 
 $targetBpl = Join-Path $targetBplDirectory "RadIA.bpl"
 $targetBridge = Join-Path $targetBplDirectory "RadIA.MCP.Bridge.exe"
+$targetSemanticEngine = Join-Path `
+    $targetBplDirectory `
+    "RadIA.Semantic.Engine.exe"
 $targetExtensionPackager = Join-Path `
     $targetBplDirectory `
     "New-RadIA.DeclarativeExtensionPackage.ps1"
@@ -228,6 +232,7 @@ $plan = [PSCustomObject]@{
     platform = $platform
     package = $targetBpl
     bridge = $targetBridge
+    semanticEngine = $targetSemanticEngine
     extensionPackager = $targetExtensionPackager
     dcp = $targetDcp
     publicWeb = $targetWeb
@@ -274,6 +279,7 @@ if ($Mode -eq "Uninstall") {
     foreach ($targetFile in @(
         $targetBpl,
         $targetBridge,
+        $targetSemanticEngine,
         $targetExtensionPackager,
         $targetDcp
     )) {
@@ -341,6 +347,10 @@ Copy-Item `
 Copy-Item `
     -LiteralPath (Resolve-PackageFile "Bin\RadIA.MCP.Bridge.exe") `
     -Destination (Join-Path $targetBplDirectory "RadIA.MCP.Bridge.exe") `
+    -Force
+Copy-Item `
+    -LiteralPath (Resolve-PackageFile "Bin\RadIA.Semantic.Engine.exe") `
+    -Destination $targetSemanticEngine `
     -Force
 Copy-Item `
     -LiteralPath (
@@ -449,6 +459,9 @@ Assert-InstalledFile `
 Assert-InstalledFile `
     -Source (Resolve-PackageFile "Bin\RadIA.MCP.Bridge.exe") `
     -Target $targetBridge
+Assert-InstalledFile `
+    -Source (Resolve-PackageFile "Bin\RadIA.Semantic.Engine.exe") `
+    -Target $targetSemanticEngine
 Assert-InstalledFile `
     -Source (
         Resolve-PackageFile `

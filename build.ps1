@@ -234,6 +234,7 @@ if ($Uninstall) {
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
     $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
+    $targetSemanticEngine = "$targetBplDir\RadIA.Semantic.Engine.exe"
     $targetExtensionPackager = (
         "$targetBplDir\New-RadIA.DeclarativeExtensionPackage.ps1"
     )
@@ -258,6 +259,9 @@ if ($Uninstall) {
     }
     if (Test-Path $targetBridge) {
         Remove-Item -Path $targetBridge -Force | Out-Null
+    }
+    if (Test-Path $targetSemanticEngine) {
+        Remove-Item -Path $targetSemanticEngine -Force | Out-Null
     }
     if (Test-Path $targetExtensionPackager) {
         Remove-Item -Path $targetExtensionPackager -Force | Out-Null
@@ -660,6 +664,9 @@ if ($Package) {
         -LiteralPath "$binPath\RadIA.MCP.Bridge.exe" `
         -Destination (Join-Path $stagingRoot "Bin\RadIA.MCP.Bridge.exe")
     Copy-Item `
+        -LiteralPath "$binPath\RadIA.Semantic.Engine.exe" `
+        -Destination (Join-Path $stagingRoot "Bin\RadIA.Semantic.Engine.exe")
+    Copy-Item `
         -Path ".\Source\UI\Web\*" `
         -Destination (Join-Path $stagingRoot "Web") `
         -Recurse
@@ -803,6 +810,7 @@ if ($Install) {
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
     $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
+    $targetSemanticEngine = "$targetBplDir\RadIA.Semantic.Engine.exe"
     $targetExtensionPackager = (
         "$targetBplDir\New-RadIA.DeclarativeExtensionPackage.ps1"
     )
@@ -863,6 +871,10 @@ if ($Install) {
     Copy-Item `
         -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.MCP.Bridge.exe" `
         -Destination $targetBridge `
+        -Force
+    Copy-Item `
+        -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.Semantic.Engine.exe" `
+        -Destination $targetSemanticEngine `
         -Force
     Copy-Item `
         -LiteralPath ".\scripts\New-RadIA.DeclarativeExtensionPackage.ps1" `
