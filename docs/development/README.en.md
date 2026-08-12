@@ -11,5 +11,4 @@
 - [Documentation policy](documentation_policy.en.md)
 - [Release process](release_process.en.md)
 - [Compliance](compliance.en.md)
-- [Internal agentic migration](agentic_migration_0_1.en.md)
 - [Architecture decisions](adr/README.en.md)

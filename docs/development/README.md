@@ -11,5 +11,4 @@
 - [Política de documentação](documentation_policy.md)
 - [Processo de release](release_process.md)
 - [Compliance](compliance.md)
-- [Migração interna agentiva](agentic_migration_0_1.md)
 - [Decisões arquiteturais](adr/README.md)

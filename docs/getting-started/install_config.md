@@ -36,6 +36,14 @@ Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation d
 um é necessário, terminal, recursos web, tools e runtime MCP externo. Ele retorna um cartão com
 score, checks e próxima ação sem mostrar tokens ou credenciais. Consulte [RadIA Doctor](../reference/doctor.md).
 
+### Atualizar uma instalação existente
+
+Feche todas as instâncias do Delphi e execute o instalador da release mais recente. O instalador
+substitui os componentes do RadIA e mantém providers, sessões e preferências armazenados em
+`%APPDATA%\RadIA`. Use **Repair** se uma atualização tiver sido interrompida e execute `/doctor`
+depois de reabrir a IDE. Para preservar uma cópia independente antes da atualização, faça backup
+de `%APPDATA%\RadIA`.
+
 ### Compilação a partir do código-fonte
 
 Este fluxo é destinado a contribuidores e usuários que escolheram compilar o projeto aberto.

@@ -15,7 +15,6 @@ not by release.
 | Install on Delphi 12 or 13 | [Installation and configuration](getting-started/install_config.en.md) |
 | Complete the first configuration | [Getting started](getting-started/onboarding.en.md) |
 | Use the visual installer | [Visual installer](getting-started/visual_installer.en.md) |
-| Migrate version 1 settings | [Version 2 migration](getting-started/migration_1_to_2.en.md) |
 
 ## Use RadIA
 

@@ -37,6 +37,13 @@ each is required, terminal, web assets, tools, and the external MCP runtime. It 
 a score, checks, and next action without displaying tokens or credentials. See
 [RadIA Doctor](../reference/doctor.en.md).
 
+### Update an existing installation
+
+Close every Delphi instance and run the installer from the latest release. The installer replaces
+RadIA components while preserving providers, sessions, and preferences stored under
+`%APPDATA%\RadIA`. Use **Repair** if an update was interrupted and run `/doctor` after reopening the
+IDE. Back up `%APPDATA%\RadIA` first when an independent copy is required.
+
 ### Build from source
 
 This flow is for contributors and users who deliberately chose to compile the open-source project.
