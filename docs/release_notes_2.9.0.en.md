@@ -1,6 +1,6 @@
 # Release notes - RadIA 2.9.0
 
-> **Status:** release candidate on August 12, 2026.
+> **Status:** published on August 12, 2026.
 
 RadIA 2.9.0 makes the Delphi experience more contextual, safe, and verifiable. This version documents
 148 internal tools.

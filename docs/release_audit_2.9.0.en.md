@@ -1,6 +1,6 @@
 # Release audit 2.9.0
 
-> **Status:** candidate; publication depends on completing the gates below.
+> **Status:** approved and released on August 12, 2026.
 
 ## Functional baseline
 
@@ -18,8 +18,10 @@
 - [x] Delphi 13 IDE64: 1111 tests without leaks.
 - [x] Web 106/106, ESLint, and documentation 42/42.
 - [x] SonarQube: passing gate, 83.6% global coverage, 1.8% duplication, and zero issues.
-- [ ] Packages, installer, evidence, merge, tag, and publication.
+- [x] Packages, installer, evidence, merge, tag, and publication.
 
 ## Final evidence
 
-Evidence, hashes, and the final commit will be recorded after the gates and before tagging.
+Artifacts were produced from commit `2d10e90917c27d9440d3a7040fc8e2b1afd19ff8`. The
+`RadIA-v2.9.0-Setup.exe` installer is intentionally unsigned and has SHA-256
+`C84414D4494FF4F2F30206404827014CEA373F647DF83F01815C54536225BCB6`.
