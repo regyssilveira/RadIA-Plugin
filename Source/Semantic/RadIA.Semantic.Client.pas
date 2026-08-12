@@ -3,7 +3,8 @@ unit RadIA.Semantic.Client;
 interface
 
 uses
-  RadIA.Core.ExternalMcpTransport;
+  RadIA.Core.ExternalMcpTransport,
+  RadIA.Semantic.Workspace;
 
 type
   TRadIASemanticEngineProbe = record
@@ -34,7 +35,10 @@ type
     ): TRadIASemanticEngineProbe; static;
   end;
 
-  TRadIASemanticEngineSupervisor = class
+  TRadIASemanticEngineSupervisor = class(
+    TInterfacedObject,
+    IRadIASemanticRequestClient
+  )
   private
     FExecutablePath: string;
     FNextRequestId: Integer;
@@ -67,6 +71,7 @@ type
       out AResponse: string;
       out AError: string
     ): Boolean;
+    function GetRestartCount: Integer;
     procedure Stop;
     property RestartCount: Integer read FRestartCount;
   end;
@@ -232,6 +237,11 @@ begin
   Stop;
   FRequestLock.Free;
   inherited Destroy;
+end;
+
+function TRadIASemanticEngineSupervisor.GetRestartCount: Integer;
+begin
+  Result := FRestartCount;
 end;
 
 function TRadIASemanticEngineSupervisor.BuildRequest(

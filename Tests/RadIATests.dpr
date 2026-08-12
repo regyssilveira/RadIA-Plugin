@@ -23,6 +23,8 @@ uses
   RadIA.Tests.SemanticIndex in 'Source\RadIA.Tests.SemanticIndex.pas',
   RadIA.Semantic.Client in '..\Source\Semantic\RadIA.Semantic.Client.pas',
   RadIA.Tests.SemanticClient in 'Source\RadIA.Tests.SemanticClient.pas',
+  RadIA.Semantic.Workspace in '..\Source\Semantic\RadIA.Semantic.Workspace.pas',
+  RadIA.Tests.SemanticWorkspace in 'Source\RadIA.Tests.SemanticWorkspace.pas',
   RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in '..\Source\Core\RadIA.Core.AgentRuntime.pas',
   RadIA.Core.ResultCompactor in '..\Source\Core\RadIA.Core.ResultCompactor.pas',
