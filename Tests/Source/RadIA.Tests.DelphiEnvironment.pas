@@ -158,8 +158,14 @@ begin
   Assert.Contains(string.Join(';', LProfile.Libraries), 'FireDAC');
   Assert.Contains(string.Join(';', LProfile.Libraries), 'DUnitX');
   Assert.Contains(string.Join(';', LProfile.Packages), 'designide');
+  Assert.Contains(string.Join(';', LProfile.Defines), 'DEBUG');
+  Assert.Contains(string.Join(';', LProfile.Defines), 'TRACE');
+  Assert.Contains(string.Join(';', LProfile.UnitScopes), 'System');
+  Assert.Contains(string.Join(';', LProfile.UnitScopes), 'Vcl');
   Assert.Contains(string.Join(';', LProfile.SearchPaths), '{workspace}');
   Assert.Contains(string.Join(';', LProfile.SearchPaths), '<external>');
+  Assert.Contains(string.Join(';', LProfile.IncludePaths), '{workspace}');
+  Assert.Contains(string.Join(';', LProfile.LibraryPaths), '$(BDS)');
   Assert.DoesNotContain(
     string.Join(';', LProfile.SearchPaths),
     'PrivateLibrary'
@@ -194,6 +200,8 @@ begin
   Assert.Contains(LResult.ContentJson, '"architecture":"IDE64"');
   Assert.Contains(LResult.ContentJson, '"framework":"VCL"');
   Assert.Contains(LResult.ContentJson, '"sku":"Enterprise"');
+  Assert.Contains(LResult.ContentJson, '"defines":["DEBUG","TRACE"]');
+  Assert.Contains(LResult.ContentJson, '"unitScopes":["System","Vcl"]');
 end;
 
 procedure TTestRadIADelphiEnvironment.Setup;
@@ -232,6 +240,13 @@ begin
     '  <FrameworkType>VCL</FrameworkType>' + sLineBreak +
     '  <DCC_UnitSearchPath>' + LWorkspaceLibrary +
     ';C:\PrivateLibrary;$(BDS)\lib</DCC_UnitSearchPath>' + sLineBreak +
+    '  <DCC_IncludePath>include;$(BDS)\include</DCC_IncludePath>' +
+    sLineBreak +
+    '  <DCC_LibraryPath>$(BDS)\lib;C:\PrivateLibrary</DCC_LibraryPath>' +
+    sLineBreak +
+    '  <DCC_Define>TRACE;DEBUG;$(DCC_Define)</DCC_Define>' + sLineBreak +
+    '  <DCC_Namespace>System;Vcl;$(DCC_Namespace)</DCC_Namespace>' +
+    sLineBreak +
     '  <DCC_UsePackage>designide;vcl;$(DCC_UsePackage)</DCC_UsePackage>' +
     sLineBreak +
     '  <Unit>FireDAC.Comp.Client</Unit>' + sLineBreak +

@@ -10,15 +10,19 @@ type
   private
     FCapabilities: TArray<string>;
     FConfiguration: string;
+    FDefines: TArray<string>;
     FFramework: string;
     FIDEArchitecture: string;
     FIDESKU: string;
     FIDEVersion: string;
+    FIncludePaths: TArray<string>;
     FLibraries: TArray<string>;
+    FLibraryPaths: TArray<string>;
     FPackages: TArray<string>;
     FProjectName: string;
     FSearchPaths: TArray<string>;
     FTargetPlatform: string;
+    FUnitScopes: TArray<string>;
   public
     constructor Create(
       const AIDEVersion: string;
@@ -35,6 +39,12 @@ type
       const APackages: TArray<string>;
       const ALibraries: TArray<string>
     );
+    procedure SetCompilerCollections(
+      const ADefines: TArray<string>;
+      const AUnitScopes: TArray<string>;
+      const AIncludePaths: TArray<string>;
+      const ALibraryPaths: TArray<string>
+    );
     property IDEVersion: string read FIDEVersion;
     property IDEArchitecture: string read FIDEArchitecture;
     property IDESKU: string read FIDESKU;
@@ -43,7 +53,11 @@ type
     property Configuration: string read FConfiguration;
     property TargetPlatform: string read FTargetPlatform;
     property Capabilities: TArray<string> read FCapabilities;
+    property Defines: TArray<string> read FDefines;
+    property UnitScopes: TArray<string> read FUnitScopes;
     property SearchPaths: TArray<string> read FSearchPaths;
+    property IncludePaths: TArray<string> read FIncludePaths;
+    property LibraryPaths: TArray<string> read FLibraryPaths;
     property Packages: TArray<string> read FPackages;
     property Libraries: TArray<string> read FLibraries;
   end;
@@ -65,6 +79,15 @@ type
     ): TArray<string>;
     function ExtractPackages(
       const AProjectContent: string
+    ): TArray<string>;
+    function ExtractCompilerValues(
+      const AProjectContent: string;
+      const ATagName: string
+    ): TArray<string>;
+    function ExtractPaths(
+      const AProjectContent: string;
+      const AProjectRoot: string;
+      const ATagName: string
     ): TArray<string>;
     function ExtractSearchPaths(
       const AProjectContent: string;
@@ -207,6 +230,19 @@ begin
   FLibraries := Copy(ALibraries);
 end;
 
+procedure TRadIADelphiEnvironmentProfile.SetCompilerCollections(
+  const ADefines: TArray<string>;
+  const AUnitScopes: TArray<string>;
+  const AIncludePaths: TArray<string>;
+  const ALibraryPaths: TArray<string>
+);
+begin
+  FDefines := Copy(ADefines);
+  FUnitScopes := Copy(AUnitScopes);
+  FIncludePaths := Copy(AIncludePaths);
+  FLibraryPaths := Copy(ALibraryPaths);
+end;
+
 { TRadIADelphiEnvironmentService }
 
 constructor TRadIADelphiEnvironmentService.Create(
@@ -243,6 +279,12 @@ begin
     ExtractSearchPaths(LContent, LProject.RootPath),
     ExtractPackages(LContent),
     DetectLibraries(LContent)
+  );
+  Result.SetCompilerCollections(
+    ExtractCompilerValues(LContent, 'DCC_Define'),
+    ExtractCompilerValues(LContent, 'DCC_Namespace'),
+    ExtractPaths(LContent, LProject.RootPath, 'DCC_IncludePath'),
+    ExtractPaths(LContent, LProject.RootPath, 'DCC_LibraryPath')
   );
 end;
 
@@ -310,9 +352,31 @@ begin
   end;
 end;
 
-function TRadIADelphiEnvironmentService.ExtractSearchPaths(
+function TRadIADelphiEnvironmentService.ExtractCompilerValues(
   const AProjectContent: string;
-  const AProjectRoot: string
+  const ATagName: string
+): TArray<string>;
+var
+  LResult: TList<string>;
+  LTagValues: TArray<string>;
+  LValue: string;
+begin
+  LTagValues := ExtractTagValues(AProjectContent, ATagName);
+  LResult := TList<string>.Create;
+  try
+    for LValue in JoinValues(LTagValues).Split([';', ',']) do
+      if not ContainsText(LValue, '$(') then
+        LResult.Add(LValue);
+    Result := UniqueValues(LResult.ToArray);
+  finally
+    LResult.Free;
+  end;
+end;
+
+function TRadIADelphiEnvironmentService.ExtractPaths(
+  const AProjectContent: string;
+  const AProjectRoot: string;
+  const ATagName: string
 ): TArray<string>;
 var
   LIndex: Integer;
@@ -320,10 +384,8 @@ var
   LPaths: TArray<string>;
   LSanitizedPath: string;
   LSanitized: TList<string>;
-  LTagValues: TArray<string>;
 begin
-  LTagValues := ExtractTagValues(AProjectContent, 'DCC_UnitSearchPath');
-  LPaths := JoinValues(LTagValues).Split([';']);
+  LPaths := JoinValues(ExtractTagValues(AProjectContent, ATagName)).Split([';']);
   LSanitized := TList<string>.Create;
   try
     for LPath in LPaths do
@@ -339,6 +401,18 @@ begin
   end;
   for LIndex := Low(Result) to High(Result) do
     Result[LIndex] := StringReplace(Result[LIndex], '/', '\', [rfReplaceAll]);
+end;
+
+function TRadIADelphiEnvironmentService.ExtractSearchPaths(
+  const AProjectContent: string;
+  const AProjectRoot: string
+): TArray<string>;
+begin
+  Result := ExtractPaths(
+    AProjectContent,
+    AProjectRoot,
+    'DCC_UnitSearchPath'
+  );
 end;
 
 function TRadIADelphiEnvironmentService.ReadProjectContent(

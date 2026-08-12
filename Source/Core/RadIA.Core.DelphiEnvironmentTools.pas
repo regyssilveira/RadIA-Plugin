@@ -42,7 +42,8 @@ const
     '{"type":"object","additionalProperties":false}';
   CProfileOutputSchema =
     '{"type":"object","required":["ide","project","capabilities",' +
-    '"searchPaths","packages","libraries"]}';
+    '"defines","unitScopes","searchPaths","includePaths",' +
+    '"libraryPaths","packages","libraries"]}';
 
 procedure RegisterRadIADelphiEnvironmentTools(
   const ARegistry: IRadIAToolRegistry;
@@ -113,7 +114,11 @@ begin
     LRoot.AddPair('project', LProject);
 
     AddStringArray(LRoot, 'capabilities', LProfile.Capabilities);
+    AddStringArray(LRoot, 'defines', LProfile.Defines);
+    AddStringArray(LRoot, 'unitScopes', LProfile.UnitScopes);
     AddStringArray(LRoot, 'searchPaths', LProfile.SearchPaths);
+    AddStringArray(LRoot, 'includePaths', LProfile.IncludePaths);
+    AddStringArray(LRoot, 'libraryPaths', LProfile.LibraryPaths);
     AddStringArray(LRoot, 'packages', LProfile.Packages);
     AddStringArray(LRoot, 'libraries', LProfile.Libraries);
     Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
