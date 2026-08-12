@@ -172,6 +172,16 @@ begin
       LError
     );
     Assert.Contains(LResponse, '"activity":"active"');
+    Assert.IsTrue(
+      LSupervisor.Request(
+        'parse',
+        '{"source":"unit ProtocolSample; interface implementation end."}',
+        LResponse,
+        LError
+      ),
+      LError
+    );
+    Assert.Contains(LResponse, '"name":"ProtocolSample"');
     Assert.AreEqual(0, LSupervisor.RestartCount);
   finally
     LSupervisor.Free;

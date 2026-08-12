@@ -7,7 +7,8 @@ uses
   System.JSON,
   System.SysUtils,
   RadIA.Semantic.Lexer in 'RadIA.Semantic.Lexer.pas',
-  RadIA.Semantic.Preprocessor in 'RadIA.Semantic.Preprocessor.pas';
+  RadIA.Semantic.Preprocessor in 'RadIA.Semantic.Preprocessor.pas',
+  RadIA.Semantic.Parser in 'RadIA.Semantic.Parser.pas';
 
 const
   CEngineName = 'RadIA Semantic Engine';
@@ -66,10 +67,12 @@ function ReadStringArray(
 var
   LArray: TJSONArray;
   LIndex: Integer;
+  LValue: TJSONValue;
 begin
-  LArray := AObject.GetValue<TJSONArray>(AName);
-  if not Assigned(LArray) then
+  LValue := AObject.GetValue(AName);
+  if not (LValue is TJSONArray) then
     Exit(nil);
+  LArray := TJSONArray(LValue);
   SetLength(Result, LArray.Count);
   for LIndex := 0 to LArray.Count - 1 do
     Result[LIndex] := LArray.Items[LIndex].Value;
@@ -152,8 +155,52 @@ begin
   LCapabilities := TJSONArray.Create;
   LCapabilities.Add('tokenize');
   LCapabilities.Add('preprocess');
+  LCapabilities.Add('parse');
   LCapabilities.Add('shutdown');
   LResult.AddPair('capabilities', LCapabilities);
+  Result.AddPair('result', LResult);
+end;
+
+function BuildParseResult(
+  const AId: TJSONValue;
+  const ASource: string;
+  const ADefines: TArray<string>
+): TJSONObject;
+var
+  LArray: TJSONArray;
+  LDiagnostics: TJSONArray;
+  LItem: TJSONObject;
+  LParsed: TRadIASemanticParseResult;
+  LResult: TJSONObject;
+  LSymbol: TRadIASemanticSymbol;
+  LText: string;
+begin
+  LParsed := TRadIASemanticParser.Parse(ASource, ADefines);
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LArray := TJSONArray.Create;
+  for LSymbol in LParsed.Symbols do
+  begin
+    LItem := TJSONObject.Create;
+    LItem.AddPair('name', LSymbol.Name);
+    LItem.AddPair('kind', TRadIASemanticParser.SymbolKindName(LSymbol.Kind));
+    LItem.AddPair('container', LSymbol.ContainerName);
+    LItem.AddPair(
+      'visibility',
+      TRadIASemanticParser.VisibilityName(LSymbol.Visibility)
+    );
+    LItem.AddPair('startOffset', TJSONNumber.Create(LSymbol.StartOffset));
+    LItem.AddPair('length', TJSONNumber.Create(LSymbol.Length));
+    LItem.AddPair('signature', LSymbol.Signature);
+    LArray.AddElement(LItem);
+  end;
+  LResult.AddPair('symbols', LArray);
+  LDiagnostics := TJSONArray.Create;
+  for LText in LParsed.Diagnostics do
+    LDiagnostics.Add(LText);
+  LResult.AddPair('diagnostics', LDiagnostics);
   Result.AddPair('result', LResult);
 end;
 
@@ -194,6 +241,17 @@ begin
     if not Assigned(LParameters) then
       Exit(BuildError(LId, -32602, 'Preprocess requires params.'));
     Exit(BuildPreprocessResult(
+      LId,
+      LParameters.GetValue<string>('source', ''),
+      ReadStringArray(LParameters, 'defines')
+    ));
+  end;
+  if SameText(LMethod, 'parse') then
+  begin
+    LParameters := ARequest.GetValue<TJSONObject>('params');
+    if not Assigned(LParameters) then
+      Exit(BuildError(LId, -32602, 'Parse requires params.'));
+    Exit(BuildParseResult(
       LId,
       LParameters.GetValue<string>('source', ''),
       ReadStringArray(LParameters, 'defines')
