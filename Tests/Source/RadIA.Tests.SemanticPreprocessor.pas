@@ -26,6 +26,8 @@ type
     procedure PreservesUnknownConditionsAndReportsThem;
     [Test]
     procedure ReportsUnbalancedConditionalBlocks;
+    [Test]
+    procedure CollectsIncludesWithoutChangingSourceOffsets;
   end;
 
 function TRadIASemanticPreprocessorTests.ActivityForText(
@@ -56,6 +58,22 @@ begin
   Assert.AreEqual(saActive, ActivityForText(LResult, 'Enabled'));
   Assert.AreEqual(saInactive, ActivityForText(LResult, 'Wrong'));
   Assert.AreEqual(saActive, ActivityForText(LResult, 'Disabled'));
+end;
+
+procedure TRadIASemanticPreprocessorTests.CollectsIncludesWithoutChangingSourceOffsets;
+var
+  LResult: TRadIASemanticPreprocessResult;
+  LSource: string;
+begin
+  LSource :=
+    '{$I ''shared.inc''}' + sLineBreak +
+    '{$IFDEF DEBUG}{$INCLUDE debug.inc}{$ELSE}{$I release.inc}{$ENDIF}';
+  LResult := TRadIASemanticPreprocessor.Process(LSource, ['DEBUG']);
+  Assert.AreEqual(3, Length(LResult.Includes));
+  Assert.AreEqual('shared.inc', LResult.Includes[0].Path);
+  Assert.AreEqual(0, LResult.Includes[0].StartOffset);
+  Assert.AreEqual(saActive, LResult.Includes[1].Activity);
+  Assert.AreEqual(saInactive, LResult.Includes[2].Activity);
 end;
 
 procedure TRadIASemanticPreprocessorTests.PreservesUnknownConditionsAndReportsThem;

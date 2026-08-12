@@ -82,6 +82,8 @@ function BuildPreprocessResult(
 ): TJSONObject;
 var
   LDiagnostics: TJSONArray;
+  LInclude: TRadIASemanticIncludeReference;
+  LIncludes: TJSONArray;
   LItem: TJSONObject;
   LProcessed: TRadIASemanticProcessedToken;
   LPreprocessResult: TRadIASemanticPreprocessResult;
@@ -117,6 +119,19 @@ begin
     LTokens.AddElement(LItem);
   end;
   LResult.AddPair('tokens', LTokens);
+  LIncludes := TJSONArray.Create;
+  for LInclude in LPreprocessResult.Includes do
+  begin
+    LItem := TJSONObject.Create;
+    LItem.AddPair('path', LInclude.Path);
+    LItem.AddPair('startOffset', TJSONNumber.Create(LInclude.StartOffset));
+    LItem.AddPair(
+      'activity',
+      TRadIASemanticPreprocessor.ActivityName(LInclude.Activity)
+    );
+    LIncludes.AddElement(LItem);
+  end;
+  LResult.AddPair('includes', LIncludes);
   LDiagnostics := TJSONArray.Create;
   for LText in LPreprocessResult.Diagnostics do
     LDiagnostics.Add(LText);

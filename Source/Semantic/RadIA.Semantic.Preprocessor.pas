@@ -25,16 +25,35 @@ type
     property Token: TRadIASemanticToken read FToken;
   end;
 
+  TRadIASemanticIncludeReference = record
+  private
+    FActivity: TRadIASemanticActivity;
+    FPath: string;
+    FStartOffset: Integer;
+  public
+    constructor Create(
+      const APath: string;
+      const AStartOffset: Integer;
+      const AActivity: TRadIASemanticActivity
+    );
+    property Activity: TRadIASemanticActivity read FActivity;
+    property Path: string read FPath;
+    property StartOffset: Integer read FStartOffset;
+  end;
+
   TRadIASemanticPreprocessResult = record
   private
     FDiagnostics: TArray<string>;
+    FIncludes: TArray<TRadIASemanticIncludeReference>;
     FTokens: TArray<TRadIASemanticProcessedToken>;
   public
     constructor Create(
       const ATokens: TArray<TRadIASemanticProcessedToken>;
-      const ADiagnostics: TArray<string>
+      const ADiagnostics: TArray<string>;
+      const AIncludes: TArray<TRadIASemanticIncludeReference>
     );
     property Diagnostics: TArray<string> read FDiagnostics;
+    property Includes: TArray<TRadIASemanticIncludeReference> read FIncludes;
     property Tokens: TArray<TRadIASemanticProcessedToken> read FTokens;
   end;
 
@@ -117,6 +136,50 @@ begin
   end;
   AArgument := Trim(Copy(ACommand, LPosition + 1, MaxInt));
   ACommand := UpperCase(Copy(ACommand, 1, LPosition - 1));
+end;
+
+procedure AddDiagnostic(
+  const ADiagnostics: TList<string>;
+  const AToken: TRadIASemanticToken;
+  const AMessage: string
+); forward;
+
+function NormalizeIncludePath(const AArgument: string): string;
+begin
+  Result := Trim(AArgument);
+  if (Length(Result) >= 2) and
+    (((Result[1] = '''') and (Result[Length(Result)] = '''')) or
+    ((Result[1] = '"') and (Result[Length(Result)] = '"'))) then
+    Result := Copy(Result, 2, Length(Result) - 2);
+end;
+
+procedure CollectInclude(
+  const AToken: TRadIASemanticToken;
+  const AActivity: TRadIASemanticActivity;
+  const AIncludes: TList<TRadIASemanticIncludeReference>;
+  const ADiagnostics: TList<string>
+);
+var
+  LArgument: string;
+  LCommand: string;
+  LPath: string;
+begin
+  SplitDirective(AToken.Text, LCommand, LArgument);
+  if not SameText(LCommand, 'I') and not SameText(LCommand, 'INCLUDE') then
+    Exit;
+  LPath := NormalizeIncludePath(LArgument);
+  if LPath = '' then
+  begin
+    AddDiagnostic(ADiagnostics, AToken, 'Include directive has no path.');
+    Exit;
+  end;
+  AIncludes.Add(
+    TRadIASemanticIncludeReference.Create(
+      LPath,
+      AToken.StartOffset,
+      AActivity
+    )
+  );
 end;
 
 function EvaluateDefinedExpression(
@@ -309,15 +372,30 @@ begin
   FActivity := AActivity;
 end;
 
+{ TRadIASemanticIncludeReference }
+
+constructor TRadIASemanticIncludeReference.Create(
+  const APath: string;
+  const AStartOffset: Integer;
+  const AActivity: TRadIASemanticActivity
+);
+begin
+  FPath := APath;
+  FStartOffset := AStartOffset;
+  FActivity := AActivity;
+end;
+
 { TRadIASemanticPreprocessResult }
 
 constructor TRadIASemanticPreprocessResult.Create(
   const ATokens: TArray<TRadIASemanticProcessedToken>;
-  const ADiagnostics: TArray<string>
+  const ADiagnostics: TArray<string>;
+  const AIncludes: TArray<TRadIASemanticIncludeReference>
 );
 begin
   FTokens := Copy(ATokens);
   FDiagnostics := Copy(ADiagnostics);
+  FIncludes := Copy(AIncludes);
 end;
 
 { TRadIASemanticPreprocessor }
@@ -343,12 +421,14 @@ var
   LDefine: string;
   LDefines: TDictionary<string, Boolean>;
   LDiagnostics: TList<string>;
+  LIncludes: TList<TRadIASemanticIncludeReference>;
   LProcessed: TList<TRadIASemanticProcessedToken>;
   LStack: TList<TRadIASemanticConditionalFrame>;
   LToken: TRadIASemanticToken;
 begin
   LDefines := TDictionary<string, Boolean>.Create;
   LDiagnostics := TList<string>.Create;
+  LIncludes := TList<TRadIASemanticIncludeReference>.Create;
   LProcessed := TList<TRadIASemanticProcessedToken>.Create;
   LStack := TList<TRadIASemanticConditionalFrame>.Create;
   try
@@ -360,7 +440,10 @@ begin
       LActivity := CurrentActivity(LStack);
       LProcessed.Add(TRadIASemanticProcessedToken.Create(LToken, LActivity));
       if LToken.Kind = stkDirective then
+      begin
+        CollectInclude(LToken, LActivity, LIncludes, LDiagnostics);
         ProcessDirective(LToken, LStack, LDefines, LDiagnostics);
+      end;
     end;
     if LStack.Count > 0 then
       LDiagnostics.Add(
@@ -368,9 +451,11 @@ begin
       );
     Result := TRadIASemanticPreprocessResult.Create(
       LProcessed.ToArray,
-      LDiagnostics.ToArray
+      LDiagnostics.ToArray,
+      LIncludes.ToArray
     );
   finally
+    LIncludes.Free;
     LStack.Free;
     LProcessed.Free;
     LDiagnostics.Free;
