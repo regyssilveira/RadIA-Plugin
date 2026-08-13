@@ -17,6 +17,12 @@ type
     function OpenProjectOnMainThread(
       const AProjectFileName: string
     ): Boolean;
+    function IsProjectOpenOnMainThread(
+      const AProjectFileName: string
+    ): Boolean;
+    function WaitForProjectOpen(
+      const AProjectFileName: string
+    ): Boolean;
     function WaitForMainThreadQueue: Boolean;
   public
     function CloseProject(const AProjectFileName: string): Boolean;
@@ -105,7 +111,12 @@ var
   LOpened: Boolean;
 begin
   if GetCurrentThreadId = MainThreadID then
-    Exit(OpenProjectOnMainThread(AProjectFileName));
+  begin
+    Result := OpenProjectOnMainThread(AProjectFileName);
+    if Result then
+      Result := IsProjectOpenOnMainThread(AProjectFileName);
+    Exit;
+  end;
 
   LOpened := False;
   TThread.Synchronize(
@@ -117,8 +128,66 @@ begin
   );
   if not LOpened or not WaitForMainThreadQueue then
     Exit(False);
-  TThread.Sleep(1000);
-  Result := WaitForMainThreadQueue;
+  Result := WaitForProjectOpen(AProjectFileName);
+end;
+
+function TRadIAOTAProjectOpeningFacade.IsProjectOpenOnMainThread(
+  const AProjectFileName: string
+): Boolean;
+var
+  LIndex: Integer;
+  LModuleServices: IOTAModuleServices;
+  LProject: IOTAProject;
+  LProjectGroup: IOTAProjectGroup;
+begin
+  Result := False;
+  if not Supports(
+    BorlandIDEServices,
+    IOTAModuleServices,
+    LModuleServices
+  ) then
+    Exit;
+  LProjectGroup := LModuleServices.MainProjectGroup;
+  if Assigned(LProjectGroup) then
+    for LIndex := 0 to LProjectGroup.ProjectCount - 1 do
+    begin
+      LProject := LProjectGroup.Projects[LIndex];
+      if Assigned(LProject) and
+        SameFileName(LProject.FileName, AProjectFileName) then
+        Exit(True);
+    end;
+  LProject := LModuleServices.GetActiveProject;
+  Result := Assigned(LProject) and
+    SameFileName(LProject.FileName, AProjectFileName);
+end;
+
+function TRadIAOTAProjectOpeningFacade.WaitForProjectOpen(
+  const AProjectFileName: string
+): Boolean;
+const
+  CAttemptCount = 40;
+  CAttemptDelayMs = 250;
+var
+  LAttempt: Integer;
+  LProjectOpen: Boolean;
+begin
+  Result := False;
+  for LAttempt := 1 to CAttemptCount do
+  begin
+    LProjectOpen := False;
+    TThread.Synchronize(
+      nil,
+      procedure
+      begin
+        LProjectOpen := IsProjectOpenOnMainThread(AProjectFileName);
+      end
+    );
+    if LProjectOpen then
+      Exit(True);
+    if not WaitForMainThreadQueue then
+      Exit;
+    TThread.Sleep(CAttemptDelayMs);
+  end;
 end;
 
 function TRadIAOTAProjectOpeningFacade.OpenProjectOnMainThread(
