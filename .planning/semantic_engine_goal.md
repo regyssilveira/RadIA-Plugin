@@ -1,6 +1,6 @@
 # Goal RadIA 2.10.0 — Motor Semântico Estrutural
 
-> **Estado:** em execução. **Baseline:** RadIA 2.9.0. **Matriz:** Delphi 12 Win32 e Delphi 13
+> **Estado:** concluído. **Baseline:** RadIA 2.9.0. **Matriz:** Delphi 12 Win32 e Delphi 13
 > Win32/IDE64, com compilação dos targets Win64 aplicáveis.
 
 ## Resultado esperado
@@ -64,3 +64,6 @@ O goal termina somente quando um usuário consegue indexar um projeto real, nave
 resolução estrutural, implementar uma interface ausente com código compilável e diagnosticar o
 motor no Delphi 12 e 13. Build, testes, corpus, Sonar, documentação e instalação devem produzir
 evidência reproduzível.
+
+Todos os marcos M0–M8 foram concluídos. A evidência reproduzível permanece nos testes, scripts,
+artefatos ignorados de `Output/`, commits da branch e análise Sonar, sem duplicar histórico em `docs`.

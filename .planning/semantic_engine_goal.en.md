@@ -1,6 +1,6 @@
 # RadIA 2.10.0 Goal — Structural Semantic Engine
 
-> **Status:** in progress. **Baseline:** RadIA 2.9.0. **Matrix:** Delphi 12 Win32 and Delphi 13
+> **Status:** completed. **Baseline:** RadIA 2.9.0. **Matrix:** Delphi 12 Win32 and Delphi 13
 > Win32/IDE64, with compilation of applicable Win64 targets.
 
 ## Expected outcome
@@ -64,3 +64,6 @@ The goal completes only when a user can index a real project, navigate and compl
 resolution, implement a missing interface with compilable code, and diagnose the engine on Delphi
 12 and 13. Build, tests, corpus, Sonar, documentation, and installation must produce reproducible
 evidence.
+
+All M0–M8 milestones are complete. Reproducible evidence remains in tests, scripts, ignored
+`Output/` artifacts, branch commits, and Sonar analysis without duplicating release history in `docs`.
