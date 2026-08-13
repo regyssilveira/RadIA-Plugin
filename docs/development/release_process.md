@@ -35,9 +35,10 @@ manualmente para contornar uma falha.
 
 ## 3. Empacotar
 
-Gere o instalador visual pelo pipeline oficial. O pacote deve conter os binários suportados para Delphi
+Gere e valide o instalador visual **localmente**, antes de criar a tag. O pacote deve conter os binários suportados para Delphi
 12 e 13, assets Web, bridge MCP, manifesto e hashes. O instalador é o único artefato público necessário;
-arquivos de evidência permanecem como saída do pipeline e não são anexados à release.
+arquivos de evidência permanecem em `Output/` e não são anexados à release. O GitHub Actions é apenas
+uma validação manual opcional: ele não gera o artefato oficial e nunca deve bloquear a publicação.
 
 Antes do smoke:
 
@@ -54,9 +55,25 @@ em `Output/` ou em um diretório temporário ignorado pelo Git.
 
 1. Faça commit e push da branch validada conforme a [convenção de commits](commit_convention.md).
 2. Integre a mesma revisão em `develop` e depois em `main`, sem reconstruir conteúdo manualmente.
-3. Crie a tag anotada em `main`.
-4. Publique o instalador e escreva as notas no GitHub Release.
-5. Verifique atualização automática, download e hash pelo canal estável.
+3. Confirme que o instalador local e sua evidência pertencem exatamente ao commit de `main`.
+4. Crie e envie a tag anotada em `main`. O envio da tag não deve iniciar o workflow de release.
+5. Publique imediatamente o instalador local com `gh release create`; não aguarde o GitHub gerar artefatos.
+6. Baixe o instalador publicado e confirme que seu SHA-256 é igual ao da evidência local.
+7. Confirme que a release contém somente o instalador e verifique a atualização automática pelo canal estável.
+
+Exemplo de publicação do artefato já validado:
+
+```powershell
+gh release create v<VERSAO> `
+  ".\Output\Installer\RadIA-v<VERSAO>-Setup.exe" `
+  --verify-tag `
+  --title "RadIA <VERSAO>" `
+  --notes-file ".\Output\Installer\release-notes-<VERSAO>.md" `
+  --latest
+```
+
+O workflow `RadIA release` só pode ser acionado manualmente. Ele serve para uma validação independente
+quando desejada, não para o caminho normal da release.
 
 Não copie notas de versão, auditorias, goals, resultados ou evidências para `docs`. O histórico continua
 disponível nas releases e no Git; `docs` deve explicar apenas o produto atual e como mantê-lo.

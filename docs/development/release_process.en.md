@@ -35,9 +35,10 @@ to bypass a failure.
 
 ## 3. Package
 
-Build the visual installer through the official pipeline. The package must include supported Delphi 12
+Build and validate the visual installer **locally**, before creating the tag. The package must include supported Delphi 12
 and 13 binaries, Web assets, the MCP bridge, manifest, and hashes. The installer is the only required
-public artifact; evidence files remain pipeline output and are not attached to the release.
+public artifact; evidence files remain under `Output/` and are not attached to the release. GitHub Actions
+is only an optional manual validation: it does not generate the official artifact and must never block publication.
 
 Before smoke testing:
 
@@ -54,9 +55,25 @@ under `Output/` or a temporary Git-ignored directory.
 
 1. Commit and push the validated branch according to the [commit convention](commit_convention.en.md).
 2. Integrate the same revision into `develop` and then `main` without rebuilding content manually.
-3. Create the annotated tag from `main`.
-4. Publish the installer and write the notes in GitHub Releases.
-5. Verify automatic update, download, and hash through the stable channel.
+3. Confirm that the local installer and its evidence belong to the exact `main` commit.
+4. Create and push the annotated tag from `main`. Pushing the tag must not start the release workflow.
+5. Immediately publish the local installer with `gh release create`; do not wait for GitHub to build artifacts.
+6. Download the published installer and confirm that its SHA-256 matches the local evidence.
+7. Confirm that the release contains only the installer and verify automatic update through the stable channel.
+
+Example for publishing the already validated artifact:
+
+```powershell
+gh release create v<VERSION> `
+  ".\Output\Installer\RadIA-v<VERSION>-Setup.exe" `
+  --verify-tag `
+  --title "RadIA <VERSION>" `
+  --notes-file ".\Output\Installer\release-notes-<VERSION>.md" `
+  --latest
+```
+
+The `RadIA release` workflow can only be started manually. It provides independent validation when desired,
+not the normal release path.
 
 Do not copy release notes, audits, goals, results, or evidence into `docs`. History remains available in
 releases and Git; `docs` must explain only the current product and how to maintain it.

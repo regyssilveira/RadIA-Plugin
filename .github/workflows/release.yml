@@ -1,9 +1,6 @@
 name: RadIA release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       release_tag:
@@ -39,9 +36,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: >-
-            ${{ github.event_name == 'workflow_dispatch' &&
-                inputs.release_tag || github.ref }}
+          ref: ${{ inputs.release_tag }}
 
       - name: Resolve and validate release identity
         shell: powershell
@@ -50,10 +45,7 @@ jobs:
             Get-Content -LiteralPath ".\package.json" -Raw |
             ConvertFrom-Json
           ).version
-          $tag = "${{ github.ref_name }}"
-          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
-            $tag = "${{ inputs.release_tag }}"
-          }
+          $tag = "${{ inputs.release_tag }}"
           if ($tag -ne "v$version") {
             throw "Release tag $tag does not match package version $version."
           }
@@ -150,9 +142,7 @@ jobs:
           retention-days: 30
 
       - name: Publish GitHub release
-        if: >-
-          github.event_name == 'push' ||
-          inputs.publish == true
+        if: inputs.publish == true
         shell: powershell
         run: |
           $releaseExists = $false
