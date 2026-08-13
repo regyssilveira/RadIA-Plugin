@@ -58,6 +58,7 @@ type
     FDelphiVersion: string;
     FPlatforms: TArray<string>;
     FFiles: TArray<TRadIAProjectTemplateFile>;
+    FSpecificationJson: string;
   public
     constructor Create(
       const ATemplateId: string;
@@ -120,6 +121,9 @@ type
       const AMainSource: string
     ): string;
     function BuildCalculatorButtons: string;
+    function IncludesCalculatorTests(
+      const ARequest: TRadIAProjectTemplateRequest
+    ): Boolean;
     function IsVclCalculator(
       const ARequest: TRadIAProjectTemplateRequest
     ): Boolean;
@@ -238,6 +242,7 @@ begin
   FDelphiVersion := ARequest.DelphiVersion;
   FPlatforms := Copy(ARequest.Platforms);
   FFiles := Copy(AFiles);
+  FSpecificationJson := ARequest.SpecificationJson;
 end;
 
 function TRadIAProjectTemplatePlan.PreviewJson: string;
@@ -249,6 +254,7 @@ var
   LPlatform: string;
   LPlatforms: TJSONArray;
   LRoot: TJSONObject;
+  LSpecification: TJSONObject;
 begin
   LCompanionTestProject := '';
   LRoot := TJSONObject.Create;
@@ -258,6 +264,28 @@ begin
     LRoot.AddPair('projectName', FProjectName);
     LRoot.AddPair('template', RadIAProjectTemplateKindName(FKind));
     LRoot.AddPair('delphiVersion', FDelphiVersion);
+    if FSpecificationJson <> '' then
+    begin
+      LSpecification := TJSONObject.ParseJSONValue(
+        FSpecificationJson
+      ) as TJSONObject;
+      try
+        if Assigned(LSpecification) and
+          SameText(
+            LSpecification.GetValue<string>('kind', ''),
+            'calculator'
+          ) then
+          LRoot.AddPair(
+            'creationProfile',
+            LSpecification.GetValue<string>(
+              'creationProfile',
+              'essential'
+            )
+          );
+      finally
+        LSpecification.Free;
+      end;
+    end;
     LPlatforms := TJSONArray.Create;
     LRoot.AddPair('platforms', LPlatforms);
     for LPlatform in FPlatforms do
@@ -307,6 +335,7 @@ var
   LDextIndex: Integer;
   LDextSpecification: TRadIAApiSpecification;
   LMainSource: string;
+  LProjectContent: string;
   LProjectName: string;
 begin
   LProjectName := ARequest.ProjectName;
@@ -352,14 +381,22 @@ begin
   if IsVclCalculator(ARequest) then
   begin
     Result := BuildVclCalculatorFiles(ARequest, ATemplateId);
+    if IncludesCalculatorTests(ARequest) then
+      LProjectContent := BuildCalculatorApplicationProjectFile(
+        ARequest,
+        ATemplateId,
+        LMainSource
+      )
+    else
+      LProjectContent := BuildProjectFile(
+        ARequest,
+        ATemplateId,
+        LMainSource
+      );
     Result := Result + [
       TRadIAProjectTemplateFile.Create(
         LProjectName + '.dproj',
-        BuildCalculatorApplicationProjectFile(
-          ARequest,
-          ATemplateId,
-          LMainSource
-        )
+        LProjectContent
       )
     ];
     Exit;
@@ -631,6 +668,43 @@ begin
   end;
 end;
 
+function TRadIAProjectTemplateEngine.IncludesCalculatorTests(
+  const ARequest: TRadIAProjectTemplateRequest
+): Boolean;
+var
+  LFeature: TJSONValue;
+  LFeatures: TJSONArray;
+  LJson: TJSONObject;
+  LProfile: string;
+begin
+  Result := False;
+  LJson := TJSONObject.ParseJSONValue(
+    ARequest.SpecificationJson
+  ) as TJSONObject;
+  try
+    if not Assigned(LJson) then
+      Exit;
+    LProfile := LJson.GetValue<string>(
+      'creationProfile',
+      'essential'
+    );
+    if SameText(LProfile, 'complete') then
+      Exit(True);
+    if not SameText(LProfile, 'custom') then
+      Exit;
+    LFeatures := LJson.GetValue<TJSONArray>('optionalFeatures');
+    if not Assigned(LFeatures) then
+      Exit;
+    for LFeature in LFeatures do
+    begin
+      if SameText(LFeature.Value, 'dunitx') then
+        Exit(True);
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
 function TRadIAProjectTemplateEngine.BuildVclCalculatorFiles(
   const ARequest: TRadIAProjectTemplateRequest;
   const ATemplateId: string
@@ -828,7 +902,11 @@ begin
       '    raise EArgumentException.Create(''Unsupported operator.'');' + sLineBreak +
       'end;' + sLineBreak + sLineBreak +
       'end.' + sLineBreak
-    ),
+    )
+  ];
+  if not IncludesCalculatorTests(ARequest) then
+    Exit;
+  Result := Result + [
     TRadIAProjectTemplateFile.Create(
       LProjectName + 'Tests.dpr',
       'program ' + LProjectName + 'Tests;' + sLineBreak + sLineBreak +

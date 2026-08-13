@@ -55,7 +55,7 @@ cannot turn an unknown key into a trusted key.
 
 ## Using the manager
 
-1. Open **Tools > Rad IA Extensions...**.
+1. Open **Tools > RadIA > Rad IA Extensions...**.
 2. Click **Browse catalog...**.
 3. Enter the catalog HTTPS URL and click **Load catalog**.
 4. Search by name, ID, description, or publisher.

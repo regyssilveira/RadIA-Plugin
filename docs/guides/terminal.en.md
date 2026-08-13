@@ -13,7 +13,7 @@ There are four equivalent forms:
 
 1. Click the **>_Terminal** button in the chat header.
 2. Type `/terminal` in chat and send the command.
-3. Use **Tools > Rad IA Terminal**.
+3. Use **Tools > RadIA > Rad IA Terminal**.
 4. Press the configured shortcut. The default is `Ctrl+Alt+T`.
 
 The button and command call the same native action. The terminal is not inserted inside WebView2:

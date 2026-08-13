@@ -1,40 +1,55 @@
 # Rad IA onboarding
 
-Onboarding presents a short journey through the essential surfaces of Rad IA. He appears
-automatically once for each version of the flow and can be reopened at any time
-**Tools > Rad IA Getting Started**.
+Rad IA onboarding leads users to a useful first result without requiring them to understand
+provider, model, executor, CLI, or MCP concepts first. The experience still presents the complete
+platform and keeps every control available in the composer and settings.
 
-Closing the window stops the stream without changing settings. Rad IA only records the current step
-to not display the window again automatically. When reopening through the menu, the journey continues from
-last stage visited. The **Finish** button records the completion.
+It appears automatically once for each flow version and can be reopened from
+**Tools > RadIA > Rad IA Getting Started**. Closing the window stops the guide without changing settings.
+Opening it again from the menu resumes the last visited step.
+
+## Experience principle
+
+The flow follows three ideas:
+
+1. **Start with the goal:** users describe what they want to understand, change, validate, debug,
+   or create.
+2. **Keep the power visible:** chat presents the effective mode, provider, model, and route, along
+   with code, build, test, debugger, Form Designer, terminal, MCP, and skill capabilities.
+3. **Go deeper on demand:** **More** opens executor, journey, and scope; **Settings** preserves the
+   complete platform configuration.
 
 ## Steps
 
-|Step|What does it teach|Action available|
+| Step | Expected result | Available action |
 |---|---|---|
-|Chat|Open the dockable panel and chat about the active project|**Open chat**|
-|Provider and executor|Configure a provider and choose native agent or CLI|**Open provider settings**|
-|Security|Review consent before reading, changing, building, debugging, or committing|**Open consent settings**|
-|CLI and MCP|Diagnose CLIs and connect, repair, or remove the MCP bridge|**Open CLI and MCP settings**|
-|Terminal|Execute commands with streaming, history, snippets and cancellation|**Open terminal**|
-|Readiness|Run `/doctor` in chat and get score, checks and next action|**Run installation doctor**|
-|New project|Create a deterministic Delphi project and continue in Agent Mode|**Create a project**|
+| Start with the goal | Open chat with work-oriented suggestions | **Start in Rad IA** |
+| First result | Assess project health without changing files | **Understand this project** |
+| Complete platform | Discover capabilities and applicable documentation | **Explore capabilities** |
+| Full control | Access providers, agents, consent, CLI, MCP, and all other options | **Open full settings** |
 
-Actions open the actual product screens. Onboarding remains available in the background so that the
-user returns to the script after saving or closing the open surface.
+The first result uses `/health`, combining IDE, compiler, build, test, and local knowledge state to
+recommend the next action. Without an open project, the card explains the requirement while the
+user can still chat or create a project from the same surface.
 
-## Recommended first configuration
+## Chat start screen
 
-1. Configure at least one provider in **AI Providers**.
-2. Under **Security & Consent**, choose how risky operations should request approval.
-3. In **CLI & MCP**, keep the native agent or select an already installed CLI and run the
-diagnosis.
-4. Connect the MCP only to the desired clients after reviewing the configuration preview.
-5. Run **Run installation doctor**. With the native executor, MCP is not a requirement; with a CLI,
-bridge and MCP configuration become part of the acceptance.
-6. Confirm that `firstToolReady` is active and run the first read-only tool.
-7. Open chat and visually enable **Agent Mode** when you want Rad IA to plan and use
-internal tools.
+An empty conversation offers four starting points:
 
-Onboarding does not install CLIs, modify MCP files, or activate consents on its own. All
-Operation continues depending on the user's explicit action on the corresponding screens.
+- **Understand this project:** prepares `/health`;
+- **Fix a problem:** prepares an investigation, reviewed fix, and validation objective;
+- **Create something:** starts a request for a project, form, unit, API, test, or feature;
+- **Debug an application:** prepares a runtime diagnostic journey.
+
+The buttons fill the composer and do not send automatically. Users can review or complete the
+request before sending it. **Explore all capabilities** prepares `/help`.
+
+## Control and security
+
+Onboarding does not install CLIs, change MCP configuration, switch providers, or grant consent
+automatically. The effective mode and route remain visible. Protected operations continue to use
+preview, risk policy, and consent.
+
+Users who prefer direct configuration can open **More**, **Settings**, `/scope`, `/doctor`, or
+`/status` at any time. Simplification changes the presentation order, not platform capability or
+control.

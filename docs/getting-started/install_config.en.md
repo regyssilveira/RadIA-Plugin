@@ -14,7 +14,8 @@ Rad IA requires active and valid API keys to function with cloud models (Gemini,
 2. Download `RadIA-v<version>-Setup.exe`, the only public installation artifact.
 3. Close every Delphi instance.
 4. Run the installer and select Delphi 12 Win32, Delphi 13 Win32, and/or Delphi 13 IDE64.
-5. Open the IDE and run **Tools > Rad IA Getting Started > Run installation doctor** or `/doctor`.
+5. Open the IDE, select **Tools > RadIA > Rad IA Getting Started**, and choose
+   **Run installation doctor**, or run `/doctor`.
 
 Using a release does not require extracting a ZIP, installing PowerShell/npm, or compiling the
 project. **Repair** reapplies files while preserving settings; **Uninstall** removes selected
@@ -31,7 +32,8 @@ also compares `WebView2Loader.dll` with the packaged copy and updates the file w
 registration, and every Web asset. Uninstall remains able to remove RadIA artifacts even when the
 corresponding Delphi installation has already been removed.
 
-After opening the IDE, use **Tools > Rad IA Getting Started > Run installation doctor** or type
+After opening the IDE, use **Tools > RadIA > Rad IA Getting Started**, choose
+**Run installation doctor**, or type
 `/doctor` in chat. The diagnostic verifies the effective route, provider, CLI and MCP only when
 each is required, terminal, web assets, tools, and the external MCP runtime. It returns a card with
 a score, checks, and next action without displaying tokens or credentials. See
@@ -69,7 +71,7 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
 
 4. If Windows requests permission to copy `WebView2Loader.dll`, approve elevation or rerun
    PowerShell as administrator.
-5. Open the IDE, select **Tools > Rad IA Chat Panel**, and run `/doctor` before first use.
+5. Open the IDE, select **Tools > RadIA > Rad IA Chat Panel**, and run `/doctor` before first use.
 
 `-Test` is independent: it builds and runs the DUnitX suite, but does not install RadIA in the IDE
 without `-Install`. Combine `-Test -Install` to test and install in one run. Prefer

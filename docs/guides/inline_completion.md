@@ -66,11 +66,11 @@ preferências existirem; caso contrário, usam o provider e modelo globais ativo
 aplicada somente ao pedido inline e não altera a configuração global.
 
 Para inspecionar a última decisão, use **Rad IA > Show Inline Completion Route Status** no menu do
-editor ou **Tools > Rad IA Inline Completion Route Status**. O diálogo informa rota dedicada ou
+editor ou **Ferramentas > RadIA > Rad IA Inline Completion Route Status**. O diálogo informa rota dedicada ou
 fallback, provider, modelo, latência local e motivo do fallback. O mesmo diagnóstico é registrado
 no log sem incluir prefixo, sufixo ou conteúdo sugerido.
 
-Use **Rad IA > Show Semantic Editor Context** no menu do editor ou **Tools > Rad IA Semantic Editor
+Use **Rad IA > Show Semantic Editor Context** no menu do editor ou **Ferramentas > RadIA > Rad IA Semantic Editor
 Context** para conferir antes da solicitação os metadados limitados compartilhados entre Ghost Text,
 ações contextuais e agente: unit ativa, símbolo no cursor, imports e declarações próximas. A inspeção
 é somente leitura e não altera o buffer. Quando uma ação como explicar, testar ou procurar bugs é

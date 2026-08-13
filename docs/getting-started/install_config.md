@@ -14,7 +14,8 @@ O Rad IA exige chaves de API válidas e ativas para funcionar com provedores de 
 2. Baixe `RadIA-v<versão>-Setup.exe`, o único artefato público de instalação.
 3. Feche todas as instâncias do Delphi.
 4. Execute o instalador e selecione Delphi 12 Win32, Delphi 13 Win32 e/ou Delphi 13 IDE64.
-5. Abra a IDE e execute **Tools > Rad IA Getting Started > Run installation doctor** ou `/doctor`.
+5. Abra a IDE, acesse **Ferramentas > RadIA > Rad IA Getting Started** e selecione
+   **Run installation doctor**, ou execute `/doctor`.
 
 Não é necessário extrair ZIP, instalar PowerShell/npm ou compilar o projeto para usar o Rad IA.
 **Repair** reaplica os arquivos mantendo configurações; **Uninstall** remove as arquiteturas
@@ -31,7 +32,8 @@ O modo **Repair** reaplica e verifica BPL, DCP, MCP Bridge, empacotador de exten
 do Delphi e todos os assets Web. A desinstalação continua disponível para limpar os artefatos do
 RadIA mesmo quando a instalação correspondente do Delphi já tiver sido removida.
 
-Depois de abrir a IDE, use **Tools > Rad IA Getting Started > Run installation doctor** ou digite
+Depois de abrir a IDE, use **Ferramentas > RadIA > Rad IA Getting Started**, selecione
+**Run installation doctor** ou digite
 `/doctor` no chat. O diagnóstico verifica a rota efetiva, provider, CLI e MCP somente quando cada
 um é necessário, terminal, recursos web, tools e runtime MCP externo. Ele retorna um cartão com
 score, checks e próxima ação sem mostrar tokens ou credenciais. Consulte [RadIA Doctor](../reference/doctor.md).
@@ -69,7 +71,7 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
 
 4. Se o Windows solicitar permissão para copiar `WebView2Loader.dll`, aprove a elevação ou repita o
    PowerShell como administrador.
-5. Abra a IDE, acesse **Tools > Rad IA Chat Panel** e execute `/doctor` antes do primeiro uso.
+5. Abra a IDE, acesse **Ferramentas > RadIA > Rad IA Chat Panel** e execute `/doctor` antes do primeiro uso.
 
 `-Test` é independente: compila e executa a suíte DUnitX, mas não instala o RadIA na IDE sem
 `-Install`. Para testar e instalar em uma única execução, combine `-Test -Install`; para instalar uma

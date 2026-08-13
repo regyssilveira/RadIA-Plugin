@@ -17,13 +17,16 @@ type
   private
     FKind: TRadIAAgentExecutorKind;
     FCliClientId: string;
+    FReasoningEffort: string;
   public
     constructor Create(
       const AKind: TRadIAAgentExecutorKind;
-      const ACliClientId: string
+      const ACliClientId: string;
+      const AReasoningEffort: string = 'medium'
     );
     property Kind: TRadIAAgentExecutorKind read FKind;
     property CliClientId: string read FCliClientId;
+    property ReasoningEffort: string read FReasoningEffort;
   end;
 
   TRadIAModelSelectionState = record
@@ -78,7 +81,8 @@ type
       const AKind: TRadIACliKind;
       const APrompt: string;
       const AWorkingDirectory: string;
-      const AResumeSessionId: string
+      const AResumeSessionId: string;
+      const AReasoningEffort: string
     ): TArray<string>; static;
     class procedure ValidateSessionId(
       const ASessionId: string
@@ -97,7 +101,8 @@ type
       const AExecutablePath: string;
       const APrompt: string;
       const AWorkingDirectory: string;
-      const AResumeSessionId: string = ''
+      const AResumeSessionId: string = '';
+      const AReasoningEffort: string = 'medium'
     ): TRadIACliInvocation; static;
   end;
 
@@ -129,6 +134,7 @@ implementation
 uses
   System.Classes,
   System.Generics.Collections,
+  System.StrUtils,
   System.SysUtils,
   RadIA.Core.AgentExecutorContracts,
   RadIA.Core.Config;
@@ -141,11 +147,15 @@ const
 
 constructor TRadIAAgentExecutorSettings.Create(
   const AKind: TRadIAAgentExecutorKind;
-  const ACliClientId: string
+  const ACliClientId: string;
+  const AReasoningEffort: string
 );
 begin
   FKind := AKind;
   FCliClientId := LowerCase(Trim(ACliClientId));
+  FReasoningEffort := LowerCase(Trim(AReasoningEffort));
+  if FReasoningEffort = '' then
+    FReasoningEffort := 'medium';
 end;
 
 { TRadIAModelSelectionState }
@@ -198,7 +208,8 @@ begin
     LClientId := FStorage.ReadString('CliClientId', CDefaultCliClientId);
     Result := TRadIAAgentExecutorSettings.Create(
       TRadIAAgentExecutorKind(LKindValue),
-      LClientId
+      LClientId,
+      FStorage.ReadString('ReasoningEffort', 'medium')
     );
     try
       Validate(Result);
@@ -223,6 +234,7 @@ begin
   try
     FStorage.WriteInteger('Kind', Ord(ASettings.Kind));
     FStorage.WriteString('CliClientId', ASettings.CliClientId);
+    FStorage.WriteString('ReasoningEffort', ASettings.ReasoningEffort);
   finally
     FStorage.CloseKey;
   end;
@@ -234,6 +246,11 @@ procedure TRadIAAgentExecutorSettingsStore.Validate(
 var
   LDefinition: TRadIACliDefinition;
 begin
+  if not MatchText(
+    ASettings.ReasoningEffort,
+    ['low', 'medium', 'high', 'xhigh']
+  ) then
+    raise EArgumentException.Create('The reasoning effort is not supported.');
   if ASettings.Kind = aekNative then
     Exit;
   if not TRadIACliCatalog.FindById(ASettings.CliClientId, LDefinition) then
@@ -282,7 +299,8 @@ class function TRadIACliInvocationBuilder.Build(
   const AExecutablePath: string;
   const APrompt: string;
   const AWorkingDirectory: string;
-  const AResumeSessionId: string
+  const AResumeSessionId: string;
+  const AReasoningEffort: string
 ): TRadIACliInvocation;
 var
   LContract: TRadIAExecutorContract;
@@ -303,7 +321,8 @@ begin
       ADefinition.Kind,
       APrompt,
       AWorkingDirectory,
-      AResumeSessionId
+      AResumeSessionId,
+      AReasoningEffort
     ),
     Trim(AWorkingDirectory),
     'stream-json'
@@ -314,7 +333,8 @@ class function TRadIACliInvocationBuilder.BuildArguments(
   const AKind: TRadIACliKind;
   const APrompt: string;
   const AWorkingDirectory: string;
-  const AResumeSessionId: string
+  const AResumeSessionId: string;
+  const AReasoningEffort: string
 ): TArray<string>;
 begin
   if AResumeSessionId <> '' then
@@ -326,6 +346,8 @@ begin
           'resume',
           '--json',
           '--skip-git-repo-check',
+          '-c',
+          'model_reasoning_effort=' + AReasoningEffort,
           AResumeSessionId,
           APrompt
         ];
@@ -358,6 +380,8 @@ begin
         'exec',
         '--json',
         '--skip-git-repo-check',
+        '-c',
+        'model_reasoning_effort=' + AReasoningEffort,
         '--cd',
         AWorkingDirectory,
         APrompt

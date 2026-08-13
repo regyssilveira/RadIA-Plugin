@@ -183,6 +183,11 @@ const btnExportExecutionScope = document.getElementById('btn-export-execution-sc
 const executionRoute  = document.getElementById('execution-route');
 const composerRoute   = document.getElementById('composer-route');
 const executionRouteSelector = document.getElementById('select-execution-route');
+const reasoningEffortSelector = document.getElementById('select-reasoning-effort');
+const effortDropdownWrapper = document.getElementById('effort-dropdown-wrapper');
+const effortDropdownTrigger = document.getElementById('effort-dropdown-trigger');
+const effortDropdownValue = document.getElementById('effort-dropdown-value');
+const effortOptionsList = document.getElementById('effort-options-list');
 
 function setComposerAdvancedVisible(visible) {
   if (!btnComposerAdvanced || !composerAdvancedOptions) return;
@@ -1900,15 +1905,17 @@ let historyLoadRequested = false;
 
 const QUICK_ACTIONS = [
   {
-    label: 'Explain Code',
-    command: '/explain ',
+    label: 'Understand this project',
+    description: 'Architecture, health, and the best next action',
+    command: '/health',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 9l-3 3 3 3\"></p" +
     "ath><path d=\"M16 9l3 3-3 3\"></path><path d=\"M14 5l-4 14\"></path></svg>"
   },
   {
-    label: 'Find Bugs',
-    command: '/bugs ',
+    label: 'Fix a problem',
+    description: 'Investigate, prepare a reviewed change, and validate it',
+    command: 'Find the cause of this problem, prepare a safe fix, and validate the result: ',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 6.5a4 4 0 0 1 8" +
     " 0\"></path><path d=\"M8 7h8v6a4 4 0 0 1-8 0V7z\"></path><path d=\"M4 13h4\"></pa" +
@@ -1916,16 +1923,18 @@ const QUICK_ACTIONS = [
     "-2.5-2.5\"></path><path d=\"M12 7v10\"></path></svg>"
   },
   {
-    label: 'Refactor Code',
-    command: '/refactor ',
+    label: 'Create something',
+    description: 'Projects, forms, units, APIs, tests, and features',
+    command: 'Create ',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10\"></path><p" +
     "ath d=\"M14 4l3 3-3 3\"></path><path d=\"M17 17H7\"></path><path d=\"M10 14l-3 3 " +
     "3 3\"></path></svg>"
   },
   {
-    label: 'Review Code',
-    command: '/review ',
+    label: 'Debug an application',
+    description: 'Reproduce a runtime failure and inspect the debugger',
+    command: '/journey debug ',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l5 5L20 6\"></" +
     "path><path d=\"M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h8\"></pa" +
@@ -2057,8 +2066,16 @@ function showWelcomeScreen() {
         </svg>
       </span>
     </div>
-    <h1>How can Rad IA help today?</h1>
+    <h1>What do you want to accomplish?</h1>
+    <p class="welcome-intro">
+      Start with your goal. Rad IA keeps the effective route visible and lets you customize every detail.
+    </p>
     <div class="welcome-actions"></div>
+    <div class="welcome-capabilities" aria-label="Rad IA platform capabilities">
+      <span>Code</span><span>Build</span><span>Tests</span><span>Debugger</span>
+      <span>Form Designer</span><span>Terminal</span><span>MCP</span><span>Skills</span>
+    </div>
+    <button type="button" class="welcome-capabilities-btn">Explore all capabilities</button>
     <button type="button" class="welcome-history-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -2075,12 +2092,18 @@ function showWelcomeScreen() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'welcome-action-btn';
-    button.innerHTML = `<span class="welcome-action-icon">${action.icon}</span><span>${action.label}</span>`;
+    button.innerHTML = `<span class="welcome-action-icon">${action.icon}</span>` +
+      `<span class="welcome-action-copy"><strong>${action.label}</strong>` +
+      `<small>${action.description}</small></span>`;
     button.title = `Prepare ${action.command} in the prompt without sending it`;
     button.addEventListener('click', () => setPromptText(action.command));
     actionsContainer.appendChild(button);
   });
 
+  welcomeScreen.querySelector('.welcome-capabilities-btn').addEventListener(
+    'click',
+    () => setPromptText('/help')
+  );
   welcomeScreen.querySelector('.welcome-history-btn').addEventListener('click', requestHistoryLoad);
   chatContainer.appendChild(welcomeScreen);
   updateChatScrollbar();
@@ -2772,6 +2795,12 @@ executionRouteSelector.addEventListener('change', () => {
     executor: executionRouteSelector.value
   });
 });
+reasoningEffortSelector.addEventListener('change', () => {
+  postMessageToDelphi({
+    action: 'set_reasoning_effort',
+    effort: reasoningEffortSelector.value
+  });
+});
 
 btnCliNewSession?.addEventListener('click', () => {
   postMessageToDelphi({ action: 'reset_cli_session' });
@@ -2887,7 +2916,46 @@ function setDropdownOpen(wrapper, trigger, open) {
 function closeDropdowns() {
   setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
   setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+  setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, false);
 }
+
+function updateEffortSelection(effort) {
+  const selectedEffort = effort || 'medium';
+  reasoningEffortSelector.value = selectedEffort;
+  const options = effortOptionsList.querySelectorAll('.custom-dropdown-option');
+  options.forEach(option => {
+    const selected = option.dataset.effort === selectedEffort;
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-pressed', String(selected));
+    if (selected) effortDropdownValue.textContent = option.textContent;
+  });
+}
+
+function toggleEffortDropdown() {
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+  const open = !effortDropdownWrapper.classList.contains('open');
+  setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, open);
+  if (open) {
+    const selected = effortOptionsList.querySelector('[aria-pressed="true"]');
+    (selected || effortOptionsList.querySelector('button'))?.focus();
+  }
+}
+
+effortDropdownTrigger.addEventListener('click', (event) => {
+  event.stopPropagation();
+  toggleEffortDropdown();
+});
+
+effortOptionsList.querySelectorAll('.custom-dropdown-option').forEach(option => {
+  option.addEventListener('click', (event) => {
+    event.stopPropagation();
+    updateEffortSelection(option.dataset.effort);
+    reasoningEffortSelector.dispatchEvent(new Event('change'));
+    setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, false);
+    effortDropdownTrigger.focus();
+  });
+});
 
 function toggleModelDropdown() {
   if (modelDropdownWrapper.classList.contains('disabled')) return;
@@ -3604,6 +3672,7 @@ function initializeConfig(data) {
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
   setAgentMode(data.agentModeEnabled);
   updateExecutionRoute(data.executionRoute);
+  updateEffortSelection(data.reasoningEffort || 'medium');
 
   if (data.slashCommands && Array.isArray(data.slashCommands)) {
     const baseCommands = [

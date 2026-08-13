@@ -223,6 +223,36 @@
                   </div>
                 </div>
               </div>
+              <div class="composer-executor-control composer-effort-control">
+                <span class="composer-control-label">Effort</span>
+                <select id="select-reasoning-effort" aria-label="Reasoning effort for the next message"
+                  title="Choose response depth and latency" hidden>
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="xhigh">Extra high</option>
+                </select>
+                <div class="custom-dropdown-wrapper" id="effort-dropdown-wrapper">
+                  <button type="button" class="custom-dropdown-trigger" id="effort-dropdown-trigger"
+                    title="Choose response depth and latency" aria-label="Reasoning effort for the next message"
+                    aria-expanded="false" aria-haspopup="listbox" aria-controls="effort-options-list">
+                    <span id="effort-dropdown-value">Medium</span>
+                  </button>
+                  <div class="custom-dropdown-content" id="effort-dropdown-content">
+                    <ul class="custom-dropdown-options" id="effort-options-list" role="listbox">
+                      <li><button type="button" class="custom-dropdown-option" data-effort="low"
+                        title="Favor faster responses">Low</button></li>
+                      <li><button type="button" class="custom-dropdown-option selected"
+                        data-effort="medium" aria-pressed="true"
+                        title="Balance response depth and latency">Medium</button></li>
+                      <li><button type="button" class="custom-dropdown-option" data-effort="high"
+                        title="Favor deeper analysis">High</button></li>
+                      <li><button type="button" class="custom-dropdown-option"
+                        data-effort="xhigh" title="Use the deepest available analysis">Extra high</button></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
               <button type="button" class="composer-mode-toggle composer-advanced-toggle"
                 id="btn-composer-advanced" title="Show executor, session, journey, and scope settings"
                 aria-label="Show advanced execution settings" aria-expanded="false"

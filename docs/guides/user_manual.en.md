@@ -1,4 +1,4 @@
-# Complete RadIA 2.10.0 user manual
+# Complete RadIA 2.11.0 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -68,20 +68,28 @@ dependencies. The purpose, usage, dependencies, and care for every option are in
 
 ## 3. Enabling agent mode
 
+An empty conversation starts with goals: understand the project, fix a problem, create something,
+or debug an application. These actions only prepare the request. The same screen keeps code, build,
+test, debugger, Form Designer, terminal, MCP, and skill capabilities visible. Users can start from
+their intent without losing awareness of or access to the complete platform.
+
 ### 3.1 Agent Mode button and commands
 
-The agentic infrastructure starts automatically when the RadIA package loads. The
-**Agent On/Off** button controls whether chat may execute tools. The same state can be changed with
-`/agent`, `/agent on`, and `/agent off`.
+The agentic infrastructure starts automatically when the RadIA package loads.
 
-In the composer, **Mode: Chat** sends a regular conversation through the route selected under **Send
-with**. **RadIA native** uses the selected provider without registered RadIA tools; a CLI sends
+In the composer, **Mode: Chat** sends a regular conversation through the route selected under
+**Executor**, inside **More**. **RadIA native** uses the selected provider without registered RadIA tools; a CLI sends
 directly to the external process, which retains its own capabilities and policies. **Mode: Agent**
 turns the next message into an agent objective and also uses **Send with**: **RadIA
 native**, **Codex CLI**, **Claude Code**, **Gemini CLI**, or **GitHub Copilot CLI**. The selection
 applies to the next message and is saved as the default. The `/agent`, `/agent on`, and `/agent off`
-commands remain available. **Settings > CLI & MCP > Chat executor** retains the default and executable
-paths. Provider authentication remains independent from the agent executor.
+commands remain available.
+
+For common use, users do not need to open **More** or understand every combination. A request that
+clearly requires actions, such as creating a VCL project, is routed to the appropriate native
+journey. **More** remains available for CLI sessions, journey links, and advanced configuration
+overrides. **Settings > CLI & MCP > Chat executor** retains defaults and executable paths. Provider
+authentication remains independent from the agent executor.
 
 OpenAI offers two explicit credential paths. **OpenAI API via API Key** uses native HTTP transport and
 API Platform billing. **ChatGPT Pro via Codex CLI** uses the ChatGPT/Codex account session and quota.
@@ -180,7 +188,9 @@ The index exposes metadata only; tool arguments and results are excluded from se
 To enable monetary estimates and enforcement, configure the
 [local pricing catalog](../reference/agent_pricing.en.md).
 
-Open the integrated terminal with the **Terminal** (`>_`) button in the chat header or with the
+Open the integrated terminal with the **Terminal** (`>_`) button in the chat header or through
+**Tools > RadIA > Rad IA Terminal**. All product commands are grouped in this submenu so RadIA
+actions remain visually distinct from native Delphi commands.
 `/terminal` command. Both paths open the same dockable terminal, supporting visual and
 keyboard-driven workflows.
 
@@ -330,6 +340,21 @@ See the [agentic tools guide](user_guide_agentic_tools.en.md).
 `GetCompilerMessages` expose controlled execution and structured output. A build does not grant
 permission to run its binary.
 
+#### Creation profiles
+
+When a project request does not mention additions, RadIA uses the `essential` profile: it creates
+only the required files, opens the project, and builds it. The `complete` profile adds the DUnitX
+project and its initial tests. The `custom` profile accepts `optionalFeatures`, currently including
+`dunitx`. After the essential project builds, RadIA presents choices to keep the project as-is or
+add features. No optional feature is created without an explicit user choice.
+
+Throughout this flow, the RadIA panel remains open and presents creation, project-opening, and build
+progress. A project transition must not hide chat or require users to reopen it.
+
+In the composer's main row, **Effort** controls reasoning depth for compatible executors.
+`Medium` is the balanced default; `Low` favors speed, while `High` and `Extra high` favor analysis.
+The choice remains visible and is preserved when switching executors.
+
 ### 4.7 DUnitX tests
 
 `RunDUnitXTests` runs a `.exe` test runner inside the active project workspace.
@@ -425,7 +450,7 @@ policy, audit, or cancellation.
 
 Declarative commands, skills, journeys, knowledge, references, templates, aliases, and workflows
 can be installed from
-**Tools > Rad IA Extensions...** as a `*.radia.json` manifest or integrity-checked `.radiaext`
+**Tools > RadIA > Rad IA Extensions...** as a `*.radia.json` manifest or integrity-checked `.radiaext`
 package. Workflows execute only internal tools through central policy and never interpret shell
 code or binaries. **Addon Studio...** creates, sandboxes, installs, exports, and signs the package.
 For shared content, select **Resources folder** and enter a relative **Content file** under

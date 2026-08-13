@@ -6,7 +6,7 @@ project formats recognized by Codex, Claude Code, Gemini CLI, and GitHub Copilot
 ## How to open
 
 1. Open or create a Delphi project.
-2. Open **Tools > Rad IA Extensions... > Addon Studio...**.
+2. Open **Tools > RadIA > Rad IA Extensions... > Addon Studio...**.
 3. Select **Skill** and fill in ID, name, description, and instructions or a valid `contentFile`.
 4. Click **Publish skill to CLIs...**.
 

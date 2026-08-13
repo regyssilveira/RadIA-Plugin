@@ -1,40 +1,55 @@
 # Onboarding do Rad IA
 
-O onboarding apresenta uma jornada curta pelas superfícies essenciais do Rad IA. Ele aparece
-automaticamente uma única vez para cada versão do fluxo e pode ser reaberto a qualquer momento em
-**Tools > Rad IA Getting Started**.
+O onboarding do Rad IA leva o usuário ao primeiro resultado útil sem exigir que ele aprenda antes
+os conceitos de provider, modelo, executor, CLI ou MCP. A experiência continua apresentando a
+plataforma completa e mantém todos os controles acessíveis no compositor e nas configurações.
 
-Fechar a janela interrompe o fluxo sem alterar configurações. O Rad IA grava somente a etapa atual
-para não exibir novamente a janela automaticamente. Ao reabrir pelo menu, a jornada continua da
-última etapa visitada. O botão **Finish** registra a conclusão.
+Ele aparece automaticamente uma vez para cada versão do fluxo e pode ser reaberto em
+**Ferramentas > RadIA > Rad IA Getting Started**. Fechar a janela interrompe o roteiro sem alterar configurações.
+Ao reabrir pelo menu, a jornada continua da última etapa visitada.
+
+## Princípio da experiência
+
+O fluxo segue três ideias:
+
+1. **Começar pelo objetivo:** o usuário descreve o que quer entender, modificar, validar, depurar
+   ou criar.
+2. **Manter a potência visível:** o chat apresenta modo, provider, modelo e rota efetivos, além das
+   capacidades de código, build, testes, debugger, Form Designer, terminal, MCP e skills.
+3. **Aprofundar sob demanda:** **More** abre executor, jornada e escopo; **Settings** preserva a
+   configuração completa da plataforma.
 
 ## Etapas
 
-| Etapa | O que ensina | Ação disponível |
+| Etapa | Resultado esperado | Ação disponível |
 |---|---|---|
-| Chat | Abrir o painel acoplável e conversar sobre o projeto ativo | **Open chat** |
-| Provider e executor | Configurar um provider e escolher agente nativo ou CLI | **Open provider settings** |
-| Segurança | Revisar consentimento antes de leitura, alteração, build, debug ou commit | **Open consent settings** |
-| CLI e MCP | Diagnosticar CLIs e conectar, reparar ou remover o bridge MCP | **Open CLI and MCP settings** |
-| Terminal | Executar comandos com streaming, histórico, snippets e cancelamento | **Open terminal** |
-| Prontidão | Executar `/doctor` no chat e obter score, checks e próxima ação | **Run installation doctor** |
-| Novo projeto | Criar um projeto Delphi determinístico e continuar no Agent Mode | **Create a project** |
+| Começar pelo objetivo | Abrir o chat com sugestões orientadas ao trabalho | **Start in Rad IA** |
+| Primeiro resultado | Avaliar a saúde do projeto sem alterar arquivos | **Understand this project** |
+| Plataforma completa | Descobrir recursos e documentação aplicável | **Explore capabilities** |
+| Controle total | Acessar providers, agentes, consentimento, CLI, MCP e demais opções | **Open full settings** |
 
-As ações abrem as telas reais do produto. O onboarding permanece disponível ao fundo para que o
-usuário retorne ao roteiro depois de salvar ou fechar a superfície aberta.
+O primeiro resultado usa `/health`, que combina estado da IDE, compilador, build, testes e
+conhecimento local para recomendar a próxima ação. Sem projeto aberto, o cartão explica esse
+pré-requisito e o usuário ainda pode conversar ou criar um projeto pelo mesmo chat.
 
-## Primeira configuração recomendada
+## Tela inicial do chat
 
-1. Configure pelo menos um provider em **AI Providers**.
-2. Em **Security & Consent**, escolha como as operações de risco devem solicitar aprovação.
-3. Em **CLI & MCP**, mantenha o agente nativo ou selecione uma CLI já instalada e execute o
-   diagnóstico.
-4. Conecte o MCP somente aos clientes desejados, depois de revisar o preview da configuração.
-5. Execute **Run installation doctor**. Com o executor nativo, MCP não é requisito; com uma CLI,
-   bridge e configuração MCP passam a fazer parte do aceite.
-6. Confirme que `firstToolReady` está ativo e execute a primeira tool somente leitura.
-7. Abra o chat e habilite visualmente o **Agent Mode** quando quiser que o Rad IA planeje e use
-   ferramentas internas.
+Uma conversa vazia oferece quatro pontos de partida:
 
-O onboarding não instala CLIs, não modifica arquivos MCP e não ativa consentimentos sozinho. Toda
-operação continua dependendo da ação explícita do usuário nas telas correspondentes.
+- **Understand this project:** prepara `/health`;
+- **Fix a problem:** prepara um objetivo de investigação, correção revisada e validação;
+- **Create something:** inicia um pedido de projeto, form, unit, API, teste ou funcionalidade;
+- **Debug an application:** prepara uma jornada de diagnóstico runtime.
+
+Os botões preenchem o compositor e não enviam nada automaticamente. O usuário pode revisar ou
+completar o pedido antes do envio. **Explore all capabilities** prepara `/help`.
+
+## Controle e segurança
+
+O onboarding não instala CLIs, não modifica configurações MCP, não troca providers e não concede
+consentimentos automaticamente. O modo e a rota efetivos permanecem visíveis. Operações protegidas
+continuam usando preview, política de risco e consentimento.
+
+Usuários que preferem configuração direta podem abrir **More**, **Settings**, `/scope`, `/doctor`
+ou `/status` a qualquer momento. A simplificação altera a ordem de apresentação, não a capacidade
+ou o controle da plataforma.

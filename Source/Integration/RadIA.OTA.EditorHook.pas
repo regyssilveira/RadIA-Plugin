@@ -1331,6 +1331,10 @@ begin
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := '-';
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Preview Rad IA Ghost Text Diagnostic';
   LItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
   AMenuItem.Add(LItem);
@@ -1344,6 +1348,10 @@ begin
   LItem.Caption := 'Rad IA Semantic Editor Context';
   LItem.Hint := 'Shows the bounded editor context shared with AI assistance.';
   LItem.OnClick := OnEditorSemanticContextStatusExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := '-';
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);

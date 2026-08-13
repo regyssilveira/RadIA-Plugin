@@ -146,10 +146,13 @@ begin
     CSettingsPath
   );
   try
-    LSettings.Save(TRadIAAgentExecutorSettings.Create(aekCli, 'claude'));
+    LSettings.Save(
+      TRadIAAgentExecutorSettings.Create(aekCli, 'claude', 'high')
+    );
     LLoaded := LSettings.Load;
     Assert.AreEqual(Ord(aekCli), Ord(LLoaded.Kind));
     Assert.AreEqual('claude', LLoaded.CliClientId);
+    Assert.AreEqual('high', LLoaded.ReasoningEffort);
   finally
     LSettings.Free;
   end;
@@ -162,7 +165,12 @@ begin
   LInvocation := BuildInvocation('codex');
   Assert.AreEqual('exec', LInvocation.Arguments[0]);
   Assert.AreEqual('--json', LInvocation.Arguments[1]);
-  Assert.AreEqual('Explain this unit', LInvocation.Arguments[5]);
+  Assert.AreEqual('-c', LInvocation.Arguments[3]);
+  Assert.AreEqual(
+    'model_reasoning_effort=medium',
+    LInvocation.Arguments[4]
+  );
+  Assert.AreEqual('Explain this unit', LInvocation.Arguments[7]);
 end;
 
 procedure TRadIAAgentExecutorTests.CommandLineQuotesPromptWithoutShellExpansion;
@@ -310,8 +318,8 @@ var
 begin
   LInvocation := BuildInvocation('codex');
   Assert.AreEqual('--skip-git-repo-check', LInvocation.Arguments[2]);
-  Assert.AreEqual('--cd', LInvocation.Arguments[3]);
-  Assert.AreEqual('C:\Project', LInvocation.Arguments[4]);
+  Assert.AreEqual('--cd', LInvocation.Arguments[5]);
+  Assert.AreEqual('C:\Project', LInvocation.Arguments[6]);
 end;
 
 procedure TRadIAAgentExecutorTests.ScopeIdentityRejectsCrossProjectJourney;
@@ -383,7 +391,12 @@ begin
   );
   Assert.AreEqual('resume', LInvocation.Arguments[1]);
   Assert.AreEqual('--skip-git-repo-check', LInvocation.Arguments[3]);
-  Assert.AreEqual('session-123', LInvocation.Arguments[4]);
+  Assert.AreEqual('-c', LInvocation.Arguments[4]);
+  Assert.AreEqual(
+    'model_reasoning_effort=medium',
+    LInvocation.Arguments[5]
+  );
+  Assert.AreEqual('session-123', LInvocation.Arguments[6]);
 
   Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
   LInvocation := TRadIACliInvocationBuilder.Build(

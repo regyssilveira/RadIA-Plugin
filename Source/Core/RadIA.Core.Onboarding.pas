@@ -14,7 +14,9 @@ type
     oaOpenCliMcpSettings,
     oaOpenTerminal,
     oaCreateProject,
-    oaRunDoctor
+    oaRunDoctor,
+    oaRunProjectHealth,
+    oaShowCapabilities
   );
 
   TRadIAOnboardingStep = record
@@ -63,7 +65,7 @@ type
     FSettingsPath: string;
     procedure WriteState(const AState: TRadIAOnboardingState);
   public
-    const CurrentFlowVersion = 2;
+    const CurrentFlowVersion = 3;
     constructor Create(
       const AStorage: IRadIASettingsStorage = nil;
       const ASettingsPath: string = ''
@@ -108,46 +110,32 @@ class function TRadIAOnboardingCatalog.Steps:
 begin
   Result := [
     TRadIAOnboardingStep.Create(
-      'Meet the Rad IA chat',
-      'Open the dockable chat, choose a provider, and ask questions about the active Delphi project.',
-      'Open chat',
+      'Start with your goal',
+      'Open Rad IA and describe what you want to understand, change, validate, debug, or create. ' +
+      'The recommended route is already selected, while every execution detail remains visible.',
+      'Start in Rad IA',
       oaOpenChat
     ),
     TRadIAOnboardingStep.Create(
-      'Choose a provider and agent executor',
-      'Configure an AI provider and choose the native agent or an installed CLI executor.',
-      'Open provider settings',
+      'Experience a useful first result',
+      'Inspect the active project health without changing files. Rad IA combines IDE, compiler, build, ' +
+      'tests, and local knowledge to recommend the next safe action.',
+      'Understand this project',
+      oaRunProjectHealth
+    ),
+    TRadIAOnboardingStep.Create(
+      'See the complete platform',
+      'Rad IA can edit and review code, build, test, debug, control the Form Designer, use a terminal, ' +
+      'connect through MCP, and run guided journeys. Discover capabilities when they become useful.',
+      'Explore capabilities',
+      oaShowCapabilities
+    ),
+    TRadIAOnboardingStep.Create(
+      'Keep full control',
+      'The composer always shows the effective mode, provider, model, and route. Use More for executor, ' +
+      'journey, and scope controls, or Settings for the complete platform configuration.',
+      'Open full settings',
       oaOpenProviderSettings
-    ),
-    TRadIAOnboardingStep.Create(
-      'Review security and consent',
-      'Choose approval rules before the agent reads, changes, builds, debugs, or commits project content.',
-      'Open consent settings',
-      oaOpenSecuritySettings
-    ),
-    TRadIAOnboardingStep.Create(
-      'Connect CLI and MCP clients',
-      'Diagnose supported CLIs and safely connect, repair, or remove the Rad IA MCP bridge.',
-      'Open CLI and MCP settings',
-      oaOpenCliMcpSettings
-    ),
-    TRadIAOnboardingStep.Create(
-      'Use the integrated terminal',
-      'Run project commands with streaming output, history, snippets, timeout, and process-tree cancellation.',
-      'Open terminal',
-      oaOpenTerminal
-    ),
-    TRadIAOnboardingStep.Create(
-      'Verify first-value readiness',
-      'Run the local doctor for provider, chat, terminal, MCP, and the first read-only IDE tool.',
-      'Run installation doctor',
-      oaRunDoctor
-    ),
-    TRadIAOnboardingStep.Create(
-      'Create your first project',
-      'Start from a deterministic Delphi template, review the file tree, build it, and continue in Agent Mode.',
-      'Create a project',
-      oaCreateProject
     )
   ];
 end;

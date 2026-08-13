@@ -68,6 +68,10 @@ begin
       ShowRadIATerminal;
     oaRunDoctor:
       ShowRadIAChatCommand('/doctor');
+    oaRunProjectHealth:
+      ShowRadIAChatCommand('/health');
+    oaShowCapabilities:
+      ShowRadIAChatCommand('/help');
     oaCreateProject:
       begin
         LProjectWizard := TRadIAProjectWizardForm.Create(

@@ -11,7 +11,7 @@ This document contains the complete checklist, categorization, and development s
 | **Smart SQL Optimizer** | Integration | Scans and optimizes SQL query strings directly from the Delphi editor context menu. | ✅ Completed |
 | **Scan Compiler & OS Warnings** | Integration | Scans the code block for potential Delphi compiler warnings, thread-safety pitfalls, and Windows GDI leaks. | ✅ Completed |
 | **Dockable Sidebar Chat** | Chat UX | IDE-integrated panel running WebView2 with Markdown and Pascal highlighting. | ✅ Completed |
-| **Chat Welcome Screen** | Chat UX | Welcome screen with a central animation, quick actions, and on-demand history loading. | ✅ Completed |
+| **Goal-oriented Entry** | Chat UX | Welcome screen that starts with understanding, fixing, creating, or debugging, keeps the complete platform visible, and prepares requests without sending. | ✅ Completed |
 | **IDE Theme Integration** | Chat UX | Dark/Light adaptation to the Delphi theme, including Mountain Mist as light, scrollbar polish, and consistent code blocks. | ✅ Completed |
 | **Keyboard Shortcuts** | Chat UX | Shortcut `Ctrl + Enter` to send prompts and simple `Enter` for line breaks. | ✅ Completed |
 | **Layout Persistence** | Chat UX | Automatic saving and restoration of floating window size/position and visibility at startup. | ✅ Completed |
@@ -74,6 +74,10 @@ This document contains the complete checklist, categorization, and development s
 | **MVP Architecture** | Infrastructure | Complete decoupling between VCL UI (Views) and logic (Presenters) in the Chat and Settings frames. | ✅ Completed |
 | **Storage Abstraction** | Infrastructure | Persistence through `IRadIASettingsStorage`, using Registry in production and memory in tests. | ✅ Completed |
 | **Presentation Testing** | Infrastructure | Automated DUnitX test suite validating Presenters logic with mocked Views. | ✅ Completed |
+| **Project creation profiles** | Journey | Essential creates and builds only the requested project; complete and custom preserve optional DUnitX. | ✅ Completed |
+| **Grouped RadIA menu** | IDE integration | All product commands live under `Tools > RadIA`. | ✅ Completed |
+| **Visible effort** | Chat | Users choose reasoning depth in the composer with a balanced default. | ✅ Completed |
+| **Persistent creation panel** | Journey | Chat remains visible while the project opens and presents creation and build progress. | ✅ Completed |
 | **Editor Hook** | Infrastructure | Resilient editor context-menu integration using an asynchronous VCL hook, compatible with Delphi 12/13 and stable during new project creation. | ✅ Completed |
 | **Agentic Registry** | Agentic | Catalog shared by chat, MCP, and extensions. | ✅ Completed |
 | **Consent and Audit** | Security | Scoped decisions and a sanitized audit trail. | ✅ Completed |

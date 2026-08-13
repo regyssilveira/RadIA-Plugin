@@ -665,6 +665,8 @@ var
   LHook: TRadIAEditorHook;
   LExtensionManagerItem: TMenuItem;
   LProjectWizardItem: TMenuItem;
+  LRadIAMenu: TMenuItem;
+  LSeparator: TMenuItem;
 begin
   LogDebug('RegisterMenus called');
   LToolsAlreadyPopulated := False;
@@ -680,11 +682,8 @@ begin
     begin
       for I := 0 to LToolsMenu.Count - 1 do
       begin
-        if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Getting Started') or
-           SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
+        if SameText(LToolsMenu[I].Name, 'mnuRadIAToolsRoot') or
+          SameText(LToolsMenu[I].Caption, 'RadIA') then
         begin
           LToolsAlreadyPopulated := True;
           Break;
@@ -694,16 +693,23 @@ begin
       if not LToolsAlreadyPopulated then
       begin
         LogDebug('Tools/Ferramentas menu found');
-        LHook.PopulateToolsMenu(LToolsMenu);
-        LProjectWizardItem := TMenuItem.Create(LToolsMenu);
+        LRadIAMenu := TMenuItem.Create(LToolsMenu);
+        LRadIAMenu.Name := 'mnuRadIAToolsRoot';
+        LRadIAMenu.Caption := 'RadIA';
+        LToolsMenu.Add(LRadIAMenu);
+        LHook.PopulateToolsMenu(LRadIAMenu);
+        LSeparator := TMenuItem.Create(LRadIAMenu);
+        LSeparator.Caption := '-';
+        LRadIAMenu.Add(LSeparator);
+        LProjectWizardItem := TMenuItem.Create(LRadIAMenu);
         LProjectWizardItem.Caption := 'RadIA New Project...';
         LProjectWizardItem.OnClick := OnProjectWizardClick;
-        LToolsMenu.Add(LProjectWizardItem);
-        LExtensionManagerItem := TMenuItem.Create(LToolsMenu);
+        LRadIAMenu.Add(LProjectWizardItem);
+        LExtensionManagerItem := TMenuItem.Create(LRadIAMenu);
         LExtensionManagerItem.Caption := 'Rad IA Extensions...';
         LExtensionManagerItem.OnClick := OnExtensionManagerClick;
-        LToolsMenu.Add(LExtensionManagerItem);
-        LogDebug('Tools menu populated');
+        LRadIAMenu.Add(LExtensionManagerItem);
+        LogDebug('RadIA submenu populated');
       end;
     end
     else
@@ -719,10 +725,8 @@ var
   LToolsMenu: TMenuItem;
   LToolsPopulated: Boolean;
   I: Integer;
-  LHook: TRadIAEditorHook;
 begin
   LToolsPopulated := False;
-  LHook := TRadIAEditorHook(FEditorHook);
 
   if Supports(BorlandIDEServices, INTAServices, LNTAServices) then
   begin
@@ -732,11 +736,8 @@ begin
     begin
       for I := 0 to LToolsMenu.Count - 1 do
       begin
-        if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Getting Started') or
-           SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
+        if SameText(LToolsMenu[I].Name, 'mnuRadIAToolsRoot') or
+          SameText(LToolsMenu[I].Caption, 'RadIA') then
         begin
           LToolsPopulated := True;
           Break;
@@ -746,9 +747,16 @@ begin
       if not LToolsPopulated then
       begin
         LogDebug('Tools menu not populated or reset. Populating now...');
-        LHook.PopulateToolsMenu(LToolsMenu);
-        LToolsPopulated := True;
-        LogDebug('Tools menu populated successfully');
+        RegisterMenus;
+        for I := 0 to LToolsMenu.Count - 1 do
+        begin
+          if SameText(LToolsMenu[I].Name, 'mnuRadIAToolsRoot') then
+          begin
+            LToolsPopulated := True;
+            Break;
+          end;
+        end;
+        LogDebug('RadIA submenu populated successfully');
       end;
     end;
   end;
@@ -773,7 +781,8 @@ procedure TRadIAWizard.UnregisterMenus;
     begin
       try
         LItem := AToolsMenu[I];
-        if SameText(LItem.Caption, 'RadIA Chat Panel') or
+        if SameText(LItem.Name, 'mnuRadIAToolsRoot') or
+           SameText(LItem.Caption, 'RadIA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Terminal') or
            SameText(LItem.Caption, 'Rad IA Getting Started') or

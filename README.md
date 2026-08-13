@@ -26,6 +26,11 @@ Se você quer primeiro entender o alcance do produto, veja [tudo que o RadIA pod
 No chat, digite `/help` para ver um resumo das capacidades, os comandos principais e links para a
 documentação. Os links são abertos no navegador padrão do Windows.
 
+Uma conversa nova começa pelo objetivo — entender, corrigir, criar ou depurar — e mantém visíveis
+as capacidades de código, build, testes, debugger, Form Designer, terminal, MCP e skills. As ações
+iniciais apenas preparam o pedido; provider, modelo, modo, rota e controles avançados continuam
+disponíveis para inspeção e personalização.
+
 ## Qual modo usar?
 
 | Combinação | Use para | Ferramentas da IDE | Precisa abrir um projeto? |

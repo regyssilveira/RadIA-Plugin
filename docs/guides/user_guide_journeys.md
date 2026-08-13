@@ -51,16 +51,18 @@ extrai caminhos Windows absolutos, infere o nome pelo destino ou tipo da aplica�
 quando a plataforma não é informada. Somente dados realmente ausentes geram perguntas. O fluxo muda
 para execução nativa e mantém a aprovação visível no chat. Após a aprovação, o
 fluxo cria os arquivos apenas na raiz autorizada, abre o projeto na IDE, compila, executa e registra
-as evidências de validação.
+as evidências de validação. O painel permanece aberto durante a transição e mostra o andamento ao
+usuário.
 
 O tipo também é inferido sem exigir o comando: Console, VCL, FireMonkey/FMX, Library/DLL, Package/BPL,
 DUnitX ou Windows Service. Os termos equivalentes em português e inglês são aceitos. Se o pedido não
 identificar um desses tipos com segurança, o RadIA pergunta qual template usar antes do preview.
 
-Para uma calculadora VCL, o preview informa `companionTestProject` e
-`companionTestExecutable`. O build principal também compila a suíte DUnitX companion. Em seguida, a
-jornada inicia a aplicação pelo depurador, verifica o cenário principal e executa os testes com
-`RunDUnitXTests`. A conclusão apresenta separadamente build, debugger, interface e relatório DUnitX.
+Para uma calculadora VCL genérica, a jornada usa o perfil `essential`: cria somente a aplicação,
+abre o projeto e conclui o primeiro build. Depois do build, o RadIA apresenta escolhas explícitas
+para manter o projeto como está, adicionar DUnitX ou solicitar outros incrementos. Somente após essa
+escolha o perfil `complete`, ou `custom` com `dunitx`, inclui `companionTestProject` e
+`companionTestExecutable`, compila a suíte companion e executa os testes com `RunDUnitXTests`.
 
 ## Como a execução funciona
 

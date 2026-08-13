@@ -44,8 +44,8 @@ The JSON preview contains:
 - platforms;
 - path, UTF-8 size, and SHA-256 for every file.
 
-The preview does not include file contents. `Tools > RadIA New Project...` displays this manifest
-before creation is enabled.
+The preview does not include file contents. `Tools > RadIA > RadIA New Project...` displays this
+manifest before creation is enabled.
 
 ## Visual use without an open project
 
@@ -86,7 +86,9 @@ The engine, preview, transaction, visual UI, option selection, and no-project au
 selection are implemented. Visual authorization does not broaden agent or MCP tool permissions.
 
 Beyond unit tests, `scripts/Test-RadIA.GeneratedProjects.ps1` generates the templates through the
-real engine and builds every `.dproj`. For the VCL calculator prompt, it also generates a DUnitX
-project, makes the main build compile that companion project, exposes its executable in the preview,
-runs five operation and division-by-zero tests through the RadIA runner, and validates the running
-UI. The current matrix covers Delphi 12 Win32 and Delphi 13 Win32/IDE64.
+real engine and builds every `.dproj`. A VCL calculator uses the `essential` profile by default,
+which generates and builds only the requested application. The `complete` profile, or `custom` with
+the `dunitx` option, adds the companion project, exposes its executable in the preview, and enables
+the five operation and division-by-zero tests through the RadIA runner. These extras are included
+only after an explicit user request or choice. The current matrix covers Delphi 12 Win32 and Delphi
+13 Win32/IDE64.

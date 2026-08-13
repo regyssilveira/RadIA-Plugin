@@ -68,3 +68,36 @@ test('composer keeps advanced execution choices out of the initial reading path'
   assert.match(chatJs, /function setComposerAdvancedVisible\(visible\)/u);
   assert.match(chatJs, /setComposerAdvancedVisible\(visible\)/u);
 });
+
+test('composer exposes reasoning effort as an explicit user choice', () => {
+  assert.match(chatHtml, /id="select-reasoning-effort"/u);
+  assert.match(
+    chatHtml,
+    /composer-execution-row[\s\S]*id="select-reasoning-effort"[\s\S]*id="btn-composer-advanced"/u
+  );
+  assert.match(chatHtml, /<option value="medium" selected>Medium<\/option>/u);
+  assert.match(chatJs, /action: 'set_reasoning_effort'/u);
+  assert.match(chatJs, /data\.reasoningEffort \|\| 'medium'/u);
+  assert.match(chatHtml, /id="effort-dropdown-trigger"[\s\S]*id="effort-options-list"/u);
+  assert.match(chatJs, /function updateEffortSelection\(effort\)/u);
+  assert.match(chatCss, /\.composer-effort-control \.custom-dropdown-trigger::after \{[\s\S]*right: 3px/u);
+});
+
+test('welcome screen starts with goals while keeping the complete platform visible', () => {
+  assert.match(chatJs, /What do you want to accomplish\?/u);
+  assert.match(chatJs, /Understand this project/u);
+  assert.match(chatJs, /Fix a problem/u);
+  assert.match(chatJs, /Create something/u);
+  assert.match(chatJs, /Debug an application/u);
+  assert.match(chatJs, /Code<\/span><span>Build<\/span><span>Tests<\/span><span>Debugger/u);
+  assert.match(chatJs, /Form Designer<\/span><span>Terminal<\/span><span>MCP<\/span><span>Skills/u);
+  assert.match(chatJs, /setPromptText\('\/help'\)/u);
+});
+
+test('welcome actions prepare requests without sending automatically', () => {
+  assert.match(chatJs, /button\.addEventListener\('click', \(\) => setPromptText\(action\.command\)\)/u);
+  assert.doesNotMatch(
+    chatJs,
+    /welcome-action-btn[\s\S]{0,500}postMessageToDelphi\(\{ action: 'send_prompt'/u
+  );
+});

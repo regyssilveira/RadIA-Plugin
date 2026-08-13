@@ -58,7 +58,7 @@ confiável.
 
 ## Uso no gerenciador
 
-1. Abra **Tools > Rad IA Extensions...**.
+1. Abra **Ferramentas > RadIA > Rad IA Extensions...**.
 2. Clique em **Browse catalog...**.
 3. Informe a URL HTTPS do catálogo e clique em **Load catalog**.
 4. Use a busca para filtrar por nome, ID, descrição ou publicador.

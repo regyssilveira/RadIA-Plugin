@@ -205,6 +205,7 @@ type
     );
     procedure SetAgentModeEnabled(const AEnabled: Boolean);
     procedure SetAgentExecutor(const AExecutorId: string);
+    procedure SetReasoningEffort(const AEffort: string);
     procedure PostAgentModeToWeb;
     procedure PostExecutionRouteToWeb;
     procedure PostExecutionScopeToWeb;
@@ -2509,6 +2510,8 @@ begin
     SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
   else if AAction = 'set_agent_executor' then
     SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
+  else if AAction = 'set_reasoning_effort' then
+    SetReasoningEffort(AJson.GetValue<string>('effort', 'medium'))
   else if AAction = 'reset_cli_session' then
   begin
     FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
@@ -3998,11 +4001,19 @@ begin
   LCurrent := FAgentExecutorSettings.Load;
   if SameText(AExecutorId, 'native') then
     FAgentExecutorSettings.Save(
-      TRadIAAgentExecutorSettings.Create(aekNative, LCurrent.CliClientId)
+      TRadIAAgentExecutorSettings.Create(
+        aekNative,
+        LCurrent.CliClientId,
+        LCurrent.ReasoningEffort
+      )
     )
   else if TRadIACliCatalog.FindById(AExecutorId, LDefinition) then
     FAgentExecutorSettings.Save(
-      TRadIAAgentExecutorSettings.Create(aekCli, LDefinition.Id)
+      TRadIAAgentExecutorSettings.Create(
+        aekCli,
+        LDefinition.Id,
+        LCurrent.ReasoningEffort
+      )
     )
   else
   begin
@@ -4013,6 +4024,28 @@ begin
     FJourneyContext.UpdateExecutor(CurrentExecutorId);
   PostExecutionRouteToWeb;
   UpdateModelsCombo;
+end;
+
+procedure TRadIAChatPresenter.SetReasoningEffort(const AEffort: string);
+var
+  LCurrent: TRadIAAgentExecutorSettings;
+begin
+  if FRequestInProgress then
+    Exit;
+  LCurrent := FAgentExecutorSettings.Load;
+  try
+    FAgentExecutorSettings.Save(
+      TRadIAAgentExecutorSettings.Create(
+        LCurrent.Kind,
+        LCurrent.CliClientId,
+        AEffort
+      )
+    );
+    SendInitialConfigToWeb;
+  except
+    on E: EArgumentException do
+      PostToWebView('add_message', 'assistant', E.Message);
+  end;
 end;
 
 function TRadIAChatPresenter.BuildAgentToolCatalogJson: string;
@@ -4492,7 +4525,8 @@ begin
     LDetection.ExecutablePath,
     AObjective,
     LWorkingDirectory,
-    LExternalSessionId
+    LExternalSessionId,
+    FAgentExecutorSettings.Load.ReasoningEffort
   );
   LUserMessage := TRadIAChatMessage.CreateMessage(
     mrUser,
@@ -5590,6 +5624,10 @@ begin
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));
     LJson.AddPair('executionRoute', BuildExecutionRouteJson);
+    LJson.AddPair(
+      'reasoningEffort',
+      FAgentExecutorSettings.Load.ReasoningEffort
+    );
 
     FView.PostMessageToWeb(LJson.ToJSON);
   finally

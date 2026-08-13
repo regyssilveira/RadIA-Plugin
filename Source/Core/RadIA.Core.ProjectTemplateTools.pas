@@ -135,7 +135,11 @@ const
     '"destinationPath":{"type":"string"},' +
     '"projectSpecification":{"type":"object","properties":{' +
     '"schemaVersion":{"type":"integer","const":1},' +
-    '"kind":{"type":"string","enum":["calculator"]}},' +
+    '"kind":{"type":"string","enum":["calculator"]},' +
+    '"creationProfile":{"type":"string","enum":[' +
+    '"essential","complete","custom"],"default":"essential"},' +
+    '"optionalFeatures":{"type":"array","uniqueItems":true,' +
+    '"items":{"type":"string","enum":["dunitx"]}}},' +
     '"required":["schemaVersion","kind"],' +
     '"additionalProperties":false},' +
     '"apiSpecification":{"type":"object","required":[' +

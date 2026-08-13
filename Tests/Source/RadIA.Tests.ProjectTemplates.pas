@@ -29,6 +29,10 @@ type
     procedure TestPreparedTransactionCleansStagingOnDestroy;
     [Test]
     procedure TestCalculatorCompositionContainsFunctionalVclInterface;
+    [Test]
+    procedure TestCalculatorEssentialProfileOmitsCompanionTests;
+    [Test]
+    procedure TestCalculatorCustomProfileCanIncludeDUnitX;
   end;
 
 implementation
@@ -61,7 +65,8 @@ begin
         ptkVcl,
         '37.0',
         ['Win32'],
-        '{"schemaVersion":1,"kind":"calculator"}'
+        '{"schemaVersion":1,"kind":"calculator",' +
+        '"creationProfile":"complete"}'
       )
     );
     try
@@ -133,6 +138,78 @@ begin
         LPlan.PreviewJson,
         '"companionTestExecutable":"bin\\$(Platform)\\$(Config)\\' +
         'CalculatorAppTests.exe"'
+      );
+    finally
+      LPlan.Free;
+    end;
+  finally
+    LEngine.Free;
+  end;
+end;
+
+procedure TTestRadIAProjectTemplates.
+  TestCalculatorEssentialProfileOmitsCompanionTests;
+var
+  LEngine: TRadIAProjectTemplateEngine;
+  LFile: TRadIAProjectTemplateFile;
+  LPlan: TRadIAProjectTemplatePlan;
+begin
+  LEngine := TRadIAProjectTemplateEngine.Create;
+  try
+    LPlan := LEngine.BuildPlan(
+      TRadIAProjectTemplateRequest.Create(
+        'EssentialCalculator',
+        ptkVcl,
+        '37.0',
+        ['Win32'],
+        '{"schemaVersion":1,"kind":"calculator"}'
+      )
+    );
+    try
+      Assert.AreEqual(5, Length(LPlan.Files));
+      for LFile in LPlan.Files do
+      begin
+        Assert.DoesNotContain(LFile.RelativePath, 'Tests');
+        if SameText(LFile.RelativePath, 'EssentialCalculator.dproj') then
+          Assert.DoesNotContain(LFile.Content, 'RadIABuildCompanionTests');
+      end;
+      Assert.Contains(
+        LPlan.PreviewJson,
+        '"creationProfile":"essential"'
+      );
+      Assert.DoesNotContain(LPlan.PreviewJson, 'companionTestProject');
+    finally
+      LPlan.Free;
+    end;
+  finally
+    LEngine.Free;
+  end;
+end;
+
+procedure TTestRadIAProjectTemplates.
+  TestCalculatorCustomProfileCanIncludeDUnitX;
+var
+  LEngine: TRadIAProjectTemplateEngine;
+  LPlan: TRadIAProjectTemplatePlan;
+begin
+  LEngine := TRadIAProjectTemplateEngine.Create;
+  try
+    LPlan := LEngine.BuildPlan(
+      TRadIAProjectTemplateRequest.Create(
+        'CustomCalculator',
+        ptkVcl,
+        '37.0',
+        ['Win32'],
+        '{"schemaVersion":1,"kind":"calculator",' +
+        '"creationProfile":"custom",' +
+        '"optionalFeatures":["dunitx"]}'
+      )
+    );
+    try
+      Assert.AreEqual(8, Length(LPlan.Files));
+      Assert.Contains(
+        LPlan.PreviewJson,
+        '"companionTestProject":"CustomCalculatorTests.dproj"'
       );
     finally
       LPlan.Free;

@@ -48,5 +48,12 @@ Tests/*.res
 # SonarQube temporary files
 .scannerwork/
 
+# Local working artifacts
+/scratch/
+/.planning/archive/
+**/.radia/debug/
+/Tests/RuntimeLab/*.cmds
+/Tests/RuntimeLab/*.res
+
 # Local environment variables (sensitive data)
 .env

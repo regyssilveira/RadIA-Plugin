@@ -45,11 +45,11 @@ O preview JSON contém:
 - path, tamanho UTF-8 e SHA-256 de cada arquivo.
 
 O preview não inclui o conteúdo dos arquivos. A tela `RadIA New Project...`, disponível no menu
-Tools/Ferramentas, apresenta esse manifesto antes de habilitar a criação.
+`Ferramentas > RadIA > RadIA New Project...`, apresenta esse manifesto antes de habilitar a criação.
 
 ## Uso visual sem projeto aberto
 
-1. Abra `Tools > RadIA New Project...`.
+1. Abra `Ferramentas > RadIA > RadIA New Project...`.
 2. Informe nome, template, versão Delphi e plataformas.
 3. Use `Browse...` para escolher a raiz autorizada.
 4. Clique em `Preview` e revise o manifesto.
@@ -93,7 +93,8 @@ Engine, preview, transação, tela visual, opções e seleção autorizada sem p
 implementados. A concessão visual não amplia a autorização das tools.
 
 Além dos testes unitários, `scripts/Test-RadIA.GeneratedProjects.ps1` gera os templates usando o
-engine real e compila cada `.dproj`. Para o prompt de calculadora VCL, também gera um projeto DUnitX,
-faz o build principal compilar esse projeto companion, expõe o executável no preview, executa cinco
-testes das operações e divisão por zero pelo runner do RadIA e valida a interface em execução. A
-matriz vigente abrange Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+engine real e compila cada `.dproj`. Uma calculadora VCL usa o perfil `essential` por padrão, que
+gera e compila somente a aplicação solicitada. O perfil `complete`, ou o perfil `custom` com a opção
+`dunitx`, acrescenta o projeto companion, expõe seu executável no preview e permite executar os cinco
+testes de operações e divisão por zero pelo runner do RadIA. Esses adicionais só entram após pedido
+ou escolha explícita do usuário. A matriz vigente abrange Delphi 12 Win32 e Delphi 13 Win32/IDE64.

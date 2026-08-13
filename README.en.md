@@ -24,6 +24,11 @@ evidence that validates a fix, with consent and workspace boundaries.
 Type `/help` in chat for a capability summary, primary commands, and documentation links. Links open
 in the Windows default browser.
 
+A new conversation starts with the goal—understand, fix, create, or debug—while keeping code,
+build, test, debugger, Form Designer, terminal, MCP, and skill capabilities visible. Start actions
+only prepare the request; provider, model, mode, route, and advanced controls remain available for
+inspection and customization.
+
 ## Which mode should I use?
 
 | Combination | Use it for | IDE tools | Must a project be open? |

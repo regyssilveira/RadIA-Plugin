@@ -51,16 +51,18 @@ extracts absolute Windows paths, infers the name from the destination or applica
 Win32 when no platform is specified. It asks only for information that is actually missing, switches
 to native execution, and keeps approval visible in the chat.
 After approval, the workflow writes only inside the authorized root, opens the project in the IDE,
-builds and runs it, and records validation evidence.
+builds and runs it, and records validation evidence. The panel remains open through the transition
+and shows progress to the user.
 
 The type is also inferred without requiring the command: Console, VCL, FireMonkey/FMX, Library/DLL,
 Package/BPL, DUnitX, or Windows Service. Equivalent Portuguese and English terms are accepted. If the
 request does not safely identify one of these types, RadIA asks which template to use before preview.
 
-For a VCL calculator, the preview reports `companionTestProject` and
-`companionTestExecutable`. The main build also compiles the companion DUnitX suite. The journey then
-starts the application under the debugger, verifies its primary scenario, and runs the tests with
-`RunDUnitXTests`. Completion reports build, debugger, UI, and DUnitX evidence separately.
+For a generic VCL calculator, the journey uses the `essential` profile: it creates only the
+application, opens the project, and completes the first build. After that build, RadIA presents
+explicit choices to keep the project as-is, add DUnitX, or request other increments. Only after that
+choice does `complete`, or `custom` with `dunitx`, include `companionTestProject` and
+`companionTestExecutable`, build the companion suite, and run it with `RunDUnitXTests`.
 
 ## Execution model
 

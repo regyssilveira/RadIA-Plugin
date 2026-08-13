@@ -15,7 +15,7 @@ before resolving a command, so adding or removing a manifest takes effect in the
 
 ## Visual manager
 
-Open **Tools > Rad IA Extensions...** to install or update a manifest, enable or disable it, reload
+Open **Tools > RadIA > Rad IA Extensions...** to install or update a manifest, enable or disable it, reload
 diagnostics, manage trusted publishers, or remove it with explicit confirmation. Installs, updates,
 and status changes use an atomic write. RadIA validates the candidate first, reloads the complete
 installed set, and restores the previous file if validation or activation fails. An open chat

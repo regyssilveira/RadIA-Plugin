@@ -1020,6 +1020,7 @@ try {
             projectSpecification = @{
                 schemaVersion = 1
                 kind = "calculator"
+                creationProfile = "complete"
             }
         }
     if (-not $templatePreview.previewId) {

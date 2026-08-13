@@ -31,6 +31,7 @@ uses
   System.SysUtils,
   ToolsAPI,
   RadIA.Core.Types,
+  RadIA.OTA.DockableForm,
   Winapi.Windows;
 
 function TRadIAOTAProjectOpeningFacade.CloseProject(
@@ -129,6 +130,7 @@ begin
   Result := False;
   if Trim(AProjectFileName) = '' then
     Exit;
+  ShowRadIAChat;
   if not Supports(
     BorlandIDEServices,
     IOTAActionServices,
@@ -141,6 +143,8 @@ begin
   finally
     TInterlocked.Decrement(GProjectTransitionCount);
   end;
+  if Result then
+    ShowRadIAChat;
 end;
 
 function TRadIAOTAProjectOpeningFacade.WaitForMainThreadQueue: Boolean;

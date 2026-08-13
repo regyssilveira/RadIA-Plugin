@@ -11,7 +11,7 @@ Este documento contém o checklist completo de recursos, categorização e statu
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |
 | **Scan Compiler & OS Warnings** | Integração | Varredura de código em busca de warnings do compilador Delphi, problemas de thread-safety e vazamentos de recursos (handles GDI). | ✅ Concluído |
 | **Chat Lateral Acoplável** | Chat UX | Painel integrado à IDE rodando WebView2 com suporte a Markdown e Pascal highlight. | ✅ Concluído |
-| **Tela Inicial do Chat** | Chat UX | Tela inicial com animação central, ações rápidas e carregamento de histórico sob demanda. | ✅ Concluído |
+| **Entrada Orientada a Objetivos** | Chat UX | Tela inicial que começa por entender, corrigir, criar ou depurar, mantém a plataforma completa visível e prepara o pedido sem envio automático. | ✅ Concluído |
 | **Tema Integrado à IDE** | Chat UX | Adaptação Dark/Light ao tema do Delphi, incluindo Mountain Mist como light, scrollbar e blocos de código consistentes. | ✅ Concluído |
 | **Atalhos de Teclado** | Chat UX | Atalho `Ctrl + Enter` para enviar prompts e `Enter` para quebra de linha. | ✅ Concluído |
 | **Persistência de Layout** | Chat UX | Salvamento e restauração automática de tamanho/posição flutuante e visibilidade no startup. | ✅ Concluído |
@@ -74,6 +74,10 @@ Este documento contém o checklist completo de recursos, categorização e statu
 | **Arquitetura MVP** | Infraestrutura | Desacoplamento completo entre UI VCL (Views) e lógica (Presenters) do Chat e Configurações. | ✅ Concluído |
 | **Abstração de Armazenamento** | Infraestrutura | Persistência via `IRadIASettingsStorage`, com Registro em produção e memória nos testes. | ✅ Concluído |
 | **Testes de Apresentação** | Infraestrutura | Suíte de testes automatizados com DUnitX validando lógica de Presenters com mocks de Views. | ✅ Concluído |
+| **Perfis de criação de projeto** | Jornada | O perfil essencial cria e compila apenas o projeto solicitado; completo e personalizado preservam DUnitX opcional. | ✅ Concluído |
+| **Menu RadIA agrupado** | Integração IDE | Todos os comandos do produto ficam em `Ferramentas > RadIA`. | ✅ Concluído |
+| **Effort visível** | Chat | O usuário escolhe a profundidade de raciocínio no compositor, com padrão equilibrado. | ✅ Concluído |
+| **Painel persistente na criação** | Jornada | O chat permanece visível durante a abertura do projeto e apresenta o andamento da criação e do build. | ✅ Concluído |
 | **Hook do Editor** | Infraestrutura | Integração resiliente com o menu contextual do editor via hook VCL assíncrono, compatível com Delphi 12/13 e estável durante a criação de novos projetos. | ✅ Concluído |
 | **Registry Agentivo** | Agentivo | Catálogo compartilhado por chat, MCP e extensões. | ✅ Concluído |
 | **Consentimento e Auditoria** | Segurança | Decisões por escopo e trilha sanitizada. | ✅ Concluído |

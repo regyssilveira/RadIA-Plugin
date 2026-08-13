@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.10.0
+# Manual completo do RadIA 2.11.0
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -35,7 +35,7 @@ da IDE e disponibiliza seu painel acoplável. Posicione o painel como uma aba la
 flutuante.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.10.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.11.0`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -100,6 +100,11 @@ e os cuidados de cada opção estão na
 [referência completa das configurações](../reference/settings_reference.md).
 
 ## 3. Como ativar o modo agente
+
+Uma conversa vazia começa por objetivos: entender o projeto, corrigir um problema, criar algo ou
+depurar uma aplicação. Essas ações apenas preparam o pedido. A mesma tela mantém visíveis as
+capacidades de código, build, testes, debugger, Form Designer, terminal, MCP e skills. O usuário
+pode começar pela intenção sem perder a percepção ou o acesso à plataforma completa.
 
 ### 3.1 Botão e comandos do modo agente
 
@@ -223,7 +228,9 @@ pela pesquisa.
 Para habilitar a estimativa e o limite monetário, configure o
 [catálogo local de custos](../reference/agent_pricing.md).
 
-O terminal integrado pode ser aberto pelo botão **Terminal** (`>_`) no cabeçalho do chat ou pelo
+O terminal integrado pode ser aberto pelo botão **Terminal** (`>_`) no cabeçalho do chat ou por
+**Ferramentas > RadIA > Rad IA Terminal**. Todos os comandos do produto ficam agrupados nesse
+submenu, evitando que ações do RadIA se misturem com comandos nativos do Delphi.
 comando `/terminal`. Os dois caminhos abrem o mesmo terminal acoplável e preservam a preferência
 entre interação visual e comandos digitados.
 
@@ -432,6 +439,21 @@ Consulte o [guia de ferramentas agentivas](user_guide_agentic_tools.md).
 Build não autoriza automaticamente a execução do binário. Execução e debugger possuem risco e
 consentimento próprios.
 
+#### Perfis de criação
+
+Ao pedir um projeto sem mencionar adicionais, o RadIA usa o perfil `essential`: cria somente os
+arquivos necessários, abre o projeto e compila. O perfil `complete` acrescenta o projeto DUnitX e
+seus testes iniciais. O perfil `custom` aceita `optionalFeatures` para selecionar, por enquanto,
+`dunitx`. Depois de compilar a criação essencial, o RadIA apresenta escolhas para manter o projeto
+como está ou adicionar recursos. Nenhum adicional é criado sem uma escolha explícita do usuário.
+
+Durante esse fluxo, o painel do RadIA permanece aberto e apresenta o andamento da criação, abertura
+e build. A transição do projeto não deve ocultar o chat nem exigir que o usuário o reabra.
+
+Na linha principal do compositor, **Effort** controla a profundidade de raciocínio do executor
+compatível. `Medium` é o padrão equilibrado; `Low` prioriza rapidez, enquanto `High` e
+`Extra high` priorizam análise. A escolha fica visível e é preservada ao trocar o executor.
+
 ### 4.8 Testes DUnitX
 
 - `RunDUnitXTests`: executa um runner `.exe` localizado dentro do projeto ativo.
@@ -559,7 +581,7 @@ Packages confiáveis podem registrar novas ferramentas pela API versionada
 
 Comandos, skills, jornadas, conhecimento, referências, templates, aliases e workflows declarativos
 podem ser instalados em
-**Tools > Rad IA Extensions...** como manifesto `*.radia.json` ou pacote íntegro `.radiaext`.
+**Ferramentas > RadIA > Rad IA Extensions...** como manifesto `*.radia.json` ou pacote íntegro `.radiaext`.
 Workflows executam somente tools internas pela policy central; não interpretam shell ou binários.
 O **Addon Studio...** cria, testa em sandbox, instala, exporta e assina o pacote. Para conteúdo
 compartilhado, selecione **Resources folder** e informe um **Content file** relativo em

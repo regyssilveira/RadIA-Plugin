@@ -16,7 +16,7 @@ arquivo adicionado ou removido entra em vigor na própria sessão.
 
 ## Gerenciador visual
 
-Abra **Tools > Rad IA Extensions...** para:
+Abra **Ferramentas > RadIA > Rad IA Extensions...** para:
 
 - instalar um novo manifesto ou atualizar uma extensão existente;
 - habilitar ou desabilitar sem apagar o arquivo;
@@ -309,7 +309,7 @@ chave. Se o usuário confirmar, a confiança é persistida em:
 
 Instalações posteriores do mesmo ID e da mesma chave são reconhecidas automaticamente. A troca de
 chave para um ID já conhecido produz um alerta destacado e exige nova decisão. Use
-**Tools > Rad IA Extensions... > Trusted publishers...** para consultar fingerprints e revogar
+**Ferramentas > RadIA > Rad IA Extensions... > Trusted publishers...** para consultar fingerprints e revogar
 confiança. A revogação impede novas instalações; ela não remove extensões que já foram instaladas.
 
 No envelope v3, a mesma identidade RSA pode assinar pacotes com recursos; todos os arquivos entram
