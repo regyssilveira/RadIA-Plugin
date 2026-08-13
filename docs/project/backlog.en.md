@@ -5,9 +5,8 @@ belong in the backlog.
 
 ## In progress
 
-| Open outcome | Completion criterion |
-|---|---|
-| Validate the delivery | Tests, Sonar, installer, and documentation pass on Delphi 12 and 13 |
+No approved item is in progress. New items must state an open outcome and a verifiable completion
+criterion before work begins.
 
 The backlog does not record versions, completed deliveries, evidence, or unapproved ideas.
 Long-term direction stays in the [roadmap](roadmap.en.md).

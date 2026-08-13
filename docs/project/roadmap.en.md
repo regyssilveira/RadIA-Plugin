@@ -6,13 +6,13 @@ the [backlog](backlog.en.md).
 
 ## Current direction
 
-Complete the structural semantic engine for Delphi 12 and 13 and use it consistently in the editor,
-agent, navigation, and diagnostics. It must complement CodeInsight without blocking the IDE and keep
-the current behavior as a fallback.
+Consolidate the complete Delphi 12 and 13 experience through real usage: create, understand, build,
+test, and debug projects without requiring users to know the internal architecture. New initiatives
+enter execution only with an observable outcome and an acceptance criterion.
 
 ## Next decision
 
-After stabilization, the next initiative will be selected by its measurable impact on the complete
+After observing the stable version, the next initiative will be selected by its measurable impact on the complete
 journey of creating, understanding, building, testing, and debugging projects. The roadmap neither
 reserves versions nor keeps speculative lists; only approved work enters the [backlog](backlog.en.md).
 

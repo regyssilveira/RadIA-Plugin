@@ -5,9 +5,8 @@ release não pertencem ao backlog.
 
 ## Em execução
 
-| Resultado aberto | Critério de conclusão |
-|---|---|
-| Validar a entrega | Testes, Sonar, instalador e documentação aprovados no Delphi 12 e 13 |
+Nenhum item aprovado está em execução. Novos itens devem registrar um resultado aberto e um critério
+de conclusão verificável antes do início do trabalho.
 
 O backlog não registra versões, entregas concluídas, evidências ou ideias ainda não aprovadas. A
 direção de longo prazo fica no [roadmap](roadmap.md).
