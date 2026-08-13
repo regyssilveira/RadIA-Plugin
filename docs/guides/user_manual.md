@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.9.0
+# Manual completo do RadIA 2.10.0
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -35,7 +35,7 @@ da IDE e disponibiliza seu painel acoplável. Posicione o painel como uma aba la
 flutuante.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.9.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.10.0`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 

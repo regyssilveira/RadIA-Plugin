@@ -6,29 +6,6 @@ Este documento contém o checklist completo de recursos, categorização e statu
 
 ## Tabela Completa de Recursos
 
-Nota v2.8.0: Ghost Text, ações contextuais e agente compartilham contexto semântico limitado; o
-usuário pode inspecionar unit, símbolo, imports e declarações próximas sem alterar o buffer.
-
-Nota v2.7.0: criação natural cobre todos os templates, intenções alternam Code/Design de forma
-determinística e a revisão por bloco aceita comentários para solicitar alterações sem mutação.
-
-Nota v2.6.2: menus do editor estabilizados, scrollbars web mais largas, captions com versao,
-criacao de calculadora por linguagem natural e projetos gerados validados com `$(BDS)` no Delphi 13.
-
-Nota v2.4.0: publicação portável de skills e terminal com true color, atributos, alternate screen,
-bracketed paste, mouse SGR e hyperlinks OSC 8 protegidos por consentimento.
-
-Nota v2.3.1: seleção explícita entre RadIA native e CLI direto, identidade visual por rota,
-cópia em todas as respostas textuais e ChatGPT Pro restaurado exclusivamente pelo Codex CLI.
-
-Nota v2.2.2: `/help`, jornadas DEXT conversacionais, descoberta de modelos compatível com o
-transporte ativo, limite local de tokens opcional e refinamentos da configuração CLI/MCP.
-
-Nota v2.2.1: diagnóstico `/doctor`, `/status` sanitizado, experiência guiada de CLI/MCP,
-documentação centralizada e correções de estabilidade do debugger e da UI.
-
-Nota v0.0.25: o plugin agora protege o **Apply Changes** do Smart Diff contra duplicação de código quando a seleção original do editor é perdida.
-
 | Recurso | Categoria | Descrição | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |

@@ -6,29 +6,6 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
-Version 2.8.0 note: Ghost Text, contextual actions, and the agent share bounded semantic context;
-users can inspect the unit, symbol, imports, and nearby declarations without changing the buffer.
-
-Version 2.7.0 note: natural creation covers every template, intents switch Code/Design
-deterministically, and block review accepts commented change requests without mutation.
-
-Version 2.6.2 note: stabilized editor menus, wider web scrollbars, versioned captions, natural
-calculator creation, and generated projects validated with `$(BDS)` on Delphi 13.
-
-Version 2.4.0 note: portable skill publication and terminal true color, attributes, alternate screen,
-bracketed paste, SGR mouse, and consent-gated OSC 8 hyperlinks.
-
-Version 2.3.1 note: explicit RadIA native versus direct CLI selection, route-specific identity,
-copy actions on every textual response, and ChatGPT Pro restored exclusively through Codex CLI.
-
-v2.2.2 note: `/help`, conversational DEXT journeys, transport-compatible model discovery, an
-optional local token limit, and refined CLI/MCP settings.
-
-v2.2.1 note: actionable `/doctor`, sanitized `/status`, guided CLI/MCP setup, centralized
-documentation, and debugger and UI stability fixes.
-
-v0.0.25 note: the plugin now protects Smart Diff **Apply Changes** against duplicated code when the original editor selection is lost.
-
 | Feature | Category | Description | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integration | Scans and optimizes SQL query strings directly from the Delphi editor context menu. | ✅ Completed |

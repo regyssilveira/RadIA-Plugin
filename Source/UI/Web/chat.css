@@ -15,6 +15,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .header-logo {
@@ -23,16 +25,19 @@
 }
 
 .header-title {
+  flex: 0 0 auto;
   font-weight: 700;
   font-size: 13.5px;
   letter-spacing: 0.05em;
   color: var(--fg-primary);
+  white-space: nowrap;
 }
 
 .header-right {
   display: flex;
-  gap: 16px;
+  gap: 10px;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 .header-action-btn {
@@ -202,6 +207,26 @@ textarea:focus-visible,
 .header-action-btn .btn-label {
   font-size: 9px;
   font-weight: 500;
+}
+
+@media (max-width: 1100px) {
+  .header-action-btn .btn-label {
+    display: none;
+  }
+
+  .header-action-btn {
+    padding: 6px;
+  }
+
+  .header-right {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 760px) {
+  .execution-route {
+    max-width: 42vw;
+  }
 }
 
 #chat-container {
@@ -584,7 +609,8 @@ textarea:focus-visible,
 }
 
 .execution-route {
-  max-width: 280px;
+  min-width: 0;
+  max-width: clamp(150px, 32vw, 360px);
   padding: 3px 8px;
   overflow: hidden;
   color: var(--fg-secondary);

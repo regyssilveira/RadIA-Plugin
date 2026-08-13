@@ -31,6 +31,15 @@ test('queued follow-ups remain visible without widening the composer', () => {
   assert.match(chatCss, /@media \(max-width: 520px\)[\s\S]*\.execution-route,[\s\S]*display: none/u);
 });
 
+test('header compacts actions before content becomes crowded', () => {
+  assert.match(
+    chatCss,
+    /@media \(max-width: 1100px\)[\s\S]*\.header-action-btn \.btn-label[\s\S]*display: none/u
+  );
+  assert.match(chatCss, /\.execution-route \{[\s\S]*text-overflow: ellipsis/u);
+  assert.match(chatHtml, /class="header-title"[^>]*>RadIA</u);
+});
+
 test('composer separates execution and context into responsive rows', () => {
   assert.match(chatCss, /#chat-wrapper[\s\S]*min-width: 0/u);
   assert.match(chatCss, /#chat-footer[\s\S]*min-width: 0[\s\S]*width: 100%/u);
