@@ -2515,6 +2515,126 @@ body.light-theme .message-avatar.provider-avatar-badge {
   color: var(--fg-primary);
 }
 
+.agent-operation-summary {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg-panel);
+}
+
+.agent-operation-heading {
+  margin-bottom: 9px;
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+
+.agent-operation-stages {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-operation-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 28px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.agent-operation-stage:not(:last-child)::after {
+  position: absolute;
+  top: 13px;
+  bottom: -1px;
+  left: 5px;
+  width: 1px;
+  background: var(--border);
+  content: '';
+}
+
+.agent-operation-marker {
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  margin-top: 3px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-panel);
+}
+
+.agent-operation-stage.is-current {
+  color: var(--fg-primary);
+  font-weight: 600;
+}
+
+.agent-operation-stage.is-current .agent-operation-marker {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.agent-operation-stage.is-completed {
+  color: var(--fg-secondary);
+}
+
+.agent-operation-stage.is-completed .agent-operation-marker {
+  border-color: var(--green-apply);
+  background: var(--green-apply);
+}
+
+.agent-operation-stage.is-failed .agent-operation-marker {
+  border-color: var(--danger, #c62828);
+  background: var(--danger, #c62828);
+}
+
+.agent-operation-exclusions,
+.agent-operation-result {
+  margin: 6px 0 0;
+  color: var(--fg-secondary);
+  font-size: 11px;
+}
+
+.agent-operation-exclusions {
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+
+.agent-operation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.agent-operation-action {
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-primary);
+  background: var(--bg-secondary);
+  cursor: pointer;
+}
+
+.agent-operation-action:hover,
+.agent-operation-action:focus-visible {
+  border-color: var(--accent);
+}
+
+.agent-technical-details {
+  margin: 9px 0;
+  color: var(--fg-secondary);
+}
+
+.agent-technical-details > summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .agent-run-message {
   margin-top: 5px;
   color: var(--fg-secondary);

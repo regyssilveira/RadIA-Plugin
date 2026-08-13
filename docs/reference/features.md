@@ -78,6 +78,7 @@ Este documento contém o checklist completo de recursos, categorização e statu
 | **Menu RadIA agrupado** | Integração IDE | Todos os comandos do produto ficam em `Ferramentas > RadIA`. | ✅ Concluído |
 | **Effort visível** | Chat | O usuário escolhe a profundidade de raciocínio no compositor, com padrão equilibrado. | ✅ Concluído |
 | **Painel persistente na criação** | Jornada | O chat permanece visível durante a abertura do projeto e apresenta o andamento da criação e do build. | ✅ Concluído |
+| **Experiência operacional unificada** | Chat | Mostra escopo, etapa atual, resultado esperado e opcionais escolhidos pelo usuário, preservando auditoria técnica sob demanda. | ✅ Concluído |
 | **Hook do Editor** | Infraestrutura | Integração resiliente com o menu contextual do editor via hook VCL assíncrono, compatível com Delphi 12/13 e estável durante a criação de novos projetos. | ✅ Concluído |
 | **Registry Agentivo** | Agentivo | Catálogo compartilhado por chat, MCP e extensões. | ✅ Concluído |
 | **Consentimento e Auditoria** | Segurança | Decisões por escopo e trilha sanitizada. | ✅ Concluído |

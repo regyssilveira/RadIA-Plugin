@@ -820,6 +820,108 @@ function renderAgentPlanItems(planElement, plan) {
   });
 }
 
+const PROJECT_OPERATION_STAGES = [
+  { id: 'prepare', label: 'Preparing request', tools: [] },
+  { id: 'preview', label: 'Reviewing project structure', tools: ['PreviewProjectTemplate'] },
+  { id: 'create', label: 'Creating project files', tools: ['CreateProjectFromTemplate'] },
+  {
+    id: 'open',
+    label: 'Opening project in Delphi',
+    tools: ['OpenCreatedProject', 'ValidateCreatedProject']
+  },
+  {
+    id: 'build',
+    label: 'Building the project',
+    tools: ['ValidateCreatedProject', 'BuildProject']
+  },
+  { id: 'complete', label: 'Project ready', tools: [] }
+];
+
+function isProjectCreationRun(state) {
+  const objective = String(state.objective || '').toLowerCase();
+  const planText = (Array.isArray(state.plan) ? state.plan : [])
+    .map(step => `${step?.title || ''} ${step?.description || ''}`)
+    .join(' ')
+    .toLowerCase();
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const hasProjectTool = steps.some(step => PROJECT_OPERATION_STAGES.some(stage =>
+    stage.tools.includes(step.toolName)
+  ));
+  return hasProjectTool || /\b(create|generate|new)\b.*\bproject\b/u.test(`${objective} ${planText}`);
+}
+
+function getProjectStageState(stage, state) {
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const matchingSteps = steps.filter(step => stage.tools.includes(step.toolName));
+  const stageSucceeded = step => {
+    if (!step.success) return false;
+    if (stage.id !== 'build' || step.toolName !== 'ValidateCreatedProject') return true;
+    const result = parseAgentStepResult(step);
+    return result?.buildSucceeded === true;
+  };
+  const failed = matchingSteps.some(step => !stageSucceeded(step));
+  if (failed) return 'failed';
+  if (matchingSteps.length > 0) return 'completed';
+  if (stage.id === 'prepare') return 'completed';
+  if (stage.id === 'complete' && state.status === 'completed') return 'completed';
+
+  const stageIndex = PROJECT_OPERATION_STAGES.indexOf(stage);
+  const furthestCompletedIndex = PROJECT_OPERATION_STAGES.reduce((furthest, candidate, index) => {
+    const wasCompleted = steps.some(step => {
+      if (!candidate.tools.includes(step.toolName) || !step.success) return false;
+      if (candidate.id !== 'build' || step.toolName !== 'ValidateCreatedProject') return true;
+      return parseAgentStepResult(step)?.buildSucceeded === true;
+    });
+    return wasCompleted ? Math.max(furthest, index) : furthest;
+  }, 0);
+  if (state.status === 'failed' || state.status === 'cancelled') return 'pending';
+  return stageIndex === furthestCompletedIndex + 1 ? 'current' : 'pending';
+}
+
+function renderProjectOperationSummary(card, state) {
+  const summary = card.querySelector('.agent-operation-summary');
+  const stagesElement = card.querySelector('.agent-operation-stages');
+  const exclusions = card.querySelector('.agent-operation-exclusions');
+  const result = card.querySelector('.agent-operation-result');
+  const actions = card.querySelector('.agent-operation-actions');
+  const isProjectRun = isProjectCreationRun(state);
+  summary.hidden = !isProjectRun;
+  if (!isProjectRun) return;
+
+  stagesElement.replaceChildren();
+  PROJECT_OPERATION_STAGES.forEach(stage => {
+    const stageState = getProjectStageState(stage, state);
+    const item = document.createElement('li');
+    const marker = document.createElement('span');
+    const label = document.createElement('span');
+    item.className = `agent-operation-stage is-${stageState}`;
+    item.setAttribute('aria-current', stageState === 'current' ? 'step' : 'false');
+    marker.className = 'agent-operation-marker';
+    marker.setAttribute('aria-hidden', 'true');
+    label.textContent = stage.label;
+    item.append(marker, label);
+    stagesElement.appendChild(item);
+  });
+  exclusions.textContent = 'Not added automatically: DUnitX and other optional features.';
+  result.textContent = state.status === 'completed'
+    ? 'Result: the requested project is ready. Optional additions remain your choice.'
+    : 'Expected result: the requested project opens in Delphi and builds successfully.';
+  actions.replaceChildren();
+  if (state.status !== 'completed') return;
+  [
+    ['Add DUnitX tests', 'Add a DUnitX test project to the project that was just created.'],
+    ['Review optional additions', 'Show optional additions for the project that was just created.']
+  ].forEach(([label, prompt]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'agent-operation-action';
+    button.textContent = label;
+    button.title = `${label}; this only prepares a request for your review`;
+    button.addEventListener('click', () => setPromptText(prompt));
+    actions.appendChild(button);
+  });
+}
+
 function openAgentPlanEditor(planElement, plan) {
   planElement.replaceChildren();
   const editor = document.createElement('div');
@@ -960,11 +1062,19 @@ function renderAgentState(data) {
       '<div class="agent-run-header">' +
       '<strong>Agent run</strong><span class="agent-run-status"></span>' +
       '</div><div class="agent-run-objective"></div>' +
+      '<section class="agent-operation-summary" hidden>' +
+      '<div class="agent-operation-heading">What RadIA is doing</div>' +
+      '<ol class="agent-operation-stages"></ol>' +
+      '<p class="agent-operation-exclusions"></p>' +
+      '<p class="agent-operation-result"></p>' +
+      '<div class="agent-operation-actions"></div></section>' +
       '<div class="agent-run-message"></div>' +
+      '<ol class="agent-run-plan"></ol>' +
+      '<details class="agent-technical-details"><summary>Technical details</summary>' +
       '<div class="agent-run-metrics"></div>' +
       '<div class="agent-run-validation"></div>' +
       '<div class="agent-run-impact"></div>' +
-      '<ol class="agent-run-plan"></ol><ol class="agent-run-steps"></ol>' +
+      '<ol class="agent-run-steps"></ol></details>' +
       '<div class="agent-run-controls"></div>';
     AGENT_CARDS.set(sessionId, card);
     chatContainer.appendChild(card);
@@ -976,6 +1086,7 @@ function renderAgentState(data) {
   card.querySelector('.agent-run-objective').textContent = state.objective || '';
   card.querySelector('.agent-run-message').textContent = state.message || '';
   const steps = Array.isArray(state.steps) ? state.steps : [];
+  renderProjectOperationSummary(card, state);
   const elapsedSeconds = Math.round((state.elapsedMilliseconds || 0) / 1000);
   const tokenBudget = state.maxTotalTokens > 0
     ? `${state.totalTokens || 0}/${state.maxTotalTokens} tokens`

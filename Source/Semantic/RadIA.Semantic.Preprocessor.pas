@@ -272,7 +272,7 @@ procedure SwitchConditionalBranch(
 );
 var
   LFrame: TRadIASemanticConditionalFrame;
-  LIndex: Integer;
+  LIndex: NativeInt;
   LSelected: TRadIASemanticActivity;
 begin
   if AStack.Count = 0 then

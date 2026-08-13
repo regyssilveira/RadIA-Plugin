@@ -1221,7 +1221,8 @@ end;
 
 function TRadIAChatPresenter.BuildHelpText: string;
 const
-  CDocsRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/';
+  CGuidesRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/guides/';
+  CReferenceRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/reference/';
 begin
   Result :=
     '## RadIA help' + sLineBreak + sLineBreak +
@@ -1251,11 +1252,11 @@ begin
       sLineBreak + sLineBreak +
     '### Documentation' + sLineBreak + sLineBreak +
     '- [Getting started](https://github.com/regyssilveira/RadIA-Plugin#readme)' + sLineBreak +
-    '- [Slash commands](' + CDocsRoot + 'slash_commands.md)' + sLineBreak +
-    '- [Journeys](' + CDocsRoot + 'user_guide_journeys.md)' + sLineBreak +
-    '- [DEXT journeys](' + CDocsRoot + 'user_guide_dext_journeys.md)' + sLineBreak +
-    '- [Settings reference](' + CDocsRoot + 'settings_reference.md)' + sLineBreak +
-    '- [Scoped execution settings](' + CDocsRoot + 'hierarchical_settings.md)';
+    '- [Slash commands](' + CReferenceRoot + 'slash_commands.md)' + sLineBreak +
+    '- [Journeys](' + CGuidesRoot + 'user_guide_journeys.md)' + sLineBreak +
+    '- [DEXT journeys](' + CGuidesRoot + 'user_guide_dext_journeys.md)' + sLineBreak +
+    '- [Settings reference](' + CReferenceRoot + 'settings_reference.md)' + sLineBreak +
+    '- [Scoped execution settings](' + CGuidesRoot + 'hierarchical_settings.md)';
 end;
 
 function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;

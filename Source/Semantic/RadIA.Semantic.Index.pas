@@ -148,7 +148,7 @@ type
     function LoadCache(const AFileName: string; out AError: string): Boolean;
     function RemoveUnit(const AUnitKey: string): Boolean;
     procedure SaveCache(const AFileName: string);
-    function UnitCount: Integer;
+    function UnitCount: NativeInt;
     property SymbolCount: Integer read FSymbolCount;
   end;
 
@@ -809,7 +809,7 @@ begin
   end;
 end;
 
-function TRadIASemanticIndex.UnitCount: Integer;
+function TRadIASemanticIndex.UnitCount: NativeInt;
 begin
   Result := FUnits.Count;
 end;

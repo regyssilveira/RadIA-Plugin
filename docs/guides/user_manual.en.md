@@ -1,4 +1,4 @@
-# Complete RadIA 2.11.0 user manual
+# Complete RadIA 2.12.0 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -187,6 +187,14 @@ Use the **Runs** button or `/agent history [query]` to find runs by objective, s
 The index exposes metadata only; tool arguments and results are excluded from search results.
 To enable monetary estimates and enforcement, configure the
 [local pricing catalog](../reference/agent_pricing.en.md).
+
+During project creation, the execution center first presents a stable operational view: preparation,
+structure review, file creation, opening in Delphi, build, and completion. The current stage remains
+highlighted while work continues. The card explicitly states that DUnitX and other additions are not
+created automatically and shows the expected result before execution finishes. Metrics, risks,
+evidence, and arguments remain available under **Technical details** without dominating the primary
+reading path. After a successful build, actions such as **Add DUnitX tests** only prepare a new
+request; the user still reviews and sends that choice.
 
 Open the integrated terminal with the **Terminal** (`>_`) button in the chat header or through
 **Tools > RadIA > Rad IA Terminal**. All product commands are grouped in this submenu so RadIA

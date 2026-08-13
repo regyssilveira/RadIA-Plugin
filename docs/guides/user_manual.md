@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.11.0
+# Manual completo do RadIA 2.12.0
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -35,7 +35,7 @@ da IDE e disponibiliza seu painel acoplável. Posicione o painel como uma aba la
 flutuante.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.11.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.12.0`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -227,6 +227,14 @@ ID da sessão. O índice mostra somente metadados; argumentos e resultados das t
 pela pesquisa.
 Para habilitar a estimativa e o limite monetário, configure o
 [catálogo local de custos](../reference/agent_pricing.md).
+
+Na criação de projetos, a central apresenta primeiro uma visão operacional estável: preparação,
+revisão da estrutura, criação dos arquivos, abertura no Delphi, build e conclusão. A etapa atual
+permanece destacada enquanto o trabalho acontece. O cartão informa explicitamente que DUnitX e
+outros adicionais não serão criados automaticamente e mostra o resultado esperado antes da
+execução terminar. Métricas, riscos, evidências e argumentos continuam disponíveis em
+**Technical details**, sem ocupar a leitura principal. Depois de um build bem-sucedido, ações como
+**Add DUnitX tests** apenas preparam uma nova solicitação; o usuário ainda revisa e envia a escolha.
 
 O terminal integrado pode ser aberto pelo botão **Terminal** (`>_`) no cabeçalho do chat ou por
 **Ferramentas > RadIA > Rad IA Terminal**. Todos os comandos do produto ficam agrupados nesse

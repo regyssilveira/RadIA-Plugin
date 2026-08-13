@@ -78,6 +78,7 @@ This document contains the complete checklist, categorization, and development s
 | **Grouped RadIA menu** | IDE integration | All product commands live under `Tools > RadIA`. | ✅ Completed |
 | **Visible effort** | Chat | Users choose reasoning depth in the composer with a balanced default. | ✅ Completed |
 | **Persistent creation panel** | Journey | Chat remains visible while the project opens and presents creation and build progress. | ✅ Completed |
+| **Unified operational experience** | Chat | Shows scope, current stage, expected result, and user-chosen options while preserving technical audit details on demand. | ✅ Completed |
 | **Editor Hook** | Infrastructure | Resilient editor context-menu integration using an asynchronous VCL hook, compatible with Delphi 12/13 and stable during new project creation. | ✅ Completed |
 | **Agentic Registry** | Agentic | Catalog shared by chat, MCP, and extensions. | ✅ Completed |
 | **Consent and Audit** | Security | Scoped decisions and a sanitized audit trail. | ✅ Completed |
