@@ -213,7 +213,7 @@ Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
 1. Abra o Delphi e um projeto.
 2. Confirme que `mcp.<pid>.json` foi criado.
 3. Inicie ou recarregue o servidor no cliente MCP.
-4. Verifique que `initialize` retorna RadIA `2.12.1`.
+4. Verifique que `initialize` retorna RadIA `2.12.2`.
 5. Execute `tools/list`.
 6. Chame `GetIDEState` e `GetActiveProject`.
 7. Para testar consentimento, use uma tool mutável somente em um projeto descartável.
