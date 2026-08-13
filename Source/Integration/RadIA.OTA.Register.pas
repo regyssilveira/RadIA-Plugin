@@ -23,7 +23,6 @@ type
     procedure OnRequestDiff(const AOriginalCode: string; const AReplaceWholeBuffer: Boolean);
     procedure OnProjectWizardClick(Sender: TObject);
     procedure OnTimerEvent(Sender: TObject);
-    procedure RestoreWindowVisibility;
     procedure ReleaseDebugTimelineNotifier;
     procedure ReleaseEditorHook;
     procedure ReleaseKnowledgeNotifier;
@@ -740,7 +739,7 @@ begin
     Exit;
   LogDebug('Tools menu populated. Disabling timer.');
   FTimer.Enabled := False;
-  RestoreWindowVisibility;
+  RadIA.OTA.DockableForm.RestoreDockableFormVisibility;
   ShowRadIAOnboarding(False);
 end;
 
@@ -792,43 +791,6 @@ begin
   except
     on E: Exception do
       OutputDebugString(PChar('RadIA.Register.UnregisterMenus Main Error: ' + E.Message));
-  end;
-end;
-
-procedure TRadIAWizard.RestoreWindowVisibility;
-var
-  LReg: TRegistry;
-  LRegPath: string;
-  LVisible: Boolean;
-begin
-  LVisible := False;
-  LReg := TRegistry.Create;
-  try
-    LReg.RootKey := HKEY_CURRENT_USER;
-    LRegPath := TRadIAConfig.GetRegistryPath;
-    if LReg.OpenKeyReadOnly(LRegPath) then
-    begin
-      if LReg.ValueExists('WindowVisible') then
-        LVisible := LReg.ReadBool('WindowVisible');
-      LReg.CloseKey;
-    end;
-  finally
-    LReg.Free;
-  end;
-
-  if LVisible then
-  begin
-    LogDebug('Queueing window visibility restoration from registry');
-    TThread.ForceQueue(
-      nil,
-      procedure
-      begin
-        if GIsShuttingDown then
-          Exit;
-        LogDebug('Applying deferred window visibility restoration');
-        ShowRadIAChat;
-      end
-    );
   end;
 end;
 

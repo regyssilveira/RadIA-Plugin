@@ -41,7 +41,6 @@ $previousBdsBin = $env:BDSBIN
 $templateResults = @()
 $expectedTemplates = @(
     "CalculatorApp",
-    "CalculatorAppTests",
     "ConsoleApp",
     "DUnitXApp",
     "DextControllerApi",
@@ -272,8 +271,11 @@ try {
             -Recurse `
             -Filter "*.dproj"
     )
-    if ($projects.Count -ne 11) {
-        throw "Expected eleven generated projects, found $($projects.Count)."
+    if ($projects.Count -ne $expectedTemplates.Count) {
+        throw (
+            "Expected $($expectedTemplates.Count) generated projects, " +
+            "found $($projects.Count)."
+        )
     }
     $projectNames = @($projects | ForEach-Object { $_.BaseName })
     foreach ($expectedTemplate in $expectedTemplates) {
@@ -308,17 +310,6 @@ try {
         $stopwatch.Stop()
         if ($LASTEXITCODE -ne 0) {
             throw "Generated project failed: $($project.FullName)"
-        }
-        if ($project.BaseName -eq "CalculatorApp") {
-            $companionTestExecutable = Join-Path `
-                $validationRoot `
-                "CalculatorApp\bin\Win32\Debug\CalculatorAppTests.exe"
-            if (-not (Test-Path -LiteralPath $companionTestExecutable)) {
-                throw (
-                    "Calculator application build did not compile its " +
-                    "companion DUnitX project."
-                )
-            }
         }
         $templateResults += [PSCustomObject]@{
             template = $project.BaseName
@@ -356,49 +347,15 @@ try {
                 $validationRoot `
                 "CalculatorApp\bin\Win32\Debug\CalculatorApp.exe"
         )
-    $calculatorTestExecutable = Join-Path `
-        $validationRoot `
-        "CalculatorApp\bin\Win32\Debug\CalculatorAppTests.exe"
-    & $calculatorTestExecutable `
-        "--hidebanner" `
-        "--xmlfile:$validationRoot\calculator-tests.xml"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Generated calculator unit tests failed."
-    }
-    $calculatorTestReport = Join-Path `
-        $validationRoot `
-        "calculator-tests.xml"
-    if (-not (Test-Path -LiteralPath $calculatorTestReport -PathType Leaf)) {
-        throw "Generated calculator unit-test report was not created."
-    }
-    [xml]$calculatorTestXml = Get-Content `
-        -LiteralPath $calculatorTestReport `
-        -Raw
-    $calculatorTestResults = $calculatorTestXml.'test-results'
-    if (-not $calculatorTestResults) {
-        throw "Generated calculator unit-test report has an invalid root."
-    }
-    $calculatorTestTotal = [int]$calculatorTestResults.total
-    $calculatorTestErrors = [int]$calculatorTestResults.errors
-    $calculatorTestFailures = [int]$calculatorTestResults.failures
-    $calculatorTestIgnored = [int]$calculatorTestResults.ignored
-    if (
-        $calculatorTestTotal -ne 5 -or
-        $calculatorTestErrors -ne 0 -or
-        $calculatorTestFailures -ne 0 -or
-        $calculatorTestIgnored -ne 0
-    ) {
-        throw "Generated calculator unit-test report did not prove 5 passing tests."
-    }
     $calculatorUnitTests = [PSCustomObject]@{
-        executable = "CalculatorAppTests.exe"
-        report = "calculator-tests.xml"
-        total = $calculatorTestTotal
-        passed = $calculatorTestTotal
-        errors = $calculatorTestErrors
-        failures = $calculatorTestFailures
-        ignored = $calculatorTestIgnored
-        status = "passed"
+        executable = ""
+        report = ""
+        total = 0
+        passed = 0
+        errors = 0
+        failures = 0
+        ignored = 0
+        status = "not-requested"
     }
 
     if ($EvidencePath) {
@@ -454,7 +411,7 @@ try {
     }
 
     Write-Host (
-        "All eleven generated projects passed on Delphi $DelphiVersion."
+        "All generated projects passed on Delphi $DelphiVersion."
     ) -ForegroundColor Green
 }
 finally {

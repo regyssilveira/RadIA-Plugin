@@ -57,6 +57,8 @@ type
     [Test]
     procedure BuildsSanitizedEnvironmentProfile;
     [Test]
+    procedure BuildsIDEProfileWithoutActiveProject;
+    [Test]
     procedure RegistersReadOnlyEnvironmentTool;
   end;
 
@@ -140,6 +142,22 @@ begin
 end;
 
 { TTestRadIADelphiEnvironment }
+
+procedure TTestRadIADelphiEnvironment.BuildsIDEProfileWithoutActiveProject;
+var
+  LProfile: TRadIADelphiEnvironmentProfile;
+  LService: IRadIADelphiEnvironmentService;
+  LWorkspace: IRadIAWorkspaceFacade;
+begin
+  LWorkspace := TRadIADelphiEnvironmentWorkspaceMock.Create('', '');
+  LService := TRadIADelphiEnvironmentService.Create(LWorkspace);
+  LProfile := LService.BuildProfile;
+
+  Assert.AreEqual('Delphi 13', LProfile.IDEVersion);
+  Assert.AreEqual('None', LProfile.Framework);
+  Assert.AreEqual(0, Length(LProfile.SearchPaths));
+  Assert.AreEqual(0, Length(LProfile.Defines));
+end;
 
 procedure TTestRadIADelphiEnvironment.BuildsSanitizedEnvironmentProfile;
 var

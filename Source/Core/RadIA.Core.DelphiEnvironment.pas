@@ -400,6 +400,12 @@ begin
     LProject.Configuration,
     LProject.Platform
   );
+  if LContent = '' then
+  begin
+    Result.SetCollections(LIDE.Capabilities, [], [], []);
+    Result.SetCompilerCollections([], [], [], []);
+    Exit;
+  end;
   Result.SetCollections(
     LIDE.Capabilities,
     ExtractSearchPaths(
