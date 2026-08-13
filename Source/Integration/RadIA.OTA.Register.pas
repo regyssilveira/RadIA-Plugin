@@ -51,7 +51,7 @@ implementation
 
 uses
   System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
-  System.Win.Registry, Winapi.Windows,
+  Winapi.Windows,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
   RadIA.OTA.MemoryDiagnostic,
