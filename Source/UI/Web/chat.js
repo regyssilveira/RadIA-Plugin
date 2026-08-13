@@ -2919,12 +2919,11 @@ function closeDropdowns() {
   setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, false);
 }
 
-function updateEffortSelection(effort) {
-  const selectedEffort = effort || 'medium';
-  reasoningEffortSelector.value = selectedEffort;
+function updateEffortSelection(effort = 'medium') {
+  reasoningEffortSelector.value = effort;
   const options = effortOptionsList.querySelectorAll('.custom-dropdown-option');
   options.forEach(option => {
-    const selected = option.dataset.effort === selectedEffort;
+    const selected = option.dataset.effort === effort;
     option.classList.toggle('selected', selected);
     option.setAttribute('aria-pressed', String(selected));
     if (selected) effortDropdownValue.textContent = option.textContent;

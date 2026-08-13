@@ -656,12 +656,25 @@ begin
   Result := AMainMenu.Items.Find('Tools');
 end;
 
+function HasRadIAToolsMenu(const AToolsMenu: TMenuItem): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  if not Assigned(AToolsMenu) then
+    Exit;
+  for I := 0 to AToolsMenu.Count - 1 do
+  begin
+    if SameText(AToolsMenu[I].Name, 'mnuRadIAToolsRoot') or
+      SameText(AToolsMenu[I].Caption, 'RadIA') then
+      Exit(True);
+  end;
+end;
+
 procedure TRadIAWizard.RegisterMenus;
 var
   LNTAServices: INTAServices;
   LToolsMenu: TMenuItem;
-  I: Integer;
-  LToolsAlreadyPopulated: Boolean;
   LHook: TRadIAEditorHook;
   LExtensionManagerItem: TMenuItem;
   LProjectWizardItem: TMenuItem;
@@ -669,7 +682,6 @@ var
   LSeparator: TMenuItem;
 begin
   LogDebug('RegisterMenus called');
-  LToolsAlreadyPopulated := False;
   LHook := TRadIAEditorHook(FEditorHook);
 
   if Supports(BorlandIDEServices, INTAServices, LNTAServices) then
@@ -680,17 +692,7 @@ begin
     LToolsMenu := FindToolsMenu(LNTAServices.MainMenu);
     if Assigned(LToolsMenu) then
     begin
-      for I := 0 to LToolsMenu.Count - 1 do
-      begin
-        if SameText(LToolsMenu[I].Name, 'mnuRadIAToolsRoot') or
-          SameText(LToolsMenu[I].Caption, 'RadIA') then
-        begin
-          LToolsAlreadyPopulated := True;
-          Break;
-        end;
-      end;
-
-      if not LToolsAlreadyPopulated then
+      if not HasRadIAToolsMenu(LToolsMenu) then
       begin
         LogDebug('Tools/Ferramentas menu found');
         LRadIAMenu := TMenuItem.Create(LToolsMenu);
@@ -723,52 +725,23 @@ procedure TRadIAWizard.OnTimerEvent(Sender: TObject);
 var
   LNTAServices: INTAServices;
   LToolsMenu: TMenuItem;
-  LToolsPopulated: Boolean;
-  I: Integer;
 begin
-  LToolsPopulated := False;
-
-  if Supports(BorlandIDEServices, INTAServices, LNTAServices) then
+  if not Supports(BorlandIDEServices, INTAServices, LNTAServices) then
+    Exit;
+  LToolsMenu := FindToolsMenu(LNTAServices.MainMenu);
+  if not Assigned(LToolsMenu) then
+    Exit;
+  if not HasRadIAToolsMenu(LToolsMenu) then
   begin
-    // 1. Verificar e popular o menu Tools
-    LToolsMenu := FindToolsMenu(LNTAServices.MainMenu);
-    if Assigned(LToolsMenu) then
-    begin
-      for I := 0 to LToolsMenu.Count - 1 do
-      begin
-        if SameText(LToolsMenu[I].Name, 'mnuRadIAToolsRoot') or
-          SameText(LToolsMenu[I].Caption, 'RadIA') then
-        begin
-          LToolsPopulated := True;
-          Break;
-        end;
-      end;
-
-      if not LToolsPopulated then
-      begin
-        LogDebug('Tools menu not populated or reset. Populating now...');
-        RegisterMenus;
-        for I := 0 to LToolsMenu.Count - 1 do
-        begin
-          if SameText(LToolsMenu[I].Name, 'mnuRadIAToolsRoot') then
-          begin
-            LToolsPopulated := True;
-            Break;
-          end;
-        end;
-        LogDebug('RadIA submenu populated successfully');
-      end;
-    end;
+    LogDebug('Tools menu not populated or reset. Populating now...');
+    RegisterMenus;
   end;
-
-  // Desliga o timer assim que o menu Tools estiver populado
-  if LToolsPopulated then
-  begin
-    LogDebug('Tools menu populated. Disabling timer.');
-    FTimer.Enabled := False;
-    RestoreWindowVisibility;
-    ShowRadIAOnboarding(False);
-  end;
+  if not HasRadIAToolsMenu(LToolsMenu) then
+    Exit;
+  LogDebug('Tools menu populated. Disabling timer.');
+  FTimer.Enabled := False;
+  RestoreWindowVisibility;
+  ShowRadIAOnboarding(False);
 end;
 
 procedure TRadIAWizard.UnregisterMenus;

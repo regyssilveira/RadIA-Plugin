@@ -178,6 +178,10 @@ type
       const AAction: string;
       const AJson: TJSONObject
     ): Boolean;
+    function TryDispatchAgentSettingsInteraction(
+      const AAction: string;
+      const AJson: TJSONObject
+    ): Boolean;
     function TryDispatchExecutionScopeInteraction(
       const AAction: string;
       const AJson: TJSONObject
@@ -2506,20 +2510,9 @@ begin
   Result := True;
   if TryDispatchExecutionScopeInteraction(AAction, AJson) then
     Exit;
-  if AAction = 'set_agent_mode' then
-    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
-  else if AAction = 'set_agent_executor' then
-    SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
-  else if AAction = 'set_reasoning_effort' then
-    SetReasoningEffort(AJson.GetValue<string>('effort', 'medium'))
-  else if AAction = 'reset_cli_session' then
-  begin
-    FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
-    PostExecutionRouteToWeb;
-  end
-  else if AAction = 'toggle_journey_context' then
-    ToggleJourneyContext
-  else if AAction = 'pause_agent' then
+  if TryDispatchAgentSettingsInteraction(AAction, AJson) then
+    Exit;
+  if AAction = 'pause_agent' then
     PauseAgentRun
   else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
     ResumeAgentRun
@@ -2535,6 +2528,29 @@ begin
   end
   else if AAction = 'replay_agent_step' then
     ReplayAgentStep(AJson.GetValue<Integer>('stepIndex', 0))
+  else
+    Result := False;
+end;
+
+function TRadIAChatPresenter.TryDispatchAgentSettingsInteraction(
+  const AAction: string;
+  const AJson: TJSONObject
+): Boolean;
+begin
+  Result := True;
+  if AAction = 'set_agent_mode' then
+    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
+  else if AAction = 'set_agent_executor' then
+    SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
+  else if AAction = 'set_reasoning_effort' then
+    SetReasoningEffort(AJson.GetValue<string>('effort', 'medium'))
+  else if AAction = 'reset_cli_session' then
+  begin
+    FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
+    PostExecutionRouteToWeb;
+  end
+  else if AAction = 'toggle_journey_context' then
+    ToggleJourneyContext
   else
     Result := False;
 end;

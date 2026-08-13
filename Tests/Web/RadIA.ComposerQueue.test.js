@@ -79,7 +79,7 @@ test('composer exposes reasoning effort as an explicit user choice', () => {
   assert.match(chatJs, /action: 'set_reasoning_effort'/u);
   assert.match(chatJs, /data\.reasoningEffort \|\| 'medium'/u);
   assert.match(chatHtml, /id="effort-dropdown-trigger"[\s\S]*id="effort-options-list"/u);
-  assert.match(chatJs, /function updateEffortSelection\(effort\)/u);
+  assert.match(chatJs, /function updateEffortSelection\(effort = 'medium'\)/u);
   assert.match(chatCss, /\.composer-effort-control \.custom-dropdown-trigger::after \{[\s\S]*right: 3px/u);
 });
 
