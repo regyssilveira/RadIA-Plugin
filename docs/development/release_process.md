@@ -29,9 +29,13 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0" -Te
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -Test
 ```
 
-Execute o scanner e exija o Quality Gate aprovado para a mesma revisão. Builds, testes, catálogo,
-instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser editada
-manualmente para contornar uma falha.
+Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma revisão. Builds, testes,
+catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser
+editada manualmente para contornar uma falha.
+
+O workflow `SonarQube release gate` do GitHub Actions é uma repetição manual opcional, dependente de um
+runner Windows `self-hosted` registrado e disponível. Ele não é disparado por push, pull request ou tag,
+não substitui o gate local e nunca deve bloquear uma release enquanto aguarda infraestrutura externa.
 
 ## 3. Empacotar
 
