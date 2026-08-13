@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 148 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 149 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -43,6 +43,12 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `GetDelphiEnvironmentProfile` | Retorna perfil sanitizado da IDE, projeto, paths, packages e bibliotecas. | Antes de sugerir APIs, componentes ou migrações dependentes do ambiente Delphi. |
+
+## Geração semântica de código
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareMissingMembers` | Localiza contratos de interfaces ainda não implementados e prepara um patch idempotente com declarações e implementações. | Quando o agente precisa completar uma classe; depois da revisão, `ApplyPatch` solicita consentimento e aplica a mudança com undo. |
 
 ## Orientação Delphi curada
 

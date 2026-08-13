@@ -431,7 +431,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado versionado fica em `declarative_workflow_smoke_evidence_2.0.0.json`.
-O gate exige exatamente os três targets suportados, 148 ferramentas e o workflow
+O gate exige exatamente os três targets suportados, 149 ferramentas e o workflow
 `RadIADiagnosticInspection` carregado, registrado e executado por hot reload. A evidência também
 confirma a classificação `readOnly` e a conclusão das duas etapas do workflow.
 
@@ -458,7 +458,7 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado versionado fica em `knowledge_smoke_evidence_2.0.0.json`.
-O gate exige exatamente Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, todos com 148
+O gate exige exatamente Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64, todos com 149
 ferramentas, provider `local-hash-v1`, acerto vetorial, origem, navegação, leitura do documento,
 métricas do índice e isolamento do workspace.
 

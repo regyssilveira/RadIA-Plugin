@@ -24,6 +24,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `GetDelphiEnvironmentProfile` | Retorna perfil sanitizado da IDE, projeto, paths, packages e bibliotecas. | `RadIA.Core.DelphiEnvironmentTools.pas` |
 
+## Geração semântica de código
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareMissingMembers` | Localiza contratos de interfaces ainda não implementados e prepara um patch idempotente com declarações e implementações. | `RadIA.Core.SemanticMemberTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -374,7 +380,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 44
-- Ferramentas internas registradas: 148
+- Grupos registrados: 45
+- Ferramentas internas registradas: 149
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

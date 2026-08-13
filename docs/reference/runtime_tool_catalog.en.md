@@ -24,6 +24,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `GetDelphiEnvironmentProfile` | Returns a sanitized profile of the active Delphi IDE and project. | `RadIA.Core.DelphiEnvironmentTools.pas` |
 
+## Semantic code generation
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareMissingMembers` | Prepares an idempotent patch for indexed interface members missing from a class. | `RadIA.Core.SemanticMemberTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -374,7 +380,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 44
-- Registered built-in tools: 148
+- Registered groups: 45
+- Registered built-in tools: 149
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

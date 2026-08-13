@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 148 internal tools: what each one does and at what stage
+This page explains RadIA's 149 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -43,6 +43,12 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |Tool|What it does|When it is triggered|
 |---|---|---|
 |`GetDelphiEnvironmentProfile`|Returns a sanitized IDE, project, path, package, and library profile.|Before suggesting APIs, components, or migrations that depend on the Delphi environment.|
+
+## Semantic code generation
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`PrepareMissingMembers`|Finds interface contracts that a class has not implemented and prepares an idempotent patch with declarations and implementations.|When the agent must complete a class; after review, `ApplyPatch` requests consent and applies the change with undo.|
 
 ## Curated Delphi guidance
 

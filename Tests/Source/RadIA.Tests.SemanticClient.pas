@@ -21,16 +21,31 @@ type
     procedure SupervisorRestartsAfterTransportFailure;
     [Test]
     procedure SupervisorIndexesAndInvalidatesUnits;
+    [Test]
+    procedure SupervisorPreparesMissingMembersIdempotently;
   end;
 
 implementation
 
 uses
   System.IOUtils,
+  System.JSON,
   System.SysUtils,
   RadIA.Core.ExternalMcp,
   RadIA.Core.ExternalMcpTransport,
   RadIA.Semantic.Client;
+
+function EncodeJsonString(const AValue: string): string;
+var
+  LValue: TJSONString;
+begin
+  LValue := TJSONString.Create(AValue);
+  try
+    Result := LValue.ToJSON;
+  finally
+    LValue.Free;
+  end;
+end;
 
 type
   TRadIAFailOnceSemanticTransport = class(
@@ -257,6 +272,103 @@ begin
       LError
     ), LError);
     Assert.Contains(LResponse, '"symbolCount":0');
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.
+  SupervisorPreparesMissingMembersIdempotently;
+const
+  CContractSource =
+    'unit Contracts; interface type IWorker = interface ' +
+    'procedure Execute(const AValue: Integer); function Ready: Boolean; ' +
+    'end; implementation end.';
+  CWorkerSource =
+    'unit Worker; interface uses Contracts; type TWorker = ' +
+    'class(TInterfacedObject, IWorker) end; implementation end.';
+var
+  LDocument: TJSONObject;
+  LError: string;
+  LParameters: TJSONObject;
+  LPath: string;
+  LProposedSource: string;
+  LResponse: string;
+  LResult: TJSONObject;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(LPath);
+  try
+    Assert.IsTrue(LSupervisor.Request(
+      'indexUnit',
+      '{"unitKey":"contracts","fileName":"Contracts.pas",' +
+      '"scope":"group","revision":1,"source":' +
+      EncodeJsonString(CContractSource) + '}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.IsTrue(LSupervisor.Request(
+      'indexUnit',
+      '{"unitKey":"worker","fileName":"Worker.pas",' +
+      '"scope":"project","revision":1,"source":' +
+      EncodeJsonString(CWorkerSource) + '}',
+      LResponse,
+      LError
+    ), LError);
+    LParameters := TJSONObject.Create;
+    try
+      LParameters.AddPair('source', CWorkerSource);
+      LParameters.AddPair('container', 'TWorker');
+      LParameters.AddPair('defines', TJSONArray.Create);
+      Assert.IsTrue(LSupervisor.Request(
+        'prepareMissingMembers',
+        LParameters.ToJSON,
+        LResponse,
+        LError
+      ), LError);
+    finally
+      LParameters.Free;
+    end;
+    LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+    try
+      Assert.IsNotNull(LDocument);
+      LResult := LDocument.GetValue<TJSONObject>('result');
+      Assert.IsTrue(LResult.GetValue<Boolean>('changed'));
+      Assert.AreEqual(2, LResult.GetValue<Integer>('missingCount'));
+      LProposedSource := LResult.GetValue<string>('proposedSource');
+      Assert.Contains(LProposedSource, 'procedure TWorker.Execute');
+      Assert.Contains(LProposedSource, 'function TWorker.Ready');
+    finally
+      LDocument.Free;
+    end;
+    LParameters := TJSONObject.Create;
+    try
+      LParameters.AddPair('source', LProposedSource);
+      LParameters.AddPair('container', 'TWorker');
+      LParameters.AddPair('defines', TJSONArray.Create);
+      Assert.IsTrue(LSupervisor.Request(
+        'indexUnit',
+        '{"unitKey":"worker","fileName":"Worker.pas",' +
+        '"scope":"project","revision":2,"source":' +
+        EncodeJsonString(LProposedSource) + '}',
+        LResponse,
+        LError
+      ), LError);
+      Assert.IsTrue(LSupervisor.Request(
+        'prepareMissingMembers',
+        LParameters.ToJSON,
+        LResponse,
+        LError
+      ), LError);
+    finally
+      LParameters.Free;
+    end;
+    Assert.Contains(LResponse, '"changed":false');
+    Assert.Contains(LResponse, '"missingCount":0');
   finally
     LSupervisor.Free;
   end;

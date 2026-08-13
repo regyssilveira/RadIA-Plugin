@@ -95,6 +95,19 @@ type
       const AVisited: TDictionary<string, Boolean>;
       const AResult: TList<TRadIASemanticIndexedSymbol>
     );
+    procedure CollectClassMembers(
+      const AContainerName: string;
+      const AVisited: TDictionary<string, Boolean>;
+      const AResult: TList<TRadIASemanticIndexedSymbol>
+    );
+    procedure CollectInterfaceRequirements(
+      const AContainerName: string;
+      const AVisited: TDictionary<string, Boolean>;
+      const AResult: TList<TRadIASemanticIndexedSymbol>
+    );
+    class function MethodKey(
+      const ASymbol: TRadIASemanticIndexedSymbol
+    ): string; static;
     procedure RemoveLookup(
       const ALookup: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
       const AKey: string;
@@ -110,6 +123,9 @@ type
     destructor Destroy; override;
     procedure Clear;
     function FindMembers(
+      const AContainerName: string
+    ): TArray<TRadIASemanticIndexedSymbol>;
+    function FindMissingMembers(
       const AContainerName: string
     ): TArray<TRadIASemanticIndexedSymbol>;
     function FindResolvedMembers(
@@ -140,6 +156,24 @@ uses
 
 const
   CIndexCacheSchemaVersion = '1.0';
+
+function FindStructuralType(
+  const AIndex: TRadIASemanticIndex;
+  const AName: string;
+  out ASymbol: TRadIASemanticIndexedSymbol
+): Boolean;
+var
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  for LSymbol in AIndex.FindSymbols(AName) do
+    if LSymbol.Kind in [sskClass, sskRecord, sskInterface, sskHelper] then
+    begin
+      ASymbol := LSymbol;
+      Exit(True);
+    end;
+  ASymbol := Default(TRadIASemanticIndexedSymbol);
+  Result := False;
+end;
 
 function ReadCacheDescriptor(
   const AObject: TJSONObject
@@ -334,6 +368,68 @@ begin
     AResult.Add(LMember);
 end;
 
+procedure TRadIASemanticIndex.CollectClassMembers(
+  const AContainerName: string;
+  const AVisited: TDictionary<string, Boolean>;
+  const AResult: TList<TRadIASemanticIndexedSymbol>
+);
+var
+  LAncestorSymbol: TRadIASemanticIndexedSymbol;
+  LAncestorName: string;
+  LContainerKey: string;
+  LMember: TRadIASemanticIndexedSymbol;
+  LTypeSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LContainerKey := Normalize(AContainerName);
+  if (LContainerKey = '') or AVisited.ContainsKey(LContainerKey) then
+    Exit;
+  AVisited.Add(LContainerKey, True);
+  if not FindStructuralType(Self, AContainerName, LTypeSymbol) then
+    Exit;
+  for LMember in FindMembers(AContainerName) do
+    AResult.Add(LMember);
+  for LAncestorName in LTypeSymbol.AncestorNames do
+    if FindStructuralType(Self, LAncestorName, LAncestorSymbol) and
+      (LAncestorSymbol.Kind <> sskInterface) then
+      CollectClassMembers(LAncestorName, AVisited, AResult);
+end;
+
+procedure TRadIASemanticIndex.CollectInterfaceRequirements(
+  const AContainerName: string;
+  const AVisited: TDictionary<string, Boolean>;
+  const AResult: TList<TRadIASemanticIndexedSymbol>
+);
+var
+  LAncestorName: string;
+  LContainerKey: string;
+  LMember: TRadIASemanticIndexedSymbol;
+  LTypeSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LContainerKey := Normalize(AContainerName);
+  if (LContainerKey = '') or AVisited.ContainsKey(LContainerKey) then
+    Exit;
+  AVisited.Add(LContainerKey, True);
+  if not FindStructuralType(Self, AContainerName, LTypeSymbol) then
+    Exit;
+  if LTypeSymbol.Kind = sskInterface then
+    for LMember in FindMembers(AContainerName) do
+      AResult.Add(LMember);
+  for LAncestorName in LTypeSymbol.AncestorNames do
+    CollectInterfaceRequirements(LAncestorName, AVisited, AResult);
+end;
+
+class function TRadIASemanticIndex.MethodKey(
+  const ASymbol: TRadIASemanticIndexedSymbol
+): string;
+var
+  LCharacter: Char;
+begin
+  Result := '';
+  for LCharacter in LowerCase(ASymbol.Signature) do
+    if not CharInSet(LCharacter, [#9, #10, #13, ' ']) then
+      Result := Result + LCharacter;
+end;
+
 procedure TRadIASemanticIndex.RemoveLookup(
   const ALookup: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
   const AKey: string;
@@ -386,6 +482,44 @@ begin
     Result := LList.ToArray
   else
     Result := nil;
+end;
+
+function TRadIASemanticIndex.FindMissingMembers(
+  const AContainerName: string
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LImplemented: TDictionary<string, Boolean>;
+  LMembers: TList<TRadIASemanticIndexedSymbol>;
+  LMissing: TList<TRadIASemanticIndexedSymbol>;
+  LRequirements: TList<TRadIASemanticIndexedSymbol>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+  LVisited: TDictionary<string, Boolean>;
+begin
+  LImplemented := TDictionary<string, Boolean>.Create;
+  LMembers := TList<TRadIASemanticIndexedSymbol>.Create;
+  LMissing := TList<TRadIASemanticIndexedSymbol>.Create;
+  LRequirements := TList<TRadIASemanticIndexedSymbol>.Create;
+  LVisited := TDictionary<string, Boolean>.Create;
+  try
+    CollectClassMembers(AContainerName, LVisited, LMembers);
+    for LSymbol in LMembers do
+      LImplemented.AddOrSetValue(MethodKey(LSymbol), True);
+    LVisited.Clear;
+    CollectInterfaceRequirements(AContainerName, LVisited, LRequirements);
+    for LSymbol in LRequirements do
+      if not LImplemented.ContainsKey(MethodKey(LSymbol)) then
+      begin
+        LMissing.Add(LSymbol);
+        LImplemented.AddOrSetValue(MethodKey(LSymbol), True);
+      end;
+    Result := LMissing.ToArray;
+  finally
+    LVisited.Free;
+    LRequirements.Free;
+    LMissing.Free;
+    LMembers.Free;
+    LImplemented.Free;
+  end;
 end;
 
 function TRadIASemanticIndex.FindResolvedMembers(

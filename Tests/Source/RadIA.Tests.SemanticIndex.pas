@@ -35,6 +35,8 @@ type
     procedure WarmQueriesMeetLatencyBudget;
     [Test]
     procedure ResolvesInheritedAndInterfaceMembersAcrossUnits;
+    [Test]
+    procedure FindsOnlyUnimplementedInterfaceMembers;
   end;
 
 procedure TRadIASemanticIndexTests.Setup;
@@ -228,6 +230,44 @@ begin
   Assert.AreEqual('Reset', FIndex.FindResolvedMembers('TWorker')[0].Name);
   Assert.AreEqual('Work', FIndex.FindResolvedMembers('TWorker')[1].Name);
   Assert.AreEqual('Execute', FIndex.FindResolvedMembers('TWorker')[2].Name);
+end;
+
+procedure TRadIASemanticIndexTests.FindsOnlyUnimplementedInterfaceMembers;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LMissing: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'contracts',
+    '',
+    susGroup,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Contracts; interface type IWorker = interface ' +
+    'procedure Work(const AValue: Integer); ' +
+    'procedure Work(const AValue: string); ' +
+    'function Ready: Boolean; end; implementation end.',
+    nil
+  );
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'worker',
+    '',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Worker; interface uses Contracts; type TWorker = class(IWorker) ' +
+    'procedure Work(const AValue: Integer); function Ready: Boolean; ' +
+    'end; implementation end.',
+    nil
+  );
+  LMissing := FIndex.FindMissingMembers('TWorker');
+  Assert.AreEqual(1, Length(LMissing));
+  Assert.AreEqual('Work', LMissing[0].Name);
+  Assert.Contains(LMissing[0].Signature, 'string');
 end;
 
 initialization

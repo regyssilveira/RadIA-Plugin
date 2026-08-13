@@ -9,7 +9,8 @@ uses
   RadIA.Semantic.Lexer in 'RadIA.Semantic.Lexer.pas',
   RadIA.Semantic.Preprocessor in 'RadIA.Semantic.Preprocessor.pas',
   RadIA.Semantic.Parser in 'RadIA.Semantic.Parser.pas',
-  RadIA.Semantic.Index in 'RadIA.Semantic.Index.pas';
+  RadIA.Semantic.Index in 'RadIA.Semantic.Index.pas',
+  RadIA.Semantic.MissingMembers in 'RadIA.Semantic.MissingMembers.pas';
 
 const
   CEngineName = 'RadIA Semantic Engine';
@@ -292,6 +293,34 @@ begin
   Result.AddPair('result', LResult);
 end;
 
+function BuildMissingMemberPreviewResult(
+  const AId: TJSONValue;
+  const AIndex: TRadIASemanticIndex;
+  const AParameters: TJSONObject
+): TJSONObject;
+var
+  LPreview: TRadIASemanticMissingMemberPreview;
+  LResult: TJSONObject;
+begin
+  LPreview := TRadIASemanticMissingMemberGenerator.Generate(
+    AParameters.GetValue<string>('source', ''),
+    AParameters.GetValue<string>('container', ''),
+    AIndex.FindMissingMembers(
+      AParameters.GetValue<string>('container', '')
+    ),
+    ReadStringArray(AParameters, 'defines')
+  );
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LResult.AddPair('changed', TJSONBool.Create(LPreview.Changed));
+  LResult.AddPair('missingCount', TJSONNumber.Create(LPreview.MissingCount));
+  LResult.AddPair('proposedSource', LPreview.ProposedSource);
+  LResult.AddPair('errorMessage', LPreview.ErrorMessage);
+  Result.AddPair('result', LResult);
+end;
+
 function BuildAnalyzeResult(
   const AId: TJSONValue;
   const ASource: string;
@@ -496,6 +525,21 @@ begin
         LParameters.GetValue<string>('container', '')
       )
     ));
+  end;
+  if SameText(AMethod, 'findMissingMembers') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.FindMissingMembers(
+        LParameters.GetValue<string>('container', '')
+      )
+    ));
+  end;
+  if SameText(AMethod, 'prepareMissingMembers') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildMissingMemberPreviewResult(AId, AIndex, LParameters));
   end;
   if SameText(AMethod, 'indexStatus') then
     Exit(BuildIndexStatusResult(AId, AIndex));

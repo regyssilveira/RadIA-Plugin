@@ -171,7 +171,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 148);
+  assert.equal(registeredTools.length, 149);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -487,7 +487,11 @@ test('tracked docs exclude release history and operational evidence', () => {
     ['ls-files', 'docs'],
     { cwd: repositoryRoot, encoding: 'utf8' }
   ).trim().split(/\r?\n/u).filter(Boolean);
-  const operationalName = /(?:release_(?:notes|audit|evidence)|smoke_evidence|quality_evidence|_goal\.|_plan\.|_m\d+\.)/iu;
+  const operationalName = new RegExp(
+    '(?:release_(?:notes|audit|evidence)|smoke_evidence|' +
+      'quality_evidence|_goal\\.|_plan\\.|_m\\d+\\.)',
+    'iu'
+  );
 
   tracked.forEach(fileName => {
     assert.doesNotMatch(fileName, operationalName, fileName);
@@ -708,8 +712,10 @@ test('current backlog contains only open work', () => {
   const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
 
-  assert.ok(portuguese.includes('| Completar membros ausentes |'));
-  assert.ok(english.includes('| Complete missing members |'));
+  assert.ok(portuguese.includes('| Integrar o índice semântico |'));
+  assert.ok(english.includes('| Integrate the semantic index |'));
+  assert.doesNotMatch(portuguese, /\| Completar membros ausentes \|/u);
+  assert.doesNotMatch(english, /\| Complete missing members \|/u);
   assert.ok(portuguese.includes('somente trabalho aberto'));
   assert.match(english, /This file contains open work only/u);
   assert.doesNotMatch(portuguese, /\| Concluído \|/u);

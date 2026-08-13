@@ -25,6 +25,13 @@
       ]
     },
     {
+      "name": "Semantic code generation",
+      "source": "Source/Core/RadIA.Core.SemanticMemberTools.pas",
+      "tools": [
+        "PrepareMissingMembers"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

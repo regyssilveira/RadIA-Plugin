@@ -75,6 +75,7 @@ uses
   RadIA.Core.Extensions, RadIA.Core.Version,
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
+  RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
   RadIA.Core.DfmPasAudit, RadIA.Core.DfmPasAuditTools,
@@ -278,10 +279,6 @@ end;
 
 constructor TRadIAWizard.Create;
 var
-  LSemanticClient: IRadIASemanticRequestClient;
-  LSemanticCoordinator: IRadIASemanticWorkspaceCoordinator;
-  LSemanticSource: IRadIASemanticWorkspaceSource;
-  LSemanticSynchronizer: IRadIASemanticWorkspaceSynchronizer;
   LThemingServices: IOTAIDEThemingServices;
 begin
   LogDebug('TRadIAWizard.Create called');
@@ -319,22 +316,9 @@ begin
     TRadIAContainer.Resolve<IRadIAKnowledgeRefreshScheduler>
   );
   TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Install;
-  LSemanticClient := TRadIASemanticEngineSupervisor.Create(
-    TRadIASemanticEngineClient.DefaultExecutablePath
-  );
-  LSemanticSynchronizer := TRadIASemanticWorkspaceSynchronizer.Create(
-    LSemanticClient
-  );
-  LSemanticSource := TRadIAOTASemanticWorkspaceSource.Create(
-    TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>
-  );
-  LSemanticCoordinator := TRadIASemanticWorkspaceCoordinator.Create(
-    LSemanticSource,
-    LSemanticSynchronizer
-  );
   FSemanticMonitor := TRadIAOTASemanticWorkspaceMonitor.Create(
     nil,
-    LSemanticCoordinator
+    TRadIAContainer.Resolve<IRadIASemanticWorkspaceCoordinator>
   );
   TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).Install;
   FDebugTimelineNotifier := TRadIAOTADebugTimelineNotifier.Create(
@@ -1273,6 +1257,35 @@ initialization
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
     )
   );
+  TRadIAContainer.Register<IRadIASemanticRequestClient>(
+    TRadIASemanticEngineSupervisor.Create(
+      TRadIASemanticEngineClient.DefaultExecutablePath
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticWorkspaceSynchronizer>(
+    TRadIASemanticWorkspaceSynchronizer.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticWorkspaceSource>(
+    TRadIAOTASemanticWorkspaceSource.Create(
+      TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticWorkspaceCoordinator>(
+    TRadIASemanticWorkspaceCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIASemanticWorkspaceSource>,
+      TRadIAContainer.Resolve<IRadIASemanticWorkspaceSynchronizer>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticMemberService>(
+    TRadIASemanticMemberService.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>,
+      TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>,
+      TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
   TRadIAContainer.Register<IRadIADelphiGuidanceCatalog>(
     TRadIADelphiGuidanceCatalog.Create
   );
@@ -1333,6 +1346,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAPatchService>,
     TRadIAContainer.Resolve<IRadIABlockReviewSession>
+  );
+  RegisterRadIASemanticMemberTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticMemberService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
