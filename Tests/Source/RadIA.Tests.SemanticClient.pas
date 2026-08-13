@@ -20,6 +20,8 @@ type
     [Test]
     procedure SupervisorRestartsAfterTransportFailure;
     [Test]
+    procedure SupervisorCancelsPendingRequest;
+    [Test]
     procedure SupervisorIndexesAndInvalidatesUnits;
     [Test]
     procedure SupervisorPreparesMissingMembersIdempotently;
@@ -71,6 +73,79 @@ type
     ): Boolean;
     procedure Stop;
   end;
+
+  TRadIACancellableSemanticTransport = class(
+    TInterfacedObject,
+    IRadIAExternalMcpTransport
+  )
+  private
+    FLastError: string;
+    FReceiveCount: Integer;
+    FResponse: string;
+    FRunning: Boolean;
+  public
+    function GetLastError: string;
+    function GetRunning: Boolean;
+    function Receive(
+      const ATimeoutMs: Cardinal;
+      out AMessage: string
+    ): Boolean;
+    function Send(const AMessage: string): Boolean;
+    function Start(
+      const AConfig: TRadIAExternalMcpServerConfig;
+      out AError: string
+    ): Boolean;
+    procedure Stop;
+    property ReceiveCount: Integer read FReceiveCount;
+  end;
+
+function TRadIACancellableSemanticTransport.GetLastError: string;
+begin
+  Result := FLastError;
+end;
+
+function TRadIACancellableSemanticTransport.GetRunning: Boolean;
+begin
+  Result := FRunning;
+end;
+
+function TRadIACancellableSemanticTransport.Receive(
+  const ATimeoutMs: Cardinal;
+  out AMessage: string
+): Boolean;
+begin
+  Inc(FReceiveCount);
+  AMessage := FResponse;
+  FResponse := '';
+  Result := AMessage <> '';
+end;
+
+function TRadIACancellableSemanticTransport.Send(
+  const AMessage: string
+): Boolean;
+begin
+  if AMessage.Contains('"method":"initialize"') then
+    FResponse :=
+      '{"id":0,"result":{"name":"RadIA Semantic Engine",' +
+      '"protocolVersion":"1.0"}}';
+  Result := True;
+end;
+
+function TRadIACancellableSemanticTransport.Start(
+  const AConfig: TRadIAExternalMcpServerConfig;
+  out AError: string
+): Boolean;
+begin
+  FLastError := '';
+  FRunning := True;
+  AError := '';
+  Result := True;
+end;
+
+procedure TRadIACancellableSemanticTransport.Stop;
+begin
+  FRunning := False;
+end;
 
 function TRadIAFailOnceSemanticTransport.GetLastError: string;
 begin
@@ -230,6 +305,44 @@ begin
     );
     Assert.Contains(LResponse, '"tokens"');
     Assert.AreEqual(1, LSupervisor.RestartCount);
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.SupervisorCancelsPendingRequest;
+var
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+  LTransport: IRadIAExternalMcpTransport;
+  LTransportObject: TRadIACancellableSemanticTransport;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LTransportObject := TRadIACancellableSemanticTransport.Create;
+  LTransport := LTransportObject;
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(
+    LPath,
+    5000,
+    LTransport
+  );
+  try
+    Assert.IsFalse(LSupervisor.RequestCancelable(
+      'completeResolvedMembers',
+      '{"container":"TForm","prefix":"Sa"}',
+      function: Boolean
+      begin
+        Result := LTransportObject.ReceiveCount >= 3;
+      end,
+      LResponse,
+      LError
+    ));
+    Assert.Contains(LError, 'cancelled');
+    Assert.IsFalse(LTransportObject.GetRunning);
   finally
     LSupervisor.Free;
   end;

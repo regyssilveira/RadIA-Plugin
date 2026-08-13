@@ -33,6 +33,8 @@ uses
   RadIA.Core.SemanticQueries in '..\Source\Core\RadIA.Core.SemanticQueries.pas',
   RadIA.Core.SemanticQueryTools in '..\Source\Core\RadIA.Core.SemanticQueryTools.pas',
   RadIA.Tests.SemanticQueries in 'Source\RadIA.Tests.SemanticQueries.pas',
+  RadIA.Core.SemanticCompletion in '..\Source\Core\RadIA.Core.SemanticCompletion.pas',
+  RadIA.Tests.SemanticCompletion in 'Source\RadIA.Tests.SemanticCompletion.pas',
   RadIA.Core.Tools in '..\Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in '..\Source\Core\RadIA.Core.AgentRuntime.pas',
   RadIA.Core.ResultCompactor in '..\Source\Core\RadIA.Core.ResultCompactor.pas',

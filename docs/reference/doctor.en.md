@@ -25,6 +25,7 @@ prerequisites, or choose a native API route that does not depend on CLI, npm, or
 | Chat | Installed HTML, CSS, and JavaScript | Web assets are missing or installation is incomplete |
 | Tools | Internal catalog and `GetIDEState` | The package did not register the first read-only tool |
 | External MCP | Enabled servers, connections, tools, and errors | An enabled server cannot be used |
+| Semantic engine | Executable, protocol, index, query, and completion metrics | The process is missing, incompatible, or unresponsive |
 
 ChatGPT Pro via Codex CLI is a composed route: orchestration may remain **RadIA native**, while the
 provider transport requires the Codex executable. That does not make MCP mandatory. The doctor
@@ -57,6 +58,8 @@ execution consent before starting. When approved, the `deep-active` profile:
 - runs `--version` against the effective selected CLI;
 - uses the non-interactive authentication status command when the CLI provides one;
 - opens a temporary handshake with every enabled external MCP server;
+- validates the semantic engine executable and protocol;
+- queries the real semantic index, measures latency, and reports the latest completion metrics;
 - closes test sessions and shows each result in the same doctor card.
 
 The diagnostic does not install, authenticate, repair, or change configuration. It also does not

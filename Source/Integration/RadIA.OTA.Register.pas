@@ -77,6 +77,7 @@ uses
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
   RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
+  RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
   RadIA.Core.DfmPasAudit, RadIA.Core.DfmPasAuditTools,
@@ -1292,6 +1293,11 @@ initialization
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
     )
   );
+  TRadIAContainer.Register<IRadIASemanticCompletionService>(
+    TRadIASemanticCompletionService.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>
+    )
+  );
   TRadIAContainer.Register<IRadIADelphiGuidanceCatalog>(
     TRadIADelphiGuidanceCatalog.Create
   );
@@ -1522,7 +1528,9 @@ initialization
         'Web'
       ),
       TRadIAContainer.Resolve<IRadIAToolRegistry>,
-      TRadIAContainer.Resolve<IRadIAExternalMcpRuntime>
+      TRadIAContainer.Resolve<IRadIAExternalMcpRuntime>,
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>,
+      TRadIAContainer.Resolve<IRadIASemanticCompletionService>
     )
   );
   RegisterRadIAFastMM5Tools(
@@ -1552,6 +1560,7 @@ initialization
       TRadIAContainer.Resolve<IRadIAService>,
       TRadIAContainer.Resolve<IRadIAConfig>,
       TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+      TRadIAContainer.Resolve<IRadIASemanticCompletionService>,
       30000
     )
   );

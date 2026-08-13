@@ -37,6 +37,8 @@ type
     procedure ResolvesInheritedAndInterfaceMembersAcrossUnits;
     [Test]
     procedure FindsOnlyUnimplementedInterfaceMembers;
+    [Test]
+    procedure CompletesResolvedMembersByPrefixWithoutDuplicates;
   end;
 
 procedure TRadIASemanticIndexTests.Setup;
@@ -268,6 +270,33 @@ begin
   Assert.AreEqual(1, Length(LMissing));
   Assert.AreEqual('Work', LMissing[0].Name);
   Assert.Contains(LMissing[0].Signature, 'string');
+end;
+
+procedure TRadIASemanticIndexTests.
+  CompletesResolvedMembersByPrefixWithoutDuplicates;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LMatches: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create('base', '', susVCL, 1);
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Base; interface type TBase = class procedure Save; ' +
+    'procedure Search; procedure Reset; end; implementation end.',
+    nil
+  );
+  LDescriptor := TRadIASemanticUnitDescriptor.Create('child', '', susProject, 1);
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Child; interface type TChild = class(TBase) ' +
+    'procedure Save; end; implementation end.',
+    nil
+  );
+  LMatches := FIndex.CompleteResolvedMembers('TChild', 'Sa', 10);
+  Assert.AreEqual(1, Length(LMatches));
+  Assert.AreEqual('Save', LMatches[0].Name);
+  LMatches := FIndex.CompleteResolvedMembers('TChild', 'S', 1);
+  Assert.AreEqual(1, Length(LMatches));
 end;
 
 initialization

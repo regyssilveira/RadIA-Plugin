@@ -131,6 +131,11 @@ type
     function FindResolvedMembers(
       const AContainerName: string
     ): TArray<TRadIASemanticIndexedSymbol>;
+    function CompleteResolvedMembers(
+      const AContainerName: string;
+      const APrefix: string;
+      const AMaxItems: Integer
+    ): TArray<TRadIASemanticIndexedSymbol>;
     function FindSymbols(
       const AName: string
     ): TArray<TRadIASemanticIndexedSymbol>;
@@ -536,6 +541,48 @@ begin
     Result := LResult.ToArray;
   finally
     LVisited.Free;
+    LResult.Free;
+  end;
+end;
+
+function TRadIASemanticIndex.CompleteResolvedMembers(
+  const AContainerName: string;
+  const APrefix: string;
+  const AMaxItems: Integer
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LCandidate: TRadIASemanticIndexedSymbol;
+  LKey: string;
+  LLimit: Integer;
+  LPrefix: string;
+  LResult: TList<TRadIASemanticIndexedSymbol>;
+  LSeen: TDictionary<string, Boolean>;
+begin
+  LLimit := AMaxItems;
+  if LLimit < 1 then
+    LLimit := 1
+  else if LLimit > 100 then
+    LLimit := 100;
+  LPrefix := Normalize(APrefix);
+  LResult := TList<TRadIASemanticIndexedSymbol>.Create;
+  LSeen := TDictionary<string, Boolean>.Create;
+  try
+    for LCandidate in FindResolvedMembers(AContainerName) do
+    begin
+      if (LPrefix <> '') and
+        not Normalize(LCandidate.Name).StartsWith(LPrefix) then
+        Continue;
+      LKey := MethodKey(LCandidate);
+      if LSeen.ContainsKey(LKey) then
+        Continue;
+      LSeen.Add(LKey, True);
+      LResult.Add(LCandidate);
+      if LResult.Count >= LLimit then
+        Break;
+    end;
+    Result := LResult.ToArray;
+  finally
+    LSeen.Free;
     LResult.Free;
   end;
 end;

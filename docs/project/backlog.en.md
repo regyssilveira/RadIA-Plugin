@@ -7,7 +7,6 @@ belong in the backlog.
 
 | Open outcome | Completion criterion |
 |---|---|
-| Finish completion and diagnostics | Cancellable local response, metrics, and `/doctor --deep` validation |
 | Validate the delivery | Tests, Sonar, installer, and documentation pass on Delphi 12 and 13 |
 
 The backlog does not record versions, completed deliveries, evidence, or unapproved ideas.

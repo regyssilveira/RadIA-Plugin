@@ -4,6 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
+  System.SysUtils,
   RadIA.Semantic.Index;
 
 type
@@ -17,6 +18,17 @@ type
       out AError: string
     ): Boolean;
     property RestartCount: Integer read GetRestartCount;
+  end;
+
+  IRadIASemanticCancelableRequestClient = interface
+    ['{6513AC4B-8E3D-40D6-A55A-8F930C2DDF53}']
+    function RequestCancelable(
+      const AMethod: string;
+      const AParameters: string;
+      const AIsCancelled: TFunc<Boolean>;
+      out AResponse: string;
+      out AError: string
+    ): Boolean;
   end;
 
   TRadIASemanticWorkspaceFile = record
@@ -137,7 +149,6 @@ uses
   System.IOUtils,
   System.JSON,
   System.SyncObjs,
-  System.SysUtils,
   RadIA.Core.Types;
 
 function ScopeName(const AScope: TRadIASemanticUnitScope): string;

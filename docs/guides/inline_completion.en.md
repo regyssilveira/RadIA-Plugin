@@ -28,6 +28,13 @@ declarations and inheritance-resolved members. The query does not run during OTA
 thread. If the semantic process is unavailable, the request continues with bounded unit context; the
 editor remains responsive and Ghost Text remains available.
 
+When the cursor follows member access, such as `Form.Sa`, RadIA queries the local structural index
+first. The search filters the prefix, resolves inherited members, removes duplicates, and limits the
+result to 20 candidates. An unambiguous continuation is displayed immediately without calling the
+provider. Empty, ambiguous, or unavailable results automatically continue through the configured FIM
+route. A new edit cancels both local and remote waits; route status reports `local semantic`, candidate
+count, and latency when that route is used.
+
 ## Alternatives panel
 
 After **Request an alternative**, RadIA keeps the previous suggestion instead of silently replacing

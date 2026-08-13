@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils,
   RadIA.Core.Interfaces,
+  RadIA.Core.SemanticCompletion,
   RadIA.Core.SemanticQueries;
 
 type
@@ -86,6 +87,7 @@ type
   end;
 
   TRadIAFimRouteKind = (
+    frkSemanticLocal,
     frkDedicated,
     frkTraditionalFallback
   );
@@ -204,12 +206,14 @@ type
     FDiagnosticLock: TObject;
     FLastDiagnostic: TRadIAFimDiagnostic;
     FSemanticQueries: IRadIASemanticQueryService;
+    FSemanticCompletion: IRadIASemanticCompletionService;
     FService: IRadIAService;
     FTimeoutMs: Cardinal;
     procedure Initialize(
       const AService: IRadIAService;
       const AConfig: IRadIAConfig;
       const ASemanticQueries: IRadIASemanticQueryService;
+      const ASemanticCompletion: IRadIASemanticCompletionService;
       const ATimeoutMs: Cardinal
     );
     function CompleteWithProvider(
@@ -219,6 +223,11 @@ type
       const AModelId: string;
       const AMaxTokens: Integer
     ): string;
+    function CompleteWithSemanticIndex(
+      const AContext: TRadIAInlineCompletionContext;
+      const ACancellation: IRadIAInlineCompletionCancellationToken;
+      out AHandled: Boolean
+    ): string;
     procedure StoreDiagnostic(
       const ADiagnostic: TRadIAFimDiagnostic
     );
@@ -227,6 +236,7 @@ type
       const AService: IRadIAService;
       const AConfig: IRadIAConfig;
       const ASemanticQueries: IRadIASemanticQueryService;
+      const ASemanticCompletion: IRadIASemanticCompletionService;
       const ATimeoutMs: Cardinal
     );
     destructor Destroy; override;
@@ -554,10 +564,12 @@ end;
 
 function TRadIAFimDiagnostic.RouteName: string;
 begin
-  if FRouteKind = frkDedicated then
-    Result := 'dedicated FIM'
+  case FRouteKind of
+    frkSemanticLocal: Result := 'local semantic completion';
+    frkDedicated: Result := 'dedicated FIM';
   else
     Result := 'traditional completion fallback';
+  end;
 end;
 
 constructor TRadIAInlineCompletionContext.Create(
@@ -753,7 +765,11 @@ var
   LTemperature: Double;
   LSettings: TRadIAExecutionSettings;
   LSemanticContext: TRadIAInlineCompletionContext;
+  LSemanticHandled: Boolean;
 begin
+  Result := CompleteWithSemanticIndex(AContext, ACancellation, LSemanticHandled);
+  if LSemanticHandled then
+    Exit;
   LProviderId := Trim(FConfig.AutocompleteProvider);
   if LProviderId = '' then
     LProviderId := FConfig.GetActiveProvider;
@@ -807,6 +823,60 @@ begin
     LModelId,
     LMaxTokens
   );
+end;
+
+function TRadIAServiceInlineCompletionProvider.CompleteWithSemanticIndex(
+  const AContext: TRadIAInlineCompletionContext;
+  const ACancellation: IRadIAInlineCompletionCancellationToken;
+  out AHandled: Boolean
+): string;
+var
+  LCancellationCheck: TFunc<Boolean>;
+  LContainerName: string;
+  LDotIndex: Integer;
+  LPrefix: string;
+  LPrefixIndex: Integer;
+  LSemanticResult: TRadIASemanticCompletionResult;
+begin
+  Result := '';
+  AHandled := False;
+  LPrefixIndex := Length(AContext.Prefix);
+  while (LPrefixIndex > 0) and
+    CharInSet(AContext.Prefix[LPrefixIndex], ['A'..'Z', 'a'..'z', '0'..'9', '_']) do
+    Dec(LPrefixIndex);
+  LPrefix := Copy(AContext.Prefix, LPrefixIndex + 1, MaxInt);
+  LContainerName := AContext.SymbolName;
+  LDotIndex := Pos('.', LContainerName);
+  if LDotIndex > 0 then
+    LContainerName := Copy(LContainerName, 1, LDotIndex - 1);
+  if not Assigned(FSemanticCompletion) or
+    (LPrefixIndex = 0) or
+    (AContext.Prefix[LPrefixIndex] <> '.') or
+    (LContainerName = '') then
+    Exit;
+  LCancellationCheck :=
+    function: Boolean
+    begin
+      Result := ACancellation.IsCancellationRequested;
+    end;
+  LSemanticResult := FSemanticCompletion.Complete(
+    LContainerName,
+    LPrefix,
+    LCancellationCheck
+  );
+  AHandled := LSemanticResult.Status = 'cancelled';
+  if (LSemanticResult.Status <> 'ready') or
+    (LSemanticResult.Suggestion = '') then
+    Exit;
+  StoreDiagnostic(TRadIAFimDiagnostic.Create(
+    'RadIA Semantic Engine',
+    'structural-index',
+    frkSemanticLocal,
+    '',
+    LSemanticResult.LatencyMs
+  ));
+  AHandled := True;
+  Result := LSemanticResult.Suggestion;
 end;
 
 function TRadIAServiceInlineCompletionProvider.CompleteWithProvider(
@@ -956,17 +1026,25 @@ constructor TRadIAServiceInlineCompletionProvider.Create(
   const AService: IRadIAService;
   const AConfig: IRadIAConfig;
   const ASemanticQueries: IRadIASemanticQueryService;
+  const ASemanticCompletion: IRadIASemanticCompletionService;
   const ATimeoutMs: Cardinal
 );
 begin
   inherited Create;
-  Initialize(AService, AConfig, ASemanticQueries, ATimeoutMs);
+  Initialize(
+    AService,
+    AConfig,
+    ASemanticQueries,
+    ASemanticCompletion,
+    ATimeoutMs
+  );
 end;
 
 procedure TRadIAServiceInlineCompletionProvider.Initialize(
   const AService: IRadIAService;
   const AConfig: IRadIAConfig;
   const ASemanticQueries: IRadIASemanticQueryService;
+  const ASemanticCompletion: IRadIASemanticCompletionService;
   const ATimeoutMs: Cardinal
 );
 begin
@@ -979,6 +1057,7 @@ begin
   FService := AService;
   FConfig := AConfig;
   FSemanticQueries := ASemanticQueries;
+  FSemanticCompletion := ASemanticCompletion;
   FTimeoutMs := ATimeoutMs;
   FDiagnosticLock := TObject.Create;
 end;

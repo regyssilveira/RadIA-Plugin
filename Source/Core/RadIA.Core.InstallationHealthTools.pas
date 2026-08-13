@@ -6,6 +6,8 @@ uses
   System.JSON,
   RadIA.Core.Interfaces,
   RadIA.Core.ExternalMcpRuntime,
+  RadIA.Core.SemanticCompletion,
+  RadIA.Semantic.Workspace,
   RadIA.Core.Tools;
 
 type
@@ -51,6 +53,8 @@ type
     FConfig: IRadIAConfig;
     FExternalMcpRuntime: IRadIAExternalMcpRuntime;
     FRegistry: IRadIAToolRegistry;
+    FSemanticClient: IRadIASemanticRequestClient;
+    FSemanticCompletion: IRadIASemanticCompletionService;
     FWebDirectory: string;
     procedure AddIssues(
       const AReadiness: TRadIAInstallationReadiness;
@@ -80,6 +84,7 @@ type
       const AReadiness: TRadIAInstallationReadiness
     );
     procedure AddDeepExternalMcpChecks(const ARoot: TJSONObject);
+    procedure AddDeepSemanticChecks(const ARoot: TJSONObject);
     function NextAction(
       const AReadiness: TRadIAInstallationReadiness
     ): string;
@@ -102,6 +107,15 @@ type
       const ARegistry: IRadIAToolRegistry;
       const AExternalMcpRuntime: IRadIAExternalMcpRuntime
     ); overload;
+    constructor Create(
+      const AConfig: IRadIAConfig;
+      const ABridgePath: string;
+      const AWebDirectory: string;
+      const ARegistry: IRadIAToolRegistry;
+      const AExternalMcpRuntime: IRadIAExternalMcpRuntime;
+      const ASemanticClient: IRadIASemanticRequestClient;
+      const ASemanticCompletion: IRadIASemanticCompletionService
+    ); overload;
     function Diagnose: string;
     function DiagnoseDeep: string;
     function Status(
@@ -119,6 +133,7 @@ implementation
 
 uses
   System.IOUtils,
+  System.Diagnostics,
   System.SyncObjs,
   System.SysUtils,
   RadIA.Core.ResultCompactionSettings,
@@ -128,7 +143,8 @@ uses
   RadIA.Core.CliMcpSettings,
   RadIA.Core.CliProcess,
   RadIA.Core.ExternalMcp,
-  RadIA.Core.PseudoTerminal;
+  RadIA.Core.PseudoTerminal,
+  RadIA.Semantic.Client;
 
 type
   IRadIADeepProbeWaiter = interface
@@ -244,7 +260,7 @@ constructor TRadIAInstallationHealthProbe.Create(
   const AWebDirectory: string
 );
 begin
-  Create(AConfig, ABridgePath, AWebDirectory, nil, nil);
+  Create(AConfig, ABridgePath, AWebDirectory, nil, nil, nil, nil);
 end;
 
 constructor TRadIAInstallationHealthProbe.Create(
@@ -254,7 +270,7 @@ constructor TRadIAInstallationHealthProbe.Create(
   const ARegistry: IRadIAToolRegistry
 );
 begin
-  Create(AConfig, ABridgePath, AWebDirectory, ARegistry, nil);
+  Create(AConfig, ABridgePath, AWebDirectory, ARegistry, nil, nil, nil);
 end;
 
 constructor TRadIAInstallationHealthProbe.Create(
@@ -265,6 +281,27 @@ constructor TRadIAInstallationHealthProbe.Create(
   const AExternalMcpRuntime: IRadIAExternalMcpRuntime
 );
 begin
+  Create(
+    AConfig,
+    ABridgePath,
+    AWebDirectory,
+    ARegistry,
+    AExternalMcpRuntime,
+    nil,
+    nil
+  );
+end;
+
+constructor TRadIAInstallationHealthProbe.Create(
+  const AConfig: IRadIAConfig;
+  const ABridgePath: string;
+  const AWebDirectory: string;
+  const ARegistry: IRadIAToolRegistry;
+  const AExternalMcpRuntime: IRadIAExternalMcpRuntime;
+  const ASemanticClient: IRadIASemanticRequestClient;
+  const ASemanticCompletion: IRadIASemanticCompletionService
+);
+begin
   inherited Create;
   if not Assigned(AConfig) then
     raise EArgumentNilException.Create('AConfig');
@@ -273,6 +310,8 @@ begin
   FWebDirectory := TPath.GetFullPath(AWebDirectory);
   FRegistry := ARegistry;
   FExternalMcpRuntime := AExternalMcpRuntime;
+  FSemanticClient := ASemanticClient;
+  FSemanticCompletion := ASemanticCompletion;
 end;
 
 function TRadIAInstallationHealthProbe.IsFirstToolReady: Boolean;
@@ -539,6 +578,109 @@ begin
     );
 end;
 
+procedure TRadIAInstallationHealthProbe.AddDeepSemanticChecks(
+  const ARoot: TJSONObject
+);
+var
+  LChecks: TJSONArray;
+  LCompletion: TRadIASemanticCompletionResult;
+  LError: string;
+  LExecutablePath: string;
+  LProbe: TRadIASemanticEngineProbe;
+  LResponse: string;
+  LStopwatch: TStopwatch;
+begin
+  LChecks := ARoot.GetValue<TJSONArray>('activeChecks');
+  LExecutablePath := TRadIASemanticEngineClient.DefaultExecutablePath;
+  if not TFile.Exists(LExecutablePath) then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'semantic-engine-executable',
+      'failed',
+      'RadIA.Semantic.Engine.exe is missing from the RadIA installation.',
+      'Repair or reinstall the RadIA package.'
+    );
+    Exit;
+  end;
+  LProbe := TRadIASemanticEngineClient.Probe(LExecutablePath);
+  if not LProbe.Ready then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'semantic-engine-protocol',
+      'failed',
+      'The semantic engine handshake failed: ' + LProbe.ErrorMessage,
+      'Repair the RadIA package and restart the IDE.'
+    );
+    Exit;
+  end;
+  AddDeepCheck(
+    LChecks,
+    'semantic-engine-protocol',
+    'passed',
+    'Semantic engine protocol ' + LProbe.ProtocolVersion + ' is ready.',
+    ''
+  );
+  if not Assigned(FSemanticClient) then
+  begin
+    AddDeepCheck(
+      LChecks,
+      'semantic-index-query',
+      'failed',
+      'The semantic engine client is not registered in the IDE.',
+      'Restart the IDE. Repair the RadIA package if the problem remains.'
+    );
+    Exit;
+  end;
+  LStopwatch := TStopwatch.StartNew;
+  if FSemanticClient.Request('indexStatus', '{}', LResponse, LError) then
+  begin
+    LStopwatch.Stop;
+    AddDeepCheck(
+      LChecks,
+      'semantic-index-query',
+      'passed',
+      Format(
+        'Semantic index query succeeded in %d ms.',
+        [LStopwatch.ElapsedMilliseconds]
+      ),
+      ''
+    );
+  end
+  else
+  begin
+    LStopwatch.Stop;
+    AddDeepCheck(
+      LChecks,
+      'semantic-index-query',
+      'failed',
+      'The semantic index query failed: ' + LError,
+      'Restart the IDE. Repair the RadIA package if the problem remains.'
+    );
+    Exit;
+  end;
+  if Assigned(FSemanticCompletion) then
+  begin
+    LCompletion := FSemanticCompletion.GetLastResult;
+    AddDeepCheck(
+      LChecks,
+      'semantic-completion-metrics',
+      'passed',
+      Format(
+        'Last semantic completion: status %s, %d candidates, %d ms. %s',
+        [
+          LCompletion.Status,
+          LCompletion.CandidateCount,
+          LCompletion.LatencyMs,
+          LCompletion.ErrorMessage
+        ]
+      ),
+      ''
+    );
+  end;
+end;
+
 function TRadIAInstallationHealthProbe.DiagnoseDeep: string;
 var
   LActiveChecks: TJSONArray;
@@ -563,6 +705,7 @@ begin
     LRoot.AddPair('activeChecks', LActiveChecks);
     AddDeepCliChecks(LRoot, LReadiness);
     AddDeepExternalMcpChecks(LRoot);
+    AddDeepSemanticChecks(LRoot);
     LFailedCount := 0;
     for LIndex := 0 to LActiveChecks.Count - 1 do
       if SameText(

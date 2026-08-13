@@ -164,6 +164,7 @@ begin
   LCapabilities.Add('findSymbols');
   LCapabilities.Add('findMembers');
   LCapabilities.Add('findResolvedMembers');
+  LCapabilities.Add('completeResolvedMembers');
   LCapabilities.Add('indexStatus');
   LCapabilities.Add('clearIndex');
   LCapabilities.Add('loadIndexCache');
@@ -523,6 +524,18 @@ begin
       AId,
       AIndex.FindResolvedMembers(
         LParameters.GetValue<string>('container', '')
+      )
+    ));
+  end;
+  if SameText(AMethod, 'completeResolvedMembers') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.CompleteResolvedMembers(
+        LParameters.GetValue<string>('container', ''),
+        LParameters.GetValue<string>('prefix', ''),
+        LParameters.GetValue<Integer>('maxItems', 20)
       )
     ));
   end;

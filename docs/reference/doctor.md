@@ -25,6 +25,7 @@ e seus pré-requisitos, ou escolher uma rota nativa por API que não dependa de 
 | Chat | Presença de HTML, CSS e JavaScript instalados | Recursos web ausentes ou instalação incompleta |
 | Tools | Catálogo interno e `GetIDEState` | O pacote não registrou a primeira tool somente leitura |
 | MCP externo | Servidores habilitados, conexões, tools e erros | Um servidor habilitado não pode ser usado |
+| Motor semântico | Executável, protocolo, índice, consulta e métricas da completion | O processo está ausente, incompatível ou não responde |
 
 ChatGPT Pro via Codex CLI é tratado como uma rota composta: a orquestração pode continuar
 **RadIA native**, mas o transporte exige o executável Codex. Isso não torna MCP obrigatório. O
@@ -57,6 +58,8 @@ de começar, o RadIA mostra o consentimento de execução. Se autorizado, o perf
 - executa `--version` na CLI efetivamente selecionada;
 - usa o comando não interativo de status de autenticação quando a CLI o oferece;
 - abre um handshake temporário com cada servidor MCP externo habilitado;
+- valida o executável e o protocolo do motor semântico;
+- consulta o índice semântico real, mede a latência e apresenta as métricas da última completion;
 - encerra as sessões de teste e apresenta cada resultado no mesmo cartão do doctor.
 
 O diagnóstico não instala, autentica, repara ou altera configurações. Também não envia uma mensagem

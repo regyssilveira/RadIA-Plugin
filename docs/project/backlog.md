@@ -7,7 +7,6 @@ release não pertencem ao backlog.
 
 | Resultado aberto | Critério de conclusão |
 |---|---|
-| Concluir completion e diagnóstico | Resposta local cancelável, métricas e validação pelo `/doctor --deep` |
 | Validar a entrega | Testes, Sonar, instalador e documentação aprovados no Delphi 12 e 13 |
 
 O backlog não registra versões, entregas concluídas, evidências ou ideias ainda não aprovadas. A

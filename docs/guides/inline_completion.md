@@ -28,6 +28,13 @@ declarações e membros resolvidos por herança. A consulta não ocorre durante 
 IDE. Se o processo semântico estiver indisponível, o pedido continua com o contexto limitado da unit;
 o editor permanece responsivo e o Ghost Text continua utilizável.
 
+Quando o cursor está após um acesso a membro, como `Form.Sa`, o RadIA consulta primeiro o índice
+estrutural local. A busca filtra o prefixo, resolve membros herdados, remove duplicidades e limita a
+20 candidatos. Uma continuação inequívoca é exibida imediatamente sem chamar o provider. Resultado
+vazio, ambíguo ou indisponível segue automaticamente para a rota FIM já configurada. Uma nova edição
+cancela tanto a espera local quanto a remota; o status de rota informa `local semantic`, quantidade
+de candidatos e latência quando essa rota é usada.
+
 ## Painel de alternativas
 
 Depois de escolher **Solicitar uma alternativa**, o RadIA mantém a sugestão anterior em vez de

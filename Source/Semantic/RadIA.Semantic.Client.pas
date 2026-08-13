@@ -3,6 +3,7 @@ unit RadIA.Semantic.Client;
 interface
 
 uses
+  System.SysUtils,
   RadIA.Core.ExternalMcpTransport,
   RadIA.Semantic.Workspace;
 
@@ -37,7 +38,8 @@ type
 
   TRadIASemanticEngineSupervisor = class(
     TInterfacedObject,
-    IRadIASemanticRequestClient
+    IRadIASemanticRequestClient,
+    IRadIASemanticCancelableRequestClient
   )
   private
     FExecutablePath: string;
@@ -53,10 +55,20 @@ type
     ): string;
     function Exchange(
       const ARequest: string;
+      const AIsCancelled: TFunc<Boolean>;
       out AResponse: string;
       out AError: string
     ): Boolean;
     function Initialize(out AError: string): Boolean;
+    function EnsureTransport(
+      const AAttempt: Integer;
+      out AError: string
+    ): Boolean;
+    function WaitForResponse(
+      const AIsCancelled: TFunc<Boolean>;
+      out AResponse: string;
+      out AError: string
+    ): Boolean;
     function StartTransport(out AError: string): Boolean;
   public
     constructor Create(
@@ -68,6 +80,13 @@ type
     function Request(
       const AMethod: string;
       const AParameters: string;
+      out AResponse: string;
+      out AError: string
+    ): Boolean;
+    function RequestCancelable(
+      const AMethod: string;
+      const AParameters: string;
+      const AIsCancelled: TFunc<Boolean>;
       out AResponse: string;
       out AError: string
     ): Boolean;
@@ -83,7 +102,6 @@ uses
   System.IOUtils,
   System.JSON,
   System.SyncObjs,
-  System.SysUtils,
   Winapi.Windows,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliProcess,
@@ -269,6 +287,7 @@ end;
 
 function TRadIASemanticEngineSupervisor.Exchange(
   const ARequest: string;
+  const AIsCancelled: TFunc<Boolean>;
   out AResponse: string;
   out AError: string
 ): Boolean;
@@ -282,14 +301,57 @@ begin
       AError := 'The semantic engine request could not be sent.';
     Exit(False);
   end;
-  if not FTransport.Receive(FTimeoutMs, AResponse) then
+  Result := WaitForResponse(AIsCancelled, AResponse, AError);
+end;
+
+function TRadIASemanticEngineSupervisor.WaitForResponse(
+  const AIsCancelled: TFunc<Boolean>;
+  out AResponse: string;
+  out AError: string
+): Boolean;
+const
+  CPollIntervalMs = 25;
+var
+  LElapsedMs: Cardinal;
+  LWaitMs: Cardinal;
+begin
+  LElapsedMs := 0;
+  while LElapsedMs < FTimeoutMs do
   begin
-    AError := FTransport.LastError;
-    if AError = '' then
-      AError := 'The semantic engine response timed out.';
-    Exit(False);
+    if Assigned(AIsCancelled) and AIsCancelled() then
+    begin
+      AError := 'The semantic engine request was cancelled.';
+      Stop;
+      Exit(False);
+    end;
+    LWaitMs := CPollIntervalMs;
+    if FTimeoutMs - LElapsedMs < LWaitMs then
+      LWaitMs := FTimeoutMs - LElapsedMs;
+    if FTransport.Receive(LWaitMs, AResponse) then
+      Exit(True);
+    if not FTransport.Running then
+    begin
+      AError := FTransport.LastError;
+      if AError = '' then
+        AError := 'The semantic engine process stopped unexpectedly.';
+      Exit(False);
+    end;
+    Inc(LElapsedMs, LWaitMs);
   end;
-  Result := True;
+  AError := 'The semantic engine response timed out.';
+  Result := False;
+end;
+
+function TRadIASemanticEngineSupervisor.EnsureTransport(
+  const AAttempt: Integer;
+  out AError: string
+): Boolean;
+begin
+  if FTransport.Running then
+    Exit(True);
+  Result := StartTransport(AError);
+  if not Result and (AAttempt = 0) then
+    Inc(FRestartCount);
 end;
 
 function TRadIASemanticEngineSupervisor.Initialize(
@@ -302,6 +364,7 @@ var
 begin
   Result := Exchange(
     BuildRequest(0, 'initialize', '{}'),
+    nil,
     LResponse,
     AError
   );
@@ -330,6 +393,23 @@ function TRadIASemanticEngineSupervisor.Request(
   out AResponse: string;
   out AError: string
 ): Boolean;
+begin
+  Result := RequestCancelable(
+    AMethod,
+    AParameters,
+    nil,
+    AResponse,
+    AError
+  );
+end;
+
+function TRadIASemanticEngineSupervisor.RequestCancelable(
+  const AMethod: string;
+  const AParameters: string;
+  const AIsCancelled: TFunc<Boolean>;
+  out AResponse: string;
+  out AError: string
+): Boolean;
 var
   LAttempt: Integer;
   LRequest: string;
@@ -340,20 +420,14 @@ begin
   try
     for LAttempt := 0 to 1 do
     begin
-      if not FTransport.Running then
-        if not StartTransport(AError) then
-        begin
-          if LAttempt = 0 then
-          begin
-            Inc(FRestartCount);
-            Continue;
-          end;
-          Exit(False);
-        end;
+      if not EnsureTransport(LAttempt, AError) then
+        Continue;
       Inc(FNextRequestId);
       LRequest := BuildRequest(FNextRequestId, AMethod, AParameters);
-      if Exchange(LRequest, AResponse, AError) then
+      if Exchange(LRequest, AIsCancelled, AResponse, AError) then
         Exit(True);
+      if Assigned(AIsCancelled) and AIsCancelled() then
+        Exit(False);
       Stop;
       if LAttempt = 0 then
         Inc(FRestartCount);
