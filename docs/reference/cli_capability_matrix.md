@@ -15,7 +15,7 @@
 
 ## Matriz atual
 
-| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.12.0 |
+| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.12.1 |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Codex CLI | Sim, JSONL | Evento estruturado | `exec resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
 | Claude Code | Sim, stream JSON | Evento estruturado | `--resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |

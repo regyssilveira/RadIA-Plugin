@@ -1,4 +1,4 @@
-# Complete RadIA 2.12.0 user manual
+# Complete RadIA 2.12.1 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
