@@ -185,8 +185,6 @@ Multiline suggestions are split into virtual overlays without changing the buffe
 starts at the cursor; visible continuation lines use a lane after real text to avoid covering code,
 and rows beyond end-of-file render below the final logical line. Full acceptance preserves every
 line break, while partial acceptance refreshes the snapshot before keeping the remainder. The
-milestone passes visual validation on Delphi 12 Win32 and Delphi 13 Win32/IDE64. The smoke
-opens a real unit, confirms the editor through MCP, and requires separate preparation and OTA
-painting events. Historical evidence is stored in `inline_completion_smoke_evidence_2.0.0.json`;
-the current gate also requires acceptance, one undo restoring the snapshot, and clean rejection.
-The approved matrix is published as `inline_completion_smoke_evidence_2.3.1.json`.
+integration is validated on Delphi 12 Win32 and Delphi 13 Win32/IDE64. Smoke testing opens a real
+unit, confirms the editor through MCP, and requires preparation, OTA painting, acceptance, one undo
+restoring the snapshot, and clean rejection. Detailed results belong in the pipeline, not in `docs`.

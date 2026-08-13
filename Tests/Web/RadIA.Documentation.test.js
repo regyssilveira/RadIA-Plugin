@@ -593,10 +593,10 @@ test('current release gates use the generated catalog size', () => {
     'terminal.en.md'
   ];
 
-  assert.match(portuguese, new RegExp(`todos com ${toolCount}\\s+ferramentas`, 'u'));
-  assert.match(english, new RegExp(`all with ${toolCount} tools`, 'u'));
-  assert.match(portuguese, /catálogo histórico de 95 tools/u);
-  assert.match(english, /historical 95-tool catalog/u);
+  assert.match(portuguese, /Update-RadIA\.RuntimeToolCatalog\.ps1/u);
+  assert.match(english, /Update-RadIA\.RuntimeToolCatalog\.ps1/u);
+  assert.doesNotMatch(portuguese, /catálogo histórico|evidência_\d/u);
+  assert.doesNotMatch(english, /historical \d+-tool catalog|evidence_\d/u);
   currentDocuments.forEach(documentName => {
     const content = fs.readFileSync(documentationPath(documentName), 'utf8');
     assert.match(
@@ -618,14 +618,6 @@ test('release metadata and operational protocols follow the package version', ()
     documentationPath('mcp_integration_guide.en.md'),
     'utf8'
   );
-  const cliPortuguese = fs.readFileSync(
-    documentationPath('cli_capability_matrix.md'),
-    'utf8'
-  );
-  const cliEnglish = fs.readFileSync(
-    documentationPath('cli_capability_matrix.en.md'),
-    'utf8'
-  );
   const sonarProject = fs.readFileSync(
     path.join(repositoryRoot, 'sonar-project.properties'),
     'utf8'
@@ -636,9 +628,6 @@ test('release metadata and operational protocols follow the package version', ()
   assert.match(project, new RegExp(`ProductVersion=${escapedVersion}\\.0`, 'u'));
   [mcpPortuguese, mcpEnglish].forEach(document => {
     assert.match(document, new RegExp(`initialize[^\\n]+${escapedVersion}`, 'u'));
-  });
-  [cliPortuguese, cliEnglish].forEach(document => {
-    assert.match(document, new RegExp(`RadIA ${escapedVersion}`, 'u'));
   });
   assert.match(sonarProject, new RegExp(`sonar\\.projectVersion=${escapedVersion}`, 'u'));
 });

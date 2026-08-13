@@ -1,6 +1,5 @@
 # Matriz contratual de capacidades dos executores CLI
 
-> **Baseline:** RadIA 2.9.0, atualizada em 12 de agosto de 2026.
 > **Natureza:** contrato técnico para implementação e testes. Uma capacidade declarada pelo CLI
 > não significa que o RadIA já a exponha na interface.
 
@@ -8,13 +7,13 @@
 
 - **Contrato do CLI** registra a capacidade publicada pelo fornecedor e representada por
   `TRadIAExecutorContractCatalog`.
-- **Uso atual no RadIA** descreve o comportamento entregue no início do goal.
+- **Uso atual no RadIA** descreve o comportamento disponível no produto.
 - Toda execução futura deve confirmar a capacidade contra o executável detectado. Uma versão
   incompatível deve produzir diagnóstico explícito, nunca fallback silencioso.
 - FIM é um contrato de completion separado do chat. Nenhum dos quatro CLIs é presumido como FIM
   apenas por aceitar um modelo configurável.
 
-## Matriz versionada
+## Matriz atual
 
 | Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.9.0 |
 |---|---:|---:|---:|---:|---:|---:|---|

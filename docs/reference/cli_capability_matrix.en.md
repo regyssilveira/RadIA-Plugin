@@ -1,6 +1,5 @@
 # CLI executor contractual capability matrix
 
-> **Baseline:** RadIA 2.9.0, updated August 12, 2026.
 > **Nature:** technical implementation and test contract. A capability declared by a CLI does not
 > mean RadIA already exposes it in the UI.
 
@@ -8,13 +7,13 @@
 
 - **CLI contract** records the vendor-published capability represented by
   `TRadIAExecutorContractCatalog`.
-- **Current RadIA use** describes behavior delivered at the start of this goal.
+- **Current RadIA use** describes behavior available in the product.
 - Future execution must confirm capabilities against the detected executable. An incompatible
   version produces an explicit diagnostic rather than a silent fallback.
 - FIM is a completion contract separate from chat. None of the four CLIs is assumed to support FIM
   merely because it accepts model selection.
 
-## Versioned matrix
+## Current matrix
 
 | Executor | Structured output | Session ID | Stable resume | Model | MCP | Dedicated FIM | RadIA 2.9.0 use |
 |---|---:|---:|---:|---:|---:|---:|---|

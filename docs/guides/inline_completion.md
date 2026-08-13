@@ -187,8 +187,6 @@ Sugestões multilinha são separadas em overlays virtuais sem modificar o buffer
 começa na coluna do cursor; continuações visíveis usam uma faixa após o texto real para não
 encobrir código existente. Linhas que ultrapassam o fim do arquivo são desenhadas abaixo da última
 linha lógica. O aceite total preserva todas as quebras, e o aceite parcial atualiza o snapshot antes
-de manter o restante. O marco é validado visualmente no Delphi 12 Win32 e no Delphi 13 Win32/IDE64.
-O smoke abre uma unit real, confirma o editor pelo MCP e exige os eventos separados de
-preparação e pintura OTA. A evidência histórica está em `inline_completion_smoke_evidence_2.0.0.json`;
-o gate atual também exige aceite, um único undo restaurando o snapshot e rejeição limpa. A matriz
-aprovada está publicada em `inline_completion_smoke_evidence_2.3.1.json`.
+de manter o restante. A integração é validada no Delphi 12 Win32 e no Delphi 13 Win32/IDE64. O smoke
+abre uma unit real, confirma o editor pelo MCP e exige preparação, pintura OTA, aceite, um único undo
+restaurando o snapshot e rejeição limpa. Os resultados detalhados pertencem ao pipeline, não a `docs`.
