@@ -7,6 +7,14 @@ const projectOpeningSource = fs.readFileSync(
   path.join('Source', 'Integration', 'RadIA.OTA.ProjectOpening.pas'),
   'utf8'
 );
+const integrationSmokeSource = fs.readFileSync(
+  path.join('scripts', 'Test-RadIA.KnowledgeNotifierSmoke.ps1'),
+  'utf8'
+);
+const integrationGateSource = fs.readFileSync(
+  path.join('scripts', 'Test-RadIA.ProjectCreationNavigation.ps1'),
+  'utf8'
+);
 
 test('project opening waits until the generated project belongs to the IDE', () => {
   assert.match(
@@ -24,4 +32,13 @@ test('project readiness compares the registered project path', () => {
     projectOpeningSource,
     /LProjectGroup\.Projects\[LIndex\][\s\S]*?SameFileName\(LProject\.FileName, AProjectFileName\)/u
   );
+});
+
+test('IDE integration navigates immediately after opening a generated project', () => {
+  assert.match(
+    integrationSmokeSource,
+    /OpenCreatedProject[\s\S]*?NavigateToFile[\s\S]*?generatedFormSourcePath/u
+  );
+  assert.match(integrationGateSource, /SkipTemplateBuild/u);
+  assert.match(integrationGateSource, /SkipBuildAndTests/u);
 });

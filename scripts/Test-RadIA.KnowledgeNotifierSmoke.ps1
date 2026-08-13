@@ -830,6 +830,26 @@ $trackedChanges = @(
     & git -C $workspaceRoot status --porcelain --untracked-files=no
 )
 $sourceDirty = $trackedChanges.Count -gt 0
+
+function Remove-RadIAKnowledgeSmokeDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    for ($attempt = 1; $attempt -le 20; $attempt++) {
+        try {
+            Remove-Item -LiteralPath $Path -Recurse -Force
+            return
+        } catch {
+            if ($attempt -eq 20) {
+                throw
+            }
+            Start-Sleep -Milliseconds 500
+        }
+    }
+}
+
 $smokeDirectory = Join-Path (
     $workspaceRoot
 ) "Output\Validation\KnowledgeNotifierSmoke"
@@ -843,7 +863,7 @@ if (-not $smokeDirectory.StartsWith(
     throw "The smoke directory escaped the validation output directory."
 }
 if (Test-Path -LiteralPath $smokeDirectory) {
-    Remove-Item -LiteralPath $smokeDirectory -Recurse -Force
+    Remove-RadIAKnowledgeSmokeDirectory -Path $smokeDirectory
 }
 New-RadIAKnowledgeSmokeProject `
     -Directory $smokeDirectory `
@@ -1132,6 +1152,28 @@ try {
             }
         if (-not $templateOpen.opened) {
             throw "The generated VCL project was not opened."
+        }
+        $immediateNavigation = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "NavigateToFile" `
+            -Arguments @{
+                fileName = $generatedFormSourcePath
+                line = 1
+                column = 1
+            }
+        if (-not $immediateNavigation.fileName -or
+            -not [IO.Path]::GetFullPath(
+                $immediateNavigation.fileName
+            ).Equals(
+                [IO.Path]::GetFullPath($generatedFormSourcePath),
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+            throw (
+                "Navigation failed immediately after opening the " +
+                "generated project."
+            )
         }
     } else {
         $templateValidation = Invoke-RadIAToolWithConsent `

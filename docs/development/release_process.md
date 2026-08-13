@@ -50,6 +50,8 @@ Antes do smoke:
 - confirme versão, arquitetura e hash da BPL instalada;
 - teste instalação limpa, atualização, reparo e desinstalação;
 - valide Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64;
+- execute `Test-RadIA.ProjectCreationNavigation.ps1` no Delphi 12 e 13 para provar que um projeto
+  recém-criado pode ser aberto e navegado imediatamente, sem corrida de inicialização;
 - confirme inicialização, docking, chat, agente, terminal e encerramento sem processos órfãos.
 
 Os scripts em `scripts/` são a fonte executável dos parâmetros e critérios detalhados. Resultados ficam
