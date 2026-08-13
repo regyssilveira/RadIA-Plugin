@@ -7,7 +7,6 @@ release não pertencem ao backlog.
 
 | Resultado aberto | Critério de conclusão |
 |---|---|
-| Integrar o índice semântico | Agente, navegação, Ghost Text e DFM/PAS usam o índice com fallback seguro |
 | Concluir completion e diagnóstico | Resposta local cancelável, métricas e validação pelo `/doctor --deep` |
 | Validar a entrega | Testes, Sonar, instalador e documentação aprovados no Delphi 12 e 13 |
 

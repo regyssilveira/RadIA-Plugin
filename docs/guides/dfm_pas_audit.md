@@ -25,6 +25,10 @@ versão atual detecta:
 O parser é deliberadamente limitado: lê no máximo 2 MiB por arquivo e produz até 500 achados. Ele não
 instancia o form, não executa código e não interpreta propriedades arbitrárias.
 
+Antes de marcar um handler como ausente, a auditoria faz uma única consulta ao índice semântico para
+considerar métodos herdados. Se o motor não responder, ela volta ao parser local e mantém o mesmo
+resultado limitado disponível antes da integração; nenhuma falha do processo externo bloqueia a IDE.
+
 ## Preparar uma correção
 
 As correções automáticas estão restritas aos casos determinísticos `missing_event_handler` e

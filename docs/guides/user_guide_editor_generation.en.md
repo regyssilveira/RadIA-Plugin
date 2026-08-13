@@ -117,3 +117,7 @@ an expandable activity card with its current stage, elapsed time, and technical 
 
 Project links open in the IDE. Web links open in the default browser and never replace the main chat
 surface, so users cannot become trapped on a page without a Back control.
+
+When navigating to a symbol, RadIA queries the structural project index first, including other units and
+inherited members. If the index is unavailable or does not find the name, navigation returns to the
+bounded active-unit scanner. The operation remains confined to projects loaded in the IDE.

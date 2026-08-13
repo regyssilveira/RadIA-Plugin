@@ -274,6 +274,8 @@ contains
   RadIA.Semantic.MissingMembers in 'Source\Semantic\RadIA.Semantic.MissingMembers.pas',
   RadIA.Core.SemanticMembers in 'Source\Core\RadIA.Core.SemanticMembers.pas',
   RadIA.Core.SemanticMemberTools in 'Source\Core\RadIA.Core.SemanticMemberTools.pas',
+  RadIA.Core.SemanticQueries in 'Source\Core\RadIA.Core.SemanticQueries.pas',
+  RadIA.Core.SemanticQueryTools in 'Source\Core\RadIA.Core.SemanticQueryTools.pas',
   RadIA.Semantic.Workspace in 'Source\Semantic\RadIA.Semantic.Workspace.pas',
   RadIA.OTA.SemanticWorkspace in 'Source\Integration\RadIA.OTA.SemanticWorkspace.pas',
   RadIA.OTA.DockableForm in 'Source\Integration\RadIA.OTA.DockableForm.pas',

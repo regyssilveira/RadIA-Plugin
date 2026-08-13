@@ -118,3 +118,7 @@ chat mostra uma atividade expansível com etapa atual, tempo decorrido e saída 
 Links de projeto abrem o arquivo na IDE. Links web são enviados ao navegador padrão e nunca
 substituem a superfície principal do chat; assim, o usuário não fica preso em uma página sem
 controle de retorno.
+
+Ao navegar para um símbolo, o RadIA consulta primeiro o índice estrutural do projeto, incluindo outras
+units e membros herdados. Se o índice estiver indisponível ou não localizar o nome, a navegação volta ao
+scanner limitado da unit ativa. A operação continua confinada aos projetos carregados na IDE.

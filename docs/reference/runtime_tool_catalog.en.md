@@ -30,6 +30,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `PrepareMissingMembers` | Prepares an idempotent patch for indexed interface members missing from a class. | `RadIA.Core.SemanticMemberTools.pas` |
 
+## Semantic index queries
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `GetSemanticContext` | Returns indexed declarations and resolved inherited members for a Delphi symbol. | `RadIA.Core.SemanticQueryTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -380,7 +386,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 45
-- Registered built-in tools: 149
+- Registered groups: 46
+- Registered built-in tools: 150
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

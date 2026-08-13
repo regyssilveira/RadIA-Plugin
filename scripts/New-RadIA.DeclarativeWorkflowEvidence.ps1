@@ -5,7 +5,7 @@ param(
     [string]$OutputPath = (
         ".\Output\Evidence\declarative_workflow_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 149
+    [int]$RequiredToolCount = 150
 )
 
 $ErrorActionPreference = "Stop"

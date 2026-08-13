@@ -23,6 +23,11 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 7. Alternativas distintas permanecem associadas ao mesmo contexto e podem ser percorridas.
 8. A camada visual exibe a sugestão selecionada e um painel compacto sem tocar no buffer.
 
+Quando há um símbolo no cursor, o worker de completion consulta o índice semântico para acrescentar
+declarações e membros resolvidos por herança. A consulta não ocorre durante a captura OTA na thread da
+IDE. Se o processo semântico estiver indisponível, o pedido continua com o contexto limitado da unit;
+o editor permanece responsivo e o Ghost Text continua utilizável.
+
 ## Painel de alternativas
 
 Depois de escolher **Solicitar uma alternativa**, o RadIA mantém a sugestão anterior em vez de

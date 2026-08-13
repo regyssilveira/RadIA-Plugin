@@ -23,6 +23,11 @@ accepts the whole suggestion or the next word.
 7. Distinct alternatives remain attached to the same context and can be browsed.
 8. The visual layer shows the selected suggestion and a compact panel without touching the buffer.
 
+When a symbol is under the cursor, the completion worker queries the semantic index to append
+declarations and inheritance-resolved members. The query does not run during OTA capture on the IDE
+thread. If the semantic process is unavailable, the request continues with bounded unit context; the
+editor remains responsive and Ghost Text remains available.
+
 ## Alternatives panel
 
 After **Request an alternative**, RadIA keeps the previous suggestion instead of silently replacing

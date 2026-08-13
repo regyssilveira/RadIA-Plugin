@@ -30,6 +30,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `PrepareMissingMembers` | Localiza contratos de interfaces ainda não implementados e prepara um patch idempotente com declarações e implementações. | `RadIA.Core.SemanticMemberTools.pas` |
 
+## Consultas ao índice semântico
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `GetSemanticContext` | Retorna declarações indexadas e membros resolvidos por herança para um símbolo Delphi. | `RadIA.Core.SemanticQueryTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -380,7 +386,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 45
-- Ferramentas internas registradas: 149
+- Grupos registrados: 46
+- Ferramentas internas registradas: 150
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

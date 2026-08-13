@@ -252,7 +252,8 @@ begin
       'indexUnit',
       '{"unitKey":"sample","fileName":"Sample.pas",' +
       '"scope":"project","revision":1,"source":' +
-      '"unit Sample; interface type TWorker = class ' +
+      '"unit Sample; interface type TBaseWorker = class ' +
+      'procedure Reset; end; TWorker = class(TBaseWorker) ' +
       'procedure Execute; end; implementation end."}',
       LResponse,
       LError
@@ -265,6 +266,13 @@ begin
       LError
     ), LError);
     Assert.Contains(LResponse, '"name":"Execute"');
+    Assert.IsTrue(LSupervisor.Request(
+      'findResolvedMembers',
+      '{"container":"TWorker"}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.Contains(LResponse, '"name":"Reset"');
     Assert.IsTrue(LSupervisor.Request(
       'removeUnit',
       '{"unitKey":"sample"}',

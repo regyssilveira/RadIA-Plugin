@@ -32,6 +32,13 @@
       ]
     },
     {
+      "name": "Semantic index queries",
+      "source": "Source/Core/RadIA.Core.SemanticQueryTools.pas",
+      "tools": [
+        "GetSemanticContext"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

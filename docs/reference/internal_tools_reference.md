@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 149 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 150 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -49,6 +49,12 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `PrepareMissingMembers` | Localiza contratos de interfaces ainda não implementados e prepara um patch idempotente com declarações e implementações. | Quando o agente precisa completar uma classe; depois da revisão, `ApplyPatch` solicita consentimento e aplica a mudança com undo. |
+
+## Consultas ao índice semântico
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `GetSemanticContext` | Retorna declarações indexadas e membros resolvidos por herança para um símbolo Delphi. | Quando o agente precisa compreender um tipo além da unit atual; Ghost Text, navegação e auditoria DFM/PAS usam o mesmo serviço automaticamente e voltam ao contexto limitado se o motor estiver indisponível. |
 
 ## Orientação Delphi curada
 

@@ -25,6 +25,10 @@ current version detects:
 The parser is deliberately bounded: it reads at most 2 MiB per file and produces at most 500 findings.
 It does not instantiate the form, run code, or interpret arbitrary properties.
 
+Before reporting a missing handler, the audit performs one semantic-index query to account for inherited
+methods. If the engine does not respond, it returns to the local parser and preserves the same bounded
+result available before integration; an external-process failure never blocks the IDE.
+
 ## Prepare a fix
 
 Automatic fixes are restricted to the deterministic `missing_event_handler` and

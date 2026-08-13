@@ -4,7 +4,8 @@ interface
 
 uses
   System.SysUtils,
-  RadIA.Core.Interfaces;
+  RadIA.Core.Interfaces,
+  RadIA.Core.SemanticQueries;
 
 type
   TRadIAInlineGhostLine = record
@@ -61,6 +62,9 @@ type
       const ALine: Integer;
       const AColumn: Integer
     ): TRadIAInlineCompletionContext;
+    function WithProjectContext(
+      const AProjectContext: string
+    ): TRadIAInlineCompletionContext;
     property CursorColumn: Integer read FCursorColumn;
     property CursorLine: Integer read FCursorLine;
     property FileName: string read FFileName;
@@ -70,6 +74,15 @@ type
     property Revision: string read FRevision;
     property SymbolName: string read FSymbolName;
     property Suffix: string read FSuffix;
+  end;
+
+  TRadIAInlineSemanticContextEnricher = class
+  public
+    class function Enrich(
+      const AContext: TRadIAInlineCompletionContext;
+      const ASemanticQueries: IRadIASemanticQueryService;
+      const AMaxCharacters: Integer
+    ): TRadIAInlineCompletionContext; static;
   end;
 
   TRadIAFimRouteKind = (
@@ -190,8 +203,15 @@ type
     FConfig: IRadIAConfig;
     FDiagnosticLock: TObject;
     FLastDiagnostic: TRadIAFimDiagnostic;
+    FSemanticQueries: IRadIASemanticQueryService;
     FService: IRadIAService;
     FTimeoutMs: Cardinal;
+    procedure Initialize(
+      const AService: IRadIAService;
+      const AConfig: IRadIAConfig;
+      const ASemanticQueries: IRadIASemanticQueryService;
+      const ATimeoutMs: Cardinal
+    );
     function CompleteWithProvider(
       const AContext: TRadIAInlineCompletionContext;
       const ACancellation: IRadIAInlineCompletionCancellationToken;
@@ -206,6 +226,7 @@ type
     constructor Create(
       const AService: IRadIAService;
       const AConfig: IRadIAConfig;
+      const ASemanticQueries: IRadIASemanticQueryService;
       const ATimeoutMs: Cardinal
     );
     destructor Destroy; override;
@@ -613,6 +634,46 @@ begin
   Result.FCursorColumn := AColumn;
 end;
 
+function TRadIAInlineCompletionContext.WithProjectContext(
+  const AProjectContext: string
+): TRadIAInlineCompletionContext;
+begin
+  Result := Self;
+  Result.FProjectContext := AProjectContext;
+end;
+
+{ TRadIAInlineSemanticContextEnricher }
+
+class function TRadIAInlineSemanticContextEnricher.Enrich(
+  const AContext: TRadIAInlineCompletionContext;
+  const ASemanticQueries: IRadIASemanticQueryService;
+  const AMaxCharacters: Integer
+): TRadIAInlineCompletionContext;
+var
+  LError: string;
+  LProjectContext: string;
+  LSemanticContext: string;
+begin
+  Result := AContext;
+  if not Assigned(ASemanticQueries) or
+    (Trim(AContext.SymbolName) = '') or
+    (AMaxCharacters <= 0) then
+    Exit;
+  if not ASemanticQueries.BuildContext(
+    AContext.SymbolName,
+    AMaxCharacters,
+    LSemanticContext,
+    LError
+  ) then
+    Exit;
+  LProjectContext := AContext.ProjectContext;
+  if LProjectContext <> '' then
+    LProjectContext := LProjectContext + sLineBreak;
+  LProjectContext := LProjectContext +
+    'Indexed semantic context:' + sLineBreak + LSemanticContext;
+  Result := AContext.WithProjectContext(LProjectContext);
+end;
+
 { TRadIAInlineCompletionResponse }
 
 procedure TRadIAInlineCompletionResponse.Complete(
@@ -691,6 +752,7 @@ var
   LProviderId: string;
   LTemperature: Double;
   LSettings: TRadIAExecutionSettings;
+  LSemanticContext: TRadIAInlineCompletionContext;
 begin
   LProviderId := Trim(FConfig.AutocompleteProvider);
   if LProviderId = '' then
@@ -733,8 +795,13 @@ begin
     LTemperature,
     LMaxTokens
   );
-  Result := CompleteWithProvider(
+  LSemanticContext := TRadIAInlineSemanticContextEnricher.Enrich(
     AContext,
+    FSemanticQueries,
+    8192
+  );
+  Result := CompleteWithProvider(
+    LSemanticContext,
     ACancellation,
     LProvider,
     LModelId,
@@ -888,10 +955,21 @@ end;
 constructor TRadIAServiceInlineCompletionProvider.Create(
   const AService: IRadIAService;
   const AConfig: IRadIAConfig;
+  const ASemanticQueries: IRadIASemanticQueryService;
   const ATimeoutMs: Cardinal
 );
 begin
   inherited Create;
+  Initialize(AService, AConfig, ASemanticQueries, ATimeoutMs);
+end;
+
+procedure TRadIAServiceInlineCompletionProvider.Initialize(
+  const AService: IRadIAService;
+  const AConfig: IRadIAConfig;
+  const ASemanticQueries: IRadIASemanticQueryService;
+  const ATimeoutMs: Cardinal
+);
+begin
   if not Assigned(AService) then
     raise EArgumentNilException.Create('AService');
   if not Assigned(AConfig) then
@@ -900,6 +978,7 @@ begin
     raise EArgumentOutOfRangeException.Create('ATimeoutMs');
   FService := AService;
   FConfig := AConfig;
+  FSemanticQueries := ASemanticQueries;
   FTimeoutMs := ATimeoutMs;
   FDiagnosticLock := TObject.Create;
 end;

@@ -34,12 +34,43 @@ type
     procedure DetectsOrphanEventHandler;
     [Test]
     procedure ReportsStableLocations;
+    [Test]
+    procedure AcceptsInheritedHandlerFromSemanticIndex;
   end;
 
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.SemanticQueries;
+
+type
+  TRadIADfmSemanticQueryMock = class(
+    TInterfacedObject,
+    IRadIASemanticQueryService
+  )
+  public
+    function BuildContext(
+      const ASymbolName: string;
+      const AMaxCharacters: Integer;
+      out AContext: string;
+      out AError: string
+    ): Boolean;
+    function FindResolvedMembers(
+      const AContainerName: string;
+      out AMembers: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function FindSymbols(
+      const AName: string;
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function HasResolvedMember(
+      const AContainerName: string;
+      const AMemberName: string
+    ): Boolean;
+  end;
 
 const
   CValidDfm =
@@ -62,6 +93,56 @@ const
     'end;' + sLineBreak +
     'end.';
 
+function TRadIADfmSemanticQueryMock.BuildContext(
+  const ASymbolName: string;
+  const AMaxCharacters: Integer;
+  out AContext: string;
+  out AError: string
+): Boolean;
+begin
+  AContext := '';
+  AError := '';
+  Result := False;
+end;
+
+function TRadIADfmSemanticQueryMock.FindResolvedMembers(
+  const AContainerName: string;
+  out AMembers: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+begin
+  AMembers := [TRadIASemanticLocation.Create(
+    'SaveButtonClick',
+    'method',
+    AContainerName,
+    'BaseForm.pas',
+    'procedure SaveButtonClick(Sender: TObject);',
+    42
+  )];
+  AError := '';
+  Result := SameText(AContainerName, 'TMainForm');
+end;
+
+function TRadIADfmSemanticQueryMock.FindSymbols(
+  const AName: string;
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+begin
+  ASymbols := nil;
+  AError := '';
+  Result := False;
+end;
+
+function TRadIADfmSemanticQueryMock.HasResolvedMember(
+  const AContainerName: string;
+  const AMemberName: string
+): Boolean;
+begin
+  Result := SameText(AContainerName, 'TMainForm') and
+    SameText(AMemberName, 'SaveButtonClick');
+end;
+
 function TTestRadIADfmPasAudit.Audit(
   const ADfm: string;
   const APas: string
@@ -83,6 +164,24 @@ var
 begin
   LResult := Audit(CValidDfm, CValidPas);
   Assert.AreEqual<Integer>(0, Length(LResult.Findings));
+end;
+
+procedure TTestRadIADfmPasAudit.AcceptsInheritedHandlerFromSemanticIndex;
+var
+  LInheritedPas: string;
+  LQueries: IRadIASemanticQueryService;
+  LResult: TRadIADfmPasAuditResult;
+begin
+  LQueries := TRadIADfmSemanticQueryMock.Create;
+  FAuditor := TRadIADfmPasAuditor.Create(LQueries);
+  LInheritedPas := StringReplace(
+    CValidPas,
+    '    procedure SaveButtonClick(Sender: TObject);' + sLineBreak,
+    '',
+    []
+  );
+  LResult := Audit(CValidDfm, LInheritedPas);
+  Assert.IsFalse(ContainsCode(LResult, 'missing_event_handler'));
 end;
 
 function TTestRadIADfmPasAudit.ContainsCode(

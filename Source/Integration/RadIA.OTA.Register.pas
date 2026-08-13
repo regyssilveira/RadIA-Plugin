@@ -76,6 +76,7 @@ uses
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
   RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
+  RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
   RadIA.Core.DfmPasAudit, RadIA.Core.DfmPasAuditTools,
@@ -1286,11 +1287,18 @@ initialization
       TRadIAContainer.Resolve<IRadIAPatchService>
     )
   );
+  TRadIAContainer.Register<IRadIASemanticQueryService>(
+    TRadIASemanticQueryService.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>
+    )
+  );
   TRadIAContainer.Register<IRadIADelphiGuidanceCatalog>(
     TRadIADelphiGuidanceCatalog.Create
   );
   TRadIAContainer.Register<IRadIADfmPasAuditor>(
-    TRadIADfmPasAuditor.Create
+    TRadIADfmPasAuditor.Create(
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>
+    )
   );
   TRadIAContainer.Register<IRadIADesignerVisualDiffService>(
     TRadIADesignerVisualDiffService.Create(
@@ -1350,6 +1358,10 @@ initialization
   RegisterRadIASemanticMemberTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticMemberService>
+  );
+  RegisterRadIASemanticQueryTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticQueryService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
@@ -1539,6 +1551,7 @@ initialization
     TRadIAServiceInlineCompletionProvider.Create(
       TRadIAContainer.Resolve<IRadIAService>,
       TRadIAContainer.Resolve<IRadIAConfig>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>,
       30000
     )
   );

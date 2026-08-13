@@ -171,7 +171,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 149);
+  assert.equal(registeredTools.length, 150);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -701,8 +701,8 @@ test('current backlog contains only open work', () => {
   const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
 
-  assert.ok(portuguese.includes('| Integrar o índice semântico |'));
-  assert.ok(english.includes('| Integrate the semantic index |'));
+  assert.doesNotMatch(portuguese, /\| Integrar o índice semântico \|/u);
+  assert.doesNotMatch(english, /\| Integrate the semantic index \|/u);
   assert.doesNotMatch(portuguese, /\| Completar membros ausentes \|/u);
   assert.doesNotMatch(english, /\| Complete missing members \|/u);
   assert.ok(portuguese.includes('somente trabalho aberto'));
@@ -713,6 +713,34 @@ test('current backlog contains only open work', () => {
   assert.doesNotMatch(english, /\| Structural parser \|/u);
   assert.doesNotMatch(portuguese, /Registro hist/u);
   assert.doesNotMatch(english, /Version History|Historical execution/u);
+});
+
+test('semantic consumers share the index and keep bounded fallbacks', () => {
+  const coreCompletion = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.InlineCompletion.pas'),
+    'utf8'
+  );
+  const otaCompletion = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Integration', 'RadIA.OTA.InlineCompletion.pas'),
+    'utf8'
+  );
+  const navigation = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Integration', 'RadIA.OTA.IDENavigation.pas'),
+    'utf8'
+  );
+  const dfmAudit = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.DfmPasAudit.pas'),
+    'utf8'
+  );
+  const inlineGuide = fs.readFileSync(documentationPath('inline_completion.md'), 'utf8');
+  const dfmGuide = fs.readFileSync(documentationPath('dfm_pas_audit.md'), 'utf8');
+
+  assert.match(coreCompletion, /TRadIAInlineSemanticContextEnricher\.Enrich/u);
+  assert.doesNotMatch(otaCompletion, /IRadIASemanticQueryService/u);
+  assert.match(navigation, /TryNavigateToIndexedSymbol/u);
+  assert.match(dfmAudit, /FindResolvedMembers/u);
+  assert.match(inlineGuide, /worker de completion[\s\S]*não ocorre durante a captura OTA/u);
+  assert.match(dfmGuide, /uma única consulta ao índice semântico/u);
 });
 
 test('declarative extensions document packaged resources end to end', () => {
