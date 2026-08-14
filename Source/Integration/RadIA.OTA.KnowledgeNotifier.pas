@@ -33,6 +33,7 @@ type
     FAttachments:
       TDictionary<string, TRadIAKnowledgeModuleAttachment>;
     FInstalled: Boolean;
+    FRefreshing: Boolean;
     FModuleNotifier: IInterface;
     FModuleNotifierControl: IRadIAKnowledgeModuleNotifierControl;
     FScheduler: IRadIAKnowledgeRefreshScheduler;
@@ -308,7 +309,7 @@ begin
   end;
   LNotifierIndex := AModule.AddNotifier(ANotifier);
   if LNotifierIndex >= 0 then
-    FAttachments.Add(
+    FAttachments.AddOrSetValue(
       LFileName,
       TRadIAKnowledgeModuleAttachment.Create(
         LModuleIdentity,
@@ -390,6 +391,8 @@ end;
 
 procedure TRadIAOTAKnowledgeNotifier.TimerEvent(Sender: TObject);
 begin
+  if FRefreshing then
+    Exit;
   if TInterlocked.CompareExchange(
     GProjectTransitionCount,
     0,
@@ -402,8 +405,29 @@ begin
     FScheduler.Stop;
     Exit;
   end;
-  RefreshAttachments;
-  FScheduler.Poll;
+  FRefreshing := True;
+  try
+    try
+      RefreshAttachments;
+    except
+      on E: Exception do
+        TLogger.Log(
+          'Knowledge attachment refresh failed: ' + E.Message,
+          'Knowledge'
+        );
+    end;
+    try
+      FScheduler.Poll;
+    except
+      on E: Exception do
+        TLogger.Log(
+          'Knowledge scheduler poll failed: ' + E.Message,
+          'Knowledge'
+        );
+    end;
+  finally
+    FRefreshing := False;
+  end;
 end;
 
 procedure TRadIAOTAKnowledgeNotifier.Uninstall;
