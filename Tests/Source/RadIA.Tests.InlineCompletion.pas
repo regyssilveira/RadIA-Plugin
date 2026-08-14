@@ -350,7 +350,7 @@ begin
   LLimited := LContext.Limited(20);
   Assert.AreEqual('ABCDEFGHIJ', LLimited.Prefix);
   Assert.AreEqual('abcde', LLimited.Suffix);
-  Assert.AreEqual(5, Length(LLimited.ProjectContext));
+  Assert.AreEqual(NativeInt(5), Length(LLimited.ProjectContext));
 end;
 
 procedure TRadIAInlineCompletionTests.PreservesCursorThroughContextLimit;

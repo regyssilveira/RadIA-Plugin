@@ -240,7 +240,7 @@ begin
   Assert.Contains(LContent, 'TTargetForm.CancelClick');
   Assert.Contains(LContent, '\"password\":\"[REDACTED]\"');
   Assert.IsFalse(LContent.Contains('secret-value'));
-  Assert.AreEqual(32, Length(EvidenceId(LContent)));
+  Assert.AreEqual(NativeInt(32), Length(EvidenceId(LContent)));
 end;
 
 procedure TTestRadIARuntimeEvidence.CaptureToolAcceptsOmittedExpressions;

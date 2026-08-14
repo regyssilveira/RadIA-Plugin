@@ -69,7 +69,7 @@ begin
     '{$I ''shared.inc''}' + sLineBreak +
     '{$IFDEF DEBUG}{$INCLUDE debug.inc}{$ELSE}{$I release.inc}{$ENDIF}';
   LResult := TRadIASemanticPreprocessor.Process(LSource, ['DEBUG']);
-  Assert.AreEqual(3, Length(LResult.Includes));
+  Assert.AreEqual(NativeInt(3), Length(LResult.Includes));
   Assert.AreEqual('shared.inc', LResult.Includes[0].Path);
   Assert.AreEqual(0, LResult.Includes[0].StartOffset);
   Assert.AreEqual(saActive, LResult.Includes[1].Activity);
@@ -86,7 +86,7 @@ begin
   );
   Assert.AreEqual(saUnknown, ActivityForText(LResult, 'Wide'));
   Assert.AreEqual(saUnknown, ActivityForText(LResult, 'Narrow'));
-  Assert.AreEqual(1, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(1), Length(LResult.Diagnostics));
   Assert.Contains(LResult.Diagnostics[0], 'unresolved');
 end;
 
@@ -98,11 +98,11 @@ begin
     '{$IFDEF DEBUG}Open',
     ['DEBUG']
   );
-  Assert.AreEqual(1, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(1), Length(LResult.Diagnostics));
   Assert.Contains(LResult.Diagnostics[0], 'not closed');
 
   LResult := TRadIASemanticPreprocessor.Process('{$ENDIF}', nil);
-  Assert.AreEqual(1, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(1), Length(LResult.Diagnostics));
   Assert.Contains(LResult.Diagnostics[0], 'no matching IF');
 end;
 
@@ -123,7 +123,7 @@ begin
   Assert.AreEqual(saInactive, ActivityForText(LResult, 'Win32Code'));
   Assert.AreEqual(saActive, ActivityForText(LResult, 'Win64Code'));
   Assert.AreEqual(saInactive, ActivityForText(LResult, 'ReleaseCode'));
-  Assert.AreEqual(0, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(0), Length(LResult.Diagnostics));
 end;
 
 initialization

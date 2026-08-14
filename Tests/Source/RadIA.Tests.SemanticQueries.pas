@@ -108,7 +108,7 @@ begin
     TRadIASemanticQueryClientMock.Create(False)
   );
   Assert.IsTrue(LService.ListPublicApiSymbols(LSymbols, LError), LError);
-  Assert.AreEqual(1, Length(LSymbols));
+  Assert.AreEqual(NativeInt(1), Length(LSymbols));
   Assert.AreEqual('Execute', LSymbols[0].Name);
   Assert.AreEqual('public', LSymbols[0].Visibility);
 end;

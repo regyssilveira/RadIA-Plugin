@@ -166,7 +166,7 @@ begin
       TRadIAOpenApiPatchStub.Create
     );
     LRoutes := LService.InventoryRoutes;
-    Assert.AreEqual(2, Length(LRoutes));
+    Assert.AreEqual(NativeInt(2), Length(LRoutes));
     Assert.AreEqual('GET', LRoutes[0].Method);
     Assert.AreEqual('/orders', LRoutes[1].Path);
   finally

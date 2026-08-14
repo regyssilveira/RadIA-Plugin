@@ -218,7 +218,7 @@ begin
     );
     LResult := LService.Prepare;
     Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
-    Assert.AreEqual(1, Length(LResult.Candidates));
+    Assert.AreEqual(NativeInt(1), Length(LResult.Candidates));
     Assert.AreEqual('UnusedUnit', LResult.Candidates[0]);
     Assert.Contains(LPatch.Spec.ReplacementText, 'UsedUnit');
     Assert.DoesNotContain(LPatch.Spec.ReplacementText, 'UnusedUnit');

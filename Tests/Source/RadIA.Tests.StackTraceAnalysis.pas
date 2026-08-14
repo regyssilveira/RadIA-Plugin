@@ -187,7 +187,7 @@ var
   LAnalysis: TRadIAStackTraceAnalysis;
 begin
   LAnalysis := FService.Analyze('Unknown.pas:17 TMissing.Run', 10);
-  Assert.AreEqual(1, Length(LAnalysis.Frames));
+  Assert.AreEqual(NativeInt(1), Length(LAnalysis.Frames));
   Assert.IsFalse(LAnalysis.Frames[0].Resolved);
   Assert.AreEqual('low', LAnalysis.Frames[0].Confidence);
 end;
@@ -203,7 +203,7 @@ begin
     1
   );
   Assert.AreEqual('eurekalog', LAnalysis.DetectedFormat);
-  Assert.AreEqual(1, Length(LAnalysis.Frames));
+  Assert.AreEqual(NativeInt(1), Length(LAnalysis.Frames));
   Assert.IsTrue(LAnalysis.Frames[0].Resolved);
 end;
 
@@ -218,7 +218,7 @@ begin
     10
   );
   Assert.AreEqual('madexcept', LAnalysis.DetectedFormat);
-  Assert.AreEqual(2, Length(LAnalysis.Frames));
+  Assert.AreEqual(NativeInt(2), Length(LAnalysis.Frames));
   Assert.AreEqual('D:\Project\Orders.pas', LAnalysis.Frames[0].FileName);
   Assert.AreEqual(42, LAnalysis.Frames[0].Line);
   Assert.AreEqual('high', LAnalysis.Frames[0].Confidence);

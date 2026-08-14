@@ -125,7 +125,7 @@ var
 begin
   Assert.IsTrue(FindLaboratoryWindow(LWindow));
   Assert.AreEqual(GetCurrentProcessId, LWindow.ProcessId);
-  Assert.AreEqual(64, Length(LWindow.WindowId));
+  Assert.AreEqual(NativeInt(64), Length(LWindow.WindowId));
 
   LFoundButton := False;
   LFoundPassword := False;
@@ -139,7 +139,7 @@ begin
       Assert.Contains(LControl.ClassName, 'Button');
       Assert.Contains(LControl.Path, 'Button');
       Assert.IsTrue(racInvoke in LControl.State.Capabilities);
-      Assert.AreEqual(64, Length(LControl.ControlId));
+      Assert.AreEqual(NativeInt(64), Length(LControl.ControlId));
     end
     else if SameText(LControl.Text, '[redacted]') then
     begin
@@ -172,8 +172,8 @@ begin
     if SameText(LControl.Text, CTestEditableValue) then
       LEditId := LControl.ControlId;
   end;
-  Assert.AreEqual(64, Length(LButtonId));
-  Assert.AreEqual(64, Length(LEditId));
+  Assert.AreEqual(NativeInt(64), Length(LButtonId));
+  Assert.AreEqual(NativeInt(64), Length(LEditId));
 
   LAction := TRadIARuntimeScenarioAction.Create(
     rakInvoke,
@@ -232,7 +232,7 @@ begin
   ) do
     if SameText(LControl.Text, '[redacted]') then
       LPasswordId := LControl.ControlId;
-  Assert.AreEqual(64, Length(LPasswordId));
+  Assert.AreEqual(NativeInt(64), Length(LPasswordId));
   LAction := TRadIARuntimeScenarioAction.Create(
     rakSetValue,
     TRadIARuntimeSelector.Create(LPasswordId, '', '', '', ''),
@@ -267,8 +267,8 @@ begin
     FForm.Enabled := True;
   end;
 
-  Assert.AreEqual(64, Length(LMainWindow.WindowId));
-  Assert.AreEqual(64, Length(LOwnedWindow.WindowId));
+  Assert.AreEqual(NativeInt(64), Length(LMainWindow.WindowId));
+  Assert.AreEqual(NativeInt(64), Length(LOwnedWindow.WindowId));
   Assert.AreEqual(LMainWindow.WindowId, LOwnedWindow.OwnerId);
   Assert.IsTrue(LOwnedWindow.Modal);
 end;
@@ -297,7 +297,7 @@ begin
       LButtonId := LControl.ControlId;
       LButtonPath := LControl.Path;
     end;
-  Assert.AreEqual(64, Length(LButtonId));
+  Assert.AreEqual(NativeInt(64), Length(LButtonId));
   LPrepare := FRegistry.Resolve('PrepareRuntimeScenario').Execute(
     TRadIAToolRequest.Create(
       'PrepareRuntimeScenario',

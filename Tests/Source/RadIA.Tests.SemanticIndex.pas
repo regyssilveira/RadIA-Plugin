@@ -69,9 +69,9 @@ begin
     ' public procedure Execute; end; implementation end.',
     nil
   ));
-  Assert.AreEqual(1, FIndex.UnitCount);
-  Assert.AreEqual(1, Length(FIndex.FindSymbols('TWorker')));
-  Assert.AreEqual(1, Length(FIndex.FindMembers('TWorker')));
+  Assert.AreEqual(NativeInt(1), FIndex.UnitCount);
+  Assert.AreEqual(NativeInt(1), Length(FIndex.FindSymbols('TWorker')));
+  Assert.AreEqual(NativeInt(1), Length(FIndex.FindMembers('TWorker')));
   Assert.AreEqual(susProject, FIndex.FindSymbols('TWorker')[0].Scope);
 end;
 
@@ -91,15 +91,15 @@ begin
     'unit Sample; interface type TStale = class end; implementation end.',
     nil
   ));
-  Assert.AreEqual(0, Length(FIndex.FindSymbols('TStale')));
+  Assert.AreEqual(NativeInt(0), Length(FIndex.FindSymbols('TStale')));
   LDescriptor := TRadIASemanticUnitDescriptor.Create('sample', '', susGroup, 3);
   Assert.IsTrue(FIndex.IndexUnit(
     LDescriptor,
     'unit Sample; interface type TNew = class end; implementation end.',
     nil
   ));
-  Assert.AreEqual(0, Length(FIndex.FindSymbols('TOld')));
-  Assert.AreEqual(1, Length(FIndex.FindSymbols('TNew')));
+  Assert.AreEqual(NativeInt(0), Length(FIndex.FindSymbols('TOld')));
+  Assert.AreEqual(NativeInt(1), Length(FIndex.FindSymbols('TNew')));
 end;
 
 procedure TRadIASemanticIndexTests.RemovesUnitFromEveryLookup;
@@ -116,8 +116,8 @@ begin
   Assert.IsTrue(FIndex.RemoveUnit('SAMPLE'));
   Assert.IsFalse(FIndex.HasUnit('sample'));
   Assert.AreEqual(0, FIndex.SymbolCount);
-  Assert.AreEqual(0, Length(FIndex.FindSymbols('TWorker')));
-  Assert.AreEqual(0, Length(FIndex.FindMembers('TWorker')));
+  Assert.AreEqual(NativeInt(0), Length(FIndex.FindSymbols('TWorker')));
+  Assert.AreEqual(NativeInt(0), Length(FIndex.FindMembers('TWorker')));
 end;
 
 procedure TRadIASemanticIndexTests.PersistsAndRestoresIndexCache;
@@ -145,10 +145,10 @@ begin
     LRestored := TRadIASemanticIndex.Create;
     try
       Assert.IsTrue(LRestored.LoadCache(LCacheFile, LError), LError);
-      Assert.AreEqual(1, LRestored.UnitCount);
-      Assert.AreEqual(1, Length(LRestored.FindSymbols('TWorker')));
+      Assert.AreEqual(NativeInt(1), LRestored.UnitCount);
+      Assert.AreEqual(NativeInt(1), Length(LRestored.FindSymbols('TWorker')));
       Assert.AreEqual(susVCL, LRestored.FindSymbols('TWorker')[0].Scope);
-      Assert.AreEqual(1, Length(LRestored.FindMembers('TWorker')));
+      Assert.AreEqual(NativeInt(1), Length(LRestored.FindMembers('TWorker')));
     finally
       LRestored.Free;
     end;
@@ -169,7 +169,7 @@ begin
     Assert.IsFalse(FIndex.LoadCache(LCacheFile, LError));
     Assert.IsFalse(TFile.Exists(LCacheFile));
     Assert.IsTrue(LError <> '');
-    Assert.AreEqual(0, FIndex.UnitCount);
+    Assert.AreEqual(NativeInt(0), FIndex.UnitCount);
   finally
     if TFile.Exists(LCacheFile) then
       TFile.Delete(LCacheFile);
@@ -202,8 +202,8 @@ begin
   FIndex.FindSymbols('TIndexed1000');
   FIndex.FindMembers('TIndexed1000');
   LStopwatch := TStopwatch.StartNew;
-  Assert.AreEqual(1, Length(FIndex.FindSymbols('TIndexed1000')));
-  Assert.AreEqual(1, Length(FIndex.FindMembers('TIndexed1000')));
+  Assert.AreEqual(NativeInt(1), Length(FIndex.FindSymbols('TIndexed1000')));
+  Assert.AreEqual(NativeInt(1), Length(FIndex.FindMembers('TIndexed1000')));
   LStopwatch.Stop;
   Assert.IsTrue(
     LStopwatch.ElapsedMilliseconds < 50,
@@ -230,7 +230,7 @@ begin
     'procedure Execute; end; implementation end.',
     nil
   );
-  Assert.AreEqual(3, Length(FIndex.FindResolvedMembers('TWorker')));
+  Assert.AreEqual(NativeInt(3), Length(FIndex.FindResolvedMembers('TWorker')));
   Assert.AreEqual('Reset', FIndex.FindResolvedMembers('TWorker')[0].Name);
   Assert.AreEqual('Work', FIndex.FindResolvedMembers('TWorker')[1].Name);
   Assert.AreEqual('Execute', FIndex.FindResolvedMembers('TWorker')[2].Name);
@@ -269,7 +269,7 @@ begin
     nil
   );
   LMissing := FIndex.FindMissingMembers('TWorker');
-  Assert.AreEqual(1, Length(LMissing));
+  Assert.AreEqual(NativeInt(1), Length(LMissing));
   Assert.AreEqual('Work', LMissing[0].Name);
   Assert.Contains(LMissing[0].Signature, 'string');
 end;
@@ -295,10 +295,10 @@ begin
     nil
   );
   LMatches := FIndex.CompleteResolvedMembers('TChild', 'Sa', 10);
-  Assert.AreEqual(1, Length(LMatches));
+  Assert.AreEqual(NativeInt(1), Length(LMatches));
   Assert.AreEqual('Save', LMatches[0].Name);
   LMatches := FIndex.CompleteResolvedMembers('TChild', 'S', 1);
-  Assert.AreEqual(1, Length(LMatches));
+  Assert.AreEqual(NativeInt(1), Length(LMatches));
 end;
 
 procedure TRadIASemanticIndexTests.ListsOnlyDeterministicPublicProjectApi;
@@ -332,7 +332,7 @@ begin
     nil
   );
   LSymbols := FIndex.ListPublicApiSymbols(100);
-  Assert.AreEqual(3, Length(LSymbols));
+  Assert.AreEqual(NativeInt(3), Length(LSymbols));
   Assert.AreEqual('Sample.Api', LSymbols[0].Name);
   Assert.AreEqual('TApi', LSymbols[1].Name);
   Assert.AreEqual('Execute', LSymbols[2].Name);

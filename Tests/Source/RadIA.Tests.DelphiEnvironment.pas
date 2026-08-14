@@ -155,8 +155,8 @@ begin
 
   Assert.AreEqual('Delphi 13', LProfile.IDEVersion);
   Assert.AreEqual('None', LProfile.Framework);
-  Assert.AreEqual(0, Length(LProfile.SearchPaths));
-  Assert.AreEqual(0, Length(LProfile.Defines));
+  Assert.AreEqual(NativeInt(0), Length(LProfile.SearchPaths));
+  Assert.AreEqual(NativeInt(0), Length(LProfile.Defines));
 end;
 
 procedure TTestRadIADelphiEnvironment.BuildsSanitizedEnvironmentProfile;

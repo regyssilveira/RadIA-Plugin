@@ -208,7 +208,7 @@ function TRadIAFakeSemanticWorkspaceSynchronizer.Synchronize(
   out AError: string
 ): Boolean;
 begin
-  Assert.AreEqual(1, Length(AFiles));
+  Assert.AreEqual(NativeInt(1), Length(AFiles));
   Assert.AreEqual('DEBUG', ADefines[0]);
   Inc(FSyncCount);
   AError := '';

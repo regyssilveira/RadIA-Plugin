@@ -166,7 +166,7 @@ begin
       )
     );
     try
-      Assert.AreEqual(5, Length(LPlan.Files));
+      Assert.AreEqual(NativeInt(5), Length(LPlan.Files));
       for LFile in LPlan.Files do
       begin
         Assert.DoesNotContain(LFile.RelativePath, 'Tests');
@@ -206,7 +206,7 @@ begin
       )
     );
     try
-      Assert.AreEqual(8, Length(LPlan.Files));
+      Assert.AreEqual(NativeInt(8), Length(LPlan.Files));
       Assert.Contains(
         LPlan.PreviewJson,
         '"companionTestProject":"CustomCalculatorTests.dproj"'

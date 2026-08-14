@@ -93,7 +93,7 @@ begin
   LMethod := FindSymbol(LResult, 'Execute', sskMethod);
   Assert.AreEqual(svPublic, LMethod.Visibility);
   Assert.Contains(LMethod.Signature, 'function Execute');
-  Assert.AreEqual(0, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(0), Length(LResult.Diagnostics));
 end;
 
 procedure TRadIASemanticParserTests.PreservesPartialUnitWhenTypeIsUnclosed;
@@ -121,7 +121,7 @@ begin
     nil
   );
   FindSymbol(LResult, 'get', sskMethod);
-  Assert.AreEqual(0, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(0), Length(LResult.Diagnostics));
 end;
 
 procedure TRadIASemanticParserTests.SkipsProceduralTypeDeclarations;
@@ -134,7 +134,7 @@ begin
     nil
   );
   FindSymbol(LResult, 'Callbacks', sskModule);
-  Assert.AreEqual(0, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(0), Length(LResult.Diagnostics));
 end;
 
 procedure TRadIASemanticParserTests.ParsesGenericForwardAndNestedTypes;
@@ -156,7 +156,7 @@ begin
     'TForward, IInterface'
   );
   Assert.AreEqual(
-    2,
+    NativeInt(2),
     Length(FindSymbol(LResult, 'TGeneric', sskClass).AncestorNames)
   );
   Assert.AreEqual(
@@ -170,7 +170,7 @@ begin
   LNested := FindSymbol(LResult, 'TNested', sskRecord);
   Assert.AreEqual('TGeneric', LNested.ContainerName);
   FindSymbol(LResult, 'Implicit', sskMethod);
-  Assert.AreEqual(0, Length(LResult.Diagnostics));
+  Assert.AreEqual(NativeInt(0), Length(LResult.Diagnostics));
 end;
 
 initialization

@@ -157,7 +157,7 @@ begin
   );
   LAnalysis := LService.Analyze;
   Assert.IsTrue(LAnalysis.BackgroundWork);
-  Assert.AreEqual(3, Length(LAnalysis.Risks));
+  Assert.AreEqual(NativeInt(3), Length(LAnalysis.Risks));
 end;
 
 procedure TRadIAThreadingAssistantTests.RejectsReplacementWithoutSafeguards;

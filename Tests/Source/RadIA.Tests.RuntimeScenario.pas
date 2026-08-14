@@ -142,7 +142,7 @@ begin
       ]
     )
   );
-  Assert.AreEqual(36, Length(LPreview.PreviewId));
+  Assert.AreEqual(NativeInt(36), Length(LPreview.PreviewId));
   Assert.AreEqual(2, LPreview.ActionCount);
 end;
 
