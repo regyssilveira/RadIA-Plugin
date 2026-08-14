@@ -1285,12 +1285,6 @@ initialization
       TRadIAContainer.Resolve<IRadIAPatchService>
     )
   );
-  TRadIAContainer.Register<IRadIADextFormModernizationService>(
-    TRadIADextFormModernizationService.Create(
-      TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
-      TRadIAContainer.Resolve<IRadIADfmPasAuditor>
-    )
-  );
   TRadIAContainer.Register<IRadIASemanticCompletionService>(
     TRadIASemanticCompletionService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1366,6 +1360,12 @@ initialization
   RegisterRadIASemanticQueryTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>
+  );
+  TRadIAContainer.Register<IRadIADextFormModernizationService>(
+    TRadIADextFormModernizationService.Create(
+      TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
+      TRadIAContainer.Resolve<IRadIADfmPasAuditor>
+    )
   );
   RegisterRadIAProductivityGenerationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
