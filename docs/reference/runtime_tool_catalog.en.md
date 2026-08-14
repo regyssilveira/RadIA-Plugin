@@ -182,6 +182,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `InventoryExistingApiRoutes` | Inventories existing DEXT minimal routes and controller attributes without changing the project. | `RadIA.Core.OpenApiRetrofitTools.pas` |
 | `PrepareOpenApiRetrofit` | Prepares a reviewable Swagger integration patch for an existing DEXT startup unit. | `RadIA.Core.OpenApiRetrofitTools.pas` |
 
+## DEXT and form modernization
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareDextFormModernization` | Validates migration, parity, DEXT boundaries, and DFM/Pascal consistency before a reversible patch. | `RadIA.Core.DextFormModernizationTools.pas` |
+| `RecordDextFormModernizationGate` | Records build and test evidence and reverts the modernization when a gate fails. | `RadIA.Core.DextFormModernizationTools.pas` |
+
 ## Inline reviews
 
 | Tool | Purpose | Source unit |
@@ -421,7 +428,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 51
-- Registered built-in tools: 160
+- Registered groups: 52
+- Registered built-in tools: 162
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

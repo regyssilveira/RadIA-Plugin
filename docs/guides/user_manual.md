@@ -655,9 +655,10 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 160 tools internas registradas.
+- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 162 tools internas registradas.
 - O [assistente de threads e PPL](threading_assistant.md) audita e prepara modernizações concorrentes seguras.
 - O [retrofit OpenAPI/Swagger](openapi_retrofit.md) integra documentação em APIs DEXT existentes.
+- A [modernização DEXT e de forms](dext_form_modernization.md) executa lotes reversíveis com gates.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

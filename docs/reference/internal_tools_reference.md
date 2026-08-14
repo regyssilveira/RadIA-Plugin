@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 160 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 162 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -157,6 +157,13 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 |---|---|---|
 | `InventoryExistingApiRoutes` | Inventaria rotas DEXT minimalistas e atributos de controllers nas units existentes. | Antes de preparar Swagger sem recriar o projeto. |
 | `PrepareOpenApiRetrofit` | Adiciona imports, metadados OpenAPI e middleware Swagger em um preview reversível da unit Startup. | Depois de revisar o inventário e abrir a unit Startup existente. |
+
+## Modernização DEXT e de forms
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareDextFormModernization` | Exige migração validada, paridade, fronteira DEXT, responsabilidade extraída e consistência DFM/PAS antes do preview multiarquivo. | Ao executar um lote revisável de adoção DEXT e decomposição. |
+| `RecordDextFormModernizationGate` | Registra evidências de build/testes e reverte o preview aplicado quando um gate falha. | Depois de aplicar e validar cada lote. |
 
 ## Patch de um arquivo
 

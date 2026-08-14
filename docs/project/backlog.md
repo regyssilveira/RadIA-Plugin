@@ -11,7 +11,6 @@ execução deve ser definida por ganho verificável, esforço e dependências.
 
 | Área | Resultado aberto | Estado atual verificável | Critério de conclusão |
 |---|---|---|---|
-| Modernização | Adoção de DEXT e decomposição de forms | A migração para FireDAC e o plano posterior existem; a ferramenta não executa DEXT nem decomposição. | Uma jornada aplica etapas reversíveis, comprova paridade e separa responsabilidades sem quebrar DFM/PAS. |
 | Produtividade | Wizard de internacionalização | Existe infraestrutura interna de localização, mas não um wizard para projetos do usuário. | O wizard inventaria strings, prepara recursos e alterações revisáveis e preserva o idioma padrão. |
 
 A auditoria DFM/PAS e a migração determinística de BDE, ADO e dbExpress para FireDAC não retornam a

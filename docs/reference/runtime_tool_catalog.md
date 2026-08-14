@@ -182,6 +182,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `InventoryExistingApiRoutes` | Inventaria rotas DEXT minimalistas e atributos de controllers nas units existentes. | `RadIA.Core.OpenApiRetrofitTools.pas` |
 | `PrepareOpenApiRetrofit` | Adiciona imports, metadados OpenAPI e middleware Swagger em um preview reversível da unit Startup. | `RadIA.Core.OpenApiRetrofitTools.pas` |
 
+## Modernização DEXT e de forms
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareDextFormModernization` | Exige migração validada, paridade, fronteira DEXT, responsabilidade extraída e consistência DFM/PAS antes do preview multiarquivo. | `RadIA.Core.DextFormModernizationTools.pas` |
+| `RecordDextFormModernizationGate` | Registra evidências de build/testes e reverte o preview aplicado quando um gate falha. | `RadIA.Core.DextFormModernizationTools.pas` |
+
 ## Revisões inline
 
 | Ferramenta | O que faz | Unit de origem |
@@ -421,7 +428,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 51
-- Ferramentas internas registradas: 160
+- Grupos registrados: 52
+- Ferramentas internas registradas: 162
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

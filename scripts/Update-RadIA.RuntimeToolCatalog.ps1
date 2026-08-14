@@ -48,6 +48,7 @@ $portugueseGroupNames = @{
     "Clean uses analysis" = "Análise Clean Uses"
     "Thread and PPL safety" = "Segurança de threads e PPL"
     "Existing API OpenAPI retrofit" = "Retrofit OpenAPI de APIs existentes"
+    "DEXT and form modernization" = "Modernização DEXT e de forms"
     "Inline reviews" = "Revisões inline"
     "Build" = "Build"
     "Form Designer inspection" = "Inspeção do Form Designer"

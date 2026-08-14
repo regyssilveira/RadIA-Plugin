@@ -118,3 +118,4 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Delphi 12/13 and IDE64** | Compatibility | Delphi 12 Win32 and Delphi 13 Win32/IDE64. | ✅ Completed |
 | **Thread and PPL assistant** | Concurrency | Detects risks and only prepares patches with validated VCL marshalling, cancellation, and exception handling. | ✅ Completed |
 | **OpenAPI/Swagger retrofit** | Existing APIs | Inventories DEXT routes and prepares reviewable Swagger integration without recreating the project. | ✅ Completed |
+| **DEXT adoption and form decomposition** | Modernization | Prepares reversible stages only after validated migration, parity evidence, and DFM/Pascal audit; failed build or tests revert the stage. | ✅ Completed |

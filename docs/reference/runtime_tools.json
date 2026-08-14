@@ -203,6 +203,14 @@
       ]
     },
     {
+      "name": "DEXT and form modernization",
+      "source": "Source/Core/RadIA.Core.DextFormModernizationTools.pas",
+      "tools": [
+        "PrepareDextFormModernization",
+        "RecordDextFormModernizationGate"
+      ]
+    },
+    {
       "name": "Inline reviews",
       "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
       "tools": [

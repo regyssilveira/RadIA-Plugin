@@ -234,6 +234,8 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.ThreadingAssistantTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.OpenApiRetrofit.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.OpenApiRetrofitTools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.DextFormModernization.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.DextFormModernizationTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.HttpClient.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ErrorDecoder.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Localizer.pas"/>
@@ -340,6 +342,7 @@
         <DCCReference Include="Source\RadIA.Tests.CleanUses.pas"/>
         <DCCReference Include="Source\RadIA.Tests.ThreadingAssistant.pas"/>
         <DCCReference Include="Source\RadIA.Tests.OpenApiRetrofit.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.DextFormModernization.pas"/>
         <DCCReference Include="Source\RadIA.Tests.IDENavigation.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Knowledge.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeScheduler.pas"/>

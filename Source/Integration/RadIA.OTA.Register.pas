@@ -82,6 +82,7 @@ uses
   RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
   RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
   RadIA.Core.OpenApiRetrofit, RadIA.Core.OpenApiRetrofitTools,
+  RadIA.Core.DextFormModernization, RadIA.Core.DextFormModernizationTools,
   RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
@@ -1284,6 +1285,12 @@ initialization
       TRadIAContainer.Resolve<IRadIAPatchService>
     )
   );
+  TRadIAContainer.Register<IRadIADextFormModernizationService>(
+    TRadIADextFormModernizationService.Create(
+      TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
+      TRadIAContainer.Resolve<IRadIADfmPasAuditor>
+    )
+  );
   TRadIAContainer.Register<IRadIASemanticCompletionService>(
     TRadIASemanticCompletionService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1380,6 +1387,10 @@ initialization
   RegisterRadIAOpenApiRetrofitTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAOpenApiRetrofitService>
+  );
+  RegisterRadIADextFormModernizationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADextFormModernizationService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

@@ -118,3 +118,4 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |
 | **Assistente de threads e PPL** | Concorrência | Detecta riscos e só prepara patches com sincronização VCL, cancelamento e tratamento de exceções validados. | ✅ Concluído |
 | **Retrofit OpenAPI/Swagger** | APIs existentes | Inventaria rotas DEXT e prepara integração Swagger revisável sem recriar o projeto. | ✅ Concluído |
+| **Adoção de DEXT e decomposição de forms** | Modernização | Prepara etapas reversíveis somente após migração validada, evidência de paridade e auditoria DFM/PAS; falhas de build ou testes revertem a etapa. | ✅ Concluído |

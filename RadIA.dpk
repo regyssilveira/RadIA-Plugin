@@ -221,6 +221,8 @@ contains
   RadIA.Core.ThreadingAssistantTools in 'Source\Core\RadIA.Core.ThreadingAssistantTools.pas',
   RadIA.Core.OpenApiRetrofit in 'Source\Core\RadIA.Core.OpenApiRetrofit.pas',
   RadIA.Core.OpenApiRetrofitTools in 'Source\Core\RadIA.Core.OpenApiRetrofitTools.pas',
+  RadIA.Core.DextFormModernization in 'Source\Core\RadIA.Core.DextFormModernization.pas',
+  RadIA.Core.DextFormModernizationTools in 'Source\Core\RadIA.Core.DextFormModernizationTools.pas',
   RadIA.Core.ProjectOpening in 'Source\Core\RadIA.Core.ProjectOpening.pas',
   RadIA.Core.ApiSpecifications in 'Source\Core\RadIA.Core.ApiSpecifications.pas',
   RadIA.Core.DextProjectTemplates in 'Source\Core\RadIA.Core.DextProjectTemplates.pas',

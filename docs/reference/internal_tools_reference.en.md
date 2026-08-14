@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 160 internal tools: what each one does and at what stage
+This page explains RadIA's 162 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -157,6 +157,13 @@ passes `execution` classification and does not accept arbitrary names received f
 |---|---|---|
 | `InventoryExistingApiRoutes` | Inventories DEXT minimal routes and controller attributes in existing units. | Before adding Swagger without recreating the project. |
 | `PrepareOpenApiRetrofit` | Adds OpenAPI imports, metadata, and Swagger middleware through a reversible Startup-unit preview. | After reviewing the inventory and opening the existing Startup unit. |
+
+## DEXT and form modernization
+
+| Tool | What it does | When it is used |
+|---|---|---|
+| `PrepareDextFormModernization` | Requires validated migration, parity, a DEXT boundary, an extracted responsibility, and DFM/Pascal consistency before a multi-file preview. | When executing a reviewable DEXT adoption and decomposition batch. |
+| `RecordDextFormModernizationGate` | Records build/test evidence and reverts an applied preview when either gate fails. | After applying and validating each batch. |
 
 ## Patch a file
 
