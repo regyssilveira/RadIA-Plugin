@@ -6,6 +6,10 @@ This document contains the complete checklist, categorization, and development s
 
 ## Complete Feature Checklist
 
+Safe generation tools also include reviewable **`API.md` generation** and a **Mock generator** for indexed
+interfaces. Both use deterministic previews, refuse overwrites, and require consent to apply or register files
+in the project.
+
 | Feature | Category | Description | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integration | Scans and optimizes SQL query strings directly from the Delphi editor context menu. | ✅ Completed |

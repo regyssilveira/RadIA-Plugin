@@ -66,6 +66,10 @@ type
       out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
+    function ListPublicApiSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
     function HasResolvedMember(
       const AContainerName: string;
       const AMemberName: string
@@ -132,6 +136,16 @@ begin
   ASymbols := nil;
   AError := '';
   Result := False;
+end;
+
+function TRadIADfmSemanticQueryMock.ListPublicApiSymbols(
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+begin
+  ASymbols := nil;
+  AError := '';
+  Result := True;
 end;
 
 function TRadIADfmSemanticQueryMock.HasResolvedMember(

@@ -19,6 +19,7 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 - [Jornadas ponta a ponta](user_guide_journeys.md)
 - [New Project Wizard](project_wizard.md)
 - [Operações estruturais de projeto](project_file_operations.md)
+- [Documentação de API e mocks seguros](safe_productivity_tools.md)
 - [Transações de desenvolvimento](development_transactions.md)
 - [Conhecimento do projeto](user_guide_project_knowledge.md)
 - [Mentor Delphi](delphi_mentor.md)

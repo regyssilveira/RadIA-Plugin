@@ -39,6 +39,8 @@ type
     procedure FindsOnlyUnimplementedInterfaceMembers;
     [Test]
     procedure CompletesResolvedMembersByPrefixWithoutDuplicates;
+    [Test]
+    procedure ListsOnlyDeterministicPublicProjectApi;
   end;
 
 procedure TRadIASemanticIndexTests.Setup;
@@ -297,6 +299,43 @@ begin
   Assert.AreEqual('Save', LMatches[0].Name);
   LMatches := FIndex.CompleteResolvedMembers('TChild', 'S', 1);
   Assert.AreEqual(1, Length(LMatches));
+end;
+
+procedure TRadIASemanticIndexTests.ListsOnlyDeterministicPublicProjectApi;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LSymbols: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.api',
+    'Sample.Api.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Api; interface type TApi = class ' +
+    'private procedure Hidden; public procedure Execute; end; ' +
+    'implementation end.',
+    nil
+  );
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'system.external',
+    'System.External.pas',
+    susRTL,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit System.External; interface type TExternal = class ' +
+    'public procedure Execute; end; implementation end.',
+    nil
+  );
+  LSymbols := FIndex.ListPublicApiSymbols(100);
+  Assert.AreEqual(3, Length(LSymbols));
+  Assert.AreEqual('Sample.Api', LSymbols[0].Name);
+  Assert.AreEqual('TApi', LSymbols[1].Name);
+  Assert.AreEqual('Execute', LSymbols[2].Name);
 end;
 
 initialization

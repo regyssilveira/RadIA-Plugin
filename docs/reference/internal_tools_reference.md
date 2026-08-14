@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 150 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 154 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -122,6 +122,15 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 
 Navegação de arquivo é confinada aos projetos abertos. A execução de ações usa uma allowlist fixa,
 passa pela classificação `execution` e não aceita nomes arbitrários recebidos do agente ou MCP.
+
+## Artefatos de produtividade seguros
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareApiDocumentation` | Prepara `API.md` determinístico com a API pública indexada do projeto. | Antes de criar documentação de API na raiz ou em subdiretório autorizado. |
+| `PrepareMockUnit` | Prepara uma unit de mock isolada para uma interface indexada. | Quando um teste precisa de um double compilável sem alterar código existente. |
+| `ApplyGeneratedArtifact` | Cria atomicamente o artefato revisado e registra a unit somente quando solicitado. | Depois da revisão do conteúdo, path, hash e consentimento de escrita. |
+| `RevertGeneratedArtifact` | Remove o artefato criado se seu conteúdo permanecer inalterado. | Para desfazer com segurança a geração aplicada. |
 
 ## Patch de um arquivo
 

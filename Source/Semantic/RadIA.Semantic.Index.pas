@@ -139,6 +139,9 @@ type
     function FindSymbols(
       const AName: string
     ): TArray<TRadIASemanticIndexedSymbol>;
+    function ListPublicApiSymbols(
+      const AMaxItems: Integer
+    ): TArray<TRadIASemanticIndexedSymbol>;
     function HasUnit(const AUnitKey: string): Boolean;
     function IndexUnit(
       const ADescriptor: TRadIASemanticUnitDescriptor;
@@ -155,9 +158,22 @@ type
 implementation
 
 uses
+  System.Generics.Defaults,
   System.IOUtils,
   System.JSON,
   System.SysUtils;
+
+function ComparePublicApiSymbols(
+  const ALeft: TRadIASemanticIndexedSymbol;
+  const ARight: TRadIASemanticIndexedSymbol
+): Integer;
+begin
+  Result := CompareText(ALeft.FileName, ARight.FileName);
+  if Result = 0 then
+    Result := ALeft.StartOffset - ARight.StartOffset;
+  if Result = 0 then
+    Result := CompareText(ALeft.Name, ARight.Name);
+end;
 
 const
   CIndexCacheSchemaVersion = '1.0';
@@ -597,6 +613,50 @@ begin
     Result := LList.ToArray
   else
     Result := nil;
+end;
+
+function TRadIASemanticIndex.ListPublicApiSymbols(
+  const AMaxItems: Integer
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LLimit: Integer;
+  LList: TList<TRadIASemanticIndexedSymbol>;
+  LPair: TPair<string, TRadIASemanticIndexedUnit>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LLimit := AMaxItems;
+  if LLimit < 1 then
+    LLimit := 1
+  else if LLimit > 5000 then
+    LLimit := 5000;
+  LList := TList<TRadIASemanticIndexedSymbol>.Create;
+  try
+    for LPair in FUnits do
+    begin
+      if LPair.Value.Descriptor.Scope <> susProject then
+        Continue;
+      for LSymbol in LPair.Value.Symbols do
+      begin
+        if LSymbol.Kind = sskUnitReference then
+          Continue;
+        if (LSymbol.Kind = sskMethod) and not (
+          LSymbol.Visibility in [svPublic, svPublished]
+        ) then
+          Continue;
+        LList.Add(LSymbol);
+      end;
+    end;
+    LList.Sort(
+      TComparer<TRadIASemanticIndexedSymbol>.Construct(
+        ComparePublicApiSymbols
+      )
+    );
+    if LList.Count > LLimit then
+      LList.Count := LLimit;
+    Result := LList.ToArray;
+  finally
+    LList.Free;
+  end;
 end;
 
 function TRadIASemanticIndex.HasUnit(const AUnitKey: string): Boolean;

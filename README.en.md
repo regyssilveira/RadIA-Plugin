@@ -96,7 +96,7 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - `/help` summarizes the product and links to the applicable documentation.
 - `/journey` lists journeys that collect missing input without losing conversational context.
 - `/scope` shows effective values and overrides or restores inheritance without an IDE restart.
-- The [150-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
+- The [154-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
 - The [operational reference](docs/reference/internal_tools_reference.en.md) explains purpose and activation.
 - The [slash command guide](docs/reference/slash_commands.en.md) documents commands and examples.
 - The [security model](docs/reference/tool_security_model.en.md) explains risk, consent, and auditing.

@@ -147,6 +147,15 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ApplyProjectFileChange` | Creates files before registration or unregisters without deletion. | `RadIA.Core.ProjectFileTools.pas` |
 | `RevertProjectFileChange` | Reverts the reviewed project file structure change. | `RadIA.Core.ProjectFileTools.pas` |
 
+## Safe productivity artifacts
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareApiDocumentation` | Previews deterministic API.md content from indexed public project symbols. | `RadIA.Core.ProductivityGenerationTools.pas` |
+| `PrepareMockUnit` | Previews an isolated Pascal mock unit for an indexed interface. | `RadIA.Core.ProductivityGenerationTools.pas` |
+| `ApplyGeneratedArtifact` | Creates one reviewed artifact and optionally registers a Pascal unit. | `RadIA.Core.ProductivityGenerationTools.pas` |
+| `RevertGeneratedArtifact` | Removes an unchanged artifact created from the reviewed preview. | `RadIA.Core.ProductivityGenerationTools.pas` |
+
 ## Inline reviews
 
 | Tool | Purpose | Source unit |
@@ -386,7 +395,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 46
-- Registered built-in tools: 150
+- Registered groups: 47
+- Registered built-in tools: 154
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

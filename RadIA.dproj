@@ -187,6 +187,9 @@
         <DCCReference Include="Source\Core\RadIA.Core.Sessions.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.DTO.Generator.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ProjectGenerator.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.GeneratedArtifacts.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ProductivityGeneration.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ProductivityGenerationTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.TextNormalizer.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.HttpClient.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ErrorDecoder.pas"/>

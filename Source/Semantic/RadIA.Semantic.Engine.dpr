@@ -162,6 +162,7 @@ begin
   LCapabilities.Add('indexUnit');
   LCapabilities.Add('removeUnit');
   LCapabilities.Add('findSymbols');
+  LCapabilities.Add('listPublicApiSymbols');
   LCapabilities.Add('findMembers');
   LCapabilities.Add('findResolvedMembers');
   LCapabilities.Add('completeResolvedMembers');
@@ -507,6 +508,16 @@ begin
     Exit(BuildIndexedSymbolsResult(
       AId,
       AIndex.FindSymbols(LParameters.GetValue<string>('name', ''))
+    ));
+  end;
+  if SameText(AMethod, 'listPublicApiSymbols') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.ListPublicApiSymbols(
+        LParameters.GetValue<Integer>('maxItems', 2000)
+      )
     ));
   end;
   if SameText(AMethod, 'findMembers') then

@@ -81,6 +81,8 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.SkillPortability` | Canonical model and CLI skill format and path adapters. |
 | `RadIA.Core.SkillReplicas` | Preview, ownership hashes, atomic writes, rollback, and safe removal. |
 | `RadIA.Core.Extensions` | Versioned API and extension registration lifecycle. |
+| `RadIA.Core.GeneratedArtifacts` | Hashed previews, consented application, and safe reversion of generated artifacts. |
+| `RadIA.Core.ProductivityGeneration*` | Deterministic `API.md` and mock generation from the semantic index. |
 
 ### 2.2 Providers Layer (`Source/Providers/`)
 Encapsulates provider-specific HTTP communication with Artificial Intelligence APIs.

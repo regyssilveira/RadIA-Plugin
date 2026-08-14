@@ -163,6 +163,16 @@
       ]
     },
     {
+      "name": "Safe productivity artifacts",
+      "source": "Source/Core/RadIA.Core.ProductivityGenerationTools.pas",
+      "tools": [
+        "PrepareApiDocumentation",
+        "PrepareMockUnit",
+        "ApplyGeneratedArtifact",
+        "RevertGeneratedArtifact"
+      ]
+    },
+    {
       "name": "Inline reviews",
       "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
       "tools": [

@@ -14,6 +14,7 @@ type
     FName: string;
     FSignature: string;
     FStartOffset: Integer;
+    FVisibility: string;
   public
     constructor Create(
       const AName: string;
@@ -22,13 +23,23 @@ type
       const AFileName: string;
       const ASignature: string;
       const AStartOffset: Integer
-    );
+    ); overload;
+    constructor Create(
+      const AName: string;
+      const AKind: string;
+      const AContainerName: string;
+      const AFileName: string;
+      const ASignature: string;
+      const AVisibility: string;
+      const AStartOffset: Integer
+    ); overload;
     property ContainerName: string read FContainerName;
     property FileName: string read FFileName;
     property Kind: string read FKind;
     property Name: string read FName;
     property Signature: string read FSignature;
     property StartOffset: Integer read FStartOffset;
+    property Visibility: string read FVisibility;
   end;
 
   IRadIASemanticQueryService = interface
@@ -41,6 +52,10 @@ type
     function FindResolvedMembers(
       const AContainerName: string;
       out AMembers: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function ListPublicApiSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
     function BuildContext(
@@ -80,6 +95,10 @@ type
       out AMembers: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
+    function ListPublicApiSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
     function BuildContext(
       const ASymbolName: string;
       const AMaxCharacters: Integer;
@@ -111,11 +130,33 @@ constructor TRadIASemanticLocation.Create(
   const AStartOffset: Integer
 );
 begin
+  Create(
+    AName,
+    AKind,
+    AContainerName,
+    AFileName,
+    ASignature,
+    '',
+    AStartOffset
+  );
+end;
+
+constructor TRadIASemanticLocation.Create(
+  const AName: string;
+  const AKind: string;
+  const AContainerName: string;
+  const AFileName: string;
+  const ASignature: string;
+  const AVisibility: string;
+  const AStartOffset: Integer
+);
+begin
   FName := AName;
   FKind := AKind;
   FContainerName := AContainerName;
   FFileName := AFileName;
   FSignature := ASignature;
+  FVisibility := AVisibility;
   FStartOffset := AStartOffset;
 end;
 
@@ -189,6 +230,7 @@ begin
           LItem.GetValue<string>('container', ''),
           LItem.GetValue<string>('fileName', ''),
           LItem.GetValue<string>('signature', ''),
+          LItem.GetValue<string>('visibility', ''),
           LItem.GetValue<Integer>('startOffset', 0)
         ));
       end;
@@ -200,6 +242,20 @@ begin
   finally
     LDocument.Free;
   end;
+end;
+
+function TRadIASemanticQueryService.ListPublicApiSymbols(
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+begin
+  Result := Execute(
+    'listPublicApiSymbols',
+    'scope',
+    'project',
+    ASymbols,
+    AError
+  );
 end;
 
 function TRadIASemanticQueryService.FindSymbols(

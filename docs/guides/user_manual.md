@@ -401,9 +401,12 @@ Consulte o [guia de editor e geração](user_guide_editor_generation.md).
 - Produzir classes ou records para Delphi puro, REST.Json, DEXT e TMS Aurelius.
 - Gerar projetos Delphi completos a partir de uma especificação.
 - Criar documentação XML para Help Insight.
+- Gerar `API.md` e mocks por preview, sem sobrescrever código existente.
 - Preparar código sugerido em Smart Diff antes da aplicação.
 
 Código gerado deve sempre passar por revisão humana, compilação e testes.
+Consulte [documentação de API e mocks seguros](safe_productivity_tools.md) para geração, aplicação e
+reversão desses artefatos.
 
 ### 4.5 Leitura da IDE, projeto e workspace
 
@@ -652,7 +655,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 150 tools internas registradas.
+- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 154 tools internas registradas.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

@@ -6,6 +6,10 @@ Este documento contém o checklist completo de recursos, categorização e statu
 
 ## Tabela Completa de Recursos
 
+As ferramentas de geração segura também incluem **Geração de `API.md`** revisável e **Gerador de mocks** para
+interfaces indexadas. Ambos usam preview determinístico, recusam sobrescrita e exigem consentimento para aplicar
+ou registrar arquivos no projeto.
+
 | Recurso | Categoria | Descrição | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |

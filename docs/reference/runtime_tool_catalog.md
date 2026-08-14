@@ -147,6 +147,15 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ApplyProjectFileChange` | Efetiva a inclusão ou remoção preparada. | `RadIA.Core.ProjectFileTools.pas` |
 | `RevertProjectFileChange` | Restaura a estrutura e os arquivos anteriores. | `RadIA.Core.ProjectFileTools.pas` |
 
+## Artefatos de produtividade seguros
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareApiDocumentation` | Prepara `API.md` determinístico com a API pública indexada do projeto. | `RadIA.Core.ProductivityGenerationTools.pas` |
+| `PrepareMockUnit` | Prepara uma unit de mock isolada para uma interface indexada. | `RadIA.Core.ProductivityGenerationTools.pas` |
+| `ApplyGeneratedArtifact` | Cria atomicamente o artefato revisado e registra a unit somente quando solicitado. | `RadIA.Core.ProductivityGenerationTools.pas` |
+| `RevertGeneratedArtifact` | Remove o artefato criado se seu conteúdo permanecer inalterado. | `RadIA.Core.ProductivityGenerationTools.pas` |
+
 ## Revisões inline
 
 | Ferramenta | O que faz | Unit de origem |
@@ -386,7 +395,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 46
-- Ferramentas internas registradas: 150
+- Grupos registrados: 47
+- Ferramentas internas registradas: 154
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

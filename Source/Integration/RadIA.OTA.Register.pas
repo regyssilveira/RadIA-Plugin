@@ -67,6 +67,8 @@ uses
   RadIA.Core.ProjectTemplateService, RadIA.Core.ProjectTemplateTools,
   RadIA.Core.ProjectOpening, RadIA.OTA.ProjectOpening,
   RadIA.Core.ProjectFiles, RadIA.Core.ProjectFileTools,
+  RadIA.Core.GeneratedArtifacts,
+  RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
   RadIA.Core.EditorAdapter, RadIA.Core.Tools, RadIA.Core.ToolRegistry, RadIA.Core.Workspace,
   RadIA.Core.AgentResultStore, RadIA.Core.AgentResultTools,
@@ -1237,6 +1239,20 @@ initialization
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
     )
   );
+  TRadIAContainer.Register<IRadIAGeneratedArtifactService>(
+    TRadIAGeneratedArtifactService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+      TRadIAContainer.Resolve<IRadIAProjectFileFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAProductivityGenerationService>(
+    TRadIAProductivityGenerationService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+      TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
+    )
+  );
   TRadIAContainer.Register<IRadIASemanticCompletionService>(
     TRadIASemanticCompletionService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1312,6 +1328,11 @@ initialization
   RegisterRadIASemanticQueryTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>
+  );
+  RegisterRadIAProductivityGenerationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAProductivityGenerationService>,
+    TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

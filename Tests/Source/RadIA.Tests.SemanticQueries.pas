@@ -21,6 +21,8 @@ type
     procedure EnrichesGhostTextContextWithResolvedMembers;
     [Test]
     procedure KeepsGhostTextFallbackWhenEngineFails;
+    [Test]
+    procedure ListsPublicApiWithVisibility;
   end;
 
 implementation
@@ -77,7 +79,13 @@ begin
     Exit(False);
   end;
   AError := '';
-  if SameText(AMethod, 'findSymbols') then
+  if SameText(AMethod, 'listPublicApiSymbols') then
+    AResponse :=
+      '{"result":{"symbols":[{"name":"Execute","kind":"method",' +
+      '"container":"TWorker","fileName":"Worker.pas",' +
+      '"visibility":"public","signature":"procedure Execute;",' +
+      '"startOffset":84}]}}'
+  else if SameText(AMethod, 'findSymbols') then
     AResponse :=
       '{"result":{"symbols":[{"name":"TWorker","kind":"class",' +
       '"container":"","fileName":"Worker.pas","signature":' +
@@ -88,6 +96,21 @@ begin
       '"container":"TBaseWorker","fileName":"BaseWorker.pas",' +
       '"signature":"procedure Execute;","startOffset":84}]}}';
   Result := AParameters <> '';
+end;
+
+procedure TRadIASemanticQueryTests.ListsPublicApiWithVisibility;
+var
+  LError: string;
+  LService: IRadIASemanticQueryService;
+  LSymbols: TArray<TRadIASemanticLocation>;
+begin
+  LService := TRadIASemanticQueryService.Create(
+    TRadIASemanticQueryClientMock.Create(False)
+  );
+  Assert.IsTrue(LService.ListPublicApiSymbols(LSymbols, LError), LError);
+  Assert.AreEqual(1, Length(LSymbols));
+  Assert.AreEqual('Execute', LSymbols[0].Name);
+  Assert.AreEqual('public', LSymbols[0].Visibility);
 end;
 
 procedure TRadIASemanticQueryTests.BuildsBoundedResolvedContext;

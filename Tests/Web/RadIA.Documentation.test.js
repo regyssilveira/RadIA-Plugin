@@ -171,7 +171,7 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 150);
+  assert.equal(registeredTools.length, 154);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);
@@ -700,7 +700,6 @@ test('feature catalog exposes every current experience-expansion milestone', () 
 test('current backlog contains only open work', () => {
   const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
-
   assert.doesNotMatch(portuguese, /\| Integrar o índice semântico \|/u);
   assert.doesNotMatch(english, /\| Integrate the semantic index \|/u);
   assert.doesNotMatch(portuguese, /\| Completar membros ausentes \|/u);
@@ -718,6 +717,8 @@ test('current backlog contains only open work', () => {
 test('revalidated backlog items cannot disappear during documentation cleanup', () => {
   const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
+  const portugueseFeatures = fs.readFileSync(documentationPath('features.md'), 'utf8');
+  const englishFeatures = fs.readFileSync(documentationPath('features.en.md'), 'utf8');
   const portuguesePolicy = fs.readFileSync(documentationPath('documentation_policy.md'), 'utf8');
   const englishPolicy = fs.readFileSync(documentationPath('documentation_policy.en.md'), 'utf8');
   const portugueseItems = [
@@ -745,10 +746,44 @@ test('revalidated backlog items cannot disappear during documentation cleanup', 
     '`API.md` generation'
   ];
 
-  portugueseItems.forEach(item => assert.ok(portuguese.includes(item), item));
-  englishItems.forEach(item => assert.ok(english.includes(item), item));
+  portugueseItems.forEach(item => {
+    assert.ok(portuguese.includes(item) || portugueseFeatures.includes(item), item);
+  });
+  englishItems.forEach(item => {
+    assert.ok(english.includes(item) || englishFeatures.includes(item), item);
+  });
   assert.match(portuguesePolicy, /Uma pendência registrada não pode simplesmente desaparecer/u);
   assert.match(englishPolicy, /A recorded pending item cannot simply disappear/u);
+});
+
+test('safe productivity goal separates preview from consented mutation', () => {
+  const portugueseGoal = fs.readFileSync(
+    path.join(repositoryRoot, '.planning', 'safe_productivity_tools_goal.md'),
+    'utf8'
+  );
+  const englishGoal = fs.readFileSync(
+    path.join(repositoryRoot, '.planning', 'safe_productivity_tools_goal.en.md'),
+    'utf8'
+  );
+  const requiredPortugueseContracts = [
+    'Nenhuma etapa sobrescreve arquivos existentes por padrão',
+    'Geração e aplicação são operações separadas',
+    'registro opcional',
+    'sem qualquer mutação anterior ao'
+  ];
+  const requiredEnglishContracts = [
+    'No step overwrites existing files by default',
+    'Generation and application are separate operations',
+    'optional registration',
+    'without any mutation before consent'
+  ];
+
+  requiredPortugueseContracts.forEach(contract => {
+    assert.ok(portugueseGoal.includes(contract), contract);
+  });
+  requiredEnglishContracts.forEach(contract => {
+    assert.ok(englishGoal.includes(contract), contract);
+  });
 });
 
 test('semantic consumers share the index and keep bounded fallbacks', () => {

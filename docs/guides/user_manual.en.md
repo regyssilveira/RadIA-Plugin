@@ -311,6 +311,9 @@ tests, create XML documentation, analyze warnings, and generate method bodies fr
 It also generates DTOs and models from JSON or DDL and can create complete Delphi project
 structures. Smart Diff lets users review generated changes before applying them.
 
+`API.md` and mock units use a separate read-only preview before consented creation. Existing files
+are never overwritten. See [safe API documentation and mocks](safe_productivity_tools.en.md).
+
 Ghost Text captures bounded prefix and suffix without mutating the buffer. Ollama and LM Studio
 receive a dedicated FIM request; other providers use an identified traditional fallback. Use
 **Show Inline Completion Route Status** in the editor Rad IA submenu to see provider, model,
@@ -515,7 +518,7 @@ See the [security model](../reference/tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 150 registered built-in tools.
+- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 154 registered built-in tools.
 - Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
   capability.
 - RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user
