@@ -52,6 +52,8 @@ Antes do smoke:
 - valide Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64;
 - execute `Test-RadIA.ProjectCreationNavigation.ps1` no Delphi 12 e 13 para provar que um projeto
   recém-criado pode ser aberto e navegado imediatamente, sem corrida de inicialização;
+- execute `Test-RadIA.KnowledgeProjectTransition.ps1` no Delphi 12 e 13; o gate deve fechar um projeto,
+  abrir outro e navegar em sua unit com o `KnowledgeNotifier` ativo;
 - confirme inicialização, docking, chat, agente, terminal e encerramento sem processos órfãos.
 
 Os scripts em `scripts/` são a fonte executável dos parâmetros e critérios detalhados. Resultados ficam

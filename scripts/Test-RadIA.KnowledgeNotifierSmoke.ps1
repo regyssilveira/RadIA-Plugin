@@ -11,6 +11,7 @@ param(
     [switch]$ExerciseCalculatorRuntime,
     [switch]$ExerciseCorrection,
     [switch]$ExerciseGit,
+    [switch]$ExerciseProjectTransition,
     [switch]$IDE64,
     [string]$EvidencePath = ""
 )
@@ -955,6 +956,12 @@ $generatedFormSourcePath = Join-Path $generatedProjectDirectory (
 $generatedCalculatorTestExecutable = Join-Path $generatedProjectDirectory (
     "bin\Win32\Debug\RadIAJourneyAppTests.exe"
 )
+$transitionProjectDirectory = Join-Path $smokeDirectory (
+    "Tests\TransitionVclApp"
+)
+$transitionProjectSourcePath = Join-Path $transitionProjectDirectory (
+    "MainForm.pas"
+)
 $testExecutableCandidates = @(
     (Join-Path $smokeDirectory (
         "Tests\Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
@@ -1707,6 +1714,71 @@ try {
             $false
         }
     } -FailureMessage "The validation project did not reactivate."
+
+    if ($ExerciseProjectTransition) {
+        $transitionPreview = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "PreviewProjectTemplate" `
+            -Arguments @{
+                projectName = "RadIATransitionApp"
+                template = "vcl"
+                delphiVersion = $DelphiVersion
+                platforms = @("Win32")
+                destinationPath = $transitionProjectDirectory
+                projectSpecification = @{
+                    schemaVersion = 1
+                    kind = "calculator"
+                    creationProfile = "essential"
+                }
+            }
+        $transitionCreated = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "CreateProjectFromTemplate" `
+            -Arguments @{
+                previewId = $transitionPreview.previewId
+            }
+        if (-not $transitionCreated.committed) {
+            throw "The replacement project was not created."
+        }
+        $transitionOpened = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "OpenCreatedProject" `
+            -Arguments @{
+                previewId = $transitionPreview.previewId
+            }
+        if (-not $transitionOpened.opened) {
+            throw "The replacement project was not opened."
+        }
+        $transitionNavigation = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "NavigateToFile" `
+            -Arguments @{
+                fileName = $transitionProjectSourcePath
+                line = 1
+                column = 1
+            }
+        if (-not $transitionNavigation.fileName) {
+            throw "Navigation failed after closing one project and opening another."
+        }
+        $transitionRollback = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "RevertCreatedProject" `
+            -Arguments @{
+                previewId = $transitionPreview.previewId
+            }
+        if (-not $transitionRollback.rolledBack) {
+            throw "The replacement project was not reverted."
+        }
+    }
 
     Open-RadIAPath -Process $process -Path $unitPath
     Start-Sleep -Seconds 2
