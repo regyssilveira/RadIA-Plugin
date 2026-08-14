@@ -143,6 +143,111 @@ function createCases() {
   ];
 }
 
+function createApplicationCases() {
+  return [
+    {
+      name: "CalculatorApp",
+      formClass: "TCalculatorForm",
+      handler: "ButtonAddClick",
+      body: "    EditResult.Text := '4';",
+      component: "EditResult: TEdit;",
+      dfmComponent: [
+        "  object EditResult: TEdit", "    Left = 16", "    Top = 16", "    TabOrder = 0", "  end"
+      ]
+    },
+    {
+      name: "InventoryApp",
+      formClass: "TInventoryForm",
+      handler: "ButtonRefreshClick",
+      body: "    Caption := 'Inventory refreshed';",
+      component: "ButtonRefresh: TButton;",
+      dfmComponent: [
+        "  object ButtonRefresh: TButton", "    Left = 16", "    Top = 16", "    Caption = 'Refresh'",
+        "    TabOrder = 0", "    OnClick = ButtonRefreshClick", "  end"
+      ]
+    }
+  ];
+}
+
+function buildApplicationFiles(application) {
+  const formUnit = `${application.name}Form`;
+  const pascal = [
+    `unit ${formUnit};`, "interface", "uses Vcl.Controls, Vcl.Forms, Vcl.StdCtrls;", "type",
+    `  ${application.formClass} = class(TForm)`, `    ${application.component}`,
+    `    procedure ${application.handler}(Sender: TObject);`, "  end;", "var",
+    `  ${application.formClass.slice(1)}: ${application.formClass};`, "implementation", "{$R *.dfm}",
+    `procedure ${application.formClass}.${application.handler}(Sender: TObject);`, "begin", application.body,
+    "end;", "end."
+  ].join("\r\n");
+  const dfm = [
+    `object ${application.formClass.slice(1)}: ${application.formClass}`, "  Left = 0", "  Top = 0",
+    "  Caption = 'Semantic corpus'", "  ClientHeight = 120", "  ClientWidth = 240", ...application.dfmComponent,
+    "end"
+  ].join("\r\n");
+  const project = [
+    `program ${application.name};`, "uses", "  Vcl.Forms,", `  ${formUnit} in '${formUnit}.pas';`,
+    "begin", "  Application.Initialize;",
+    `  Application.CreateForm(${application.formClass}, ${application.formClass.slice(1)});`,
+    "  Application.Run;", "end."
+  ].join("\r\n");
+  return { dfm, formUnit, pascal, project };
+}
+
+function verifyDfmContract(application, files, symbols) {
+  const symbolNames = new Set(symbols.map(symbol => symbol.name.toLowerCase()));
+  const rootPattern = new RegExp(`object\\s+\\w+\\s*:\\s*${application.formClass}`, "i");
+  const handlerPattern = new RegExp(`OnClick\\s*=\\s*${application.handler}`, "i");
+  if (!rootPattern.test(files.dfm) || !symbolNames.has(application.formClass.toLowerCase())) {
+    throw new Error(`${application.name}: DFM root does not match its Pascal form class.`);
+  }
+  if (files.dfm.includes("OnClick") &&
+    (!handlerPattern.test(files.dfm) || !symbolNames.has(application.handler.toLowerCase()))) {
+    throw new Error(`${application.name}: DFM event does not resolve to a Pascal method.`);
+  }
+}
+
+function compileApplication(delphiVersion, fixtureRoot, application, files) {
+  fs.mkdirSync(path.join(fixtureRoot, "Output"), { recursive: true });
+  fs.writeFileSync(path.join(fixtureRoot, `${files.formUnit}.pas`), files.pascal, "utf8");
+  fs.writeFileSync(path.join(fixtureRoot, `${files.formUnit}.dfm`), files.dfm, "utf8");
+  fs.writeFileSync(path.join(fixtureRoot, `${application.name}.dpr`), files.project, "utf8");
+  return compileFixture(delphiVersion, fixtureRoot, application.name, []);
+}
+
+async function evaluateApplications(engine, delphiVersion, versionRoot) {
+  const applications = createApplicationCases();
+  for (const application of applications) {
+    const client = createEngineClient(engine);
+    let requestId = 1;
+    try {
+      await requireResult(client, requestId++, "initialize", {});
+      const files = buildApplicationFiles(application);
+      const analysis = await requireResult(client, requestId++, "parse", {
+        source: files.pascal,
+        defines: []
+      });
+      verifyDfmContract(application, files, analysis.symbols);
+      const incompleteSource = files.pascal.slice(0, files.pascal.indexOf("implementation"));
+      const incomplete = await requireResult(client, requestId++, "parse", {
+        source: incompleteSource,
+        defines: []
+      });
+      const incompleteNames = new Set(incomplete.symbols.map(symbol => symbol.name.toLowerCase()));
+      if (!incompleteNames.has(application.formClass.toLowerCase()) ||
+        !incompleteNames.has(application.handler.toLowerCase())) {
+        throw new Error(`${application.name}: incomplete editor buffer lost stable declarations.`);
+      }
+      const fixtureRoot = path.join(versionRoot, "applications", application.name);
+      fs.mkdirSync(fixtureRoot, { recursive: true });
+      const output = compileApplication(delphiVersion, fixtureRoot, application, files);
+      fs.writeFileSync(path.join(fixtureRoot, "compile.log"), output, "utf8");
+    } finally {
+      await client.close(requestId);
+    }
+  }
+  return applications.length;
+}
+
 function buildWorkerSource(probe) {
   const typeLines = ["type"];
   if (probe.baseDeclaration) typeLines.push(probe.baseDeclaration);
@@ -225,8 +330,10 @@ async function run() {
       await client.close(requestId.value);
     }
   }
+  const applicationCount = await evaluateApplications(engine, delphiVersion, versionRoot);
   console.log(
-    `Delphi ${delphiVersion}: ${probes.length} semantic language probes compiled and ran successfully.`
+    `Delphi ${delphiVersion}: ${probes.length} language probes ran and ` +
+    `${applicationCount} VCL application probes compiled successfully.`
   );
 }
 

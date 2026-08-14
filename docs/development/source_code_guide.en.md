@@ -318,3 +318,8 @@ interfaces, implementation supplied by a base class, and conditional contracts. 
 exactly the expected members, remain idempotent on the second run, compile with the evaluated version's
 `dcc32`, and execute calls through the interface contract without failure. The compiler and real
 interface dispatch act as external oracles for the proposed edit.
+
+The same command compiles two representative VCL applications, validates the identity between the DFM
+root class and its Pascal class, and resolves form events against real methods. It also analyzes buffer
+snapshots interrupted before `implementation` and requires already stable declarations to remain
+available. This covers projects, forms, and the editor's normal transient state.

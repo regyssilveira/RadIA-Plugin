@@ -320,3 +320,8 @@ herança de interfaces, implementação fornecida por uma classe-base e contrato
 deve produzir exatamente os membros esperados, permanecer idempotente na segunda execução, compilar
 com o `dcc32` da versão avaliada e executar as chamadas pelo contrato de interface sem falhar. O
 compilador e o despacho real da interface funcionam como oráculos externos da edição proposta.
+
+O mesmo comando compila duas aplicações VCL representativas, valida a identidade entre a classe raiz
+do DFM e a classe Pascal e resolve eventos do formulário contra métodos reais. Também analisa snapshots
+de buffers interrompidos antes de `implementation` e exige que declarações estáveis já digitadas
+continuem disponíveis. Isso cobre projetos, formulários e o estado transitório normal do editor.
