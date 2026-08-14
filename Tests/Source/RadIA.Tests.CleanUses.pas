@@ -69,6 +69,7 @@ end;
 
 procedure TRadIACleanPatchStub.Clear;
 begin
+  FSpec := Default(TRadIAPatchSpec);
 end;
 
 function TRadIACleanPatchStub.Prepare(const ASpec: TRadIAPatchSpec): TRadIAPatchResult;

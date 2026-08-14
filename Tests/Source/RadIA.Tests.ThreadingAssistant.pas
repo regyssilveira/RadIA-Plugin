@@ -28,8 +28,9 @@ uses
 
 type
   TRadIAThreadWorkspaceStub = class(TInterfacedObject, IRadIAWorkspaceFacade)
+  private
+    FContent: string;
   public
-    Content: string;
     constructor Create(const AContent: string);
     function GetActiveProject: TRadIAProjectSnapshot;
     function GetActiveUnit: string;
@@ -43,18 +44,20 @@ type
   end;
 
   TRadIAThreadPatchStub = class(TInterfacedObject, IRadIAPatchService)
+  private
+    FPrepared: Boolean;
   public
-    Prepared: Boolean;
     function Apply(const APreviewId: string): TRadIAPatchResult;
     procedure Clear;
     function Prepare(const ASpec: TRadIAPatchSpec): TRadIAPatchResult;
     function Revert(const APreviewId: string): TRadIAPatchResult;
+    property Prepared: Boolean read FPrepared;
   end;
 
 constructor TRadIAThreadWorkspaceStub.Create(const AContent: string);
 begin
   inherited Create;
-  Content := AContent;
+  FContent := AContent;
 end;
 
 function TRadIAThreadWorkspaceStub.GetActiveProject: TRadIAProjectSnapshot;
@@ -83,7 +86,14 @@ function TRadIAThreadWorkspaceStub.GetEditorContent(
   const AMaxCharacters: Integer
 ): TRadIAEditorContent;
 begin
-  Result := TRadIAEditorContent.Create('Worker', 'Worker.pas', Content, 'revision', Length(Content), False);
+  Result := TRadIAEditorContent.Create(
+    'Worker',
+    'Worker.pas',
+    FContent,
+    'revision',
+    Length(FContent),
+    False
+  );
 end;
 
 function TRadIAThreadWorkspaceStub.GetEditorSelection: TRadIAEditorSelection;
@@ -113,11 +123,12 @@ end;
 
 procedure TRadIAThreadPatchStub.Clear;
 begin
+  FPrepared := False;
 end;
 
 function TRadIAThreadPatchStub.Prepare(const ASpec: TRadIAPatchSpec): TRadIAPatchResult;
 begin
-  Prepared := True;
+  FPrepared := True;
   Result := TRadIAPatchResult.Succeeded(TRadIAPatchPreview.Create(
     'thread-preview',
     ASpec,

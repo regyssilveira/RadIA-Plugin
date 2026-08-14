@@ -3,15 +3,28 @@ unit RadIA.UI.CacheManager;
 interface
 
 uses
-  RadIA.Core.Interfaces,
+  RadIA.Core.Interfaces;
+
+type
+  TRadIACacheManagerForm = class
+  public
+    class procedure ShowManager(const AService: IRadIAService); static;
+  end;
+
+implementation
+
+uses
+  RadIA.Core.Cache,
   System.Classes,
+  System.SysUtils,
   Vcl.ComCtrls,
   Vcl.Controls,
+  Vcl.Dialogs,
   Vcl.Forms,
   Vcl.StdCtrls;
 
 type
-  TRadIACacheManagerForm = class(TForm)
+  TRadIACacheManagerWindow = class(TForm)
   private
     FCacheList: TListView;
     FClearAllButton: TButton;
@@ -29,17 +42,9 @@ type
       AOwner: TComponent;
       const AService: IRadIAService
     ); reintroduce;
-    class procedure ShowManager(const AService: IRadIAService); static;
   end;
 
-implementation
-
-uses
-  RadIA.Core.Cache,
-  System.SysUtils,
-  Vcl.Dialogs;
-
-constructor TRadIACacheManagerForm.Create(
+constructor TRadIACacheManagerWindow.Create(
   AOwner: TComponent;
   const AService: IRadIAService
 );
@@ -106,7 +111,7 @@ begin
   RefreshEntries;
 end;
 
-procedure TRadIACacheManagerForm.ClearAllClick(Sender: TObject);
+procedure TRadIACacheManagerWindow.ClearAllClick(Sender: TObject);
 begin
   if MessageDlg(
     'Clear every local AI response cache entry? Entries will be rebuilt by future requests.',
@@ -119,12 +124,12 @@ begin
   RefreshEntries;
 end;
 
-procedure TRadIACacheManagerForm.RefreshClick(Sender: TObject);
+procedure TRadIACacheManagerWindow.RefreshClick(Sender: TObject);
 begin
   RefreshEntries;
 end;
 
-procedure TRadIACacheManagerForm.RefreshEntries;
+procedure TRadIACacheManagerWindow.RefreshEntries;
 var
   LEntry: TRadIACacheEntrySnapshot;
   LEntries: TArray<TRadIACacheEntrySnapshot>;
@@ -154,7 +159,7 @@ begin
   );
 end;
 
-procedure TRadIACacheManagerForm.RemoveSelectedClick(Sender: TObject);
+procedure TRadIACacheManagerWindow.RemoveSelectedClick(Sender: TObject);
 begin
   if not Assigned(FCacheList.Selected) then
     Exit;
@@ -173,9 +178,9 @@ class procedure TRadIACacheManagerForm.ShowManager(
   const AService: IRadIAService
 );
 var
-  LForm: TRadIACacheManagerForm;
+  LForm: TRadIACacheManagerWindow;
 begin
-  LForm := TRadIACacheManagerForm.Create(nil, AService);
+  LForm := TRadIACacheManagerWindow.Create(nil, AService);
   try
     LForm.ShowModal;
   finally

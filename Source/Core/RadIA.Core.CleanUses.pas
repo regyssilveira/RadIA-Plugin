@@ -5,7 +5,8 @@ interface
 uses
   RadIA.Core.Patches,
   RadIA.Core.SemanticQueries,
-  RadIA.Core.Workspace;
+  RadIA.Core.Workspace,
+  System.Generics.Collections;
 
 type
   TRadIACleanUsesResult = record
@@ -46,7 +47,18 @@ type
       const ASymbols: TArray<TRadIASemanticLocation>;
       out ACandidates: TArray<string>
     ): string;
+    function BuildCleanClause(
+      const AClauseText: string;
+      const ABody: string;
+      const ADeclarations: TDictionary<string, Boolean>;
+      const ACandidates: TList<string>
+    ): string;
     function HasInitialization(const AUnitName: string): Boolean;
+    function IsUnitUsed(
+      const ABody: string;
+      const AUnitName: string;
+      const ADeclarations: TDictionary<string, Boolean>
+    ): Boolean;
   public
     constructor Create(
       const AWorkspace: IRadIAWorkspaceFacade;
@@ -59,7 +71,6 @@ type
 implementation
 
 uses
-  System.Generics.Collections,
   System.IOUtils,
   System.RegularExpressions,
   System.SysUtils;
@@ -113,11 +124,7 @@ var
   LClause: TMatch;
   LClauseText: string;
   LDeclarations: TDictionary<string, Boolean>;
-  LIdentifier: TMatch;
   LIndex: Integer;
-  LItem: TMatch;
-  LKept: TList<string>;
-  LName: string;
   LNewClause: string;
   LSymbol: TRadIASemanticLocation;
   LUnitFile: string;
@@ -139,46 +146,79 @@ begin
       if LClauseText.Contains('{$') or
         TRegEx.IsMatch(LClauseText, '\bin\s+', [roIgnoreCase]) then
         Continue;
-      LKept := TList<string>.Create;
-      try
-        for LItem in TRegEx.Matches(LClauseText, '[A-Za-z_][A-Za-z0-9_.]*') do
-        begin
-          LName := LItem.Value;
-          if SameText(LName, 'in') or LName.EndsWith('.pas', True) then
-            Continue;
-          if TRegEx.IsMatch(
-            LBody,
-            '\b' + TRegEx.Escape(LName) + '\s*\.',
-            [roIgnoreCase]
-          ) or HasInitialization(LName) then
-          begin
-            LKept.Add(LName);
-            Continue;
-          end;
-          for LIdentifier in TRegEx.Matches(LBody, '\b[A-Za-z_][A-Za-z0-9_]*\b') do
-            if LDeclarations.ContainsKey(
-              LowerCase(LName) + '|' + LowerCase(LIdentifier.Value)
-            ) then
-            begin
-              LKept.Add(LName);
-              Break;
-            end;
-          if not LKept.Contains(LName) then
-            LCandidates.Add(LName);
-        end;
-        if LKept.Count = 0 then
-          Continue;
-        LNewClause := 'uses' + sLineBreak + '  ' + string.Join(',' + sLineBreak + '  ', LKept.ToArray) + ';';
-        Result := Result.Remove(LClause.Index, LClause.Length).Insert(LClause.Index, LNewClause);
-      finally
-        LKept.Free;
-      end;
+      LNewClause := BuildCleanClause(
+        LClauseText,
+        LBody,
+        LDeclarations,
+        LCandidates
+      );
+      if LNewClause <> '' then
+        Result := Result.Remove(LClause.Index, LClause.Length).Insert(
+          LClause.Index,
+          LNewClause
+        );
     end;
     ACandidates := LCandidates.ToArray;
   finally
     LDeclarations.Free;
     LCandidates.Free;
   end;
+end;
+
+function TRadIACleanUsesService.BuildCleanClause(
+  const AClauseText: string;
+  const ABody: string;
+  const ADeclarations: TDictionary<string, Boolean>;
+  const ACandidates: TList<string>
+): string;
+var
+  LItem: TMatch;
+  LKept: TList<string>;
+  LName: string;
+begin
+  Result := '';
+  LKept := TList<string>.Create;
+  try
+    for LItem in TRegEx.Matches(AClauseText, '[A-Za-z_][A-Za-z0-9_.]*') do
+    begin
+      LName := LItem.Value;
+      if SameText(LName, 'in') or LName.EndsWith('.pas', True) then
+        Continue;
+      if IsUnitUsed(ABody, LName, ADeclarations) then
+        LKept.Add(LName)
+      else
+        ACandidates.Add(LName);
+    end;
+    if LKept.Count > 0 then
+      Result := 'uses' + sLineBreak + '  ' + string.Join(
+        ',' + sLineBreak + '  ',
+        LKept.ToArray
+      ) + ';';
+  finally
+    LKept.Free;
+  end;
+end;
+
+function TRadIACleanUsesService.IsUnitUsed(
+  const ABody: string;
+  const AUnitName: string;
+  const ADeclarations: TDictionary<string, Boolean>
+): Boolean;
+var
+  LIdentifier: TMatch;
+begin
+  if TRegEx.IsMatch(
+    ABody,
+    '\b' + TRegEx.Escape(AUnitName) + '\s*\.',
+    [roIgnoreCase]
+  ) or HasInitialization(AUnitName) then
+    Exit(True);
+  for LIdentifier in TRegEx.Matches(ABody, '\b[A-Za-z_][A-Za-z0-9_]*\b') do
+    if ADeclarations.ContainsKey(
+      LowerCase(AUnitName) + '|' + LowerCase(LIdentifier.Value)
+    ) then
+      Exit(True);
+  Result := False;
 end;
 
 function TRadIACleanUsesService.HasInitialization(const AUnitName: string): Boolean;

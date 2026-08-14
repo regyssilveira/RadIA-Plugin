@@ -4,9 +4,7 @@ interface
 
 uses
   DUnitX.TestFramework,
-  RadIA.Core.SemanticQueries,
-  RadIA.Core.StackTraceAnalysis,
-  RadIA.Core.Workspace;
+  RadIA.Core.StackTraceAnalysis;
 
 type
   [TestFixture]
@@ -27,6 +25,8 @@ type
 implementation
 
 uses
+  RadIA.Core.SemanticQueries,
+  RadIA.Core.Workspace,
   System.SysUtils;
 
 type

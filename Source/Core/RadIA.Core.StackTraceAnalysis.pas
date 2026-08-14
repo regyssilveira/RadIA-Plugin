@@ -65,6 +65,11 @@ type
       const AReportedFile: string;
       const AProjectUnits: TArray<string>
     ): string;
+    function ParseFrame(
+      const ALine: string;
+      const AProjectUnits: TArray<string>;
+      out AFrame: TRadIAStackTraceFrame
+    ): Boolean;
     function ResolveByMethod(const AMethodName: string): string;
   public
     constructor Create(
@@ -136,17 +141,12 @@ function TRadIAStackTraceAnalysisService.Analyze(
   const AMaxFrames: Integer
 ): TRadIAStackTraceAnalysis;
 var
-  LConfidence: string;
-  LFileName: string;
+  LFrame: TRadIAStackTraceFrame;
   LFrames: TList<TRadIAStackTraceFrame>;
   LLimit: Integer;
   LLine: string;
-  LLineNumber: Integer;
   LLines: TStringList;
-  LMatch: TMatch;
-  LMethodName: string;
   LProjectUnits: TArray<string>;
-  LResolvedFile: string;
 begin
   if Length(AText) > CMaximumStackTraceCharacters then
     raise EArgumentOutOfRangeException.Create('Stack trace exceeds 512 KiB.');
@@ -158,33 +158,9 @@ begin
     LLines.Text := AText;
     for LLine in LLines do
     begin
-      LMatch := TRegEx.Match(
-        LLine,
-        '([A-Za-z0-9_.-]+\.pas)\s*(?:\(|:|\.)\s*(\d+)\)?(?:\s+([^\s+]+))?',
-        [roIgnoreCase]
-      );
-      if not LMatch.Success then
+      if not ParseFrame(LLine, LProjectUnits, LFrame) then
         Continue;
-      LFileName := LMatch.Groups[1].Value;
-      LLineNumber := StrToIntDef(LMatch.Groups[2].Value, 0);
-      LMethodName := Trim(LMatch.Groups[3].Value);
-      LResolvedFile := FindProjectUnit(LFileName, LProjectUnits);
-      if (LResolvedFile = '') and (LMethodName <> '') then
-        LResolvedFile := ResolveByMethod(LMethodName);
-      if LResolvedFile = '' then
-        LConfidence := 'low'
-      else if (LLineNumber > 0) and (LMethodName <> '') then
-        LConfidence := 'high'
-      else
-        LConfidence := 'medium';
-      LFrames.Add(TRadIAStackTraceFrame.Create(
-        Trim(LLine),
-        LResolvedFile,
-        LMethodName,
-        LLineNumber,
-        LResolvedFile <> '',
-        LConfidence
-      ));
+      LFrames.Add(LFrame);
       if LFrames.Count >= LLimit then
         Break;
     end;
@@ -193,6 +169,49 @@ begin
     LLines.Free;
     LFrames.Free;
   end;
+end;
+
+function TRadIAStackTraceAnalysisService.ParseFrame(
+  const ALine: string;
+  const AProjectUnits: TArray<string>;
+  out AFrame: TRadIAStackTraceFrame
+): Boolean;
+var
+  LConfidence: string;
+  LFileName: string;
+  LLineNumber: Integer;
+  LMatch: TMatch;
+  LMethodName: string;
+  LResolvedFile: string;
+begin
+  LMatch := TRegEx.Match(
+    ALine,
+    '([A-Za-z0-9_.-]+\.pas)\s*(?:\(|:|\.)\s*(\d+)\)?(?:\s+([^\s+]+))?',
+    [roIgnoreCase]
+  );
+  Result := LMatch.Success;
+  if not Result then
+    Exit;
+  LFileName := LMatch.Groups[1].Value;
+  LLineNumber := StrToIntDef(LMatch.Groups[2].Value, 0);
+  LMethodName := Trim(LMatch.Groups[3].Value);
+  LResolvedFile := FindProjectUnit(LFileName, AProjectUnits);
+  if (LResolvedFile = '') and (LMethodName <> '') then
+    LResolvedFile := ResolveByMethod(LMethodName);
+  if LResolvedFile = '' then
+    LConfidence := 'low'
+  else if (LLineNumber > 0) and (LMethodName <> '') then
+    LConfidence := 'high'
+  else
+    LConfidence := 'medium';
+  AFrame := TRadIAStackTraceFrame.Create(
+    Trim(ALine),
+    LResolvedFile,
+    LMethodName,
+    LLineNumber,
+    LResolvedFile <> '',
+    LConfidence
+  );
 end;
 
 function TRadIAStackTraceAnalysisService.DetectFormat(const AText: string): string;

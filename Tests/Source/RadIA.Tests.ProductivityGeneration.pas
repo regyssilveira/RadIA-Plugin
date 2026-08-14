@@ -42,7 +42,6 @@ uses
   RadIA.Core.GeneratedArtifacts,
   RadIA.Core.ProductivityGeneration,
   RadIA.Core.ProductivityGenerationTools,
-  RadIA.Core.ProjectFiles,
   RadIA.Core.SemanticQueries,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,

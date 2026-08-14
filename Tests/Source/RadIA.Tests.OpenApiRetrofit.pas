@@ -44,12 +44,14 @@ type
   end;
 
   TRadIAOpenApiPatchStub = class(TInterfacedObject, IRadIAPatchService)
+  private
+    FSpec: TRadIAPatchSpec;
   public
-    Spec: TRadIAPatchSpec;
     function Apply(const APreviewId: string): TRadIAPatchResult;
     procedure Clear;
     function Prepare(const ASpec: TRadIAPatchSpec): TRadIAPatchResult;
     function Revert(const APreviewId: string): TRadIAPatchResult;
+    property Spec: TRadIAPatchSpec read FSpec;
   end;
 
 constructor TRadIAOpenApiWorkspaceStub.Create(
@@ -125,11 +127,12 @@ end;
 
 procedure TRadIAOpenApiPatchStub.Clear;
 begin
+  FSpec := Default(TRadIAPatchSpec);
 end;
 
 function TRadIAOpenApiPatchStub.Prepare(const ASpec: TRadIAPatchSpec): TRadIAPatchResult;
 begin
-  Spec := ASpec;
+  FSpec := ASpec;
   Result := TRadIAPatchResult.Succeeded(TRadIAPatchPreview.Create(
     'openapi-preview',
     ASpec,

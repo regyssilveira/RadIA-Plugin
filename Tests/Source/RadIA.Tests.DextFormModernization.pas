@@ -30,15 +30,18 @@ uses
 
 type
   TRadIADextFormPatchStub = class(TInterfacedObject, IRadIAMultiFilePatchService)
+  private
+    FPrepared: Boolean;
+    FReverted: Boolean;
   public
-    Prepared: Boolean;
-    Reverted: Boolean;
     function Apply(const APreviewId: string): TRadIAMultiFilePatchResult;
     procedure Clear;
     function Prepare(
       const ASpecs: TArray<TRadIAMultiFilePatchSpec>
     ): TRadIAMultiFilePatchResult;
     function Revert(const APreviewId: string): TRadIAMultiFilePatchResult;
+    property Prepared: Boolean read FPrepared;
+    property Reverted: Boolean read FReverted;
   end;
 
   TRadIADextFormAuditStub = class(TInterfacedObject, IRadIADfmPasAuditor)
@@ -84,6 +87,8 @@ end;
 
 procedure TRadIADextFormPatchStub.Clear;
 begin
+  FPrepared := False;
+  FReverted := False;
 end;
 
 function TRadIADextFormPatchStub.Prepare(
@@ -93,7 +98,7 @@ var
   LEntries: TArray<TRadIAMultiFilePatchEntry>;
   LIndex: Integer;
 begin
-  Prepared := True;
+  FPrepared := True;
   SetLength(LEntries, Length(ASpecs));
   for LIndex := Low(ASpecs) to High(ASpecs) do
     LEntries[LIndex] := TRadIAMultiFilePatchEntry.Create(ASpecs[LIndex], '', 'new-revision');
@@ -108,7 +113,7 @@ function TRadIADextFormPatchStub.Revert(
 var
   LPreview: TRadIAMultiFilePatchPreview;
 begin
-  Reverted := True;
+  FReverted := True;
   LPreview := TRadIAMultiFilePatchPreview.Create('modernization-preview', [], IncMinute(Now, 10));
   LPreview.State := mpsReverted;
   Result := TRadIAMultiFilePatchResult.Succeeded(LPreview);

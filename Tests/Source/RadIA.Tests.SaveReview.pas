@@ -18,8 +18,7 @@ type
 implementation
 
 uses
-  RadIA.Core.SaveReview,
-  System.SysUtils;
+  RadIA.Core.SaveReview;
 
 procedure TRadIASaveReviewTests.AcceptsCleanSavedCode;
 begin
