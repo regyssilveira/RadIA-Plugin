@@ -162,6 +162,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `AnalyzeProjectStackTrace` | Importa traces Delphi, MadExcept ou EurekaLog e resolve frames entre units do projeto. | `RadIA.Core.StackTraceTools.pas` |
 
+## Análise Clean Uses
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareCleanUses` | Prepara uma remoção conservadora de imports sem uso usando o índice semântico. | `RadIA.Core.CleanUsesTools.pas` |
+
 ## Revisões inline
 
 | Ferramenta | O que faz | Unit de origem |
@@ -401,7 +407,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 48
-- Ferramentas internas registradas: 155
+- Grupos registrados: 49
+- Ferramentas internas registradas: 156
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

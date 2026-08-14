@@ -655,7 +655,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 155 tools internas registradas.
+- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 156 tools internas registradas.
 - A automação runtime atua somente em controles VCL com janela própria; controles sem `HWND`
   informam capacidade indisponível.
 - O RadIA reproduz e comprova a correção, mas a hipótese e o diff continuam sujeitos à revisão e ao

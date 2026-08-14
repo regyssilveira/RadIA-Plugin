@@ -22,6 +22,7 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 - [Documentação de API e mocks seguros](safe_productivity_tools.md)
 - [Gerenciamento do cache](cache_management.md)
 - [Revisão automática ao salvar](automatic_save_review.md)
+- [Clean Uses](clean_uses.md)
 - [Transações de desenvolvimento](development_transactions.md)
 - [Conhecimento do projeto](user_guide_project_knowledge.md)
 - [Mentor Delphi](delphi_mentor.md)

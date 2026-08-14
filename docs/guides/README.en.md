@@ -22,6 +22,7 @@ catalogs.
 - [Safe API documentation and mocks](safe_productivity_tools.en.md)
 - [Cache management](cache_management.en.md)
 - [Automatic review on save](automatic_save_review.en.md)
+- [Clean Uses](clean_uses.en.md)
 - [Development transactions](development_transactions.en.md)
 - [Project knowledge](user_guide_project_knowledge.en.md)
 - [Delphi Mentor](delphi_mentor.en.md)

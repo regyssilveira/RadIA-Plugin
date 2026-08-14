@@ -105,7 +105,7 @@ RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja 
 - `/help` resume o produto e aponta para a documentação aplicável.
 - `/journey` lista jornadas que coletam dados ausentes sem perder o contexto da conversa.
 - `/scope` mostra valores efetivos e permite sobrescrever ou restaurar herança sem reiniciar a IDE.
-- [Catálogo das 155 ferramentas](docs/reference/runtime_tool_catalog.md) lista o catálogo interno gerado.
+- [Catálogo das 156 ferramentas](docs/reference/runtime_tool_catalog.md) lista o catálogo interno gerado.
 - [Referência operacional](docs/reference/internal_tools_reference.md) explica o que cada ferramenta faz e
   quando pode ser acionada.
 - [Comandos de barra](docs/reference/slash_commands.md) documenta comandos, argumentos e exemplos.

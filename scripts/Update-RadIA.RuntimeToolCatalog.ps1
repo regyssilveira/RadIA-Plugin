@@ -45,6 +45,7 @@ $portugueseGroupNames = @{
     "Project files" = "Arquivos de projeto"
     "Safe productivity artifacts" = "Artefatos de produtividade seguros"
     "Project stack trace diagnostics" = "Diagnóstico de stack trace do projeto"
+    "Clean uses analysis" = "Análise Clean Uses"
     "Inline reviews" = "Revisões inline"
     "Build" = "Build"
     "Form Designer inspection" = "Inspeção do Form Designer"

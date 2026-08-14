@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 155 internal tools: what each one does and at what stage
+This page explains RadIA's 156 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -137,6 +137,12 @@ passes `execution` classification and does not accept arbitrary names received f
 |Tool|What it does|When it is activated|
 |---|---|---|
 |`AnalyzeProjectStackTrace`|Imports Delphi, MadExcept, or EurekaLog traces and resolves frames across project units.|When a trace needs file, line, method, confidence, and a navigable target for each frame.|
+
+## Clean uses analysis
+
+|Tool|What it does|When it is activated|
+|---|---|---|
+|`PrepareCleanUses`|Prepares a conservative semantic removal of unused imports.|Before reviewing and applying cleanup through reversible patch infrastructure.|
 
 ## Patch a file
 

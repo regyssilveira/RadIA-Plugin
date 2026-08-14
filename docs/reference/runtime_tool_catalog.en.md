@@ -162,6 +162,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `AnalyzeProjectStackTrace` | Parses Delphi, MadExcept, or EurekaLog traces and resolves frames across project units. | `RadIA.Core.StackTraceTools.pas` |
 
+## Clean uses analysis
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareCleanUses` | Prepares a conservative semantic preview that removes unused Pascal units. | `RadIA.Core.CleanUsesTools.pas` |
+
 ## Inline reviews
 
 | Tool | Purpose | Source unit |
@@ -401,7 +407,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 48
-- Registered built-in tools: 155
+- Registered groups: 49
+- Registered built-in tools: 156
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

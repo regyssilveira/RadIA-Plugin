@@ -180,6 +180,13 @@
       ]
     },
     {
+      "name": "Clean uses analysis",
+      "source": "Source/Core/RadIA.Core.CleanUsesTools.pas",
+      "tools": [
+        "PrepareCleanUses"
+      ]
+    },
+    {
       "name": "Inline reviews",
       "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
       "tools": [

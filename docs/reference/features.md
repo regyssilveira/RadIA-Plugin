@@ -19,6 +19,9 @@ completa mediante confirmação, explicando que as entradas serão reconstruída
 A **Revisão automática ao salvar** pode ser habilitada no menu RadIA. A análise limitada ocorre em background e
 publica achados descartáveis na revisão inline, sem modificar o arquivo salvo.
 
+O **Clean Uses** prepara uma preview semântica conservadora, preserva cláusulas condicionais, units com
+initialization/finalization e imports fora do projeto, e usa os patches reversíveis existentes para aplicação.
+
 | Recurso | Categoria | Descrição | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |
