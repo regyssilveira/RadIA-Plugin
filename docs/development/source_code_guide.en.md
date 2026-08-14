@@ -315,5 +315,6 @@ counts, candidates, and P50, P95, and maximum latency for each Delphi version.
 
 The missing-member probes exercise real language rules: basic signatures, overloads, inherited
 interfaces, implementation supplied by a base class, and conditional contracts. Each case must produce
-exactly the expected members, remain idempotent on the second run, and compile with the evaluated
-version's `dcc32`. The compiler acts as an external oracle for the proposed edit.
+exactly the expected members, remain idempotent on the second run, compile with the evaluated version's
+`dcc32`, and execute calls through the interface contract without failure. The compiler and real
+interface dispatch act as external oracles for the proposed edit.

@@ -56,17 +56,33 @@ async function requireResult(client, id, method, params) {
   return response.result;
 }
 
-function compileFixture(delphiVersion, fixtureRoot, projectName) {
+function compileFixture(delphiVersion, fixtureRoot, projectName, defines) {
   const compiler = path.join(
     "C:\\Program Files (x86)\\Embarcadero\\Studio", delphiVersion, "bin", "dcc32.exe"
   );
+  const arguments = ["-B", "-Q", "-N0Output", "-EOutput"];
+  if (defines.length > 0) arguments.push(`-D${defines.join(";")}`);
+  arguments.push(`${projectName}.dpr`);
   const result = childProcess.spawnSync(
     compiler,
-    ["-B", "-Q", "-N0Output", "-EOutput", `${projectName}.dpr`],
+    arguments,
     { cwd: fixtureRoot, encoding: "utf8", windowsHide: true }
   );
   if (result.status !== 0) {
     throw new Error(`${projectName} did not compile.\n${result.stdout}\n${result.stderr}`);
+  }
+  return `${result.stdout}${result.stderr}`;
+}
+
+function runFixture(fixtureRoot, projectName) {
+  const executable = path.join(fixtureRoot, "Output", `${projectName}.exe`);
+  const result = childProcess.spawnSync(executable, [], {
+    cwd: fixtureRoot,
+    encoding: "utf8",
+    windowsHide: true
+  });
+  if (result.status !== 0 || !result.stdout.includes("SEMANTIC_PROBE_OK")) {
+    throw new Error(`${projectName} failed at runtime.\n${result.stdout}\n${result.stderr}`);
   }
   return `${result.stdout}${result.stderr}`;
 }
@@ -80,7 +96,8 @@ function createCases() {
         "    procedure Execute(const AValue: Integer);", "    function Ready: Boolean;", "  end;",
         "implementation", "end."
       ],
-      workerAncestors: "TInterfacedObject, IWorker"
+      workerAncestors: "TInterfacedObject, IWorker",
+      runtimeCalls: ["  LContract.Execute(42);", "  LContract.Ready;"]
     },
     {
       name: "overloaded-methods", defines: [], expectedMissing: 2,
@@ -89,7 +106,8 @@ function createCases() {
         "    procedure Execute(const AValue: Integer); overload;",
         "    procedure Execute(const AValue: string); overload;", "  end;", "implementation", "end."
       ],
-      workerAncestors: "TInterfacedObject, IWorker"
+      workerAncestors: "TInterfacedObject, IWorker",
+      runtimeCalls: ["  LContract.Execute(42);", "  LContract.Execute('probe');"]
     },
     {
       name: "inherited-interface", defines: [], expectedMissing: 2,
@@ -98,7 +116,8 @@ function createCases() {
         "    procedure Start;", "  end;", "  IWorker = interface(IBaseWorker)",
         "    procedure Stop;", "  end;", "implementation", "end."
       ],
-      workerAncestors: "TInterfacedObject, IWorker"
+      workerAncestors: "TInterfacedObject, IWorker",
+      runtimeCalls: ["  LContract.Start;", "  LContract.Stop;"]
     },
     {
       name: "inherited-implementation", defines: [], expectedMissing: 1,
@@ -108,7 +127,8 @@ function createCases() {
       ],
       baseDeclaration: "  TBaseWorker = class(TInterfacedObject)\r\n  public\r\n    procedure Start;\r\n  end;",
       baseImplementation: "procedure TBaseWorker.Start;\r\nbegin\r\nend;\r\n\r\n",
-      workerAncestors: "TBaseWorker, IWorker"
+      workerAncestors: "TBaseWorker, IWorker",
+      runtimeCalls: ["  LContract.Start;", "  LContract.Stop;"]
     },
     {
       name: "conditional-contract", defines: ["FEATURE_EXTRA"], expectedMissing: 2,
@@ -117,7 +137,8 @@ function createCases() {
         "    procedure Execute;", "{$IFDEF FEATURE_EXTRA}", "    procedure ExecuteExtra;",
         "{$ENDIF}", "  end;", "implementation", "end."
       ],
-      workerAncestors: "TInterfacedObject, IWorker"
+      workerAncestors: "TInterfacedObject, IWorker",
+      runtimeCalls: ["  LContract.Execute;", "  LContract.ExecuteExtra;"]
     }
   ];
 }
@@ -138,8 +159,9 @@ function writeProject(fixtureRoot, probe, contractSource, proposedSource) {
   fs.writeFileSync(path.join(fixtureRoot, "Contracts.pas"), contractSource, "utf8");
   fs.writeFileSync(path.join(fixtureRoot, "Worker.pas"), proposedSource, "utf8");
   fs.writeFileSync(path.join(fixtureRoot, `${projectName}.dpr`), [
-    `program ${projectName};`, "{$APPTYPE CONSOLE}", "uses Worker;", "var LWorker: TWorker;", "begin",
-    "  LWorker := TWorker.Create;", "  LWorker.Free;", "end."
+    `program ${projectName};`, "{$APPTYPE CONSOLE}", "uses Contracts, Worker;", "var LContract: IWorker;",
+    "begin", "  LContract := TWorker.Create;", ...probe.runtimeCalls, "  Writeln('SEMANTIC_PROBE_OK');",
+    "end."
   ].join("\r\n"), "utf8");
   return projectName;
 }
@@ -172,8 +194,10 @@ async function evaluateCase(client, requestId, probe, fixtureRoot, delphiVersion
     throw new Error(`${probe.name}: repeated preview was not idempotent.`);
   }
   const projectName = writeProject(fixtureRoot, probe, contractSource, preview.proposedSource);
-  const output = compileFixture(delphiVersion, fixtureRoot, projectName);
-  fs.writeFileSync(path.join(fixtureRoot, "compile.log"), output, "utf8");
+  const compilerOutput = compileFixture(delphiVersion, fixtureRoot, projectName, probe.defines);
+  const runtimeOutput = runFixture(fixtureRoot, projectName);
+  fs.writeFileSync(path.join(fixtureRoot, "compile.log"), compilerOutput, "utf8");
+  fs.writeFileSync(path.join(fixtureRoot, "runtime.log"), runtimeOutput, "utf8");
 }
 
 async function run() {
@@ -201,7 +225,9 @@ async function run() {
       await client.close(requestId.value);
     }
   }
-  console.log(`Delphi ${delphiVersion}: ${probes.length} semantic language probes compiled and passed.`);
+  console.log(
+    `Delphi ${delphiVersion}: ${probes.length} semantic language probes compiled and ran successfully.`
+  );
 }
 
 run().catch(error => {

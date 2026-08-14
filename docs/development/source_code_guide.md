@@ -317,5 +317,6 @@ de arquivos, pontos avaliados, candidatos e latências P50, P95 e máxima por ve
 
 Os probes de membros ausentes exercitam regras reais da linguagem: assinaturas básicas, sobrecargas,
 herança de interfaces, implementação fornecida por uma classe-base e contratos condicionais. Cada caso
-deve produzir exatamente os membros esperados, permanecer idempotente na segunda execução e compilar
-com o `dcc32` da versão avaliada. O compilador funciona como oráculo externo da edição proposta.
+deve produzir exatamente os membros esperados, permanecer idempotente na segunda execução, compilar
+com o `dcc32` da versão avaliada e executar as chamadas pelo contrato de interface sem falhar. O
+compilador e o despacho real da interface funcionam como oráculos externos da edição proposta.
