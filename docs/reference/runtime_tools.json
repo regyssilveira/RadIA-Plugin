@@ -173,6 +173,13 @@
       ]
     },
     {
+      "name": "Project stack trace diagnostics",
+      "source": "Source/Core/RadIA.Core.StackTraceTools.pas",
+      "tools": [
+        "AnalyzeProjectStackTrace"
+      ]
+    },
+    {
       "name": "Inline reviews",
       "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
       "tools": [

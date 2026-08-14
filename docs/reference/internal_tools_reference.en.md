@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 154 internal tools: what each one does and at what stage
+This page explains RadIA's 155 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -131,6 +131,12 @@ passes `execution` classification and does not accept arbitrary names received f
 |`PrepareMockUnit`|Previews an isolated mock unit for an indexed interface.|When a test needs a compilable double without changing existing code.|
 |`ApplyGeneratedArtifact`|Atomically creates the reviewed artifact and registers the unit only when requested.|After reviewing content, path, hash, and granting write consent.|
 |`RevertGeneratedArtifact`|Removes the created artifact if its content remains unchanged.|To safely undo applied generation.|
+
+## Project stack trace diagnostics
+
+|Tool|What it does|When it is activated|
+|---|---|---|
+|`AnalyzeProjectStackTrace`|Imports Delphi, MadExcept, or EurekaLog traces and resolves frames across project units.|When a trace needs file, line, method, confidence, and a navigable target for each frame.|
 
 ## Patch a file
 

@@ -83,6 +83,7 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.Extensions` | Versioned API and extension registration lifecycle. |
 | `RadIA.Core.GeneratedArtifacts` | Hashed previews, consented application, and safe reversion of generated artifacts. |
 | `RadIA.Core.ProductivityGeneration*` | Deterministic `API.md` and mock generation from the semantic index. |
+| `RadIA.Core.StackTrace*` | Bounded import and cross-unit correlation for Delphi, MadExcept, and EurekaLog traces. |
 
 ### 2.2 Providers Layer (`Source/Providers/`)
 Encapsulates provider-specific HTTP communication with Artificial Intelligence APIs.

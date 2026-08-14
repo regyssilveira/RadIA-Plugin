@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 154 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 155 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -131,6 +131,12 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `PrepareMockUnit` | Prepara uma unit de mock isolada para uma interface indexada. | Quando um teste precisa de um double compilável sem alterar código existente. |
 | `ApplyGeneratedArtifact` | Cria atomicamente o artefato revisado e registra a unit somente quando solicitado. | Depois da revisão do conteúdo, path, hash e consentimento de escrita. |
 | `RevertGeneratedArtifact` | Remove o artefato criado se seu conteúdo permanecer inalterado. | Para desfazer com segurança a geração aplicada. |
+
+## Diagnóstico de stack trace do projeto
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `AnalyzeProjectStackTrace` | Importa traces Delphi, MadExcept ou EurekaLog e resolve frames entre units do projeto. | Ao analisar um trace para obter arquivo, linha, método, confiança e destino navegável por frame. |
 
 ## Patch de um arquivo
 

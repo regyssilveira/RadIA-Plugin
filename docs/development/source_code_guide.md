@@ -83,6 +83,7 @@ Contém as regras centrais de negócio do Rad IA. É agnóstica à IDE e a compo
 | `RadIA.Core.Extensions` | API versionada e ciclo de registro de extensões. |
 | `RadIA.Core.GeneratedArtifacts` | Previews com hash, aplicação consentida e reversão segura de artefatos gerados. |
 | `RadIA.Core.ProductivityGeneration*` | Geração determinística de `API.md` e mocks a partir do índice semântico. |
+| `RadIA.Core.StackTrace*` | Importação limitada e correlação multiarquivo de traces Delphi, MadExcept e EurekaLog. |
 
 ### 2.2 Camada de Provedores (`Source/Providers/`)
 Encapsula a comunicação HTTP específica com cada provedor de Inteligência Artificial.

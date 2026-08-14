@@ -10,6 +10,9 @@ As ferramentas de geração segura também incluem **Geração de `API.md`** rev
 interfaces indexadas. Ambos usam preview determinístico, recusam sobrescrita e exigem consentimento para aplicar
 ou registrar arquivos no projeto.
 
+O diagnóstico inclui **Trace multiarquivo e importadores MadExcept/EurekaLog**, com confiança e navegação por
+frame, sem modificar o projeto.
+
 | Recurso | Categoria | Descrição | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |

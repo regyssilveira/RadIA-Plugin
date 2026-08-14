@@ -190,6 +190,8 @@
         <DCCReference Include="Source\Core\RadIA.Core.GeneratedArtifacts.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ProductivityGeneration.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ProductivityGenerationTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.StackTraceAnalysis.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.StackTraceTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.TextNormalizer.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.HttpClient.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ErrorDecoder.pas"/>

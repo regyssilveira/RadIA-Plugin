@@ -10,6 +10,9 @@ Safe generation tools also include reviewable **`API.md` generation** and a **Mo
 interfaces. Both use deterministic previews, refuse overwrites, and require consent to apply or register files
 in the project.
 
+Diagnostics include **Cross-unit traces and MadExcept/EurekaLog importers**, with confidence and navigation per
+frame and no project mutation.
+
 | Feature | Category | Description | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integration | Scans and optimizes SQL query strings directly from the Delphi editor context menu. | ✅ Completed |

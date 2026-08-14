@@ -156,6 +156,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ApplyGeneratedArtifact` | Cria atomicamente o artefato revisado e registra a unit somente quando solicitado. | `RadIA.Core.ProductivityGenerationTools.pas` |
 | `RevertGeneratedArtifact` | Remove o artefato criado se seu conteúdo permanecer inalterado. | `RadIA.Core.ProductivityGenerationTools.pas` |
 
+## Diagnóstico de stack trace do projeto
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `AnalyzeProjectStackTrace` | Importa traces Delphi, MadExcept ou EurekaLog e resolve frames entre units do projeto. | `RadIA.Core.StackTraceTools.pas` |
+
 ## Revisões inline
 
 | Ferramenta | O que faz | Unit de origem |
@@ -395,7 +401,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 47
-- Ferramentas internas registradas: 154
+- Grupos registrados: 48
+- Ferramentas internas registradas: 155
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

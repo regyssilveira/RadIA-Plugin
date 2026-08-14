@@ -78,6 +78,7 @@ uses
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
   RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
+  RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
   RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
@@ -1253,6 +1254,12 @@ initialization
       TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
     )
   );
+  TRadIAContainer.Register<IRadIAStackTraceAnalysisService>(
+    TRadIAStackTraceAnalysisService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>
+    )
+  );
   TRadIAContainer.Register<IRadIASemanticCompletionService>(
     TRadIASemanticCompletionService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1333,6 +1340,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAProductivityGenerationService>,
     TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
+  );
+  RegisterRadIAStackTraceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAStackTraceAnalysisService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

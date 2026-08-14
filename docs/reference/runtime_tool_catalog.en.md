@@ -156,6 +156,12 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ApplyGeneratedArtifact` | Creates one reviewed artifact and optionally registers a Pascal unit. | `RadIA.Core.ProductivityGenerationTools.pas` |
 | `RevertGeneratedArtifact` | Removes an unchanged artifact created from the reviewed preview. | `RadIA.Core.ProductivityGenerationTools.pas` |
 
+## Project stack trace diagnostics
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `AnalyzeProjectStackTrace` | Parses Delphi, MadExcept, or EurekaLog traces and resolves frames across project units. | `RadIA.Core.StackTraceTools.pas` |
+
 ## Inline reviews
 
 | Tool | Purpose | Source unit |
@@ -395,7 +401,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 47
-- Registered built-in tools: 154
+- Registered groups: 48
+- Registered built-in tools: 155
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

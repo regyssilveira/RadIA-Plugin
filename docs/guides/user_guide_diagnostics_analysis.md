@@ -34,6 +34,10 @@ Depurar erros ocorridos em ambiente de homologação ou produção baseando-se a
 2. Na caixa de texto do chat do Rad IA, digite `/stacktrace` seguido do log de erro. Exemplo:
    > `/stacktrace EAccessViolation em TInvoiceService.ProcessInvoice na linha 122`
    *(Você também pode colar o stack trace completo gerado por ferramentas como **MadExcept** ou **EurekaLog**).*
+
+O comando usa `AnalyzeProjectStackTrace` antes da análise textual. A ferramenta reconhece traces Delphi,
+MadExcept e EurekaLog, correlaciona frames com todas as units do projeto e retorna arquivo, linha, método e
+confiança. Quando solicitado, o agente usa esse destino com `NavigateToFile`; a importação não altera código.
 3. O Rad IA capturará o código da unit ativa aberta no editor, enviará à IA juntamente com a pilha de chamadas informada e solicitará o cruzamento de dados.
 4. A IA analisará o código correspondente às linhas apontadas no log e retornará um parecer técnico indicando onde a falha (ponteiro nulo, estouro de índice de array, etc.) ocorreu e como corrigi-la.
 
