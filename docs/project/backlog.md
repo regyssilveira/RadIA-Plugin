@@ -13,9 +13,8 @@ execução deve ser definida por ganho verificável, esforço e dependências.
 |---|---|---|---|
 | Produtividade | Wizard de internacionalização | Existe infraestrutura interna de localização, mas não um wizard para projetos do usuário. | O wizard inventaria strings, prepara recursos e alterações revisáveis e preserva o idioma padrão. |
 
-A auditoria DFM/PAS e a migração determinística de BDE, ADO e dbExpress para FireDAC não retornam a
-esta lista porque já estão implementadas. O item de modernização registra apenas o trabalho residual
-de adoção de DEXT e decomposição efetiva de forms.
+A auditoria DFM/PAS, a migração determinística para FireDAC e os lotes reversíveis de adoção DEXT e
+decomposição de forms não retornam a esta lista porque já estão implementados e validados.
 
 O backlog não registra versões, entregas concluídas, evidências ou ideias ainda não aprovadas. A
 direção de longo prazo fica no [roadmap](roadmap.md).

@@ -13,9 +13,8 @@ from verifiable value, effort, and dependencies.
 |---|---|---|---|
 | Productivity | Internationalization wizard | Internal localization infrastructure exists, but no wizard targets user projects. | The wizard inventories strings, prepares reviewable resources and changes, and preserves the default language. |
 
-The DFM/Pascal audit and deterministic BDE, ADO, and dbExpress migration to FireDAC do not return to
-this list because they are implemented. The modernization item records only the residual DEXT
-adoption and effective form decomposition work.
+The DFM/Pascal audit, deterministic FireDAC migration, and reversible DEXT adoption and form
+decomposition batches do not return to this list because they are implemented and validated.
 
 The backlog does not record versions, completed deliveries, evidence, or unapproved ideas.
 Long-term direction stays in the [roadmap](roadmap.en.md).
