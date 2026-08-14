@@ -135,7 +135,7 @@ Enter the obtained keys in the plugin settings (**Settings** at the top of the c
    * **Instructions:** Log in, navigate to **API Keys** in the side menu, click **Create new secret key**, and copy the token (starts with `sk-`).
 
 3. **Anthropic Claude**
-   * **How to obtain:** Access the [Anthropic Console](https://console.anthropic.com/).
+   * **How to obtain:** Access the [Anthropic Console](https://platform.claude.com/).
    * **Instructions:** Log in, go to the **API Keys** tab, click **Create Key**, and copy the token (starts with `sk-ant-`).
 
 4. **DeepSeek**

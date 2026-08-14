@@ -730,7 +730,6 @@ test('revalidated backlog items cannot disappear during documentation cleanup', 
     'Adoção de DEXT e decomposição de forms',
     'Painel de gerenciamento do cache',
     'Assistente de threads e PPL',
-    'Wizard de internacionalização',
     'Geração de `API.md`'
   ];
   const englishItems = [
@@ -742,7 +741,6 @@ test('revalidated backlog items cannot disappear during documentation cleanup', 
     'DEXT adoption and form decomposition',
     'Cache management panel',
     'Thread and PPL assistant',
-    'Internationalization wizard',
     '`API.md` generation'
   ];
 

@@ -30,6 +30,9 @@ catalogs.
 - [Git workflow](git_workflow.en.md)
 - [Legacy data-access migration](legacy_data_migration.en.md)
 - [DEXT journeys](user_guide_dext_journeys.en.md)
+- [Thread and PPL assistant](threading_assistant.en.md)
+- [OpenAPI/Swagger retrofit](openapi_retrofit.en.md)
+- [DEXT adoption and form decomposition](dext_form_modernization.en.md)
 
 ## Editor, Designer, and review
 

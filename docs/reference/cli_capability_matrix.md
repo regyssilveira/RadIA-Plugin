@@ -15,7 +15,7 @@
 
 ## Matriz atual
 
-| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.12.3 |
+| Executor | Saída estruturada | ID de sessão | Retomada estável | Modelo | MCP | FIM dedicado | Uso no RadIA 2.13.0 |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Codex CLI | Sim, JSONL | Evento estruturado | `exec resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
 | Claude Code | Sim, stream JSON | Evento estruturado | `--resume <id>` | Sim | Sim | Não declarado | Nova execução por mensagem |
@@ -24,8 +24,8 @@
 
 ## Fontes primárias do contrato
 
-- [Codex CLI](https://developers.openai.com/codex/cli/reference) — execução JSON e retomada por ID.
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code/cli-usage) — saída estruturada,
+- [Codex CLI](https://learn.chatgpt.com/docs/developer-commands?surface=cli) — execução JSON e retomada por ID.
+- [Claude Code CLI](https://code.claude.com/docs/en/cli-usage) — saída estruturada,
   modelo, MCP e `--resume`.
 - [Gemini CLI](https://geminicli.com/docs/reference/configuration/) e
   [modo headless](https://geminicli.com/docs/cli/headless/) — stream JSON, evento `init`, modelo e

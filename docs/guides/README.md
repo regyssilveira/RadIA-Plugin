@@ -30,6 +30,9 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 - [Fluxo Git](git_workflow.md)
 - [Migração de acesso a dados legado](legacy_data_migration.md)
 - [Jornadas DEXT](user_guide_dext_journeys.md)
+- [Assistente de threads e PPL](threading_assistant.md)
+- [Retrofit OpenAPI/Swagger](openapi_retrofit.md)
+- [Modernização DEXT e decomposição de forms](dext_form_modernization.md)
 
 ## Editor, Designer e revisão
 
