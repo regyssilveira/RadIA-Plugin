@@ -28,3 +28,8 @@ Release notes live exclusively in GitHub Releases. Evidence, audits, execution r
 plans do not belong under `docs/`. Active engineering plans live under `.planning/` and are not user
 manuals.
 
+A recorded pending item cannot simply disappear. Its removal must be part of the same work that
+records one verifiable destination: completion in product documentation, explicit rejection with a
+rationale, replacement by another item, or migration into an active goal. Documentation
+reorganization or simplification alone does not change the work state.
+

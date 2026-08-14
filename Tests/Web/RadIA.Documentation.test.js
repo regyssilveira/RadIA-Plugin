@@ -715,6 +715,42 @@ test('current backlog contains only open work', () => {
   assert.doesNotMatch(english, /Version History|Historical execution/u);
 });
 
+test('revalidated backlog items cannot disappear during documentation cleanup', () => {
+  const portuguese = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
+  const portuguesePolicy = fs.readFileSync(documentationPath('documentation_policy.md'), 'utf8');
+  const englishPolicy = fs.readFileSync(documentationPath('documentation_policy.en.md'), 'utf8');
+  const portugueseItems = [
+    'Revisão automática ao salvar',
+    'Clean Uses',
+    'Gerador de mocks',
+    'Trace multiarquivo e importadores MadExcept/EurekaLog',
+    'Retrofit OpenAPI/Swagger',
+    'Adoção de DEXT e decomposição de forms',
+    'Painel de gerenciamento do cache',
+    'Assistente de threads e PPL',
+    'Wizard de internacionalização',
+    'Geração de `API.md`'
+  ];
+  const englishItems = [
+    'Automatic review on save',
+    'Clean Uses',
+    'Mock generator',
+    'Cross-unit traces and MadExcept/EurekaLog importers',
+    'OpenAPI/Swagger retrofit',
+    'DEXT adoption and form decomposition',
+    'Cache management panel',
+    'Thread and PPL assistant',
+    'Internationalization wizard',
+    '`API.md` generation'
+  ];
+
+  portugueseItems.forEach(item => assert.ok(portuguese.includes(item), item));
+  englishItems.forEach(item => assert.ok(english.includes(item), item));
+  assert.match(portuguesePolicy, /Uma pendência registrada não pode simplesmente desaparecer/u);
+  assert.match(englishPolicy, /A recorded pending item cannot simply disappear/u);
+});
+
 test('semantic consumers share the index and keep bounded fallbacks', () => {
   const coreCompletion = fs.readFileSync(
     path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.InlineCompletion.pas'),

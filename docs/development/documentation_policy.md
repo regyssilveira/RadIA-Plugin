@@ -40,6 +40,11 @@ quando não existe goal ativo.
 - Listas de modelos fallback devem permanecer sincronizadas com `RadIA.Core.Types.pas`.
 - Contagens do catálogo devem ser derivadas de `runtime_tools.json`, não copiadas de evidências antigas.
 
+Uma pendência registrada não pode simplesmente desaparecer. Sua remoção deve ocorrer no mesmo
+trabalho que registre um dos destinos verificáveis: conclusão na documentação do produto, descarte
+explícito com justificativa, substituição por outro item ou migração para um goal ativo. Uma
+reorganização ou simplificação documental, isoladamente, não altera o estado do trabalho.
+
 ## Critérios de qualidade
 
 Cada opção documentada deve informar:
