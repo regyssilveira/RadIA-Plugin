@@ -195,6 +195,8 @@
         <DCCReference Include="Source\Core\RadIA.Core.SaveReview.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.CleanUses.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.CleanUsesTools.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ThreadingAssistant.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ThreadingAssistantTools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.TextNormalizer.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.HttpClient.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ErrorDecoder.pas"/>

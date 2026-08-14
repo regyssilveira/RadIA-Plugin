@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 156 internal tools: what each one does and at what stage
+This page explains RadIA's 158 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -143,6 +143,13 @@ passes `execution` classification and does not accept arbitrary names received f
 |Tool|What it does|When it is activated|
 |---|---|---|
 |`PrepareCleanUses`|Prepares a conservative semantic removal of unused imports.|Before reviewing and applying cleanup through reversible patch infrastructure.|
+
+## Thread and PPL safety
+
+| Tool | What it does | When it is used |
+|---|---|---|
+| `AnalyzeThreadingRisks` | Detects unsafe VCL access and missing cancellation or exception handling. | Before modernizing background work. |
+| `PrepareThreadModernization` | Validates safeguards and prepares a reviewable, reversible patch. | After every reported risk is fixed in the proposed block. |
 
 ## Patch a file
 

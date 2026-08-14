@@ -187,6 +187,14 @@
       ]
     },
     {
+      "name": "Thread and PPL safety",
+      "source": "Source/Core/RadIA.Core.ThreadingAssistantTools.pas",
+      "tools": [
+        "AnalyzeThreadingRisks",
+        "PrepareThreadModernization"
+      ]
+    },
+    {
       "name": "Inline reviews",
       "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
       "tools": [

@@ -168,6 +168,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `PrepareCleanUses` | Prepara uma remoção conservadora de imports sem uso usando o índice semântico. | `RadIA.Core.CleanUsesTools.pas` |
 
+## Segurança de threads e PPL
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `AnalyzeThreadingRisks` | Detecta acesso VCL inseguro, ausência de cancelamento e tratamento de exceções. | `RadIA.Core.ThreadingAssistantTools.pas` |
+| `PrepareThreadModernization` | Valida as proteções e prepara um patch revisável e reversível. | `RadIA.Core.ThreadingAssistantTools.pas` |
+
 ## Revisões inline
 
 | Ferramenta | O que faz | Unit de origem |
@@ -407,7 +414,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 49
-- Ferramentas internas registradas: 156
+- Grupos registrados: 50
+- Ferramentas internas registradas: 158
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

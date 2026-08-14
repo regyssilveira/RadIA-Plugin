@@ -3,7 +3,7 @@ param(
     [string]$OutputPath = (
         ".\Output\Evidence\agent_runtime_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 156
+    [int]$RequiredToolCount = 158
 )
 
 $ErrorActionPreference = "Stop"

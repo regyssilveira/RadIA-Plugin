@@ -168,6 +168,13 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `PrepareCleanUses` | Prepares a conservative semantic preview that removes unused Pascal units. | `RadIA.Core.CleanUsesTools.pas` |
 
+## Thread and PPL safety
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `AnalyzeThreadingRisks` | Detects VCL access, cancellation, and exception-handling risks in Delphi background work. | `RadIA.Core.ThreadingAssistantTools.pas` |
+| `PrepareThreadModernization` | Validates safeguards and prepares a reviewable Delphi threading patch. | `RadIA.Core.ThreadingAssistantTools.pas` |
+
 ## Inline reviews
 
 | Tool | Purpose | Source unit |
@@ -407,7 +414,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 49
-- Registered built-in tools: 156
+- Registered groups: 50
+- Registered built-in tools: 158
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

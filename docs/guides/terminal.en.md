@@ -162,5 +162,5 @@ The automated matrix runs in the validation pipeline. Smoke requires useful
 geometry, input and output, the **New terminal**, **Close terminal**, **Run**, **Stop**, and
 **Clear**, the five accessible labels, at least 11 navigable points per Tab, two profiles and one
 non-empty palette. The current matrix exclusively covers Delphi 12 Win32, Delphi 13 Win32 and Delphi
-13 IDE64, all with the current catalog of 156 tools. Detailed evidence remains outside `docs` as
+13 IDE64, all with the current catalog of 158 tools. Detailed evidence remains outside `docs` as
 historical record.

@@ -80,6 +80,7 @@ uses
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
   RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
   RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
+  RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
   RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
@@ -1270,6 +1271,12 @@ initialization
       TRadIAContainer.Resolve<IRadIAPatchService>
     )
   );
+  TRadIAContainer.Register<IRadIAThreadingAssistantService>(
+    TRadIAThreadingAssistantService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
   TRadIAContainer.Register<IRadIASemanticCompletionService>(
     TRadIASemanticCompletionService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1358,6 +1365,10 @@ initialization
   RegisterRadIACleanUsesTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIACleanUsesService>
+  );
+  RegisterRadIAThreadingAssistantTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAThreadingAssistantService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

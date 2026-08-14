@@ -13,7 +13,6 @@ execução deve ser definida por ganho verificável, esforço e dependências.
 |---|---|---|---|
 | APIs existentes | Retrofit OpenAPI/Swagger | Swagger é gerado para novos projetos DEXT, mas projetos existentes não possuem jornada de retrofit. | A jornada inventaria rotas existentes, prepara a especificação e aplica integração revisável sem recriar o projeto. |
 | Modernização | Adoção de DEXT e decomposição de forms | A migração para FireDAC e o plano posterior existem; a ferramenta não executa DEXT nem decomposição. | Uma jornada aplica etapas reversíveis, comprova paridade e separa responsabilidades sem quebrar DFM/PAS. |
-| Concorrência | Assistente de threads e PPL | Há orientação genérica, sem auditor ou jornada específica para modernizar rotinas síncronas. | A jornada detecta riscos, prepara alterações seguras e valida acesso à VCL, cancelamento e tratamento de exceções. |
 | Produtividade | Wizard de internacionalização | Existe infraestrutura interna de localização, mas não um wizard para projetos do usuário. | O wizard inventaria strings, prepara recursos e alterações revisáveis e preserva o idioma padrão. |
 
 A auditoria DFM/PAS e a migração determinística de BDE, ADO e dbExpress para FireDAC não retornam a
