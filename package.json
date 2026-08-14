@@ -1,6 +1,6 @@
 {
   "name": "radia-plugin",
-  "version": "2.12.2",
+  "version": "2.12.3",
   "description": "Rad IA - AI Assistant for Delphi IDE",
   "main": "eslint.config.js",
   "scripts": {
