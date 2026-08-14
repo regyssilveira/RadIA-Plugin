@@ -288,6 +288,7 @@ contains
   RadIA.OTA.Onboarding in 'Source\Integration\RadIA.OTA.Onboarding.pas',
   RadIA.OTA.Options in 'Source\Integration\RadIA.OTA.Options.pas',
   RadIA.UI.ChatPresenter in 'Source\UI\RadIA.UI.ChatPresenter.pas',
+  RadIA.UI.CacheManager in 'Source\UI\RadIA.UI.CacheManager.pas',
   RadIA.UI.ChatFrame in 'Source\UI\RadIA.UI.ChatFrame.pas' {FrameAIChat: TFrame},
   RadIA.UI.TerminalFrame in 'Source\UI\RadIA.UI.TerminalFrame.pas',
   RadIA.UI.OnboardingForm in 'Source\UI\RadIA.UI.OnboardingForm.pas',

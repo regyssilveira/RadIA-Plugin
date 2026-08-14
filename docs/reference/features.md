@@ -13,6 +13,9 @@ ou registrar arquivos no projeto.
 O diagnóstico inclui **Trace multiarquivo e importadores MadExcept/EurekaLog**, com confiança e navegação por
 frame, sem modificar o projeto.
 
+O **Painel de gerenciamento do cache** mostra uso do cache local de respostas e oferece limpeza seletiva ou
+completa mediante confirmação, explicando que as entradas serão reconstruídas sob demanda.
+
 | Recurso | Categoria | Descrição | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |

@@ -234,6 +234,7 @@
         <DCCReference Include="Source\Integration\RadIA.OTA.DockableForm.pas"/>
         <DCCReference Include="Source\Integration\RadIA.OTA.Options.pas"/>
         <DCCReference Include="Source\UI\RadIA.UI.ChatPresenter.pas"/>
+        <DCCReference Include="Source\UI\RadIA.UI.CacheManager.pas"/>
         <DCCReference Include="Source\UI\RadIA.UI.ChatFrame.pas">
             <Form>FrameAIChat</Form>
             <FormType>dfm</FormType>

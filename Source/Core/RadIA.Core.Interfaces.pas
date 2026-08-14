@@ -4,6 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Net.URLClient,
+  RadIA.Core.Cache,
   RadIA.Core.Types, RadIA.Core.TokenUsage,
   RadIA.Core.HierarchicalSettings;
 
@@ -267,6 +268,8 @@ type
     );
     procedure CancelCurrentRequest;
     procedure ClearCache;
+    function ListCacheEntries: TArray<TRadIACacheEntrySnapshot>;
+    function RemoveCacheEntry(const AHash: string): Boolean;
   end;
 
   IRadIAIDEAdapter = interface

@@ -183,6 +183,7 @@ type
     procedure OnCreateExampleExecute(Sender: TObject);
     procedure OnFixErrorExecute(Sender: TObject);
     procedure OnGettingStartedExecute(Sender: TObject);
+    procedure OnCacheManagerExecute(Sender: TObject);
     procedure OnShowChatExecute(Sender: TObject);
     procedure OnShowTerminalExecute(Sender: TObject);
     procedure OnInlineCompletionAcceptExecute(Sender: TObject);
@@ -266,6 +267,7 @@ uses
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm,
   RadIA.OTA.Onboarding,
+  RadIA.UI.CacheManager,
   RadIA.UI.DiffForm,
   {$ENDIF}
   RadIA.Core.Logger, RadIA.Core.Container, RadIA.OTA.Adapter, RadIA.OTA.Helper;
@@ -1331,6 +1333,12 @@ begin
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Cache Manager';
+  LItem.Hint := 'Inspect or selectively clear the local AI response cache.';
+  LItem.OnClick := OnCacheManagerExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := '-';
   AMenuItem.Add(LItem);
 
@@ -1484,6 +1492,15 @@ end;
 procedure TRadIAEditorHook.OnGettingStartedExecute(Sender: TObject);
 begin
   ShowRadIAOnboarding(True);
+end;
+
+procedure TRadIAEditorHook.OnCacheManagerExecute(Sender: TObject);
+begin
+  {$IFNDEF TESTS}
+  TRadIACacheManagerForm.ShowManager(
+    TRadIAContainer.Resolve<IRadIAService>
+  );
+  {$ENDIF}
 end;
 
 procedure TRadIAEditorHook.OnShowTerminalExecute(Sender: TObject);

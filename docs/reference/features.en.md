@@ -13,6 +13,9 @@ in the project.
 Diagnostics include **Cross-unit traces and MadExcept/EurekaLog importers**, with confidence and navigation per
 frame and no project mutation.
 
+The **Cache management panel** shows local response-cache usage and offers selective or complete confirmed
+cleanup, explaining that entries are rebuilt on demand.
+
 | Feature | Category | Description | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integration | Scans and optimizes SQL query strings directly from the Delphi editor context menu. | ✅ Completed |

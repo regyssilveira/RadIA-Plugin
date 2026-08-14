@@ -7,6 +7,7 @@ uses
   System.SysUtils,
   DUnitX.TestFramework,
   RadIA.Core.AgentRuntime,
+  RadIA.Core.Cache,
   RadIA.Core.Interfaces,
   RadIA.Core.HierarchicalSettings,
   RadIA.Core.TokenUsage,
@@ -134,6 +135,8 @@ type
     );
     procedure CancelCurrentRequest;
     procedure ClearCache;
+    function ListCacheEntries: TArray<TRadIACacheEntrySnapshot>;
+    function RemoveCacheEntry(const AHash: string): Boolean;
     property Prompt: string read FPrompt;
     property Cancelled: Boolean read FCancelled;
     property Usage: TTokenUsage read FUsage write FUsage;
@@ -463,6 +466,19 @@ end;
 procedure TRadIAMockAgentService.ClearCache;
 begin
   if True then ; // The mock does not maintain a response cache.
+end;
+
+function TRadIAMockAgentService.ListCacheEntries:
+  TArray<TRadIACacheEntrySnapshot>;
+begin
+  Result := [];
+end;
+
+function TRadIAMockAgentService.RemoveCacheEntry(
+  const AHash: string
+): Boolean;
+begin
+  Result := False;
 end;
 
 function TRadIAMockAgentService.CreateActiveProvider: IRadIAProvider;

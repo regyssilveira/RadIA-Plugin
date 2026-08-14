@@ -5,6 +5,25 @@ interface
 uses  System.Generics.Collections, System.SyncObjs;
 
 type
+  TRadIACacheEntrySnapshot = record
+  private
+    FHash: string;
+    FLastAccessed: TDateTime;
+    FResponseCharacters: Integer;
+    FTimestamp: TDateTime;
+  public
+    constructor Create(
+      const AHash: string;
+      const AResponseCharacters: Integer;
+      const ATimestamp: TDateTime;
+      const ALastAccessed: TDateTime
+    );
+    property Hash: string read FHash;
+    property LastAccessed: TDateTime read FLastAccessed;
+    property ResponseCharacters: Integer read FResponseCharacters;
+    property Timestamp: TDateTime read FTimestamp;
+  end;
+
   TRadIACacheEntry = class
   private
     FHash: string;
@@ -35,7 +54,9 @@ type
     destructor Destroy; override;
 
     function Get(const AHash: string; out AResponse: string): Boolean;
+    function ListEntries: TArray<TRadIACacheEntrySnapshot>;
     procedure Put(const AHash: string; const AResponse: string);
+    function Remove(const AHash: string): Boolean;
     procedure Clear;
 
     class function GenerateHash(const AProvider: string; const AModel: string;
@@ -49,6 +70,19 @@ uses
   System.IOUtils, System.JSON, System.Hash, System.DateUtils, RadIA.Core.Logger, System.SysUtils;
 
 { TRadIACacheManager }
+
+constructor TRadIACacheEntrySnapshot.Create(
+  const AHash: string;
+  const AResponseCharacters: Integer;
+  const ATimestamp: TDateTime;
+  const ALastAccessed: TDateTime
+);
+begin
+  FHash := AHash;
+  FResponseCharacters := AResponseCharacters;
+  FTimestamp := ATimestamp;
+  FLastAccessed := ALastAccessed;
+end;
 
 constructor TRadIACacheManager.Create(const AFilePath: string; ALimit: Integer);
 begin
@@ -65,6 +99,31 @@ begin
     FFilePath := AFilePath;
 
   LoadCache;
+end;
+
+function TRadIACacheManager.ListEntries: TArray<TRadIACacheEntrySnapshot>;
+var
+  LEntry: TRadIACacheEntry;
+  LEntries: TList<TRadIACacheEntrySnapshot>;
+begin
+  LEntries := TList<TRadIACacheEntrySnapshot>.Create;
+  try
+    FCriticalSection.Enter;
+    try
+      for LEntry in FEntries do
+        LEntries.Add(TRadIACacheEntrySnapshot.Create(
+          LEntry.Hash,
+          Length(LEntry.Response),
+          LEntry.Timestamp,
+          LEntry.LastAccessed
+        ));
+    finally
+      FCriticalSection.Leave;
+    end;
+    Result := LEntries.ToArray;
+  finally
+    LEntries.Free;
+  end;
 end;
 
 destructor TRadIACacheManager.Destroy;
@@ -276,6 +335,24 @@ begin
     LEntry.LastAccessed := Now;
     FEntries.Add(LEntry);
     FDictionary.Add(AHash, LEntry);
+    FIsDirty := True;
+    SaveCache;
+  finally
+    FCriticalSection.Leave;
+  end;
+end;
+
+function TRadIACacheManager.Remove(const AHash: string): Boolean;
+var
+  LEntry: TRadIACacheEntry;
+begin
+  FCriticalSection.Enter;
+  try
+    Result := FDictionary.TryGetValue(AHash, LEntry);
+    if not Result then
+      Exit;
+    FDictionary.Remove(AHash);
+    FEntries.Remove(LEntry);
     FIsDirty := True;
     SaveCache;
   finally

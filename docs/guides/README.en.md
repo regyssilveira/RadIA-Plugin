@@ -20,6 +20,7 @@ catalogs.
 - [New Project Wizard](project_wizard.en.md)
 - [Structural project operations](project_file_operations.en.md)
 - [Safe API documentation and mocks](safe_productivity_tools.en.md)
+- [Cache management](cache_management.en.md)
 - [Development transactions](development_transactions.en.md)
 - [Project knowledge](user_guide_project_knowledge.en.md)
 - [Delphi Mentor](delphi_mentor.en.md)
