@@ -11,7 +11,6 @@ execução deve ser definida por ganho verificável, esforço e dependências.
 
 | Área | Resultado aberto | Estado atual verificável | Critério de conclusão |
 |---|---|---|---|
-| Assistência de código | Revisão automática ao salvar | O evento de save existe, mas não há fluxo dedicado de revisão em background. | O usuário habilita a revisão, recebe achados sem bloquear a IDE e pode revisar ou descartar o resultado. |
 | Assistência de código | Clean Uses | Não há analisador dedicado para detectar e preparar a remoção segura de units não utilizadas. | Uma preview considera símbolos, condicionais e escopos do projeto, aplica com consentimento e preserva o build. |
 | APIs existentes | Retrofit OpenAPI/Swagger | Swagger é gerado para novos projetos DEXT, mas projetos existentes não possuem jornada de retrofit. | A jornada inventaria rotas existentes, prepara a especificação e aplica integração revisável sem recriar o projeto. |
 | Modernização | Adoção de DEXT e decomposição de forms | A migração para FireDAC e o plano posterior existem; a ferramenta não executa DEXT nem decomposição. | Uma jornada aplica etapas reversíveis, comprova paridade e separa responsabilidades sem quebrar DFM/PAS. |

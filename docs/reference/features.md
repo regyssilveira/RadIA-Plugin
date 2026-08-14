@@ -16,6 +16,9 @@ frame, sem modificar o projeto.
 O **Painel de gerenciamento do cache** mostra uso do cache local de respostas e oferece limpeza seletiva ou
 completa mediante confirmação, explicando que as entradas serão reconstruídas sob demanda.
 
+A **Revisão automática ao salvar** pode ser habilitada no menu RadIA. A análise limitada ocorre em background e
+publica achados descartáveis na revisão inline, sem modificar o arquivo salvo.
+
 | Recurso | Categoria | Descrição | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integração | Analisador e otimizador de strings de consultas SQL integrado diretamente ao menu contextual do editor do Delphi. | ✅ Concluído |

@@ -16,6 +16,9 @@ frame and no project mutation.
 The **Cache management panel** shows local response-cache usage and offers selective or complete confirmed
 cleanup, explaining that entries are rebuilt on demand.
 
+**Automatic review on save** can be enabled from the RadIA menu. Bounded analysis runs in the background and
+publishes dismissible inline findings without changing the saved file.
+
 | Feature | Category | Description | Status |
 | :--- | :--- | :--- | :--- |
 | **Smart SQL Optimizer** | Integration | Scans and optimizes SQL query strings directly from the Delphi editor context menu. | ✅ Completed |

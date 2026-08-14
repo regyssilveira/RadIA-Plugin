@@ -227,6 +227,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.ProductivityGenerationTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.StackTraceAnalysis.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.StackTraceTools.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.SaveReview.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.HttpClient.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ErrorDecoder.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.Localizer.pas"/>
@@ -329,6 +330,7 @@
         <DCCReference Include="Source\RadIA.Tests.InlineCompletion.pas"/>
         <DCCReference Include="Source\RadIA.Tests.ProductivityGeneration.pas"/>
         <DCCReference Include="Source\RadIA.Tests.StackTraceAnalysis.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.SaveReview.pas"/>
         <DCCReference Include="Source\RadIA.Tests.IDENavigation.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Knowledge.pas"/>
         <DCCReference Include="Source\RadIA.Tests.KnowledgeScheduler.pas"/>

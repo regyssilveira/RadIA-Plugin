@@ -214,6 +214,7 @@ contains
   RadIA.Core.ProductivityGenerationTools in 'Source\Core\RadIA.Core.ProductivityGenerationTools.pas',
   RadIA.Core.StackTraceAnalysis in 'Source\Core\RadIA.Core.StackTraceAnalysis.pas',
   RadIA.Core.StackTraceTools in 'Source\Core\RadIA.Core.StackTraceTools.pas',
+  RadIA.Core.SaveReview in 'Source\Core\RadIA.Core.SaveReview.pas',
   RadIA.Core.ProjectOpening in 'Source\Core\RadIA.Core.ProjectOpening.pas',
   RadIA.Core.ApiSpecifications in 'Source\Core\RadIA.Core.ApiSpecifications.pas',
   RadIA.Core.DextProjectTemplates in 'Source\Core\RadIA.Core.DextProjectTemplates.pas',

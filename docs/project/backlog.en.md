@@ -11,7 +11,6 @@ from verifiable value, effort, and dependencies.
 
 | Area | Open outcome | Current verifiable state | Completion criterion |
 |---|---|---|---|
-| Code assistance | Automatic review on save | The save event exists, but there is no dedicated background review flow. | Users can enable review, receive findings without blocking the IDE, and review or discard the result. |
 | Code assistance | Clean Uses | No dedicated analyzer detects and safely prepares removal of unused units. | A preview accounts for symbols, conditionals, and project scopes, applies with consent, and preserves the build. |
 | Existing APIs | OpenAPI/Swagger retrofit | Swagger is generated for new DEXT projects, but existing projects have no retrofit journey. | The journey inventories existing routes, prepares the specification, and applies reviewable integration without recreating the project. |
 | Modernization | DEXT adoption and form decomposition | FireDAC migration and the follow-up plan exist; the tool does not execute DEXT adoption or decomposition. | A journey applies reversible steps, proves parity, and separates responsibilities without breaking DFM/PAS. |

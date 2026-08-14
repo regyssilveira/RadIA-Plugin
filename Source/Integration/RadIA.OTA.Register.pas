@@ -519,6 +519,8 @@ procedure TRadIAWizard.AfterSave;
 begin
   if Assigned(FSemanticMonitor) then
     TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
+  if Assigned(FEditorHook) then
+    TRadIAEditorHook(FEditorHook).ScheduleAutoReview;
 end;
 
 procedure TRadIAWizard.BeforeSave;
