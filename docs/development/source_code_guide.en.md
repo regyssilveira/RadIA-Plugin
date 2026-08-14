@@ -298,5 +298,8 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
 npm run test:semantic-corpus:13
 ```
 
-The gate requires exact offset coverage for 100% of the files and structural parsing for at least
-99%. Reproducible reports are written to `Output/Evidence`, outside user documentation.
+The gate requires exact offset coverage for 100% of the files, structural parsing for at least 99%,
+valid spans, and exactly one module per unit. An independent lexical oracle locates structural
+declarations anchored by `type` in the interface and requires a matching parser symbol for every anchor.
+An incomplete tree therefore cannot pass merely because the parser did not report a diagnostic against
+itself. Reproducible reports are written to `Output/Evidence`, outside user documentation.

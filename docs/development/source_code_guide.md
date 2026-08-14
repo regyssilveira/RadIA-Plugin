@@ -300,5 +300,8 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
 npm run test:semantic-corpus:13
 ```
 
-O gate exige cobertura exata de offsets em 100% dos arquivos e parsing estrutural de pelo menos 99%.
-O relatório reproduzível é gravado em `Output/Evidence`, fora da documentação de usuário.
+O gate exige cobertura exata de offsets em 100% dos arquivos, parsing estrutural de pelo menos 99%,
+spans válidos e exatamente um módulo por unit. Um oráculo lexical independente localiza declarações
+estruturais ancoradas por `type` na interface e exige que cada uma possua um símbolo correspondente no
+parser. Assim, uma árvore incompleta não pode ser aceita apenas porque o parser não diagnosticou a si
+mesmo. O relatório reproduzível é gravado em `Output/Evidence`, fora da documentação de usuário.
