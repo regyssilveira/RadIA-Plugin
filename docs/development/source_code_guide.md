@@ -296,10 +296,12 @@ correspondente:
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0"
 npm run test:semantic-corpus:12
 npm run test:semantic-completion:12
+npm run test:semantic-members:12
 
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
 npm run test:semantic-corpus:13
 npm run test:semantic-completion:13
+npm run test:semantic-members:13
 ```
 
 O gate exige cobertura exata de offsets em 100% dos arquivos, parsing estrutural de pelo menos 99%,
@@ -312,3 +314,8 @@ O corpus de completion indexa as mesmas RTL/VCL e deriva pontos determinísticos
 em tipos de nome não ambíguo. Cada consulta deve retornar `status` e `reason`, resolver ao menos um
 candidato compatível com o prefixo e nunca produzir resposta silenciosa. O relatório inclui quantidade
 de arquivos, pontos avaliados, candidatos e latências P50, P95 e máxima por versão do Delphi.
+
+Os probes de membros ausentes exercitam regras reais da linguagem: assinaturas básicas, sobrecargas,
+herança de interfaces, implementação fornecida por uma classe-base e contratos condicionais. Cada caso
+deve produzir exatamente os membros esperados, permanecer idempotente na segunda execução e compilar
+com o `dcc32` da versão avaliada. O compilador funciona como oráculo externo da edição proposta.

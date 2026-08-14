@@ -294,10 +294,12 @@ Pascal unit available under `source/rtl` and `source/vcl` in the corresponding i
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0"
 npm run test:semantic-corpus:12
 npm run test:semantic-completion:12
+npm run test:semantic-members:12
 
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
 npm run test:semantic-corpus:13
 npm run test:semantic-completion:13
+npm run test:semantic-members:13
 ```
 
 The gate requires exact offset coverage for 100% of the files, structural parsing for at least 99%,
@@ -310,3 +312,8 @@ The completion corpus indexes the same RTL/VCL trees and derives deterministic s
 declared in unambiguous type names. Every query must return `status` and `reason`, resolve at least one
 candidate matching the prefix, and never produce a silent answer. Its report records file and site
 counts, candidates, and P50, P95, and maximum latency for each Delphi version.
+
+The missing-member probes exercise real language rules: basic signatures, overloads, inherited
+interfaces, implementation supplied by a base class, and conditional contracts. Each case must produce
+exactly the expected members, remain idempotent on the second run, and compile with the evaluated
+version's `dcc32`. The compiler acts as an external oracle for the proposed edit.
