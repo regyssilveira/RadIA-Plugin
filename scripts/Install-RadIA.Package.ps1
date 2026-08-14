@@ -440,6 +440,21 @@ New-ItemProperty `
     -PropertyType String `
     -Force |
     Out-Null
+$disabledRegistryPath = (
+    "HKCU:\Software\Embarcadero\BDS\$DelphiVersion\Disabled Packages"
+)
+if ($IDE64) {
+    $disabledRegistryPath = (
+        "HKCU:\Software\Embarcadero\BDS\$DelphiVersion\" +
+        "Disabled Packages x64"
+    )
+}
+if (Test-Path $disabledRegistryPath) {
+    Remove-ItemProperty `
+        -LiteralPath $disabledRegistryPath `
+        -Name $targetBpl `
+        -ErrorAction SilentlyContinue
+}
 $registeredPackageProperties = (
     Get-ItemProperty `
         -LiteralPath $registryPath `

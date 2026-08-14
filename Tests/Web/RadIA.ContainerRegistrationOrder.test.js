@@ -19,3 +19,18 @@ test('DEXT form modernization resolves the DFM auditor only after registration',
   assert.ok(auditorRegistration >= 0);
   assert.ok(modernizationRegistration > auditorRegistration);
 });
+
+test('installers re-enable an exact RadIA package disabled after a failed startup', () => {
+  const installers = [
+    fs.readFileSync(path.resolve('build.ps1'), 'utf8'),
+    fs.readFileSync(path.resolve('scripts/Install-RadIA.Package.ps1'), 'utf8')
+  ];
+
+  installers.forEach(installer => {
+    assert.match(installer, /Disabled Packages/u);
+    assert.match(
+      installer,
+      /Remove-ItemProperty[\s\S]*?-Name \$targetBpl/u
+    );
+  });
+});

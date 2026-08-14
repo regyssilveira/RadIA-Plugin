@@ -950,6 +950,20 @@ if ($Install) {
         -Force |
         Out-Null
 
+    $disabledRegPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Disabled Packages"
+    if ($IDE64) {
+        $disabledRegPath = (
+            "HKCU:\Software\Embarcadero\BDS\$delphiVer\" +
+            "Disabled Packages x64"
+        )
+    }
+    if (Test-Path $disabledRegPath) {
+        Remove-ItemProperty `
+            -LiteralPath $disabledRegPath `
+            -Name $targetBpl `
+            -ErrorAction SilentlyContinue
+    }
+
     Write-Host "=============================================" -ForegroundColor Green
     Write-Host " Plugin instalado com sucesso no Delphi!     " -ForegroundColor Green
     Write-Host " O Rad IA estara disponivel no proximo startup" -ForegroundColor Green
