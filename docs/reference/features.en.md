@@ -117,3 +117,4 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Skill Portability** | Extensibility | Transactional publication to four CLIs with preview, consent, hashes, and conflict preservation. | ✅ Completed |
 | **Delphi 12/13 and IDE64** | Compatibility | Delphi 12 Win32 and Delphi 13 Win32/IDE64. | ✅ Completed |
 | **Thread and PPL assistant** | Concurrency | Detects risks and only prepares patches with validated VCL marshalling, cancellation, and exception handling. | ✅ Completed |
+| **OpenAPI/Swagger retrofit** | Existing APIs | Inventories DEXT routes and prepares reviewable Swagger integration without recreating the project. | ✅ Completed |

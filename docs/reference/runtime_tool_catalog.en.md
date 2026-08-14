@@ -175,6 +175,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `AnalyzeThreadingRisks` | Detects VCL access, cancellation, and exception-handling risks in Delphi background work. | `RadIA.Core.ThreadingAssistantTools.pas` |
 | `PrepareThreadModernization` | Validates safeguards and prepares a reviewable Delphi threading patch. | `RadIA.Core.ThreadingAssistantTools.pas` |
 
+## Existing API OpenAPI retrofit
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `InventoryExistingApiRoutes` | Inventories existing DEXT minimal routes and controller attributes without changing the project. | `RadIA.Core.OpenApiRetrofitTools.pas` |
+| `PrepareOpenApiRetrofit` | Prepares a reviewable Swagger integration patch for an existing DEXT startup unit. | `RadIA.Core.OpenApiRetrofitTools.pas` |
+
 ## Inline reviews
 
 | Tool | Purpose | Source unit |
@@ -414,7 +421,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 50
-- Registered built-in tools: 158
+- Registered groups: 51
+- Registered built-in tools: 160
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

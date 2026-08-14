@@ -117,3 +117,4 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Terminal de alta fidelidade** | Terminal | True color, atributos, alternate screen, bracketed paste, mouse SGR e links OSC 8 sob consentimento. | ✅ Concluído (v2.4.0) |
 | **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |
 | **Assistente de threads e PPL** | Concorrência | Detecta riscos e só prepara patches com sincronização VCL, cancelamento e tratamento de exceções validados. | ✅ Concluído |
+| **Retrofit OpenAPI/Swagger** | APIs existentes | Inventaria rotas DEXT e prepara integração Swagger revisável sem recriar o projeto. | ✅ Concluído |

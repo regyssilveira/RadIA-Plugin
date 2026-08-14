@@ -11,7 +11,6 @@ from verifiable value, effort, and dependencies.
 
 | Area | Open outcome | Current verifiable state | Completion criterion |
 |---|---|---|---|
-| Existing APIs | OpenAPI/Swagger retrofit | Swagger is generated for new DEXT projects, but existing projects have no retrofit journey. | The journey inventories existing routes, prepares the specification, and applies reviewable integration without recreating the project. |
 | Modernization | DEXT adoption and form decomposition | FireDAC migration and the follow-up plan exist; the tool does not execute DEXT adoption or decomposition. | A journey applies reversible steps, proves parity, and separates responsibilities without breaking DFM/PAS. |
 | Productivity | Internationalization wizard | Internal localization infrastructure exists, but no wizard targets user projects. | The wizard inventories strings, prepares reviewable resources and changes, and preserves the default language. |
 

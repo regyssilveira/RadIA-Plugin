@@ -195,6 +195,14 @@
       ]
     },
     {
+      "name": "Existing API OpenAPI retrofit",
+      "source": "Source/Core/RadIA.Core.OpenApiRetrofitTools.pas",
+      "tools": [
+        "InventoryExistingApiRoutes",
+        "PrepareOpenApiRetrofit"
+      ]
+    },
+    {
       "name": "Inline reviews",
       "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
       "tools": [

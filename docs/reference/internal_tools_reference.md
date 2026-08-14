@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 158 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 160 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -150,6 +150,13 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 |---|---|---|
 | `AnalyzeThreadingRisks` | Detecta acesso VCL inseguro, ausência de cancelamento e tratamento de exceções. | Antes de modernizar trabalho executado em background. |
 | `PrepareThreadModernization` | Valida as proteções e prepara um patch revisável e reversível. | Depois de corrigir todos os riscos apontados no trecho proposto. |
+
+## Retrofit OpenAPI de APIs existentes
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `InventoryExistingApiRoutes` | Inventaria rotas DEXT minimalistas e atributos de controllers nas units existentes. | Antes de preparar Swagger sem recriar o projeto. |
+| `PrepareOpenApiRetrofit` | Adiciona imports, metadados OpenAPI e middleware Swagger em um preview reversível da unit Startup. | Depois de revisar o inventário e abrir a unit Startup existente. |
 
 ## Patch de um arquivo
 

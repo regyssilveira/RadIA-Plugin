@@ -175,6 +175,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `AnalyzeThreadingRisks` | Detecta acesso VCL inseguro, ausência de cancelamento e tratamento de exceções. | `RadIA.Core.ThreadingAssistantTools.pas` |
 | `PrepareThreadModernization` | Valida as proteções e prepara um patch revisável e reversível. | `RadIA.Core.ThreadingAssistantTools.pas` |
 
+## Retrofit OpenAPI de APIs existentes
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `InventoryExistingApiRoutes` | Inventaria rotas DEXT minimalistas e atributos de controllers nas units existentes. | `RadIA.Core.OpenApiRetrofitTools.pas` |
+| `PrepareOpenApiRetrofit` | Adiciona imports, metadados OpenAPI e middleware Swagger em um preview reversível da unit Startup. | `RadIA.Core.OpenApiRetrofitTools.pas` |
+
 ## Revisões inline
 
 | Ferramenta | O que faz | Unit de origem |
@@ -414,7 +421,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 50
-- Ferramentas internas registradas: 158
+- Grupos registrados: 51
+- Ferramentas internas registradas: 160
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

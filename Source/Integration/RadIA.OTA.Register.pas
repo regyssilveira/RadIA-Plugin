@@ -81,6 +81,7 @@ uses
   RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
   RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
   RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
+  RadIA.Core.OpenApiRetrofit, RadIA.Core.OpenApiRetrofitTools,
   RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
@@ -1277,6 +1278,12 @@ initialization
       TRadIAContainer.Resolve<IRadIAPatchService>
     )
   );
+  TRadIAContainer.Register<IRadIAOpenApiRetrofitService>(
+    TRadIAOpenApiRetrofitService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
   TRadIAContainer.Register<IRadIASemanticCompletionService>(
     TRadIASemanticCompletionService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1369,6 +1376,10 @@ initialization
   RegisterRadIAThreadingAssistantTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAThreadingAssistantService>
+  );
+  RegisterRadIAOpenApiRetrofitTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAOpenApiRetrofitService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
