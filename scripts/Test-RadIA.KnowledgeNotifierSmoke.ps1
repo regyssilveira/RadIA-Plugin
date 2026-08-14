@@ -1778,6 +1778,8 @@ try {
         if (-not $transitionRollback.rolledBack) {
             throw "The replacement project was not reverted."
         }
+        $journeySucceeded = $true
+        return
     }
 
     Open-RadIAPath -Process $process -Path $unitPath

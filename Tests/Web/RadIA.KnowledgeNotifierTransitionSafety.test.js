@@ -47,5 +47,9 @@ test('release gate closes one generated project before opening another', () => {
     transitionSmokeSource,
     /ExerciseProjectTransition[\s\S]*?RevertCreatedProject[\s\S]*?OpenCreatedProject[\s\S]*?NavigateToFile/u
   );
+  assert.match(
+    transitionSmokeSource,
+    /transitionRollback[\s\S]*?journeySucceeded = \$true\s*return/u
+  );
   assert.match(releaseProcessSource, /Test-RadIA\.KnowledgeProjectTransition\.ps1/u);
 });
