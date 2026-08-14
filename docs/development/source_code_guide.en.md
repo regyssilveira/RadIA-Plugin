@@ -293,9 +293,11 @@ Pascal unit available under `source/rtl` and `source/vcl` in the corresponding i
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0"
 npm run test:semantic-corpus:12
+npm run test:semantic-completion:12
 
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0"
 npm run test:semantic-corpus:13
+npm run test:semantic-completion:13
 ```
 
 The gate requires exact offset coverage for 100% of the files, structural parsing for at least 99%,
@@ -303,3 +305,8 @@ valid spans, and exactly one module per unit. An independent lexical oracle loca
 declarations anchored by `type` in the interface and requires a matching parser symbol for every anchor.
 An incomplete tree therefore cannot pass merely because the parser did not report a diagnostic against
 itself. Reproducible reports are written to `Output/Evidence`, outside user documentation.
+
+The completion corpus indexes the same RTL/VCL trees and derives deterministic sites from members
+declared in unambiguous type names. Every query must return `status` and `reason`, resolve at least one
+candidate matching the prefix, and never produce a silent answer. Its report records file and site
+counts, candidates, and P50, P95, and maximum latency for each Delphi version.
