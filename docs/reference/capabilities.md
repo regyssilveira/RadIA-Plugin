@@ -1,6 +1,6 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.13.0. Ela reúne as capacidades disponíveis e aponta para
+Esta página é o mapa funcional do RadIA 2.14.0. Ela reúne as capacidades disponíveis e aponta para
 as instruções detalhadas.
 
 Para distinguir implementação de planejamento:

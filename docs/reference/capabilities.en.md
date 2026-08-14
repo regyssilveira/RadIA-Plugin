@@ -1,6 +1,6 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.13.0.
+This page is the functional map of RadIA 2.14.0.
 
 The agent combines the [sanitized Delphi environment profile](delphi_environment_profile.en.md) with
 [curated Delphi guidance](delphi_guidance.en.md). Language, memory, VCL, FMX, Delphi 12, Delphi 13,
