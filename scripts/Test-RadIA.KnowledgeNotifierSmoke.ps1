@@ -1778,11 +1778,10 @@ try {
         if (-not $transitionRollback.rolledBack) {
             throw "The replacement project was not reverted."
         }
-        $journeySucceeded = $true
-        return
     }
 
-    Open-RadIAPath -Process $process -Path $unitPath
+    if (-not $ExerciseProjectTransition) {
+        Open-RadIAPath -Process $process -Path $unitPath
     Start-Sleep -Seconds 2
     $activeUnit = Invoke-RadIATool `
         -BridgePath $bridgePath `
@@ -2099,6 +2098,7 @@ try {
         if (-not $statusAfterClose.loaded) {
             throw "The knowledge index was unavailable after closing the unit."
         }
+    }
     }
 
     $journeySucceeded = $true

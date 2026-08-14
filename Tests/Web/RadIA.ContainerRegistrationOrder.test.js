@@ -34,3 +34,17 @@ test('installers re-enable an exact RadIA package disabled after a failed startu
     );
   });
 });
+
+test('project-transition smoke reaches structured evidence generation', () => {
+  const smoke = fs.readFileSync(
+    path.resolve('scripts/Test-RadIA.KnowledgeNotifierSmoke.ps1'),
+    'utf8'
+  );
+  const transitionBlock = smoke.match(
+    /if \(\$ExerciseProjectTransition\) \{[\s\S]*?\n    \}/u
+  );
+
+  assert.ok(transitionBlock);
+  assert.doesNotMatch(transitionBlock[0], /\breturn\b/iu);
+  assert.match(smoke, /if \(-not \$ExerciseProjectTransition\) \{/u);
+});
