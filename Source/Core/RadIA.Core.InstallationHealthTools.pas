@@ -668,13 +668,16 @@ begin
       'semantic-completion-metrics',
       'passed',
       Format(
-        'Last semantic completion: status %s, %d candidates, %d ms. %s',
-        [
-          LCompletion.Status,
-          LCompletion.CandidateCount,
-          LCompletion.LatencyMs,
-          LCompletion.ErrorMessage
-        ]
+          'Last semantic completion: status %s, %d candidates, %d ms. ' +
+          'Resolution %s from %s. %s',
+          [
+            LCompletion.Status,
+            LCompletion.CandidateCount,
+            LCompletion.LatencyMs,
+            LCompletion.ResolutionReason,
+            LCompletion.OriginUnit,
+            LCompletion.ErrorMessage
+          ]
       ),
       ''
     );

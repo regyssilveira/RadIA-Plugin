@@ -254,7 +254,8 @@ end;
 
 function BuildIndexedSymbolsResult(
   const AId: TJSONValue;
-  const ASymbols: TArray<TRadIASemanticIndexedSymbol>
+  const ASymbols: TArray<TRadIASemanticIndexedSymbol>;
+  const AResolution: TJSONObject = nil
 ): TJSONObject;
 var
   LAncestor: string;
@@ -292,7 +293,77 @@ begin
     LArray.AddElement(LItem);
   end;
   LResult.AddPair('symbols', LArray);
+  if Assigned(AResolution) then
+    LResult.AddPair('resolution', AResolution);
   Result.AddPair('result', LResult);
+end;
+
+function IsStructuralSymbol(
+  const ASymbol: TRadIASemanticIndexedSymbol
+): Boolean;
+begin
+  Result := ASymbol.Kind in [sskClass, sskRecord, sskInterface, sskHelper];
+end;
+
+function BuildResolution(
+  const AIndex: TRadIASemanticIndex;
+  const ARequestedSymbol: string;
+  const ACandidateCount: Integer;
+  const AEmptyReason: string
+): TJSONObject;
+var
+  LAlternative: TJSONObject;
+  LAlternatives: TJSONArray;
+  LStructural: TList<TRadIASemanticIndexedSymbol>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LStructural := TList<TRadIASemanticIndexedSymbol>.Create;
+  try
+    for LSymbol in AIndex.FindSymbols(ARequestedSymbol) do
+      if IsStructuralSymbol(LSymbol) then
+        LStructural.Add(LSymbol);
+    Result := TJSONObject.Create;
+    Result.AddPair('requestedSymbol', ARequestedSymbol);
+    Result.AddPair('candidateCount', TJSONNumber.Create(ACandidateCount));
+    LAlternatives := TJSONArray.Create;
+    for LSymbol in LStructural do
+    begin
+      LAlternative := TJSONObject.Create;
+      LAlternative.AddPair('unitKey', LSymbol.UnitKey);
+      LAlternative.AddPair('fileName', LSymbol.FileName);
+      LAlternative.AddPair('scope', ScopeName(LSymbol.Scope));
+      LAlternatives.AddElement(LAlternative);
+    end;
+    Result.AddPair('alternatives', LAlternatives);
+    if LStructural.Count = 0 then
+    begin
+      Result.AddPair('status', 'unresolved');
+      Result.AddPair('reason', 'container-not-found');
+    end
+    else if LStructural.Count > 1 then
+    begin
+      Result.AddPair('status', 'ambiguous');
+      Result.AddPair('reason', 'short-name-ambiguous');
+    end
+    else
+    begin
+      LSymbol := LStructural[0];
+      Result.AddPair('originUnit', LSymbol.UnitKey);
+      Result.AddPair('originFile', LSymbol.FileName);
+      if ACandidateCount = 0 then
+      begin
+        Result.AddPair('status', 'not-found');
+        Result.AddPair('reason', AEmptyReason);
+      end
+      else
+      begin
+        Result.AddPair('status', 'resolved');
+        Result.AddPair('reason', 'exact-structural-match');
+      end;
+    end;
+  finally
+    LStructural.Free;
+  end;
 end;
 
 function BuildMissingMemberPreviewResult(
@@ -474,6 +545,7 @@ function HandleIndexRequest(
 var
   LCacheError: string;
   LParameters: TJSONObject;
+  LSymbols: TArray<TRadIASemanticIndexedSymbol>;
 begin
   if SameText(AMethod, 'indexUnit') then
   begin
@@ -531,32 +603,53 @@ begin
   if SameText(AMethod, 'findResolvedMembers') then
   begin
     LParameters := RequireParameters(ARequest);
+    LSymbols := AIndex.FindResolvedMembers(
+      LParameters.GetValue<string>('container', '')
+    );
     Exit(BuildIndexedSymbolsResult(
       AId,
-      AIndex.FindResolvedMembers(
-        LParameters.GetValue<string>('container', '')
+      LSymbols,
+      BuildResolution(
+        AIndex,
+        LParameters.GetValue<string>('container', ''),
+        Length(LSymbols),
+        'container-has-no-members'
       )
     ));
   end;
   if SameText(AMethod, 'completeResolvedMembers') then
   begin
     LParameters := RequireParameters(ARequest);
+    LSymbols := AIndex.CompleteResolvedMembers(
+      LParameters.GetValue<string>('container', ''),
+      LParameters.GetValue<string>('prefix', ''),
+      LParameters.GetValue<Integer>('maxItems', 20)
+    );
     Exit(BuildIndexedSymbolsResult(
       AId,
-      AIndex.CompleteResolvedMembers(
+      LSymbols,
+      BuildResolution(
+        AIndex,
         LParameters.GetValue<string>('container', ''),
-        LParameters.GetValue<string>('prefix', ''),
-        LParameters.GetValue<Integer>('maxItems', 20)
+        Length(LSymbols),
+        'prefix-has-no-match'
       )
     ));
   end;
   if SameText(AMethod, 'findMissingMembers') then
   begin
     LParameters := RequireParameters(ARequest);
+    LSymbols := AIndex.FindMissingMembers(
+      LParameters.GetValue<string>('container', '')
+    );
     Exit(BuildIndexedSymbolsResult(
       AId,
-      AIndex.FindMissingMembers(
-        LParameters.GetValue<string>('container', '')
+      LSymbols,
+      BuildResolution(
+        AIndex,
+        LParameters.GetValue<string>('container', ''),
+        Length(LSymbols),
+        'contract-is-satisfied'
       )
     ));
   end;

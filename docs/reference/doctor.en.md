@@ -59,7 +59,8 @@ execution consent before starting. When approved, the `deep-active` profile:
 - uses the non-interactive authentication status command when the CLI provides one;
 - opens a temporary handshake with every enabled external MCP server;
 - validates the semantic engine executable and protocol;
-- queries the real semantic index, measures latency, and reports the latest completion metrics;
+- queries the real semantic index and reports resolution status, reason, origin unit, latency, and the latest
+  completion metrics;
 - closes test sessions and shows each result in the same doctor card.
 
 The diagnostic does not install, authenticate, repair, or change configuration. It also does not

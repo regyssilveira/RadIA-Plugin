@@ -35,6 +35,12 @@ vazio, ambíguo ou indisponível segue automaticamente para a rota FIM já confi
 cancela tanto a espera local quanto a remota; o status de rota informa `local semantic`, quantidade
 de candidatos e latência quando essa rota é usada.
 
+A resolução local nunca trata uma lista vazia como resposta silenciosa. O motor identifica o símbolo
+solicitado e retorna estado, motivo, origem e alternativas estruturais. Nomes curtos encontrados em mais
+de uma unit são marcados como `short-name-ambiguous`; nesse caso nenhuma sugestão local é aplicada e o
+fluxo segue para o fallback. Contêiner inexistente, prefixo sem correspondência e contrato já satisfeito
+possuem motivos distintos, também expostos pelo diagnóstico profundo.
+
 ## Painel de alternativas
 
 Depois de escolher **Solicitar uma alternativa**, o RadIA mantém a sugestão anterior em vez de

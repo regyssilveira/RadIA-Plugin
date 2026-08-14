@@ -59,7 +59,8 @@ de começar, o RadIA mostra o consentimento de execução. Se autorizado, o perf
 - usa o comando não interativo de status de autenticação quando a CLI o oferece;
 - abre um handshake temporário com cada servidor MCP externo habilitado;
 - valida o executável e o protocolo do motor semântico;
-- consulta o índice semântico real, mede a latência e apresenta as métricas da última completion;
+- consulta o índice semântico real, mede a latência e apresenta estado, motivo de resolução, unit de origem
+  e métricas da última completion;
 - encerra as sessões de teste e apresenta cada resultado no mesmo cartão do doctor.
 
 O diagnóstico não instala, autentica, repara ou altera configurações. Também não envia uma mensagem

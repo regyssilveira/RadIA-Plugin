@@ -9,9 +9,12 @@ uses
 type
   TRadIASemanticCompletionResult = record
   private
+    FAlternativeCount: Integer;
     FCandidateCount: Integer;
     FErrorMessage: string;
     FLatencyMs: Int64;
+    FOriginUnit: string;
+    FResolutionReason: string;
     FStatus: string;
     FSuggestion: string;
   public
@@ -22,9 +25,17 @@ type
       const ALatencyMs: Int64;
       const AErrorMessage: string
     );
+    function WithResolution(
+      const AReason: string;
+      const AOriginUnit: string;
+      const AAlternativeCount: Integer
+    ): TRadIASemanticCompletionResult;
+    property AlternativeCount: Integer read FAlternativeCount;
     property CandidateCount: Integer read FCandidateCount;
     property ErrorMessage: string read FErrorMessage;
     property LatencyMs: Int64 read FLatencyMs;
+    property OriginUnit: string read FOriginUnit;
+    property ResolutionReason: string read FResolutionReason;
     property Status: string read FStatus;
     property Suggestion: string read FSuggestion;
   end;
@@ -110,6 +121,41 @@ begin
   FErrorMessage := AErrorMessage;
 end;
 
+procedure ReadResolution(
+  const AResult: TJSONObject;
+  out AStatus: string;
+  out AReason: string;
+  out AOriginUnit: string;
+  out AAlternatives: TJSONArray
+);
+var
+  LResolution: TJSONObject;
+begin
+  AStatus := '';
+  AReason := '';
+  AOriginUnit := '';
+  AAlternatives := nil;
+  LResolution := AResult.GetValue('resolution') as TJSONObject;
+  if not Assigned(LResolution) then
+    Exit;
+  AStatus := LResolution.GetValue<string>('status', '');
+  AReason := LResolution.GetValue<string>('reason', '');
+  AOriginUnit := LResolution.GetValue<string>('originUnit', '');
+  AAlternatives := LResolution.GetValue<TJSONArray>('alternatives');
+end;
+
+function TRadIASemanticCompletionResult.WithResolution(
+  const AReason: string;
+  const AOriginUnit: string;
+  const AAlternativeCount: Integer
+): TRadIASemanticCompletionResult;
+begin
+  Result := Self;
+  Result.FResolutionReason := AReason;
+  Result.FOriginUnit := AOriginUnit;
+  Result.FAlternativeCount := AAlternativeCount;
+end;
+
 constructor TRadIASemanticCompletionService.Create(
   const AClient: IRadIASemanticRequestClient
 );
@@ -169,11 +215,15 @@ var
   LError: string;
   LIndex: Integer;
   LParameters: TJSONObject;
+  LResolutionReason: string;
+  LResolutionStatus: string;
   LResponse: string;
   LResult: TJSONObject;
   LStopwatch: TStopwatch;
   LSymbols: TJSONArray;
   LSuggestion: string;
+  LAlternatives: TJSONArray;
+  LOriginUnit: string;
 begin
   LStopwatch := TStopwatch.StartNew;
   LParameters := TJSONObject.Create;
@@ -227,6 +277,13 @@ begin
       Store(Result);
       Exit;
     end;
+    ReadResolution(
+      LResult,
+      LResolutionStatus,
+      LResolutionReason,
+      LOriginUnit,
+      LAlternatives
+    );
     SetLength(LCandidates, LSymbols.Count);
     for LIndex := 0 to LSymbols.Count - 1 do
       LCandidates[LIndex] :=
@@ -237,13 +294,36 @@ begin
     else if LSuggestion.StartsWith(APrefix, True) then
       Delete(LSuggestion, 1, Length(APrefix));
     LStopwatch.Stop;
+    if SameText(LResolutionStatus, 'ambiguous') then
+    begin
+      Result := TRadIASemanticCompletionResult.Create(
+        'ambiguous', '', Length(LCandidates),
+        LStopwatch.ElapsedMilliseconds, LResolutionReason
+      );
+      if Assigned(LAlternatives) then
+        Result := Result.WithResolution(
+          LResolutionReason,
+          LOriginUnit,
+          LAlternatives.Count
+        );
+      Store(Result);
+      Exit;
+    end;
     Result := TRadIASemanticCompletionResult.Create(
-      'ready',
+      LResolutionStatus,
       LSuggestion,
       Length(LCandidates),
       LStopwatch.ElapsedMilliseconds,
       ''
     );
+    if Result.FStatus = '' then
+      Result.FStatus := 'ready';
+    if Assigned(LAlternatives) then
+      Result := Result.WithResolution(
+        LResolutionReason,
+        LOriginUnit,
+        LAlternatives.Count
+      );
     Store(Result);
   finally
     LDocument.Free;

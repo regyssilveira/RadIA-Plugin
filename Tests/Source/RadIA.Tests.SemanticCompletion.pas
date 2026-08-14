@@ -14,6 +14,8 @@ type
     [Test]
     procedure ReturnsCommonPrefixForMultipleCandidates;
     [Test]
+    procedure RefusesAmbiguousStructuralResolution;
+    [Test]
     procedure HonorsPreCancelledRequest;
   end;
 
@@ -32,8 +34,12 @@ type
   )
   private
     FNames: TArray<string>;
+    FResolutionJson: string;
   public
-    constructor Create(const ANames: TArray<string>);
+    constructor Create(
+      const ANames: TArray<string>;
+      const AResolutionJson: string = ''
+    );
     function GetRestartCount: Integer;
     function Request(
       const AMethod: string;
@@ -51,11 +57,13 @@ type
   end;
 
 constructor TRadIASemanticCompletionClientMock.Create(
-  const ANames: TArray<string>
+  const ANames: TArray<string>;
+  const AResolutionJson: string
 );
 begin
   inherited Create;
   FNames := Copy(ANames);
+  FResolutionJson := AResolutionJson;
 end;
 
 function TRadIASemanticCompletionClientMock.GetRestartCount: Integer;
@@ -103,9 +111,32 @@ begin
       AResponse := AResponse + ',';
     AResponse := AResponse + '{"name":"' + FNames[LIndex] + '"}';
   end;
-  AResponse := AResponse + ']}}';
+  AResponse := AResponse + ']';
+  if FResolutionJson <> '' then
+    AResponse := AResponse + ',"resolution":' + FResolutionJson;
+  AResponse := AResponse + '}}';
   Result := SameText(AMethod, 'completeResolvedMembers') and
     (AParameters <> '');
+end;
+
+procedure TRadIASemanticCompletionTests.RefusesAmbiguousStructuralResolution;
+var
+  LClient: IRadIASemanticRequestClient;
+  LResult: TRadIASemanticCompletionResult;
+  LService: IRadIASemanticCompletionService;
+begin
+  LClient := TRadIASemanticCompletionClientMock.Create(
+    ['Save'],
+    '{"status":"ambiguous","reason":"short-name-ambiguous",' +
+    '"alternatives":[{"unitKey":"Vcl.Sample"},' +
+    '{"unitKey":"Fmx.Sample"}]}'
+  );
+  LService := TRadIASemanticCompletionService.Create(LClient);
+  LResult := LService.Complete('TSample', 'Sa', nil);
+  Assert.AreEqual('ambiguous', LResult.Status);
+  Assert.AreEqual('', LResult.Suggestion);
+  Assert.AreEqual('short-name-ambiguous', LResult.ResolutionReason);
+  Assert.AreEqual(2, LResult.AlternativeCount);
 end;
 
 procedure TRadIASemanticCompletionTests.

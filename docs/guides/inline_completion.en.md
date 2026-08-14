@@ -35,6 +35,12 @@ provider. Empty, ambiguous, or unavailable results automatically continue throug
 route. A new edit cancels both local and remote waits; route status reports `local semantic`, candidate
 count, and latency when that route is used.
 
+Local resolution never treats an empty list as a silent answer. The engine returns the requested symbol's
+status, reason, origin, and structural alternatives. Short names found in more than one unit are reported as
+`short-name-ambiguous`; no local suggestion is applied and the flow continues through fallback. A missing
+container, a prefix with no match, and an already satisfied contract have distinct reasons that are also
+available to the deep diagnostic.
+
 ## Alternatives panel
 
 After **Request an alternative**, RadIA keeps the previous suggestion instead of silently replacing
