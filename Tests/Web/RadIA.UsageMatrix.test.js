@@ -58,6 +58,10 @@ test('usage matrix plan is deterministic and does not start Delphi', () => {
 
 test('release gate composes calculator, opening, and usage tests', () => {
   const source = fs.readFileSync(releaseRunnerPath, 'utf8');
+  assert.match(source, /build\.ps1/u);
+  assert.match(source, /-Test/u);
+  assert.match(source, /Version = "23\.0"/u);
+  assert.match(source, /Version = "37\.0"/u);
   assert.match(source, /Test-RadIA\.GeneratedProjects\.ps1/u);
   assert.match(source, /New-RadIA\.GeneratedProjectsEvidence\.ps1/u);
   assert.match(source, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);

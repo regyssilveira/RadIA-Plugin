@@ -24,6 +24,20 @@ New-Item `
     -Force |
     Out-Null
 
+$unitTestTargets = @(
+    [PSCustomObject]@{ Id = "delphi12-win32"; Version = "23.0" },
+    [PSCustomObject]@{ Id = "delphi13-win32"; Version = "37.0" }
+)
+foreach ($target in $unitTestTargets) {
+    Write-Host "Running the complete DUnitX suite for $($target.Id)."
+    & (Join-Path $repositoryRoot "build.ps1") `
+        -DelphiVersion $target.Version `
+        -Test
+    if ($LASTEXITCODE -ne 0) {
+        throw "The complete DUnitX suite failed for $($target.Id)."
+    }
+}
+
 $generatedProjectTargets = @(
     [PSCustomObject]@{
         Id = "delphi12-win32"
@@ -129,6 +143,6 @@ foreach ($target in $openingTargets) {
     )
 
 Write-Host (
-    "Release usage gate passed: calculator, generated projects, " +
-    "project opening, and automated usage matrix."
+    "Release usage gate passed: complete DUnitX suites, calculator, " +
+    "generated projects, project opening, and automated usage matrix."
 )
