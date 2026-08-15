@@ -311,6 +311,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CancelDUnitXTests` | Cancel the active DUnitX test process. | `RadIA.Core.DUnitXTools.pas` |
 | `GetDUnitXStatus` | Return the current DUnitX runner status. | `RadIA.Core.DUnitXTools.pas` |
 
+## Impact-based DUnitX tests
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PlanImpactedDUnitXTests` | Explains the smallest safe DUnitX fixture set for workspace changes. | `RadIA.Core.TestImpactTools.pas` |
+| `RunImpactedDUnitXTests` | Plans, explains, and runs impacted DUnitX fixtures or the full suite. | `RadIA.Core.TestImpactTools.pas` |
+
 ## Code coverage evidence
 
 | Tool | Purpose | Source unit |
@@ -435,7 +442,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 53
-- Registered built-in tools: 164
+- Registered groups: 54
+- Registered built-in tools: 166
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -347,6 +347,14 @@
       ]
     },
     {
+      "name": "Impact-based DUnitX tests",
+      "source": "Source/Core/RadIA.Core.TestImpactTools.pas",
+      "tools": [
+        "PlanImpactedDUnitXTests",
+        "RunImpactedDUnitXTests"
+      ]
+    },
+    {
       "name": "Code coverage evidence",
       "source": "Source/Core/RadIA.Core.CoverageTools.pas",
       "tools": [

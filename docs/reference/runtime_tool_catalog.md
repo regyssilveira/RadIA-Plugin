@@ -311,6 +311,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `CancelDUnitXTests` | Solicita o encerramento da execução de testes. | `RadIA.Core.DUnitXTools.pas` |
 | `GetDUnitXStatus` | Retorna progresso, resultado e artefatos da execução. | `RadIA.Core.DUnitXTools.pas` |
 
+## Testes DUnitX selecionados por impacto
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PlanImpactedDUnitXTests` | Calcula e explica o menor conjunto seguro de fixtures DUnitX afetadas por arquivos modificados. | `RadIA.Core.TestImpactTools.pas` |
+| `RunImpactedDUnitXTests` | Planeja e executa as fixtures afetadas ou toda a suíte quando a seleção não pode ser provada. | `RadIA.Core.TestImpactTools.pas` |
+
 ## Evidências de cobertura de código
 
 | Ferramenta | O que faz | Unit de origem |
@@ -435,7 +442,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 53
-- Ferramentas internas registradas: 164
+- Grupos registrados: 54
+- Ferramentas internas registradas: 166
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

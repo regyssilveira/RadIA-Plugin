@@ -712,11 +712,15 @@ var
   LSeen: TDictionary<string, Boolean>;
   LSymbol: TRadIASemanticIndexedSymbol;
 begin
+  Result := 0;
   LSeen := TDictionary<string, Boolean>.Create;
   try
     for LSymbol in FindSymbols(AName) do
-      LSeen.AddOrSetValue(LSymbol.SymbolId, True);
-    Result := LSeen.Count;
+      if not LSeen.ContainsKey(LSymbol.SymbolId) then
+      begin
+        LSeen.Add(LSymbol.SymbolId, True);
+        Inc(Result);
+      end;
   finally
     LSeen.Free;
   end;
@@ -730,12 +734,16 @@ var
   LSeen: TDictionary<string, Boolean>;
   LSymbol: TRadIASemanticIndexedSymbol;
 begin
+  Result := 0;
   LSeen := TDictionary<string, Boolean>.Create;
   try
     for LSymbol in FindSymbols(AName) do
-      if QualifierMatches(AQualifier, LSymbol) then
-        LSeen.AddOrSetValue(LSymbol.SymbolId, True);
-    Result := LSeen.Count;
+      if QualifierMatches(AQualifier, LSymbol) and
+        not LSeen.ContainsKey(LSymbol.SymbolId) then
+      begin
+        LSeen.Add(LSymbol.SymbolId, True);
+        Inc(Result);
+      end;
   finally
     LSeen.Free;
   end;

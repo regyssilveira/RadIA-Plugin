@@ -40,7 +40,7 @@ e com a criação, abertura e navegação imediata de projetos.
   arquivos fechados, transação multiarquivo e rollback.
 - [ ] **Refatorações semânticas avançadas:** expandir a base validada para hierarquias,
   Extract Method, Move Type e Change Signature.
-- [ ] **Testes selecionados por impacto:** relacionar diff, símbolos, dependências, fixtures e
+- [x] **Testes selecionados por impacto:** relacionar diff, símbolos, dependências, fixtures e
   cobertura para executar e justificar o menor conjunto seguro de testes DUnitX.
 
 Gate: renomear um símbolo usado por várias units e pelo DFM, executar somente os testes afetados e

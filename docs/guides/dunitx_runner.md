@@ -8,6 +8,11 @@ gera XML no formato NUnit, que é convertido para JSON antes de retornar ao chat
 - `RunDUnitXTests`: recebe `executablePath`, `timeoutMs` opcional e uma lista opcional `tests`.
 - `GetDUnitXStatus`: consulta o estado da execução.
 - `CancelDUnitXTests`: cancela o processo ativo.
+- `PlanImpactedDUnitXTests`: explica quais fixtures foram afetadas por uma alteração.
+- `RunImpactedDUnitXTests`: executa essas fixtures ou recorre à suíte completa com segurança.
+
+Consulte [testes selecionados por impacto](impact_based_tests.md) para entender os sinais, a confiança
+e os fallbacks. Essa otimização é exclusiva do ciclo de desenvolvimento e não reduz o gate de release.
 
 Exemplo:
 

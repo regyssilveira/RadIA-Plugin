@@ -63,6 +63,7 @@ $portugueseGroupNames = @{
     "Debugger sessions and watches" = "Sessões do debugger e watches"
     "Project knowledge" = "Conhecimento do projeto"
     "DUnitX test runner" = "Execução de testes DUnitX"
+    "Impact-based DUnitX tests" = "Testes DUnitX selecionados por impacto"
     "Code coverage evidence" = "Evidências de cobertura de código"
     "Debugger event timeline" = "Linha do tempo de eventos do debugger"
     "Runtime debugger correlation" = "Correlação do debugger em runtime"

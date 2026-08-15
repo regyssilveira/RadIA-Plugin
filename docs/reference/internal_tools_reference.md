@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 164 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 166 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -335,6 +335,8 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 | `RunDUnitXTests` | Executa o runner autorizado e interpreta o relatório NUnit XML. | Depois do build ou quando o objetivo exige validar testes. |
 | `CancelDUnitXTests` | Solicita o encerramento da execução de testes. | Pelo usuário, agente ou timeout. |
 | `GetDUnitXStatus` | Retorna progresso, resultado e artefatos da execução. | Enquanto o agente acompanha os testes ou coleta falhas. |
+| `PlanImpactedDUnitXTests` | Calcula e explica o menor conjunto seguro de fixtures DUnitX afetadas por arquivos modificados. | Antes dos testes durante o desenvolvimento; usa dependências transitivas e cobertura disponível, com fallback para a suíte completa. |
+| `RunImpactedDUnitXTests` | Planeja e executa as fixtures afetadas ou toda a suíte quando a seleção não pode ser provada. | Após uma alteração localizada; nunca substitui as suítes completas obrigatórias do gate de release. |
 
 ## Cobertura de código
 

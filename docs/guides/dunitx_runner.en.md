@@ -8,6 +8,11 @@ NUnit XML report, which RadIA converts to structured JSON for chat, agent mode, 
 - `RunDUnitXTests` accepts `executablePath`, optional `timeoutMs`, and optional `tests`.
 - `GetDUnitXStatus` returns the current execution state.
 - `CancelDUnitXTests` cancels the active process.
+- `PlanImpactedDUnitXTests` explains which fixtures are affected by a change.
+- `RunImpactedDUnitXTests` runs those fixtures or safely falls back to the complete suite.
+
+See [impact-based tests](impact_based_tests.en.md) for signals, confidence, and fallbacks. This
+optimization applies only to development feedback and never reduces the release gate.
 
 The active Delphi project defines the authorized workspace. Only `.exe` files inside that boundary
 are accepted, and paths containing reparse points are rejected. A single process may run at once;

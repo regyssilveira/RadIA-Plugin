@@ -98,6 +98,7 @@ uses
   RadIA.Core.DevelopmentTransactionTools,
   RadIA.Core.Build, RadIA.Core.BuildTools, RadIA.OTA.Workspace,
   RadIA.Core.DUnitX, RadIA.Core.DUnitXTools, RadIA.OTA.DUnitX,
+  RadIA.Core.TestImpact, RadIA.Core.TestImpactTools,
   RadIA.Core.CoverageTools,
   RadIA.Core.Git, RadIA.Core.GitTools, RadIA.OTA.Git,
   RadIA.Core.Mcp, RadIA.OTA.Consent, RadIA.OTA.Build,
@@ -1447,6 +1448,14 @@ initialization
   );
   RegisterRadIADUnitXTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADUnitXRunner>
+  );
+  RegisterRadIATestImpactTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIATestImpactService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+    ),
     TRadIAContainer.Resolve<IRadIADUnitXRunner>
   );
   RegisterRadIACoverageTools(

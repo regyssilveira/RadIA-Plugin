@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 164 internal tools: what each one does and at what stage
+This page explains RadIA's 166 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -335,6 +335,8 @@ passes `execution` classification and does not accept arbitrary names received f
 |`RunDUnitXTests`|Runs the authorized runner and interprets the NUnit XML report.|After the build or when the objective requires validating tests.|
 |`CancelDUnitXTests`|Requests the end of test execution.|By user, agent or timeout.|
 |`GetDUnitXStatus`|Returns execution progress, result, and artifacts.|While the agent monitors the tests or collects failures.|
+|`PlanImpactedDUnitXTests`|Calculates and explains the smallest safe DUnitX fixture set affected by changed files.|Before development-time tests; it uses transitive dependencies and available coverage with a full-suite fallback.|
+|`RunImpactedDUnitXTests`|Plans and runs affected fixtures or the full suite when a safe selection cannot be proven.|After a localized change; it never replaces the complete suites required by the release gate.|
 
 ## Code coverage
 

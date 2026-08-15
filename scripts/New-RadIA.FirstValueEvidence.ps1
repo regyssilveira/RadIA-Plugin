@@ -3,7 +3,7 @@ param(
     [string]$OutputPath = (
         ".\Output\Evidence\first_value_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 164
+    [int]$RequiredToolCount = 166
 )
 
 $ErrorActionPreference = "Stop"

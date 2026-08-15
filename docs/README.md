@@ -29,6 +29,7 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 | Entender modos, chat, agente e consentimento | [Manual do usuário](guides/user_manual.md) |
 | Entender precedência por solicitação, sessão e projeto | [Configurações por escopo](guides/hierarchical_settings.md) |
 | Criar, editar, compilar e testar projetos | [Jornadas ponta a ponta](guides/user_guide_journeys.md) |
+| Executar somente testes DUnitX afetados | [Testes por impacto](guides/impact_based_tests.md) |
 | Criar um projeto pelo chat | [New Project Wizard](guides/project_wizard.md) |
 | Usar chat e sessões | [Chat e sessões](guides/user_guide_chat_sessions.md) |
 | Usar o editor e gerar código | [Editor e geração](guides/user_guide_editor_generation.md) |

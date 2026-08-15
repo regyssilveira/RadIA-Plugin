@@ -40,7 +40,7 @@ and immediate project creation, opening, and navigation.
   closed files, multi-file transactions, and rollback.
 - [ ] **Advanced semantic refactorings:** expand the validated foundation to hierarchies,
   Extract Method, Move Type, and Change Signature.
-- [ ] **Impact-based test selection:** relate diffs, symbols, dependencies, fixtures, and coverage to
+- [x] **Impact-based test selection:** relate diffs, symbols, dependencies, fixtures, and coverage to
   execute and justify the smallest safe DUnitX test set.
 
 Gate: rename a symbol used by multiple units and a DFM, run only affected tests, and revert the
