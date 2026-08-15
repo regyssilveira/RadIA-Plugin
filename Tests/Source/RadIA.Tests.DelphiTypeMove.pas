@@ -19,12 +19,68 @@ type
     procedure EditsDestinationSectionsIdempotently;
     [Test]
     procedure InsertsMissingUsesClauseAndRejectsInvalidInputs;
+    [Test]
+    procedure FindsOnlyOwnedMethodImplementations;
+    [Test]
+    procedure RejectsAmbiguousNestedRoutineImplementation;
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   RadIA.Core.DelphiTypeMove;
+
+procedure TRadIADelphiTypeMoveTests.FindsOnlyOwnedMethodImplementations;
+const
+  CSource = 'unit SourceUnit;' + sLineBreak + 'interface' + sLineBreak +
+    'type TWorker = class' + sLineBreak +
+    '  procedure Execute; function Ready: Boolean;' + sLineBreak +
+    'end;' + sLineBreak + 'implementation' + sLineBreak +
+    'procedure TWorker.Execute;' + sLineBreak + 'begin' + sLineBreak +
+    '  if Ready then' + sLineBreak + '  begin' + sLineBreak +
+    '    Work;' + sLineBreak + '  end;' + sLineBreak + 'end;' + sLineBreak +
+    'function TWorker.Ready: Boolean;' + sLineBreak + 'begin' + sLineBreak +
+    '  Result := True;' + sLineBreak + 'end;' + sLineBreak +
+    'procedure TOther.Execute;' + sLineBreak + 'begin' + sLineBreak +
+    'end;' + sLineBreak + 'end.';
+var
+  LBlocks: TArray<TRadIADelphiMoveBlock>;
+  LError: string;
+begin
+  Assert.IsTrue(TRadIADelphiTypeMoveAnalyzer.TryFindImplementations(
+    CSource,
+    'TWorker',
+    LBlocks,
+    LError
+  ), LError);
+  Assert.AreEqual(2, Length(LBlocks));
+  Assert.Contains(LBlocks[0].Content, 'procedure TWorker.Execute');
+  Assert.Contains(LBlocks[1].Content, 'function TWorker.Ready');
+  Assert.IsFalse(LBlocks[0].Content.Contains('TOther'));
+end;
+
+procedure TRadIADelphiTypeMoveTests.
+  RejectsAmbiguousNestedRoutineImplementation;
+const
+  CSource = 'unit SourceUnit;' + sLineBreak + 'interface' + sLineBreak +
+    'type TWorker = class procedure Execute; end;' + sLineBreak +
+    'implementation' + sLineBreak + 'procedure TWorker.Execute;' +
+    sLineBreak + 'procedure LocalWork;' + sLineBreak + 'begin' +
+    sLineBreak + 'end;' + sLineBreak + 'begin' + sLineBreak +
+    '  LocalWork;' + sLineBreak + 'end;' + sLineBreak + 'end.';
+var
+  LBlocks: TArray<TRadIADelphiMoveBlock>;
+  LError: string;
+begin
+  Assert.IsFalse(TRadIADelphiTypeMoveAnalyzer.TryFindImplementations(
+    CSource,
+    'TWorker',
+    LBlocks,
+    LError
+  ));
+  Assert.Contains(LError, 'nested routine');
+end;
 
 procedure TRadIADelphiTypeMoveTests.EditsDestinationSectionsIdempotently;
 const

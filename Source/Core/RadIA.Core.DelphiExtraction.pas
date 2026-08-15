@@ -90,6 +90,14 @@ type
       out ARoutine: TRadIADelphiExtractRoutine;
       out AError: string
     ): Boolean; static;
+    class function TryFindRoutineExtent(
+      const ASource: string;
+      const ARoutineSignature: string;
+      const ARoutineStartOffset: Integer;
+      out AStartOffset: Integer;
+      out AEndOffset: Integer;
+      out AError: string
+    ): Boolean; static;
   end;
 
 implementation
@@ -422,6 +430,39 @@ begin
   ABodyStart := LHeaderEnd + LTokens[LOpeningIndex].StartOffset;
   ABodyEnd := LHeaderEnd + LClosingToken.StartOffset + LClosingToken.Length;
   Result := True;
+end;
+
+function RoutineLineStartOffset(
+  const ASource: string;
+  const AOffset: Integer
+): Integer;
+begin
+  Result := AOffset;
+  while (Result > 0) and
+    not CharInSet(ASource[Result], [#10, #13]) do
+    Dec(Result);
+end;
+
+function TryFindRoutineTerminator(
+  const ASource: string;
+  const ABodyEnd: Integer;
+  out AEndOffset: Integer
+): Boolean;
+var
+  LToken: TRadIASemanticToken;
+begin
+  Result := False;
+  AEndOffset := -1;
+  for LToken in TRadIASemanticLexer.Tokenize(
+    Copy(ASource, ABodyEnd + 1, MaxInt)
+  ) do
+    if not (LToken.Kind in [stkWhitespace, stkComment, stkDirective]) then
+    begin
+      if LToken.Text <> ';' then
+        Exit;
+      AEndOffset := ABodyEnd + LToken.StartOffset + LToken.Length;
+      Exit(True);
+    end;
 end;
 
 function RoutineSignatureStart(
@@ -1047,6 +1088,40 @@ begin
   finally
     LVariables.Free;
   end;
+end;
+
+class function TRadIADelphiExtractionAnalyzer.TryFindRoutineExtent(
+  const ASource: string;
+  const ARoutineSignature: string;
+  const ARoutineStartOffset: Integer;
+  out AStartOffset: Integer;
+  out AEndOffset: Integer;
+  out AError: string
+): Boolean;
+var
+  LBodyEnd: Integer;
+  LBodyStart: Integer;
+begin
+  Result := False;
+  AStartOffset := -1;
+  AEndOffset := -1;
+  AError := '';
+  if not TryFindRoutineBody(
+    ASource,
+    ARoutineSignature,
+    ARoutineStartOffset,
+    LBodyStart,
+    LBodyEnd,
+    AError
+  ) then
+    Exit;
+  if not TryFindRoutineTerminator(ASource, LBodyEnd, AEndOffset) then
+  begin
+    AError := 'The indexed Delphi routine body is not followed by a semicolon.';
+    Exit;
+  end;
+  AStartOffset := RoutineLineStartOffset(ASource, ARoutineStartOffset);
+  Result := True;
 end;
 
 class function TRadIADelphiExtractionAnalyzer.TryFindEnclosingRoutine(

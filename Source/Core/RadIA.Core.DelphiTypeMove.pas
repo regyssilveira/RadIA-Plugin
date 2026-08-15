@@ -26,6 +26,22 @@ type
     property Kind: TRadIADelphiMovableTypeKind read FKind;
   end;
 
+  TRadIADelphiMoveBlock = record
+  private
+    FContent: string;
+    FLength: Integer;
+    FStartOffset: Integer;
+  public
+    constructor Create(
+      const AStartOffset: Integer;
+      const ALength: Integer;
+      const AContent: string
+    );
+    property Content: string read FContent;
+    property Length: Integer read FLength;
+    property StartOffset: Integer read FStartOffset;
+  end;
+
   TRadIADelphiTypeMoveAnalyzer = class
   public
     class function TryAnalyze(
@@ -33,6 +49,12 @@ type
       const ATypeName: string;
       const AIndexedStartOffset: Integer;
       out AMovableType: TRadIADelphiMovableType;
+      out AError: string
+    ): Boolean; static;
+    class function TryFindImplementations(
+      const ASource: string;
+      const ATypeName: string;
+      out ABlocks: TArray<TRadIADelphiMoveBlock>;
       out AError: string
     ): Boolean; static;
   end;
@@ -66,6 +88,7 @@ uses
   System.Generics.Collections,
   System.StrUtils,
   System.SysUtils,
+  RadIA.Core.DelphiExtraction,
   RadIA.Semantic.Lexer,
   RadIA.Semantic.Parser;
 
@@ -75,6 +98,17 @@ constructor TRadIADelphiMovableType.Create(
 );
 begin
   FKind := AKind;
+  FContent := AContent;
+end;
+
+constructor TRadIADelphiMoveBlock.Create(
+  const AStartOffset: Integer;
+  const ALength: Integer;
+  const AContent: string
+);
+begin
+  FStartOffset := AStartOffset;
+  FLength := ALength;
   FContent := AContent;
 end;
 
@@ -540,6 +574,66 @@ begin
     LInsertOffset + 1
   );
   Result := True;
+end;
+
+class function TRadIADelphiTypeMoveAnalyzer.TryFindImplementations(
+  const ASource: string;
+  const ATypeName: string;
+  out ABlocks: TArray<TRadIADelphiMoveBlock>;
+  out AError: string
+): Boolean;
+var
+  LBlock: TRadIADelphiMoveBlock;
+  LBlocks: TList<TRadIADelphiMoveBlock>;
+  LEndOffset: Integer;
+  LParsed: TRadIASemanticParseResult;
+  LStartOffset: Integer;
+  LSymbol: TRadIASemanticSymbol;
+begin
+  Result := False;
+  ABlocks := nil;
+  AError := '';
+  if Trim(ATypeName).IsEmpty then
+  begin
+    AError := 'The Delphi type name is required.';
+    Exit;
+  end;
+  LParsed := TRadIASemanticParser.Parse(ASource, []);
+  LBlocks := TList<TRadIADelphiMoveBlock>.Create;
+  try
+    for LSymbol in LParsed.Symbols do
+    begin
+      if (LSymbol.Kind <> sskMethod) or
+        (LSymbol.DeclarationSection <> sdsImplementation) or
+        not SameText(LSymbol.ContainerName, ATypeName) then
+        Continue;
+      if not TRadIADelphiExtractionAnalyzer.TryFindRoutineExtent(
+        ASource,
+        LSymbol.Signature,
+        LSymbol.StartOffset,
+        LStartOffset,
+        LEndOffset,
+        AError
+      ) then
+        Exit;
+      if (LBlocks.Count > 0) and
+        (LStartOffset < LBlocks.Last.StartOffset + LBlocks.Last.Length) then
+      begin
+        AError := 'The Delphi type implementations overlap or are ambiguous.';
+        Exit;
+      end;
+      LBlock := TRadIADelphiMoveBlock.Create(
+        LStartOffset,
+        LEndOffset - LStartOffset,
+        Copy(ASource, LStartOffset + 1, LEndOffset - LStartOffset)
+      );
+      LBlocks.Add(LBlock);
+    end;
+    ABlocks := LBlocks.ToArray;
+    Result := True;
+  finally
+    LBlocks.Free;
+  end;
 end;
 
 class function TRadIADelphiTypeMoveAnalyzer.TryAnalyze(
