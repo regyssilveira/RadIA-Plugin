@@ -139,7 +139,7 @@ type
     function BuildResult(
       const ARequest: TRadIAChangeSignatureRequest;
       const APatchResult: TRadIAMultiFilePatchResult;
-      const AEditCount: Integer
+      const AEditCount: NativeInt
     ): TRadIAToolResult;
     function BuildSpecs(
       const AMap: TRadIAChangeSignatureEditMap;
@@ -510,7 +510,7 @@ end;
 function TRadIAPrepareChangeSignatureTool.BuildResult(
   const ARequest: TRadIAChangeSignatureRequest;
   const APatchResult: TRadIAMultiFilePatchResult;
-  const AEditCount: Integer
+  const AEditCount: NativeInt
 ): TRadIAToolResult;
 var
   LEntry: TRadIAMultiFilePatchEntry;
@@ -682,7 +682,7 @@ var
   LCallContext: TRadIAChangeSignatureCallContext;
   LChangeRequest: TRadIAChangeSignatureRequest;
   LDelta: TRadIADelphiSignatureDelta;
-  LEditCount: Integer;
+  LEditCount: NativeInt;
   LEntry: TPair<string, TRadIAChangeSignatureEditList>;
   LError: string;
   LMap: TRadIAChangeSignatureEditMap;
@@ -759,7 +759,7 @@ begin
       Exit(TRadIAToolResult.Failed('change_signature_precondition', LError));
     LEditCount := 0;
     for LEntry in LMap do
-      Inc(LEditCount, LEntry.Value.Count);
+      LEditCount := LEditCount + LEntry.Value.Count;
     LPatchResult := FPatches.Prepare(LSpecs);
     Result := BuildResult(LChangeRequest, LPatchResult, LEditCount);
   finally
