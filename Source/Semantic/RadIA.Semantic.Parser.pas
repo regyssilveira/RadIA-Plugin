@@ -3,6 +3,12 @@ unit RadIA.Semantic.Parser;
 interface
 
 type
+  TRadIASemanticDeclarationSection = (
+    sdsUnknown,
+    sdsInterface,
+    sdsImplementation
+  );
+
   TRadIASemanticSymbolKind = (
     sskModule,
     sskUnitReference,
@@ -27,6 +33,7 @@ type
   private
     FAncestorNames: TArray<string>;
     FContainerName: string;
+    FDeclarationSection: TRadIASemanticDeclarationSection;
     FKind: TRadIASemanticSymbolKind;
     FLength: Integer;
     FName: string;
@@ -46,8 +53,13 @@ type
     function WithAncestors(
       const AAncestorNames: TArray<string>
     ): TRadIASemanticSymbol;
+    function WithDeclarationSection(
+      const ASection: TRadIASemanticDeclarationSection
+    ): TRadIASemanticSymbol;
     property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
+    property DeclarationSection: TRadIASemanticDeclarationSection
+      read FDeclarationSection;
     property Kind: TRadIASemanticSymbolKind read FKind;
     property Length: Integer read FLength;
     property Name: string read FName;
@@ -75,6 +87,9 @@ type
       const ASource: string;
       const ADefines: TArray<string>
     ): TRadIASemanticParseResult; static;
+    class function DeclarationSectionName(
+      const ASection: TRadIASemanticDeclarationSection
+    ): string; static;
     class function SymbolKindName(
       const AKind: TRadIASemanticSymbolKind
     ): string; static;
@@ -95,6 +110,7 @@ type
   TRadIASemanticParserWorker = class
   private
     FDiagnostics: TList<string>;
+    FDeclarationSection: TRadIASemanticDeclarationSection;
     FHasModule: Boolean;
     FIndex: Integer;
     FSource: string;
@@ -108,6 +124,8 @@ type
     function IsTypeBoundary: Boolean;
     function LookAheadAfterGeneric(const AIndex: Integer): Integer;
     function ParseQualifiedName: string;
+    function TryParseDeclaration: Boolean;
+    function TryParseSection: Boolean;
     procedure ParseStructuredTypeBody(
       const AName: string;
       const AStart: Integer
@@ -193,6 +211,14 @@ begin
   Result.FAncestorNames := Copy(AAncestorNames);
 end;
 
+function TRadIASemanticSymbol.WithDeclarationSection(
+  const ASection: TRadIASemanticDeclarationSection
+): TRadIASemanticSymbol;
+begin
+  Result := Self;
+  Result.FDeclarationSection := ASection;
+end;
+
 constructor TRadIASemanticParseResult.Create(
   const ASymbols: TArray<TRadIASemanticSymbol>;
   const ADiagnostics: TArray<string>
@@ -212,6 +238,7 @@ var
 begin
   inherited Create;
   FSource := ASource;
+  FDeclarationSection := sdsUnknown;
   FDiagnostics := TList<string>.Create;
   FSymbols := TList<TRadIASemanticSymbol>.Create;
   LFiltered := TList<TRadIASemanticToken>.Create;
@@ -252,7 +279,7 @@ begin
       AStart,
       AEnd - AStart,
       ASignature
-    )
+    ).WithDeclarationSection(FDeclarationSection)
   );
 end;
 
@@ -275,7 +302,7 @@ begin
       AStart,
       AEnd - AStart,
       ASignature
-    ).WithAncestors(AAncestorNames)
+    ).WithAncestors(AAncestorNames).WithDeclarationSection(FDeclarationSection)
   );
 end;
 
@@ -292,20 +319,8 @@ end;
 function TRadIASemanticParserWorker.Execute: TRadIASemanticParseResult;
 begin
   while FIndex < Length(FTokens) do
-  begin
-    if (not FHasModule) and
-      (IsCurrent('unit') or IsCurrent('program') or
-       IsCurrent('library') or IsCurrent('package')) then
-      ParseModule
-    else if IsCurrent('uses') then
-      ParseUses
-    else if IsCurrent('type') then
-      ParseTypeSection
-    else if IsMethodKeyword then
-      ParseMethod('', svUnspecified)
-    else
+    if not TryParseSection and not TryParseDeclaration then
       Advance;
-  end;
   Result := TRadIASemanticParseResult.Create(
     FSymbols.ToArray,
     FDiagnostics.ToArray
@@ -412,11 +427,27 @@ begin
   end;
 end;
 
+procedure SplitQualifiedMethodName(
+  var AName: string;
+  out AContainer: string
+);
+var
+  LDelimiter: Integer;
+begin
+  AContainer := '';
+  LDelimiter := LastDelimiter('.', AName);
+  if LDelimiter = 0 then
+    Exit;
+  AContainer := Copy(AName, 1, LDelimiter - 1);
+  AName := Copy(AName, LDelimiter + 1, MaxInt);
+end;
+
 procedure TRadIASemanticParserWorker.ParseMethod(
   const AContainer: string;
   const AVisibility: TRadIASemanticVisibility
 );
 var
+  LContainer: string;
   LEnd: Integer;
   LName: string;
   LStart: Integer;
@@ -433,6 +464,9 @@ begin
     Exit;
   end;
   LName := ParseQualifiedName;
+  LContainer := AContainer;
+  if LContainer.IsEmpty then
+    SplitQualifiedMethodName(LName, LContainer);
   while (FIndex < Length(FTokens)) and not IsCurrent(';') do
     Advance;
   if FIndex < Length(FTokens) then
@@ -453,7 +487,7 @@ begin
   AddSymbol(
     LName,
     sskMethod,
-    AContainer,
+    LContainer,
     AVisibility,
     LStart,
     LEnd,
@@ -760,6 +794,47 @@ begin
   finally
     LWorker.Free;
   end;
+end;
+
+class function TRadIASemanticParser.DeclarationSectionName(
+  const ASection: TRadIASemanticDeclarationSection
+): string;
+begin
+  case ASection of
+    sdsInterface: Result := 'interface';
+    sdsImplementation: Result := 'implementation';
+  else
+    Result := 'unknown';
+  end;
+end;
+
+function TRadIASemanticParserWorker.TryParseSection: Boolean;
+begin
+  Result := IsCurrent('interface') or IsCurrent('implementation');
+  if not Result then
+    Exit;
+  if IsCurrent('interface') then
+    FDeclarationSection := sdsInterface
+  else
+    FDeclarationSection := sdsImplementation;
+  Advance;
+end;
+
+function TRadIASemanticParserWorker.TryParseDeclaration: Boolean;
+begin
+  Result := True;
+  if (not FHasModule) and
+    (IsCurrent('unit') or IsCurrent('program') or
+     IsCurrent('library') or IsCurrent('package')) then
+    ParseModule
+  else if IsCurrent('uses') then
+    ParseUses
+  else if IsCurrent('type') then
+    ParseTypeSection
+  else if IsMethodKeyword then
+    ParseMethod('', svUnspecified)
+  else
+    Result := False;
 end;
 
 class function TRadIASemanticParser.SymbolKindName(

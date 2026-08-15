@@ -162,6 +162,7 @@ begin
   LCapabilities.Add('indexUnit');
   LCapabilities.Add('removeUnit');
   LCapabilities.Add('findSymbols');
+  LCapabilities.Add('findRoutineSymbols');
   LCapabilities.Add('findReferences');
   LCapabilities.Add('listPublicApiSymbols');
   LCapabilities.Add('listTypeSymbols');
@@ -283,6 +284,12 @@ begin
     LItem.AddPair('kind', TRadIASemanticParser.SymbolKindName(LSymbol.Kind));
     LItem.AddPair('container', LSymbol.ContainerName);
     LItem.AddPair(
+      'section',
+      TRadIASemanticParser.DeclarationSectionName(
+        LSymbol.DeclarationSection
+      )
+    );
+    LItem.AddPair(
       'visibility',
       TRadIASemanticParser.VisibilityName(LSymbol.Visibility)
     );
@@ -299,6 +306,35 @@ begin
   if Assigned(AResolution) then
     LResult.AddPair('resolution', AResolution);
   Result.AddPair('result', LResult);
+end;
+
+function IsSymbolLookupMethod(const AMethod: string): Boolean;
+begin
+  Result := SameText(AMethod, 'findSymbols') or
+    SameText(AMethod, 'findRoutineSymbols');
+end;
+
+function BuildSymbolLookupResult(
+  const AId: TJSONValue;
+  const AMethod: string;
+  const AIndex: TRadIASemanticIndex;
+  const AParameters: TJSONObject
+): TJSONObject;
+begin
+  if SameText(AMethod, 'findRoutineSymbols') then
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.FindRoutineSymbols(
+        AParameters.GetValue<string>('name', ''),
+        AParameters.GetValue<string>('unit', ''),
+        AParameters.GetValue<string>('container', ''),
+        AParameters.GetValue<string>('signature', '')
+      )
+    ));
+  Result := BuildIndexedSymbolsResult(
+    AId,
+    AIndex.FindSymbols(AParameters.GetValue<string>('name', ''))
+  );
 end;
 
 function ReferenceKindName(
@@ -634,12 +670,14 @@ begin
       AIndex
     ));
   end;
-  if SameText(AMethod, 'findSymbols') then
+  if IsSymbolLookupMethod(AMethod) then
   begin
     LParameters := RequireParameters(ARequest);
-    Exit(BuildIndexedSymbolsResult(
+    Exit(BuildSymbolLookupResult(
       AId,
-      AIndex.FindSymbols(LParameters.GetValue<string>('name', ''))
+      AMethod,
+      AIndex,
+      LParameters
     ));
   end;
   if SameText(AMethod, 'findReferences') then

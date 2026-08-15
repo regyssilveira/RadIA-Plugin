@@ -104,6 +104,7 @@ type
   private
     FAncestorNames: TArray<string>;
     FContainerName: string;
+    FDeclarationSection: TRadIASemanticDeclarationSection;
     FFileName: string;
     FKind: TRadIASemanticSymbolKind;
     FLength: Integer;
@@ -121,6 +122,8 @@ type
     );
     property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
+    property DeclarationSection: TRadIASemanticDeclarationSection
+      read FDeclarationSection;
     property FileName: string read FFileName;
     property Kind: TRadIASemanticSymbolKind read FKind;
     property Length: Integer read FLength;
@@ -160,6 +163,11 @@ type
     class function BuildSymbolId(
       const AUnitKey: string;
       const ASymbol: TRadIASemanticSymbol
+    ): string; static;
+    class function CanonicalMethodSignature(
+      const AName: string;
+      const AContainer: string;
+      const ASignature: string
     ): string; static;
     class function BuildIdentifiers(
       const ASource: string;
@@ -261,6 +269,12 @@ type
     ): TArray<TRadIASemanticIndexedSymbol>;
     function FindSymbolsById(
       const ASymbolId: string
+    ): TArray<TRadIASemanticIndexedSymbol>;
+    function FindRoutineSymbols(
+      const AName: string;
+      const AUnitKey: string;
+      const AContainer: string;
+      const ASignature: string
     ): TArray<TRadIASemanticIndexedSymbol>;
     function FindReferences(
       const ASymbolId: string;
@@ -400,7 +414,7 @@ begin
 end;
 
 const
-  CIndexCacheSchemaVersion = '2.0';
+  CIndexCacheSchemaVersion = '2.1';
 
 function FindStructuralType(
   const AIndex: TRadIASemanticIndex;
@@ -444,14 +458,18 @@ var
   LAncestorIndex: Integer;
   LAncestorNames: TArray<string>;
   LKindValue: Integer;
+  LSectionValue: Integer;
   LVisibilityValue: Integer;
 begin
   LKindValue := AObject.GetValue<Integer>('kind', -1);
+  LSectionValue := AObject.GetValue<Integer>('section', 0);
   LVisibilityValue := AObject.GetValue<Integer>('visibility', -1);
   if (LKindValue < Ord(Low(TRadIASemanticSymbolKind))) or
     (LKindValue > Ord(High(TRadIASemanticSymbolKind))) or
     (LVisibilityValue < Ord(Low(TRadIASemanticVisibility))) or
-    (LVisibilityValue > Ord(High(TRadIASemanticVisibility))) then
+    (LVisibilityValue > Ord(High(TRadIASemanticVisibility))) or
+    (LSectionValue < Ord(Low(TRadIASemanticDeclarationSection))) or
+    (LSectionValue > Ord(High(TRadIASemanticDeclarationSection))) then
     raise EInvalidOpException.Create('Semantic cache symbol metadata is invalid.');
   LAncestorArray := AObject.GetValue<TJSONArray>('ancestors');
   if Assigned(LAncestorArray) then
@@ -468,7 +486,9 @@ begin
     AObject.GetValue<Integer>('startOffset', 0),
     AObject.GetValue<Integer>('length', 0),
     AObject.GetValue<string>('signature', '')
-  ).WithAncestors(LAncestorNames);
+  ).WithAncestors(LAncestorNames).WithDeclarationSection(
+    TRadIASemanticDeclarationSection(LSectionValue)
+  );
 end;
 
 function ReadCacheSymbols(
@@ -590,6 +610,7 @@ begin
   FName := ASymbol.Name;
   FKind := ASymbol.Kind;
   FContainerName := ASymbol.ContainerName;
+  FDeclarationSection := ASymbol.DeclarationSection;
   FVisibility := ASymbol.Visibility;
   FStartOffset := ASymbol.StartOffset;
   FLength := ASymbol.Length;
@@ -645,10 +666,18 @@ var
   LCanonical: string;
   LHash: UInt64;
 begin
+  if ASymbol.Kind = sskMethod then
+    LCanonical := CanonicalMethodSignature(
+      ASymbol.Name,
+      ASymbol.ContainerName,
+      ASymbol.Signature
+    )
+  else
+    LCanonical := Normalize(ASymbol.Signature);
   LCanonical := Normalize(AUnitKey) + '|' +
     Normalize(ASymbol.ContainerName) + '|' +
     IntToStr(Ord(ASymbol.Kind)) + '|' +
-    Normalize(ASymbol.Name) + '|' + Normalize(ASymbol.Signature);
+    Normalize(ASymbol.Name) + '|' + LCanonical;
   LHash := CFNVOffsetBasis;
   for LByte in TEncoding.UTF8.GetBytes(LCanonical) do
   begin
@@ -656,6 +685,29 @@ begin
     LHash := LHash * CFNVPrime;
   end;
   Result := 'sym-' + LowerCase(IntToHex(LHash, 16));
+end;
+
+class function TRadIASemanticIndex.CanonicalMethodSignature(
+  const AName: string;
+  const AContainer: string;
+  const ASignature: string
+): string;
+var
+  LCharacter: Char;
+  LQualifiedName: string;
+begin
+  Result := '';
+  for LCharacter in LowerCase(ASignature) do
+    if not CharInSet(LCharacter, [#9, #10, #13, ' ']) then
+      Result := Result + LCharacter;
+  LQualifiedName := Normalize(AContainer) + '.' + Normalize(AName);
+  if not AContainer.IsEmpty then
+    Result := StringReplace(
+      Result,
+      LQualifiedName,
+      Normalize(AName),
+      [rfReplaceAll]
+    );
 end;
 
 class function TRadIASemanticIndex.BuildIdentifiers(
@@ -1181,6 +1233,43 @@ begin
     Result := nil;
 end;
 
+function TRadIASemanticIndex.FindRoutineSymbols(
+  const AName: string;
+  const AUnitKey: string;
+  const AContainer: string;
+  const ASignature: string
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LCandidate: TRadIASemanticIndexedSymbol;
+  LExpectedSignature: string;
+  LResult: TList<TRadIASemanticIndexedSymbol>;
+begin
+  LExpectedSignature := CanonicalMethodSignature(
+    AName,
+    AContainer,
+    ASignature
+  );
+  LResult := TList<TRadIASemanticIndexedSymbol>.Create;
+  try
+    for LCandidate in FindSymbols(AName) do
+      if (LCandidate.Kind = sskMethod) and
+        (AUnitKey.IsEmpty or SameText(LCandidate.UnitKey, AUnitKey)) and
+        (AContainer.IsEmpty or SameText(LCandidate.ContainerName, AContainer)) and
+        (ASignature.IsEmpty or SameText(
+          CanonicalMethodSignature(
+            LCandidate.Name,
+            LCandidate.ContainerName,
+            LCandidate.Signature
+          ),
+          LExpectedSignature
+        )) then
+        LResult.Add(LCandidate);
+    Result := LResult.ToArray;
+  finally
+    LResult.Free;
+  end;
+end;
+
 function TRadIASemanticIndex.FindReferences(
   const ASymbolId: string;
   const AIncludeCandidates: Boolean;
@@ -1496,6 +1585,10 @@ begin
         LSymbolItem.AddPair('name', LSymbol.Name);
         LSymbolItem.AddPair('kind', TJSONNumber.Create(Ord(LSymbol.Kind)));
         LSymbolItem.AddPair('container', LSymbol.ContainerName);
+        LSymbolItem.AddPair(
+          'section',
+          TJSONNumber.Create(Ord(LSymbol.DeclarationSection))
+        );
         LSymbolItem.AddPair(
           'visibility',
           TJSONNumber.Create(Ord(LSymbol.Visibility))

@@ -10,6 +10,7 @@ type
   private
     FAncestorNames: TArray<string>;
     FContainerName: string;
+    FDeclarationSection: string;
     FFileName: string;
     FKind: string;
     FName: string;
@@ -45,6 +46,7 @@ type
     ): TRadIASemanticLocation;
     property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
+    property DeclarationSection: string read FDeclarationSection;
     property FileName: string read FFileName;
     property Kind: string read FKind;
     property Name: string read FName;
@@ -131,10 +133,23 @@ type
     ): Boolean;
   end;
 
+  IRadIASemanticRoutineService = interface
+    ['{967758A0-6E21-4B0E-ACAA-B3B38B9C225E}']
+    function FindRoutineSymbols(
+      const AName: string;
+      const AUnitName: string;
+      const AContainerName: string;
+      const ASignature: string;
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+  end;
+
   TRadIASemanticQueryService = class(
     TInterfacedObject,
     IRadIASemanticQueryService,
-    IRadIASemanticHierarchyService
+    IRadIASemanticHierarchyService,
+    IRadIASemanticRoutineService
   )
   private
     FClient: IRadIASemanticRequestClient;
@@ -145,6 +160,13 @@ type
       out AItems: TArray<TRadIASemanticLocation>;
       out AError: string;
       const AMaxItems: Integer = 200
+    ): Boolean;
+    function ExecuteJson(
+      const AMethod: string;
+      const AParametersJson: string;
+      out AItems: TArray<TRadIASemanticLocation>;
+      out AError: string;
+      const AMaxItems: Integer
     ): Boolean;
     function ExecuteReferences(
       const ASymbolId: string;
@@ -177,6 +199,14 @@ type
       out AError: string
     ): Boolean;
     function ListTypeSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function FindRoutineSymbols(
+      const AName: string;
+      const AUnitName: string;
+      const AContainerName: string;
+      const ASignature: string;
       out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
@@ -304,6 +334,31 @@ function TRadIASemanticQueryService.Execute(
   const AMaxItems: Integer
 ): Boolean;
 var
+  LParameters: TJSONObject;
+begin
+  LParameters := TJSONObject.Create;
+  try
+    LParameters.AddPair(AFieldName, AFieldValue);
+    Result := ExecuteJson(
+      AMethod,
+      LParameters.ToJSON,
+      AItems,
+      AError,
+      AMaxItems
+    );
+  finally
+    LParameters.Free;
+  end;
+end;
+
+function TRadIASemanticQueryService.ExecuteJson(
+  const AMethod: string;
+  const AParametersJson: string;
+  out AItems: TArray<TRadIASemanticLocation>;
+  out AError: string;
+  const AMaxItems: Integer
+): Boolean;
+var
   LAncestorArray: TJSONArray;
   LAncestorIndex: Integer;
   LAncestors: TArray<string>;
@@ -313,19 +368,12 @@ var
   LItem: TJSONObject;
   LLocation: TRadIASemanticLocation;
   LList: TList<TRadIASemanticLocation>;
-  LParameters: TJSONObject;
   LResponse: string;
   LResult: TJSONObject;
 begin
   AItems := nil;
   AError := '';
-  LParameters := TJSONObject.Create;
-  try
-    LParameters.AddPair(AFieldName, AFieldValue);
-    Result := FClient.Request(AMethod, LParameters.ToJSON, LResponse, AError);
-  finally
-    LParameters.Free;
-  end;
+  Result := FClient.Request(AMethod, AParametersJson, LResponse, AError);
   if not Result then
     Exit;
   LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
@@ -362,6 +410,10 @@ begin
           LItem.GetValue<string>('signature', ''),
           LItem.GetValue<string>('visibility', ''),
           LItem.GetValue<Integer>('startOffset', 0)
+        );
+        LLocation.FDeclarationSection := LItem.GetValue<string>(
+          'section',
+          'unknown'
         );
         LAncestorArray := nil;
         LItem.TryGetValue<TJSONArray>('ancestors', LAncestorArray);
@@ -530,6 +582,35 @@ begin
     AError,
     2000
   );
+end;
+
+function TRadIASemanticQueryService.FindRoutineSymbols(
+  const AName: string;
+  const AUnitName: string;
+  const AContainerName: string;
+  const ASignature: string;
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+var
+  LParameters: TJSONObject;
+begin
+  LParameters := TJSONObject.Create;
+  try
+    LParameters.AddPair('name', AName);
+    LParameters.AddPair('unit', AUnitName);
+    LParameters.AddPair('container', AContainerName);
+    LParameters.AddPair('signature', ASignature);
+    Result := ExecuteJson(
+      'findRoutineSymbols',
+      LParameters.ToJSON,
+      ASymbols,
+      AError,
+      500
+    );
+  finally
+    LParameters.Free;
+  end;
 end;
 
 function TRadIASemanticQueryService.FindReferences(

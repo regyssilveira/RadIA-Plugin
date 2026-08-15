@@ -31,6 +31,8 @@ type
     procedure ReturnsIndexedTypeHierarchy;
     [Test]
     procedure ReturnsTransitiveHierarchyDepthAndExternalTypes;
+    [Test]
+    procedure ResolvesRoutineFamilyWithDeclarationSections;
   end;
 
 implementation
@@ -129,6 +131,19 @@ begin
         '"container":"","fileName":"Worker.pas","signature":' +
         '"TWorker = class(TBaseWorker)","startOffset":42}]}}';
   end
+  else if SameText(AMethod, 'findRoutineSymbols') then
+    AResponse :=
+      '{"result":{"symbols":[' +
+      '{"symbolId":"routine-execute","unitKey":"Worker",' +
+      '"name":"Execute","kind":"method","container":"TWorker",' +
+      '"section":"interface","fileName":"Worker.pas",' +
+      '"signature":"procedure Execute(const AValue: Integer);",' +
+      '"startOffset":42},' +
+      '{"symbolId":"routine-execute","unitKey":"Worker",' +
+      '"name":"Execute","kind":"method","container":"TWorker",' +
+      '"section":"implementation","fileName":"Worker.pas",' +
+      '"signature":"procedure TWorker.Execute(const AValue: Integer);",' +
+      '"startOffset":142}]}}'
   else if SameText(AMethod, 'findReferences') then
     AResponse :=
       '{"result":{"status":"resolved","references":[' +
@@ -145,6 +160,29 @@ begin
       '"container":"TBaseWorker","fileName":"BaseWorker.pas",' +
       '"signature":"procedure Execute;","startOffset":84}]}}';
   Result := AParameters <> '';
+end;
+
+procedure TRadIASemanticQueryTests.ResolvesRoutineFamilyWithDeclarationSections;
+var
+  LError: string;
+  LRoutines: TArray<TRadIASemanticLocation>;
+  LService: IRadIASemanticRoutineService;
+begin
+  LService := TRadIASemanticQueryService.Create(
+    TRadIASemanticQueryClientMock.Create(False)
+  );
+  Assert.IsTrue(LService.FindRoutineSymbols(
+    'Execute',
+    'Worker',
+    'TWorker',
+    'procedure Execute(const AValue: Integer);',
+    LRoutines,
+    LError
+  ), LError);
+  Assert.AreEqual(NativeInt(2), Length(LRoutines));
+  Assert.AreEqual('interface', LRoutines[0].DeclarationSection);
+  Assert.AreEqual('implementation', LRoutines[1].DeclarationSection);
+  Assert.AreEqual(LRoutines[0].SymbolId, LRoutines[1].SymbolId);
 end;
 
 procedure TRadIASemanticQueryTests.

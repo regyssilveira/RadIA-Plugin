@@ -31,6 +31,8 @@ type
     procedure SkipsProceduralTypeDeclarations;
     [Test]
     procedure ParsesGenericForwardAndNestedTypes;
+    [Test]
+    procedure LinksQualifiedImplementationToInterfaceMethod;
   end;
 
 function TRadIASemanticParserTests.FindSymbol(
@@ -46,6 +48,35 @@ begin
       Exit(LSymbol);
   Assert.Fail('Symbol not found: ' + AName);
   Result := Default(TRadIASemanticSymbol);
+end;
+
+procedure TRadIASemanticParserTests.LinksQualifiedImplementationToInterfaceMethod;
+var
+  LInterfaceMethod: TRadIASemanticSymbol;
+  LResult: TRadIASemanticParseResult;
+  LSymbol: TRadIASemanticSymbol;
+begin
+  LResult := TRadIASemanticParser.Parse(
+    'unit Worker; interface type TWorker = class ' +
+    'procedure Execute(const AValue: Integer); end; implementation ' +
+    'procedure TWorker.Execute(const AValue: Integer); begin end; end.',
+    nil
+  );
+  LInterfaceMethod := FindSymbol(LResult, 'Execute', sskMethod);
+  Assert.AreEqual('TWorker', LInterfaceMethod.ContainerName);
+  Assert.AreEqual(
+    Integer(sdsInterface),
+    Integer(LInterfaceMethod.DeclarationSection)
+  );
+  for LSymbol in LResult.Symbols do
+    if (LSymbol.Kind = sskMethod) and
+      (LSymbol.DeclarationSection = sdsImplementation) then
+    begin
+      Assert.AreEqual('Execute', LSymbol.Name);
+      Assert.AreEqual('TWorker', LSymbol.ContainerName);
+      Exit;
+    end;
+  Assert.Fail('Qualified implementation method was not indexed.');
 end;
 
 procedure TRadIASemanticParserTests.IgnoresInactiveDeclarations;

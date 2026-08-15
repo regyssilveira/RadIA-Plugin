@@ -48,6 +48,8 @@ type
     [Test]
     procedure DistinguishesOverloadsAndUnitsByIdentity;
     [Test]
+    procedure ResolvesRoutineFamilyByCanonicalSignature;
+    [Test]
     procedure FindsOnlyActiveCodeReferencesForUniqueSymbol;
     [Test]
     procedure SeparatesExactAndCandidateReferencesForHomonyms;
@@ -350,6 +352,41 @@ begin
   Assert.AreEqual('Sample.Api', LSymbols[0].Name);
   Assert.AreEqual('TApi', LSymbols[1].Name);
   Assert.AreEqual('Execute', LSymbols[2].Name);
+end;
+
+procedure TRadIASemanticIndexTests.ResolvesRoutineFamilyByCanonicalSignature;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LSymbols: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'worker',
+    'Worker.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Worker; interface type TWorker = class ' +
+    'procedure Execute(const AValue: Integer); overload; ' +
+    'procedure Execute(const AValue: string); overload; end; ' +
+    'implementation procedure TWorker.Execute(const AValue: Integer); ' +
+    'begin end; procedure TWorker.Execute(const AValue: string); ' +
+    'begin end; end.',
+    nil
+  );
+  LSymbols := FIndex.FindRoutineSymbols(
+    'Execute',
+    'worker',
+    'TWorker',
+    'procedure Execute(const AValue: Integer);'
+  );
+  Assert.AreEqual(NativeInt(2), Length(LSymbols));
+  Assert.AreEqual(LSymbols[0].SymbolId, LSymbols[1].SymbolId);
+  Assert.AreNotEqual(
+    Integer(LSymbols[0].DeclarationSection),
+    Integer(LSymbols[1].DeclarationSection)
+  );
 end;
 
 procedure TRadIASemanticIndexTests.ListsProjectTypesWithAncestorMetadata;
