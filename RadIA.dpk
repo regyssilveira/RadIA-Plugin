@@ -293,6 +293,8 @@ contains
   RadIA.Core.SemanticMemberTools in 'Source\Core\RadIA.Core.SemanticMemberTools.pas',
   RadIA.Core.SemanticQueries in 'Source\Core\RadIA.Core.SemanticQueries.pas',
   RadIA.Core.SemanticQueryTools in 'Source\Core\RadIA.Core.SemanticQueryTools.pas',
+  RadIA.Core.SemanticRefactoringTools in 'Source\Core\RadIA.Core.SemanticRefactoringTools.pas',
+  RadIA.Core.TransactionalTextFiles in 'Source\Core\RadIA.Core.TransactionalTextFiles.pas',
   RadIA.Core.SemanticCompletion in 'Source\Core\RadIA.Core.SemanticCompletion.pas',
   RadIA.Semantic.Workspace in 'Source\Semantic\RadIA.Semantic.Workspace.pas',
   RadIA.OTA.SemanticWorkspace in 'Source\Integration\RadIA.OTA.SemanticWorkspace.pas',

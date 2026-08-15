@@ -36,9 +36,10 @@ and immediate project creation, opening, and navigation.
 
 ## Milestone 2 — code intelligence
 
-- [ ] **Safe semantic refactoring:** deliver Rename Symbol and Find All References first with
-  preview, Pascal/DFM consistency, multi-file transactions, and rollback; then expand to
-  hierarchies, Extract Method, Move Type, and Change Signature.
+- [x] **Rename Symbol and Find All References:** stable identity, preview, Pascal/DFM consistency,
+  closed files, multi-file transactions, and rollback.
+- [ ] **Advanced semantic refactorings:** expand the validated foundation to hierarchies,
+  Extract Method, Move Type, and Change Signature.
 - [ ] **Impact-based test selection:** relate diffs, symbols, dependencies, fixtures, and coverage to
   execute and justify the smallest safe DUnitX test set.
 

@@ -78,6 +78,7 @@ uses
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
   RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
+  RadIA.Core.SemanticRefactoringTools,
   RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
   RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
   RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
@@ -1360,6 +1361,12 @@ initialization
   RegisterRadIASemanticQueryTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>
+  );
+  RegisterRadIASemanticRefactoringTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+    TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
   );
   TRadIAContainer.Register<IRadIADextFormModernizationService>(
     TRadIADextFormModernizationService.Create(

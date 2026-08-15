@@ -37,6 +37,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `GetSemanticContext` | Retorna declarações indexadas e membros resolvidos por herança para um símbolo Delphi. | `RadIA.Core.SemanticQueryTools.pas` |
 | `FindSymbolReferences` | Localiza declarações e referências confirmadas de um símbolo em Pascal e DFM, com arquivo, linha e coluna. | `RadIA.Core.SemanticQueryTools.pas` |
 
+## Refatoração semântica
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareRenameSymbol` | Prepara uma renomeação semântica exata em Pascal e DFM, incluindo arquivos fechados, sem alterar o projeto. | `RadIA.Core.SemanticRefactoringTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -429,7 +435,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 52
-- Ferramentas internas registradas: 163
+- Grupos registrados: 53
+- Ferramentas internas registradas: 164
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

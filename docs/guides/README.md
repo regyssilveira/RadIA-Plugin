@@ -24,6 +24,7 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 - [Revisão automática ao salvar](automatic_save_review.md)
 - [Clean Uses](clean_uses.md)
 - [Transações de desenvolvimento](development_transactions.md)
+- [Refatoração semântica segura](semantic_refactoring.md)
 - [Conhecimento do projeto](user_guide_project_knowledge.md)
 - [Mentor Delphi](delphi_mentor.md)
 - [Runner DUnitX](dunitx_runner.md)

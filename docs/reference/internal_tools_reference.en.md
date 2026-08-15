@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 163 internal tools: what each one does and at what stage
+This page explains RadIA's 164 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -56,6 +56,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |---|---|---|
 |`GetSemanticContext`|Returns indexed declarations and inheritance-resolved members for a Delphi symbol.|When the agent must understand a type beyond the current unit; Ghost Text, navigation, and DFM/PAS auditing use the same service automatically and return to bounded context when the engine is unavailable.|
 |`FindSymbolReferences`|Finds confirmed Pascal and DFM declarations and references with file, line, and column.|When the user asks for usages or references; homonyms require a unit and ambiguous occurrences appear only when explicitly requested as candidates.|
+|`PrepareRenameSymbol`|Prepares an exact semantic rename across Pascal and DFM files, including closed files, without changing the project.|When the user requests a symbol rename; it requires one identity and produces a preview for multi-file application and rollback.|
 
 ## Curated Delphi guidance
 

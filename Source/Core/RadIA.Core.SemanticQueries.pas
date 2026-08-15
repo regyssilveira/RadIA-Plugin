@@ -35,6 +35,10 @@ type
       const AVisibility: string;
       const AStartOffset: Integer
     ); overload;
+    function WithIdentity(
+      const ASymbolId: string;
+      const AUnitKey: string
+    ): TRadIASemanticLocation;
     property ContainerName: string read FContainerName;
     property FileName: string read FFileName;
     property Kind: string read FKind;
@@ -65,6 +69,10 @@ type
       const AKind: string;
       const AReason: string
     );
+    function WithOffsets(
+      const AStartOffset: Integer;
+      const ALength: Integer
+    ): TRadIASemanticReferenceLocation;
     property Column: Integer read FColumn;
     property FileName: string read FFileName;
     property Kind: string read FKind;
@@ -212,6 +220,26 @@ begin
   FSignature := ASignature;
   FVisibility := AVisibility;
   FStartOffset := AStartOffset;
+end;
+
+function TRadIASemanticLocation.WithIdentity(
+  const ASymbolId: string;
+  const AUnitKey: string
+): TRadIASemanticLocation;
+begin
+  Result := Self;
+  Result.FSymbolId := ASymbolId;
+  Result.FUnitKey := AUnitKey;
+end;
+
+function TRadIASemanticReferenceLocation.WithOffsets(
+  const AStartOffset: Integer;
+  const ALength: Integer
+): TRadIASemanticReferenceLocation;
+begin
+  Result := Self;
+  Result.FStartOffset := AStartOffset;
+  Result.FLength := ALength;
 end;
 
 constructor TRadIASemanticReferenceLocation.Create(
@@ -397,11 +425,10 @@ begin
           LItem.GetValue<string>('kind', ''),
           LItem.GetValue<string>('reason', '')
         );
-        LReference.FStartOffset := LItem.GetValue<Integer>(
-          'startOffset',
-          0
+        LReference := LReference.WithOffsets(
+          LItem.GetValue<Integer>('startOffset', 0),
+          LItem.GetValue<Integer>('length', 0)
         );
-        LReference.FLength := LItem.GetValue<Integer>('length', 0);
         LList.Add(LReference);
       end;
       AReferences := LList.ToArray;

@@ -40,6 +40,13 @@
       ]
     },
     {
+      "name": "Semantic refactoring",
+      "source": "Source/Core/RadIA.Core.SemanticRefactoringTools.pas",
+      "tools": [
+        "PrepareRenameSymbol"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

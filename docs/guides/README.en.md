@@ -24,6 +24,7 @@ catalogs.
 - [Automatic review on save](automatic_save_review.en.md)
 - [Clean Uses](clean_uses.en.md)
 - [Development transactions](development_transactions.en.md)
+- [Safe semantic refactoring](semantic_refactoring.en.md)
 - [Project knowledge](user_guide_project_knowledge.en.md)
 - [Delphi Mentor](delphi_mentor.en.md)
 - [DUnitX runner](dunitx_runner.en.md)

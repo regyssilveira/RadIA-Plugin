@@ -36,9 +36,10 @@ e com a criação, abertura e navegação imediata de projetos.
 
 ## Marco 2 — inteligência de código
 
-- [ ] **Refatoração semântica segura:** entregar primeiro Rename Symbol e Find All References com
-  preview, consistência Pascal/DFM, transação multiarquivo e rollback; expandir depois para
-  hierarquias, Extract Method, Move Type e Change Signature.
+- [x] **Rename Symbol e Find All References:** identidade estável, preview, consistência Pascal/DFM,
+  arquivos fechados, transação multiarquivo e rollback.
+- [ ] **Refatorações semânticas avançadas:** expandir a base validada para hierarquias,
+  Extract Method, Move Type e Change Signature.
 - [ ] **Testes selecionados por impacto:** relacionar diff, símbolos, dependências, fixtures e
   cobertura para executar e justificar o menor conjunto seguro de testes DUnitX.
 

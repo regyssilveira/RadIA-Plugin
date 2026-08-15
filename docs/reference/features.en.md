@@ -117,6 +117,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Ghost Text Alternatives** | Editor | Up to three suggestions with visual navigation and configurable shortcuts without changing the buffer before acceptance. | ✅ Completed |
 | **Semantic editor context** | Editor | Unit, symbol, imports, and nearby declarations shared by Ghost Text, actions, and agent, with read-only inspection. | ✅ Completed |
 | **Pascal/DFM semantic references** | Editor | Stable identity plus confirmed declarations and usages with file, line, and column; homonyms and candidates remain explicit. | ✅ Completed |
+| **Transactional Rename Symbol** | Editor | Exact Pascal and DFM rename, including closed files, with preview, hashes, consent, compensation, and rollback. | ✅ Completed |
 | **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
 | **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed (v2.4.0) |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |

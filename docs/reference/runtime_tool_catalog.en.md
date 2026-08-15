@@ -37,6 +37,12 @@ This list contains only the built-in tools registered by the current package. Ar
 | `GetSemanticContext` | Returns indexed declarations and resolved inherited members for a Delphi symbol. | `RadIA.Core.SemanticQueryTools.pas` |
 | `FindSymbolReferences` | Finds confirmed Delphi symbol declarations and references. Ambiguous occurrences are excluded unless explicitly requested. | `RadIA.Core.SemanticQueryTools.pas` |
 
+## Semantic refactoring
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareRenameSymbol` | Prepares an exact semantic Delphi symbol rename across Pascal and DFM files. | `RadIA.Core.SemanticRefactoringTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -429,7 +435,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 52
-- Registered built-in tools: 163
+- Registered groups: 53
+- Registered built-in tools: 164
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

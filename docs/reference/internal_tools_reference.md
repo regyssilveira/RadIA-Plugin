@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 163 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 164 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -56,6 +56,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 |---|---|---|
 | `GetSemanticContext` | Retorna declarações indexadas e membros resolvidos por herança para um símbolo Delphi. | Quando o agente precisa compreender um tipo além da unit atual; Ghost Text, navegação e auditoria DFM/PAS usam o mesmo serviço automaticamente e voltam ao contexto limitado se o motor estiver indisponível. |
 | `FindSymbolReferences` | Localiza declarações e referências confirmadas de um símbolo em Pascal e DFM, com arquivo, linha e coluna. | Quando o usuário pede usos ou referências; homônimos exigem a unit e ocorrências ambíguas só aparecem quando solicitadas como candidatas. |
+| `PrepareRenameSymbol` | Prepara uma renomeação semântica exata em Pascal e DFM, incluindo arquivos fechados, sem alterar o projeto. | Quando o usuário pede para renomear um símbolo; exige identidade única e produz preview para aplicação e rollback multiarquivo. |
 
 ## Orientação Delphi curada
 

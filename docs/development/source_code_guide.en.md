@@ -54,6 +54,8 @@ Contains the central business rules of Rad IA. It is agnostic to the IDE and phy
 | `RadIA.Core.TerminalEmulator` | Contract between UI and VT emulation, including negotiated modes, with a native factory. |
 | `RadIA.Core.Workspace*` | Workspace facade and editor and project tools. |
 | `RadIA.Core.Patches` and `PatchTools` | Patch preview, preconditions, application, and reversal. |
+| `RadIA.Core.SemanticRefactoringTools` | Exact Rename Symbol converted into a reversible multi-file preview. |
+| `RadIA.Core.TransactionalTextFiles` | Atomic closed UTF-8 file reads and writes with BOM preservation and base hashes. |
 | `RadIA.Core.Build*` | Controlled build-cycle contracts and tools. |
 | `RadIA.Core.Designer*` | Component, property, event, and layout facades and tools. |
 | `RadIA.Core.Debugger*` | State, control, breakpoint, evaluation, and watch tools. |

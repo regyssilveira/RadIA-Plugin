@@ -30,6 +30,7 @@ $portugueseGroupNames = @{
     "Delphi environment" = "Ambiente Delphi"
     "Semantic code generation" = "Geração semântica de código"
     "Semantic index queries" = "Consultas ao índice semântico"
+    "Semantic refactoring" = "Refatoração semântica"
     "Curated Delphi guidance" = "Orientação Delphi curada"
     "DFM and Pascal consistency" = "Consistência entre DFM e Pascal"
     "Designer visual diff" = "Diff visual do Designer"

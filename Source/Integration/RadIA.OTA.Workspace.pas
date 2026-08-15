@@ -61,6 +61,7 @@ uses
   ToolsAPI,
   Winapi.Windows,
   RadIA.Core.Types,
+  RadIA.Core.TransactionalTextFiles,
   RadIA.OTA.TextReader;
 
 const
@@ -298,12 +299,17 @@ function TRadIAOTAWorkspaceFacade.ApplyContent(
 var
   LAppliedRevision: string;
   LResult: Boolean;
+  LWasOpen: Boolean;
 begin
   LAppliedRevision := '';
   LResult := False;
+  LWasOpen := False;
   RunOnMainThread(
     procedure
     begin
+      LWasOpen := Assigned(FindSourceEditor(AFileName));
+      if not LWasOpen then
+        Exit;
       LResult := TryApplyEditorContent(
         AFileName,
         AExpectedRevision,
@@ -312,6 +318,13 @@ begin
       );
     end
   );
+  if not LWasOpen then
+    LResult := TRadIATransactionalTextFile.Apply(
+      AFileName,
+      AExpectedRevision,
+      ANewContent,
+      LAppliedRevision
+    );
   AAppliedRevision := LAppliedRevision;
   Result := LResult;
 end;
@@ -321,8 +334,10 @@ function TRadIAOTAWorkspaceFacade.ReadContent(
   const AMaxCharacters: Integer
 ): TRadIAEditorContent;
 var
+  LContent: string;
   LResult: TRadIAEditorContent;
 begin
+  LResult := Default(TRadIAEditorContent);
   RunOnMainThread(
     procedure
     var
@@ -355,6 +370,28 @@ begin
       );
     end
   );
+  if LResult.FileName.IsEmpty and
+    TRadIATransactionalTextFile.Read(AFileName, LContent) then
+  begin
+    if (AMaxCharacters > 0) and (Length(LContent) > AMaxCharacters) then
+      LResult := TRadIAEditorContent.Create(
+        TPath.GetFileNameWithoutExtension(AFileName),
+        AFileName,
+        Copy(LContent, 1, AMaxCharacters),
+        THashSHA2.GetHashString(LContent),
+        Length(LContent),
+        True
+      )
+    else
+      LResult := TRadIAEditorContent.Create(
+        TPath.GetFileNameWithoutExtension(AFileName),
+        AFileName,
+        LContent,
+        THashSHA2.GetHashString(LContent),
+        Length(LContent),
+        False
+      );
+  end;
   Result := LResult;
 end;
 
