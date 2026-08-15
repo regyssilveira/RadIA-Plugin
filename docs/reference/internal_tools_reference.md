@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 170 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 171 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -61,6 +61,12 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `PrepareChangeSignature` | Prepara uma alteração transacional da assinatura de uma rotina Delphi em declarações, implementação e chamadas comprovadas. | Quando parâmetros precisam ser adicionados, removidos, renomeados ou reordenados; exige mappings explícitos, bindings para novos argumentos e bloqueia referências ambíguas. |
 | `PrepareExtractMethod` | Prepara a extração transacional da seleção ativa para um novo método Delphi, inferindo parâmetros e atualizando declaração, implementação e chamada. | Quando um bloco coeso de um método deve virar outro método; exige seleção estruturalmente segura, classe e identidade semântica não ambígua e produz preview reversível. |
 | `PrepareMoveType` | Prepara a movimentação transacional de um tipo Delphi entre units do projeto, incluindo declaração, métodos, dependências e consumidores confirmados. | Quando uma classe, interface, record ou helper de nível superior deve mudar de unit; bloqueia DFM, recursos, dependências privadas, referências ambíguas e ciclos de interface antes do preview reversível. |
+
+## Validação unificada de código Delphi
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `ValidateDelphiCode` | Normaliza em um único resultado os achados determinísticos do RadIA, as mensagens atuais do compilador, a disponibilidade do DelphiLint e as issues atuais do Sonar. | Quando o usuário pede para validar a unit ativa ou o projeto; fontes opcionais ausentes são explicadas separadamente com a ação necessária, sem transformar ausência de configuração em falso problema de código. |
 
 ## Orientação Delphi curada
 

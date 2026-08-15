@@ -103,7 +103,7 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - `/help` summarizes the product and links to the applicable documentation.
 - `/journey` lists journeys that collect missing input without losing conversational context.
 - `/scope` shows effective values and overrides or restores inheritance without an IDE restart.
-- The [170-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
+- The [171-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
 - [Safe semantic refactoring](docs/guides/semantic_refactoring.en.md) explains references, Rename Symbol,
   preview, consent, and rollback.
 - The [operational reference](docs/reference/internal_tools_reference.en.md) explains purpose and activation.

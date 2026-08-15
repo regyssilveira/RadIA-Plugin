@@ -91,6 +91,7 @@ uses
   RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
+  RadIA.Core.CodeValidationTools,
   RadIA.Core.DfmPasAudit, RadIA.Core.DfmPasAuditTools,
   RadIA.Core.DesignerVisualDiff, RadIA.Core.DesignerVisualDiffTools,
   RadIA.Core.ToolSecurity, RadIA.Core.Patches, RadIA.Core.PatchTools,
@@ -1370,6 +1371,12 @@ initialization
   RegisterRadIASemanticQueryTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>
+  );
+  RegisterRadIACodeValidationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+    TRadIAContainer.Resolve<IRadIAHttpClient>
   );
   RegisterRadIASemanticHierarchyTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

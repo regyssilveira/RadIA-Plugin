@@ -50,3 +50,18 @@ O painel não modifica código, não inicia build e não aceita consentimento em
 navegação continua sujeita à política das ferramentas; comandos recomendados são apenas preparados
 no compositor.
 
+## Validação unificada de código Delphi
+
+Peça para validar a unit atual ou o projeto para acionar `ValidateDelphiCode`. O resultado separa as
+fontes para não confundir configuração ausente com defeito no código:
+
+- **RadIA native:** regras locais e determinísticas, sem rede;
+- **Compiler:** mensagens que já estão na IDE; execute `BuildProject` antes quando precisar de uma
+  evidência nova;
+- **DelphiLint:** detecta a instalação em `%USERPROFILE%\DelphiLint` e informa exatamente o recurso
+  ausente. O adapter isolado usa a resposta estruturada real e não referencia a BPL externa;
+- **Sonar:** consulta `api/issues/search` com URL e project key explícitos. O token só é enviado quando
+  `SONAR_HOST_URL` coincide com a URL solicitada, evitando encaminhar credenciais a outro host.
+
+Por padrão, a análise tem limite de 200 achados, com máximo configurável de 500. Cada item preserva
+origem, regra, severidade, mensagem, arquivo, linha e coluna e entra na área **Review** do painel.

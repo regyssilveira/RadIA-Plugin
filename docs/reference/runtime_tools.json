@@ -75,6 +75,13 @@
       ]
     },
     {
+      "name": "Unified Delphi code validation",
+      "source": "Source/Core/RadIA.Core.CodeValidationTools.pas",
+      "tools": [
+        "ValidateDelphiCode"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

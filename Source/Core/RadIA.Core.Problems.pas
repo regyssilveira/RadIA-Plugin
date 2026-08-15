@@ -391,7 +391,8 @@ begin
     SameText(ACollectionName, 'messages') then
     Exit(pcBuild);
   if ContainsText(AToolName, 'Review') or
-    ContainsText(AToolName, 'Analyze') then
+    ContainsText(AToolName, 'Analyze') or
+    ContainsText(AToolName, 'Validate') then
     Exit(pcReview);
   Result := pcGeneral;
 end;

@@ -124,6 +124,13 @@ NUnit XML e devolver fixtures, duração, falhas e stack traces estruturados. Os
 
 Consulte [Runner DUnitX](../guides/dunitx_runner.md).
 
+### Validação de código
+
+`ValidateDelphiCode` valida a unit ativa ou o projeto e normaliza regras nativas, mensagens atuais do
+compilador, disponibilidade do DelphiLint e issues do Sonar no [Painel de problemas](problems_panel.md).
+Cada fonte informa separadamente se passou, encontrou problemas, não foi solicitada, não está
+configurada ou falhou. Nenhuma correção é aplicada automaticamente.
+
 ## Debugger
 
 Durante uma sessão válida, o RadIA pode:
@@ -276,7 +283,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 170 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 171 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)

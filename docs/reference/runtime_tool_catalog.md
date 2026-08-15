@@ -67,6 +67,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `PrepareMoveType` | Prepara a movimentação transacional de um tipo Delphi entre units do projeto, incluindo declaração, métodos, dependências e consumidores confirmados. | `RadIA.Core.SemanticMoveTypeTools.pas` |
 
+## Validação unificada de código Delphi
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `ValidateDelphiCode` | Normaliza em um único resultado os achados determinísticos do RadIA, as mensagens atuais do compilador, a disponibilidade do DelphiLint e as issues atuais do Sonar. | `RadIA.Core.CodeValidationTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -466,7 +472,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 58
-- Ferramentas internas registradas: 170
+- Grupos registrados: 59
+- Ferramentas internas registradas: 171
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

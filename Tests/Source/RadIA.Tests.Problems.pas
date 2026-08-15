@@ -24,6 +24,8 @@ type
     procedure ProducesStableProblemIdentifiers;
     [Test]
     procedure ConvertsCoverageAndMemoryEvidence;
+    [Test]
+    procedure RoutesUnifiedValidationToReview;
   end;
 
 implementation
@@ -54,6 +56,20 @@ begin
   Assert.Contains(LMemory, '"category":"memory"');
   Assert.Contains(LMemory, '"fileName":"Main.pas"');
   Assert.Contains(LMemory, '"line":27');
+end;
+
+procedure TRadIAProblemTests.RoutesUnifiedValidationToReview;
+var
+  LJson: string;
+begin
+  LJson := ExtractJson(
+    'ValidateDelphiCode',
+    '{"findings":[{"source":"sonar","code":"rule-1",' +
+    '"severity":"warning","message":"Review this routine.",' +
+    '"fileName":"Main.pas","line":9,"column":2}]}'
+  );
+  Assert.Contains(LJson, '"category":"review"');
+  Assert.Contains(LJson, '"recommendedCommand":"/review"');
 end;
 
 function TRadIAProblemTests.ExtractJson(

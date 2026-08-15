@@ -49,3 +49,18 @@ previous conversation.
 The panel does not modify code, start a build, or grant consent on the user's behalf. Navigation
 remains subject to tool policy; recommended commands are only prepared in the composer.
 
+## Unified Delphi code validation
+
+Ask RadIA to validate the active unit or project to invoke `ValidateDelphiCode`. The result separates
+sources so missing configuration is never confused with a code defect:
+
+- **RadIA native:** deterministic local rules with no network access;
+- **Compiler:** messages already available in the IDE; run `BuildProject` first when fresh evidence
+  is required;
+- **DelphiLint:** detects installation under `%USERPROFILE%\DelphiLint` and reports the exact missing
+  resource. The isolated adapter consumes the real structured response without referencing its BPL;
+- **Sonar:** queries `api/issues/search` with an explicit URL and project key. The token is sent only
+  when `SONAR_HOST_URL` matches the requested URL, preventing credential forwarding to another host.
+
+The default limit is 200 findings and the configurable maximum is 500. Each item preserves source,
+rule, severity, message, file, line, and column and enters the panel under **Review**.

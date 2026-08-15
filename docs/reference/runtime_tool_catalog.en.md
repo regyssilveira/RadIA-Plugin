@@ -67,6 +67,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `PrepareMoveType` | Prepares a transactional Delphi type move between project units. | `RadIA.Core.SemanticMoveTypeTools.pas` |
 
+## Unified Delphi code validation
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `ValidateDelphiCode` | Validates Delphi code with native, compiler, DelphiLint, and Sonar evidence. | `RadIA.Core.CodeValidationTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -466,7 +472,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 58
-- Registered built-in tools: 170
+- Registered groups: 59
+- Registered built-in tools: 171
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

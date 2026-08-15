@@ -35,6 +35,7 @@ $portugueseGroupNames = @{
     "Semantic signature refactoring" = "Refatoração semântica de assinaturas"
     "Semantic method extraction" = "Extração semântica de métodos"
     "Semantic type movement" = "Movimentação semântica de tipos"
+    "Unified Delphi code validation" = "Validação unificada de código Delphi"
     "Curated Delphi guidance" = "Orientação Delphi curada"
     "DFM and Pascal consistency" = "Consistência entre DFM e Pascal"
     "Designer visual diff" = "Diff visual do Designer"
