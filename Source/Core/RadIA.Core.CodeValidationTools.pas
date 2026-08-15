@@ -26,6 +26,7 @@ uses
   System.StrUtils,
   System.SysUtils,
   RadIA.Core.CodeValidation,
+  RadIA.Core.DelphiLintAdapter,
   RadIA.Core.SaveReview;
 
 type
@@ -60,6 +61,7 @@ type
   TRadIAValidateDelphiCodeTool = class(TInterfacedObject, IRadIATool)
   private
     FHttpClient: IRadIAHttpClient;
+    FDelphiLint: IRadIADelphiLintAdapter;
     FMutation: IRadIAEditorMutationFacade;
     FWorkspace: IRadIAWorkspaceFacade;
     procedure AddCompilerFindings(
@@ -67,8 +69,10 @@ type
       const AFindings: TList<TRadIACodeValidationFinding>;
       const ASources: TJSONArray
     );
-    procedure AddDelphiLintStatus(
+    procedure AddDelphiLintFindings(
       const ARequest: TRadIACodeValidationRequest;
+      const AProject: TRadIAProjectSnapshot;
+      const AFindings: TList<TRadIACodeValidationFinding>;
       const ASources: TJSONArray
     );
     procedure AddNativeFindings(
@@ -143,27 +147,6 @@ begin
   end;
 end;
 
-function DelphiLintDirectory: string;
-begin
-  Result := TPath.Combine(TPath.GetHomePath, 'DelphiLint');
-end;
-
-function DelphiLintJar: string;
-var
-  LFiles: TArray<string>;
-begin
-  Result := '';
-  if not TDirectory.Exists(DelphiLintDirectory) then
-    Exit;
-  LFiles := TDirectory.GetFiles(
-    DelphiLintDirectory,
-    'delphilint-server-*.jar',
-    TSearchOption.soTopDirectoryOnly
-  );
-  if Length(LFiles) > 0 then
-    Result := LFiles[High(LFiles)];
-end;
-
 procedure ResolveSonarConfiguration(
   const AProject: TRadIAProjectSnapshot;
   const ARequest: TRadIACodeValidationRequest;
@@ -215,6 +198,7 @@ begin
   FWorkspace := AWorkspace;
   FMutation := AMutation;
   FHttpClient := AHttpClient;
+  FDelphiLint := CreateRadIADelphiLintAdapter;
 end;
 
 procedure TRadIAValidateDelphiCodeTool.AddCompilerFindings(
@@ -243,12 +227,21 @@ begin
   ));
 end;
 
-procedure TRadIAValidateDelphiCodeTool.AddDelphiLintStatus(
+procedure TRadIAValidateDelphiCodeTool.AddDelphiLintFindings(
   const ARequest: TRadIACodeValidationRequest;
+  const AProject: TRadIAProjectSnapshot;
+  const AFindings: TList<TRadIACodeValidationFinding>;
   const ASources: TJSONArray
 );
 var
-  LJar: string;
+  LError: string;
+  LFiles: TArray<string>;
+  LItems: TArray<TRadIACodeValidationFinding>;
+  LProperties: string;
+  LResult: TRadIADelphiLintResult;
+  LSonarKey: string;
+  LSonarToken: string;
+  LSonarUrl: string;
 begin
   if not ARequest.IncludeDelphiLint then
   begin
@@ -256,23 +249,58 @@ begin
       'DelphiLint analysis was not requested.'));
     Exit;
   end;
-  LJar := DelphiLintJar;
-  if LJar.IsEmpty then
+  if SameText(ARequest.Scope, 'activeUnit') then
+    LFiles := [FWorkspace.GetActiveUnit]
+  else
+    LFiles := FWorkspace.ListProjectUnits;
+  ResolveSonarConfiguration(AProject, ARequest, LSonarUrl, LSonarKey);
+  LSonarToken := '';
+  if SameText(
+    GetEnvironmentVariable('SONAR_HOST_URL').TrimRight(['/']),
+    LSonarUrl
+  ) then
+    LSonarToken := GetEnvironmentVariable('SONAR_TOKEN');
+  LProperties := TPath.Combine(AProject.RootPath, 'sonar-project.properties');
+  if not TFile.Exists(LProperties) then
+    LProperties := '';
+  LResult := FDelphiLint.Analyze(TRadIADelphiLintRequest.Create(
+    AProject.RootPath,
+    LFiles,
+    LSonarUrl,
+    LSonarKey,
+    LSonarToken,
+    LProperties
+  ), 30000);
+  if not LResult.Succeeded then
   begin
     ASources.AddElement(SourceStatus(
       'delphilint',
-      'not-configured',
-      'DelphiLint is not installed or its analysis server was not found.',
+      LResult.Status,
+      LResult.Error,
       'Install DelphiLint from https://github.com/' +
-      'integrated-application-development/delphilint/releases.'
+      'integrated-application-development/delphilint/releases and configure Java.'
     ));
     Exit;
   end;
+  if not TRadIACodeValidationParser.ParseDelphiLint(
+    LResult.ResponseJson,
+    LItems,
+    LError
+  ) then
+  begin
+    ASources.AddElement(SourceStatus(
+      'delphilint',
+      'invalid-response',
+      LError,
+      'Update DelphiLint or run /doctor --deep to inspect the adapter.'
+    ));
+    Exit;
+  end;
+  AppendFindings(AFindings, LItems, ARequest.MaxFindings);
   ASources.AddElement(SourceStatus(
     'delphilint',
-    'available',
-    'DelphiLint resources were detected at ' + LJar + '.',
-    'The isolated DelphiLint server adapter is available for analysis.'
+    IfThen(Length(LItems) = 0, 'passed', 'findings'),
+    Format('%d DelphiLint issue(s) collected.', [Length(LItems)])
   ));
 end;
 
@@ -428,7 +456,7 @@ begin
     LSources := TJSONArray.Create;
     AddNativeFindings(LParsed, LFindings, LSources);
     AddCompilerFindings(LParsed, LFindings, LSources);
-    AddDelphiLintStatus(LParsed, LSources);
+    AddDelphiLintFindings(LParsed, LProject, LFindings, LSources);
     AddSonarFindings(LParsed, LProject, LFindings, LSources);
     LFindingsJson := TJSONArray.Create;
     for LFinding in LFindings do

@@ -19,6 +19,8 @@ type
     procedure RejectsInvalidExternalResponses;
     [Test]
     procedure DiscoversSonarConfiguration;
+    [Test]
+    procedure EncodesAndDecodesDelphiLintProtocol;
   end;
 
 implementation
@@ -27,6 +29,7 @@ uses
   System.IOUtils,
   System.SysUtils,
   RadIA.Core.CodeValidation,
+  RadIA.Core.DelphiLintAdapter,
   RadIA.Core.Workspace;
 
 procedure TRadIACodeValidationTests.NormalizesCompilerMessages;
@@ -46,6 +49,30 @@ begin
   Assert.AreEqual('compiler', RadIAValidationSourceName(LFindings[0].Source));
   Assert.AreEqual('error', RadIAValidationSeverityName(LFindings[0].Severity));
   Assert.AreEqual(14, LFindings[0].Line);
+end;
+
+procedure TRadIACodeValidationTests.EncodesAndDecodesDelphiLintProtocol;
+var
+  LCategory: Byte;
+  LHeader: TBytes;
+  LId: Integer;
+  LLength: Integer;
+  LMessage: TBytes;
+begin
+  LMessage := TRadIADelphiLintProtocol.BuildMessage(30, 42, '{"unit":"Main"}');
+  LHeader := Copy(LMessage, 0, 9);
+  Assert.IsTrue(TRadIADelphiLintProtocol.DecodeHeader(
+    LHeader,
+    LCategory,
+    LId,
+    LLength
+  ));
+  Assert.AreEqual(30, Integer(LCategory));
+  Assert.AreEqual(42, LId);
+  Assert.AreEqual(Length(LMessage) - 9, LLength);
+  Assert.AreEqual('{"unit":"Main"}', TEncoding.UTF8.GetString(
+    Copy(LMessage, 9, LLength)
+  ));
 end;
 
 procedure TRadIACodeValidationTests.DiscoversSonarConfiguration;

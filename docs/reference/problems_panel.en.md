@@ -57,8 +57,10 @@ sources so missing configuration is never confused with a code defect:
 - **RadIA native:** deterministic local rules with no network access;
 - **Compiler:** messages already available in the IDE; run `BuildProject` first when fresh evidence
   is required;
-- **DelphiLint:** detects installation under `%USERPROFILE%\DelphiLint` and reports the exact missing
-  resource. The isolated adapter consumes the real structured response without referencing its BPL;
+- **DelphiLint:** detects the installation under `%APPDATA%\DelphiLint`, honors `delphilint.ini`
+  overrides, locates Java through the override, `JAVA_HOME`, or `PATH`, and runs the server in an
+  isolated process. The adapter consumes the real structured response, stops the process afterward,
+  and does not reference the external BPL;
 - **Sonar:** discovers the URL and project key from explicit arguments, environment variables,
   `sonar-project.properties`, or `.scannerwork/report-task.txt`, then queries `api/issues/search`.
   The token is sent only when `SONAR_HOST_URL` matches the effective URL, preventing credential

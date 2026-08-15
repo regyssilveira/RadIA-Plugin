@@ -43,6 +43,7 @@ contains
   RadIA.Core.DelphiExtraction in 'Source\Core\RadIA.Core.DelphiExtraction.pas',
   RadIA.Core.DelphiTypeMove in 'Source\Core\RadIA.Core.DelphiTypeMove.pas',
   RadIA.Core.CodeValidation in 'Source\Core\RadIA.Core.CodeValidation.pas',
+  RadIA.Core.DelphiLintAdapter in 'Source\Core\RadIA.Core.DelphiLintAdapter.pas',
   RadIA.Core.CodeValidationTools in 'Source\Core\RadIA.Core.CodeValidationTools.pas',
   RadIA.Core.SemanticExtractMethodTools in 'Source\Core\RadIA.Core.SemanticExtractMethodTools.pas',
   RadIA.Core.SemanticChangeSignatureTools in 'Source\Core\RadIA.Core.SemanticChangeSignatureTools.pas',

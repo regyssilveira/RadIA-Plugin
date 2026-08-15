@@ -19,6 +19,7 @@ uses
   RadIA.Tests.DelphiExtraction in 'Source\RadIA.Tests.DelphiExtraction.pas',
   RadIA.Core.DelphiTypeMove in '..\Source\Core\RadIA.Core.DelphiTypeMove.pas',
   RadIA.Core.CodeValidation in '..\Source\Core\RadIA.Core.CodeValidation.pas',
+  RadIA.Core.DelphiLintAdapter in '..\Source\Core\RadIA.Core.DelphiLintAdapter.pas',
   RadIA.Core.CodeValidationTools in '..\Source\Core\RadIA.Core.CodeValidationTools.pas',
   RadIA.Tests.DelphiTypeMove in 'Source\RadIA.Tests.DelphiTypeMove.pas',
   RadIA.Tests.CodeValidation in 'Source\RadIA.Tests.CodeValidation.pas',
