@@ -119,7 +119,7 @@ begin
   Assert.IsTrue(TRadIACodeValidationParser.ParseDelphiLint(
     '{"issues":[{"ruleKey":"DelphiLint:LongRoutine",' +
     '"message":"Routine is too long","file":"Main.pas",' +
-    '"textRange":{"startLine":12,"startOffset":4}}]}',
+    '"range":{"startLine":12,"startOffset":4}}]}',
     LFindings,
     LError
   ), LError);

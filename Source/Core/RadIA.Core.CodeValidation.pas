@@ -325,7 +325,9 @@ begin
       if not (LIssue is TJSONObject) then
         Continue;
       LObject := TJSONObject(LIssue);
-      LRange := LObject.GetValue('textRange') as TJSONObject;
+      LRange := LObject.GetValue('range') as TJSONObject;
+      if not Assigned(LRange) then
+        LRange := LObject.GetValue('textRange') as TJSONObject;
       LRule := JsonText(LObject, 'ruleKey');
       LFindings.Add(TRadIACodeValidationFinding.Create(
         cvsDelphiLint,

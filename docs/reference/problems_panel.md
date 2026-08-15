@@ -56,8 +56,9 @@ Peça para validar a unit atual ou o projeto para acionar `ValidateDelphiCode`. 
 fontes para não confundir configuração ausente com defeito no código:
 
 - **RadIA native:** regras locais e determinísticas, sem rede;
-- **Compiler:** mensagens que já estão na IDE; execute `BuildProject` antes quando precisar de uma
-  evidência nova;
+- **Compiler:** mensagens que já estão na IDE; use `buildBeforeValidation: true` para executar um
+  **Check** nativo antes de coletá-las. O padrão é `false`, portanto mensagens antigas nunca são
+  apresentadas como evidência de um build recente;
 - **DelphiLint:** detecta a instalação em `%APPDATA%\DelphiLint`, respeita os overrides do
   `delphilint.ini`, localiza Java pelo override, `JAVA_HOME` ou `PATH` e executa o servidor em processo
   isolado. O adaptador usa a resposta estruturada real, encerra o processo ao concluir e não referencia

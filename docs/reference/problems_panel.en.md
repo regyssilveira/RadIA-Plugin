@@ -55,8 +55,9 @@ Ask RadIA to validate the active unit or project to invoke `ValidateDelphiCode`.
 sources so missing configuration is never confused with a code defect:
 
 - **RadIA native:** deterministic local rules with no network access;
-- **Compiler:** messages already available in the IDE; run `BuildProject` first when fresh evidence
-  is required;
+- **Compiler:** messages already available in the IDE; use `buildBeforeValidation: true` to run a
+  native **Check** before collecting them. The default is `false`, so old messages are never presented
+  as evidence from a recent build;
 - **DelphiLint:** detects the installation under `%APPDATA%\DelphiLint`, honors `delphilint.ini`
   overrides, locates Java through the override, `JAVA_HOME`, or `PATH`, and runs the server in an
   isolated process. The adapter consumes the real structured response, stops the process afterward,

@@ -129,7 +129,8 @@ Consulte [Runner DUnitX](../guides/dunitx_runner.md).
 `ValidateDelphiCode` valida a unit ativa ou o projeto e normaliza regras nativas, mensagens atuais do
 compilador, disponibilidade do DelphiLint e issues do Sonar no [Painel de problemas](problems_panel.md).
 Cada fonte informa separadamente se passou, encontrou problemas, não foi solicitada, não está
-configurada ou falhou. Nenhuma correção é aplicada automaticamente.
+configurada ou falhou. Quando solicitado, um Check nativo atualiza primeiro a evidência do compilador.
+Nenhuma correção é aplicada automaticamente.
 
 ## Debugger
 

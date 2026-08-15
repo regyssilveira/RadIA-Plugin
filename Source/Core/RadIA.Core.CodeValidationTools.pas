@@ -3,6 +3,7 @@ unit RadIA.Core.CodeValidationTools;
 interface
 
 uses
+  RadIA.Core.Build,
   RadIA.Core.Interfaces,
   RadIA.Core.Patches,
   RadIA.Core.Tools,
@@ -12,7 +13,8 @@ procedure RegisterRadIACodeValidationTools(
   const ARegistry: IRadIAToolRegistry;
   const AWorkspace: IRadIAWorkspaceFacade;
   const AMutation: IRadIAEditorMutationFacade;
-  const AHttpClient: IRadIAHttpClient
+  const AHttpClient: IRadIAHttpClient;
+  const ABuild: IRadIABuildFacade
 );
 
 implementation
@@ -33,6 +35,7 @@ type
   TRadIACodeValidationRequest = record
   private
     FIncludeCompiler: Boolean;
+    FBuildBeforeValidation: Boolean;
     FIncludeDelphiLint: Boolean;
     FIncludeSonar: Boolean;
     FMaxFindings: Integer;
@@ -49,7 +52,11 @@ type
       const ASonarUrl: string;
       const ASonarProjectKey: string
     );
+    function WithBuildBeforeValidation(
+      const AValue: Boolean
+    ): TRadIACodeValidationRequest;
     property IncludeCompiler: Boolean read FIncludeCompiler;
+    property BuildBeforeValidation: Boolean read FBuildBeforeValidation;
     property IncludeDelphiLint: Boolean read FIncludeDelphiLint;
     property IncludeSonar: Boolean read FIncludeSonar;
     property MaxFindings: Integer read FMaxFindings;
@@ -61,12 +68,17 @@ type
   TRadIAValidateDelphiCodeTool = class(TInterfacedObject, IRadIATool)
   private
     FHttpClient: IRadIAHttpClient;
+    FBuild: IRadIABuildFacade;
     FDelphiLint: IRadIADelphiLintAdapter;
     FMutation: IRadIAEditorMutationFacade;
     FWorkspace: IRadIAWorkspaceFacade;
     procedure AddCompilerFindings(
       const ARequest: TRadIACodeValidationRequest;
       const AFindings: TList<TRadIACodeValidationFinding>;
+      const ASources: TJSONArray
+    );
+    procedure AddBuildStatus(
+      const ARequest: TRadIACodeValidationRequest;
       const ASources: TJSONArray
     );
     procedure AddDelphiLintFindings(
@@ -95,7 +107,8 @@ type
     constructor Create(
       const AWorkspace: IRadIAWorkspaceFacade;
       const AMutation: IRadIAEditorMutationFacade;
-      const AHttpClient: IRadIAHttpClient
+      const AHttpClient: IRadIAHttpClient;
+      const ABuild: IRadIABuildFacade
     );
     function Execute(const ARequest: TRadIAToolRequest): TRadIAToolResult;
     function GetDescriptor: TRadIAToolDescriptor;
@@ -104,7 +117,8 @@ type
 const
   CInputSchema =
     '{"type":"object","properties":{"scope":{"type":"string",' +
-    '"enum":["activeUnit","project"]},"includeCompiler":' +
+    '"enum":["activeUnit","project"]},"buildBeforeValidation":' +
+    '{"type":"boolean"},"includeCompiler":' +
     '{"type":"boolean"},"includeDelphiLint":{"type":"boolean"},' +
     '"includeSonar":{"type":"boolean"},"maxFindings":{"type":' +
     '"integer","minimum":1,"maximum":500},"sonarUrl":{"type":' +
@@ -129,6 +143,14 @@ begin
   Result.AddPair('status', AStatus);
   Result.AddPair('message', AMessage);
   Result.AddPair('action', AAction);
+end;
+
+function TRadIACodeValidationRequest.WithBuildBeforeValidation(
+  const AValue: Boolean
+): TRadIACodeValidationRequest;
+begin
+  Result := Self;
+  Result.FBuildBeforeValidation := AValue;
 end;
 
 procedure AppendFindings(
@@ -185,7 +207,8 @@ end;
 constructor TRadIAValidateDelphiCodeTool.Create(
   const AWorkspace: IRadIAWorkspaceFacade;
   const AMutation: IRadIAEditorMutationFacade;
-  const AHttpClient: IRadIAHttpClient
+  const AHttpClient: IRadIAHttpClient;
+  const ABuild: IRadIABuildFacade
 );
 begin
   inherited Create;
@@ -195,10 +218,47 @@ begin
     raise EArgumentNilException.Create('AMutation');
   if not Assigned(AHttpClient) then
     raise EArgumentNilException.Create('AHttpClient');
+  if not Assigned(ABuild) then
+    raise EArgumentNilException.Create('ABuild');
   FWorkspace := AWorkspace;
   FMutation := AMutation;
   FHttpClient := AHttpClient;
+  FBuild := ABuild;
   FDelphiLint := CreateRadIADelphiLintAdapter;
+end;
+
+procedure TRadIAValidateDelphiCodeTool.AddBuildStatus(
+  const ARequest: TRadIACodeValidationRequest;
+  const ASources: TJSONArray
+);
+var
+  LResult: TRadIABuildResult;
+begin
+  if not ARequest.BuildBeforeValidation then
+  begin
+    ASources.AddElement(SourceStatus(
+      'build',
+      'not-requested',
+      'A fresh compiler check was not requested.'
+    ));
+    Exit;
+  end;
+  LResult := FBuild.Execute(TRadIABuildRequest.Create(bmCheck, 120000, True));
+  if LResult.Success then
+    ASources.AddElement(SourceStatus(
+      'build',
+      'passed',
+      Format('Fresh compiler check completed in %d ms.', [LResult.DurationMs])
+    ))
+  else
+    ASources.AddElement(SourceStatus(
+      'build',
+      'failed',
+      Format('Fresh compiler check did not pass; %d message(s) were returned.', [
+        Length(LResult.Messages)
+      ]),
+      'Open the compiler findings below and fix the reported errors.'
+    ));
 end;
 
 procedure TRadIAValidateDelphiCodeTool.AddCompilerFindings(
@@ -455,6 +515,7 @@ begin
   try
     LSources := TJSONArray.Create;
     AddNativeFindings(LParsed, LFindings, LSources);
+    AddBuildStatus(LParsed, LSources);
     AddCompilerFindings(LParsed, LFindings, LSources);
     AddDelphiLintFindings(LParsed, LProject, LFindings, LSources);
     AddSonarFindings(LParsed, LProject, LFindings, LSources);
@@ -520,6 +581,8 @@ begin
       LMaxFindings,
       LJson.GetValue<string>('sonarUrl', ''),
       LJson.GetValue<string>('sonarProjectKey', '')
+    ).WithBuildBeforeValidation(
+      LJson.GetValue<Boolean>('buildBeforeValidation', False)
     );
     Result := True;
   finally
@@ -531,7 +594,8 @@ procedure RegisterRadIACodeValidationTools(
   const ARegistry: IRadIAToolRegistry;
   const AWorkspace: IRadIAWorkspaceFacade;
   const AMutation: IRadIAEditorMutationFacade;
-  const AHttpClient: IRadIAHttpClient
+  const AHttpClient: IRadIAHttpClient;
+  const ABuild: IRadIABuildFacade
 );
 begin
   if not Assigned(ARegistry) then
@@ -539,7 +603,8 @@ begin
   ARegistry.RegisterTool(TRadIAValidateDelphiCodeTool.Create(
     AWorkspace,
     AMutation,
-    AHttpClient
+    AHttpClient,
+    ABuild
   ));
 end;
 
