@@ -1,7 +1,8 @@
 # Tudo que o RadIA pode fazer
 
-Esta página é o mapa funcional do RadIA 2.14.0. Ela reúne as capacidades disponíveis e aponta para
-as instruções detalhadas.
+Esta é a referência canônica, orientada ao usuário, sobre o que o RadIA pode fazer. Ela reúne as
+capacidades disponíveis por área e aponta para as instruções detalhadas. Para consultar cada recurso
+individualmente, com categoria e status, use o [inventário detalhado de funcionalidades](features.md).
 
 Para distinguir implementação de planejamento:
 

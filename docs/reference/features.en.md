@@ -1,6 +1,12 @@
 # Rad IA Features and Capabilities
 
-This document contains the complete checklist, categorization, and development status of all features integrated into the **Rad IA** plugin.
+This is the detailed inventory of features integrated into **RadIA**, including category,
+description, and status. To discover the product by area and open the corresponding usage guides,
+start with the canonical reference [Everything RadIA can do](capabilities.en.md).
+
+This inventory complements the capability map; it does not replace it as the user entry point.
+Exact tool availability depends on the current installation and context and must be checked with
+`/tools`.
 
 ---
 

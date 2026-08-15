@@ -1,7 +1,7 @@
 # Referência
 
-- [Capacidades](capabilities.md)
-- [Funcionalidades](features.md)
+- [Tudo que o RadIA pode fazer](capabilities.md): referência canônica orientada ao usuário
+- [Inventário detalhado de funcionalidades](features.md): recursos individuais, categorias e status
 - [Configurações](settings_reference.md)
 - [Comandos de barra](slash_commands.md)
 - [Doctor](doctor.md)

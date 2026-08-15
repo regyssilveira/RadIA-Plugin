@@ -1,7 +1,7 @@
 # Reference
 
-- [Capabilities](capabilities.en.md)
-- [Features](features.en.md)
+- [Everything RadIA can do](capabilities.en.md): canonical user-oriented reference
+- [Detailed feature inventory](features.en.md): individual features, categories, and status
 - [Settings](settings_reference.en.md)
 - [Slash commands](slash_commands.en.md)
 - [Doctor](doctor.en.md)

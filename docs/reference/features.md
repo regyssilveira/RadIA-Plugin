@@ -1,6 +1,12 @@
 # Recursos e Funcionalidades do Rad IA
 
-Este documento contém o checklist completo de recursos, categorização e status de desenvolvimento de todas as funcionalidades integradas ao plugin **Rad IA**.
+Este é o inventário detalhado das funcionalidades integradas ao **RadIA**, com categoria, descrição
+e status. Para descobrir o produto por área e acessar os respectivos guias de uso, comece pela
+referência canônica [Tudo que o RadIA pode fazer](capabilities.md).
+
+Este inventário complementa o mapa de capacidades; ele não o substitui como ponto de entrada para
+usuários. A disponibilidade exata de tools depende da instalação e do contexto atuais e deve ser
+consultada com `/tools`.
 
 ---
 

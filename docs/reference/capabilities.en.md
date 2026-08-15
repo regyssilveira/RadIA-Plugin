@@ -1,6 +1,8 @@
 # Everything RadIA can do
 
-This page is the functional map of RadIA 2.14.0.
+This is the canonical, user-oriented reference for what RadIA can do. It groups available
+capabilities by area and links to detailed instructions. To inspect each individual feature with
+its category and status, use the [detailed feature inventory](features.en.md).
 
 The agent combines the [sanitized Delphi environment profile](delphi_environment_profile.en.md) with
 [curated Delphi guidance](delphi_guidance.en.md). Language, memory, VCL, FMX, Delphi 12, Delphi 13,

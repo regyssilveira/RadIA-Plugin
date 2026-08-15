@@ -47,6 +47,7 @@ Internal plans, audits, test results, and release notes do not belong in this tr
 | Information | Reference |
 |---|---|
 | Everything RadIA can do | [Capability map](reference/capabilities.en.md) |
+| Inspect each feature, its category, and its status | [Detailed inventory](reference/features.en.md) |
 | Settings fields and buttons | [Settings](reference/settings_reference.en.md) |
 | Understand settings tabs | [Settings map](guides/user_manual.en.md#21-settings-map) |
 | Slash commands and diagnostics | [Commands](reference/slash_commands.en.md#which-diagnostic-command-to-use) |
