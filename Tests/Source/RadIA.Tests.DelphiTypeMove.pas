@@ -23,6 +23,8 @@ type
     procedure FindsOnlyOwnedMethodImplementations;
     [Test]
     procedure RejectsAmbiguousNestedRoutineImplementation;
+    [Test]
+    procedure RemovesDeclarationAndImplementationsAtomically;
   end;
 
 implementation
@@ -80,6 +82,46 @@ begin
     LError
   ));
   Assert.Contains(LError, 'nested routine');
+end;
+
+procedure TRadIADelphiTypeMoveTests.
+  RemovesDeclarationAndImplementationsAtomically;
+const
+  CSource = 'unit SourceUnit;' + sLineBreak + 'interface' + sLineBreak +
+    'type' + sLineBreak + '  TWorker = class' + sLineBreak +
+    '    procedure Execute;' + sLineBreak + '  end;' + sLineBreak +
+    '  TRemaining = class end;' + sLineBreak + 'implementation' +
+    sLineBreak + 'procedure TWorker.Execute;' + sLineBreak + 'begin' +
+    sLineBreak + 'end;' + sLineBreak + 'end.';
+var
+  LBlocks: TArray<TRadIADelphiMoveBlock>;
+  LContent: string;
+  LError: string;
+  LType: TRadIADelphiMovableType;
+begin
+  Assert.IsTrue(TRadIADelphiTypeMoveAnalyzer.TryAnalyze(
+    CSource,
+    'TWorker',
+    Pos('TWorker', CSource) - 1,
+    LType,
+    LError
+  ), LError);
+  Assert.IsTrue(TRadIADelphiTypeMoveAnalyzer.TryFindImplementations(
+    CSource,
+    'TWorker',
+    LBlocks,
+    LError
+  ), LError);
+  Assert.IsTrue(TRadIADelphiTypeMoveEditor.TryRemoveMoveBlocks(
+    CSource,
+    LType,
+    LBlocks,
+    LContent,
+    LError
+  ), LError);
+  Assert.IsFalse(LContent.Contains('TWorker'));
+  Assert.Contains(LContent, 'TRemaining');
+  Assert.Contains(LContent, 'implementation');
 end;
 
 procedure TRadIADelphiTypeMoveTests.EditsDestinationSectionsIdempotently;

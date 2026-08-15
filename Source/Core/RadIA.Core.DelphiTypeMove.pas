@@ -17,13 +17,19 @@ type
   private
     FContent: string;
     FKind: TRadIADelphiMovableTypeKind;
+    FLength: Integer;
+    FStartOffset: Integer;
   public
     constructor Create(
       const AKind: TRadIADelphiMovableTypeKind;
-      const AContent: string
+      const AContent: string;
+      const AStartOffset: Integer;
+      const ALength: Integer
     );
     property Content: string read FContent;
     property Kind: TRadIADelphiMovableTypeKind read FKind;
+    property Length: Integer read FLength;
+    property StartOffset: Integer read FStartOffset;
   end;
 
   TRadIADelphiMoveBlock = record
@@ -80,6 +86,13 @@ type
       out AContent: string;
       out AError: string
     ): Boolean; static;
+    class function TryRemoveMoveBlocks(
+      const ASource: string;
+      const AMovableType: TRadIADelphiMovableType;
+      const AImplementations: TArray<TRadIADelphiMoveBlock>;
+      out AContent: string;
+      out AError: string
+    ): Boolean; static;
   end;
 
 implementation
@@ -94,11 +107,15 @@ uses
 
 constructor TRadIADelphiMovableType.Create(
   const AKind: TRadIADelphiMovableTypeKind;
-  const AContent: string
+  const AContent: string;
+  const AStartOffset: Integer;
+  const ALength: Integer
 );
 begin
   FKind := AKind;
   FContent := AContent;
+  FStartOffset := AStartOffset;
+  FLength := ALength;
 end;
 
 constructor TRadIADelphiMoveBlock.Create(
@@ -576,6 +593,69 @@ begin
   Result := True;
 end;
 
+function MatchesMoveBlock(
+  const ASource: string;
+  const AStartOffset: Integer;
+  const ALength: Integer;
+  const AContent: string
+): Boolean;
+begin
+  Result := (AStartOffset >= 0) and (ALength > 0) and
+    (AStartOffset + ALength <= Length(ASource)) and
+    (Copy(ASource, AStartOffset + 1, ALength) = AContent);
+end;
+
+class function TRadIADelphiTypeMoveEditor.TryRemoveMoveBlocks(
+  const ASource: string;
+  const AMovableType: TRadIADelphiMovableType;
+  const AImplementations: TArray<TRadIADelphiMoveBlock>;
+  out AContent: string;
+  out AError: string
+): Boolean;
+var
+  LBlock: TRadIADelphiMoveBlock;
+  LIndex: Integer;
+  LNextOffset: Integer;
+begin
+  Result := False;
+  AContent := ASource;
+  AError := '';
+  if not MatchesMoveBlock(
+    ASource,
+    AMovableType.StartOffset,
+    AMovableType.Length,
+    AMovableType.Content
+  ) then
+  begin
+    AError := 'The Delphi type declaration changed before composition.';
+    Exit;
+  end;
+  LNextOffset := Length(ASource) + 1;
+  for LIndex := High(AImplementations) downto Low(AImplementations) do
+  begin
+    LBlock := AImplementations[LIndex];
+    if not MatchesMoveBlock(
+      ASource,
+      LBlock.StartOffset,
+      LBlock.Length,
+      LBlock.Content
+    ) or (LBlock.StartOffset + LBlock.Length > LNextOffset) or
+      (LBlock.StartOffset <= AMovableType.StartOffset) then
+    begin
+      AError := 'A Delphi type implementation changed or overlaps another block.';
+      Exit;
+    end;
+    Delete(AContent, LBlock.StartOffset + 1, LBlock.Length);
+    LNextOffset := LBlock.StartOffset;
+  end;
+  Delete(
+    AContent,
+    AMovableType.StartOffset + 1,
+    AMovableType.Length
+  );
+  Result := True;
+end;
+
 class function TRadIADelphiTypeMoveAnalyzer.TryFindImplementations(
   const ASource: string;
   const ATypeName: string;
@@ -695,7 +775,9 @@ begin
   end;
   AMovableType := TRadIADelphiMovableType.Create(
     LKind,
-    LContent
+    LContent,
+    AIndexedStartOffset,
+    LEndOffset - AIndexedStartOffset
   );
   Result := True;
 end;
