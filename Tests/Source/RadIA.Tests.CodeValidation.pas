@@ -17,11 +17,15 @@ type
     procedure NormalizesCompilerMessages;
     [Test]
     procedure RejectsInvalidExternalResponses;
+    [Test]
+    procedure DiscoversSonarConfiguration;
   end;
 
 implementation
 
 uses
+  System.IOUtils,
+  System.SysUtils,
   RadIA.Core.CodeValidation,
   RadIA.Core.Workspace;
 
@@ -42,6 +46,42 @@ begin
   Assert.AreEqual('compiler', RadIAValidationSourceName(LFindings[0].Source));
   Assert.AreEqual('error', RadIAValidationSeverityName(LFindings[0].Severity));
   Assert.AreEqual(14, LFindings[0].Line);
+end;
+
+procedure TRadIACodeValidationTests.DiscoversSonarConfiguration;
+var
+  LKey: string;
+  LRootPath: string;
+  LUrl: string;
+begin
+  LRootPath := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIASonarConfiguration-' + TGUID.NewGuid.ToString
+  );
+  TDirectory.CreateDirectory(TPath.Combine(LRootPath, '.scannerwork'));
+  try
+    TFile.WriteAllText(
+      TPath.Combine(LRootPath, 'sonar-project.properties'),
+      '# project' + sLineBreak + 'sonar.projectKey = sample-key',
+      TEncoding.UTF8
+    );
+    TFile.WriteAllText(
+      TPath.Combine(LRootPath, '.scannerwork\report-task.txt'),
+      'serverUrl=http://localhost:9000',
+      TEncoding.UTF8
+    );
+    TRadIASonarConfiguration.Resolve(
+      LRootPath,
+      'https://sonar.example.test/',
+      '',
+      LUrl,
+      LKey
+    );
+    Assert.AreEqual('https://sonar.example.test', LUrl);
+    Assert.AreEqual('sample-key', LKey);
+  finally
+    TDirectory.Delete(LRootPath, True);
+  end;
 end;
 
 procedure TRadIACodeValidationTests.ParsesDelphiLintIssues;

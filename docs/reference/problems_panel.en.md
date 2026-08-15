@@ -59,8 +59,10 @@ sources so missing configuration is never confused with a code defect:
   is required;
 - **DelphiLint:** detects installation under `%USERPROFILE%\DelphiLint` and reports the exact missing
   resource. The isolated adapter consumes the real structured response without referencing its BPL;
-- **Sonar:** queries `api/issues/search` with an explicit URL and project key. The token is sent only
-  when `SONAR_HOST_URL` matches the requested URL, preventing credential forwarding to another host.
+- **Sonar:** discovers the URL and project key from explicit arguments, environment variables,
+  `sonar-project.properties`, or `.scannerwork/report-task.txt`, then queries `api/issues/search`.
+  The token is sent only when `SONAR_HOST_URL` matches the effective URL, preventing credential
+  forwarding to another host.
 
 The default limit is 200 findings and the configurable maximum is 500. Each item preserves source,
 rule, severity, message, file, line, and column and enters the panel under **Review**.

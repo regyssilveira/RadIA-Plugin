@@ -66,6 +66,17 @@ type
     ): TArray<TRadIACodeValidationFinding>; static;
   end;
 
+  TRadIASonarConfiguration = class
+  public
+    class procedure Resolve(
+      const ARootPath: string;
+      const AExplicitUrl: string;
+      const AExplicitProjectKey: string;
+      out AUrl: string;
+      out AProjectKey: string
+    ); static;
+  end;
+
 function RadIAValidationSourceName(
   const ASource: TRadIACodeValidationSource
 ): string;
@@ -78,6 +89,7 @@ implementation
 
 uses
   System.Generics.Collections,
+  System.IOUtils,
   System.Math,
   System.SysUtils;
 
@@ -137,6 +149,60 @@ begin
   else
     Result := cvsInformation;
   end;
+end;
+
+function ReadPropertyValue(
+  const AFileName: string;
+  const AName: string
+): string;
+var
+  LLine: string;
+  LRawLine: string;
+  LSeparator: Integer;
+begin
+  Result := '';
+  if not TFile.Exists(AFileName) then
+    Exit;
+  for LRawLine in TFile.ReadAllLines(AFileName, TEncoding.UTF8) do
+  begin
+    LLine := LRawLine.Trim;
+    if LLine.IsEmpty or LLine.StartsWith('#') then
+      Continue;
+    LSeparator := LLine.IndexOf('=');
+    if (LSeparator > 0) and
+      SameText(LLine.Substring(0, LSeparator).Trim, AName) then
+      Exit(LLine.Substring(LSeparator + 1).Trim);
+  end;
+end;
+
+class procedure TRadIASonarConfiguration.Resolve(
+  const ARootPath: string;
+  const AExplicitUrl: string;
+  const AExplicitProjectKey: string;
+  out AUrl: string;
+  out AProjectKey: string
+);
+var
+  LProperties: string;
+  LReport: string;
+begin
+  AUrl := AExplicitUrl.TrimRight(['/']);
+  AProjectKey := AExplicitProjectKey;
+  LProperties := TPath.Combine(ARootPath, 'sonar-project.properties');
+  LReport := TPath.Combine(
+    TPath.Combine(ARootPath, '.scannerwork'),
+    'report-task.txt'
+  );
+  if AProjectKey.IsEmpty then
+    AProjectKey := ReadPropertyValue(LProperties, 'sonar.projectKey');
+  if AProjectKey.IsEmpty then
+    AProjectKey := ReadPropertyValue(LReport, 'projectKey');
+  if AUrl.IsEmpty then
+    AUrl := GetEnvironmentVariable('SONAR_HOST_URL').TrimRight(['/']);
+  if AUrl.IsEmpty then
+    AUrl := ReadPropertyValue(LProperties, 'sonar.host.url').TrimRight(['/']);
+  if AUrl.IsEmpty then
+    AUrl := ReadPropertyValue(LReport, 'serverUrl').TrimRight(['/']);
 end;
 
 function RadIAValidationSourceName(

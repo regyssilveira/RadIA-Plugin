@@ -60,8 +60,10 @@ fontes para não confundir configuração ausente com defeito no código:
   evidência nova;
 - **DelphiLint:** detecta a instalação em `%USERPROFILE%\DelphiLint` e informa exatamente o recurso
   ausente. O adapter isolado usa a resposta estruturada real e não referencia a BPL externa;
-- **Sonar:** consulta `api/issues/search` com URL e project key explícitos. O token só é enviado quando
-  `SONAR_HOST_URL` coincide com a URL solicitada, evitando encaminhar credenciais a outro host.
+- **Sonar:** descobre URL e project key em parâmetros explícitos, variáveis de ambiente,
+  `sonar-project.properties` ou `.scannerwork/report-task.txt` e consulta `api/issues/search`. O token
+  só é enviado quando `SONAR_HOST_URL` coincide com a URL efetiva, evitando encaminhar credenciais a
+  outro host.
 
 Por padrão, a análise tem limite de 200 achados, com máximo configurável de 500. Cada item preserva
 origem, regra, severidade, mensagem, arquivo, linha e coluna e entra na área **Review** do painel.

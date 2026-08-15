@@ -164,6 +164,22 @@ begin
     Result := LFiles[High(LFiles)];
 end;
 
+procedure ResolveSonarConfiguration(
+  const AProject: TRadIAProjectSnapshot;
+  const ARequest: TRadIACodeValidationRequest;
+  out AUrl: string;
+  out AProjectKey: string
+);
+begin
+  TRadIASonarConfiguration.Resolve(
+    AProject.RootPath,
+    ARequest.SonarUrl,
+    ARequest.SonarProjectKey,
+    AUrl,
+    AProjectKey
+  );
+end;
+
 constructor TRadIACodeValidationRequest.Create(
   const AScope: string;
   const AIncludeCompiler: Boolean;
@@ -320,6 +336,8 @@ var
   LToken: string;
   LTokenHost: string;
   LUrl: string;
+  LSonarProjectKey: string;
+  LSonarUrl: string;
 begin
   if not ARequest.IncludeSonar then
   begin
@@ -327,14 +345,20 @@ begin
       'Sonar analysis was not requested.'));
     Exit;
   end;
-  if ARequest.SonarUrl.IsEmpty or ARequest.SonarProjectKey.IsEmpty then
+  ResolveSonarConfiguration(
+    AProject,
+    ARequest,
+    LSonarUrl,
+    LSonarProjectKey
+  );
+  if LSonarUrl.IsEmpty or LSonarProjectKey.IsEmpty then
   begin
     ASources.AddElement(SourceStatus(
       'sonar',
       'not-configured',
-      'Sonar requires sonarUrl and sonarProjectKey.',
-      'Configure the values from sonar-project.properties; ' +
-      'authentication is read from SONAR_TOKEN.'
+      'Sonar URL or project key could not be discovered.',
+      'Create sonar-project.properties, run a local scan, or provide ' +
+      'sonarUrl and sonarProjectKey. Authentication uses SONAR_TOKEN.'
     ));
     Exit;
   end;
@@ -342,7 +366,7 @@ begin
   LToken := GetEnvironmentVariable('SONAR_TOKEN');
   LTokenHost := GetEnvironmentVariable('SONAR_HOST_URL').TrimRight(['/']);
   if not LToken.IsEmpty and
-    SameText(LTokenHost, ARequest.SonarUrl.TrimRight(['/'])) then
+    SameText(LTokenHost, LSonarUrl) then
   begin
     SetLength(LHeaders, 1);
     LHeaders[0] := TNetHeader.Create(
@@ -350,9 +374,9 @@ begin
       'Basic ' + TNetEncoding.Base64.Encode(LToken + ':')
     );
   end;
-  LUrl := ARequest.SonarUrl.TrimRight(['/']) +
+  LUrl := LSonarUrl +
     '/api/issues/search?componentKeys=' +
-    TNetEncoding.URL.Encode(ARequest.SonarProjectKey) + '&resolved=false&ps=500';
+    TNetEncoding.URL.Encode(LSonarProjectKey) + '&resolved=false&ps=500';
   try
     LJson := FHttpClient.Get(LUrl, LHeaders, 15000);
     if not TRadIACodeValidationParser.ParseSonar(LJson, LItems, LError) then
