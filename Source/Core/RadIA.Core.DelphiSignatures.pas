@@ -31,6 +31,50 @@ type
     property TypeName: string read FTypeName;
   end;
 
+  TRadIADelphiParameterChangeKind = (
+    pckAdded,
+    pckRemoved,
+    pckRenamed,
+    pckReordered,
+    pckModifierChanged,
+    pckTypeChanged,
+    pckDefaultChanged
+  );
+
+  TRadIADelphiParameterChangeKinds = set of TRadIADelphiParameterChangeKind;
+
+  TRadIADelphiParameterMapping = record
+  private
+    FNewName: string;
+    FOldName: string;
+  public
+    constructor Create(const AOldName: string; const ANewName: string);
+    property NewName: string read FNewName;
+    property OldName: string read FOldName;
+  end;
+
+  TRadIADelphiParameterChange = record
+  private
+    FKinds: TRadIADelphiParameterChangeKinds;
+    FNewIndex: Integer;
+    FNewName: string;
+    FOldIndex: Integer;
+    FOldName: string;
+  public
+    constructor Create(
+      const AOldName: string;
+      const ANewName: string;
+      const AOldIndex: Integer;
+      const ANewIndex: Integer;
+      const AKinds: TRadIADelphiParameterChangeKinds
+    );
+    property Kinds: TRadIADelphiParameterChangeKinds read FKinds;
+    property NewIndex: Integer read FNewIndex;
+    property NewName: string read FNewName;
+    property OldIndex: Integer read FOldIndex;
+    property OldName: string read FOldName;
+  end;
+
   TRadIADelphiSignature = record
   private
     FDirectives: string;
@@ -41,12 +85,31 @@ type
     FReturnType: string;
   public
     function FindParameter(const AName: string): Integer;
+    function RenderCore(const AQualifiedName: string): string;
     property Directives: string read FDirectives;
     property IsClassRoutine: Boolean read FIsClassRoutine;
     property Kind: TRadIADelphiRoutineKind read FKind;
     property Name: string read FName;
     property Parameters: TArray<TRadIADelphiParameter> read FParameters;
     property ReturnType: string read FReturnType;
+  end;
+
+  TRadIADelphiSignatureDelta = record
+  private
+    FChanges: TArray<TRadIADelphiParameterChange>;
+    FNewToOld: TArray<Integer>;
+    FReturnTypeChanged: Boolean;
+  public
+    class function TryBuild(
+      const AOldSignature: TRadIADelphiSignature;
+      const ANewSignature: TRadIADelphiSignature;
+      const AMappings: TArray<TRadIADelphiParameterMapping>;
+      out ADelta: TRadIADelphiSignatureDelta;
+      out AError: string
+    ): Boolean; static;
+    property Changes: TArray<TRadIADelphiParameterChange> read FChanges;
+    property NewToOld: TArray<Integer> read FNewToOld;
+    property ReturnTypeChanged: Boolean read FReturnTypeChanged;
   end;
 
   TRadIADelphiSignatureParser = class
@@ -64,6 +127,14 @@ type
       out AError: string
     ): Boolean; static;
   public
+    class function FindTopLevel(
+      const AText: string;
+      const ACharacter: Char
+    ): Integer; static;
+    class function SplitTopLevelItems(
+      const AText: string;
+      const ASeparator: Char
+    ): TArray<string>; static;
     class function TryParse(
       const AText: string;
       out ASignature: TRadIADelphiSignature;
@@ -361,6 +432,53 @@ begin
   FDefaultValue := ADefaultValue;
 end;
 
+constructor TRadIADelphiParameterMapping.Create(
+  const AOldName: string;
+  const ANewName: string
+);
+begin
+  FOldName := AOldName;
+  FNewName := ANewName;
+end;
+
+constructor TRadIADelphiParameterChange.Create(
+  const AOldName: string;
+  const ANewName: string;
+  const AOldIndex: Integer;
+  const ANewIndex: Integer;
+  const AKinds: TRadIADelphiParameterChangeKinds
+);
+begin
+  FOldName := AOldName;
+  FNewName := ANewName;
+  FOldIndex := AOldIndex;
+  FNewIndex := ANewIndex;
+  FKinds := AKinds;
+end;
+
+function RoutineKindText(const AKind: TRadIADelphiRoutineKind): string;
+begin
+  case AKind of
+    drkProcedure: Result := 'procedure';
+    drkFunction: Result := 'function';
+    drkConstructor: Result := 'constructor';
+    drkDestructor: Result := 'destructor';
+    drkOperator: Result := 'operator';
+  else
+    Result := '';
+  end;
+end;
+
+function RenderParameter(const AParameter: TRadIADelphiParameter): string;
+begin
+  Result := '';
+  if not AParameter.Modifier.IsEmpty then
+    Result := AParameter.Modifier + ' ';
+  Result := Result + AParameter.Name + ': ' + AParameter.TypeName;
+  if not AParameter.DefaultValue.IsEmpty then
+    Result := Result + ' = ' + AParameter.DefaultValue;
+end;
+
 function TRadIADelphiSignature.FindParameter(const AName: string): Integer;
 var
   LIndex: Integer;
@@ -369,6 +487,198 @@ begin
     if SameText(FParameters[LIndex].Name, AName) then
       Exit(LIndex);
   Result := -1;
+end;
+
+function TRadIADelphiSignature.RenderCore(
+  const AQualifiedName: string
+): string;
+var
+  LIndex: Integer;
+begin
+  Result := '';
+  if FIsClassRoutine then
+    Result := 'class ';
+  Result := Result + RoutineKindText(FKind) + ' ' + AQualifiedName;
+  if Length(FParameters) > 0 then
+  begin
+    Result := Result + '(';
+    for LIndex := 0 to Length(FParameters) - 1 do
+    begin
+      if LIndex > 0 then
+        Result := Result + '; ';
+      Result := Result + RenderParameter(FParameters[LIndex]);
+    end;
+    Result := Result + ')';
+  end;
+  if not FReturnType.IsEmpty then
+    Result := Result + ': ' + FReturnType;
+  Result := Result + ';';
+end;
+
+function MappedOldName(
+  const ANewName: string;
+  const AMappings: TArray<TRadIADelphiParameterMapping>
+): string;
+var
+  LMapping: TRadIADelphiParameterMapping;
+begin
+  for LMapping in AMappings do
+    if SameText(LMapping.NewName, ANewName) then
+      Exit(LMapping.OldName);
+  Result := ANewName;
+end;
+
+function CompareParameter(
+  const AOldParameter: TRadIADelphiParameter;
+  const ANewParameter: TRadIADelphiParameter;
+  const AOldIndex: Integer;
+  const ANewIndex: Integer
+): TRadIADelphiParameterChangeKinds;
+begin
+  Result := [];
+  if not SameText(AOldParameter.Name, ANewParameter.Name) then
+    Include(Result, pckRenamed);
+  if AOldIndex <> ANewIndex then
+    Include(Result, pckReordered);
+  if not SameText(AOldParameter.Modifier, ANewParameter.Modifier) then
+    Include(Result, pckModifierChanged);
+  if not SameText(AOldParameter.TypeName, ANewParameter.TypeName) then
+    Include(Result, pckTypeChanged);
+  if AOldParameter.DefaultValue <> ANewParameter.DefaultValue then
+    Include(Result, pckDefaultChanged);
+end;
+
+function ValidateMappings(
+  const AOldSignature: TRadIADelphiSignature;
+  const ANewSignature: TRadIADelphiSignature;
+  const AMappings: TArray<TRadIADelphiParameterMapping>;
+  out AError: string
+): Boolean;
+var
+  LMapping: TRadIADelphiParameterMapping;
+begin
+  AError := '';
+  for LMapping in AMappings do
+  begin
+    if AOldSignature.FindParameter(LMapping.OldName) < 0 then
+    begin
+      AError := 'A parameter mapping references an unknown old parameter: ' +
+        LMapping.OldName;
+      Exit(False);
+    end;
+    if ANewSignature.FindParameter(LMapping.NewName) < 0 then
+    begin
+      AError := 'A parameter mapping references an unknown new parameter: ' +
+        LMapping.NewName;
+      Exit(False);
+    end;
+  end;
+  Result := True;
+end;
+
+class function TRadIADelphiSignatureDelta.TryBuild(
+  const AOldSignature: TRadIADelphiSignature;
+  const ANewSignature: TRadIADelphiSignature;
+  const AMappings: TArray<TRadIADelphiParameterMapping>;
+  out ADelta: TRadIADelphiSignatureDelta;
+  out AError: string
+): Boolean;
+var
+  LChangeKinds: TRadIADelphiParameterChangeKinds;
+  LChanges: TList<TRadIADelphiParameterChange>;
+  LNewIndex: Integer;
+  LOldIndex: Integer;
+  LOldName: string;
+  LOldUsed: TArray<Boolean>;
+begin
+  ADelta := Default(TRadIADelphiSignatureDelta);
+  AError := '';
+  if AOldSignature.Kind <> ANewSignature.Kind then
+  begin
+    AError := 'Change Signature cannot change the Delphi routine kind.';
+    Exit(False);
+  end;
+  if not ValidateMappings(AOldSignature, ANewSignature, AMappings, AError) then
+    Exit(False);
+  SetLength(ADelta.FNewToOld, Length(ANewSignature.Parameters));
+  SetLength(LOldUsed, Length(AOldSignature.Parameters));
+  LChanges := TList<TRadIADelphiParameterChange>.Create;
+  try
+    for LNewIndex := 0 to Length(ANewSignature.Parameters) - 1 do
+    begin
+      LOldName := MappedOldName(
+        ANewSignature.Parameters[LNewIndex].Name,
+        AMappings
+      );
+      LOldIndex := AOldSignature.FindParameter(LOldName);
+      ADelta.FNewToOld[LNewIndex] := LOldIndex;
+      if LOldIndex < 0 then
+      begin
+        LChanges.Add(TRadIADelphiParameterChange.Create(
+          '',
+          ANewSignature.Parameters[LNewIndex].Name,
+          -1,
+          LNewIndex,
+          [pckAdded]
+        ));
+        Continue;
+      end;
+      if LOldUsed[LOldIndex] then
+      begin
+        AError := 'Multiple new parameters map to the same old parameter: ' +
+          LOldName;
+        Exit(False);
+      end;
+      LOldUsed[LOldIndex] := True;
+      LChangeKinds := CompareParameter(
+        AOldSignature.Parameters[LOldIndex],
+        ANewSignature.Parameters[LNewIndex],
+        LOldIndex,
+        LNewIndex
+      );
+      if LChangeKinds <> [] then
+        LChanges.Add(TRadIADelphiParameterChange.Create(
+          AOldSignature.Parameters[LOldIndex].Name,
+          ANewSignature.Parameters[LNewIndex].Name,
+          LOldIndex,
+          LNewIndex,
+          LChangeKinds
+        ));
+    end;
+    for LOldIndex := 0 to Length(AOldSignature.Parameters) - 1 do
+      if not LOldUsed[LOldIndex] then
+        LChanges.Add(TRadIADelphiParameterChange.Create(
+          AOldSignature.Parameters[LOldIndex].Name,
+          '',
+          LOldIndex,
+          -1,
+          [pckRemoved]
+        ));
+    ADelta.FChanges := LChanges.ToArray;
+    ADelta.FReturnTypeChanged := not SameText(
+      AOldSignature.ReturnType,
+      ANewSignature.ReturnType
+    );
+    Result := True;
+  finally
+    LChanges.Free;
+  end;
+end;
+
+class function TRadIADelphiSignatureParser.FindTopLevel(
+  const AText: string;
+  const ACharacter: Char
+): Integer;
+begin
+  Result := FindTopLevelCharacter(AText, ACharacter);
+end;
+
+class function TRadIADelphiSignatureParser.SplitTopLevelItems(
+  const AText: string;
+  const ASeparator: Char
+): TArray<string>;
+begin
+  Result := SplitTopLevel(AText, ASeparator);
 end;
 
 class function TRadIADelphiSignatureParser.ExtractHeader(

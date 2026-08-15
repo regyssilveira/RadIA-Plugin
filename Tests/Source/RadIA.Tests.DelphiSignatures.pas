@@ -17,12 +17,61 @@ type
     procedure RejectsInvalidSignatures;
     [Test]
     procedure ParsesParameterlessProcedureDirectives;
+    [Test]
+    procedure BuildsExplicitDeterministicSignatureDelta;
+    [Test]
+    procedure RendersQualifiedImplementationSignature;
+    [Test]
+    procedure RejectsDuplicateAndUnknownMappings;
   end;
 
 implementation
 
 uses
   RadIA.Core.DelphiSignatures;
+
+procedure TRadIADelphiSignatureTests.BuildsExplicitDeterministicSignatureDelta;
+var
+  LDelta: TRadIADelphiSignatureDelta;
+  LError: string;
+  LMappings: TArray<TRadIADelphiParameterMapping>;
+  LNewSignature: TRadIADelphiSignature;
+  LOldSignature: TRadIADelphiSignature;
+begin
+  Assert.IsTrue(TRadIADelphiSignatureParser.TryParse(
+    'function Calculate(const AValue: Integer; const AScale: Double): Double;',
+    LOldSignature,
+    LError
+  ), LError);
+  Assert.IsTrue(TRadIADelphiSignatureParser.TryParse(
+    'function Calculate(const AMultiplier: Double; ' +
+    'const AInput: Int64; const ARound: Boolean = False): Extended;',
+    LNewSignature,
+    LError
+  ), LError);
+  LMappings := [
+    TRadIADelphiParameterMapping.Create('AScale', 'AMultiplier'),
+    TRadIADelphiParameterMapping.Create('AValue', 'AInput')
+  ];
+  Assert.IsTrue(TRadIADelphiSignatureDelta.TryBuild(
+    LOldSignature,
+    LNewSignature,
+    LMappings,
+    LDelta,
+    LError
+  ), LError);
+  Assert.AreEqual(1, LDelta.NewToOld[0]);
+  Assert.AreEqual(0, LDelta.NewToOld[1]);
+  Assert.AreEqual(-1, LDelta.NewToOld[2]);
+  Assert.IsTrue(LDelta.ReturnTypeChanged);
+  Assert.IsTrue(pckRenamed in LDelta.Changes[0].Kinds);
+  Assert.IsTrue(pckReordered in LDelta.Changes[0].Kinds);
+  Assert.IsTrue(pckAdded in LDelta.Changes[2].Kinds);
+  Assert.AreEqual('AScale', LDelta.Changes[0].OldName);
+  Assert.AreEqual('AMultiplier', LDelta.Changes[0].NewName);
+  Assert.AreEqual(1, LDelta.Changes[0].OldIndex);
+  Assert.AreEqual(0, LDelta.Changes[0].NewIndex);
+end;
 
 procedure TRadIADelphiSignatureTests.ParsesGroupedParametersAndDirectives;
 var
@@ -101,6 +150,58 @@ begin
     LSignature,
     LError
   ));
+end;
+
+procedure TRadIADelphiSignatureTests.RejectsDuplicateAndUnknownMappings;
+var
+  LDelta: TRadIADelphiSignatureDelta;
+  LError: string;
+  LNewSignature: TRadIADelphiSignature;
+  LOldSignature: TRadIADelphiSignature;
+begin
+  TRadIADelphiSignatureParser.TryParse(
+    'procedure Execute(const AFirst: Integer; const ASecond: Integer);',
+    LOldSignature,
+    LError
+  );
+  TRadIADelphiSignatureParser.TryParse(
+    'procedure Execute(const AOne: Integer; const ATwo: Integer);',
+    LNewSignature,
+    LError
+  );
+  Assert.IsFalse(TRadIADelphiSignatureDelta.TryBuild(
+    LOldSignature,
+    LNewSignature,
+    [TRadIADelphiParameterMapping.Create('AMissing', 'AOne')],
+    LDelta,
+    LError
+  ));
+  Assert.IsFalse(TRadIADelphiSignatureDelta.TryBuild(
+    LOldSignature,
+    LNewSignature,
+    [
+      TRadIADelphiParameterMapping.Create('AFirst', 'AOne'),
+      TRadIADelphiParameterMapping.Create('AFirst', 'ATwo')
+    ],
+    LDelta,
+    LError
+  ));
+end;
+
+procedure TRadIADelphiSignatureTests.RendersQualifiedImplementationSignature;
+var
+  LError: string;
+  LSignature: TRadIADelphiSignature;
+begin
+  Assert.IsTrue(TRadIADelphiSignatureParser.TryParse(
+    'class function Calculate(const AValue: Integer): Double;',
+    LSignature,
+    LError
+  ), LError);
+  Assert.AreEqual(
+    'class function TWorker.Calculate(const AValue: Integer): Double;',
+    LSignature.RenderCore('TWorker.Calculate')
+  );
 end;
 
 initialization
