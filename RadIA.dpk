@@ -38,6 +38,7 @@ requires
   IndyProtocols;
 
 contains
+  RadIA.Core.DelphiSignatures in 'Source\Core\RadIA.Core.DelphiSignatures.pas',
   RadIA.Core.Types in 'Source\Core\RadIA.Core.Types.pas',
   RadIA.Core.Version in 'Source\Core\RadIA.Core.Version.pas',
   RadIA.Core.Tools in 'Source\Core\RadIA.Core.Tools.pas',
