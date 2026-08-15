@@ -13,7 +13,9 @@ type
     FKind: string;
     FName: string;
     FSignature: string;
+    FSymbolId: string;
     FStartOffset: Integer;
+    FUnitKey: string;
     FVisibility: string;
   public
     constructor Create(
@@ -38,8 +40,39 @@ type
     property Kind: string read FKind;
     property Name: string read FName;
     property Signature: string read FSignature;
+    property SymbolId: string read FSymbolId;
     property StartOffset: Integer read FStartOffset;
     property Visibility: string read FVisibility;
+    property UnitKey: string read FUnitKey;
+  end;
+
+  TRadIASemanticReferenceLocation = record
+  private
+    FColumn: Integer;
+    FFileName: string;
+    FKind: string;
+    FLength: Integer;
+    FLine: Integer;
+    FReason: string;
+    FStartOffset: Integer;
+    FUnitKey: string;
+  public
+    constructor Create(
+      const AUnitKey: string;
+      const AFileName: string;
+      const ALine: Integer;
+      const AColumn: Integer;
+      const AKind: string;
+      const AReason: string
+    );
+    property Column: Integer read FColumn;
+    property FileName: string read FFileName;
+    property Kind: string read FKind;
+    property Length: Integer read FLength;
+    property Line: Integer read FLine;
+    property Reason: string read FReason;
+    property StartOffset: Integer read FStartOffset;
+    property UnitKey: string read FUnitKey;
   end;
 
   IRadIASemanticQueryService = interface
@@ -52,6 +85,13 @@ type
     function FindResolvedMembers(
       const AContainerName: string;
       out AMembers: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function FindReferences(
+      const ASymbolId: string;
+      const AIncludeCandidates: Boolean;
+      const AMaxItems: Integer;
+      out AReferences: TArray<TRadIASemanticReferenceLocation>;
       out AError: string
     ): Boolean;
     function ListPublicApiSymbols(
@@ -83,6 +123,13 @@ type
       out AItems: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
+    function ExecuteReferences(
+      const ASymbolId: string;
+      const AIncludeCandidates: Boolean;
+      const AMaxItems: Integer;
+      out AReferences: TArray<TRadIASemanticReferenceLocation>;
+      out AError: string
+    ): Boolean;
   public
     constructor Create(const AClient: IRadIASemanticRequestClient);
     function FindSymbols(
@@ -93,6 +140,13 @@ type
     function FindResolvedMembers(
       const AContainerName: string;
       out AMembers: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function FindReferences(
+      const ASymbolId: string;
+      const AIncludeCandidates: Boolean;
+      const AMaxItems: Integer;
+      out AReferences: TArray<TRadIASemanticReferenceLocation>;
       out AError: string
     ): Boolean;
     function ListPublicApiSymbols(
@@ -160,6 +214,25 @@ begin
   FStartOffset := AStartOffset;
 end;
 
+constructor TRadIASemanticReferenceLocation.Create(
+  const AUnitKey: string;
+  const AFileName: string;
+  const ALine: Integer;
+  const AColumn: Integer;
+  const AKind: string;
+  const AReason: string
+);
+begin
+  FUnitKey := AUnitKey;
+  FFileName := AFileName;
+  FLine := ALine;
+  FColumn := AColumn;
+  FKind := AKind;
+  FReason := AReason;
+  FStartOffset := 0;
+  FLength := 0;
+end;
+
 constructor TRadIASemanticQueryService.Create(
   const AClient: IRadIASemanticRequestClient
 );
@@ -182,6 +255,7 @@ var
   LDocument: TJSONObject;
   LIndex: Integer;
   LItem: TJSONObject;
+  LLocation: TRadIASemanticLocation;
   LList: TList<TRadIASemanticLocation>;
   LParameters: TJSONObject;
   LResponse: string;
@@ -224,7 +298,7 @@ begin
         if LList.Count >= CMaximumSemanticQueryItems then
           Break;
         LItem := LArray[LIndex] as TJSONObject;
-        LList.Add(TRadIASemanticLocation.Create(
+        LLocation := TRadIASemanticLocation.Create(
           LItem.GetValue<string>('name', ''),
           LItem.GetValue<string>('kind', ''),
           LItem.GetValue<string>('container', ''),
@@ -232,9 +306,105 @@ begin
           LItem.GetValue<string>('signature', ''),
           LItem.GetValue<string>('visibility', ''),
           LItem.GetValue<Integer>('startOffset', 0)
-        ));
+        );
+        LLocation.FSymbolId := LItem.GetValue<string>('symbolId', '');
+        LLocation.FUnitKey := LItem.GetValue<string>('unitKey', '');
+        LList.Add(LLocation);
       end;
       AItems := LList.ToArray;
+    finally
+      LList.Free;
+    end;
+    Result := True;
+  finally
+    LDocument.Free;
+  end;
+end;
+
+function TRadIASemanticQueryService.ExecuteReferences(
+  const ASymbolId: string;
+  const AIncludeCandidates: Boolean;
+  const AMaxItems: Integer;
+  out AReferences: TArray<TRadIASemanticReferenceLocation>;
+  out AError: string
+): Boolean;
+var
+  LArray: TJSONArray;
+  LDocument: TJSONObject;
+  LIndex: Integer;
+  LItem: TJSONObject;
+  LList: TList<TRadIASemanticReferenceLocation>;
+  LParameters: TJSONObject;
+  LReference: TRadIASemanticReferenceLocation;
+  LResponse: string;
+  LResult: TJSONObject;
+begin
+  AReferences := nil;
+  AError := '';
+  LParameters := TJSONObject.Create;
+  try
+    LParameters.AddPair('symbolId', ASymbolId);
+    LParameters.AddPair(
+      'includeCandidates',
+      TJSONBool.Create(AIncludeCandidates)
+    );
+    LParameters.AddPair('maxItems', TJSONNumber.Create(AMaxItems));
+    Result := FClient.Request(
+      'findReferences',
+      LParameters.ToJSON,
+      LResponse,
+      AError
+    );
+  finally
+    LParameters.Free;
+  end;
+  if not Result then
+    Exit;
+  LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+  try
+    if not Assigned(LDocument) then
+    begin
+      AError := 'The semantic engine returned invalid reference JSON.';
+      Exit(False);
+    end;
+    LResult := LDocument.GetValue<TJSONObject>('result');
+    if not Assigned(LResult) then
+    begin
+      AError := 'The semantic engine returned no reference result.';
+      Exit(False);
+    end;
+    if not SameText(LResult.GetValue<string>('status', ''), 'resolved') then
+    begin
+      AError := 'The requested semantic symbol identity was not found.';
+      Exit(False);
+    end;
+    LArray := LResult.GetValue<TJSONArray>('references');
+    if not Assigned(LArray) then
+    begin
+      AError := 'The semantic engine returned no reference array.';
+      Exit(False);
+    end;
+    LList := TList<TRadIASemanticReferenceLocation>.Create;
+    try
+      for LIndex := 0 to LArray.Count - 1 do
+      begin
+        LItem := LArray[LIndex] as TJSONObject;
+        LReference := TRadIASemanticReferenceLocation.Create(
+          LItem.GetValue<string>('unitKey', ''),
+          LItem.GetValue<string>('fileName', ''),
+          LItem.GetValue<Integer>('line', 1),
+          LItem.GetValue<Integer>('column', 1),
+          LItem.GetValue<string>('kind', ''),
+          LItem.GetValue<string>('reason', '')
+        );
+        LReference.FStartOffset := LItem.GetValue<Integer>(
+          'startOffset',
+          0
+        );
+        LReference.FLength := LItem.GetValue<Integer>('length', 0);
+        LList.Add(LReference);
+      end;
+      AReferences := LList.ToArray;
     finally
       LList.Free;
     end;
@@ -278,6 +448,23 @@ begin
     'container',
     AContainerName,
     AMembers,
+    AError
+  );
+end;
+
+function TRadIASemanticQueryService.FindReferences(
+  const ASymbolId: string;
+  const AIncludeCandidates: Boolean;
+  const AMaxItems: Integer;
+  out AReferences: TArray<TRadIASemanticReferenceLocation>;
+  out AError: string
+): Boolean;
+begin
+  Result := ExecuteReferences(
+    ASymbolId,
+    AIncludeCandidates,
+    AMaxItems,
+    AReferences,
     AError
   );
 end;

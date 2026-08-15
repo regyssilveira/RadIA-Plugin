@@ -41,6 +41,18 @@ type
     procedure CompletesResolvedMembersByPrefixWithoutDuplicates;
     [Test]
     procedure ListsOnlyDeterministicPublicProjectApi;
+    [Test]
+    procedure KeepsStableSymbolIdentityAcrossOffsetChanges;
+    [Test]
+    procedure DistinguishesOverloadsAndUnitsByIdentity;
+    [Test]
+    procedure FindsOnlyActiveCodeReferencesForUniqueSymbol;
+    [Test]
+    procedure SeparatesExactAndCandidateReferencesForHomonyms;
+    [Test]
+    procedure RestoresReferencesFromCache;
+    [Test]
+    procedure FindsDfmClassAndEventReferences;
   end;
 
 procedure TRadIASemanticIndexTests.Setup;
@@ -336,6 +348,293 @@ begin
   Assert.AreEqual('Sample.Api', LSymbols[0].Name);
   Assert.AreEqual('TApi', LSymbols[1].Name);
   Assert.AreEqual('Execute', LSymbols[2].Name);
+end;
+
+procedure TRadIASemanticIndexTests.KeepsStableSymbolIdentityAcrossOffsetChanges;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LFirstId: string;
+  LFirstOffset: Integer;
+  LSymbols: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.identity',
+    'Sample.Identity.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Identity; interface type TWorker = class end; ' +
+    'implementation end.',
+    nil
+  );
+  LSymbols := FIndex.FindSymbols('TWorker');
+  Assert.AreEqual(NativeInt(1), Length(LSymbols));
+  LFirstId := LSymbols[0].SymbolId;
+  LFirstOffset := LSymbols[0].StartOffset;
+
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.identity',
+    'Sample.Identity.pas',
+    susProject,
+    2
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Identity; interface const CShift = 1; ' +
+    'type TWorker = class end; implementation end.',
+    nil
+  );
+  LSymbols := FIndex.FindSymbols('TWorker');
+  Assert.AreEqual(LFirstId, LSymbols[0].SymbolId);
+  Assert.AreNotEqual(LFirstOffset, LSymbols[0].StartOffset);
+  Assert.AreEqual(
+    NativeInt(1),
+    Length(FIndex.FindSymbolsById(LFirstId))
+  );
+end;
+
+procedure TRadIASemanticIndexTests.DistinguishesOverloadsAndUnitsByIdentity;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LFirstUnitTypeId: string;
+  LMethods: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.first',
+    'Sample.First.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.First; interface type TWorker = class ' +
+    'procedure Execute(const AValue: Integer); overload; ' +
+    'procedure Execute(const AValue: string); overload; end; ' +
+    'implementation end.',
+    nil
+  );
+  LFirstUnitTypeId := FIndex.FindSymbols('TWorker')[0].SymbolId;
+  LMethods := FIndex.FindSymbols('Execute');
+  Assert.AreEqual(NativeInt(2), Length(LMethods));
+  Assert.AreNotEqual(LMethods[0].SymbolId, LMethods[1].SymbolId);
+
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.second',
+    'Sample.Second.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Second; interface type TWorker = class end; ' +
+    'implementation end.',
+    nil
+  );
+  Assert.AreEqual(NativeInt(2), Length(FIndex.FindSymbols('TWorker')));
+  Assert.AreNotEqual(
+    LFirstUnitTypeId,
+    FIndex.FindSymbols('TWorker')[1].SymbolId
+  );
+end;
+
+procedure TRadIASemanticIndexTests.
+  FindsOnlyActiveCodeReferencesForUniqueSymbol;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LReferences: TArray<TRadIASemanticReference>;
+  LSymbolId: string;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.references',
+    'Sample.References.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.References; interface type TWorker = class end; ' +
+    'implementation procedure Use; var LWorker: TWorker; begin ' +
+    '// TWorker' + sLineBreak +
+    'Writeln(''TWorker''); {$IFDEF NEVER} LWorker := TWorker.Create; ' +
+    '{$ENDIF} end; end.',
+    nil
+  );
+  LSymbolId := FIndex.FindSymbols('TWorker')[0].SymbolId;
+  LReferences := FIndex.FindReferences(LSymbolId, False, 100);
+  Assert.AreEqual(NativeInt(2), Length(LReferences));
+  Assert.AreEqual(srkDeclaration, LReferences[0].Kind);
+  Assert.AreEqual(srkExact, LReferences[1].Kind);
+end;
+
+procedure TRadIASemanticIndexTests.
+  SeparatesExactAndCandidateReferencesForHomonyms;
+var
+  LCandidates: Integer;
+  LDeclarations: Integer;
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LExact: TArray<TRadIASemanticReference>;
+  LExactMatches: Integer;
+  LReference: TRadIASemanticReference;
+  LWithCandidates: TArray<TRadIASemanticReference>;
+  LSymbolId: string;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.first',
+    'Sample.First.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.First; interface type TWorker = class end; ' +
+    'implementation end.',
+    nil
+  );
+  LSymbolId := FIndex.FindSymbols('TWorker')[0].SymbolId;
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.second',
+    'Sample.Second.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Second; interface type TWorker = class end; ' +
+    'implementation end.',
+    nil
+  );
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.consumer',
+    'Sample.Consumer.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Consumer; interface uses Sample.First, Sample.Second; ' +
+    'type TConsumer = class procedure Use; end; implementation ' +
+    'procedure TConsumer.Use; var LExact: Sample.First.TWorker; ' +
+    'LAmbiguous: TWorker; begin end; end.',
+    nil
+  );
+  LExact := FIndex.FindReferences(LSymbolId, False, 100);
+  Assert.AreEqual(NativeInt(2), Length(LExact));
+  LDeclarations := 0;
+  LExactMatches := 0;
+  for LReference in LExact do
+    if LReference.Kind = srkDeclaration then
+      Inc(LDeclarations)
+    else if (LReference.Kind = srkExact) and
+      (LReference.Reason = 'qualified-symbol') then
+      Inc(LExactMatches);
+  Assert.AreEqual(1, LDeclarations);
+  Assert.AreEqual(1, LExactMatches);
+  LWithCandidates := FIndex.FindReferences(LSymbolId, True, 100);
+  Assert.AreEqual(NativeInt(3), Length(LWithCandidates));
+  LCandidates := 0;
+  for LReference in LWithCandidates do
+    if (LReference.Kind = srkCandidate) and
+      (LReference.Reason = 'ambiguous-short-name') then
+      Inc(LCandidates);
+  Assert.AreEqual(1, LCandidates);
+end;
+
+procedure TRadIASemanticIndexTests.RestoresReferencesFromCache;
+var
+  LCacheFile: string;
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LError: string;
+  LRestored: TRadIASemanticIndex;
+  LSymbolId: string;
+begin
+  LCacheFile := TPath.GetTempFileName;
+  try
+    LDescriptor := TRadIASemanticUnitDescriptor.Create(
+      'sample.cache',
+      'Sample.Cache.pas',
+      susProject,
+      1
+    );
+    FIndex.IndexUnit(
+      LDescriptor,
+      'unit Sample.Cache; interface type TWorker = class end; ' +
+      'implementation procedure Use(AWorker: TWorker); begin end; end.',
+      nil
+    );
+    LSymbolId := FIndex.FindSymbols('TWorker')[0].SymbolId;
+    FIndex.SaveCache(LCacheFile);
+    LRestored := TRadIASemanticIndex.Create;
+    try
+      Assert.IsTrue(LRestored.LoadCache(LCacheFile, LError), LError);
+      Assert.AreEqual(
+        NativeInt(2),
+        Length(LRestored.FindReferences(LSymbolId, False, 100))
+      );
+    finally
+      LRestored.Free;
+    end;
+  finally
+    if TFile.Exists(LCacheFile) then
+      TFile.Delete(LCacheFile);
+  end;
+end;
+
+procedure TRadIASemanticIndexTests.FindsDfmClassAndEventReferences;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LEventId: string;
+  LReference: TRadIASemanticReference;
+  LReferences: TArray<TRadIASemanticReference>;
+  LTypeId: string;
+  LFoundEvent: Boolean;
+  LFoundType: Boolean;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'main.pas',
+    'Main.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Main; interface type TMainForm = class ' +
+    'procedure SaveButtonClick(Sender: TObject); end; implementation ' +
+    'procedure TMainForm.SaveButtonClick(Sender: TObject); begin end; end.',
+    nil
+  );
+  LTypeId := FIndex.FindSymbols('TMainForm')[0].SymbolId;
+  LEventId := FIndex.FindSymbols('SaveButtonClick')[0].SymbolId;
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'main.dfm',
+    'Main.dfm',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'object MainForm: TMainForm' + sLineBreak +
+    '  object SaveButton: TButton' + sLineBreak +
+    '    OnClick = SaveButtonClick' + sLineBreak +
+    '  end' + sLineBreak + 'end',
+    nil
+  );
+  LFoundType := False;
+  LReferences := FIndex.FindReferences(LTypeId, False, 100);
+  for LReference in LReferences do
+    if SameText(LReference.FileName, 'Main.dfm') and
+      (LReference.Kind = srkExact) then
+      LFoundType := True;
+  LFoundEvent := False;
+  LReferences := FIndex.FindReferences(LEventId, False, 100);
+  for LReference in LReferences do
+    if SameText(LReference.FileName, 'Main.dfm') and
+      (LReference.Line = 3) and (LReference.Column = 15) and
+      (LReference.Kind = srkExact) then
+      LFoundEvent := True;
+  Assert.IsTrue(LFoundType, 'The DFM class reference was not resolved.');
+  Assert.IsTrue(LFoundEvent, 'The DFM event reference was not resolved.');
 end;
 
 initialization

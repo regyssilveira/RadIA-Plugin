@@ -14,6 +14,73 @@ type
     susVCL
   );
 
+  TRadIASemanticReferenceKind = (
+    srkDeclaration,
+    srkExact,
+    srkCandidate
+  );
+
+  TRadIASemanticIndexedIdentifier = record
+  private
+    FColumn: Integer;
+    FLength: Integer;
+    FLine: Integer;
+    FName: string;
+    FQualifier: string;
+    FStartOffset: Integer;
+  public
+    constructor Create(
+      const AName: string;
+      const AQualifier: string;
+      const AStartOffset: Integer;
+      const ALength: Integer;
+      const ALine: Integer;
+      const AColumn: Integer
+    );
+    property Column: Integer read FColumn;
+    property Length: Integer read FLength;
+    property Line: Integer read FLine;
+    property Name: string read FName;
+    property Qualifier: string read FQualifier;
+    property StartOffset: Integer read FStartOffset;
+  end;
+
+  TRadIASemanticReference = record
+  private
+    FColumn: Integer;
+    FFileName: string;
+    FKind: TRadIASemanticReferenceKind;
+    FLength: Integer;
+    FLine: Integer;
+    FReason: string;
+    FStartOffset: Integer;
+    FSymbolId: string;
+    FUnitKey: string;
+  public
+    constructor Create(
+      const ASymbolId: string;
+      const AUnitKey: string;
+      const AFileName: string;
+      const AStartOffset: Integer;
+      const ALength: Integer;
+      const AKind: TRadIASemanticReferenceKind;
+      const AReason: string
+    );
+    function WithPosition(
+      const ALine: Integer;
+      const AColumn: Integer
+    ): TRadIASemanticReference;
+    property Column: Integer read FColumn;
+    property FileName: string read FFileName;
+    property Kind: TRadIASemanticReferenceKind read FKind;
+    property Length: Integer read FLength;
+    property Line: Integer read FLine;
+    property Reason: string read FReason;
+    property StartOffset: Integer read FStartOffset;
+    property SymbolId: string read FSymbolId;
+    property UnitKey: string read FUnitKey;
+  end;
+
   TRadIASemanticUnitDescriptor = record
   private
     FFileName: string;
@@ -43,6 +110,7 @@ type
     FName: string;
     FScope: TRadIASemanticUnitScope;
     FSignature: string;
+    FSymbolId: string;
     FStartOffset: Integer;
     FUnitKey: string;
     FVisibility: TRadIASemanticVisibility;
@@ -59,6 +127,7 @@ type
     property Name: string read FName;
     property Scope: TRadIASemanticUnitScope read FScope;
     property Signature: string read FSignature;
+    property SymbolId: string read FSymbolId;
     property StartOffset: Integer read FStartOffset;
     property UnitKey: string read FUnitKey;
     property Visibility: TRadIASemanticVisibility read FVisibility;
@@ -67,23 +136,73 @@ type
   TRadIASemanticIndexedUnit = class
   private
     FDescriptor: TRadIASemanticUnitDescriptor;
+    FIdentifiers: TArray<TRadIASemanticIndexedIdentifier>;
     FSymbols: TArray<TRadIASemanticIndexedSymbol>;
   public
     constructor Create(
       const ADescriptor: TRadIASemanticUnitDescriptor;
-      const ASymbols: TArray<TRadIASemanticIndexedSymbol>
+      const ASymbols: TArray<TRadIASemanticIndexedSymbol>;
+      const AIdentifiers: TArray<TRadIASemanticIndexedIdentifier>
     );
     property Descriptor: TRadIASemanticUnitDescriptor read FDescriptor;
+    property Identifiers: TArray<TRadIASemanticIndexedIdentifier> read FIdentifiers;
     property Symbols: TArray<TRadIASemanticIndexedSymbol> read FSymbols;
   end;
 
   TRadIASemanticIndex = class
   private
     FByContainer: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
+    FByIdentity: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
     FByName: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
     FSymbolCount: Integer;
     FUnits: TObjectDictionary<string, TRadIASemanticIndexedUnit>;
     class function Normalize(const AValue: string): string; static;
+    class function BuildSymbolId(
+      const AUnitKey: string;
+      const ASymbol: TRadIASemanticSymbol
+    ): string; static;
+    class function BuildIdentifiers(
+      const ASource: string;
+      const ADefines: TArray<string>
+    ): TArray<TRadIASemanticIndexedIdentifier>; static;
+    class procedure AdvancePosition(
+      const AText: string;
+      var ALine: Integer;
+      var AColumn: Integer
+    ); static;
+    function CountDistinctSymbolIds(const AName: string): Integer;
+    function CountQualifiedSymbolIds(
+      const AName: string;
+      const AQualifier: string
+    ): Integer;
+    function IsDeclaration(
+      const AUnit: TRadIASemanticIndexedUnit;
+      const AIdentifier: TRadIASemanticIndexedIdentifier;
+      const ASymbolId: string
+    ): Boolean;
+    function IsForeignDeclaration(
+      const AUnit: TRadIASemanticIndexedUnit;
+      const AIdentifier: TRadIASemanticIndexedIdentifier;
+      const ASymbolId: string
+    ): Boolean;
+    function ClassifyReference(
+      const AUnit: TRadIASemanticIndexedUnit;
+      const AIdentifier: TRadIASemanticIndexedIdentifier;
+      const ATarget: TRadIASemanticIndexedSymbol;
+      const ADistinctIds: Integer;
+      out AReason: string
+    ): TRadIASemanticReferenceKind;
+    procedure CollectUnitReferences(
+      const AUnit: TRadIASemanticIndexedUnit;
+      const ATarget: TRadIASemanticIndexedSymbol;
+      const ADistinctIds: Integer;
+      const AIncludeCandidates: Boolean;
+      const AReferences: TList<TRadIASemanticReference>
+    );
+    class function QualifierMatches(
+      const AQualifier: string;
+      const ASymbol: TRadIASemanticIndexedSymbol
+    ): Boolean; static;
     procedure AddLookup(
       const ALookup: TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>;
       const AKey: string;
@@ -116,7 +235,8 @@ type
     procedure RemoveUnitSymbols(const AUnit: TRadIASemanticIndexedUnit);
     procedure RestoreUnit(
       const ADescriptor: TRadIASemanticUnitDescriptor;
-      const ASymbols: TArray<TRadIASemanticIndexedSymbol>
+      const ASymbols: TArray<TRadIASemanticIndexedSymbol>;
+      const AIdentifiers: TArray<TRadIASemanticIndexedIdentifier>
     );
   public
     constructor Create;
@@ -139,6 +259,14 @@ type
     function FindSymbols(
       const AName: string
     ): TArray<TRadIASemanticIndexedSymbol>;
+    function FindSymbolsById(
+      const ASymbolId: string
+    ): TArray<TRadIASemanticIndexedSymbol>;
+    function FindReferences(
+      const ASymbolId: string;
+      const AIncludeCandidates: Boolean;
+      const AMaxItems: Integer
+    ): TArray<TRadIASemanticReference>;
     function ListPublicApiSymbols(
       const AMaxItems: Integer
     ): TArray<TRadIASemanticIndexedSymbol>;
@@ -161,7 +289,100 @@ uses
   System.Generics.Defaults,
   System.IOUtils,
   System.JSON,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Semantic.Lexer,
+  RadIA.Semantic.Preprocessor;
+
+type
+  TRadIAIdentifierScanState = record
+  private
+    FBeforePrevious: TRadIASemanticToken;
+    FColumn: Integer;
+    FHasBeforePrevious: Boolean;
+    FHasPrevious: Boolean;
+    FLine: Integer;
+    FPrevious: TRadIASemanticToken;
+  public
+    class function Initialize: TRadIAIdentifierScanState; static;
+    procedure AcceptToken(const AToken: TRadIASemanticToken);
+    function Qualifier: string;
+    procedure ResetHistory;
+    property Column: Integer read FColumn write FColumn;
+    property Line: Integer read FLine write FLine;
+  end;
+
+class function TRadIAIdentifierScanState.Initialize:
+  TRadIAIdentifierScanState;
+begin
+  Result.FHasBeforePrevious := False;
+  Result.FHasPrevious := False;
+  Result.FLine := 1;
+  Result.FColumn := 1;
+end;
+
+procedure TRadIAIdentifierScanState.AcceptToken(
+  const AToken: TRadIASemanticToken
+);
+begin
+  if FHasPrevious then
+  begin
+    FBeforePrevious := FPrevious;
+    FHasBeforePrevious := True;
+  end;
+  FPrevious := AToken;
+  FHasPrevious := True;
+end;
+
+function TRadIAIdentifierScanState.Qualifier: string;
+begin
+  Result := '';
+  if FHasBeforePrevious and FHasPrevious and
+    (FPrevious.Kind = stkSymbol) and (FPrevious.Text = '.') and
+    (FBeforePrevious.Kind = stkIdentifier) then
+    Result := FBeforePrevious.Text;
+end;
+
+procedure TRadIAIdentifierScanState.ResetHistory;
+begin
+  FHasBeforePrevious := False;
+  FHasPrevious := False;
+end;
+
+procedure ProcessActiveIdentifierToken(
+  const AProcessed: TRadIASemanticProcessedToken;
+  var AState: TRadIAIdentifierScanState;
+  const AIdentifiers: TList<TRadIASemanticIndexedIdentifier>
+);
+begin
+  if AProcessed.Token.Kind = stkIdentifier then
+    AIdentifiers.Add(TRadIASemanticIndexedIdentifier.Create(
+      AProcessed.Token.Text,
+      AState.Qualifier,
+      AProcessed.Token.StartOffset,
+      AProcessed.Token.Length,
+      AState.Line,
+      AState.Column
+    ));
+  if AProcessed.Token.Kind in [
+    stkIdentifier,
+    stkNumber,
+    stkString,
+    stkSymbol
+  ] then
+    AState.AcceptToken(AProcessed.Token);
+end;
+
+function CompareReferences(
+  const ALeft: TRadIASemanticReference;
+  const ARight: TRadIASemanticReference
+): Integer;
+begin
+  Result := CompareText(ALeft.FileName, ARight.FileName);
+  if Result = 0 then
+    Result := ALeft.StartOffset - ARight.StartOffset;
+  if Result = 0 then
+    Result := Ord(ALeft.Kind) - Ord(ARight.Kind);
+end;
 
 function ComparePublicApiSymbols(
   const ALeft: TRadIASemanticIndexedSymbol;
@@ -176,7 +397,7 @@ begin
 end;
 
 const
-  CIndexCacheSchemaVersion = '1.0';
+  CIndexCacheSchemaVersion = '2.0';
 
 function FindStructuralType(
   const AIndex: TRadIASemanticIndex;
@@ -270,6 +491,78 @@ begin
   end;
 end;
 
+function ReadCacheIdentifiers(
+  const AObject: TJSONObject
+): TArray<TRadIASemanticIndexedIdentifier>;
+var
+  LArray: TJSONArray;
+  LIndex: Integer;
+  LItem: TJSONObject;
+begin
+  LArray := AObject.GetValue<TJSONArray>('identifiers');
+  if not Assigned(LArray) then
+    raise EInvalidOpException.Create('Semantic cache unit has no identifier list.');
+  SetLength(Result, LArray.Count);
+  for LIndex := 0 to LArray.Count - 1 do
+  begin
+    LItem := LArray[LIndex] as TJSONObject;
+    Result[LIndex] := TRadIASemanticIndexedIdentifier.Create(
+      LItem.GetValue<string>('name', ''),
+      LItem.GetValue<string>('qualifier', ''),
+      LItem.GetValue<Integer>('startOffset', 0),
+      LItem.GetValue<Integer>('length', 0),
+      LItem.GetValue<Integer>('line', 1),
+      LItem.GetValue<Integer>('column', 1)
+    );
+  end;
+end;
+
+constructor TRadIASemanticIndexedIdentifier.Create(
+  const AName: string;
+  const AQualifier: string;
+  const AStartOffset: Integer;
+  const ALength: Integer;
+  const ALine: Integer;
+  const AColumn: Integer
+);
+begin
+  FName := AName;
+  FQualifier := AQualifier;
+  FStartOffset := AStartOffset;
+  FLength := ALength;
+  FLine := ALine;
+  FColumn := AColumn;
+end;
+
+constructor TRadIASemanticReference.Create(
+  const ASymbolId: string;
+  const AUnitKey: string;
+  const AFileName: string;
+  const AStartOffset: Integer;
+  const ALength: Integer;
+  const AKind: TRadIASemanticReferenceKind;
+  const AReason: string
+);
+begin
+  FSymbolId := ASymbolId;
+  FUnitKey := AUnitKey;
+  FFileName := AFileName;
+  FStartOffset := AStartOffset;
+  FLength := ALength;
+  FKind := AKind;
+  FReason := AReason;
+end;
+
+function TRadIASemanticReference.WithPosition(
+  const ALine: Integer;
+  const AColumn: Integer
+): TRadIASemanticReference;
+begin
+  Result := Self;
+  Result.FLine := ALine;
+  Result.FColumn := AColumn;
+end;
+
 constructor TRadIASemanticUnitDescriptor.Create(
   const AUnitKey: string;
   const AFileName: string;
@@ -298,17 +591,20 @@ begin
   FStartOffset := ASymbol.StartOffset;
   FLength := ASymbol.Length;
   FSignature := ASymbol.Signature;
+  FSymbolId := TRadIASemanticIndex.BuildSymbolId(AUnit.UnitKey, ASymbol);
   FAncestorNames := Copy(ASymbol.AncestorNames);
 end;
 
 constructor TRadIASemanticIndexedUnit.Create(
   const ADescriptor: TRadIASemanticUnitDescriptor;
-  const ASymbols: TArray<TRadIASemanticIndexedSymbol>
+  const ASymbols: TArray<TRadIASemanticIndexedSymbol>;
+  const AIdentifiers: TArray<TRadIASemanticIndexedIdentifier>
 );
 begin
   inherited Create;
   FDescriptor := ADescriptor;
   FSymbols := Copy(ASymbols);
+  FIdentifiers := Copy(AIdentifiers);
 end;
 
 constructor TRadIASemanticIndex.Create;
@@ -317,10 +613,12 @@ begin
   FUnits := TObjectDictionary<string, TRadIASemanticIndexedUnit>.Create([doOwnsValues]);
   FByName := TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>.Create([doOwnsValues]);
   FByContainer := TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>.Create([doOwnsValues]);
+  FByIdentity := TObjectDictionary<string, TList<TRadIASemanticIndexedSymbol>>.Create([doOwnsValues]);
 end;
 
 destructor TRadIASemanticIndex.Destroy;
 begin
+  FByIdentity.Free;
   FByContainer.Free;
   FByName.Free;
   FUnits.Free;
@@ -330,6 +628,248 @@ end;
 class function TRadIASemanticIndex.Normalize(const AValue: string): string;
 begin
   Result := LowerCase(Trim(AValue));
+end;
+
+class function TRadIASemanticIndex.BuildSymbolId(
+  const AUnitKey: string;
+  const ASymbol: TRadIASemanticSymbol
+): string;
+const
+  CFNVOffsetBasis: UInt64 = 14695981039346656037;
+  CFNVPrime: UInt64 = 1099511628211;
+var
+  LByte: Byte;
+  LCanonical: string;
+  LHash: UInt64;
+begin
+  LCanonical := Normalize(AUnitKey) + '|' +
+    Normalize(ASymbol.ContainerName) + '|' +
+    IntToStr(Ord(ASymbol.Kind)) + '|' +
+    Normalize(ASymbol.Name) + '|' + Normalize(ASymbol.Signature);
+  LHash := CFNVOffsetBasis;
+  for LByte in TEncoding.UTF8.GetBytes(LCanonical) do
+  begin
+    LHash := LHash xor LByte;
+    LHash := LHash * CFNVPrime;
+  end;
+  Result := 'sym-' + LowerCase(IntToHex(LHash, 16));
+end;
+
+class function TRadIASemanticIndex.BuildIdentifiers(
+  const ASource: string;
+  const ADefines: TArray<string>
+): TArray<TRadIASemanticIndexedIdentifier>;
+var
+  LIdentifiers: TList<TRadIASemanticIndexedIdentifier>;
+  LPreprocessed: TRadIASemanticPreprocessResult;
+  LProcessed: TRadIASemanticProcessedToken;
+  LState: TRadIAIdentifierScanState;
+begin
+  LState := TRadIAIdentifierScanState.Initialize;
+  LPreprocessed := TRadIASemanticPreprocessor.Process(ASource, ADefines);
+  LIdentifiers := TList<TRadIASemanticIndexedIdentifier>.Create;
+  try
+    for LProcessed in LPreprocessed.Tokens do
+    begin
+      if LProcessed.Activity <> saInactive then
+        ProcessActiveIdentifierToken(LProcessed, LState, LIdentifiers)
+      else
+        LState.ResetHistory;
+      AdvancePosition(
+        LProcessed.Token.Text,
+        LState.FLine,
+        LState.FColumn
+      );
+    end;
+    Result := LIdentifiers.ToArray;
+  finally
+    LIdentifiers.Free;
+  end;
+end;
+
+class procedure TRadIASemanticIndex.AdvancePosition(
+  const AText: string;
+  var ALine: Integer;
+  var AColumn: Integer
+);
+var
+  LCharacter: Char;
+begin
+  for LCharacter in AText do
+    if LCharacter = #10 then
+    begin
+      Inc(ALine);
+      AColumn := 1;
+    end
+    else if LCharacter <> #13 then
+      Inc(AColumn);
+end;
+
+function TRadIASemanticIndex.CountDistinctSymbolIds(
+  const AName: string
+): Integer;
+var
+  LSeen: TDictionary<string, Boolean>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LSeen := TDictionary<string, Boolean>.Create;
+  try
+    for LSymbol in FindSymbols(AName) do
+      LSeen.AddOrSetValue(LSymbol.SymbolId, True);
+    Result := LSeen.Count;
+  finally
+    LSeen.Free;
+  end;
+end;
+
+function TRadIASemanticIndex.CountQualifiedSymbolIds(
+  const AName: string;
+  const AQualifier: string
+): Integer;
+var
+  LSeen: TDictionary<string, Boolean>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LSeen := TDictionary<string, Boolean>.Create;
+  try
+    for LSymbol in FindSymbols(AName) do
+      if QualifierMatches(AQualifier, LSymbol) then
+        LSeen.AddOrSetValue(LSymbol.SymbolId, True);
+    Result := LSeen.Count;
+  finally
+    LSeen.Free;
+  end;
+end;
+
+function TRadIASemanticIndex.IsDeclaration(
+  const AUnit: TRadIASemanticIndexedUnit;
+  const AIdentifier: TRadIASemanticIndexedIdentifier;
+  const ASymbolId: string
+): Boolean;
+var
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  for LSymbol in AUnit.Symbols do
+    if SameText(LSymbol.SymbolId, ASymbolId) and
+      (LSymbol.StartOffset = AIdentifier.StartOffset) then
+      Exit(True);
+  Result := False;
+end;
+
+function TRadIASemanticIndex.IsForeignDeclaration(
+  const AUnit: TRadIASemanticIndexedUnit;
+  const AIdentifier: TRadIASemanticIndexedIdentifier;
+  const ASymbolId: string
+): Boolean;
+var
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  for LSymbol in AUnit.Symbols do
+    if (LSymbol.StartOffset = AIdentifier.StartOffset) and
+      not SameText(LSymbol.SymbolId, ASymbolId) then
+      Exit(True);
+  Result := False;
+end;
+
+function TRadIASemanticIndex.ClassifyReference(
+  const AUnit: TRadIASemanticIndexedUnit;
+  const AIdentifier: TRadIASemanticIndexedIdentifier;
+  const ATarget: TRadIASemanticIndexedSymbol;
+  const ADistinctIds: Integer;
+  out AReason: string
+): TRadIASemanticReferenceKind;
+var
+  LQualifiedIds: Integer;
+begin
+  if IsDeclaration(AUnit, AIdentifier, ATarget.SymbolId) then
+  begin
+    AReason := 'declaration';
+    Exit(srkDeclaration);
+  end;
+  if AIdentifier.Qualifier.IsEmpty then
+  begin
+    if ADistinctIds = 1 then
+    begin
+      AReason := 'unique-symbol';
+      Exit(srkExact);
+    end;
+    AReason := 'ambiguous-short-name';
+    Exit(srkCandidate);
+  end;
+  LQualifiedIds := CountQualifiedSymbolIds(
+    ATarget.Name,
+    AIdentifier.Qualifier
+  );
+  if QualifierMatches(AIdentifier.Qualifier, ATarget) and
+    (LQualifiedIds = 1) then
+  begin
+    AReason := 'qualified-symbol';
+    Exit(srkExact);
+  end;
+  AReason := 'ambiguous-qualified-name';
+  Result := srkCandidate;
+end;
+
+procedure TRadIASemanticIndex.CollectUnitReferences(
+  const AUnit: TRadIASemanticIndexedUnit;
+  const ATarget: TRadIASemanticIndexedSymbol;
+  const ADistinctIds: Integer;
+  const AIncludeCandidates: Boolean;
+  const AReferences: TList<TRadIASemanticReference>
+);
+var
+  LIdentifier: TRadIASemanticIndexedIdentifier;
+  LKind: TRadIASemanticReferenceKind;
+  LReason: string;
+begin
+  for LIdentifier in AUnit.Identifiers do
+  begin
+    if not SameText(LIdentifier.Name, ATarget.Name) then
+      Continue;
+    if IsForeignDeclaration(AUnit, LIdentifier, ATarget.SymbolId) then
+      Continue;
+    LKind := ClassifyReference(
+      AUnit,
+      LIdentifier,
+      ATarget,
+      ADistinctIds,
+      LReason
+    );
+    if (LKind = srkCandidate) and not AIncludeCandidates then
+      Continue;
+    AReferences.Add(
+      TRadIASemanticReference.Create(
+        ATarget.SymbolId,
+        AUnit.Descriptor.UnitKey,
+        AUnit.Descriptor.FileName,
+        LIdentifier.StartOffset,
+        LIdentifier.Length,
+        LKind,
+        LReason
+      ).WithPosition(LIdentifier.Line, LIdentifier.Column)
+    );
+  end;
+end;
+
+class function TRadIASemanticIndex.QualifierMatches(
+  const AQualifier: string;
+  const ASymbol: TRadIASemanticIndexedSymbol
+): Boolean;
+var
+  LDelimiter: Integer;
+  LShortUnit: string;
+begin
+  if AQualifier.IsEmpty then
+    Exit(False);
+  if SameText(AQualifier, ASymbol.ContainerName) or
+    SameText(AQualifier, ASymbol.UnitKey) then
+    Exit(True);
+  LDelimiter := LastDelimiter('.', ASymbol.UnitKey);
+  if LDelimiter > 0 then
+    LShortUnit := Copy(ASymbol.UnitKey, LDelimiter + 1, MaxInt)
+  else
+    LShortUnit := ASymbol.UnitKey;
+  Result := SameText(AQualifier, LShortUnit);
 end;
 
 procedure TRadIASemanticIndex.AddLookup(
@@ -362,6 +902,7 @@ begin
   begin
     AddLookup(FByName, LSymbol.Name, LSymbol);
     AddLookup(FByContainer, LSymbol.ContainerName, LSymbol);
+    AddLookup(FByIdentity, LSymbol.SymbolId, LSymbol);
     Inc(FSymbolCount);
   end;
 end;
@@ -481,12 +1022,14 @@ begin
   begin
     RemoveLookup(FByName, LSymbol.Name, LSymbol.UnitKey);
     RemoveLookup(FByContainer, LSymbol.ContainerName, LSymbol.UnitKey);
+    RemoveLookup(FByIdentity, LSymbol.SymbolId, LSymbol.UnitKey);
     Dec(FSymbolCount);
   end;
 end;
 
 procedure TRadIASemanticIndex.Clear;
 begin
+  FByIdentity.Clear;
   FByContainer.Clear;
   FByName.Clear;
   FUnits.Clear;
@@ -615,6 +1158,62 @@ begin
     Result := nil;
 end;
 
+function TRadIASemanticIndex.FindSymbolsById(
+  const ASymbolId: string
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LList: TList<TRadIASemanticIndexedSymbol>;
+begin
+  if FByIdentity.TryGetValue(Normalize(ASymbolId), LList) then
+    Result := LList.ToArray
+  else
+    Result := nil;
+end;
+
+function TRadIASemanticIndex.FindReferences(
+  const ASymbolId: string;
+  const AIncludeCandidates: Boolean;
+  const AMaxItems: Integer
+): TArray<TRadIASemanticReference>;
+var
+  LDistinctIds: Integer;
+  LLimit: Integer;
+  LPair: TPair<string, TRadIASemanticIndexedUnit>;
+  LReferences: TList<TRadIASemanticReference>;
+  LSymbols: TArray<TRadIASemanticIndexedSymbol>;
+  LTarget: TRadIASemanticIndexedSymbol;
+begin
+  LSymbols := FindSymbolsById(ASymbolId);
+  if Length(LSymbols) = 0 then
+    Exit(nil);
+  LTarget := LSymbols[0];
+  LLimit := AMaxItems;
+  if LLimit < 1 then
+    LLimit := 1
+  else if LLimit > 1000 then
+    LLimit := 1000;
+  LDistinctIds := CountDistinctSymbolIds(LTarget.Name);
+  LReferences := TList<TRadIASemanticReference>.Create;
+  try
+    for LPair in FUnits do
+      CollectUnitReferences(
+        LPair.Value,
+        LTarget,
+        LDistinctIds,
+        AIncludeCandidates,
+        LReferences
+      );
+    LReferences.Sort(
+      TComparer<TRadIASemanticReference>.Construct(CompareReferences)
+    );
+    if LReferences.Count > LLimit then
+      LReferences.Count := LLimit;
+    Result := LReferences.ToArray;
+  finally
+    LReferences.Free;
+  end;
+end;
+
 function TRadIASemanticIndex.ListPublicApiSymbols(
   const AMaxItems: Integer
 ): TArray<TRadIASemanticIndexedSymbol>;
@@ -671,6 +1270,7 @@ function TRadIASemanticIndex.IndexUnit(
 ): Boolean;
 var
   LExisting: TRadIASemanticIndexedUnit;
+  LIdentifiers: TArray<TRadIASemanticIndexedIdentifier>;
   LIndex: Integer;
   LParsed: TRadIASemanticParseResult;
   LSymbols: TArray<TRadIASemanticIndexedSymbol>;
@@ -691,7 +1291,12 @@ begin
       ADescriptor,
       LParsed.Symbols[LIndex]
     );
-  LUnit := TRadIASemanticIndexedUnit.Create(ADescriptor, LSymbols);
+  LIdentifiers := BuildIdentifiers(ASource, ADefines);
+  LUnit := TRadIASemanticIndexedUnit.Create(
+    ADescriptor,
+    LSymbols,
+    LIdentifiers
+  );
   try
     if FUnits.TryGetValue(LUnitKey, LExisting) then
     begin
@@ -709,7 +1314,8 @@ end;
 
 procedure TRadIASemanticIndex.RestoreUnit(
   const ADescriptor: TRadIASemanticUnitDescriptor;
-  const ASymbols: TArray<TRadIASemanticIndexedSymbol>
+  const ASymbols: TArray<TRadIASemanticIndexedSymbol>;
+  const AIdentifiers: TArray<TRadIASemanticIndexedIdentifier>
 );
 var
   LUnit: TRadIASemanticIndexedUnit;
@@ -718,7 +1324,11 @@ begin
   LUnitKey := Normalize(ADescriptor.UnitKey);
   if (LUnitKey = '') or FUnits.ContainsKey(LUnitKey) then
     raise EInvalidOpException.Create('Semantic cache contains an invalid unit key.');
-  LUnit := TRadIASemanticIndexedUnit.Create(ADescriptor, ASymbols);
+  LUnit := TRadIASemanticIndexedUnit.Create(
+    ADescriptor,
+    ASymbols,
+    AIdentifiers
+  );
   try
     FUnits.Add(LUnitKey, LUnit);
     AddUnitSymbols(LUnit);
@@ -735,6 +1345,7 @@ function TRadIASemanticIndex.LoadCache(
 var
   LDescriptor: TRadIASemanticUnitDescriptor;
   LDocument: TJSONObject;
+  LIdentifiers: TArray<TRadIASemanticIndexedIdentifier>;
   LIndex: Integer;
   LItem: TJSONObject;
   LSymbols: TArray<TRadIASemanticIndexedSymbol>;
@@ -766,7 +1377,8 @@ begin
         LItem := LUnitArray[LIndex] as TJSONObject;
         LDescriptor := ReadCacheDescriptor(LItem);
         LSymbols := ReadCacheSymbols(LItem, LDescriptor);
-        RestoreUnit(LDescriptor, LSymbols);
+        LIdentifiers := ReadCacheIdentifiers(LItem);
+        RestoreUnit(LDescriptor, LSymbols, LIdentifiers);
       end;
     finally
       LDocument.Free;
@@ -801,6 +1413,9 @@ var
   LAncestor: string;
   LAncestors: TJSONArray;
   LDocument: TJSONObject;
+  LIdentifier: TRadIASemanticIndexedIdentifier;
+  LIdentifierItem: TJSONObject;
+  LIdentifiers: TJSONArray;
   LPair: TPair<string, TRadIASemanticIndexedUnit>;
   LSymbol: TRadIASemanticIndexedSymbol;
   LSymbolItem: TJSONObject;
@@ -853,6 +1468,31 @@ begin
         LSymbols.AddElement(LSymbolItem);
       end;
       LUnitItem.AddPair('symbols', LSymbols);
+      LIdentifiers := TJSONArray.Create;
+      for LIdentifier in LPair.Value.Identifiers do
+      begin
+        LIdentifierItem := TJSONObject.Create;
+        LIdentifierItem.AddPair('name', LIdentifier.Name);
+        LIdentifierItem.AddPair('qualifier', LIdentifier.Qualifier);
+        LIdentifierItem.AddPair(
+          'startOffset',
+          TJSONNumber.Create(LIdentifier.StartOffset)
+        );
+        LIdentifierItem.AddPair(
+          'length',
+          TJSONNumber.Create(LIdentifier.Length)
+        );
+        LIdentifierItem.AddPair(
+          'line',
+          TJSONNumber.Create(LIdentifier.Line)
+        );
+        LIdentifierItem.AddPair(
+          'column',
+          TJSONNumber.Create(LIdentifier.Column)
+        );
+        LIdentifiers.AddElement(LIdentifierItem);
+      end;
+      LUnitItem.AddPair('identifiers', LIdentifiers);
       LUnits.AddElement(LUnitItem);
     end;
     LDocument.AddPair('units', LUnits);

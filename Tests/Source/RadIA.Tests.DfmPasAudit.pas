@@ -61,6 +61,13 @@ type
       out AMembers: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
+    function FindReferences(
+      const ASymbolId: string;
+      const AIncludeCandidates: Boolean;
+      const AMaxItems: Integer;
+      out AReferences: TArray<TRadIASemanticReferenceLocation>;
+      out AError: string
+    ): Boolean;
     function FindSymbols(
       const AName: string;
       out ASymbols: TArray<TRadIASemanticLocation>;
@@ -125,6 +132,19 @@ begin
   )];
   AError := '';
   Result := SameText(AContainerName, 'TMainForm');
+end;
+
+function TRadIADfmSemanticQueryMock.FindReferences(
+  const ASymbolId: string;
+  const AIncludeCandidates: Boolean;
+  const AMaxItems: Integer;
+  out AReferences: TArray<TRadIASemanticReferenceLocation>;
+  out AError: string
+): Boolean;
+begin
+  AReferences := nil;
+  AError := '';
+  Result := False;
 end;
 
 function TRadIADfmSemanticQueryMock.FindSymbols(

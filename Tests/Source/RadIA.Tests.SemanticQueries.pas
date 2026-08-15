@@ -23,11 +23,16 @@ type
     procedure KeepsGhostTextFallbackWhenEngineFails;
     [Test]
     procedure ListsPublicApiWithVisibility;
+    [Test]
+    procedure FindsReferencesWithNavigationCoordinates;
+    [Test]
+    procedure RejectsAmbiguousReferenceQueryWithoutUnit;
   end;
 
 implementation
 
 uses
+  System.StrUtils,
   System.SysUtils,
   RadIA.Core.InlineCompletion,
   RadIA.Core.SemanticQueries,
@@ -86,16 +91,89 @@ begin
       '"visibility":"public","signature":"procedure Execute;",' +
       '"startOffset":84}]}}'
   else if SameText(AMethod, 'findSymbols') then
+  begin
+    if ContainsText(AParameters, 'TShared') then
+      AResponse :=
+        '{"result":{"symbols":[' +
+        '{"symbolId":"sym-first","unitKey":"First","name":"TShared",' +
+        '"kind":"class","container":"","fileName":"First.pas",' +
+        '"signature":"TShared = class","startOffset":42},' +
+        '{"symbolId":"sym-second","unitKey":"Second","name":"TShared",' +
+        '"kind":"class","container":"","fileName":"Second.pas",' +
+        '"signature":"TShared = class","startOffset":42}]}}'
+    else
+      AResponse :=
+        '{"result":{"symbols":[{"symbolId":"sym-worker",' +
+        '"unitKey":"Worker","name":"TWorker","kind":"class",' +
+        '"container":"","fileName":"Worker.pas","signature":' +
+        '"TWorker = class(TBaseWorker)","startOffset":42}]}}';
+  end
+  else if SameText(AMethod, 'findReferences') then
     AResponse :=
-      '{"result":{"symbols":[{"name":"TWorker","kind":"class",' +
-      '"container":"","fileName":"Worker.pas","signature":' +
-      '"TWorker = class(TBaseWorker)","startOffset":42}]}}'
+      '{"result":{"status":"resolved","references":[' +
+      '{"symbolId":"sym-worker","unitKey":"Worker",' +
+      '"fileName":"Worker.pas","startOffset":42,"length":7,' +
+      '"line":3,"column":3,"kind":"declaration",' +
+      '"reason":"declaration"},{"symbolId":"sym-worker",' +
+      '"unitKey":"Consumer","fileName":"Consumer.pas",' +
+      '"startOffset":91,"length":7,"line":8,"column":12,' +
+      '"kind":"exact","reason":"unique-symbol"}]}}'
   else
     AResponse :=
       '{"result":{"symbols":[{"name":"Execute","kind":"method",' +
       '"container":"TBaseWorker","fileName":"BaseWorker.pas",' +
       '"signature":"procedure Execute;","startOffset":84}]}}';
   Result := AParameters <> '';
+end;
+
+procedure TRadIASemanticQueryTests.
+  FindsReferencesWithNavigationCoordinates;
+var
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LService: IRadIASemanticQueryService;
+begin
+  LService := TRadIASemanticQueryService.Create(
+    TRadIASemanticQueryClientMock.Create(False)
+  );
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticQueryTools(LRegistry, LService);
+  LResult := LRegistry.Resolve('FindSymbolReferences').Execute(
+    TRadIAToolRequest.Create(
+      'FindSymbolReferences',
+      '{"symbol":"TWorker"}',
+      'semantic-reference-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LResult.ContentJson, '"referenceCount":2');
+  Assert.Contains(LResult.ContentJson, '"line":8');
+  Assert.Contains(LResult.ContentJson, 'NavigateToFile');
+end;
+
+procedure TRadIASemanticQueryTests.
+  RejectsAmbiguousReferenceQueryWithoutUnit;
+var
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LService: IRadIASemanticQueryService;
+begin
+  LService := TRadIASemanticQueryService.Create(
+    TRadIASemanticQueryClientMock.Create(False)
+  );
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticQueryTools(LRegistry, LService);
+  LResult := LRegistry.Resolve('FindSymbolReferences').Execute(
+    TRadIAToolRequest.Create(
+      'FindSymbolReferences',
+      '{"symbol":"TShared"}',
+      'semantic-ambiguity-test'
+    )
+  );
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('ambiguous_symbol', LResult.ErrorCode);
+  Assert.Contains(LResult.ErrorMessage, 'First');
+  Assert.Contains(LResult.ErrorMessage, 'Second');
 end;
 
 procedure TRadIASemanticQueryTests.ListsPublicApiWithVisibility;

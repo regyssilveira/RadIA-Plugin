@@ -518,7 +518,7 @@ See the [security model](../reference/tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 162 registered built-in tools.
+- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 163 registered built-in tools.
 - The [thread and PPL assistant](threading_assistant.en.md) audits and prepares safe concurrency modernization.
 - The [OpenAPI/Swagger retrofit](openapi_retrofit.en.md) integrates documentation into existing DEXT APIs.
 - [DEXT and form modernization](dext_form_modernization.en.md) executes reversible, gated batches.

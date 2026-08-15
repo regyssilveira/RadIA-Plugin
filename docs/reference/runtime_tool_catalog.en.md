@@ -35,6 +35,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | Tool | Purpose | Source unit |
 |---|---|---|
 | `GetSemanticContext` | Returns indexed declarations and resolved inherited members for a Delphi symbol. | `RadIA.Core.SemanticQueryTools.pas` |
+| `FindSymbolReferences` | Finds confirmed Delphi symbol declarations and references. Ambiguous occurrences are excluded unless explicitly requested. | `RadIA.Core.SemanticQueryTools.pas` |
 
 ## Curated Delphi guidance
 
@@ -429,6 +430,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 52
-- Registered built-in tools: 162
+- Registered built-in tools: 163
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

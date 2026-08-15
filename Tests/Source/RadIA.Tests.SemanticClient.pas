@@ -24,6 +24,8 @@ type
     [Test]
     procedure SupervisorIndexesAndInvalidatesUnits;
     [Test]
+    procedure SupervisorFindsReferencesByStableIdentity;
+    [Test]
     procedure SupervisorPreparesMissingMembersIdempotently;
   end;
 
@@ -393,6 +395,62 @@ begin
       LError
     ), LError);
     Assert.Contains(LResponse, '"symbolCount":0');
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.
+  SupervisorFindsReferencesByStableIdentity;
+var
+  LDocument: TJSONObject;
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LResult: TJSONObject;
+  LSymbolId: string;
+  LSymbols: TJSONArray;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(LPath);
+  try
+    Assert.IsTrue(LSupervisor.Request(
+      'indexUnit',
+      '{"unitKey":"sample","fileName":"Sample.pas",' +
+      '"scope":"project","revision":1,"source":' +
+      '"unit Sample; interface type TWorker = class end; ' +
+      'implementation procedure Use(AWorker: TWorker); begin end; end."}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.IsTrue(LSupervisor.Request(
+      'findSymbols',
+      '{"name":"TWorker"}',
+      LResponse,
+      LError
+    ), LError);
+    LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+    try
+      LResult := LDocument.GetValue<TJSONObject>('result');
+      LSymbols := LResult.GetValue<TJSONArray>('symbols');
+      LSymbolId := (LSymbols[0] as TJSONObject).GetValue<string>('symbolId');
+    finally
+      LDocument.Free;
+    end;
+    Assert.IsTrue(LSupervisor.Request(
+      'findReferences',
+      '{"symbolId":' + EncodeJsonString(LSymbolId) + '}',
+      LResponse,
+      LError
+    ), LError);
+    Assert.Contains(LResponse, '"status":"resolved"');
+    Assert.Contains(LResponse, '"referenceCount":2');
+    Assert.Contains(LResponse, '"kind":"declaration"');
+    Assert.Contains(LResponse, '"kind":"exact"');
   finally
     LSupervisor.Free;
   end;

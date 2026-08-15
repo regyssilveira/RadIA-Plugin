@@ -35,7 +35,8 @@
       "name": "Semantic index queries",
       "source": "Source/Core/RadIA.Core.SemanticQueryTools.pas",
       "tools": [
-        "GetSemanticContext"
+        "GetSemanticContext",
+        "FindSymbolReferences"
       ]
     },
     {

@@ -162,6 +162,7 @@ begin
   LCapabilities.Add('indexUnit');
   LCapabilities.Add('removeUnit');
   LCapabilities.Add('findSymbols');
+  LCapabilities.Add('findReferences');
   LCapabilities.Add('listPublicApiSymbols');
   LCapabilities.Add('findMembers');
   LCapabilities.Add('findResolvedMembers');
@@ -273,6 +274,7 @@ begin
   for LSymbol in ASymbols do
   begin
     LItem := TJSONObject.Create;
+    LItem.AddPair('symbolId', LSymbol.SymbolId);
     LItem.AddPair('unitKey', LSymbol.UnitKey);
     LItem.AddPair('fileName', LSymbol.FileName);
     LItem.AddPair('scope', ScopeName(LSymbol.Scope));
@@ -295,6 +297,62 @@ begin
   LResult.AddPair('symbols', LArray);
   if Assigned(AResolution) then
     LResult.AddPair('resolution', AResolution);
+  Result.AddPair('result', LResult);
+end;
+
+function ReferenceKindName(
+  const AKind: TRadIASemanticReferenceKind
+): string;
+begin
+  case AKind of
+    srkDeclaration: Result := 'declaration';
+    srkExact: Result := 'exact';
+  else
+    Result := 'candidate';
+  end;
+end;
+
+function BuildReferencesResult(
+  const AId: TJSONValue;
+  const ASymbolId: string;
+  const AReferences: TArray<TRadIASemanticReference>;
+  const ASymbolExists: Boolean
+): TJSONObject;
+var
+  LArray: TJSONArray;
+  LItem: TJSONObject;
+  LReference: TRadIASemanticReference;
+  LResult: TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('id', AId.Clone as TJSONValue);
+  LResult := TJSONObject.Create;
+  LResult.AddPair('protocolVersion', CProtocolVersion);
+  LResult.AddPair('symbolId', ASymbolId);
+  if ASymbolExists then
+    LResult.AddPair('status', 'resolved')
+  else
+    LResult.AddPair('status', 'symbol-not-found');
+  LArray := TJSONArray.Create;
+  for LReference in AReferences do
+  begin
+    LItem := TJSONObject.Create;
+    LItem.AddPair('symbolId', LReference.SymbolId);
+    LItem.AddPair('unitKey', LReference.UnitKey);
+    LItem.AddPair('fileName', LReference.FileName);
+    LItem.AddPair(
+      'startOffset',
+      TJSONNumber.Create(LReference.StartOffset)
+    );
+    LItem.AddPair('length', TJSONNumber.Create(LReference.Length));
+    LItem.AddPair('line', TJSONNumber.Create(LReference.Line));
+    LItem.AddPair('column', TJSONNumber.Create(LReference.Column));
+    LItem.AddPair('kind', ReferenceKindName(LReference.Kind));
+    LItem.AddPair('reason', LReference.Reason);
+    LArray.AddElement(LItem);
+  end;
+  LResult.AddPair('referenceCount', TJSONNumber.Create(LArray.Count));
+  LResult.AddPair('references', LArray);
   Result.AddPair('result', LResult);
 end;
 
@@ -545,6 +603,7 @@ function HandleIndexRequest(
 var
   LCacheError: string;
   LParameters: TJSONObject;
+  LSymbolId: string;
   LSymbols: TArray<TRadIASemanticIndexedSymbol>;
 begin
   if SameText(AMethod, 'indexUnit') then
@@ -580,6 +639,22 @@ begin
     Exit(BuildIndexedSymbolsResult(
       AId,
       AIndex.FindSymbols(LParameters.GetValue<string>('name', ''))
+    ));
+  end;
+  if SameText(AMethod, 'findReferences') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    LSymbolId := LParameters.GetValue<string>('symbolId', '');
+    LSymbols := AIndex.FindSymbolsById(LSymbolId);
+    Exit(BuildReferencesResult(
+      AId,
+      LSymbolId,
+      AIndex.FindReferences(
+        LSymbolId,
+        LParameters.GetValue<Boolean>('includeCandidates', False),
+        LParameters.GetValue<Integer>('maxItems', 500)
+      ),
+      Length(LSymbols) > 0
     ));
   end;
   if SameText(AMethod, 'listPublicApiSymbols') then

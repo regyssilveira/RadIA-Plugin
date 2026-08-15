@@ -41,6 +41,21 @@ status, reason, origin, and structural alternatives. Short names found in more t
 container, a prefix with no match, and an already satisfied contract have distinct reasons that are also
 available to the deep diagnostic.
 
+## Finding references through the agent
+
+Ask, for example, **“find every reference to `TMainForm`.”** The agent uses
+`FindSymbolReferences`, which searches the local index and returns confirmed Pascal and DFM
+declarations and usages with file, line, and column. The result is read-only; the agent uses
+`NavigateToFile` with the returned position to open an occurrence.
+
+When the same name denotes different symbols, RadIA does not choose silently: it reports the available
+units and requires the intended unit. Occurrences that need unproven inference, such as a call through
+a variable whose type was not resolved, stay outside the confirmed result. They appear only with
+`includeCandidates=true`, clearly marked as candidates rather than facts.
+
+Comments, strings, and conditionally inactive code are not references. Changes to open buffers, units,
+or forms invalidate and rebuild local occurrences without sending code over the network.
+
 ## Alternatives panel
 
 After **Request an alternative**, RadIA keeps the previous suggestion instead of silently replacing

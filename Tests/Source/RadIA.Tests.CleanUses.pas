@@ -44,6 +44,10 @@ type
       out AContext: string; out AError: string): Boolean;
     function FindResolvedMembers(const AContainerName: string;
       out AMembers: TArray<TRadIASemanticLocation>; out AError: string): Boolean;
+    function FindReferences(const ASymbolId: string;
+      const AIncludeCandidates: Boolean; const AMaxItems: Integer;
+      out AReferences: TArray<TRadIASemanticReferenceLocation>;
+      out AError: string): Boolean;
     function FindSymbols(const AName: string; out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string): Boolean;
     function HasResolvedMember(const AContainerName: string; const AMemberName: string): Boolean;
@@ -104,6 +108,16 @@ begin
   AMembers := [];
   AError := '';
   Result := True;
+end;
+
+function TRadIACleanQueryStub.FindReferences(const ASymbolId: string;
+  const AIncludeCandidates: Boolean; const AMaxItems: Integer;
+  out AReferences: TArray<TRadIASemanticReferenceLocation>;
+  out AError: string): Boolean;
+begin
+  AReferences := nil;
+  AError := '';
+  Result := False;
 end;
 
 function TRadIACleanQueryStub.FindSymbols(const AName: string;

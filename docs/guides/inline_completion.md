@@ -41,6 +41,22 @@ de uma unit são marcados como `short-name-ambiguous`; nesse caso nenhuma sugest
 fluxo segue para o fallback. Contêiner inexistente, prefixo sem correspondência e contrato já satisfeito
 possuem motivos distintos, também expostos pelo diagnóstico profundo.
 
+## Localizar referências pelo agente
+
+Peça, por exemplo, **“localize todas as referências de `TMainForm`”**. O agente usa
+`FindSymbolReferences`, que pesquisa o índice local e retorna declarações e usos confirmados em
+Pascal e DFM com arquivo, linha e coluna. O resultado é somente leitura; para abrir uma ocorrência,
+o agente usa `NavigateToFile` com a posição retornada.
+
+Se o mesmo nome representar símbolos diferentes, o RadIA não escolhe silenciosamente: informa as
+units disponíveis e solicita a unit desejada. Ocorrências que exigiriam inferência não comprovada,
+como uma chamada por variável cujo tipo não foi resolvido, ficam fora do resultado confirmado. Elas
+só aparecem com `includeCandidates=true`, identificadas como candidatas e nunca como certeza.
+
+Comentários, strings e código desativado por diretivas condicionais não são referências. Alterações
+em buffers abertos, units ou formulários invalidam e reconstroem as ocorrências locais sem enviar
+código pela rede.
+
 ## Painel de alternativas
 
 Depois de escolher **Solicitar uma alternativa**, o RadIA mantém a sugestão anterior em vez de

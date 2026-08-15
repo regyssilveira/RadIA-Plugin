@@ -163,6 +163,40 @@ begin
   end;
 end;
 
+function ReadSemanticFileContent(const AFileName: string): string;
+var
+  LBytes: TBytes;
+  LHeader: array[0..3] of Byte;
+  LInput: TFileStream;
+  LOutput: TMemoryStream;
+begin
+  if not SameText(ExtractFileExt(AFileName), '.dfm') then
+    Exit(TFile.ReadAllText(AFileName, TEncoding.UTF8));
+  LInput := TFileStream.Create(AFileName, fmOpenRead or fmShareDenyNone);
+  try
+    if LInput.Size < Length(LHeader) then
+      Exit(TFile.ReadAllText(AFileName, TEncoding.UTF8));
+    LInput.ReadBuffer(LHeader, Length(LHeader));
+    LInput.Position := 0;
+    if not ((LHeader[0] = $54) and (LHeader[1] = $50) and
+      (LHeader[2] = $46) and (LHeader[3] = $30)) then
+      Exit(TFile.ReadAllText(AFileName, TEncoding.UTF8));
+    LOutput := TMemoryStream.Create;
+    try
+      ObjectBinaryToText(LInput, LOutput);
+      SetLength(LBytes, LOutput.Size);
+      LOutput.Position := 0;
+      if Length(LBytes) > 0 then
+        LOutput.ReadBuffer(LBytes[0], Length(LBytes));
+      Result := TEncoding.UTF8.GetString(LBytes);
+    finally
+      LOutput.Free;
+    end;
+  finally
+    LInput.Free;
+  end;
+end;
+
 { TRadIASemanticWorkspaceFile }
 
 constructor TRadIASemanticWorkspaceFile.Create(
@@ -272,7 +306,7 @@ var
 begin
   if (AFile.Content <> '') or not TFile.Exists(AFile.FileName) then
     Exit(AFile);
-  LContent := TFile.ReadAllText(AFile.FileName, TEncoding.UTF8);
+  LContent := ReadSemanticFileContent(AFile.FileName);
   Result := TRadIASemanticWorkspaceFile.Create(
     AFile.UnitKey,
     AFile.FileName,

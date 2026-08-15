@@ -59,12 +59,13 @@ uses
   RadIA.OTA.TextReader,
   RadIA.Semantic.Index;
 
-function IsPascalSource(const AFileName: string): Boolean;
+function IsSemanticSource(const AFileName: string): Boolean;
 var
   LExtension: string;
 begin
   LExtension := ExtractFileExt(AFileName);
-  Result := SameText(LExtension, '.pas') or SameText(LExtension, '.dpr');
+  Result := SameText(LExtension, '.pas') or
+    SameText(LExtension, '.dpr') or SameText(LExtension, '.dfm');
 end;
 
 function SemanticScopeName(const AScope: TRadIASemanticUnitScope): string;
@@ -132,7 +133,7 @@ var
   LFullName: string;
   LKey: string;
 begin
-  if not IsPascalSource(AFileName) then
+  if not IsSemanticSource(AFileName) then
     Exit;
   LFullName := TPath.GetFullPath(AFileName);
   if FindOpenContent(LFullName, LContent) then
@@ -198,7 +199,15 @@ begin
   begin
     LModuleInfo := AProject.GetModule(LIndex);
     if Assigned(LModuleInfo) then
+    begin
       AddWorkspaceFile(AFiles, LModuleInfo.FileName, AScope);
+      if SameText(ExtractFileExt(LModuleInfo.FileName), '.pas') then
+        AddWorkspaceFile(
+          AFiles,
+          ChangeFileExt(LModuleInfo.FileName, '.dfm'),
+          AScope
+        );
+    end;
   end;
 end;
 

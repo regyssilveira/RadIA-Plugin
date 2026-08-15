@@ -116,6 +116,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Ghost Text Multilinha** | Editor | Overlays virtuais por linha, aceite total ou por palavra e atalhos configuráveis sem alterar o buffer antes do aceite. | ✅ Concluído |
 | **Alternativas de Ghost Text** | Editor | Painel de até três sugestões com navegação visual e atalhos configuráveis, sem alterar o buffer antes do aceite. | ✅ Concluído |
 | **Contexto semântico do editor** | Editor | Unit, símbolo, imports e declarações próximas compartilhados entre Ghost Text, ações e agente, com inspeção somente leitura. | ✅ Concluído |
+| **Referências semânticas Pascal/DFM** | Editor | Identidade estável, declarações e usos confirmados com arquivo, linha e coluna; homônimos e candidatos permanecem explícitos. | ✅ Concluído |
 | **Terminal Unicode e TUI** | Terminal | Decodificação UTF-8 incremental, CJK, emoji, marcas combinantes, reflow e operações ICH/DCH/ECH sobre ConPTY. | ✅ Concluído |
 | **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |
