@@ -1192,6 +1192,60 @@ function updateExecutionRoute(route) {
   updateComposerRoute();
 }
 
+function createIntentRecommendationButton(label, action, primary = false) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = primary
+    ? 'intent-recommendation-button primary'
+    : 'intent-recommendation-button';
+  button.textContent = label;
+  button.addEventListener('click', () => {
+    postMessageToDelphi({ action });
+    if (action !== 'review_intent_recommendation') {
+      button.closest('.intent-recommendation-card')
+        ?.querySelectorAll('button')
+        .forEach(item => { item.disabled = true; });
+    }
+  });
+  return button;
+}
+
+function renderIntentRecommendation(data) {
+  const card = document.createElement('section');
+  card.className = 'intent-recommendation-card';
+  card.setAttribute('aria-label', 'Recommended execution route');
+
+  const heading = document.createElement('div');
+  heading.className = 'intent-recommendation-heading';
+  const title = document.createElement('strong');
+  title.textContent = `Recommended: ${data.intent || 'guided work'}`;
+  const confidence = document.createElement('span');
+  confidence.className = 'intent-recommendation-confidence';
+  confidence.textContent = `${data.confidence || 'unknown'} confidence`;
+  heading.append(title, confidence);
+
+  const explanation = document.createElement('p');
+  explanation.textContent = data.explanation || '';
+  const route = document.createElement('code');
+  route.textContent = data.command || data.route || '';
+
+  const controls = document.createElement('div');
+  controls.className = 'intent-recommendation-controls';
+  controls.append(
+    createIntentRecommendationButton(
+      'Use recommended route',
+      'accept_intent_recommendation',
+      true
+    ),
+    createIntentRecommendationButton('Review command', 'review_intent_recommendation'),
+    createIntentRecommendationButton('Continue as chat', 'dismiss_intent_recommendation')
+  );
+
+  card.append(heading, explanation, route, controls);
+  chatContainer.appendChild(card);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
 function getExecutionRouteKind(route = activeExecutionRoute) {
   const transport = route.transport || 'native';
   if (transport.includes('cli')) return 'cli';
@@ -4180,6 +4234,7 @@ if (globalThis.chrome?.webview) {
       case 'agent_history':         renderAgentHistory(data);                                    break;
       case 'visual_runtime_session': renderVisualRuntimeSession(data);                           break;
       case 'cli_activity':          renderCliActivity(data);                                    break;
+      case 'intent_recommendation': renderIntentRecommendation(data);                            break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

@@ -26,6 +26,9 @@ Every recipe accepts optional context after the command, for example:
 Context is limited to 4,000 characters and appended to the structured objective. It never changes
 consent rules or replaces plan review.
 
+The complete local classification contract and its safeguards are documented in
+[Intent routing](../reference/intent_routing.en.md).
+
 Every recipe has four required phases. Each phase defines the expected work and the evidence that
 must appear in the timeline. The run also receives three completion criteria, so the agent cannot
 claim success merely because it produced a text response.
@@ -42,15 +45,21 @@ claim success merely because it produced a text response.
 | `/journey migrate [legacy pattern]` | Migrate a bounded pattern with a baseline, transaction, and rollback. |
 | `/journey release [scope]` | Check gates and diff, then prepare a commit preview. |
 
-### Automatic creation from the conversation
+### Intent recommendation from the conversation
 
-Users do not need to know `/journey create`. When no project is open, phrases such as **“make a
-basic calculator”** or **“create a VCL calculator in D:\Projects\Calculator”** are automatically
-converted into this journey. RadIA
-extracts absolute Windows paths, infers the name from the destination or application type, and uses
-Win32 when no platform is specified. It asks only for information that is actually missing, switches
-to native execution, and keeps approval visible in the chat.
-After approval, the workflow writes only inside the authorized root, opens the project in the IDE,
+Users do not need to know journey commands. Natural requests to create a project, repair a build,
+run tests, or diagnose a failure first display a recommendation card. It reports the intent,
+confidence, explanation, and proposed command without changing mode or running a tool.
+
+- **Use recommended route** confirms the proposed journey.
+- **Review command** places the command in the composer for editing.
+- **Continue as chat** keeps the current route and sends the request as an ordinary conversation.
+
+For phrases such as **“make a basic calculator”** or **“create a VCL calculator in
+D:\Projects\Calculator”**, RadIA extracts absolute Windows paths, infers the name from the
+destination or application type, and uses Win32 when no platform is specified. It asks only for
+information that is actually missing after the user confirms the recommendation. After plan
+approval, the workflow writes only inside the authorized root, opens the project in the IDE,
 builds and runs it, and records validation evidence. The panel remains open through the transition
 and shows progress to the user.
 

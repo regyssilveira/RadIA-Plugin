@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("startup")]
+    [ValidateSet("startup", "release")]
     [string]$Profile = "startup",
 
     [string[]]$TargetId = @(),
@@ -77,8 +77,17 @@ if ($selectedTargets.Count -eq 0 -or $selectedScenarios.Count -eq 0) {
 $resolvedEvidencePath = Resolve-RadIAUsageEvidencePath -Path $EvidencePath
 $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
 $planEntries = @()
-foreach ($target in $selectedTargets) {
-    foreach ($scenario in $selectedScenarios) {
+foreach ($scenario in $selectedScenarios) {
+    $scenarioTargets = if ($scenario.scope -eq "host") {
+        @([PSCustomObject]@{
+            id = "host-neutral"
+            delphiVersion = ""
+            ide64 = $false
+        })
+    } else {
+        $selectedTargets
+    }
+    foreach ($target in $scenarioTargets) {
         $targetEvidence = Join-Path `
             $evidenceDirectory `
             "$($scenario.id)-$($target.id).json"
@@ -92,6 +101,8 @@ foreach ($target in $selectedTargets) {
             startupTimeoutSeconds = $scenario.startupTimeoutSeconds
             requiredEvidence = @($scenario.requiredEvidence)
             evidencePath = $targetEvidence
+            scope = $scenario.scope
+            testPath = $scenario.testPath
         }
     }
 }
@@ -117,31 +128,36 @@ New-Item `
 $results = @()
 $matrixStopwatch = [Diagnostics.Stopwatch]::StartNew()
 foreach ($run in $planEntries) {
-    $arguments = @(
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        $smokePath,
-        "-DelphiVersion",
-        $run.delphiVersion,
-        "-Cycles",
-        [string]$run.cycles,
-        "-StartupTimeoutSeconds",
-        [string]$run.startupTimeoutSeconds
-    )
-    if ($run.ideArchitecture -eq "Win64") {
-        $arguments += "-IDE64"
-    }
-    if ($RequirePackageProvenance) {
-        $arguments += @("-EvidencePath", $run.evidencePath)
-    } else {
-        $arguments += "-SkipPackageHashCheck"
-    }
-
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
-    $output = & powershell.exe @arguments 2>&1 | Out-String
-    $exitCode = $LASTEXITCODE
+    if ($run.scope -eq "host") {
+        $testFile = Join-Path $repositoryRoot $run.testPath
+        $output = & node --test $testFile 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+    } else {
+        $arguments = @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            $smokePath,
+            "-DelphiVersion",
+            $run.delphiVersion,
+            "-Cycles",
+            [string]$run.cycles,
+            "-StartupTimeoutSeconds",
+            [string]$run.startupTimeoutSeconds
+        )
+        if ($run.ideArchitecture -eq "Win64") {
+            $arguments += "-IDE64"
+        }
+        if ($RequirePackageProvenance) {
+            $arguments += @("-EvidencePath", $run.evidencePath)
+        } else {
+            $arguments += "-SkipPackageHashCheck"
+        }
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+    }
     $stopwatch.Stop()
     $status = if ($exitCode -eq 0) { "passed" } else { "failed" }
     $results += [PSCustomObject]@{
@@ -152,7 +168,7 @@ foreach ($run in $planEntries) {
         status = $status
         exitCode = $exitCode
         durationMs = $stopwatch.ElapsedMilliseconds
-        evidencePath = if ($RequirePackageProvenance) {
+        evidencePath = if ($RequirePackageProvenance -and $run.scope -eq "ide") {
             $run.evidencePath
         } else {
             ""

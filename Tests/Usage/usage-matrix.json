@@ -7,6 +7,14 @@
       "scenarioIds": [
         "ide-startup-shutdown"
       ]
+    },
+    {
+      "id": "release",
+      "description": "Runs IDE lifecycle and critical user-facing capability contracts.",
+      "scenarioIds": [
+        "ide-startup-shutdown",
+        "intent-recommendation"
+      ]
     }
   ],
   "targets": [
@@ -32,6 +40,7 @@
   "scenarios": [
     {
       "id": "ide-startup-shutdown",
+      "scope": "ide",
       "runner": "Test-RadIA.IDESmoke.ps1",
       "cycles": 1,
       "startupTimeoutSeconds": 180,
@@ -40,6 +49,18 @@
         "tool-contract-valid",
         "clean-shutdown",
         "no-orphan-processes"
+      ]
+    },
+    {
+      "id": "intent-recommendation",
+      "scope": "host",
+      "runner": "node-test",
+      "testPath": "Tests/Web/RadIA.IntentRecommendation.test.js",
+      "requiredEvidence": [
+        "explicit-route-confirmation",
+        "reviewable-command",
+        "chat-fallback",
+        "host-owned-pending-command"
       ]
     }
   ]

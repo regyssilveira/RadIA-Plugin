@@ -71,5 +71,7 @@ preserves partial evidence and blocks publication; retrying a scenario does not 
 failure into a pass.
 
 The `startup` profile proves that the package loaded, the tool contract is valid, shutdown is clean,
-and no orphan process remains. New behavior must add manifest scenarios and contract tests to
+and no orphan process remains. The `release` profile also executes critical IDE-neutral contracts.
+The first proves explicit intent-route confirmation, command review, chat fallback, and host
+validation of the pending command. New behavior must add manifest scenarios and contract tests to
 `Tests/Web/RadIA.UsageMatrix.test.js`.

@@ -71,5 +71,7 @@ preserva evidência parcial e bloqueia a publicação; repetir um cenário não 
 em sucesso.
 
 O perfil `startup` comprova package carregado, contrato de tools válido, shutdown limpo e ausência de
-processos órfãos. Novos comportamentos devem acrescentar cenários ao manifesto e testes de contrato
-em `Tests/Web/RadIA.UsageMatrix.test.js`.
+processos órfãos. O perfil `release` também executa contratos críticos independentes da IDE. O
+primeiro comprova confirmação explícita da rota por intenção, revisão do comando, continuação no chat
+e validação do comando pendente pelo host. Novos comportamentos devem acrescentar cenários ao
+manifesto e testes de contrato em `Tests/Web/RadIA.UsageMatrix.test.js`.

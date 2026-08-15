@@ -4,6 +4,7 @@
 - [Detailed feature inventory](features.en.md): individual features, categories, and status
 - [Settings](settings_reference.en.md)
 - [Slash commands](slash_commands.en.md)
+- [Intent routing](intent_routing.en.md)
 - [Doctor](doctor.en.md)
 - [Internal tools](internal_tools_reference.en.md)
 - [Runtime catalog](runtime_tool_catalog.en.md)

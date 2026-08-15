@@ -286,6 +286,10 @@ type
     [Test]
     procedure TestNaturalCalculatorRequestStartsGuidedProjectJourney;
     [Test]
+    procedure TestIntentRecommendationCanBeReviewed;
+    [Test]
+    procedure TestIntentRecommendationCanContinueAsChat;
+    [Test]
     procedure TestCompleteCalculatorPromptStartsGuardedAgentJourney;
     [Test]
     procedure TestNaturalConsolePromptPt;
@@ -730,6 +734,10 @@ begin
   FPresenter.Initialize('C:\mock\web');
   FPresenter.WebViewReady := True;
   FPresenter.SendPromptText(APrompt);
+  DrainQueuedCalls;
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"intent_recommendation"');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+  FPresenter.ProcessWebMessage('{"action":"accept_intent_recommendation"}');
   DrainQueuedCalls;
   for LAttempt := 1 to 100 do
   begin
@@ -1315,7 +1323,42 @@ begin
     'crie uma calculadora com operacoes basicas em VCL'
   );
 
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"intent_recommendation"');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, 'Which destination folder');
+  FPresenter.ProcessWebMessage('{"action":"accept_intent_recommendation"}');
+  DrainQueuedCalls;
   Assert.Contains(FMockView.PostedMessages.Text, 'Which destination folder');
+end;
+
+procedure TTestChatPresenter.TestIntentRecommendationCanBeReviewed;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('execute os testes DUnitX e verifique as falhas');
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"intent":"Run tests"');
+  FPresenter.ProcessWebMessage('{"action":"review_intent_recommendation"}');
+  DrainQueuedCalls;
+
+  Assert.IsTrue(FMockView.PromptInputText.StartsWith('/journey tests '));
+  Assert.IsTrue(FMockView.PromptFocused);
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+end;
+
+procedure TTestChatPresenter.TestIntentRecommendationCanContinueAsChat;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('a aplicação causa access violation ao fechar');
+  Assert.Contains(FMockView.PostedMessages.Text, '"intent":"Diagnose problem"');
+
+  FPresenter.ProcessWebMessage('{"action":"dismiss_intent_recommendation"}');
+  DrainQueuedCalls;
+  FPresenter.ProcessWebMessage('{"action":"accept_intent_recommendation"}');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'no longer active');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
 end;
 
 procedure TTestChatPresenter.
@@ -1329,6 +1372,10 @@ begin
   FPresenter.SendPromptText(
     'crie uma calculadora VCL em D:\CalculatorAcceptance'
   );
+  DrainQueuedCalls;
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"intent_recommendation"');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+  FPresenter.ProcessWebMessage('{"action":"accept_intent_recommendation"}');
   DrainQueuedCalls;
   for LAttempt := 1 to 100 do
   begin

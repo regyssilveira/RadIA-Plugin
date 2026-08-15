@@ -26,6 +26,9 @@ Cada receita aceita contexto opcional depois do comando, por exemplo:
 O contexto é limitado a 4.000 caracteres e anexado ao objetivo estruturado. Ele não altera as
 regras de consentimento nem substitui a revisão do plano.
 
+O contrato completo da classificação local e suas proteções está em
+[Roteamento de intenção](../reference/intent_routing.md).
+
 Cada receita possui quatro fases obrigatórias. Cada fase define o trabalho esperado e a evidência
 que deve aparecer na timeline. A execução também recebe três critérios de conclusão; o agente não
 deve declarar sucesso apenas porque produziu uma resposta textual.
@@ -42,14 +45,20 @@ deve declarar sucesso apenas porque produziu uma resposta textual.
 | `/journey migrate [padrão legado]` | Migrar um padrão delimitado com baseline, transação e rollback. |
 | `/journey release [escopo]` | Verificar gates, diff e preparar preview de commit. |
 
-### Criação automática a partir da conversa
+### Recomendação por intenção a partir da conversa
 
-Não é obrigatório conhecer `/journey create`. Quando não há projeto aberto, frases como **“faça uma
-calculadora básica”** ou **“crie uma calculadora VCL em D:\Projetos\Calculadora”** são convertidas
-automaticamente nessa jornada. O RadIA
-extrai caminhos Windows absolutos, infere o nome pelo destino ou tipo da aplicação e assume Win32
-quando a plataforma não é informada. Somente dados realmente ausentes geram perguntas. O fluxo muda
-para execução nativa e mantém a aprovação visível no chat. Após a aprovação, o
+Não é obrigatório conhecer os comandos de jornada. Pedidos naturais de criação, correção de build,
+execução de testes ou diagnóstico mostram primeiro um cartão de recomendação. Ele informa intenção,
+nível de confiança, motivo e comando proposto, sem mudar o modo nem executar uma tool.
+
+- **Use recommended route** confirma a jornada proposta.
+- **Review command** coloca o comando no compositor para edição.
+- **Continue as chat** mantém a rota atual e envia o pedido como conversa comum.
+
+Para frases como **“faça uma calculadora básica”** ou **“crie uma calculadora VCL em
+D:\Projetos\Calculadora”**, o RadIA extrai caminhos Windows absolutos, infere o nome pelo destino ou
+tipo da aplicação e assume Win32 quando a plataforma não é informada. Somente dados realmente
+ausentes geram perguntas depois que o usuário confirma a recomendação. Após a aprovação do plano, o
 fluxo cria os arquivos apenas na raiz autorizada, abre o projeto na IDE, compila, executa e registra
 as evidências de validação. O painel permanece aberto durante a transição e mostra o andamento ao
 usuário.

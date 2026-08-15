@@ -26,11 +26,14 @@ Delphi 12, Delphi 13 e IDE64 entram no contexto com citações estáveis e consu
 - Templates editáveis, importáveis e exportáveis.
 - Comandos internos e comandos personalizados.
 - Ajuda integrada com `/help`, exemplos de comandos e links abertos no navegador padrão.
+- Recomendação local de rota para criação, build, testes e diagnóstico, com confirmação, revisão ou
+  permanência no chat antes de qualquer mudança de modo.
 - Jornadas conversacionais que preservam respostas até concluir ou abandonar a coleta.
 - Identidade de jornada compartilhada entre chat, terminal e editor, com vínculo, troca e isolamento
   por projeto sem copiar histórico ou saída de processos.
 
-Consulte [Chat e sessões](../guides/user_guide_chat_sessions.md) e
+Consulte [Chat e sessões](../guides/user_guide_chat_sessions.md),
+[Roteamento de intenção](intent_routing.md) e
 [Comandos de barra](slash_commands.md). Para continuar a mesma tarefa entre superfícies, consulte
 [Contexto compartilhado](../guides/shared_journey_context.md).
 

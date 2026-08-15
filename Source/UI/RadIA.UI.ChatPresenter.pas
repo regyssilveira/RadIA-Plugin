@@ -11,7 +11,7 @@ uses
   RadIA.Core.AgentController, RadIA.Core.AgentRuntime,
   RadIA.Core.AgentProvider,
   RadIA.Core.AgentExecutors, RadIA.Core.CliManager, RadIA.Core.CliProcess,
-  RadIA.Core.Journeys, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
+  RadIA.Core.Journeys, RadIA.Core.IntentRouter, RadIA.Core.Tools, RadIA.Core.ToolSecurity,
   RadIA.Core.Workspace, RadIA.Core.JourneyContext,
   RadIA.Core.VisualRuntimeSession,
   RadIA.Core.HierarchicalSettings,
@@ -104,6 +104,9 @@ type
     FPendingJourneyDefinition: TRadIAJourneyDefinition;
     FPendingJourneyField: string;
     FPendingJourneyNative: Boolean;
+    FPendingIntentActive: Boolean;
+    FPendingIntentCommand: string;
+    FPendingIntentPrompt: string;
     FVisualRuntimeSession: IRadIAVisualRuntimeSession;
     FLastVisualSessionId: string;
     FLastVisualSequence: Int64;
@@ -388,9 +391,15 @@ type
       const ACommandText: string
     );
     function TryHandleToolPrompt(const APromptText: string): Boolean;
-    function TryHandleInferredJourney(
+    function TryHandleIntentRecommendation(
       const APromptText: string
     ): Boolean;
+    procedure HandleIntentRecommendation(const AAction: string);
+    procedure PostIntentRecommendation(
+      const ARecommendation: TRadIAIntentRecommendation
+    );
+    procedure PostUserMessageIfPresent(const AText: string);
+    procedure SendPendingIntentToChat;
     procedure ExecuteRegisteredTool(
       const AName: string;
       const AArgumentsJson: string
@@ -2509,6 +2518,13 @@ var
   LPlan: TJSONValue;
 begin
   Result := True;
+  if (AAction = 'accept_intent_recommendation') or
+    (AAction = 'review_intent_recommendation') or
+    (AAction = 'dismiss_intent_recommendation') then
+  begin
+    HandleIntentRecommendation(AAction);
+    Exit;
+  end;
   if TryDispatchExecutionScopeInteraction(AAction, AJson) then
     Exit;
   if TryDispatchAgentSettingsInteraction(AAction, AJson) then
@@ -3573,9 +3589,15 @@ var
   LText: string;
 begin
   LText := Trim(APromptText);
+  if FPendingIntentActive then
+  begin
+    FPendingIntentActive := False;
+    FPendingIntentCommand := '';
+    FPendingIntentPrompt := '';
+  end;
   if TryHandlePendingJourneyInput(APromptText) then
     Exit(True);
-  if TryHandleInferredJourney(APromptText) then
+  if TryHandleIntentRecommendation(APromptText) then
     Exit(True);
   if TryHandleJourneyCommand(APromptText, LText) then
     Exit(True);
@@ -3782,7 +3804,7 @@ begin
       Exit;
     end;
   end;
-  PostToWebView('add_message', 'user', APromptText);
+  PostUserMessageIfPresent(APromptText);
   if TryBeginJourneyIntake(
     LIsNativeJourney,
     LDefinition,
@@ -4747,33 +4769,102 @@ begin
     );
 end;
 
-function TRadIAChatPresenter.TryHandleInferredJourney(
+function TRadIAChatPresenter.TryHandleIntentRecommendation(
   const APromptText: string
 ): Boolean;
 var
-  LCommandText: string;
-  LCurrent: TRadIAResolvedExecutionSettings;
+  LRecommendation: TRadIAIntentRecommendation;
 begin
-  Result := TRadIAJourneyCatalog.TryInferCreateProject(
+  Result := TRadIAIntentRouter.TryRecommend(
     APromptText,
-    LCommandText
+    LRecommendation
   );
   if not Result then
     Exit;
-  LCurrent := ResolveEffectiveExecutionSettings;
-  FPendingRequestSettings := TRadIAExecutionSettings.Create(
-    LCurrent.Values.ProviderId,
-    LCurrent.Values.ModelId,
-    'native',
-    LCurrent.Values.MaxTokens,
-    LCurrent.Values.TimeoutMs,
-    LCurrent.Values.TokenBudget
-  );
-  FPendingRequestConversationId := FSessionManager.ActiveSessionId;
-  FPendingRequestProjectId := CurrentProjectId;
-  if not FAgentModeEnabled then
-    SetAgentModeEnabled(True);
-  TryHandleJourneyCommand(APromptText, LCommandText);
+  FPendingIntentActive := True;
+  FPendingIntentCommand := LRecommendation.Command;
+  FPendingIntentPrompt := APromptText;
+  PostToWebView('add_message', 'user', APromptText);
+  PostIntentRecommendation(LRecommendation);
+end;
+
+procedure TRadIAChatPresenter.PostIntentRecommendation(
+  const ARecommendation: TRadIAIntentRecommendation
+);
+var
+  LJson: TJSONObject;
+begin
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('action', 'intent_recommendation');
+    LJson.AddPair('intent', ARecommendation.IntentName);
+    LJson.AddPair('confidence', ARecommendation.ConfidenceName);
+    LJson.AddPair('route', ARecommendation.Route);
+    LJson.AddPair('command', ARecommendation.Command);
+    LJson.AddPair('explanation', ARecommendation.Explanation);
+    PostJsonToWeb(LJson);
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAChatPresenter.PostUserMessageIfPresent(const AText: string);
+begin
+  if not AText.IsEmpty then
+    PostToWebView('add_message', 'user', AText);
+end;
+
+procedure TRadIAChatPresenter.HandleIntentRecommendation(
+  const AAction: string
+);
+var
+  LCommand: string;
+begin
+  if not FPendingIntentActive then
+  begin
+    PostToWebView('add_message', 'assistant', 'This route recommendation is no longer active.');
+    Exit;
+  end;
+  if AAction = 'review_intent_recommendation' then
+  begin
+    FView.SetPromptInput(FPendingIntentCommand);
+    FView.FocusPromptInput;
+    Exit;
+  end;
+  if AAction = 'dismiss_intent_recommendation' then
+  begin
+    SendPendingIntentToChat;
+    Exit;
+  end;
+  LCommand := FPendingIntentCommand;
+  FPendingIntentActive := False;
+  FPendingIntentCommand := '';
+  FPendingIntentPrompt := '';
+  TryHandleJourneyCommand('', LCommand);
+end;
+
+procedure TRadIAChatPresenter.SendPendingIntentToChat;
+var
+  LEffectiveSettings: TRadIAResolvedExecutionSettings;
+  LPreflightMessage: string;
+  LProcessed: string;
+  LPrompt: string;
+begin
+  LPrompt := FPendingIntentPrompt;
+  FPendingIntentActive := False;
+  FPendingIntentCommand := '';
+  FPendingIntentPrompt := '';
+  EnsureJourneyProjectBoundary;
+  LProcessed := PreProcessPrompt(LPrompt);
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  if not CheckChatPreflight(LEffectiveSettings, LPreflightMessage) then
+  begin
+    ShowChatPreflightFailure(LPrompt, LPreflightMessage);
+    Exit;
+  end;
+  if TryStartCliAgentRun(LProcessed, LEffectiveSettings) then
+    Exit;
+  SendPromptToAI(LProcessed);
 end;
 
 procedure TRadIAChatPresenter.PostCliActivity(

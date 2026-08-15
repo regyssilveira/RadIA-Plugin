@@ -44,6 +44,13 @@ The **provider** selects the model and authentication; **mode** controls agent e
 awaits approval, select **Approve plan** or type `/agent resume`. See the
 [complete executor guide](docs/guides/cli_executors.en.md).
 
+You do not need to choose the correct combination before describing a development objective.
+Requests such as **“create a VCL calculator in D:\Projects\Calculator”**, fix a build, run tests,
+or diagnose a runtime failure produce a recommendation before RadIA changes routes. The card shows
+the detected intent, confidence, explanation, and proposed command. You can use the recommended
+route, review the command, or continue as ordinary chat. Tools and mutations remain behind plan
+review and consent.
+
 ## Compatibility
 
 | IDE | Architecture | Status |

@@ -122,7 +122,7 @@ foreach ($target in $openingTargets) {
 }
 
 & (Join-Path $PSScriptRoot "Test-RadIA.UsageMatrix.ps1") `
-    -Profile "startup" `
+    -Profile "release" `
     -RequirePackageProvenance `
     -EvidencePath (
         Join-Path $resolvedEvidenceRoot "automated-usage-matrix.json"

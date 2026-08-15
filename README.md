@@ -47,11 +47,12 @@ Quando um plano aguardar aprovação, clique em **Approve plan** ou digite `/age
 Veja a [explicação completa dos executores](docs/guides/cli_executors.md).
 
 Você não precisa escolher previamente a combinação correta para criar um projeto. Pedidos naturais
-como **“crie uma calculadora VCL em D:\Projetos\Calculadora”** são reconhecidos como uma jornada de
-criação: o RadIA infere nome e destino, usa Win32 quando a plataforma não é informada, pergunta apenas
-o que realmente faltar, apresenta o plano e a aprovação no próprio chat e usa as ferramentas
-nativas da IDE para criar, abrir, compilar, executar e validar o resultado. Os controles de executor
-continuam disponíveis para uso avançado, mas não mudam esse roteamento seguro.
+como **“crie uma calculadora VCL em D:\Projetos\Calculadora”** apresentam uma recomendação antes
+de mudar a rota. O cartão explica a intenção, a confiança e o comando proposto. Você pode usar a rota
+recomendada, revisar o comando ou continuar como chat comum. Somente após a confirmação o RadIA
+coleta o que faltar, apresenta o plano e usa as ferramentas nativas da IDE para criar, abrir,
+compilar, executar e validar o resultado. Correção de build, execução de testes e diagnóstico de
+falhas recebem a mesma escolha explícita.
 
 ## Compatibilidade
 

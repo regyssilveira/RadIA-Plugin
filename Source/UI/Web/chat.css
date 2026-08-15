@@ -3370,3 +3370,64 @@ body.light-theme .agent-step-git-diff .is-removal {
   font-size: 12px;
 }
 
+.intent-recommendation-card {
+  display: grid;
+  gap: 10px;
+  margin: 10px 56px;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.intent-recommendation-heading,
+.intent-recommendation-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.intent-recommendation-heading {
+  justify-content: space-between;
+}
+
+.intent-recommendation-card p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.intent-recommendation-card code {
+  overflow-wrap: anywhere;
+}
+
+.intent-recommendation-confidence {
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.intent-recommendation-button {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  cursor: pointer;
+}
+
+.intent-recommendation-button.primary {
+  border-color: var(--accent);
+}
+
+.intent-recommendation-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+@media (max-width: 620px) {
+  .intent-recommendation-card {
+    margin: 10px 12px;
+  }
+}
+

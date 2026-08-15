@@ -86,6 +86,10 @@ Every improvement in this goal is complete only after adding or updating a scena
 4. Deliver a problems panel with filters, navigation, and safe actions.
 5. Validate creation, build, test, and diagnostic prompts with beginner users.
 
+Status: deterministic classification and the reviewable recommendation card are complete for
+creation, build, tests, and diagnostics. Local telemetry, unified findings, the problems panel, and
+broader experience validation remain pending.
+
 Dependencies: journeys, Agent Runtime, Tool Registry, Tool Views, and Project Health.
 
 ### M2 — code intelligence

@@ -62,5 +62,31 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /New-RadIA\.GeneratedProjectsEvidence\.ps1/u);
   assert.match(source, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
   assert.match(source, /Test-RadIA\.UsageMatrix\.ps1/u);
+  assert.match(source, /-Profile "release"/u);
   assert.match(source, /RequirePackageProvenance/u);
+});
+
+test('release usage plan adds the intent recommendation contract once', () => {
+  const output = execFileSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      runnerPath,
+      '-Profile',
+      'release',
+      '-PlanOnly'
+    ],
+    { encoding: 'utf8' }
+  );
+  const plan = JSON.parse(output);
+  const intentRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'intent-recommendation'
+  );
+  assert.equal(plan.runCount, 4);
+  assert.equal(intentRuns.length, 1);
+  assert.equal(intentRuns[0].targetId, 'host-neutral');
+  assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
 });
