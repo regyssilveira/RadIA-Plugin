@@ -18,6 +18,8 @@ type
     [Test]
     procedure ParsesParameterlessProcedureDirectives;
     [Test]
+    procedure ParsesParameterlessFunctionWithoutParentheses;
+    [Test]
     procedure BuildsExplicitDeterministicSignatureDelta;
     [Test]
     procedure RendersQualifiedImplementationSignature;
@@ -29,6 +31,22 @@ implementation
 
 uses
   RadIA.Core.DelphiSignatures;
+
+procedure TRadIADelphiSignatureTests.
+  ParsesParameterlessFunctionWithoutParentheses;
+var
+  LError: string;
+  LSignature: TRadIADelphiSignature;
+begin
+  Assert.IsTrue(TRadIADelphiSignatureParser.TryParse(
+    'function Calculate: Integer;',
+    LSignature,
+    LError
+  ), LError);
+  Assert.AreEqual('Calculate', LSignature.Name);
+  Assert.AreEqual('Integer', LSignature.ReturnType);
+  Assert.AreEqual(NativeInt(0), Length(LSignature.Parameters));
+end;
 
 procedure TRadIADelphiSignatureTests.BuildsExplicitDeterministicSignatureDelta;
 var

@@ -307,6 +307,7 @@ function ExtractRoutineParts(
 ): Boolean;
 var
   LCloseOffset: Integer;
+  LReturnOffset: Integer;
   LOpenOffset: Integer;
   LSeparatorOffset: Integer;
 begin
@@ -331,6 +332,13 @@ begin
       LCloseOffset - LOpenOffset - 1
     );
     ASuffix := Trim(Copy(AHeader, LCloseOffset + 1, MaxInt));
+    Exit(True);
+  end;
+  LReturnOffset := FindTopLevelCharacter(AHeader, ':');
+  if LReturnOffset > 0 then
+  begin
+    AName := Trim(Copy(AHeader, 1, LReturnOffset - 1));
+    ASuffix := Trim(Copy(AHeader, LReturnOffset, MaxInt));
     Exit(True);
   end;
   LSeparatorOffset := FindTopLevelCharacter(AHeader, ';');
