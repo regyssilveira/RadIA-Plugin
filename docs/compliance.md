@@ -42,3 +42,18 @@ inclui conteúdo do projeto no contexto enviado ao provider selecionado.
 
 Preserve a auditoria quando necessária para rastreabilidade. Remova índices somente com todas as
 IDEs fechadas e conforme a política de retenção da organização.
+
+### Proteções da superfície de chat e das exportações
+
+*   **Política de segurança de conteúdo (CSP):** as telas web do chat e do diff declaram uma CSP que
+    bloqueia conexões e imagens remotas (`connect-src 'none'`, `frame-src 'none'`,
+    `img-src 'self' data:`). Assim, uma resposta do modelo com HTML malicioso não consegue enviar
+    trechos da conversa para fora da máquina ao ser renderizada.
+*   **Redação de segredos na exportação:** ao exportar a conversa para Markdown ou HTML, o conteúdo
+    passa pelo redator de segredos, que substitui tokens `Bearer`, chaves de acesso AWS e campos
+    JSON sensíveis (`api_key`, `password`, `authorization`, entre outros) por `[REDACTED]`.
+*   **Redação nos logs de diagnóstico:** o resumo de payload gravado em `%APPDATA%\RadIA\Logs`
+    aplica a mesma redação antes de truncar a amostra.
+*   **Login de CLI sem interpretador de comandos:** a autenticação guiada executa o binário do CLI
+    diretamente, sem passar por `cmd.exe`, de modo que caracteres especiais no caminho configurado
+    não são interpretados como comandos.

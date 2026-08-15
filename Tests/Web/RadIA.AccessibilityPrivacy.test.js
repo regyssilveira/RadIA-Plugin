@@ -227,3 +227,43 @@ test('diff review announces selection state and errors', () => {
   assert.match(diffHtml, /id="selection-error" role="alert" aria-live="assertive"/);
   assert.match(diffHtml, /setAttribute\(\s*'aria-pressed'/);
 });
+
+test('web surfaces declare a content security policy that blocks exfiltration', () => {
+  for (const surface of [chatHtml, diffHtml]) {
+    assert.match(surface, /http-equiv="Content-Security-Policy"/u);
+    assert.match(surface, /default-src 'self'/u);
+    assert.match(surface, /connect-src 'none'/u);
+    assert.match(surface, /frame-src 'none'/u);
+    assert.match(surface, /object-src 'none'/u);
+    assert.match(surface, /img-src 'self' data:/u);
+  }
+});
+
+test('content security policy precedes every script and stylesheet', () => {
+  for (const surface of [chatHtml, diffHtml]) {
+    const cspIndex = surface.indexOf('Content-Security-Policy');
+    const scriptIndex = surface.indexOf('<script');
+    const linkIndex = surface.indexOf('<link');
+    assert.ok(cspIndex > -1, 'the policy must be declared');
+    if (scriptIndex > -1) {
+      assert.ok(cspIndex < scriptIndex, 'the policy must precede the first script');
+    }
+    if (linkIndex > -1) {
+      assert.ok(cspIndex < linkIndex, 'the policy must precede the first stylesheet');
+    }
+  }
+});
+
+test('the policy never allows remote origins for images or connections', () => {
+  for (const surface of [chatHtml, diffHtml]) {
+    const declaration = surface.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/u);
+    assert.ok(declaration, 'the policy declaration must be readable');
+    assert.doesNotMatch(declaration[1], /https?:/u);
+  }
+});
+
+test('CLI login runs the executable without a shell interpreter', () => {
+  assert.doesNotMatch(configFrame, /LInfo\.lpFile := 'cmd\.exe'/u);
+  assert.match(configFrame, /LInfo\.lpFile := PChar\(LDetection\.ExecutablePath\)/u);
+  assert.doesNotMatch(configFrame, /LParameters := '\/c ""'/u);
+});

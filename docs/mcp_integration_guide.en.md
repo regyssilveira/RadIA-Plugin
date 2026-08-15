@@ -25,7 +25,9 @@ format.
 ### Consume an external server in RadIA
 
 1. Open **External MCP Servers** and enter ID, name, command, arguments, directory, and timeout; or
-   use **Import...** to load `mcpServers`/`servers` JSON into the local preview.
+   use **Import...** to load `mcpServers`/`servers` JSON into the local preview. Imported servers
+   arrive disabled unless the file declares `"enabled": true`; enable each one deliberately before
+   applying.
 2. Use **Add / Update** and inspect the list. No process or file changes at this point.
 3. Click **Test** to connect and discover tools, resources, and prompts without publishing a tool.
 4. Select a discovered tool and create its local grant with risk, consent, and path arguments.

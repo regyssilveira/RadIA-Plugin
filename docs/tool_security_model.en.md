@@ -22,6 +22,11 @@ to the stated scope and fails if its preconditions are not met.
 A sensitive tool can override the default denial only when its descriptor declares
 `ConsentEveryTime`. In that case every call opens the dialog and `AllowSession` is never reused.
 
+Tools federated by external MCP servers (names starting with `mcp.`) do not receive the automatic
+read-only clearance. Because their risk level is declared by the configured grant rather than by
+RadIA itself, the first call always opens the consent dialog. Choosing `AllowSession` keeps the
+approval valid for the rest of the session.
+
 ## 3. Consent Decisions
 
 - `AllowOnce`: only allows the current request.

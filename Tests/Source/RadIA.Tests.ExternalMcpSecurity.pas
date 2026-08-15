@@ -6,9 +6,27 @@ uses
   DUnitX.TestFramework,
   RadIA.Core.ExternalMcp,
   RadIA.Core.ExternalMcpClient,
-  RadIA.Core.ExternalMcpSecurity;
+  RadIA.Core.ExternalMcpSecurity,
+  RadIA.Core.ToolSecurity,
+  RadIA.Core.Tools;
 
 type
+  TRadIAFakeMcpConsentProvider = class(
+    TInterfacedObject,
+    IRadIAConsentProvider
+  )
+  private
+    FDecision: TRadIAConsentDecision;
+    FRequestCount: Integer;
+  public
+    constructor Create(const ADecision: TRadIAConsentDecision);
+    function RequestConsent(
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor
+    ): TRadIAConsentDecision;
+    property RequestCount: Integer read FRequestCount;
+  end;
+
   TRadIAFakeExternalMcpClient = class(
     TInterfacedObject,
     IRadIAExternalMcpClient
@@ -58,9 +76,26 @@ implementation
 
 uses
   RadIA.Core.ToolRegistry,
-  RadIA.Core.ToolSecurity,
-  RadIA.Core.Tools,
   RadIA.Core.WorkspaceBoundary;
+
+{ TRadIAFakeMcpConsentProvider }
+
+constructor TRadIAFakeMcpConsentProvider.Create(
+  const ADecision: TRadIAConsentDecision
+);
+begin
+  inherited Create;
+  FDecision := ADecision;
+end;
+
+function TRadIAFakeMcpConsentProvider.RequestConsent(
+  const ARequest: TRadIAToolRequest;
+  const ADescriptor: TRadIAToolDescriptor
+): TRadIAConsentDecision;
+begin
+  Inc(FRequestCount);
+  Result := FDecision;
+end;
 
 function NewAdapter(
   const AClient: IRadIAExternalMcpClient;
@@ -192,6 +227,7 @@ var
   LAuditSink: IRadIAToolAuditSink;
   LClientApi: IRadIAExternalMcpClient;
   LClient: TRadIAFakeExternalMcpClient;
+  LConsent: TRadIAFakeMcpConsentProvider;
   LExecutor: IRadIAToolExecutor;
   LGrant: TRadIAExternalMcpToolGrant;
   LInner: IRadIAToolExecutor;
@@ -212,10 +248,12 @@ begin
   LInner := TRadIAToolExecutor.Create(LRegistry);
   LAudit := TRadIAInMemoryToolAuditSink.Create;
   LAuditSink := LAudit;
+  { Federated tools always ask for consent, even when the grant is read-only }
+  LConsent := TRadIAFakeMcpConsentProvider.Create(cdAllowOnce);
   LExecutor := TRadIAToolPolicyExecutor.Create(
     LRegistry,
     LInner,
-    nil,
+    LConsent,
     LAuditSink,
     TRadIASecretRedactor.Create
   );
@@ -228,6 +266,7 @@ begin
   );
   Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
   Assert.AreEqual(1, LClient.CallCount);
+  Assert.AreEqual(1, LConsent.RequestCount);
   Assert.AreEqual<Integer>(1, Length(LAudit.GetEvents));
   Assert.AreEqual(aoSucceeded, LAudit.GetEvents[0].Outcome);
 end;

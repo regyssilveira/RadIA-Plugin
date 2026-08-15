@@ -128,7 +128,9 @@ begin
         LServer.GetValue<string>('command', ''),
         LArguments,
         LServer.GetValue<string>('cwd', ''),
-        LServer.GetValue<Boolean>('enabled', True),
+        { Imported servers stay disabled unless the file states otherwise, so a
+          third-party mcp.json cannot start processes right after the import. }
+        LServer.GetValue<Boolean>('enabled', False),
         LServer.GetValue<Integer>('timeoutMs', 30000)
       );
       if not LImportedServer.Validate(LError) then

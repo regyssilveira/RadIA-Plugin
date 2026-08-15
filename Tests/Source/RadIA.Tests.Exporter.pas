@@ -24,12 +24,19 @@ type
     procedure TestExportMarkdown_EmptyHistory;
     [Test]
     procedure TestExportHTML_ContainsStylesAndContent;
+    [Test]
+    procedure TestExportMarkdown_RedactsSecretsWhenRedactorIsSupplied;
+    [Test]
+    procedure TestExportHTML_RedactsSecretsWhenRedactorIsSupplied;
+    [Test]
+    procedure TestExportMarkdown_KeepsContentWhenRedactorIsAbsent;
   end;
 
 implementation
 
 uses
-  System.SysUtils, RadIA.Core.ChatMessage, RadIA.Core.Types, RadIA.Core.ConversationExporter;
+  System.SysUtils, RadIA.Core.ChatMessage, RadIA.Core.Types, RadIA.Core.ConversationExporter,
+  RadIA.Core.ToolSecurity;
 
 { TTestRadIAExporter }
 
@@ -97,6 +104,54 @@ begin
   Assert.IsTrue(LHtml.Contains('Use a sintaxe `type TMyClass = class`.'));
   Assert.IsTrue(LHtml.Contains('class="message user"'));
   Assert.IsTrue(LHtml.Contains('class="message assistant"'));
+end;
+
+procedure TTestRadIAExporter.TestExportMarkdown_RedactsSecretsWhenRedactorIsSupplied;
+var
+  LHistory: TArray<IRadIAChatMessage>;
+  LMarkdown: string;
+begin
+  LHistory := TArray<IRadIAChatMessage>.Create(
+    TRadIAChatMessage.CreateMessage(
+      mrUser,
+      'Authorization: Bearer sk-secret-value-123 and AKIA1234567890ABCDEF'
+    ),
+    TRadIAChatMessage.CreateMessage(mrAssistant, '{"api_key": "sk-live-abc123"}')
+  );
+
+  LMarkdown := TConversationExporter.ExportToMarkdown(
+    LHistory, 'OpenAI', 'gpt-4o', TRadIASecretRedactor.Create);
+
+  Assert.IsFalse(LMarkdown.Contains('sk-secret-value-123'));
+  Assert.IsFalse(LMarkdown.Contains('AKIA1234567890ABCDEF'));
+  Assert.IsFalse(LMarkdown.Contains('sk-live-abc123'));
+  Assert.IsTrue(LMarkdown.Contains('Bearer [REDACTED]'));
+  Assert.IsTrue(LMarkdown.Contains('[REDACTED_AWS_ACCESS_KEY]'));
+end;
+
+procedure TTestRadIAExporter.TestExportHTML_RedactsSecretsWhenRedactorIsSupplied;
+var
+  LHistory: TArray<IRadIAChatMessage>;
+  LHtml: string;
+begin
+  LHistory := TArray<IRadIAChatMessage>.Create(
+    TRadIAChatMessage.CreateMessage(mrUser, 'Token: Bearer sk-secret-value-123')
+  );
+
+  LHtml := TConversationExporter.ExportToHTML(
+    LHistory, 'OpenAI', 'gpt-4o', TRadIASecretRedactor.Create);
+
+  Assert.IsFalse(LHtml.Contains('sk-secret-value-123'));
+  Assert.IsTrue(LHtml.Contains('Bearer [REDACTED]'));
+end;
+
+procedure TTestRadIAExporter.TestExportMarkdown_KeepsContentWhenRedactorIsAbsent;
+var
+  LMarkdown: string;
+begin
+  LMarkdown := TConversationExporter.ExportToMarkdown(FHistory, 'OpenAI', 'gpt-4o');
+
+  Assert.IsTrue(LMarkdown.Contains('Como criar uma classe em Delphi?'));
 end;
 
 initialization
