@@ -49,6 +49,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `PrepareRenameSymbol` | Prepares an exact semantic Delphi symbol rename across Pascal and DFM files. | `RadIA.Core.SemanticRefactoringTools.pas` |
 
+## Semantic signature refactoring
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareChangeSignature` | Prepares a transactional Delphi routine signature change across declarations, implementations, and calls. | `RadIA.Core.SemanticChangeSignatureTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -448,7 +454,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 55
-- Registered built-in tools: 167
+- Registered groups: 56
+- Registered built-in tools: 168
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

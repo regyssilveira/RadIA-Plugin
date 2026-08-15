@@ -47,3 +47,28 @@ content is unavailable.
 
 The result contains the `previewId`, affected files, and confirmed replacement count. Preparation never
 mutates the workspace.
+
+## Change a routine signature
+
+Use `PrepareChangeSignature` to add, remove, rename, reorder, or change parameters of a procedure,
+function, constructor, or destructor. The tool uses the routine's canonical identity to join its
+declaration and implementation and changes only calls proven by the semantic index.
+
+Supply:
+
+- `symbol`: the routine's simple name;
+- `oldSignature`: its complete current signature;
+- `newSignature`: the desired complete signature;
+- `unit` and `container`: recommended filters for methods and homonyms;
+- `mappings`: `oldName`/`newName` pairs that preserve parameter identity across renames and reorders;
+- `bindings`: `parameterName`/`expression` pairs for every new required parameter.
+
+```text
+/tool PrepareChangeSignature {"symbol":"Execute","unit":"Worker","container":"TWorker","oldSignature":"procedure Execute(const AValue: Integer);","newSignature":"procedure Execute(const AInput: Integer; const ATrace: Boolean);","mappings":[{"oldName":"AValue","newName":"AInput"}],"bindings":[{"parameterName":"ATrace","expression":"False"}]}
+```
+
+The result is a multi-file preview only. Review and approve `ApplyMultiFilePatch`; use
+`RevertMultiFilePatch` to undo it. RadIA blocks preparation on ambiguous references, calls without an
+explicit argument list, removed arguments with possible side effects, incomplete files, reference
+limits, or content changed since indexing. Disambiguate or adjust the reported call and retry; no
+partial change is applied.

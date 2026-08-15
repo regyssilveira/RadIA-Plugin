@@ -44,6 +44,9 @@ type
     function WithAncestors(
       const AAncestorNames: TArray<string>
     ): TRadIASemanticLocation;
+    function WithDeclarationSection(
+      const ADeclarationSection: string
+    ): TRadIASemanticLocation;
     property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
     property DeclarationSection: string read FDeclarationSection;
@@ -284,6 +287,14 @@ function TRadIASemanticLocation.WithAncestors(
 begin
   Result := Self;
   Result.FAncestorNames := Copy(AAncestorNames);
+end;
+
+function TRadIASemanticLocation.WithDeclarationSection(
+  const ADeclarationSection: string
+): TRadIASemanticLocation;
+begin
+  Result := Self;
+  Result.FDeclarationSection := ADeclarationSection;
 end;
 
 function TRadIASemanticReferenceLocation.WithOffsets(

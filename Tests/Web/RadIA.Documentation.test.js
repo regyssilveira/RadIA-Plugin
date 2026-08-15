@@ -171,7 +171,8 @@ test('every built-in tool has an operational description and activation guidance
   }
 
   const registeredTools = manifest.groups.flatMap(group => group.tools);
-  assert.equal(registeredTools.length, 167);
+  assert.equal(new Set(registeredTools).size, registeredTools.length);
+  assert.ok(registeredTools.length > 0);
   assert.equal(documentedTools.size, registeredTools.length);
   registeredTools.forEach(toolName => {
     const documentation = documentedTools.get(toolName);

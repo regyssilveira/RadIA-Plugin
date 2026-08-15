@@ -31,6 +31,10 @@ type
     procedure RejectsInvalidAndAmbiguousRename;
     [Test]
     procedure ClosedUtf8FilePreservesPreambleAndPreconditions;
+    [Test]
+    procedure PreparesAppliesAndRevertsChangeSignature;
+    [Test]
+    procedure RejectsAmbiguousChangeSignatureCall;
   end;
 
 implementation
@@ -45,6 +49,7 @@ uses
   RadIA.Core.MultiFilePatches,
   RadIA.Core.Patches,
   RadIA.Core.SemanticQueries,
+  RadIA.Core.SemanticChangeSignatureTools,
   RadIA.Core.SemanticRefactoringTools,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,
@@ -94,7 +99,8 @@ type
 
   TRadIARenameQueryStub = class(
     TInterfacedObject,
-    IRadIASemanticQueryService
+    IRadIASemanticQueryService,
+    IRadIASemanticRoutineService
   )
   private
     FAmbiguous: Boolean;
@@ -135,6 +141,14 @@ type
     ): Boolean;
     function FindSymbols(
       const AName: string;
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function FindRoutineSymbols(
+      const AName: string;
+      const AUnitName: string;
+      const AContainerName: string;
+      const ASignature: string;
       out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
@@ -340,6 +354,24 @@ function TRadIARenameQueryStub.FindReferences(
   out AError: string
 ): Boolean;
 begin
+  if SameText(ASymbolId, 'sym-execute') then
+  begin
+    AReferences := [
+      TRadIASemanticReferenceLocation.Create(
+        'Other',
+        FOtherFile,
+        1,
+        1,
+        IfThen(FAmbiguous, 'candidate', 'exact'),
+        IfThen(FAmbiguous, 'ambiguous-short-name', 'unique-symbol')
+      ).WithOffsets(
+        Pos('Execute(10)', FWorkspace.ContentOf(FOtherFile)) - 1,
+        Length('Execute')
+      )
+    ];
+    AError := '';
+    Exit(AIncludeCandidates and (AMaxItems = 1000));
+  end;
   AReferences := [
     ReferenceFor(FMainFile, 'Main', 1),
     ReferenceFor(FMainFile, 'Main', 2),
@@ -349,6 +381,91 @@ begin
   AError := '';
   Result := SameText(ASymbolId, 'sym-save-button-click') and
     not AIncludeCandidates and (AMaxItems = 1000);
+end;
+
+procedure TRadIASemanticRefactoringTests.
+  RejectsAmbiguousChangeSignatureCall;
+var
+  LPatchService: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRoutines: IRadIASemanticRoutineService;
+  LWorkspace: IRadIARenameWorkspaceInspect;
+begin
+  LWorkspace := FWorkspace as IRadIARenameWorkspaceInspect;
+  LQueries := TRadIARenameQueryStub.Create(
+    LWorkspace,
+    FMainFile,
+    FOtherFile,
+    FFormFile,
+    True
+  );
+  Assert.IsTrue(Supports(LQueries, IRadIASemanticRoutineService, LRoutines));
+  LRegistry := TRadIAToolRegistry.Create;
+  LPatchService := FPatchService as IRadIAMultiFilePatchService;
+  RegisterRadIASemanticChangeSignatureTools(
+    LRegistry,
+    LQueries,
+    LRoutines,
+    FWorkspace as IRadIAEditorMutationFacade,
+    LPatchService
+  );
+  LResult := LRegistry.Resolve('PrepareChangeSignature').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareChangeSignature',
+      '{"symbol":"Execute","unit":"Main","container":"TWorker",' +
+      '"oldSignature":"procedure Execute(const AValue: Integer);",' +
+      '"newSignature":"procedure Execute(const AInput: Integer);",' +
+      '"mappings":[{"oldName":"AValue","newName":"AInput"}]}',
+      'change-signature-ambiguous-test'
+    )
+  );
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('change_signature_precondition', LResult.ErrorCode);
+  Assert.Contains(LResult.ErrorMessage, 'ambiguous');
+end;
+
+function TRadIARenameQueryStub.FindRoutineSymbols(
+  const AName: string;
+  const AUnitName: string;
+  const AContainerName: string;
+  const ASignature: string;
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+const
+  CDeclaration = 'procedure Execute(const AValue: Integer);';
+  CImplementation = 'procedure TWorker.Execute(const AValue: Integer);';
+var
+  LContent: string;
+begin
+  LContent := FWorkspace.ContentOf(FMainFile);
+  ASymbols := [
+    TRadIASemanticLocation.Create(
+      AName,
+      'method',
+      'TWorker',
+      FMainFile,
+      CDeclaration,
+      Pos(CDeclaration, LContent) - 1
+    ).WithIdentity('sym-execute', 'Main').WithDeclarationSection('interface'),
+    TRadIASemanticLocation.Create(
+      AName,
+      'method',
+      'TWorker',
+      FMainFile,
+      CImplementation,
+      Pos(CImplementation, LContent) - 1
+    ).WithIdentity('sym-execute', 'Main').WithDeclarationSection('implementation')
+  ];
+  AError := '';
+  Result := SameText(AName, 'Execute') and
+    (AUnitName.IsEmpty or SameText(AUnitName, 'Main')) and
+    (AContainerName.IsEmpty or SameText(AContainerName, 'TWorker')) and
+    SameText(ASignature, CDeclaration);
+  if not Result then
+    ASymbols := nil;
 end;
 
 function TRadIARenameQueryStub.FindResolvedMembers(
@@ -426,12 +543,17 @@ begin
   LWorkspace := TRadIARenameWorkspaceStub.Create(FRootPath);
   LWorkspace.AddFile(
     FMainFile,
+    'type TWorker = class' + sLineBreak +
+    '  procedure Execute(const AValue: Integer);' + sLineBreak +
+    'end;' + sLineBreak +
+    'procedure TWorker.Execute(const AValue: Integer);' + sLineBreak +
+    'begin end;' + sLineBreak +
     'procedure SaveButtonClick(Sender: TObject);' + sLineBreak +
     'begin SaveButtonClick(Sender); end;'
   );
   LWorkspace.AddFile(
     FOtherFile,
-    'begin MainForm.SaveButtonClick(Sender); end;'
+    'begin MainForm.SaveButtonClick(Sender); Worker.Execute(10); end;'
   );
   LWorkspace.AddFile(
     FFormFile,
@@ -444,6 +566,72 @@ begin
     LWorkspace,
     TRadIAWorkspaceBoundary.Create
   );
+end;
+
+procedure TRadIASemanticRefactoringTests.
+  PreparesAppliesAndRevertsChangeSignature;
+var
+  LPatchService: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRoot: TJSONObject;
+  LRoutines: IRadIASemanticRoutineService;
+  LWorkspace: IRadIARenameWorkspaceInspect;
+begin
+  LWorkspace := FWorkspace as IRadIARenameWorkspaceInspect;
+  LQueries := TRadIARenameQueryStub.Create(
+    LWorkspace,
+    FMainFile,
+    FOtherFile,
+    FFormFile,
+    False
+  );
+  Assert.IsTrue(Supports(LQueries, IRadIASemanticRoutineService, LRoutines));
+  LRegistry := TRadIAToolRegistry.Create;
+  LPatchService := FPatchService as IRadIAMultiFilePatchService;
+  RegisterRadIASemanticChangeSignatureTools(
+    LRegistry,
+    LQueries,
+    LRoutines,
+    FWorkspace as IRadIAEditorMutationFacade,
+    LPatchService
+  );
+  LResult := LRegistry.Resolve('PrepareChangeSignature').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareChangeSignature',
+      '{"symbol":"Execute","unit":"Main","container":"TWorker",' +
+      '"oldSignature":"procedure Execute(const AValue: Integer);",' +
+      '"newSignature":"procedure Execute(const AInput: Integer; ' +
+      'const ATrace: Boolean);","mappings":[{"oldName":"AValue",' +
+      '"newName":"AInput"}],"bindings":[{"parameterName":"ATrace",' +
+      '"expression":"False"}]}',
+      'change-signature-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  LRoot := TJSONObject.ParseJSONValue(LResult.ContentJson) as TJSONObject;
+  try
+    Assert.IsTrue(
+      LPatchService.Apply(LRoot.GetValue<string>('previewId')).Success
+    );
+    Assert.Contains(
+      LWorkspace.ContentOf(FMainFile),
+      'procedure Execute(const AInput: Integer; const ATrace: Boolean);'
+    );
+    Assert.Contains(
+      LWorkspace.ContentOf(FMainFile),
+      'procedure TWorker.Execute(const AInput: Integer; ' +
+      'const ATrace: Boolean);'
+    );
+    Assert.Contains(LWorkspace.ContentOf(FOtherFile), 'Execute(10, False)');
+    Assert.IsTrue(
+      LPatchService.Revert(LRoot.GetValue<string>('previewId')).Success
+    );
+    Assert.Contains(LWorkspace.ContentOf(FOtherFile), 'Execute(10)');
+  finally
+    LRoot.Free;
+  end;
 end;
 
 procedure TRadIASemanticRefactoringTests.TearDown;

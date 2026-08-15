@@ -54,6 +54,13 @@
       ]
     },
     {
+      "name": "Semantic signature refactoring",
+      "source": "Source/Core/RadIA.Core.SemanticChangeSignatureTools.pas",
+      "tools": [
+        "PrepareChangeSignature"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

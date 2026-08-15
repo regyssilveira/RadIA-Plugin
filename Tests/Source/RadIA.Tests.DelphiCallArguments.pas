@@ -15,6 +15,10 @@ type
     procedure RewritesNamedArgumentsByIdentity;
     [Test]
     procedure RejectsRemovedSideEffectsAndMissingBindings;
+    [Test]
+    procedure LocatesNestedCallsAcrossStringsAndComments;
+    [Test]
+    procedure RejectsMethodReferencesAndUnclosedCalls;
   end;
 
 implementation
@@ -22,6 +26,50 @@ implementation
 uses
   RadIA.Core.DelphiCallArguments,
   RadIA.Core.DelphiSignatures;
+
+procedure TRadIADelphiCallArgumentTests.
+  LocatesNestedCallsAcrossStringsAndComments;
+const
+  CContent = 'begin Worker.Execute(Load(''(''), { ) } Other(2)); end;';
+var
+  LCallSite: TRadIADelphiCallSite;
+  LError: string;
+  LReferenceStart: Integer;
+begin
+  LReferenceStart := Pos('Execute', CContent) - 1;
+  Assert.IsTrue(TRadIADelphiCallSite.TryLocate(
+    CContent,
+    LReferenceStart,
+    Length('Execute'),
+    LCallSite,
+    LError
+  ), LError);
+  Assert.AreEqual('Load(''(''), { ) } Other(2)', LCallSite.ArgumentText);
+  Assert.AreEqual(Pos('(', CContent), LCallSite.ArgumentStart);
+  Assert.AreEqual(Length(LCallSite.ArgumentText), LCallSite.ArgumentLength);
+end;
+
+procedure TRadIADelphiCallArgumentTests.
+  RejectsMethodReferencesAndUnclosedCalls;
+var
+  LCallSite: TRadIADelphiCallSite;
+  LError: string;
+begin
+  Assert.IsFalse(TRadIADelphiCallSite.TryLocate(
+    'LHandler := Execute;',
+    Length('LHandler := '),
+    Length('Execute'),
+    LCallSite,
+    LError
+  ));
+  Assert.IsFalse(TRadIADelphiCallSite.TryLocate(
+    'Execute(LoadValue()',
+    0,
+    Length('Execute'),
+    LCallSite,
+    LError
+  ));
+end;
 
 procedure BuildSignatures(
   out AOldSignature: TRadIADelphiSignature;

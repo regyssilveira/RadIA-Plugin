@@ -15,6 +15,7 @@ uses
   RadIA.Core.DelphiSignatures in '..\Source\Core\RadIA.Core.DelphiSignatures.pas',
   RadIA.Tests.DelphiSignatures in 'Source\RadIA.Tests.DelphiSignatures.pas',
   RadIA.Core.DelphiCallArguments in '..\Source\Core\RadIA.Core.DelphiCallArguments.pas',
+  RadIA.Core.SemanticChangeSignatureTools in '..\Source\Core\RadIA.Core.SemanticChangeSignatureTools.pas',
   RadIA.Tests.DelphiCallArguments in 'Source\RadIA.Tests.DelphiCallArguments.pas',
   RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',
   RadIA.Semantic.Lexer in '..\Source\Semantic\RadIA.Semantic.Lexer.pas',

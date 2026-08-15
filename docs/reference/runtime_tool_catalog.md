@@ -49,6 +49,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `PrepareRenameSymbol` | Prepara uma renomeação semântica exata em Pascal e DFM, incluindo arquivos fechados, sem alterar o projeto. | `RadIA.Core.SemanticRefactoringTools.pas` |
 
+## Refatoração semântica de assinaturas
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareChangeSignature` | Prepara uma alteração transacional da assinatura de uma rotina Delphi em declarações, implementação e chamadas comprovadas. | `RadIA.Core.SemanticChangeSignatureTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -448,7 +454,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 55
-- Ferramentas internas registradas: 167
+- Grupos registrados: 56
+- Ferramentas internas registradas: 168
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

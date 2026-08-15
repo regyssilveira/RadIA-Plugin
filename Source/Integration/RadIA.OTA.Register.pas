@@ -80,6 +80,7 @@ uses
   RadIA.Core.SemanticHierarchyTools,
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
   RadIA.Core.SemanticRefactoringTools,
+  RadIA.Core.SemanticChangeSignatureTools,
   RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
   RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
   RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
@@ -1375,6 +1376,13 @@ initialization
   RegisterRadIASemanticRefactoringTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+    TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
+  );
+  RegisterRadIASemanticChangeSignatureTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+    TRadIAContainer.Resolve<IRadIASemanticRoutineService>,
     TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
     TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
   );

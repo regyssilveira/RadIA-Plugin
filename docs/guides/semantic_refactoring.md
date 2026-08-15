@@ -48,3 +48,30 @@ segura quando não consegue obter conteúdo textual completo.
 
 O retorno contém `previewId`, arquivos afetados e quantidade de substituições confirmadas. Nenhuma
 mutação ocorre durante a preparação.
+
+## Alterar a assinatura de uma rotina
+
+Use `PrepareChangeSignature` quando precisar adicionar, remover, renomear, reordenar ou alterar
+parâmetros de uma procedure, function, constructor ou destructor. A ferramenta usa a identidade
+canônica da rotina para reunir declaração e implementação e só modifica chamadas que o índice
+semântico consegue comprovar.
+
+Informe:
+
+- `symbol`: nome simples da rotina;
+- `oldSignature`: assinatura atual completa;
+- `newSignature`: assinatura desejada completa;
+- `unit` e `container`: filtros recomendados para métodos e homônimos;
+- `mappings`: pares `oldName`/`newName` que preservam a identidade de parâmetros renomeados ou
+  reordenados;
+- `bindings`: pares `parameterName`/`expression` para cada parâmetro novo obrigatório.
+
+```text
+/tool PrepareChangeSignature {"symbol":"Execute","unit":"Worker","container":"TWorker","oldSignature":"procedure Execute(const AValue: Integer);","newSignature":"procedure Execute(const AInput: Integer; const ATrace: Boolean);","mappings":[{"oldName":"AValue","newName":"AInput"}],"bindings":[{"parameterName":"ATrace","expression":"False"}]}
+```
+
+O resultado é somente um preview multiarquivo. Revise e aprove `ApplyMultiFilePatch`; use
+`RevertMultiFilePatch` para desfazer. O RadIA bloqueia a preparação quando encontra referência
+ambígua, chamada sem lista explícita de argumentos, argumento removido com possível efeito colateral,
+arquivo incompleto, limite de referências ou conteúdo alterado depois da indexação. Nesses casos,
+desambigue ou ajuste a chamada indicada e repita a operação; nenhuma alteração parcial é aplicada.

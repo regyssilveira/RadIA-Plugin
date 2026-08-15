@@ -41,6 +41,29 @@ type
     property OldSignature: TRadIADelphiSignature read FOldSignature;
   end;
 
+  TRadIADelphiCallSite = record
+  private
+    FArgumentLength: Integer;
+    FArgumentStart: Integer;
+    FArgumentText: string;
+  public
+    constructor Create(
+      const AArgumentStart: Integer;
+      const AArgumentLength: Integer;
+      const AArgumentText: string
+    );
+    class function TryLocate(
+      const AContent: string;
+      const AReferenceStart: Integer;
+      const ANameLength: Integer;
+      out ACallSite: TRadIADelphiCallSite;
+      out AError: string
+    ): Boolean; static;
+    property ArgumentLength: Integer read FArgumentLength;
+    property ArgumentStart: Integer read FArgumentStart;
+    property ArgumentText: string read FArgumentText;
+  end;
+
   TRadIADelphiCallRewrite = record
   private
     FArgumentText: string;
@@ -64,6 +87,14 @@ uses
   System.SysUtils;
 
 type
+  TRadIADelphiCallScanState = (
+    cssCode,
+    cssString,
+    cssBraceComment,
+    cssParenthesisComment,
+    cssLineComment
+  );
+
   TRadIAParsedArgument = record
   private
     FExpression: string;
@@ -104,6 +135,201 @@ begin
   FNewSignature := ANewSignature;
   FDelta := ADelta;
   FBindings := Copy(ABindings);
+end;
+
+constructor TRadIADelphiCallSite.Create(
+  const AArgumentStart: Integer;
+  const AArgumentLength: Integer;
+  const AArgumentText: string
+);
+begin
+  FArgumentStart := AArgumentStart;
+  FArgumentLength := AArgumentLength;
+  FArgumentText := AArgumentText;
+end;
+
+function IsCallWhitespace(const ACharacter: Char): Boolean;
+begin
+  Result := CharInSet(ACharacter, [#9, #10, #13, ' ']);
+end;
+
+function AdvanceStringScanState(
+  var AIndex: Integer;
+  var AState: TRadIADelphiCallScanState;
+  const ACharacter: Char;
+  const ANext: Char
+): Boolean;
+begin
+  Result := True;
+  if ACharacter = '''' then
+    if ANext = '''' then
+      Inc(AIndex)
+    else
+      AState := cssCode;
+end;
+
+function AdvanceCommentScanState(
+  var AIndex: Integer;
+  var AState: TRadIADelphiCallScanState;
+  const ACharacter: Char;
+  const ANext: Char
+): Boolean;
+begin
+  Result := True;
+  if (AState = cssBraceComment) and (ACharacter = '}') then
+    AState := cssCode
+  else if (AState = cssParenthesisComment) and
+    (ACharacter = '*') and (ANext = ')') then
+  begin
+    Inc(AIndex);
+    AState := cssCode;
+  end
+  else if (AState = cssLineComment) and
+    CharInSet(ACharacter, [#10, #13]) then
+    AState := cssCode;
+end;
+
+function AdvanceCodeScanState(
+  var AIndex: Integer;
+  var AState: TRadIADelphiCallScanState;
+  const ACharacter: Char;
+  const ANext: Char
+): Boolean;
+begin
+  Result := True;
+  if ACharacter = '''' then
+    AState := cssString
+  else if ACharacter = '{' then
+    AState := cssBraceComment
+  else if (ACharacter = '(') and (ANext = '*') then
+  begin
+    Inc(AIndex);
+    AState := cssParenthesisComment;
+  end
+  else if (ACharacter = '/') and (ANext = '/') then
+  begin
+    Inc(AIndex);
+    AState := cssLineComment;
+  end
+  else
+    Result := False;
+end;
+
+function AdvanceCallScanState(
+  const AContent: string;
+  var AIndex: Integer;
+  var AState: TRadIADelphiCallScanState
+): Boolean;
+var
+  LCharacter: Char;
+  LNext: Char;
+begin
+  LCharacter := AContent[AIndex];
+  if AIndex < Length(AContent) then
+    LNext := AContent[AIndex + 1]
+  else
+    LNext := #0;
+  case AState of
+    cssString:
+      Result := AdvanceStringScanState(
+        AIndex,
+        AState,
+        LCharacter,
+        LNext
+      );
+    cssBraceComment,
+    cssParenthesisComment,
+    cssLineComment:
+      Result := AdvanceCommentScanState(
+        AIndex,
+        AState,
+        LCharacter,
+        LNext
+      );
+  else
+    Result := AdvanceCodeScanState(
+      AIndex,
+      AState,
+      LCharacter,
+      LNext
+    );
+  end;
+end;
+
+function FindClosingCallParenthesis(
+  const AContent: string;
+  const AOpeningIndex: Integer
+): Integer;
+var
+  LDepth: Integer;
+  LIndex: Integer;
+  LState: TRadIADelphiCallScanState;
+begin
+  Result := 0;
+  LDepth := 0;
+  LState := cssCode;
+  LIndex := AOpeningIndex;
+  while LIndex <= Length(AContent) do
+  begin
+    if AdvanceCallScanState(AContent, LIndex, LState) then
+    begin
+      Inc(LIndex);
+      Continue;
+    end;
+    if AContent[LIndex] = '(' then
+      Inc(LDepth)
+    else if AContent[LIndex] = ')' then
+    begin
+      Dec(LDepth);
+      if LDepth = 0 then
+        Exit(LIndex);
+    end;
+    Inc(LIndex);
+  end;
+end;
+
+class function TRadIADelphiCallSite.TryLocate(
+  const AContent: string;
+  const AReferenceStart: Integer;
+  const ANameLength: Integer;
+  out ACallSite: TRadIADelphiCallSite;
+  out AError: string
+): Boolean;
+var
+  LClosingIndex: Integer;
+  LOpeningIndex: Integer;
+begin
+  Result := False;
+  ACallSite := Default(TRadIADelphiCallSite);
+  AError := '';
+  if (AReferenceStart < 0) or (ANameLength < 1) or
+    (AReferenceStart + ANameLength > Length(AContent)) then
+  begin
+    AError := 'The semantic call reference is outside the current file.';
+    Exit;
+  end;
+  LOpeningIndex := AReferenceStart + ANameLength + 1;
+  while (LOpeningIndex <= Length(AContent)) and
+    IsCallWhitespace(AContent[LOpeningIndex]) do
+    Inc(LOpeningIndex);
+  if (LOpeningIndex > Length(AContent)) or
+    (AContent[LOpeningIndex] <> '(') then
+  begin
+    AError := 'The semantic reference is not an explicit Delphi invocation.';
+    Exit;
+  end;
+  LClosingIndex := FindClosingCallParenthesis(AContent, LOpeningIndex);
+  if LClosingIndex = 0 then
+  begin
+    AError := 'The Delphi invocation argument list is not closed.';
+    Exit;
+  end;
+  ACallSite := TRadIADelphiCallSite.Create(
+    LOpeningIndex,
+    LClosingIndex - LOpeningIndex - 1,
+    Copy(AContent, LOpeningIndex + 1, LClosingIndex - LOpeningIndex - 1)
+  );
+  Result := True;
 end;
 
 constructor TRadIAParsedArgument.Create(
