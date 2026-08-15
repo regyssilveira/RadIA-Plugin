@@ -9,6 +9,20 @@ Ask chat to find a symbol's usages or run `FindSymbolReferences`. Supply the uni
 The result includes file, line, and column and can be opened with `NavigateToFile`. Uncertain occurrences
 are marked as candidates and are never treated as exact silently.
 
+## Inspect a type hierarchy
+
+Ask chat for the hierarchy of a class, interface, record, or helper, or run `GetTypeHierarchy`. The
+tool returns the requested type, its ancestors, and its descendants with each relationship depth.
+Types inherited from RTL, VCL, FMX, or libraries outside the project remain visible as external even
+when they are not indexed.
+
+When two units declare types with the same name, supply `unit`. RadIA stops instead of silently
+choosing a homonym. This query is read-only and never changes files.
+
+```text
+/tool GetTypeHierarchy {"type":"TMainForm","unit":"Main"}
+```
+
 ## Rename a symbol
 
 1. `PrepareRenameSymbol` accepts `symbol`, `newName`, and `unit` when required.

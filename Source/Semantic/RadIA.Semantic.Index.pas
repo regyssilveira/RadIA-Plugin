@@ -270,6 +270,9 @@ type
     function ListPublicApiSymbols(
       const AMaxItems: Integer
     ): TArray<TRadIASemanticIndexedSymbol>;
+    function ListTypeSymbols(
+      const AMaxItems: Integer
+    ): TArray<TRadIASemanticIndexedSymbol>;
     function HasUnit(const AUnitKey: string): Boolean;
     function IndexUnit(
       const ADescriptor: TRadIASemanticUnitDescriptor;
@@ -1253,6 +1256,40 @@ begin
         LList.Add(LSymbol);
       end;
     end;
+    LList.Sort(
+      TComparer<TRadIASemanticIndexedSymbol>.Construct(
+        ComparePublicApiSymbols
+      )
+    );
+    if LList.Count > LLimit then
+      LList.Count := LLimit;
+    Result := LList.ToArray;
+  finally
+    LList.Free;
+  end;
+end;
+
+function TRadIASemanticIndex.ListTypeSymbols(
+  const AMaxItems: Integer
+): TArray<TRadIASemanticIndexedSymbol>;
+var
+  LLimit: Integer;
+  LList: TList<TRadIASemanticIndexedSymbol>;
+  LPair: TPair<string, TRadIASemanticIndexedUnit>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  LLimit := AMaxItems;
+  if LLimit < 1 then
+    LLimit := 1
+  else if LLimit > 5000 then
+    LLimit := 5000;
+  LList := TList<TRadIASemanticIndexedSymbol>.Create;
+  try
+    for LPair in FUnits do
+      if LPair.Value.Descriptor.Scope = susProject then
+        for LSymbol in LPair.Value.Symbols do
+          if LSymbol.Kind in [sskClass, sskRecord, sskInterface, sskHelper] then
+            LList.Add(LSymbol);
     LList.Sort(
       TComparer<TRadIASemanticIndexedSymbol>.Construct(
         ComparePublicApiSymbols

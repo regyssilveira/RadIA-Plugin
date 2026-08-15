@@ -77,6 +77,7 @@ uses
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
   RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
+  RadIA.Core.SemanticHierarchyTools,
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
   RadIA.Core.SemanticRefactoringTools,
   RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
@@ -1248,6 +1249,10 @@ initialization
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
     )
   );
+  TRadIAContainer.Register<IRadIASemanticHierarchyService>(
+    TRadIAContainer.Resolve<IRadIASemanticQueryService> as
+      IRadIASemanticHierarchyService
+  );
   TRadIAContainer.Register<IRadIAGeneratedArtifactService>(
     TRadIAGeneratedArtifactService.Create(
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
@@ -1362,6 +1367,10 @@ initialization
   RegisterRadIASemanticQueryTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>
+  );
+  RegisterRadIASemanticHierarchyTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticHierarchyService>
   );
   RegisterRadIASemanticRefactoringTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

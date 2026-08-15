@@ -27,6 +27,10 @@ type
     procedure FindsReferencesWithNavigationCoordinates;
     [Test]
     procedure RejectsAmbiguousReferenceQueryWithoutUnit;
+    [Test]
+    procedure ReturnsIndexedTypeHierarchy;
+    [Test]
+    procedure ReturnsTransitiveHierarchyDepthAndExternalTypes;
   end;
 
 implementation
@@ -36,6 +40,7 @@ uses
   System.SysUtils,
   RadIA.Core.InlineCompletion,
   RadIA.Core.SemanticQueries,
+  RadIA.Core.SemanticHierarchyTools,
   RadIA.Core.SemanticQueryTools,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,
@@ -90,6 +95,22 @@ begin
       '"container":"TWorker","fileName":"Worker.pas",' +
       '"visibility":"public","signature":"procedure Execute;",' +
       '"startOffset":84}]}}'
+  else if SameText(AMethod, 'listTypeSymbols') then
+    AResponse :=
+      '{"result":{"symbols":[' +
+      '{"symbolId":"type-base","unitKey":"Base","name":"TBase",' +
+      '"kind":"class","container":"","fileName":"Base.pas",' +
+      '"signature":"TBase = class(TObject)","startOffset":10,' +
+      '"ancestors":["TObject"]},' +
+      '{"symbolId":"type-worker","unitKey":"Worker",' +
+      '"name":"TWorker","kind":"class","container":"",' +
+      '"fileName":"Worker.pas","signature":"TWorker = class(TBase)",' +
+      '"startOffset":20,"ancestors":["TBase"]},' +
+      '{"symbolId":"type-special","unitKey":"Special",' +
+      '"name":"TSpecialWorker","kind":"class","container":"",' +
+      '"fileName":"Special.pas","signature":' +
+      '"TSpecialWorker = class(TWorker)","startOffset":30,' +
+      '"ancestors":["TWorker"]}]}}'
   else if SameText(AMethod, 'findSymbols') then
   begin
     if ContainsText(AParameters, 'TShared') then
@@ -189,6 +210,66 @@ begin
   Assert.AreEqual(NativeInt(1), Length(LSymbols));
   Assert.AreEqual('Execute', LSymbols[0].Name);
   Assert.AreEqual('public', LSymbols[0].Visibility);
+end;
+
+procedure TRadIASemanticQueryTests.ReturnsIndexedTypeHierarchy;
+var
+  LHierarchy: IRadIASemanticHierarchyService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LService: TRadIASemanticQueryService;
+begin
+  LService := TRadIASemanticQueryService.Create(
+    TRadIASemanticQueryClientMock.Create(False)
+  );
+  LHierarchy := LService as IRadIASemanticHierarchyService;
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticHierarchyTools(LRegistry, LHierarchy);
+  LResult := LRegistry.Resolve('GetTypeHierarchy').Execute(
+    TRadIAToolRequest.Create(
+      'GetTypeHierarchy',
+      '{"type":"TWorker"}',
+      'semantic-hierarchy-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LResult.ContentJson, '"name":"TBase"');
+  Assert.Contains(LResult.ContentJson, '"relation":"ancestor"');
+  Assert.Contains(LResult.ContentJson, '"name":"TSpecialWorker"');
+  Assert.Contains(LResult.ContentJson, '"relation":"descendant"');
+end;
+
+procedure TRadIASemanticQueryTests.ReturnsTransitiveHierarchyDepthAndExternalTypes;
+var
+  LHierarchy: IRadIASemanticHierarchyService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LService: TRadIASemanticQueryService;
+begin
+  LService := TRadIASemanticQueryService.Create(
+    TRadIASemanticQueryClientMock.Create(False)
+  );
+  LHierarchy := LService as IRadIASemanticHierarchyService;
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticHierarchyTools(LRegistry, LHierarchy);
+  LResult := LRegistry.Resolve('GetTypeHierarchy').Execute(
+    TRadIAToolRequest.Create(
+      'GetTypeHierarchy',
+      '{"type":"TBase"}',
+      'semantic-transitive-hierarchy-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(
+    LResult.ContentJson,
+    '"name":"TSpecialWorker","kind":"class","relation":' +
+    '"descendant","depth":2'
+  );
+  Assert.Contains(
+    LResult.ContentJson,
+    '"name":"TObject","kind":"external","relation":"ancestor",' +
+    '"depth":1,"indexed":false'
+  );
 end;
 
 procedure TRadIASemanticQueryTests.BuildsBoundedResolvedContext;

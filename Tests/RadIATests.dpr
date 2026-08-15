@@ -32,6 +32,7 @@ uses
   RadIA.Tests.SemanticMembers in 'Source\RadIA.Tests.SemanticMembers.pas',
   RadIA.Core.SemanticQueries in '..\Source\Core\RadIA.Core.SemanticQueries.pas',
   RadIA.Core.SemanticQueryTools in '..\Source\Core\RadIA.Core.SemanticQueryTools.pas',
+  RadIA.Core.SemanticHierarchyTools in '..\Source\Core\RadIA.Core.SemanticHierarchyTools.pas',
   RadIA.Core.SemanticRefactoringTools in '..\Source\Core\RadIA.Core.SemanticRefactoringTools.pas',
   RadIA.Core.TransactionalTextFiles in '..\Source\Core\RadIA.Core.TransactionalTextFiles.pas',
   RadIA.Core.TestImpact in '..\Source\Core\RadIA.Core.TestImpact.pas',

@@ -40,6 +40,13 @@
       ]
     },
     {
+      "name": "Semantic type hierarchy",
+      "source": "Source/Core/RadIA.Core.SemanticHierarchyTools.pas",
+      "tools": [
+        "GetTypeHierarchy"
+      ]
+    },
+    {
       "name": "Semantic refactoring",
       "source": "Source/Core/RadIA.Core.SemanticRefactoringTools.pas",
       "tools": [

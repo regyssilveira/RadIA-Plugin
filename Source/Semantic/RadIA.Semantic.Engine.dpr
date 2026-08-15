@@ -164,6 +164,7 @@ begin
   LCapabilities.Add('findSymbols');
   LCapabilities.Add('findReferences');
   LCapabilities.Add('listPublicApiSymbols');
+  LCapabilities.Add('listTypeSymbols');
   LCapabilities.Add('findMembers');
   LCapabilities.Add('findResolvedMembers');
   LCapabilities.Add('completeResolvedMembers');
@@ -663,6 +664,16 @@ begin
     Exit(BuildIndexedSymbolsResult(
       AId,
       AIndex.ListPublicApiSymbols(
+        LParameters.GetValue<Integer>('maxItems', 2000)
+      )
+    ));
+  end;
+  if SameText(AMethod, 'listTypeSymbols') then
+  begin
+    LParameters := RequireParameters(ARequest);
+    Exit(BuildIndexedSymbolsResult(
+      AId,
+      AIndex.ListTypeSymbols(
         LParameters.GetValue<Integer>('maxItems', 2000)
       )
     ));

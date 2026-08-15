@@ -8,6 +8,7 @@ uses
 type
   TRadIASemanticLocation = record
   private
+    FAncestorNames: TArray<string>;
     FContainerName: string;
     FFileName: string;
     FKind: string;
@@ -39,6 +40,10 @@ type
       const ASymbolId: string;
       const AUnitKey: string
     ): TRadIASemanticLocation;
+    function WithAncestors(
+      const AAncestorNames: TArray<string>
+    ): TRadIASemanticLocation;
+    property AncestorNames: TArray<string> read FAncestorNames;
     property ContainerName: string read FContainerName;
     property FileName: string read FFileName;
     property Kind: string read FKind;
@@ -118,9 +123,18 @@ type
     ): Boolean;
   end;
 
+  IRadIASemanticHierarchyService = interface
+    ['{8551C5CC-2729-4FC6-8AA0-4F8C6F6B4460}']
+    function ListTypeSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+  end;
+
   TRadIASemanticQueryService = class(
     TInterfacedObject,
-    IRadIASemanticQueryService
+    IRadIASemanticQueryService,
+    IRadIASemanticHierarchyService
   )
   private
     FClient: IRadIASemanticRequestClient;
@@ -129,7 +143,8 @@ type
       const AFieldName: string;
       const AFieldValue: string;
       out AItems: TArray<TRadIASemanticLocation>;
-      out AError: string
+      out AError: string;
+      const AMaxItems: Integer = 200
     ): Boolean;
     function ExecuteReferences(
       const ASymbolId: string;
@@ -161,6 +176,10 @@ type
       out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
+    function ListTypeSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
     function BuildContext(
       const ASymbolName: string;
       const AMaxCharacters: Integer;
@@ -179,9 +198,6 @@ uses
   System.Generics.Collections,
   System.JSON,
   System.SysUtils;
-
-const
-  CMaximumSemanticQueryItems = 200;
 
 constructor TRadIASemanticLocation.Create(
   const AName: string;
@@ -232,6 +248,14 @@ begin
   Result.FUnitKey := AUnitKey;
 end;
 
+function TRadIASemanticLocation.WithAncestors(
+  const AAncestorNames: TArray<string>
+): TRadIASemanticLocation;
+begin
+  Result := Self;
+  Result.FAncestorNames := Copy(AAncestorNames);
+end;
+
 function TRadIASemanticReferenceLocation.WithOffsets(
   const AStartOffset: Integer;
   const ALength: Integer
@@ -276,9 +300,13 @@ function TRadIASemanticQueryService.Execute(
   const AFieldName: string;
   const AFieldValue: string;
   out AItems: TArray<TRadIASemanticLocation>;
-  out AError: string
+  out AError: string;
+  const AMaxItems: Integer
 ): Boolean;
 var
+  LAncestorArray: TJSONArray;
+  LAncestorIndex: Integer;
+  LAncestors: TArray<string>;
   LArray: TJSONArray;
   LDocument: TJSONObject;
   LIndex: Integer;
@@ -323,7 +351,7 @@ begin
     try
       for LIndex := 0 to LArray.Count - 1 do
       begin
-        if LList.Count >= CMaximumSemanticQueryItems then
+        if LList.Count >= AMaxItems then
           Break;
         LItem := LArray[LIndex] as TJSONObject;
         LLocation := TRadIASemanticLocation.Create(
@@ -335,6 +363,16 @@ begin
           LItem.GetValue<string>('visibility', ''),
           LItem.GetValue<Integer>('startOffset', 0)
         );
+        LAncestorArray := nil;
+        LItem.TryGetValue<TJSONArray>('ancestors', LAncestorArray);
+        LAncestors := nil;
+        if Assigned(LAncestorArray) then
+        begin
+          SetLength(LAncestors, LAncestorArray.Count);
+          for LAncestorIndex := 0 to LAncestorArray.Count - 1 do
+            LAncestors[LAncestorIndex] := LAncestorArray[LAncestorIndex].Value;
+        end;
+        LLocation := LLocation.WithAncestors(LAncestors);
         LLocation.FSymbolId := LItem.GetValue<string>('symbolId', '');
         LLocation.FUnitKey := LItem.GetValue<string>('unitKey', '');
         LList.Add(LLocation);
@@ -476,6 +514,21 @@ begin
     AContainerName,
     AMembers,
     AError
+  );
+end;
+
+function TRadIASemanticQueryService.ListTypeSymbols(
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+begin
+  Result := Execute(
+    'listTypeSymbols',
+    'scope',
+    'project',
+    ASymbols,
+    AError,
+    2000
   );
 end;
 

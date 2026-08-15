@@ -42,6 +42,8 @@ type
     [Test]
     procedure ListsOnlyDeterministicPublicProjectApi;
     [Test]
+    procedure ListsProjectTypesWithAncestorMetadata;
+    [Test]
     procedure KeepsStableSymbolIdentityAcrossOffsetChanges;
     [Test]
     procedure DistinguishesOverloadsAndUnitsByIdentity;
@@ -348,6 +350,32 @@ begin
   Assert.AreEqual('Sample.Api', LSymbols[0].Name);
   Assert.AreEqual('TApi', LSymbols[1].Name);
   Assert.AreEqual('Execute', LSymbols[2].Name);
+end;
+
+procedure TRadIASemanticIndexTests.ListsProjectTypesWithAncestorMetadata;
+var
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LSymbols: TArray<TRadIASemanticIndexedSymbol>;
+begin
+  LDescriptor := TRadIASemanticUnitDescriptor.Create(
+    'sample.types',
+    'Sample.Types.pas',
+    susProject,
+    1
+  );
+  FIndex.IndexUnit(
+    LDescriptor,
+    'unit Sample.Types; interface type TBase = class end; ' +
+    'TChild = class(TBase) public procedure Execute; end; ' +
+    'implementation end.',
+    nil
+  );
+  LSymbols := FIndex.ListTypeSymbols(100);
+  Assert.AreEqual(NativeInt(2), Length(LSymbols));
+  Assert.AreEqual('TBase', LSymbols[0].Name);
+  Assert.AreEqual('TChild', LSymbols[1].Name);
+  Assert.AreEqual(NativeInt(1), Length(LSymbols[1].AncestorNames));
+  Assert.AreEqual('TBase', LSymbols[1].AncestorNames[0]);
 end;
 
 procedure TRadIASemanticIndexTests.KeepsStableSymbolIdentityAcrossOffsetChanges;
