@@ -11,5 +11,6 @@
 - [Documentation policy](documentation_policy.en.md)
 - [Release process](release_process.en.md)
 - [Automated usage test matrix](usage_test_matrix.en.md)
+- [Move Type refactoring contract](move_type_contract.en.md)
 - [Compliance](compliance.en.md)
 - [Architecture decisions](adr/README.en.md)
