@@ -85,7 +85,8 @@ begin
     LDelphiVersion,
     'CalculatorApp',
     ptkVcl,
-    '{"schemaVersion":1,"kind":"calculator"}'
+    '{"schemaVersion":1,"kind":"calculator",' +
+    '"creationProfile":"complete"}'
   );
   GenerateProject(LRootPath, LDelphiVersion, 'FmxApp', ptkFmx);
   GenerateProject(LRootPath, LDelphiVersion, 'LibraryApp', ptkLibrary);

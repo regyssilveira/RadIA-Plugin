@@ -66,6 +66,16 @@ and cleanup.
 
 Every improvement in this goal is complete only after adding or updating a scenario in this matrix.
 
+### Foundation status
+
+- Versioned contract, runner, and `startup` profile: complete.
+- Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64: executed successfully.
+- VCL calculator: `2 + 3 = 5` UI and five DUnitX tests proven on Delphi 12 and 13 compilers.
+- Immediate project creation and opening: proven on all three IDE targets.
+- Mandatory release-process integration: complete.
+- Doctor, simulated provider, consent, failing DUnitX, debugger, and terminal scenarios: pending to
+  expand the profile beyond startup.
+
 ## Milestones and dependencies
 
 ### M1 — universal experience

@@ -41,6 +41,7 @@ $previousBdsBin = $env:BDSBIN
 $templateResults = @()
 $expectedTemplates = @(
     "CalculatorApp",
+    "CalculatorAppTests",
     "ConsoleApp",
     "DUnitXApp",
     "DextControllerApi",
@@ -171,6 +172,65 @@ function Test-RadIACalculatorInterface {
     }
 }
 
+function Test-RadIACalculatorUnitTests {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ExecutablePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ReportPath
+    )
+
+    & $ExecutablePath `
+        "--hidebanner" `
+        "--consolemode:Off" `
+        "--xmlfile:$ReportPath"
+    if ($LASTEXITCODE -ne 0) {
+        throw (
+            "Generated calculator unit tests failed with exit code " +
+            "$LASTEXITCODE."
+        )
+    }
+    if (-not (Test-Path -LiteralPath $ReportPath -PathType Leaf)) {
+        throw "Generated calculator test report was not created."
+    }
+
+    [xml]$report = Get-Content -LiteralPath $ReportPath -Raw
+    $root = $report.'test-results'
+    if (-not $root) {
+        throw "Generated calculator test report has an invalid format."
+    }
+    $total = [int]$root.total
+    $errors = [int]$root.errors
+    $failures = [int]$root.failures
+    $ignored = [int]$root.'not-run'
+    $passed = $total - $errors - $failures - $ignored
+    if (
+        $total -ne 5 -or
+        $passed -ne 5 -or
+        $errors -ne 0 -or
+        $failures -ne 0 -or
+        $ignored -ne 0
+    ) {
+        throw (
+            "Generated calculator test evidence is incomplete: " +
+            "total=$total, passed=$passed, errors=$errors, " +
+            "failures=$failures, ignored=$ignored."
+        )
+    }
+
+    return [PSCustomObject]@{
+        executable = $ExecutablePath
+        report = $ReportPath
+        total = $total
+        passed = $passed
+        errors = $errors
+        failures = $failures
+        ignored = $ignored
+        status = "passed"
+    }
+}
+
 function Test-DextEndpoint {
     param(
         [Parameter(Mandatory = $true)]
@@ -285,6 +345,29 @@ try {
     }
 
     foreach ($project in $projects) {
+        if ($project.BaseName -eq "CalculatorAppTests") {
+            $calculatorTestExecutable = Join-Path `
+                $project.DirectoryName `
+                "bin\Win32\Debug\CalculatorAppTests.exe"
+            if (-not (Test-Path `
+                -LiteralPath $calculatorTestExecutable `
+                -PathType Leaf
+            )) {
+                throw (
+                    "CalculatorApp did not build its companion tests: " +
+                    $calculatorTestExecutable
+                )
+            }
+            $templateResults += [PSCustomObject]@{
+                template = $project.BaseName
+                projectFile = $project.Name
+                platform = "Win32"
+                configuration = "Debug"
+                durationMs = 0
+                status = "passed"
+            }
+            continue
+        }
         if ($SkipDext -and $project.BaseName.StartsWith("Dext")) {
             $templateResults += [PSCustomObject]@{
                 template = $project.BaseName
@@ -347,16 +430,17 @@ try {
                 $validationRoot `
                 "CalculatorApp\bin\Win32\Debug\CalculatorApp.exe"
         )
-    $calculatorUnitTests = [PSCustomObject]@{
-        executable = ""
-        report = ""
-        total = 0
-        passed = 0
-        errors = 0
-        failures = 0
-        ignored = 0
-        status = "not-requested"
-    }
+    $calculatorUnitTests = Test-RadIACalculatorUnitTests `
+        -ExecutablePath (
+            Join-Path `
+                $validationRoot `
+                "CalculatorApp\bin\Win32\Debug\CalculatorAppTests.exe"
+        ) `
+        -ReportPath (
+            Join-Path `
+                $validationRoot `
+                "CalculatorApp\calculator-tests.xml"
+        )
 
     if ($EvidencePath) {
         $resolvedEvidencePath = [IO.Path]::GetFullPath($EvidencePath)

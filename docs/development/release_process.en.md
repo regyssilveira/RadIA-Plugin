@@ -27,7 +27,13 @@ npx eslint
 node --test Tests/Web/RadIA.Documentation.test.js
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0" -Test
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -Test
+powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
+
+`Test-RadIA.ReleaseUsage.ps1` is mandatory for every release and runs calculator creation plus its
+functional and DUnitX tests, immediate project creation and opening, and the automated usage matrix
+on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64 as one gate. It produces sanitized evidence
+under `Output/Validation/ReleaseUsage`; a missing target or failed scenario blocks publication.
 
 Run the scanner **locally** and require a passing Quality Gate for the same revision. Builds, tests,
 catalog, installer, and smoke tests must point to the same clean commit. Evidence must never be edited
@@ -39,10 +45,11 @@ does not replace the local gate and must never block a release while waiting for
 
 ## 3. Package
 
-Build and validate the visual installer **locally**, before creating the tag. The package must include supported Delphi 12
-and 13 binaries, Web assets, the MCP bridge, manifest, and hashes. The installer is the only required
-public artifact; evidence files remain under `Output/` and are not attached to the release. GitHub Actions
-is only an optional manual validation: it does not generate the official artifact and must never block publication.
+Build and validate the visual installer **locally**, before creating the tag. The package must include
+supported Delphi 12 and 13 binaries, Web assets, the MCP bridge, manifest, and hashes. The installer
+is the only required public artifact; evidence files remain under `Output/` and are not attached to
+the release. GitHub Actions is only an optional manual validation: it does not generate the official
+artifact and must never block publication.
 
 Before smoke testing:
 

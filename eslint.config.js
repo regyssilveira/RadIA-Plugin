@@ -2,6 +2,7 @@ module.exports = [
   {
     ignores: [
       "**/node_modules/**",
+      "**/Output/**",
       "**/vendor/**",
       "**/*.min.js",
       "eslint.config.js"

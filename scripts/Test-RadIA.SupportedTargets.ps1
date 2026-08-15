@@ -9,6 +9,8 @@ $activePaths = @(
     ".\scripts\New-RadIA.VisualInstaller.ps1",
     ".\scripts\New-RadIA.ReleaseEvidence.ps1",
     ".\scripts\New-RadIA.ReleaseChannel.ps1",
+    ".\scripts\Test-RadIA.ReleaseUsage.ps1",
+    ".\scripts\Test-RadIA.UsageMatrix.ps1",
     ".\.github\workflows\quality-gate.yml",
     ".\.github\workflows\release.yml",
     ".\Source\Core\RadIA.Core.ProjectTemplates.pas",

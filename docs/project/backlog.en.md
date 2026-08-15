@@ -31,6 +31,9 @@ the critical matrix, collect logs, screenshots, and structured results, and rest
 without human intervention. Failures must identify the stage, IDE version, and diagnostic artifact
 without exposing credentials.
 
+This gate is mandatory for every release together with calculator creation and functional testing
+and immediate project creation, opening, and navigation.
+
 ## Milestone 1 — universal experience
 
 - [ ] **Intent-driven universal command:** classify free-form requests, select chat, journey, or

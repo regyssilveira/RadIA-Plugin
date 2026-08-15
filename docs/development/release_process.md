@@ -27,7 +27,14 @@ npx eslint
 node --test Tests/Web/RadIA.Documentation.test.js
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "23.0" -Test
 powershell.exe -ExecutionPolicy Bypass -File build.ps1 -DelphiVersion "37.0" -Test
+powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
+
+`Test-RadIA.ReleaseUsage.ps1` é obrigatório em toda release e executa, como um único gate, a criação
+e os testes funcionais e DUnitX da calculadora, a criação e abertura imediata de projetos e a matriz
+automatizada de uso no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. O gate produz evidência
+sanitizada em `Output/Validation/ReleaseUsage` e qualquer alvo ausente ou cenário reprovado bloqueia a
+publicação.
 
 Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma revisão. Builds, testes,
 catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser
@@ -39,8 +46,9 @@ não substitui o gate local e nunca deve bloquear uma release enquanto aguarda i
 
 ## 3. Empacotar
 
-Gere e valide o instalador visual **localmente**, antes de criar a tag. O pacote deve conter os binários suportados para Delphi
-12 e 13, assets Web, bridge MCP, manifesto e hashes. O instalador é o único artefato público necessário;
+Gere e valide o instalador visual **localmente**, antes de criar a tag. O pacote deve conter os
+binários suportados para Delphi 12 e 13, assets Web, bridge MCP, manifesto e hashes. O instalador é o
+único artefato público necessário;
 arquivos de evidência permanecem em `Output/` e não são anexados à release. O GitHub Actions é apenas
 uma validação manual opcional: ele não gera o artefato oficial e nunca deve bloquear a publicação.
 

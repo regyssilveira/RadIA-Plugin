@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    {
+      "id": "startup",
+      "description": "Loads RadIA, verifies the package contract, and closes the IDE cleanly.",
+      "scenarioIds": [
+        "ide-startup-shutdown"
+      ]
+    }
+  ],
+  "targets": [
+    {
+      "id": "delphi12-win32",
+      "delphiVersion": "23.0",
+      "ide64": false,
+      "required": true
+    },
+    {
+      "id": "delphi13-win32",
+      "delphiVersion": "37.0",
+      "ide64": false,
+      "required": true
+    },
+    {
+      "id": "delphi13-ide64",
+      "delphiVersion": "37.0",
+      "ide64": true,
+      "required": true
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "ide-startup-shutdown",
+      "runner": "Test-RadIA.IDESmoke.ps1",
+      "cycles": 1,
+      "startupTimeoutSeconds": 180,
+      "requiredEvidence": [
+        "package-loaded",
+        "tool-contract-valid",
+        "clean-shutdown",
+        "no-orphan-processes"
+      ]
+    }
+  ]
+}

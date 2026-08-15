@@ -67,6 +67,16 @@ evidências e limpeza.
 
 Cada melhoria deste goal só termina quando adicionar ou atualizar um cenário nessa matriz.
 
+### Estado da fundação
+
+- Contrato versionado, runner e perfil `startup`: concluídos.
+- Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64: executados com sucesso.
+- Calculadora VCL: interface `2 + 3 = 5` e cinco testes DUnitX comprovados nos compiladores 12 e 13.
+- Criação e abertura imediata de projetos: comprovadas nos três alvos da IDE.
+- Integração obrigatória ao processo de release: concluída.
+- Cenários de doctor, provider simulado, consentimento, DUnitX com falha, debugger e terminal:
+  pendentes para ampliar o perfil além de startup.
+
 ## Marcos e dependências
 
 ### M1 — experiência universal

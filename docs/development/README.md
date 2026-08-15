@@ -10,5 +10,6 @@
 - [Convenção de commits](commit_convention.md)
 - [Política de documentação](documentation_policy.md)
 - [Processo de release](release_process.md)
+- [Matriz automatizada de testes de uso](usage_test_matrix.md)
 - [Compliance](compliance.md)
 - [Decisões arquiteturais](adr/README.md)

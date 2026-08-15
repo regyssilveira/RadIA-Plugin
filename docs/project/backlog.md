@@ -31,6 +31,9 @@ executar a matriz crítica, coletar logs, screenshots e resultados estruturados 
 sem depender de intervenção humana. Falhas precisam identificar etapa, versão da IDE e artefato de
 diagnóstico, sem expor credenciais.
 
+Esse gate integra obrigatoriamente toda release junto com a criação e teste funcional da calculadora
+e com a criação, abertura e navegação imediata de projetos.
+
 ## Marco 1 — experiência universal
 
 - [ ] **Comando universal por intenção:** classificar o pedido livre, selecionar chat, jornada ou

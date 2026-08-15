@@ -49,6 +49,8 @@ $requiredFragments = @(
     "New-RadIA.ReleaseEvidence.ps1",
     "New-RadIA.VisualInstaller.ps1",
     "Test-RadIA.VisualInstaller.ps1",
+    "Test-RadIA.ReleaseUsage.ps1",
+    "Run mandatory calculator, project opening, and usage tests",
     "Prepare a clean distribution directory",
     "https://github.com/",
     "actions/upload-artifact@v4",
@@ -129,7 +131,8 @@ foreach ($fragment in $visualInstallerFragments) {
 
 Write-Host (
     "Release workflow validation succeeded with three internal Delphi inputs, " +
-    "one public installer, internal evidence, no unused update catalog, " +
+    "mandatory usage tests, one public installer, internal evidence, " +
+    "no unused update catalog, " +
     "manual-only GitHub validation, local artifact publication, " +
     "no certificate dependency, and " +
     "Delphi-open installer gates."
