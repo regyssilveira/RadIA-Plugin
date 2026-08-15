@@ -48,6 +48,24 @@ type
     property StartOffset: Integer read FStartOffset;
   end;
 
+  TRadIADelphiUnitSource = record
+  private
+    FContent: string;
+    FUnitName: string;
+  public
+    constructor Create(const AUnitName: string; const AContent: string);
+    property Content: string read FContent;
+    property UnitName: string read FUnitName;
+  end;
+
+  TRadIADelphiUnitDependencyGraph = class
+  public
+    class function TryValidateAcyclic(
+      const AUnits: TArray<TRadIADelphiUnitSource>;
+      out ACycle: string
+    ): Boolean; static;
+  end;
+
   TRadIADelphiTypeMoveAnalyzer = class
   public
     class function TryAnalyze(
@@ -127,6 +145,147 @@ begin
   FStartOffset := AStartOffset;
   FLength := ALength;
   FContent := AContent;
+end;
+
+constructor TRadIADelphiUnitSource.Create(
+  const AUnitName: string;
+  const AContent: string
+);
+begin
+  FUnitName := AUnitName;
+  FContent := AContent;
+end;
+
+type
+  TRadIADelphiUnitCycleDetector = class
+  private
+    FEdges: TObjectDictionary<string, TList<string>>;
+    FPath: TList<string>;
+    FStates: TDictionary<string, Integer>;
+    function BuildCycle(const AUnitName: string): string;
+    function Visit(const AUnitName: string; out ACycle: string): Boolean;
+  public
+    constructor Create(const AUnits: TArray<TRadIADelphiUnitSource>);
+    destructor Destroy; override;
+    function TryValidate(out ACycle: string): Boolean;
+  end;
+
+constructor TRadIADelphiUnitCycleDetector.Create(
+  const AUnits: TArray<TRadIADelphiUnitSource>
+);
+var
+  LEdges: TList<string>;
+  LParsed: TRadIASemanticParseResult;
+  LSymbol: TRadIASemanticSymbol;
+  LUnit: TRadIADelphiUnitSource;
+  LUnitKey: string;
+begin
+  inherited Create;
+  FEdges := TObjectDictionary<string, TList<string>>.Create([doOwnsValues]);
+  FStates := TDictionary<string, Integer>.Create;
+  FPath := TList<string>.Create;
+  for LUnit in AUnits do
+    if not LUnit.UnitName.IsEmpty and
+      not FEdges.ContainsKey(LowerCase(LUnit.UnitName)) then
+      FEdges.Add(LowerCase(LUnit.UnitName), TList<string>.Create);
+  for LUnit in AUnits do
+  begin
+    LUnitKey := LowerCase(LUnit.UnitName);
+    if not FEdges.TryGetValue(LUnitKey, LEdges) then
+      Continue;
+    LParsed := TRadIASemanticParser.Parse(LUnit.Content, []);
+    for LSymbol in LParsed.Symbols do
+      if (LSymbol.Kind = sskUnitReference) and
+        (LSymbol.DeclarationSection = sdsInterface) and
+        FEdges.ContainsKey(LowerCase(LSymbol.Name)) and
+        not LEdges.Contains(LowerCase(LSymbol.Name)) then
+        LEdges.Add(LowerCase(LSymbol.Name));
+  end;
+end;
+
+destructor TRadIADelphiUnitCycleDetector.Destroy;
+begin
+  FPath.Free;
+  FStates.Free;
+  FEdges.Free;
+  inherited Destroy;
+end;
+
+function TRadIADelphiUnitCycleDetector.BuildCycle(
+  const AUnitName: string
+): string;
+var
+  LIndex: NativeInt;
+begin
+  Result := '';
+  LIndex := FPath.IndexOf(AUnitName);
+  if LIndex < 0 then
+    Exit(AUnitName);
+  while LIndex < FPath.Count do
+  begin
+    if not Result.IsEmpty then
+      Result := Result + ' -> ';
+    Result := Result + FPath[LIndex];
+    Inc(LIndex);
+  end;
+  Result := Result + ' -> ' + AUnitName;
+end;
+
+function TRadIADelphiUnitCycleDetector.Visit(
+  const AUnitName: string;
+  out ACycle: string
+): Boolean;
+var
+  LDependency: string;
+  LEdges: TList<string>;
+  LState: Integer;
+begin
+  if FStates.TryGetValue(AUnitName, LState) then
+  begin
+    if LState = 1 then
+    begin
+      ACycle := BuildCycle(AUnitName);
+      Exit(False);
+    end;
+    Exit(True);
+  end;
+  FStates.Add(AUnitName, 1);
+  FPath.Add(AUnitName);
+  if FEdges.TryGetValue(AUnitName, LEdges) then
+    for LDependency in LEdges do
+      if not Visit(LDependency, ACycle) then
+        Exit(False);
+  FPath.Delete(FPath.Count - 1);
+  FStates[AUnitName] := 2;
+  Result := True;
+end;
+
+function TRadIADelphiUnitCycleDetector.TryValidate(
+  out ACycle: string
+): Boolean;
+var
+  LUnitName: string;
+begin
+  ACycle := '';
+  for LUnitName in FEdges.Keys do
+    if not Visit(LUnitName, ACycle) then
+      Exit(False);
+  Result := True;
+end;
+
+class function TRadIADelphiUnitDependencyGraph.TryValidateAcyclic(
+  const AUnits: TArray<TRadIADelphiUnitSource>;
+  out ACycle: string
+): Boolean;
+var
+  LDetector: TRadIADelphiUnitCycleDetector;
+begin
+  LDetector := TRadIADelphiUnitCycleDetector.Create(AUnits);
+  try
+    Result := LDetector.TryValidate(ACycle);
+  finally
+    LDetector.Free;
+  end;
 end;
 
 function SignificantTokens(

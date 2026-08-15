@@ -61,6 +61,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `PrepareExtractMethod` | Prepara a extração transacional da seleção ativa para um novo método Delphi, inferindo parâmetros e atualizando declaração, implementação e chamada. | `RadIA.Core.SemanticExtractMethodTools.pas` |
 
+## Movimentação semântica de tipos
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareMoveType` | Prepara a movimentação transacional de um tipo Delphi entre units do projeto, incluindo declaração, métodos, dependências e consumidores confirmados. | `RadIA.Core.SemanticMoveTypeTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -460,7 +466,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 57
-- Ferramentas internas registradas: 169
+- Grupos registrados: 58
+- Ferramentas internas registradas: 170
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

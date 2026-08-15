@@ -118,6 +118,9 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Semantic editor context** | Editor | Unit, symbol, imports, and nearby declarations shared by Ghost Text, actions, and agent, with read-only inspection. | ✅ Completed |
 | **Pascal/DFM semantic references** | Editor | Stable identity plus confirmed declarations and usages with file, line, and column; homonyms and candidates remain explicit. | ✅ Completed |
 | **Transactional Rename Symbol** | Editor | Exact Pascal and DFM rename, including closed files, with preview, hashes, consent, compensation, and rollback. | ✅ Completed |
+| **Transactional Extract Method** | Editor | Extracts a structurally valid Pascal selection into a new method, preserving the buffer until preview approval and supporting exact reversal. | ✅ Completed |
+| **Transactional Change Signature** | Editor | Updates declarations, implementations, and confirmed calls with explicit parameter mapping, multi-file preview, and rollback. | ✅ Completed |
+| **Transactional Move Type** | Editor | Moves an interface type and its implementations between units, updates consumers and `uses`, blocks private dependencies or cycles, and applies only after approval. | ✅ Completed |
 | **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
 | **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed (v2.4.0) |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |

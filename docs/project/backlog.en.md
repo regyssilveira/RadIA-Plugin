@@ -40,8 +40,10 @@ failed group blocks the release.
 
 - [x] **Rename Symbol and Find All References:** stable identity, preview, Pascal/DFM consistency,
   closed files, multi-file transactions, and rollback.
-- [ ] **Advanced semantic refactorings:** expand the validated foundation to hierarchies,
-  Extract Method, Move Type, and Change Signature.
+- [x] **Transactional semantic refactorings:** Extract Method, Move Type, and Change Signature with
+  structural analysis, preview, fingerprint, consent, multi-file application, and rollback.
+- [ ] **Hierarchy refactorings:** expand the validated foundation to inherited members, overrides,
+  and coordinated changes across ancestor and descendant classes.
 - [x] **Impact-based test selection:** relate diffs, symbols, dependencies, fixtures, and coverage to
   execute and justify the smallest safe DUnitX test set.
 

@@ -40,8 +40,10 @@ ignorado ou reprovado bloqueia a release.
 
 - [x] **Rename Symbol e Find All References:** identidade estável, preview, consistência Pascal/DFM,
   arquivos fechados, transação multiarquivo e rollback.
-- [ ] **Refatorações semânticas avançadas:** expandir a base validada para hierarquias,
-  Extract Method, Move Type e Change Signature.
+- [x] **Refatorações semânticas transacionais:** Extract Method, Move Type e Change Signature com
+  análise estrutural, preview, fingerprint, consentimento, aplicação multiarquivo e rollback.
+- [ ] **Refatorações de hierarquia:** expandir a base validada para membros herdados, overrides e
+  mudanças coordenadas entre classes ancestrais e descendentes.
 - [x] **Testes selecionados por impacto:** relacionar diff, símbolos, dependências, fixtures e
   cobertura para executar e justificar o menor conjunto seguro de testes DUnitX.
 

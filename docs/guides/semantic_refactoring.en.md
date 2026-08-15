@@ -90,3 +90,21 @@ previous content.
 The operation is blocked when the selection is ambiguous, crosses control flow, uses `Result`, contains
 early exits, is outside a class method, depends on an implicit local type, or requests an existing name.
 A blocked operation changes no file and reports the precondition that must be corrected.
+
+## Move a type between units
+
+Use `PrepareMoveType` to move a top-level class, interface, record, or helper to another unit that already
+belongs to the project:
+
+```text
+/tool PrepareMoveType {"symbol":"TWorker","destinationFile":"D:\Project\Worker.pas"}
+```
+
+The tool resolves one semantic identity, moves the declaration and every method implementation owned by
+the type, carries required `uses` dependencies, and updates only consumers confirmed by the index. The
+result is a multi-file preview; preparation writes nothing. Review and approve `ApplyMultiFilePatch`, and
+use `RevertMultiFilePatch` to restore every file exactly.
+
+RadIA blocks types associated with DFM or resources, incomplete buffers, a homonymous destination, an
+ambiguous local routine, a private source-implementation dependency, candidate references, and every
+cycle found in the complete interface `uses` graph. Correct the reported precondition and prepare again.

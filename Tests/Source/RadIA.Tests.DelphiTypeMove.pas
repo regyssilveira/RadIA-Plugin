@@ -25,6 +25,8 @@ type
     procedure RejectsAmbiguousNestedRoutineImplementation;
     [Test]
     procedure RemovesDeclarationAndImplementationsAtomically;
+    [Test]
+    procedure DetectsIndirectInterfaceCycles;
   end;
 
 implementation
@@ -32,6 +34,40 @@ implementation
 uses
   System.SysUtils,
   RadIA.Core.DelphiTypeMove;
+
+procedure TRadIADelphiTypeMoveTests.DetectsIndirectInterfaceCycles;
+var
+  LCycle: string;
+  LUnits: TArray<TRadIADelphiUnitSource>;
+begin
+  LUnits := [
+    TRadIADelphiUnitSource.Create(
+      'UnitA',
+      'unit UnitA; interface uses UnitB; implementation end.'
+    ),
+    TRadIADelphiUnitSource.Create(
+      'UnitB',
+      'unit UnitB; interface uses UnitC; implementation end.'
+    ),
+    TRadIADelphiUnitSource.Create(
+      'UnitC',
+      'unit UnitC; interface uses UnitA; implementation end.'
+    )
+  ];
+  Assert.IsFalse(TRadIADelphiUnitDependencyGraph.TryValidateAcyclic(
+    LUnits,
+    LCycle
+  ));
+  Assert.Contains(LCycle, 'unita');
+  LUnits[2] := TRadIADelphiUnitSource.Create(
+    'UnitC',
+    'unit UnitC; interface implementation end.'
+  );
+  Assert.IsTrue(TRadIADelphiUnitDependencyGraph.TryValidateAcyclic(
+    LUnits,
+    LCycle
+  ), LCycle);
+end;
 
 procedure TRadIADelphiTypeMoveTests.FindsOnlyOwnedMethodImplementations;
 const

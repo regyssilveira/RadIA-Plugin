@@ -44,6 +44,12 @@ type
     procedure RejectsAmbiguousChangeSignatureCall;
     [Test]
     procedure PreparesAppliesAndRevertsExtractMethod;
+    [Test]
+    procedure PreparesAppliesAndRevertsMoveType;
+    [Test]
+    procedure RejectsAmbiguousAndCyclicMoveType;
+    [Test]
+    procedure RejectsStaleMoveTypePreview;
   end;
 
 implementation
@@ -60,6 +66,7 @@ uses
   RadIA.Core.SemanticQueries,
   RadIA.Core.SemanticChangeSignatureTools,
   RadIA.Core.SemanticExtractMethodTools,
+  RadIA.Core.SemanticMoveTypeTools,
   RadIA.Core.SemanticRefactoringTools,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,
@@ -390,6 +397,24 @@ function TRadIARenameQueryStub.FindReferences(
   out AError: string
 ): Boolean;
 begin
+  if SameText(ASymbolId, 'sym-worker') then
+  begin
+    AReferences := [
+      TRadIASemanticReferenceLocation.Create(
+        'Consumer',
+        FFormFile,
+        4,
+        10,
+        IfThen(FAmbiguous, 'candidate', 'exact'),
+        IfThen(FAmbiguous, 'ambiguous-short-name', 'unique-symbol')
+      ).WithOffsets(
+        Pos('TWorker', FWorkspace.ContentOf(FFormFile)) - 1,
+        Length('TWorker')
+      )
+    ];
+    AError := '';
+    Exit(not AIncludeCandidates and (AMaxItems = 1000));
+  end;
   if SameText(ASymbolId, 'sym-execute') then
   begin
     AReferences := [
@@ -417,6 +442,84 @@ begin
   AError := '';
   Result := SameText(ASymbolId, 'sym-save-button-click') and
     not AIncludeCandidates and (AMaxItems = 1000);
+end;
+
+procedure TRadIASemanticRefactoringTests.
+  RejectsAmbiguousAndCyclicMoveType;
+const
+  CSource = 'unit Main;' + sLineBreak + 'interface' + sLineBreak +
+    'type TWorker = class end;' + sLineBreak +
+    'implementation' + sLineBreak + 'end.';
+  CConsumer = 'unit Consumer;' + sLineBreak + 'interface' + sLineBreak +
+    'type TConsumer = class FWorker: TWorker; end;' + sLineBreak +
+    'implementation' + sLineBreak + 'end.';
+var
+  LConsumerFile: string;
+  LInspect: IRadIARenameWorkspaceInspect;
+  LPatches: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+
+  function ExecuteMove(const AAmbiguous: Boolean): TRadIAToolResult;
+  begin
+    LQueries := TRadIARenameQueryStub.Create(
+      LInspect,
+      FMainFile,
+      FOtherFile,
+      LConsumerFile,
+      AAmbiguous
+    );
+    LRegistry := TRadIAToolRegistry.Create;
+    RegisterRadIASemanticMoveTypeTools(
+      LRegistry,
+      FWorkspace as IRadIAWorkspaceFacade,
+      LQueries,
+      FWorkspace as IRadIAEditorMutationFacade,
+      LPatches
+    );
+    Result := LRegistry.Resolve('PrepareMoveType').Execute(
+      TRadIAToolRequest.Create(
+        'PrepareMoveType',
+        '{"symbol":"TWorker","destinationFile":"' +
+        StringReplace(FOtherFile, '\', '\\', [rfReplaceAll]) + '"}',
+        'unsafe-move-type-test'
+      )
+    );
+  end;
+
+begin
+  LInspect := FWorkspace as IRadIARenameWorkspaceInspect;
+  LPatches := FPatchService as IRadIAMultiFilePatchService;
+  LConsumerFile := TPath.Combine(FRootPath, 'Consumer.pas');
+  LInspect.AddFile(FMainFile, CSource);
+  LInspect.AddFile(LConsumerFile, CConsumer);
+  LInspect.AddFile(
+    FOtherFile,
+    'unit Other;' + sLineBreak + 'interface' + sLineBreak +
+    'uses Consumer;' + sLineBreak + 'implementation' + sLineBreak + 'end.'
+  );
+  LResult := ExecuteMove(False);
+  Assert.IsFalse(LResult.Success);
+  Assert.Contains(LResult.ErrorMessage, 'cycle');
+  LInspect.AddFile(
+    FOtherFile,
+    'unit Other;' + sLineBreak + 'interface' + sLineBreak +
+    'implementation' + sLineBreak + 'end.'
+  );
+  LResult := ExecuteMove(True);
+  Assert.IsFalse(LResult.Success);
+  Assert.Contains(LResult.ErrorMessage, 'candidate');
+  LInspect.AddFile(
+    FMainFile,
+    'unit Main;' + sLineBreak + 'interface' + sLineBreak +
+    'type TWorker = class FSecret: TSecret; end;' + sLineBreak +
+    'implementation' + sLineBreak +
+    'type TSecret = class end;' + sLineBreak + 'end.'
+  );
+  LResult := ExecuteMove(False);
+  Assert.IsFalse(LResult.Success);
+  Assert.Contains(LResult.ErrorMessage, 'TSecret');
 end;
 
 procedure TRadIASemanticRefactoringTests.
@@ -521,6 +624,21 @@ function TRadIARenameQueryStub.FindSymbols(
   out AError: string
 ): Boolean;
 begin
+  if SameText(AName, 'TWorker') then
+  begin
+    ASymbols := [
+      TRadIASemanticLocation.Create(
+        AName,
+        'class',
+        '',
+        FMainFile,
+        'TWorker = class',
+        Pos('TWorker', FWorkspace.ContentOf(FMainFile)) - 1
+      ).WithIdentity('sym-worker', 'Main').WithDeclarationSection('interface')
+    ];
+    AError := '';
+    Exit(True);
+  end;
   ASymbols := [
     TRadIASemanticLocation.Create(
       AName,
@@ -544,6 +662,155 @@ begin
     ];
   AError := '';
   Result := True;
+end;
+
+procedure TRadIASemanticRefactoringTests.
+  PreparesAppliesAndRevertsMoveType;
+const
+  CSource = 'unit Main;' + sLineBreak + 'interface' + sLineBreak +
+    'uses System.SysUtils;' + sLineBreak + 'type' + sLineBreak +
+    '  TWorker = class' + sLineBreak + '    procedure Execute;' +
+    sLineBreak + '  end;' + sLineBreak + 'implementation' + sLineBreak +
+    'procedure TWorker.Execute;' + sLineBreak + 'begin' + sLineBreak +
+    'end;' + sLineBreak + 'end.';
+  CDestination = 'unit Other;' + sLineBreak + 'interface' + sLineBreak +
+    'implementation' + sLineBreak + 'end.';
+var
+  LConsumerFile: string;
+  LInspect: IRadIARenameWorkspaceInspect;
+  LPatches: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRoot: TJSONObject;
+  LPreviewId: string;
+begin
+  LInspect := FWorkspace as IRadIARenameWorkspaceInspect;
+  LConsumerFile := TPath.Combine(FRootPath, 'Consumer.pas');
+  LInspect.AddFile(FMainFile, CSource);
+  LInspect.AddFile(FOtherFile, CDestination);
+  LInspect.AddFile(
+    LConsumerFile,
+    'unit Consumer;' + sLineBreak + 'interface' + sLineBreak +
+    'type TConsumer = class' + sLineBreak +
+    '  FWorker: TWorker;' + sLineBreak + 'end;' + sLineBreak +
+    'implementation' + sLineBreak + 'end.'
+  );
+  LQueries := TRadIARenameQueryStub.Create(
+    LInspect,
+    FMainFile,
+    FOtherFile,
+    LConsumerFile,
+    False
+  );
+  LPatches := FPatchService as IRadIAMultiFilePatchService;
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticMoveTypeTools(
+    LRegistry,
+    FWorkspace as IRadIAWorkspaceFacade,
+    LQueries,
+    FWorkspace as IRadIAEditorMutationFacade,
+    LPatches
+  );
+  LResult := LRegistry.Resolve('PrepareMoveType').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareMoveType',
+      '{"symbol":"TWorker","destinationFile":"' +
+      StringReplace(FOtherFile, '\', '\\', [rfReplaceAll]) + '"}',
+      'move-type-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LInspect.ContentOf(FMainFile), 'TWorker');
+  Assert.IsFalse(LInspect.ContentOf(FOtherFile).Contains('TWorker'));
+  LRoot := TJSONObject.ParseJSONValue(LResult.ContentJson) as TJSONObject;
+  try
+    LPreviewId := LRoot.GetValue<string>('previewId');
+  finally
+    LRoot.Free;
+  end;
+  Assert.IsTrue(LPatches.Apply(LPreviewId).Success);
+  Assert.IsFalse(LInspect.ContentOf(FMainFile).Contains('TWorker'));
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'TWorker = class');
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'TWorker.Execute');
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'System.SysUtils');
+  Assert.Contains(LInspect.ContentOf(LConsumerFile), 'uses');
+  Assert.Contains(LInspect.ContentOf(LConsumerFile), 'Other');
+  Assert.IsTrue(LPatches.Revert(LPreviewId).Success);
+  Assert.AreEqual(CSource, LInspect.ContentOf(FMainFile));
+  Assert.AreEqual(CDestination, LInspect.ContentOf(FOtherFile));
+  Assert.IsFalse(LInspect.ContentOf(LConsumerFile).Contains('uses'));
+end;
+
+procedure TRadIASemanticRefactoringTests.RejectsStaleMoveTypePreview;
+const
+  CSource = 'unit Main;' + sLineBreak + 'interface' + sLineBreak +
+    'type TWorker = class end;' + sLineBreak +
+    'implementation' + sLineBreak + 'end.';
+  CDestination = 'unit Other;' + sLineBreak + 'interface' + sLineBreak +
+    'implementation' + sLineBreak + 'end.';
+var
+  LAppliedRevision: string;
+  LConsumerFile: string;
+  LInspect: IRadIARenameWorkspaceInspect;
+  LMutation: IRadIAEditorMutationFacade;
+  LPatches: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRoot: TJSONObject;
+  LSnapshot: TRadIAEditorContent;
+begin
+  LInspect := FWorkspace as IRadIARenameWorkspaceInspect;
+  LMutation := FWorkspace as IRadIAEditorMutationFacade;
+  LConsumerFile := TPath.Combine(FRootPath, 'Consumer.pas');
+  LInspect.AddFile(FMainFile, CSource);
+  LInspect.AddFile(FOtherFile, CDestination);
+  LInspect.AddFile(
+    LConsumerFile,
+    'unit Consumer; interface type TUse = class FValue: TWorker; end; ' +
+    'implementation end.'
+  );
+  LQueries := TRadIARenameQueryStub.Create(
+    LInspect,
+    FMainFile,
+    FOtherFile,
+    LConsumerFile,
+    False
+  );
+  LPatches := FPatchService as IRadIAMultiFilePatchService;
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticMoveTypeTools(
+    LRegistry,
+    FWorkspace as IRadIAWorkspaceFacade,
+    LQueries,
+    LMutation,
+    LPatches
+  );
+  LResult := LRegistry.Resolve('PrepareMoveType').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareMoveType',
+      '{"symbol":"TWorker","destinationFile":"' +
+      StringReplace(FOtherFile, '\', '\\', [rfReplaceAll]) + '"}',
+      'stale-move-type-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  LSnapshot := LMutation.ReadContent(FOtherFile, 1024 * 1024);
+  Assert.IsTrue(LMutation.ApplyContent(
+    FOtherFile,
+    LSnapshot.Revision,
+    CDestination + sLineBreak + '// concurrent edit',
+    LAppliedRevision
+  ));
+  LRoot := TJSONObject.ParseJSONValue(LResult.ContentJson) as TJSONObject;
+  try
+    Assert.IsFalse(LPatches.Apply(LRoot.GetValue<string>('previewId')).Success);
+  finally
+    LRoot.Free;
+  end;
+  Assert.AreEqual(CSource, LInspect.ContentOf(FMainFile));
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'concurrent edit');
 end;
 
 function TRadIARenameQueryStub.HasResolvedMember(

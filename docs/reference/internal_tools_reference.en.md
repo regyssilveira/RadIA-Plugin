@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 169 internal tools: what each one does and at what stage
+This page explains RadIA's 170 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -60,6 +60,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`PrepareRenameSymbol`|Prepares an exact semantic rename across Pascal and DFM files, including closed files, without changing the project.|When the user requests a symbol rename; it requires one identity and produces a preview for multi-file application and rollback.|
 |`PrepareChangeSignature`|Prepares a transactional Delphi routine signature change across declarations, implementation, and proven calls.|When parameters must be added, removed, renamed, or reordered; it requires explicit mappings and new-argument bindings and blocks ambiguous references.|
 |`PrepareExtractMethod`|Prepares the active selection as a transactional Delphi method extraction, inferring parameters and updating declaration, implementation, and call.|When a cohesive block inside a method should become another method; it requires a structurally safe selection, a class, and an unambiguous semantic identity and produces a reversible preview.|
+|`PrepareMoveType`|Prepares a transactional Delphi type move between project units, including its declaration, methods, dependencies, and confirmed consumers.|When a top-level class, interface, record, or helper must change units; it blocks DFM, resources, private dependencies, ambiguous references, and interface cycles before creating a reversible preview.|
 
 ## Curated Delphi guidance
 

@@ -68,6 +68,13 @@
       ]
     },
     {
+      "name": "Semantic type movement",
+      "source": "Source/Core/RadIA.Core.SemanticMoveTypeTools.pas",
+      "tools": [
+        "PrepareMoveType"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

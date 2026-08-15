@@ -21,6 +21,7 @@ uses
   RadIA.Tests.DelphiTypeMove in 'Source\RadIA.Tests.DelphiTypeMove.pas',
   RadIA.Core.SemanticExtractMethodTools in '..\Source\Core\RadIA.Core.SemanticExtractMethodTools.pas',
   RadIA.Core.SemanticChangeSignatureTools in '..\Source\Core\RadIA.Core.SemanticChangeSignatureTools.pas',
+  RadIA.Core.SemanticMoveTypeTools in '..\Source\Core\RadIA.Core.SemanticMoveTypeTools.pas',
   RadIA.Tests.DelphiCallArguments in 'Source\RadIA.Tests.DelphiCallArguments.pas',
   RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',
   RadIA.Semantic.Lexer in '..\Source\Semantic\RadIA.Semantic.Lexer.pas',

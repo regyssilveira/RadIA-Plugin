@@ -118,6 +118,9 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Contexto semântico do editor** | Editor | Unit, símbolo, imports e declarações próximas compartilhados entre Ghost Text, ações e agente, com inspeção somente leitura. | ✅ Concluído |
 | **Referências semânticas Pascal/DFM** | Editor | Identidade estável, declarações e usos confirmados com arquivo, linha e coluna; homônimos e candidatos permanecem explícitos. | ✅ Concluído |
 | **Rename Symbol transacional** | Editor | Renomeação exata em Pascal e DFM, inclusive arquivos fechados, com preview, hashes, consentimento, compensação e rollback. | ✅ Concluído |
+| **Extract Method transacional** | Editor | Extrai uma seleção Pascal estruturalmente válida para um novo método, preservando o buffer até a aprovação da preview e permitindo reversão exata. | ✅ Concluído |
+| **Change Signature transacional** | Editor | Altera declarações, implementações e chamadas confirmadas com mapeamento explícito de parâmetros, preview multiarquivo e rollback. | ✅ Concluído |
+| **Move Type transacional** | Editor | Move um tipo de interface e suas implementações entre units, atualiza consumidores e `uses`, bloqueia dependências privadas ou ciclos e aplica somente após aprovação. | ✅ Concluído |
 | **Terminal Unicode e TUI** | Terminal | Decodificação UTF-8 incremental, CJK, emoji, marcas combinantes, reflow e operações ICH/DCH/ECH sobre ConPTY. | ✅ Concluído |
 | **Conhecimento Local** | Agentivo | Índice incremental e reconstruível por projeto. | ✅ Concluído |
 | **Extensões de Tools** | Infraestrutura | API versionada e pacote externo de exemplo. | ✅ Concluído |

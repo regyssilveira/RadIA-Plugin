@@ -94,3 +94,21 @@ exatamente o conteúdo anterior.
 A operação é bloqueada quando a seleção é ambígua, atravessa fluxo de controle, usa `Result`, contém
 saídas antecipadas, está fora de um método de classe, depende de tipo local implícito ou quando o nome
 solicitado já existe. O bloqueio não modifica o arquivo e informa a precondição que precisa ser corrigida.
+
+## Mover um tipo entre units
+
+Use `PrepareMoveType` para mover uma classe, interface, record ou helper de nível superior para outra
+unit já pertencente ao projeto:
+
+```text
+/tool PrepareMoveType {"symbol":"TWorker","destinationFile":"D:\Projeto\Worker.pas"}
+```
+
+A ferramenta resolve uma identidade semântica única, move a declaração e todas as implementações de
+métodos pertencentes ao tipo, transporta dependências de `uses` e atualiza somente consumidores
+confirmados pelo índice. O retorno é um preview multiarquivo: a preparação não grava nada. Revise e
+aprove `ApplyMultiFilePatch`; use `RevertMultiFilePatch` para restaurar exatamente todos os arquivos.
+
+O RadIA bloqueia tipos associados a DFM ou recursos, buffers incompletos, destino homônimo, rotina local
+ambígua, dependência privada da implementação de origem, referência candidata e qualquer ciclo detectado
+no grafo completo de `uses` da interface. Corrija a precondição informada e prepare novamente.

@@ -61,6 +61,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `PrepareExtractMethod` | Prepares a transactional Extract Method refactoring from the active Delphi selection. | `RadIA.Core.SemanticExtractMethodTools.pas` |
 
+## Semantic type movement
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareMoveType` | Prepares a transactional Delphi type move between project units. | `RadIA.Core.SemanticMoveTypeTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -460,7 +466,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 57
-- Registered built-in tools: 169
+- Registered groups: 58
+- Registered built-in tools: 170
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.
