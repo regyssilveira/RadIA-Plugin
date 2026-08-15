@@ -26,8 +26,25 @@ ordinary questions, and ambiguous requests are not intercepted.
 - Plan review, consent, workspace boundary, fingerprint, and rollback remain mandatory.
 - Confidence describes only the intent match. It does not prove that the action will succeed or
   replace prerequisite diagnostics.
-- No prompt or decision telemetry is sent remotely. Future versions may record only sanitized,
-  optional local counters.
+- No prompt or decision telemetry is sent remotely.
+
+## Local counters and privacy
+
+RadIA records only five routing decisions locally: `recommended`, `accepted`, `reviewed`,
+`chat-fallback`, and `superseded`. Each line contains the UTC date, intent name, and confidence
+level. The recording API does not accept prompts, code, commands, projects, providers, models,
+credentials, or responses. Intent and confidence use allowlists; unknown values become `Unknown`
+instead of being persisted literally.
+
+The file is `%LOCALAPPDATA%\RadIA\Telemetry\intent-routing.jsonl` and resets when it reaches 1 MiB.
+A read or write failure never blocks chat. Use `/status intent` to inspect only sanitized aggregate
+counters. To reset them, close Delphi and delete this file; it is recreated after a new
+recommendation.
+
+The automated matrix exercises sixteen natural Portuguese and English requests across project
+creation, build repair, tests, and diagnostics. Educational or ambiguous questions remain in chat.
+These tests execute the real Pascal classifier in the Delphi 12 and 13 DUnitX suites and belong to
+the indivisible release gate.
 
 See [Delphi journeys](../guides/user_guide_journeys.en.md) for available workflows and the
 [security model](tool_security_model.en.md) for protections applied after confirmation.

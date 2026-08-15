@@ -254,6 +254,8 @@ type
     [Test]
     procedure TestStatusCommandExecutesFilteredStatus;
     [Test]
+    procedure TestStatusIntentShowsSanitizedLocalCounters;
+    [Test]
     procedure TestStatusCommandRejectsUnknownFilter;
     [Test]
     procedure TestScopeCommandOverridesAndRestoresProjectProvider;
@@ -1040,6 +1042,18 @@ begin
     '"agentModeEnabled":true'
   );
   Assert.Contains(FMockView.PostedMessages.Text, 'CLI conversation link:');
+end;
+
+procedure TTestChatPresenter.TestStatusIntentShowsSanitizedLocalCounters;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/status intent');
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'local-only');
+  Assert.Contains(FMockView.PostedMessages.Text, 'sanitized');
+  Assert.Contains(FMockView.PostedMessages.Text, 'promptContentStored');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, 'SECRET PROMPT');
 end;
 
 procedure TTestChatPresenter.TestDeepDoctorCommandExecutesActiveDiagnostic;

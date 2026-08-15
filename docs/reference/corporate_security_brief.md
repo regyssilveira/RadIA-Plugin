@@ -35,6 +35,12 @@ O RadIA não envia telemetria própria contendo código, prompts ou credenciais.
 existir localmente. Providers, CLIs, endpoints e servidores MCP podem ter telemetria própria; o RadIA não
 consegue desativá-la ou auditá-la universalmente.
 
+O roteamento por intenção mantém apenas contadores locais de recomendação e decisão em
+`%LOCALAPPDATA%\RadIA\Telemetry\intent-routing.jsonl`. O registro contém evento, intenção, confiança
+e data UTC; sua API não aceita prompt, código, comando, projeto, provider, modelo ou credencial.
+Valores fora das listas fechadas são reduzidos a `Unknown`. Use `/status intent` para consultar o
+agregado sanitizado.
+
 ## Checklist de aprovação
 
 1. Classifique o código e escolha uma rota permitida.

@@ -120,20 +120,8 @@ var
   LText: string;
 begin
   LText := ' ' + LowerCase(Trim(AInput)) + ' ';
-  if TRadIAJourneyCatalog.TryInferCreateProject(AInput, LCommand) then
-  begin
-    ARecommendation := TRadIAIntentRecommendation.Create(
-      rikCreateProject,
-      ricHigh,
-      'journey',
-      LCommand,
-      'The request asks for a complete Delphi project, so the guided creation journey can ' +
-        'collect missing details, create it, open it, build it, and validate its main scenario.'
-    );
-    Exit(True);
-  end;
-  if ContainsAny(LText, [' build ', ' compile ', ' compilation ', ' compilar ', ' compilacao ',
-    ' compilação ', ' e2003 ', ' e2029 ', ' compiler error ']) and
+  if ContainsAny(LText, [' build ', ' compile ', ' compilation ', ' compilar ', ' compila ',
+    ' compilacao ', ' compilação ', ' e2003 ', ' e2029 ', ' compiler error ']) and
     ContainsAny(LText, [' fix ', ' repair ', ' correct ', ' corrig', ' resolv', ' falh', ' error ',
       ' erro ']) then
   begin
@@ -144,6 +132,18 @@ begin
       '/journey fix-build ' + Trim(AInput),
       'The request combines a build or compilation failure with a repair objective. The build ' +
         'journey preserves constraints, reproduces the failure, applies a reviewable fix, and rebuilds.'
+    );
+    Exit(True);
+  end;
+  if TRadIAJourneyCatalog.TryInferCreateProject(AInput, LCommand) then
+  begin
+    ARecommendation := TRadIAIntentRecommendation.Create(
+      rikCreateProject,
+      ricHigh,
+      'journey',
+      LCommand,
+      'The request asks for a complete Delphi project, so the guided creation journey can ' +
+        'collect missing details, create it, open it, build it, and validate its main scenario.'
     );
     Exit(True);
   end;
@@ -162,7 +162,11 @@ begin
     Exit(True);
   end;
   if ContainsAny(LText, [' access violation ', ' memory leak ', ' vazamento ', ' exception ',
-    ' excecao ', ' exceção ', ' crash ', ' trava ', ' breakpoint ', ' debug ']) then
+    ' excecao ', ' exceção ', ' crash ', ' trava ', ' breakpoint ', ' debug ']) and
+    ContainsAny(LText, [' app ', ' application ', ' aplicativo ', ' aplicação ', ' programa ',
+      ' projeto ', ' project ', ' form ', ' formulário ', ' formulario ', ' tela ', ' when ',
+      ' quando ', ' ao ', ' click ', ' clic', ' close ', ' fech', ' cancel', ' reproduce ',
+      ' reproduz', ' diagnose ', ' diagnostic', ' investig', ' fix ', ' corrig', ' resolv']) then
   begin
     ARecommendation := TRadIAIntentRecommendation.Create(
       rikDiagnose,

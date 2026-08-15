@@ -34,13 +34,6 @@ diagnóstico, sem expor credenciais.
 Esse gate integra obrigatoriamente toda release junto com a criação e teste funcional da calculadora
 e com a criação, abertura e navegação imediata de projetos.
 
-## Marco 1 — experiência universal
-
-- [ ] **Comando universal por intenção:** classificar o pedido livre, selecionar chat, jornada ou
-  agente e apresentar uma ação compreensível antes de executar.
-Gate: criar, corrigir build, testar e diagnosticar um defeito a partir de prompts livres, sem exigir
-que o usuário conheça modos, jornadas ou nomes de tools.
-
 ## Marco 2 — inteligência de código
 
 - [ ] **Refatoração semântica segura:** entregar primeiro Rename Symbol e Find All References com

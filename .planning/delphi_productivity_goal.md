@@ -89,8 +89,11 @@ Cada melhoria deste goal só termina quando adicionar ou atualizar um cenário n
 
 Estado: o classificador determinístico e o cartão de recomendação revisável estão concluídos para
 criação, build, testes e diagnóstico. O contrato unificado de achados e o painel de problemas com
-filtros, navegação segura e ações revisáveis também estão concluídos. Telemetria local e validação
-ampliada da experiência com usuários iniciantes permanecem pendentes.
+filtros, navegação segura e ações revisáveis também estão concluídos. A telemetria registra somente
+evento, intenção allowlisted, confiança allowlisted e data UTC em armazenamento local limitado; o
+comando `/status intent` expõe apenas agregados sanitizados. Dezesseis prompts naturais em português
+e inglês, além dos fallbacks educativos, executam o classificador Pascal real nas suítes Delphi 12
+e 13 e integram o gate indivisível de release. M1 concluído.
 
 Dependências: jornadas, Agent Runtime, Tool Registry, Tool Views e Project Health.
 

@@ -27,7 +27,7 @@ Delphi 12, Delphi 13 e IDE64 entram no contexto com citações estáveis e consu
 - Comandos internos e comandos personalizados.
 - Ajuda integrada com `/help`, exemplos de comandos e links abertos no navegador padrão.
 - Recomendação local de rota para criação, build, testes e diagnóstico, com confirmação, revisão ou
-  permanência no chat antes de qualquer mudança de modo.
+  permanência no chat antes de qualquer mudança de modo e contadores sanitizados em `/status intent`.
 - Jornadas conversacionais que preservam respostas até concluir ou abandonar a coleta.
 - Identidade de jornada compartilhada entre chat, terminal e editor, com vínculo, troca e isolamento
   por projeto sem copiar histórico ou saída de processos.

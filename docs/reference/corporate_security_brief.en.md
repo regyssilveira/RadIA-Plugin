@@ -35,6 +35,12 @@ RadIA sends no product telemetry containing code, prompts, or credentials. Sanit
 locally. Providers, CLIs, endpoints, and MCP servers may have their own telemetry; RadIA cannot universally
 disable or audit it.
 
+Intent routing keeps only local recommendation and decision counters in
+`%LOCALAPPDATA%\RadIA\Telemetry\intent-routing.jsonl`. Records contain the event, intent, confidence,
+and UTC date; the API cannot accept prompts, code, commands, projects, providers, models, or
+credentials. Values outside the allowlists become `Unknown`. Use `/status intent` to inspect the
+sanitized aggregate.
+
 ## Approval checklist
 
 1. Classify code and choose a permitted route.

@@ -106,6 +106,8 @@ type
     FPendingJourneyNative: Boolean;
     FPendingIntentActive: Boolean;
     FPendingIntentCommand: string;
+    FPendingIntentConfidence: string;
+    FPendingIntentName: string;
     FPendingIntentPrompt: string;
     FVisualRuntimeSession: IRadIAVisualRuntimeSession;
     FLastVisualSessionId: string;
@@ -399,6 +401,7 @@ type
       const ARecommendation: TRadIAIntentRecommendation
     );
     procedure PostUserMessageIfPresent(const AText: string);
+    procedure ClearPendingIntent;
     procedure SendPendingIntentToChat;
     procedure ExecuteRegisteredTool(
       const AName: string;
@@ -507,6 +510,7 @@ uses
   RadIA.Core.AgentResultStore,
   RadIA.Core.ResultCompactionSettings,
   RadIA.Core.ResultCompactor,
+  RadIA.Core.IntentTelemetry,
   RadIA.Core.ConfigDefaults,
   RadIA.Core.Mediator, RadIA.OTA.Helper;
 
@@ -3457,7 +3461,7 @@ function TRadIAChatPresenter.TryHandleStatusCommand(
   const ACommandText: string
 ): Boolean;
 const
-  CFilters: array[0..10] of string = (
+  CFilters: array[0..11] of string = (
     'all',
     'provider',
     'agent',
@@ -3468,7 +3472,8 @@ const
     'project',
     'tools',
     'logging',
-    'settings'
+    'settings',
+    'intent'
   );
 var
   LAgentMode: string;
@@ -3498,7 +3503,7 @@ begin
       'add_message',
       'assistant',
       'Usage: /status [provider|agent|cli|mcp|security|editor|' +
-      'project|tools|logging|settings|--json]'
+      'project|tools|logging|settings|intent|--json]'
     );
     Exit;
   end;
@@ -3510,6 +3515,16 @@ begin
       'add_message',
       'assistant',
       BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
+    );
+    Exit;
+  end;
+  if SameText(LFilter, 'intent') then
+  begin
+    PostToWebView('add_message', 'user', APromptText);
+    PostToWebView(
+      'add_message',
+      'assistant',
+      TRadIAIntentTelemetry.SummaryJson
     );
     Exit;
   end;
@@ -3525,11 +3540,18 @@ begin
   if SameText(LFilter, 'all') or SameText(LFilter, 'cli') then
     PostCliSessionStatus;
   if SameText(LFilter, 'all') then
+  begin
     PostToWebView(
       'add_message',
       'assistant',
       BuildExecutionSettingsStatus(ResolveEffectiveExecutionSettings)
     );
+    PostToWebView(
+      'add_message',
+      'assistant',
+      TRadIAIntentTelemetry.SummaryJson
+    );
+  end;
 end;
 
 function TRadIAChatPresenter.TryHandleDoctorCommand(
@@ -3591,9 +3613,12 @@ begin
   LText := Trim(APromptText);
   if FPendingIntentActive then
   begin
-    FPendingIntentActive := False;
-    FPendingIntentCommand := '';
-    FPendingIntentPrompt := '';
+    TRadIAIntentTelemetry.TryRecord(
+      riteSuperseded,
+      FPendingIntentName,
+      FPendingIntentConfidence
+    );
+    ClearPendingIntent;
   end;
   if TryHandlePendingJourneyInput(APromptText) then
     Exit(True);
@@ -4783,7 +4808,14 @@ begin
     Exit;
   FPendingIntentActive := True;
   FPendingIntentCommand := LRecommendation.Command;
+  FPendingIntentConfidence := LRecommendation.ConfidenceName;
+  FPendingIntentName := LRecommendation.IntentName;
   FPendingIntentPrompt := APromptText;
+  TRadIAIntentTelemetry.TryRecord(
+    riteRecommended,
+    FPendingIntentName,
+    FPendingIntentConfidence
+  );
   PostToWebView('add_message', 'user', APromptText);
   PostIntentRecommendation(LRecommendation);
 end;
@@ -4827,6 +4859,11 @@ begin
   end;
   if AAction = 'review_intent_recommendation' then
   begin
+    TRadIAIntentTelemetry.TryRecord(
+      riteReviewed,
+      FPendingIntentName,
+      FPendingIntentConfidence
+    );
     FView.SetPromptInput(FPendingIntentCommand);
     FView.FocusPromptInput;
     Exit;
@@ -4837,10 +4874,22 @@ begin
     Exit;
   end;
   LCommand := FPendingIntentCommand;
+  TRadIAIntentTelemetry.TryRecord(
+    riteAccepted,
+    FPendingIntentName,
+    FPendingIntentConfidence
+  );
+  ClearPendingIntent;
+  TryHandleJourneyCommand('', LCommand);
+end;
+
+procedure TRadIAChatPresenter.ClearPendingIntent;
+begin
   FPendingIntentActive := False;
   FPendingIntentCommand := '';
+  FPendingIntentConfidence := '';
+  FPendingIntentName := '';
   FPendingIntentPrompt := '';
-  TryHandleJourneyCommand('', LCommand);
 end;
 
 procedure TRadIAChatPresenter.SendPendingIntentToChat;
@@ -4851,9 +4900,12 @@ var
   LPrompt: string;
 begin
   LPrompt := FPendingIntentPrompt;
-  FPendingIntentActive := False;
-  FPendingIntentCommand := '';
-  FPendingIntentPrompt := '';
+  TRadIAIntentTelemetry.TryRecord(
+    riteChatFallback,
+    FPendingIntentName,
+    FPendingIntentConfidence
+  );
+  ClearPendingIntent;
   EnsureJourneyProjectBoundary;
   LProcessed := PreProcessPrompt(LPrompt);
   LEffectiveSettings := ResolveEffectiveExecutionSettings;

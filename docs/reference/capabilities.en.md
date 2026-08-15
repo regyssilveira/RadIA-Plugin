@@ -11,7 +11,7 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Area | What RadIA can do |
 |---|---|
 | Chat | Dockable panel, Markdown, Pascal highlighting, streaming, cancellation, a visible five-message follow-up queue, sessions, history, exports, templates, token and cost estimates. |
-| Intent routing | Locally recommend creation, build, test, or diagnostic journeys with explicit confirm, review, and remain-in-chat choices. |
+| Intent routing | Locally recommend creation, build, test, or diagnostic journeys with explicit confirm, review, and remain-in-chat choices plus sanitized counters in `/status intent`. |
 | Shared journey | Link chat, terminal, and editor by project-safe identity without copying history or process output. |
 | Terminal | Use multi-tab ConPTY with streaming UTF-8, CJK, emoji and combining-character widths, reflow, extended colors, attributes, alternate screen, bracketed paste, SGR mouse, consent-gated OSC 8 links, history, and tree cancellation. |
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |

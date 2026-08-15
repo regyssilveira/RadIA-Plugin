@@ -49,7 +49,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Doctor e Status do RadIA** | Diagnóstico | `/doctor` verifica prontidão e recomenda a próxima ação; `/status` inventaria configuração e disponibilidade sem expor credenciais. | ✅ Concluído (v2.2.1) |
 | **Assistente CLI/MCP** | Integração | Detecta, explica, solicita consentimento, instala ou configura, valida e oferece fallback manual completo sem exigir reinício da IDE. | ✅ Concluído (v2.2.1) |
 | **Rotas explícitas de execução** | Chat UX | Separa modo Chat/Agent, orquestração RadIA native e CLI direto, mostrando rota, transporte e credencial efetivos. | ✅ Concluído (v2.3.1) |
-| **Recomendação por intenção** | Chat UX | Reconhece criação, build, testes e diagnóstico localmente e permite confirmar, revisar ou continuar no chat antes de mudar a rota. | ✅ Concluído |
+| **Recomendação por intenção** | Chat UX | Reconhece criação, build, testes e diagnóstico localmente; permite confirmar, revisar ou continuar no chat e mantém somente contadores locais sanitizados. | ✅ Concluído |
 | **Painel de problemas unificado** | Chat UX | Reúne achados de build, DUnitX, cobertura, memória, DFM/PAS, threads e revisão com filtros, navegação e ações revisáveis. | ✅ Concluído |
 | **ChatGPT Pro via Codex CLI** | Provedor | Usa a sessão e a cota ChatGPT/Codex tanto como transporte do provider nativo quanto na execução CLI direta; API Key permanece separada. | ✅ Concluído (v2.3.1) |
 | **Cópia universal de texto** | Chat UX | Oferece cópia para respostas, JSON, resultados de tools e demais payloads textuais, preservando o conteúdo original. | ✅ Concluído (v2.3.1) |

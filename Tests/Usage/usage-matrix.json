@@ -61,7 +61,9 @@
         "explicit-route-confirmation",
         "reviewable-command",
         "chat-fallback",
-        "host-owned-pending-command"
+        "host-owned-pending-command",
+        "sanitized-local-telemetry",
+        "beginner-prompt-corpus"
       ]
     },
     {

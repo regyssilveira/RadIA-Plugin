@@ -34,13 +34,6 @@ without exposing credentials.
 This gate is mandatory for every release together with calculator creation and functional testing
 and immediate project creation, opening, and navigation.
 
-## Milestone 1 — universal experience
-
-- [ ] **Intent-driven universal command:** classify free-form requests, select chat, journey, or
-  agent, and present a comprehensible action before execution.
-Gate: create, fix a build, test, and diagnose a defect from free-form prompts without requiring the
-user to understand modes, journeys, or tool names.
-
 ## Milestone 2 — code intelligence
 
 - [ ] **Safe semantic refactoring:** deliver Rename Symbol and Find All References first with

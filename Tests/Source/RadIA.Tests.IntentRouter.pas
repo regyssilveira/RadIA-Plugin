@@ -19,6 +19,8 @@ type
     procedure RecommendsDebugJourneyWithMediumConfidence;
     [Test]
     procedure LeavesOrdinaryChatAndExplicitCommandsUntouched;
+    [Test]
+    procedure RoutesBeginnerPromptMatrix;
   end;
 
 implementation
@@ -87,6 +89,62 @@ begin
     'Explique como testes unitários funcionam',
     LRecommendation
   ));
+  Assert.IsFalse(TRadIAIntentRouter.TryRecommend(
+    'O que é uma access violation?',
+    LRecommendation
+  ));
+end;
+
+procedure TTestRadIAIntentRouter.RoutesBeginnerPromptMatrix;
+const
+  CCreatePrompts: array[0..3] of string = (
+    'Quero criar um programa simples de cadastro em VCL',
+    'Monte uma calculadora com as quatro operações',
+    'Create a small Delphi console application',
+    'Gere um projeto FMX para controlar tarefas'
+  );
+  CBuildPrompts: array[0..3] of string = (
+    'Meu projeto não compila, corrija o erro E2003',
+    'Resolva a falha de build deste projeto',
+    'Fix the compiler error in the current application',
+    'A compilação falhou, pode corrigir o projeto?'
+  );
+  CTestPrompts: array[0..3] of string = (
+    'Rode os testes e veja por que estão falhando',
+    'Execute os testes DUnitX deste projeto',
+    'Run the tests and check the failures',
+    'Valide os testes unitários da aplicação'
+  );
+  CDiagnosePrompts: array[0..3] of string = (
+    'Ao fechar o formulário acontece uma access violation',
+    'O aplicativo trava quando cancelo a tela de cadastro',
+    'Diagnose the memory leak in this application',
+    'Investigue a exceção que ocorre ao clicar no botão Salvar'
+  );
+var
+  LPrompt: string;
+  LRecommendation: TRadIAIntentRecommendation;
+begin
+  for LPrompt in CCreatePrompts do
+  begin
+    Assert.IsTrue(TRadIAIntentRouter.TryRecommend(LPrompt, LRecommendation), LPrompt);
+    Assert.AreEqual(rikCreateProject, LRecommendation.Intent, LPrompt);
+  end;
+  for LPrompt in CBuildPrompts do
+  begin
+    Assert.IsTrue(TRadIAIntentRouter.TryRecommend(LPrompt, LRecommendation), LPrompt);
+    Assert.AreEqual(rikFixBuild, LRecommendation.Intent, LPrompt);
+  end;
+  for LPrompt in CTestPrompts do
+  begin
+    Assert.IsTrue(TRadIAIntentRouter.TryRecommend(LPrompt, LRecommendation), LPrompt);
+    Assert.AreEqual(rikRunTests, LRecommendation.Intent, LPrompt);
+  end;
+  for LPrompt in CDiagnosePrompts do
+  begin
+    Assert.IsTrue(TRadIAIntentRouter.TryRecommend(LPrompt, LRecommendation), LPrompt);
+    Assert.AreEqual(rikDiagnose, LRecommendation.Intent, LPrompt);
+  end;
 end;
 
 initialization

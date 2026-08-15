@@ -88,8 +88,11 @@ Every improvement in this goal is complete only after adding or updating a scena
 
 Status: deterministic classification and the reviewable recommendation card are complete for
 creation, build, tests, and diagnostics. The unified findings contract and Problems panel with
-filters, safe navigation, and reviewable actions are also complete. Local telemetry and broader
-validation with beginner users remain pending.
+filters, safe navigation, and reviewable actions are also complete. Telemetry records only the
+event, allowlisted intent, allowlisted confidence, and UTC date in bounded local storage;
+`/status intent` exposes sanitized aggregates only. Sixteen natural Portuguese and English prompts,
+plus educational fallbacks, run against the real Pascal classifier in the Delphi 12 and 13 suites
+and belong to the indivisible release gate. M1 is complete.
 
 Dependencies: journeys, Agent Runtime, Tool Registry, Tool Views, and Project Health.
 

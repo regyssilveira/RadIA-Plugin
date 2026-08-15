@@ -26,8 +26,25 @@ começam com `/`, perguntas comuns e pedidos ambíguos não são interceptados.
 - Plano, consentimento, workspace boundary, fingerprint e rollback continuam obrigatórios.
 - O nível de confiança descreve apenas a correspondência da intenção; não comprova que a ação terá
   sucesso nem substitui diagnóstico de pré-requisitos.
-- Não há telemetria remota do prompt ou da decisão. Evoluções futuras podem registrar somente
-  contadores locais sanitizados e desativáveis.
+- Não há telemetria remota do prompt ou da decisão.
+
+## Contadores locais e privacidade
+
+O RadIA registra localmente somente cinco decisões de roteamento: `recommended`, `accepted`,
+`reviewed`, `chat-fallback` e `superseded`. Cada linha contém data UTC, nome da intenção e nível de
+confiança. A API de registro não recebe prompt, código, comando, projeto, provider, modelo,
+credencial ou resposta. Intenção e confiança usam listas fechadas; valores desconhecidos viram
+`Unknown` em vez de serem persistidos literalmente.
+
+O arquivo fica em `%LOCALAPPDATA%\RadIA\Telemetry\intent-routing.jsonl` e é reiniciado ao atingir
+1 MiB. Falha de leitura ou gravação nunca bloqueia o chat. Use `/status intent` para ver somente os
+contadores agregados e sanitizados. Para zerá-los, feche o Delphi e exclua esse arquivo; ele será
+recriado quando houver uma nova recomendação.
+
+A matriz automatizada exercita dezesseis pedidos naturais em português e inglês para criação de
+projeto, correção de build, testes e diagnóstico. Perguntas educativas ou ambíguas continuam no
+chat. Esses testes usam o classificador Pascal real nas suítes DUnitX de Delphi 12 e 13 e integram o
+gate indivisível de release.
 
 Consulte [Jornadas Delphi](../guides/user_guide_journeys.md) para os fluxos disponíveis e
 [Modelo de segurança](tool_security_model.md) para as proteções aplicadas após a confirmação.

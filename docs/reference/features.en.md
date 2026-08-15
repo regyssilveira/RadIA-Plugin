@@ -50,7 +50,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Unified Problems panel** | Chat UX | Collects build, DUnitX, coverage, memory, DFM/PAS, threading, and review findings with filters, navigation, and reviewable actions. | ✅ Completed |
 | **CLI/MCP Setup Assistant** | Integration | Detects, explains, requests consent, installs or configures, validates, and provides complete manual fallback without an IDE restart. | ✅ Completed (v2.2.1) |
 | **Explicit execution routes** | Chat UX | Separates Chat/Agent mode, RadIA native orchestration, and direct CLI while showing the effective route, transport, and credential. | ✅ Completed (v2.3.1) |
-| **Intent recommendation** | Chat UX | Recognizes creation, build, tests, and diagnostics locally and lets users confirm, review, or remain in chat before changing routes. | ✅ Completed |
+| **Intent recommendation** | Chat UX | Recognizes creation, build, tests, and diagnostics locally; lets users confirm, review, or remain in chat and keeps only sanitized local counters. | ✅ Completed |
 | **ChatGPT Pro via Codex CLI** | Provider | Uses the ChatGPT/Codex session and quota as either the native provider transport or direct CLI execution; API Key remains separate. | ✅ Completed (v2.3.1) |
 | **Universal text copy** | Chat UX | Adds copy actions to responses, JSON, tool results, and other textual payloads while preserving original content. | ✅ Completed (v2.3.1) |
 | **Integrated Help** | Chat UX | `/help` summarizes capabilities and opens public guides in the default browser. | ✅ Completed (v2.2.2) |

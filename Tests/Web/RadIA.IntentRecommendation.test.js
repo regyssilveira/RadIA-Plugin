@@ -10,6 +10,14 @@ const presenter = fs.readFileSync(
   path.join(root, 'Source', 'UI', 'RadIA.UI.ChatPresenter.pas'),
   'utf8'
 );
+const telemetry = fs.readFileSync(
+  path.join(root, 'Source', 'Core', 'RadIA.Core.IntentTelemetry.pas'),
+  'utf8'
+);
+const routerTests = fs.readFileSync(
+  path.join(root, 'Tests', 'Source', 'RadIA.Tests.IntentRouter.pas'),
+  'utf8'
+);
 
 test('intent recommendation exposes three explicit user decisions', () => {
   assert.match(chatScript, /Use recommended route/u);
@@ -31,4 +39,25 @@ test('natural intent creates a recommendation instead of direct journey executio
     presenter,
     /function TRadIAChatPresenter\.TryHandleInferredJourney/u
   );
+});
+
+test('routing decisions use sanitized local-only telemetry', () => {
+  assert.match(telemetry, /intent-routing\.jsonl/u);
+  assert.match(telemetry, /'scope', 'local-only'/u);
+  assert.match(telemetry, /'promptContentStored', TJSONBool\.Create\(False\)/u);
+  assert.doesNotMatch(telemetry, /const APrompt/u);
+  assert.match(presenter, /riteRecommended/u);
+  assert.match(presenter, /riteAccepted/u);
+  assert.match(presenter, /riteReviewed/u);
+  assert.match(presenter, /riteChatFallback/u);
+  assert.match(presenter, /riteSuperseded/u);
+});
+
+test('real router tests cover beginner prompts and educational fallback', () => {
+  assert.match(routerTests, /CCreatePrompts: array\[0\.\.3\]/u);
+  assert.match(routerTests, /CBuildPrompts: array\[0\.\.3\]/u);
+  assert.match(routerTests, /CTestPrompts: array\[0\.\.3\]/u);
+  assert.match(routerTests, /CDiagnosePrompts: array\[0\.\.3\]/u);
+  assert.match(routerTests, /O que é uma access violation\?/u);
+  assert.match(routerTests, /Assert\.IsFalse/u);
 });

@@ -57,7 +57,9 @@ This command composes the following gates without options to skip their main req
 2. perform the visual `2 + 3 = 5` operation in the VCL calculator;
 3. run all five calculator DUnitX tests;
 4. create, open, and immediately navigate a project on all three IDE targets;
-5. run the startup and shutdown matrix with package provenance.
+5. run the startup and shutdown matrix with package provenance;
+6. route real beginner requests for creation, build, tests, and diagnostics, including educational
+   fallback and sanitized local counters.
 
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also
@@ -73,5 +75,7 @@ failure into a pass.
 The `startup` profile proves that the package loaded, the tool contract is valid, shutdown is clean,
 and no orphan process remains. The `release` profile also executes critical IDE-neutral contracts.
 The first proves explicit intent-route confirmation, command review, chat fallback, and host
-validation of the pending command. New behavior must add manifest scenarios and contract tests to
+validation of the pending command. DUnitX runs sixteen natural prompts against the real Pascal
+classifier; the host-neutral contract confirms that telemetry cannot accept prompt content. New
+behavior must add manifest scenarios and contract tests to
 `Tests/Web/RadIA.UsageMatrix.test.js`.

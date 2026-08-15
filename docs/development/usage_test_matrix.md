@@ -57,7 +57,9 @@ Esse comando compõe, sem opções para pular os gates principais:
 2. operação visual `2 + 3 = 5` na calculadora VCL;
 3. execução dos cinco testes DUnitX da calculadora;
 4. criação, abertura e navegação imediata de projeto nos três alvos da IDE;
-5. matriz de inicialização e encerramento com proveniência do package.
+5. matriz de inicialização e encerramento com proveniência do package;
+6. roteamento real de pedidos iniciantes para criação, build, testes e diagnóstico, com fallback
+   educativo e contadores locais sanitizados.
 
 Se `DEXT_ROOT` não estiver configurado, somente os templates DEXT são registrados como
 `not-required`; os demais templates e gates continuam obrigatórios. Quando `DEXT_ROOT` existe, os
@@ -73,5 +75,7 @@ em sucesso.
 O perfil `startup` comprova package carregado, contrato de tools válido, shutdown limpo e ausência de
 processos órfãos. O perfil `release` também executa contratos críticos independentes da IDE. O
 primeiro comprova confirmação explícita da rota por intenção, revisão do comando, continuação no chat
-e validação do comando pendente pelo host. Novos comportamentos devem acrescentar cenários ao
+e validação do comando pendente pelo host. A suíte DUnitX executa dezesseis prompts naturais contra
+o classificador Pascal real; o contrato host-neutral confirma que a telemetria não aceita conteúdo
+do prompt. Novos comportamentos devem acrescentar cenários ao
 manifesto e testes de contrato em `Tests/Web/RadIA.UsageMatrix.test.js`.
