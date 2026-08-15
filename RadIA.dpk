@@ -76,6 +76,7 @@ contains
   RadIA.UI.ExternalMcpFrame in 'Source\UI\RadIA.UI.ExternalMcpFrame.pas',
   RadIA.Core.ToolRegistry in 'Source\Core\RadIA.Core.ToolRegistry.pas',
   RadIA.Core.ToolViews in 'Source\Core\RadIA.Core.ToolViews.pas',
+  RadIA.Core.Problems in 'Source\Core\RadIA.Core.Problems.pas',
   RadIA.Core.Extensions in 'Source\Core\RadIA.Core.Extensions.pas',
   RadIA.Core.DeclarativeExtensions in 'Source\Core\RadIA.Core.DeclarativeExtensions.pas',
   RadIA.Core.DeclarativeTools in 'Source\Core\RadIA.Core.DeclarativeTools.pas',

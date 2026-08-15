@@ -5,6 +5,7 @@
 - [Configurações](settings_reference.md)
 - [Comandos de barra](slash_commands.md)
 - [Roteamento de intenção](intent_routing.md)
+- [Painel de problemas](problems_panel.md)
 - [Doctor](doctor.md)
 - [Ferramentas internas](internal_tools_reference.md)
 - [Catálogo runtime](runtime_tool_catalog.md)

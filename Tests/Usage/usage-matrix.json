@@ -13,7 +13,8 @@
       "description": "Runs IDE lifecycle and critical user-facing capability contracts.",
       "scenarioIds": [
         "ide-startup-shutdown",
-        "intent-recommendation"
+        "intent-recommendation",
+        "unified-problems-panel"
       ]
     }
   ],
@@ -61,6 +62,18 @@
         "reviewable-command",
         "chat-fallback",
         "host-owned-pending-command"
+      ]
+    },
+    {
+      "id": "unified-problems-panel",
+      "scope": "host",
+      "runner": "node-test",
+      "testPath": "Tests/Web/RadIA.ProblemsPanel.test.js",
+      "requiredEvidence": [
+        "unified-problem-contract",
+        "severity-and-category-filters",
+        "safe-source-navigation",
+        "reviewable-recommended-action"
       ]
     }
   ]

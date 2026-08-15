@@ -34,6 +34,7 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 | Usar o editor e gerar código | [Editor e geração](guides/user_guide_editor_generation.md) |
 | Trabalhar com Designer e debugger | [Designer e debugger](guides/user_guide_designer_debugger.md) |
 | Diagnosticar problemas e stack traces | [Diagnóstico e análise](guides/user_guide_diagnostics_analysis.md) |
+| Reunir e navegar pelos achados das ferramentas | [Painel de problemas](reference/problems_panel.md) |
 | Reproduzir falhas em execução | [Automação de diagnóstico runtime](guides/runtime_debug_automation.md) |
 | Diagnosticar vazamentos com FastMM5 | [Diagnóstico de memória](guides/fastmm5_diagnostic_session.md) |
 | Usar o terminal integrado | [Terminal](guides/terminal.md) |
@@ -53,6 +54,7 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 | Entender as abas de configuração | [Mapa das configurações](guides/user_manual.md#24-mapa-das-configurações) |
 | Comandos de barra e diagnóstico | [Comandos](reference/slash_commands.md#qual-diagnóstico-usar) |
 | Estado e diagnóstico completo | [Doctor](reference/doctor.md) |
+| Achados de build, testes, memória e revisão | [Painel de problemas](reference/problems_panel.md) |
 | Ferramentas disponíveis e quando são usadas | [Ferramentas internas](reference/internal_tools_reference.md) |
 | Catálogo gerado da versão atual | [Catálogo runtime](reference/runtime_tool_catalog.md) |
 | Compatibilidade Delphi | [Matriz de compatibilidade](reference/delphi_compatibility_matrix.md) |

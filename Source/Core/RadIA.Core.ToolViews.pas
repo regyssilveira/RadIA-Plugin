@@ -65,7 +65,8 @@ implementation
 uses
   System.JSON,
   System.StrUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.Problems;
 
 { TRadIAToolViewIntent }
 
@@ -106,7 +107,9 @@ function TRadIAToolViewResolver.Attach(
 ): TRadIAToolResult;
 var
   LIntent: TRadIAToolViewIntent;
+  LPair: TJSONPair;
   LRoot: TJSONObject;
+  LProblems: TJSONArray;
   LValue: TJSONValue;
   LView: TJSONObject;
 begin
@@ -118,15 +121,20 @@ begin
     if not (LValue is TJSONObject) then
       Exit;
     LRoot := TJSONObject(LValue);
-    if Assigned(LRoot.GetValue('_radiaView')) then
-      Exit;
-    LIntent := Resolve(AToolName);
-    LView := TJSONObject.Create;
-    LView.AddPair('version', TJSONNumber.Create(1));
-    LView.AddPair('kind', LIntent.KindName);
-    LView.AddPair('action', LIntent.Action);
-    LView.AddPair('sourceTool', LIntent.SourceTool);
-    LRoot.AddPair('_radiaView', LView);
+    if not Assigned(LRoot.GetValue('_radiaView')) then
+    begin
+      LIntent := Resolve(AToolName);
+      LView := TJSONObject.Create;
+      LView.AddPair('version', TJSONNumber.Create(1));
+      LView.AddPair('kind', LIntent.KindName);
+      LView.AddPair('action', LIntent.Action);
+      LView.AddPair('sourceTool', LIntent.SourceTool);
+      LRoot.AddPair('_radiaView', LView);
+    end;
+    LPair := LRoot.RemovePair('_radiaProblems');
+    LPair.Free;
+    LProblems := TRadIAProblemExtractor.Extract(AToolName, LRoot);
+    LRoot.AddPair('_radiaProblems', LProblems);
     Result := TRadIAToolResult.Succeeded(
       LRoot.ToJSON,
       AResult.Truncated

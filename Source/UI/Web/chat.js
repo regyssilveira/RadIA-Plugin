@@ -169,6 +169,15 @@ const btnSettings     = document.getElementById('btn-settings');
 const btnAgentMode    = document.getElementById('btn-agent-mode');
 const btnTerminal     = document.getElementById('btn-terminal');
 const btnAgentHistory = document.getElementById('btn-agent-history');
+const btnProblems     = document.getElementById('btn-problems');
+const problemsBadge   = document.getElementById('problems-badge');
+const problemsPanel   = document.getElementById('problems-panel');
+const problemsSummary = document.getElementById('problems-summary');
+const problemsList    = document.getElementById('problems-list');
+const problemsSeverityFilter = document.getElementById('problems-severity-filter');
+const problemsCategoryFilter = document.getElementById('problems-category-filter');
+const btnCloseProblems = document.getElementById('btn-close-problems');
+const btnClearProblems = document.getElementById('btn-clear-problems');
 const btnCliNewSession = document.getElementById('btn-cli-new-session');
 const btnJourneyContext = document.getElementById('btn-journey-context');
 const btnExecutionScope = document.getElementById('btn-execution-scope');
@@ -266,6 +275,8 @@ let AVAILABLE_TOOLS = [];
 let agentModeEnabled = true;
 const TOOL_CARDS = new Map();
 const AGENT_CARDS = new Map();
+const COLLECTED_PROBLEMS = new Map();
+let currentProblemSessionId = '';
 
 function setAgentMode(enabled) {
   agentModeEnabled = enabled !== false;
@@ -1530,6 +1541,135 @@ function createToolActionButton(label, toolName, previewId) {
   return createToolArgumentsButton(label, toolName, { previewId });
 }
 
+function problemSeverityRank(severity) {
+  return {
+    critical: 0,
+    error: 1,
+    warning: 2,
+    information: 3
+  }[severity] ?? 4;
+}
+
+function createProblemAction(label, title, handler) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = label;
+  button.title = title;
+  button.addEventListener('click', handler);
+  return button;
+}
+
+function renderProblemsPanel() {
+  const severityFilter = problemsSeverityFilter.value;
+  const categoryFilter = problemsCategoryFilter.value;
+  const problems = [...COLLECTED_PROBLEMS.values()].sort((left, right) => {
+    const severity = problemSeverityRank(left.severity) -
+      problemSeverityRank(right.severity);
+    return severity || String(left.message).localeCompare(String(right.message));
+  });
+  const visible = problems.filter(problem =>
+    (severityFilter === 'all' || problem.severity === severityFilter) &&
+    (categoryFilter === 'all' || problem.category === categoryFilter)
+  );
+
+  problemsBadge.textContent = problems.length > 99 ? '99+' : String(problems.length);
+  problemsBadge.classList.toggle('hidden', problems.length === 0);
+  problemsSummary.textContent = problems.length === 0
+    ? 'No problems collected'
+    : `${visible.length} shown · ${problems.length} collected`;
+  problemsList.replaceChildren();
+
+  if (visible.length === 0) {
+    const empty = document.createElement('li');
+    empty.className = 'problems-empty';
+    empty.textContent = problems.length === 0
+      ? 'Run a build, test, diagnostic, or review to collect actionable findings.'
+      : 'No problem matches the selected filters.';
+    problemsList.appendChild(empty);
+    return;
+  }
+
+  visible.forEach(problem => {
+    const item = document.createElement('li');
+    item.className = 'problem-item';
+    item.dataset.severity = problem.severity || 'information';
+
+    const heading = document.createElement('div');
+    heading.className = 'problem-heading';
+    const title = document.createElement('strong');
+    title.textContent = problem.title || problem.code || 'Problem';
+    const severity = document.createElement('span');
+    severity.className = 'problem-severity';
+    severity.textContent = problem.severity || 'information';
+    heading.append(title, severity);
+
+    const message = document.createElement('div');
+    message.className = 'problem-message';
+    message.textContent = problem.message || '';
+
+    const meta = document.createElement('div');
+    meta.className = 'problem-meta';
+    meta.textContent = [
+      problem.category || 'general',
+      problem.sourceTool || '',
+      problem.fileName
+        ? `${problem.fileName}:${Math.max(1, problem.line || 1)}`
+        : ''
+    ].filter(Boolean).join(' · ');
+
+    const actions = document.createElement('div');
+    actions.className = 'problem-actions';
+    if (problem.fileName) {
+      actions.appendChild(createProblemAction(
+        'Open source',
+        'Open this location in the Delphi editor after policy checks',
+        () => postMessageToDelphi({
+          action: 'execute_tool',
+          name: 'NavigateToFile',
+          arguments: {
+            fileName: problem.fileName,
+            line: Math.max(1, problem.line || 1),
+            column: Math.max(1, problem.column || 1)
+          }
+        })
+      ));
+    }
+    if (problem.recommendedCommand) {
+      actions.appendChild(createProblemAction(
+        'Review action',
+        `Prepare ${problem.recommendedCommand} without running it`,
+        () => {
+          setPromptText(problem.recommendedCommand);
+          problemsPanel.classList.add('collapsed');
+          problemsPanel.setAttribute('inert', '');
+          btnProblems.setAttribute('aria-expanded', 'false');
+        }
+      ));
+    }
+
+    item.append(heading, message, meta);
+    if (actions.childElementCount > 0) item.appendChild(actions);
+    problemsList.appendChild(item);
+  });
+}
+
+function collectToolProblems(result) {
+  const problems = Array.isArray(result?._radiaProblems)
+    ? result._radiaProblems
+    : [];
+  problems.forEach(problem => {
+    if (problem?.id && problem?.message) {
+      COLLECTED_PROBLEMS.set(problem.id, problem);
+    }
+  });
+  renderProblemsPanel();
+}
+
+function clearCollectedProblems() {
+  COLLECTED_PROBLEMS.clear();
+  renderProblemsPanel();
+}
+
 function renderKnowledgeSearchResult(card, result) {
   const content = card.querySelector('.tool-card-content');
   const results = Array.isArray(result.results) ? result.results : [];
@@ -1959,6 +2099,7 @@ function renderToolResult(data) {
 
   card.classList.toggle('tool-card-error', !data.success);
   status.textContent = data.success ? 'Completed' : 'Failed';
+  if (data.success && data.result) collectToolProblems(data.result);
   if (renderer) {
     renderer[0](card, data.result, renderer[1]);
   } else {
@@ -2869,6 +3010,25 @@ btnClearChat.addEventListener('click', () => {
   }
 });
 
+btnProblems.addEventListener('click', () => {
+  const willOpen = problemsPanel.classList.contains('collapsed');
+  problemsPanel.classList.toggle('collapsed', !willOpen);
+  problemsPanel.toggleAttribute('inert', !willOpen);
+  btnProblems.setAttribute('aria-expanded', String(willOpen));
+  if (willOpen) renderProblemsPanel();
+});
+
+btnCloseProblems.addEventListener('click', () => {
+  problemsPanel.classList.add('collapsed');
+  problemsPanel.setAttribute('inert', '');
+  btnProblems.setAttribute('aria-expanded', 'false');
+  btnProblems.focus();
+});
+
+btnClearProblems.addEventListener('click', clearCollectedProblems);
+problemsSeverityFilter.addEventListener('change', renderProblemsPanel);
+problemsCategoryFilter.addEventListener('change', renderProblemsPanel);
+
 btnHistory.addEventListener('click', () => {
   if (!canChangeSession()) {
     showSessionLockedStatus();
@@ -3348,6 +3508,7 @@ function clearChat() {
   currentAssistantWrapper = null;
   currentAssistantContent = null;
   currentAssistantText = '';
+  clearCollectedProblems();
   showWelcomeScreen();
 }
 
@@ -3992,6 +4153,11 @@ function setContextText(text) {
 }
 
 function updateSessions(sessions, activeSessionId) {
+  if (activeSessionId && currentProblemSessionId &&
+      activeSessionId !== currentProblemSessionId) {
+    clearCollectedProblems();
+  }
+  if (activeSessionId) currentProblemSessionId = activeSessionId;
   sessionsList.innerHTML = '';
 
   if (!sessions || sessions.length === 0) {

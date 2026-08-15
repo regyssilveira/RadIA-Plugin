@@ -38,9 +38,6 @@ and immediate project creation, opening, and navigation.
 
 - [ ] **Intent-driven universal command:** classify free-form requests, select chat, journey, or
   agent, and present a comprehensible action before execution.
-- [ ] **Unified problems panel:** combine compiler, tests, coverage, FastMM5, DFM/Pascal audit,
-  threading, and inline review findings with navigation and safe actions.
-
 Gate: create, fix a build, test, and diagnose a defect from free-form prompts without requiring the
 user to understand modes, journeys, or tool names.
 

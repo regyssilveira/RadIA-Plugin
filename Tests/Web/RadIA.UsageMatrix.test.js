@@ -89,8 +89,16 @@ test('release usage plan adds the intent recommendation contract once', () => {
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
-  assert.equal(plan.runCount, 4);
+  assert.equal(plan.runCount, 5);
   assert.equal(intentRuns.length, 1);
   assert.equal(intentRuns[0].targetId, 'host-neutral');
   assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
+  const problemRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'unified-problems-panel'
+  );
+  assert.equal(problemRuns.length, 1);
+  assert.equal(problemRuns[0].targetId, 'host-neutral');
+  assert.ok(
+    problemRuns[0].requiredEvidence.includes('safe-source-navigation')
+  );
 });

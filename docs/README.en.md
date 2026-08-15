@@ -33,6 +33,7 @@ Internal plans, audits, test results, and release notes do not belong in this tr
 | Work with the editor and generate code | [Editor and generation](guides/user_guide_editor_generation.en.md) |
 | Work with the Designer and debugger | [Designer and debugger](guides/user_guide_designer_debugger.en.md) |
 | Diagnose problems and stack traces | [Diagnostics and analysis](guides/user_guide_diagnostics_analysis.en.md) |
+| Collect and navigate tool findings | [Problems panel](reference/problems_panel.en.md) |
 | Reproduce runtime failures | [Runtime diagnostic automation](guides/runtime_debug_automation.en.md) |
 | Diagnose leaks with FastMM5 | [Memory diagnostics](guides/fastmm5_diagnostic_session.en.md) |
 | Use the integrated terminal | [Terminal](guides/terminal.en.md) |
@@ -52,6 +53,7 @@ Internal plans, audits, test results, and release notes do not belong in this tr
 | Understand settings tabs | [Settings map](guides/user_manual.en.md#21-settings-map) |
 | Slash commands and diagnostics | [Commands](reference/slash_commands.en.md#which-diagnostic-command-to-use) |
 | Complete state and diagnostics | [Doctor](reference/doctor.en.md) |
+| Build, test, memory, and review findings | [Problems panel](reference/problems_panel.en.md) |
 | Internal tools and when they run | [Internal tools](reference/internal_tools_reference.en.md) |
 | Generated catalog for the current version | [Runtime catalog](reference/runtime_tool_catalog.en.md) |
 | Delphi compatibility | [Compatibility matrix](reference/delphi_compatibility_matrix.en.md) |

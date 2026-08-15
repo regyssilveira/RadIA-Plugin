@@ -38,6 +38,7 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.IsTrue(LResult.Truncated);
   Assert.Contains(LResult.ContentJson, '"_radiaView"');
+  Assert.Contains(LResult.ContentJson, '"_radiaProblems":[]');
   Assert.Contains(LResult.ContentJson, '"kind":"diff"');
   Assert.Contains(LResult.ContentJson, '"sourceTool":"PreparePatch"');
 end;
@@ -71,11 +72,14 @@ begin
   LResult := LResolver.Attach(
     'SampleTool',
     TRadIAToolResult.Succeeded(
-      '{"_radiaView":{"version":2,"kind":"custom"}}'
+      '{"_radiaView":{"version":2,"kind":"custom"},' +
+      '"_radiaProblems":[{"id":"untrusted"}]}'
     )
   );
   Assert.Contains(LResult.ContentJson, '"version":2');
   Assert.Contains(LResult.ContentJson, '"kind":"custom"');
+  Assert.Contains(LResult.ContentJson, '"_radiaProblems":[]');
+  Assert.DoesNotContain(LResult.ContentJson, 'untrusted');
 end;
 
 procedure TRadIAToolViewTests.ResolvesEveryViewCategory;

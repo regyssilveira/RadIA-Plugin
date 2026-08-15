@@ -60,6 +60,18 @@
         </svg>
         <span class="btn-label">Runs</span>
       </button>
+      <button class="header-action-btn" id="btn-problems"
+        title="Review diagnostics collected from builds, tests, memory, forms, threads, and code reviews"
+        aria-label="Open Problems" aria-expanded="false" aria-controls="problems-panel">
+        <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.3 2.9 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 2.9a2 2 0 0 0-3.4 0z"></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
+        <span class="btn-label">Problems</span>
+        <span id="problems-badge" class="problems-badge hidden" aria-hidden="true">0</span>
+      </button>
       <button class="header-action-btn" id="btn-clear-chat"
         title="Clear messages from the current chat without deleting other sessions"
         aria-label="Clear Chat">
@@ -301,6 +313,44 @@
           aria-label="Available slash commands"></ul>
       </footer>
     </div>
+
+    <aside id="problems-panel" class="collapsed" aria-label="Problems found by RadIA" inert>
+      <header class="problems-panel-header">
+        <div>
+          <strong>Problems</strong>
+          <span id="problems-summary">No problems collected</span>
+        </div>
+        <button id="btn-close-problems" title="Close Problems" aria-label="Close Problems">&times;</button>
+      </header>
+      <div class="problems-toolbar">
+        <label>
+          Severity
+          <select id="problems-severity-filter" title="Show problems with this severity">
+            <option value="all">All</option>
+            <option value="critical">Critical</option>
+            <option value="error">Error</option>
+            <option value="warning">Warning</option>
+            <option value="information">Information</option>
+          </select>
+        </label>
+        <label>
+          Area
+          <select id="problems-category-filter" title="Show problems from this area">
+            <option value="all">All</option>
+            <option value="build">Build</option>
+            <option value="tests">Tests</option>
+            <option value="coverage">Coverage</option>
+            <option value="memory">Memory</option>
+            <option value="dfm-pas">DFM/PAS</option>
+            <option value="threading">Threading</option>
+            <option value="review">Review</option>
+            <option value="general">General</option>
+          </select>
+        </label>
+        <button id="btn-clear-problems" title="Clear collected problems from this chat">Clear</button>
+      </div>
+      <ul id="problems-list" aria-live="polite"></ul>
+    </aside>
 
     <div id="generators-wrapper" class="hidden">
       <main id="generators-container">

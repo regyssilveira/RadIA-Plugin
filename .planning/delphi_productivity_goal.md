@@ -88,8 +88,9 @@ Cada melhoria deste goal só termina quando adicionar ou atualizar um cenário n
 5. Validar prompts de criação, build, testes e diagnóstico com usuários iniciantes.
 
 Estado: o classificador determinístico e o cartão de recomendação revisável estão concluídos para
-criação, build, testes e diagnóstico. Telemetria local, unificação de achados, painel de problemas e
-validação ampliada da experiência permanecem pendentes.
+criação, build, testes e diagnóstico. O contrato unificado de achados e o painel de problemas com
+filtros, navegação segura e ações revisáveis também estão concluídos. Telemetria local e validação
+ampliada da experiência com usuários iniciantes permanecem pendentes.
 
 Dependências: jornadas, Agent Runtime, Tool Registry, Tool Views e Project Health.
 

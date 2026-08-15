@@ -51,6 +51,22 @@
   gap: 2px;
   transition: color 0.15s ease;
   outline: none;
+  position: relative;
+}
+
+.problems-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  min-width: 15px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  color: #fff;
+  background: #d13438;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 13px;
+  text-align: center;
 }
 
 .header-action-btn:hover {
@@ -3368,6 +3384,193 @@ body.light-theme .agent-step-git-diff .is-removal {
   display: block;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+#problems-panel {
+  width: min(390px, 42vw);
+  min-width: 300px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.2s ease, min-width 0.2s ease;
+}
+
+#problems-panel.collapsed {
+  width: 0;
+  min-width: 0;
+  border-left-width: 0;
+}
+
+.problems-panel-header {
+  min-height: 52px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.problems-panel-header div,
+.problem-content {
+  min-width: 0;
+}
+
+.problems-panel-header strong,
+.problems-panel-header span {
+  display: block;
+}
+
+.problems-panel-header span {
+  margin-top: 2px;
+  color: var(--fg-secondary);
+  font-size: 11px;
+}
+
+.problems-panel-header button,
+.problems-toolbar button,
+.problem-actions button {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--fg-primary);
+  background: var(--bg-elevated);
+  cursor: pointer;
+}
+
+.problems-panel-header button {
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+}
+
+.problems-toolbar {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.problems-toolbar label {
+  min-width: 0;
+  color: var(--fg-secondary);
+  font-size: 10px;
+}
+
+.problems-toolbar select {
+  width: 100%;
+  margin-top: 3px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-primary);
+  background: var(--bg-input);
+}
+
+#problems-list {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+}
+
+.problems-empty {
+  padding: 24px 12px;
+  color: var(--fg-secondary);
+  text-align: center;
+}
+
+.problem-item {
+  margin-bottom: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--fg-muted);
+  border-radius: 7px;
+  background: var(--bg-elevated);
+}
+
+.problem-item[data-severity="critical"] {
+  border-left-color: #b42318;
+}
+
+.problem-item[data-severity="error"] {
+  border-left-color: #d13438;
+}
+
+.problem-item[data-severity="warning"] {
+  border-left-color: #ca8a04;
+}
+
+.problem-item[data-severity="information"] {
+  border-left-color: var(--accent);
+}
+
+.problem-heading,
+.problem-meta,
+.problem-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.problem-heading {
+  justify-content: space-between;
+}
+
+.problem-severity {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.problem-message {
+  margin: 7px 0;
+  overflow-wrap: anywhere;
+}
+
+.problem-meta {
+  color: var(--fg-secondary);
+  font-size: 10px;
+}
+
+.problem-actions {
+  margin-top: 8px;
+}
+
+.problem-actions button {
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  #problems-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 20;
+    width: min(390px, 92vw);
+    max-width: 92vw;
+    box-shadow: -10px 0 30px rgb(0 0 0 / 28%);
+  }
+
+  #problems-panel.collapsed {
+    width: 0;
+    max-width: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .problems-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .problems-toolbar button {
+    grid-column: 1 / -1;
+  }
 }
 
 .intent-recommendation-card {

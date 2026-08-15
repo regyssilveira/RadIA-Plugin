@@ -38,9 +38,6 @@ e com a criação, abertura e navegação imediata de projetos.
 
 - [ ] **Comando universal por intenção:** classificar o pedido livre, selecionar chat, jornada ou
   agente e apresentar uma ação compreensível antes de executar.
-- [ ] **Painel de problemas unificado:** reunir compilador, testes, cobertura, FastMM5, auditoria
-  DFM/PAS, threads e revisões inline com navegação e ações seguras.
-
 Gate: criar, corrigir build, testar e diagnosticar um defeito a partir de prompts livres, sem exigir
 que o usuário conheça modos, jornadas ou nomes de tools.
 

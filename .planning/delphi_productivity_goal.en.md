@@ -87,8 +87,9 @@ Every improvement in this goal is complete only after adding or updating a scena
 5. Validate creation, build, test, and diagnostic prompts with beginner users.
 
 Status: deterministic classification and the reviewable recommendation card are complete for
-creation, build, tests, and diagnostics. Local telemetry, unified findings, the problems panel, and
-broader experience validation remain pending.
+creation, build, tests, and diagnostics. The unified findings contract and Problems panel with
+filters, safe navigation, and reviewable actions are also complete. Local telemetry and broader
+validation with beginner users remain pending.
 
 Dependencies: journeys, Agent Runtime, Tool Registry, Tool Views, and Project Health.
 
