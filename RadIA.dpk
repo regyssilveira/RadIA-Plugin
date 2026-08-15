@@ -41,6 +41,7 @@ contains
   RadIA.Core.DelphiSignatures in 'Source\Core\RadIA.Core.DelphiSignatures.pas',
   RadIA.Core.DelphiCallArguments in 'Source\Core\RadIA.Core.DelphiCallArguments.pas',
   RadIA.Core.DelphiExtraction in 'Source\Core\RadIA.Core.DelphiExtraction.pas',
+  RadIA.Core.DelphiTypeMove in 'Source\Core\RadIA.Core.DelphiTypeMove.pas',
   RadIA.Core.SemanticExtractMethodTools in 'Source\Core\RadIA.Core.SemanticExtractMethodTools.pas',
   RadIA.Core.SemanticChangeSignatureTools in 'Source\Core\RadIA.Core.SemanticChangeSignatureTools.pas',
   RadIA.Core.Types in 'Source\Core\RadIA.Core.Types.pas',
