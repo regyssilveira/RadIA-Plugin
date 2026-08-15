@@ -54,6 +54,40 @@ $profileDefinition = @(
 if ($profileDefinition.Count -ne 1) {
     throw "Usage profile was not found: $Profile"
 }
+if ($Profile -eq "release") {
+    $registeredScenarioIds = @($manifest.scenarios.id | Sort-Object -Unique)
+    $releaseScenarioEntries = @($profileDefinition[0].scenarioIds)
+    $releaseScenarioIds = @(
+        $releaseScenarioEntries | Sort-Object -Unique
+    )
+    $missingReleaseScenarios = @(
+        $registeredScenarioIds |
+            Where-Object { $_ -notin $releaseScenarioIds }
+    )
+    $unknownReleaseScenarios = @(
+        $releaseScenarioIds |
+            Where-Object { $_ -notin $registeredScenarioIds }
+    )
+    $duplicateReleaseScenarios = @(
+        $releaseScenarioEntries |
+            Group-Object |
+            Where-Object { $_.Count -gt 1 } |
+            ForEach-Object { $_.Name }
+    )
+    if (
+        $missingReleaseScenarios.Count -gt 0 -or
+        $unknownReleaseScenarios.Count -gt 0 -or
+        $duplicateReleaseScenarios.Count -gt 0
+    ) {
+        throw (
+            "The release profile must contain every registered usage " +
+            "scenario exactly once. Missing: " +
+            "$($missingReleaseScenarios -join ', '). Unknown: " +
+            "$($unknownReleaseScenarios -join ', '). Duplicated: " +
+            "$($duplicateReleaseScenarios -join ', ')."
+        )
+    }
+}
 $selectedTargets = @($manifest.targets)
 if ($TargetId.Count -gt 0) {
     $unknownTargets = @(

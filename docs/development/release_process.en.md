@@ -34,6 +34,8 @@ calculator creation plus its functional and DUnitX tests, immediate project crea
 the automated usage matrix on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64. It produces
 sanitized evidence under `Output/Validation/ReleaseUsage`; a missing, skipped, or failed group, target,
 or scenario blocks publication. Do not run or approve these groups in isolation to authorize a release.
+The `release` profile must include every scenario registered in `Tests/Usage/usage-matrix.json`; the
+runner stops when it finds a registered scenario outside that profile.
 
 Run the scanner **locally** and require a passing Quality Gate for the same revision. Builds, tests,
 catalog, installer, and smoke tests must point to the same clean commit. Evidence must never be edited

@@ -34,7 +34,8 @@ criação e os testes funcionais e DUnitX da calculadora, a criação e abertura
 matriz automatizada de uso no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. O gate produz evidência
 sanitizada em `Output/Validation/ReleaseUsage` e qualquer grupo, alvo ou cenário ausente, ignorado ou
 reprovado bloqueia a publicação. Não execute nem aprove esses grupos isoladamente para autorizar uma
-release.
+release. O perfil `release` deve incluir todos os cenários registrados em `Tests/Usage/usage-matrix.json`;
+o próprio runner interrompe a execução quando encontra um cenário cadastrado fora desse perfil.
 
 Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma revisão. Builds, testes,
 catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser

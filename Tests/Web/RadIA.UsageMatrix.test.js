@@ -86,6 +86,12 @@ test('release usage plan adds the intent recommendation contract once', () => {
     { encoding: 'utf8' }
   );
   const plan = JSON.parse(output);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.equal(plan.scenarioCount, manifest.scenarios.length);
+  assert.deepEqual(
+    [...new Set(plan.runs.map((run) => run.scenarioId))].sort(),
+    manifest.scenarios.map((scenario) => scenario.id).sort()
+  );
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
