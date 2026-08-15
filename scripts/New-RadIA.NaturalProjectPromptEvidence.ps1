@@ -1,6 +1,6 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\FunctionalClosure",
-    [string]$OutputPath = ".\docs\natural_project_prompts_evidence_2.7.0.json"
+    [string]$OutputPath = ".\Output\Evidence\natural_project_prompts_evidence_2.7.0.json"
 )
 
 $ErrorActionPreference = "Stop"

@@ -1,9 +1,9 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\AgentRuntime",
     [string]$OutputPath = (
-        ".\docs\agent_runtime_smoke_evidence_2.0.0.json"
+        ".\Output\Evidence\agent_runtime_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 148
+    [int]$RequiredToolCount = 162
 )
 
 $ErrorActionPreference = "Stop"

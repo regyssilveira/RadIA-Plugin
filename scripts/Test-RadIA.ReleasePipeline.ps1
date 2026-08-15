@@ -1,5 +1,6 @@
 param(
-    [string]$WorkflowPath = ".\.github\workflows\release.yml"
+    [string]$WorkflowPath = ".\.github\workflows\release.yml",
+    [string]$QualityWorkflowPath = ".\.github\workflows\quality-gate.yml"
 )
 
 $ErrorActionPreference = "Stop"
@@ -9,6 +10,41 @@ if (-not (Test-Path -LiteralPath $resolvedWorkflow -PathType Leaf)) {
 }
 
 $workflow = Get-Content -LiteralPath $resolvedWorkflow -Raw
+$automaticTagTrigger = [regex]::IsMatch(
+    $workflow,
+    '(?ms)^on:\s*\r?\n\s+push:\s*\r?\n\s+tags:'
+)
+if ($automaticTagTrigger) {
+    throw (
+        "Release workflow cannot run automatically from a tag push. " +
+        "Official artifacts are generated and published locally."
+    )
+}
+if (-not $workflow.Contains("workflow_dispatch:")) {
+    throw "Release workflow must remain available as an optional manual validation."
+}
+if ($workflow.Contains("github.event_name == 'push'")) {
+    throw "Release publication cannot depend on a GitHub push event."
+}
+
+$resolvedQualityWorkflow = [IO.Path]::GetFullPath($QualityWorkflowPath)
+if (-not (Test-Path -LiteralPath $resolvedQualityWorkflow -PathType Leaf)) {
+    throw "Quality workflow was not found: $resolvedQualityWorkflow"
+}
+$qualityWorkflow = Get-Content -LiteralPath $resolvedQualityWorkflow -Raw
+if (-not $qualityWorkflow.Contains("workflow_dispatch:")) {
+    throw "SonarQube workflow must remain available as an optional manual validation."
+}
+$automaticQualityTriggers = [regex]::IsMatch(
+    $qualityWorkflow,
+    '(?m)^\s{2}(?:push|pull_request):\s*$'
+)
+if ($automaticQualityTriggers) {
+    throw (
+        "SonarQube GitHub validation cannot run from push, pull request, or tag. " +
+        "The official Quality Gate runs locally."
+    )
+}
 $requiredFragments = @(
     "New-RadIA.ReleaseEvidence.ps1",
     "New-RadIA.VisualInstaller.ps1",
@@ -94,6 +130,7 @@ foreach ($fragment in $visualInstallerFragments) {
 Write-Host (
     "Release workflow validation succeeded with three internal Delphi inputs, " +
     "one public installer, internal evidence, no unused update catalog, " +
+    "manual-only GitHub validation, local artifact publication, " +
     "no certificate dependency, and " +
     "Delphi-open installer gates."
 )

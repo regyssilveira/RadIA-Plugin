@@ -355,7 +355,7 @@ begin
   );
   Assert.IsTrue(LResult.Success);
   LPreviewId := JsonValue(LResult.ContentJson, 'previewId');
-  Assert.AreEqual(32, Length(LPreviewId));
+  Assert.AreEqual(NativeInt(32), Length(LPreviewId));
 
   LResult := ExecuteTool(
     'SaveRuntimeRegression',

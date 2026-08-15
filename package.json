@@ -1,11 +1,17 @@
 {
   "name": "radia-plugin",
-  "version": "2.9.0",
+  "version": "2.14.0",
   "description": "Rad IA - AI Assistant for Delphi IDE",
   "main": "eslint.config.js",
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test:semantic-corpus:12": "node scripts/Test-RadIA.SemanticCorpus.js --delphi-version 23.0",
+    "test:semantic-corpus:13": "node scripts/Test-RadIA.SemanticCorpus.js --delphi-version 37.0",
+    "test:semantic-completion:12": "node scripts/Test-RadIA.SemanticCompletionCorpus.js --delphi-version 23.0",
+    "test:semantic-completion:13": "node scripts/Test-RadIA.SemanticCompletionCorpus.js --delphi-version 37.0",
+    "test:semantic-members:12": "node scripts/Test-RadIA.SemanticMissingMembers.js --delphi-version 23.0",
+    "test:semantic-members:13": "node scripts/Test-RadIA.SemanticMissingMembers.js --delphi-version 37.0",
     "test:web": "node --test Tests/Web/*.test.js",
     "test:docs": "node --test Tests/Web/RadIA.Documentation.test.js"
   },

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$ScenarioId,
-    [string]$OutputPath = "docs/delphi_experience_benchmark_result.json",
+    [string]$OutputPath = "Output/Evidence/delphi_experience_benchmark_result.json",
     [switch]$ValidateOnly
 )
 

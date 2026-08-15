@@ -1,9 +1,9 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\FirstValue",
     [string]$OutputPath = (
-        ".\docs\first_value_smoke_evidence_2.0.0.json"
+        ".\Output\Evidence\first_value_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 148
+    [int]$RequiredToolCount = 162
 )
 
 $ErrorActionPreference = "Stop"

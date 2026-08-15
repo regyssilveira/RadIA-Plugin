@@ -178,6 +178,10 @@ type
       const AAction: string;
       const AJson: TJSONObject
     ): Boolean;
+    function TryDispatchAgentSettingsInteraction(
+      const AAction: string;
+      const AJson: TJSONObject
+    ): Boolean;
     function TryDispatchExecutionScopeInteraction(
       const AAction: string;
       const AJson: TJSONObject
@@ -205,6 +209,7 @@ type
     );
     procedure SetAgentModeEnabled(const AEnabled: Boolean);
     procedure SetAgentExecutor(const AExecutorId: string);
+    procedure SetReasoningEffort(const AEffort: string);
     procedure PostAgentModeToWeb;
     procedure PostExecutionRouteToWeb;
     procedure PostExecutionScopeToWeb;
@@ -1216,7 +1221,8 @@ end;
 
 function TRadIAChatPresenter.BuildHelpText: string;
 const
-  CDocsRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/';
+  CGuidesRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/guides/';
+  CReferenceRoot = 'https://github.com/regyssilveira/RadIA-Plugin/blob/main/docs/reference/';
 begin
   Result :=
     '## RadIA help' + sLineBreak + sLineBreak +
@@ -1246,11 +1252,11 @@ begin
       sLineBreak + sLineBreak +
     '### Documentation' + sLineBreak + sLineBreak +
     '- [Getting started](https://github.com/regyssilveira/RadIA-Plugin#readme)' + sLineBreak +
-    '- [Slash commands](' + CDocsRoot + 'slash_commands.md)' + sLineBreak +
-    '- [Journeys](' + CDocsRoot + 'user_guide_journeys.md)' + sLineBreak +
-    '- [DEXT journeys](' + CDocsRoot + 'user_guide_dext_journeys.md)' + sLineBreak +
-    '- [Settings reference](' + CDocsRoot + 'settings_reference.md)' + sLineBreak +
-    '- [Scoped execution settings](' + CDocsRoot + 'hierarchical_settings.md)';
+    '- [Slash commands](' + CReferenceRoot + 'slash_commands.md)' + sLineBreak +
+    '- [Journeys](' + CGuidesRoot + 'user_guide_journeys.md)' + sLineBreak +
+    '- [DEXT journeys](' + CGuidesRoot + 'user_guide_dext_journeys.md)' + sLineBreak +
+    '- [Settings reference](' + CReferenceRoot + 'settings_reference.md)' + sLineBreak +
+    '- [Scoped execution settings](' + CGuidesRoot + 'hierarchical_settings.md)';
 end;
 
 function TRadIAChatPresenter.BuildToolsJsonArray: TJSONArray;
@@ -2511,18 +2517,9 @@ begin
   Result := True;
   if TryDispatchExecutionScopeInteraction(AAction, AJson) then
     Exit;
-  if AAction = 'set_agent_mode' then
-    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
-  else if AAction = 'set_agent_executor' then
-    SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
-  else if AAction = 'reset_cli_session' then
-  begin
-    FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
-    PostExecutionRouteToWeb;
-  end
-  else if AAction = 'toggle_journey_context' then
-    ToggleJourneyContext
-  else if AAction = 'pause_agent' then
+  if TryDispatchAgentSettingsInteraction(AAction, AJson) then
+    Exit;
+  if AAction = 'pause_agent' then
     PauseAgentRun
   else if (AAction = 'resume_agent') or (AAction = 'approve_agent') then
     ResumeAgentRun
@@ -2538,6 +2535,29 @@ begin
   end
   else if AAction = 'replay_agent_step' then
     ReplayAgentStep(AJson.GetValue<Integer>('stepIndex', 0))
+  else
+    Result := False;
+end;
+
+function TRadIAChatPresenter.TryDispatchAgentSettingsInteraction(
+  const AAction: string;
+  const AJson: TJSONObject
+): Boolean;
+begin
+  Result := True;
+  if AAction = 'set_agent_mode' then
+    SetAgentModeEnabled(AJson.GetValue<Boolean>('enabled', True))
+  else if AAction = 'set_agent_executor' then
+    SetAgentExecutor(AJson.GetValue<string>('executor', 'native'))
+  else if AAction = 'set_reasoning_effort' then
+    SetReasoningEffort(AJson.GetValue<string>('effort', 'medium'))
+  else if AAction = 'reset_cli_session' then
+  begin
+    FSessionManager.ClearCliConversation(FSessionManager.ActiveSessionId);
+    PostExecutionRouteToWeb;
+  end
+  else if AAction = 'toggle_journey_context' then
+    ToggleJourneyContext
   else
     Result := False;
 end;
@@ -4004,11 +4024,19 @@ begin
   LCurrent := FAgentExecutorSettings.Load;
   if SameText(AExecutorId, 'native') then
     FAgentExecutorSettings.Save(
-      TRadIAAgentExecutorSettings.Create(aekNative, LCurrent.CliClientId)
+      TRadIAAgentExecutorSettings.Create(
+        aekNative,
+        LCurrent.CliClientId,
+        LCurrent.ReasoningEffort
+      )
     )
   else if TRadIACliCatalog.FindById(AExecutorId, LDefinition) then
     FAgentExecutorSettings.Save(
-      TRadIAAgentExecutorSettings.Create(aekCli, LDefinition.Id)
+      TRadIAAgentExecutorSettings.Create(
+        aekCli,
+        LDefinition.Id,
+        LCurrent.ReasoningEffort
+      )
     )
   else
   begin
@@ -4019,6 +4047,28 @@ begin
     FJourneyContext.UpdateExecutor(CurrentExecutorId);
   PostExecutionRouteToWeb;
   UpdateModelsCombo;
+end;
+
+procedure TRadIAChatPresenter.SetReasoningEffort(const AEffort: string);
+var
+  LCurrent: TRadIAAgentExecutorSettings;
+begin
+  if FRequestInProgress then
+    Exit;
+  LCurrent := FAgentExecutorSettings.Load;
+  try
+    FAgentExecutorSettings.Save(
+      TRadIAAgentExecutorSettings.Create(
+        LCurrent.Kind,
+        LCurrent.CliClientId,
+        AEffort
+      )
+    );
+    SendInitialConfigToWeb;
+  except
+    on E: EArgumentException do
+      PostToWebView('add_message', 'assistant', E.Message);
+  end;
 end;
 
 function TRadIAChatPresenter.BuildAgentToolCatalogJson: string;
@@ -4498,7 +4548,8 @@ begin
     LDetection.ExecutablePath,
     AObjective,
     LWorkingDirectory,
-    LExternalSessionId
+    LExternalSessionId,
+    FAgentExecutorSettings.Load.ReasoningEffort
   );
   LUserMessage := TRadIAChatMessage.CreateMessage(
     mrUser,
@@ -5596,6 +5647,10 @@ begin
     LJson.AddPair('activeModel', LActiveModel);
     LJson.AddPair('isWebLogin', TJSONBool.Create(LIsWebLogin));
     LJson.AddPair('executionRoute', BuildExecutionRouteJson);
+    LJson.AddPair(
+      'reasoningEffort',
+      FAgentExecutorSettings.Load.ReasoningEffort
+    );
 
     FView.PostMessageToWeb(LJson.ToJSON);
   finally

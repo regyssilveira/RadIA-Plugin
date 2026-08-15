@@ -6,6 +6,7 @@ procedure ShowRadIAChat;
 procedure ShowRadIAChatCommand(const ACommand: string);
 procedure ShowRadIATerminal;
 procedure RegisterDockableForm;
+procedure RestoreDockableFormVisibility;
 procedure UnregisterDockableForm;
 
 implementation
@@ -14,6 +15,7 @@ uses
   System.Classes,
   System.IniFiles,
   System.SysUtils,
+  System.Win.Registry,
   Winapi.Windows,
   DesignIntf,
   Vcl.ActnList,
@@ -30,6 +32,7 @@ uses
 
 type
   TRadIACustomDockableForm = class;
+  TRadIAAccessibleCustomForm = class(TCustomForm);
 
   TRadIADockableFormObserver = class(TComponent)
   private
@@ -50,10 +53,17 @@ type
     FFrameClass: TCustomFrameClass;
     FDefaultWidth: Integer;
     FDefaultHeight: Integer;
+    FHasSavedWindowState: Boolean;
+    FPreviousOnShow: TNotifyEvent;
+    FPreviousOnClose: TCloseEvent;
     procedure ApplyIDETheme;
     procedure ApplyWindowIdentity;
+    procedure AttachNativeForm(AForm: TCustomForm);
     procedure EnsureFrameContent;
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormRemoved;
+    procedure FormShow(Sender: TObject);
+    procedure SaveVisibility(const AVisible: Boolean);
   public
     constructor Create(
       const ACaption: string;
@@ -307,10 +317,67 @@ begin
   FFrame := nil;
 end;
 
+procedure TRadIACustomDockableForm.FormClose(
+  Sender: TObject;
+  var Action: TCloseAction
+);
+begin
+  SaveVisibility(False);
+  if Assigned(FPreviousOnClose) then
+    FPreviousOnClose(Sender, Action);
+end;
+
+procedure TRadIACustomDockableForm.FormShow(Sender: TObject);
+begin
+  SaveVisibility(True);
+  if Assigned(FPreviousOnShow) then
+    FPreviousOnShow(Sender);
+end;
+
+procedure RestoreDockableFormVisibility;
+var
+  LRegistry: TRegistry;
+  LServices: IOTAServices;
+  LVisible: Boolean;
+begin
+  LVisible := False;
+  if not Supports(BorlandIDEServices, IOTAServices, LServices) then
+    Exit;
+  LRegistry := TRegistry.Create;
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if LRegistry.OpenKeyReadOnly(
+      LServices.GetBaseRegistryKey + '\RadIA'
+    ) and LRegistry.ValueExists('WindowVisible') then
+      LVisible := LRegistry.ReadBool('WindowVisible');
+  finally
+    LRegistry.Free;
+  end;
+
+  if Assigned(GRadIADockableFormHost) and LVisible then
+    GRadIADockableFormHost.Show;
+end;
+
 procedure TRadIACustomDockableForm.FrameCreated(AFrame: TCustomFrame);
 begin
   FFrame := AFrame;
+  AttachNativeForm(GetParentForm(AFrame));
   ApplyIDETheme;
+end;
+
+procedure TRadIACustomDockableForm.AttachNativeForm(AForm: TCustomForm);
+begin
+  if not Assigned(AForm) or (FForm = AForm) then
+    Exit;
+
+  FForm := AForm;
+  FForm.FreeNotification(FObserver);
+  FForm.Caption := GetCaption;
+  FPreviousOnShow := TRadIAAccessibleCustomForm(FForm).OnShow;
+  FPreviousOnClose := TRadIAAccessibleCustomForm(FForm).OnClose;
+  TRadIAAccessibleCustomForm(FForm).OnShow := FormShow;
+  TRadIAAccessibleCustomForm(FForm).OnClose := FormClose;
+  ApplyWindowIdentity;
 end;
 
 function TRadIACustomDockableForm.GetCaption: string;
@@ -358,7 +425,30 @@ procedure TRadIACustomDockableForm.LoadWindowState(
   const ASection: string
 );
 begin
-  // The native IDE host restores docking, size, and visibility.
+  FHasSavedWindowState := ADesktop.SectionExists(ASection);
+end;
+
+procedure TRadIACustomDockableForm.SaveVisibility(const AVisible: Boolean);
+var
+  LRegistry: TRegistry;
+  LServices: IOTAServices;
+begin
+  if FIdentifier <> 'RadIADockableForm' then
+    Exit;
+  if not Supports(BorlandIDEServices, IOTAServices, LServices) then
+    Exit;
+
+  LRegistry := TRegistry.Create;
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if LRegistry.OpenKey(
+      LServices.GetBaseRegistryKey + '\RadIA',
+      True
+    ) then
+      LRegistry.WriteBool('WindowVisible', AVisible);
+  finally
+    LRegistry.Free;
+  end;
 end;
 
 procedure TRadIACustomDockableForm.ReleaseForm;
@@ -402,10 +492,11 @@ begin
       );
       Exit;
     end;
-    FForm.FreeNotification(FObserver);
-    FForm.Caption := GetCaption;
-    FForm.Width := FDefaultWidth;
-    FForm.Height := FDefaultHeight;
+    if not FHasSavedWindowState then
+    begin
+      FForm.Width := FDefaultWidth;
+      FForm.Height := FDefaultHeight;
+    end;
     TLogger.Log(
       'Native form created for ' + FIdentifier + ': ' + FForm.ClassName + '.',
       'DockableForm'

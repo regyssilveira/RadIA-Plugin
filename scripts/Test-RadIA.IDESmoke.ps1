@@ -1836,7 +1836,7 @@ if (-not $versionMatch.Success) {
     throw "RadIA version constant was not found: $versionUnitPath"
 }
 $expectedVersion = $versionMatch.Groups[1].Value
-$toolManifestPath = Join-Path $repositoryRoot "docs\runtime_tools.json"
+$toolManifestPath = Join-Path $repositoryRoot "docs\reference\runtime_tools.json"
 $toolManifest = Get-Content -LiteralPath $toolManifestPath -Raw -Encoding utf8 |
     ConvertFrom-Json
 $expectedToolNames = @(
@@ -2170,7 +2170,7 @@ if (-not $SkipPackageHashCheck) {
     } else {
         $releaseEvidencePath = Join-Path (
             $repositoryRoot
-        ) "docs\release_evidence_$expectedVersion.json"
+        ) "Output\Evidence\release_evidence_$expectedVersion.json"
         if (-not (Test-Path -LiteralPath $releaseEvidencePath -PathType Leaf)) {
             throw "Release evidence was not found: $releaseEvidencePath"
         }

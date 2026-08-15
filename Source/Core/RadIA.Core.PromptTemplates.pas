@@ -140,8 +140,9 @@ begin
   AddDefault(
     'Analyze Stack Trace',
     'Analyze exception stack trace and suggest root cause fixes',
-    'Analyze the following Delphi stack trace/error log:'#13#10#13#10'{stacktrace}'#13#10#13#10'Here ' +
-        'is the active unit code context for line reference:'#13#10#13#10'{code}',
+    'Call AnalyzeProjectStackTrace first for the following Delphi stack trace/error log:'#13#10#13#10 +
+        '{stacktrace}'#13#10#13#10'Use its resolved files, lines, confidence, and NavigateToFile when ' +
+        'navigation is requested. Here is the active unit context:'#13#10#13#10'{code}',
     False,
     '/stacktrace'
   );

@@ -1,10 +1,10 @@
 param(
     [string]$ValidationPath = ".\Output\Validation",
     [string]$PackagesPath = ".\Output\Packages",
-    [string]$ReleaseEvidencePath = ".\docs\release_evidence_2.0.0.json",
-    [string]$OutputPath = ".\docs\ide_smoke_evidence_2.0.0.json",
+    [string]$ReleaseEvidencePath = ".\Output\Evidence\release_evidence_2.0.0.json",
+    [string]$OutputPath = ".\Output\Evidence\ide_smoke_evidence_2.0.0.json",
     [int]$RequiredCycles = 10,
-    [int]$RequiredToolCount = 148,
+    [int]$RequiredToolCount = 162,
     [string]$UpgradeFromVersion = "1.0.0"
 )
 

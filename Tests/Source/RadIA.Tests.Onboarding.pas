@@ -35,14 +35,11 @@ var
   LSteps: TArray<TRadIAOnboardingStep>;
 begin
   LSteps := TRadIAOnboardingCatalog.Steps;
-  Assert.AreEqual<Integer>(7, Length(LSteps));
+  Assert.AreEqual<Integer>(4, Length(LSteps));
   Assert.AreEqual(Ord(oaOpenChat), Ord(LSteps[0].Action));
-  Assert.AreEqual(Ord(oaOpenProviderSettings), Ord(LSteps[1].Action));
-  Assert.AreEqual(Ord(oaOpenSecuritySettings), Ord(LSteps[2].Action));
-  Assert.AreEqual(Ord(oaOpenCliMcpSettings), Ord(LSteps[3].Action));
-  Assert.AreEqual(Ord(oaOpenTerminal), Ord(LSteps[4].Action));
-  Assert.AreEqual(Ord(oaRunDoctor), Ord(LSteps[5].Action));
-  Assert.AreEqual(Ord(oaCreateProject), Ord(LSteps[6].Action));
+  Assert.AreEqual(Ord(oaRunProjectHealth), Ord(LSteps[1].Action));
+  Assert.AreEqual(Ord(oaShowCapabilities), Ord(LSteps[2].Action));
+  Assert.AreEqual(Ord(oaOpenProviderSettings), Ord(LSteps[3].Action));
 end;
 
 procedure TRadIAOnboardingTests.ClosingOnboardingSuppressesRepeatedAutomaticDisplay;
@@ -76,7 +73,7 @@ begin
   try
     LStore.MarkCompleted;
     LState := LStore.Load;
-    Assert.AreEqual(6, LState.LastStep);
+    Assert.AreEqual(3, LState.LastStep);
     Assert.IsTrue(LState.Completed);
     Assert.IsFalse(LStore.ShouldShowAutomatically);
   finally

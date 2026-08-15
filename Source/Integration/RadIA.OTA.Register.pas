@@ -12,6 +12,7 @@ type
     FEditorHook: TObject;
     FKnowledgeNotifier: TObject;
     FDebugTimelineNotifier: TObject;
+    FSemanticMonitor: TObject;
     FTimer: TTimer;
     FOptionsPages: TInterfaceList;
     procedure RegisterMenus;
@@ -22,10 +23,10 @@ type
     procedure OnRequestDiff(const AOriginalCode: string; const AReplaceWholeBuffer: Boolean);
     procedure OnProjectWizardClick(Sender: TObject);
     procedure OnTimerEvent(Sender: TObject);
-    procedure RestoreWindowVisibility;
     procedure ReleaseDebugTimelineNotifier;
     procedure ReleaseEditorHook;
     procedure ReleaseKnowledgeNotifier;
+    procedure ReleaseSemanticMonitor;
     procedure ReleasePinnedModule;
   public
     constructor Create;
@@ -50,7 +51,7 @@ implementation
 
 uses
   System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
-  System.Win.Registry, Winapi.Windows,
+  Winapi.Windows,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
   RadIA.OTA.MemoryDiagnostic,
@@ -66,6 +67,8 @@ uses
   RadIA.Core.ProjectTemplateService, RadIA.Core.ProjectTemplateTools,
   RadIA.Core.ProjectOpening, RadIA.OTA.ProjectOpening,
   RadIA.Core.ProjectFiles, RadIA.Core.ProjectFileTools,
+  RadIA.Core.GeneratedArtifacts,
+  RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
   RadIA.Core.EditorAdapter, RadIA.Core.Tools, RadIA.Core.ToolRegistry, RadIA.Core.Workspace,
   RadIA.Core.AgentResultStore, RadIA.Core.AgentResultTools,
@@ -73,6 +76,14 @@ uses
   RadIA.Core.Extensions, RadIA.Core.Version,
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
+  RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
+  RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
+  RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
+  RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
+  RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
+  RadIA.Core.OpenApiRetrofit, RadIA.Core.OpenApiRetrofitTools,
+  RadIA.Core.DextFormModernization, RadIA.Core.DextFormModernizationTools,
+  RadIA.Core.SemanticCompletion,
   RadIA.Core.DelphiGuidance, RadIA.Core.DelphiGuidanceTools,
   RadIA.Core.DelphiMentor,
   RadIA.Core.DfmPasAudit, RadIA.Core.DfmPasAuditTools,
@@ -131,8 +142,11 @@ uses
   RadIA.OTA.DebugTimelineStore,
   RadIA.OTA.Knowledge,
   RadIA.OTA.KnowledgeNotifier, RadIA.OTA.InlineReviews,
+  RadIA.OTA.SemanticWorkspace,
   RadIA.OTA.IDENavigation,
-  RadIA.MCP.NamedPipe;
+  RadIA.MCP.NamedPipe,
+  RadIA.Semantic.Client,
+  RadIA.Semantic.Workspace;
 
 const
   GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = $00000004;
@@ -310,6 +324,11 @@ begin
     TRadIAContainer.Resolve<IRadIAKnowledgeRefreshScheduler>
   );
   TRadIAOTAKnowledgeNotifier(FKnowledgeNotifier).Install;
+  FSemanticMonitor := TRadIAOTASemanticWorkspaceMonitor.Create(
+    nil,
+    TRadIAContainer.Resolve<IRadIASemanticWorkspaceCoordinator>
+  );
+  TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).Install;
   FDebugTimelineNotifier := TRadIAOTADebugTimelineNotifier.Create(
     TRadIAContainer.Resolve<IRadIADebugTimeline>,
     TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>
@@ -366,6 +385,14 @@ begin
   end;
 end;
 
+procedure TRadIAWizard.ReleaseSemanticMonitor;
+begin
+  if not Assigned(FSemanticMonitor) then
+    Exit;
+  TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).Stop;
+  FreeAndNil(FSemanticMonitor);
+end;
+
 procedure TRadIAWizard.ReleasePinnedModule;
 begin
   if GIsShuttingDown or (GModuleHandle = 0) then
@@ -412,6 +439,8 @@ begin
   LogDebug('TRadIAWizard.Destroy timer released');
   ReleaseKnowledgeNotifier;
   LogDebug('TRadIAWizard.Destroy knowledge notifier released');
+  ReleaseSemanticMonitor;
+  LogDebug('TRadIAWizard.Destroy semantic monitor released');
   ReleaseDebugTimelineNotifier;
   LogDebug('TRadIAWizard.Destroy debug notifier released');
   UnregisterOptions;
@@ -492,7 +521,10 @@ end;
 
 procedure TRadIAWizard.AfterSave;
 begin
-  // Intentionally empty: IOTANotifier implementation
+  if Assigned(FSemanticMonitor) then
+    TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
+  if Assigned(FEditorHook) then
+    TRadIAEditorHook(FEditorHook).ScheduleAutoReview;
 end;
 
 procedure TRadIAWizard.BeforeSave;
@@ -502,12 +534,14 @@ end;
 
 procedure TRadIAWizard.Destroyed;
 begin
-  // Intentionally empty: IOTANotifier implementation
+  if Assigned(FSemanticMonitor) then
+    TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
 end;
 
 procedure TRadIAWizard.Modified;
 begin
-  // Intentionally empty: IOTANotifier implementation
+  if Assigned(FSemanticMonitor) then
+    TRadIAOTASemanticWorkspaceMonitor(FSemanticMonitor).MarkDirty;
 end;
 
 function TRadIAWizard.GetIDString: string;
@@ -630,18 +664,32 @@ begin
   Result := AMainMenu.Items.Find('Tools');
 end;
 
+function HasRadIAToolsMenu(const AToolsMenu: TMenuItem): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  if not Assigned(AToolsMenu) then
+    Exit;
+  for I := 0 to AToolsMenu.Count - 1 do
+  begin
+    if SameText(AToolsMenu[I].Name, 'mnuRadIAToolsRoot') or
+      SameText(AToolsMenu[I].Caption, 'RadIA') then
+      Exit(True);
+  end;
+end;
+
 procedure TRadIAWizard.RegisterMenus;
 var
   LNTAServices: INTAServices;
   LToolsMenu: TMenuItem;
-  I: Integer;
-  LToolsAlreadyPopulated: Boolean;
   LHook: TRadIAEditorHook;
   LExtensionManagerItem: TMenuItem;
   LProjectWizardItem: TMenuItem;
+  LRadIAMenu: TMenuItem;
+  LSeparator: TMenuItem;
 begin
   LogDebug('RegisterMenus called');
-  LToolsAlreadyPopulated := False;
   LHook := TRadIAEditorHook(FEditorHook);
 
   if Supports(BorlandIDEServices, INTAServices, LNTAServices) then
@@ -652,32 +700,26 @@ begin
     LToolsMenu := FindToolsMenu(LNTAServices.MainMenu);
     if Assigned(LToolsMenu) then
     begin
-      for I := 0 to LToolsMenu.Count - 1 do
-      begin
-        if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Getting Started') or
-           SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
-        begin
-          LToolsAlreadyPopulated := True;
-          Break;
-        end;
-      end;
-
-      if not LToolsAlreadyPopulated then
+      if not HasRadIAToolsMenu(LToolsMenu) then
       begin
         LogDebug('Tools/Ferramentas menu found');
-        LHook.PopulateToolsMenu(LToolsMenu);
-        LProjectWizardItem := TMenuItem.Create(LToolsMenu);
+        LRadIAMenu := TMenuItem.Create(LToolsMenu);
+        LRadIAMenu.Name := 'mnuRadIAToolsRoot';
+        LRadIAMenu.Caption := 'RadIA';
+        LToolsMenu.Add(LRadIAMenu);
+        LHook.PopulateToolsMenu(LRadIAMenu);
+        LSeparator := TMenuItem.Create(LRadIAMenu);
+        LSeparator.Caption := '-';
+        LRadIAMenu.Add(LSeparator);
+        LProjectWizardItem := TMenuItem.Create(LRadIAMenu);
         LProjectWizardItem.Caption := 'RadIA New Project...';
         LProjectWizardItem.OnClick := OnProjectWizardClick;
-        LToolsMenu.Add(LProjectWizardItem);
-        LExtensionManagerItem := TMenuItem.Create(LToolsMenu);
+        LRadIAMenu.Add(LProjectWizardItem);
+        LExtensionManagerItem := TMenuItem.Create(LRadIAMenu);
         LExtensionManagerItem.Caption := 'Rad IA Extensions...';
         LExtensionManagerItem.OnClick := OnExtensionManagerClick;
-        LToolsMenu.Add(LExtensionManagerItem);
-        LogDebug('Tools menu populated');
+        LRadIAMenu.Add(LExtensionManagerItem);
+        LogDebug('RadIA submenu populated');
       end;
     end
     else
@@ -691,50 +733,23 @@ procedure TRadIAWizard.OnTimerEvent(Sender: TObject);
 var
   LNTAServices: INTAServices;
   LToolsMenu: TMenuItem;
-  LToolsPopulated: Boolean;
-  I: Integer;
-  LHook: TRadIAEditorHook;
 begin
-  LToolsPopulated := False;
-  LHook := TRadIAEditorHook(FEditorHook);
-
-  if Supports(BorlandIDEServices, INTAServices, LNTAServices) then
+  if not Supports(BorlandIDEServices, INTAServices, LNTAServices) then
+    Exit;
+  LToolsMenu := FindToolsMenu(LNTAServices.MainMenu);
+  if not Assigned(LToolsMenu) then
+    Exit;
+  if not HasRadIAToolsMenu(LToolsMenu) then
   begin
-    // 1. Verificar e popular o menu Tools
-    LToolsMenu := FindToolsMenu(LNTAServices.MainMenu);
-    if Assigned(LToolsMenu) then
-    begin
-      for I := 0 to LToolsMenu.Count - 1 do
-      begin
-        if SameText(LToolsMenu[I].Caption, 'RadIA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Chat Panel') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Terminal') or
-           SameText(LToolsMenu[I].Caption, 'Rad IA Getting Started') or
-           SameText(LToolsMenu[I].Caption, 'Fix Last Compiler Error') then
-        begin
-          LToolsPopulated := True;
-          Break;
-        end;
-      end;
-
-      if not LToolsPopulated then
-      begin
-        LogDebug('Tools menu not populated or reset. Populating now...');
-        LHook.PopulateToolsMenu(LToolsMenu);
-        LToolsPopulated := True;
-        LogDebug('Tools menu populated successfully');
-      end;
-    end;
+    LogDebug('Tools menu not populated or reset. Populating now...');
+    RegisterMenus;
   end;
-
-  // Desliga o timer assim que o menu Tools estiver populado
-  if LToolsPopulated then
-  begin
-    LogDebug('Tools menu populated. Disabling timer.');
-    FTimer.Enabled := False;
-    RestoreWindowVisibility;
-    ShowRadIAOnboarding(False);
-  end;
+  if not HasRadIAToolsMenu(LToolsMenu) then
+    Exit;
+  LogDebug('Tools menu populated. Disabling timer.');
+  FTimer.Enabled := False;
+  RadIA.OTA.DockableForm.RestoreDockableFormVisibility;
+  ShowRadIAOnboarding(False);
 end;
 
 procedure TRadIAWizard.UnregisterMenus;
@@ -747,7 +762,8 @@ procedure TRadIAWizard.UnregisterMenus;
     begin
       try
         LItem := AToolsMenu[I];
-        if SameText(LItem.Caption, 'RadIA Chat Panel') or
+        if SameText(LItem.Name, 'mnuRadIAToolsRoot') or
+           SameText(LItem.Caption, 'RadIA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Chat Panel') or
            SameText(LItem.Caption, 'Rad IA Terminal') or
            SameText(LItem.Caption, 'Rad IA Getting Started') or
@@ -784,43 +800,6 @@ begin
   except
     on E: Exception do
       OutputDebugString(PChar('RadIA.Register.UnregisterMenus Main Error: ' + E.Message));
-  end;
-end;
-
-procedure TRadIAWizard.RestoreWindowVisibility;
-var
-  LReg: TRegistry;
-  LRegPath: string;
-  LVisible: Boolean;
-begin
-  LVisible := False;
-  LReg := TRegistry.Create;
-  try
-    LReg.RootKey := HKEY_CURRENT_USER;
-    LRegPath := TRadIAConfig.GetRegistryPath;
-    if LReg.OpenKeyReadOnly(LRegPath) then
-    begin
-      if LReg.ValueExists('WindowVisible') then
-        LVisible := LReg.ReadBool('WindowVisible');
-      LReg.CloseKey;
-    end;
-  finally
-    LReg.Free;
-  end;
-
-  if LVisible then
-  begin
-    LogDebug('Queueing window visibility restoration from registry');
-    TThread.ForceQueue(
-      nil,
-      procedure
-      begin
-        if GIsShuttingDown then
-          Exit;
-        LogDebug('Applying deferred window visibility restoration');
-        ShowRadIAChat;
-      end
-    );
   end;
 end;
 
@@ -1233,11 +1212,91 @@ initialization
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>
     )
   );
+  TRadIAContainer.Register<IRadIASemanticRequestClient>(
+    TRadIASemanticEngineSupervisor.Create(
+      TRadIASemanticEngineClient.DefaultExecutablePath
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticWorkspaceSynchronizer>(
+    TRadIASemanticWorkspaceSynchronizer.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticWorkspaceSource>(
+    TRadIAOTASemanticWorkspaceSource.Create(
+      TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticWorkspaceCoordinator>(
+    TRadIASemanticWorkspaceCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIASemanticWorkspaceSource>,
+      TRadIAContainer.Resolve<IRadIASemanticWorkspaceSynchronizer>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticMemberService>(
+    TRadIASemanticMemberService.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>,
+      TRadIAContainer.Resolve<IRadIADelphiEnvironmentService>,
+      TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticQueryService>(
+    TRadIASemanticQueryService.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>
+    )
+  );
+  TRadIAContainer.Register<IRadIAGeneratedArtifactService>(
+    TRadIAGeneratedArtifactService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+      TRadIAContainer.Resolve<IRadIAProjectFileFacade>
+    )
+  );
+  TRadIAContainer.Register<IRadIAProductivityGenerationService>(
+    TRadIAProductivityGenerationService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+      TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
+    )
+  );
+  TRadIAContainer.Register<IRadIAStackTraceAnalysisService>(
+    TRadIAStackTraceAnalysisService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>
+    )
+  );
+  TRadIAContainer.Register<IRadIACleanUsesService>(
+    TRadIACleanUsesService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
+  TRadIAContainer.Register<IRadIAThreadingAssistantService>(
+    TRadIAThreadingAssistantService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
+  TRadIAContainer.Register<IRadIAOpenApiRetrofitService>(
+    TRadIAOpenApiRetrofitService.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>
+    )
+  );
+  TRadIAContainer.Register<IRadIASemanticCompletionService>(
+    TRadIASemanticCompletionService.Create(
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>
+    )
+  );
   TRadIAContainer.Register<IRadIADelphiGuidanceCatalog>(
     TRadIADelphiGuidanceCatalog.Create
   );
   TRadIAContainer.Register<IRadIADfmPasAuditor>(
-    TRadIADfmPasAuditor.Create
+    TRadIADfmPasAuditor.Create(
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>
+    )
   );
   TRadIAContainer.Register<IRadIADesignerVisualDiffService>(
     TRadIADesignerVisualDiffService.Create(
@@ -1293,6 +1352,45 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAPatchService>,
     TRadIAContainer.Resolve<IRadIABlockReviewSession>
+  );
+  RegisterRadIASemanticMemberTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticMemberService>
+  );
+  RegisterRadIASemanticQueryTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIASemanticQueryService>
+  );
+  TRadIAContainer.Register<IRadIADextFormModernizationService>(
+    TRadIADextFormModernizationService.Create(
+      TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
+      TRadIAContainer.Resolve<IRadIADfmPasAuditor>
+    )
+  );
+  RegisterRadIAProductivityGenerationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAProductivityGenerationService>,
+    TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
+  );
+  RegisterRadIAStackTraceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAStackTraceAnalysisService>
+  );
+  RegisterRadIACleanUsesTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIACleanUsesService>
+  );
+  RegisterRadIAThreadingAssistantTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAThreadingAssistantService>
+  );
+  RegisterRadIAOpenApiRetrofitTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAOpenApiRetrofitService>
+  );
+  RegisterRadIADextFormModernizationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIADextFormModernizationService>
   );
   RegisterRadIAMemoryInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
@@ -1453,7 +1551,9 @@ initialization
         'Web'
       ),
       TRadIAContainer.Resolve<IRadIAToolRegistry>,
-      TRadIAContainer.Resolve<IRadIAExternalMcpRuntime>
+      TRadIAContainer.Resolve<IRadIAExternalMcpRuntime>,
+      TRadIAContainer.Resolve<IRadIASemanticRequestClient>,
+      TRadIAContainer.Resolve<IRadIASemanticCompletionService>
     )
   );
   RegisterRadIAFastMM5Tools(
@@ -1482,6 +1582,8 @@ initialization
     TRadIAServiceInlineCompletionProvider.Create(
       TRadIAContainer.Resolve<IRadIAService>,
       TRadIAContainer.Resolve<IRadIAConfig>,
+      TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+      TRadIAContainer.Resolve<IRadIASemanticCompletionService>,
       30000
     )
   );

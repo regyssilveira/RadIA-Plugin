@@ -2,6 +2,9 @@ unit RadIA.Core.DfmPasAudit;
 
 interface
 
+uses
+  RadIA.Core.SemanticQueries;
+
 type
   TRadIADfmPasSeverity = (
     dpsInfo,
@@ -68,7 +71,13 @@ type
   end;
 
   TRadIADfmPasAuditor = class(TInterfacedObject, IRadIADfmPasAuditor)
+  private
+    FSemanticQueries: IRadIASemanticQueryService;
   public
+    constructor Create; overload;
+    constructor Create(
+      const ASemanticQueries: IRadIASemanticQueryService
+    ); overload;
     function Audit(
       const AInput: TRadIADfmPasAuditInput
     ): TRadIADfmPasAuditResult;
@@ -385,42 +394,68 @@ end;
 procedure AuditEvents(
   const AEvents: TList<TRadIADfmEvent>;
   const AMethods: TDictionary<string, TRadIANamedDeclaration>;
+  const ARootClassName: string;
+  const ASemanticQueries: IRadIASemanticQueryService;
   const AFindings: TList<TRadIADfmPasFinding>
 );
 var
   LEvent: TRadIADfmEvent;
   LMethod: TRadIANamedDeclaration;
+  LQueryError: string;
+  LResolvedMember: TRadIASemanticLocation;
+  LResolvedMembers: TDictionary<string, Boolean>;
+  LResolvedSymbols: TArray<TRadIASemanticLocation>;
 begin
-  for LEvent in AEvents do
-  begin
-    if not AMethods.TryGetValue(LowerCase(LEvent.HandlerName), LMethod) then
+  LResolvedMembers := TDictionary<string, Boolean>.Create;
+  try
+    if Assigned(ASemanticQueries) and
+      ASemanticQueries.FindResolvedMembers(
+        ARootClassName,
+        LResolvedSymbols,
+        LQueryError
+      ) then
+      for LResolvedMember in LResolvedSymbols do
+        LResolvedMembers.AddOrSetValue(
+          LowerCase(LResolvedMember.Name),
+          True
+        );
+    for LEvent in AEvents do
     begin
-      AddFinding(
-        AFindings,
-        TRadIADfmPasFinding.Create(
-          'missing_event_handler',
-          dpsError,
-          'dfm',
-          LEvent.Line,
-          LEvent.HandlerName,
-          'DFM event references a missing Pascal method.'
-        )
-      );
-      Continue;
+      if not AMethods.TryGetValue(LowerCase(LEvent.HandlerName), LMethod) then
+      begin
+        if LResolvedMembers.ContainsKey(
+          LowerCase(LEvent.HandlerName)
+        ) then
+          Continue;
+        AddFinding(
+          AFindings,
+          TRadIADfmPasFinding.Create(
+            'missing_event_handler',
+            dpsError,
+            'dfm',
+            LEvent.Line,
+            LEvent.HandlerName,
+            'DFM event references a missing Pascal method.'
+          )
+        );
+        Continue;
+      end;
+      if IsNotifyEvent(LEvent.EventName) and
+        not IsCompatibleNotifyDeclaration(LMethod.TypeName) then
+        AddFinding(
+          AFindings,
+          TRadIADfmPasFinding.Create(
+            'incompatible_event_handler',
+            dpsError,
+            'pas',
+            LMethod.Line,
+            LMethod.Name,
+            'Common notification event handler must receive Sender: TObject.'
+          )
+        );
     end;
-    if IsNotifyEvent(LEvent.EventName) and
-      not IsCompatibleNotifyDeclaration(LMethod.TypeName) then
-      AddFinding(
-        AFindings,
-        TRadIADfmPasFinding.Create(
-          'incompatible_event_handler',
-          dpsError,
-          'pas',
-          LMethod.Line,
-          LMethod.Name,
-          'Common notification event handler must receive Sender: TObject.'
-        )
-      );
+  finally
+    LResolvedMembers.Free;
   end;
 end;
 
@@ -567,6 +602,20 @@ end;
 
 { TRadIADfmPasAuditor }
 
+constructor TRadIADfmPasAuditor.Create;
+begin
+  inherited Create;
+  FSemanticQueries := nil;
+end;
+
+constructor TRadIADfmPasAuditor.Create(
+  const ASemanticQueries: IRadIASemanticQueryService
+);
+begin
+  inherited Create;
+  FSemanticQueries := ASemanticQueries;
+end;
+
 function TRadIADfmPasAuditor.Audit(
   const AInput: TRadIADfmPasAuditInput
 ): TRadIADfmPasAuditResult;
@@ -594,7 +643,13 @@ begin
     ParsePascal(AInput.PasContent, LFields, LMethods, LPasRoot);
     AuditRootClass(LDfmRoot, LPasRoot, LFindings);
     AuditComponents(LComponents, LFields, LDfmRoot.Name, LFindings);
-    AuditEvents(LEvents, LMethods, LFindings);
+    AuditEvents(
+      LEvents,
+      LMethods,
+      LPasRoot.Name,
+      FSemanticQueries,
+      LFindings
+    );
     AuditOrphanFields(LComponents, LFields, LFindings);
     AuditOrphanHandlers(LComponents, LEvents, LMethods, LFindings);
     Result := TRadIADfmPasAuditResult.Create(LFindings.ToArray);

@@ -67,6 +67,8 @@ type
     );
     procedure CancelCurrentRequest;
     procedure ClearCache;
+    function ListCacheEntries: TArray<TRadIACacheEntrySnapshot>;
+    function RemoveCacheEntry(const AHash: string): Boolean;
   end;
 
 implementation
@@ -690,6 +692,19 @@ procedure TRadIAService.ClearCache;
 begin
   if Assigned(FCacheManager) then
     FCacheManager.Clear;
+end;
+
+function TRadIAService.ListCacheEntries: TArray<TRadIACacheEntrySnapshot>;
+begin
+  if Assigned(FCacheManager) then
+    Result := FCacheManager.ListEntries
+  else
+    Result := [];
+end;
+
+function TRadIAService.RemoveCacheEntry(const AHash: string): Boolean;
+begin
+  Result := Assigned(FCacheManager) and FCacheManager.Remove(AHash);
 end;
 
 end.

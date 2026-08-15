@@ -1,6 +1,6 @@
 <div align="right">
 
-[Português](README.md) | [English](README.en.md) | [Documentation](docs/README.en.md) | [Roadmap](docs/roadmap.en.md)
+[Português](README.md) | [English](README.en.md) | [Documentation](docs/README.en.md) | [Roadmap](docs/project/roadmap.en.md)
 
 </div>
 
@@ -16,13 +16,18 @@ evidence that validates a fix, with consent and workspace boundaries.
 
 ## Start here
 
-1. [Install and configure RadIA](docs/install_config.en.md).
-2. Read the [user manual](docs/user_manual.en.md).
+1. [Install and configure RadIA](docs/getting-started/install_config.en.md).
+2. Read the [user manual](docs/guides/user_manual.en.md).
 3. Use the [documentation hub](docs/README.en.md) to find guides by task.
-4. Review the [capability map](docs/capabilities.en.md) for the current product scope.
+4. Review the [capability map](docs/reference/capabilities.en.md) for the current product scope.
 
 Type `/help` in chat for a capability summary, primary commands, and documentation links. Links open
 in the Windows default browser.
+
+A new conversation starts with the goal—understand, fix, create, or debug—while keeping code,
+build, test, debugger, Form Designer, terminal, MCP, and skill capabilities visible. Start actions
+only prepare the request; provider, model, mode, route, and advanced controls remain available for
+inspection and customization.
 
 ## Which mode should I use?
 
@@ -37,7 +42,7 @@ in the Windows default browser.
 The **provider** selects the model and authentication; **mode** controls agent execution; the
 **executor** determines who conducts the request; **MCP** is an independent tool bridge. When a plan
 awaits approval, select **Approve plan** or type `/agent resume`. See the
-[complete executor guide](docs/cli_executors.en.md).
+[complete executor guide](docs/guides/cli_executors.en.md).
 
 ## Compatibility
 
@@ -53,22 +58,22 @@ Delphi 11 is outside the current support matrix.
 
 | Area | What RadIA provides | Guide |
 |---|---|---|
-| Chat | Providers, streaming, sessions, follow-up queue, templates, history, and commands | [Chat and sessions](docs/user_guide_chat_sessions.en.md) |
-| Scoped settings | Provider, model, executor, and limits by project, session, or next request | [Scoped settings](docs/hierarchical_settings.en.md) |
-| Shared context | Continue one journey across chat, terminal, and editor without copying history | [Shared context](docs/shared_journey_context.en.md) |
-| Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/user_guide_editor_generation.en.md) |
-| Ghost Text/FIM | Complete at the cursor, compare alternatives, and inspect shared semantic context | [Inline assistance and FIM](docs/inline_completion.en.md) |
-| Block review | Accept, reject, edit, explain, and apply reviewed changes from the gutter | [Block-level review](docs/block_reviews.en.md) |
-| Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/project_wizard.en.md) |
-| DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/user_guide_dext_journeys.en.md) |
-| Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/user_guide_journeys.en.md) |
-| Designer and debugger | Components, events, execution, breakpoints, watches, and call stack | [Designer and debugger](docs/user_guide_designer_debugger.en.md) |
-| Runtime diagnostics | Reproduce a visual failure, fix it, and replay the scenario | [Runtime diagnostics](docs/runtime_debug_automation.en.md) |
-| Memory | Instrument Debug builds with FastMM5 and compare a fix | [FastMM5 diagnostics](docs/fastmm5_diagnostic_session.en.md) |
-| Agent | Plan, execute tools, pause, resume, cancel, and restore checkpoints | [User manual](docs/user_manual.en.md) |
-| MCP | Expose IDE tools to authorized local clients | [MCP integration](docs/mcp_integration_guide.en.md) |
-| Terminal | Use ConPTY with Unicode, true color, alternate screen, protected paste, SGR mouse, and OSC 8 | [Terminal](docs/terminal.en.md) |
-| Knowledge | Index and search the local project | [Project knowledge](docs/user_guide_project_knowledge.en.md) |
+| Chat | Providers, streaming, sessions, follow-up queue, templates, history, and commands | [Chat and sessions](docs/guides/user_guide_chat_sessions.en.md) |
+| Scoped settings | Provider, model, executor, and limits by project, session, or next request | [Scoped settings](docs/guides/hierarchical_settings.en.md) |
+| Shared context | Continue one journey across chat, terminal, and editor without copying history | [Shared context](docs/guides/shared_journey_context.en.md) |
+| Editor | Explain, review, refactor, generate code, tests, DTOs, and documentation | [Editor and generation](docs/guides/user_guide_editor_generation.en.md) |
+| Ghost Text/FIM | Complete at the cursor, compare alternatives, and inspect shared semantic context | [Inline assistance and FIM](docs/guides/inline_completion.en.md) |
+| Block review | Accept, reject, edit, explain, and apply reviewed changes from the gutter | [Block-level review](docs/guides/block_reviews.en.md) |
+| Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/guides/project_wizard.en.md) |
+| DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/guides/user_guide_dext_journeys.en.md) |
+| Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/guides/user_guide_journeys.en.md) |
+| Designer and debugger | Components, events, execution, breakpoints, watches, and call stack | [Designer and debugger](docs/guides/user_guide_designer_debugger.en.md) |
+| Runtime diagnostics | Reproduce a visual failure, fix it, and replay the scenario | [Runtime diagnostics](docs/guides/runtime_debug_automation.en.md) |
+| Memory | Instrument Debug builds with FastMM5 and compare a fix | [FastMM5 diagnostics](docs/guides/fastmm5_diagnostic_session.en.md) |
+| Agent | Plan, execute tools, pause, resume, cancel, and restore checkpoints | [User manual](docs/guides/user_manual.en.md) |
+| MCP | Expose IDE tools to authorized local clients | [MCP integration](docs/guides/mcp_integration_guide.en.md) |
+| Terminal | Use ConPTY with Unicode, true color, alternate screen, protected paste, SGR mouse, and OSC 8 | [Terminal](docs/guides/terminal.en.md) |
+| Knowledge | Index and search the local project | [Project knowledge](docs/guides/user_guide_project_knowledge.en.md) |
 
 ## Native agent, CLI, provider, and MCP
 
@@ -83,7 +88,7 @@ These settings have separate responsibilities:
 OpenAI API via API Key uses HTTP transport and API Platform billing. ChatGPT Pro uses the Codex CLI
 session and quota. In the latter route, **RadIA native** keeps orchestration inside RadIA, while
 **Codex CLI direct** delegates the complete execution to the CLI. See the
-[executor matrix](docs/cli_executors.en.md).
+[executor matrix](docs/guides/cli_executors.en.md).
 
 ## Tools and commands
 
@@ -91,13 +96,13 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - `/help` summarizes the product and links to the applicable documentation.
 - `/journey` lists journeys that collect missing input without losing conversational context.
 - `/scope` shows effective values and overrides or restores inheritance without an IDE restart.
-- The [148-tool runtime catalog](docs/runtime_tool_catalog.en.md) lists built-in registrations.
-- The [operational reference](docs/internal_tools_reference.en.md) explains purpose and activation.
-- The [slash command guide](docs/slash_commands.en.md) documents commands and examples.
-- The [security model](docs/tool_security_model.en.md) explains risk, consent, and auditing.
-- [Declarative extensions](docs/declarative_extensions.en.md) explains how to share commands, skills,
+- The [162-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
+- The [operational reference](docs/reference/internal_tools_reference.en.md) explains purpose and activation.
+- The [slash command guide](docs/reference/slash_commands.en.md) documents commands and examples.
+- The [security model](docs/reference/tool_security_model.en.md) explains risk, consent, and auditing.
+- [Declarative extensions](docs/guides/declarative_extensions.en.md) explains how to share commands, skills,
   knowledge, references, templates, aliases, and workflows in `.radiaext` packages.
-- [Skill portability](docs/skill_portability.en.md) publishes one definition to four CLIs with
+- [Skill portability](docs/guides/skill_portability.en.md) publishes one definition to four CLIs with
   preview, consent, rollback, and conflict preservation.
 
 The runtime `/tools` response is authoritative. Roadmaps and architectural catalogs may include
@@ -115,7 +120,7 @@ manifest. Repair reapplies those components while preserving settings, and unins
 data by default.
 
 To find and understand any settings field or button, see the
-[complete settings reference](docs/settings_reference.en.md).
+[complete settings reference](docs/reference/settings_reference.en.md).
 
 ## Build and install from source
 
@@ -138,7 +143,7 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
 ```
 
 `-Test` builds and runs the tests, but does not install without `-Install`. After installation, open
-the IDE and run `/doctor`. See the [installation guide](docs/install_config.en.md) for build, test,
+the IDE and run `/doctor`. See the [installation guide](docs/getting-started/install_config.en.md) for build, test,
 package installation, and troubleshooting instructions.
 
 ## Security and privacy
@@ -150,22 +155,22 @@ package installation, and troubleshooting instructions.
 - MCP reuses the same policies as chat.
 - RadIA does not send code to a provider without a user-initiated action.
 
-See the [tool security model](docs/tool_security_model.en.md) and the
-[privacy and compliance guide](docs/compliance.en.md).
+See the [tool security model](docs/reference/tool_security_model.en.md) and the
+[privacy and compliance guide](docs/development/compliance.en.md).
 
 ## Development and contribution
 
-- [Architecture](docs/architecture_guide.en.md)
-- [Source code map](docs/source_code_guide.en.md)
-- [Compatibility matrix](docs/delphi_compatibility_matrix.en.md)
-- [Branch convention](docs/branch_convention.en.md)
-- [Commit convention](docs/commit_convention.en.md)
-- [Release process](docs/release_process.en.md)
-- [Backlog](docs/backlog.en.md)
+- [Architecture](docs/development/architecture_guide.en.md)
+- [Source code map](docs/development/source_code_guide.en.md)
+- [Compatibility matrix](docs/reference/delphi_compatibility_matrix.en.md)
+- [Branch convention](docs/development/branch_convention.en.md)
+- [Commit convention](docs/development/commit_convention.en.md)
+- [Release process](docs/development/release_process.en.md)
+- [Backlog](docs/project/backlog.en.md)
 
 Source code, identifiers, comments, and commits are written in English. The primary user
 documentation is maintained in Brazilian Portuguese, with English versions where available.
 
 ## License
 
-See [LICENSE](LICENSE) and the [compliance guide](docs/compliance.en.md).
+See [LICENSE](LICENSE) and the [compliance guide](docs/development/compliance.en.md).

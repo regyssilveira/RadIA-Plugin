@@ -5,10 +5,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$manifestPath = Join-Path $repositoryRoot "docs\runtime_tools.json"
-$catalogPath = Join-Path $repositoryRoot "docs\runtime_tool_catalog.md"
-$englishCatalogPath = Join-Path $repositoryRoot "docs\runtime_tool_catalog.en.md"
-$referencePath = Join-Path $repositoryRoot "docs\internal_tools_reference.md"
+$manifestPath = Join-Path $repositoryRoot "docs\reference\runtime_tools.json"
+$catalogPath = Join-Path $repositoryRoot "docs\reference\runtime_tool_catalog.md"
+$englishCatalogPath = Join-Path $repositoryRoot "docs\reference\runtime_tool_catalog.en.md"
+$referencePath = Join-Path $repositoryRoot "docs\reference\internal_tools_reference.md"
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 |
     ConvertFrom-Json
 $seenTools = @{}
@@ -28,6 +28,8 @@ $englishPurposeOverrides = @{
 $portugueseGroupNames = @{
     "Workspace" = "Workspace e editor"
     "Delphi environment" = "Ambiente Delphi"
+    "Semantic code generation" = "Geração semântica de código"
+    "Semantic index queries" = "Consultas ao índice semântico"
     "Curated Delphi guidance" = "Orientação Delphi curada"
     "DFM and Pascal consistency" = "Consistência entre DFM e Pascal"
     "Designer visual diff" = "Diff visual do Designer"
@@ -41,6 +43,12 @@ $portugueseGroupNames = @{
     "Development transactions" = "Transações de desenvolvimento"
     "Project templates" = "Templates de projeto"
     "Project files" = "Arquivos de projeto"
+    "Safe productivity artifacts" = "Artefatos de produtividade seguros"
+    "Project stack trace diagnostics" = "Diagnóstico de stack trace do projeto"
+    "Clean uses analysis" = "Análise Clean Uses"
+    "Thread and PPL safety" = "Segurança de threads e PPL"
+    "Existing API OpenAPI retrofit" = "Retrofit OpenAPI de APIs existentes"
+    "DEXT and form modernization" = "Modernização DEXT e de forms"
     "Inline reviews" = "Revisões inline"
     "Build" = "Build"
     "Form Designer inspection" = "Inspeção do Form Designer"

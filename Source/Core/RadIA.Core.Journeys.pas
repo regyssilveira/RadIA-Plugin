@@ -467,7 +467,11 @@ begin
       'reusable code, update project references, document applicable provenance, then build it ' +
       'and iterate from compiler evidence until completion or a proven external blocker. Infer ' +
       'a deterministic template and project specification when available. Calculator requests ' +
-      'use the VCL template with projectSpecification kind calculator. With no active project, ' +
+      'use the VCL template with projectSpecification kind calculator and creationProfile ' +
+      'essential by default. Never add tests or other optional project features based only on a ' +
+      'generic request for a project. After the essential project builds, present explicit choices ' +
+      'to keep it as-is or add DUnitX and other available features. Apply a complete or custom ' +
+      'profile only after the user explicitly selects or requests those additions. With no active project, ' +
       'use the user-approved destination parent as authorizedRoot. Use OpenCreatedProject, ' +
       'ValidateCreatedProject, and IDE execution tools instead of invoking MSBuild from a CLI. ' +
       'For executable projects, start the application after a successful build, confirm its main ' +

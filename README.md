@@ -1,6 +1,6 @@
 <div align="right">
 
-[Português](README.md) | [English](README.en.md) | [Documentação](docs/README.md) | [Roadmap](docs/roadmap.md)
+[Português](README.md) | [English](README.en.md) | [Documentação](docs/README.md) | [Roadmap](docs/project/roadmap.md)
 
 </div>
 
@@ -16,15 +16,20 @@ produzir evidências para validar uma correção — sempre com consentimento e 
 
 ## Comece aqui
 
-1. [Instale e configure o RadIA](docs/install_config.md).
-2. Siga os [primeiros passos](docs/onboarding.md).
-3. Consulte o [manual completo do usuário](docs/user_manual.md).
+1. [Instale e configure o RadIA](docs/getting-started/install_config.md).
+2. Siga os [primeiros passos](docs/getting-started/onboarding.md).
+3. Consulte o [manual completo do usuário](docs/guides/user_manual.md).
 4. Use o [centro de documentação](docs/README.md) para localizar qualquer assunto por tarefa.
 
-Se você quer primeiro entender o alcance do produto, veja [tudo que o RadIA pode fazer](docs/capabilities.md).
+Se você quer primeiro entender o alcance do produto, veja [tudo que o RadIA pode fazer](docs/reference/capabilities.md).
 
 No chat, digite `/help` para ver um resumo das capacidades, os comandos principais e links para a
 documentação. Os links são abertos no navegador padrão do Windows.
+
+Uma conversa nova começa pelo objetivo — entender, corrigir, criar ou depurar — e mantém visíveis
+as capacidades de código, build, testes, debugger, Form Designer, terminal, MCP e skills. As ações
+iniciais apenas preparam o pedido; provider, modelo, modo, rota e controles avançados continuam
+disponíveis para inspeção e personalização.
 
 ## Qual modo usar?
 
@@ -39,7 +44,7 @@ documentação. Os links são abertos no navegador padrão do Windows.
 **Provider** escolhe o modelo e a forma de autenticação; **modo** define se há execução agentiva;
 **executor** define quem conduz a solicitação; **MCP** é uma ponte de ferramentas independente.
 Quando um plano aguardar aprovação, clique em **Approve plan** ou digite `/agent resume`.
-Veja a [explicação completa dos executores](docs/cli_executors.md).
+Veja a [explicação completa dos executores](docs/guides/cli_executors.md).
 
 Você não precisa escolher previamente a combinação correta para criar um projeto. Pedidos naturais
 como **“crie uma calculadora VCL em D:\Projetos\Calculadora”** são reconhecidos como uma jornada de
@@ -62,23 +67,23 @@ Delphi 11 não faz parte da matriz atual.
 
 | Área | Capacidades principais | Guia |
 |---|---|---|
-| Chat | Providers, streaming, sessões, fila de continuações, templates, histórico e comandos | [Chat e sessões](docs/user_guide_chat_sessions.md) |
-| Configurações por escopo | Provider, modelo, executor e limites por projeto, sessão ou próxima solicitação | [Configurações por escopo](docs/hierarchical_settings.md) |
-| Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/shared_journey_context.md) |
-| Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/user_guide_editor_generation.md) |
-| Ghost Text/FIM | Completar no cursor, comparar alternativas e inspecionar o contexto semântico compartilhado | [Assistência inline e FIM](docs/inline_completion.md) |
-| Revisão por bloco | Aceitar, rejeitar, editar e aplicar mudanças pelo gutter | [Revisão por bloco](docs/block_reviews.md) |
-| Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/project_wizard.md) |
-| DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/user_guide_dext_journeys.md) |
-| Build e testes | Compilar, estruturar erros, executar DUnitX e usar resultados como gate | [Jornadas](docs/user_guide_journeys.md) |
-| Designer | Consultar e alterar componentes, propriedades, eventos e layout | [Designer e debugger](docs/user_guide_designer_debugger.md) |
-| Debugger | Iniciar, pausar, continuar, executar passos, breakpoints, watches e call stack | [Designer e debugger](docs/user_guide_designer_debugger.md) |
-| Diagnóstico runtime | Reproduzir uma falha visual, corrigir e repetir o mesmo cenário | [Diagnóstico runtime](docs/runtime_debug_automation.md) |
-| Memória | Instrumentar Debug com FastMM5, analisar leaks e comparar a correção | [Diagnóstico FastMM5](docs/fastmm5_diagnostic_session.md) |
-| Agente | Planejar, executar tools, pausar, retomar, cancelar e restaurar checkpoints | [Modo agente](docs/user_manual.md#3-como-ativar-o-modo-agente) |
-| MCP | Expor as mesmas tools da IDE a clientes locais autorizados | [Integração MCP](docs/mcp_integration_guide.md) |
-| Terminal | Usar ConPTY com Unicode, true color, alternate screen, paste protegido, mouse SGR e OSC 8 | [Terminal](docs/terminal.md) |
-| Conhecimento | Indexar e pesquisar o projeto localmente | [Conhecimento do projeto](docs/user_guide_project_knowledge.md) |
+| Chat | Providers, streaming, sessões, fila de continuações, templates, histórico e comandos | [Chat e sessões](docs/guides/user_guide_chat_sessions.md) |
+| Configurações por escopo | Provider, modelo, executor e limites por projeto, sessão ou próxima solicitação | [Configurações por escopo](docs/guides/hierarchical_settings.md) |
+| Contexto compartilhado | Continuar a mesma jornada no chat, terminal e editor sem copiar histórico | [Contexto compartilhado](docs/guides/shared_journey_context.md) |
+| Editor | Explicar, revisar, refatorar, gerar código, testes, DTOs e documentação | [Editor e geração](docs/guides/user_guide_editor_generation.md) |
+| Ghost Text/FIM | Completar no cursor, comparar alternativas e inspecionar o contexto semântico compartilhado | [Assistência inline e FIM](docs/guides/inline_completion.md) |
+| Revisão por bloco | Aceitar, rejeitar, editar e aplicar mudanças pelo gutter | [Revisão por bloco](docs/guides/block_reviews.md) |
+| Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/guides/project_wizard.md) |
+| DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/guides/user_guide_dext_journeys.md) |
+| Build e testes | Compilar, estruturar erros, executar DUnitX e usar resultados como gate | [Jornadas](docs/guides/user_guide_journeys.md) |
+| Designer | Consultar e alterar componentes, propriedades, eventos e layout | [Designer e debugger](docs/guides/user_guide_designer_debugger.md) |
+| Debugger | Iniciar, pausar, continuar, executar passos, breakpoints, watches e call stack | [Designer e debugger](docs/guides/user_guide_designer_debugger.md) |
+| Diagnóstico runtime | Reproduzir uma falha visual, corrigir e repetir o mesmo cenário | [Diagnóstico runtime](docs/guides/runtime_debug_automation.md) |
+| Memória | Instrumentar Debug com FastMM5, analisar leaks e comparar a correção | [Diagnóstico FastMM5](docs/guides/fastmm5_diagnostic_session.md) |
+| Agente | Planejar, executar tools, pausar, retomar, cancelar e restaurar checkpoints | [Modo agente](docs/guides/user_manual.md#3-como-ativar-o-modo-agente) |
+| MCP | Expor as mesmas tools da IDE a clientes locais autorizados | [Integração MCP](docs/guides/mcp_integration_guide.md) |
+| Terminal | Usar ConPTY com Unicode, true color, alternate screen, paste protegido, mouse SGR e OSC 8 | [Terminal](docs/guides/terminal.md) |
+| Conhecimento | Indexar e pesquisar o projeto localmente | [Conhecimento do projeto](docs/guides/user_guide_project_knowledge.md) |
 
 ## Agente nativo, CLI, provider e MCP
 
@@ -92,7 +97,7 @@ Essas escolhas têm responsabilidades diferentes:
 O OpenAI API via API Key usa transporte HTTP e cobrança da plataforma API. O ChatGPT Pro usa a
 sessão e a cota do Codex CLI. Nesse segundo caso, **RadIA native** mantém a orquestração dentro do
 RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja a
-[matriz completa de executores](docs/cli_executors.md).
+[matriz completa de executores](docs/guides/cli_executors.md).
 
 ## Ferramentas e comandos
 
@@ -100,14 +105,14 @@ RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja 
 - `/help` resume o produto e aponta para a documentação aplicável.
 - `/journey` lista jornadas que coletam dados ausentes sem perder o contexto da conversa.
 - `/scope` mostra valores efetivos e permite sobrescrever ou restaurar herança sem reiniciar a IDE.
-- [Catálogo das 148 ferramentas](docs/runtime_tool_catalog.md) lista o catálogo interno gerado.
-- [Referência operacional](docs/internal_tools_reference.md) explica o que cada ferramenta faz e
+- [Catálogo das 162 ferramentas](docs/reference/runtime_tool_catalog.md) lista o catálogo interno gerado.
+- [Referência operacional](docs/reference/internal_tools_reference.md) explica o que cada ferramenta faz e
   quando pode ser acionada.
-- [Comandos de barra](docs/slash_commands.md) documenta comandos, argumentos e exemplos.
-- [Modelo de segurança](docs/tool_security_model.md) explica riscos, consentimento e auditoria.
-- [Extensões declarativas](docs/declarative_extensions.md) ensina a compartilhar comandos, skills,
+- [Comandos de barra](docs/reference/slash_commands.md) documenta comandos, argumentos e exemplos.
+- [Modelo de segurança](docs/reference/tool_security_model.md) explica riscos, consentimento e auditoria.
+- [Extensões declarativas](docs/guides/declarative_extensions.md) ensina a compartilhar comandos, skills,
   conhecimento, referências, templates, aliases e workflows em pacotes `.radiaext`.
-- [Portabilidade de skills](docs/skill_portability.md) publica uma definição nos quatro CLIs com
+- [Portabilidade de skills](docs/guides/skill_portability.md) publica uma definição nos quatro CLIs com
   preview, consentimento, rollback e preservação de conflitos.
 
 O catálogo retornado por `/tools` é a fonte mais precisa em runtime. Documentos de roadmap e
@@ -147,10 +152,10 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
 `-Test` compila e executa os testes, mas não instala sem `-Install`. Depois da instalação, abra a IDE
 e execute `/doctor`. O procedimento completo, incluindo build, teste, instalação por pacote e
 solução de problemas, está no
-[guia de instalação e configuração](docs/install_config.md).
+[guia de instalação e configuração](docs/getting-started/install_config.md).
 
 Para localizar e entender qualquer campo ou botão de configuração, consulte a
-[referência completa das configurações](docs/settings_reference.md).
+[referência completa das configurações](docs/reference/settings_reference.md).
 
 ## Segurança e privacidade
 
@@ -161,22 +166,22 @@ Para localizar e entender qualquer campo ou botão de configuração, consulte a
 - MCP reutiliza as mesmas políticas do chat.
 - O RadIA não envia código a um provider sem uma ação iniciada pelo usuário.
 
-Consulte [segurança das ferramentas](docs/tool_security_model.md) e
-[privacidade e compliance](docs/compliance.md).
+Consulte [segurança das ferramentas](docs/reference/tool_security_model.md) e
+[privacidade e compliance](docs/development/compliance.md).
 
 ## Desenvolvimento e contribuição
 
-- [Arquitetura](docs/architecture_guide.md)
-- [Mapa do código-fonte](docs/source_code_guide.md)
-- [Matriz de compatibilidade](docs/delphi_compatibility_matrix.md)
-- [Convenção de branches](docs/branch_convention.md)
-- [Convenção de commits](docs/commit_convention.md)
-- [Processo de release](docs/release_process.md)
-- [Backlog](docs/backlog.md)
+- [Arquitetura](docs/development/architecture_guide.md)
+- [Mapa do código-fonte](docs/development/source_code_guide.md)
+- [Matriz de compatibilidade](docs/reference/delphi_compatibility_matrix.md)
+- [Convenção de branches](docs/development/branch_convention.md)
+- [Convenção de commits](docs/development/commit_convention.md)
+- [Processo de release](docs/development/release_process.md)
+- [Backlog](docs/project/backlog.md)
 
 O código, identificadores, comentários e commits são escritos em inglês. Discussões e documentação
 principal são mantidas em português do Brasil, com versões em inglês quando disponíveis.
 
 ## Licença
 
-Consulte o arquivo [LICENSE](LICENSE) e o [guia de compliance](docs/compliance.md).
+Consulte o arquivo [LICENSE](LICENSE) e o [guia de compliance](docs/development/compliance.md).

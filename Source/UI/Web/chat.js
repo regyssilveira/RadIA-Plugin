@@ -183,6 +183,11 @@ const btnExportExecutionScope = document.getElementById('btn-export-execution-sc
 const executionRoute  = document.getElementById('execution-route');
 const composerRoute   = document.getElementById('composer-route');
 const executionRouteSelector = document.getElementById('select-execution-route');
+const reasoningEffortSelector = document.getElementById('select-reasoning-effort');
+const effortDropdownWrapper = document.getElementById('effort-dropdown-wrapper');
+const effortDropdownTrigger = document.getElementById('effort-dropdown-trigger');
+const effortDropdownValue = document.getElementById('effort-dropdown-value');
+const effortOptionsList = document.getElementById('effort-options-list');
 
 function setComposerAdvancedVisible(visible) {
   if (!btnComposerAdvanced || !composerAdvancedOptions) return;
@@ -815,6 +820,108 @@ function renderAgentPlanItems(planElement, plan) {
   });
 }
 
+const PROJECT_OPERATION_STAGES = [
+  { id: 'prepare', label: 'Preparing request', tools: [] },
+  { id: 'preview', label: 'Reviewing project structure', tools: ['PreviewProjectTemplate'] },
+  { id: 'create', label: 'Creating project files', tools: ['CreateProjectFromTemplate'] },
+  {
+    id: 'open',
+    label: 'Opening project in Delphi',
+    tools: ['OpenCreatedProject', 'ValidateCreatedProject']
+  },
+  {
+    id: 'build',
+    label: 'Building the project',
+    tools: ['ValidateCreatedProject', 'BuildProject']
+  },
+  { id: 'complete', label: 'Project ready', tools: [] }
+];
+
+function isProjectCreationRun(state) {
+  const objective = String(state.objective || '').toLowerCase();
+  const planText = (Array.isArray(state.plan) ? state.plan : [])
+    .map(step => `${step?.title || ''} ${step?.description || ''}`)
+    .join(' ')
+    .toLowerCase();
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const hasProjectTool = steps.some(step => PROJECT_OPERATION_STAGES.some(stage =>
+    stage.tools.includes(step.toolName)
+  ));
+  return hasProjectTool || /\b(create|generate|new)\b.*\bproject\b/u.test(`${objective} ${planText}`);
+}
+
+function getProjectStageState(stage, state) {
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const matchingSteps = steps.filter(step => stage.tools.includes(step.toolName));
+  const stageSucceeded = step => {
+    if (!step.success) return false;
+    if (stage.id !== 'build' || step.toolName !== 'ValidateCreatedProject') return true;
+    const result = parseAgentStepResult(step);
+    return result?.buildSucceeded === true;
+  };
+  const failed = matchingSteps.some(step => !stageSucceeded(step));
+  if (failed) return 'failed';
+  if (matchingSteps.length > 0) return 'completed';
+  if (stage.id === 'prepare') return 'completed';
+  if (stage.id === 'complete' && state.status === 'completed') return 'completed';
+
+  const stageIndex = PROJECT_OPERATION_STAGES.indexOf(stage);
+  const furthestCompletedIndex = PROJECT_OPERATION_STAGES.reduce((furthest, candidate, index) => {
+    const wasCompleted = steps.some(step => {
+      if (!candidate.tools.includes(step.toolName) || !step.success) return false;
+      if (candidate.id !== 'build' || step.toolName !== 'ValidateCreatedProject') return true;
+      return parseAgentStepResult(step)?.buildSucceeded === true;
+    });
+    return wasCompleted ? Math.max(furthest, index) : furthest;
+  }, 0);
+  if (state.status === 'failed' || state.status === 'cancelled') return 'pending';
+  return stageIndex === furthestCompletedIndex + 1 ? 'current' : 'pending';
+}
+
+function renderProjectOperationSummary(card, state) {
+  const summary = card.querySelector('.agent-operation-summary');
+  const stagesElement = card.querySelector('.agent-operation-stages');
+  const exclusions = card.querySelector('.agent-operation-exclusions');
+  const result = card.querySelector('.agent-operation-result');
+  const actions = card.querySelector('.agent-operation-actions');
+  const isProjectRun = isProjectCreationRun(state);
+  summary.hidden = !isProjectRun;
+  if (!isProjectRun) return;
+
+  stagesElement.replaceChildren();
+  PROJECT_OPERATION_STAGES.forEach(stage => {
+    const stageState = getProjectStageState(stage, state);
+    const item = document.createElement('li');
+    const marker = document.createElement('span');
+    const label = document.createElement('span');
+    item.className = `agent-operation-stage is-${stageState}`;
+    item.setAttribute('aria-current', stageState === 'current' ? 'step' : 'false');
+    marker.className = 'agent-operation-marker';
+    marker.setAttribute('aria-hidden', 'true');
+    label.textContent = stage.label;
+    item.append(marker, label);
+    stagesElement.appendChild(item);
+  });
+  exclusions.textContent = 'Not added automatically: DUnitX and other optional features.';
+  result.textContent = state.status === 'completed'
+    ? 'Result: the requested project is ready. Optional additions remain your choice.'
+    : 'Expected result: the requested project opens in Delphi and builds successfully.';
+  actions.replaceChildren();
+  if (state.status !== 'completed') return;
+  [
+    ['Add DUnitX tests', 'Add a DUnitX test project to the project that was just created.'],
+    ['Review optional additions', 'Show optional additions for the project that was just created.']
+  ].forEach(([label, prompt]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'agent-operation-action';
+    button.textContent = label;
+    button.title = `${label}; this only prepares a request for your review`;
+    button.addEventListener('click', () => setPromptText(prompt));
+    actions.appendChild(button);
+  });
+}
+
 function openAgentPlanEditor(planElement, plan) {
   planElement.replaceChildren();
   const editor = document.createElement('div');
@@ -955,11 +1062,19 @@ function renderAgentState(data) {
       '<div class="agent-run-header">' +
       '<strong>Agent run</strong><span class="agent-run-status"></span>' +
       '</div><div class="agent-run-objective"></div>' +
+      '<section class="agent-operation-summary" hidden>' +
+      '<div class="agent-operation-heading">What RadIA is doing</div>' +
+      '<ol class="agent-operation-stages"></ol>' +
+      '<p class="agent-operation-exclusions"></p>' +
+      '<p class="agent-operation-result"></p>' +
+      '<div class="agent-operation-actions"></div></section>' +
       '<div class="agent-run-message"></div>' +
+      '<ol class="agent-run-plan"></ol>' +
+      '<details class="agent-technical-details"><summary>Technical details</summary>' +
       '<div class="agent-run-metrics"></div>' +
       '<div class="agent-run-validation"></div>' +
       '<div class="agent-run-impact"></div>' +
-      '<ol class="agent-run-plan"></ol><ol class="agent-run-steps"></ol>' +
+      '<ol class="agent-run-steps"></ol></details>' +
       '<div class="agent-run-controls"></div>';
     AGENT_CARDS.set(sessionId, card);
     chatContainer.appendChild(card);
@@ -971,6 +1086,7 @@ function renderAgentState(data) {
   card.querySelector('.agent-run-objective').textContent = state.objective || '';
   card.querySelector('.agent-run-message').textContent = state.message || '';
   const steps = Array.isArray(state.steps) ? state.steps : [];
+  renderProjectOperationSummary(card, state);
   const elapsedSeconds = Math.round((state.elapsedMilliseconds || 0) / 1000);
   const tokenBudget = state.maxTotalTokens > 0
     ? `${state.totalTokens || 0}/${state.maxTotalTokens} tokens`
@@ -1900,15 +2016,17 @@ let historyLoadRequested = false;
 
 const QUICK_ACTIONS = [
   {
-    label: 'Explain Code',
-    command: '/explain ',
+    label: 'Understand this project',
+    description: 'Architecture, health, and the best next action',
+    command: '/health',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 9l-3 3 3 3\"></p" +
     "ath><path d=\"M16 9l3 3-3 3\"></path><path d=\"M14 5l-4 14\"></path></svg>"
   },
   {
-    label: 'Find Bugs',
-    command: '/bugs ',
+    label: 'Fix a problem',
+    description: 'Investigate, prepare a reviewed change, and validate it',
+    command: 'Find the cause of this problem, prepare a safe fix, and validate the result: ',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 6.5a4 4 0 0 1 8" +
     " 0\"></path><path d=\"M8 7h8v6a4 4 0 0 1-8 0V7z\"></path><path d=\"M4 13h4\"></pa" +
@@ -1916,16 +2034,18 @@ const QUICK_ACTIONS = [
     "-2.5-2.5\"></path><path d=\"M12 7v10\"></path></svg>"
   },
   {
-    label: 'Refactor Code',
-    command: '/refactor ',
+    label: 'Create something',
+    description: 'Projects, forms, units, APIs, tests, and features',
+    command: 'Create ',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10\"></path><p" +
     "ath d=\"M14 4l3 3-3 3\"></path><path d=\"M17 17H7\"></path><path d=\"M10 14l-3 3 " +
     "3 3\"></path></svg>"
   },
   {
-    label: 'Review Code',
-    command: '/review ',
+    label: 'Debug an application',
+    description: 'Reproduce a runtime failure and inspect the debugger',
+    command: '/journey debug ',
     icon: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9" +
     "\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 12l5 5L20 6\"></" +
     "path><path d=\"M19 13v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h8\"></pa" +
@@ -2057,8 +2177,16 @@ function showWelcomeScreen() {
         </svg>
       </span>
     </div>
-    <h1>How can Rad IA help today?</h1>
+    <h1>What do you want to accomplish?</h1>
+    <p class="welcome-intro">
+      Start with your goal. Rad IA keeps the effective route visible and lets you customize every detail.
+    </p>
     <div class="welcome-actions"></div>
+    <div class="welcome-capabilities" aria-label="Rad IA platform capabilities">
+      <span>Code</span><span>Build</span><span>Tests</span><span>Debugger</span>
+      <span>Form Designer</span><span>Terminal</span><span>MCP</span><span>Skills</span>
+    </div>
+    <button type="button" class="welcome-capabilities-btn">Explore all capabilities</button>
     <button type="button" class="welcome-history-btn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
         stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -2075,12 +2203,18 @@ function showWelcomeScreen() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'welcome-action-btn';
-    button.innerHTML = `<span class="welcome-action-icon">${action.icon}</span><span>${action.label}</span>`;
+    button.innerHTML = `<span class="welcome-action-icon">${action.icon}</span>` +
+      `<span class="welcome-action-copy"><strong>${action.label}</strong>` +
+      `<small>${action.description}</small></span>`;
     button.title = `Prepare ${action.command} in the prompt without sending it`;
     button.addEventListener('click', () => setPromptText(action.command));
     actionsContainer.appendChild(button);
   });
 
+  welcomeScreen.querySelector('.welcome-capabilities-btn').addEventListener(
+    'click',
+    () => setPromptText('/help')
+  );
   welcomeScreen.querySelector('.welcome-history-btn').addEventListener('click', requestHistoryLoad);
   chatContainer.appendChild(welcomeScreen);
   updateChatScrollbar();
@@ -2772,6 +2906,12 @@ executionRouteSelector.addEventListener('change', () => {
     executor: executionRouteSelector.value
   });
 });
+reasoningEffortSelector.addEventListener('change', () => {
+  postMessageToDelphi({
+    action: 'set_reasoning_effort',
+    effort: reasoningEffortSelector.value
+  });
+});
 
 btnCliNewSession?.addEventListener('click', () => {
   postMessageToDelphi({ action: 'reset_cli_session' });
@@ -2887,7 +3027,45 @@ function setDropdownOpen(wrapper, trigger, open) {
 function closeDropdowns() {
   setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
   setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+  setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, false);
 }
+
+function updateEffortSelection(effort = 'medium') {
+  reasoningEffortSelector.value = effort;
+  const options = effortOptionsList.querySelectorAll('.custom-dropdown-option');
+  options.forEach(option => {
+    const selected = option.dataset.effort === effort;
+    option.classList.toggle('selected', selected);
+    option.setAttribute('aria-pressed', String(selected));
+    if (selected) effortDropdownValue.textContent = option.textContent;
+  });
+}
+
+function toggleEffortDropdown() {
+  setDropdownOpen(modelDropdownWrapper, modelDropdownTrigger, false);
+  setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
+  const open = !effortDropdownWrapper.classList.contains('open');
+  setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, open);
+  if (open) {
+    const selected = effortOptionsList.querySelector('[aria-pressed="true"]');
+    (selected || effortOptionsList.querySelector('button'))?.focus();
+  }
+}
+
+effortDropdownTrigger.addEventListener('click', (event) => {
+  event.stopPropagation();
+  toggleEffortDropdown();
+});
+
+effortOptionsList.querySelectorAll('.custom-dropdown-option').forEach(option => {
+  option.addEventListener('click', (event) => {
+    event.stopPropagation();
+    updateEffortSelection(option.dataset.effort);
+    reasoningEffortSelector.dispatchEvent(new Event('change'));
+    setDropdownOpen(effortDropdownWrapper, effortDropdownTrigger, false);
+    effortDropdownTrigger.focus();
+  });
+});
 
 function toggleModelDropdown() {
   if (modelDropdownWrapper.classList.contains('disabled')) return;
@@ -3604,6 +3782,7 @@ function initializeConfig(data) {
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
   setAgentMode(data.agentModeEnabled);
   updateExecutionRoute(data.executionRoute);
+  updateEffortSelection(data.reasoningEffort || 'medium');
 
   if (data.slashCommands && Array.isArray(data.slashCommands)) {
     const baseCommands = [

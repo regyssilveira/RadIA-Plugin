@@ -1,21 +1,11 @@
 name: SonarQube release gate
 
 on:
-  pull_request:
-    branches:
-      - develop
-      - main
-  push:
-    branches:
-      - develop
-      - main
-    tags:
-      - "v*"
   workflow_dispatch:
 
 concurrency:
-  group: radia-sonar-${{ github.ref }}
-  cancel-in-progress: true
+  group: radia-sonar-manual
+  cancel-in-progress: false
 
 jobs:
   quality-gate:

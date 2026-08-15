@@ -1,6 +1,6 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\FunctionalClosure",
-    [string]$OutputPath = ".\docs\block_review_feedback_evidence_2.7.0.json"
+    [string]$OutputPath = ".\Output\Evidence\block_review_feedback_evidence_2.7.0.json"
 )
 
 $ErrorActionPreference = "Stop"

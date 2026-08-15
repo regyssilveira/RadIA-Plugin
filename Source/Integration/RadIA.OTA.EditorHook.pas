@@ -126,6 +126,7 @@ type
     FIDENotifierIndex: Integer;
     FEditorNotifiers: TInterfaceList;
     FConfig: IRadIAConfig;
+    FAutoReviewEnabled: Boolean;
     FIDEAdapter: IRadIAIDEAdapter;
     FInlineCompletionConsentGranted: Boolean;
     FInlineCompletionController: IRadIAInlineCompletionController;
@@ -177,12 +178,14 @@ type
     procedure OnOptimizeSQLExecute(Sender: TObject);
     procedure OnTestsExecute(Sender: TObject);
     procedure OnBugsExecute(Sender: TObject);
+    procedure OnAutoReviewToggleExecute(Sender: TObject);
     procedure OnScanWarningsExecute(Sender: TObject);
     procedure OnDocExecute(Sender: TObject);
     procedure OnReviewExecute(Sender: TObject);
     procedure OnCreateExampleExecute(Sender: TObject);
     procedure OnFixErrorExecute(Sender: TObject);
     procedure OnGettingStartedExecute(Sender: TObject);
+    procedure OnCacheManagerExecute(Sender: TObject);
     procedure OnShowChatExecute(Sender: TObject);
     procedure OnShowTerminalExecute(Sender: TObject);
     procedure OnInlineCompletionAcceptExecute(Sender: TObject);
@@ -243,6 +246,7 @@ type
     destructor Destroy; override;
 
     procedure Install;
+    procedure ScheduleAutoReview;
     procedure Uninstall;
     procedure PopulateToolsMenu(const AMenuItem: TMenuItem);
 
@@ -254,6 +258,8 @@ implementation
 
 uses
   RadIA.Core.EditorContext,
+  RadIA.Core.SaveReview,
+  RadIA.Core.Workspace,
   RadIA.Core.Patches,
   RadIA.Core.IDENavigation,
   System.Generics.Collections,
@@ -266,6 +272,7 @@ uses
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm,
   RadIA.OTA.Onboarding,
+  RadIA.UI.CacheManager,
   RadIA.UI.DiffForm,
   {$ENDIF}
   RadIA.Core.Logger, RadIA.Core.Container, RadIA.OTA.Adapter, RadIA.OTA.Helper;
@@ -1331,6 +1338,24 @@ begin
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Review automatically on save';
+  LItem.AutoCheck := True;
+  LItem.Checked := FAutoReviewEnabled;
+  LItem.Hint := 'Runs a bounded background review after saving the active Delphi source.';
+  LItem.OnClick := OnAutoReviewToggleExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := 'Rad IA Cache Manager';
+  LItem.Hint := 'Inspect or selectively clear the local AI response cache.';
+  LItem.OnClick := OnCacheManagerExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := '-';
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
   LItem.Caption := 'Preview Rad IA Ghost Text Diagnostic';
   LItem.OnClick := OnInlineCompletionPreviewDiagnosticExecute;
   AMenuItem.Add(LItem);
@@ -1344,6 +1369,10 @@ begin
   LItem.Caption := 'Rad IA Semantic Editor Context';
   LItem.Hint := 'Shows the bounded editor context shared with AI assistance.';
   LItem.OnClick := OnEditorSemanticContextStatusExecute;
+  AMenuItem.Add(LItem);
+
+  LItem := TMenuItem.Create(AMenuItem);
+  LItem.Caption := '-';
   AMenuItem.Add(LItem);
 
   LItem := TMenuItem.Create(AMenuItem);
@@ -1476,6 +1505,67 @@ end;
 procedure TRadIAEditorHook.OnGettingStartedExecute(Sender: TObject);
 begin
   ShowRadIAOnboarding(True);
+end;
+
+procedure TRadIAEditorHook.OnCacheManagerExecute(Sender: TObject);
+begin
+  {$IFNDEF TESTS}
+  TRadIACacheManagerForm.ShowManager(
+    TRadIAContainer.Resolve<IRadIAService>
+  );
+  {$ENDIF}
+end;
+
+procedure TRadIAEditorHook.OnAutoReviewToggleExecute(Sender: TObject);
+begin
+  if Sender is TMenuItem then
+    FAutoReviewEnabled := TMenuItem(Sender).Checked;
+end;
+
+procedure TRadIAEditorHook.ScheduleAutoReview;
+var
+  LReviewService: IRadIAInlineReviewService;
+  LSnapshot: TRadIAEditorContent;
+begin
+  if not FAutoReviewEnabled or GIsShuttingDown then
+    Exit;
+  LSnapshot := TRadIAContainer.Resolve<IRadIAWorkspaceFacade>.GetEditorContent(
+    2 * 1024 * 1024
+  );
+  if (LSnapshot.FileName = '') or (LSnapshot.Content = '') then
+    Exit;
+  LReviewService := TRadIAContainer.Resolve<IRadIAInlineReviewService>;
+  TThread.CreateAnonymousThread(
+    procedure
+    var
+      LFindings: TArray<TRadIASaveReviewFinding>;
+    begin
+      LFindings := TRadIASaveReviewAnalyzer.Analyze(LSnapshot.Content);
+      TThread.Queue(nil,
+        procedure
+        var
+          LFinding: TRadIASaveReviewFinding;
+          LReview: TRadIAInlineReview;
+        begin
+          if GIsShuttingDown then
+            Exit;
+          for LFinding in LFindings do
+          begin
+            LReview := TRadIAInlineReview.Create(
+              TGUID.NewGuid.ToString,
+              LSnapshot.FileName,
+              LSnapshot.Revision,
+              LFinding.Line,
+              LFinding.Line,
+              irsWarning
+            );
+            LReview.SetContent(LFinding.Message, LFinding.Text, LFinding.Text);
+            LReviewService.Publish(LReview);
+          end;
+        end
+      );
+    end
+  ).Start;
 end;
 
 procedure TRadIAEditorHook.OnShowTerminalExecute(Sender: TObject);

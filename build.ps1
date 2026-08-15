@@ -234,6 +234,7 @@ if ($Uninstall) {
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
     $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
+    $targetSemanticEngine = "$targetBplDir\RadIA.Semantic.Engine.exe"
     $targetExtensionPackager = (
         "$targetBplDir\New-RadIA.DeclarativeExtensionPackage.ps1"
     )
@@ -258,6 +259,9 @@ if ($Uninstall) {
     }
     if (Test-Path $targetBridge) {
         Remove-Item -Path $targetBridge -Force | Out-Null
+    }
+    if (Test-Path $targetSemanticEngine) {
+        Remove-Item -Path $targetSemanticEngine -Force | Out-Null
     }
     if (Test-Path $targetExtensionPackager) {
         Remove-Item -Path $targetExtensionPackager -Force | Out-Null
@@ -371,7 +375,20 @@ if ($LASTEXITCODE -ne 0) {
     throw "Compilacao do bridge MCP stdio falhou."
 }
 
-# 6.3 Verificar disponibilidade do DUnitX caso os testes tenham sido explicitamente solicitados
+# 6.3 Compilar motor semantico isolado
+Write-Host "Compilando motor semantico ($platform)..." -ForegroundColor Yellow
+$semanticEngineParams = @("-Q", "-NU$dcuPath", "-E$binPath")
+if ($Release) {
+    $semanticEngineParams += @('-$D-', '-$L-', '-O+', '-DRELEASE')
+} else {
+    $semanticEngineParams += @('-$D+', '-$L+', '-O-', '-DDEBUG')
+}
+& $compiler $semanticEngineParams "Source\Semantic\RadIA.Semantic.Engine.dpr"
+if ($LASTEXITCODE -ne 0) {
+    throw "Compilacao do motor semantico falhou."
+}
+
+# 6.4 Verificar disponibilidade do DUnitX caso os testes tenham sido explicitamente solicitados
 $runTests = $Test
 if ($runTests) {
     $dunitxPath = ""
@@ -647,6 +664,9 @@ if ($Package) {
         -LiteralPath "$binPath\RadIA.MCP.Bridge.exe" `
         -Destination (Join-Path $stagingRoot "Bin\RadIA.MCP.Bridge.exe")
     Copy-Item `
+        -LiteralPath "$binPath\RadIA.Semantic.Engine.exe" `
+        -Destination (Join-Path $stagingRoot "Bin\RadIA.Semantic.Engine.exe")
+    Copy-Item `
         -Path ".\Source\UI\Web\*" `
         -Destination (Join-Path $stagingRoot "Web") `
         -Recurse
@@ -790,6 +810,7 @@ if ($Install) {
 
     $targetBpl = "$targetBplDir\RadIA.bpl"
     $targetBridge = "$targetBplDir\RadIA.MCP.Bridge.exe"
+    $targetSemanticEngine = "$targetBplDir\RadIA.Semantic.Engine.exe"
     $targetExtensionPackager = (
         "$targetBplDir\New-RadIA.DeclarativeExtensionPackage.ps1"
     )
@@ -850,6 +871,10 @@ if ($Install) {
     Copy-Item `
         -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.MCP.Bridge.exe" `
         -Destination $targetBridge `
+        -Force
+    Copy-Item `
+        -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.Semantic.Engine.exe" `
+        -Destination $targetSemanticEngine `
         -Force
     Copy-Item `
         -LiteralPath ".\scripts\New-RadIA.DeclarativeExtensionPackage.ps1" `
@@ -924,6 +949,20 @@ if ($Install) {
         -PropertyType String `
         -Force |
         Out-Null
+
+    $disabledRegPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Disabled Packages"
+    if ($IDE64) {
+        $disabledRegPath = (
+            "HKCU:\Software\Embarcadero\BDS\$delphiVer\" +
+            "Disabled Packages x64"
+        )
+    }
+    if (Test-Path $disabledRegPath) {
+        Remove-ItemProperty `
+            -LiteralPath $disabledRegPath `
+            -Name $targetBpl `
+            -ErrorAction SilentlyContinue
+    }
 
     Write-Host "=============================================" -ForegroundColor Green
     Write-Host " Plugin instalado com sucesso no Delphi!     " -ForegroundColor Green

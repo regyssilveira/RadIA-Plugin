@@ -31,6 +31,15 @@ test('queued follow-ups remain visible without widening the composer', () => {
   assert.match(chatCss, /@media \(max-width: 520px\)[\s\S]*\.execution-route,[\s\S]*display: none/u);
 });
 
+test('header compacts actions before content becomes crowded', () => {
+  assert.match(
+    chatCss,
+    /@media \(max-width: 1100px\)[\s\S]*\.header-action-btn \.btn-label[\s\S]*display: none/u
+  );
+  assert.match(chatCss, /\.execution-route \{[\s\S]*text-overflow: ellipsis/u);
+  assert.match(chatHtml, /class="header-title"[^>]*>RadIA</u);
+});
+
 test('composer separates execution and context into responsive rows', () => {
   assert.match(chatCss, /#chat-wrapper[\s\S]*min-width: 0/u);
   assert.match(chatCss, /#chat-footer[\s\S]*min-width: 0[\s\S]*width: 100%/u);
@@ -58,4 +67,37 @@ test('composer keeps advanced execution choices out of the initial reading path'
   assert.match(chatHtml, /composer-advanced-options[\s\S]*id="select-execution-route"/u);
   assert.match(chatJs, /function setComposerAdvancedVisible\(visible\)/u);
   assert.match(chatJs, /setComposerAdvancedVisible\(visible\)/u);
+});
+
+test('composer exposes reasoning effort as an explicit user choice', () => {
+  assert.match(chatHtml, /id="select-reasoning-effort"/u);
+  assert.match(
+    chatHtml,
+    /composer-execution-row[\s\S]*id="select-reasoning-effort"[\s\S]*id="btn-composer-advanced"/u
+  );
+  assert.match(chatHtml, /<option value="medium" selected>Medium<\/option>/u);
+  assert.match(chatJs, /action: 'set_reasoning_effort'/u);
+  assert.match(chatJs, /data\.reasoningEffort \|\| 'medium'/u);
+  assert.match(chatHtml, /id="effort-dropdown-trigger"[\s\S]*id="effort-options-list"/u);
+  assert.match(chatJs, /function updateEffortSelection\(effort = 'medium'\)/u);
+  assert.match(chatCss, /\.composer-effort-control \.custom-dropdown-trigger::after \{[\s\S]*right: 3px/u);
+});
+
+test('welcome screen starts with goals while keeping the complete platform visible', () => {
+  assert.match(chatJs, /What do you want to accomplish\?/u);
+  assert.match(chatJs, /Understand this project/u);
+  assert.match(chatJs, /Fix a problem/u);
+  assert.match(chatJs, /Create something/u);
+  assert.match(chatJs, /Debug an application/u);
+  assert.match(chatJs, /Code<\/span><span>Build<\/span><span>Tests<\/span><span>Debugger/u);
+  assert.match(chatJs, /Form Designer<\/span><span>Terminal<\/span><span>MCP<\/span><span>Skills/u);
+  assert.match(chatJs, /setPromptText\('\/help'\)/u);
+});
+
+test('welcome actions prepare requests without sending automatically', () => {
+  assert.match(chatJs, /button\.addEventListener\('click', \(\) => setPromptText\(action\.command\)\)/u);
+  assert.doesNotMatch(
+    chatJs,
+    /welcome-action-btn[\s\S]{0,500}postMessageToDelphi\(\{ action: 'send_prompt'/u
+  );
 });

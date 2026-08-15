@@ -1,9 +1,9 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\Knowledge",
     [string]$OutputPath = (
-        ".\docs\knowledge_smoke_evidence_2.0.0.json"
+        ".\Output\Evidence\knowledge_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 148
+    [int]$RequiredToolCount = 162
 )
 
 $ErrorActionPreference = "Stop"

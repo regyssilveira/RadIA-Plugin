@@ -11,6 +11,7 @@ param(
     [switch]$ExerciseCalculatorRuntime,
     [switch]$ExerciseCorrection,
     [switch]$ExerciseGit,
+    [switch]$ExerciseProjectTransition,
     [switch]$IDE64,
     [string]$EvidencePath = ""
 )
@@ -830,6 +831,26 @@ $trackedChanges = @(
     & git -C $workspaceRoot status --porcelain --untracked-files=no
 )
 $sourceDirty = $trackedChanges.Count -gt 0
+
+function Remove-RadIAKnowledgeSmokeDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    for ($attempt = 1; $attempt -le 20; $attempt++) {
+        try {
+            Remove-Item -LiteralPath $Path -Recurse -Force
+            return
+        } catch {
+            if ($attempt -eq 20) {
+                throw
+            }
+            Start-Sleep -Milliseconds 500
+        }
+    }
+}
+
 $smokeDirectory = Join-Path (
     $workspaceRoot
 ) "Output\Validation\KnowledgeNotifierSmoke"
@@ -843,7 +864,7 @@ if (-not $smokeDirectory.StartsWith(
     throw "The smoke directory escaped the validation output directory."
 }
 if (Test-Path -LiteralPath $smokeDirectory) {
-    Remove-Item -LiteralPath $smokeDirectory -Recurse -Force
+    Remove-RadIAKnowledgeSmokeDirectory -Path $smokeDirectory
 }
 New-RadIAKnowledgeSmokeProject `
     -Directory $smokeDirectory `
@@ -935,6 +956,12 @@ $generatedFormSourcePath = Join-Path $generatedProjectDirectory (
 $generatedCalculatorTestExecutable = Join-Path $generatedProjectDirectory (
     "bin\Win32\Debug\RadIAJourneyAppTests.exe"
 )
+$transitionProjectDirectory = Join-Path $smokeDirectory (
+    "Tests\TransitionVclApp"
+)
+$transitionProjectSourcePath = Join-Path $transitionProjectDirectory (
+    "MainForm.pas"
+)
 $testExecutableCandidates = @(
     (Join-Path $smokeDirectory (
         "Tests\Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
@@ -1020,6 +1047,7 @@ try {
             projectSpecification = @{
                 schemaVersion = 1
                 kind = "calculator"
+                creationProfile = "complete"
             }
         }
     if (-not $templatePreview.previewId) {
@@ -1131,6 +1159,28 @@ try {
             }
         if (-not $templateOpen.opened) {
             throw "The generated VCL project was not opened."
+        }
+        $immediateNavigation = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "NavigateToFile" `
+            -Arguments @{
+                fileName = $generatedFormSourcePath
+                line = 1
+                column = 1
+            }
+        if (-not $immediateNavigation.fileName -or
+            -not [IO.Path]::GetFullPath(
+                $immediateNavigation.fileName
+            ).Equals(
+                [IO.Path]::GetFullPath($generatedFormSourcePath),
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+            throw (
+                "Navigation failed immediately after opening the " +
+                "generated project."
+            )
         }
     } else {
         $templateValidation = Invoke-RadIAToolWithConsent `
@@ -1665,7 +1715,73 @@ try {
         }
     } -FailureMessage "The validation project did not reactivate."
 
-    Open-RadIAPath -Process $process -Path $unitPath
+    if ($ExerciseProjectTransition) {
+        $transitionPreview = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "PreviewProjectTemplate" `
+            -Arguments @{
+                projectName = "RadIATransitionApp"
+                template = "vcl"
+                delphiVersion = $DelphiVersion
+                platforms = @("Win32")
+                destinationPath = $transitionProjectDirectory
+                projectSpecification = @{
+                    schemaVersion = 1
+                    kind = "calculator"
+                    creationProfile = "essential"
+                }
+            }
+        $transitionCreated = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "CreateProjectFromTemplate" `
+            -Arguments @{
+                previewId = $transitionPreview.previewId
+            }
+        if (-not $transitionCreated.committed) {
+            throw "The replacement project was not created."
+        }
+        $transitionOpened = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "OpenCreatedProject" `
+            -Arguments @{
+                previewId = $transitionPreview.previewId
+            }
+        if (-not $transitionOpened.opened) {
+            throw "The replacement project was not opened."
+        }
+        $transitionNavigation = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "NavigateToFile" `
+            -Arguments @{
+                fileName = $transitionProjectSourcePath
+                line = 1
+                column = 1
+            }
+        if (-not $transitionNavigation.fileName) {
+            throw "Navigation failed after closing one project and opening another."
+        }
+        $transitionRollback = Invoke-RadIAToolWithConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Name "RevertCreatedProject" `
+            -Arguments @{
+                previewId = $transitionPreview.previewId
+            }
+        if (-not $transitionRollback.rolledBack) {
+            throw "The replacement project was not reverted."
+        }
+    }
+
+    if (-not $ExerciseProjectTransition) {
+        Open-RadIAPath -Process $process -Path $unitPath
     Start-Sleep -Seconds 2
     $activeUnit = Invoke-RadIATool `
         -BridgePath $bridgePath `
@@ -1982,6 +2098,7 @@ try {
         if (-not $statusAfterClose.loaded) {
             throw "The knowledge index was unavailable after closing the unit."
         }
+    }
     }
 
     $journeySucceeded = $true

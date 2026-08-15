@@ -57,6 +57,8 @@ type
     [Test]
     procedure BuildsSanitizedEnvironmentProfile;
     [Test]
+    procedure BuildsIDEProfileWithoutActiveProject;
+    [Test]
     procedure RegistersReadOnlyEnvironmentTool;
   end;
 
@@ -141,6 +143,22 @@ end;
 
 { TTestRadIADelphiEnvironment }
 
+procedure TTestRadIADelphiEnvironment.BuildsIDEProfileWithoutActiveProject;
+var
+  LProfile: TRadIADelphiEnvironmentProfile;
+  LService: IRadIADelphiEnvironmentService;
+  LWorkspace: IRadIAWorkspaceFacade;
+begin
+  LWorkspace := TRadIADelphiEnvironmentWorkspaceMock.Create('', '');
+  LService := TRadIADelphiEnvironmentService.Create(LWorkspace);
+  LProfile := LService.BuildProfile;
+
+  Assert.AreEqual('Delphi 13', LProfile.IDEVersion);
+  Assert.AreEqual('None', LProfile.Framework);
+  Assert.AreEqual(NativeInt(0), Length(LProfile.SearchPaths));
+  Assert.AreEqual(NativeInt(0), Length(LProfile.Defines));
+end;
+
 procedure TTestRadIADelphiEnvironment.BuildsSanitizedEnvironmentProfile;
 var
   LProfile: TRadIADelphiEnvironmentProfile;
@@ -158,8 +176,15 @@ begin
   Assert.Contains(string.Join(';', LProfile.Libraries), 'FireDAC');
   Assert.Contains(string.Join(';', LProfile.Libraries), 'DUnitX');
   Assert.Contains(string.Join(';', LProfile.Packages), 'designide');
+  Assert.Contains(string.Join(';', LProfile.Defines), 'DEBUG');
+  Assert.Contains(string.Join(';', LProfile.Defines), 'TRACE');
+  Assert.DoesNotContain(string.Join(';', LProfile.Defines), 'RELEASE');
+  Assert.Contains(string.Join(';', LProfile.UnitScopes), 'System');
+  Assert.Contains(string.Join(';', LProfile.UnitScopes), 'Vcl');
   Assert.Contains(string.Join(';', LProfile.SearchPaths), '{workspace}');
   Assert.Contains(string.Join(';', LProfile.SearchPaths), '<external>');
+  Assert.Contains(string.Join(';', LProfile.IncludePaths), '{workspace}');
+  Assert.Contains(string.Join(';', LProfile.LibraryPaths), '$(BDS)');
   Assert.DoesNotContain(
     string.Join(';', LProfile.SearchPaths),
     'PrivateLibrary'
@@ -194,6 +219,8 @@ begin
   Assert.Contains(LResult.ContentJson, '"architecture":"IDE64"');
   Assert.Contains(LResult.ContentJson, '"framework":"VCL"');
   Assert.Contains(LResult.ContentJson, '"sku":"Enterprise"');
+  Assert.Contains(LResult.ContentJson, '"defines":["DEBUG","TRACE"]');
+  Assert.Contains(LResult.ContentJson, '"unitScopes":["System","Vcl"]');
 end;
 
 procedure TTestRadIADelphiEnvironment.Setup;
@@ -229,11 +256,25 @@ begin
   LWorkspaceLibrary := TPath.Combine(FTemporaryDirectory, 'lib');
   LContent :=
     '<Project>' + sLineBreak +
-    '  <FrameworkType>VCL</FrameworkType>' + sLineBreak +
-    '  <DCC_UnitSearchPath>' + LWorkspaceLibrary +
+    '  <PropertyGroup>' + sLineBreak +
+    '    <FrameworkType>VCL</FrameworkType>' + sLineBreak +
+    '    <DCC_UnitSearchPath>' + LWorkspaceLibrary +
     ';C:\PrivateLibrary;$(BDS)\lib</DCC_UnitSearchPath>' + sLineBreak +
-    '  <DCC_UsePackage>designide;vcl;$(DCC_UsePackage)</DCC_UsePackage>' +
+    '    <DCC_IncludePath>include;$(BDS)\include</DCC_IncludePath>' +
     sLineBreak +
+    '    <DCC_LibraryPath>$(BDS)\lib;C:\PrivateLibrary</DCC_LibraryPath>' +
+    sLineBreak +
+    '    <DCC_Namespace>System;Vcl;$(DCC_Namespace)</DCC_Namespace>' +
+    sLineBreak +
+    '    <DCC_UsePackage>designide;vcl;$(DCC_UsePackage)</DCC_UsePackage>' +
+    sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
+    '  <PropertyGroup Condition="''$(Config)''==''Debug''">' + sLineBreak +
+    '    <DCC_Define>TRACE;DEBUG;$(DCC_Define)</DCC_Define>' + sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
+    '  <PropertyGroup Condition="''$(Config)''==''Release''">' + sLineBreak +
+    '    <DCC_Define>RELEASE;$(DCC_Define)</DCC_Define>' + sLineBreak +
+    '  </PropertyGroup>' + sLineBreak +
     '  <Unit>FireDAC.Comp.Client</Unit>' + sLineBreak +
     '  <Unit>DUnitX.TestFramework</Unit>' + sLineBreak +
     '</Project>';

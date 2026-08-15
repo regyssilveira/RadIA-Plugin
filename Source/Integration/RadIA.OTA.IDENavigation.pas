@@ -15,6 +15,14 @@ type
   private
     FEditorAdapter: IRadIAEditorAdapter;
     procedure RunOnMainThread(const AAction: TThreadProcedure);
+    function TryNavigateToIndexedSymbol(
+      const ASymbol: string;
+      out AResult: TRadIANavigationResult
+    ): Boolean;
+    function TryReadNavigationContent(
+      const AFileName: string;
+      out AContent: string
+    ): Boolean;
   public
     constructor Create(
       const AEditorAdapter: IRadIAEditorAdapter
@@ -54,6 +62,8 @@ uses
   Vcl.ActnList,
   Winapi.Windows,
   RadIA.Core.EditorContext,
+  RadIA.Core.Container,
+  RadIA.Core.SemanticQueries,
   RadIA.Core.Types;
 
 const
@@ -67,6 +77,23 @@ const
     'SearchFind',
     'SearchFindInFiles'
   );
+
+function LineForOffset(
+  const AContent: string;
+  const AOffset: Integer
+): Integer;
+var
+  LIndex: Integer;
+  LLimit: Integer;
+begin
+  Result := 1;
+  LLimit := AOffset;
+  if LLimit > Length(AContent) then
+    LLimit := Length(AContent);
+  for LIndex := 1 to LLimit do
+    if AContent[LIndex] = #10 then
+      Inc(Result);
+end;
 
 function FindIDEAction(
   const AActionName: string
@@ -523,6 +550,8 @@ begin
   LResult := TRadIANavigationResult.Failed(
     'The requested symbol was not found in the active unit.'
   );
+  if TryNavigateToIndexedSymbol(ASymbol, LResult) then
+    Exit(LResult);
   RunOnMainThread(
     procedure
     var
@@ -550,6 +579,73 @@ begin
     end
   );
   Result := LResult;
+end;
+
+function TRadIAOTAIDENavigationFacade.TryNavigateToIndexedSymbol(
+  const ASymbol: string;
+  out AResult: TRadIANavigationResult
+): Boolean;
+var
+  LContent: string;
+  LError: string;
+  LLocation: TRadIASemanticLocation;
+  LLocations: TArray<TRadIASemanticLocation>;
+  LSemanticQueries: IRadIASemanticQueryService;
+begin
+  Result := False;
+  if Trim(ASymbol) = '' then
+    Exit;
+  if not TRadIAContainer.TryResolve<IRadIASemanticQueryService>(
+    LSemanticQueries
+  ) then
+    Exit;
+  if not LSemanticQueries.FindSymbols(ASymbol, LLocations, LError) then
+    Exit;
+  for LLocation in LLocations do
+  begin
+    if (LLocation.FileName = '') or
+      not TryReadNavigationContent(LLocation.FileName, LContent) then
+      Continue;
+    AResult := NavigateToFile(
+      LLocation.FileName,
+      LineForOffset(LContent, LLocation.StartOffset),
+      1
+    );
+    if AResult.Success then
+      Exit(True);
+  end;
+end;
+
+function TRadIAOTAIDENavigationFacade.TryReadNavigationContent(
+  const AFileName: string;
+  out AContent: string
+): Boolean;
+var
+  LActiveBuffer: Boolean;
+  LActiveContent: string;
+begin
+  AContent := '';
+  LActiveBuffer := False;
+  LActiveContent := '';
+  RunOnMainThread(
+    procedure
+    begin
+      LActiveBuffer := SameFileName(
+        FEditorAdapter.GetActiveUnitName,
+        AFileName
+      );
+      if LActiveBuffer then
+        LActiveContent := FEditorAdapter.GetText;
+    end
+  );
+  if LActiveBuffer then
+  begin
+    AContent := LActiveContent;
+    Exit(True);
+  end;
+  Result := TFile.Exists(AFileName);
+  if Result then
+    AContent := TFile.ReadAllText(AFileName, TEncoding.UTF8);
 end;
 
 procedure TRadIAOTAIDENavigationFacade.RunOnMainThread(

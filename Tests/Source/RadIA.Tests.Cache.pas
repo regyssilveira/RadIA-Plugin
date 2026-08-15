@@ -30,6 +30,8 @@ type
     procedure TestCacheExceptions;
     [Test]
     procedure TestCache_LoadInvalid;
+    [Test]
+    procedure TestListAndRemoveEntries;
   end;
 
 implementation
@@ -78,6 +80,22 @@ begin
   Assert.AreEqual('IA Response Content', LResponse);
 
   Assert.IsFalse(FCache.Get('non-existent-hash', LResponse));
+end;
+
+procedure TTestRadIACache.TestListAndRemoveEntries;
+var
+  LEntries: TArray<TRadIACacheEntrySnapshot>;
+begin
+  FCache.Put('hash-one', 'first response');
+  FCache.Put('hash-two', 'second');
+  LEntries := FCache.ListEntries;
+  Assert.AreEqual(NativeInt(2), Length(LEntries));
+  Assert.AreEqual(14, LEntries[0].ResponseCharacters);
+  Assert.IsTrue(FCache.Remove('hash-one'));
+  Assert.IsFalse(FCache.Remove('missing'));
+  LEntries := FCache.ListEntries;
+  Assert.AreEqual(NativeInt(1), Length(LEntries));
+  Assert.AreEqual('hash-two', LEntries[0].Hash);
 end;
 
 procedure TTestRadIACache.TestExpiration;

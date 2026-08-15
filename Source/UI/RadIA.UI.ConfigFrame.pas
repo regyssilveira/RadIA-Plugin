@@ -620,6 +620,11 @@ begin
   FLblTemplateOrigin.Top := btnSaveTemplate.Top + btnSaveTemplate.Height + 12;
   FLblTemplateOrigin.Font.Assign(lblTemplateName.Font);
   FLblTemplateOrigin.Font.Style := [fsItalic];
+  FLblTemplateOrigin.AutoSize := False;
+  FLblTemplateOrigin.WordWrap := True;
+  FLblTemplateOrigin.Width := pnlTemplatesClient.ClientWidth - 28;
+  FLblTemplateOrigin.Height := 36;
+  FLblTemplateOrigin.Anchors := [akLeft, akTop, akRight];
   FLblTemplateOrigin.Caption := '';
 end;
 
@@ -1124,6 +1129,10 @@ begin
     104
   );
   FLblCliSectionTitle.Font.Style := [fsBold];
+  FLblCliSectionTitle.AutoSize := False;
+  FLblCliSectionTitle.Width := 590;
+  FLblCliSectionTitle.Height := 20;
+  FLblCliSectionTitle.Anchors := [akLeft, akTop, akRight];
   CreateLabel(FPnlCliMcp, 'CLI executable override (optional):', 16, 130);
   FEdtCliExecutable := CreateEdit(FPnlCliMcp, 16, 150, 382);
   FEdtCliExecutable.Anchors := [akLeft, akTop, akRight];
@@ -1420,6 +1429,7 @@ end;
 procedure TRadIAFrameAIConfig.CreateCliMcpTab;
 var
   LDefinition: TRadIACliDefinition;
+  LOrchestrationHint: TLabel;
 begin
   FTsCliMcp := TTabSheet.Create(Self);
   FTsCliMcp.PageControl := pgcSettings;
@@ -1449,12 +1459,17 @@ begin
   FCmbAgentExecutor.Items.Add('RadIA native orchestration');
   FCmbAgentExecutor.Items.Add('External CLI orchestration');
   FCmbAgentExecutor.ItemIndex := 0;
-  CreateLabel(
+  LOrchestrationHint := CreateLabel(
     FPnlCliMcp,
     'Orchestration choice; provider authentication is configured separately.',
     280,
     76
-  ).Width := 330;
+  );
+  LOrchestrationHint.AutoSize := False;
+  LOrchestrationHint.WordWrap := True;
+  LOrchestrationHint.Width := 430;
+  LOrchestrationHint.Height := 32;
+  LOrchestrationHint.Anchors := [akLeft, akTop, akRight];
 
   CreateLabel(FPnlCliMcp, 'CLI client:', 16, 32);
   FCmbCliClient := TComboBox.Create(Self);
@@ -1476,16 +1491,24 @@ begin
     280
   );
   FLblMcpSectionTitle.Font.Style := [fsBold];
+  FLblMcpSectionTitle.AutoSize := False;
+  FLblMcpSectionTitle.Width := 590;
+  FLblMcpSectionTitle.Height := 20;
+  FLblMcpSectionTitle.Anchors := [akLeft, akTop, akRight];
   CreateLabel(FPnlCliMcp, 'MCP client configuration:', 16, 306);
   FEdtMcpConfig := CreateEdit(FPnlCliMcp, 16, 326, 590);
   CreateLabel(FPnlCliMcp, 'RadIA MCP bridge:', 16, 362);
   FEdtMcpBridge := CreateEdit(FPnlCliMcp, 16, 382, 590);
 
   FLblMcpStatus := CreateLabel(FPnlCliMcp, 'MCP status: not checked', 16, 418);
+  FLblMcpStatus.AutoSize := False;
+  FLblMcpStatus.WordWrap := True;
+  FLblMcpStatus.SetBounds(16, 418, 590, 40);
+  FLblMcpStatus.Anchors := [akLeft, akTop, akRight];
   FBtnMcpPreview := TButton.Create(Self);
   FBtnMcpPreview.Parent := FPnlCliMcp;
   FBtnMcpPreview.Left := 16;
-  FBtnMcpPreview.Top := 444;
+  FBtnMcpPreview.Top := 464;
   FBtnMcpPreview.Width := 104;
   FBtnMcpPreview.Height := 27;
   FBtnMcpPreview.Caption := 'Preview';
@@ -1494,7 +1517,7 @@ begin
   FBtnMcpProvision := TButton.Create(Self);
   FBtnMcpProvision.Parent := FPnlCliMcp;
   FBtnMcpProvision.Left := 128;
-  FBtnMcpProvision.Top := 444;
+  FBtnMcpProvision.Top := 464;
   FBtnMcpProvision.Width := 136;
   FBtnMcpProvision.Height := 27;
   FBtnMcpProvision.Caption := 'Connect / Repair';
@@ -1503,7 +1526,7 @@ begin
   FBtnMcpRemove := TButton.Create(Self);
   FBtnMcpRemove.Parent := FPnlCliMcp;
   FBtnMcpRemove.Left := 272;
-  FBtnMcpRemove.Top := 444;
+  FBtnMcpRemove.Top := 464;
   FBtnMcpRemove.Width := 104;
   FBtnMcpRemove.Height := 27;
   FBtnMcpRemove.Caption := 'Disconnect';
@@ -1512,7 +1535,7 @@ begin
   FBtnMcpHandshake := TButton.Create(Self);
   FBtnMcpHandshake.Parent := FPnlCliMcp;
   FBtnMcpHandshake.Left := 384;
-  FBtnMcpHandshake.Top := 444;
+  FBtnMcpHandshake.Top := 464;
   FBtnMcpHandshake.Width := 130;
   FBtnMcpHandshake.Height := 27;
   FBtnMcpHandshake.Caption := 'Test Handshake';
@@ -1521,7 +1544,7 @@ begin
   FMemoMcpPreview := TMemo.Create(Self);
   FMemoMcpPreview.Parent := FPnlCliMcp;
   FMemoMcpPreview.Left := 16;
-  FMemoMcpPreview.Top := 482;
+  FMemoMcpPreview.Top := 502;
   FMemoMcpPreview.Width := 590;
   FMemoMcpPreview.Height := 118;
   FMemoMcpPreview.ReadOnly := True;
@@ -3409,6 +3432,7 @@ begin
   if not LIsApiKey then
   begin
     btnOpenAIWebLogin.Caption := 'Configure Codex CLI login';
+    btnOpenAIWebLogin.Width := 190;
     btnOpenAIWebLogin.Hint := 'Open the Codex CLI settings used by the ChatGPT Pro route.';
   end;
   if not LIsApiKey then
@@ -3558,6 +3582,7 @@ begin
   else if SameText(AProviderId, 'OpenAI') then
   begin
     btnOpenAIWebLogin.Caption := 'Configure Codex CLI login';
+    btnOpenAIWebLogin.Width := 190;
     btnOpenAIWebLogin.Hint := 'Open the Codex CLI settings used by the ChatGPT Pro route.';
   end;
 end;

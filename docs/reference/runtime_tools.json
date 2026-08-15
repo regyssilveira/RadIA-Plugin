@@ -1,0 +1,480 @@
+{
+  "schemaVersion": 1,
+  "description": "Built-in tools registered by RadIA.OTA.Register.",
+  "groups": [
+    {
+      "name": "Workspace",
+      "source": "Source/Core/RadIA.Core.WorkspaceTools.pas",
+      "tools": [
+        "GetIDEState",
+        "GetActiveProject",
+        "GetActiveUnit",
+        "ListOpenFiles",
+        "ListProjectUnits",
+        "GetEditorContent",
+        "GetEditorSelection",
+        "GetCursorPosition",
+        "GetCompilerMessages"
+      ]
+    },
+    {
+      "name": "Delphi environment",
+      "source": "Source/Core/RadIA.Core.DelphiEnvironmentTools.pas",
+      "tools": [
+        "GetDelphiEnvironmentProfile"
+      ]
+    },
+    {
+      "name": "Semantic code generation",
+      "source": "Source/Core/RadIA.Core.SemanticMemberTools.pas",
+      "tools": [
+        "PrepareMissingMembers"
+      ]
+    },
+    {
+      "name": "Semantic index queries",
+      "source": "Source/Core/RadIA.Core.SemanticQueryTools.pas",
+      "tools": [
+        "GetSemanticContext"
+      ]
+    },
+    {
+      "name": "Curated Delphi guidance",
+      "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
+      "tools": [
+        "GetDelphiGuidance"
+      ]
+    },
+    {
+      "name": "DFM and Pascal consistency",
+      "source": "Source/Core/RadIA.Core.DfmPasAuditTools.pas",
+      "tools": [
+        "AuditActiveDfmPasConsistency",
+        "PrepareDfmPasAuditFix"
+      ]
+    },
+    {
+      "name": "Designer visual diff",
+      "source": "Source/Core/RadIA.Core.DesignerVisualDiffTools.pas",
+      "tools": [
+        "CaptureDesignerVisualSnapshot",
+        "CompareDesignerVisualSnapshots",
+        "DecideDesignerVisualDiff",
+        "ClearDesignerVisualDiffArtifacts"
+      ]
+    },
+    {
+      "name": "Agent result recovery",
+      "source": "Source/Core/RadIA.Core.AgentResultTools.pas",
+      "tools": [
+        "GetToolResultSummary",
+        "GetToolResultRange"
+      ]
+    },
+    {
+      "name": "Project health",
+      "source": "Source/Core/RadIA.Core.ProjectHealthTools.pas",
+      "tools": [
+        "GetProjectHealth"
+      ]
+    },
+    {
+      "name": "Installation health",
+      "source": "Source/Core/RadIA.Core.InstallationHealthTools.pas",
+      "tools": [
+        "GetInstallationHealth",
+        "RunInstallationDeepDiagnostic",
+        "GetRadIAStatus"
+      ]
+    },
+    {
+      "name": "IDE navigation and project graph",
+      "source": "Source/Core/RadIA.Core.IDENavigationTools.pas",
+      "tools": [
+        "ListProjectGroupProjects",
+        "GetProjectDependencies",
+        "GetUnitSymbols",
+        "GetEditorSemanticContext",
+        "NavigateToFile",
+        "NavigateToSymbol",
+        "NavigateToDevelopmentSurface",
+        "ListIDEActions",
+        "ExecuteIDEAction"
+      ]
+    },
+    {
+      "name": "Patches",
+      "source": "Source/Core/RadIA.Core.PatchTools.pas",
+      "tools": [
+        "PreparePatch",
+        "ApplyPatch",
+        "RevertPatch"
+      ]
+    },
+    {
+      "name": "Multi-file patches",
+      "source": "Source/Core/RadIA.Core.MultiFilePatchTools.pas",
+      "tools": [
+        "PrepareMultiFilePatch",
+        "ApplyMultiFilePatch",
+        "RevertMultiFilePatch"
+      ]
+    },
+    {
+      "name": "Block reviews",
+      "source": "Source/Core/RadIA.Core.BlockReviewTools.pas",
+      "tools": [
+        "ListBlockReviews",
+        "DecideBlockReview",
+        "ApplyBlockReviews",
+        "ClearBlockReviews"
+      ]
+    },
+    {
+      "name": "Development transactions",
+      "source": "Source/Core/RadIA.Core.DevelopmentTransactionTools.pas",
+      "tools": [
+        "PrepareDevelopmentTransaction",
+        "ApplyDevelopmentTransaction",
+        "RevertDevelopmentTransaction",
+        "RejectDevelopmentTransactionStep",
+        "RevertDevelopmentTransactionStep"
+      ]
+    },
+    {
+      "name": "Project templates",
+      "source": "Source/Core/RadIA.Core.ProjectTemplateTools.pas",
+      "tools": [
+        "PreviewProjectTemplate",
+        "CreateProjectFromTemplate",
+        "RevertCreatedProject",
+        "OpenCreatedProject",
+        "ValidateCreatedProject"
+      ]
+    },
+    {
+      "name": "Project files",
+      "source": "Source/Core/RadIA.Core.ProjectFileTools.pas",
+      "tools": [
+        "PrepareAddProjectFile",
+        "PrepareRemoveProjectFile",
+        "ApplyProjectFileChange",
+        "RevertProjectFileChange"
+      ]
+    },
+    {
+      "name": "Safe productivity artifacts",
+      "source": "Source/Core/RadIA.Core.ProductivityGenerationTools.pas",
+      "tools": [
+        "PrepareApiDocumentation",
+        "PrepareMockUnit",
+        "ApplyGeneratedArtifact",
+        "RevertGeneratedArtifact"
+      ]
+    },
+    {
+      "name": "Project stack trace diagnostics",
+      "source": "Source/Core/RadIA.Core.StackTraceTools.pas",
+      "tools": [
+        "AnalyzeProjectStackTrace"
+      ]
+    },
+    {
+      "name": "Clean uses analysis",
+      "source": "Source/Core/RadIA.Core.CleanUsesTools.pas",
+      "tools": [
+        "PrepareCleanUses"
+      ]
+    },
+    {
+      "name": "Thread and PPL safety",
+      "source": "Source/Core/RadIA.Core.ThreadingAssistantTools.pas",
+      "tools": [
+        "AnalyzeThreadingRisks",
+        "PrepareThreadModernization"
+      ]
+    },
+    {
+      "name": "Existing API OpenAPI retrofit",
+      "source": "Source/Core/RadIA.Core.OpenApiRetrofitTools.pas",
+      "tools": [
+        "InventoryExistingApiRoutes",
+        "PrepareOpenApiRetrofit"
+      ]
+    },
+    {
+      "name": "DEXT and form modernization",
+      "source": "Source/Core/RadIA.Core.DextFormModernizationTools.pas",
+      "tools": [
+        "PrepareDextFormModernization",
+        "RecordDextFormModernizationGate"
+      ]
+    },
+    {
+      "name": "Inline reviews",
+      "source": "Source/Core/RadIA.Core.InlineReviewTools.pas",
+      "tools": [
+        "PublishInlineReview",
+        "ListInlineReviews",
+        "PrepareInlineReviewFix",
+        "ApplyInlineReviewFix",
+        "RejectInlineReview",
+        "RemoveInlineReview",
+        "ClearInlineReviews"
+      ]
+    },
+    {
+      "name": "Build",
+      "source": "Source/Core/RadIA.Core.BuildTools.pas",
+      "tools": [
+        "BuildProject",
+        "CancelBuild",
+        "GetBuildStatus"
+      ]
+    },
+    {
+      "name": "Form Designer inspection",
+      "source": "Source/Core/RadIA.Core.DesignerTools.pas",
+      "tools": [
+        "GetActiveForm",
+        "ListFormComponents"
+      ]
+    },
+    {
+      "name": "Form Designer layout",
+      "source": "Source/Core/RadIA.Core.DesignerMutationTools.pas",
+      "tools": [
+        "PrepareComponentLayout",
+        "ApplyComponentLayout",
+        "RevertComponentLayout"
+      ]
+    },
+    {
+      "name": "Form Designer properties",
+      "source": "Source/Core/RadIA.Core.DesignerPropertyTools.pas",
+      "tools": [
+        "PrepareComponentProperty",
+        "ApplyComponentProperty",
+        "RevertComponentProperty"
+      ]
+    },
+    {
+      "name": "Form Designer components",
+      "source": "Source/Core/RadIA.Core.DesignerComponentTools.pas",
+      "tools": [
+        "PrepareAddFormComponent",
+        "PrepareRemoveFormComponent",
+        "ApplyFormComponentChange",
+        "RevertFormComponentChange"
+      ]
+    },
+    {
+      "name": "Form Designer events",
+      "source": "Source/Core/RadIA.Core.DesignerEventTools.pas",
+      "tools": [
+        "PrepareFormEventHandler",
+        "ApplyFormEventHandler",
+        "RevertFormEventHandler"
+      ]
+    },
+    {
+      "name": "Debugger inspection",
+      "source": "Source/Core/RadIA.Core.DebuggerTools.pas",
+      "tools": [
+        "GetDebuggerState",
+        "ListBreakpoints",
+        "GetCallStack"
+      ]
+    },
+    {
+      "name": "Debugger control",
+      "source": "Source/Core/RadIA.Core.DebuggerControlTools.pas",
+      "tools": [
+        "PauseDebugging",
+        "ContinueDebugging",
+        "StepInto",
+        "StepOver",
+        "StepOut",
+        "StopDebugging"
+      ]
+    },
+    {
+      "name": "Debugger breakpoints",
+      "source": "Source/Core/RadIA.Core.DebuggerBreakpointTools.pas",
+      "tools": [
+        "AddBreakpoint",
+        "RemoveBreakpoint"
+      ]
+    },
+    {
+      "name": "Debugger sessions and watches",
+      "source": "Source/Core/RadIA.Core.DebuggerInspectionTools.pas",
+      "tools": [
+        "EvaluateDebuggerExpression",
+        "AddDebuggerWatch",
+        "RemoveDebuggerWatch",
+        "ListDebuggerWatches",
+        "EvaluateDebuggerWatches",
+        "StartDebugging"
+      ]
+    },
+    {
+      "name": "Project knowledge",
+      "source": "Source/Core/RadIA.Core.KnowledgeTools.pas",
+      "tools": [
+        "IndexProjectKnowledge",
+        "SearchProjectKnowledge",
+        "GetKnowledgeStatus",
+        "GetKnowledgeDocument",
+        "ClearProjectKnowledge"
+      ]
+    },
+    {
+      "name": "DUnitX test runner",
+      "source": "Source/Core/RadIA.Core.DUnitXTools.pas",
+      "tools": [
+        "RunDUnitXTests",
+        "CancelDUnitXTests",
+        "GetDUnitXStatus"
+      ]
+    },
+    {
+      "name": "Code coverage evidence",
+      "source": "Source/Core/RadIA.Core.CoverageTools.pas",
+      "tools": [
+        "GetCoverageSummary"
+      ]
+    },
+    {
+      "name": "Debugger event timeline",
+      "source": "Source/Core/RadIA.Core.DebugTimelineTools.pas",
+      "tools": [
+        "GetDebugTimeline"
+      ]
+    },
+    {
+      "name": "Runtime debugger correlation",
+      "source": "Source/Core/RadIA.Core.RuntimeDebugTools.pas",
+      "tools": [
+        "GetRuntimeDebugSession",
+        "WaitForDebuggerEvent",
+        "CancelDebuggerWait"
+      ]
+    },
+    {
+      "name": "Runtime window discovery",
+      "source": "Source/Core/RadIA.Core.RuntimeDiscoveryTools.pas",
+      "tools": [
+        "GetRuntimeWindows",
+        "GetRuntimeControlTree"
+      ]
+    },
+    {
+      "name": "Bounded runtime scenarios",
+      "source": "Source/Core/RadIA.Core.RuntimeScenarioTools.pas",
+      "tools": [
+        "PrepareRuntimeScenario",
+        "RunRuntimeScenario",
+        "CancelRuntimeScenario",
+        "GetRuntimeScenarioStatus"
+      ]
+    },
+    {
+      "name": "Runtime visual capture",
+      "source": "Source/Core/RadIA.Core.RuntimeVisualTools.pas",
+      "tools": [
+        "CaptureRuntimeVisual"
+      ]
+    },
+    {
+      "name": "Runtime diagnostic evidence",
+      "source": "Source/Core/RadIA.Core.RuntimeEvidenceTools.pas",
+      "tools": [
+        "CaptureRuntimeEvidence",
+        "CompareRuntimeEvidence"
+      ]
+    },
+    {
+      "name": "Versioned runtime regressions",
+      "source": "Source/Core/RadIA.Core.RuntimeRegressionTools.pas",
+      "tools": [
+        "PrepareRuntimeRegression",
+        "SaveRuntimeRegression",
+        "RevertRuntimeRegression",
+        "ListRuntimeRegressions",
+        "PrepareSavedRuntimeScenario"
+      ]
+    },
+    {
+      "name": "Reviewable local Git commits",
+      "source": "Source/Core/RadIA.Core.GitTools.pas",
+      "tools": [
+        "GetGitStatus",
+        "GetGitDiff",
+        "PreviewGitCommit",
+        "CommitChanges"
+      ]
+    },
+    {
+      "name": "FastMM5 memory diagnostics",
+      "source": "Source/Core/RadIA.Core.FastMM5.pas",
+      "tools": [
+        "GetMemoryDiagnosticsStatus",
+        "ConfigureMemoryDiagnostics"
+      ]
+    },
+    {
+      "name": "Reversible memory instrumentation",
+      "source": "Source/Core/RadIA.Core.MemoryInstrumentation.pas",
+      "tools": [
+        "PrepareMemoryInstrumentation",
+        "ApplyMemoryInstrumentation",
+        "RevertMemoryInstrumentation"
+      ]
+    },
+    {
+      "name": "FastMM5 log evidence",
+      "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
+      "tools": [
+        "ParseMemoryDiagnosticLog"
+      ]
+    },
+    {
+      "name": "Composed memory diagnostic sessions",
+      "source": "Source/Core/RadIA.Core.MemoryDiagnosticSession.pas",
+      "tools": [
+        "PrepareMemoryDiagnosticSession",
+        "RunMemoryDiagnosticSession",
+        "CancelMemoryDiagnosticSession",
+        "GetMemoryDiagnosticSessionStatus"
+      ]
+    },
+    {
+      "name": "Delphi mentor",
+      "source": "Source/Core/RadIA.Core.DelphiMentor.pas",
+      "tools": [
+        "ExplainSelectedDelphiCode"
+      ]
+    },
+    {
+      "name": "Legacy data migration",
+      "source": "Source/Core/RadIA.Core.LegacyDataMigrationTools.pas",
+      "tools": [
+        "InventoryLegacyDataAccess",
+        "PlanLegacyMigrationBatches",
+        "PrepareLegacyMigrationBatch",
+        "RecordLegacyMigrationGate",
+        "GetLegacyMigrationReport",
+        "PlanDextAndFormModernization"
+      ]
+    },
+    {
+      "name": "Memory evidence correction workflow",
+      "source": "Source/Core/RadIA.Core.MemoryEvidence.pas",
+      "tools": [
+        "CompareMemoryDiagnosticEvidence",
+        "PrepareMemoryDiagnosticFix"
+      ]
+    }
+  ]
+}

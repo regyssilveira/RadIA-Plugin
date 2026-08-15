@@ -3,9 +3,9 @@ param(
         ".\Output\Validation\DeclarativeWorkflow"
     ),
     [string]$OutputPath = (
-        ".\docs\declarative_workflow_smoke_evidence_2.0.0.json"
+        ".\Output\Evidence\declarative_workflow_smoke_evidence_2.0.0.json"
     ),
-    [int]$RequiredToolCount = 148
+    [int]$RequiredToolCount = 162
 )
 
 $ErrorActionPreference = "Stop"

@@ -1,9 +1,9 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\InlineCompletion",
     [string]$OutputPath = (
-        ".\docs\inline_completion_smoke_evidence_2.3.1.json"
+        ".\Output\Evidence\inline_completion_smoke_evidence_2.3.1.json"
     ),
-    [int]$RequiredToolCount = 148,
+    [int]$RequiredToolCount = 162,
     [int]$RequiredLineCount = 2,
     [int]$RequiredAlternativeCount = 2
 )
