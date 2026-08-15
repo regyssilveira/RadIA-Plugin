@@ -41,6 +41,31 @@ type
     property StartOffset: Integer read FStartOffset;
   end;
 
+  TRadIADelphiExtractRoutine = record
+  private
+    FBodyEnd: Integer;
+    FBodyStart: Integer;
+    FContainerName: string;
+    FName: string;
+    FSignature: string;
+    FStartOffset: Integer;
+  public
+    constructor Create(
+      const AName: string;
+      const AContainerName: string;
+      const ASignature: string;
+      const AStartOffset: Integer;
+      const ABodyStart: Integer;
+      const ABodyEnd: Integer
+    );
+    property BodyEnd: Integer read FBodyEnd;
+    property BodyStart: Integer read FBodyStart;
+    property ContainerName: string read FContainerName;
+    property Name: string read FName;
+    property Signature: string read FSignature;
+    property StartOffset: Integer read FStartOffset;
+  end;
+
   TRadIADelphiExtractionAnalyzer = class
   public
     class function TryAnalyze(
@@ -57,6 +82,12 @@ type
       const ARoutineSignature: string;
       const ARoutineStartOffset: Integer;
       out AParameters: TArray<TRadIADelphiExtractParameter>;
+      out AError: string
+    ): Boolean; static;
+    class function TryFindEnclosingRoutine(
+      const ASource: string;
+      const ASelection: TRadIADelphiExtractSelection;
+      out ARoutine: TRadIADelphiExtractRoutine;
       out AError: string
     ): Boolean; static;
   end;
@@ -93,6 +124,23 @@ begin
   FName := AName;
   FTypeName := ATypeName;
   FKind := AKind;
+end;
+
+constructor TRadIADelphiExtractRoutine.Create(
+  const AName: string;
+  const AContainerName: string;
+  const ASignature: string;
+  const AStartOffset: Integer;
+  const ABodyStart: Integer;
+  const ABodyEnd: Integer
+);
+begin
+  FName := AName;
+  FContainerName := AContainerName;
+  FSignature := ASignature;
+  FStartOffset := AStartOffset;
+  FBodyStart := ABodyStart;
+  FBodyEnd := ABodyEnd;
 end;
 
 type
@@ -373,6 +421,160 @@ begin
     Exit;
   ABodyStart := LHeaderEnd + LTokens[LOpeningIndex].StartOffset;
   ABodyEnd := LHeaderEnd + LClosingToken.StartOffset + LClosingToken.Length;
+  Result := True;
+end;
+
+function RoutineSignatureStart(
+  const ATokens: TArray<TRadIASemanticToken>;
+  const ARoutineIndex: Integer
+): Integer;
+begin
+  Result := ATokens[ARoutineIndex].StartOffset;
+  if (ARoutineIndex > Low(ATokens)) and
+    SameText(ATokens[ARoutineIndex - 1].Text, 'class') then
+    Result := ATokens[ARoutineIndex - 1].StartOffset;
+end;
+
+procedure UpdateSignatureDepth(
+  const AText: string;
+  var AParenthesisDepth: Integer;
+  var ABracketDepth: Integer
+);
+begin
+  if AText = '(' then
+    Inc(AParenthesisDepth)
+  else if AText = ')' then
+    Dec(AParenthesisDepth)
+  else if AText = '[' then
+    Inc(ABracketDepth)
+  else if AText = ']' then
+    Dec(ABracketDepth);
+end;
+
+function IsSignatureTerminator(
+  const AToken: TRadIASemanticToken;
+  const AParenthesisDepth: Integer;
+  const ABracketDepth: Integer
+): Boolean;
+begin
+  Result := (AToken.Text = ';') and (AParenthesisDepth = 0) and
+    (ABracketDepth = 0);
+end;
+
+function TryReadRoutineSignature(
+  const ASource: string;
+  const ATokens: TArray<TRadIASemanticToken>;
+  const ARoutineIndex: Integer;
+  out ASignature: string;
+  out AStartOffset: Integer
+): Boolean;
+var
+  LBracketDepth: Integer;
+  LIndex: Integer;
+  LParenthesisDepth: Integer;
+  LToken: TRadIASemanticToken;
+begin
+  Result := False;
+  ASignature := '';
+  AStartOffset := RoutineSignatureStart(ATokens, ARoutineIndex);
+  LBracketDepth := 0;
+  LParenthesisDepth := 0;
+  for LIndex := ARoutineIndex + 1 to High(ATokens) do
+  begin
+    LToken := ATokens[LIndex];
+    UpdateSignatureDepth(
+      LToken.Text,
+      LParenthesisDepth,
+      LBracketDepth
+    );
+    if IsSignatureTerminator(
+      LToken,
+      LParenthesisDepth,
+      LBracketDepth
+    ) then
+    begin
+      ASignature := Copy(
+        ASource,
+        AStartOffset + 1,
+        LToken.StartOffset + LToken.Length - AStartOffset
+      );
+      Exit(True);
+    end;
+    if (LParenthesisDepth < 0) or (LBracketDepth < 0) then
+      Exit;
+  end;
+end;
+
+procedure SplitRoutineName(
+  const AQualifiedName: string;
+  out AName: string;
+  out AContainerName: string
+);
+var
+  LSeparator: Integer;
+begin
+  LSeparator := LastDelimiter('.', AQualifiedName);
+  if LSeparator > 0 then
+  begin
+    AContainerName := Copy(AQualifiedName, 1, LSeparator - 1);
+    AName := Copy(AQualifiedName, LSeparator + 1, MaxInt);
+  end
+  else
+  begin
+    AContainerName := '';
+    AName := AQualifiedName;
+  end;
+end;
+
+function TryBuildEnclosingRoutine(
+  const ASource: string;
+  const ASelection: TRadIADelphiExtractSelection;
+  const ATokens: TArray<TRadIASemanticToken>;
+  const ARoutineIndex: Integer;
+  out ARoutine: TRadIADelphiExtractRoutine
+): Boolean;
+var
+  LBodyEnd: Integer;
+  LBodyStart: Integer;
+  LContainerName: string;
+  LError: string;
+  LName: string;
+  LParsed: TRadIADelphiSignature;
+  LSignature: string;
+  LStartOffset: Integer;
+begin
+  Result := False;
+  if not TryReadRoutineSignature(
+    ASource,
+    ATokens,
+    ARoutineIndex,
+    LSignature,
+    LStartOffset
+  ) then
+    Exit;
+  if not TRadIADelphiSignatureParser.TryParse(LSignature, LParsed, LError) then
+    Exit;
+  if not TryFindRoutineBody(
+    ASource,
+    LSignature,
+    LStartOffset,
+    LBodyStart,
+    LBodyEnd,
+    LError
+  ) then
+    Exit;
+  if (ASelection.StartOffset <= LBodyStart) or
+    (ASelection.StartOffset + ASelection.Length > LBodyEnd) then
+    Exit;
+  SplitRoutineName(LParsed.Name, LName, LContainerName);
+  ARoutine := TRadIADelphiExtractRoutine.Create(
+    LName,
+    LContainerName,
+    LSignature,
+    LStartOffset,
+    LBodyStart,
+    LBodyEnd
+  );
   Result := True;
 end;
 
@@ -845,6 +1047,40 @@ begin
   finally
     LVariables.Free;
   end;
+end;
+
+class function TRadIADelphiExtractionAnalyzer.TryFindEnclosingRoutine(
+  const ASource: string;
+  const ASelection: TRadIADelphiExtractSelection;
+  out ARoutine: TRadIADelphiExtractRoutine;
+  out AError: string
+): Boolean;
+var
+  LIndex: Integer;
+  LToken: TRadIASemanticToken;
+  LTokens: TArray<TRadIASemanticToken>;
+begin
+  Result := False;
+  ARoutine := Default(TRadIADelphiExtractRoutine);
+  AError := '';
+  LTokens := SignificantTokens(ASource);
+  for LIndex := High(LTokens) downto Low(LTokens) do
+  begin
+    LToken := LTokens[LIndex];
+    if LToken.StartOffset >= ASelection.StartOffset then
+      Continue;
+    if not IsRoutineDeclaration(LToken.Text) then
+      Continue;
+    if TryBuildEnclosingRoutine(
+      ASource,
+      ASelection,
+      LTokens,
+      LIndex,
+      ARoutine
+    ) then
+      Exit(True);
+  end;
+  AError := 'No unambiguous Delphi routine contains the active selection.';
 end;
 
 end.

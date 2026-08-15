@@ -61,6 +61,13 @@
       ]
     },
     {
+      "name": "Semantic method extraction",
+      "source": "Source/Core/RadIA.Core.SemanticExtractMethodTools.pas",
+      "tools": [
+        "PrepareExtractMethod"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

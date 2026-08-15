@@ -55,6 +55,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `PrepareChangeSignature` | Prepares a transactional Delphi routine signature change across declarations, implementations, and calls. | `RadIA.Core.SemanticChangeSignatureTools.pas` |
 
+## Semantic method extraction
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareExtractMethod` | Prepares a transactional Extract Method refactoring from the active Delphi selection. | `RadIA.Core.SemanticExtractMethodTools.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -454,7 +460,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 56
-- Registered built-in tools: 168
+- Registered groups: 57
+- Registered built-in tools: 169
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

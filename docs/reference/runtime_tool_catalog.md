@@ -55,6 +55,12 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `PrepareChangeSignature` | Prepara uma alteração transacional da assinatura de uma rotina Delphi em declarações, implementação e chamadas comprovadas. | `RadIA.Core.SemanticChangeSignatureTools.pas` |
 
+## Extração semântica de métodos
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareExtractMethod` | Prepara a extração transacional da seleção ativa para um novo método Delphi, inferindo parâmetros e atualizando declaração, implementação e chamada. | `RadIA.Core.SemanticExtractMethodTools.pas` |
+
 ## Orientação Delphi curada
 
 | Ferramenta | O que faz | Unit de origem |
@@ -454,7 +460,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 56
-- Ferramentas internas registradas: 168
+- Grupos registrados: 57
+- Ferramentas internas registradas: 169
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

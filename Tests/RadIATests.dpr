@@ -17,6 +17,7 @@ uses
   RadIA.Core.DelphiCallArguments in '..\Source\Core\RadIA.Core.DelphiCallArguments.pas',
   RadIA.Core.DelphiExtraction in '..\Source\Core\RadIA.Core.DelphiExtraction.pas',
   RadIA.Tests.DelphiExtraction in 'Source\RadIA.Tests.DelphiExtraction.pas',
+  RadIA.Core.SemanticExtractMethodTools in '..\Source\Core\RadIA.Core.SemanticExtractMethodTools.pas',
   RadIA.Core.SemanticChangeSignatureTools in '..\Source\Core\RadIA.Core.SemanticChangeSignatureTools.pas',
   RadIA.Tests.DelphiCallArguments in 'Source\RadIA.Tests.DelphiCallArguments.pas',
   RadIA.Core.Version in '..\Source\Core\RadIA.Core.Version.pas',

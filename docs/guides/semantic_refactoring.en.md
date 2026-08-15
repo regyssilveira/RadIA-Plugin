@@ -72,3 +72,21 @@ The result is a multi-file preview only. Review and approve `ApplyMultiFilePatch
 explicit argument list, removed arguments with possible side effects, incomplete files, reference
 limits, or content changed since indexing. Disambiguate or adjust the reported call and retry; no
 partial change is applied.
+
+## Extract a method
+
+Select a complete block inside a method implementation and ask RadIA to extract it, or run:
+
+```text
+/tool PrepareExtractMethod {"methodName":"CalculateTotal"}
+```
+
+RadIA automatically finds the routine containing the selection, locates its class declaration, and
+infers input, `const`, `var`, and `out` parameters. Preparation replaces the block with a call, adds the
+declaration beside the original method, and creates the implementation before it as one transactional
+preview. Review and approve `ApplyMultiFilePatch`; use `RevertMultiFilePatch` to restore the exact
+previous content.
+
+The operation is blocked when the selection is ambiguous, crosses control flow, uses `Result`, contains
+early exits, is outside a class method, depends on an implicit local type, or requests an existing name.
+A blocked operation changes no file and reports the precondition that must be corrected.

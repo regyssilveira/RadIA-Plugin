@@ -8,7 +8,14 @@ uses
 type
   IRadIARenameWorkspaceInspect = interface
     ['{18E3D951-89C3-4FAB-A865-1D19B45603F0}']
+    procedure AddFile(const AFileName: string; const AContent: string);
     function ContentOf(const AFileName: string): string;
+    procedure SetActiveSelection(
+      const AFileName: string;
+      const AContent: string;
+      const ALine: Integer;
+      const AColumn: Integer
+    );
   end;
 
   [TestFixture]
@@ -35,6 +42,8 @@ type
     procedure PreparesAppliesAndRevertsChangeSignature;
     [Test]
     procedure RejectsAmbiguousChangeSignatureCall;
+    [Test]
+    procedure PreparesAppliesAndRevertsExtractMethod;
   end;
 
 implementation
@@ -50,6 +59,7 @@ uses
   RadIA.Core.Patches,
   RadIA.Core.SemanticQueries,
   RadIA.Core.SemanticChangeSignatureTools,
+  RadIA.Core.SemanticExtractMethodTools,
   RadIA.Core.SemanticRefactoringTools,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,
@@ -65,12 +75,20 @@ type
     IRadIARenameWorkspaceInspect
   )
   private
+    FActiveFile: string;
+    FActiveSelection: TRadIAEditorSelection;
     FContents: TDictionary<string, string>;
     FRootPath: string;
   public
     constructor Create(const ARootPath: string);
     destructor Destroy; override;
     procedure AddFile(const AFileName: string; const AContent: string);
+    procedure SetActiveSelection(
+      const AFileName: string;
+      const AContent: string;
+      const ALine: Integer;
+      const AColumn: Integer
+    );
     function ApplyContent(
       const AFileName: string;
       const AExpectedRevision: string;
@@ -183,6 +201,21 @@ begin
   FContents.AddOrSetValue(LowerCase(AFileName), AContent);
 end;
 
+procedure TRadIARenameWorkspaceStub.SetActiveSelection(
+  const AFileName: string;
+  const AContent: string;
+  const ALine: Integer;
+  const AColumn: Integer
+);
+begin
+  FActiveFile := AFileName;
+  FActiveSelection := TRadIAEditorSelection.Create(
+    AContent,
+    ALine,
+    AColumn
+  );
+end;
+
 function TRadIARenameWorkspaceStub.ApplyContent(
   const AFileName: string;
   const AExpectedRevision: string;
@@ -245,13 +278,16 @@ function TRadIARenameWorkspaceStub.GetEditorContent(
   const AMaxCharacters: Integer
 ): TRadIAEditorContent;
 begin
-  Result := Default(TRadIAEditorContent);
+  if FActiveFile.IsEmpty then
+    Result := Default(TRadIAEditorContent)
+  else
+    Result := ReadContent(FActiveFile, AMaxCharacters);
 end;
 
 function TRadIARenameWorkspaceStub.GetEditorSelection:
   TRadIAEditorSelection;
 begin
-  Result := Default(TRadIAEditorSelection);
+  Result := FActiveSelection;
 end;
 
 function TRadIARenameWorkspaceStub.GetIDEState: TRadIAIDEState;
@@ -629,6 +665,90 @@ begin
       LPatchService.Revert(LRoot.GetValue<string>('previewId')).Success
     );
     Assert.Contains(LWorkspace.ContentOf(FOtherFile), 'Execute(10)');
+  finally
+    LRoot.Free;
+  end;
+end;
+
+procedure TRadIASemanticRefactoringTests.
+  PreparesAppliesAndRevertsExtractMethod;
+const
+  CSelection = '  LTotal := AValue * 2;' + sLineBreak;
+  CSource = 'type TWorker = class' + sLineBreak +
+    '  procedure Execute(const AValue: Integer);' + sLineBreak +
+    'end;' + sLineBreak +
+    'procedure TWorker.Execute(const AValue: Integer);' + sLineBreak +
+    'var' + sLineBreak + '  LTotal: Integer;' + sLineBreak +
+    'begin' + sLineBreak + CSelection +
+    '  Save(LTotal);' + sLineBreak + 'end;';
+var
+  LInspect: IRadIARenameWorkspaceInspect;
+  LPatches: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRoot: TJSONObject;
+  LRoutines: IRadIASemanticRoutineService;
+begin
+  LInspect := FWorkspace as IRadIARenameWorkspaceInspect;
+  LInspect.AddFile(FMainFile, CSource);
+  LInspect.SetActiveSelection(FMainFile, CSelection, 8, 5);
+  LQueries := TRadIARenameQueryStub.Create(
+    LInspect,
+    FMainFile,
+    FOtherFile,
+    FFormFile,
+    False
+  );
+  Assert.IsTrue(Supports(LQueries, IRadIASemanticRoutineService, LRoutines));
+  LPatches := FPatchService as IRadIAMultiFilePatchService;
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticExtractMethodTools(
+    LRegistry,
+    FWorkspace as IRadIAWorkspaceFacade,
+    LQueries,
+    LRoutines,
+    LPatches
+  );
+  LResult := LRegistry.Resolve('PrepareExtractMethod').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareExtractMethod',
+      '{"methodName":"begin"}',
+      'extract-method-invalid-name-test'
+    )
+  );
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('invalid_identifier', LResult.ErrorCode);
+  LResult := LRegistry.Resolve('PrepareExtractMethod').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareExtractMethod',
+      '{"methodName":"CalculateTotal"}',
+      'extract-method-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  LRoot := TJSONObject.ParseJSONValue(LResult.ContentJson) as TJSONObject;
+  try
+    Assert.IsTrue(LPatches.Apply(
+      LRoot.GetValue<string>('previewId')
+    ).Success);
+    Assert.Contains(
+      LInspect.ContentOf(FMainFile),
+      'procedure CalculateTotal(const AValue: Integer; out LTotal: Integer);'
+    );
+    Assert.Contains(
+      LInspect.ContentOf(FMainFile),
+      'procedure TWorker.CalculateTotal(const AValue: Integer; ' +
+      'out LTotal: Integer);'
+    );
+    Assert.Contains(
+      LInspect.ContentOf(FMainFile),
+      '  CalculateTotal(AValue, LTotal);'
+    );
+    Assert.IsTrue(LPatches.Revert(
+      LRoot.GetValue<string>('previewId')
+    ).Success);
+    Assert.AreEqual(CSource, LInspect.ContentOf(FMainFile));
   finally
     LRoot.Free;
   end;

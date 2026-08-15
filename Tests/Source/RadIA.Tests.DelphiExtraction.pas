@@ -25,12 +25,72 @@ type
     procedure PreservesAssignedLocalInsideExtractedMethod;
     [Test]
     procedure RejectsFunctionResultMutation;
+    [Test]
+    procedure FindsImplementationContainingSelection;
+    [Test]
+    procedure RejectsSelectionOutsideRoutine;
   end;
 
 implementation
 
 uses
   RadIA.Core.DelphiExtraction;
+
+procedure TRadIADelphiExtractionTests.FindsImplementationContainingSelection;
+const
+  CSelection = '  LTotal := AValue * 2;' + sLineBreak;
+  CSource = 'unit Calculator;' + sLineBreak + 'interface' + sLineBreak +
+    'type' + sLineBreak + '  TCalculator = class' + sLineBreak +
+    '  public' + sLineBreak +
+    '    procedure Calculate(const AValue: Integer);' + sLineBreak +
+    '  end;' + sLineBreak + 'implementation' + sLineBreak +
+    'procedure TCalculator.Calculate(const AValue: Integer);' + sLineBreak +
+    'var' + sLineBreak + '  LTotal: Integer;' + sLineBreak +
+    'begin' + sLineBreak + CSelection + 'end;' + sLineBreak + 'end.';
+var
+  LError: string;
+  LRoutine: TRadIADelphiExtractRoutine;
+  LSelection: TRadIADelphiExtractSelection;
+begin
+  LSelection := TRadIADelphiExtractSelection.Create(
+    CSelection,
+    Pos(CSelection, CSource) - 1
+  );
+  Assert.IsTrue(TRadIADelphiExtractionAnalyzer.TryFindEnclosingRoutine(
+    CSource,
+    LSelection,
+    LRoutine,
+    LError
+  ), LError);
+  Assert.AreEqual('Calculate', LRoutine.Name);
+  Assert.AreEqual('TCalculator', LRoutine.ContainerName);
+  Assert.Contains(LRoutine.Signature, 'TCalculator.Calculate');
+  Assert.IsTrue(LRoutine.BodyStart < LSelection.StartOffset);
+  Assert.IsTrue(LRoutine.BodyEnd > LSelection.StartOffset);
+end;
+
+procedure TRadIADelphiExtractionTests.RejectsSelectionOutsideRoutine;
+const
+  CSelection = 'type TOutside = Integer;';
+  CSource = 'unit Outside;' + sLineBreak + 'interface' + sLineBreak +
+    CSelection + sLineBreak + 'implementation' + sLineBreak + 'end.';
+var
+  LError: string;
+  LRoutine: TRadIADelphiExtractRoutine;
+  LSelection: TRadIADelphiExtractSelection;
+begin
+  LSelection := TRadIADelphiExtractSelection.Create(
+    CSelection,
+    Pos(CSelection, CSource) - 1
+  );
+  Assert.IsFalse(TRadIADelphiExtractionAnalyzer.TryFindEnclosingRoutine(
+    CSource,
+    LSelection,
+    LRoutine,
+    LError
+  ));
+  Assert.Contains(LError, 'No unambiguous Delphi routine');
+end;
 
 procedure TRadIADelphiExtractionTests.InfersInputAndOutputParameters;
 const

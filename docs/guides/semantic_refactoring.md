@@ -75,3 +75,22 @@ O resultado é somente um preview multiarquivo. Revise e aprove `ApplyMultiFileP
 ambígua, chamada sem lista explícita de argumentos, argumento removido com possível efeito colateral,
 arquivo incompleto, limite de referências ou conteúdo alterado depois da indexação. Nesses casos,
 desambigue ou ajuste a chamada indicada e repita a operação; nenhuma alteração parcial é aplicada.
+
+## Extrair um método
+
+Selecione no editor um bloco completo dentro da implementação de um método e peça para extrair esse
+bloco, ou execute:
+
+```text
+/tool PrepareExtractMethod {"methodName":"CalculateTotal"}
+```
+
+O RadIA encontra automaticamente a rotina que contém a seleção, localiza sua declaração na classe e
+infere os parâmetros de entrada, `const`, `var` e `out`. A preparação substitui o bloco por uma chamada,
+adiciona a declaração junto ao método original e cria a implementação antes dele, sempre em um único
+preview transacional. Revise e aprove `ApplyMultiFilePatch`; use `RevertMultiFilePatch` para restaurar
+exatamente o conteúdo anterior.
+
+A operação é bloqueada quando a seleção é ambígua, atravessa fluxo de controle, usa `Result`, contém
+saídas antecipadas, está fora de um método de classe, depende de tipo local implícito ou quando o nome
+solicitado já existe. O bloqueio não modifica o arquivo e informa a precondição que precisa ser corrigida.

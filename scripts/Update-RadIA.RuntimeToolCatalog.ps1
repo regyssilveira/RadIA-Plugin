@@ -33,6 +33,7 @@ $portugueseGroupNames = @{
     "Semantic type hierarchy" = "Hierarquia semântica de tipos"
     "Semantic refactoring" = "Refatoração semântica"
     "Semantic signature refactoring" = "Refatoração semântica de assinaturas"
+    "Semantic method extraction" = "Extração semântica de métodos"
     "Curated Delphi guidance" = "Orientação Delphi curada"
     "DFM and Pascal consistency" = "Consistência entre DFM e Pascal"
     "Designer visual diff" = "Diff visual do Designer"

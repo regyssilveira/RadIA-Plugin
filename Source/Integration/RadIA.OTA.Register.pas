@@ -81,6 +81,7 @@ uses
   RadIA.Core.SemanticQueries, RadIA.Core.SemanticQueryTools,
   RadIA.Core.SemanticRefactoringTools,
   RadIA.Core.SemanticChangeSignatureTools,
+  RadIA.Core.SemanticExtractMethodTools,
   RadIA.Core.StackTraceAnalysis, RadIA.Core.StackTraceTools,
   RadIA.Core.CleanUses, RadIA.Core.CleanUsesTools,
   RadIA.Core.ThreadingAssistant, RadIA.Core.ThreadingAssistantTools,
@@ -1384,6 +1385,13 @@ initialization
     TRadIAContainer.Resolve<IRadIASemanticQueryService>,
     TRadIAContainer.Resolve<IRadIASemanticRoutineService>,
     TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
+  );
+  RegisterRadIASemanticExtractMethodTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIASemanticQueryService>,
+    TRadIAContainer.Resolve<IRadIASemanticRoutineService>,
     TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
   );
   TRadIAContainer.Register<IRadIADextFormModernizationService>(

@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 168 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 169 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -59,6 +59,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GetTypeHierarchy` | Retorna ancestrais e descendentes de um tipo Delphi indexado, com profundidade e indicação de tipos externos. | Quando o usuário ou o agente precisa compreender herança antes de navegar, refatorar ou avaliar impacto; homônimos exigem a unit. |
 | `PrepareRenameSymbol` | Prepara uma renomeação semântica exata em Pascal e DFM, incluindo arquivos fechados, sem alterar o projeto. | Quando o usuário pede para renomear um símbolo; exige identidade única e produz preview para aplicação e rollback multiarquivo. |
 | `PrepareChangeSignature` | Prepara uma alteração transacional da assinatura de uma rotina Delphi em declarações, implementação e chamadas comprovadas. | Quando parâmetros precisam ser adicionados, removidos, renomeados ou reordenados; exige mappings explícitos, bindings para novos argumentos e bloqueia referências ambíguas. |
+| `PrepareExtractMethod` | Prepara a extração transacional da seleção ativa para um novo método Delphi, inferindo parâmetros e atualizando declaração, implementação e chamada. | Quando um bloco coeso de um método deve virar outro método; exige seleção estruturalmente segura, classe e identidade semântica não ambígua e produz preview reversível. |
 
 ## Orientação Delphi curada
 
