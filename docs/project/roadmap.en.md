@@ -10,10 +10,10 @@ Consolidate the complete Delphi 12 and 13 experience through real usage: create,
 test, and debug projects without requiring users to know the internal architecture. New initiatives
 enter execution only with an observable outcome and an acceptance criterion.
 
-## Next decision
+## Current goal
 
-After observing the stable version, the next initiative will be selected by its measurable impact on the complete
-journey of creating, understanding, building, testing, and debugging projects. The roadmap neither
-reserves versions nor keeps speculative lists; only approved work enters the [backlog](backlog.en.md).
+The approved work prioritizes four outcomes in this order: universal experience, code intelligence,
+advanced diagnostics, and Delphi ecosystem integration. The executable scope and its gates are in
+the [backlog](backlog.en.md); the roadmap does not reserve versions or keep speculative lists.
 
 Delphi 11, C++, Lazarus, marketplace work, and DCU reading remain outside the current direction.
