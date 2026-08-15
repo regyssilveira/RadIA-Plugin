@@ -607,6 +607,24 @@ test('current release gates use the generated catalog size', () => {
   });
 });
 
+test('release keeps integration, calculator, and project journeys indivisible', () => {
+  const portuguese = fs.readFileSync(documentationPath('release_process.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('release_process.en.md'), 'utf8');
+  const backlog = fs.readFileSync(documentationPath('project', 'backlog.md'), 'utf8');
+  const releaseRunner = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'Test-RadIA.ReleaseUsage.ps1'),
+    'utf8'
+  );
+
+  assert.match(portuguese, /toda a suíte registrada de integração e ponta a ponta/u);
+  assert.match(english, /entire registered integration and end-to-end suite/u);
+  assert.match(backlog, /sem\s+opções de exclusão/u);
+  assert.match(releaseRunner, /build\.ps1[\s\S]*-Test/u);
+  assert.match(releaseRunner, /Test-RadIA\.GeneratedProjects\.ps1/u);
+  assert.match(releaseRunner, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
+  assert.match(releaseRunner, /Test-RadIA\.UsageMatrix\.ps1/u);
+});
+
 test('release metadata and operational protocols follow the package version', () => {
   const escapedVersion = packageVersion.replaceAll('.', '\\.');
   const project = fs.readFileSync(path.join(repositoryRoot, 'RadIA.dproj'), 'utf8');

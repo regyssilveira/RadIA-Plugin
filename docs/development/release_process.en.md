@@ -29,11 +29,11 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
 `Test-RadIA.ReleaseUsage.ps1` is mandatory for every release and runs, as one indivisible gate, the
-complete DUnitX suites on Delphi 12 and 13, calculator creation plus its functional and DUnitX tests,
-immediate project creation and opening, and the automated usage matrix on Delphi 12 Win32, Delphi 13
-Win32, and Delphi 13 IDE64. It produces sanitized evidence under `Output/Validation/ReleaseUsage`; a
-missing target or failed scenario blocks publication. Do not run or approve these groups in isolation
-to authorize a release.
+complete DUnitX suites on Delphi 12 and 13, the entire registered integration and end-to-end suite,
+calculator creation plus its functional and DUnitX tests, immediate project creation and opening, and
+the automated usage matrix on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64. It produces
+sanitized evidence under `Output/Validation/ReleaseUsage`; a missing, skipped, or failed group, target,
+or scenario blocks publication. Do not run or approve these groups in isolation to authorize a release.
 
 Run the scanner **locally** and require a passing Quality Gate for the same revision. Builds, tests,
 catalog, installer, and smoke tests must point to the same clean commit. Evidence must never be edited

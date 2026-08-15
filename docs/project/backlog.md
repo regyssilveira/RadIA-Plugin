@@ -31,8 +31,10 @@ executar a matriz crítica, coletar logs, screenshots e resultados estruturados 
 sem depender de intervenção humana. Falhas precisam identificar etapa, versão da IDE e artefato de
 diagnóstico, sem expor credenciais.
 
-Esse gate integra obrigatoriamente toda release junto com a criação e teste funcional da calculadora
-e com a criação, abertura e navegação imediata de projetos.
+Esse gate integra obrigatoriamente toda release. A publicação deve executar, no mesmo comando e sem
+opções de exclusão, a suíte completa de integração e ponta a ponta, a criação e os testes funcionais e
+DUnitX da calculadora e a criação, abertura e navegação imediata de projetos. Um desses grupos ausente,
+ignorado ou reprovado bloqueia a release.
 
 ## Marco 2 — inteligência de código
 

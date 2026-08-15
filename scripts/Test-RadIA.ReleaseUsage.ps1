@@ -143,6 +143,7 @@ foreach ($target in $openingTargets) {
     )
 
 Write-Host (
-    "Release usage gate passed: complete DUnitX suites, calculator, " +
-    "generated projects, project opening, and automated usage matrix."
+    "Release usage gate passed: complete DUnitX, registered integration " +
+    "and end-to-end scenarios, calculator, generated projects, project " +
+    "opening, and automated usage matrix."
 )

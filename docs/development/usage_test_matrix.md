@@ -53,13 +53,18 @@ powershell.exe -ExecutionPolicy Bypass `
 
 Esse comando compõe, sem opções para pular os gates principais:
 
-1. geração e build de todos os templates suportados no Delphi 12 e 13;
-2. operação visual `2 + 3 = 5` na calculadora VCL;
-3. execução dos cinco testes DUnitX da calculadora;
-4. criação, abertura e navegação imediata de projeto nos três alvos da IDE;
-5. matriz de inicialização e encerramento com proveniência do package;
-6. roteamento real de pedidos iniciantes para criação, build, testes e diagnóstico, com fallback
+1. suítes DUnitX completas do RadIA no Delphi 12 e 13;
+2. todos os cenários registrados de integração e ponta a ponta aplicáveis aos alvos suportados;
+3. geração e build de todos os templates suportados no Delphi 12 e 13;
+4. operação visual `2 + 3 = 5` na calculadora VCL;
+5. execução dos cinco testes DUnitX da calculadora;
+6. criação, abertura e navegação imediata de projeto nos três alvos da IDE;
+7. matriz de inicialização e encerramento com proveniência do package;
+8. roteamento real de pedidos iniciantes para criação, build, testes e diagnóstico, com fallback
    educativo e contadores locais sanitizados.
+
+A entrada de uma funcionalidade na matriz torna seu cenário obrigatório nas releases seguintes. O
+runner de release não aceita filtro, exclusão ou aprovação parcial desses grupos.
 
 Se `DEXT_ROOT` não estiver configurado, somente os templates DEXT são registrados como
 `not-required`; os demais templates e gates continuam obrigatórios. Quando `DEXT_ROOT` existe, os

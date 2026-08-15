@@ -31,8 +31,10 @@ the critical matrix, collect logs, screenshots, and structured results, and rest
 without human intervention. Failures must identify the stage, IDE version, and diagnostic artifact
 without exposing credentials.
 
-This gate is mandatory for every release together with calculator creation and functional testing
-and immediate project creation, opening, and navigation.
+This gate is mandatory for every release. Publication must run, through the same command and without
+skip options, the complete integration and end-to-end suite, calculator creation plus its functional
+and DUnitX tests, and immediate project creation, opening, and navigation. A missing, skipped, or
+failed group blocks the release.
 
 ## Milestone 2 — code intelligence
 

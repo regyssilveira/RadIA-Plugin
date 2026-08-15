@@ -108,7 +108,7 @@ jobs:
           .\build.ps1 -DelphiVersion "37.0" -Release -Package
           .\build.ps1 -DelphiVersion "37.0" -IDE64 -Release -Package
 
-      - name: Run mandatory calculator, project opening, and usage tests
+      - name: Run mandatory integration, calculator, and project usage gate
         shell: powershell
         run: |
           .\scripts\Test-RadIA.ReleaseUsage.ps1 `

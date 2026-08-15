@@ -29,11 +29,12 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
 `Test-RadIA.ReleaseUsage.ps1` é obrigatório em toda release e executa, como um único gate indivisível,
-as suítes DUnitX completas no Delphi 12 e 13, a criação e os testes funcionais e DUnitX da calculadora,
-a criação e abertura imediata de projetos e a matriz automatizada de uso no Delphi 12 Win32, Delphi 13
-Win32 e Delphi 13 IDE64. O gate produz evidência sanitizada em `Output/Validation/ReleaseUsage` e
-qualquer alvo ausente ou cenário reprovado bloqueia a publicação. Não execute nem aprove esses grupos
-isoladamente para autorizar uma release.
+as suítes DUnitX completas no Delphi 12 e 13, toda a suíte registrada de integração e ponta a ponta, a
+criação e os testes funcionais e DUnitX da calculadora, a criação e abertura imediata de projetos e a
+matriz automatizada de uso no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. O gate produz evidência
+sanitizada em `Output/Validation/ReleaseUsage` e qualquer grupo, alvo ou cenário ausente, ignorado ou
+reprovado bloqueia a publicação. Não execute nem aprove esses grupos isoladamente para autorizar uma
+release.
 
 Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma revisão. Builds, testes,
 catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser

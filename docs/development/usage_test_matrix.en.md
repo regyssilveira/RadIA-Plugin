@@ -53,13 +53,18 @@ powershell.exe -ExecutionPolicy Bypass `
 
 This command composes the following gates without options to skip their main requirements:
 
-1. generate and build every supported template on Delphi 12 and 13;
-2. perform the visual `2 + 3 = 5` operation in the VCL calculator;
-3. run all five calculator DUnitX tests;
-4. create, open, and immediately navigate a project on all three IDE targets;
-5. run the startup and shutdown matrix with package provenance;
-6. route real beginner requests for creation, build, tests, and diagnostics, including educational
+1. run the complete RadIA DUnitX suites on Delphi 12 and 13;
+2. run every registered integration and end-to-end scenario applicable to supported targets;
+3. generate and build every supported template on Delphi 12 and 13;
+4. perform the visual `2 + 3 = 5` operation in the VCL calculator;
+5. run all five calculator DUnitX tests;
+6. create, open, and immediately navigate a project on all three IDE targets;
+7. run the startup and shutdown matrix with package provenance;
+8. route real beginner requests for creation, build, tests, and diagnostics, including educational
    fallback and sanitized local counters.
+
+Once a feature enters the matrix, its scenario becomes mandatory in every following release. The
+release runner accepts no filter, exclusion, or partial approval for these groups.
 
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also
