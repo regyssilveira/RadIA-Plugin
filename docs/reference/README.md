@@ -1,6 +1,7 @@
 # Referência
 
 - [Tudo que o RadIA pode fazer](capabilities.md): referência canônica orientada ao usuário
+- [Inteligência semântica no editor](semantic_intelligence.md): recursos entregues, ativação, provas e limites
 - [Inventário detalhado de funcionalidades](features.md): recursos individuais, categorias e status
 - [Configurações](settings_reference.md)
 - [Comandos de barra](slash_commands.md)

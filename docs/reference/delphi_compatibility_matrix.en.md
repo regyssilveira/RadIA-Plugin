@@ -62,9 +62,3 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
 4. Each target compiles the BPL, the sample extension, the MCP bridge, and the DUnitX suite.
 5. Tests cannot fail, error, ignore or leak.
 6. Smokes in real IDE must confirm docking, tool catalog and shutdown without orphaned process.
-
-## Historical evidence
-
-Version 2.0 evidence files may contain Delphi 11 runs performed before the change
-support. These records are immutable and demonstrate the status of that review; do not expand the
-current matrix. New evidence generators only process Delphi 12 and 13.

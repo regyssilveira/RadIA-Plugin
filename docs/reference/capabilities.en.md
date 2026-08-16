@@ -43,6 +43,12 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Declarative extensions | Hot-reloaded commands, skills, journeys, knowledge, references, templates, aliases, and audited workflows with transactional package resources. |
 | Skill portability | Project-scoped publication to four CLIs with preview, central consent, ownership hashes, rollback, and conflict preservation. |
 
+Local structural completion after `.` belongs to the Ghost Text flow: it may provide an unambiguous
+continuation without calling AI, but it does not replace or inject items into the native CodeInsight
+popup. References, hierarchy, and missing members also have explicit scope and activation. See
+[Semantic intelligence in the editor](semantic_intelligence.en.md) for the verifiable matrix,
+commands, reproducible evidence, and limits.
+
 Use the visual Agent On/Off button or `/agent on` and `/agent off`. Start an autonomous run with:
 
 ```text
@@ -53,7 +59,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 174 registered built-in tools](runtime_tool_catalog.en.md)
+- [All 185 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.en.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](../guides/user_manual.en.md)

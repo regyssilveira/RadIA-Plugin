@@ -38,6 +38,7 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 ## Editor, Designer e revisão
 
 - [Assistência inline e FIM](inline_completion.md)
+- [Inteligência semântica: estado, acionamento e limites](../reference/semantic_intelligence.md)
 - [Revisão por bloco](block_reviews.md)
 - [Designer e debugger](user_guide_designer_debugger.md)
 - [Auditoria DFM/PAS](dfm_pas_audit.md)

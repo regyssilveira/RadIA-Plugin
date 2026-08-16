@@ -50,6 +50,7 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 | Informação | Referência |
 |---|---|
 | Tudo que o RadIA pode fazer | [Mapa de capacidades](reference/capabilities.md) |
+| Entender completion, referências, membros e limites do CodeInsight | [Inteligência semântica](reference/semantic_intelligence.md) |
 | Consultar cada recurso, sua categoria e seu status | [Inventário detalhado](reference/features.md) |
 | Campos e botões de configuração | [Configurações](reference/settings_reference.md) |
 | Entender as abas de configuração | [Mapa das configurações](guides/user_manual.md#24-mapa-das-configurações) |

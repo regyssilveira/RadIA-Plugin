@@ -120,6 +120,9 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Alternativas de Ghost Text** | Editor | Painel de até três sugestões com navegação visual e atalhos configuráveis, sem alterar o buffer antes do aceite. | ✅ Concluído |
 | **Contexto semântico do editor** | Editor | Unit, símbolo, imports e declarações próximas compartilhados entre Ghost Text, ações e agente, com inspeção somente leitura. | ✅ Concluído |
 | **Referências semânticas Pascal/DFM** | Editor | Identidade estável, declarações e usos confirmados com arquivo, linha e coluna; homônimos e candidatos permanecem explícitos. | ✅ Concluído |
+| **Conclusão estrutural no Ghost Text** | Editor | Resolve localmente uma continuação inequívoca após `.`; resultados vazios ou ambíguos usam fallback e não alteram o popup nativo do CodeInsight. | ✅ Concluído |
+| **Membros de interface ausentes** | Editor | Prepara declarações e corpos idempotentes para contratos ausentes, com preview, consentimento na aplicação e rollback. | ✅ Concluído |
+| **Hierarquia de tipos** | Editor | Consulta ancestrais e descendentes confirmados e exige a unit quando um nome é ambíguo. | ✅ Concluído |
 | **Rename Symbol transacional** | Editor | Renomeação exata em Pascal e DFM, inclusive arquivos fechados, com preview, hashes, consentimento, compensação e rollback. | ✅ Concluído |
 | **Extract Method transacional** | Editor | Extrai uma seleção Pascal estruturalmente válida para um novo método, preservando o buffer até a aprovação da preview e permitindo reversão exata. | ✅ Concluído |
 | **Change Signature transacional** | Editor | Altera declarações, implementações e chamadas confirmadas com mapeamento explícito de parâmetros, preview multiarquivo e rollback. | ✅ Concluído |

@@ -38,6 +38,7 @@ catalogs.
 ## Editor, Designer, and review
 
 - [Inline assistance and FIM](inline_completion.en.md)
+- [Semantic intelligence: status, activation, and limits](../reference/semantic_intelligence.en.md)
 - [Block review](block_reviews.en.md)
 - [Designer and debugger](user_guide_designer_debugger.en.md)
 - [DFM/PAS audit](dfm_pas_audit.en.md)

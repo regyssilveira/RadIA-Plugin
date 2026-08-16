@@ -120,6 +120,9 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Ghost Text Alternatives** | Editor | Up to three suggestions with visual navigation and configurable shortcuts without changing the buffer before acceptance. | ✅ Completed |
 | **Semantic editor context** | Editor | Unit, symbol, imports, and nearby declarations shared by Ghost Text, actions, and agent, with read-only inspection. | ✅ Completed |
 | **Pascal/DFM semantic references** | Editor | Stable identity plus confirmed declarations and usages with file, line, and column; homonyms and candidates remain explicit. | ✅ Completed |
+| **Structural Ghost Text completion** | Editor | Resolves an unambiguous continuation after `.` locally; empty or ambiguous results use fallback and do not alter the native CodeInsight popup. | ✅ Completed |
+| **Missing interface members** | Editor | Prepares idempotent declarations and bodies for missing contracts, with preview, consent on apply, and rollback. | ✅ Completed |
+| **Type hierarchy** | Editor | Queries confirmed ancestors and descendants and requires a unit when a name is ambiguous. | ✅ Completed |
 | **Transactional Rename Symbol** | Editor | Exact Pascal and DFM rename, including closed files, with preview, hashes, consent, compensation, and rollback. | ✅ Completed |
 | **Transactional Extract Method** | Editor | Extracts a structurally valid Pascal selection into a new method, preserving the buffer until preview approval and supporting exact reversal. | ✅ Completed |
 | **Transactional Change Signature** | Editor | Updates declarations, implementations, and confirmed calls with explicit parameter mapping, multi-file preview, and rollback. | ✅ Completed |

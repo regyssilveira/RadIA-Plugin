@@ -227,17 +227,3 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 - **Cenário excedeu o tempo:** reduza repetições na reprodução e use o cenário versionado completo
   após a correção.
 - **Artefato recusado:** o fingerprint não corresponde ao conteúdo; gere e revise um novo preview.
-
-## Evidência histórica de aceite inicial
-
-### Matriz automatizada atual da captura visual
-
-A implementação atual abre uma janela VCL real, obtém seu ID opaco pelo facade de descoberta,
-captura o mesmo `HWND` pelo facade de produção e valida dimensões e assinatura PNG. O teste passou
-no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. A renderização segura do card, incluindo o
-par anterior/posterior e a timeline, é coberta adicionalmente pelos testes web locais.
-
-O caso-laboratório de Access Violation ao cancelar um formulário foi comprovado em Delphi 12 Win32,
-Delphi 13 Win32 e Delphi 13 IDE64. Em cada alvo houve reprodução, captura, correção, novo build,
-nova sessão, comparação `fixed` e regressão com 10 repetições. A matriz de build executou 806 testes
-por alvo sem falhas ou vazamentos, e o SonarQube permaneceu com Quality Gate `OK`.

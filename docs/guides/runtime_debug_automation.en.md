@@ -206,17 +206,3 @@ The user decides when to add the artifact to version control.
 - **Scenario timeout:** use one repetition for failure capture and the full saved scenario after the
   fix.
 - **Rejected artifact:** regenerate and review the preview because its fingerprint is stale.
-
-## Version 2.1 acceptance
-
-### Current automated visual-capture matrix
-
-The current implementation opens a real VCL window, obtains its opaque ID through the discovery
-facade, captures the same `HWND` through the production facade, and validates PNG dimensions and
-signature. The test passes on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64. Local web tests
-additionally cover safe card rendering, including the before/after pair and timeline.
-
-The form-cancellation Access Violation laboratory case was proven on Delphi 12 Win32, Delphi 13
-Win32, and Delphi 13 IDE64. Every target completed reproduction, capture, fix, new build, new
-session, `fixed` comparison, and a ten-replay regression. The build matrix ran 806 tests per target
-without failures or leaks, while SonarQube retained an `OK` Quality Gate.

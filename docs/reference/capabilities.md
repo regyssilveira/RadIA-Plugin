@@ -69,6 +69,12 @@ Pelo chat e pelo menu contextual do editor, o RadIA pode:
 - renomear membros em ancestrais e overrides como uma única alteração transacional, bloqueando
   overloads ou relações de herança ambíguas.
 
+A conclusão estrutural local após `.` pertence ao fluxo de Ghost Text: ela pode fornecer uma
+continuação inequívoca sem chamar a IA, mas não substitui nem injeta itens no popup nativo do
+CodeInsight. Referências, hierarquia e membros ausentes também possuem escopo e acionamento próprios.
+Consulte [Inteligência semântica no editor](semantic_intelligence.md) para a matriz verificável,
+comandos, provas reproduzíveis e limites.
+
 Quando uma ação compatível não recebe seleção, ela pode usar a unit ativa como contexto.
 
 Consulte [Editor e geração](../guides/user_guide_editor_generation.md) e
