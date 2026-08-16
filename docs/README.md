@@ -38,6 +38,7 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 | Reunir e navegar pelos achados das ferramentas | [Painel de problemas](reference/problems_panel.md) |
 | Reproduzir falhas em execução | [Automação de diagnóstico runtime](guides/runtime_debug_automation.md) |
 | Diagnosticar vazamentos com FastMM5 | [Diagnóstico de memória](guides/fastmm5_diagnostic_session.md) |
+| Inspecionar e consultar SQLite local | [Banco de dados local](guides/local_database.md) |
 | Usar o terminal integrado | [Terminal](guides/terminal.md) |
 | Configurar e usar CLI | [Executores nativo e CLI](guides/cli_executors.md) |
 | Configurar e usar MCP | [Integração MCP](guides/mcp_integration_guide.md) |

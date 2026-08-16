@@ -176,6 +176,13 @@ Designer mutations are structural and require confirmation.
 Debugger control and application execution are classified as execution. Locals readings
 may contain secrets and must be sanitized before reaching logs or external clients.
 
+### 10.1. Local SQLite database
+
+Inspection accepts only files inside the workspace. Queries use a read-only connection, row and
+column bounds, consent on every execution, and redaction before grid and CSV rendering. DDL, DML,
+compound statements, BLOB materialization, and SQLite runtimes outside the trusted Delphi
+installation are rejected.
+
 ## 11. Fail safe
 
 When in doubt, the operation must:

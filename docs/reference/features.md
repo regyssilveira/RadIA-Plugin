@@ -138,3 +138,4 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Assistente de threads e PPL** | Concorrência | Detecta riscos e só prepara patches com sincronização VCL, cancelamento e tratamento de exceções validados. | ✅ Concluído |
 | **Retrofit OpenAPI/Swagger** | APIs existentes | Inventaria rotas DEXT e prepara integração Swagger revisável sem recriar o projeto. | ✅ Concluído |
 | **Adoção de DEXT e decomposição de forms** | Modernização | Prepara etapas reversíveis somente após migração validada, evidência de paridade e auditoria DFM/PAS; falhas de build ou testes revertem a etapa. | ✅ Concluído |
+| **Inspeção SQLite local** | Dados | Descobre schema e visualiza uma consulta somente leitura com consentimento, limites e sanitização de segredos. | ✅ Concluído |

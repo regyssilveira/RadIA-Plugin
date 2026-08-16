@@ -165,7 +165,7 @@ foreach ($run in $planEntries) {
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
     if ($run.scope -eq "host") {
         $testFile = Join-Path $repositoryRoot $run.testPath
-        $output = & node --test $testFile 2>&1 | Out-String
+        $output = & node --test --test-isolation=none $testFile 2>&1 | Out-String
         $exitCode = $LASTEXITCODE
     } else {
         $arguments = @(

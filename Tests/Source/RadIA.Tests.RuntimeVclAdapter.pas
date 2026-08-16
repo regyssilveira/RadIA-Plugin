@@ -336,7 +336,7 @@ begin
     );
   LSource := TRadIARuntimeVclFileTemplateSource.Create(FRootPath);
   Assert.IsTrue(LSource.LoadTemplates(LTemplates, LError), LError);
-  Assert.AreEqual(4, Length(LTemplates));
+  Assert.AreEqual(NativeInt(4), Length(LTemplates));
   Assert.AreEqual(CTemplateNames[3], LTemplates[3].FileName);
 end;
 

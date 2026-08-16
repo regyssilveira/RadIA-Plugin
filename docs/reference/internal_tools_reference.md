@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 185 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 187 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -464,6 +464,13 @@ não grava a seleção como material didático.
 | `RecordLegacyMigrationGate` | Registra evidências de build e testes e reverte o lote aplicado se um gate falhar. | Depois de aplicar e validar cada lote. |
 | `GetLegacyMigrationReport` | Consolida compatibilidade, gates e ações manuais pendentes. | Durante e ao encerrar a migração. |
 | `PlanDextAndFormModernization` | Planeja DEXT e decomposição de forms sem reescrita automática. | Depois de estabilizar os lotes FireDAC. |
+
+## Inspeção segura de banco local
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `InspectLocalSQLiteDatabase` | Lê tabelas, views e colunas de um arquivo SQLite dentro do workspace sem executar SQL fornecido pelo usuário. | Quando o agente precisa conhecer o schema local antes de propor uma consulta. |
+| `PreviewLocalSQLiteQuery` | Executa uma única consulta somente leitura, limita o resultado a 500 linhas e oculta colunas sensíveis no grid e no CSV. | Depois que o usuário revisa a consulta; exige consentimento em toda execução. |
 
 ## Exemplos de acionamento
 

@@ -2526,6 +2526,65 @@ body.light-theme .message-avatar.provider-avatar-badge {
   border-color: var(--danger, #c62828);
 }
 
+.database-result-summary {
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.database-schema-object {
+  margin: 6px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.database-schema-object ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.database-grid-viewport {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.database-grid {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.database-grid th,
+.database-grid td {
+  max-width: 360px;
+  padding: 7px 9px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.database-grid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-elevated);
+}
+
+.database-grid-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .agent-run-objective {
   margin-top: 8px;
   color: var(--fg-primary);

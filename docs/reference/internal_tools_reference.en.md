@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 185 internal tools: what each one does and at what stage
+This page explains RadIA's 187 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -464,6 +464,13 @@ store the selection as learning material.
 | `RecordLegacyMigrationGate` | Records build and test evidence and reverts an applied batch when a gate fails. | After applying and validating each batch. |
 | `GetLegacyMigrationReport` | Consolidates compatibility, gates, and pending manual actions. | During and at the end of migration. |
 | `PlanDextAndFormModernization` | Plans DEXT and form decomposition without automatic rewriting. | After stabilizing the FireDAC batches. |
+
+## Safe local database inspection
+
+| Tool | What it does | When it is triggered |
+|---|---|---|
+| `InspectLocalSQLiteDatabase` | Reads tables, views, and columns from a workspace-local SQLite file without executing user SQL. | When the agent needs the local schema before proposing a query. |
+| `PreviewLocalSQLiteQuery` | Runs one read-only query, limits results to 500 rows, and redacts sensitive columns in the grid and CSV. | After the user reviews the query; consent is required on every execution. |
 
 ## Trigger examples
 

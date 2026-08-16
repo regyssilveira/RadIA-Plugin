@@ -129,7 +129,12 @@ test('inline completion diagnostic defers acceptance until after preview paint',
   );
   assert.match(
     hook,
-    /if not FInlineCompletionSmokePreviewed then[\s\S]*?Preview\([\s\S]*?FInlineCompletionSmokePreviewed := True;[\s\S]*?Exit;/u,
+    new RegExp(
+      'if not FInlineCompletionSmokePreviewed then[\\s\\S]*?' +
+      'TryPreviewInlineCompletionDiagnostic[\\s\\S]*?' +
+      'FInlineCompletionSmokePreviewed := True;[\\s\\S]*?Exit;',
+      'u',
+    ),
   );
   assert.match(
     hook,

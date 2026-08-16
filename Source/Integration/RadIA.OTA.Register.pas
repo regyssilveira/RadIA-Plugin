@@ -73,6 +73,8 @@ uses
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Core.RuntimePerformance,
   RadIA.Core.DelphiEcosystemTools,
+  RadIA.Core.LocalDatabase,
+  RadIA.Core.LocalDatabaseTools,
   RadIA.OTA.RuntimePerformance,
   RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
@@ -1642,6 +1644,12 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
     TRadIAContainer.Resolve<IRadIAPatchService>
+  );
+  RegisterRadIALocalDatabaseTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+    TRadIALocalDatabaseService.Create
   );
   RegisterRadIAExternalMcpRuntime;
   RegisterRadIAInstallationHealthTools(

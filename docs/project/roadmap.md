@@ -13,10 +13,10 @@ critérios de aceitação verificáveis.
 
 ## Goal atual
 
-Fechar de forma determinística as diferenças acionáveis restantes na inteligência semântica,
-jornadas da IDE, progresso do agente, banco de dados, terminal, lifecycle do WebView, conhecimento,
-consentimento e supervisão do motor. Cada frente precisa de baseline, métrica, cenário reproduzível
-e evidência no mesmo commit antes de ser encerrada. O escopo executável está no
+Fechar de forma determinística as diferenças acionáveis restantes em terminal, lifecycle do
+WebView, conhecimento, consentimento e supervisão do motor. Cada frente precisa de baseline,
+métrica, cenário reproduzível e evidência no mesmo commit antes de ser encerrada. O escopo
+executável está no
 [backlog](backlog.md).
 
 Delphi 11, C++, Lazarus, marketplace, repositório público de extensões, troca do WebView e leitura de

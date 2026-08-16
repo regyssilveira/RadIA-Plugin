@@ -37,6 +37,7 @@ Internal plans, audits, test results, and release notes do not belong in this tr
 | Collect and navigate tool findings | [Problems panel](reference/problems_panel.en.md) |
 | Reproduce runtime failures | [Runtime diagnostic automation](guides/runtime_debug_automation.en.md) |
 | Diagnose leaks with FastMM5 | [Memory diagnostics](guides/fastmm5_diagnostic_session.en.md) |
+| Inspect and query local SQLite | [Safe local database](guides/local_database.en.md) |
 | Use the integrated terminal | [Terminal](guides/terminal.en.md) |
 | Configure and use CLIs | [Native and CLI executors](guides/cli_executors.en.md) |
 | Configure and use MCP | [MCP integration](guides/mcp_integration_guide.en.md) |

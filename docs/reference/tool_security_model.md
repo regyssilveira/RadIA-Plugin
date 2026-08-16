@@ -176,6 +176,13 @@ Mutações do Designer são estruturais e exigem confirmação.
 Controle do debugger e execução da aplicação são classificados como execução. Leituras de locals
 podem conter secrets e devem ser sanitizadas antes de chegar a logs ou clientes externos.
 
+### 10.1. Banco SQLite local
+
+A inspeção aceita somente arquivos dentro do workspace. Consultas usam conexão somente leitura,
+limites de linhas e colunas, consentimento em toda execução e sanitização antes do grid e do CSV.
+DDL, DML, múltiplas instruções, BLOBs e runtimes SQLite fora da instalação confiável do Delphi são
+recusados.
+
 ## 11. Falha segura
 
 Na dúvida, a operação deve:

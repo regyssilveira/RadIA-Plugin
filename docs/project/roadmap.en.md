@@ -13,10 +13,10 @@ criteria.
 
 ## Current goal
 
-Deterministically close the remaining actionable differences in semantic intelligence, IDE journeys,
-agent progress, databases, terminal, WebView lifecycle, knowledge, consent, and engine supervision.
-Each workstream needs a baseline, metric, reproducible scenario, and evidence on the same commit
-before closure. The executable scope is in the [backlog](backlog.en.md).
+Deterministically close the remaining actionable differences in terminal, WebView lifecycle,
+knowledge, consent, and engine supervision. Each workstream needs a baseline, metric, reproducible
+scenario, and evidence on the same commit before closure. The executable scope is in the
+[backlog](backlog.en.md).
 
 Delphi 11, C++, Lazarus, marketplace work, a public extension repository, WebView replacement, and
 DCU reading remain outside the current direction.

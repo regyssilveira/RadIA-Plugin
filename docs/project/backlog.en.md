@@ -8,11 +8,6 @@ belong in the backlog.
 Close every actionable difference in the current experience with reproducible evidence, reusing
 existing capabilities before implementing any new infrastructure.
 
-- [ ] close and prove the end-to-end completion, missing-members, navigation, and Ghost Text journey
-  while preserving its explicit distinction from the native CodeInsight popup;
-- [ ] complete the automatic journey across Designer, Code, Problems, tests, and debugger;
-- [ ] simplify routes and make native-agent and CLI progress continuously observable;
-- [ ] deliver a safe visual database journey;
 - [ ] integrate terminal, chat, journeys, and error navigation;
 - [ ] prove current-WebView stability across dock, undock, resize, and recovery;
 - [ ] make local knowledge explainable and verifiable;

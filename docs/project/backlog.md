@@ -8,11 +8,6 @@ release não pertencem ao backlog.
 Encerrar com evidência reproduzível todas as diferenças acionáveis da experiência atual, reutilizando
 as capacidades existentes antes de implementar qualquer nova infraestrutura.
 
-- [ ] fechar e comprovar a jornada ponta a ponta de completion, membros ausentes, navegação e
-  Ghost Text, preservando a distinção explícita em relação ao popup nativo do CodeInsight;
-- [ ] concluir a jornada automática entre Designer, Code, Problems, testes e debugger;
-- [ ] simplificar rotas e tornar o progresso do agente e das CLIs continuamente observável;
-- [ ] entregar uma jornada visual e segura para banco de dados;
 - [ ] integrar terminal, chat e jornadas com navegação de erros;
 - [ ] provar estabilidade do WebView atual em dock, undock, resize e recuperação;
 - [ ] tornar o conhecimento local explicável e verificável;

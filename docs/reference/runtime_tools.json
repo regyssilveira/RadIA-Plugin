@@ -522,6 +522,14 @@
       ]
     },
     {
+      "name": "Safe local database inspection",
+      "source": "Source/Core/RadIA.Core.LocalDatabaseTools.pas",
+      "tools": [
+        "InspectLocalSQLiteDatabase",
+        "PreviewLocalSQLiteQuery"
+      ]
+    },
+    {
       "name": "FastMM5 log evidence",
       "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
       "tools": [

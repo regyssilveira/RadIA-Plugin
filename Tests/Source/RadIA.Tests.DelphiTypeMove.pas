@@ -92,7 +92,7 @@ begin
     LBlocks,
     LError
   ), LError);
-  Assert.AreEqual(2, Length(LBlocks));
+  Assert.AreEqual(NativeInt(2), Length(LBlocks));
   Assert.Contains(LBlocks[0].Content, 'procedure TWorker.Execute');
   Assert.Contains(LBlocks[1].Content, 'function TWorker.Ready');
   Assert.IsFalse(LBlocks[0].Content.Contains('TOther'));

@@ -291,6 +291,14 @@ manifestos ausentes sem instalar componentes e localiza textos visíveis em Pasc
 `PrepareLocalizationExtraction` cria somente um preview imutável na unit ativa; `ApplyPatch` exige consentimento
 e `RevertPatch` restaura a alteração. A comparação entre idiomas reutiliza os snapshots e o diff visual existentes.
 
+## Banco SQLite local
+
+O RadIA descobre tabelas, views e colunas de arquivos SQLite dentro do workspace. Também executa,
+com consentimento em toda chamada, uma consulta somente leitura limitada a 500 linhas. O resultado
+aparece em grid paginado e permite copiar um CSV sanitizado. Operações de escrita, múltiplas
+instruções, arquivos externos ao projeto, BLOBs e valores de colunas sensíveis não atravessam essa
+jornada. Consulte [Banco de dados local com segurança](../guides/local_database.md).
+
 ## Compatibilidade
 
 | IDE | Arquitetura | Estado |
@@ -305,7 +313,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 185 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 187 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)
