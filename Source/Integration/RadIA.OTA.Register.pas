@@ -51,7 +51,8 @@ procedure Register;
 implementation
 
 uses
-  System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
+  System.SysUtils, System.IOUtils, System.SyncObjs,
+  Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
   Vcl.AppEvnts, Winapi.Windows, Winapi.Messages,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
@@ -176,6 +177,8 @@ type
 
 const
   GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = $00000004;
+  CBackgroundShutdownTimeoutMs = 5000;
+  CBackgroundShutdownPollMs = 10;
 
 function GetModuleHandleEx(ADwFlags: DWORD; ALpModuleName: PChar; var APhModule: HMODULE): BOOL; stdcall;
   external 'kernel32.dll' name 'GetModuleHandleExW';
@@ -190,6 +193,43 @@ var
 procedure LogDebug(const AMsg: string);
 begin
   TLogger.Log(AMsg, 'Register');
+end;
+
+procedure StopBackgroundServices;
+var
+  LKnowledgeScheduler: IRadIAKnowledgeRefreshScheduler;
+  LSemanticCoordinator: IRadIASemanticWorkspaceCoordinator;
+  LSemanticLifecycle: IRadIASemanticEngineLifecycle;
+begin
+  if TRadIAContainer.TryResolve<IRadIAKnowledgeRefreshScheduler>(
+    LKnowledgeScheduler
+  ) then
+    LKnowledgeScheduler.Stop;
+  if TRadIAContainer.TryResolve<IRadIASemanticWorkspaceCoordinator>(
+    LSemanticCoordinator
+  ) then
+    LSemanticCoordinator.Stop;
+  if TRadIAContainer.TryResolve<IRadIASemanticEngineLifecycle>(
+    LSemanticLifecycle
+  ) then
+    LSemanticLifecycle.Stop;
+end;
+
+procedure WaitForBackgroundServices;
+var
+  LStartedAt: UInt64;
+begin
+  LStartedAt := GetTickCount64;
+  while (TInterlocked.CompareExchange(GActiveThreadCount, 0, 0) > 0) and
+    (GetTickCount64 - LStartedAt < CBackgroundShutdownTimeoutMs) do
+  begin
+    CheckSynchronize(CBackgroundShutdownPollMs);
+    Sleep(CBackgroundShutdownPollMs);
+  end;
+  LogDebug(
+    'Background threads remaining after shutdown wait: ' +
+    IntToStr(TInterlocked.CompareExchange(GActiveThreadCount, 0, 0))
+  );
 end;
 
 constructor TRadIAApplicationShutdownObserver.Create;
@@ -480,6 +520,8 @@ begin
     'TRadIAWizard.Destroy shutdown state: ' +
     BoolToStr(GIsShuttingDown, True)
   );
+  StopBackgroundServices;
+  LogDebug('TRadIAWizard.Destroy background services stopped');
   if Assigned(GMcpServer) then
   begin
     LogDebug('TRadIAWizard.Destroy stopping MCP server');
@@ -516,6 +558,7 @@ begin
   LogDebug('TRadIAWizard.Destroy editor hook released');
   FOptionsPages.Free;
   LogDebug('TRadIAWizard.Destroy owned objects released');
+  WaitForBackgroundServices;
 
   ReleasePinnedModule;
 
@@ -1288,6 +1331,10 @@ initialization
     TRadIASemanticEngineSupervisor.Create(
       TRadIASemanticEngineClient.DefaultExecutablePath
     )
+  );
+  TRadIAContainer.Register<IRadIASemanticEngineLifecycle>(
+    TRadIAContainer.Resolve<IRadIASemanticRequestClient> as
+      IRadIASemanticEngineLifecycle
   );
   TRadIAContainer.Register<IRadIASemanticWorkspaceSynchronizer>(
     TRadIASemanticWorkspaceSynchronizer.Create(

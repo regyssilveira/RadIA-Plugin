@@ -31,6 +31,11 @@ type
     ): Boolean;
   end;
 
+  IRadIASemanticEngineLifecycle = interface
+    ['{AF670F4C-F678-45A8-A4E8-37C663D133A0}']
+    procedure Stop;
+  end;
+
   TRadIASemanticWorkspaceFile = record
   private
     FContent: string;

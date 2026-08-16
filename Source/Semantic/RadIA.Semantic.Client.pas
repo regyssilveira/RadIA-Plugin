@@ -39,7 +39,8 @@ type
   TRadIASemanticEngineSupervisor = class(
     TInterfacedObject,
     IRadIASemanticRequestClient,
-    IRadIASemanticCancelableRequestClient
+    IRadIASemanticCancelableRequestClient,
+    IRadIASemanticEngineLifecycle
   )
   private
     FExecutablePath: string;

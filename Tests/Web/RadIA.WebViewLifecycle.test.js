@@ -61,6 +61,18 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
     /RadIA\.OTA\.DockableForm\.PrepareDockableFormsForShutdown;/u
   );
   assert.match(
+    registration,
+    /StopBackgroundServices;[\s\S]*?IRadIASemanticEngineLifecycle[\s\S]*?LSemanticLifecycle\.Stop;/u
+  );
+  assert.match(
+    registration,
+    /StopBackgroundServices;[\s\S]*?WaitForBackgroundServices;/u
+  );
+  assert.match(
+    registration,
+    /TInterlocked\.CompareExchange\(GActiveThreadCount, 0, 0\)/u
+  );
+  assert.match(
     dockableForm,
     /procedure PrepareDockableFormsForShutdown;[\s\S]*?ReleaseForm;/u
   );
