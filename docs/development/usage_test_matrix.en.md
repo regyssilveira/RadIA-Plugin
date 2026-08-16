@@ -59,7 +59,7 @@ This command composes the following gates without options to skip their main req
 4. perform the visual `2 + 3 = 5` operation in the VCL calculator;
 5. run all five calculator DUnitX tests;
 6. create, open, and immediately navigate a project on all three IDE targets;
-7. run the startup and shutdown matrix by comparing the installation with the current local build;
+7. explicitly install the current build and run the startup/shutdown matrix on all three targets;
 8. route real beginner requests for creation, build, tests, and diagnostics, including educational
    fallback and sanitized local counters.
 
@@ -69,7 +69,8 @@ release runner accepts no filter, exclusion, or partial approval for these group
 Package and installer provenance is validated afterwards by the packaging gate because those artifacts do not
 exist yet while `Test-RadIA.ReleaseUsage.ps1` runs. Using `-RequirePackageProvenance` before
 `New-RadIA.ReleaseEvidence.ps1` is invalid. The matrix compares the installed BPL with the local build from the
-same revision; the following stage binds that revision to packages and the installer.
+same revision; the runner installs that build on all three targets before the matrix, and the following stage binds
+the revision to packages and the installer.
 
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also

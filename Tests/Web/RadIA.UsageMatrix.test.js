@@ -68,6 +68,8 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Test-RadIA\.UsageMatrix\.ps1/u);
   assert.match(source, /-Profile "release"/u);
   assert.doesNotMatch(source, /RequirePackageProvenance/u);
+  assert.match(source, /installationTargets/u);
+  assert.match(source, /Install = \$true/u);
 });
 
 test('release usage plan adds the intent recommendation contract once', () => {

@@ -135,6 +135,29 @@ foreach ($target in $openingTargets) {
     }
 }
 
+$installationTargets = @(
+    [PSCustomObject]@{ Version = "23.0"; IDE64 = $false },
+    [PSCustomObject]@{ Version = "37.0"; IDE64 = $false },
+    [PSCustomObject]@{ Version = "37.0"; IDE64 = $true }
+)
+foreach ($target in $installationTargets) {
+    $installArguments = @{
+        DelphiVersion = $target.Version
+        Install = $true
+    }
+    if ($target.IDE64) {
+        $installArguments.IDE64 = $true
+    }
+    & (Join-Path $repositoryRoot "build.ps1") @installArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw (
+            "The current build could not be installed for Delphi " +
+            "$($target.Version) " +
+            $(if ($target.IDE64) { "Win64" } else { "Win32" }) + "."
+        )
+    }
+}
+
 & (Join-Path $PSScriptRoot "Test-RadIA.UsageMatrix.ps1") `
     -Profile "release" `
     -EvidencePath (
