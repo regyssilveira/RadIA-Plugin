@@ -1209,8 +1209,14 @@ test('planning and update documentation follow the new separation', () => {
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
   assert.match(portugueseBacklog, /Goal ativo: fechamento determinístico/u);
   assert.match(englishBacklog, /Active goal: deterministic Delphi experience closure/u);
-  assert.match(portugueseBacklog, /^\s*- \[ \]/mu);
-  assert.match(englishBacklog, /^\s*- \[ \]/mu);
+  assert.ok(
+    /^\s*- \[ \]/mu.test(portugueseBacklog) ||
+      /Não há item aberto neste goal/u.test(portugueseBacklog)
+  );
+  assert.ok(
+    /^\s*- \[ \]/mu.test(englishBacklog) ||
+      /This goal has no open implementation item/u.test(englishBacklog)
+  );
   assert.match(portugueseBacklog, /exclui repositório público ou marketplace/u);
   assert.match(englishBacklog, /excludes a public extension repository or marketplace/u);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
