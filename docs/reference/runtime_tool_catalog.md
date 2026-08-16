@@ -447,6 +447,15 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ApplyRuntimeVclInstrumentation` | Aplica exatamente o preview revisado ao DPR e cria as quatro units isoladas em `.radia/runtime`. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
 | `RevertRuntimeVclInstrumentation` | Restaura o DPR original e remove somente as units geradas que continuam inalteradas. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
 
+## Performance runtime comparável
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `BeginRuntimePerformanceMeasurement` | Inicia amostragem limitada de CPU, memória e responsividade da janela para a sessão e o cenário já preparados. | `RadIA.Core.RuntimePerformance.pas` |
+| `CompleteRuntimePerformanceMeasurement` | Encerra a amostragem e gera evidência somente se o mesmo cenário terminou com sucesso na mesma sessão e build. | `RadIA.Core.RuntimePerformance.pas` |
+| `CompareRuntimePerformanceEvidence` | Compara duração, CPU, picos de working set/private bytes e amostras sem resposta entre dois builds. | `RadIA.Core.RuntimePerformance.pas` |
+| `CancelRuntimePerformanceMeasurement` | Interrompe a amostragem ativa sem criar evidência. | `RadIA.Core.RuntimePerformance.pas` |
+
 ## Evidências de logs do FastMM5
 
 | Ferramenta | O que faz | Unit de origem |
@@ -488,7 +497,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 61
-- Ferramentas internas registradas: 177
+- Grupos registrados: 62
+- Ferramentas internas registradas: 181
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

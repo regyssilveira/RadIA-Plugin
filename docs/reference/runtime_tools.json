@@ -502,6 +502,16 @@
       ]
     },
     {
+      "name": "Comparable runtime performance",
+      "source": "Source/Core/RadIA.Core.RuntimePerformance.pas",
+      "tools": [
+        "BeginRuntimePerformanceMeasurement",
+        "CompleteRuntimePerformanceMeasurement",
+        "CompareRuntimePerformanceEvidence",
+        "CancelRuntimePerformanceMeasurement"
+      ]
+    },
+    {
       "name": "FastMM5 log evidence",
       "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
       "tools": [

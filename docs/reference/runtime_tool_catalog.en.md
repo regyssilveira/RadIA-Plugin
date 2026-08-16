@@ -447,6 +447,15 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ApplyRuntimeVclInstrumentation` | Adds the reviewed runtime adapter units and starts them only in the instrumented application. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
 | `RevertRuntimeVclInstrumentation` | Removes unchanged runtime adapter units and restores the reviewed project source. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
 
+## Comparable runtime performance
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `BeginRuntimePerformanceMeasurement` | Starts bounded sampling for the active runtime session before a reviewed scenario. | `RadIA.Core.RuntimePerformance.pas` |
+| `CompleteRuntimePerformanceMeasurement` | Stops sampling after a successful scenario and returns bounded evidence. | `RadIA.Core.RuntimePerformance.pas` |
+| `CompareRuntimePerformanceEvidence` | Compares the same scenario across distinct runtime sessions and builds. | `RadIA.Core.RuntimePerformance.pas` |
+| `CancelRuntimePerformanceMeasurement` | Cancels active performance sampling without producing evidence. | `RadIA.Core.RuntimePerformance.pas` |
+
 ## FastMM5 log evidence
 
 | Tool | Purpose | Source unit |
@@ -488,7 +497,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 61
-- Registered built-in tools: 177
+- Registered groups: 62
+- Registered built-in tools: 181
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -56,7 +56,7 @@ reverter toda a operação sem perda de código.
   as capacidades efetivas do Delphi 12 e 13.
 - [x] **Automação de controles sem janela própria:** adicionar um adaptador VCL autorizado para
   `TGraphicControl`, frames e controles customizados sem usar coordenadas globais.
-- [ ] **Diagnóstico de performance:** medir cenários, bloqueio da thread principal, CPU, memória e
+- [x] **Diagnóstico de performance:** medir cenários, bloqueio da thread principal, CPU, memória e
   duração, comparando evidência anterior e posterior à correção.
 
 Gate: reproduzir um problema condicionado, interagir com um controle sem `HWND` e comprovar uma

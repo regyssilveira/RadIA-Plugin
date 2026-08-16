@@ -63,6 +63,23 @@ publishes a random-token named pipe restricted to owner/SYSTEM, and bounds depth
 payload, and timeout. It uses no coordinates, opens no network port, and is never added silently to
 Release builds.
 
+### Comparable performance measurement
+
+A single snapshot is not accepted as proof of improvement. First prepare a deterministic scenario
+and use the same `scenarioKey` for baseline and verification:
+
+1. prepare the scenario with `PrepareRuntimeScenario`;
+2. call `BeginRuntimePerformanceMeasurement` before running the preview;
+3. run `RunRuntimeScenario` and call `CompleteRuntimePerformanceMeasurement` only after `succeeded`;
+4. rebuild the fix, start a distinct session and build, and replay the same scenario;
+5. call `CompareRuntimePerformanceEvidence` with both evidence identifiers.
+
+The sampler reads the process every 100 ms for at most five minutes and records duration, CPU time,
+peak working set and private bytes, and main-window samples that exceeded the 50 ms responsiveness
+bound. Comparison requires the same project and scenario in distinct sessions and builds. It flags
+duration, CPU, or memory degradation above 10%, or an increase in unresponsive samples. These values
+remain reviewable evidence rather than a statistical guarantee.
+
 ## Complete workflow
 
 1. Describe the exact path to the failure and the expected outcome.
@@ -111,6 +128,7 @@ The plan is shown before the first execution. Every risky tool keeps its own con
 | Discovery | `GetRuntimeWindows`, `GetRuntimeControlTree` (Win32 plus instrumented VCL) |
 | Visual | `CaptureRuntimeVisual` before and after the scenario |
 | Scenario | `PrepareRuntimeScenario`, `RunRuntimeScenario`, `GetRuntimeScenarioStatus`, `CancelRuntimeScenario` |
+| Performance | `BeginRuntimePerformanceMeasurement`, `CompleteRuntimePerformanceMeasurement`, `CompareRuntimePerformanceEvidence`, `CancelRuntimePerformanceMeasurement` |
 | Evidence | `WaitForDebuggerEvent`, `CaptureRuntimeEvidence`, `CompareRuntimeEvidence` |
 | Fix | `PreparePatch`, `ApplyPatch`, `RevertPatch` |
 | Regression | `PrepareRuntimeRegression`, `SaveRuntimeRegression`, `ListRuntimeRegressions`, `PrepareSavedRuntimeScenario` |

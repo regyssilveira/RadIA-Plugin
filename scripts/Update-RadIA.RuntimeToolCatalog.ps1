@@ -82,6 +82,7 @@ $portugueseGroupNames = @{
     "FastMM5 memory diagnostics" = "Diagnóstico de memória com FastMM5"
     "Reversible memory instrumentation" = "Instrumentação reversível de memória"
     "Reversible VCL runtime instrumentation" = "Instrumentação VCL runtime reversível"
+    "Comparable runtime performance" = "Performance runtime comparável"
     "FastMM5 log evidence" = "Evidências de logs do FastMM5"
     "Composed memory diagnostic sessions" = "Sessões compostas de diagnóstico de memória"
     "Memory evidence correction workflow" = "Correção orientada por evidências de memória"

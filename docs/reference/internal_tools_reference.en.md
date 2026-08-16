@@ -124,6 +124,15 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`PrepareRuntimeVclInstrumentation`|Analyze the active Debug VCL project and preview the authenticated runtime adapter without changing files.|Before automating `TLabel`, `TSpeedButton`, frames, or composite controls that are absent from the Win32 tree.|
 |`ApplyRuntimeVclInstrumentation`|Apply the reviewed DPR change and create four isolated units under `.radia/runtime`.|After structural-write consent; the instrumented application publishes a bounded local endpoint while it runs.|
 |`RevertRuntimeVclInstrumentation`|Restore the original DPR and remove only unchanged generated units.|When finishing or cancelling the runtime diagnosis or removing temporary instrumentation.|
+
+## Comparable runtime performance
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`BeginRuntimePerformanceMeasurement`|Start bounded CPU, memory, and window-responsiveness sampling for the prepared scenario and active session.|Immediately before running a `PrepareRuntimeScenario` preview, using a stable scenario key.|
+|`CompleteRuntimePerformanceMeasurement`|Stop sampling and produce evidence only after the same scenario succeeds in the same session and build.|Immediately after `RunRuntimeScenario`; insufficient samples and changed sessions are rejected.|
+|`CompareRuntimePerformanceEvidence`|Compare duration, CPU, peak working set/private bytes, and unresponsive samples across builds.|After replaying the same scenario key in a distinct session and build; it flags changes above 10% or worse responsiveness.|
+|`CancelRuntimePerformanceMeasurement`|Stop active sampling without producing evidence.|When the scenario is cancelled or fails, or when the user abandons the measurement.|
 |`ParseMemoryDiagnosticLog`|Interprets a limited and authorized FastMM5 log, grouping events, bytes, classes, stacks, lines and fingerprints.|After a diagnostic run or when importing a log located within the active workspace.|
 |`PrepareMemoryDiagnosticSession`|Prepare a single preview with instrumentation, warm-up, repetitions and runtime scenario, without running the project.|When the user requests a full memory diagnosis and before execution consent.|
 |`RunMemoryDiagnosticSession`|Instruments, compiles, starts only the supervised process, runs the scenario, collects the log, and restores the DPR.|After preview review and explicit consent for composite session.|

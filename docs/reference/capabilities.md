@@ -162,6 +162,7 @@ O RadIA pode transformar uma falha visual reproduzível em uma prova verificáve
 - capturar a janela autorizada antes e depois da interação e apresentar o par no chat;
 - aplicar uma correção revisada, recompilar e repetir o mesmo roteiro;
 - comparar falha e verificação entre sessões e builds distintos;
+- medir o mesmo cenário em builds distintos e comparar duração, CPU, memória e responsividade;
 - versionar o cenário em `.radia/runtime-scenarios` e executá-lo repetidamente como regressão.
 
 A automação não aceita `HWND`, coordenadas globais ou processos arbitrários. Em Delphi 13 IDE64,
@@ -291,7 +292,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 177 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 181 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)

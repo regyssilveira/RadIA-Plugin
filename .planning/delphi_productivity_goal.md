@@ -129,7 +129,8 @@ anterior e permitem reversão. Filtros globais de exceção são reportados como
 OTA não oferece contrato confiável; nenhuma emulação foi introduzida. A automação de controles VCL
 sem janela foi concluída com instrumentação Debug reversível, transporte local autenticado,
 integração aos cenários existentes e prova entre processos nos Delphis 12 e 13. A comparação de
-performance permanece aberta.
+performance também foi concluída com amostragem limitada de CPU, picos de memória e responsividade,
+vínculo ao preview executado e comparação somente entre sessões e builds distintos. M3 concluído.
 
 Dependências: Debugger, RuntimeScenario, RuntimeEvidence, VisualRuntimeSession e consentimento.
 

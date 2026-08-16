@@ -71,6 +71,8 @@ uses
   RadIA.Core.RuntimeVclInstrumentation,
   RadIA.OTA.RuntimeVclFacade,
   RadIA.OTA.RuntimeVclTransport,
+  RadIA.Core.RuntimePerformance,
+  RadIA.OTA.RuntimePerformance,
   RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
   RadIA.Core.EditorAdapter, RadIA.Core.Tools, RadIA.Core.ToolRegistry, RadIA.Core.Workspace,
@@ -1262,6 +1264,13 @@ initialization
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
     )
   );
+  TRadIAContainer.Register<IRadIARuntimePerformanceCoordinator>(
+    TRadIARuntimePerformanceCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIARuntimeDebugSessionCoordinator>,
+      TRadIAContainer.Resolve<IRadIARuntimeScenarioCoordinator>,
+      TRadIAWindowsRuntimePerformanceSampler.Create
+    )
+  );
   TRadIAContainer.Register<IRadIASemanticHierarchyService>(
     TRadIAContainer.Resolve<IRadIASemanticQueryService> as
       IRadIASemanticHierarchyService
@@ -1515,6 +1524,10 @@ initialization
   RegisterRadIARuntimeVclInstrumentationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIARuntimeVclInstrumentationCoordinator>
+  );
+  RegisterRadIARuntimePerformanceTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimePerformanceCoordinator>
   );
   RegisterRadIATestImpactTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

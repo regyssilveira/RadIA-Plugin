@@ -68,6 +68,24 @@ publica um named pipe com token aleatório e ACL do proprietário/SYSTEM e limit
 quantidade de controles, payload e timeout. Ele não usa coordenadas, não abre uma porta de rede e
 não é incluído silenciosamente em builds Release.
 
+### Medição comparável de performance
+
+A medição não aceita uma leitura isolada como prova de melhoria. Prepare primeiro um cenário
+determinístico e use a mesma `scenarioKey` no baseline e na verificação:
+
+1. prepare o cenário com `PrepareRuntimeScenario`;
+2. chame `BeginRuntimePerformanceMeasurement` antes de executar o preview;
+3. execute `RunRuntimeScenario` e, somente depois de `succeeded`, chame
+   `CompleteRuntimePerformanceMeasurement`;
+4. recompile a correção, inicie uma sessão e build novos e repita o mesmo cenário;
+5. use `CompareRuntimePerformanceEvidence` com as duas evidências.
+
+O sampler consulta o processo a cada 100 ms, por no máximo cinco minutos, e registra duração, tempo
+de CPU, picos de working set e private bytes e quantas amostras da janela principal excederam 50 ms
+sem resposta. A comparação exige o mesmo projeto e cenário em sessões e builds distintos. Ela
+sinaliza regressão quando duração, CPU ou memória pioram mais de 10%, ou quando aumentam as amostras
+sem resposta; os números continuam sendo evidência para revisão, não uma garantia estatística.
+
 ## Fluxo completo
 
 1. Descreva o caminho exato até a falha e o resultado esperado.
@@ -116,6 +134,7 @@ O plano aparece antes da primeira execução. Cada tool com risco mantém seu pr
 | Descoberta | `GetRuntimeWindows`, `GetRuntimeControlTree` (Win32 e VCL instrumentado) |
 | Visual | `CaptureRuntimeVisual` antes e depois do cenário |
 | Cenário | `PrepareRuntimeScenario`, `RunRuntimeScenario`, `GetRuntimeScenarioStatus`, `CancelRuntimeScenario` |
+| Performance | `BeginRuntimePerformanceMeasurement`, `CompleteRuntimePerformanceMeasurement`, `CompareRuntimePerformanceEvidence`, `CancelRuntimePerformanceMeasurement` |
 | Evidência | `WaitForDebuggerEvent`, `CaptureRuntimeEvidence`, `CompareRuntimeEvidence` |
 | Correção | `PreparePatch`, `ApplyPatch`, `RevertPatch` |
 | Regressão | `PrepareRuntimeRegression`, `SaveRuntimeRegression`, `ListRuntimeRegressions`, `PrepareSavedRuntimeScenario` |
