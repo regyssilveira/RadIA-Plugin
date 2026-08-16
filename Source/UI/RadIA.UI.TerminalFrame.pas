@@ -77,6 +77,7 @@ type
       const ASegment: TRadIATerminalTextSegment
     );
     procedure BuildControls;
+    procedure BuildDiagnosticControls;
     procedure BuildPaletteControls;
     procedure ConfigureControlHints;
     function CanRunCommand(
@@ -414,17 +415,7 @@ begin
   FClearButton.Caption := 'Clear';
   FClearButton.OnClick := ClearClick;
 
-  FOpenDiagnosticButton := TButton.Create(Self);
-  FOpenDiagnosticButton.Parent := FTopPanel;
-  FOpenDiagnosticButton.SetBounds(612, 170, 112, 27);
-  FOpenDiagnosticButton.Caption := 'Open error';
-  FOpenDiagnosticButton.OnClick := OpenDiagnosticClick;
-
-  FSendDiagnosticButton := TButton.Create(Self);
-  FSendDiagnosticButton.Parent := FTopPanel;
-  FSendDiagnosticButton.SetBounds(732, 170, 112, 27);
-  FSendDiagnosticButton.Caption := 'Send to chat';
-  FSendDiagnosticButton.OnClick := SendDiagnosticClick;
+  BuildDiagnosticControls;
 
   BuildPaletteControls;
   ConfigureControlHints;
@@ -1227,6 +1218,21 @@ begin
     FSession.Cancel;
 end;
 
+procedure TRadIATerminalFrame.BuildDiagnosticControls;
+begin
+  FOpenDiagnosticButton := TButton.Create(Self);
+  FOpenDiagnosticButton.Parent := FTopPanel;
+  FOpenDiagnosticButton.SetBounds(612, 170, 112, 27);
+  FOpenDiagnosticButton.Caption := 'Open error';
+  FOpenDiagnosticButton.OnClick := OpenDiagnosticClick;
+
+  FSendDiagnosticButton := TButton.Create(Self);
+  FSendDiagnosticButton.Parent := FTopPanel;
+  FSendDiagnosticButton.SetBounds(732, 170, 112, 27);
+  FSendDiagnosticButton.Caption := 'Send to chat';
+  FSendDiagnosticButton.OnClick := SendDiagnosticClick;
+end;
+
 procedure TRadIATerminalFrame.SendDiagnosticClick(Sender: TObject);
 var
   LDiagnostic: TRadIATerminalDiagnostic;
@@ -1249,7 +1255,7 @@ function TRadIATerminalFrame.TryGetSelectedDiagnostic(
   out ADiagnostic: TRadIATerminalDiagnostic
 ): Boolean;
 var
-  LCaretLine: Integer;
+  LCaretLine: NativeInt;
   LText: string;
 begin
   ADiagnostic := Default(TRadIATerminalDiagnostic);
@@ -1264,7 +1270,7 @@ begin
   if (LCaretLine < 0) or (LCaretLine >= FOutputEditor.Lines.Count) then
     Exit(False);
   Result := TRadIATerminalDiagnosticParser.TryParse(
-    FOutputEditor.Lines[LCaretLine],
+    FOutputEditor.Lines[Integer(LCaretLine)],
     ADiagnostic
   );
 end;
