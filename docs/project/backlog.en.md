@@ -3,16 +3,14 @@
 This file contains open work only. History, completed milestones, metrics, and release notes do not
 belong in the backlog.
 
-## Active goal: deterministic Delphi experience closure
+## Current state
 
-Close every actionable difference in the current experience with reproducible evidence, reusing
-existing capabilities before implementing any new infrastructure.
+There is no open item or active goal. The deterministic Delphi experience closure was completed and
+validated by the integrated gates of the published version. New work enters this file only after it
+has an executable scope and defined acceptance criteria.
 
-This goal has no open implementation item. Closure depends only on running the ledger and integrated
-gate against the candidate commit; any failure reopens its corresponding criterion before a release.
-
-The scope excludes a public extension repository or marketplace, C++Builder, Delphi 11, Lazarus,
-GetIt, Embarcadero-exclusive integrations, and replacement of the current WebView.
+A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
+Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.
 
 ## Definition of done for new items
 
