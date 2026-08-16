@@ -155,6 +155,8 @@ uses
   RadIA.Core.DebuggerInspectionTools in '..\Source\Core\RadIA.Core.DebuggerInspectionTools.pas',
   RadIA.Core.RuntimeAutomation in '..\Source\Core\RadIA.Core.RuntimeAutomation.pas',
   RadIA.Core.RuntimeVclAdapter in '..\Source\Core\RadIA.Core.RuntimeVclAdapter.pas',
+  RadIA.OTA.RuntimeVclTransport in '..\Source\Integration\RadIA.OTA.RuntimeVclTransport.pas',
+  RadIA.Runtime.VclAdapter in '..\Source\Runtime\RadIA.Runtime.VclAdapter.pas',
   RadIA.Core.RuntimeScenario in '..\Source\Core\RadIA.Core.RuntimeScenario.pas',
   RadIA.Core.RuntimeScenarioTools in '..\Source\Core\RadIA.Core.RuntimeScenarioTools.pas',
   RadIA.Core.RuntimeEvidence in '..\Source\Core\RadIA.Core.RuntimeEvidence.pas',

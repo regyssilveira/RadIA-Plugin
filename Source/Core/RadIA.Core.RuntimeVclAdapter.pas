@@ -21,6 +21,10 @@ type
     );
     class function Defaults: TRadIARuntimeVclAdapterLimits; static;
     function IsValid: Boolean;
+    property MaxDepth: Integer read FMaxDepth;
+    property MaxTargets: Integer read FMaxTargets;
+    property MaxPayloadBytes: Integer read FMaxPayloadBytes;
+    property TimeoutMs: Cardinal read FTimeoutMs;
   end;
 
   TRadIARuntimeVclAdapterIdentity = record
@@ -41,6 +45,47 @@ type
     function IsUsableFor(
       const ASession: TRadIARuntimeSessionIdentity
     ): Boolean;
+    property ProcessId: LongWord read FProcessId;
+    property SessionId: string read FSessionId;
+    property Endpoint: string read FEndpoint;
+    property Token: string read FToken;
+    property ProtocolVersion: Integer read FProtocolVersion;
+  end;
+
+  TRadIARuntimeVclTransportResult = record
+  private
+    FErrorCode: string;
+    FErrorMessage: string;
+    FPayload: string;
+    FSuccess: Boolean;
+  public
+    class function Failed(
+      const AErrorCode: string;
+      const AErrorMessage: string
+    ): TRadIARuntimeVclTransportResult; static;
+    class function Succeeded(
+      const APayload: string
+    ): TRadIARuntimeVclTransportResult; static;
+    property Success: Boolean read FSuccess;
+    property ErrorCode: string read FErrorCode;
+  end;
+
+  IRadIARuntimeVclEndpointLocator = interface
+    ['{573941F9-08DF-4218-8D25-2E24338E0A14}']
+    function Locate(
+      const ASession: TRadIARuntimeSessionIdentity;
+      out AIdentity: TRadIARuntimeVclAdapterIdentity
+    ): Boolean;
+  end;
+
+  IRadIARuntimeVclTransport = interface
+    ['{1D094851-452A-4BF5-B13A-1FDDAA6095C0}']
+    function Send(
+      const AIdentity: TRadIARuntimeVclAdapterIdentity;
+      const AMethod: string;
+      const AParametersJson: string;
+      const ALimits: TRadIARuntimeVclAdapterLimits
+    ): TRadIARuntimeVclTransportResult;
   end;
 
 implementation
@@ -107,6 +152,25 @@ begin
     StartsText('\\.\pipe\RadIA.Runtime.', FEndpoint) and
     (Length(FToken) >= 32) and
     (FProtocolVersion = 1);
+end;
+
+class function TRadIARuntimeVclTransportResult.Failed(
+  const AErrorCode: string;
+  const AErrorMessage: string
+): TRadIARuntimeVclTransportResult;
+begin
+  Result := Default(TRadIARuntimeVclTransportResult);
+  Result.FErrorCode := Trim(AErrorCode);
+  Result.FErrorMessage := Trim(AErrorMessage);
+end;
+
+class function TRadIARuntimeVclTransportResult.Succeeded(
+  const APayload: string
+): TRadIARuntimeVclTransportResult;
+begin
+  Result := Default(TRadIARuntimeVclTransportResult);
+  Result.FSuccess := True;
+  Result.FPayload := APayload;
 end;
 
 end.
