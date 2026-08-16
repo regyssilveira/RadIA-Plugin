@@ -141,6 +141,7 @@ contains
   RadIA.Core.FireDAC.Scanner in 'Source\Core\RadIA.Core.FireDAC.Scanner.pas',
   RadIA.Core.FireDAC.SqlAnalyzer in 'Source\Core\RadIA.Core.FireDAC.SqlAnalyzer.pas',
   RadIA.Core.FireDAC.Parameters in 'Source\Core\RadIA.Core.FireDAC.Parameters.pas',
+  RadIA.Core.FireDAC.Transactions in 'Source\Core\RadIA.Core.FireDAC.Transactions.pas',
   RadIA.Core.FireDAC.Tools in 'Source\Core\RadIA.Core.FireDAC.Tools.pas',
   RadIA.Core.DelphiEcosystemTools in 'Source\Core\RadIA.Core.DelphiEcosystemTools.pas',
   RadIA.Core.LocalDatabase in 'Source\Core\RadIA.Core.LocalDatabase.pas',
