@@ -468,6 +468,7 @@ begin
   FBrowserInitialized := False;
   FWebViewInitialized := False;
   FPresenter.WebViewReady := False;
+  FWebViewLifecycle.BeginCreate;
   FEdgeBrowser.ReinitializeWebView;
 end;
 
@@ -982,7 +983,8 @@ begin
     Exit;
   LSmoke := 'false';
   if FWebViewSmokeStarted and
-    (FWebViewLifecycle.Snapshot.Generation > 1) then
+    (FWebViewLifecycle.Snapshot.Generation > 1) and
+    (FWebViewLifecycle.Snapshot.RecoveryCount > 0) then
     LSmoke := 'true';
   PostMessageToWeb(
     '{"action":"restore_lifecycle_state","state":' +

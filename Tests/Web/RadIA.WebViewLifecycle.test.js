@@ -22,9 +22,17 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
   assert.match(frame, /FEdgeBrowser\.ReinitializeWebView;/u);
   assert.match(
     frame,
+    /procedure TRadIAFrameAIChat\.RecreateWebView;[\s\S]*?FWebViewLifecycle\.BeginCreate;/u
+  );
+  assert.match(
+    frame,
     /EdgeBrowserProcessFailed\([\s\S]*?COREWEBVIEW2_PROCESS_FAILED_KIND_BROWSER_PROCESS_EXITED/u
   );
   assert.match(chat, /restoreLifecycleState\(state, smoke/u);
+  assert.match(
+    frame,
+    /FWebViewLifecycle\.Snapshot\.RecoveryCount > 0/u
+  );
   assert.doesNotMatch(frame, /TTask\.Run/u);
   assert.match(frame, /beginLifecycleSmoke\(\)/u);
   assert.match(
