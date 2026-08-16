@@ -46,7 +46,7 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
   assert.match(dockableForm, /RemoveFreeNotification\(FObserver\)/u);
   assert.match(
     registration,
-    /FApplicationEvents\.OnMessage := OnApplicationMessage;/u
+    /FEvents\.OnMessage := OnApplicationMessage;/u
   );
   assert.match(
     registration,
