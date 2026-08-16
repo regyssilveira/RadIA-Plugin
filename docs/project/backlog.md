@@ -3,16 +3,14 @@
 Este arquivo contém somente trabalho aberto. Histórico, marcos concluídos, métricas e notas de
 release não pertencem ao backlog.
 
-## Goal ativo: fechamento determinístico da experiência Delphi
+## Estado atual
 
-Encerrar com evidência reproduzível todas as diferenças acionáveis da experiência atual, reutilizando
-as capacidades existentes antes de implementar qualquer nova infraestrutura.
+Não há item ou goal aberto. O fechamento determinístico da experiência Delphi foi concluído e validado
+pelos gates integrados da versão publicada. Novos trabalhos só entram neste arquivo quando possuírem
+escopo executável e critérios de aceitação definidos.
 
-Não há item aberto neste goal. O fechamento depende apenas da execução do ledger e do gate integrado
-no commit candidato; qualquer falha reabre o critério correspondente antes de uma release.
-
-O escopo exclui repositório público ou marketplace de extensões, C++Builder, Delphi 11, Lazarus,
-GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.
+Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
+Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.
 
 ## Definição de concluído para novos itens
 

@@ -11,12 +11,11 @@ build, test, and debug projects without requiring users to know the internal arc
 evolution must first demonstrate an observable gain for this flow and have verifiable acceptance
 criteria.
 
-## Current goal
+## Next cycle
 
-Deterministically close the remaining actionable differences in knowledge, consent, and engine
-supervision. Each workstream needs a baseline, metric, reproducible
-scenario, and evidence on the same commit before closure. The executable scope is in the
-[backlog](backlog.en.md).
+There is no active goal. The next cycle will be defined only when a proposed improvement has an
+observable gain, baseline, metric, reproducible scenario, and evidence required on the same commit.
+Approved work will be recorded in the [backlog](backlog.en.md) before implementation.
 
 Delphi 11, C++, Lazarus, marketplace work, a public extension repository, WebView replacement, and
 DCU reading remain outside the current direction.
