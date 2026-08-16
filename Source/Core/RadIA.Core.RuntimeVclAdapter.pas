@@ -149,7 +149,10 @@ begin
     ASession.IsComplete and
     (FProcessId = ASession.ProcessId) and
     SameText(FSessionId, ASession.SessionId) and
-    StartsText('\\.\pipe\RadIA.Runtime.', FEndpoint) and
+    StartsText(
+      '\\.\pipe\RadIA.Runtime.' + FProcessId.ToString + '.',
+      FEndpoint
+    ) and
     (Length(FToken) >= 32) and
     (FProtocolVersion = 1);
 end;

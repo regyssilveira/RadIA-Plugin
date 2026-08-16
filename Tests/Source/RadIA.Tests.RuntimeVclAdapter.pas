@@ -37,6 +37,8 @@ type
     procedure DiscoversGraphicControlWithoutWindowHandle;
     [Test]
     procedure InvokesNamedGraphicControlWithoutCoordinates;
+    [Test]
+    procedure PublishesAndRemovesProcessBoundEndpoint;
   end;
 
 implementation
@@ -44,10 +46,12 @@ implementation
 uses
   System.IOUtils,
   System.SysUtils,
+  Winapi.Windows,
   RadIA.Core.RuntimeAutomation,
   RadIA.Core.RuntimeVclAdapter,
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Runtime.VclAdapter,
+  RadIA.Runtime.VclServer,
   Vcl.Buttons,
   Vcl.StdCtrls;
 
@@ -100,7 +104,7 @@ var
   LIdentity: TRadIARuntimeVclAdapterIdentity;
 begin
   LIdentity := TRadIARuntimeVclAdapterIdentity.Create(
-    42, 'session-1', '\\.\pipe\RadIA.Runtime.42',
+    42, 'session-1', '\\.\pipe\RadIA.Runtime.42.test',
     '0123456789abcdef0123456789abcdef', 1
   );
   Assert.IsTrue(LIdentity.IsUsableFor(CompleteSession));
@@ -116,7 +120,7 @@ var
   LIdentity: TRadIARuntimeVclAdapterIdentity;
 begin
   LIdentity := TRadIARuntimeVclAdapterIdentity.Create(
-    42, 'session-2', '\\.\pipe\RadIA.Runtime.42',
+    42, 'session-2', '\\.\pipe\RadIA.Runtime.42.test',
     '0123456789abcdef0123456789abcdef', 1
   );
   Assert.IsFalse(LIdentity.IsUsableFor(CompleteSession));
@@ -130,7 +134,7 @@ begin
   TFile.WriteAllText(
     TPath.Combine(FRootPath, '42.json'),
     '{"processId":42,"sessionId":"session-1",' +
-    '"endpoint":"\\\\.\\pipe\\RadIA.Runtime.42",' +
+    '"endpoint":"\\\\.\\pipe\\RadIA.Runtime.42.test",' +
     '"token":"0123456789abcdef0123456789abcdef",' +
     '"protocolVersion":1}',
     TEncoding.UTF8
@@ -149,7 +153,7 @@ begin
   TFile.WriteAllText(
     TPath.Combine(FRootPath, '42.json'),
     '{"processId":42,"sessionId":"",' +
-    '"endpoint":"\\\\.\\pipe\\RadIA.Runtime.42",' +
+    '"endpoint":"\\\\.\\pipe\\RadIA.Runtime.42.test",' +
     '"token":"0123456789abcdef0123456789abcdef",' +
     '"protocolVersion":1}',
     TEncoding.UTF8
@@ -168,7 +172,7 @@ begin
   TFile.WriteAllText(
     TPath.Combine(FRootPath, '42.json'),
     '{"processId":42,"sessionId":"session-2",' +
-    '"endpoint":"\\\\.\\pipe\\RadIA.Runtime.42",' +
+    '"endpoint":"\\\\.\\pipe\\RadIA.Runtime.42.test",' +
     '"token":"0123456789abcdef0123456789abcdef",' +
     '"protocolVersion":1}',
     TEncoding.UTF8
@@ -185,7 +189,7 @@ var
   LTransport: IRadIARuntimeVclTransport;
 begin
   LIdentity := TRadIARuntimeVclAdapterIdentity.Create(
-    42, 'session-1', '\\.\pipe\RadIA.Runtime.42',
+    42, 'session-1', '\\.\pipe\RadIA.Runtime.42.test',
     '0123456789abcdef0123456789abcdef', 1
   );
   LTransport := TRadIARuntimeVclNamedPipeTransport.Create;
@@ -248,6 +252,35 @@ begin
   finally
     LAdapter.Free;
   end;
+end;
+
+procedure TTestRadIARuntimeVclAdapter.
+  PublishesAndRemovesProcessBoundEndpoint;
+var
+  LIdentity: TRadIARuntimeVclAdapterIdentity;
+  LLocator: IRadIARuntimeVclEndpointLocator;
+  LServer: TRadIARuntimeVclServer;
+  LSession: TRadIARuntimeSessionIdentity;
+begin
+  LSession := TRadIARuntimeSessionIdentity.Create(
+    'server-test-session',
+    GetCurrentProcessId,
+    Now,
+    ParamStr(0),
+    ParamStr(0),
+    'server-test-build'
+  );
+  LServer := TRadIARuntimeVclServer.Create;
+  try
+    LServer.Start;
+    LLocator := TRadIARuntimeVclEndpointLocator.Create;
+    Assert.IsTrue(LLocator.Locate(LSession, LIdentity));
+    Assert.AreEqual(LServer.Endpoint, LIdentity.Endpoint);
+  finally
+    LServer.Free;
+  end;
+  LLocator := TRadIARuntimeVclEndpointLocator.Create;
+  Assert.IsFalse(LLocator.Locate(LSession, LIdentity));
 end;
 
 initialization
