@@ -879,6 +879,7 @@ end;
 
 initialization
   TRadIAContainer.Register<IRadIAConfig>(TRadIAConfig.GetInstance);
+  TRadIAContainer.Register<IRadIAHttpClient>(TRadIAConcreteHttpClient.Create);
   TRadIAContainer.Register<IRadIALogger>(TConcreteLogger.Create);
   TLogger.SetActiveLogger(TRadIAContainer.Resolve<IRadIALogger>);
   TRadIAContainer.Register<IRadIAIDEAdapter>(TRadIAConcreteIDEAdapter.Create);
@@ -1264,6 +1265,10 @@ initialization
     TRadIASemanticQueryService.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
     )
+  );
+  TRadIAContainer.Register<IRadIASemanticRoutineService>(
+    TRadIAContainer.Resolve<IRadIASemanticQueryService> as
+      IRadIASemanticRoutineService
   );
   TRadIAContainer.Register<IRadIARuntimePerformanceCoordinator>(
     TRadIARuntimePerformanceCoordinator.Create(
@@ -1692,7 +1697,6 @@ initialization
   TRadIAContainer.Register<IRadIAMediator>(TRadIAMediator.Instance);
   TRadIAContainer.Register<IRadIADTOBuilder>(TRadIADTOBuilder.Create);
   TRadIAContainer.Register<IRadIAProjectGenerator>(TRadIAProjectGenerator.Create);
-  TRadIAContainer.Register<IRadIAHttpClient>(TRadIAConcreteHttpClient.Create);
   TRadIAContainer.Register<IRadIAErrorDecoder>(TRadIAErrorDecoder.Create);
   TRadIAContainer.Register<IRadIALocalizer>(TRadIALocalizer.Create);
   StartRadIAAgentRuntimeDiagnosticIfRequested;

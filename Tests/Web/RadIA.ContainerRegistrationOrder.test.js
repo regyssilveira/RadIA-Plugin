@@ -35,6 +35,30 @@ test('installers re-enable an exact RadIA package disabled after a failed startu
   });
 });
 
+test('HTTP client is registered before code validation tools resolve it', () => {
+  const httpClientRegistration = source.indexOf(
+    'TRadIAContainer.Register<IRadIAHttpClient>'
+  );
+  const codeValidationRegistration = source.indexOf(
+    'RegisterRadIACodeValidationTools('
+  );
+
+  assert.ok(httpClientRegistration >= 0);
+  assert.ok(codeValidationRegistration > httpClientRegistration);
+});
+
+test('semantic routine service is registered before semantic tools resolve it', () => {
+  const routineRegistration = source.indexOf(
+    'TRadIAContainer.Register<IRadIASemanticRoutineService>'
+  );
+  const routineResolution = source.indexOf(
+    'TRadIAContainer.Resolve<IRadIASemanticRoutineService>'
+  );
+
+  assert.ok(routineRegistration >= 0);
+  assert.ok(routineResolution > routineRegistration);
+});
+
 test('project-transition smoke reaches structured evidence generation', () => {
   const smoke = fs.readFileSync(
     path.resolve('scripts/Test-RadIA.KnowledgeNotifierSmoke.ps1'),
