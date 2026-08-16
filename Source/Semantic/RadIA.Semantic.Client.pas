@@ -40,12 +40,19 @@ type
     TInterfacedObject,
     IRadIASemanticRequestClient,
     IRadIASemanticCancelableRequestClient,
-    IRadIASemanticEngineLifecycle
+    IRadIASemanticEngineLifecycle,
+    IRadIASemanticEngineDiagnostics
   )
   private
+    FCircuitOpenUntil: UInt64;
+    FConsecutiveFailureCount: Integer;
     FExecutablePath: string;
+    FFailureCount: Integer;
+    FLastError: string;
+    FLastLatencyMs: Int64;
     FNextRequestId: Integer;
     FRequestLock: TObject;
+    FRequestCount: Integer;
     FRestartCount: Integer;
     FTimeoutMs: Cardinal;
     FTransport: IRadIAExternalMcpTransport;
@@ -92,6 +99,7 @@ type
       out AError: string
     ): Boolean;
     function GetRestartCount: Integer;
+    function GetDiagnosticsJson: string;
     procedure Stop;
     property RestartCount: Integer read FRestartCount;
   end;
@@ -100,6 +108,7 @@ implementation
 
 uses
   System.Classes,
+  System.Diagnostics,
   System.IOUtils,
   System.JSON,
   System.SyncObjs,
@@ -128,7 +137,10 @@ type
   end;
 
 const
+  CCircuitCooldownMs = 5000;
+  CFailureThreshold = 3;
   CInitializeRequest = '{"id":1,"method":"initialize","params":{}}';
+  CRestartBackoffMs = 100;
   CShutdownRequest = '{"id":2,"method":"shutdown","params":{}}';
 
 { TRadIASemanticEngineProbe }
@@ -261,6 +273,37 @@ end;
 function TRadIASemanticEngineSupervisor.GetRestartCount: Integer;
 begin
   Result := FRestartCount;
+end;
+
+function TRadIASemanticEngineSupervisor.GetDiagnosticsJson: string;
+var
+  LRoot: TJSONObject;
+begin
+  TMonitor.Enter(FRequestLock);
+  try
+    LRoot := TJSONObject.Create;
+    try
+      LRoot.AddPair('running', TJSONBool.Create(FTransport.Running));
+      LRoot.AddPair('requestCount', TJSONNumber.Create(FRequestCount));
+      LRoot.AddPair('failureCount', TJSONNumber.Create(FFailureCount));
+      LRoot.AddPair('restartCount', TJSONNumber.Create(FRestartCount));
+      LRoot.AddPair(
+        'consecutiveFailureCount',
+        TJSONNumber.Create(FConsecutiveFailureCount)
+      );
+      LRoot.AddPair('lastLatencyMs', TJSONNumber.Create(FLastLatencyMs));
+      LRoot.AddPair(
+        'circuitOpen',
+        TJSONBool.Create(GetTickCount64 < FCircuitOpenUntil)
+      );
+      LRoot.AddPair('lastError', FLastError);
+      Result := LRoot.ToJSON;
+    finally
+      LRoot.Free;
+    end;
+  finally
+    TMonitor.Exit(FRequestLock);
+  end;
 end;
 
 function TRadIASemanticEngineSupervisor.BuildRequest(
@@ -414,11 +457,27 @@ function TRadIASemanticEngineSupervisor.RequestCancelable(
 var
   LAttempt: Integer;
   LRequest: string;
+  LStopwatch: TStopwatch;
 begin
   AResponse := '';
   AError := '';
   TMonitor.Enter(FRequestLock);
   try
+    Inc(FRequestCount);
+    if GetTickCount64 < FCircuitOpenUntil then
+    begin
+      AError :=
+        'The semantic engine circuit is temporarily open. ' +
+        'The caller must use its bounded fallback.';
+      FLastError := AError;
+      Exit(False);
+    end;
+    if FCircuitOpenUntil <> 0 then
+    begin
+      FCircuitOpenUntil := 0;
+      FConsecutiveFailureCount := 0;
+    end;
+    LStopwatch := TStopwatch.StartNew;
     for LAttempt := 0 to 1 do
     begin
       if not EnsureTransport(LAttempt, AError) then
@@ -426,13 +485,34 @@ begin
       Inc(FNextRequestId);
       LRequest := BuildRequest(FNextRequestId, AMethod, AParameters);
       if Exchange(LRequest, AIsCancelled, AResponse, AError) then
+      begin
+        LStopwatch.Stop;
+        FLastLatencyMs := LStopwatch.ElapsedMilliseconds;
+        FConsecutiveFailureCount := 0;
+        FLastError := '';
         Exit(True);
+      end;
       if Assigned(AIsCancelled) and AIsCancelled() then
+      begin
+        LStopwatch.Stop;
+        FLastLatencyMs := LStopwatch.ElapsedMilliseconds;
+        FLastError := AError;
         Exit(False);
+      end;
       Stop;
       if LAttempt = 0 then
+      begin
         Inc(FRestartCount);
+        Sleep(CRestartBackoffMs);
+      end;
     end;
+    LStopwatch.Stop;
+    FLastLatencyMs := LStopwatch.ElapsedMilliseconds;
+    Inc(FFailureCount);
+    Inc(FConsecutiveFailureCount);
+    FLastError := AError;
+    if FConsecutiveFailureCount >= CFailureThreshold then
+      FCircuitOpenUntil := GetTickCount64 + CCircuitCooldownMs;
     Result := False;
   finally
     TMonitor.Exit(FRequestLock);

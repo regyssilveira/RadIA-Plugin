@@ -641,8 +641,13 @@ procedure TRadIAInstallationHealthProbe.AddDeepSemanticChecks(
 var
   LChecks: TJSONArray;
   LCompletion: TRadIASemanticCompletionResult;
+  LDiagnostics: IRadIASemanticEngineDiagnostics;
+  LDiagnosticsDocument: TJSONObject;
   LError: string;
   LExecutablePath: string;
+  LIndexDocument: TJSONObject;
+  LIndexResult: TJSONObject;
+  LPlatform: string;
   LProbe: TRadIASemanticEngineProbe;
   LResponse: string;
   LStopwatch: TStopwatch;
@@ -704,6 +709,56 @@ begin
       ),
       ''
     );
+    if Supports(
+      FSemanticClient,
+      IRadIASemanticEngineDiagnostics,
+      LDiagnostics
+    ) then
+    begin
+      LIndexDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+      LDiagnosticsDocument := TJSONObject.ParseJSONValue(
+        LDiagnostics.GetDiagnosticsJson
+      ) as TJSONObject;
+      try
+        LIndexResult := nil;
+        if Assigned(LIndexDocument) then
+          LIndexResult := LIndexDocument.GetValue<TJSONObject>('result');
+        if Assigned(LIndexResult) and Assigned(LDiagnosticsDocument) then
+        begin
+          {$IFDEF WIN64}
+          LPlatform := 'Win64';
+          {$ELSE}
+          LPlatform := 'Win32';
+          {$ENDIF}
+          AddDeepCheck(
+            LChecks,
+            'semantic-supervision-metrics',
+            'passed',
+            Format(
+              'Semantic profile %.1f %s: %d units, %d symbols, ' +
+              '%d estimated bytes, cache schema %s, %d requests, ' +
+              '%d failures, %d restarts, last request %d ms.',
+              [
+                CompilerVersion,
+                LPlatform,
+                LIndexResult.GetValue<Integer>('unitCount', 0),
+                LIndexResult.GetValue<Integer>('symbolCount', 0),
+                LIndexResult.GetValue<Int64>('estimatedMemoryBytes', 0),
+                LIndexResult.GetValue<string>('cacheSchemaVersion', ''),
+                LDiagnosticsDocument.GetValue<Integer>('requestCount', 0),
+                LDiagnosticsDocument.GetValue<Integer>('failureCount', 0),
+                LDiagnosticsDocument.GetValue<Integer>('restartCount', 0),
+                LDiagnosticsDocument.GetValue<Int64>('lastLatencyMs', 0)
+              ]
+            ),
+            ''
+          );
+        end;
+      finally
+        LDiagnosticsDocument.Free;
+        LIndexDocument.Free;
+      end;
+    end;
   end
   else
   begin

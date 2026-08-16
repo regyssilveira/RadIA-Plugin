@@ -31,7 +31,10 @@ type
     destructor Destroy; override;
     function CountMethod(const AMethod: string): Integer;
     function GetRestartCount: Integer;
-    function ParameterAt(const AIndex: Integer): string;
+    function ParameterForMethod(
+      const AMethod: string;
+      const AOccurrence: Integer = 0
+    ): string;
     function Request(
       const AMethod: string;
       const AParameters: string;
@@ -128,11 +131,23 @@ begin
   Result := FRestartCount;
 end;
 
-function TRadIAFakeSemanticRequestClient.ParameterAt(
-  const AIndex: Integer
+function TRadIAFakeSemanticRequestClient.ParameterForMethod(
+  const AMethod: string;
+  const AOccurrence: Integer
 ): string;
+var
+  LCurrentOccurrence: Integer;
+  LRequest: TRadIARecordedSemanticRequest;
 begin
-  Result := FRequests[AIndex].Parameters;
+  LCurrentOccurrence := 0;
+  for LRequest in FRequests do
+    if SameText(LRequest.Method, AMethod) then
+    begin
+      if LCurrentOccurrence = AOccurrence then
+        Exit(LRequest.Parameters);
+      Inc(LCurrentOccurrence);
+    end;
+  Result := '';
 end;
 
 function TRadIAFakeSemanticRequestClient.Request(
@@ -152,7 +167,12 @@ begin
   LRequest.Method := AMethod;
   LRequest.Parameters := AParameters;
   FRequests.Add(LRequest);
-  AResponse := '{"result":{"changed":true}}';
+  if SameText(AMethod, 'loadIndexCache') then
+    AResponse := '{"result":{"succeeded":false,"unitCount":0}}'
+  else if SameText(AMethod, 'saveIndexCache') then
+    AResponse := '{"result":{"succeeded":true,"unitCount":4}}'
+  else
+    AResponse := '{"result":{"changed":true}}';
   AError := '';
   Result := True;
 end;
@@ -277,11 +297,11 @@ begin
   LFiles := SampleFiles;
   Assert.IsTrue(FSynchronizer.Synchronize(LFiles, ['DEBUG'], LError), LError);
   Assert.AreEqual(4, FClient.CountMethod('indexUnit'));
-  Assert.Contains(FClient.ParameterAt(0), '"scope":"project"');
-  Assert.Contains(FClient.ParameterAt(1), '"scope":"group"');
-  Assert.Contains(FClient.ParameterAt(2), '"scope":"rtl"');
-  Assert.Contains(FClient.ParameterAt(3), '"scope":"vcl"');
-  Assert.Contains(FClient.ParameterAt(0), '"DEBUG"');
+  Assert.Contains(FClient.ParameterForMethod('indexUnit', 0), '"scope":"project"');
+  Assert.Contains(FClient.ParameterForMethod('indexUnit', 1), '"scope":"group"');
+  Assert.Contains(FClient.ParameterForMethod('indexUnit', 2), '"scope":"rtl"');
+  Assert.Contains(FClient.ParameterForMethod('indexUnit', 3), '"scope":"vcl"');
+  Assert.Contains(FClient.ParameterForMethod('indexUnit', 0), '"DEBUG"');
 end;
 
 procedure TRadIASemanticWorkspaceTests.SendsOnlyChangedRevisions;
@@ -314,7 +334,10 @@ begin
   SetLength(LFiles, 3);
   Assert.IsTrue(FSynchronizer.Synchronize(LFiles, nil, LError), LError);
   Assert.AreEqual(1, FClient.CountMethod('removeUnit'));
-  Assert.Contains(FClient.ParameterAt(4), '"unitKey":"vcl.forms"');
+  Assert.Contains(
+    FClient.ParameterForMethod('removeUnit'),
+    '"unitKey":"vcl.forms"'
+  );
 end;
 
 procedure TRadIASemanticWorkspaceTests.ReplaysSnapshotAfterEngineRestart;

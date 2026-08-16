@@ -59,8 +59,11 @@ execution consent before starting. When approved, the `deep-active` profile:
 - uses the non-interactive authentication status command when the CLI provides one;
 - opens a temporary handshake with every enabled external MCP server;
 - validates the semantic engine executable and protocol;
-- queries the real semantic index and reports resolution status, reason, origin unit, latency, and the latest
-  completion metrics;
+- queries the real semantic index and reports resolution status, reason, and origin unit;
+- reports compiler/platform profile, corpus size, estimated memory, cache version, latency, requests,
+  failures, and semantic-engine restarts;
+- reports an open semantic circuit breaker; while it is open, the editor uses its bounded fallback and
+  the doctor keeps the latest sanitized error to guide repair;
 - checks the DelphiLint isolated adapter jar, Java, and version and gives the exact recovery path;
 - checks the base Sonar configuration and explains per-project discovery when the variable is absent;
 - closes test sessions and shows each result in the same doctor card.

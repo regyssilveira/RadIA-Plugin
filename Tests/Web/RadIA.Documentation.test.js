@@ -1119,6 +1119,7 @@ test('semantic intelligence is public, reachable, and explicit about its boundar
     'GetTypeHierarchy',
     'PrepareMissingMembers',
     'NavigateToFile',
+    'circuit breaker',
     'test:semantic-corpus:12',
     'test:semantic-completion:13'
   ].forEach(term => {
@@ -1131,6 +1132,10 @@ test('semantic intelligence is public, reachable, and explicit about its boundar
   assert.match(english, /does not measure end-to-end UI/u);
   assert.match(portuguese, /fontes RTL\/VCL/u);
   assert.match(english, /RTL\/VCL sources/u);
+  assert.match(portuguese, /%APPDATA%\\RadIA\\Semantic/u);
+  assert.match(english, /%APPDATA%\\RadIA\\Semantic/u);
+  assert.match(portuguese, /esquema do cache/u);
+  assert.match(english, /cache schema/u);
   assert.match(portugueseHub, /semantic_intelligence\.md/u);
   assert.match(englishHub, /semantic_intelligence\.en\.md/u);
   assert.match(portugueseCapabilities, /semantic_intelligence\.md/u);

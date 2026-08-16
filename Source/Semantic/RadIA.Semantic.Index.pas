@@ -293,9 +293,23 @@ type
       const ASource: string;
       const ADefines: TArray<string>
     ): Boolean;
-    function LoadCache(const AFileName: string; out AError: string): Boolean;
+    function LoadCache(
+      const AFileName: string;
+      out AError: string
+    ): Boolean; overload;
+    function LoadCache(
+      const AFileName: string;
+      const AProfileKey: string;
+      out AError: string
+    ): Boolean; overload;
     function RemoveUnit(const AUnitKey: string): Boolean;
-    procedure SaveCache(const AFileName: string);
+    procedure SaveCache(const AFileName: string); overload;
+    procedure SaveCache(
+      const AFileName: string;
+      const AProfileKey: string
+    ); overload;
+    class function CacheSchemaVersion: string; static;
+    function EstimatedMemoryBytes: Int64;
     function UnitCount: NativeInt;
     property SymbolCount: Integer read FSymbolCount;
   end;
@@ -414,7 +428,7 @@ begin
 end;
 
 const
-  CIndexCacheSchemaVersion = '2.1';
+  CIndexCacheSchemaVersion = '3.0';
 
 function FindStructuralType(
   const AIndex: TRadIASemanticIndex;
@@ -1476,6 +1490,15 @@ function TRadIASemanticIndex.LoadCache(
   const AFileName: string;
   out AError: string
 ): Boolean;
+begin
+  Result := LoadCache(AFileName, '', AError);
+end;
+
+function TRadIASemanticIndex.LoadCache(
+  const AFileName: string;
+  const AProfileKey: string;
+  out AError: string
+): Boolean;
 var
   LDescriptor: TRadIASemanticUnitDescriptor;
   LDocument: TJSONObject;
@@ -1503,6 +1526,12 @@ begin
         (LDocument.GetValue<string>('schemaVersion', '') <>
          CIndexCacheSchemaVersion) then
         raise EInvalidOpException.Create('Semantic cache schema is invalid.');
+      if (AProfileKey <> '') and
+        not SameText(
+          LDocument.GetValue<string>('profileKey', ''),
+          AProfileKey
+        ) then
+        raise EInvalidOpException.Create('Semantic cache profile is invalid.');
       LUnitArray := LDocument.GetValue<TJSONArray>('units');
       if not Assigned(LUnitArray) then
         raise EInvalidOpException.Create('Semantic cache has no unit list.');
@@ -1543,6 +1572,14 @@ begin
 end;
 
 procedure TRadIASemanticIndex.SaveCache(const AFileName: string);
+begin
+  SaveCache(AFileName, '');
+end;
+
+procedure TRadIASemanticIndex.SaveCache(
+  const AFileName: string;
+  const AProfileKey: string
+);
 var
   LAncestor: string;
   LAncestors: TJSONArray;
@@ -1564,6 +1601,7 @@ begin
   LDocument := TJSONObject.Create;
   try
     LDocument.AddPair('schemaVersion', CIndexCacheSchemaVersion);
+    LDocument.AddPair('profileKey', AProfileKey);
     LUnits := TJSONArray.Create;
     for LPair in FUnits do
     begin
@@ -1644,6 +1682,45 @@ begin
     TFile.Move(LTemporaryFile, AFileName);
   finally
     LDocument.Free;
+  end;
+end;
+
+class function TRadIASemanticIndex.CacheSchemaVersion: string;
+begin
+  Result := CIndexCacheSchemaVersion;
+end;
+
+function TRadIASemanticIndex.EstimatedMemoryBytes: Int64;
+const
+  CCharacterBytes = SizeOf(Char);
+var
+  LIdentifier: TRadIASemanticIndexedIdentifier;
+  LPair: TPair<string, TRadIASemanticIndexedUnit>;
+  LSymbol: TRadIASemanticIndexedSymbol;
+begin
+  Result := SizeOf(Self);
+  for LPair in FUnits do
+  begin
+    Inc(
+      Result,
+      (Length(LPair.Value.Descriptor.UnitKey) +
+       Length(LPair.Value.Descriptor.FileName)) * CCharacterBytes
+    );
+    for LSymbol in LPair.Value.Symbols do
+      Inc(
+        Result,
+        SizeOf(LSymbol) +
+        (Length(LSymbol.Name) + Length(LSymbol.ContainerName) +
+         Length(LSymbol.Signature) + Length(LSymbol.SymbolId)) *
+        CCharacterBytes
+      );
+    for LIdentifier in LPair.Value.Identifiers do
+      Inc(
+        Result,
+        SizeOf(LIdentifier) +
+        (Length(LIdentifier.Name) + Length(LIdentifier.Qualifier)) *
+        CCharacterBytes
+      );
   end;
 end;
 

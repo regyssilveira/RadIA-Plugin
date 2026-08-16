@@ -93,6 +93,14 @@ motor no ambiente medido, não uma garantia de latência em qualquer máquina.
 - Código incompleto, macros complexas, símbolos externos não indexados e tipos ambíguos podem exigir
   contexto adicional ou fallback para o provider.
 - O motor semântico funciona fora do processo da IDE; sua indisponibilidade não deve travar o editor.
+- O supervisor limita cada requisição, reinicia o processo com backoff e abre um circuit breaker após
+  falhas repetidas. O editor continua pela rota de fallback limitada, sem exigir reinício da IDE.
+- O índice persistente é aceito somente quando esquema, compilador, plataforma, defines e revisões
+  correspondem ao workspace. Cache inválido ou incompatível é descartado e reconstruído.
+- O cache fica em `%APPDATA%\RadIA\Semantic`; ele contém somente o índice local e não envia código,
+  métricas ou diagnósticos para serviços externos.
+- `/doctor --deep` mostra corpus, memória estimada, esquema do cache, latência, requisições, falhas,
+  reinicializações e estado do circuit breaker, sem incluir conteúdo do código.
 - Ações de leitura não modificam o projeto. Preparações geram preview; aplicações exigem consentimento.
 - Use `/doctor --deep` para verificar o processo semântico e **Show Inline Completion Route Status**
   para entender a última rota do Ghost Text.

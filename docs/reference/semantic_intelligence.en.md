@@ -93,6 +93,14 @@ environment, not a latency guarantee for every machine.
 - Incomplete code, complex macros, unindexed external symbols, and ambiguous types may require more
   context or provider fallback.
 - The semantic engine runs outside the IDE process; its unavailability must not block the editor.
+- The supervisor bounds every request, restarts the process with backoff, and opens a circuit breaker
+  after repeated failures. The editor continues through its bounded fallback without an IDE restart.
+- The persisted index is accepted only when schema, compiler, platform, defines, and revisions match
+  the workspace. Invalid or incompatible caches are discarded and rebuilt.
+- The cache is stored under `%APPDATA%\RadIA\Semantic`; it contains only the local index and sends no
+  code, metrics, or diagnostics to external services.
+- `/doctor --deep` reports corpus size, estimated memory, cache schema, latency, requests, failures,
+  restarts, and circuit state without including source contents.
 - Read actions do not modify the project. Preparation creates a preview; application requires consent.
 - Use `/doctor --deep` to inspect the semantic process and **Show Inline Completion Route Status** to
   understand the last Ghost Text route.
