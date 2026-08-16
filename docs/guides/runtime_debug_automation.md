@@ -43,10 +43,30 @@ complementa testes unitários; ele não os substitui.
 - projeto ativo compilável para Win32 ou Win64;
 - modo agente ativado pelo botão **Agent On/Off** ou por `/agent on`;
 - consentimento habilitado para build, depurador, execução runtime e escrita;
-- aplicação VCL com controles que possuam janela própria (`HWND`).
+- aplicação VCL; controles com ou sem janela própria podem ser alcançados conforme o modo abaixo.
 
 O fluxo também pode ser dirigido por um cliente MCP. As mesmas regras de consentimento e segurança
 continuam válidas.
+
+### Controles VCL sem `HWND`
+
+O modo padrão continua usando a árvore Win32 e não altera o projeto. Quando o roteiro precisa de
+`TLabel`, `TSpeedButton`, frames ou controles compostos sem janela própria, o RadIA oferece uma
+instrumentação local, opt-in e reversível:
+
+1. `PrepareRuntimeVclInstrumentation` mostra o DPR e as quatro units que seriam criadas em
+   `.radia/runtime`, sem escrever arquivos;
+2. `ApplyRuntimeVclInstrumentation` exige consentimento de escrita estrutural e aplica somente o
+   preview revisado ao projeto ativo em configuração Debug;
+3. depois de recompilar e iniciar o debug, `GetRuntimeControlTree` combina a árvore Win32 com a
+   árvore VCL autenticada, e os cenários existentes usam automaticamente o adaptador apropriado;
+4. `RevertRuntimeVclInstrumentation` restaura o DPR e remove somente as units geradas que não foram
+   alteradas pelo usuário.
+
+O adaptador roda dentro da aplicação instrumentada, aceita apenas o processo e a sessão atuais,
+publica um named pipe com token aleatório e ACL do proprietário/SYSTEM e limita profundidade,
+quantidade de controles, payload e timeout. Ele não usa coordenadas, não abre uma porta de rede e
+não é incluído silenciosamente em builds Release.
 
 ## Fluxo completo
 
@@ -92,7 +112,8 @@ O plano aparece antes da primeira execução. Cada tool com risco mantém seu pr
 |---|---|
 | Build | `BuildProject`, `GetBuildStatus`, `CancelBuild` |
 | Sessão | `StartDebugging`, `GetDebuggerState`, `GetRuntimeDebugSession`, `StopDebugging` |
-| Descoberta | `GetRuntimeWindows`, `GetRuntimeControlTree` |
+| Instrumentação VCL opcional | `PrepareRuntimeVclInstrumentation`, `ApplyRuntimeVclInstrumentation`, `RevertRuntimeVclInstrumentation` |
+| Descoberta | `GetRuntimeWindows`, `GetRuntimeControlTree` (Win32 e VCL instrumentado) |
 | Visual | `CaptureRuntimeVisual` antes e depois do cenário |
 | Cenário | `PrepareRuntimeScenario`, `RunRuntimeScenario`, `GetRuntimeScenarioStatus`, `CancelRuntimeScenario` |
 | Evidência | `WaitForDebuggerEvent`, `CaptureRuntimeEvidence`, `CompareRuntimeEvidence` |
@@ -163,7 +184,7 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 
 ## Limitações
 
-- Controles VCL sem janela própria não podem ser automatizados por este mecanismo.
+- Controles VCL sem janela própria exigem a instrumentação Debug revisada e recompilação do projeto.
 - Aplicações elevadas em outro nível de integridade podem ser inacessíveis.
 - Janelas minimizadas, invisíveis ou acima de 2560×1440 não são capturadas.
 - A execução usa identidade semântica e não visão computacional ou coordenadas.
@@ -175,6 +196,10 @@ O artefato deve ser incluído no controle de versão pelo usuário.
 - **Nenhuma janela encontrada:** aguarde a aplicação entrar em `running` e confirme
   `GetRuntimeDebugSession.complete=true`.
 - **`runtime_target_not_found`:** atualize a descoberta e verifique classe, texto e caminho.
+- **Controle VCL não aparece:** confirme a configuração Debug, aplique o preview de instrumentação,
+  recompile e inicie uma nova sessão. O projeto não instrumentado continua limitado à árvore Win32.
+- **`runtime_vcl_unavailable`:** a aplicação não publicou o endpoint da sessão atual; pare o debug,
+  confirme que o DPR instrumentado inicia `TRadIARuntimeVclServer` e execute novamente.
 - **`runtime_capture_unavailable`:** restaure e deixe visível a janela, confirme o PID e repita
   `GetRuntimeWindows` antes de gerar um novo ID opaco.
 - **Sessão incomparável:** pare, recompile e inicie uma nova sessão antes da verificação.

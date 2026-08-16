@@ -518,12 +518,13 @@ See the [security model](../reference/tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 164 registered built-in tools.
+- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 177 registered built-in tools.
 - The [thread and PPL assistant](threading_assistant.en.md) audits and prepares safe concurrency modernization.
 - The [OpenAPI/Swagger retrofit](openapi_retrofit.en.md) integrates documentation into existing DEXT APIs.
 - [DEXT and form modernization](dext_form_modernization.en.md) executes reversible, gated batches.
-- Runtime automation supports windowed VCL controls; controls without an `HWND` report unavailable
-  capability.
+- Runtime automation uses Win32 controls by default. VCL controls without an `HWND` require the
+  reviewed Debug instrumentation, consent, a rebuild, and a new session; see the
+  [runtime diagnostics guide](runtime_debug_automation.en.md#vcl-controls-without-an-hwnd).
 - RadIA reproduces and verifies a correction, while the hypothesis and diff remain subject to user
   review and consent.
 - Some architectural catalog entries remain roadmap items and may not appear in `/tools`.

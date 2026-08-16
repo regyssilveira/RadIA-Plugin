@@ -155,7 +155,8 @@ O RadIA pode transformar uma falha visual reproduzível em uma prova verificáve
 
 - compilar o projeto e iniciar uma nova sessão pelo depurador da IDE;
 - correlacionar projeto, processo, executável, build e identidade da sessão;
-- descobrir somente janelas e controles do processo depurado e seus descendentes;
+- descobrir somente janelas e controles Win32 ou VCL do processo depurado e seus descendentes;
+- instrumentar reversivelmente um projeto Debug para alcançar controles VCL sem `HWND`;
 - preparar um roteiro visual com preview, limites, fingerprint e consentimento;
 - reproduzir uma exceção, capturar a pilha e registrar evidência sanitizada;
 - capturar a janela autorizada antes e depois da interação e apresentar o par no chat;
@@ -166,6 +167,9 @@ O RadIA pode transformar uma falha visual reproduzível em uma prova verificáve
 A automação não aceita `HWND`, coordenadas globais ou processos arbitrários. Em Delphi 13 IDE64,
 seletores cruzados para aplicações Win32 preservam classe e hierarquia quando o texto do controle
 não está disponível.
+
+O adaptador VCL é opt-in, autenticado por sessão e limitado. Sua inclusão exige preview e
+consentimento, e pode ser revertida sem manter alterações nas units geradas.
 
 Consulte [Diagnóstico Runtime Autônomo](../guides/runtime_debug_automation.md).
 
@@ -287,7 +291,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 174 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 177 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)

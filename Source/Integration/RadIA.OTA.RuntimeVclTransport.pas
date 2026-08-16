@@ -100,6 +100,30 @@ begin
   Result := True;
 end;
 
+function WaitForNamedPipeEndpoint(
+  const AEndpoint: string;
+  const ATimeoutMs: Cardinal
+): Boolean;
+var
+  LDeadline: UInt64;
+  LRemaining: Cardinal;
+begin
+  LDeadline := GetTickCount64 + ATimeoutMs;
+  repeat
+    if GetTickCount64 >= LDeadline then
+      Exit(False);
+    LRemaining := Cardinal(LDeadline - GetTickCount64);
+    if LRemaining > 100 then
+      LRemaining := 100;
+    if WaitNamedPipe(PChar(AEndpoint), LRemaining) then
+      Exit(True);
+    if not (GetLastError in [ERROR_FILE_NOT_FOUND, ERROR_SEM_TIMEOUT,
+      ERROR_PIPE_BUSY]) then
+      Exit(False);
+    Sleep(10);
+  until False;
+end;
+
 constructor TRadIARuntimeVclEndpointLocator.Create(
   const ARootPath: string
 );
@@ -223,7 +247,7 @@ begin
     Exit(TRadIARuntimeVclTransportResult.Failed(
       'runtime_vcl_payload_too_large', 'Runtime VCL request exceeds the configured limit.'
     ));
-  if not WaitNamedPipe(PChar(AIdentity.Endpoint), ALimits.TimeoutMs) then
+  if not WaitForNamedPipeEndpoint(AIdentity.Endpoint, ALimits.TimeoutMs) then
     Exit(TRadIARuntimeVclTransportResult.Failed(
       'runtime_vcl_endpoint_unavailable', 'Runtime VCL adapter is not available.'
     ));

@@ -39,6 +39,10 @@ type
     procedure InvokesNamedGraphicControlWithoutCoordinates;
     [Test]
     procedure PublishesAndRemovesProcessBoundEndpoint;
+    [Test]
+    procedure InstrumentsProjectSourceReversibly;
+    [Test]
+    procedure LoadsCompleteRuntimeTemplateSet;
   end;
 
 implementation
@@ -49,6 +53,7 @@ uses
   Winapi.Windows,
   RadIA.Core.RuntimeAutomation,
   RadIA.Core.RuntimeVclAdapter,
+  RadIA.Core.RuntimeVclInstrumentation,
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Runtime.VclAdapter,
   RadIA.Runtime.VclServer,
@@ -281,6 +286,58 @@ begin
   end;
   LLocator := TRadIARuntimeVclEndpointLocator.Create;
   Assert.IsFalse(LLocator.Locate(LSession, LIdentity));
+end;
+
+procedure TTestRadIARuntimeVclAdapter.InstrumentsProjectSourceReversibly;
+const
+  CProjectSource =
+    'program Sample;' + #13#10 +
+    'uses' + #13#10 +
+    '  Vcl.Forms;' + #13#10 +
+    'begin' + #13#10 +
+    '  Application.Initialize;' + #13#10 +
+    '  Application.Run;' + #13#10 +
+    'end.';
+var
+  LInstrumented: string;
+begin
+  Assert.IsTrue(TRadIARuntimeVclInstrumentationTransformer.Instrument(
+    CProjectSource,
+    LInstrumented
+  ));
+  Assert.Contains(LInstrumented, 'RadIA.Runtime.VclServer in');
+  Assert.Contains(LInstrumented, 'RadIARuntimeVclServer.Start;');
+  Assert.Contains(LInstrumented, 'RadIARuntimeVclServer.Free;');
+  Assert.IsFalse(TRadIARuntimeVclInstrumentationTransformer.Instrument(
+    LInstrumented,
+    LInstrumented
+  ));
+end;
+
+procedure TTestRadIARuntimeVclAdapter.LoadsCompleteRuntimeTemplateSet;
+const
+  CTemplateNames: array[0..3] of string = (
+    'RadIA.Core.RuntimeAutomation.pas',
+    'RadIA.Core.RuntimeVclAdapter.pas',
+    'RadIA.Runtime.VclAdapter.pas',
+    'RadIA.Runtime.VclServer.pas'
+  );
+var
+  LError: string;
+  LIndex: Integer;
+  LSource: IRadIARuntimeVclTemplateSource;
+  LTemplates: TArray<TRadIARuntimeVclTemplate>;
+begin
+  for LIndex := Low(CTemplateNames) to High(CTemplateNames) do
+    TFile.WriteAllText(
+      TPath.Combine(FRootPath, CTemplateNames[LIndex]),
+      'unit Template' + LIndex.ToString + '; interface implementation end.',
+      TEncoding.UTF8
+    );
+  LSource := TRadIARuntimeVclFileTemplateSource.Create(FRootPath);
+  Assert.IsTrue(LSource.LoadTemplates(LTemplates, LError), LError);
+  Assert.AreEqual(4, Length(LTemplates));
+  Assert.AreEqual(CTemplateNames[3], LTemplates[3].FileName);
 end;
 
 initialization

@@ -54,7 +54,7 @@ reverter toda a operação sem perda de código.
 
 - [x] **Debugger avançado:** breakpoints condicionais, hit count, exceções e logpoints, respeitando
   as capacidades efetivas do Delphi 12 e 13.
-- [ ] **Automação de controles sem janela própria:** adicionar um adaptador VCL autorizado para
+- [x] **Automação de controles sem janela própria:** adicionar um adaptador VCL autorizado para
   `TGraphicControl`, frames e controles customizados sem usar coordenadas globais.
 - [ ] **Diagnóstico de performance:** medir cenários, bloqueio da thread principal, CPU, memória e
   duração, comparando evidência anterior e posterior à correção.

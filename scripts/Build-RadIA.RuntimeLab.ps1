@@ -35,6 +35,15 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Runtime laboratory build failed with exit code $LASTEXITCODE."
     }
+    & $compilerPath `
+        -B `
+        -Q `
+        "-E$binaryDirectory" `
+        "-N$dcuDirectory" `
+        "RadIARuntimeVclProbe.dpr"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Runtime VCL probe build failed with exit code $LASTEXITCODE."
+    }
 } finally {
     Pop-Location
 }
@@ -42,6 +51,10 @@ try {
 $executablePath = Join-Path $binaryDirectory "RadIARuntimeLab.exe"
 if (-not (Test-Path -LiteralPath $executablePath)) {
     throw "Runtime laboratory executable was not produced."
+}
+$probePath = Join-Path $binaryDirectory "RadIARuntimeVclProbe.exe"
+if (-not (Test-Path -LiteralPath $probePath)) {
+    throw "Runtime VCL probe executable was not produced."
 }
 
 Write-Host "Runtime laboratory compiled: $executablePath" -ForegroundColor Green

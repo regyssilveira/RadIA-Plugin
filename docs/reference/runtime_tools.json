@@ -493,6 +493,15 @@
       ]
     },
     {
+      "name": "Reversible VCL runtime instrumentation",
+      "source": "Source/Core/RadIA.Core.RuntimeVclInstrumentation.pas",
+      "tools": [
+        "PrepareRuntimeVclInstrumentation",
+        "ApplyRuntimeVclInstrumentation",
+        "RevertRuntimeVclInstrumentation"
+      ]
+    },
+    {
       "name": "FastMM5 log evidence",
       "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
       "tools": [

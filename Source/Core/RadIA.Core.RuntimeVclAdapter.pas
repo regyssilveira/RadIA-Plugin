@@ -68,6 +68,8 @@ type
     ): TRadIARuntimeVclTransportResult; static;
     property Success: Boolean read FSuccess;
     property ErrorCode: string read FErrorCode;
+    property ErrorMessage: string read FErrorMessage;
+    property Payload: string read FPayload;
   end;
 
   IRadIARuntimeVclEndpointLocator = interface

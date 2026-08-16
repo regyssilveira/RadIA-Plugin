@@ -106,7 +106,11 @@ $requiredFiles = @(
     "Scripts/New-RadIA.DeclarativeExtensionPackage.ps1",
     "Web/chat.html",
     "Web/chat.js",
-    "Web/chat.css"
+    "Web/chat.css",
+    "RuntimeAdapter/RadIA.Core.RuntimeAutomation.pas",
+    "RuntimeAdapter/RadIA.Core.RuntimeVclAdapter.pas",
+    "RuntimeAdapter/RadIA.Runtime.VclAdapter.pas",
+    "RuntimeAdapter/RadIA.Runtime.VclServer.pas"
 )
 foreach ($requiredFile in $requiredFiles) {
     if (-not $manifestPaths.ContainsKey($requiredFile)) {
@@ -213,6 +217,7 @@ $targetExtensionPackager = Join-Path `
     "New-RadIA.DeclarativeExtensionPackage.ps1"
 $targetDcp = Join-Path $targetDcpDirectory "RadIA.dcp"
 $targetWeb = Join-Path $publicBpl "Web"
+$targetRuntimeAdapter = Join-Path $targetBplDirectory "RuntimeAdapter"
 $userRadIA = Join-Path (
     [Environment]::GetFolderPath("ApplicationData")
 ) "RadIA"
@@ -236,6 +241,7 @@ $plan = [PSCustomObject]@{
     extensionPackager = $targetExtensionPackager
     dcp = $targetDcp
     publicWeb = $targetWeb
+    runtimeAdapter = $targetRuntimeAdapter
     registryPath = $registryPath
     userData = $userRadIA
     removeUserData = $RemoveUserData.IsPresent
@@ -295,6 +301,9 @@ if ($Mode -eq "Uninstall") {
         (Test-Path -LiteralPath $targetWeb)
     ) {
         Remove-Item -LiteralPath $targetWeb -Recurse -Force
+    }
+    if (Test-Path -LiteralPath $targetRuntimeAdapter) {
+        Remove-Item -LiteralPath $targetRuntimeAdapter -Recurse -Force
     }
     if ($RemoveUserData -and (Test-Path -LiteralPath $userRadIA)) {
         $resolvedUserData = [IO.Path]::GetFullPath($userRadIA)
@@ -381,6 +390,16 @@ Copy-Item `
     -Path (Join-Path $sourceWeb "*") `
     -Destination $resolvedWeb `
     -Recurse `
+    -Force
+
+$sourceRuntimeAdapter = Resolve-PackageFile "RuntimeAdapter"
+if (Test-Path -LiteralPath $targetRuntimeAdapter) {
+    Remove-Item -LiteralPath $targetRuntimeAdapter -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $targetRuntimeAdapter | Out-Null
+Copy-Item `
+    -Path (Join-Path $sourceRuntimeAdapter "*") `
+    -Destination $targetRuntimeAdapter `
     -Force
 
 $userWeb = [IO.Path]::GetFullPath(

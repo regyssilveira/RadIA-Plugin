@@ -439,6 +439,14 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ApplyMemoryInstrumentation` | Applies a fresh FastMM5 instrumentation preview to the live project source buffer. | `RadIA.Core.MemoryInstrumentation.pas` |
 | `RevertMemoryInstrumentation` | Restores the exact project source captured before FastMM5 instrumentation. | `RadIA.Core.MemoryInstrumentation.pas` |
 
+## Reversible VCL runtime instrumentation
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareRuntimeVclInstrumentation` | Previews reversible VCL runtime instrumentation for the active Debug project. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
+| `ApplyRuntimeVclInstrumentation` | Adds the reviewed runtime adapter units and starts them only in the instrumented application. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
+| `RevertRuntimeVclInstrumentation` | Removes unchanged runtime adapter units and restores the reviewed project source. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
+
 ## FastMM5 log evidence
 
 | Tool | Purpose | Source unit |
@@ -480,7 +488,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 60
-- Registered built-in tools: 174
+- Registered groups: 61
+- Registered built-in tools: 177
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

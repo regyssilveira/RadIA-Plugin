@@ -45,6 +45,10 @@
         <DCCReference Include="RadIA.RuntimeLab.TargetForm.pas">
             <Form>RadIARuntimeLabTargetForm</Form>
         </DCCReference>
+        <DCCReference Include="..\..\Source\Core\RadIA.Core.RuntimeAutomation.pas"/>
+        <DCCReference Include="..\..\Source\Core\RadIA.Core.RuntimeVclAdapter.pas"/>
+        <DCCReference Include="..\..\Source\Runtime\RadIA.Runtime.VclAdapter.pas"/>
+        <DCCReference Include="..\..\Source\Runtime\RadIA.Runtime.VclServer.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

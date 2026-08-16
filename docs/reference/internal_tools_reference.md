@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 174 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 177 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -116,6 +116,14 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `PrepareMemoryInstrumentation` | Cria um preview com fingerprint para inserir o FastMM5 primeiro no projeto e habilitar diagnósticos somente em Debug. | Antes de alterar o DPR, depois de confirmar que FastMM5, plataforma e configuração estão prontos. |
 | `ApplyMemoryInstrumentation` | Revalida o fingerprint e aplica o preview ao buffer vivo do DPR com suporte ao Undo da IDE. | Após revisão e consentimento estrutural do usuário, antes do build diagnóstico. |
 | `RevertMemoryInstrumentation` | Restaura exatamente o conteúdo do DPR capturado antes da instrumentação. | No fim de uma sessão temporária, em cancelamentos e quando o usuário desfaz a instrumentação persistente. |
+
+## Instrumentação VCL runtime reversível
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareRuntimeVclInstrumentation` | Analisa o projeto VCL ativo em Debug e prepara, sem alterar arquivos, a inclusão temporária do adaptador autenticado que enxerga controles VCL sem janela própria. | Antes de automatizar controles como `TLabel`, `TSpeedButton`, frames e componentes compostos que não aparecem na árvore Win32. |
+| `ApplyRuntimeVclInstrumentation` | Aplica exatamente o preview revisado ao DPR e cria as quatro units isoladas em `.radia/runtime`. | Depois da revisão e do consentimento para escrita estrutural; a aplicação instrumentada passa a publicar um endpoint local limitado durante sua execução. |
+| `RevertRuntimeVclInstrumentation` | Restaura o DPR original e remove somente as units geradas que continuam inalteradas. | Ao encerrar o diagnóstico, cancelar a automação ou retirar a instrumentação temporária do projeto. |
 | `ParseMemoryDiagnosticLog` | Interpreta um log FastMM5 limitado e autorizado, agrupando eventos, bytes, classes, stacks, linhas e fingerprints. | Depois de uma execução diagnóstica ou ao importar um log localizado dentro do workspace ativo. |
 | `PrepareMemoryDiagnosticSession` | Prepara um preview único com instrumentação, aquecimento, repetições e cenário runtime, sem executar o projeto. | Quando o usuário solicita um diagnóstico completo de memória e antes do consentimento de execução. |
 | `RunMemoryDiagnosticSession` | Instrumenta, compila, inicia somente o processo supervisionado, executa o cenário, coleta o log e restaura o DPR. | Depois da revisão do preview e do consentimento explícito para a sessão composta. |

@@ -240,6 +240,7 @@ if ($Uninstall) {
     )
     $targetDcp = "$targetDcpDir\RadIA.dcp"
     $targetWeb = "$publicBplDir\Web"
+    $targetRuntimeAdapter = "$targetBplDir\RuntimeAdapter"
 
     Write-Host "Removendo pacote do Registro do Windows..." -ForegroundColor Yellow
     $regPath = "HKCU:\Software\Embarcadero\BDS\$delphiVer\Known Packages"
@@ -277,6 +278,14 @@ if ($Uninstall) {
         (Test-Path $targetWeb)
     ) {
         Remove-Item -Path $targetWeb -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    if (Test-Path $targetRuntimeAdapter) {
+        Remove-Item `
+            -LiteralPath $targetRuntimeAdapter `
+            -Recurse `
+            -Force `
+            -ErrorAction SilentlyContinue |
+            Out-Null
     }
 
     Write-Host "=============================================" -ForegroundColor Green
@@ -646,6 +655,7 @@ if ($Package) {
         (Join-Path $stagingRoot "Dcp"),
         (Join-Path $stagingRoot "Bin"),
         (Join-Path $stagingRoot "Web"),
+        (Join-Path $stagingRoot "RuntimeAdapter"),
         (Join-Path $stagingRoot "Redist"),
         (Join-Path $stagingRoot "Docs"),
         (Join-Path $stagingRoot "Scripts"),
@@ -670,6 +680,17 @@ if ($Package) {
         -Path ".\Source\UI\Web\*" `
         -Destination (Join-Path $stagingRoot "Web") `
         -Recurse
+    $runtimeAdapterSources = @(
+        ".\Source\Core\RadIA.Core.RuntimeAutomation.pas",
+        ".\Source\Core\RadIA.Core.RuntimeVclAdapter.pas",
+        ".\Source\Runtime\RadIA.Runtime.VclAdapter.pas",
+        ".\Source\Runtime\RadIA.Runtime.VclServer.pas"
+    )
+    foreach ($runtimeAdapterSource in $runtimeAdapterSources) {
+        Copy-Item `
+            -LiteralPath $runtimeAdapterSource `
+            -Destination (Join-Path $stagingRoot "RuntimeAdapter")
+    }
     Copy-Item `
         -LiteralPath ".\Redist\$platform\WebView2Loader.dll" `
         -Destination (Join-Path $stagingRoot "Redist\WebView2Loader.dll")
@@ -884,6 +905,7 @@ if ($Install) {
 
     $sourceWeb = Join-Path (Get-Location) "Source\UI\Web"
     $targetWeb = "$publicBplDir\Web"
+    $targetRuntimeAdapter = "$targetBplDir\RuntimeAdapter"
     $userRadIADir = Join-Path ([Environment]::GetFolderPath('ApplicationData')) "RadIA"
     $userWeb = Join-Path $userRadIADir "Web"
     $userWebView2 = Join-Path $userRadIADir "WebView2"
@@ -904,6 +926,23 @@ if ($Install) {
     }
     New-Item -ItemType Directory -Force -Path $resolvedPublicWebRoot | Out-Null
     Copy-Item -Path "$sourceWeb\*" -Destination $resolvedPublicWebRoot -Force -Recurse
+
+    $runtimeAdapterSources = @(
+        ".\Source\Core\RadIA.Core.RuntimeAutomation.pas",
+        ".\Source\Core\RadIA.Core.RuntimeVclAdapter.pas",
+        ".\Source\Runtime\RadIA.Runtime.VclAdapter.pas",
+        ".\Source\Runtime\RadIA.Runtime.VclServer.pas"
+    )
+    if (Test-Path -LiteralPath $targetRuntimeAdapter) {
+        Remove-Item -LiteralPath $targetRuntimeAdapter -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path $targetRuntimeAdapter | Out-Null
+    foreach ($runtimeAdapterSource in $runtimeAdapterSources) {
+        Copy-Item `
+            -LiteralPath $runtimeAdapterSource `
+            -Destination $targetRuntimeAdapter `
+            -Force
+    }
 
     Write-Host "Atualizando cache local de recursos Web do usuario..." -ForegroundColor Yellow
     $resolvedUserWebRoot = [System.IO.Path]::GetFullPath($userWeb)

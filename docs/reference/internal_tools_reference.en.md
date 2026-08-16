@@ -116,6 +116,14 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`PrepareMemoryInstrumentation`|Creates a preview with fingerprint to insert FastMM5 first into the project and enable diagnostics only in Debug.|Before changing the DPR, after confirming that FastMM5, platform and configuration are ready.|
 |`ApplyMemoryInstrumentation`|Revalidates the fingerprint and applies the preview to the DPR live buffer with IDE Undo support.|After user structural review and consent, before diagnostic build.|
 |`RevertMemoryInstrumentation`|Restore exactly the contents of the DPR captured before instrumentation.|At the end of a temporary session, on cancellations, and when the user undoes persistent instrumentation.|
+
+## Reversible VCL runtime instrumentation
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`PrepareRuntimeVclInstrumentation`|Analyze the active Debug VCL project and preview the authenticated runtime adapter without changing files.|Before automating `TLabel`, `TSpeedButton`, frames, or composite controls that are absent from the Win32 tree.|
+|`ApplyRuntimeVclInstrumentation`|Apply the reviewed DPR change and create four isolated units under `.radia/runtime`.|After structural-write consent; the instrumented application publishes a bounded local endpoint while it runs.|
+|`RevertRuntimeVclInstrumentation`|Restore the original DPR and remove only unchanged generated units.|When finishing or cancelling the runtime diagnosis or removing temporary instrumentation.|
 |`ParseMemoryDiagnosticLog`|Interprets a limited and authorized FastMM5 log, grouping events, bytes, classes, stacks, lines and fingerprints.|After a diagnostic run or when importing a log located within the active workspace.|
 |`PrepareMemoryDiagnosticSession`|Prepare a single preview with instrumentation, warm-up, repetitions and runtime scenario, without running the project.|When the user requests a full memory diagnosis and before execution consent.|
 |`RunMemoryDiagnosticSession`|Instruments, compiles, starts only the supervised process, runs the scenario, collects the log, and restores the DPR.|After preview review and explicit consent for composite session.|

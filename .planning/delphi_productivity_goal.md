@@ -126,8 +126,10 @@ Coverage.
 Estado parcial: a matriz OTA de breakpoints foi comprovada nos Delphis 12 e 13. Condições, hit count,
 logpoints, avaliação, frames e filtro de thread usam propriedades nativas, preservam configuração
 anterior e permitem reversão. Filtros globais de exceção são reportados como indisponíveis porque a
-OTA não oferece contrato confiável; nenhuma emulação foi introduzida. Automação de controles sem
-janela e comparação de performance permanecem abertas.
+OTA não oferece contrato confiável; nenhuma emulação foi introduzida. A automação de controles VCL
+sem janela foi concluída com instrumentação Debug reversível, transporte local autenticado,
+integração aos cenários existentes e prova entre processos nos Delphis 12 e 13. A comparação de
+performance permanece aberta.
 
 Dependências: Debugger, RuntimeScenario, RuntimeEvidence, VisualRuntimeSession e consentimento.
 

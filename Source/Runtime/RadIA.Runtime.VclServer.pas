@@ -521,6 +521,7 @@ end;
 
 procedure TRadIARuntimeVclServer.Stop;
 var
+  LDeadline: UInt64;
   LHandle: THandle;
 begin
   if not Assigned(FWorker) then
@@ -529,12 +530,21 @@ begin
     Exit;
   end;
   TThread(FWorker).Terminate;
-  LHandle := CreateFile(
-    PChar(FEndpoint), GENERIC_READ or GENERIC_WRITE, 0,
-    nil, OPEN_EXISTING, 0, 0
-  );
-  if LHandle <> INVALID_HANDLE_VALUE then
-    CloseHandle(LHandle);
+  LDeadline := GetTickCount64 + 5000;
+  repeat
+    LHandle := CreateFile(
+      PChar(FEndpoint), GENERIC_READ or GENERIC_WRITE, 0,
+      nil, OPEN_EXISTING, 0, 0
+    );
+    if LHandle <> INVALID_HANDLE_VALUE then
+    begin
+      CloseHandle(LHandle);
+      Break;
+    end;
+    if WaitForSingleObject(TThread(FWorker).Handle, 0) = WAIT_OBJECT_0 then
+      Break;
+    Sleep(10);
+  until GetTickCount64 >= LDeadline;
   TThread(FWorker).WaitFor;
   FWorker.Free;
   FWorker := nil;

@@ -439,6 +439,14 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ApplyMemoryInstrumentation` | Revalida o fingerprint e aplica o preview ao buffer vivo do DPR com suporte ao Undo da IDE. | `RadIA.Core.MemoryInstrumentation.pas` |
 | `RevertMemoryInstrumentation` | Restaura exatamente o conteúdo do DPR capturado antes da instrumentação. | `RadIA.Core.MemoryInstrumentation.pas` |
 
+## Instrumentação VCL runtime reversível
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareRuntimeVclInstrumentation` | Analisa o projeto VCL ativo em Debug e prepara, sem alterar arquivos, a inclusão temporária do adaptador autenticado que enxerga controles VCL sem janela própria. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
+| `ApplyRuntimeVclInstrumentation` | Aplica exatamente o preview revisado ao DPR e cria as quatro units isoladas em `.radia/runtime`. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
+| `RevertRuntimeVclInstrumentation` | Restaura o DPR original e remove somente as units geradas que continuam inalteradas. | `RadIA.Core.RuntimeVclInstrumentation.pas` |
+
 ## Evidências de logs do FastMM5
 
 | Ferramenta | O que faz | Unit de origem |
@@ -480,7 +488,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 60
-- Ferramentas internas registradas: 174
+- Grupos registrados: 61
+- Ferramentas internas registradas: 177
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

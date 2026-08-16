@@ -68,6 +68,9 @@ uses
   RadIA.Core.ProjectOpening, RadIA.OTA.ProjectOpening,
   RadIA.Core.ProjectFiles, RadIA.Core.ProjectFileTools,
   RadIA.Core.GeneratedArtifacts,
+  RadIA.Core.RuntimeVclInstrumentation,
+  RadIA.OTA.RuntimeVclFacade,
+  RadIA.OTA.RuntimeVclTransport,
   RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
   RadIA.Core.EditorAdapter, RadIA.Core.Tools, RadIA.Core.ToolRegistry, RadIA.Core.Workspace,
@@ -1030,16 +1033,22 @@ initialization
   TRadIAContainer.Register<IRadIARuntimeDebugSessionCoordinator>(
     TRadIARuntimeDebugSessionCoordinator.Create
   );
-  TRadIAContainer.Register<IRadIARuntimeDiscoveryFacade>(
+  TRadIAContainer.Register<IRadIARuntimeVisualCaptureFacade>(
     TRadIAWindowsRuntimeDiscoveryFacade.Create
+  );
+  TRadIAContainer.Register<IRadIARuntimeDiscoveryFacade>(
+    TRadIACompositeRuntimeFacade.Create(
+      TRadIAContainer.Resolve<IRadIARuntimeVisualCaptureFacade> as
+        IRadIARuntimeDiscoveryFacade,
+      TRadIAContainer.Resolve<IRadIARuntimeVisualCaptureFacade> as
+        IRadIARuntimeActionFacade,
+      TRadIARuntimeVclEndpointLocator.Create,
+      TRadIARuntimeVclNamedPipeTransport.Create
+    )
   );
   TRadIAContainer.Register<IRadIARuntimeActionFacade>(
     TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade> as
       IRadIARuntimeActionFacade
-  );
-  TRadIAContainer.Register<IRadIARuntimeVisualCaptureFacade>(
-    TRadIAContainer.Resolve<IRadIARuntimeDiscoveryFacade> as
-      IRadIARuntimeVisualCaptureFacade
   );
   TRadIAContainer.Register<IRadIAVisualRuntimeSession>(
     TRadIAVisualRuntimeSession.Create
@@ -1372,6 +1381,16 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>
   );
+  TRadIAContainer.Register<IRadIARuntimeVclInstrumentationCoordinator>(
+    TRadIARuntimeVclInstrumentationCoordinator.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+      TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
+      TRadIAContainer.Resolve<IRadIAIDENavigationFacade>,
+      TRadIAContainer.Resolve<IRadIAPatchService>,
+      TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>,
+      TRadIARuntimeVclFileTemplateSource.Create
+    )
+  );
   RegisterRadIACodeValidationTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
@@ -1492,6 +1511,10 @@ initialization
   RegisterRadIADUnitXTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIADUnitXRunner>
+  );
+  RegisterRadIARuntimeVclInstrumentationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIARuntimeVclInstrumentationCoordinator>
   );
   RegisterRadIATestImpactTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

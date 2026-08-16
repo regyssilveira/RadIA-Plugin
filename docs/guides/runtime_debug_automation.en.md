@@ -40,9 +40,28 @@ complement unit tests; they do not replace them.
 - an active project that builds for Win32 or Win64;
 - Agent Mode enabled through **Agent On/Off** or `/agent on`;
 - consent enabled for build, debugger, runtime execution, and writes;
-- a VCL application with windowed controls (`HWND`).
+- a VCL application; windowed and windowless controls are supported as described below.
 
 An MCP client can also drive the workflow. The same consent and security rules apply.
+
+### VCL controls without an `HWND`
+
+The default mode keeps using the Win32 tree and does not change the project. When a scenario needs
+a `TLabel`, `TSpeedButton`, frame, or composite control without its own window, RadIA provides an
+opt-in, local, and reversible instrumentation flow:
+
+1. `PrepareRuntimeVclInstrumentation` previews the DPR change and the four units under
+   `.radia/runtime` without writing files;
+2. `ApplyRuntimeVclInstrumentation` requires structural-write consent and applies only the reviewed
+   preview to the active Debug project;
+3. after rebuild and debug startup, `GetRuntimeControlTree` combines Win32 and authenticated VCL
+   trees, while existing scenarios automatically use the suitable adapter;
+4. `RevertRuntimeVclInstrumentation` restores the DPR and removes only unchanged generated units.
+
+The adapter runs inside the instrumented application, accepts only the current process and session,
+publishes a random-token named pipe restricted to owner/SYSTEM, and bounds depth, control count,
+payload, and timeout. It uses no coordinates, opens no network port, and is never added silently to
+Release builds.
 
 ## Complete workflow
 
@@ -88,7 +107,8 @@ The plan is shown before the first execution. Every risky tool keeps its own con
 |---|---|
 | Build | `BuildProject`, `GetBuildStatus`, `CancelBuild` |
 | Session | `StartDebugging`, `GetDebuggerState`, `GetRuntimeDebugSession`, `StopDebugging` |
-| Discovery | `GetRuntimeWindows`, `GetRuntimeControlTree` |
+| Optional VCL instrumentation | `PrepareRuntimeVclInstrumentation`, `ApplyRuntimeVclInstrumentation`, `RevertRuntimeVclInstrumentation` |
+| Discovery | `GetRuntimeWindows`, `GetRuntimeControlTree` (Win32 plus instrumented VCL) |
 | Visual | `CaptureRuntimeVisual` before and after the scenario |
 | Scenario | `PrepareRuntimeScenario`, `RunRuntimeScenario`, `GetRuntimeScenarioStatus`, `CancelRuntimeScenario` |
 | Evidence | `WaitForDebuggerEvent`, `CaptureRuntimeEvidence`, `CompareRuntimeEvidence` |
@@ -144,7 +164,7 @@ The user decides when to add the artifact to version control.
 
 ## Limitations
 
-- VCL controls without their own window cannot be automated by this mechanism.
+- VCL controls without their own window require reviewed Debug instrumentation and a rebuild.
 - Applications running at a different integrity level may be inaccessible.
 - Minimized, invisible, or larger-than-2560×1440 windows are not captured.
 - Execution uses semantic identity, not computer vision or screen coordinates.
@@ -155,6 +175,11 @@ The user decides when to add the artifact to version control.
 
 - **No windows:** wait for `running` and confirm `GetRuntimeDebugSession.complete=true`.
 - **`runtime_target_not_found`:** refresh discovery and inspect class, text, and path.
+- **Missing VCL control:** confirm Debug configuration, apply the instrumentation preview, rebuild,
+  and start a new session. An uninstrumented project remains limited to the Win32 tree.
+- **`runtime_vcl_unavailable`:** the application did not publish an endpoint for the current
+  session; stop debugging, confirm that the instrumented DPR starts `TRadIARuntimeVclServer`, and
+  run it again.
 - **`runtime_capture_unavailable`:** restore and expose the window, confirm its PID, and call
   `GetRuntimeWindows` again before using a fresh opaque ID.
 - **Not comparable:** stop, rebuild, and start a new session before verification.
