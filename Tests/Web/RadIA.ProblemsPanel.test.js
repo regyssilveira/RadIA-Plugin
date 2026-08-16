@@ -45,6 +45,8 @@ test('problem actions navigate safely or prepare a command for review', () => {
     chatScript,
     /execute_tool[\s\S]{0,120}problem\.recommendedCommand/u
   );
+  assert.match(chatScript, /name: 'PrepareCodeValidationFix'/u);
+  assert.match(chatScript, /arguments: \{ id: problem\.fixId \}/u);
 });
 
 test('problem collection is bounded by stable identifiers and chat lifecycle', () => {

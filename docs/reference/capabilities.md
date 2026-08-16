@@ -130,7 +130,7 @@ Consulte [Runner DUnitX](../guides/dunitx_runner.md).
 compilador, disponibilidade do DelphiLint e issues do Sonar no [Painel de problemas](problems_panel.md).
 Cada fonte informa separadamente se passou, encontrou problemas, não foi solicitada, não está
 configurada ou falhou. Quando solicitado, um Check nativo atualiza primeiro a evidência do compilador.
-Nenhuma correção é aplicada automaticamente.
+Correções estruturadas aparecem no painel e geram preview; nenhuma é aplicada automaticamente.
 
 ## Debugger
 
@@ -284,7 +284,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 171 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 172 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)

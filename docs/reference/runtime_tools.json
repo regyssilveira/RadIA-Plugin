@@ -82,6 +82,13 @@
       ]
     },
     {
+      "name": "Code validation fixes",
+      "source": "Source/Core/RadIA.Core.CodeValidationFixes.pas",
+      "tools": [
+        "PrepareCodeValidationFix"
+      ]
+    },
+    {
       "name": "Curated Delphi guidance",
       "source": "Source/Core/RadIA.Core.DelphiGuidanceTools.pas",
       "tools": [

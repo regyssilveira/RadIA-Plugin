@@ -70,3 +70,7 @@ fontes para não confundir configuração ausente com defeito no código:
 
 Por padrão, a análise tem limite de 200 achados, com máximo configurável de 500. Cada item preserva
 origem, regra, severidade, mensagem, arquivo, linha e coluna e entra na área **Review** do painel.
+Quando o DelphiLint fornece uma correção, o resultado inclui um identificador temporário. O
+`PrepareCodeValidationFix` transforma esse identificador em preview sobre o conteúdo atual; somente
+`ApplyPatch`, após consentimento, altera o arquivo. Mudança posterior, expiração, range inválido ou
+sobreposição bloqueiam o fluxo e exigem nova validação.

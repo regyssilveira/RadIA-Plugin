@@ -37,6 +37,7 @@ type
     FLine: Integer;
     FColumn: Integer;
     FRecommendedCommand: string;
+    FFixId: string;
   public
     constructor Create(
       const ACategory: TRadIAProblemCategory;
@@ -54,6 +55,7 @@ type
     function WithRecommendedCommand(
       const ACommand: string
     ): TRadIAProblem;
+    function WithFixId(const AId: string): TRadIAProblem;
     function ToJson: TJSONObject;
   end;
 
@@ -124,7 +126,7 @@ const
   CMaxProblems = 200;
   CFnvOffset: UInt64 = $CBF29CE484222325;
   CFnvPrime: UInt64 = $100000001B3;
-  CProblemCollections: array[0..7] of string = (
+  CProblemCollections: array[0..8] of string = (
     'messages',
     'findings',
     'risks',
@@ -132,7 +134,8 @@ const
     'diagnostics',
     'testCases',
     'leaks',
-    'events'
+    'events',
+    'suggestedFixes'
   );
 
 function CategoryName(
@@ -242,6 +245,7 @@ begin
   FLine := 0;
   FColumn := 0;
   FRecommendedCommand := '';
+  FFixId := '';
 end;
 
 function TRadIAProblem.ToJson: TJSONObject;
@@ -264,6 +268,13 @@ begin
   Result.AddPair('line', TJSONNumber.Create(FLine));
   Result.AddPair('column', TJSONNumber.Create(FColumn));
   Result.AddPair('recommendedCommand', FRecommendedCommand);
+  Result.AddPair('fixId', FFixId);
+end;
+
+function TRadIAProblem.WithFixId(const AId: string): TRadIAProblem;
+begin
+  Result := Self;
+  Result.FFixId := AId;
 end;
 
 function TRadIAProblem.WithLocation(
@@ -473,7 +484,8 @@ begin
     LLine
   );
   LCommand := FirstText(LItem, ['recommendedCommand', 'action']);
-  if LCommand.Trim.IsEmpty then
+  if LCommand.Trim.IsEmpty and
+    not SameText(ACollectionName, 'suggestedFixes') then
     LCommand := CommandFor(LCategory);
   AProblem := TRadIAProblem.Create(
     LCategory,
@@ -487,6 +499,8 @@ begin
     LLine,
     JsonInteger(LItem, 'column')
   ).WithRecommendedCommand(LCommand);
+  if SameText(ACollectionName, 'suggestedFixes') then
+    AProblem := AProblem.WithFixId(JsonText(LItem, 'fixId'));
   Result := True;
 end;
 

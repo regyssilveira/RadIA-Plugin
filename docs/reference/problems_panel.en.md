@@ -69,3 +69,7 @@ sources so missing configuration is never confused with a code defect:
 
 The default limit is 200 findings and the configurable maximum is 500. Each item preserves source,
 rule, severity, message, file, line, and column and enters the panel under **Review**.
+When DelphiLint provides a fix, the result includes a temporary identifier.
+`PrepareCodeValidationFix` turns it into a preview against current content; only `ApplyPatch`, after
+consent, changes the file. Later edits, expiration, invalid ranges, or overlap block the flow and
+require another validation.

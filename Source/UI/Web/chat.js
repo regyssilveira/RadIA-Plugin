@@ -1646,6 +1646,17 @@ function renderProblemsPanel() {
         }
       ));
     }
+    if (problem.fixId) {
+      actions.appendChild(createProblemAction(
+        'Preview fix',
+        'Prepare a fingerprinted preview without changing the file',
+        () => postMessageToDelphi({
+          action: 'execute_tool',
+          name: 'PrepareCodeValidationFix',
+          arguments: { id: problem.fixId }
+        })
+      ));
+    }
 
     item.append(heading, message, meta);
     if (actions.childElementCount > 0) item.appendChild(actions);

@@ -1377,7 +1377,8 @@ initialization
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
     TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
     TRadIAContainer.Resolve<IRadIAHttpClient>,
-    TRadIAContainer.Resolve<IRadIABuildFacade>
+    TRadIAContainer.Resolve<IRadIABuildFacade>,
+    TRadIAContainer.Resolve<IRadIAPatchService>
   );
   RegisterRadIASemanticHierarchyTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

@@ -14,7 +14,8 @@ procedure RegisterRadIACodeValidationTools(
   const AWorkspace: IRadIAWorkspaceFacade;
   const AMutation: IRadIAEditorMutationFacade;
   const AHttpClient: IRadIAHttpClient;
-  const ABuild: IRadIABuildFacade
+  const ABuild: IRadIABuildFacade;
+  const APatches: IRadIAPatchService
 );
 
 implementation
@@ -28,6 +29,7 @@ uses
   System.StrUtils,
   System.SysUtils,
   RadIA.Core.CodeValidation,
+  RadIA.Core.CodeValidationFixes,
   RadIA.Core.DelphiLintAdapter,
   RadIA.Core.SaveReview;
 
@@ -70,6 +72,7 @@ type
     FHttpClient: IRadIAHttpClient;
     FBuild: IRadIABuildFacade;
     FDelphiLint: IRadIADelphiLintAdapter;
+    FFixes: IRadIACodeValidationFixService;
     FMutation: IRadIAEditorMutationFacade;
     FWorkspace: IRadIAWorkspaceFacade;
     procedure AddCompilerFindings(
@@ -85,6 +88,7 @@ type
       const ARequest: TRadIACodeValidationRequest;
       const AProject: TRadIAProjectSnapshot;
       const AFindings: TList<TRadIACodeValidationFinding>;
+      const ASuggestedFixes: TJSONArray;
       const ASources: TJSONArray
     );
     procedure AddNativeFindings(
@@ -108,7 +112,8 @@ type
       const AWorkspace: IRadIAWorkspaceFacade;
       const AMutation: IRadIAEditorMutationFacade;
       const AHttpClient: IRadIAHttpClient;
-      const ABuild: IRadIABuildFacade
+      const ABuild: IRadIABuildFacade;
+      const AFixes: IRadIACodeValidationFixService
     );
     function Execute(const ARequest: TRadIAToolRequest): TRadIAToolResult;
     function GetDescriptor: TRadIAToolDescriptor;
@@ -126,9 +131,11 @@ const
     '"additionalProperties":false}';
   COutputSchema =
     '{"type":"object","required":["status","scope","findingCount",' +
-    '"findings","sources"],"properties":{"status":{"type":"string"},' +
+    '"findings","sources","suggestedFixes"],"properties":{' +
+    '"status":{"type":"string"},' +
     '"scope":{"type":"string"},"findingCount":{"type":"integer"},' +
-    '"findings":{"type":"array"},"sources":{"type":"array"}}}';
+    '"findings":{"type":"array"},"sources":{"type":"array"},' +
+    '"suggestedFixes":{"type":"array"}}}';
   CMaxFileCharacters = 2 * 1024 * 1024;
 
 function SourceStatus(
@@ -208,7 +215,8 @@ constructor TRadIAValidateDelphiCodeTool.Create(
   const AWorkspace: IRadIAWorkspaceFacade;
   const AMutation: IRadIAEditorMutationFacade;
   const AHttpClient: IRadIAHttpClient;
-  const ABuild: IRadIABuildFacade
+  const ABuild: IRadIABuildFacade;
+  const AFixes: IRadIACodeValidationFixService
 );
 begin
   inherited Create;
@@ -220,10 +228,13 @@ begin
     raise EArgumentNilException.Create('AHttpClient');
   if not Assigned(ABuild) then
     raise EArgumentNilException.Create('ABuild');
+  if not Assigned(AFixes) then
+    raise EArgumentNilException.Create('AFixes');
   FWorkspace := AWorkspace;
   FMutation := AMutation;
   FHttpClient := AHttpClient;
   FBuild := ABuild;
+  FFixes := AFixes;
   FDelphiLint := CreateRadIADelphiLintAdapter;
 end;
 
@@ -291,6 +302,7 @@ procedure TRadIAValidateDelphiCodeTool.AddDelphiLintFindings(
   const ARequest: TRadIACodeValidationRequest;
   const AProject: TRadIAProjectSnapshot;
   const AFindings: TList<TRadIACodeValidationFinding>;
+  const ASuggestedFixes: TJSONArray;
   const ASources: TJSONArray
 );
 var
@@ -357,6 +369,11 @@ begin
     Exit;
   end;
   AppendFindings(AFindings, LItems, ARequest.MaxFindings);
+  FFixes.CaptureDelphiLintFixes(
+    LResult.ResponseJson,
+    AProject.RootPath,
+    ASuggestedFixes
+  );
   ASources.AddElement(SourceStatus(
     'delphilint',
     IfThen(Length(LItems) = 0, 'passed', 'findings'),
@@ -500,6 +517,7 @@ var
   LParsed: TRadIACodeValidationRequest;
   LProject: TRadIAProjectSnapshot;
   LSources: TJSONArray;
+  LSuggestedFixes: TJSONArray;
   LError: string;
 begin
   if not LoadRequest(ARequest.ArgumentsJson, LParsed, LError) then
@@ -514,10 +532,18 @@ begin
   LJson := TJSONObject.Create;
   try
     LSources := TJSONArray.Create;
+    LSuggestedFixes := TJSONArray.Create;
+    FFixes.Clear;
     AddNativeFindings(LParsed, LFindings, LSources);
     AddBuildStatus(LParsed, LSources);
     AddCompilerFindings(LParsed, LFindings, LSources);
-    AddDelphiLintFindings(LParsed, LProject, LFindings, LSources);
+    AddDelphiLintFindings(
+      LParsed,
+      LProject,
+      LFindings,
+      LSuggestedFixes,
+      LSources
+    );
     AddSonarFindings(LParsed, LProject, LFindings, LSources);
     LFindingsJson := TJSONArray.Create;
     for LFinding in LFindings do
@@ -527,6 +553,7 @@ begin
     LJson.AddPair('findingCount', TJSONNumber.Create(LFindings.Count));
     LJson.AddPair('findings', LFindingsJson);
     LJson.AddPair('sources', LSources);
+    LJson.AddPair('suggestedFixes', LSuggestedFixes);
     Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
   finally
     LJson.Free;
@@ -595,17 +622,23 @@ procedure RegisterRadIACodeValidationTools(
   const AWorkspace: IRadIAWorkspaceFacade;
   const AMutation: IRadIAEditorMutationFacade;
   const AHttpClient: IRadIAHttpClient;
-  const ABuild: IRadIABuildFacade
+  const ABuild: IRadIABuildFacade;
+  const APatches: IRadIAPatchService
 );
+var
+  LFixes: IRadIACodeValidationFixService;
 begin
   if not Assigned(ARegistry) then
     raise EArgumentNilException.Create('ARegistry');
+  LFixes := CreateRadIACodeValidationFixService(AMutation, APatches);
   ARegistry.RegisterTool(TRadIAValidateDelphiCodeTool.Create(
     AWorkspace,
     AMutation,
     AHttpClient,
-    ABuild
+    ABuild,
+    LFixes
   ));
+  RegisterRadIACodeValidationFixTools(ARegistry, LFixes);
 end;
 
 end.

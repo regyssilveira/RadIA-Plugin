@@ -71,7 +71,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
-| `ValidateDelphiCode` | Normaliza em um único resultado os achados determinísticos do RadIA, as mensagens atuais do compilador, a disponibilidade do DelphiLint e as issues atuais do Sonar. | `RadIA.Core.CodeValidationTools.pas` |
+| `ValidateDelphiCode` | Normaliza regras nativas, Check opcional do compilador, DelphiLint isolado e Sonar; também retorna correções estruturadas disponíveis. | `RadIA.Core.CodeValidationTools.pas` |
+
+## Correções da validação de código
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareCodeValidationFix` | Converte uma correção sugerida pelo DelphiLint em preview limitado, com revisão e fingerprint do conteúdo atual. | `RadIA.Core.CodeValidationFixes.pas` |
 
 ## Orientação Delphi curada
 
@@ -472,7 +478,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 59
-- Ferramentas internas registradas: 171
+- Grupos registrados: 60
+- Ferramentas internas registradas: 172
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

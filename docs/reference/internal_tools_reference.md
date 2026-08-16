@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 171 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 172 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -66,7 +66,13 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
-| `ValidateDelphiCode` | Normaliza em um único resultado os achados determinísticos do RadIA, as mensagens atuais do compilador, a disponibilidade do DelphiLint e as issues atuais do Sonar. | Quando o usuário pede para validar a unit ativa ou o projeto; fontes opcionais ausentes são explicadas separadamente com a ação necessária, sem transformar ausência de configuração em falso problema de código. |
+| `ValidateDelphiCode` | Normaliza regras nativas, Check opcional do compilador, DelphiLint isolado e Sonar; também retorna correções estruturadas disponíveis. | Quando o usuário pede para validar a unit ativa ou o projeto; cada fonte informa seu estado e a ação necessária. |
+
+## Correções da validação de código
+
+| Ferramenta | O que faz | Quando é acionada |
+|---|---|---|
+| `PrepareCodeValidationFix` | Converte uma correção sugerida pelo DelphiLint em preview limitado, com revisão e fingerprint do conteúdo atual. | Após `ValidateDelphiCode` retornar uma correção; apenas prepara a alteração. A aplicação continua exigindo consentimento por `ApplyPatch` e pode ser revertida. |
 
 ## Orientação Delphi curada
 

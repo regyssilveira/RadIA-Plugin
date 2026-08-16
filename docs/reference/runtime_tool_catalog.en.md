@@ -73,6 +73,12 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `ValidateDelphiCode` | Validates Delphi code with native, compiler, DelphiLint, and Sonar evidence. | `RadIA.Core.CodeValidationTools.pas` |
 
+## Code validation fixes
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareCodeValidationFix` | Prepares a fingerprinted preview for a DelphiLint suggested fix. | `RadIA.Core.CodeValidationFixes.pas` |
+
 ## Curated Delphi guidance
 
 | Tool | Purpose | Source unit |
@@ -472,7 +478,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 59
-- Registered built-in tools: 171
+- Registered groups: 60
+- Registered built-in tools: 172
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

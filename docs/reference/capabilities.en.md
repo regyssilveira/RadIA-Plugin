@@ -27,7 +27,7 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Form Designer | Inspect forms and components, change layout and properties, add or remove components and create event handlers. |
 | Build | Make, build, check, clean, structured diagnostics, status, timeout and cancellation. |
 | DUnitX | Run, filter and cancel tests, parse NUnit XML and return structured failures and stack traces. |
-| Code validation | Normalize native rules, compiler messages, isolated DelphiLint analysis, and Sonar issues into navigable Problems findings; optionally run a fresh native Check first. |
+| Code validation | Normalize native rules, compiler Check, isolated DelphiLint, and Sonar into navigable findings; structured fixes become reviewed previews and are never applied automatically. |
 | Debugger | Start, stop, pause, continue, step, manage breakpoints and watches, evaluate expressions, inspect call stacks and read the timeline. |
 | Autonomous runtime diagnostics | Build and start under the IDE debugger, capture the authorized window before and after a bounded visual scenario, record an exception and stack, rebuild, compare evidence across distinct sessions and builds, and preserve a versioned regression. |
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |

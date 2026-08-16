@@ -66,7 +66,13 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 
 |Tool|What it does|When it is triggered|
 |---|---|---|
-|`ValidateDelphiCode`|Normalizes RadIA deterministic findings, current compiler messages, DelphiLint availability, and current Sonar issues into one result.|When the user asks to validate the active unit or project; missing optional sources are explained separately with the required action instead of being reported as false code problems.|
+|`ValidateDelphiCode`|Normalizes native rules, an optional compiler Check, isolated DelphiLint, and Sonar; it also returns available structured fixes.|When the user asks to validate the active unit or project; each source reports its state and required action.|
+
+## Code validation fixes
+
+|Tool|What it does|When it is triggered|
+|---|---|---|
+|`PrepareCodeValidationFix`|Converts a DelphiLint suggested fix into a bounded preview fingerprinted against current content.|After `ValidateDelphiCode` returns a fix; it only prepares the change. Applying still requires consent through `ApplyPatch` and remains reversible.|
 
 ## Curated Delphi guidance
 

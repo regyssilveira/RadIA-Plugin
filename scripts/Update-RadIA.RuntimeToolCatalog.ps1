@@ -36,6 +36,7 @@ $portugueseGroupNames = @{
     "Semantic method extraction" = "Extração semântica de métodos"
     "Semantic type movement" = "Movimentação semântica de tipos"
     "Unified Delphi code validation" = "Validação unificada de código Delphi"
+    "Code validation fixes" = "Correções da validação de código"
     "Curated Delphi guidance" = "Orientação Delphi curada"
     "DFM and Pascal consistency" = "Consistência entre DFM e Pascal"
     "Designer visual diff" = "Diff visual do Designer"
