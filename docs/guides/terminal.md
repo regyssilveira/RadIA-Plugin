@@ -65,6 +65,10 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - busca reversa incremental com `Ctrl+R`;
 - snippets para build, testes e Git;
 - paleta pesquisável e deduplicada sobre snippets e histórico, aberta com `Ctrl+P`;
+- reconhecimento de diagnósticos Delphi nos formatos `arquivo.pas(linha,coluna)` e
+  `arquivo.pas:linha:coluna`;
+- navegação da linha reconhecida para o editor por duplo clique ou **Open error**;
+- envio de somente um diagnóstico estruturado e sanitizado ao chat por **Send to chat**;
 - cancelamento da árvore completa de processos;
 - timeout máximo de 30 minutos por comando;
 - encerramento isolado de cada aba.
@@ -83,6 +87,17 @@ automaticamente o padrão `Ctrl+Alt+T`.
 
 Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Pressione
 novamente para percorrer ocorrências mais antigas. Uma edição manual reinicia a busca.
+
+### Abrir e analisar um erro de compilação
+
+Selecione uma linha de diagnóstico na saída, ou apenas posicione o cursor nela. Use **Open error**
+para abrir arquivo, linha e coluna no editor. Um duplo clique sobre a mesma linha executa a mesma
+ação. O RadIA aceita somente arquivos Delphi (`.pas`, `.dpr`, `.dpk` e `.dfm`) pertencentes ao
+projeto aberto; caminhos externos e texto sem posição reconhecível são recusados.
+
+Use **Send to chat** para preparar a análise no chat. O RadIA não envia o buffer inteiro do terminal:
+somente arquivo, posição e mensagem reconhecidos são estruturados, limitados em tamanho e submetidos
+ao redator central de credenciais. O terminal permanece aberto para continuar a correção e o build.
 
 Para procurar por finalidade ou pelo próprio texto do comando, pressione `Ctrl+P` no campo de
 comando. Digite na caixa **Command palette** e selecione um resultado identificado como
@@ -160,8 +175,9 @@ A própria IDE persiste posição, tamanho, visibilidade e estado acoplado.
 ## Evidência
 
 A matriz automatizada é executada no pipeline de validação. O smoke exige geometria
-útil, entrada e saída, os controles **New terminal**, **Close terminal**, **Run**, **Stop** e
-**Clear**, os cinco rótulos acessíveis, pelo menos 11 pontos navegáveis por Tab, dois perfis e uma
+útil, entrada e saída, os controles **New terminal**, **Close terminal**, **Run**, **Stop**,
+**Clear**, **Open error** e **Send to chat**, os cinco rótulos acessíveis, pelo menos 13 pontos
+navegáveis por Tab, dois perfis e uma
 paleta não vazia. A matriz vigente cobre exclusivamente Delphi 12 Win32, Delphi 13 Win32 e Delphi
 13 IDE64, todos com o catálogo atual de 187 ferramentas. Evidências detalhadas ficam fora de `docs`
 somente como registro histórico.

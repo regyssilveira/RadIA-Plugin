@@ -313,6 +313,13 @@ begin
   );
   Result := TRegEx.Replace(
     Result,
+    '(?i)\b(api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?' +
+    'secret|password|token)\s*([=:])\s*(?!Bearer\b)' +
+    '("[^"]*"|''[^'']*''|[^\s;]+)',
+    '$1$2[REDACTED]'
+  );
+  Result := TRegEx.Replace(
+    Result,
     '(?i)\bAKIA[0-9A-Z]{16}\b',
     '[REDACTED_AWS_ACCESS_KEY]'
   );

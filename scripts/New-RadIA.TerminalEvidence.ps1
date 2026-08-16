@@ -4,7 +4,7 @@ param(
         ".\Output\Evidence\terminal_smoke_evidence_2.6.0.json"
     ),
     [int]$RequiredToolCount = 187,
-    [int]$MinimumTabStopCount = 11,
+    [int]$MinimumTabStopCount = 13,
     [int]$MinimumPaletteItemCount = 1,
     [int]$MinimumProfileCount = 2
 )

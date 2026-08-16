@@ -10,10 +10,13 @@ uses
   Vcl.Forms,
   Vcl.StdCtrls,
   RadIA.Core.CliProcess,
+  RadIA.Core.IDENavigation,
+  RadIA.Core.Interfaces,
+  RadIA.Core.JourneyContext,
   RadIA.Core.Terminal,
+  RadIA.Core.TerminalDiagnostics,
   RadIA.Core.TerminalEmulator,
-  RadIA.Core.ToolSecurity,
-  RadIA.Core.JourneyContext;
+  RadIA.Core.ToolSecurity;
 
 type
   TRadIATerminalHyperlink = record
@@ -46,6 +49,8 @@ type
     FRunButton: TButton;
     FStopButton: TButton;
     FClearButton: TButton;
+    FOpenDiagnosticButton: TButton;
+    FSendDiagnosticButton: TButton;
     FOutputEditor: TRichEdit;
     FOutputLabel: TLabel;
     FStatusLabel: TLabel;
@@ -58,6 +63,9 @@ type
     FFocusQueued: Boolean;
     FSession: IRadIACliProcessSession;
     FAuthorizationPolicy: IRadIAToolAuthorizationPolicy;
+    FNavigation: IRadIAIDENavigationFacade;
+    FMediator: IRadIAMediator;
+    FRedactor: IRadIASecretRedactor;
     FJourneyContext: IRadIAJourneyContextCoordinator;
     FLifecycleGuard: IInterface;
     FHyperlinks: TArray<TRadIATerminalHyperlink>;
@@ -112,6 +120,7 @@ type
       Y: Integer
     );
     procedure OutputDoubleClick(Sender: TObject);
+    procedure OpenDiagnosticClick(Sender: TObject);
     procedure OutputMouseUp(
       Sender: TObject;
       Button: TMouseButton;
@@ -125,6 +134,7 @@ type
       const AVerticalPosition: Integer;
       const APressed: Boolean
     );
+    procedure SendDiagnosticClick(Sender: TObject);
     procedure QueueCompletion(
       const AGuard: IRadIATerminalLifecycleGuard;
       const ACommand: string;
@@ -140,6 +150,9 @@ type
     procedure RunClick(Sender: TObject);
     procedure SnippetChange(Sender: TObject);
     procedure StopClick(Sender: TObject);
+    function TryGetSelectedDiagnostic(
+      out ADiagnostic: TRadIATerminalDiagnostic
+    ): Boolean;
   protected
     procedure CreateWnd; override;
     procedure Resize; override;
@@ -218,6 +231,7 @@ uses
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.Container,
+  RadIA.Core.Mediator,
   RadIA.Core.PseudoTerminal,
   RadIA.Core.Tools,
   RadIA.OTA.Helper;
@@ -277,6 +291,10 @@ begin
   TRadIAContainer.TryResolve<IRadIAJourneyContextCoordinator>(
     FJourneyContext
   );
+  TRadIAContainer.TryResolve<IRadIAIDENavigationFacade>(FNavigation);
+  if not TRadIAContainer.TryResolve<IRadIAMediator>(FMediator) then
+    FMediator := TRadIAMediator.Instance;
+  FRedactor := TRadIASecretRedactor.Create;
 end;
 
 destructor TRadIATerminalFrame.Destroy;
@@ -295,6 +313,9 @@ begin
     FSession := nil;
   end;
   FScreen := nil;
+  FRedactor := nil;
+  FMediator := nil;
+  FNavigation := nil;
   FHistory.Free;
   inherited Destroy;
 end;
@@ -393,6 +414,18 @@ begin
   FClearButton.Caption := 'Clear';
   FClearButton.OnClick := ClearClick;
 
+  FOpenDiagnosticButton := TButton.Create(Self);
+  FOpenDiagnosticButton.Parent := FTopPanel;
+  FOpenDiagnosticButton.SetBounds(612, 170, 112, 27);
+  FOpenDiagnosticButton.Caption := 'Open error';
+  FOpenDiagnosticButton.OnClick := OpenDiagnosticClick;
+
+  FSendDiagnosticButton := TButton.Create(Self);
+  FSendDiagnosticButton.Parent := FTopPanel;
+  FSendDiagnosticButton.SetBounds(732, 170, 112, 27);
+  FSendDiagnosticButton.Caption := 'Send to chat';
+  FSendDiagnosticButton.OnClick := SendDiagnosticClick;
+
   BuildPaletteControls;
   ConfigureControlHints;
 
@@ -406,7 +439,7 @@ begin
 
   FStatusLabel := TLabel.Create(Self);
   FStatusLabel.Parent := FTopPanel;
-  FStatusLabel.SetBounds(8, 175, 820, 17);
+  FStatusLabel.SetBounds(8, 175, 596, 17);
   FStatusLabel.Caption := 'Ready';
 
   FOutputLabel := TLabel.Create(Self);
@@ -461,6 +494,10 @@ begin
   FRunButton.Hint := 'Run the command after execution policy and consent checks';
   FStopButton.Hint := 'Cancel the active process and its child process tree';
   FClearButton.Hint := 'Clear visible terminal output without deleting command history';
+  FOpenDiagnosticButton.Hint :=
+    'Open the Delphi source position recognized on the selected terminal line';
+  FSendDiagnosticButton.Hint :=
+    'Send only the recognized and sanitized Delphi diagnostic to chat';
   FPaletteEdit.Hint := 'Filter command snippets and local history. Press Enter to select a result';
   FPaletteCombo.Hint := 'Choose a filtered command and place it in the command field';
 
@@ -471,6 +508,8 @@ begin
   FRunButton.ShowHint := True;
   FStopButton.ShowHint := True;
   FClearButton.ShowHint := True;
+  FOpenDiagnosticButton.ShowHint := True;
+  FSendDiagnosticButton.ShowHint := True;
   FPaletteEdit.ShowHint := True;
   FPaletteCombo.ShowHint := True;
 end;
@@ -1188,6 +1227,48 @@ begin
     FSession.Cancel;
 end;
 
+procedure TRadIATerminalFrame.SendDiagnosticClick(Sender: TObject);
+var
+  LDiagnostic: TRadIATerminalDiagnostic;
+begin
+  if not TryGetSelectedDiagnostic(LDiagnostic) then
+  begin
+    FStatusLabel.Caption := 'Select a Delphi diagnostic line first';
+    Exit;
+  end;
+  if not Assigned(FMediator) then
+  begin
+    FStatusLabel.Caption := 'Chat handoff is unavailable';
+    Exit;
+  end;
+  FMediator.RequestPrompt(LDiagnostic.ToChatPrompt(FRedactor), True);
+  FStatusLabel.Caption := 'Sanitized diagnostic prepared in chat';
+end;
+
+function TRadIATerminalFrame.TryGetSelectedDiagnostic(
+  out ADiagnostic: TRadIATerminalDiagnostic
+): Boolean;
+var
+  LCaretLine: Integer;
+  LText: string;
+begin
+  ADiagnostic := Default(TRadIATerminalDiagnostic);
+  LText := FOutputEditor.SelText.Trim;
+  if TRadIATerminalDiagnosticParser.TryParse(LText, ADiagnostic) then
+    Exit(True);
+  LCaretLine := FOutputEditor.Perform(
+    EM_LINEFROMCHAR,
+    FOutputEditor.SelStart,
+    0
+  );
+  if (LCaretLine < 0) or (LCaretLine >= FOutputEditor.Lines.Count) then
+    Exit(False);
+  Result := TRadIATerminalDiagnosticParser.TryParse(
+    FOutputEditor.Lines[LCaretLine],
+    ADiagnostic
+  );
+end;
+
 procedure TRadIATerminalFrame.OutputMouseDown(
   Sender: TObject;
   Button: TMouseButton;
@@ -1234,6 +1315,34 @@ begin
       FStatusLabel.Caption := 'Unable to open terminal link';
     Exit;
   end;
+  OpenDiagnosticClick(Sender);
+end;
+
+procedure TRadIATerminalFrame.OpenDiagnosticClick(Sender: TObject);
+var
+  LDiagnostic: TRadIATerminalDiagnostic;
+  LFileName: string;
+  LResult: TRadIANavigationResult;
+begin
+  if not TryGetSelectedDiagnostic(LDiagnostic) then
+  begin
+    FStatusLabel.Caption := 'Select a Delphi diagnostic line first';
+    Exit;
+  end;
+  if not Assigned(FNavigation) then
+  begin
+    FStatusLabel.Caption := 'IDE navigation is unavailable';
+    Exit;
+  end;
+  LFileName := LDiagnostic.FileName;
+  if not TPath.IsPathRooted(LFileName) then
+    LFileName := TPath.Combine(GetWorkingDirectory, LFileName);
+  LResult := FNavigation.NavigateToFile(
+    LFileName,
+    LDiagnostic.Line,
+    LDiagnostic.Column
+  );
+  FStatusLabel.Caption := LResult.Message;
 end;
 
 procedure TRadIATerminalFrame.OutputMouseUp(
@@ -1459,7 +1568,9 @@ begin
     FCloseButton.Visible and
     ASession.FRunButton.Visible and
     ASession.FStopButton.Visible and
-    ASession.FClearButton.Visible;
+    ASession.FClearButton.Visible and
+    ASession.FOpenDiagnosticButton.Visible and
+    ASession.FSendDiagnosticButton.Visible;
 end;
 
 function TRadIATerminalTabsFrame.IsAvailableTabStop(
@@ -1493,6 +1604,10 @@ begin
   if IsAvailableTabStop(ASession.FRunButton) then
     Inc(Result);
   if IsAvailableTabStop(ASession.FClearButton) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FOpenDiagnosticButton) then
+    Inc(Result);
+  if IsAvailableTabStop(ASession.FSendDiagnosticButton) then
     Inc(Result);
   if IsAvailableTabStop(ASession.FOutputEditor) then
     Inc(Result);

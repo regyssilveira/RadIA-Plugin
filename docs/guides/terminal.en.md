@@ -65,6 +65,9 @@ automatically defaults to `Ctrl+Alt+T`.
 - incremental reverse search with `Ctrl+R`;
 - snippets for build, tests and Git;
 - searchable and deduplicated palette over snippets and history, opened with `Ctrl+P`;
+- recognition of Delphi diagnostics in `file.pas(line,column)` and `file.pas:line:column` formats;
+- navigation from a recognized line to the editor by double-click or **Open error**;
+- handoff of only one structured and sanitized diagnostic to chat with **Send to chat**;
 - cancellation of the complete process tree;
 - maximum timeout of 30 minutes per command;
 - isolated closure of each flap.
@@ -83,6 +86,18 @@ automatically defaults to `Ctrl+Alt+T`.
 
 To recall a command without using the mouse, type part of the command and press `Ctrl+R`. press
 again to scroll through older occurrences. A manual edit restarts the search.
+
+### Open and analyze a compiler error
+
+Select a diagnostic line in the output, or place the caret on it. Use **Open error** to open its file,
+line, and column in the editor. Double-clicking the same line performs the same action. RadIA accepts
+only Delphi files (`.pas`, `.dpr`, `.dpk`, and `.dfm`) that belong to the open project; external paths
+and text without a recognized position are rejected.
+
+Use **Send to chat** to prepare an analysis in chat. RadIA does not submit the complete terminal
+buffer: only the recognized file, position, and message are structured, size-bounded, and passed
+through the central credential redactor. The terminal stays open so the correction and build can
+continue.
 
 To search by purpose or by the command text itself, press `Ctrl+P` in the search field.
 command. Type in the **Command palette** box and select a result labeled
@@ -159,8 +174,9 @@ The IDE itself persists position, size, visibility, and coupled state.
 ## Evidence
 
 The automated matrix runs in the validation pipeline. Smoke requires useful
-geometry, input and output, the **New terminal**, **Close terminal**, **Run**, **Stop**, and
-**Clear**, the five accessible labels, at least 11 navigable points per Tab, two profiles and one
+geometry, input and output, the **New terminal**, **Close terminal**, **Run**, **Stop**, **Clear**,
+**Open error**, and **Send to chat** controls, the five accessible labels, at least 13 navigable
+points per Tab, two profiles and one
 non-empty palette. The current matrix exclusively covers Delphi 12 Win32, Delphi 13 Win32 and Delphi
 13 IDE64, all with the current catalog of 187 tools. Detailed evidence remains outside `docs` as
 historical record.

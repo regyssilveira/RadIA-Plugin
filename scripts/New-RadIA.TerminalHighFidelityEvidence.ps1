@@ -1,10 +1,10 @@
 param(
     [string]$OutputPath = (
-        ".\Output\Evidence\terminal_high_fidelity_evidence_2.6.0.json"
+        ".\Output\Evidence\terminal_high_fidelity_evidence.json"
     ),
-    [int]$ExpectedTestCount = 1024,
+    [int]$MinimumTestCount = 1309,
     [string]$VisualSmokeEvidencePath = (
-        ".\Output\Evidence\terminal_smoke_evidence_2.6.0.json"
+        ".\Output\Evidence\terminal_smoke_evidence.json"
     )
 )
 
@@ -38,7 +38,11 @@ $requiredTests = @(
     "ScreenNegotiatesBracketedPasteAndMouseInput",
     "ScreenUsesDisplayWidthForWideAndCombiningCharacters",
     "ScreenReflowsSoftWrapsAndPreservesHardBreaks",
-    "ScreenSupportsTuiInsertDeleteAndEraseCharacters"
+    "ScreenSupportsTuiInsertDeleteAndEraseCharacters",
+    "ParsesDelphiCompilerLocations",
+    "ParsesColonLocationsAndAnsiOutput",
+    "RejectsUnstructuredOrUnsafeOutput",
+    "CreatesBoundedRedactedChatPrompt"
 )
 $targetDefinitions = @(
     @{
@@ -67,7 +71,7 @@ foreach ($definition in $targetDefinitions) {
     [xml]$document = Get-Content -LiteralPath $resultPath -Raw
     $root = $document.'test-results'
     if (
-        [int]$root.total -ne $ExpectedTestCount -or
+        [int]$root.total -lt $MinimumTestCount -or
         [int]$root.errors -ne 0 -or
         [int]$root.failures -ne 0 -or
         [int]$root.ignored -ne 0 -or
