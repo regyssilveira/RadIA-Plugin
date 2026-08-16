@@ -76,6 +76,10 @@ Antes do primeiro build e de cada instalação, o gate encerra somente processos
 (`RadIA.Semantic.Engine` e `RadIA.MCP.Bridge`) quando nenhuma IDE está aberta. Isso impede que um processo órfão
 de uma sessão anterior bloqueie a substituição dos binários, sem encerrar terminais ou processos do projeto.
 
+Uma falha exata de prontidão na inicialização da IDE permite uma única retentativa limitada do mesmo alvo.
+A primeira saída é preservada na evidência com `attemptCount: 2` e `startupRetryUsed: true`. Qualquer falha
+funcional, de build, teste, navegação, debug ou encerramento bloqueia imediatamente sem retentativa.
+
 Se `DEXT_ROOT` não estiver configurado, somente os templates DEXT são registrados como
 `not-required`; os demais templates e gates continuam obrigatórios. Quando `DEXT_ROOT` existe, os
 servidores e endpoints DEXT também são compilados e executados.

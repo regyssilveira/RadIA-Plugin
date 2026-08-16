@@ -72,6 +72,9 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Install = \$true/u);
   assert.match(source, /Stop-RadIAReleaseAuxiliaryProcesses/u);
   assert.match(source, /RadIA\.Semantic\.Engine/u);
+  assert.match(source, /startupRetryUsed/u);
+  assert.match(source, /attemptCount/u);
+  assert.match(source, /Delphi did not become ready for the smoke test/u);
 });
 
 test('release usage plan adds the intent recommendation contract once', () => {

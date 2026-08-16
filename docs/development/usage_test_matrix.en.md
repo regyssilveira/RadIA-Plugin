@@ -76,6 +76,10 @@ Before the first build and each installation, the gate stops only known RadIA au
 (`RadIA.Semantic.Engine` and `RadIA.MCP.Bridge`) while no IDE is open. This prevents an orphan from a previous
 session from locking binaries without terminating terminals or project processes.
 
+An exact IDE startup-readiness failure allows one bounded retry of the same target. The first output is preserved
+in evidence with `attemptCount: 2` and `startupRetryUsed: true`. Any functional, build, test, navigation, debug,
+or shutdown failure blocks immediately without a retry.
+
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also
 built and executed.

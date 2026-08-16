@@ -33,6 +33,16 @@ function Stop-RadIAReleaseAuxiliaryProcesses {
     }
 }
 
+function Stop-RadIAReleaseIDEProcesses {
+    $processes = @(Get-Process bds -ErrorAction SilentlyContinue)
+    foreach ($process in $processes) {
+        Stop-Process -Id $process.Id -Force
+        if (-not $process.WaitForExit(10000)) {
+            throw "Delphi process did not stop after a failed startup probe."
+        }
+    }
+}
+
 Stop-RadIAReleaseAuxiliaryProcesses
 New-Item `
     -ItemType Directory `
@@ -111,6 +121,26 @@ foreach ($target in $openingTargets) {
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
     $output = & powershell.exe @arguments 2>&1 | Out-String
     $exitCode = $LASTEXITCODE
+    $attemptCount = 1
+    $startupRetryUsed = $false
+    if (
+        $exitCode -ne 0 -and
+        $output.Contains("Delphi did not become ready for the smoke test.")
+    ) {
+        $firstAttemptOutput = $output
+        Stop-RadIAReleaseIDEProcesses
+        Stop-RadIAReleaseAuxiliaryProcesses
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+        $attemptCount = 2
+        $startupRetryUsed = $true
+        $output = (
+            "First startup attempt failed and was preserved:`r`n" +
+            $firstAttemptOutput +
+            "`r`nBounded startup retry:`r`n" +
+            $output
+        )
+    }
     $stopwatch.Stop()
     $openingResults += [PSCustomObject]@{
         targetId = $target.Id
@@ -119,6 +149,8 @@ foreach ($target in $openingTargets) {
         status = if ($exitCode -eq 0) { "passed" } else { "failed" }
         exitCode = $exitCode
         durationMs = $stopwatch.ElapsedMilliseconds
+        attemptCount = $attemptCount
+        startupRetryUsed = $startupRetryUsed
         outputTail = if ($output.Length -gt 8192) {
             $output.Substring($output.Length - 8192)
         } else {
