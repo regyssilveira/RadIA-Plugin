@@ -49,16 +49,19 @@ $targetDefinitions = @(
         delphiVersion = "23.0"
         platform = "Win32"
         resultPath = "Output\23.0\bin\Win32\Debug\dunitx-results.xml"
+        externalResultPath = "Output\23.0\bin\Win32\Debug\dunitx-external-results.xml"
     },
     @{
         delphiVersion = "37.0"
         platform = "Win32"
         resultPath = "Output\37.0\bin\Win32\Debug\dunitx-results.xml"
+        externalResultPath = "Output\37.0\bin\Win32\Debug\dunitx-external-results.xml"
     },
     @{
         delphiVersion = "37.0"
         platform = "Win64"
         resultPath = "Output\37.0\bin\Win64\Debug\dunitx-results.xml"
+        externalResultPath = ""
     }
 )
 
@@ -79,10 +82,40 @@ foreach ($definition in $targetDefinitions) {
     ) {
         throw "DUnitX matrix failed for $($definition.delphiVersion) $($definition.platform)."
     }
+    $externalDocument = $null
+    if ($definition.externalResultPath) {
+        $externalResultPath = Join-Path `
+            $repositoryRoot `
+            $definition.externalResultPath
+        if (-not (Test-Path -LiteralPath $externalResultPath -PathType Leaf)) {
+            throw "External DUnitX evidence was not found: $externalResultPath"
+        }
+        [xml]$externalDocument = Get-Content `
+            -LiteralPath $externalResultPath `
+            -Raw
+        $externalRoot = $externalDocument.'test-results'
+        if (
+            [int]$externalRoot.total -lt 1 -or
+            [int]$externalRoot.errors -ne 0 -or
+            [int]$externalRoot.failures -ne 0 -or
+            [int]$externalRoot.ignored -ne 0 -or
+            [int]$externalRoot.'not-run' -ne 0
+        ) {
+            throw (
+                "External DUnitX matrix failed for " +
+                "$($definition.delphiVersion) $($definition.platform)."
+            )
+        }
+    }
     foreach ($testName in $requiredTests) {
         $testCase = $document.SelectSingleNode(
             "//test-case[@name='$testName']"
         )
+        if (-not $testCase -and $externalDocument) {
+            $testCase = $externalDocument.SelectSingleNode(
+                "//test-case[@name='$testName']"
+            )
+        }
         if (-not $testCase -or $testCase.result -ne "Success") {
             throw (
                 "Required terminal test '$testName' did not pass for " +
