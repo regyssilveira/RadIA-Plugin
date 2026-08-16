@@ -13,6 +13,8 @@ uses
   System.Generics.Collections,
   System.JSON,
   System.SysUtils,
+  RadIA.Core.FireDAC.Model,
+  RadIA.Core.FireDAC.Parameters,
   RadIA.Core.FireDAC.SqlAnalyzer;
 
 const
@@ -25,7 +27,16 @@ const
     '{"type":"object","required":["sql","bindings"],' +
     '"properties":{"sql":{"type":"string","maxLength":262144},' +
     '"bindings":{"type":"array","maxItems":512,' +
-    '"items":{"type":"string","maxLength":128}}},"additionalProperties":false}';
+    '"items":{"oneOf":[{"type":"string","maxLength":128},' +
+    '{"type":"object","required":["name"],"properties":{' +
+    '"name":{"type":"string","maxLength":128},' +
+    '"dataType":{"type":"string","maxLength":64},' +
+    '"direction":{"type":"string","enum":["unknown","input","output","inputOutput","result"]},' +
+    '"size":{"type":"integer","minimum":0,"maximum":2147483647},' +
+    '"nullable":{"type":"string","enum":["unknown","true","false"]},' +
+    '"valueState":{"type":"string","enum":["unknown","value","null"]},' +
+    '"assignmentKind":{"type":"string","maxLength":64}},' +
+    '"additionalProperties":false}]}}},"additionalProperties":false}';
   CObjectOutputSchema = '{"type":"object"}';
 
 type
@@ -74,73 +85,67 @@ begin
   end;
 end;
 
-function ContainsText(const AValues: TList<string>; const AValue: string): Boolean;
-var
-  LItem: string;
-begin
-  Result := False;
-  for LItem in AValues do
-    if SameText(LItem, AValue) then
-      Exit(True);
-end;
-
-procedure AddDistinct(const AValues: TList<string>; const AValue: string);
-begin
-  if not AValue.Trim.IsEmpty and not ContainsText(AValues, AValue) then
-    AValues.Add(AValue);
-end;
-
-function ContainsSqlParameter(
-  const AParameters: TArray<TRadIAFireDACSqlParameter>;
+function ContainsBinding(
+  const AValues: TList<TRadIAFireDACParameterBinding>;
   const AName: string
 ): Boolean;
 var
-  LParameter: TRadIAFireDACSqlParameter;
+  LItem: TRadIAFireDACParameterBinding;
 begin
   Result := False;
-  for LParameter in AParameters do
-    if SameText(LParameter.Name, AName) then
+  for LItem in AValues do
+    if SameText(LItem.Name, AName) then
       Exit(True);
 end;
 
-function BuildParameterValidationJson(
-  const AMissing: TList<string>;
-  const AExtra: TList<string>
-): string;
+function TryParseBinding(
+  const AValue: TJSONValue;
+  out ABinding: TRadIAFireDACParameterBinding
+): Boolean;
 var
-  LArray: TJSONArray;
-  LItem: string;
-  LRoot: TJSONObject;
+  LObject: TJSONObject;
+  LName: string;
 begin
-  LRoot := TJSONObject.Create;
-  try
-    LRoot.AddPair('valid', TJSONBool.Create((AMissing.Count = 0) and (AExtra.Count = 0)));
-    LArray := TJSONArray.Create;
-    for LItem in AMissing do
-      LArray.Add(LItem);
-    LRoot.AddPair('missingBindings', LArray);
-    LArray := TJSONArray.Create;
-    for LItem in AExtra do
-      LArray.Add(LItem);
-    LRoot.AddPair('extraBindings', LArray);
-    LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
-    Result := LRoot.ToJSON;
-  finally
-    LRoot.Free;
+  Result := False;
+  if AValue is TJSONString then
+  begin
+    LName := AValue.Value.Trim;
+    if LName.IsEmpty then
+      Exit;
+    ABinding := TRadIAFireDACParameterBinding.Create(
+      LName, '', fpdUnknown, 0, 'unknown', 'unknown', ''
+    );
+    Exit(True);
   end;
+  if not (AValue is TJSONObject) then
+    Exit;
+  LObject := TJSONObject(AValue);
+  LName := LObject.GetValue<string>('name', '').Trim;
+  if LName.IsEmpty then
+    Exit;
+  ABinding := TRadIAFireDACParameterBinding.Create(
+    LName,
+    LObject.GetValue<string>('dataType', ''),
+    RadIAFireDACParameterDirection(LObject.GetValue<string>('direction', 'unknown')),
+    LObject.GetValue<Integer>('size', 0),
+    LObject.GetValue<string>('nullable', 'unknown'),
+    LObject.GetValue<string>('valueState', 'unknown'),
+    LObject.GetValue<string>('assignmentKind', '')
+  );
+  Result := True;
 end;
 
 function TRadIAFireDACTool.ValidateParameters(const AInput: TJSONObject): TRadIAToolResult;
 var
   LAnalysis: TRadIAFireDACSqlAnalysis;
   LAnalyzer: TRadIAFireDACSqlAnalyzer;
+  LBinding: TRadIAFireDACParameterBinding;
   LBindings: TJSONArray;
-  LBindingNames: TList<string>;
-  LExtra: TList<string>;
+  LBindingValues: TList<TRadIAFireDACParameterBinding>;
   LIndex: Integer;
-  LMissing: TList<string>;
-  LParameter: TRadIAFireDACSqlParameter;
   LSql: string;
+  LValidation: TRadIAFireDACParameterValidation;
+  LValidator: TRadIAFireDACParameterValidator;
 begin
   LSql := AInput.GetValue<string>('sql', '');
   LBindings := AInput.GetValue<TJSONArray>('bindings');
@@ -151,30 +156,36 @@ begin
     ));
   if LBindings.Count > CRadIAFireDACMaximumParameters then
     Exit(TRadIAToolResult.Failed('too_many_bindings', 'The binding limit was exceeded.'));
-  LBindingNames := TList<string>.Create;
-  LMissing := TList<string>.Create;
-  LExtra := TList<string>.Create;
+  LBindingValues := TList<TRadIAFireDACParameterBinding>.Create;
   LAnalyzer := TRadIAFireDACSqlAnalyzer.Create;
+  LValidator := TRadIAFireDACParameterValidator.Create;
   try
     for LIndex := 0 to LBindings.Count - 1 do
-      AddDistinct(LBindingNames, LBindings.Items[LIndex].Value);
+    begin
+      if not TryParseBinding(LBindings.Items[LIndex], LBinding) then
+        Exit(TRadIAToolResult.Failed('invalid_binding', 'Each binding requires a non-empty name.'));
+      if not ContainsBinding(LBindingValues, LBinding.Name) then
+        LBindingValues.Add(LBinding);
+    end;
     LAnalysis := LAnalyzer.Analyze(LSql);
     try
-      for LParameter in LAnalysis.Parameters do
-        if not ContainsText(LBindingNames, LParameter.Name) then
-          LMissing.Add(LParameter.Name);
-      for LIndex := 0 to LBindingNames.Count - 1 do
-        if not ContainsSqlParameter(LAnalysis.Parameters, LBindingNames[LIndex]) then
-          LExtra.Add(LBindingNames[LIndex]);
-      Result := TRadIAToolResult.Succeeded(BuildParameterValidationJson(LMissing, LExtra));
+      LValidation := LValidator.Validate(
+        LAnalysis.Parameters,
+        LBindingValues.ToArray,
+        TRadIAFireDACLocation.Create('', 0)
+      );
+      try
+        Result := TRadIAToolResult.Succeeded(LValidation.ToJson);
+      finally
+        LValidation.Free;
+      end;
     finally
       LAnalysis.Free;
     end;
   finally
+    LValidator.Free;
     LAnalyzer.Free;
-    LExtra.Free;
-    LMissing.Free;
-    LBindingNames.Free;
+    LBindingValues.Free;
   end;
 end;
 
@@ -215,7 +226,7 @@ begin
       Result := TRadIAToolDescriptor.Create(
         'ValidateFireDACParameters',
         '1.0.0',
-        'Compares SQL placeholders with supplied FireDAC binding names without executing SQL.',
+        'Validates FireDAC binding names, types, directions, sizes, and null state without executing SQL.',
         CValidateInputSchema,
         CObjectOutputSchema,
         trReadOnly

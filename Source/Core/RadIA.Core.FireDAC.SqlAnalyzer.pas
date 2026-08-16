@@ -167,6 +167,7 @@ end;
 function TRadIAFireDACSqlAnalysis.ToJson: string;
 var
   LArray: TJSONArray;
+  LEvidence: TJSONArray;
   LFinding: TRadIAFireDACFinding;
   LObject: TJSONObject;
   LParameter: TRadIAFireDACSqlParameter;
@@ -202,6 +203,11 @@ begin
       LObject.AddPair('message', LFinding.Message);
       LObject.AddPair('file', LFinding.Location.FileName);
       LObject.AddPair('line', TJSONNumber.Create(LFinding.Location.Line));
+      LObject.AddPair('symbol', LFinding.Symbol);
+      LEvidence := TJSONArray.Create;
+      if not LFinding.Evidence.IsEmpty then
+        LEvidence.Add(LFinding.Evidence);
+      LObject.AddPair('evidence', LEvidence);
       LObject.AddPair('suggestedAction', LFinding.SuggestedAction);
       LObject.AddPair('automaticFixAvailable', TJSONBool.Create(LFinding.AutomaticFixAvailable));
       LArray.AddElement(LObject);
@@ -401,9 +407,13 @@ begin
         ffcProven,
         'Multiple SQL statements',
         'The SQL text contains more than one executable statement.',
-        TRadIAFireDACLocation.Create(AFileName, ALine),
-        'Split the statements and review each execution boundary.',
-        False
+        TRadIAFireDACFindingDetails.Create(
+          TRadIAFireDACLocation.Create(AFileName, ALine),
+          '',
+          'More than one top-level statement delimiter was found.',
+          'Split the statements and review each execution boundary.',
+          False
+        )
       ));
   except
     Result.Free;

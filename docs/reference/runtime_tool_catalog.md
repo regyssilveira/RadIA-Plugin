@@ -461,7 +461,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
 | `AnalyzeFireDACQuery` | Analisa SQL limitado, statements e placeholders sem executar ou devolver o texto da consulta. | `RadIA.Core.FireDAC.Tools.pas` |
-| `ValidateFireDACParameters` | Compara placeholders SQL com nomes de bindings informados, sem executar SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ValidateFireDACParameters` | Valida nomes, tipos, direção, tamanho e estado null dos bindings sem executar SQL. | `RadIA.Core.FireDAC.Tools.pas` |
 
 ## Diagnóstico do ecossistema Delphi
 

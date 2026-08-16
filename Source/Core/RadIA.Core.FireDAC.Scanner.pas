@@ -162,9 +162,13 @@ begin
     ffcProven,
     'Embedded connection credential',
     'A FireDAC connection setting contains a credential. Its value was not collected.',
-    TRadIAFireDACLocation.Create(AFileName, ALine),
-    'Move the credential to a protected runtime configuration.',
-    False
+    TRadIAFireDACFindingDetails.Create(
+      TRadIAFireDACLocation.Create(AFileName, ALine),
+      '',
+      'A credential-bearing FireDAC setting is present; its value was discarded.',
+      'Move the credential to a protected runtime configuration.',
+      False
+    )
   ));
 end;
 
@@ -393,9 +397,13 @@ begin
         ffcProven,
         'FireDAC source file was not scanned',
         'A supported source file exceeds the bounded scanner size.',
-        TRadIAFireDACLocation.Create(ARelativeName, 0),
-        'Review or reduce the file before running the inventory again.',
-        False
+        TRadIAFireDACFindingDetails.Create(
+          TRadIAFireDACLocation.Create(ARelativeName, 0),
+          '',
+          'The file size exceeds the configured scanner byte limit.',
+          'Review or reduce the file before running the inventory again.',
+          False
+        )
       ));
       Exit;
     end;
@@ -409,9 +417,13 @@ begin
         ffcProven,
         'FireDAC source file could not be read',
         'A supported source file could not be read safely.',
-        TRadIAFireDACLocation.Create(ARelativeName, 0),
-        'Check file access and encoding before running the inventory again.',
-        False
+        TRadIAFireDACFindingDetails.Create(
+          TRadIAFireDACLocation.Create(ARelativeName, 0),
+          '',
+          'The bounded file reader rejected or could not decode the file.',
+          'Check file access and encoding before running the inventory again.',
+          False
+        )
       ));
   end;
 end;

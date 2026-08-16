@@ -47,6 +47,28 @@ type
     property Line: Integer read FLine;
   end;
 
+  TRadIAFireDACFindingDetails = record
+  private
+    FAutomaticFixAvailable: Boolean;
+    FEvidence: string;
+    FLocation: TRadIAFireDACLocation;
+    FSuggestedAction: string;
+    FSymbol: string;
+  public
+    constructor Create(
+      const ALocation: TRadIAFireDACLocation;
+      const ASymbol: string;
+      const AEvidence: string;
+      const ASuggestedAction: string;
+      const AAutomaticFixAvailable: Boolean
+    );
+    property AutomaticFixAvailable: Boolean read FAutomaticFixAvailable;
+    property Evidence: string read FEvidence;
+    property Location: TRadIAFireDACLocation read FLocation;
+    property SuggestedAction: string read FSuggestedAction;
+    property Symbol: string read FSymbol;
+  end;
+
   TRadIAFireDACComponent = record
   private
     FClassName: string;
@@ -92,12 +114,14 @@ type
   private
     FAutomaticFixAvailable: Boolean;
     FConfidence: TRadIAFireDACFindingConfidence;
+    FEvidence: string;
     FId: string;
     FLocation: TRadIAFireDACLocation;
     FMessage: string;
     FRuleId: string;
     FSeverity: TRadIAFireDACFindingSeverity;
     FSuggestedAction: string;
+    FSymbol: string;
     FTitle: string;
   public
     constructor Create(
@@ -106,18 +130,18 @@ type
       const AConfidence: TRadIAFireDACFindingConfidence;
       const ATitle: string;
       const AMessage: string;
-      const ALocation: TRadIAFireDACLocation;
-      const ASuggestedAction: string;
-      const AAutomaticFixAvailable: Boolean
+      const ADetails: TRadIAFireDACFindingDetails
     );
     property AutomaticFixAvailable: Boolean read FAutomaticFixAvailable;
     property Confidence: TRadIAFireDACFindingConfidence read FConfidence;
+    property Evidence: string read FEvidence;
     property Id: string read FId;
     property Location: TRadIAFireDACLocation read FLocation;
     property Message: string read FMessage;
     property RuleId: string read FRuleId;
     property Severity: TRadIAFireDACFindingSeverity read FSeverity;
     property SuggestedAction: string read FSuggestedAction;
+    property Symbol: string read FSymbol;
     property Title: string read FTitle;
   end;
 
@@ -199,6 +223,21 @@ begin
   FLine := ALine;
 end;
 
+constructor TRadIAFireDACFindingDetails.Create(
+  const ALocation: TRadIAFireDACLocation;
+  const ASymbol: string;
+  const AEvidence: string;
+  const ASuggestedAction: string;
+  const AAutomaticFixAvailable: Boolean
+);
+begin
+  FLocation := ALocation;
+  FSymbol := ASymbol;
+  FEvidence := AEvidence;
+  FSuggestedAction := ASuggestedAction;
+  FAutomaticFixAvailable := AAutomaticFixAvailable;
+end;
+
 constructor TRadIAFireDACComponent.Create(
   const AName: string;
   const AClassName: string;
@@ -233,9 +272,7 @@ constructor TRadIAFireDACFinding.Create(
   const AConfidence: TRadIAFireDACFindingConfidence;
   const ATitle: string;
   const AMessage: string;
-  const ALocation: TRadIAFireDACLocation;
-  const ASuggestedAction: string;
-  const AAutomaticFixAvailable: Boolean
+  const ADetails: TRadIAFireDACFindingDetails
 );
 var
   LIdentity: string;
@@ -245,10 +282,14 @@ begin
   FConfidence := AConfidence;
   FTitle := ATitle;
   FMessage := AMessage;
-  FLocation := ALocation;
-  FSuggestedAction := ASuggestedAction;
-  FAutomaticFixAvailable := AAutomaticFixAvailable and (AConfidence = ffcProven);
-  LIdentity := LowerCase(ARuleId + '|' + ALocation.FileName + '|' + ALocation.Line.ToString);
+  FLocation := ADetails.Location;
+  FSymbol := ADetails.Symbol;
+  FEvidence := ADetails.Evidence;
+  FSuggestedAction := ADetails.SuggestedAction;
+  FAutomaticFixAvailable := ADetails.AutomaticFixAvailable and (AConfidence = ffcProven);
+  LIdentity := LowerCase(
+    ARuleId + '|' + FLocation.FileName + '|' + FLocation.Line.ToString + '|' + FSymbol
+  );
   FId := LowerCase(THashSHA2.GetHashString(LIdentity)).Substring(0, 24);
 end;
 
@@ -406,6 +447,8 @@ begin
 end;
 
 function FindingToJson(const AValue: TRadIAFireDACFinding): TJSONObject;
+var
+  LEvidence: TJSONArray;
 begin
   Result := TJSONObject.Create;
   Result.AddPair('id', AValue.Id);
@@ -416,6 +459,11 @@ begin
   Result.AddPair('message', AValue.Message);
   Result.AddPair('file', AValue.Location.FileName);
   Result.AddPair('line', TJSONNumber.Create(AValue.Location.Line));
+  Result.AddPair('symbol', AValue.Symbol);
+  LEvidence := TJSONArray.Create;
+  if not AValue.Evidence.IsEmpty then
+    LEvidence.Add(AValue.Evidence);
+  Result.AddPair('evidence', LEvidence);
   Result.AddPair('suggestedAction', AValue.SuggestedAction);
   Result.AddPair('automaticFixAvailable', TJSONBool.Create(AValue.AutomaticFixAvailable));
 end;

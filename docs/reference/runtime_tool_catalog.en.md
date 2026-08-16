@@ -461,7 +461,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | Tool | Purpose | Source unit |
 |---|---|---|
 | `AnalyzeFireDACQuery` | Analyzes bounded SQL text without connecting to or querying a database. | `RadIA.Core.FireDAC.Tools.pas` |
-| `ValidateFireDACParameters` | Compares SQL placeholders with supplied FireDAC binding names without executing SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ValidateFireDACParameters` | Validates FireDAC binding names, types, directions, sizes, and null state without executing SQL. | `RadIA.Core.FireDAC.Tools.pas` |
 
 ## Delphi ecosystem diagnostics
 

@@ -136,7 +136,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 | `InspectFireDACUsage` | Preserves legacy counters and returns the same structured project inventory. | For existing consumers and automations that still use the original name. |
 | `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL or collecting credentials. | When reviewing the data layer before specialized analysis. |
 | `AnalyzeFireDACQuery` | Analyzes bounded SQL, statements, and placeholders without executing or returning the query text. | When reviewing a selected FireDAC query before any execution. |
-| `ValidateFireDACParameters` | Compares SQL placeholders with supplied binding names without executing SQL. | When locating missing or extra parameters before preparing a fix. |
+| `ValidateFireDACParameters` | Validates binding names, types, directions, sizes, and null state without executing SQL. | When locating inconsistent parameters before preparing a fix. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
 |`AuditDelphiLocalization`|Find visible Pascal and DFM text that may move to `resourcestring`.|Before preparing a reviewable extraction or comparing languages.|
 |`PrepareLocalizationExtraction`|Prepare an immutable patch that moves one active-unit literal to `resourcestring` without applying changes.|After selecting a candidate; application uses `ApplyPatch` with consent and reversal uses `RevertPatch`.|

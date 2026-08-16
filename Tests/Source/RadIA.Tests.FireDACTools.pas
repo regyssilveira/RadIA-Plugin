@@ -16,6 +16,8 @@ type
     [Test]
     procedure ValidatesMissingAndExtraBindingsCaseInsensitively;
     [Test]
+    procedure ValidatesTypedBindingMetadata;
+    [Test]
     procedure RejectsMissingSql;
   end;
 
@@ -74,6 +76,26 @@ begin
   Assert.Contains(LResult.ContentJson, '"missingBindings":["Tenant"]');
   Assert.Contains(LResult.ContentJson, '"extraBindings":["Unused"]');
   Assert.Contains(LResult.ContentJson, '"valid":false');
+end;
+
+procedure TRadIAFireDACToolsTests.ValidatesTypedBindingMetadata;
+var
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+begin
+  LRegistry := CreateRegistry;
+  LResult := LRegistry.Resolve('ValidateFireDACParameters').Execute(TRadIAToolRequest.Create(
+    'ValidateFireDACParameters',
+    '{"sql":"select * from account where name = :Name",' +
+    '"bindings":[{"name":"Name","dataType":"ftString","direction":"input",' +
+    '"size":0,"nullable":"false","valueState":"null","assignmentKind":"AsInteger"}]}',
+    'firedac-tool-test'
+  ));
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.parameter.string-size-missing');
+  Assert.Contains(LResult.ContentJson, 'firedac.parameter.null-not-allowed');
+  Assert.Contains(LResult.ContentJson, 'firedac.parameter.assignment-type-mismatch');
+  Assert.Contains(LResult.ContentJson, '"direction":"input"');
 end;
 
 procedure TRadIAFireDACToolsTests.RejectsMissingSql;

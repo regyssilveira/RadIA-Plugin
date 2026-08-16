@@ -40,9 +40,13 @@ begin
     AConfidence,
     'SQL parameter is not assigned',
     'Parameter customer_id has no matching assignment.',
-    TestLocation,
-    'Assign the parameter before opening the query.',
-    True
+    TRadIAFireDACFindingDetails.Create(
+      TestLocation,
+      'CustomerQuery.customer_id',
+      'The SQL placeholder has no matching binding assignment.',
+      'Assign the parameter before opening the query.',
+      True
+    )
   );
 end;
 
@@ -72,6 +76,8 @@ begin
     Assert.Contains(LJson, 'CustomerQuery');
     Assert.Contains(LJson, 'MainConnection');
     Assert.Contains(LJson, 'firedac.parameter.missing');
+    Assert.Contains(LJson, '"symbol":"CustomerQuery.customer_id"');
+    Assert.Contains(LJson, '"evidence":["The SQL placeholder has no matching binding assignment."]');
     Assert.Contains(LJson, '"sqlExecuted":false');
     Assert.Contains(LJson, '"credentialsCollected":false');
     Assert.DoesNotContain(LJson, 'secret-value');
