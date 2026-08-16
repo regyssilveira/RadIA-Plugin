@@ -46,17 +46,17 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Export Conversation** | Chat UX | Save current active chats to Markdown (.md) or standalone rich HTML formats. | ✅ Completed |
 | **Prompt Templates** | Chat UX | Quick prompt template library with token replacement and the `/template` command. | ✅ Completed |
 | **Dynamic Slash Commands** | Chat UX | Dynamic mapping of templates to slash commands (e.g. `/createprojectarch`), synced and autocompleted in WebView2. | ✅ Completed |
-| **RadIA Doctor and Status** | Diagnostics | `/doctor` checks readiness and recommends the next action; `/status` inventories configuration and availability without exposing credentials. | ✅ Completed (v2.2.1) |
+| **RadIA Doctor and Status** | Diagnostics | `/doctor` checks readiness and recommends the next action; `/status` inventories configuration and availability without exposing credentials. | ✅ Completed |
 | **Unified Problems panel** | Chat UX | Collects build, DUnitX, coverage, memory, DFM/PAS, threading, and review findings with filters, navigation, and reviewable actions. | ✅ Completed |
 | **Unified Delphi code validation** | Intelligence | Consolidates native rules, compiler Check, isolated DelphiLint, and Sonar into navigable findings; quick fixes become consented, reversible previews. | ✅ Completed |
 | **Hierarchy refactoring** | Intelligence | Coordinates compatible member renames across an ancestor, overrides, and exact usages, blocking overloads and ambiguous relationships before a reversible preview. | ✅ Completed |
-| **CLI/MCP Setup Assistant** | Integration | Detects, explains, requests consent, installs or configures, validates, and provides complete manual fallback without an IDE restart. | ✅ Completed (v2.2.1) |
-| **Explicit execution routes** | Chat UX | Separates Chat/Agent mode, RadIA native orchestration, and direct CLI while showing the effective route, transport, and credential. | ✅ Completed (v2.3.1) |
+| **CLI/MCP Setup Assistant** | Integration | Detects, explains, requests consent, installs or configures, validates, and provides complete manual fallback without an IDE restart. | ✅ Completed |
+| **Explicit execution routes** | Chat UX | Separates Chat/Agent mode, RadIA native orchestration, and direct CLI while showing the effective route, transport, and credential. | ✅ Completed |
 | **Intent recommendation** | Chat UX | Recognizes creation, build, tests, and diagnostics locally; lets users confirm, review, or remain in chat and keeps only sanitized local counters. | ✅ Completed |
-| **ChatGPT Pro via Codex CLI** | Provider | Uses the ChatGPT/Codex session and quota as either the native provider transport or direct CLI execution; API Key remains separate. | ✅ Completed (v2.3.1) |
-| **Universal text copy** | Chat UX | Adds copy actions to responses, JSON, tool results, and other textual payloads while preserving original content. | ✅ Completed (v2.3.1) |
-| **Integrated Help** | Chat UX | `/help` summarizes capabilities and opens public guides in the default browser. | ✅ Completed (v2.2.2) |
-| **Conversational DEXT Journeys** | Projects | Collects missing requirements across messages, preserves context, and generates minimal or controller-based APIs. | ✅ Completed (v2.2.2) |
+| **ChatGPT Pro via Codex CLI** | Provider | Uses the ChatGPT/Codex session and quota as either the native provider transport or direct CLI execution; API Key remains separate. | ✅ Completed |
+| **Universal text copy** | Chat UX | Adds copy actions to responses, JSON, tool results, and other textual payloads while preserving original content. | ✅ Completed |
+| **Integrated Help** | Chat UX | `/help` summarizes capabilities and opens public guides in the default browser. | ✅ Completed |
+| **Conversational DEXT Journeys** | Projects | Collects missing requirements across messages, preserves context, and generates minimal or controller-based APIs. | ✅ Completed |
 | **Declarative Skills and Templates** | Extensibility | Schema 2 manifest with hot reload, autocomplete, and minimal `chat.prompt` permission. | ✅ Completed |
 | **Declarative Tool Aliases** | Extensibility | Schema 3 registers safe chat/MCP aliases that inherit internal tool risk, schemas, and consent. | ✅ Completed |
 | **Declarative Workflows** | Extensibility | Schema 5 chains up to 16 internal tools with inherited risk, bounds, and per-step central policy, without arbitrary shells. | ✅ Completed |
@@ -125,7 +125,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Transactional Change Signature** | Editor | Updates declarations, implementations, and confirmed calls with explicit parameter mapping, multi-file preview, and rollback. | ✅ Completed |
 | **Transactional Move Type** | Editor | Moves an interface type and its implementations between units, updates consumers and `uses`, blocks private dependencies or cycles, and applies only after approval. | ✅ Completed |
 | **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
-| **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed (v2.4.0) |
+| **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
 | **Signed Declarative Extensions** | Security | RSA-SHA256 packages with fingerprints, first-use trust, and visual revocation. | ✅ Completed |

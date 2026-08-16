@@ -6,14 +6,15 @@ no [backlog](backlog.md).
 
 ## Direção atual
 
-Consolidar a experiência completa no Delphi 12 e 13 com base em uso real: criar, compreender,
-compilar, testar e depurar projetos sem exigir que o usuário conheça a arquitetura interna. Novas
-frentes só entram em execução quando possuírem resultado observável e critério de aceitação.
+Manter e aprofundar a experiência completa no Delphi 12 e 13 com base em uso real: criar,
+compreender, compilar, testar e depurar projetos sem exigir que o usuário conheça a arquitetura
+interna. Evoluções futuras devem primeiro demonstrar ganho observável para esse fluxo e possuir
+critérios de aceitação verificáveis.
 
-## Goal atual
+## Estado de planejamento
 
-O trabalho aberto prioriza uma plataforma automatizada e determinística de integração e ponta a
-ponta para a experiência Delphi completa. O escopo executável e seus gates estão no
-[backlog](backlog.md); o roadmap não reserva versões nem mantém listas especulativas.
+Não existe goal executável ativo. A fundação automatizada de integração e ponta a ponta foi
+concluída e passou a integrar o gate obrigatório de toda release. O estado aberto oficial permanece
+no [backlog](backlog.md), que atualmente não possui itens aprovados.
 
 Delphi 11, C++, Lazarus, marketplace e leitura de DCU permanecem fora da direção atual.

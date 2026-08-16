@@ -3,41 +3,23 @@
 Este arquivo contém somente trabalho aberto. Histórico, marcos concluídos, métricas e notas de
 release não pertencem ao backlog.
 
-O backlog não registra versões, entregas concluídas, evidências ou planos internos.
+## Estado atual
 
-## Goal ativo: experiência Delphi completa e determinística
+Não existe goal ativo nem item aberto aprovado no backlog público.
 
-Transformar objetivos comuns do programador Delphi em fluxos simples, seguros e verificáveis,
-aproveitando as ferramentas existentes antes de ampliar o catálogo.
+A plataforma determinística de integração e ponta a ponta que constava anteriormente como pendente
+foi concluída. O gate obrigatório `Test-RadIA.ReleaseUsage.ps1` reúne as suítes DUnitX do Delphi 12
+e 13, os cenários registrados de integração e uso, a calculadora, a geração e abertura de projetos e
+a matriz automatizada nos três alvos suportados. O contrato vigente está na
+[matriz automatizada de testes de uso](../development/usage_test_matrix.md).
 
-A única frente aberta é a consolidação da plataforma automatizada de uso. Planos internos de
-engenharia permanecem separados da documentação pública.
+Novas propostas somente entram neste arquivo depois de aprovadas como trabalho executável, com
+resultado observável e critérios de aceitação. Ideias ainda não aprovadas não são apresentadas como
+compromisso do produto.
 
-## Fundação transversal — testes automatizados de uso
+## Definição de concluído para novos itens
 
-- [ ] **Plataforma de integração e ponta a ponta:** automatizar instalação isolada, abertura do
-  Delphi, configuração sanitizada, chat, tools, editor, Designer, build, testes, debugger, terminal,
-  consentimento e recuperação de falhas nos alvos Delphi 12 e 13.
-
-A plataforma deve possuir três camadas:
-
-1. integração de serviços e adapters sem abrir a IDE;
-2. integração OTA carregada em uma instância descartável do Delphi;
-3. jornadas de usuário ponta a ponta com projetos-fixture, ações reais e evidências verificáveis.
-
-Gate: uma execução limpa deve instalar o RadIA em ambiente isolado, abrir cada IDE suportada,
-executar a matriz crítica, coletar logs, screenshots e resultados estruturados e restaurar o ambiente
-sem depender de intervenção humana. Falhas precisam identificar etapa, versão da IDE e artefato de
-diagnóstico, sem expor credenciais.
-
-Esse gate integra obrigatoriamente toda release. A publicação deve executar, no mesmo comando e sem
-opções de exclusão, a suíte completa de integração e ponta a ponta, a criação e os testes funcionais e
-DUnitX da calculadora e a criação, abertura e navegação imediata de projetos. Um desses grupos ausente,
-ignorado ou reprovado bloqueia a release.
-
-## Definição de concluído
-
-Cada item precisa de:
+Cada novo item deverá exigir:
 
 - contrato e ameaça documentados antes da implementação;
 - suporte comprovado no Delphi 12 e 13, com capacidade indisponível reportada explicitamente;

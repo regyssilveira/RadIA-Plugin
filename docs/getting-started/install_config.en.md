@@ -167,7 +167,11 @@ Enter the obtained keys in the plugin settings (**Settings** at the top of the c
    > * The IAM access key used must have security policies attached that allow executing the actions `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream`.
    > * By default, AWS Bedrock requires you to request access to models individually in the AWS Console for the intended region (*Model Access* menu). Confirm that the selected model is enabled for the account and region before connecting it in Rad IA.
 
-> **Note on Dynamic and Enterprise Providers:** You can also dynamically add new OpenAI-compatible API providers (such as GitHub Copilot or third-party proxies) by saving JSON configuration files under `%APPDATA%\RadIA\providers\`. For more details, check our [Guide for Adding New Providers (docs/new_provider_guide.en.md)](../development/new_provider_guide.en.md) and the [GitHub Copilot Configuration Guide (docs/copilot_proxy_guide.en.md)](../guides/copilot_proxy_guide.en.md).
+> **Note on Dynamic and Enterprise Providers:** You can also dynamically add new OpenAI-compatible
+> API providers, including GitHub Copilot or third-party proxies, by saving JSON configuration files
+> under `%APPDATA%\RadIA\providers\`. For details, see the
+> [guide for adding new providers](../development/new_provider_guide.en.md) and the
+> [GitHub Copilot configuration guide](../guides/copilot_proxy_guide.en.md).
 
 ---
 

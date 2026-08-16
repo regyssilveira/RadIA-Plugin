@@ -4,7 +4,7 @@ Quando uma jornada está vinculada no chat, o cabeçalho do terminal mostra o me
 projeto e estado de atividade. A autorização do comando usa essa identidade sem enviar o histórico
 do chat ou a saída anterior. Veja [Contexto compartilhado](shared_journey_context.md).
 
-O RadIA 2.0 inclui um terminal nativo acoplável à IDE. Ele está disponível nos três targets
+O RadIA inclui um terminal nativo acoplável à IDE. Ele está disponível nos três targets
 oficiais: Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 
 ## Como abrir

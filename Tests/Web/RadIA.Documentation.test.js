@@ -611,7 +611,7 @@ test('current release gates use the generated catalog size', () => {
 test('release keeps integration, calculator, and project journeys indivisible', () => {
   const portuguese = fs.readFileSync(documentationPath('release_process.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('release_process.en.md'), 'utf8');
-  const backlog = fs.readFileSync(documentationPath('project', 'backlog.md'), 'utf8');
+  const usageMatrix = fs.readFileSync(documentationPath('usage_test_matrix.md'), 'utf8');
   const releaseRunner = fs.readFileSync(
     path.join(repositoryRoot, 'scripts', 'Test-RadIA.ReleaseUsage.ps1'),
     'utf8'
@@ -619,7 +619,8 @@ test('release keeps integration, calculator, and project journeys indivisible', 
 
   assert.match(portuguese, /toda a suíte registrada de integração e ponta a ponta/u);
   assert.match(english, /entire registered integration and end-to-end suite/u);
-  assert.match(backlog, /sem\s+opções de exclusão/u);
+  assert.match(usageMatrix, /sem opções para pular os gates principais/u);
+  assert.match(usageMatrix, /não aceita filtro, exclusão ou aprovação parcial/u);
   assert.match(releaseRunner, /build\.ps1[\s\S]*-Test/u);
   assert.match(releaseRunner, /Test-RadIA\.GeneratedProjects\.ps1/u);
   assert.match(releaseRunner, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
@@ -1151,7 +1152,9 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /não registra versões, entregas concluídas, evidências/u);
-  assert.match(englishBacklog, /does not record versions, completed deliveries, evidence/u);
+  assert.match(portugueseBacklog, /Não existe goal ativo nem item aberto aprovado/u);
+  assert.match(englishBacklog, /There is no active goal or approved open item/u);
+  assert.doesNotMatch(portugueseBacklog, /^\s*- \[ \]/mu);
+  assert.doesNotMatch(englishBacklog, /^\s*- \[ \]/mu);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
 });

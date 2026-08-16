@@ -257,7 +257,7 @@ continuam exibindo o consentimento na IDE. Para detalhes, consulte
 
 ## Provisionamento seguro dos clientes CLI
 
-O RadIA 2.2 possui um mecanismo visual de provisionamento para Codex CLI, Claude Code, Gemini CLI e
+O RadIA possui um mecanismo visual de provisionamento para Codex CLI, Claude Code, Gemini CLI e
 GitHub Copilot CLI. O contrato central garante que o processo siga estas etapas:
 
 1. detectar se a configuração está ausente, válida, divergente ou inválida;
