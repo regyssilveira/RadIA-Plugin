@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 172 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 174 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -322,6 +322,8 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 |---|---|---|
 | `AddBreakpoint` | Adiciona um breakpoint em arquivo e linha válidos. | Antes de iniciar ou continuar para observar um ponto específico. |
 | `RemoveBreakpoint` | Remove um breakpoint existente. | Quando o ponto não é mais necessário ou interfere no fluxo. |
+| `GetAdvancedBreakpointCapabilities` | Informa quais recursos avançados de breakpoint estão realmente disponíveis no Delphi 12 e 13 e explica limitações da OTA. | Antes de configurar condição, hit count, logpoint, thread ou filtro de exceção, evitando tentativas incompatíveis. |
+| `ConfigureBreakpoint` | Altera somente os campos informados de um breakpoint existente e devolve a configuração anterior para reversão. | Para criar breakpoint condicional, hit count ou logpoint; exige consentimento de escrita reversível e caminho dentro do projeto. |
 
 ## Sessão, expressões e watches
 

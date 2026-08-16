@@ -15,7 +15,8 @@
         "ide-startup-shutdown",
         "intent-recommendation",
         "unified-problems-panel",
-        "semantic-hierarchy-refactoring"
+        "semantic-hierarchy-refactoring",
+        "advanced-breakpoints"
       ]
     }
   ],
@@ -90,6 +91,19 @@
         "preview-before-consent",
         "apply-and-rollback-regression",
         "ambiguous-overload-blocked"
+      ]
+    },
+    {
+      "id": "advanced-breakpoints",
+      "scope": "host",
+      "runner": "node-test",
+      "testPath": "Tests/Web/RadIA.AdvancedBreakpoints.test.js",
+      "requiredEvidence": [
+        "delphi12-and-13-capability-matrix",
+        "native-condition-and-hit-count",
+        "native-logpoint",
+        "reversible-configuration",
+        "unsupported-exception-filter-explicit"
       ]
     }
   ]

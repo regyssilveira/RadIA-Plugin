@@ -52,7 +52,7 @@ reverter toda a operação sem perda de código.
 
 ## Marco 3 — diagnóstico avançado
 
-- [ ] **Debugger avançado:** breakpoints condicionais, hit count, exceções e logpoints, respeitando
+- [x] **Debugger avançado:** breakpoints condicionais, hit count, exceções e logpoints, respeitando
   as capacidades efetivas do Delphi 12 e 13.
 - [ ] **Automação de controles sem janela própria:** adicionar um adaptador VCL autorizado para
   `TGraphicControl`, frames e controles customizados sem usar coordenadas globais.

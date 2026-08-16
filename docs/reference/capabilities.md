@@ -142,6 +142,7 @@ Durante uma sessão válida, o RadIA pode:
 - executar Step Into, Step Over e Step Out;
 - consultar estado e call stack;
 - adicionar, remover e listar breakpoints;
+- consultar capacidades e configurar condições, hit count, logpoints, frames e thread em breakpoints;
 - avaliar expressões sem efeitos colaterais;
 - adicionar, remover, listar e avaliar watches;
 - consultar a timeline de eventos.
@@ -286,7 +287,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 172 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 174 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)

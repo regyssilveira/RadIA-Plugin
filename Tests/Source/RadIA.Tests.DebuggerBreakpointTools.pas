@@ -13,6 +13,7 @@ type
     IRadIADebuggerBreakpointFacade
   )
   private
+    FConfiguration: TRadIABreakpointConfiguration;
     FExists: Boolean;
   public
     function HasSourceBreakpoint(
@@ -26,6 +27,21 @@ type
     function RemoveSourceBreakpoint(
       const AFileName: string;
       const ALineNumber: Integer
+    ): Boolean;
+    function GetBreakpointCapabilities:
+      TRadIADebuggerBreakpointCapabilities;
+    function GetSourceBreakpointConfiguration(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      out AConfiguration: TRadIABreakpointConfiguration;
+      out AError: string
+    ): Boolean;
+    function ConfigureSourceBreakpoint(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      const AConfiguration: TRadIABreakpointConfiguration;
+      out APrevious: TRadIABreakpointConfiguration;
+      out AError: string
     ): Boolean;
     property Exists: Boolean read FExists write FExists;
   end;
@@ -55,6 +71,10 @@ type
     procedure RejectsOutsideWorkspace;
     [Test]
     procedure RejectsUnsupportedFile;
+    [Test]
+    procedure ReportsAdvancedCapabilities;
+    [Test]
+    procedure ConfiguresAndRestoresAdvancedBreakpoint;
   end;
 
 implementation
@@ -101,6 +121,55 @@ begin
     FExists := False;
 end;
 
+function TRadIAFakeDebuggerBreakpointFacade.GetBreakpointCapabilities:
+  TRadIADebuggerBreakpointCapabilities;
+begin
+  Result := TRadIADebuggerBreakpointCapabilities.Create(
+    True,
+    True,
+    True,
+    True,
+    True,
+    True,
+    False
+  );
+end;
+
+function TRadIAFakeDebuggerBreakpointFacade.GetSourceBreakpointConfiguration(
+  const AFileName: string;
+  const ALineNumber: Integer;
+  out AConfiguration: TRadIABreakpointConfiguration;
+  out AError: string
+): Boolean;
+begin
+  Result := HasSourceBreakpoint(AFileName, ALineNumber);
+  if Result then
+  begin
+    AConfiguration := FConfiguration;
+    AError := '';
+  end
+  else
+    AError := 'Breakpoint not found.';
+end;
+
+function TRadIAFakeDebuggerBreakpointFacade.ConfigureSourceBreakpoint(
+  const AFileName: string;
+  const ALineNumber: Integer;
+  const AConfiguration: TRadIABreakpointConfiguration;
+  out APrevious: TRadIABreakpointConfiguration;
+  out AError: string
+): Boolean;
+begin
+  Result := GetSourceBreakpointConfiguration(
+    AFileName,
+    ALineNumber,
+    APrevious,
+    AError
+  );
+  if Result then
+    FConfiguration := AConfiguration;
+end;
+
 { TTestRadIADebuggerBreakpointTools }
 
 procedure TTestRadIADebuggerBreakpointTools.AddsAndRemovesBreakpoint;
@@ -145,7 +214,7 @@ end;
 
 procedure TTestRadIADebuggerBreakpointTools.RegistersRiskLevels;
 begin
-  Assert.AreEqual(2, FRegistry.Count);
+  Assert.AreEqual(4, FRegistry.Count);
   Assert.AreEqual(
     trReversibleWrite,
     FRegistry.Resolve('AddBreakpoint').Descriptor.Risk
@@ -154,6 +223,72 @@ begin
     trDestructive,
     FRegistry.Resolve('RemoveBreakpoint').Descriptor.Risk
   );
+  Assert.AreEqual(
+    trReadOnly,
+    FRegistry.Resolve('GetAdvancedBreakpointCapabilities').Descriptor.Risk
+  );
+  Assert.AreEqual(
+    trReversibleWrite,
+    FRegistry.Resolve('ConfigureBreakpoint').Descriptor.Risk
+  );
+end;
+
+procedure TTestRadIADebuggerBreakpointTools.ReportsAdvancedCapabilities;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := FExecutor.Execute(
+    TRadIAToolRequest.Create(
+      'GetAdvancedBreakpointCapabilities',
+      '{}',
+      'debugger-capabilities-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LResult.ContentJson, '"condition":true');
+  Assert.Contains(LResult.ContentJson, '"logpoint":true');
+  Assert.Contains(LResult.ContentJson, '"exceptionFilters":false');
+  Assert.Contains(LResult.ContentJson, '"23.0"');
+  Assert.Contains(LResult.ContentJson, '"37.0"');
+end;
+
+procedure TTestRadIADebuggerBreakpointTools.
+  ConfiguresAndRestoresAdvancedBreakpoint;
+var
+  LResult: TRadIAToolResult;
+begin
+  FDebugger.Exists := True;
+  FDebugger.FConfiguration.DoBreak := True;
+  LResult := FExecutor.Execute(
+    TRadIAToolRequest.Create(
+      'ConfigureBreakpoint',
+      '{"fileName":"C:\\Sample\\Sample.Unit.pas","lineNumber":42,' +
+      '"condition":"Count > 3","hitCount":5,"break":false,' +
+      '"logMessage":"Count reached","evaluateExpression":"Count",' +
+      '"logResult":true,"stackFrames":4,"threadCondition":"Main Thread"}',
+      'configure-breakpoint-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.AreEqual('Count > 3', FDebugger.FConfiguration.Condition);
+  Assert.AreEqual(5, FDebugger.FConfiguration.HitCount);
+  Assert.IsFalse(FDebugger.FConfiguration.DoBreak);
+  Assert.Contains(LResult.ContentJson, '"inverseTool":"ConfigureBreakpoint"');
+  Assert.Contains(LResult.ContentJson, '"previousConfiguration"');
+
+  LResult := FExecutor.Execute(
+    TRadIAToolRequest.Create(
+      'ConfigureBreakpoint',
+      '{"fileName":"C:\\Sample\\Sample.Unit.pas","lineNumber":42,' +
+      '"condition":"","hitCount":0,"break":true,"logMessage":"",' +
+      '"evaluateExpression":"","logResult":false,"stackFrames":0,' +
+      '"threadCondition":""}',
+      'restore-breakpoint-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.AreEqual('', FDebugger.FConfiguration.Condition);
+  Assert.IsTrue(FDebugger.FConfiguration.DoBreak);
 end;
 
 procedure TTestRadIADebuggerBreakpointTools.RejectsDuplicateBreakpoint;

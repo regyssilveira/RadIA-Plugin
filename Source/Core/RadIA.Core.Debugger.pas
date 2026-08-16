@@ -110,9 +110,18 @@ type
 
   TRadIABreakpointSnapshot = record
   private
+    FCondition: string;
+    FCurrentHitCount: Integer;
+    FDoBreak: Boolean;
     FEnabled: Boolean;
+    FEvaluateExpression: string;
     FFileName: string;
+    FHitCount: Integer;
     FLineNumber: Integer;
+    FLogMessage: string;
+    FLogResult: Boolean;
+    FStackFramesToLog: Integer;
+    FThreadCondition: string;
     FValid: Boolean;
   public
     constructor Create(
@@ -121,10 +130,84 @@ type
       const AEnabled: Boolean;
       const AValid: Boolean
     );
+    procedure SetAdvanced(
+      const ACondition: string;
+      const AHitCount: Integer;
+      const ACurrentHitCount: Integer;
+      const ADoBreak: Boolean;
+      const ALogMessage: string;
+      const AEvaluateExpression: string;
+      const ALogResult: Boolean
+    );
+    procedure SetAdvancedContext(
+      const AStackFramesToLog: Integer;
+      const AThreadCondition: string
+    );
+    property Condition: string read FCondition;
+    property CurrentHitCount: Integer read FCurrentHitCount;
+    property DoBreak: Boolean read FDoBreak;
     property FileName: string read FFileName;
     property LineNumber: Integer read FLineNumber;
     property Enabled: Boolean read FEnabled;
     property Valid: Boolean read FValid;
+    property EvaluateExpression: string read FEvaluateExpression;
+    property HitCount: Integer read FHitCount;
+    property LogMessage: string read FLogMessage;
+    property LogResult: Boolean read FLogResult;
+    property StackFramesToLog: Integer read FStackFramesToLog;
+    property ThreadCondition: string read FThreadCondition;
+  end;
+
+  TRadIADebuggerBreakpointCapabilities = record
+  private
+    FAvailable: Boolean;
+    FCondition: Boolean;
+    FExceptionFilters: Boolean;
+    FHitCount: Boolean;
+    FLogpoint: Boolean;
+    FStackFrames: Boolean;
+    FThreadCondition: Boolean;
+  public
+    constructor Create(
+      const AAvailable: Boolean;
+      const ACondition: Boolean;
+      const AHitCount: Boolean;
+      const ALogpoint: Boolean;
+      const AStackFrames: Boolean;
+      const AThreadCondition: Boolean;
+      const AExceptionFilters: Boolean
+    );
+    property Available: Boolean read FAvailable;
+    property Condition: Boolean read FCondition;
+    property ExceptionFilters: Boolean read FExceptionFilters;
+    property HitCount: Boolean read FHitCount;
+    property Logpoint: Boolean read FLogpoint;
+    property StackFrames: Boolean read FStackFrames;
+    property ThreadCondition: Boolean read FThreadCondition;
+  end;
+
+  TRadIABreakpointConfiguration = record
+  private
+    FCondition: string;
+    FDoBreak: Boolean;
+    FEvaluateExpression: string;
+    FHitCount: Integer;
+    FLogMessage: string;
+    FLogResult: Boolean;
+    FStackFramesToLog: Integer;
+    FThreadCondition: string;
+  public
+    property Condition: string read FCondition write FCondition;
+    property DoBreak: Boolean read FDoBreak write FDoBreak;
+    property EvaluateExpression: string
+      read FEvaluateExpression write FEvaluateExpression;
+    property HitCount: Integer read FHitCount write FHitCount;
+    property LogMessage: string read FLogMessage write FLogMessage;
+    property LogResult: Boolean read FLogResult write FLogResult;
+    property StackFramesToLog: Integer
+      read FStackFramesToLog write FStackFramesToLog;
+    property ThreadCondition: string
+      read FThreadCondition write FThreadCondition;
   end;
 
   TRadIADebugValueSnapshot = record
@@ -193,6 +276,21 @@ type
     function RemoveSourceBreakpoint(
       const AFileName: string;
       const ALineNumber: Integer
+    ): Boolean;
+    function GetBreakpointCapabilities:
+      TRadIADebuggerBreakpointCapabilities;
+    function GetSourceBreakpointConfiguration(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      out AConfiguration: TRadIABreakpointConfiguration;
+      out AError: string
+    ): Boolean;
+    function ConfigureSourceBreakpoint(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      const AConfiguration: TRadIABreakpointConfiguration;
+      out APrevious: TRadIABreakpointConfiguration;
+      out AError: string
     ): Boolean;
   end;
 
@@ -319,6 +417,55 @@ begin
   FLineNumber := ALineNumber;
   FEnabled := AEnabled;
   FValid := AValid;
+end;
+
+procedure TRadIABreakpointSnapshot.SetAdvanced(
+  const ACondition: string;
+  const AHitCount: Integer;
+  const ACurrentHitCount: Integer;
+  const ADoBreak: Boolean;
+  const ALogMessage: string;
+  const AEvaluateExpression: string;
+  const ALogResult: Boolean
+);
+begin
+  FCondition := ACondition;
+  FHitCount := AHitCount;
+  FCurrentHitCount := ACurrentHitCount;
+  FDoBreak := ADoBreak;
+  FLogMessage := ALogMessage;
+  FEvaluateExpression := AEvaluateExpression;
+  FLogResult := ALogResult;
+end;
+
+procedure TRadIABreakpointSnapshot.SetAdvancedContext(
+  const AStackFramesToLog: Integer;
+  const AThreadCondition: string
+);
+begin
+  FStackFramesToLog := AStackFramesToLog;
+  FThreadCondition := AThreadCondition;
+end;
+
+{ TRadIADebuggerBreakpointCapabilities }
+
+constructor TRadIADebuggerBreakpointCapabilities.Create(
+  const AAvailable: Boolean;
+  const ACondition: Boolean;
+  const AHitCount: Boolean;
+  const ALogpoint: Boolean;
+  const AStackFrames: Boolean;
+  const AThreadCondition: Boolean;
+  const AExceptionFilters: Boolean
+);
+begin
+  FAvailable := AAvailable;
+  FCondition := ACondition;
+  FHitCount := AHitCount;
+  FLogpoint := ALogpoint;
+  FStackFrames := AStackFrames;
+  FThreadCondition := AThreadCondition;
+  FExceptionFilters := AExceptionFilters;
 end;
 
 { TRadIADebugValueSnapshot }

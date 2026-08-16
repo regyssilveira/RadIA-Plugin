@@ -322,6 +322,8 @@ passes `execution` classification and does not accept arbitrary names received f
 |---|---|---|
 |`AddBreakpoint`|Adds a breakpoint to a valid file and line.|Before starting or continuing to note a specific point.|
 |`RemoveBreakpoint`|Removes an existing breakpoint.|When the point is no longer needed or interferes with the flow.|
+|`GetAdvancedBreakpointCapabilities`|Reports which advanced breakpoint features are actually available in Delphi 12 and 13 and explains OTA limitations.|Before configuring a condition, hit count, logpoint, thread, or exception filter, avoiding incompatible attempts.|
+|`ConfigureBreakpoint`|Changes only supplied fields of an existing breakpoint and returns its previous configuration for rollback.|For conditional breakpoints, hit counts, or logpoints; it requires reversible-write consent and a path inside the project.|
 
 ## Session, expressions and watches
 

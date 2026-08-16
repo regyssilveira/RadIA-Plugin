@@ -114,6 +114,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Servidor MCP Local** | Integração | Bridge stdio, named pipe e discovery por PID. | ✅ Concluído |
 | **Designer Agentivo** | Integração | Componentes, propriedades, eventos e layout revisáveis. | ✅ Concluído |
 | **Debugger Agentivo** | Integração | Estado, controle, breakpoints, avaliação de expressões e watches. | ✅ Concluído |
+| **Breakpoints avançados** | Debugger | Condições, hit count, logpoints, frames e filtro de thread nativos no Delphi 12/13, com reversão e limitação explícita para filtros globais de exceção. | ✅ Concluído |
 | **Revisão Inline e por bloco** | Editor | Marcadores no gutter para aceitar, rejeitar, editar, explicar, navegar e aplicar alterações simples ou multiarquivo de forma transacional. | ✅ Concluído |
 | **Ghost Text Multilinha** | Editor | Overlays virtuais por linha, aceite total ou por palavra e atalhos configuráveis sem alterar o buffer antes do aceite. | ✅ Concluído |
 | **Alternativas de Ghost Text** | Editor | Painel de até três sugestões com navegação visual e atalhos configuráveis, sem alterar o buffer antes do aceite. | ✅ Concluído |

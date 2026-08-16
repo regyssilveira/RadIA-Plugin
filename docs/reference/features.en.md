@@ -114,6 +114,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Local MCP Server** | Integration | Stdio bridge, named pipe, and per-PID discovery. | ✅ Completed |
 | **Agentic Designer** | Integration | Reviewable components, properties, events, and layout. | ✅ Completed |
 | **Agentic Debugger** | Integration | State, control, breakpoints, expression evaluation, and watches. | ✅ Completed |
+| **Advanced breakpoints** | Debugger | Native conditions, hit counts, logpoints, frames, and thread filters in Delphi 12/13, with rollback and an explicit global-exception-filter limitation. | ✅ Completed |
 | **Inline and block review** | Editor | Gutter markers to accept, reject, edit, explain, navigate, and transactionally apply single- or multi-file changes. | ✅ Completed |
 | **Multiline Ghost Text** | Editor | Per-line virtual overlays, full or next-word acceptance, and configurable shortcuts without pre-acceptance buffer changes. | ✅ Completed |
 | **Ghost Text Alternatives** | Editor | Up to three suggestions with visual navigation and configurable shortcuts without changing the buffer before acceptance. | ✅ Completed |

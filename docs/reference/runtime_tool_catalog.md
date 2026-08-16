@@ -317,6 +317,8 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `AddBreakpoint` | Adiciona um breakpoint em arquivo e linha válidos. | `RadIA.Core.DebuggerBreakpointTools.pas` |
 | `RemoveBreakpoint` | Remove um breakpoint existente. | `RadIA.Core.DebuggerBreakpointTools.pas` |
+| `GetAdvancedBreakpointCapabilities` | Informa quais recursos avançados de breakpoint estão realmente disponíveis no Delphi 12 e 13 e explica limitações da OTA. | `RadIA.Core.DebuggerBreakpointTools.pas` |
+| `ConfigureBreakpoint` | Altera somente os campos informados de um breakpoint existente e devolve a configuração anterior para reversão. | `RadIA.Core.DebuggerBreakpointTools.pas` |
 
 ## Sessões do debugger e watches
 
@@ -479,6 +481,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 60
-- Ferramentas internas registradas: 172
+- Ferramentas internas registradas: 174
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

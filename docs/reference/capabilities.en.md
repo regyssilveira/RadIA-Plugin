@@ -28,7 +28,7 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Build | Make, build, check, clean, structured diagnostics, status, timeout and cancellation. |
 | DUnitX | Run, filter and cancel tests, parse NUnit XML and return structured failures and stack traces. |
 | Code validation | Normalize native rules, compiler Check, isolated DelphiLint, and Sonar into navigable findings; structured fixes become reviewed previews and are never applied automatically. |
-| Debugger | Start, stop, pause, continue, step, manage breakpoints and watches, evaluate expressions, inspect call stacks and read the timeline. |
+| Debugger | Start, stop, pause, continue, step, manage conditions, hit counts, logpoints, thread-aware breakpoints and watches, evaluate expressions, inspect call stacks and read the timeline. |
 | Autonomous runtime diagnostics | Build and start under the IDE debugger, capture the authorized window before and after a bounded visual scenario, record an exception and stack, rebuild, compare evidence across distinct sessions and builds, and preserve a versioned regression. |
 | Git | Status, diff, commit preview, fingerprint validation, selected paths and local commits. |
 | Knowledge | Index, search, inspect, clear and rebuild local project knowledge while tracking IDE events. |
@@ -53,7 +53,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 172 registered built-in tools](runtime_tool_catalog.en.md)
+- [All 174 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.en.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](../guides/user_manual.en.md)

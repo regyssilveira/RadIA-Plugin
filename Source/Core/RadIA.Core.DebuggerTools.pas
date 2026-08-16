@@ -220,6 +220,27 @@ begin
         'valid',
         TJSONBool.Create(LBreakpoint.Valid)
       );
+      LItem.AddPair('condition', LBreakpoint.Condition);
+      LItem.AddPair(
+        'hitCount',
+        TJSONNumber.Create(LBreakpoint.HitCount)
+      );
+      LItem.AddPair(
+        'currentHitCount',
+        TJSONNumber.Create(LBreakpoint.CurrentHitCount)
+      );
+      LItem.AddPair('break', TJSONBool.Create(LBreakpoint.DoBreak));
+      LItem.AddPair('logMessage', LBreakpoint.LogMessage);
+      LItem.AddPair(
+        'evaluateExpression',
+        LBreakpoint.EvaluateExpression
+      );
+      LItem.AddPair('logResult', TJSONBool.Create(LBreakpoint.LogResult));
+      LItem.AddPair(
+        'stackFrames',
+        TJSONNumber.Create(LBreakpoint.StackFramesToLog)
+      );
+      LItem.AddPair('threadCondition', LBreakpoint.ThreadCondition);
       LArray.AddElement(LItem);
     end;
     LRoot.AddPair(

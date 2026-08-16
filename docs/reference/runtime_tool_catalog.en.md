@@ -317,6 +317,8 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `AddBreakpoint` | Adds a reviewed source breakpoint inside the active workspace. | `RadIA.Core.DebuggerBreakpointTools.pas` |
 | `RemoveBreakpoint` | Removes an existing source breakpoint after explicit confirmation. | `RadIA.Core.DebuggerBreakpointTools.pas` |
+| `GetAdvancedBreakpointCapabilities` | Reports reliable advanced breakpoint capabilities for Delphi 12 and 13. | `RadIA.Core.DebuggerBreakpointTools.pas` |
+| `ConfigureBreakpoint` | Configures a conditional breakpoint, hit count, logpoint, or thread filter. | `RadIA.Core.DebuggerBreakpointTools.pas` |
 
 ## Debugger sessions and watches
 
@@ -479,6 +481,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 60
-- Registered built-in tools: 172
+- Registered built-in tools: 174
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -59,6 +59,38 @@ type
     ): TRadIAToolResult;
   end;
 
+  TRadIADebuggerBreakpointCapabilitiesTool = class(
+    TInterfacedObject,
+    IRadIATool
+  )
+  private
+    FDebugger: IRadIADebuggerBreakpointFacade;
+  public
+    constructor Create(const ADebugger: IRadIADebuggerBreakpointFacade);
+    function Execute(const ARequest: TRadIAToolRequest): TRadIAToolResult;
+    function GetDescriptor: TRadIAToolDescriptor;
+  end;
+
+  TRadIAConfigureBreakpointTool = class(TInterfacedObject, IRadIATool)
+  private
+    FBoundary: IRadIAWorkspaceBoundary;
+    FDebugger: IRadIADebuggerBreakpointFacade;
+    FWorkspace: IRadIAWorkspaceFacade;
+    function ResolveFile(
+      const AFileName: string;
+      out AResolved: string;
+      out AError: TRadIAToolResult
+    ): Boolean;
+  public
+    constructor Create(
+      const ADebugger: IRadIADebuggerBreakpointFacade;
+      const AWorkspace: IRadIAWorkspaceFacade;
+      const ABoundary: IRadIAWorkspaceBoundary
+    );
+    function Execute(const ARequest: TRadIAToolRequest): TRadIAToolResult;
+    function GetDescriptor: TRadIAToolDescriptor;
+  end;
+
 const
   CInputSchema =
     '{"type":"object","required":["fileName","lineNumber"],' +
@@ -69,6 +101,20 @@ const
     '{"type":"object","required":["action","fileName","lineNumber"],' +
     '"properties":{"action":{"type":"string"},"fileName":{"type":"string"},' +
     '"lineNumber":{"type":"integer"},"inverseTool":{"type":"string"}}}';
+  CConfigureInputSchema =
+    '{"type":"object","required":["fileName","lineNumber"],' +
+    '"properties":{"fileName":{"type":"string"},' +
+    '"lineNumber":{"type":"integer","minimum":1},' +
+    '"condition":{"type":"string","maxLength":4096},' +
+    '"hitCount":{"type":"integer","minimum":0},' +
+    '"break":{"type":"boolean"},' +
+    '"logMessage":{"type":"string","maxLength":4096},' +
+    '"evaluateExpression":{"type":"string","maxLength":4096},' +
+    '"logResult":{"type":"boolean"},' +
+    '"stackFrames":{"type":"integer","minimum":0,"maximum":100},' +
+    '"threadCondition":{"type":"string","maxLength":256}},' +
+    '"additionalProperties":false}';
+  CObjectOutputSchema = '{"type":"object"}';
 
 procedure RegisterRadIADebuggerBreakpointTools(
   const ARegistry: IRadIAToolRegistry;
@@ -98,6 +144,274 @@ begin
         ABoundary
       )
     );
+  ARegistry.RegisterTool(
+    TRadIADebuggerBreakpointCapabilitiesTool.Create(ADebugger)
+  );
+  ARegistry.RegisterTool(
+    TRadIAConfigureBreakpointTool.Create(
+      ADebugger,
+      AWorkspace,
+      ABoundary
+    )
+  );
+end;
+
+function ConfigurationToJson(
+  const AConfiguration: TRadIABreakpointConfiguration
+): TJSONObject;
+begin
+  Result := TJSONObject.Create;
+  Result.AddPair('condition', AConfiguration.Condition);
+  Result.AddPair('hitCount', TJSONNumber.Create(AConfiguration.HitCount));
+  Result.AddPair('break', TJSONBool.Create(AConfiguration.DoBreak));
+  Result.AddPair('logMessage', AConfiguration.LogMessage);
+  Result.AddPair('evaluateExpression', AConfiguration.EvaluateExpression);
+  Result.AddPair('logResult', TJSONBool.Create(AConfiguration.LogResult));
+  Result.AddPair(
+    'stackFrames',
+    TJSONNumber.Create(AConfiguration.StackFramesToLog)
+  );
+  Result.AddPair('threadCondition', AConfiguration.ThreadCondition);
+end;
+
+procedure MergeConfiguration(
+  const AArguments: TJSONObject;
+  var AConfiguration: TRadIABreakpointConfiguration
+);
+begin
+  if Assigned(AArguments.GetValue('condition')) then
+    AConfiguration.Condition := AArguments.GetValue<string>('condition');
+  if Assigned(AArguments.GetValue('hitCount')) then
+    AConfiguration.HitCount := AArguments.GetValue<Integer>('hitCount');
+  if Assigned(AArguments.GetValue('break')) then
+    AConfiguration.DoBreak := AArguments.GetValue<Boolean>('break');
+  if Assigned(AArguments.GetValue('logMessage')) then
+    AConfiguration.LogMessage := AArguments.GetValue<string>('logMessage');
+  if Assigned(AArguments.GetValue('evaluateExpression')) then
+    AConfiguration.EvaluateExpression :=
+      AArguments.GetValue<string>('evaluateExpression');
+  if Assigned(AArguments.GetValue('logResult')) then
+    AConfiguration.LogResult := AArguments.GetValue<Boolean>('logResult');
+  if Assigned(AArguments.GetValue('stackFrames')) then
+    AConfiguration.StackFramesToLog :=
+      AArguments.GetValue<Integer>('stackFrames');
+  if Assigned(AArguments.GetValue('threadCondition')) then
+    AConfiguration.ThreadCondition :=
+      AArguments.GetValue<string>('threadCondition');
+end;
+
+function ConfigurationIsValid(
+  const AConfiguration: TRadIABreakpointConfiguration;
+  out AError: string
+): Boolean;
+begin
+  Result := False;
+  if (AConfiguration.HitCount < 0) or
+    (AConfiguration.StackFramesToLog < 0) or
+    (AConfiguration.StackFramesToLog > 100) then
+  begin
+    AError := 'Hit count and stack frame limits are outside the supported range.';
+    Exit;
+  end;
+  if (Length(AConfiguration.Condition) > 4096) or
+    (Length(AConfiguration.LogMessage) > 4096) or
+    (Length(AConfiguration.EvaluateExpression) > 4096) or
+    (Length(AConfiguration.ThreadCondition) > 256) then
+  begin
+    AError := 'A breakpoint text field exceeds its bounded limit.';
+    Exit;
+  end;
+  Result := True;
+end;
+
+{ TRadIADebuggerBreakpointCapabilitiesTool }
+
+constructor TRadIADebuggerBreakpointCapabilitiesTool.Create(
+  const ADebugger: IRadIADebuggerBreakpointFacade
+);
+begin
+  inherited Create;
+  if not Assigned(ADebugger) then
+    raise EArgumentNilException.Create('ADebugger');
+  FDebugger := ADebugger;
+end;
+
+function TRadIADebuggerBreakpointCapabilitiesTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+var
+  LCapabilities: TRadIADebuggerBreakpointCapabilities;
+  LRoot: TJSONObject;
+  LTargets: TJSONArray;
+begin
+  LCapabilities := FDebugger.GetBreakpointCapabilities;
+  LRoot := TJSONObject.Create;
+  try
+    LRoot.AddPair('available', TJSONBool.Create(LCapabilities.Available));
+    LRoot.AddPair('condition', TJSONBool.Create(LCapabilities.Condition));
+    LRoot.AddPair('hitCount', TJSONBool.Create(LCapabilities.HitCount));
+    LRoot.AddPair('logpoint', TJSONBool.Create(LCapabilities.Logpoint));
+    LRoot.AddPair('stackFrames', TJSONBool.Create(LCapabilities.StackFrames));
+    LRoot.AddPair(
+      'threadCondition',
+      TJSONBool.Create(LCapabilities.ThreadCondition)
+    );
+    LRoot.AddPair(
+      'exceptionFilters',
+      TJSONBool.Create(LCapabilities.ExceptionFilters)
+    );
+    LRoot.AddPair(
+      'exceptionFilterStatus',
+      'Unavailable: Delphi OTA does not expose a reliable global exception filter API.'
+    );
+    LTargets := TJSONArray.Create;
+    LTargets.Add('23.0');
+    LTargets.Add('37.0');
+    LRoot.AddPair('verifiedDelphiTargets', LTargets);
+    Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
+  finally
+    LRoot.Free;
+  end;
+end;
+
+function TRadIADebuggerBreakpointCapabilitiesTool.GetDescriptor:
+  TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'GetAdvancedBreakpointCapabilities',
+    '1.0.0',
+    'Reports reliable advanced breakpoint capabilities for Delphi 12 and 13.',
+    '{"type":"object","additionalProperties":false}',
+    CObjectOutputSchema,
+    trReadOnly
+  );
+end;
+
+{ TRadIAConfigureBreakpointTool }
+
+constructor TRadIAConfigureBreakpointTool.Create(
+  const ADebugger: IRadIADebuggerBreakpointFacade;
+  const AWorkspace: IRadIAWorkspaceFacade;
+  const ABoundary: IRadIAWorkspaceBoundary
+);
+begin
+  inherited Create;
+  if not Assigned(ADebugger) then
+    raise EArgumentNilException.Create('ADebugger');
+  if not Assigned(AWorkspace) then
+    raise EArgumentNilException.Create('AWorkspace');
+  if not Assigned(ABoundary) then
+    raise EArgumentNilException.Create('ABoundary');
+  FDebugger := ADebugger;
+  FWorkspace := AWorkspace;
+  FBoundary := ABoundary;
+end;
+
+function TRadIAConfigureBreakpointTool.ResolveFile(
+  const AFileName: string;
+  out AResolved: string;
+  out AError: TRadIAToolResult
+): Boolean;
+var
+  LProject: TRadIAProjectSnapshot;
+  LValidation: TRadIAPathValidation;
+begin
+  LProject := FWorkspace.GetActiveProject;
+  LValidation := FBoundary.ValidatePath(LProject.RootPath, AFileName);
+  Result := LValidation.Allowed;
+  if Result then
+    AResolved := LValidation.ResolvedPath
+  else
+    AError := TRadIAToolResult.Failed(
+      LValidation.ErrorCode,
+      LValidation.ErrorMessage
+    );
+end;
+
+function TRadIAConfigureBreakpointTool.Execute(
+  const ARequest: TRadIAToolRequest
+): TRadIAToolResult;
+var
+  LArguments: TJSONObject;
+  LConfiguration: TRadIABreakpointConfiguration;
+  LError: string;
+  LFileName: string;
+  LLineNumber: Integer;
+  LInverseArguments: TJSONObject;
+  LPrevious: TRadIABreakpointConfiguration;
+  LResolvedFile: string;
+  LResultError: TRadIAToolResult;
+  LRoot: TJSONObject;
+begin
+  LArguments := TJSONObject.ParseJSONValue(ARequest.ArgumentsJson) as TJSONObject;
+  if not Assigned(LArguments) then
+    Exit(TRadIAToolResult.Failed('invalid_request', 'Arguments must be a JSON object.'));
+  try
+    LFileName := LArguments.GetValue<string>('fileName', '');
+    LLineNumber := LArguments.GetValue<Integer>('lineNumber', 0);
+    if (LLineNumber < 1) or not ResolveFile(
+      LFileName,
+      LResolvedFile,
+      LResultError
+    ) then
+    begin
+      if LLineNumber < 1 then
+        Exit(TRadIAToolResult.Failed('invalid_request', 'A positive line is required.'));
+      Exit(LResultError);
+    end;
+    LFileName := LResolvedFile;
+    if not FDebugger.GetSourceBreakpointConfiguration(
+      LFileName,
+      LLineNumber,
+      LConfiguration,
+      LError
+    ) then
+      Exit(TRadIAToolResult.Failed('breakpoint_not_found', LError));
+    MergeConfiguration(LArguments, LConfiguration);
+    if not ConfigurationIsValid(LConfiguration, LError) then
+      Exit(TRadIAToolResult.Failed('invalid_breakpoint_configuration', LError));
+    if not FDebugger.ConfigureSourceBreakpoint(
+      LFileName,
+      LLineNumber,
+      LConfiguration,
+      LPrevious,
+      LError
+    ) then
+      Exit(TRadIAToolResult.Failed('breakpoint_configuration_failed', LError));
+    LRoot := TJSONObject.Create;
+    try
+      LRoot.AddPair('action', 'configured');
+      LRoot.AddPair('fileName', LFileName);
+      LRoot.AddPair('lineNumber', TJSONNumber.Create(LLineNumber));
+      LRoot.AddPair('configuration', ConfigurationToJson(LConfiguration));
+      LRoot.AddPair('previousConfiguration', ConfigurationToJson(LPrevious));
+      LRoot.AddPair('inverseTool', 'ConfigureBreakpoint');
+      LInverseArguments := ConfigurationToJson(LPrevious);
+      LInverseArguments.AddPair('fileName', LFileName);
+      LInverseArguments.AddPair(
+        'lineNumber',
+        TJSONNumber.Create(LLineNumber)
+      );
+      LRoot.AddPair('inverseArguments', LInverseArguments);
+      Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
+    finally
+      LRoot.Free;
+    end;
+  finally
+    LArguments.Free;
+  end;
+end;
+
+function TRadIAConfigureBreakpointTool.GetDescriptor: TRadIAToolDescriptor;
+begin
+  Result := TRadIAToolDescriptor.Create(
+    'ConfigureBreakpoint',
+    '1.0.0',
+    'Configures a conditional breakpoint, hit count, logpoint, or thread filter.',
+    CConfigureInputSchema,
+    CObjectOutputSchema,
+    trReversibleWrite
+  );
 end;
 
 { TRadIADebuggerBreakpointTool }

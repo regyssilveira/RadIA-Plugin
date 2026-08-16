@@ -47,6 +47,21 @@ type
       const AFileName: string;
       const ALineNumber: Integer
     ): Boolean;
+    function GetBreakpointCapabilities:
+      TRadIADebuggerBreakpointCapabilities;
+    function GetSourceBreakpointConfiguration(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      out AConfiguration: TRadIABreakpointConfiguration;
+      out AError: string
+    ): Boolean;
+    function ConfigureSourceBreakpoint(
+      const AFileName: string;
+      const ALineNumber: Integer;
+      const AConfiguration: TRadIABreakpointConfiguration;
+      out APrevious: TRadIABreakpointConfiguration;
+      out AError: string
+    ): Boolean;
     function EvaluateExpression(
       const AExpression: string
     ): TRadIADebugValueSnapshot;
@@ -78,6 +93,35 @@ uses
 
 const
   CDebuggerUnavailable = 'The debugger is shutting down.';
+
+function ReadBreakpointConfiguration(
+  const ABreakpoint: IOTASourceBreakpoint
+): TRadIABreakpointConfiguration;
+begin
+  Result.Condition := ABreakpoint.Expression;
+  Result.HitCount := ABreakpoint.PassCount;
+  Result.DoBreak := ABreakpoint.DoBreak;
+  Result.LogMessage := ABreakpoint.LogMessage;
+  Result.EvaluateExpression := ABreakpoint.EvalExpression;
+  Result.LogResult := ABreakpoint.LogResult;
+  Result.StackFramesToLog := ABreakpoint.StackFramesToLog;
+  Result.ThreadCondition := ABreakpoint.ThreadCondition;
+end;
+
+procedure ApplyBreakpointConfiguration(
+  const ABreakpoint: IOTASourceBreakpoint;
+  const AConfiguration: TRadIABreakpointConfiguration
+);
+begin
+  ABreakpoint.Expression := AConfiguration.Condition;
+  ABreakpoint.PassCount := AConfiguration.HitCount;
+  ABreakpoint.DoBreak := AConfiguration.DoBreak;
+  ABreakpoint.LogMessage := AConfiguration.LogMessage;
+  ABreakpoint.EvalExpression := AConfiguration.EvaluateExpression;
+  ABreakpoint.LogResult := AConfiguration.LogResult;
+  ABreakpoint.StackFramesToLog := AConfiguration.StackFramesToLog;
+  ABreakpoint.ThreadCondition := AConfiguration.ThreadCondition;
+end;
 
 function FindIDEAction(
   const AActionNames: array of string
@@ -486,6 +530,136 @@ begin
   Result := LResult;
 end;
 
+function TRadIAOTADebuggerFacade.GetBreakpointCapabilities:
+  TRadIADebuggerBreakpointCapabilities;
+var
+  LResult: TRadIADebuggerBreakpointCapabilities;
+begin
+  LResult := TRadIADebuggerBreakpointCapabilities.Create(
+    False,
+    False,
+    False,
+    False,
+    False,
+    False,
+    False
+  );
+  RunOnMainThread(
+    procedure
+    var
+      LDebugger: IOTADebuggerServices;
+    begin
+      if Supports(BorlandIDEServices, IOTADebuggerServices, LDebugger) then
+        LResult := TRadIADebuggerBreakpointCapabilities.Create(
+          True,
+          True,
+          True,
+          True,
+          True,
+          True,
+          False
+        );
+    end
+  );
+  Result := LResult;
+end;
+
+function TRadIAOTADebuggerFacade.GetSourceBreakpointConfiguration(
+  const AFileName: string;
+  const ALineNumber: Integer;
+  out AConfiguration: TRadIABreakpointConfiguration;
+  out AError: string
+): Boolean;
+var
+  LConfiguration: TRadIABreakpointConfiguration;
+  LError: string;
+  LResult: Boolean;
+begin
+  LError := '';
+  LResult := False;
+  RunOnMainThread(
+    procedure
+    var
+      LBreakpoint: IOTASourceBreakpoint;
+      LDebugger: IOTADebuggerServices;
+    begin
+      if not Supports(BorlandIDEServices, IOTADebuggerServices, LDebugger) then
+      begin
+        LError := 'The IDE debugger service is unavailable.';
+        Exit;
+      end;
+      if not FindSourceBreakpoint(
+        LDebugger,
+        AFileName,
+        ALineNumber,
+        LBreakpoint
+      ) then
+      begin
+        LError := 'No source breakpoint exists at this location.';
+        Exit;
+      end;
+      LConfiguration := ReadBreakpointConfiguration(LBreakpoint);
+      LResult := True;
+    end
+  );
+  AConfiguration := LConfiguration;
+  AError := LError;
+  Result := LResult;
+end;
+
+function TRadIAOTADebuggerFacade.ConfigureSourceBreakpoint(
+  const AFileName: string;
+  const ALineNumber: Integer;
+  const AConfiguration: TRadIABreakpointConfiguration;
+  out APrevious: TRadIABreakpointConfiguration;
+  out AError: string
+): Boolean;
+var
+  LError: string;
+  LPrevious: TRadIABreakpointConfiguration;
+  LResult: Boolean;
+begin
+  LError := '';
+  LResult := False;
+  RunOnMainThread(
+    procedure
+    var
+      LBreakpoint: IOTASourceBreakpoint;
+      LDebugger: IOTADebuggerServices;
+    begin
+      if not Supports(BorlandIDEServices, IOTADebuggerServices, LDebugger) then
+      begin
+        LError := 'The IDE debugger service is unavailable.';
+        Exit;
+      end;
+      if not FindSourceBreakpoint(
+        LDebugger,
+        AFileName,
+        ALineNumber,
+        LBreakpoint
+      ) then
+      begin
+        LError := 'No source breakpoint exists at this location.';
+        Exit;
+      end;
+      LPrevious := ReadBreakpointConfiguration(LBreakpoint);
+      try
+        ApplyBreakpointConfiguration(LBreakpoint, AConfiguration);
+        LResult := True;
+      except
+        on E: Exception do
+        begin
+          ApplyBreakpointConfiguration(LBreakpoint, LPrevious);
+          LError := E.Message;
+        end;
+      end;
+    end
+  );
+  APrevious := LPrevious;
+  AError := LError;
+  Result := LResult;
+end;
+
 function TRadIAOTADebuggerFacade.ExecuteAction(
   const AAction: TRadIADebuggerAction
 ): TRadIADebuggerActionResult;
@@ -804,6 +978,7 @@ begin
       LCount: Integer;
       LDebugger: IOTADebuggerServices;
       LIndex: Integer;
+      LSnapshot: TRadIABreakpointSnapshot;
     begin
       if AMaxCount <= 0 then
         Exit;
@@ -820,12 +995,28 @@ begin
       begin
         LBreakpoint := LDebugger.SourceBkpts[LIndex];
         if Assigned(LBreakpoint) then
-          LResult[LIndex] := TRadIABreakpointSnapshot.Create(
+        begin
+          LSnapshot := TRadIABreakpointSnapshot.Create(
             LBreakpoint.FileName,
             LBreakpoint.LineNumber,
             LBreakpoint.Enabled,
             LBreakpoint.ValidInCurrentProcess
           );
+          LSnapshot.SetAdvanced(
+            LBreakpoint.Expression,
+            LBreakpoint.PassCount,
+            LBreakpoint.CurPassCount,
+            LBreakpoint.DoBreak,
+            LBreakpoint.LogMessage,
+            LBreakpoint.EvalExpression,
+            LBreakpoint.LogResult
+          );
+          LSnapshot.SetAdvancedContext(
+            LBreakpoint.StackFramesToLog,
+            LBreakpoint.ThreadCondition
+          );
+          LResult[LIndex] := LSnapshot;
+        end;
       end;
     end
   );

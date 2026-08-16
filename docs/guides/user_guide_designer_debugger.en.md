@@ -39,6 +39,30 @@ Examples:
 Evaluation requires a paused process and valid context. Continue requires an active session, and
 some breakpoint changes are unavailable during debugger transitions.
 
+### Advanced breakpoints in Delphi 12 and 13
+
+Before configuring an advanced breakpoint, RadIA runs
+`GetAdvancedBreakpointCapabilities`. The effective matrix for both supported Delphi versions is:
+
+| Capability | Status | Notes |
+|---|---|---|
+| Condition | Available | Uses the IDE breakpoint's native expression. |
+| Hit count | Available | `0` disables it; positive values use the native counter. |
+| Logpoint | Available | Can log a message, expression, result, and frames without stopping when `break=false`. |
+| Thread condition | Available | Accepts the identifier or name recognized by the debugger. |
+| Global exception filters | Unavailable | OTA exposes no reliable global API; RadIA reports the limitation and does not simulate it. |
+
+Create a breakpoint with `AddBreakpoint` first. Then ask in natural language, for example:
+
+- “Stop here only when `OrderId = 42`.”
+- “Skip the first four hits and stop on the fifth.”
+- “Log `Customer.Name` and four frames without stopping.”
+
+`ConfigureBreakpoint` changes only requested fields, preserves the others, and returns
+`previousConfiguration`, `inverseTool`, and `inverseArguments`. The same tool can therefore restore
+the previous configuration after new consent. `ListBreakpoints` shows effective conditions, counters,
+log actions, and thread filters.
+
 ## Safety
 
 Control and mutation commands require consent. Results are bounded and sanitized, OTA failures are
