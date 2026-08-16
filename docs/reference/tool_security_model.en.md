@@ -42,6 +42,12 @@ Session permissions:
 - They can be revoked by the UI.
 - They do not automatically apply to destructive or sensitive actions.
 
+Compatible tools share approval only while origin, session, project, scope, and risk level remain
+the same. A journey may therefore request one approval to create a project and another to open or
+execute it, then reuse each decision for later calls in the same category. When the active project
+changes, RadIA requests fresh approval instead of silently transferring permission to the new
+workspace.
+
 ### Central dialog and surfaces
 
 Chat, native agent, MCP, and terminal use the same consent provider and native dialog, independently

@@ -8,8 +8,6 @@ belong in the backlog.
 Close every actionable difference in the current experience with reproducible evidence, reusing
 existing capabilities before implementing any new infrastructure.
 
-- [ ] make local knowledge explainable and verifiable;
-- [ ] eliminate redundant consent without broadening permissions;
 - [ ] prove semantic-engine isolation, recovery, and metrics;
 - [ ] close every workstream in the same ledger, commit, and integrated gate.
 

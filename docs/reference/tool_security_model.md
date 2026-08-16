@@ -42,6 +42,12 @@ Permissões de sessão:
 - Podem ser revogadas pela UI.
 - Não se aplicam automaticamente a ações destrutivas ou sensíveis.
 
+Ferramentas compatíveis compartilham a aprovação somente quando origem, sessão, projeto, escopo e
+nível de risco permanecem iguais. Por isso, uma jornada pode pedir uma aprovação para criar o
+projeto, outra para abri-lo ou executá-lo e reutilizar cada decisão nas chamadas seguintes da mesma
+categoria. Quando o projeto ativo muda, o RadIA solicita uma nova aprovação em vez de transferir
+silenciosamente a permissão para o novo workspace.
+
 ### Diálogo central e superfícies
 
 Chat, agente nativo, MCP e terminal usam o mesmo provider de consentimento e o mesmo diálogo nativo,

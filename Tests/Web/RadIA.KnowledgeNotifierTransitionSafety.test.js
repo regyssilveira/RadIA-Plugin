@@ -57,3 +57,24 @@ test('release gate closes one generated project before opening another', () => {
   );
   assert.match(releaseProcessSource, /Test-RadIA\.KnowledgeProjectTransition\.ps1/u);
 });
+
+test('project-transition smoke proves bounded session consent reuse', () => {
+  assert.match(
+    transitionSmokeSource,
+    /Invoke-RadIAToolSequenceWithSessionConsent/u
+  );
+  assert.match(transitionSmokeSource, /IsWindowEnabled/u);
+  assert.match(transitionSmokeSource, /"Allow session"/u);
+  assert.match(
+    transitionSmokeSource,
+    /A compatible tool requested redundant session consent/u
+  );
+  assert.match(
+    transitionSmokeSource,
+    /Name = "ValidateCreatedProject"[\s\S]*?Name = "BuildProject"/u
+  );
+  assert.match(
+    transitionSmokeSource,
+    /sessionConsentPassed = \$sessionConsentPassed/u
+  );
+});
