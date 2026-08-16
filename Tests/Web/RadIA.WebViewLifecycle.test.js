@@ -12,6 +12,7 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
   const dockableForm = read('Source/Integration/RadIA.OTA.DockableForm.pas');
   const registration = read('Source/Integration/RadIA.OTA.Register.pas');
   const chat = read('Source/UI/Web/chat.js');
+  const ideSmoke = read('scripts/Test-RadIA.IDESmoke.ps1');
 
   assert.match(frame, /TRadIAWebViewLifecycle\.Create\(2\)/u);
   assert.match(frame, /OnProcessFailed := EdgeBrowserProcessFailed/u);
@@ -75,6 +76,11 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
   assert.match(
     dockableForm,
     /procedure PrepareDockableFormsForShutdown;[\s\S]*?ReleaseForm;/u
+  );
+  assert.ok(
+    ideSmoke.indexOf('$webViewDiagnostic = Wait-RadIAWebViewLifecycleDiagnostic') <
+      ideSmoke.indexOf('$webViewTransitions = Invoke-RadIAWebViewHostTransitions'),
+    'WebView recovery evidence must precede disruptive host transitions'
   );
 });
 

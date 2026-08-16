@@ -2560,11 +2560,6 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                     )
                 }
             }
-            if ($ExerciseWebViewLifecycle) {
-                $webViewTransitions = Invoke-RadIAWebViewHostTransitions `
-                    -DockInfo $dockInfo `
-                    -TransitionCount $WebViewTransitionCount
-            }
         }
 
         $requests = @(
@@ -2638,6 +2633,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $webViewDiagnostic = Wait-RadIAWebViewLifecycleDiagnostic `
                 -EvidencePath $webViewSmokePath `
                 -TimeoutSeconds 90
+            $webViewTransitions = Invoke-RadIAWebViewHostTransitions `
+                -DockInfo $dockInfo `
+                -TransitionCount $WebViewTransitionCount
         }
         $inlineDiagnostic = $null
         if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
