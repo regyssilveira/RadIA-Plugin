@@ -30,6 +30,8 @@ type
     procedure InventoriesDistinctFireDACProjectReferences;
     [Test]
     procedure AuditsTransactionsAcrossBoundedPascalFiles;
+    [Test]
+    procedure InspectsConfigurationWithoutReturningSecretsOrAbsolutePaths;
   end;
 
 implementation
@@ -222,6 +224,36 @@ begin
   Assert.Contains(LJson, '"file":"UnsafeData.pas"');
   Assert.Contains(LJson, '"findings"');
   Assert.DoesNotContain(LJson, 'Caption');
+end;
+
+procedure TRadIAFireDACScannerTests.InspectsConfigurationWithoutReturningSecretsOrAbsolutePaths;
+var
+  LJson: string;
+  LScanner: TRadIAFireDACScanner;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'MainData.dfm'),
+    'object Connection: TFDConnection' + sLineBreak +
+    '  Params.Strings = (' + sLineBreak +
+    '    ''DriverID=FB''' + sLineBreak +
+    '    ''Password=hidden-password'')' + sLineBreak +
+    'end' + sLineBreak +
+    'object Driver: TFDPhysFBDriverLink' + sLineBreak +
+    '  VendorLib = ''D:\Private\fbclient.dll''' + sLineBreak +
+    'end'
+  );
+  LScanner := TRadIAFireDACScanner.Create(TRadIAWorkspaceBoundary.Create);
+  try
+    LJson := LScanner.InspectConfiguration(FRootPath);
+  finally
+    LScanner.Free;
+  end;
+  Assert.Contains(LJson, '"driverId":"FB"');
+  Assert.Contains(LJson, '"libraryFileName":"fbclient.dll"');
+  Assert.Contains(LJson, 'firedac.configuration.embedded-credential');
+  Assert.Contains(LJson, '"credentialsCollected":false');
+  Assert.DoesNotContain(LJson, 'hidden-password');
+  Assert.DoesNotContain(LJson, 'D:\Private');
 end;
 
 initialization

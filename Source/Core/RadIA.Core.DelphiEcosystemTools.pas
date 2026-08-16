@@ -36,6 +36,7 @@ type
     detFireDAC,
     detFireDACProject,
     detFireDACTransactions,
+    detFireDACConfiguration,
     detDependencies,
     detLocalization
   );
@@ -330,6 +331,8 @@ begin
   try
     if FKind = detFireDACTransactions then
       Exit(TRadIAToolResult.Succeeded(LScanner.AuditTransactions(AProject.RootPath)));
+    if FKind = detFireDACConfiguration then
+      Exit(TRadIAToolResult.Succeeded(LScanner.InspectConfiguration(AProject.RootPath)));
     LInventory := LScanner.Scan(AProject.RootPath);
     try
       LRoot := TJSONObject.ParseJSONValue(LInventory.ToJson) as TJSONObject;
@@ -368,7 +371,7 @@ begin
       'project_root_unavailable',
       'No active project root is available.'
     ));
-  if FKind in [detFireDAC, detFireDACProject, detFireDACTransactions] then
+  if FKind in [detFireDAC, detFireDACProject, detFireDACTransactions, detFireDACConfiguration] then
     Exit(ExecuteFireDAC(LProject));
   LFiles := CollectFiles(LProject.RootPath);
   LRoot := TJSONObject.Create;
@@ -417,6 +420,15 @@ begin
         'AuditFireDACTransactions',
         '1.0.0',
         'Audits bounded Pascal transaction flows without executing SQL or connecting to a database.',
+        CEmptyInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
+    detFireDACConfiguration:
+      Result := TRadIAToolDescriptor.Create(
+        'InspectFireDACConfiguration',
+        '1.0.0',
+        'Inspects bounded FireDAC configuration while discarding credentials and absolute paths.',
         CEmptyInputSchema,
         '{"type":"object"}',
         trReadOnly
@@ -559,6 +571,11 @@ begin
     AWorkspace,
     ABoundary,
     detFireDACTransactions
+  ));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(
+    AWorkspace,
+    ABoundary,
+    detFireDACConfiguration
   ));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detDependencies));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detLocalization));

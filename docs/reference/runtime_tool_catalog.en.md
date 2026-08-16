@@ -470,6 +470,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `InspectFireDACUsage` | Returns the structured FireDAC project inventory while preserving legacy usage counters. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `AuditFireDACTransactions` | Audits bounded Pascal transaction flows without executing SQL or connecting to a database. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `InspectFireDACConfiguration` | Inspects bounded FireDAC configuration while discarding credentials and absolute paths. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `DiagnoseDelphiDependencies` | Diagnoses Delphi project search paths and dependency manifests without installing anything. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `AuditDelphiLocalization` | Inventories user-visible Pascal and DFM literals for localization review. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `PrepareLocalizationExtraction` | Prepares an immutable patch that moves one active-unit literal to resourcestring. | `RadIA.Core.DelphiEcosystemTools.pas` |
@@ -523,6 +524,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 65
-- Registered built-in tools: 191
+- Registered built-in tools: 192
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

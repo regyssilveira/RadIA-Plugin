@@ -54,6 +54,7 @@ type
   public
     constructor Create(const ABoundary: IRadIAWorkspaceBoundary);
     function AuditTransactions(const ARootPath: string): string;
+    function InspectConfiguration(const ARootPath: string): string;
     function Scan(const ARootPath: string): TRadIAFireDACInventory;
   end;
 
@@ -67,6 +68,7 @@ uses
   System.RegularExpressions,
   System.StrUtils,
   System.SysUtils,
+  RadIA.Core.FireDAC.Configuration,
   RadIA.Core.FireDAC.Transactions;
 
 const
@@ -555,6 +557,69 @@ begin
     LRoot.AddPair('truncated', TJSONBool.Create(LInventory.Truncated));
     LRoot.AddPair('audits', LAudits);
     LRoot.AddPair('findings', LFindings);
+    LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
+    Result := LRoot.ToJSON;
+  finally
+    LRoot.Free;
+    LAnalyzer.Free;
+    LInventory.Free;
+  end;
+end;
+
+function TRadIAFireDACScanner.InspectConfiguration(const ARootPath: string): string;
+var
+  LAnalysis: TRadIAFireDACConfigurationAnalysis;
+  LAnalyzer: TRadIAFireDACConfigurationAnalyzer;
+  LConfigurations: TJSONArray;
+  LContent: string;
+  LExtension: string;
+  LFileName: string;
+  LFiles: TArray<string>;
+  LFinding: TRadIAFireDACFinding;
+  LFindings: TJSONArray;
+  LInventory: TRadIAFireDACInventory;
+  LObject: TJSONObject;
+  LRelativeName: string;
+  LRoot: TJSONObject;
+begin
+  if ARootPath.Trim.IsEmpty or not TDirectory.Exists(ARootPath) then
+    raise EDirectoryNotFoundException.Create('A valid project root is required.');
+  LInventory := TRadIAFireDACInventory.Create;
+  LAnalyzer := TRadIAFireDACConfigurationAnalyzer.Create;
+  LRoot := TJSONObject.Create;
+  try
+    LFiles := CollectFiles(ARootPath, LInventory);
+    LConfigurations := TJSONArray.Create;
+    LFindings := TJSONArray.Create;
+    for LFileName in LFiles do
+    begin
+      LExtension := TPath.GetExtension(LFileName).ToLower;
+      if not MatchText(LExtension, ['.pas', '.dfm']) then
+        Continue;
+      LRelativeName := RelativeName(ARootPath, LFileName);
+      if not ReadSupportedFile(LFileName, LRelativeName, LInventory, LContent) then
+        Continue;
+      if SameText(LExtension, '.pas') then
+        LAnalysis := LAnalyzer.AnalyzePascal(LContent, LRelativeName)
+      else
+        LAnalysis := LAnalyzer.AnalyzeDfm(LContent, LRelativeName);
+      try
+        for LFinding in LAnalysis.Findings do
+          LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+        if LAnalysis.EntryCount = 0 then
+          Continue;
+        LObject := TJSONObject.ParseJSONValue(LAnalysis.ToJson) as TJSONObject;
+        if Assigned(LObject) then
+          LConfigurations.AddElement(LObject);
+      finally
+        LAnalysis.Free;
+      end;
+    end;
+    LRoot.AddPair('scannedFileCount', TJSONNumber.Create(Length(LFiles)));
+    LRoot.AddPair('truncated', TJSONBool.Create(LInventory.Truncated));
+    LRoot.AddPair('configurations', LConfigurations);
+    LRoot.AddPair('findings', LFindings);
+    LRoot.AddPair('credentialsCollected', TJSONBool.Create(False));
     LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
     Result := LRoot.ToJSON;
   finally

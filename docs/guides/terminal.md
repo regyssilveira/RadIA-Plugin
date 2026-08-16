@@ -179,5 +179,5 @@ A matriz automatizada é executada no pipeline de validação. O smoke exige geo
 **Clear**, **Open error** e **Send to chat**, os cinco rótulos acessíveis, pelo menos 13 pontos
 navegáveis por Tab, dois perfis e uma
 paleta não vazia. A matriz vigente cobre exclusivamente Delphi 12 Win32, Delphi 13 Win32 e Delphi
-13 IDE64, todos com o catálogo atual de 191 ferramentas. Evidências detalhadas ficam fora de `docs`
+13 IDE64, todos com o catálogo atual de 192 ferramentas. Evidências detalhadas ficam fora de `docs`
 somente como registro histórico.

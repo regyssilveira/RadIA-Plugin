@@ -22,6 +22,8 @@ type
     [Test]
     procedure AuditsFireDACTransactionsWithoutExecutingSql;
     [Test]
+    procedure InspectsFireDACConfigurationWithoutReturningCredentials;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -255,6 +257,25 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, 'firedac.transaction.commit-missing');
   Assert.Contains(LResult.ContentJson, '"sqlExecuted":false');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.InspectsFireDACConfigurationWithoutReturningCredentials;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.dfm'),
+    'object MainConnection: TFDConnection' + sLineBreak +
+    '  Params.Strings = (' + sLineBreak +
+    '    ''DriverID=SQLite''' + sLineBreak +
+    '    ''Password=never-return'')' + sLineBreak +
+    'end'
+  );
+  LResult := ExecuteTool(FRootPath, 'InspectFireDACConfiguration');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"driverId":"SQLite"');
+  Assert.Contains(LResult.ContentJson, '"credentialsCollected":false');
+  Assert.DoesNotContain(LResult.ContentJson, 'never-return');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;
