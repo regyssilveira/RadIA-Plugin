@@ -3,19 +3,24 @@
 This file contains open work only. History, completed milestones, metrics, and release notes do not
 belong in the backlog.
 
-## Current status
+## Active goal: deterministic Delphi experience closure
 
-There is no active goal or approved open item in the public backlog.
+Close every actionable difference in the current experience with reproducible evidence, reusing
+existing capabilities before implementing any new infrastructure.
 
-The deterministic integration and end-to-end platform previously recorded as pending is complete.
-The mandatory `Test-RadIA.ReleaseUsage.ps1` gate brings together the Delphi 12 and 13 DUnitX suites,
-registered integration and usage scenarios, the calculator, project generation and opening, and the
-automated matrix on all three supported targets. Its current contract is documented in the
-[automated usage test matrix](../development/usage_test_matrix.en.md).
+- [ ] prove completion, missing members, navigation, and Ghost Text through corpus and benchmarks;
+- [ ] complete the automatic journey across Designer, Code, Problems, tests, and debugger;
+- [ ] simplify routes and make native-agent and CLI progress continuously observable;
+- [ ] deliver a safe visual database journey;
+- [ ] integrate terminal, chat, journeys, and error navigation;
+- [ ] prove current-WebView stability across dock, undock, resize, and recovery;
+- [ ] make local knowledge explainable and verifiable;
+- [ ] eliminate redundant consent without broadening permissions;
+- [ ] prove semantic-engine isolation, recovery, and metrics;
+- [ ] close every workstream in the same ledger, commit, and integrated gate.
 
-New proposals enter this file only after they are approved as executable work with an observable
-outcome and acceptance criteria. Ideas that have not been approved are not presented as product
-commitments.
+The scope excludes a public extension repository or marketplace, C++Builder, Delphi 11, Lazarus,
+GetIt, Embarcadero-exclusive integrations, and replacement of the current WebView.
 
 ## Definition of done for new items
 
