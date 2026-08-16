@@ -85,6 +85,7 @@ type
     );
     procedure AddDeepExternalMcpChecks(const ARoot: TJSONObject);
     procedure AddDeepSemanticChecks(const ARoot: TJSONObject);
+    procedure AddDeepCodeValidationChecks(const ARoot: TJSONObject);
     function NextAction(
       const AReadiness: TRadIAInstallationReadiness
     ): string;
@@ -142,6 +143,7 @@ uses
   RadIA.Core.CliManager,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.CliProcess,
+  RadIA.Core.DelphiLintAdapter,
   RadIA.Core.ExternalMcp,
   RadIA.Core.PseudoTerminal,
   RadIA.Semantic.Client;
@@ -405,9 +407,64 @@ begin
   LCheck.AddPair('action', AAction);
   if SameText(AStatus, 'failed') then
     LCheck.AddPair('severity', 'error')
+  else if SameText(AStatus, 'warning') then
+    LCheck.AddPair('severity', 'warning')
   else
     LCheck.AddPair('severity', 'none');
   AChecks.AddElement(LCheck);
+end;
+
+procedure TRadIAInstallationHealthProbe.AddDeepCodeValidationChecks(
+  const ARoot: TJSONObject
+);
+var
+  LAction: string;
+  LChecks: TJSONArray;
+  LJar: string;
+  LJava: string;
+  LStatus: string;
+  LVersion: string;
+begin
+  LChecks := ARoot.GetValue<TJSONArray>('activeChecks');
+  LStatus := DiagnoseRadIADelphiLintEnvironment(
+    LJar,
+    LJava,
+    LVersion,
+    LAction
+  );
+  if SameText(LStatus, 'ready') then
+    AddDeepCheck(
+      LChecks,
+      'delphilint-runtime',
+      'passed',
+      'DelphiLint isolated runtime is ready with SonarDelphi ' + LVersion + '.',
+      ''
+    )
+  else
+    AddDeepCheck(
+      LChecks,
+      'delphilint-runtime',
+      'warning',
+      'Optional DelphiLint validation is unavailable: ' + LStatus + '.',
+      LAction
+    );
+  if GetEnvironmentVariable('SONAR_HOST_URL').Trim.IsEmpty then
+    AddDeepCheck(
+      LChecks,
+      'sonar-validation',
+      'warning',
+      'SONAR_HOST_URL is not set. Project files may still provide the URL.',
+      'Set SONAR_HOST_URL and SONAR_TOKEN, or add sonar.host.url to ' +
+        'sonar-project.properties.'
+    )
+  else
+    AddDeepCheck(
+      LChecks,
+      'sonar-validation',
+      'passed',
+      'SONAR_HOST_URL is configured. The project key is discovered per project.',
+      ''
+    );
 end;
 
 procedure TRadIAInstallationHealthProbe.AddDeepCliChecks(
@@ -702,13 +759,14 @@ begin
     LRoot.AddPair('profile', 'deep-active');
     LPair := LRoot.RemovePair('diagnosticVersion');
     LPair.Free;
-    LRoot.AddPair('diagnosticVersion', '2.2');
+    LRoot.AddPair('diagnosticVersion', '2.3');
     LRoot.AddPair('consentRequired', TJSONBool.Create(True));
     LActiveChecks := TJSONArray.Create;
     LRoot.AddPair('activeChecks', LActiveChecks);
     AddDeepCliChecks(LRoot, LReadiness);
     AddDeepExternalMcpChecks(LRoot);
     AddDeepSemanticChecks(LRoot);
+    AddDeepCodeValidationChecks(LRoot);
     LFailedCount := 0;
     for LIndex := 0 to LActiveChecks.Count - 1 do
       if SameText(

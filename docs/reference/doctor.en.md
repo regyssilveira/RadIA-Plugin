@@ -61,6 +61,8 @@ execution consent before starting. When approved, the `deep-active` profile:
 - validates the semantic engine executable and protocol;
 - queries the real semantic index and reports resolution status, reason, origin unit, latency, and the latest
   completion metrics;
+- checks the DelphiLint isolated adapter jar, Java, and version and gives the exact recovery path;
+- checks the base Sonar configuration and explains per-project discovery when the variable is absent;
 - closes test sessions and shows each result in the same doctor card.
 
 The diagnostic does not install, authenticate, repair, or change configuration. It also does not

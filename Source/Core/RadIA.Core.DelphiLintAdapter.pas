@@ -72,6 +72,12 @@ type
   end;
 
 function CreateRadIADelphiLintAdapter: IRadIADelphiLintAdapter;
+function DiagnoseRadIADelphiLintEnvironment(
+  out AJar: string;
+  out AJava: string;
+  out AVersion: string;
+  out AAction: string
+): string;
 
 implementation
 
@@ -535,6 +541,39 @@ end;
 function CreateRadIADelphiLintAdapter: IRadIADelphiLintAdapter;
 begin
   Result := TRadIADelphiLintAdapter.Create;
+end;
+
+function DiagnoseRadIADelphiLintEnvironment(
+  out AJar: string;
+  out AJava: string;
+  out AVersion: string;
+  out AAction: string
+): string;
+var
+  LAdapter: TRadIADelphiLintAdapter;
+begin
+  LAdapter := TRadIADelphiLintAdapter.Create;
+  try
+    AJar := LAdapter.FindJar;
+    AJava := LAdapter.ResolveJava;
+    AVersion := LAdapter.SonarDelphiVersion;
+  finally
+    LAdapter.Free;
+  end;
+  if AJar.IsEmpty then
+  begin
+    AAction := 'Install DelphiLint from https://github.com/' +
+      'integrated-application-development/delphilint/releases.';
+    Exit('jar-missing');
+  end;
+  if AJava.IsEmpty then
+  begin
+    AAction := 'Set Resources.JavaExeOverride in %APPDATA%\DelphiLint\' +
+      'delphilint.ini, JAVA_HOME, or add java.exe to PATH.';
+    Exit('java-missing');
+  end;
+  AAction := '';
+  Result := 'ready';
 end;
 
 end.

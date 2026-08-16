@@ -28,7 +28,7 @@ Simply type the `/` character in the chat input area. A floating popup menu will
 | `/extensions` | Opens the visual extension manager. | Local extensions and publishers. |
 | `/health` | Summarizes project health and prioritizes current risks. | IDE, compiler, build, tests, and local knowledge. |
 | `/doctor` | Runs the complete local diagnostic and recommends the next action. | Effective route, provider, conditional CLI, conditional MCP bridge, terminal, chat, tools, and external MCP runtime. |
-| `/doctor --deep` | After consent, runs real CLI version/authentication probes and MCP handshakes. | Effective CLI and enabled external MCP servers; it changes no configuration. |
+| `/doctor --deep` | After consent, probes CLI, MCP, semantic engine, DelphiLint, and Sonar. | Effective prerequisites; it changes no configuration and provides complete recovery actions. |
 | `/status [filter\|--json]` | Shows a sanitized inventory of RadIA state. | Provider, agent, CLI, MCP, security, editor, project, tools, and logs. |
 | `/status settings` | Shows effective provider, model, executor, and limits with each source. | Project, session, and next request. |
 | `/status intent` | Shows sanitized local route-recommendation counters. | Event, intent, and confidence only; never prompts or code. |

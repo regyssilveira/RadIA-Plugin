@@ -28,7 +28,7 @@ Basta digitar o caractere `/` na caixa de entrada do chat. Um menu flutuante sur
 | `/extensions` | Abre o gerenciador visual de extensões. | Extensões e publicadores locais. |
 | `/health` | Resume a saúde do projeto e prioriza riscos atuais. | IDE, compilador, build, testes e conhecimento local. |
 | `/doctor` | Executa o diagnóstico local completo e recomenda a próxima ação. | Rota efetiva, provider, CLI condicional, ponte MCP condicional, terminal, chat, tools e runtime MCP externo. |
-| `/doctor --deep` | Após consentimento, executa probes reais de versão/autenticação da CLI e handshake MCP. | CLI efetiva e servidores MCP externos habilitados; não altera configurações. |
+| `/doctor --deep` | Após consentimento, executa probes reais de CLI, MCP, motor semântico, DelphiLint e Sonar. | Pré-requisitos efetivos; não altera configurações e informa ações completas de recuperação. |
 | `/status [filtro\|--json]` | Mostra um inventário sanitizado do estado do RadIA. | Provider, agente, CLI, MCP, segurança, editor, projeto, tools e logs. |
 | `/status settings` | Mostra provider, modelo, executor e limites efetivos com a origem de cada valor. | Projeto, sessão e próxima solicitação. |
 | `/status intent` | Mostra contadores locais sanitizados das recomendações de rota. | Somente evento, intenção e confiança; nunca inclui prompts ou código. |

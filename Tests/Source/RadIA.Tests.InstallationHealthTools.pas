@@ -485,6 +485,9 @@ begin
     Assert.Contains(LResult, '"id":"cli-runtime"');
     Assert.Contains(LResult, '"status":"not-required"');
     Assert.Contains(LResult, '"id":"external-mcp-handshake"');
+    Assert.Contains(LResult, '"id":"delphilint-runtime"');
+    Assert.Contains(LResult, '"id":"sonar-validation"');
+    Assert.Contains(LResult, '"diagnosticVersion":"2.3"');
     Assert.DoesNotContain(LResult, 'secret-value');
   finally
     LProbe := nil;
