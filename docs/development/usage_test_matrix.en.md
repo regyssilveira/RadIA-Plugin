@@ -44,7 +44,7 @@ authorize a release.
 
 ## Mandatory release gate
 
-After building and packaging the same clean revision, run:
+After building the same clean revision and before producing official packages, run:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -59,12 +59,17 @@ This command composes the following gates without options to skip their main req
 4. perform the visual `2 + 3 = 5` operation in the VCL calculator;
 5. run all five calculator DUnitX tests;
 6. create, open, and immediately navigate a project on all three IDE targets;
-7. run the startup and shutdown matrix with package provenance;
+7. run the startup and shutdown matrix by comparing the installation with the current local build;
 8. route real beginner requests for creation, build, tests, and diagnostics, including educational
    fallback and sanitized local counters.
 
 Once a feature enters the matrix, its scenario becomes mandatory in every following release. The
 release runner accepts no filter, exclusion, or partial approval for these groups.
+
+Package and installer provenance is validated afterwards by the packaging gate because those artifacts do not
+exist yet while `Test-RadIA.ReleaseUsage.ps1` runs. Using `-RequirePackageProvenance` before
+`New-RadIA.ReleaseEvidence.ps1` is invalid. The matrix compares the installed BPL with the local build from the
+same revision; the following stage binds that revision to packages and the installer.
 
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also

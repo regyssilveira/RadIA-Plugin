@@ -44,7 +44,7 @@ exigida; esse resultado não autoriza uma release.
 
 ## Gate obrigatório de release
 
-Depois dos builds e packages da mesma revisão limpa, execute:
+Depois dos builds da mesma revisão limpa e antes de gerar os packages oficiais, execute:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `
@@ -59,12 +59,17 @@ Esse comando compõe, sem opções para pular os gates principais:
 4. operação visual `2 + 3 = 5` na calculadora VCL;
 5. execução dos cinco testes DUnitX da calculadora;
 6. criação, abertura e navegação imediata de projeto nos três alvos da IDE;
-7. matriz de inicialização e encerramento com proveniência do package;
+7. matriz de inicialização e encerramento comparando a instalação com o build local atual;
 8. roteamento real de pedidos iniciantes para criação, build, testes e diagnóstico, com fallback
    educativo e contadores locais sanitizados.
 
 A entrada de uma funcionalidade na matriz torna seu cenário obrigatório nas releases seguintes. O
 runner de release não aceita filtro, exclusão ou aprovação parcial desses grupos.
+
+A proveniência dos packages e do instalador é validada depois, no gate de empacotamento, porque esses
+artefatos ainda não existem durante `Test-RadIA.ReleaseUsage.ps1`. Usar `-RequirePackageProvenance`
+antes de `New-RadIA.ReleaseEvidence.ps1` é inválido. A matriz compara a BPL instalada com o build local
+da mesma revisão; a etapa seguinte vincula essa revisão aos packages e ao instalador.
 
 Se `DEXT_ROOT` não estiver configurado, somente os templates DEXT são registrados como
 `not-required`; os demais templates e gates continuam obrigatórios. Quando `DEXT_ROOT` existe, os
