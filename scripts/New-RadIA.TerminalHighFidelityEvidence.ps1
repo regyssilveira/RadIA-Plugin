@@ -60,7 +60,7 @@ $targetDefinitions = @(
     @{
         delphiVersion = "37.0"
         platform = "Win64"
-        resultPath = "Output\37.0\bin\Win64\Debug\dunitx-results.xml"
+        resultPath = "Output\37.0\bin\Win64\Debug\dunitx-main-results.xml"
         externalResultPath = ""
     }
 )

@@ -626,6 +626,18 @@ if ($runTests) {
             if ($LASTEXITCODE -ne 0) {
                 throw "A suite de testes retornou falhas."
             }
+            $testResultPath = Join-Path `
+                (Split-Path -Parent $testsExe) `
+                "dunitx-results.xml"
+            $mainTestResultPath = Join-Path `
+                (Split-Path -Parent $testsExe) `
+                "dunitx-main-results.xml"
+            if (Test-Path -LiteralPath $testResultPath -PathType Leaf) {
+                Copy-Item `
+                    -LiteralPath $testResultPath `
+                    -Destination $mainTestResultPath `
+                    -Force
+            }
 
             Write-Host "=============================================" -ForegroundColor Green
             Write-Host "    Build e Testes Concluidos com Sucesso!   " -ForegroundColor Green
