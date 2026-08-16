@@ -8,7 +8,6 @@ release não pertencem ao backlog.
 Encerrar com evidência reproduzível todas as diferenças acionáveis da experiência atual, reutilizando
 as capacidades existentes antes de implementar qualquer nova infraestrutura.
 
-- [ ] integrar terminal, chat e jornadas com navegação de erros;
 - [ ] provar estabilidade do WebView atual em dock, undock, resize e recuperação;
 - [ ] tornar o conhecimento local explicável e verificável;
 - [ ] eliminar consentimentos redundantes sem ampliar permissões;

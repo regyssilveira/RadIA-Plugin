@@ -51,7 +51,7 @@ claims do not reopen work. Future comparisons must consume the last approved led
 | F2 | Intent-to-surface journey | A prompt creates and changes a VCL application, opens the correct Designer/Code/Problems/test/debug surface, builds, tests, and debugs on all targets without manual surface selection. |
 | F3 | Chat and operational progress | Valid routes are recommended, incompatible combinations are hidden, consent is locatable, and no active period longer than two seconds shows only an unexplained thinking state. |
 | F4 | Safe database journey | A local fixture supports schema discovery, reviewed read-only SQL, bounded execution, virtualized results, and sanitized export; destructive, secret, and unbounded cases are blocked. |
-| F5 | Journey-aware terminal | Profiles, searchable palette, favorites, reverse history, safe file links, chat handoff, restoration, Unicode/TUI, and clean shutdown pass on all targets. |
+| F5 | Journey-aware terminal | Closed. Existing profiles, palette, history, Unicode/TUI, journey state, and shutdown were retained; Delphi diagnostic navigation and sanitized chat handoff now pass on all targets. |
 | F6 | Current WebView lifecycle | Twenty-five dock/undock/resize cycles per target preserve content and recover focus with no persistent blank view, deadlock, AV, or orphan process. |
 | F7 | Explainable knowledge | Fixture queries return deterministic sources and explain selection, absence, stale state, and fallback; excluded or cross-project content never leaks. |
 | F8 | Journey-scoped consent | The calculator journey completes without redundant approvals while destructive actions remain individually confirmed; expiration, revocation, conflict, and project switching pass. |

@@ -8,7 +8,6 @@ belong in the backlog.
 Close every actionable difference in the current experience with reproducible evidence, reusing
 existing capabilities before implementing any new infrastructure.
 
-- [ ] integrate terminal, chat, journeys, and error navigation;
 - [ ] prove current-WebView stability across dock, undock, resize, and recovery;
 - [ ] make local knowledge explainable and verifiable;
 - [ ] eliminate redundant consent without broadening permissions;

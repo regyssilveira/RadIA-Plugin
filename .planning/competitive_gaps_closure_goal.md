@@ -155,6 +155,10 @@ bloqueados pelos testes.
 
 ## Fase 5 — terminal ligado à jornada
 
+**Estado:** concluída no ledger determinístico. A infraestrutura de perfis, paleta, histórico,
+Unicode/TUI, vínculo de jornada e encerramento já existia; esta fase acrescentou somente navegação
+de diagnósticos Delphi e envio estruturado e sanitizado ao chat.
+
 ### Entregas
 
 - command palette pesquisável, favoritos, perfis e busca reversa persistente;
