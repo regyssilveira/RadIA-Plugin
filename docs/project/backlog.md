@@ -64,11 +64,11 @@ melhoria de desempenho em execuções comparáveis.
 
 ## Marco 4 — ecossistema Delphi
 
-- [ ] **Assistente FireDAC e banco de dados:** inventariar conexões, queries, parâmetros,
+- [x] **Assistente FireDAC e banco de dados:** inventariar conexões, queries, parâmetros,
   transações e datasets; operar em modo somente leitura por padrão.
-- [ ] **Saúde de dependências Delphi:** detectar bibliotecas, packages, GetIt, Boss, paths e versões
+- [x] **Saúde de dependências Delphi:** detectar bibliotecas, packages, GetIt, Boss, paths e versões
   ausentes ou incompatíveis e produzir orientação acionável.
-- [ ] **Auditoria de localização e recursos:** inventariar textos Pascal/DFM, preparar extração para
+- [x] **Auditoria de localização e recursos:** inventariar textos Pascal/DFM, preparar extração para
   `resourcestring` e verificar idiomas e layout visual.
 
 Gate: diagnosticar uma aplicação de dados em uma máquina limpa e produzir correções revisáveis para

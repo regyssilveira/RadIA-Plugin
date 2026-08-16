@@ -278,6 +278,13 @@ divergências manuais. Consulte [Portabilidade de skills](../guides/skill_portab
 Consulte [Modelo de segurança](tool_security_model.md) e
 [Extensões](../development/tool_extension_guide.md).
 
+## FireDAC, dependências e localização
+
+O RadIA inventaria o uso de FireDAC sem executar SQL nem devolver valores de credenciais, diagnostica paths e
+manifestos ausentes sem instalar componentes e localiza textos visíveis em Pascal/DFM. Para localização,
+`PrepareLocalizationExtraction` cria somente um preview imutável na unit ativa; `ApplyPatch` exige consentimento
+e `RevertPatch` restaura a alteração. A comparação entre idiomas reutiliza os snapshots e o diff visual existentes.
+
 ## Compatibilidade
 
 | IDE | Arquitetura | Estado |
@@ -292,7 +299,7 @@ suporte.
 ## Referências rápidas
 
 - [O que faz e quando usar cada ferramenta](internal_tools_reference.md)
-- [Catálogo técnico das 181 ferramentas registradas](runtime_tool_catalog.md)
+- [Catálogo técnico das 185 ferramentas registradas](runtime_tool_catalog.md)
 - [Todos os comandos de barra](slash_commands.md)
 - [Manual completo](../guides/user_manual.md)
 - [Recursos e funcionalidades](features.md)

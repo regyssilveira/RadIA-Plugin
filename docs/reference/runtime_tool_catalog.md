@@ -456,6 +456,15 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `CompareRuntimePerformanceEvidence` | Compara duração, CPU, picos de working set/private bytes e amostras sem resposta entre dois builds. | `RadIA.Core.RuntimePerformance.pas` |
 | `CancelRuntimePerformanceMeasurement` | Interrompe a amostragem ativa sem criar evidência. | `RadIA.Core.RuntimePerformance.pas` |
 
+## Diagnóstico do ecossistema Delphi
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `InspectFireDACUsage` | Inventaria conexões, queries, parâmetros, transações e SQL potencialmente mutável sem executar comandos nem coletar valores de credenciais. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `DiagnoseDelphiDependencies` | Verifica paths declarados no projeto e manifestos de dependências sem instalar componentes. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `PrepareLocalizationExtraction` | Prepara um patch imutável que move um literal da unit ativa para `resourcestring`, sem aplicar alterações. | `RadIA.Core.DelphiEcosystemTools.pas` |
+
 ## Evidências de logs do FastMM5
 
 | Ferramenta | O que faz | Unit de origem |
@@ -497,7 +506,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 62
-- Ferramentas internas registradas: 181
+- Grupos registrados: 63
+- Ferramentas internas registradas: 185
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

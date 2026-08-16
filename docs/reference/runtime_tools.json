@@ -512,6 +512,16 @@
       ]
     },
     {
+      "name": "Delphi ecosystem diagnostics",
+      "source": "Source/Core/RadIA.Core.DelphiEcosystemTools.pas",
+      "tools": [
+        "InspectFireDACUsage",
+        "DiagnoseDelphiDependencies",
+        "AuditDelphiLocalization",
+        "PrepareLocalizationExtraction"
+      ]
+    },
+    {
       "name": "FastMM5 log evidence",
       "source": "Source/Core/RadIA.Core.FastMM5LogParser.pas",
       "tools": [

@@ -3,7 +3,7 @@ param(
     [string]$OutputPath = (
         ".\Output\Evidence\terminal_smoke_evidence_2.6.0.json"
     ),
-    [int]$RequiredToolCount = 181,
+    [int]$RequiredToolCount = 185,
     [int]$MinimumTabStopCount = 11,
     [int]$MinimumPaletteItemCount = 1,
     [int]$MinimumProfileCount = 2

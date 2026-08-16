@@ -142,6 +142,10 @@ Dependências: Debugger, RuntimeScenario, RuntimeEvidence, VisualRuntimeSession 
 4. Preparar extração transacional de textos para `resourcestring`.
 5. Comparar layouts entre idiomas com snapshots existentes.
 
+Entregue: inventários limitados e somente leitura para FireDAC, paths/manifests e textos Pascal/DFM;
+credenciais e SQL não são coletados nem executados. A extração de um literal da unit ativa produz preview
+imutável e reutiliza `ApplyPatch`/`RevertPatch`; layouts por idioma reutilizam o diff visual existente. M4 concluído.
+
 Dependências: DelphiEnvironment, ProjectKnowledge, DesignerVisualDiff e DevelopmentTransaction.
 
 ## Gates transversais

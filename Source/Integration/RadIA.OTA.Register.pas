@@ -72,6 +72,7 @@ uses
   RadIA.OTA.RuntimeVclFacade,
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Core.RuntimePerformance,
+  RadIA.Core.DelphiEcosystemTools,
   RadIA.OTA.RuntimePerformance,
   RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
@@ -1631,6 +1632,11 @@ initialization
     TRadIAContainer.Resolve<IRadIABuildFacade>,
     TRadIAContainer.Resolve<IRadIADUnitXRunner>,
     TRadIAContainer.Resolve<IRadIAKnowledgeService>
+  );
+  RegisterRadIADelphiEcosystemTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAPatchService>
   );
   RegisterRadIAExternalMcpRuntime;
   RegisterRadIAInstallationHealthTools(

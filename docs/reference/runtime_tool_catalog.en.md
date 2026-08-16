@@ -456,6 +456,15 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CompareRuntimePerformanceEvidence` | Compares the same scenario across distinct runtime sessions and builds. | `RadIA.Core.RuntimePerformance.pas` |
 | `CancelRuntimePerformanceMeasurement` | Cancels active performance sampling without producing evidence. | `RadIA.Core.RuntimePerformance.pas` |
 
+## Delphi ecosystem diagnostics
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `InspectFireDACUsage` | Inventories FireDAC connections, queries, parameters, transactions, and risks without executing SQL. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `DiagnoseDelphiDependencies` | Diagnoses Delphi project search paths and dependency manifests without installing anything. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `AuditDelphiLocalization` | Inventories user-visible Pascal and DFM literals for localization review. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `PrepareLocalizationExtraction` | Prepares an immutable patch that moves one active-unit literal to resourcestring. | `RadIA.Core.DelphiEcosystemTools.pas` |
+
 ## FastMM5 log evidence
 
 | Tool | Purpose | Source unit |
@@ -497,7 +506,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 62
-- Registered built-in tools: 181
+- Registered groups: 63
+- Registered built-in tools: 185
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.
