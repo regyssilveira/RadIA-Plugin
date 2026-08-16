@@ -75,6 +75,7 @@ type
     procedure CreateEdgeBrowser;
     procedure EnsureMainWebView;
     procedure RefreshBrowserLayout;
+    function IsExpectedWebMessageSource(const AArgs: TWebMessageReceivedEventArgs): Boolean;
     procedure CMShowingChanged(var Message: TMessage); message CM_SHOWINGCHANGED;
     procedure InitializeWebView;
     procedure CopyWebFiles;
@@ -642,7 +643,7 @@ var
   LStr: PWideChar;
   LJsonStr: PWideChar;
 begin
-  if Assigned(Args.ArgsInterface) then
+  if Assigned(Args.ArgsInterface) and IsExpectedWebMessageSource(Args) then
   begin
     if Succeeded(Args.ArgsInterface.TryGetWebMessageAsString(LStr)) then
     begin
@@ -662,6 +663,35 @@ begin
       end;
     end;
   end;
+end;
+
+function TRadIAFrameAIChat.IsExpectedWebMessageSource(
+  const AArgs: TWebMessageReceivedEventArgs
+): Boolean;
+var
+  LExpectedSource: string;
+  LSeparatorIndex: Integer;
+  LSource: PWideChar;
+  LSourceText: string;
+begin
+  Result := False;
+  if not Assigned(AArgs.ArgsInterface) then
+    Exit;
+  LSource := nil;
+  if Failed(AArgs.ArgsInterface.Get_Source(LSource)) then
+    Exit;
+  try
+    LSourceText := string(LSource);
+  finally
+    CoTaskMemFree(LSource);
+  end;
+  LSeparatorIndex := LSourceText.IndexOfAny(['?', '#']);
+  if LSeparatorIndex >= 0 then
+    LSourceText := LSourceText.Substring(0, LSeparatorIndex);
+  LExpectedSource := 'file:///' + TPath.Combine(FWebFilesDir, 'chat.html').Replace('\', '/');
+  Result := SameText(LSourceText, LExpectedSource);
+  if not Result then
+    TLogger.Log('Rejected WebView message from unexpected source: ' + LSourceText, 'Security');
 end;
 
 procedure TRadIAFrameAIChat.EdgeBrowserNavigationStarting(

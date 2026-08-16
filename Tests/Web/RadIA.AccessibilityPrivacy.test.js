@@ -10,6 +10,10 @@ const chatHtml = fs.readFileSync(path.join(webRoot, 'chat.html'), 'utf8');
 const chatJs = fs.readFileSync(path.join(webRoot, 'chat.js'), 'utf8');
 const chatCss = fs.readFileSync(path.join(webRoot, 'chat.css'), 'utf8');
 const diffHtml = fs.readFileSync(path.join(webRoot, 'diff.html'), 'utf8');
+const webDependencies = fs.readFileSync(
+  path.join(webRoot, 'vendor', 'DEPENDENCIES.md'),
+  'utf8'
+);
 const configFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigFrame.pas'),
   'utf8'
@@ -32,6 +36,10 @@ const dockableForm = fs.readFileSync(
 );
 const configForm = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigForm.pas'),
+  'utf8'
+);
+const diffForm = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.DiffForm.pas'),
   'utf8'
 );
 
@@ -278,6 +286,33 @@ test('CLI login runs the executable without a shell interpreter', () => {
   assert.doesNotMatch(configFrame, /LInfo\.lpFile := 'cmd\.exe'/u);
   assert.match(configFrame, /LInfo\.lpFile := PChar\(LDetection\.ExecutablePath\)/u);
   assert.doesNotMatch(configFrame, /LParameters := '\/c ""'/u);
+});
+
+test('native WebView handlers reject messages from unexpected documents', () => {
+  assert.match(chatFrame, /Get_Source\(LSource\)/u);
+  assert.match(chatFrame, /TPath\.Combine\(FWebFilesDir, 'chat\.html'\)/u);
+  assert.match(chatFrame, /Rejected WebView message from unexpected source/u);
+  assert.match(diffForm, /Get_Source\(LSource\)/u);
+  assert.match(diffForm, /TPath\.Combine\(FWebFilesDir, 'diff\.html'\)/u);
+});
+
+test('runtime package excludes the obsolete remote-page bridge', () => {
+  assert.equal(fs.existsSync(path.join(webRoot, 'bridge.js')), false);
+  assert.match(chatHtml, /<script src="chat-bridge\.js"><\/script>/u);
+  assert.doesNotMatch(chatHtml, /<script src="bridge\.js"><\/script>/u);
+});
+
+test('bundled syntax highlighter is the patched PrismJS release', () => {
+  assert.match(webDependencies, /PrismJS 1\.30\.0/u);
+  assert.match(webDependencies, /local-only loading policy/u);
+});
+
+test('configurable command and provider labels are rendered as text', () => {
+  assert.match(chatJs, /appendCommandText\(info, 'slash-command-name', cmd\.name\)/u);
+  assert.match(chatJs, /element\.textContent = String\(text \?\? ''\)/u);
+  assert.match(chatJs, /renderProviderDropdownValue\(getProviderIcon\(p\.value\), p\.name\)/u);
+  assert.match(chatJs, /name\.textContent = String\(providerName \?\? ''\)/u);
+  assert.doesNotMatch(chatJs, /<span>\$\{p\.name\}<\/span>/u);
 });
 
 test('model Markdown cannot inject executable HTML into the chat surface', () => {

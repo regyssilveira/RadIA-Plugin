@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.15.0
+# Manual completo do RadIA 2.15.1
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -39,7 +39,7 @@ são restaurados na próxima abertura do Delphi. Se o painel for fechado antes d
 fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.15.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.15.1`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 

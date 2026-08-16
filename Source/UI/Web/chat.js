@@ -3459,7 +3459,7 @@ function hideSlashPopup() {
 
 function renderSlashCommands() {
   const popup = document.getElementById('slash-commands-popup');
-  popup.innerHTML = '';
+  popup.replaceChildren();
 
   if (slashPopupSelectedIndex >= filteredSlashCommands.length) {
     slashPopupSelectedIndex = 0;
@@ -3472,15 +3472,14 @@ function renderSlashCommands() {
       item.classList.add('selected');
     }
 
-    item.innerHTML = `
-      <div class="slash-command-info">
-        <span class="slash-command-name">${cmd.name}</span>
-        <span class="slash-command-desc">${cmd.desc}</span>
-        ${cmd.usage ? `<span class="slash-command-usage">${cmd.usage}</span>` : ''}
-        ${cmd.example ? `<span class="slash-command-example">Example: ${cmd.example}</span>` : ''}
-      </div>
-      ${cmd.shortcut ? `<span class="slash-command-shortcut">${cmd.shortcut}</span>` : ''}
-    `;
+    const info = document.createElement('div');
+    info.className = 'slash-command-info';
+    appendCommandText(info, 'slash-command-name', cmd.name);
+    appendCommandText(info, 'slash-command-desc', cmd.desc);
+    if (cmd.usage) appendCommandText(info, 'slash-command-usage', cmd.usage);
+    if (cmd.example) appendCommandText(info, 'slash-command-example', `Example: ${cmd.example}`);
+    item.appendChild(info);
+    if (cmd.shortcut) appendCommandText(item, 'slash-command-shortcut', cmd.shortcut);
 
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -3490,6 +3489,13 @@ function renderSlashCommands() {
 
     popup.appendChild(item);
   });
+}
+
+function appendCommandText(parent, className, text) {
+  const element = document.createElement('span');
+  element.className = className;
+  element.textContent = String(text ?? '');
+  parent.appendChild(element);
 }
 
 function insertSlashCommand(commandText) {
@@ -4048,7 +4054,7 @@ function initializeConfig(data) {
       selectProvider.value = p.value;
       selectProvider.dispatchEvent(new Event('change'));
 
-      providerDropdownValue.innerHTML = `${getProviderIcon(p.value)}<span>${p.name}</span>`;
+      renderProviderDropdownValue(getProviderIcon(p.value), p.name);
       setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
       providerDropdownTrigger.focus();
     });
@@ -4063,9 +4069,7 @@ function initializeConfig(data) {
     providerOptionsList.appendChild(listItem);
   });
 
-  providerDropdownValue.innerHTML = activeIcon
-    ? `${activeIcon}<span>${activeText}</span>`
-    : `<span>${activeText}</span>`;
+  renderProviderDropdownValue(activeIcon, activeText);
 
   updateModelsList(data.models, data.activeModel, data.modelSelectionEnabled !== false);
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
@@ -4097,6 +4101,18 @@ function initializeConfig(data) {
   }
 
 
+}
+
+function renderProviderDropdownValue(iconHtml, providerName) {
+  providerDropdownValue.replaceChildren();
+  if (iconHtml) {
+    const icon = document.createElement('span');
+    icon.innerHTML = iconHtml;
+    providerDropdownValue.appendChild(icon);
+  }
+  const name = document.createElement('span');
+  name.textContent = String(providerName ?? '');
+  providerDropdownValue.appendChild(name);
 }
 
 function applyModelSelectionState() {
