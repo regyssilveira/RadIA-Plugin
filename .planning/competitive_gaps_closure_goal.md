@@ -63,6 +63,18 @@ um novo gap.
 O relatório deve distinguir claramente ausência, regressão, melhoria de UX e capacidade já entregue.
 Nenhuma implementação começa antes desse baseline ser aprovado.
 
+### Comandos do gate
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts/New-RadIA.CompetitiveClosureBaseline.ps1
+powershell.exe -ExecutionPolicy Bypass -File scripts/Test-RadIA.CompetitiveClosureLedger.ps1 `
+  -LedgerPath Output/Validation/CompetitiveClosure/CurrentBaseline.json
+```
+
+O manifesto versionado fica em `.planning/competitive_closure_manifest.json`. O validador recusa
+worktree sujo, versão ou commit divergente, frentes ou checks ausentes, duplicidades, evidência sem
+comando e artefato e qualquer fechamento que não cubra os três alvos suportados.
+
 ## Fase 1 — inteligência de código comprovada
 
 Completion, membros ausentes e navegação já existem. Esta fase mede, corrige e fecha a diferença sem

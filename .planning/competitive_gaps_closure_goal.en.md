@@ -58,6 +58,18 @@ claims do not reopen work. Future comparisons must consume the last approved led
 | F9 | Semantic supervision | Fault injection for crash, hang, incompatible response, and invalid cache never blocks `bds.exe`, loses a buffer, or requires an IDE restart. |
 | F10 | Integrated closure | Lint, docs/web tests, Delphi DUnitX, semantic corpus, benchmarks, OTA/E2E matrix, calculator, templates, Sonar, docs, installer, and one all-closed ledger pass on the same clean commit. |
 
+### F0 gate commands
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts/New-RadIA.CompetitiveClosureBaseline.ps1
+powershell.exe -ExecutionPolicy Bypass -File scripts/Test-RadIA.CompetitiveClosureLedger.ps1 `
+  -LedgerPath Output/Validation/CompetitiveClosure/CurrentBaseline.json
+```
+
+The versioned manifest lives at `.planning/competitive_closure_manifest.json`. The validator rejects
+a dirty worktree, a mismatched version or commit, missing or duplicate fronts and checks, evidence
+without a command and artifact, and any closure that does not cover all three supported targets.
+
 ## F1 mandatory semantic scenarios
 
 - completion after `.` for locals, parameters, fields, properties, `Self`, `Result`, and globals;

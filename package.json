@@ -12,6 +12,7 @@
     "test:semantic-completion:13": "node scripts/Test-RadIA.SemanticCompletionCorpus.js --delphi-version 37.0",
     "test:semantic-members:12": "node scripts/Test-RadIA.SemanticMissingMembers.js --delphi-version 23.0",
     "test:semantic-members:13": "node scripts/Test-RadIA.SemanticMissingMembers.js --delphi-version 37.0",
+    "test:closure-ledger": "node --test Tests/Web/RadIA.CompetitiveClosureLedger.test.js",
     "test:web": "node --test Tests/Web/*.test.js",
     "test:docs": "node --test Tests/Web/RadIA.Documentation.test.js"
   },

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "goalId": "deterministic-delphi-experience-closure",
+  "supportedTargets": [
+    "delphi12-win32",
+    "delphi13-win32",
+    "delphi13-ide64"
+  ],
+  "fronts": [
+    {
+      "id": "semantic-editor",
+      "title": "Semantic completion, missing members, navigation, and Ghost Text",
+      "requiredChecks": ["semantic-corpus", "semantic-completion", "missing-members", "editor-e2e"]
+    },
+    {
+      "id": "ide-journey",
+      "title": "Intent-driven Designer, Code, Problems, tests, and debugger journey",
+      "requiredChecks": ["calculator-e2e", "surface-navigation", "build-tests-debug"]
+    },
+    {
+      "id": "operational-progress",
+      "title": "Observable native-agent and CLI progress",
+      "requiredChecks": ["route-compatibility", "native-progress", "cli-progress", "pending-consent"]
+    },
+    {
+      "id": "database-journey",
+      "title": "Safe visual database journey",
+      "requiredChecks": ["connection-safety", "schema-read", "query-preview", "bounded-grid"]
+    },
+    {
+      "id": "terminal-journey",
+      "title": "Terminal, chat, journey, and error navigation integration",
+      "requiredChecks": ["terminal-build", "error-navigation", "chat-handoff", "shutdown"]
+    },
+    {
+      "id": "webview-lifecycle",
+      "title": "Current WebView dock, resize, failure, and recovery lifecycle",
+      "requiredChecks": ["dock-cycles", "state-preservation", "failure-recovery", "shutdown"]
+    },
+    {
+      "id": "explainable-knowledge",
+      "title": "Explainable and verifiable local knowledge",
+      "requiredChecks": ["source-citations", "coverage-state", "selective-rebuild", "isolation"]
+    },
+    {
+      "id": "journey-consent",
+      "title": "Non-redundant journey-scoped consent",
+      "requiredChecks": ["calculator-consent", "grant-scope", "revocation", "destructive-boundary"]
+    },
+    {
+      "id": "semantic-supervision",
+      "title": "Semantic engine health, isolation, recovery, and metrics",
+      "requiredChecks": ["deep-doctor", "crash-recovery", "hang-recovery", "cache-recovery"]
+    }
+  ]
+}
