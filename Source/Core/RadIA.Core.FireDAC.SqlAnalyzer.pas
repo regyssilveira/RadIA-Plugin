@@ -282,31 +282,45 @@ function TRadIAFireDACSqlAnalyzer.ClassifyStatement(
   const AMaskedSql: string
 ): TRadIAFireDACSqlStatementKind;
 var
-  LMatch: TMatch;
+  LDepth: Integer;
+  LIndex: Integer;
+  LStart: Integer;
   LToken: string;
 begin
   Result := fskUnknown;
-  LMatch := TRegEx.Match(
-    AMaskedSql,
-    '(?i)\b(select|insert|update|delete|merge|execute|exec|create|alter|drop|truncate)\b'
-  );
-  if not LMatch.Success then
-    Exit;
-  LToken := LowerCase(LMatch.Groups[1].Value);
-  if LToken = 'select' then
-    Result := fskSelect
-  else if LToken = 'insert' then
-    Result := fskInsert
-  else if LToken = 'update' then
-    Result := fskUpdate
-  else if LToken = 'delete' then
-    Result := fskDelete
-  else if LToken = 'merge' then
-    Result := fskMerge
-  else if MatchText(LToken, ['execute', 'exec']) then
-    Result := fskExecute
-  else
-    Result := fskDdl;
+  LDepth := 0;
+  LIndex := Low(AMaskedSql);
+  while LIndex <= High(AMaskedSql) do
+  begin
+    if AMaskedSql[LIndex] = '(' then
+      Inc(LDepth)
+    else if (AMaskedSql[LIndex] = ')') and (LDepth > 0) then
+      Dec(LDepth)
+    else if (LDepth = 0) and CharInSet(AMaskedSql[LIndex], ['A'..'Z', 'a'..'z', '_']) then
+    begin
+      LStart := LIndex;
+      while (LIndex <= High(AMaskedSql)) and
+        CharInSet(AMaskedSql[LIndex], ['A'..'Z', 'a'..'z', '0'..'9', '_']) do
+        Inc(LIndex);
+      LToken := LowerCase(AMaskedSql.Substring(LStart - 1, LIndex - LStart));
+      if LToken = 'select' then
+        Exit(fskSelect);
+      if LToken = 'insert' then
+        Exit(fskInsert);
+      if LToken = 'update' then
+        Exit(fskUpdate);
+      if LToken = 'delete' then
+        Exit(fskDelete);
+      if LToken = 'merge' then
+        Exit(fskMerge);
+      if MatchText(LToken, ['execute', 'exec']) then
+        Exit(fskExecute);
+      if MatchText(LToken, ['create', 'alter', 'drop', 'truncate']) then
+        Exit(fskDdl);
+      Continue;
+    end;
+    Inc(LIndex);
+  end;
 end;
 
 function TRadIAFireDACSqlAnalyzer.CountStatements(

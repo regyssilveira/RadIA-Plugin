@@ -14,6 +14,8 @@ type
     [Test]
     procedure ClassifiesSelectWithCteAndParameters;
     [Test]
+    procedure ClassifiesOuterMutationAfterCte;
+    [Test]
     procedure IgnoresParametersAndSemicolonsInsideStringsAndComments;
     [Test]
     procedure DoesNotTreatPostgreSqlCastAsParameter;
@@ -64,6 +66,18 @@ begin
   Assert.Contains(LJson, '"name":"State","prefix":":"');
   Assert.Contains(LJson, '"name":"CustomerId","prefix":"@"');
   Assert.Contains(LJson, '"statementCount":1');
+end;
+
+procedure TRadIAFireDACSqlAnalyzerTests.ClassifiesOuterMutationAfterCte;
+var
+  LJson: string;
+begin
+  LJson := AnalyzeJson(
+    'with inactive as (select id from customer where active = 0) ' +
+    'update customer set archived = 1 where id in (select id from inactive)'
+  );
+  Assert.Contains(LJson, '"statementKind":"update"');
+  Assert.Contains(LJson, '"mutable":true');
 end;
 
 procedure TRadIAFireDACSqlAnalyzerTests.IgnoresParametersAndSemicolonsInsideStringsAndComments;
