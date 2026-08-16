@@ -41,6 +41,22 @@ consentimento, preview, fingerprint, gates de build e testes e rollback quando u
 Os nomes só podem mudar com atualização simultânea deste contrato, dos testes de catálogo e das duas
 versões da documentação pública.
 
+## Integração com capacidades existentes
+
+- `InspectFireDACUsage` permanece compatível e delega ao mesmo inventário de
+  `InspectFireDACProject`; não haverá dois scanners independentes.
+- `IRadIAWorkspaceBoundary` valida todo arquivo informado ou enumerado pelo Advisor.
+- `IRadIASecretRedactor` protege argumentos, auditoria e resultados, complementado pela remoção
+  específica de valores FireDAC antes da construção do JSON.
+- `IRadIALocalDatabaseService` continua sendo a única implementação autorizada para schema e preview
+  SQLite; o Advisor apenas adapta seu resultado tipado para comparação.
+- `IRadIAGeneratedArtifactService` prepara, aplica e reverte arquivos novos. `IRadIAPatchService`,
+  multi-file patches e transações de desenvolvimento tratam arquivos existentes e gates.
+- findings seguem o contrato consumido por `TRadIAProblemExtractor`, evitando uma segunda coleção de
+  problemas na UI.
+- `TRadIALegacyDataMigrationAnalyzer` e suas tools permanecem o fluxo de migração; o Advisor adiciona
+  validação FireDAC entre aplicação, build, DUnitX e registro do gate.
+
 ## Contrato de achados
 
 Todo achado deve possuir ID estável, rule ID, severidade, confiança, título, mensagem, arquivo, linha,

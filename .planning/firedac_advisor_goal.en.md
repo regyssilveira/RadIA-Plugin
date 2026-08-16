@@ -41,6 +41,22 @@ preview, fingerprint, build and test gates, and rollback when a gate fails.
 Names may change only with simultaneous updates to this contract, catalog tests, and both public
 documentation languages.
 
+## Integration with existing capabilities
+
+- `InspectFireDACUsage` remains compatible and delegates to the same inventory as
+  `InspectFireDACProject`; there will not be two independent scanners.
+- `IRadIAWorkspaceBoundary` validates every Advisor-provided or enumerated file.
+- `IRadIASecretRedactor` protects arguments, audits, and results, complemented by FireDAC-specific
+  value removal before JSON construction.
+- `IRadIALocalDatabaseService` remains the only authorized SQLite schema and preview implementation;
+  the Advisor only adapts its typed result for comparison.
+- `IRadIAGeneratedArtifactService` prepares, applies, and reverts new files. `IRadIAPatchService`,
+  multi-file patches, and development transactions handle existing files and gates.
+- findings follow the contract consumed by `TRadIAProblemExtractor`, avoiding a second UI problem
+  collection.
+- `TRadIALegacyDataMigrationAnalyzer` and its tools remain the migration flow; the Advisor adds
+  FireDAC validation between application, build, DUnitX, and gate recording.
+
 ## Finding contract
 
 Every finding has a stable ID, rule ID, severity, confidence, title, message, file, line, symbol or
