@@ -84,6 +84,7 @@ $portugueseGroupNames = @{
     "Reversible VCL runtime instrumentation" = "Instrumentação VCL runtime reversível"
     "Comparable runtime performance" = "Performance runtime comparável"
     "Delphi ecosystem diagnostics" = "Diagnóstico do ecossistema Delphi"
+    "FireDAC query diagnostics" = "Diagnóstico de consultas FireDAC"
     "Safe local database inspection" = "Inspeção segura de banco local"
     "FastMM5 log evidence" = "Evidências de logs do FastMM5"
     "Composed memory diagnostic sessions" = "Sessões compostas de diagnóstico de memória"

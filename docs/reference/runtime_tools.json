@@ -512,6 +512,14 @@
       ]
     },
     {
+      "name": "FireDAC query diagnostics",
+      "source": "Source/Core/RadIA.Core.FireDAC.Tools.pas",
+      "tools": [
+        "AnalyzeFireDACQuery",
+        "ValidateFireDACParameters"
+      ]
+    },
+    {
       "name": "Delphi ecosystem diagnostics",
       "source": "Source/Core/RadIA.Core.DelphiEcosystemTools.pas",
       "tools": [

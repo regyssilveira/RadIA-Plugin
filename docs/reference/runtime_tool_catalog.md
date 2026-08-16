@@ -456,6 +456,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `CompareRuntimePerformanceEvidence` | Compara duração, CPU, picos de working set/private bytes e amostras sem resposta entre dois builds. | `RadIA.Core.RuntimePerformance.pas` |
 | `CancelRuntimePerformanceMeasurement` | Interrompe a amostragem ativa sem criar evidência. | `RadIA.Core.RuntimePerformance.pas` |
 
+## Diagnóstico de consultas FireDAC
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `AnalyzeFireDACQuery` | Analisa SQL limitado, statements e placeholders sem executar ou devolver o texto da consulta. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ValidateFireDACParameters` | Compara placeholders SQL com nomes de bindings informados, sem executar SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+
 ## Diagnóstico do ecossistema Delphi
 
 | Ferramenta | O que faz | Unit de origem |
@@ -514,7 +521,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 64
-- Ferramentas internas registradas: 188
+- Grupos registrados: 65
+- Ferramentas internas registradas: 190
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

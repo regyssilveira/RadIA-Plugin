@@ -456,6 +456,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CompareRuntimePerformanceEvidence` | Compares the same scenario across distinct runtime sessions and builds. | `RadIA.Core.RuntimePerformance.pas` |
 | `CancelRuntimePerformanceMeasurement` | Cancels active performance sampling without producing evidence. | `RadIA.Core.RuntimePerformance.pas` |
 
+## FireDAC query diagnostics
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `AnalyzeFireDACQuery` | Analyzes bounded SQL text without connecting to or querying a database. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ValidateFireDACParameters` | Compares SQL placeholders with supplied FireDAC binding names without executing SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+
 ## Delphi ecosystem diagnostics
 
 | Tool | Purpose | Source unit |
@@ -514,7 +521,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 64
-- Registered built-in tools: 188
+- Registered groups: 65
+- Registered built-in tools: 190
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.
