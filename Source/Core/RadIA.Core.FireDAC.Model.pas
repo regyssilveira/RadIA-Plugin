@@ -125,23 +125,32 @@ type
   private
     FComponents: TList<TRadIAFireDACComponent>;
     FFindings: TList<TRadIAFireDACFinding>;
+    FParameterReferenceCount: Integer;
+    FPotentiallyMutableSqlFileCount: Integer;
+    FProjectReferences: TList<string>;
     FRelationships: TList<TRadIAFireDACRelationship>;
     FScannedFileCount: Integer;
     FTruncated: Boolean;
     function ContainsComponent(const AComponent: TRadIAFireDACComponent): Boolean;
     function ContainsFinding(const AFinding: TRadIAFireDACFinding): Boolean;
     function ContainsRelationship(const ARelationship: TRadIAFireDACRelationship): Boolean;
+    function ContainsProjectReference(const AReference: string): Boolean;
   public
     constructor Create;
     destructor Destroy; override;
     procedure AddComponent(const AComponent: TRadIAFireDACComponent);
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
     procedure AddRelationship(const ARelationship: TRadIAFireDACRelationship);
+    procedure AddProjectReference(const AReference: string);
     function Components: TArray<TRadIAFireDACComponent>;
     function Findings: TArray<TRadIAFireDACFinding>;
     function Relationships: TArray<TRadIAFireDACRelationship>;
+    function ProjectReferences: TArray<string>;
     function ToJson: string;
     property ScannedFileCount: Integer read FScannedFileCount write FScannedFileCount;
+    property ParameterReferenceCount: Integer read FParameterReferenceCount write FParameterReferenceCount;
+    property PotentiallyMutableSqlFileCount: Integer read FPotentiallyMutableSqlFileCount
+      write FPotentiallyMutableSqlFileCount;
     property Truncated: Boolean read FTruncated write FTruncated;
   end;
 
@@ -249,14 +258,26 @@ begin
   FComponents := TList<TRadIAFireDACComponent>.Create;
   FRelationships := TList<TRadIAFireDACRelationship>.Create;
   FFindings := TList<TRadIAFireDACFinding>.Create;
+  FProjectReferences := TList<string>.Create;
 end;
 
 destructor TRadIAFireDACInventory.Destroy;
 begin
+  FProjectReferences.Free;
   FFindings.Free;
   FRelationships.Free;
   FComponents.Free;
   inherited;
+end;
+
+function TRadIAFireDACInventory.ContainsProjectReference(const AReference: string): Boolean;
+var
+  LItem: string;
+begin
+  Result := False;
+  for LItem in FProjectReferences do
+    if SameText(LItem, AReference) then
+      Exit(True);
 end;
 
 function TRadIAFireDACInventory.ContainsComponent(
@@ -331,6 +352,18 @@ begin
     FRelationships.Add(ARelationship);
 end;
 
+procedure TRadIAFireDACInventory.AddProjectReference(const AReference: string);
+begin
+  if AReference.Trim.IsEmpty or ContainsProjectReference(AReference) then
+    Exit;
+  if FProjectReferences.Count >= CRadIAFireDACMaximumComponents then
+  begin
+    FTruncated := True;
+    Exit;
+  end;
+  FProjectReferences.Add(AReference);
+end;
+
 function TRadIAFireDACInventory.Components: TArray<TRadIAFireDACComponent>;
 begin
   Result := FComponents.ToArray;
@@ -344,6 +377,11 @@ end;
 function TRadIAFireDACInventory.Relationships: TArray<TRadIAFireDACRelationship>;
 begin
   Result := FRelationships.ToArray;
+end;
+
+function TRadIAFireDACInventory.ProjectReferences: TArray<string>;
+begin
+  Result := FProjectReferences.ToArray;
 end;
 
 function ComponentToJson(const AComponent: TRadIAFireDACComponent): TJSONObject;
@@ -386,14 +424,38 @@ function TRadIAFireDACInventory.ToJson: string;
 var
   LArray: TJSONArray;
   LComponent: TRadIAFireDACComponent;
+  LConnectionCount: Integer;
   LFinding: TRadIAFireDACFinding;
+  LQueryCount: Integer;
   LRelationship: TRadIAFireDACRelationship;
   LRoot: TJSONObject;
+  LProjectReference: string;
+  LTransactionCount: Integer;
 begin
+  LConnectionCount := 0;
+  LQueryCount := 0;
+  LTransactionCount := 0;
+  for LComponent in FComponents do
+    case LComponent.Kind of
+      fckConnection:
+        Inc(LConnectionCount);
+      fckQuery, fckCommand, fckStoredProcedure:
+        Inc(LQueryCount);
+      fckTransaction:
+        Inc(LTransactionCount);
+    end;
   LRoot := TJSONObject.Create;
   try
     LRoot.AddPair('scannedFileCount', TJSONNumber.Create(FScannedFileCount));
     LRoot.AddPair('truncated', TJSONBool.Create(FTruncated));
+    LRoot.AddPair('connectionCount', TJSONNumber.Create(LConnectionCount));
+    LRoot.AddPair('queryCount', TJSONNumber.Create(LQueryCount));
+    LRoot.AddPair('parameterReferenceCount', TJSONNumber.Create(FParameterReferenceCount));
+    LRoot.AddPair('transactionCount', TJSONNumber.Create(LTransactionCount));
+    LRoot.AddPair(
+      'filesWithPotentiallyMutableSql',
+      TJSONNumber.Create(FPotentiallyMutableSqlFileCount)
+    );
     LArray := TJSONArray.Create;
     for LComponent in FComponents do
       LArray.AddElement(ComponentToJson(LComponent));
@@ -402,6 +464,10 @@ begin
     for LRelationship in FRelationships do
       LArray.AddElement(RelationshipToJson(LRelationship));
     LRoot.AddPair('relationships', LArray);
+    LArray := TJSONArray.Create;
+    for LProjectReference in FProjectReferences do
+      LArray.Add(LProjectReference);
+    LRoot.AddPair('projectReferences', LArray);
     LArray := TJSONArray.Create;
     for LFinding in FFindings do
       LArray.AddElement(FindingToJson(LFinding));

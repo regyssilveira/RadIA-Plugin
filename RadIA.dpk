@@ -138,6 +138,7 @@ contains
   RadIA.OTA.RuntimeVclFacade in 'Source\Integration\RadIA.OTA.RuntimeVclFacade.pas',
   RadIA.Core.RuntimePerformance in 'Source\Core\RadIA.Core.RuntimePerformance.pas',
   RadIA.Core.FireDAC.Model in 'Source\Core\RadIA.Core.FireDAC.Model.pas',
+  RadIA.Core.FireDAC.Scanner in 'Source\Core\RadIA.Core.FireDAC.Scanner.pas',
   RadIA.Core.DelphiEcosystemTools in 'Source\Core\RadIA.Core.DelphiEcosystemTools.pas',
   RadIA.Core.LocalDatabase in 'Source\Core\RadIA.Core.LocalDatabase.pas',
   RadIA.Core.LocalDatabaseTools in 'Source\Core\RadIA.Core.LocalDatabaseTools.pas',

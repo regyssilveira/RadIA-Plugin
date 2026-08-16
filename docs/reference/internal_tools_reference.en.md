@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 187 internal tools: what each one does and at what stage
+This page explains RadIA's 188 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -133,7 +133,8 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`CompleteRuntimePerformanceMeasurement`|Stop sampling and produce evidence only after the same scenario succeeds in the same session and build.|Immediately after `RunRuntimeScenario`; insufficient samples and changed sessions are rejected.|
 |`CompareRuntimePerformanceEvidence`|Compare duration, CPU, peak working set/private bytes, and unresponsive samples across builds.|After replaying the same scenario key in a distinct session and build; it flags changes above 10% or worse responsiveness.|
 |`CancelRuntimePerformanceMeasurement`|Stop active sampling without producing evidence.|When the scenario is cancelled or fails, or when the user abandons the measurement.|
-|`InspectFireDACUsage`|Inventory connections, queries, parameters, transactions, and potentially mutable SQL without executing commands or collecting credential values.|When reviewing the data layer or preparing a clean machine.|
+| `InspectFireDACUsage` | Preserves legacy counters and returns the same structured project inventory. | For existing consumers and automations that still use the original name. |
+| `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL or collecting credentials. | When reviewing the data layer before specialized analysis. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
 |`AuditDelphiLocalization`|Find visible Pascal and DFM text that may move to `resourcestring`.|Before preparing a reviewable extraction or comparing languages.|
 |`PrepareLocalizationExtraction`|Prepare an immutable patch that moves one active-unit literal to `resourcestring` without applying changes.|After selecting a candidate; application uses `ApplyPatch` with consent and reversal uses `RevertPatch`.|

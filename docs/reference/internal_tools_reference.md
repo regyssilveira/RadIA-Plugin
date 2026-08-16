@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 187 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 188 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -133,7 +133,8 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `CompleteRuntimePerformanceMeasurement` | Encerra a amostragem e gera evidência somente se o mesmo cenário terminou com sucesso na mesma sessão e build. | Logo após `RunRuntimeScenario` concluir; medições insuficientes ou sessões trocadas são recusadas. |
 | `CompareRuntimePerformanceEvidence` | Compara duração, CPU, picos de working set/private bytes e amostras sem resposta entre dois builds. | Depois de repetir a mesma chave de cenário em sessão e build novos; sinaliza regressão acima de 10% ou piora de responsividade. |
 | `CancelRuntimePerformanceMeasurement` | Interrompe a amostragem ativa sem criar evidência. | Em cancelamentos, falhas do cenário ou quando o usuário decide abandonar a medição. |
-| `InspectFireDACUsage` | Inventaria conexões, queries, parâmetros, transações e SQL potencialmente mutável sem executar comandos nem coletar valores de credenciais. | Ao revisar a camada de dados ou preparar uma máquina limpa. |
+| `InspectFireDACUsage` | Mantém as contagens legadas e retorna o mesmo inventário estruturado da inspeção de projeto. | Para consumidores existentes e automações que ainda usam o nome original. |
+| `InspectFireDACProject` | Inventaria componentes e relações FireDAC em PAS e DFM limitados, sem executar SQL nem coletar credenciais. | Ao revisar a camada de dados antes das análises especializadas. |
 | `DiagnoseDelphiDependencies` | Verifica paths declarados no projeto e manifestos de dependências sem instalar componentes. | Antes de preparar uma máquina ou corrigir falhas de compilação por dependência. |
 | `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | Antes de preparar uma extração revisável ou comparar idiomas. |
 | `PrepareLocalizationExtraction` | Prepara um patch imutável que move um literal da unit ativa para `resourcestring`, sem aplicar alterações. | Após escolher um candidato; a aplicação usa `ApplyPatch` com consentimento e a reversão usa `RevertPatch`. |

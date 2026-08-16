@@ -5,12 +5,14 @@ interface
 uses
   RadIA.Core.Patches,
   RadIA.Core.Tools,
-  RadIA.Core.Workspace;
+  RadIA.Core.Workspace,
+  RadIA.Core.WorkspaceBoundary;
 
 procedure RegisterRadIADelphiEcosystemTools(
   const ARegistry: IRadIAToolRegistry;
   const AWorkspace: IRadIAWorkspaceFacade;
-  const APatches: IRadIAPatchService
+  const APatches: IRadIAPatchService;
+  const ABoundary: IRadIAWorkspaceBoundary
 );
 
 implementation
@@ -21,19 +23,27 @@ uses
   System.JSON,
   System.RegularExpressions,
   System.StrUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.FireDAC.Model,
+  RadIA.Core.FireDAC.Scanner;
 
 const
   CEmptyInputSchema = '{"type":"object","additionalProperties":false}';
   CMaximumFiles = 2000;
 
 type
-  TRadIADelphiEcosystemToolKind = (detFireDAC, detDependencies, detLocalization);
+  TRadIADelphiEcosystemToolKind = (
+    detFireDAC,
+    detFireDACProject,
+    detDependencies,
+    detLocalization
+  );
 
   TRadIADelphiEcosystemTool = class(TInterfacedObject, IRadIATool)
   private
     FKind: TRadIADelphiEcosystemToolKind;
     FWorkspace: IRadIAWorkspaceFacade;
+    FBoundary: IRadIAWorkspaceBoundary;
     procedure AddFinding(
       const AFindings: TJSONArray;
       const AFileName: string;
@@ -62,12 +72,6 @@ type
       var APathCount: Integer;
       var AMissingCount: Integer
     );
-    procedure AnalyzeFireDAC(
-      const ARootPath: string;
-      const AFiles: TArray<string>;
-      const ARoot: TJSONObject;
-      const AFindings: TJSONArray
-    );
     procedure AnalyzeLocalization(
       const ARootPath: string;
       const AFiles: TArray<string>;
@@ -75,10 +79,12 @@ type
       const AFindings: TJSONArray
     );
     function CollectFiles(const ARootPath: string): TArray<string>;
+    function ExecuteFireDAC(const AProject: TRadIAProjectSnapshot): TRadIAToolResult;
     function RelativeName(const ARootPath, AFileName: string): string;
   public
     constructor Create(
       const AWorkspace: IRadIAWorkspaceFacade;
+      const ABoundary: IRadIAWorkspaceBoundary;
       const AKind: TRadIADelphiEcosystemToolKind
     );
     function Execute(const ARequest: TRadIAToolRequest): TRadIAToolResult;
@@ -100,13 +106,17 @@ type
 
 constructor TRadIADelphiEcosystemTool.Create(
   const AWorkspace: IRadIAWorkspaceFacade;
+  const ABoundary: IRadIAWorkspaceBoundary;
   const AKind: TRadIADelphiEcosystemToolKind
 );
 begin
   inherited Create;
   if not Assigned(AWorkspace) then
     raise EArgumentNilException.Create('AWorkspace');
+  if not Assigned(ABoundary) then
+    raise EArgumentNilException.Create('ABoundary');
   FWorkspace := AWorkspace;
+  FBoundary := ABoundary;
   FKind := AKind;
 end;
 
@@ -163,54 +173,6 @@ begin
   finally
     LFiles.Free;
   end;
-end;
-
-procedure TRadIADelphiEcosystemTool.AnalyzeFireDAC(
-  const ARootPath: string;
-  const AFiles: TArray<string>;
-  const ARoot: TJSONObject;
-  const AFindings: TJSONArray
-);
-var
-  LConnectionCount: Integer;
-  LContent: string;
-  LFile: string;
-  LMutableQueryCount: Integer;
-  LParameterCount: Integer;
-  LQueryCount: Integer;
-  LTransactionCount: Integer;
-begin
-  LConnectionCount := 0;
-  LQueryCount := 0;
-  LParameterCount := 0;
-  LTransactionCount := 0;
-  LMutableQueryCount := 0;
-  for LFile in AFiles do
-  begin
-    if not MatchText(TPath.GetExtension(LFile), ['.pas', '.dfm']) then
-      Continue;
-    LContent := TFile.ReadAllText(LFile);
-    Inc(LConnectionCount, TRegEx.Matches(LContent, '\bTFDConnection\b').Count);
-    Inc(LQueryCount, TRegEx.Matches(LContent, '\bTFD(?:Query|Command|StoredProc)\b').Count);
-    Inc(LParameterCount, TRegEx.Matches(LContent, '\b(?:Params|ParamByName)\b').Count);
-    Inc(LTransactionCount, TRegEx.Matches(LContent, '\bTFDTransaction\b').Count);
-    if TRegEx.IsMatch(LContent, '(?i)\b(?:insert|update|delete|merge|alter|drop|create)\b') then
-      Inc(LMutableQueryCount);
-    if TRegEx.IsMatch(LContent, '(?i)(?:Password|User_Name)\s*=\s*[^\r\n]*') then
-      AddFinding(
-        AFindings,
-        RelativeName(ARootPath, LFile),
-        'embedded-connection-setting',
-        'A connection setting that may contain a credential is embedded; its value was not collected.'
-      );
-  end;
-  ARoot.AddPair('connectionCount', TJSONNumber.Create(LConnectionCount));
-  ARoot.AddPair('queryCount', TJSONNumber.Create(LQueryCount));
-  ARoot.AddPair('parameterReferenceCount', TJSONNumber.Create(LParameterCount));
-  ARoot.AddPair('transactionCount', TJSONNumber.Create(LTransactionCount));
-  ARoot.AddPair('filesWithPotentiallyMutableSql', TJSONNumber.Create(LMutableQueryCount));
-  ARoot.AddPair('sqlExecuted', TJSONBool.Create(False));
-  ARoot.AddPair('credentialsCollected', TJSONBool.Create(False));
 end;
 
 procedure TRadIADelphiEcosystemTool.AnalyzeDependencies(
@@ -355,6 +317,39 @@ begin
   ARoot.AddPair('nextAction', 'Review candidates before preparing a transactional extraction.');
 end;
 
+function TRadIADelphiEcosystemTool.ExecuteFireDAC(
+  const AProject: TRadIAProjectSnapshot
+): TRadIAToolResult;
+var
+  LInventory: TRadIAFireDACInventory;
+  LRoot: TJSONObject;
+  LScanner: TRadIAFireDACScanner;
+begin
+  LScanner := TRadIAFireDACScanner.Create(FBoundary);
+  try
+    LInventory := LScanner.Scan(AProject.RootPath);
+    try
+      LRoot := TJSONObject.ParseJSONValue(LInventory.ToJson) as TJSONObject;
+      if not Assigned(LRoot) then
+        Exit(TRadIAToolResult.Failed(
+          'inventory_serialization_failed',
+          'The FireDAC inventory could not be serialized.'
+        ));
+      try
+        LRoot.AddPair('project', AProject.Name);
+        LRoot.AddPair('root', AProject.RootPath);
+        Result := TRadIAToolResult.Succeeded(LRoot.ToJSON);
+      finally
+        LRoot.Free;
+      end;
+    finally
+      LInventory.Free;
+    end;
+  finally
+    LScanner.Free;
+  end;
+end;
+
 function TRadIADelphiEcosystemTool.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
@@ -370,6 +365,8 @@ begin
       'project_root_unavailable',
       'No active project root is available.'
     ));
+  if FKind in [detFireDAC, detFireDACProject] then
+    Exit(ExecuteFireDAC(LProject));
   LFiles := CollectFiles(LProject.RootPath);
   LRoot := TJSONObject.Create;
   try
@@ -380,8 +377,6 @@ begin
     LRoot.AddPair('scannedFileCount', TJSONNumber.Create(Length(LFiles)));
     LRoot.AddPair('truncated', TJSONBool.Create(Length(LFiles) >= CMaximumFiles));
     case FKind of
-      detFireDAC:
-        AnalyzeFireDAC(LProject.RootPath, LFiles, LRoot, LFindings);
       detDependencies:
         AnalyzeDependencies(LProject.RootPath, LFiles, LRoot, LFindings);
       detLocalization:
@@ -399,8 +394,17 @@ begin
     detFireDAC:
       Result := TRadIAToolDescriptor.Create(
         'InspectFireDACUsage',
+        '2.0.0',
+        'Returns the structured FireDAC project inventory while preserving legacy usage counters.',
+        CEmptyInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
+    detFireDACProject:
+      Result := TRadIAToolDescriptor.Create(
+        'InspectFireDACProject',
         '1.0.0',
-        'Inventories FireDAC connections, queries, parameters, transactions, and risks without executing SQL.',
+        'Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL.',
         CEmptyInputSchema,
         '{"type":"object"}',
         trReadOnly
@@ -531,14 +535,16 @@ end;
 procedure RegisterRadIADelphiEcosystemTools(
   const ARegistry: IRadIAToolRegistry;
   const AWorkspace: IRadIAWorkspaceFacade;
-  const APatches: IRadIAPatchService
+  const APatches: IRadIAPatchService;
+  const ABoundary: IRadIAWorkspaceBoundary
 );
 begin
   if not Assigned(ARegistry) then
     raise EArgumentNilException.Create('ARegistry');
-  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, detFireDAC));
-  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, detDependencies));
-  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, detLocalization));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDAC));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDACProject));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detDependencies));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detLocalization));
   ARegistry.RegisterTool(TRadIAPrepareLocalizationExtractionTool.Create(AWorkspace, APatches));
 end;
 

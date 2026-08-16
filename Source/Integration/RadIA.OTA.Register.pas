@@ -1740,7 +1740,8 @@ initialization
   RegisterRadIADelphiEcosystemTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
-    TRadIAContainer.Resolve<IRadIAPatchService>
+    TRadIAContainer.Resolve<IRadIAPatchService>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
   );
   RegisterRadIALocalDatabaseTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

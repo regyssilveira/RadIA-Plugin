@@ -18,6 +18,8 @@ type
     [Test]
     procedure InventoriesFireDACWithoutReturningCredentialValues;
     [Test]
+    procedure PreservesFireDACUsageCompatibilityWithStructuredProjectInventory;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -34,7 +36,8 @@ uses
   RadIA.Core.Patches,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,
-  RadIA.Core.Workspace;
+  RadIA.Core.Workspace,
+  RadIA.Core.WorkspaceBoundary;
 
 type
   TRadIAEcosystemPatchStub = class(TInterfacedObject, IRadIAPatchService)
@@ -187,7 +190,8 @@ begin
   RegisterRadIADelphiEcosystemTools(
     LRegistry,
     TRadIAEcosystemWorkspaceStub.Create(ARootPath),
-    TRadIAEcosystemPatchStub.Create
+    TRadIAEcosystemPatchStub.Create,
+    TRadIAWorkspaceBoundary.Create
   );
   LTool := LRegistry.Resolve(AToolName);
   Result := LTool.Execute(TRadIAToolRequest.Create(AToolName, '{}', 'ecosystem-test'));
@@ -210,6 +214,28 @@ begin
   Assert.Contains(LResult.ContentJson, '"connectionCount":1');
   Assert.Contains(LResult.ContentJson, '"credentialsCollected":false');
   Assert.IsFalse(LResult.ContentJson.Contains('do-not-return'));
+end;
+
+procedure TTestRadIADelphiEcosystemTools.PreservesFireDACUsageCompatibilityWithStructuredProjectInventory;
+var
+  LProjectResult: TRadIAToolResult;
+  LUsageResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'type TDataModule = class' + sLineBreak +
+    '  Connection: TFDConnection;' + sLineBreak +
+    '  Query: TFDQuery;' + sLineBreak +
+    'end;'
+  );
+  LUsageResult := ExecuteTool(FRootPath, 'InspectFireDACUsage');
+  LProjectResult := ExecuteTool(FRootPath, 'InspectFireDACProject');
+  Assert.IsTrue(LUsageResult.Success);
+  Assert.IsTrue(LProjectResult.Success);
+  Assert.Contains(LUsageResult.ContentJson, '"connectionCount":1');
+  Assert.Contains(LProjectResult.ContentJson, '"connectionCount":1');
+  Assert.Contains(LUsageResult.ContentJson, '"components"');
+  Assert.Contains(LProjectResult.ContentJson, '"components"');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;
@@ -257,7 +283,8 @@ begin
   RegisterRadIADelphiEcosystemTools(
     LRegistry,
     TRadIAEcosystemWorkspaceStub.Create(FRootPath),
-    TRadIAEcosystemPatchStub.Create
+    TRadIAEcosystemPatchStub.Create,
+    TRadIAWorkspaceBoundary.Create
   );
   LResult := LRegistry.Resolve('PrepareLocalizationExtraction').Execute(
     TRadIAToolRequest.Create(

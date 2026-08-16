@@ -42,6 +42,7 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Extensions | Visual creation, sandbox, install, export, signing, and management plus a versioned tool API protected by the policy pipeline. |
 | Declarative extensions | Hot-reloaded commands, skills, journeys, knowledge, references, templates, aliases, and audited workflows with transactional package resources. |
 | Skill portability | Project-scoped publication to four CLIs with preview, central consent, ownership hashes, rollback, and conflict preservation. |
+| FireDAC inventory | Locate bounded PAS/DFM components and relationships without executing SQL or returning credential values. |
 | Local SQLite | Discover tables, views, and columns, then preview one consented read-only query with bounded, redacted grid and CSV output. |
 
 Local structural completion after `.` belongs to the Ghost Text flow: it may provide an unambiguous
@@ -60,7 +61,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 187 registered built-in tools](runtime_tool_catalog.en.md)
+- [All 188 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.en.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](../guides/user_manual.en.md)
