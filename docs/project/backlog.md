@@ -5,9 +5,14 @@ release não pertencem ao backlog.
 
 ## Estado atual
 
-Não há item ou goal aberto. O fechamento determinístico da experiência Delphi foi concluído e validado
-pelos gates integrados da versão publicada. Novos trabalhos só entram neste arquivo quando possuírem
-escopo executável e critérios de aceitação definidos.
+O goal ativo é o **FireDAC Advisor**. O trabalho abrange inventário, SQL, parâmetros, transações,
+configuração, drivers, thread safety, schema, assistência por IA, geração, correções reversíveis,
+migração, documentação e validação nas IDEs suportadas. O contrato executável interno mantém os
+limites de segurança, a matriz de testes e a definição de pronto deste ciclo.
+
+O goal não pode ser encerrado por uma entrega parcial. A conclusão exige todas as tools planejadas,
+os testes unitários, de contrato, segurança e integração, os 16 cenários E2E, builds Delphi 12 e 13,
+documentação bilíngue e auditoria requisito por requisito.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

@@ -1207,15 +1207,15 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /Não há item ou goal aberto/u);
-  assert.match(englishBacklog, /There is no open item or active goal/u);
+  assert.match(portugueseBacklog, /goal ativo é o \*\*FireDAC Advisor\*\*/u);
+  assert.match(englishBacklog, /active goal is the \*\*FireDAC Advisor\*\*/u);
   assert.ok(
     /^\s*- \[ \]/mu.test(portugueseBacklog) ||
-      /Não há item ou goal aberto/u.test(portugueseBacklog)
+      /goal ativo é o \*\*FireDAC Advisor\*\*/u.test(portugueseBacklog)
   );
   assert.ok(
     /^\s*- \[ \]/mu.test(englishBacklog) ||
-      /There is no open item or active goal/u.test(englishBacklog)
+      /active goal is the \*\*FireDAC Advisor\*\*/u.test(englishBacklog)
   );
   assert.match(portugueseBacklog, /fora do escopo repositório público ou marketplace/u);
   assert.match(englishBacklog, /public extension repository or marketplace[\s\S]*remain out of scope/u);
