@@ -72,6 +72,10 @@ antes de `New-RadIA.ReleaseEvidence.ps1` é inválido. A matriz compara a BPL in
 da mesma revisão; o runner instala esse build nos três alvos antes da matriz, e a etapa seguinte vincula
 a revisão aos packages e ao instalador.
 
+Antes do primeiro build e de cada instalação, o gate encerra somente processos auxiliares conhecidos do RadIA
+(`RadIA.Semantic.Engine` e `RadIA.MCP.Bridge`) quando nenhuma IDE está aberta. Isso impede que um processo órfão
+de uma sessão anterior bloqueie a substituição dos binários, sem encerrar terminais ou processos do projeto.
+
 Se `DEXT_ROOT` não estiver configurado, somente os templates DEXT são registrados como
 `not-required`; os demais templates e gates continuam obrigatórios. Quando `DEXT_ROOT` existe, os
 servidores e endpoints DEXT também são compilados e executados.

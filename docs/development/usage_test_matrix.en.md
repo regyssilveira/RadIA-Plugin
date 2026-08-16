@@ -72,6 +72,10 @@ exist yet while `Test-RadIA.ReleaseUsage.ps1` runs. Using `-RequirePackageProven
 same revision; the runner installs that build on all three targets before the matrix, and the following stage binds
 the revision to packages and the installer.
 
+Before the first build and each installation, the gate stops only known RadIA auxiliary processes
+(`RadIA.Semantic.Engine` and `RadIA.MCP.Bridge`) while no IDE is open. This prevents an orphan from a previous
+session from locking binaries without terminating terminals or project processes.
+
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also
 built and executed.

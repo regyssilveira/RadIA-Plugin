@@ -18,6 +18,22 @@ if (-not $resolvedEvidenceRoot.StartsWith(
 if (Get-Process bds -ErrorAction SilentlyContinue) {
     throw "Close all Delphi IDE instances before the release usage gate."
 }
+
+function Stop-RadIAReleaseAuxiliaryProcesses {
+    $names = @("RadIA.Semantic.Engine", "RadIA.MCP.Bridge")
+    $processes = @(Get-Process -Name $names -ErrorAction SilentlyContinue)
+    foreach ($process in $processes) {
+        Stop-Process -Id $process.Id -Force
+        if (-not $process.WaitForExit(10000)) {
+            throw (
+                "RadIA auxiliary process did not stop: " +
+                "$($process.ProcessName):$($process.Id)."
+            )
+        }
+    }
+}
+
+Stop-RadIAReleaseAuxiliaryProcesses
 New-Item `
     -ItemType Directory `
     -Path $resolvedEvidenceRoot `
@@ -141,6 +157,7 @@ $installationTargets = @(
     [PSCustomObject]@{ Version = "37.0"; IDE64 = $true }
 )
 foreach ($target in $installationTargets) {
+    Stop-RadIAReleaseAuxiliaryProcesses
     $installArguments = @{
         DelphiVersion = $target.Version
         Install = $true
