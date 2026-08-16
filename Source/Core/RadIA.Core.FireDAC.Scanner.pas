@@ -53,6 +53,7 @@ type
     function RelativeName(const ARootPath: string; const AFileName: string): string;
   public
     constructor Create(const ABoundary: IRadIAWorkspaceBoundary);
+    function AuditTransactions(const ARootPath: string): string;
     function Scan(const ARootPath: string): TRadIAFireDACInventory;
   end;
 
@@ -62,9 +63,11 @@ uses
   System.Generics.Collections,
   System.Generics.Defaults,
   System.IOUtils,
+  System.JSON,
   System.RegularExpressions,
   System.StrUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.FireDAC.Transactions;
 
 const
   CClassPattern =
@@ -498,6 +501,66 @@ begin
   except
     Result.Free;
     raise;
+  end;
+end;
+
+function TRadIAFireDACScanner.AuditTransactions(const ARootPath: string): string;
+var
+  LAnalysis: TRadIAFireDACTransactionAnalysis;
+  LAnalyzer: TRadIAFireDACTransactionAnalyzer;
+  LContent: string;
+  LFileName: string;
+  LFiles: TArray<string>;
+  LFinding: TRadIAFireDACFinding;
+  LFindings: TJSONArray;
+  LInventory: TRadIAFireDACInventory;
+  LObject: TJSONObject;
+  LRelativeName: string;
+  LRoot: TJSONObject;
+  LAudits: TJSONArray;
+begin
+  if ARootPath.Trim.IsEmpty or not TDirectory.Exists(ARootPath) then
+    raise EDirectoryNotFoundException.Create('A valid project root is required.');
+  LInventory := TRadIAFireDACInventory.Create;
+  LAnalyzer := TRadIAFireDACTransactionAnalyzer.Create;
+  LRoot := TJSONObject.Create;
+  try
+    LFiles := CollectFiles(ARootPath, LInventory);
+    LAudits := TJSONArray.Create;
+    LFindings := TJSONArray.Create;
+    for LFileName in LFiles do
+    begin
+      if not SameText(TPath.GetExtension(LFileName), '.pas') then
+        Continue;
+      LRelativeName := RelativeName(ARootPath, LFileName);
+      if not ReadSupportedFile(LFileName, LRelativeName, LInventory, LContent) then
+        Continue;
+      LAnalysis := LAnalyzer.Analyze(LContent, LRelativeName);
+      try
+        for LFinding in LAnalysis.Findings do
+          LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+        if LAnalysis.UsageCount = 0 then
+          Continue;
+        LObject := TJSONObject.ParseJSONValue(LAnalysis.ToJson) as TJSONObject;
+        if Assigned(LObject) then
+        begin
+          LObject.AddPair('file', LRelativeName);
+          LAudits.AddElement(LObject);
+        end;
+      finally
+        LAnalysis.Free;
+      end;
+    end;
+    LRoot.AddPair('scannedFileCount', TJSONNumber.Create(Length(LFiles)));
+    LRoot.AddPair('truncated', TJSONBool.Create(LInventory.Truncated));
+    LRoot.AddPair('audits', LAudits);
+    LRoot.AddPair('findings', LFindings);
+    LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
+    Result := LRoot.ToJSON;
+  finally
+    LRoot.Free;
+    LAnalyzer.Free;
+    LInventory.Free;
   end;
 end;
 

@@ -180,6 +180,7 @@ type
 
 function RadIAFireDACComponentKindName(const AKind: TRadIAFireDACComponentKind): string;
 function RadIAFireDACConfidenceName(const AValue: TRadIAFireDACFindingConfidence): string;
+function RadIAFireDACFindingToJson(const AValue: TRadIAFireDACFinding): TJSONObject;
 function RadIAFireDACSeverityName(const AValue: TRadIAFireDACFindingSeverity): string;
 
 implementation
@@ -446,7 +447,7 @@ begin
   Result.AddPair('line', TJSONNumber.Create(AValue.Location.Line));
 end;
 
-function FindingToJson(const AValue: TRadIAFireDACFinding): TJSONObject;
+function RadIAFireDACFindingToJson(const AValue: TRadIAFireDACFinding): TJSONObject;
 var
   LEvidence: TJSONArray;
 begin
@@ -518,7 +519,7 @@ begin
     LRoot.AddPair('projectReferences', LArray);
     LArray := TJSONArray.Create;
     for LFinding in FFindings do
-      LArray.AddElement(FindingToJson(LFinding));
+      LArray.AddElement(RadIAFireDACFindingToJson(LFinding));
     LRoot.AddPair('findings', LArray);
     LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
     LRoot.AddPair('credentialsCollected', TJSONBool.Create(False));

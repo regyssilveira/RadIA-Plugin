@@ -525,6 +525,7 @@
       "tools": [
         "InspectFireDACUsage",
         "InspectFireDACProject",
+        "AuditFireDACTransactions",
         "DiagnoseDelphiDependencies",
         "AuditDelphiLocalization",
         "PrepareLocalizationExtraction"

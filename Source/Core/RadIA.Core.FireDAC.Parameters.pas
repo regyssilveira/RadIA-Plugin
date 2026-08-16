@@ -188,28 +188,6 @@ begin
     FMissing.Add(AName);
 end;
 
-function FindingJson(const AFinding: TRadIAFireDACFinding): TJSONObject;
-var
-  LEvidence: TJSONArray;
-begin
-  Result := TJSONObject.Create;
-  Result.AddPair('id', AFinding.Id);
-  Result.AddPair('ruleId', AFinding.RuleId);
-  Result.AddPair('severity', RadIAFireDACSeverityName(AFinding.Severity));
-  Result.AddPair('confidence', RadIAFireDACConfidenceName(AFinding.Confidence));
-  Result.AddPair('title', AFinding.Title);
-  Result.AddPair('message', AFinding.Message);
-  Result.AddPair('file', AFinding.Location.FileName);
-  Result.AddPair('line', TJSONNumber.Create(AFinding.Location.Line));
-  Result.AddPair('symbol', AFinding.Symbol);
-  LEvidence := TJSONArray.Create;
-  if not AFinding.Evidence.IsEmpty then
-    LEvidence.Add(AFinding.Evidence);
-  Result.AddPair('evidence', LEvidence);
-  Result.AddPair('suggestedAction', AFinding.SuggestedAction);
-  Result.AddPair('automaticFixAvailable', TJSONBool.Create(AFinding.AutomaticFixAvailable));
-end;
-
 function BindingJson(const ABinding: TRadIAFireDACParameterBinding): TJSONObject;
 begin
   Result := TJSONObject.Create;
@@ -249,7 +227,7 @@ begin
     LRoot.AddPair('extraBindings', LArray);
     LArray := TJSONArray.Create;
     for LFinding in FFindings do
-      LArray.AddElement(FindingJson(LFinding));
+      LArray.AddElement(RadIAFireDACFindingToJson(LFinding));
     LRoot.AddPair('findings', LArray);
     LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
     Result := LRoot.ToJSON;

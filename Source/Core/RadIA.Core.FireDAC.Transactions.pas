@@ -33,11 +33,13 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
+    function Findings: TArray<TRadIAFireDACFinding>;
     function AddOrGetUsage(
       const AName: string;
       const ALine: Integer
     ): TRadIAFireDACTransactionUsage;
     function ToJson: string;
+    function UsageCount: Integer;
   end;
 
   TRadIAFireDACTransactionAnalyzer = class
@@ -111,28 +113,6 @@ begin
   FUsages.Add(Result);
 end;
 
-function TransactionFindingJson(const AFinding: TRadIAFireDACFinding): TJSONObject;
-var
-  LEvidence: TJSONArray;
-begin
-  Result := TJSONObject.Create;
-  Result.AddPair('id', AFinding.Id);
-  Result.AddPair('ruleId', AFinding.RuleId);
-  Result.AddPair('severity', RadIAFireDACSeverityName(AFinding.Severity));
-  Result.AddPair('confidence', RadIAFireDACConfidenceName(AFinding.Confidence));
-  Result.AddPair('title', AFinding.Title);
-  Result.AddPair('message', AFinding.Message);
-  Result.AddPair('file', AFinding.Location.FileName);
-  Result.AddPair('line', TJSONNumber.Create(AFinding.Location.Line));
-  Result.AddPair('symbol', AFinding.Symbol);
-  LEvidence := TJSONArray.Create;
-  if not AFinding.Evidence.IsEmpty then
-    LEvidence.Add(AFinding.Evidence);
-  Result.AddPair('evidence', LEvidence);
-  Result.AddPair('suggestedAction', AFinding.SuggestedAction);
-  Result.AddPair('automaticFixAvailable', TJSONBool.Create(AFinding.AutomaticFixAvailable));
-end;
-
 function TRadIAFireDACTransactionAnalysis.ToJson: string;
 var
   LArray: TJSONArray;
@@ -158,13 +138,23 @@ begin
     LRoot.AddPair('transactions', LArray);
     LArray := TJSONArray.Create;
     for LFinding in FFindings do
-      LArray.AddElement(TransactionFindingJson(LFinding));
+      LArray.AddElement(RadIAFireDACFindingToJson(LFinding));
     LRoot.AddPair('findings', LArray);
     LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
     Result := LRoot.ToJSON;
   finally
     LRoot.Free;
   end;
+end;
+
+function TRadIAFireDACTransactionAnalysis.Findings: TArray<TRadIAFireDACFinding>;
+begin
+  Result := FFindings.ToArray;
+end;
+
+function TRadIAFireDACTransactionAnalysis.UsageCount: Integer;
+begin
+  Result := FUsages.Count;
 end;
 
 function TRadIAFireDACTransactionAnalyzer.SanitizePascal(const AContent: string): string;

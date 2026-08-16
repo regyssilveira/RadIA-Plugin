@@ -20,6 +20,8 @@ type
     [Test]
     procedure PreservesFireDACUsageCompatibilityWithStructuredProjectInventory;
     [Test]
+    procedure AuditsFireDACTransactionsWithoutExecutingSql;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -236,6 +238,23 @@ begin
   Assert.Contains(LProjectResult.ContentJson, '"connectionCount":1');
   Assert.Contains(LUsageResult.ContentJson, '"components"');
   Assert.Contains(LProjectResult.ContentJson, '"components"');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.AuditsFireDACTransactionsWithoutExecutingSql;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'procedure Save;' + sLineBreak +
+    'begin' + sLineBreak +
+    '  MainTransaction.StartTransaction;' + sLineBreak +
+    'end;'
+  );
+  LResult := ExecuteTool(FRootPath, 'AuditFireDACTransactions');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.transaction.commit-missing');
+  Assert.Contains(LResult.ContentJson, '"sqlExecuted":false');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;

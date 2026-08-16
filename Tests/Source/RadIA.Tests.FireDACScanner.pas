@@ -28,6 +28,8 @@ type
     procedure IgnoresSimilarNonFireDACClassesAndComments;
     [Test]
     procedure InventoriesDistinctFireDACProjectReferences;
+    [Test]
+    procedure AuditsTransactionsAcrossBoundedPascalFiles;
   end;
 
 implementation
@@ -189,6 +191,37 @@ begin
   );
   LJson := ScanJson;
   Assert.Contains(LJson, '"projectReferences":["FireDAC.Comp.Client","FireDAC.Phys.FB"]');
+end;
+
+procedure TRadIAFireDACScannerTests.AuditsTransactionsAcrossBoundedPascalFiles;
+var
+  LJson: string;
+  LScanner: TRadIAFireDACScanner;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'UnsafeData.pas'),
+    'procedure Save;' + sLineBreak +
+    'begin' + sLineBreak +
+    '  MainConnection.StartTransaction;' + sLineBreak +
+    'end;'
+  );
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Ignored.dfm'),
+    'object MainData: TDataModule' + sLineBreak +
+    '  Caption = ''MainConnection.StartTransaction;''' + sLineBreak +
+    'end'
+  );
+  LScanner := TRadIAFireDACScanner.Create(TRadIAWorkspaceBoundary.Create);
+  try
+    LJson := LScanner.AuditTransactions(FRootPath);
+  finally
+    LScanner.Free;
+  end;
+  Assert.Contains(LJson, 'firedac.transaction.commit-missing');
+  Assert.Contains(LJson, 'firedac.transaction.rollback-missing');
+  Assert.Contains(LJson, '"file":"UnsafeData.pas"');
+  Assert.Contains(LJson, '"findings"');
+  Assert.DoesNotContain(LJson, 'Caption');
 end;
 
 initialization

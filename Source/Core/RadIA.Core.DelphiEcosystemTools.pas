@@ -35,6 +35,7 @@ type
   TRadIADelphiEcosystemToolKind = (
     detFireDAC,
     detFireDACProject,
+    detFireDACTransactions,
     detDependencies,
     detLocalization
   );
@@ -327,6 +328,8 @@ var
 begin
   LScanner := TRadIAFireDACScanner.Create(FBoundary);
   try
+    if FKind = detFireDACTransactions then
+      Exit(TRadIAToolResult.Succeeded(LScanner.AuditTransactions(AProject.RootPath)));
     LInventory := LScanner.Scan(AProject.RootPath);
     try
       LRoot := TJSONObject.ParseJSONValue(LInventory.ToJson) as TJSONObject;
@@ -365,7 +368,7 @@ begin
       'project_root_unavailable',
       'No active project root is available.'
     ));
-  if FKind in [detFireDAC, detFireDACProject] then
+  if FKind in [detFireDAC, detFireDACProject, detFireDACTransactions] then
     Exit(ExecuteFireDAC(LProject));
   LFiles := CollectFiles(LProject.RootPath);
   LRoot := TJSONObject.Create;
@@ -405,6 +408,15 @@ begin
         'InspectFireDACProject',
         '1.0.0',
         'Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL.',
+        CEmptyInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
+    detFireDACTransactions:
+      Result := TRadIAToolDescriptor.Create(
+        'AuditFireDACTransactions',
+        '1.0.0',
+        'Audits bounded Pascal transaction flows without executing SQL or connecting to a database.',
         CEmptyInputSchema,
         '{"type":"object"}',
         trReadOnly
@@ -543,6 +555,11 @@ begin
     raise EArgumentNilException.Create('ARegistry');
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDAC));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDACProject));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(
+    AWorkspace,
+    ABoundary,
+    detFireDACTransactions
+  ));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detDependencies));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detLocalization));
   ARegistry.RegisterTool(TRadIAPrepareLocalizationExtractionTool.Create(AWorkspace, APatches));
