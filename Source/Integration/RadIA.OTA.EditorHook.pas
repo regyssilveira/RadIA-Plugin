@@ -1789,10 +1789,8 @@ begin
     Exit;
   if not FInlineCompletionSmokePreviewed then
   begin
-    FInlineCompletionController.Preview(
-      LOriginalContext,
-      CAcceptanceSuggestion
-    );
+    if not TryPreviewInlineCompletionDiagnostic then
+      Exit;
     FInlineCompletionSmokePreviewed := True;
     Exit;
   end;
