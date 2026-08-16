@@ -8,7 +8,6 @@ release não pertencem ao backlog.
 Encerrar com evidência reproduzível todas as diferenças acionáveis da experiência atual, reutilizando
 as capacidades existentes antes de implementar qualquer nova infraestrutura.
 
-- [ ] tornar o conhecimento local explicável e verificável;
 - [ ] eliminar consentimentos redundantes sem ampliar permissões;
 - [ ] provar isolamento, recuperação e métricas do motor semântico;
 - [ ] fechar todas as frentes no mesmo ledger, commit e gate integrado.
