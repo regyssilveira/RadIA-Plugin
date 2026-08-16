@@ -20,6 +20,8 @@ Rad IA docks directly within the Delphi IDE sidebar, providing a modern chat pan
 *   **Panel recovery**: If WebView2 creation, navigation, or its process fails, RadIA attempts to
     recreate the panel up to twice per failure sequence. The draft, conversation position, and
     advanced-options visibility remain in memory only. Unsent text is never persisted to disk.
+*   **Safe shutdown**: When the IDE closes, RadIA releases the panel and WebView2 controller before
+    Delphi destroys dockable windows. No manual action is required.
 
 If both attempts fail, close and reopen the panel. See
 [Troubleshooting](troubleshooting_agentic_platform.en.md#chat-panel-and-webview2) before deleting

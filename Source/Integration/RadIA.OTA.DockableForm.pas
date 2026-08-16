@@ -6,6 +6,7 @@ procedure ShowRadIAChat;
 procedure ShowRadIAChatCommand(const ACommand: string);
 procedure ShowRadIATerminal;
 procedure RegisterDockableForm;
+procedure PrepareDockableFormsForShutdown;
 procedure RestoreDockableFormVisibility;
 procedure UnregisterDockableForm;
 
@@ -59,6 +60,7 @@ type
     procedure ApplyIDETheme;
     procedure ApplyWindowIdentity;
     procedure AttachNativeForm(AForm: TCustomForm);
+    procedure DetachNativeForm;
     procedure EnsureFrameContent;
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormRemoved;
@@ -256,8 +258,30 @@ end;
 
 destructor TRadIACustomDockableForm.Destroy;
 begin
+  DetachNativeForm;
   FObserver.Free;
   inherited Destroy;
+end;
+
+procedure PrepareDockableFormsForShutdown;
+begin
+  if Assigned(GRadIADockableFormHost) then
+    GRadIADockableFormHost.ReleaseForm;
+  if Assigned(GRadIATerminalDockableFormHost) then
+    GRadIATerminalDockableFormHost.ReleaseForm;
+end;
+
+procedure TRadIACustomDockableForm.DetachNativeForm;
+begin
+  if not Assigned(FForm) then
+    Exit;
+  TRadIAAccessibleCustomForm(FForm).OnShow := FPreviousOnShow;
+  TRadIAAccessibleCustomForm(FForm).OnClose := FPreviousOnClose;
+  FForm.RemoveFreeNotification(FObserver);
+  FForm := nil;
+  FFrame := nil;
+  FPreviousOnShow := nil;
+  FPreviousOnClose := nil;
 end;
 
 procedure TRadIACustomDockableForm.ApplyIDETheme;

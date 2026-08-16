@@ -22,6 +22,8 @@ O Rad IA se acopla diretamente à barra lateral da IDE do Delphi, fornecendo um 
     recriar o painel até duas vezes por sequência de falhas. O rascunho, a posição da conversa e a
     abertura das opções avançadas são preservados somente em memória. O texto ainda não enviado
     não é gravado em disco.
+*   **Encerramento seguro**: Ao fechar a IDE, o RadIA libera antecipadamente o painel e o controller
+    do WebView2 antes que o Delphi destrua as janelas acopláveis. Nenhuma ação manual é necessária.
 
 Se as duas tentativas falharem, feche e reabra o painel. Consulte
 [Solução de problemas](troubleshooting_agentic_platform.md#painel-de-chat-e-webview2) antes de

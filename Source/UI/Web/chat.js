@@ -361,6 +361,22 @@ function restoreLifecycleState(state, smoke = false) {
   }
 }
 
+function beginLifecycleSmoke() {
+  if (promptTextarea) {
+    promptTextarea.value = 'radia-webview-recovery-draft';
+    promptTextarea.dispatchEvent(new Event('input'));
+  }
+  if (btnComposerAdvanced?.getAttribute('aria-expanded') !== 'true') {
+    btnComposerAdvanced?.click();
+  }
+  captureLifecycleState();
+  globalThis.setTimeout(() => {
+    postMessageToDelphi({ action: 'webview_lifecycle_smoke_ready' });
+  }, 300);
+}
+
+globalThis.beginLifecycleSmoke = beginLifecycleSmoke;
+
 const sessionsSidebar = document.getElementById('sessions-sidebar');
 const btnNewChatSidebar = document.getElementById('btn-new-chat-sidebar');
 const sessionsList    = document.getElementById('sessions-list');

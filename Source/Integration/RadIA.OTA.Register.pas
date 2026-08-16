@@ -3,7 +3,8 @@ unit RadIA.OTA.Register;
 interface
 
 uses
-  System.Classes, ToolsAPI, Vcl.ExtCtrls;
+  System.Classes, ToolsAPI, Vcl.ExtCtrls, Vcl.AppEvnts, Winapi.Windows,
+  Winapi.Messages;
 
 type
   { Wizard implementing IOTAWizard to register RadIA into Delphi IDE }
@@ -14,6 +15,7 @@ type
     FDebugTimelineNotifier: TObject;
     FSemanticMonitor: TObject;
     FTimer: TTimer;
+    FApplicationEvents: TApplicationEvents;
     FOptionsPages: TInterfaceList;
     procedure RegisterMenus;
     procedure UnregisterMenus;
@@ -22,6 +24,7 @@ type
     procedure OnExtensionManagerClick(Sender: TObject);
     procedure OnRequestDiff(const AOriginalCode: string; const AReplaceWholeBuffer: Boolean);
     procedure OnProjectWizardClick(Sender: TObject);
+    procedure OnApplicationMessage(var Msg: TMsg; var Handled: Boolean);
     procedure OnTimerEvent(Sender: TObject);
     procedure ReleaseDebugTimelineNotifier;
     procedure ReleaseEditorHook;
@@ -51,7 +54,6 @@ implementation
 
 uses
   System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
-  Winapi.Windows,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
   RadIA.OTA.MemoryDiagnostic,
@@ -317,6 +319,8 @@ begin
   inherited Create;
 
   FOptionsPages := TInterfaceList.Create;
+  FApplicationEvents := TApplicationEvents.Create(nil);
+  FApplicationEvents.OnMessage := OnApplicationMessage;
 
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm.RegisterDockableForm;
@@ -358,6 +362,30 @@ begin
   FTimer.Enabled := True;
 
   TRadIAContainer.Resolve<IRadIAMediator>.RegisterDiffHandler(OnRequestDiff);
+end;
+
+procedure TRadIAWizard.OnApplicationMessage(
+  var Msg: TMsg;
+  var Handled: Boolean
+);
+var
+  LMainForm: TCustomForm;
+  LIsCloseRequest: Boolean;
+begin
+  if Handled or GIsShuttingDown or Application.Terminated then
+    Exit;
+  LMainForm := Application.MainForm;
+  if not Assigned(LMainForm) or not LMainForm.HandleAllocated or
+    (Msg.hwnd <> LMainForm.Handle) then
+    Exit;
+  LIsCloseRequest := (Msg.message = WM_CLOSE) or
+    (
+      (Msg.message = WM_SYSCOMMAND) and
+      ((Msg.wParam and $FFF0) = SC_CLOSE)
+    );
+  if not LIsCloseRequest then
+    Exit;
+  RadIA.OTA.DockableForm.PrepareDockableFormsForShutdown;
 end;
 
 procedure TRadIAWizard.ReleaseDebugTimelineNotifier;
@@ -421,6 +449,7 @@ var
   LMediator: IRadIAMediator;
 begin
   LogDebug('TRadIAWizard.Destroy started');
+  FreeAndNil(FApplicationEvents);
   GIsShuttingDown :=
     Application.Terminated or
     not Assigned(Application.MainForm) or
