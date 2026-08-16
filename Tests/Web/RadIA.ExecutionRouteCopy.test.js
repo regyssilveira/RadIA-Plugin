@@ -100,7 +100,7 @@ test('copy actions use original payloads instead of rendered interface text', ()
 test('Codex CLI login reflects authentication state and supports logout', () => {
   assert.match(configFrame, /FBtnCliLogin\.Caption := 'Logout'/u);
   assert.match(configFrame, /FBtnCliLogin\.Caption := 'Start login'/u);
-  assert.match(configFrame, /LDetection\.ExecutablePath \+ '" logout"'/u);
+  assert.match(configFrame, /LParameters := 'logout'/u);
   assert.match(configFrame, /authentication: ready/u);
   assert.match(configFrame, /The status will refresh automatically after authorization/u);
   assert.doesNotMatch(configFrame, /LParameters := '\/k/u);

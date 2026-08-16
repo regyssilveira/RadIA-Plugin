@@ -3,21 +3,29 @@ unit RadIA.Core.ConversationExporter;
 interface
 
 uses
-  RadIA.Core.Interfaces;
+  RadIA.Core.Interfaces,
+  RadIA.Core.ToolSecurity;
 
 type
   { Core class responsible for formatting conversation history to Markdown and HTML }
   TConversationExporter = class
   private
     class function MarkdownToSimpleHTML(const AMarkdownText: string): string; static;
+    { Applies the supplied redactor or a secure default redactor }
+    class function RedactContent(const AContent: string;
+      const ARedactor: IRadIASecretRedactor): string; static;
   public
-    { Formats the history as a Markdown document }
+    { Formats the history as a Markdown document.
+      A secure default redactor is used when none is supplied. }
     class function ExportToMarkdown(const AHistory: TArray<IRadIAChatMessage>;
-      const AProviderName, AModelName: string): string; static;
+      const AProviderName, AModelName: string;
+      const ARedactor: IRadIASecretRedactor = nil): string; static;
 
-    { Formats the history as a standalone HTML document }
+    { Formats the history as a standalone HTML document.
+      A secure default redactor is used when none is supplied. }
     class function ExportToHTML(const AHistory: TArray<IRadIAChatMessage>;
-      const AProviderName, AModelName: string): string; static;
+      const AProviderName, AModelName: string;
+      const ARedactor: IRadIASecretRedactor = nil): string; static;
   end;
 
 implementation
@@ -26,6 +34,17 @@ uses
   System.SysUtils, RadIA.Core.Types;
 
 { TConversationExporter }
+
+class function TConversationExporter.RedactContent(const AContent: string;
+  const ARedactor: IRadIASecretRedactor): string;
+var
+  LRedactor: IRadIASecretRedactor;
+begin
+  if Assigned(ARedactor) then
+    Exit(ARedactor.Redact(AContent));
+  LRedactor := TRadIASecretRedactor.Create;
+  Result := LRedactor.Redact(AContent);
+end;
 
 class function TConversationExporter.MarkdownToSimpleHTML(const AMarkdownText: string): string;
 var
@@ -88,7 +107,8 @@ begin
 end;
 
 class function TConversationExporter.ExportToMarkdown(const AHistory: TArray<IRadIAChatMessage>;
-  const AProviderName, AModelName: string): string;
+  const AProviderName, AModelName: string;
+  const ARedactor: IRadIASecretRedactor): string;
 var
   LSb: TStringBuilder;
   LMsg: IRadIAChatMessage;
@@ -111,12 +131,12 @@ begin
       if LMsg.Role = mrUser then
       begin
         LSb.AppendLine('### 👤 User');
-        LSb.AppendLine(LMsg.Content);
+        LSb.AppendLine(RedactContent(LMsg.Content, ARedactor));
       end
       else
       begin
         LSb.AppendLine('### 🤖 Assistant (Rad IA)');
-        LSb.AppendLine(LMsg.Content);
+        LSb.AppendLine(RedactContent(LMsg.Content, ARedactor));
       end;
       LSb.AppendLine;
       LSb.AppendLine('---');
@@ -130,7 +150,8 @@ begin
 end;
 
 class function TConversationExporter.ExportToHTML(const AHistory: TArray<IRadIAChatMessage>;
-  const AProviderName, AModelName: string): string;
+  const AProviderName, AModelName: string;
+  const ARedactor: IRadIASecretRedactor): string;
 var
   LSb: TStringBuilder;
   LMsg: IRadIAChatMessage;
@@ -200,7 +221,8 @@ begin
 
       LSb.AppendLine(Format('  <div class="message %s">', [LRoleClass]));
       LSb.AppendLine(Format('    <div class="role">%s</div>', [LRoleName]));
-      LSb.AppendLine('    ' + MarkdownToSimpleHTML(LMsg.Content));
+      { Redact before the HTML conversion so the escaping does not break the patterns }
+      LSb.AppendLine('    ' + MarkdownToSimpleHTML(RedactContent(LMsg.Content, ARedactor)));
       LSb.AppendLine('  </div>');
     end;
 

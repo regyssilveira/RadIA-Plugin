@@ -289,7 +289,7 @@ workspace confinement cannot be disabled.
 - Dockable Markdown chat with Pascal highlighting and IDE themes.
 - Streaming responses and cancellation.
 - Multiple persistent sessions and prompt history.
-- Markdown and HTML conversation export.
+- Markdown and HTML conversation export with automatic redaction of known tokens and secrets.
 - Reusable templates, backups, and custom slash commands.
 - Token and estimated cost tracking with a local quota.
 

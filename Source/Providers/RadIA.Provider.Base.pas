@@ -106,7 +106,8 @@ implementation
 uses
   System.JSON, System.Generics.Collections, System.Math, RadIA.Core.Logger,
   RadIA.Core.Container, RadIA.Core.HttpClient, RadIA.Core.ErrorDecoder, System.Classes, System.Net.HttpClient,
-      System.Threading, RadIA.Core.Types, RadIA.Provider.Streaming, RadIA.Core.OAuth, System.DateUtils;
+      System.Threading, RadIA.Core.Types, RadIA.Provider.Streaming, RadIA.Core.OAuth, System.DateUtils,
+      RadIA.Core.ToolSecurity;
 
 const
   CLogPreviewMaxLength = 320;
@@ -140,8 +141,13 @@ begin
 end;
 
 function SanitizePayloadPreview(const APayload: string): string;
+var
+  LRedactor: IRadIASecretRedactor;
 begin
   Result := APayload.Replace(#13, ' ').Replace(#10, ' ').Trim;
+  { Redact before truncating: cutting first could split a secret and defeat the patterns }
+  if TRadIAContainer.TryResolve<IRadIASecretRedactor>(LRedactor) then
+    Result := LRedactor.Redact(Result);
   if Length(Result) > CLogPreviewMaxLength then
     Result := Copy(Result, 1, CLogPreviewMaxLength) + '...';
 end;

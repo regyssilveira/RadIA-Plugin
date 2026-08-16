@@ -43,7 +43,32 @@ function normalizeCodeLanguage(language, code) {
     return 'pascal';
   }
 
-  return normalized || 'pascal';
+  return normalized.replace(/[^a-z0-9_-]/gu, '') || 'pascal';
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function getMarkedTokenText(tokenOrText, fallback = '') {
+  if (typeof tokenOrText === 'string') {
+    return tokenOrText;
+  }
+  return tokenOrText?.text || tokenOrText?.raw || fallback;
+}
+
+function isSafeMarkdownLink(href) {
+  const normalized = String(href || '')
+    .replace(/[\u0000-\u0020]+/gu, '')
+    .toLowerCase();
+  const scheme = normalized.match(/^([a-z][a-z0-9+.-]*):/u)?.[1] || '';
+  return normalized !== '' &&
+    (!scheme || ['http', 'https', 'mailto', 'file'].includes(scheme));
 }
 
 function getCodeHeaderTitle(language, highlightLanguage) {
@@ -100,6 +125,23 @@ const SVG_ICONS = {
 };
 
 const renderer = new marked.Renderer();
+renderer.html = function(tokenOrHtml) {
+  return escapeHtml(tokenOrHtml?.raw || tokenOrHtml);
+};
+renderer.link = function(tokenOrHref, title, text) {
+  const href = typeof tokenOrHref === 'object' ? tokenOrHref.href : tokenOrHref;
+  const label = getMarkedTokenText(tokenOrHref, text || href);
+  if (!isSafeMarkdownLink(href)) {
+    return escapeHtml(label);
+  }
+  const safeTitle = typeof tokenOrHref === 'object' ? tokenOrHref.title : title;
+  const titleAttribute = safeTitle ? ` title="${escapeHtml(safeTitle)}"` : '';
+  return `<a href="${escapeHtml(href)}"${titleAttribute}>${escapeHtml(label)}</a>`;
+};
+renderer.image = function(tokenOrHref, title, text) {
+  const label = getMarkedTokenText(tokenOrHref, text || title || 'Image');
+  return `<span class="markdown-image-placeholder">${escapeHtml(label)}</span>`;
+};
 renderer.code = function(codeOrToken, lang) {
   let code = '';
   let language = '';
@@ -138,10 +180,19 @@ renderer.code = function(codeOrToken, lang) {
   const highlightLanguage = normalizeCodeLanguage(language, code);
   const isPascal = highlightLanguage === 'pascal';
   const headerTitleText = getCodeHeaderTitle(language, highlightLanguage);
-  const headerTitle = isProjectFile ? `${headerTitleText} - ${filepath}` : headerTitleText;
+  const safeFilepath = escapeHtml(filepath);
+  const headerTitle = isProjectFile
+    ? `${escapeHtml(headerTitleText)} - ${safeFilepath}`
+    : escapeHtml(headerTitleText);
+  const renderedCode = Prism.languages[highlightLanguage]
+    ? Prism.highlight(code, Prism.languages[highlightLanguage], highlightLanguage)
+    : escapeHtml(code);
+  const projectFileAttributes = isProjectFile
+    ? `data-filepath="${safeFilepath}" data-project-file="true"`
+    : '';
 
   return `
-    <div class="code-block-container" ${isProjectFile ? `data-filepath="${filepath}" data-project-file="true"` : ''}>
+    <div class="code-block-container" ${projectFileAttributes}>
       <div class="code-header">
         <span>${headerTitle}</span>
         <div class="code-header-actions">
@@ -152,7 +203,7 @@ renderer.code = function(codeOrToken, lang) {
             : ''}
         </div>
       </div>
-      <pre><code class="language-${highlightLanguage}">${code}</code></pre>
+      <pre><code class="language-${highlightLanguage}">${renderedCode}</code></pre>
     </div>
   `;
 };
@@ -3809,6 +3860,7 @@ function processProjectFiles(contentElement) {
 
   fileBlocks.forEach((block) => {
     const filepath = block.dataset.filepath;
+    const safeDisplayPath = escapeHtml(filepath);
     const ext = filepath.split('.').pop().toLowerCase();
     const copyBtn = block.querySelector('.copy-btn');
     if (!copyBtn) return;
@@ -3863,7 +3915,7 @@ function processProjectFiles(contentElement) {
     item.innerHTML = `
       <div class="file-item-info">
         <span class="file-item-icon" style="color: ${iconColor};">${fileIconSvg}</span>
-        <span class="file-item-name" title="${filepath}">${filepath}</span>
+        <span class="file-item-name" title="${safeDisplayPath}">${safeDisplayPath}</span>
       </div>
       <div class="file-item-actions">
         <button class="file-item-btn" title="View file code" onclick="scrollToBlock('${blockId}')">

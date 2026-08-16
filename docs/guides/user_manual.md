@@ -334,7 +334,7 @@ secrets e confinamento ao workspace não podem ser desativados.
 - Chat acoplável com Markdown, realce Pascal e temas claro/escuro.
 - Streaming incremental de respostas.
 - Múltiplas sessões com criação, rename, exclusão e histórico local.
-- Exportação de conversa para Markdown ou HTML.
+- Exportação de conversa para Markdown ou HTML, com redação automática de tokens e segredos conhecidos.
 - Histórico de prompts e cancelamento de requisições.
 - Templates reutilizáveis, importação, exportação e slash commands customizáveis.
 - Contagem estimada de tokens e custo.

@@ -220,6 +220,9 @@ const
   CConsentCancelled = 'consent_cancelled';
   CSensitiveDenied = 'sensitive_tool_denied';
   CToolNotFound = 'tool_not_found';
+  { Federated tools are provided by external MCP servers, so their declared risk
+    is not enough on its own to skip consent. }
+  CFederatedToolPrefix = 'mcp.';
 
 { TRadIAToolAuditEvent }
 
@@ -545,7 +548,8 @@ function TRadIAToolPolicyExecutor.Decide(
 var
   LPermissionKey: string;
 begin
-  if ADescriptor.Risk = trReadOnly then
+  if (ADescriptor.Risk = trReadOnly) and
+    not ADescriptor.Name.StartsWith(CFederatedToolPrefix, True) then
     Exit(cdAllowOnce);
   if (ADescriptor.Risk = trSensitive) and
     not ADescriptor.ConsentEveryTime then

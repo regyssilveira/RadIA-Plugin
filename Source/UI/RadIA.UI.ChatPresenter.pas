@@ -1529,6 +1529,7 @@ var
   LProviderName: string;
   LModelName: string;
   LFileName: string;
+  LRedactor: IRadIASecretRedactor;
 begin
   if Length(FHistory) = 0 then
   begin
@@ -1540,11 +1541,16 @@ begin
   begin
     LProviderName := FConfig.GetActiveProvider;
     LModelName := FConfig.GetActiveModel(LProviderName);
+    { Exported files are commonly shared, so strip secrets from the content }
+    if not TRadIAContainer.TryResolve<IRadIASecretRedactor>(LRedactor) then
+      LRedactor := TRadIASecretRedactor.Create;
 
     if SameText(ExtractFileExt(LFileName), '.html') then
-      LContent := TConversationExporter.ExportToHTML(FHistory, LProviderName, LModelName)
+      LContent := TConversationExporter.ExportToHTML(
+        FHistory, LProviderName, LModelName, LRedactor)
     else
-      LContent := TConversationExporter.ExportToMarkdown(FHistory, LProviderName, LModelName);
+      LContent := TConversationExporter.ExportToMarkdown(
+        FHistory, LProviderName, LModelName, LRedactor);
 
     try
       TFile.WriteAllText(LFileName, LContent, TEncoding.UTF8);

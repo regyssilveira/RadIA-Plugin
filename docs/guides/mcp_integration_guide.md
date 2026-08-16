@@ -25,7 +25,9 @@ edição manual suportado.
 ### Consumir um servidor externo no RadIA
 
 1. Abra **External MCP Servers** e preencha ID, nome, comando, argumentos, diretório e timeout; ou
-   use **Import...** para carregar um JSON com `mcpServers`/`servers` no preview local.
+   use **Import...** para carregar um JSON com `mcpServers`/`servers` no preview local. Servidores
+   importados chegam desabilitados, a menos que o arquivo declare `"enabled": true`; habilite cada
+   um conscientemente antes de aplicar.
 2. Use **Add / Update** e confira a lista. Nenhum processo ou arquivo muda nessa etapa.
 3. Clique **Test** para conectar e descobrir tools, resources e prompts sem publicar a tool.
 4. Selecione uma tool descoberta e crie a concessão local com risco, consentimento e argumentos de
