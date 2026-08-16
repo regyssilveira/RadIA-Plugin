@@ -77,6 +77,14 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Delphi did not become ready for the smoke test/u);
   assert.match(source, /previousErrorActionPreference/u);
   assert.match(source, /\$ErrorActionPreference = "Continue"/u);
+  assert.ok(
+    source.indexOf('$installationTargets = @(') <
+      source.indexOf('$openingTargets = @(')
+  );
+  const retryStart = source.indexOf('$firstAttemptOutput = $output');
+  const retryEnd = source.indexOf('$attemptCount = 2', retryStart);
+  const retryBlock = source.slice(retryStart, retryEnd);
+  assert.match(retryBlock, /Install-RadIAReleaseTarget/u);
 });
 
 test('release usage plan adds the intent recommendation contract once', () => {

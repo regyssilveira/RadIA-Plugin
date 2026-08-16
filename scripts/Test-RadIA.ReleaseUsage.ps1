@@ -43,6 +43,31 @@ function Stop-RadIAReleaseIDEProcesses {
     }
 }
 
+function Install-RadIAReleaseTarget {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$DelphiVersion,
+        [switch]$IDE64
+    )
+
+    Stop-RadIAReleaseAuxiliaryProcesses
+    $installArguments = @{
+        DelphiVersion = $DelphiVersion
+        Install = $true
+    }
+    if ($IDE64) {
+        $installArguments.IDE64 = $true
+    }
+    & (Join-Path $repositoryRoot "build.ps1") @installArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw (
+            "The current build could not be installed for Delphi " +
+            "$DelphiVersion " +
+            $(if ($IDE64) { "Win64" } else { "Win32" }) + "."
+        )
+    }
+}
+
 Stop-RadIAReleaseAuxiliaryProcesses
 New-Item `
     -ItemType Directory `
@@ -96,6 +121,17 @@ foreach ($target in $generatedProjectTargets) {
         Join-Path $resolvedEvidenceRoot "generated-projects-matrix.json"
     )
 
+$installationTargets = @(
+    [PSCustomObject]@{ Version = "23.0"; IDE64 = $false },
+    [PSCustomObject]@{ Version = "37.0"; IDE64 = $false },
+    [PSCustomObject]@{ Version = "37.0"; IDE64 = $true }
+)
+foreach ($target in $installationTargets) {
+    Install-RadIAReleaseTarget `
+        -DelphiVersion $target.Version `
+        -IDE64:$target.IDE64
+}
+
 $openingTargets = @(
     [PSCustomObject]@{ Id = "delphi12-win32"; Version = "23.0"; IDE64 = $false },
     [PSCustomObject]@{ Id = "delphi13-win32"; Version = "37.0"; IDE64 = $false },
@@ -135,7 +171,9 @@ foreach ($target in $openingTargets) {
     ) {
         $firstAttemptOutput = $output
         Stop-RadIAReleaseIDEProcesses
-        Stop-RadIAReleaseAuxiliaryProcesses
+        Install-RadIAReleaseTarget `
+            -DelphiVersion $target.Version `
+            -IDE64:$target.IDE64
         try {
             $ErrorActionPreference = "Continue"
             $output = & powershell.exe @arguments 2>&1 | Out-String
@@ -191,30 +229,6 @@ foreach ($target in $openingTargets) {
             -Encoding UTF8
     if ($exitCode -ne 0) {
         throw "Project creation and opening failed for $($target.Id)."
-    }
-}
-
-$installationTargets = @(
-    [PSCustomObject]@{ Version = "23.0"; IDE64 = $false },
-    [PSCustomObject]@{ Version = "37.0"; IDE64 = $false },
-    [PSCustomObject]@{ Version = "37.0"; IDE64 = $true }
-)
-foreach ($target in $installationTargets) {
-    Stop-RadIAReleaseAuxiliaryProcesses
-    $installArguments = @{
-        DelphiVersion = $target.Version
-        Install = $true
-    }
-    if ($target.IDE64) {
-        $installArguments.IDE64 = $true
-    }
-    & (Join-Path $repositoryRoot "build.ps1") @installArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw (
-            "The current build could not be installed for Delphi " +
-            "$($target.Version) " +
-            $(if ($target.IDE64) { "Win64" } else { "Win32" }) + "."
-        )
     }
 }
 
