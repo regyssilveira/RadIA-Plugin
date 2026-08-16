@@ -50,7 +50,6 @@ $requiredFragments = @(
     "New-RadIA.VisualInstaller.ps1",
     "Test-RadIA.VisualInstaller.ps1",
     "Test-RadIA.ReleaseUsage.ps1",
-    "Run mandatory calculator, project opening, and usage tests",
     "Prepare a clean distribution directory",
     "https://github.com/",
     "actions/upload-artifact@v4",
@@ -62,6 +61,17 @@ foreach ($fragment in $requiredFragments) {
     if (-not $workflow.Contains($fragment)) {
         throw "Release workflow is missing required gate: $fragment"
     }
+}
+
+$mandatoryUsageGate = [regex]::IsMatch(
+    $workflow,
+    '(?im)^\s*- name:\s*Run mandatory .*integration.*calculator.*project.*usage gate\s*$'
+)
+if (-not $mandatoryUsageGate) {
+    throw (
+        "Release workflow is missing the mandatory integration, calculator, " +
+        "project opening, and usage gate."
+    )
 }
 
 $packageBuilds = [regex]::Matches(
