@@ -3164,6 +3164,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             Platform = $ideState.platform
             ToolCount = $runtimeToolNames.Count
             DescendantCount = $descendants.Count
+            ShutdownClean = $true
             Seconds = $elapsed
             DockingExercised = [bool]$ExerciseDocking
             DockPositionRestored = (
@@ -3569,7 +3570,7 @@ if ($WebViewLifecycleEvidencePath) {
             $results | Where-Object { $_.WebViewStateRestored }
         ).Count -eq $Cycles
         shutdownPassed = @(
-            $results | Where-Object { $_.DescendantCount -ge 0 }
+            $results | Where-Object { $_.ShutdownClean }
         ).Count -eq $Cycles
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
         cycles = $results
