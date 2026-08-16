@@ -318,6 +318,48 @@ const statusBar       = document.getElementById('status-bar');
 const statusText      = document.getElementById('status-text');
 const contextBar      = document.getElementById('context-bar');
 const contextText     = document.getElementById('context-text');
+let lifecycleStateTimer = 0;
+
+function captureLifecycleState() {
+  postMessageToDelphi({
+    action: 'webview_lifecycle_state',
+    state: {
+      draft: String(promptTextarea?.value || '').slice(0, 12000),
+      scrollTop: Math.max(0, Math.round(chatContainer?.scrollTop || 0)),
+      advanced: btnComposerAdvanced?.getAttribute('aria-expanded') === 'true'
+    }
+  });
+}
+
+function scheduleLifecycleStateCapture() {
+  globalThis.clearTimeout(lifecycleStateTimer);
+  lifecycleStateTimer = globalThis.setTimeout(captureLifecycleState, 120);
+}
+
+function restoreLifecycleState(state, smoke = false) {
+  if (!state || typeof state !== 'object') return;
+  const draft = String(state.draft || '').slice(0, 12000);
+  if (promptTextarea && !promptTextarea.value) {
+    promptTextarea.value = draft;
+    promptTextarea.dispatchEvent(new Event('input'));
+  }
+  setComposerAdvancedVisible(state.advanced === true);
+  const scrollTop = Math.max(0, Math.min(10000000, Number(state.scrollTop) || 0));
+  [0, 100, 500].forEach(delay => {
+    globalThis.setTimeout(() => {
+      if (chatContainer) chatContainer.scrollTop = scrollTop;
+    }, delay);
+  });
+  if (smoke) {
+    globalThis.setTimeout(() => {
+      postMessageToDelphi({
+        action: 'webview_lifecycle_smoke_result',
+        draftRestored: promptTextarea?.value === 'radia-webview-recovery-draft',
+        advancedRestored: btnComposerAdvanced?.getAttribute('aria-expanded') === 'true'
+      });
+    }, 600);
+  }
+}
 
 const sessionsSidebar = document.getElementById('sessions-sidebar');
 const btnNewChatSidebar = document.getElementById('btn-new-chat-sidebar');
@@ -2468,7 +2510,10 @@ function updateChatScrollbar() {
 function bindChatScrollbar() {
   if (!chatContainer || !chatScrollbar || !chatScrollbarThumb) return;
 
-  chatContainer.addEventListener('scroll', updateChatScrollbar);
+  chatContainer.addEventListener('scroll', () => {
+    updateChatScrollbar();
+    scheduleLifecycleStateCapture();
+  });
   globalThis.addEventListener('resize', updateChatScrollbar);
 
   chatScrollbarThumb.addEventListener('mousedown', (event) => {
@@ -3029,6 +3074,7 @@ promptTextarea.addEventListener('input', () => {
   } else {
     hideSlashPopup();
   }
+  scheduleLifecycleStateCapture();
 });
 
 function handleSlashPopupKeydown(e) {
@@ -3333,6 +3379,7 @@ btnExecutionScope?.addEventListener('click', () => {
 btnComposerAdvanced?.addEventListener('click', () => {
   const visible = btnComposerAdvanced.getAttribute('aria-expanded') !== 'true';
   setComposerAdvancedVisible(visible);
+  scheduleLifecycleStateCapture();
 });
 
 btnClearExecutionScope?.addEventListener('click', () => {
@@ -4609,6 +4656,7 @@ if (globalThis.chrome?.webview) {
       case 'visual_runtime_session': renderVisualRuntimeSession(data);                           break;
       case 'cli_activity':          renderCliActivity(data);                                    break;
       case 'intent_recommendation': renderIntentRecommendation(data);                            break;
+      case 'restore_lifecycle_state': restoreLifecycleState(data.state, data.smoke === true);    break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

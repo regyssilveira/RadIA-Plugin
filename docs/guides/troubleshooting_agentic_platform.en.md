@@ -63,6 +63,15 @@ The [RadIA Doctor guide](../reference/doctor.en.md) explains the effective route
 | Control rejected | Inspect debugger state before the next command. |
 | `Debug process not initialized` when pressing F9 | Update RadIA and restart the IDE. The timeline observer ignores transient OTA states and must never block manual debugging. If it persists, temporarily disable the package and preserve `%APPDATA%\RadIA\Logs` for diagnosis. |
 
+## Chat panel and WebView2
+
+| Symptom | Check and action |
+|---|---|
+| Panel turns blank after a resize or docking change | Wait for automatic recovery. RadIA recreates WebView2 and restores the draft and visual state held in memory. |
+| The panel reports that recovery failed | Close and reopen chat. Recovery attempts are bounded to prevent an infinite creation loop. |
+| Failure persists after reopening | Close every IDE, preserve `%APPDATA%\RadIA\Logs`, and remove only the disposable `%APPDATA%\RadIA\WebView2` cache. Do not delete sessions, audit, or settings. |
+| Draft disappeared after closing the IDE | Expected behavior: recovery drafts remain in memory and are not persisted. |
+
 ## Local data
 
 - Audit: `%APPDATA%\RadIA\audit\tools.jsonl`.

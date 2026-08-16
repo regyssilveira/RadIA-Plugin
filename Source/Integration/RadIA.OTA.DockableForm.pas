@@ -175,6 +175,10 @@ begin
     GetEnvironmentVariable('RADIA_IDE_SMOKE_TERMINAL')
   ) <> '' then
     GRadIATerminalDockableFormHost.Show;
+  if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE')
+  ) <> '' then
+    GRadIADockableFormHost.Show;
   TLogger.Log('Native chat and terminal docks registered.', 'DockableForm');
 end;
 

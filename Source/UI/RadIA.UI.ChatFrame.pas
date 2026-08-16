@@ -3,9 +3,10 @@ unit RadIA.UI.ChatFrame;
 interface
 
 uses  Winapi.Messages, System.SysUtils, System.Classes,
+  Winapi.WebView2,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
   Vcl.Edge, Vcl.Menus, Vcl.Buttons, RadIA.Core.Sessions, RadIA.UI.Resources,
-  RadIA.UI.ChatPresenter;
+  RadIA.UI.ChatPresenter, RadIA.Core.WebViewLifecycle;
 
 type
   TRadIAEdgeBrowser = class(TEdgeBrowser)
@@ -48,7 +49,16 @@ type
     procedure btnSettingsClick(Sender: TObject);
     procedure btnTerminalClick(Sender: TObject);
     procedure EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdgeBrowser; AResult: HRESULT);
+    procedure EdgeBrowserNavigationCompleted(
+      Sender: TCustomEdgeBrowser;
+      IsSuccess: Boolean;
+      WebErrorStatus: COREWEBVIEW2_WEB_ERROR_STATUS
+    );
     procedure EdgeBrowserNavigationStarting(Sender: TCustomEdgeBrowser; Args: TNavigationStartingEventArgs);
+    procedure EdgeBrowserProcessFailed(
+      Sender: TCustomEdgeBrowser;
+      ProcessFailedKind: COREWEBVIEW2_PROCESS_FAILED_KIND
+    );
     procedure EdgeBrowserWebMessageReceived(Sender: TCustomEdgeBrowser; Args: TWebMessageReceivedEventArgs);
     procedure memPromptKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnToggleSessionsClick(Sender: TObject);
@@ -65,6 +75,11 @@ type
     FLifecycleGuard: IInterface;
     FEdgeBrowser: TRadIAEdgeBrowser;
     FLayoutRefreshQueued: Boolean;
+    FRecoveryQueued: Boolean;
+    FWebViewSmokeEvidencePath: string;
+    FWebViewSmokeStarted: Boolean;
+    FWebStateJson: string;
+    FWebViewLifecycle: TRadIAWebViewLifecycle;
 
     procedure UpdateWebViewNavigation;
     function TryOpenLocalLinkInIDE(const AFileName: string): Boolean;
@@ -75,7 +90,14 @@ type
     procedure CreateEdgeBrowser;
     procedure EnsureMainWebView;
     procedure RefreshBrowserLayout;
+    procedure RecreateWebView;
+    procedure ScheduleWebViewRecovery(const AFailure: string);
     function IsExpectedWebMessageSource(const AArgs: TWebMessageReceivedEventArgs): Boolean;
+    function CaptureWebViewState(const AJson: string): Boolean;
+    function CaptureWebViewSmokeResult(const AJson: string): Boolean;
+    procedure ProcessWebPayload(const AJson: string);
+    procedure RestoreWebViewState;
+    procedure RunWebViewLifecycleSmoke;
     procedure CMShowingChanged(var Message: TMessage); message CM_SHOWINGCHANGED;
     procedure InitializeWebView;
     procedure CopyWebFiles;
@@ -130,11 +152,13 @@ type
 implementation
 
 uses
-  System.IOUtils, System.JSON, System.NetEncoding, System.StrUtils, ToolsAPI, RadIA.OTA.Helper,
+  System.IOUtils, System.JSON, System.Math, System.NetEncoding, System.StrUtils,
+  System.Threading,
+  ToolsAPI, RadIA.OTA.Helper,
   RadIA.UI.ConfigForm,
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
-  Winapi.ShellAPI, RadIA.Core.Interfaces, Winapi.WebView2, RadIA.OTA.DockableForm,
+  Winapi.ShellAPI, RadIA.Core.Interfaces, RadIA.OTA.DockableForm,
   RadIA.UI.ExtensionManagerForm;
 
 {$R *.dfm}
@@ -221,6 +245,13 @@ begin
   FBrowserInitialized := False;
   FWebViewInitialized := False;
   FLayoutRefreshQueued := False;
+  FRecoveryQueued := False;
+  FWebViewSmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE')
+  );
+  FWebViewSmokeStarted := False;
+  FWebStateJson := '{}';
+  FWebViewLifecycle := TRadIAWebViewLifecycle.Create(2);
 
   if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
   begin
@@ -307,7 +338,9 @@ begin
     if Assigned(FEdgeBrowser) then
     begin
       FEdgeBrowser.OnCreateWebViewCompleted := nil;
+      FEdgeBrowser.OnNavigationCompleted := nil;
       FEdgeBrowser.OnNavigationStarting := nil;
+      FEdgeBrowser.OnProcessFailed := nil;
       FEdgeBrowser.OnWebMessageReceived := nil;
       FEdgeBrowser := nil;
     end;
@@ -317,9 +350,11 @@ end;
 destructor TRadIAFrameAIChat.Destroy;
 begin
   UnregisterHandlers;
+  FWebViewLifecycle.Stop;
   CleanupUIComponents;
   FPresenter.Free;
   CleanupBrowsers;
+  FWebViewLifecycle.Free;
 
   inherited Destroy;
 end;
@@ -340,7 +375,9 @@ begin
     FEdgeBrowser.Align := alClient;
     FEdgeBrowser.AlignWithMargins := True;
     FEdgeBrowser.OnCreateWebViewCompleted := EdgeBrowserCreateWebViewCompleted;
+    FEdgeBrowser.OnNavigationCompleted := EdgeBrowserNavigationCompleted;
     FEdgeBrowser.OnNavigationStarting := EdgeBrowserNavigationStarting;
+    FEdgeBrowser.OnProcessFailed := EdgeBrowserProcessFailed;
     FEdgeBrowser.OnWebMessageReceived := EdgeBrowserWebMessageReceived;
   end;
 end;
@@ -360,6 +397,7 @@ begin
   if not FWebViewInitialized then
   begin
     FWebViewInitialized := True;
+    FWebViewLifecycle.BeginCreate;
     TThread.ForceQueue(nil,
       TThreadProcedure(
       procedure
@@ -412,6 +450,71 @@ begin
   );
 end;
 
+procedure TRadIAFrameAIChat.RecreateWebView;
+var
+  LEdgeToFree: TRadIAEdgeBrowser;
+begin
+  if GIsShuttingDown then
+    Exit;
+  FBrowserInitialized := False;
+  FWebViewInitialized := False;
+  FPresenter.WebViewReady := False;
+  LEdgeToFree := FEdgeBrowser;
+  FEdgeBrowser := nil;
+  if Assigned(LEdgeToFree) then
+  begin
+    LEdgeToFree.OnCreateWebViewCompleted := nil;
+    LEdgeToFree.OnNavigationCompleted := nil;
+    LEdgeToFree.OnNavigationStarting := nil;
+    LEdgeToFree.OnProcessFailed := nil;
+    LEdgeToFree.OnWebMessageReceived := nil;
+    LEdgeToFree.Parent := nil;
+    LEdgeToFree.Free;
+  end;
+  CreateEdgeBrowser;
+  EnsureMainWebView;
+end;
+
+procedure TRadIAFrameAIChat.ScheduleWebViewRecovery(
+  const AFailure: string
+);
+var
+  LGuard: IRadIALifecycleGuard;
+  LSnapshot: TRadIAWebViewLifecycleSnapshot;
+begin
+  if FRecoveryQueued or GIsShuttingDown then
+    Exit;
+  if not FWebViewLifecycle.RegisterFailure(GIsShuttingDown) then
+  begin
+    pnlBrowser.Caption :=
+      'RadIA Chat could not recover WebView2. Reopen the chat window.';
+    TLogger.Log('WebView recovery limit reached: ' + AFailure, 'UI');
+    Exit;
+  end;
+  FRecoveryQueued := True;
+  LSnapshot := FWebViewLifecycle.Snapshot;
+  pnlBrowser.Caption := Format(
+    'Recovering RadIA Chat (%d/2)...',
+    [LSnapshot.RecoveryAttempts]
+  );
+  TLogger.Log('Scheduling bounded WebView recovery: ' + AFailure, 'UI');
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TThread.ForceQueue(
+    nil,
+    TThreadProcedure(
+      procedure
+      begin
+        if not LGuard.IsAlive or GIsShuttingDown then
+          Exit;
+        FRecoveryQueued := False;
+        if not HandleAllocated then
+          Exit;
+        RecreateWebView;
+      end
+    )
+  );
+end;
+
 procedure TRadIAFrameAIChat.DestroyWnd;
 var
   LEdgeToFree: TRadIAEdgeBrowser;
@@ -427,7 +530,9 @@ begin
     if GIsShuttingDown then
     begin
       LEdgeToFree.OnCreateWebViewCompleted := nil;
+      LEdgeToFree.OnNavigationCompleted := nil;
       LEdgeToFree.OnNavigationStarting := nil;
+      LEdgeToFree.OnProcessFailed := nil;
       LEdgeToFree.OnWebMessageReceived := nil;
     end
     else
@@ -516,6 +621,7 @@ begin
     LTargetUrl := 'file:///' + TPath.Combine(FWebFilesDir, 'chat.html').Replace('\', '/') +
       '?theme=' + GetWebThemeName(GetCurrentIDEThemeName);
     TLogger.Log('UpdateWebViewNavigation: Navigating to local chat: ' + LTargetUrl, 'UI');
+    FWebViewLifecycle.BeginNavigation;
     FEdgeBrowser.Navigate(LTargetUrl);
   end;
 end;
@@ -613,6 +719,8 @@ procedure TRadIAFrameAIChat.EdgeBrowserCreateWebViewCompleted(Sender: TCustomEdg
 var
   LSettings: ICoreWebView2Settings;
 begin
+  if Sender <> FEdgeBrowser then
+    Exit;
   if Succeeded(AResult) then
   begin
     FBrowserInitialized := True;
@@ -631,10 +739,41 @@ begin
   begin
     FBrowserInitialized := False;
     FWebViewInitialized := False;
-    pnlBrowser.Caption := 'Unable to load Rad IA Chat. Close and reopen the chat window.';
     TLogger.Log('EdgeBrowserCreateWebViewCompleted failed for main chat WebView. HRESULT: ' +
       IntToHex(AResult, 8), 'UI');
+    ScheduleWebViewRecovery('create HRESULT ' + IntToHex(AResult, 8));
   end;
+end;
+
+procedure TRadIAFrameAIChat.EdgeBrowserNavigationCompleted(
+  Sender: TCustomEdgeBrowser;
+  IsSuccess: Boolean;
+  WebErrorStatus: COREWEBVIEW2_WEB_ERROR_STATUS
+);
+begin
+  if Sender <> FEdgeBrowser then
+    Exit;
+  if IsSuccess then
+  begin
+    FWebViewLifecycle.MarkReady;
+    pnlBrowser.Caption := '';
+    Exit;
+  end;
+  ScheduleWebViewRecovery(
+    'navigation status ' + IntToStr(Ord(WebErrorStatus))
+  );
+end;
+
+procedure TRadIAFrameAIChat.EdgeBrowserProcessFailed(
+  Sender: TCustomEdgeBrowser;
+  ProcessFailedKind: COREWEBVIEW2_PROCESS_FAILED_KIND
+);
+begin
+  if Sender <> FEdgeBrowser then
+    Exit;
+  ScheduleWebViewRecovery(
+    'process kind ' + IntToStr(Ord(ProcessFailedKind))
+  );
 end;
 
 procedure TRadIAFrameAIChat.EdgeBrowserWebMessageReceived(Sender: TCustomEdgeBrowser;
@@ -648,7 +787,7 @@ begin
     if Succeeded(Args.ArgsInterface.TryGetWebMessageAsString(LStr)) then
     begin
       try
-        FPresenter.ProcessWebMessage(string(LStr));
+        ProcessWebPayload(string(LStr));
       finally
         CoTaskMemFree(LStr);
       end;
@@ -657,12 +796,222 @@ begin
     begin
       Args.ArgsInterface.Get_webMessageAsJson(LJsonStr);
       try
-        FPresenter.ProcessWebMessage(string(LJsonStr));
+        ProcessWebPayload(string(LJsonStr));
       finally
         CoTaskMemFree(LJsonStr);
       end;
     end;
   end;
+end;
+
+function TRadIAFrameAIChat.CaptureWebViewState(
+  const AJson: string
+): Boolean;
+const
+  CMaximumDraftLength = 12000;
+  CMaximumScrollTop = 10000000;
+var
+  LAdvanced: Boolean;
+  LDraft: string;
+  LJson: TJSONValue;
+  LRoot: TJSONObject;
+  LScrollTop: Integer;
+  LState: TJSONObject;
+  LStateValue: TJSONValue;
+  LStoredState: TJSONObject;
+begin
+  Result := False;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'webview_lifecycle_state'
+    ) then
+      Exit;
+    Result := True;
+    LStateValue := LRoot.GetValue('state');
+    if not (LStateValue is TJSONObject) then
+      Exit;
+    LState := TJSONObject(LStateValue);
+    LDraft := LState.GetValue<string>('draft', '');
+    LDraft := LDraft.Substring(0, Min(LDraft.Length, CMaximumDraftLength));
+    LScrollTop := EnsureRange(
+      LState.GetValue<Integer>('scrollTop', 0),
+      0,
+      CMaximumScrollTop
+    );
+    LAdvanced := LState.GetValue<Boolean>('advanced', False);
+    LStoredState := TJSONObject.Create;
+    try
+      LStoredState.AddPair('draft', LDraft);
+      LStoredState.AddPair('scrollTop', TJSONNumber.Create(LScrollTop));
+      LStoredState.AddPair('advanced', TJSONBool.Create(LAdvanced));
+      FWebStateJson := LStoredState.ToJSON;
+    finally
+      LStoredState.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.ProcessWebPayload(const AJson: string);
+var
+  LAction: string;
+  LJson: TJSONValue;
+begin
+  if CaptureWebViewState(AJson) then
+    Exit;
+  if CaptureWebViewSmokeResult(AJson) then
+    Exit;
+  LAction := '';
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if LJson is TJSONObject then
+      LAction := TJSONObject(LJson).GetValue<string>('action', '');
+  finally
+    LJson.Free;
+  end;
+  FPresenter.ProcessWebMessage(AJson);
+  if SameText(LAction, 'ready') then
+  begin
+    RestoreWebViewState;
+    RunWebViewLifecycleSmoke;
+  end;
+end;
+
+function TRadIAFrameAIChat.CaptureWebViewSmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LEvidence: TJSONObject;
+  LEvidenceDirectory: string;
+  LJson: TJSONValue;
+  LPassed: Boolean;
+  LRoot: TJSONObject;
+  LSnapshot: TRadIAWebViewLifecycleSnapshot;
+begin
+  Result := False;
+  if FWebViewSmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'webview_lifecycle_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LSnapshot := FWebViewLifecycle.Snapshot;
+    LPassed :=
+      LRoot.GetValue<Boolean>('draftRestored', False) and
+      LRoot.GetValue<Boolean>('advancedRestored', False) and
+      (LSnapshot.Generation > 1) and
+      (LSnapshot.RecoveryCount >= 1) and
+      (LSnapshot.State = wlsReady);
+    LEvidence := TJSONObject.Create;
+    try
+      LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
+      if LPassed then
+        LEvidence.AddPair('status', 'passed')
+      else
+        LEvidence.AddPair('status', 'failed');
+      LEvidence.AddPair(
+        'draftRestored',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('draftRestored', False))
+      );
+      LEvidence.AddPair(
+        'advancedRestored',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('advancedRestored', False))
+      );
+      LEvidence.AddPair(
+        'generation',
+        TJSONNumber.Create(LSnapshot.Generation)
+      );
+      LEvidence.AddPair(
+        'recoveryAttempts',
+        TJSONNumber.Create(LSnapshot.RecoveryAttempts)
+      );
+      LEvidence.AddPair(
+        'recoveryCount',
+        TJSONNumber.Create(LSnapshot.RecoveryCount)
+      );
+      LEvidenceDirectory := ExtractFileDir(FWebViewSmokeEvidencePath);
+      if LEvidenceDirectory <> '' then
+        ForceDirectories(LEvidenceDirectory);
+      TFile.WriteAllText(
+        FWebViewSmokeEvidencePath,
+        LEvidence.ToJSON,
+        TEncoding.UTF8
+      );
+    finally
+      LEvidence.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RestoreWebViewState;
+var
+  LSmoke: string;
+begin
+  if FWebStateJson = '{}' then
+    Exit;
+  LSmoke := 'false';
+  if FWebViewSmokeStarted and
+    (FWebViewLifecycle.Snapshot.Generation > 1) then
+    LSmoke := 'true';
+  PostMessageToWeb(
+    '{"action":"restore_lifecycle_state","state":' +
+    FWebStateJson + ',"smoke":' + LSmoke + '}'
+  );
+end;
+
+procedure TRadIAFrameAIChat.RunWebViewLifecycleSmoke;
+var
+  LGuard: IRadIALifecycleGuard;
+begin
+  if (FWebViewSmokeEvidencePath = '') or FWebViewSmokeStarted or
+    not Assigned(FEdgeBrowser) then
+    Exit;
+  FWebViewSmokeStarted := True;
+  FEdgeBrowser.ExecuteScript(
+    '(function(){' +
+    'const p=document.getElementById("prompt-textarea");' +
+    'if(p){p.value="radia-webview-recovery-draft";' +
+    'p.dispatchEvent(new Event("input"));}' +
+    'const b=document.getElementById("btn-composer-advanced");' +
+    'if(b&&b.getAttribute("aria-expanded")!=="true"){b.click();}' +
+    '})();'
+  );
+  LGuard := FLifecycleGuard as IRadIALifecycleGuard;
+  TTask.Run(
+    procedure
+    begin
+      TThread.Sleep(500);
+      TThread.Queue(
+        nil,
+        TThreadProcedure(
+          procedure
+          begin
+            if not LGuard.IsAlive or GIsShuttingDown then
+              Exit;
+            EdgeBrowserProcessFailed(
+              FEdgeBrowser,
+              COREWEBVIEW2_PROCESS_FAILED_KIND_BROWSER_PROCESS_EXITED
+            );
+          end
+        )
+      );
+    end
+  );
 end;
 
 function TRadIAFrameAIChat.IsExpectedWebMessageSource(

@@ -13,8 +13,8 @@ criteria.
 
 ## Current goal
 
-Deterministically close the remaining actionable differences in WebView lifecycle, knowledge,
-consent, and engine supervision. Each workstream needs a baseline, metric, reproducible
+Deterministically close the remaining actionable differences in knowledge, consent, and engine
+supervision. Each workstream needs a baseline, metric, reproducible
 scenario, and evidence on the same commit before closure. The executable scope is in the
 [backlog](backlog.en.md).
 

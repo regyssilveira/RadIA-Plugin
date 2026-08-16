@@ -13,8 +13,8 @@ critérios de aceitação verificáveis.
 
 ## Goal atual
 
-Fechar de forma determinística as diferenças acionáveis restantes no lifecycle do WebView,
-conhecimento, consentimento e supervisão do motor. Cada frente precisa de baseline,
+Fechar de forma determinística as diferenças acionáveis restantes em conhecimento, consentimento
+e supervisão do motor. Cada frente precisa de baseline,
 métrica, cenário reproduzível e evidência no mesmo commit antes de ser encerrada. O escopo
 executável está no
 [backlog](backlog.md).
