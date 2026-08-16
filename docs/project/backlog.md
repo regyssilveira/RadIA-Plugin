@@ -8,7 +8,8 @@ release não pertencem ao backlog.
 Encerrar com evidência reproduzível todas as diferenças acionáveis da experiência atual, reutilizando
 as capacidades existentes antes de implementar qualquer nova infraestrutura.
 
-- [ ] fechar todas as frentes no mesmo ledger, commit e gate integrado.
+Não há item aberto neste goal. O fechamento depende apenas da execução do ledger e do gate integrado
+no commit candidato; qualquer falha reabre o critério correspondente antes de uma release.
 
 O escopo exclui repositório público ou marketplace de extensões, C++Builder, Delphi 11, Lazarus,
 GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

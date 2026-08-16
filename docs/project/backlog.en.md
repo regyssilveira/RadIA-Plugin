@@ -8,7 +8,8 @@ belong in the backlog.
 Close every actionable difference in the current experience with reproducible evidence, reusing
 existing capabilities before implementing any new infrastructure.
 
-- [ ] close every workstream in the same ledger, commit, and integrated gate.
+This goal has no open implementation item. Closure depends only on running the ledger and integrated
+gate against the candidate commit; any failure reopens its corresponding criterion before a release.
 
 The scope excludes a public extension repository or marketplace, C++Builder, Delphi 11, Lazarus,
 GetIt, Embarcadero-exclusive integrations, and replacement of the current WebView.
