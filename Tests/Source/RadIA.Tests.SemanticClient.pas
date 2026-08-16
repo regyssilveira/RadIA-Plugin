@@ -18,7 +18,15 @@ type
     [Test]
     procedure SupervisorKeepsEngineAliveAcrossRequests;
     [Test]
+    procedure SupervisorRecoversAfterPackagedEngineCrash;
+    [Test]
     procedure SupervisorRestartsAfterTransportFailure;
+    [Test]
+    procedure SupervisorOpensCircuitAfterRepeatedFailures;
+    [Test]
+    procedure SupervisorBoundsHungRequests;
+    [Test]
+    procedure SupervisorRejectsIncompatibleProtocol;
     [Test]
     procedure SupervisorCancelsPendingRequest;
     [Test]
@@ -32,9 +40,11 @@ type
 implementation
 
 uses
+  System.Diagnostics,
   System.IOUtils,
   System.JSON,
   System.SysUtils,
+  Winapi.Windows,
   RadIA.Core.ExternalMcp,
   RadIA.Core.ExternalMcpTransport,
   RadIA.Semantic.Client;
@@ -82,6 +92,7 @@ type
   )
   private
     FLastError: string;
+    FInvalidProtocol: Boolean;
     FReceiveCount: Integer;
     FResponse: string;
     FRunning: Boolean;
@@ -98,7 +109,33 @@ type
       out AError: string
     ): Boolean;
     procedure Stop;
+    procedure UseInvalidProtocol;
     property ReceiveCount: Integer read FReceiveCount;
+  end;
+
+  TRadIAFailingSemanticTransport = class(
+    TInterfacedObject,
+    IRadIAExternalMcpTransport
+  )
+  private
+    FLastError: string;
+    FResponse: string;
+    FRunning: Boolean;
+    FStartCount: Integer;
+  public
+    function GetLastError: string;
+    function GetRunning: Boolean;
+    function Receive(
+      const ATimeoutMs: Cardinal;
+      out AMessage: string
+    ): Boolean;
+    function Send(const AMessage: string): Boolean;
+    function Start(
+      const AConfig: TRadIAExternalMcpServerConfig;
+      out AError: string
+    ): Boolean;
+    procedure Stop;
+    property StartCount: Integer read FStartCount;
   end;
 
 function TRadIACancellableSemanticTransport.GetLastError: string;
@@ -127,9 +164,14 @@ function TRadIACancellableSemanticTransport.Send(
 ): Boolean;
 begin
   if AMessage.Contains('"method":"initialize"') then
-    FResponse :=
-      '{"id":0,"result":{"name":"RadIA Semantic Engine",' +
-      '"protocolVersion":"1.0"}}';
+    if FInvalidProtocol then
+      FResponse :=
+        '{"id":0,"result":{"name":"RadIA Semantic Engine",' +
+        '"protocolVersion":"999.0"}}'
+    else
+      FResponse :=
+        '{"id":0,"result":{"name":"RadIA Semantic Engine",' +
+        '"protocolVersion":"1.0"}}';
   Result := True;
 end;
 
@@ -145,6 +187,126 @@ begin
 end;
 
 procedure TRadIACancellableSemanticTransport.Stop;
+begin
+  FRunning := False;
+end;
+
+procedure TRadIACancellableSemanticTransport.UseInvalidProtocol;
+begin
+  FInvalidProtocol := True;
+end;
+
+procedure TRadIASemanticClientTests.SupervisorRecoversAfterPackagedEngineCrash;
+var
+  LDocument: TJSONObject;
+  LError: string;
+  LPath: string;
+  LProcess: THandle;
+  LProcessId: Cardinal;
+  LResponse: string;
+  LResult: TJSONObject;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(LPath, 2000);
+  try
+    Assert.IsTrue(
+      LSupervisor.Request('indexStatus', '{}', LResponse, LError),
+      LError
+    );
+    LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+    try
+      Assert.IsNotNull(LDocument);
+      LResult := LDocument.GetValue<TJSONObject>('result');
+      Assert.IsNotNull(LResult);
+      LProcessId := LResult.GetValue<Cardinal>('processId', 0);
+      Assert.IsTrue(LProcessId > 0);
+    finally
+      LDocument.Free;
+    end;
+    LProcess := OpenProcess(
+      PROCESS_TERMINATE or SYNCHRONIZE,
+      False,
+      LProcessId
+    );
+    Assert.IsTrue(LProcess <> 0);
+    try
+      Assert.IsTrue(TerminateProcess(LProcess, 197));
+      Assert.AreEqual(
+        Cardinal(WAIT_OBJECT_0),
+        WaitForSingleObject(LProcess, 2000)
+      );
+    finally
+      CloseHandle(LProcess);
+    end;
+    Assert.IsTrue(
+      LSupervisor.Request(
+        'tokenize',
+        '{"source":"unit Recovered;"}',
+        LResponse,
+        LError
+      ),
+      LError
+    );
+    Assert.Contains(LResponse, '"tokens"');
+    Assert.AreEqual(1, LSupervisor.RestartCount);
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+function TRadIAFailingSemanticTransport.GetLastError: string;
+begin
+  Result := FLastError;
+end;
+
+function TRadIAFailingSemanticTransport.GetRunning: Boolean;
+begin
+  Result := FRunning;
+end;
+
+function TRadIAFailingSemanticTransport.Receive(
+  const ATimeoutMs: Cardinal;
+  out AMessage: string
+): Boolean;
+begin
+  AMessage := FResponse;
+  FResponse := '';
+  Result := AMessage <> '';
+end;
+
+function TRadIAFailingSemanticTransport.Send(
+  const AMessage: string
+): Boolean;
+begin
+  if AMessage.Contains('"method":"initialize"') then
+  begin
+    FResponse :=
+      '{"id":0,"result":{"name":"RadIA Semantic Engine",' +
+      '"protocolVersion":"1.0"}}';
+    Exit(True);
+  end;
+  FLastError := 'Simulated persistent process failure.';
+  FRunning := False;
+  Result := False;
+end;
+
+function TRadIAFailingSemanticTransport.Start(
+  const AConfig: TRadIAExternalMcpServerConfig;
+  out AError: string
+): Boolean;
+begin
+  Inc(FStartCount);
+  FLastError := '';
+  FRunning := True;
+  AError := '';
+  Result := True;
+end;
+
+procedure TRadIAFailingSemanticTransport.Stop;
 begin
   FRunning := False;
 end;
@@ -284,6 +446,7 @@ end;
 
 procedure TRadIASemanticClientTests.SupervisorRestartsAfterTransportFailure;
 var
+  LDiagnostics: TJSONObject;
   LError: string;
   LPath: string;
   LResponse: string;
@@ -307,6 +470,132 @@ begin
     );
     Assert.Contains(LResponse, '"tokens"');
     Assert.AreEqual(1, LSupervisor.RestartCount);
+    LDiagnostics := TJSONObject.ParseJSONValue(
+      LSupervisor.GetDiagnosticsJson
+    ) as TJSONObject;
+    try
+      Assert.AreEqual(1, LDiagnostics.GetValue<Integer>('requestCount'));
+      Assert.AreEqual(0, LDiagnostics.GetValue<Integer>('failureCount'));
+      Assert.AreEqual(1, LDiagnostics.GetValue<Integer>('restartCount'));
+      Assert.IsFalse(LDiagnostics.GetValue<Boolean>('circuitOpen'));
+    finally
+      LDiagnostics.Free;
+    end;
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.SupervisorBoundsHungRequests;
+var
+  LElapsed: TStopwatch;
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+  LTransport: IRadIAExternalMcpTransport;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LTransport := TRadIACancellableSemanticTransport.Create;
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(
+    LPath,
+    50,
+    LTransport
+  );
+  try
+    LElapsed := TStopwatch.StartNew;
+    Assert.IsFalse(
+      LSupervisor.Request('tokenize', '{}', LResponse, LError)
+    );
+    LElapsed.Stop;
+    Assert.Contains(LError, 'timed out');
+    Assert.IsTrue(LElapsed.ElapsedMilliseconds < 1000);
+    Assert.AreEqual(1, LSupervisor.RestartCount);
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.SupervisorRejectsIncompatibleProtocol;
+var
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+  LTransport: IRadIAExternalMcpTransport;
+  LTransportObject: TRadIACancellableSemanticTransport;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LTransportObject := TRadIACancellableSemanticTransport.Create;
+  LTransportObject.UseInvalidProtocol;
+  LTransport := LTransportObject;
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(
+    LPath,
+    50,
+    LTransport
+  );
+  try
+    Assert.IsFalse(
+      LSupervisor.Request('tokenize', '{}', LResponse, LError)
+    );
+    Assert.Contains(LError, 'protocol is incompatible');
+    Assert.AreEqual(1, LSupervisor.RestartCount);
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.
+  SupervisorOpensCircuitAfterRepeatedFailures;
+var
+  LDiagnostics: TJSONObject;
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+  LTransport: IRadIAExternalMcpTransport;
+  LTransportObject: TRadIAFailingSemanticTransport;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LTransportObject := TRadIAFailingSemanticTransport.Create;
+  LTransport := LTransportObject;
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(
+    LPath,
+    5000,
+    LTransport
+  );
+  try
+    Assert.IsFalse(LSupervisor.Request('tokenize', '{}', LResponse, LError));
+    Assert.IsFalse(LSupervisor.Request('tokenize', '{}', LResponse, LError));
+    Assert.IsFalse(LSupervisor.Request('tokenize', '{}', LResponse, LError));
+    Assert.AreEqual(6, LTransportObject.StartCount);
+    Assert.IsFalse(LSupervisor.Request('tokenize', '{}', LResponse, LError));
+    Assert.Contains(LError, 'bounded fallback');
+    Assert.AreEqual(6, LTransportObject.StartCount);
+    LDiagnostics := TJSONObject.ParseJSONValue(
+      LSupervisor.GetDiagnosticsJson
+    ) as TJSONObject;
+    try
+      Assert.AreEqual(4, LDiagnostics.GetValue<Integer>('requestCount'));
+      Assert.AreEqual(3, LDiagnostics.GetValue<Integer>('failureCount'));
+      Assert.AreEqual(3, LDiagnostics.GetValue<Integer>('restartCount'));
+      Assert.IsTrue(LDiagnostics.GetValue<Boolean>('circuitOpen'));
+      Assert.Contains(
+        LDiagnostics.GetValue<string>('lastError'),
+        'bounded fallback'
+      );
+    finally
+      LDiagnostics.Free;
+    end;
   finally
     LSupervisor.Free;
   end;

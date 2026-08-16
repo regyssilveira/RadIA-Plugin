@@ -30,6 +30,7 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 - [Runner DUnitX](dunitx_runner.md)
 - [Fluxo Git](git_workflow.md)
 - [Migração de acesso a dados legado](legacy_data_migration.md)
+- [Banco de dados local com segurança](local_database.md)
 - [Jornadas DEXT](user_guide_dext_journeys.md)
 - [Assistente de threads e PPL](threading_assistant.md)
 - [Retrofit OpenAPI/Swagger](openapi_retrofit.md)
@@ -38,6 +39,7 @@ Guias orientados a tarefas. Para campos, comandos e catálogos, consulte as
 ## Editor, Designer e revisão
 
 - [Assistência inline e FIM](inline_completion.md)
+- [Inteligência semântica: estado, acionamento e limites](../reference/semantic_intelligence.md)
 - [Revisão por bloco](block_reviews.md)
 - [Designer e debugger](user_guide_designer_debugger.md)
 - [Auditoria DFM/PAS](dfm_pas_audit.md)

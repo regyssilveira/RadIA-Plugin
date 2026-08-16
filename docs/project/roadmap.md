@@ -11,10 +11,13 @@ compreender, compilar, testar e depurar projetos sem exigir que o usuário conhe
 interna. Evoluções futuras devem primeiro demonstrar ganho observável para esse fluxo e possuir
 critérios de aceitação verificáveis.
 
-## Estado de planejamento
+## Goal atual
 
-Não existe goal executável ativo. A fundação automatizada de integração e ponta a ponta foi
-concluída e passou a integrar o gate obrigatório de toda release. O estado aberto oficial permanece
-no [backlog](backlog.md), que atualmente não possui itens aprovados.
+Fechar de forma determinística as diferenças acionáveis restantes em conhecimento, consentimento
+e supervisão do motor. Cada frente precisa de baseline,
+métrica, cenário reproduzível e evidência no mesmo commit antes de ser encerrada. O escopo
+executável está no
+[backlog](backlog.md).
 
-Delphi 11, C++, Lazarus, marketplace e leitura de DCU permanecem fora da direção atual.
+Delphi 11, C++, Lazarus, marketplace, repositório público de extensões, troca do WebView e leitura de
+DCU permanecem fora da direção atual.

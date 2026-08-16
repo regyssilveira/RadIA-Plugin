@@ -465,6 +465,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `AuditDelphiLocalization` | Inventories user-visible Pascal and DFM literals for localization review. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `PrepareLocalizationExtraction` | Prepares an immutable patch that moves one active-unit literal to resourcestring. | `RadIA.Core.DelphiEcosystemTools.pas` |
 
+## Safe local database inspection
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `InspectLocalSQLiteDatabase` | Reads tables, views, and columns from a workspace-local SQLite database without executing user SQL. | `RadIA.Core.LocalDatabaseTools.pas` |
+| `PreviewLocalSQLiteQuery` | Runs one reviewed read-only SQLite query with bounded rows and sanitized grid and CSV output. | `RadIA.Core.LocalDatabaseTools.pas` |
+
 ## FastMM5 log evidence
 
 | Tool | Purpose | Source unit |
@@ -506,7 +513,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 63
-- Registered built-in tools: 185
+- Registered groups: 64
+- Registered built-in tools: 187
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -35,6 +35,10 @@ provider. Empty, ambiguous, or unavailable results automatically continue throug
 route. A new edit cancels both local and remote waits; route status reports `local semantic`, candidate
 count, and latency when that route is used.
 
+This suggestion belongs to the Ghost Text overlay. It does not add candidates to or replace the
+native CodeInsight popup. See [Semantic intelligence in the editor](../reference/semantic_intelligence.en.md)
+to distinguish every surface, activation path, and measured boundary.
+
 Local resolution never treats an empty list as a silent answer. The engine returns the requested symbol's
 status, reason, origin, and structural alternatives. Short names found in more than one unit are reported as
 `short-name-ambiguous`; no local suggestion is applied and the flow continues through fallback. A missing

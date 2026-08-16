@@ -32,6 +32,8 @@ type
     [Test]
     procedure DiscardsCorruptedIndexCache;
     [Test]
+    procedure DiscardsCacheFromAnotherCompilerProfile;
+    [Test]
     procedure WarmQueriesMeetLatencyBudget;
     [Test]
     procedure ResolvesInheritedAndInterfaceMembersAcrossUnits;
@@ -185,6 +187,41 @@ begin
     Assert.IsFalse(FIndex.LoadCache(LCacheFile, LError));
     Assert.IsFalse(TFile.Exists(LCacheFile));
     Assert.IsTrue(LError <> '');
+    Assert.AreEqual(NativeInt(0), FIndex.UnitCount);
+  finally
+    if TFile.Exists(LCacheFile) then
+      TFile.Delete(LCacheFile);
+  end;
+end;
+
+procedure TRadIASemanticIndexTests.
+  DiscardsCacheFromAnotherCompilerProfile;
+var
+  LCacheFile: string;
+  LDescriptor: TRadIASemanticUnitDescriptor;
+  LError: string;
+begin
+  LCacheFile := TPath.GetTempFileName;
+  try
+    LDescriptor := TRadIASemanticUnitDescriptor.Create(
+      'sample',
+      'Sample.pas',
+      susProject,
+      1
+    );
+    FIndex.IndexUnit(
+      LDescriptor,
+      'unit Sample; interface implementation end.',
+      nil
+    );
+    FIndex.SaveCache(LCacheFile, 'compiler=36;platform=Win32');
+    Assert.IsFalse(FIndex.LoadCache(
+      LCacheFile,
+      'compiler=37;platform=Win64',
+      LError
+    ));
+    Assert.Contains(LError, 'profile');
+    Assert.IsFalse(TFile.Exists(LCacheFile));
     Assert.AreEqual(NativeInt(0), FIndex.UnitCount);
   finally
     if TFile.Exists(LCacheFile) then

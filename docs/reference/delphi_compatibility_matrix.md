@@ -62,9 +62,3 @@ powershell.exe -ExecutionPolicy Bypass -File build.ps1 `
 4. Cada target compila a BPL, a extensão de exemplo, a bridge MCP e a suíte DUnitX.
 5. Os testes não podem apresentar falha, erro, ignore ou vazamento.
 6. Os smokes em IDE real devem confirmar docking, catálogo de tools e shutdown sem processo órfão.
-
-## Evidência histórica
-
-Arquivos de evidência da versão 2.0 podem conter execuções do Delphi 11 realizadas antes da mudança
-de suporte. Esses registros são imutáveis e demonstram o estado daquela revisão; não ampliam a
-matriz atual. Geradores novos de evidência processam somente Delphi 12 e 13.

@@ -590,8 +590,14 @@ test('current release gates use the generated catalog size', () => {
   const portuguese = fs.readFileSync(documentationPath('release_process.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('release_process.en.md'), 'utf8');
   const currentDocuments = [
+    'capabilities.md',
+    'capabilities.en.md',
+    'internal_tools_reference.md',
+    'internal_tools_reference.en.md',
     'terminal.md',
-    'terminal.en.md'
+    'terminal.en.md',
+    'user_manual.md',
+    'user_manual.en.md'
   ];
 
   assert.match(portuguese, /Update-RadIA\.RuntimeToolCatalog\.ps1/u);
@@ -602,7 +608,7 @@ test('current release gates use the generated catalog size', () => {
     const content = fs.readFileSync(documentationPath(documentName), 'utf8');
     assert.match(
       content,
-      new RegExp(`${toolCount}\\s+(?:ferramentas|tools)`, 'u'),
+      new RegExp(`${toolCount}[\\w\\s-]{0,30}(?:ferramentas|tools)`, 'u'),
       documentName
     );
   });
@@ -1087,6 +1093,55 @@ test('terminal documentation defines Unicode, reflow, and TUI behavior', () => {
   assert.match(capabilities, /CJK, emoji and combining-character widths/u);
 });
 
+test('semantic intelligence is public, reachable, and explicit about its boundaries', () => {
+  const portuguese = fs.readFileSync(
+    documentationPath('semantic_intelligence.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    documentationPath('semantic_intelligence.en.md'),
+    'utf8'
+  );
+  const portugueseHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
+  const englishHub = fs.readFileSync(documentationPath('README.en.md'), 'utf8');
+  const portugueseCapabilities = fs.readFileSync(
+    documentationPath('capabilities.md'),
+    'utf8'
+  );
+  const englishCapabilities = fs.readFileSync(
+    documentationPath('capabilities.en.md'),
+    'utf8'
+  );
+
+  [
+    'GetSemanticContext',
+    'FindSymbolReferences',
+    'GetTypeHierarchy',
+    'PrepareMissingMembers',
+    'NavigateToFile',
+    'circuit breaker',
+    'test:semantic-corpus:12',
+    'test:semantic-completion:13'
+  ].forEach(term => {
+    assert.ok(portuguese.includes(term), `Portuguese semantic reference is missing ${term}`);
+    assert.ok(english.includes(term), `English semantic reference is missing ${term}`);
+  });
+  assert.match(portuguese, /não estende\s+nem substitui a lista visual do CodeInsight/u);
+  assert.match(english, /does not extend\s+or replace the CodeInsight visual list/u);
+  assert.match(portuguese, /não mede a latência ponta a ponta da UI/u);
+  assert.match(english, /does not measure end-to-end UI/u);
+  assert.match(portuguese, /fontes RTL\/VCL/u);
+  assert.match(english, /RTL\/VCL sources/u);
+  assert.match(portuguese, /%APPDATA%\\RadIA\\Semantic/u);
+  assert.match(english, /%APPDATA%\\RadIA\\Semantic/u);
+  assert.match(portuguese, /esquema do cache/u);
+  assert.match(english, /cache schema/u);
+  assert.match(portugueseHub, /semantic_intelligence\.md/u);
+  assert.match(englishHub, /semantic_intelligence\.en\.md/u);
+  assert.match(portugueseCapabilities, /semantic_intelligence\.md/u);
+  assert.match(englishCapabilities, /semantic_intelligence\.en\.md/u);
+});
+
 test('chat documentation explains the bounded follow-up queue', () => {
   const portuguese = fs.readFileSync(
     documentationPath('user_guide_chat_sessions.md'),
@@ -1152,9 +1207,17 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /Não existe goal ativo nem item aberto aprovado/u);
-  assert.match(englishBacklog, /There is no active goal or approved open item/u);
-  assert.doesNotMatch(portugueseBacklog, /^\s*- \[ \]/mu);
-  assert.doesNotMatch(englishBacklog, /^\s*- \[ \]/mu);
+  assert.match(portugueseBacklog, /Goal ativo: fechamento determinístico/u);
+  assert.match(englishBacklog, /Active goal: deterministic Delphi experience closure/u);
+  assert.ok(
+    /^\s*- \[ \]/mu.test(portugueseBacklog) ||
+      /Não há item aberto neste goal/u.test(portugueseBacklog)
+  );
+  assert.ok(
+    /^\s*- \[ \]/mu.test(englishBacklog) ||
+      /This goal has no open implementation item/u.test(englishBacklog)
+  );
+  assert.match(portugueseBacklog, /exclui repositório público ou marketplace/u);
+  assert.match(englishBacklog, /excludes a public extension repository or marketplace/u);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
 });

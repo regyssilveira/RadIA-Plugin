@@ -14,6 +14,7 @@ type
     FDebugTimelineNotifier: TObject;
     FSemanticMonitor: TObject;
     FTimer: TTimer;
+    FApplicationEvents: TObject;
     FOptionsPages: TInterfaceList;
     procedure RegisterMenus;
     procedure UnregisterMenus;
@@ -50,8 +51,9 @@ procedure Register;
 implementation
 
 uses
-  System.SysUtils, System.IOUtils, Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
-  Winapi.Windows,
+  System.SysUtils, System.IOUtils, System.SyncObjs,
+  Vcl.Menus, Vcl.Controls, Vcl.Graphics, Vcl.Dialogs, Vcl.Forms,
+  Vcl.AppEvnts, Winapi.Windows, Winapi.Messages,
   RadIA.OTA.AgentDiagnostic,
   RadIA.OTA.DeclarativeWorkflowDiagnostic,
   RadIA.OTA.MemoryDiagnostic,
@@ -73,6 +75,8 @@ uses
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Core.RuntimePerformance,
   RadIA.Core.DelphiEcosystemTools,
+  RadIA.Core.LocalDatabase,
+  RadIA.Core.LocalDatabaseTools,
   RadIA.OTA.RuntimePerformance,
   RadIA.Core.ProductivityGeneration, RadIA.Core.ProductivityGenerationTools,
   RadIA.OTA.ProjectFiles,
@@ -161,8 +165,20 @@ uses
   RadIA.Semantic.Client,
   RadIA.Semantic.Workspace;
 
+type
+  TRadIAApplicationShutdownObserver = class
+  private
+    FEvents: TApplicationEvents;
+    procedure OnApplicationMessage(var Msg: TMsg; var Handled: Boolean);
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
 const
   GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = $00000004;
+  CBackgroundShutdownTimeoutMs = 5000;
+  CBackgroundShutdownPollMs = 10;
 
 function GetModuleHandleEx(ADwFlags: DWORD; ALpModuleName: PChar; var APhModule: HMODULE): BOOL; stdcall;
   external 'kernel32.dll' name 'GetModuleHandleExW';
@@ -177,6 +193,80 @@ var
 procedure LogDebug(const AMsg: string);
 begin
   TLogger.Log(AMsg, 'Register');
+end;
+
+procedure StopBackgroundServices;
+var
+  LKnowledgeScheduler: IRadIAKnowledgeRefreshScheduler;
+  LSemanticCoordinator: IRadIASemanticWorkspaceCoordinator;
+  LSemanticLifecycle: IRadIASemanticEngineLifecycle;
+begin
+  if TRadIAContainer.TryResolve<IRadIAKnowledgeRefreshScheduler>(
+    LKnowledgeScheduler
+  ) then
+    LKnowledgeScheduler.Stop;
+  if TRadIAContainer.TryResolve<IRadIASemanticWorkspaceCoordinator>(
+    LSemanticCoordinator
+  ) then
+    LSemanticCoordinator.Stop;
+  if TRadIAContainer.TryResolve<IRadIASemanticEngineLifecycle>(
+    LSemanticLifecycle
+  ) then
+    LSemanticLifecycle.Stop;
+end;
+
+procedure WaitForBackgroundServices;
+var
+  LStartedAt: UInt64;
+begin
+  LStartedAt := GetTickCount64;
+  while (TInterlocked.CompareExchange(GActiveThreadCount, 0, 0) > 0) and
+    (GetTickCount64 - LStartedAt < CBackgroundShutdownTimeoutMs) do
+  begin
+    CheckSynchronize(CBackgroundShutdownPollMs);
+    Sleep(CBackgroundShutdownPollMs);
+  end;
+  LogDebug(
+    'Background threads remaining after shutdown wait: ' +
+    IntToStr(TInterlocked.CompareExchange(GActiveThreadCount, 0, 0))
+  );
+end;
+
+constructor TRadIAApplicationShutdownObserver.Create;
+begin
+  inherited Create;
+  FEvents := TApplicationEvents.Create(nil);
+  FEvents.OnMessage := OnApplicationMessage;
+end;
+
+destructor TRadIAApplicationShutdownObserver.Destroy;
+begin
+  FEvents.Free;
+  inherited Destroy;
+end;
+
+procedure TRadIAApplicationShutdownObserver.OnApplicationMessage(
+  var Msg: TMsg;
+  var Handled: Boolean
+);
+var
+  LMainForm: TCustomForm;
+  LIsCloseRequest: Boolean;
+begin
+  if Handled or GIsShuttingDown or Application.Terminated then
+    Exit;
+  LMainForm := Application.MainForm;
+  if not Assigned(LMainForm) or not LMainForm.HandleAllocated or
+    (Msg.hwnd <> LMainForm.Handle) then
+    Exit;
+  LIsCloseRequest := (Msg.message = WM_CLOSE) or
+    (
+      (Msg.message = WM_SYSCOMMAND) and
+      ((Msg.wParam and $FFF0) = SC_CLOSE)
+    );
+  if not LIsCloseRequest then
+    Exit;
+  RadIA.OTA.DockableForm.PrepareDockableFormsForShutdown;
 end;
 
 function GetRadIAModuleDirectory: string;
@@ -315,6 +405,7 @@ begin
   inherited Create;
 
   FOptionsPages := TInterfaceList.Create;
+  FApplicationEvents := TRadIAApplicationShutdownObserver.Create;
 
   {$IFNDEF TESTS}
   RadIA.OTA.DockableForm.RegisterDockableForm;
@@ -419,6 +510,7 @@ var
   LMediator: IRadIAMediator;
 begin
   LogDebug('TRadIAWizard.Destroy started');
+  FreeAndNil(FApplicationEvents);
   GIsShuttingDown :=
     Application.Terminated or
     not Assigned(Application.MainForm) or
@@ -428,6 +520,8 @@ begin
     'TRadIAWizard.Destroy shutdown state: ' +
     BoolToStr(GIsShuttingDown, True)
   );
+  StopBackgroundServices;
+  LogDebug('TRadIAWizard.Destroy background services stopped');
   if Assigned(GMcpServer) then
   begin
     LogDebug('TRadIAWizard.Destroy stopping MCP server');
@@ -464,6 +558,7 @@ begin
   LogDebug('TRadIAWizard.Destroy editor hook released');
   FOptionsPages.Free;
   LogDebug('TRadIAWizard.Destroy owned objects released');
+  WaitForBackgroundServices;
 
   ReleasePinnedModule;
 
@@ -1237,6 +1332,10 @@ initialization
       TRadIASemanticEngineClient.DefaultExecutablePath
     )
   );
+  TRadIAContainer.Register<IRadIASemanticEngineLifecycle>(
+    TRadIAContainer.Resolve<IRadIASemanticRequestClient> as
+      IRadIASemanticEngineLifecycle
+  );
   TRadIAContainer.Register<IRadIASemanticWorkspaceSynchronizer>(
     TRadIASemanticWorkspaceSynchronizer.Create(
       TRadIAContainer.Resolve<IRadIASemanticRequestClient>
@@ -1642,6 +1741,12 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
     TRadIAContainer.Resolve<IRadIAPatchService>
+  );
+  RegisterRadIALocalDatabaseTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+    TRadIALocalDatabaseService.Create
   );
   RegisterRadIAExternalMcpRuntime;
   RegisterRadIAInstallationHealthTools(

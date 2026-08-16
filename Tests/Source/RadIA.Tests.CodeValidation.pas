@@ -149,7 +149,7 @@ begin
       3
     )
   ]);
-  Assert.AreEqual(1, Length(LFindings));
+  Assert.AreEqual(NativeInt(1), Length(LFindings));
   Assert.AreEqual('compiler', RadIAValidationSourceName(LFindings[0].Source));
   Assert.AreEqual('error', RadIAValidationSeverityName(LFindings[0].Severity));
   Assert.AreEqual(14, LFindings[0].Line);
@@ -173,7 +173,7 @@ begin
   ));
   Assert.AreEqual(30, Integer(LCategory));
   Assert.AreEqual(42, LId);
-  Assert.AreEqual(Length(LMessage) - 9, LLength);
+  Assert.AreEqual<NativeInt>(Length(LMessage) - 9, LLength);
   Assert.AreEqual('{"unit":"Main"}', TEncoding.UTF8.GetString(
     Copy(LMessage, 9, LLength)
   ));
@@ -227,7 +227,7 @@ begin
     LFindings,
     LError
   ), LError);
-  Assert.AreEqual(1, Length(LFindings));
+  Assert.AreEqual(NativeInt(1), Length(LFindings));
   Assert.AreEqual('DelphiLint:LongRoutine', LFindings[0].Rule);
   Assert.AreEqual(12, LFindings[0].Line);
   Assert.AreEqual(5, LFindings[0].Column);
@@ -296,7 +296,7 @@ begin
     LFindings,
     LError
   ), LError);
-  Assert.AreEqual(1, Length(LFindings));
+  Assert.AreEqual(NativeInt(1), Length(LFindings));
   Assert.AreEqual('Source/Main.pas', LFindings[0].FileName);
   Assert.AreEqual('error', RadIAValidationSeverityName(LFindings[0].Severity));
   Assert.AreEqual(3, LFindings[0].Column);

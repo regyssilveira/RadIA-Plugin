@@ -4,8 +4,10 @@ program RadIASemanticEngine;
 
 uses
   System.Generics.Collections,
+  System.Diagnostics,
   System.JSON,
   System.SysUtils,
+  Winapi.Windows,
   RadIA.Semantic.Lexer in 'RadIA.Semantic.Lexer.pas',
   RadIA.Semantic.Preprocessor in 'RadIA.Semantic.Preprocessor.pas',
   RadIA.Semantic.Parser in 'RadIA.Semantic.Parser.pas',
@@ -15,6 +17,11 @@ uses
 const
   CEngineName = 'RadIA Semantic Engine';
   CProtocolVersion = '1.0';
+
+var
+  GLastRequestLatencyMs: Int64;
+  GRequestCount: Int64;
+  GStartedAt: TStopwatch;
 
 function BuildError(
   const AId: TJSONValue;
@@ -195,6 +202,21 @@ begin
   LResult.AddPair('error', AError);
   LResult.AddPair('unitCount', TJSONNumber.Create(AIndex.UnitCount));
   LResult.AddPair('symbolCount', TJSONNumber.Create(AIndex.SymbolCount));
+  LResult.AddPair(
+    'estimatedMemoryBytes',
+    TJSONNumber.Create(AIndex.EstimatedMemoryBytes)
+  );
+  LResult.AddPair('cacheSchemaVersion', AIndex.CacheSchemaVersion);
+  LResult.AddPair('processId', TJSONNumber.Create(GetCurrentProcessId));
+  LResult.AddPair('requestCount', TJSONNumber.Create(GRequestCount));
+  LResult.AddPair(
+    'lastRequestLatencyMs',
+    TJSONNumber.Create(GLastRequestLatencyMs)
+  );
+  LResult.AddPair(
+    'uptimeMs',
+    TJSONNumber.Create(GStartedAt.ElapsedMilliseconds)
+  );
   Result.AddPair('result', LResult);
 end;
 
@@ -234,6 +256,21 @@ begin
   LResult.AddPair('protocolVersion', CProtocolVersion);
   LResult.AddPair('unitCount', TJSONNumber.Create(AIndex.UnitCount));
   LResult.AddPair('symbolCount', TJSONNumber.Create(AIndex.SymbolCount));
+  LResult.AddPair(
+    'estimatedMemoryBytes',
+    TJSONNumber.Create(AIndex.EstimatedMemoryBytes)
+  );
+  LResult.AddPair('cacheSchemaVersion', AIndex.CacheSchemaVersion);
+  LResult.AddPair('processId', TJSONNumber.Create(GetCurrentProcessId));
+  LResult.AddPair('requestCount', TJSONNumber.Create(GRequestCount));
+  LResult.AddPair(
+    'lastRequestLatencyMs',
+    TJSONNumber.Create(GLastRequestLatencyMs)
+  );
+  LResult.AddPair(
+    'uptimeMs',
+    TJSONNumber.Create(GStartedAt.ElapsedMilliseconds)
+  );
   Result.AddPair('result', LResult);
 end;
 
@@ -796,6 +833,7 @@ begin
       AId,
       AIndex.LoadCache(
         LParameters.GetValue<string>('fileName', ''),
+        LParameters.GetValue<string>('profileKey', ''),
         LCacheError
       ),
       LCacheError,
@@ -805,7 +843,10 @@ begin
   if SameText(AMethod, 'saveIndexCache') then
   begin
     LParameters := RequireParameters(ARequest);
-    AIndex.SaveCache(LParameters.GetValue<string>('fileName', ''));
+    AIndex.SaveCache(
+      LParameters.GetValue<string>('fileName', ''),
+      LParameters.GetValue<string>('profileKey', '')
+    );
     Exit(BuildCacheResult(AId, True, '', AIndex));
   end;
   Result := BuildError(AId, -32601, 'Unknown semantic engine method.');
@@ -862,8 +903,10 @@ var
   LRequest: TJSONObject;
   LResponse: TJSONObject;
   LShutdown: Boolean;
+  LStopwatch: TStopwatch;
 begin
   LShutdown := False;
+  GStartedAt := TStopwatch.StartNew;
   LIndex := TRadIASemanticIndex.Create;
   try
     while not Eof(Input) and not LShutdown do
@@ -873,6 +916,8 @@ begin
         Continue;
       LRequest := TJSONObject.ParseJSONValue(LInput) as TJSONObject;
       try
+        LStopwatch := TStopwatch.StartNew;
+        Inc(GRequestCount);
         if not Assigned(LRequest) then
           LResponse := BuildError(nil, -32700, 'Invalid JSON request.')
         else
@@ -881,6 +926,8 @@ begin
           WriteLn(LResponse.ToJSON);
           Flush(Output);
         finally
+          LStopwatch.Stop;
+          GLastRequestLatencyMs := LStopwatch.ElapsedMilliseconds;
           LResponse.Free;
         end;
       finally

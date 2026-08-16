@@ -65,6 +65,9 @@ public static class RadIAWindowNative
     public static extern bool IsWindowVisible(IntPtr windowHandle);
 
     [DllImport("user32.dll")]
+    public static extern bool IsWindowEnabled(IntPtr windowHandle);
+
+    [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(
         IntPtr windowHandle,
         out uint processId
@@ -645,6 +648,187 @@ function Invoke-RadIAToolWithConsent {
     }
 }
 
+function Invoke-RadIAToolSequenceWithSessionConsent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BridgePath,
+        [Parameter(Mandatory = $true)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory = $true)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory = $true)]
+        [array]$Operations
+    )
+
+    if ($Operations.Count -lt 2) {
+        throw "Session consent validation requires at least two operations."
+    }
+
+    $requestKey = [Guid]::NewGuid().ToString("N")
+    $requestRoot = Join-Path (
+        [IO.Path]::GetTempPath()
+    ) "radia-session-consent-$requestKey"
+    $inputPath = "$requestRoot.in"
+    $outputPath = "$requestRoot.out"
+    $errorPath = "$requestRoot.err"
+    $messages = @(
+        @{
+            jsonrpc = "2.0"
+            id = 1
+            method = "initialize"
+            params = @{
+                protocolVersion = "2025-06-18"
+                capabilities = @{}
+                clientInfo = @{
+                    name = "radia-session-consent-smoke"
+                    version = "1"
+                }
+            }
+        } | ConvertTo-Json -Depth 8 -Compress
+        @{
+            jsonrpc = "2.0"
+            method = "notifications/initialized"
+            params = @{}
+        } | ConvertTo-Json -Depth 4 -Compress
+    )
+    for ($operationIndex = 0; $operationIndex -lt $Operations.Count;
+        $operationIndex++) {
+        $operation = $Operations[$operationIndex]
+        $messages += @{
+            jsonrpc = "2.0"
+            id = $operationIndex + 2
+            method = "tools/call"
+            params = @{
+                name = $operation.Name
+                arguments = $operation.Arguments
+            }
+        } | ConvertTo-Json -Depth 8 -Compress
+    }
+    Set-Content -LiteralPath $inputPath -Value $messages -Encoding UTF8
+
+    $bridgeProcess = $null
+    try {
+        $bridgeProcess = Start-Process `
+            -FilePath $BridgePath `
+            -ArgumentList "`"$InstanceFile`"" `
+            -RedirectStandardInput $inputPath `
+            -RedirectStandardOutput $outputPath `
+            -RedirectStandardError $errorPath `
+            -PassThru
+        Wait-RadIACondition -TimeoutSeconds 30 -Condition {
+            $bridgeProcess.HasExited -or
+                [RadIAWindowNative]::FindVisibleWindow(
+                    [uint32]$IDEProcess.Id,
+                    "TRadIAConsentForm"
+                ) -ne [IntPtr]::Zero
+        } -FailureMessage "The first session consent dialog did not open."
+        if ($bridgeProcess.HasExited) {
+            throw "The MCP bridge exited before session consent."
+        }
+
+        $consentWindow = [RadIAWindowNative]::FindVisibleWindow(
+            [uint32]$IDEProcess.Id,
+            "TRadIAConsentForm"
+        )
+        $allowSessionButton = [RadIAWindowNative]::FindChildByText(
+            $consentWindow,
+            "Allow session"
+        )
+        if ($allowSessionButton -eq [IntPtr]::Zero -or
+            -not [RadIAWindowNative]::IsWindowEnabled(
+                $allowSessionButton
+            )) {
+            throw "Allow session is unavailable for the compatible sequence."
+        }
+        [void][RadIAWindowNative]::SendMessage(
+            $allowSessionButton,
+            0x00F5,
+            [IntPtr]0,
+            [IntPtr]0
+        )
+        Wait-RadIACondition -TimeoutSeconds 30 -Condition {
+            -not [RadIAWindowNative]::IsWindowVisible($consentWindow)
+        } -FailureMessage "The first session consent dialog did not close."
+        $sequenceTimeoutSeconds = if (@(
+            $Operations.Name |
+                Where-Object {
+                    $_ -in @(
+                        "BuildProject",
+                        "RunDUnitXTests",
+                        "ValidateCreatedProject"
+                    )
+                }
+        ).Count -gt 0) { 600 } else { 120 }
+        Wait-RadIACondition -TimeoutSeconds $sequenceTimeoutSeconds -Condition {
+            $bridgeProcess.HasExited -or
+                [RadIAWindowNative]::FindVisibleWindow(
+                    [uint32]$IDEProcess.Id,
+                    "TRadIAConsentForm"
+                ) -ne [IntPtr]::Zero
+        } -FailureMessage "The consented tool sequence did not finish."
+
+        $redundantWindow = [RadIAWindowNative]::FindVisibleWindow(
+            [uint32]$IDEProcess.Id,
+            "TRadIAConsentForm"
+        )
+        if ($redundantWindow -ne [IntPtr]::Zero) {
+            $cancelButton = [RadIAWindowNative]::FindChildByText(
+                $redundantWindow,
+                "Cancel"
+            )
+            if ($cancelButton -ne [IntPtr]::Zero) {
+                [void][RadIAWindowNative]::SendMessage(
+                    $cancelButton,
+                    0x00F5,
+                    [IntPtr]0,
+                    [IntPtr]0
+                )
+            }
+            throw "A compatible tool requested redundant session consent."
+        }
+        if (-not $bridgeProcess.WaitForExit(5000)) {
+            throw "The MCP bridge did not exit after the consented sequence."
+        }
+
+        $responses = @(
+            Get-Content -LiteralPath $outputPath |
+                ForEach-Object { $_ | ConvertFrom-Json } |
+                Where-Object { $_.id -ge 2 } |
+                Sort-Object id
+        )
+        if ($responses.Count -ne $Operations.Count) {
+            throw "The consented sequence returned incomplete responses."
+        }
+        $results = @()
+        foreach ($response in $responses) {
+            if ($response.error -or $response.result.isError) {
+                $responseDetails = $response |
+                    ConvertTo-Json -Depth 10 -Compress
+                throw (
+                    "The consented sequence failed: " +
+                    $responseDetails
+                )
+            }
+            $results += $response.result.structuredContent
+        }
+        return $results
+    } finally {
+        if ($bridgeProcess -and -not $bridgeProcess.HasExited) {
+            Stop-Process -Id $bridgeProcess.Id -Force
+            [void]$bridgeProcess.WaitForExit(5000)
+        }
+        foreach ($temporaryPath in @(
+            $inputPath,
+            $outputPath,
+            $errorPath
+        )) {
+            if (Test-Path -LiteralPath $temporaryPath) {
+                Remove-Item -LiteralPath $temporaryPath -Force
+            }
+        }
+    }
+}
+
 function Complete-RadIADebugSession {
     param(
         [Parameter(Mandatory = $true)]
@@ -962,6 +1146,9 @@ $transitionProjectDirectory = Join-Path $smokeDirectory (
 $transitionProjectSourcePath = Join-Path $transitionProjectDirectory (
     "MainForm.pas"
 )
+$consentProbeProjectDirectory = Join-Path $smokeDirectory (
+    "Tests\ConsentProbeVclApp"
+)
 $testExecutableCandidates = @(
     (Join-Path $smokeDirectory (
         "Tests\Output\$DelphiVersion\bin\$idePlatform\Debug\RadIATests.exe"
@@ -992,6 +1179,7 @@ $editorChanged = $false
 $buildPassed = $false
 $testsPassed = $false
 $generatedTestsPassed = $false
+$sessionConsentPassed = -not $ExerciseProjectTransition
 $correctionPassed = -not $ExerciseCorrection
 $debugPassed = -not $ExerciseDebugger
 $gitPassed = -not $ExerciseGit
@@ -1732,16 +1920,48 @@ try {
                     creationProfile = "essential"
                 }
             }
-        $transitionCreated = Invoke-RadIAToolWithConsent `
+        $consentProbePreview = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "PreviewProjectTemplate" `
+            -Arguments @{
+                projectName = "RadIAConsentProbeApp"
+                template = "vcl"
+                delphiVersion = $DelphiVersion
+                platforms = @("Win32")
+                destinationPath = $consentProbeProjectDirectory
+                projectSpecification = @{
+                    schemaVersion = 1
+                    kind = "blank"
+                    creationProfile = "essential"
+                }
+            }
+        $creationResults = @(
+            Invoke-RadIAToolSequenceWithSessionConsent `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
             -IDEProcess $process `
-            -Name "CreateProjectFromTemplate" `
-            -Arguments @{
-                previewId = $transitionPreview.previewId
-            }
+            -Operations @(
+                @{
+                    Name = "CreateProjectFromTemplate"
+                    Arguments = @{
+                        previewId = $transitionPreview.previewId
+                    }
+                },
+                @{
+                    Name = "CreateProjectFromTemplate"
+                    Arguments = @{
+                        previewId = $consentProbePreview.previewId
+                    }
+                }
+            )
+        )
+        $transitionCreated = $creationResults[0]
         if (-not $transitionCreated.committed) {
             throw "The replacement project was not created."
+        }
+        if (-not $creationResults[1].committed) {
+            throw "The consent probe project was not created."
         }
         $transitionOpened = Invoke-RadIAToolWithConsent `
             -BridgePath $bridgePath `
@@ -1753,6 +1973,33 @@ try {
             }
         if (-not $transitionOpened.opened) {
             throw "The replacement project was not opened."
+        }
+        $executionResults = @(
+            Invoke-RadIAToolSequenceWithSessionConsent `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -IDEProcess $process `
+            -Operations @(
+                @{
+                    Name = "ValidateCreatedProject"
+                    Arguments = @{
+                        previewId = $transitionPreview.previewId
+                        timeoutMs = 600000
+                    }
+                },
+                @{
+                    Name = "BuildProject"
+                    Arguments = @{
+                        mode = "build"
+                        timeoutMs = 600000
+                        clearMessages = $true
+                    }
+                }
+            )
+        )
+        if (-not $executionResults[0].buildSucceeded -or
+            -not $executionResults[1].success) {
+            throw "The replacement project did not validate."
         }
         $transitionNavigation = Invoke-RadIAToolWithConsent `
             -BridgePath $bridgePath `
@@ -1767,17 +2014,34 @@ try {
         if (-not $transitionNavigation.fileName) {
             throw "Navigation failed after closing one project and opening another."
         }
-        $transitionRollback = Invoke-RadIAToolWithConsent `
+        $rollbackResults = @(
+            Invoke-RadIAToolSequenceWithSessionConsent `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
             -IDEProcess $process `
-            -Name "RevertCreatedProject" `
-            -Arguments @{
-                previewId = $transitionPreview.previewId
-            }
+            -Operations @(
+                @{
+                    Name = "RevertCreatedProject"
+                    Arguments = @{
+                        previewId = $consentProbePreview.previewId
+                    }
+                },
+                @{
+                    Name = "RevertCreatedProject"
+                    Arguments = @{
+                        previewId = $transitionPreview.previewId
+                    }
+                }
+            )
+        )
+        if (-not $rollbackResults[0].rolledBack) {
+            throw "The consent probe project was not reverted."
+        }
+        $transitionRollback = $rollbackResults[1]
         if (-not $transitionRollback.rolledBack) {
             throw "The replacement project was not reverted."
         }
+        $sessionConsentPassed = $true
     }
 
     if (-not $ExerciseProjectTransition) {
@@ -2235,6 +2499,7 @@ if ($EvidencePath) {
             buildPassed = $buildPassed
             testsPassed = $testsPassed
             generatedTestsPassed = $generatedTestsPassed
+            sessionConsentPassed = $sessionConsentPassed
             debuggerPassed = $debugPassed
             reviewedCommitCreated = $gitPassed
             shutdownPassed = $journeySucceeded

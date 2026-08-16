@@ -42,6 +42,12 @@ Session permissions:
 - They can be revoked by the UI.
 - They do not automatically apply to destructive or sensitive actions.
 
+Compatible tools share approval only while origin, session, project, scope, and risk level remain
+the same. A journey may therefore request one approval to create a project and another to open or
+execute it, then reuse each decision for later calls in the same category. When the active project
+changes, RadIA requests fresh approval instead of silently transferring permission to the new
+workspace.
+
 ### Central dialog and surfaces
 
 Chat, native agent, MCP, and terminal use the same consent provider and native dialog, independently
@@ -175,6 +181,13 @@ Designer mutations are structural and require confirmation.
 
 Debugger control and application execution are classified as execution. Locals readings
 may contain secrets and must be sanitized before reaching logs or external clients.
+
+### 10.1. Local SQLite database
+
+Inspection accepts only files inside the workspace. Queries use a read-only connection, row and
+column bounds, consent on every execution, and redaction before grid and CSV rendering. DDL, DML,
+compound statements, BLOB materialization, and SQLite runtimes outside the trusted Delphi
+installation are rejected.
 
 ## 11. Fail safe
 

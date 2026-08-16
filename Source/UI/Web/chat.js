@@ -318,6 +318,64 @@ const statusBar       = document.getElementById('status-bar');
 const statusText      = document.getElementById('status-text');
 const contextBar      = document.getElementById('context-bar');
 const contextText     = document.getElementById('context-text');
+let lifecycleStateTimer = 0;
+
+function captureLifecycleState() {
+  postMessageToDelphi({
+    action: 'webview_lifecycle_state',
+    state: {
+      draft: String(promptTextarea?.value || '').slice(0, 12000),
+      scrollTop: Math.max(0, Math.round(chatContainer?.scrollTop || 0)),
+      advanced: btnComposerAdvanced?.getAttribute('aria-expanded') === 'true'
+    }
+  });
+}
+
+function scheduleLifecycleStateCapture() {
+  globalThis.clearTimeout(lifecycleStateTimer);
+  lifecycleStateTimer = globalThis.setTimeout(captureLifecycleState, 120);
+}
+
+function restoreLifecycleState(state, smoke = false) {
+  if (!state || typeof state !== 'object') return;
+  const draft = String(state.draft || '').slice(0, 12000);
+  if (promptTextarea && !promptTextarea.value) {
+    promptTextarea.value = draft;
+    promptTextarea.dispatchEvent(new Event('input'));
+  }
+  setComposerAdvancedVisible(state.advanced === true);
+  const scrollTop = Math.max(0, Math.min(10000000, Number(state.scrollTop) || 0));
+  [0, 100, 500].forEach(delay => {
+    globalThis.setTimeout(() => {
+      if (chatContainer) chatContainer.scrollTop = scrollTop;
+    }, delay);
+  });
+  if (smoke) {
+    globalThis.setTimeout(() => {
+      postMessageToDelphi({
+        action: 'webview_lifecycle_smoke_result',
+        draftRestored: promptTextarea?.value === 'radia-webview-recovery-draft',
+        advancedRestored: btnComposerAdvanced?.getAttribute('aria-expanded') === 'true'
+      });
+    }, 600);
+  }
+}
+
+function beginLifecycleSmoke() {
+  if (promptTextarea) {
+    promptTextarea.value = 'radia-webview-recovery-draft';
+    promptTextarea.dispatchEvent(new Event('input'));
+  }
+  if (btnComposerAdvanced?.getAttribute('aria-expanded') !== 'true') {
+    btnComposerAdvanced?.click();
+  }
+  captureLifecycleState();
+  globalThis.setTimeout(() => {
+    postMessageToDelphi({ action: 'webview_lifecycle_smoke_ready' });
+  }, 300);
+}
+
+globalThis.beginLifecycleSmoke = beginLifecycleSmoke;
 
 const sessionsSidebar = document.getElementById('sessions-sidebar');
 const btnNewChatSidebar = document.getElementById('btn-new-chat-sidebar');
@@ -1835,6 +1893,122 @@ function renderKnowledgeDocumentResult(card, result) {
   });
 }
 
+function renderLocalDatabaseSchema(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const objects = Array.isArray(result.objects) ? result.objects : [];
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'database-result-summary';
+  summary.textContent = `${objects.length} schema object(s) · read-only SQLite`;
+  content.appendChild(summary);
+
+  objects.forEach(item => {
+    const details = document.createElement('details');
+    details.className = 'database-schema-object';
+    const heading = document.createElement('summary');
+    const columns = Array.isArray(item.columns) ? item.columns : [];
+    heading.textContent = `${item.objectType || 'table'} ${item.name || ''} · ` +
+      `${columns.length} column(s)`;
+    const list = document.createElement('ul');
+    columns.forEach(column => {
+      const entry = document.createElement('li');
+      entry.textContent = [
+        column.name || '',
+        column.dataType || 'untyped',
+        column.primaryKey ? 'primary key' : '',
+        column.notNull ? 'not null' : '',
+        column.sensitive ? 'sensitive (redacted in previews)' : ''
+      ].filter(Boolean).join(' · ');
+      list.appendChild(entry);
+    });
+    details.append(heading, list);
+    content.appendChild(details);
+  });
+}
+
+function renderLocalDatabaseQuery(card, result) {
+  const content = card.querySelector('.tool-card-content');
+  const columns = Array.isArray(result.columns) ? result.columns : [];
+  const rows = Array.isArray(result.rows) ? result.rows : [];
+  const pageSize = 25;
+  let page = 0;
+  content.replaceChildren();
+
+  const summary = document.createElement('div');
+  summary.className = 'database-result-summary';
+  const resultState = result.truncated
+    ? `limited to ${result.maxRows || rows.length}`
+    : 'complete preview';
+  summary.textContent = `${rows.length} row(s) · read-only · ` +
+    resultState;
+  content.appendChild(summary);
+
+  const viewport = document.createElement('div');
+  viewport.className = 'database-grid-viewport';
+  const table = document.createElement('table');
+  table.className = 'database-grid';
+  const header = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  columns.forEach(column => {
+    const cell = document.createElement('th');
+    cell.scope = 'col';
+    cell.textContent = String(column ?? '');
+    headerRow.appendChild(cell);
+  });
+  header.appendChild(headerRow);
+  const body = document.createElement('tbody');
+  table.append(header, body);
+  viewport.appendChild(table);
+  content.appendChild(viewport);
+
+  const controls = document.createElement('div');
+  controls.className = 'database-grid-controls';
+  const previous = document.createElement('button');
+  previous.type = 'button';
+  previous.textContent = 'Previous';
+  previous.title = 'Show the previous 25 sanitized rows';
+  const indicator = document.createElement('span');
+  const next = document.createElement('button');
+  next.type = 'button';
+  next.textContent = 'Next';
+  next.title = 'Show the next 25 sanitized rows';
+  const copyCsv = createTextCopyButton(
+    () => String(result.exportCsv || ''),
+    'Copy sanitized CSV'
+  );
+  copyCsv.disabled = !result.exportCsv;
+
+  const renderPage = () => {
+    body.replaceChildren();
+    const start = page * pageSize;
+    rows.slice(start, start + pageSize).forEach(row => {
+      const rowElement = document.createElement('tr');
+      (Array.isArray(row) ? row : []).forEach(value => {
+        const cell = document.createElement('td');
+        cell.textContent = value === null ? 'NULL' : String(value);
+        rowElement.appendChild(cell);
+      });
+      body.appendChild(rowElement);
+    });
+    const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+    indicator.textContent = `Page ${Math.min(page + 1, pageCount)} of ${pageCount}`;
+    previous.disabled = page === 0;
+    next.disabled = page + 1 >= pageCount;
+  };
+  previous.addEventListener('click', () => {
+    page = Math.max(0, page - 1);
+    renderPage();
+  });
+  next.addEventListener('click', () => {
+    page = Math.min(Math.max(0, Math.ceil(rows.length / pageSize) - 1), page + 1);
+    renderPage();
+  });
+  controls.append(previous, indicator, next, copyCsv);
+  content.appendChild(controls);
+  renderPage();
+}
+
 function createHealthActionButton(command) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -2126,6 +2300,8 @@ const TOOL_RESULT_RENDERERS = {
   GetProjectHealth: [renderProjectHealth, ''],
   SearchProjectKnowledge: [renderKnowledgeSearchResult, ''],
   GetKnowledgeDocument: [renderKnowledgeDocumentResult, ''],
+  InspectLocalSQLiteDatabase: [renderLocalDatabaseSchema, ''],
+  PreviewLocalSQLiteQuery: [renderLocalDatabaseQuery, ''],
   PreparePatch: [renderPatchPreview, 'ApplyPatch'],
   ApplyPatch: [renderPatchPreview, 'RevertPatch'],
   PrepareComponentLayout: [
@@ -2350,7 +2526,10 @@ function updateChatScrollbar() {
 function bindChatScrollbar() {
   if (!chatContainer || !chatScrollbar || !chatScrollbarThumb) return;
 
-  chatContainer.addEventListener('scroll', updateChatScrollbar);
+  chatContainer.addEventListener('scroll', () => {
+    updateChatScrollbar();
+    scheduleLifecycleStateCapture();
+  });
   globalThis.addEventListener('resize', updateChatScrollbar);
 
   chatScrollbarThumb.addEventListener('mousedown', (event) => {
@@ -2911,6 +3090,7 @@ promptTextarea.addEventListener('input', () => {
   } else {
     hideSlashPopup();
   }
+  scheduleLifecycleStateCapture();
 });
 
 function handleSlashPopupKeydown(e) {
@@ -3215,6 +3395,7 @@ btnExecutionScope?.addEventListener('click', () => {
 btnComposerAdvanced?.addEventListener('click', () => {
   const visible = btnComposerAdvanced.getAttribute('aria-expanded') !== 'true';
   setComposerAdvancedVisible(visible);
+  scheduleLifecycleStateCapture();
 });
 
 btnClearExecutionScope?.addEventListener('click', () => {
@@ -4491,6 +4672,7 @@ if (globalThis.chrome?.webview) {
       case 'visual_runtime_session': renderVisualRuntimeSession(data);                           break;
       case 'cli_activity':          renderCliActivity(data);                                    break;
       case 'intent_recommendation': renderIntentRecommendation(data);                            break;
+      case 'restore_lifecycle_state': restoreLifecycleState(data.state, data.smoke === true);    break;
     }
   });
   postMessageToDelphi({ action: 'ready' });

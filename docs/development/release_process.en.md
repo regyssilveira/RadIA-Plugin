@@ -24,7 +24,7 @@ Run validations proportional to the delivery. A complete release requires:
 
 ```powershell
 npx eslint
-node --test Tests/Web/RadIA.Documentation.test.js
+node --test --test-isolation=none Tests/Web/RadIA.Documentation.test.js
 powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 

@@ -556,12 +556,42 @@ if ($runTests) {
             & $codeCoverageExe $ccArgs
 
             if ($LASTEXITCODE -eq 0) {
+                $testResultPath = Join-Path `
+                    (Split-Path -Parent $testsExe) `
+                    "dunitx-results.xml"
+                $mainTestResultPath = Join-Path `
+                    (Split-Path -Parent $testsExe) `
+                    "dunitx-main-results.xml"
+                $externalTestResultPath = Join-Path `
+                    (Split-Path -Parent $testsExe) `
+                    "dunitx-external-results.xml"
+                if (Test-Path -LiteralPath $testResultPath -PathType Leaf) {
+                    Copy-Item `
+                        -LiteralPath $testResultPath `
+                        -Destination $mainTestResultPath `
+                        -Force
+                }
                 Write-Host (
                     "Executando testes de processos externos fora da instrumentacao..."
                 ) -ForegroundColor Yellow
-                & $testsExe "--include:ExternalProcess"
-                if ($LASTEXITCODE -ne 0) {
-                    throw "External-process tests returned failures."
+                try {
+                    & $testsExe "--include:ExternalProcess"
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "External-process tests returned failures."
+                    }
+                    if (Test-Path -LiteralPath $testResultPath -PathType Leaf) {
+                        Move-Item `
+                            -LiteralPath $testResultPath `
+                            -Destination $externalTestResultPath `
+                            -Force
+                    }
+                } finally {
+                    if (Test-Path -LiteralPath $mainTestResultPath -PathType Leaf) {
+                        Copy-Item `
+                            -LiteralPath $mainTestResultPath `
+                            -Destination $testResultPath `
+                            -Force
+                    }
                 }
                 Write-Host "=============================================" -ForegroundColor Green
                 Write-Host "    Build, Testes e Cobertura Concluidos!    " -ForegroundColor Green
@@ -595,6 +625,18 @@ if ($runTests) {
             & $testsExe
             if ($LASTEXITCODE -ne 0) {
                 throw "A suite de testes retornou falhas."
+            }
+            $testResultPath = Join-Path `
+                (Split-Path -Parent $testsExe) `
+                "dunitx-results.xml"
+            $mainTestResultPath = Join-Path `
+                (Split-Path -Parent $testsExe) `
+                "dunitx-main-results.xml"
+            if (Test-Path -LiteralPath $testResultPath -PathType Leaf) {
+                Copy-Item `
+                    -LiteralPath $testResultPath `
+                    -Destination $mainTestResultPath `
+                    -Force
             }
 
             Write-Host "=============================================" -ForegroundColor Green

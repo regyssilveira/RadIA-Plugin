@@ -63,6 +63,15 @@ O [guia do RadIA Doctor](../reference/doctor.md) explica a rota efetiva e cada c
 | Controle recusado | Consulte o estado do debugger antes do próximo comando. |
 | `Debug process not initialized` ao usar F9 | Atualize o Rad IA e reinicie a IDE. O observador de timeline ignora estados transitórios da OTA e nunca deve bloquear um debug manual. Se persistir, desabilite temporariamente o package e preserve `%APPDATA%\RadIA\Logs` para diagnóstico. |
 
+## Painel de chat e WebView2
+
+| Sintoma | Verificação e ação |
+|---|---|
+| Painel fica branco após resize ou troca de dock | Aguarde a recuperação automática. O RadIA recria o WebView2 e restaura o rascunho e o estado visual mantidos em memória. |
+| Mensagem informa que o painel não pôde ser recuperado | Feche e reabra o chat. As tentativas são limitadas para impedir um ciclo infinito de criação. |
+| Falha persiste após reabrir | Feche todas as IDEs, preserve `%APPDATA%\RadIA\Logs` e remova apenas o cache descartável `%APPDATA%\RadIA\WebView2`. Não remova sessões, auditoria ou configurações. |
+| Rascunho desapareceu após fechar a IDE | Comportamento esperado: rascunhos de recuperação ficam somente na memória e não são persistidos. |
+
 ## Logs e dados locais
 
 - Auditoria: `%APPDATA%\RadIA\audit\tools.jsonl`.

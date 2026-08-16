@@ -35,6 +35,10 @@ vazio, ambíguo ou indisponível segue automaticamente para a rota FIM já confi
 cancela tanto a espera local quanto a remota; o status de rota informa `local semantic`, quantidade
 de candidatos e latência quando essa rota é usada.
 
+Essa sugestão pertence ao overlay de Ghost Text. Ela não adiciona candidatos nem substitui o popup
+nativo do CodeInsight. Consulte [Inteligência semântica no editor](../reference/semantic_intelligence.md)
+para distinguir todas as superfícies, formas de acionamento e limites medidos.
+
 A resolução local nunca trata uma lista vazia como resposta silenciosa. O motor identifica o símbolo
 solicitado e retorna estado, motivo, origem e alternativas estruturais. Nomes curtos encontrados em mais
 de uma unit são marcados como `short-name-ambiguous`; nesse caso nenhuma sugestão local é aplicada e o

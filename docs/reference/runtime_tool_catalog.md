@@ -465,6 +465,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `PrepareLocalizationExtraction` | Prepara um patch imutável que move um literal da unit ativa para `resourcestring`, sem aplicar alterações. | `RadIA.Core.DelphiEcosystemTools.pas` |
 
+## Inspeção segura de banco local
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `InspectLocalSQLiteDatabase` | Lê tabelas, views e colunas de um arquivo SQLite dentro do workspace sem executar SQL fornecido pelo usuário. | `RadIA.Core.LocalDatabaseTools.pas` |
+| `PreviewLocalSQLiteQuery` | Executa uma única consulta somente leitura, limita o resultado a 500 linhas e oculta colunas sensíveis no grid e no CSV. | `RadIA.Core.LocalDatabaseTools.pas` |
+
 ## Evidências de logs do FastMM5
 
 | Ferramenta | O que faz | Unit de origem |
@@ -506,7 +513,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 63
-- Ferramentas internas registradas: 185
+- Grupos registrados: 64
+- Ferramentas internas registradas: 187
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

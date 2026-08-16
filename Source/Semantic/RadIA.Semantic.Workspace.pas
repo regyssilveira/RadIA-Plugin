@@ -31,6 +31,16 @@ type
     ): Boolean;
   end;
 
+  IRadIASemanticEngineLifecycle = interface
+    ['{AF670F4C-F678-45A8-A4E8-37C663D133A0}']
+    procedure Stop;
+  end;
+
+  IRadIASemanticEngineDiagnostics = interface
+    ['{5AB6B95D-5FF8-4611-A90E-14D450497CC8}']
+    function GetDiagnosticsJson: string;
+  end;
+
   TRadIASemanticWorkspaceFile = record
   private
     FContent: string;
@@ -85,10 +95,20 @@ type
     IRadIASemanticWorkspaceSynchronizer
   )
   private
+    FCacheFile: string;
+    FCacheLoaded: Boolean;
     FClient: IRadIASemanticRequestClient;
     FFingerprints: TDictionary<string, string>;
     FLastRestartCount: Integer;
     FNextRevision: Int64;
+    FProfileKey: string;
+    function BuildCacheFile(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>
+    ): string;
+    function BuildProfileKey(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      const ADefines: TArray<string>
+    ): string;
     function BuildIndexParameters(
       const AFile: TRadIASemanticWorkspaceFile;
       const ADefines: TArray<string>;
@@ -104,9 +124,29 @@ type
       const AFiles: TArray<TRadIASemanticWorkspaceFile>;
       out AError: string
     ): Boolean;
+    function PrepareCache(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      const ADefines: TArray<string>;
+      out AError: string
+    ): Boolean;
+    function PersistCache(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      const ADefines: TArray<string>;
+      out AError: string
+    ): Boolean;
+    function RestoreCache(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      out AError: string
+    ): Boolean;
     function ResolveContent(
       const AFile: TRadIASemanticWorkspaceFile
     ): TRadIASemanticWorkspaceFile;
+    function SaveCache(out AError: string): Boolean;
+    function SynchronizeIndexState(
+      const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+      const ADefines: TArray<string>;
+      out AError: string
+    ): Boolean;
   public
     constructor Create(const AClient: IRadIASemanticRequestClient);
     destructor Destroy; override;
@@ -146,6 +186,7 @@ implementation
 
 uses
   System.Classes,
+  System.Hash,
   System.IOUtils,
   System.JSON,
   System.SyncObjs,
@@ -232,6 +273,162 @@ destructor TRadIASemanticWorkspaceSynchronizer.Destroy;
 begin
   FFingerprints.Free;
   inherited Destroy;
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.BuildCacheFile(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>
+): string;
+var
+  LFile: TRadIASemanticWorkspaceFile;
+  LIdentity: string;
+  LRoot: string;
+begin
+  LIdentity := '';
+  for LFile in AFiles do
+    if LFile.Scope = susProject then
+    begin
+      LIdentity := LowerCase(
+        TPath.GetDirectoryName(TPath.GetFullPath(LFile.FileName))
+      );
+      Break;
+    end;
+  if LIdentity = '' then
+    for LFile in AFiles do
+      if LFile.Scope = susGroup then
+      begin
+        LIdentity := LowerCase(
+          TPath.GetDirectoryName(TPath.GetFullPath(LFile.FileName))
+        );
+        Break;
+      end;
+  if LIdentity = '' then
+    LIdentity := 'empty-workspace';
+  LRoot := GetEnvironmentVariable('APPDATA');
+  if LRoot = '' then
+    LRoot := TPath.GetTempPath;
+  Result := TPath.Combine(
+    TPath.Combine(LRoot, 'RadIA\Semantic'),
+    THashSHA2.GetHashString(LIdentity) + '.json'
+  );
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.BuildProfileKey(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  const ADefines: TArray<string>
+): string;
+var
+  LDefine: string;
+  LFile: TRadIASemanticWorkspaceFile;
+  LProfile: TStringList;
+begin
+  LProfile := TStringList.Create;
+  try
+    LProfile.Sorted := True;
+    LProfile.Duplicates := dupIgnore;
+    LProfile.Add(
+      'compiler=' +
+      FloatToStr(CompilerVersion, TFormatSettings.Invariant)
+    );
+    {$IFDEF WIN64}
+    LProfile.Add('platform=Win64');
+    {$ELSE}
+    LProfile.Add('platform=Win32');
+    {$ENDIF}
+    for LDefine in ADefines do
+      LProfile.Add('define=' + UpperCase(LDefine));
+    for LFile in AFiles do
+      LProfile.Add(
+        'file=' + LowerCase(LFile.UnitKey) + ':' + LFile.Fingerprint
+      );
+    Result := THashSHA2.GetHashString('semantic-profile-v1' + LProfile.Text);
+  finally
+    LProfile.Free;
+  end;
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.RestoreCache(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  out AError: string
+): Boolean;
+var
+  LDocument: TJSONObject;
+  LFile: TRadIASemanticWorkspaceFile;
+  LParameters: TJSONObject;
+  LResponse: string;
+  LResult: TJSONObject;
+begin
+  Result := False;
+  LParameters := TJSONObject.Create;
+  try
+    LParameters.AddPair('fileName', FCacheFile);
+    LParameters.AddPair('profileKey', FProfileKey);
+    if not FClient.Request(
+      'loadIndexCache',
+      LParameters.ToJSON,
+      LResponse,
+      AError
+    ) then
+      Exit;
+  finally
+    LParameters.Free;
+  end;
+  FCacheLoaded := True;
+  LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+  try
+    LResult := nil;
+    if Assigned(LDocument) then
+      LResult := LDocument.GetValue<TJSONObject>('result');
+    if not Assigned(LResult) then
+    begin
+      AError := 'The semantic cache response was invalid.';
+      Exit;
+    end;
+    if not LResult.GetValue<Boolean>('succeeded', False) then
+      Exit(True);
+    if LResult.GetValue<Integer>('unitCount', 0) > 0 then
+      for LFile in AFiles do
+        FFingerprints.AddOrSetValue(LFile.UnitKey, LFile.Fingerprint);
+    Result := True;
+  finally
+    LDocument.Free;
+  end;
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.SaveCache(
+  out AError: string
+): Boolean;
+var
+  LDocument: TJSONObject;
+  LParameters: TJSONObject;
+  LResponse: string;
+  LResult: TJSONObject;
+begin
+  LParameters := TJSONObject.Create;
+  try
+    LParameters.AddPair('fileName', FCacheFile);
+    LParameters.AddPair('profileKey', FProfileKey);
+    if not FClient.Request(
+      'saveIndexCache',
+      LParameters.ToJSON,
+      LResponse,
+      AError
+    ) then
+      Exit(False);
+  finally
+    LParameters.Free;
+  end;
+  LDocument := TJSONObject.ParseJSONValue(LResponse) as TJSONObject;
+  try
+    LResult := nil;
+    if Assigned(LDocument) then
+      LResult := LDocument.GetValue<TJSONObject>('result');
+    Result := Assigned(LResult) and
+      LResult.GetValue<Boolean>('succeeded', False);
+    if not Result then
+      AError := 'The semantic cache could not be saved.';
+  finally
+    LDocument.Free;
+  end;
 end;
 
 function TRadIASemanticWorkspaceSynchronizer.BuildIndexParameters(
@@ -362,7 +559,100 @@ end;
 procedure TRadIASemanticWorkspaceSynchronizer.Reset;
 begin
   FFingerprints.Clear;
+  FCacheLoaded := False;
   FLastRestartCount := FClient.RestartCount;
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.SynchronizeIndexState(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  const ADefines: TArray<string>;
+  out AError: string
+): Boolean;
+const
+  CMaximumAttempts = 3;
+var
+  LAttempt: Integer;
+  LRestartCount: Integer;
+  LRestarted: Boolean;
+begin
+  for LAttempt := 1 to CMaximumAttempts do
+  begin
+    if LAttempt > 1 then
+    begin
+      Reset;
+      FCacheLoaded := True;
+    end;
+    if not IndexChangedFiles(AFiles, ADefines, LRestarted, AError) then
+      Exit(False);
+    if LRestarted then
+      Continue;
+    LRestartCount := FClient.RestartCount;
+    if not RemoveMissingFiles(AFiles, AError) then
+      Exit(False);
+    if FClient.RestartCount = LRestartCount then
+      Exit(True);
+  end;
+  AError :=
+    'The semantic engine restarted repeatedly during workspace synchronization.';
+  Result := False;
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.PrepareCache(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  const ADefines: TArray<string>;
+  out AError: string
+): Boolean;
+var
+  LCacheFile: string;
+  LProfileKey: string;
+begin
+  LCacheFile := BuildCacheFile(AFiles);
+  LProfileKey := BuildProfileKey(AFiles, ADefines);
+  if not SameText(FCacheFile, LCacheFile) then
+  begin
+    Reset;
+    FCacheFile := LCacheFile;
+    FProfileKey := LProfileKey;
+  end
+  else if not FCacheLoaded and not SameText(FProfileKey, LProfileKey) then
+    FProfileKey := LProfileKey
+  else if FCacheLoaded then
+    FProfileKey := LProfileKey;
+  Result := FCacheLoaded or RestoreCache(AFiles, AError);
+end;
+
+function TRadIASemanticWorkspaceSynchronizer.PersistCache(
+  const AFiles: TArray<TRadIASemanticWorkspaceFile>;
+  const ADefines: TArray<string>;
+  out AError: string
+): Boolean;
+var
+  LRestartCount: Integer;
+begin
+  LRestartCount := FClient.RestartCount;
+  if not SaveCache(AError) and (FClient.RestartCount = LRestartCount) then
+  begin
+    AError := '';
+    FLastRestartCount := FClient.RestartCount;
+    Exit(True);
+  end;
+  if FClient.RestartCount = LRestartCount then
+    Exit(True);
+  Reset;
+  FCacheLoaded := True;
+  if not SynchronizeIndexState(AFiles, ADefines, AError) then
+    Exit(False);
+  LRestartCount := FClient.RestartCount;
+  if not SaveCache(AError) and (FClient.RestartCount = LRestartCount) then
+  begin
+    AError := '';
+    FLastRestartCount := FClient.RestartCount;
+    Exit(True);
+  end;
+  Result := FClient.RestartCount = LRestartCount;
+  if not Result then
+    AError :=
+      'The semantic engine restarted while persisting its recovered cache.';
 end;
 
 function TRadIASemanticWorkspaceSynchronizer.Synchronize(
@@ -370,28 +660,18 @@ function TRadIASemanticWorkspaceSynchronizer.Synchronize(
   const ADefines: TArray<string>;
   out AError: string
 ): Boolean;
-var
-  LRestarted: Boolean;
 begin
   AError := '';
   if FClient.RestartCount <> FLastRestartCount then
     Reset;
-  if not IndexChangedFiles(AFiles, ADefines, LRestarted, AError) then
+  if not PrepareCache(AFiles, ADefines, AError) then
     Exit(False);
-  if LRestarted then
-  begin
-    Reset;
-    if not IndexChangedFiles(AFiles, ADefines, LRestarted, AError) then
-      Exit(False);
-    if LRestarted then
-    begin
-      AError := 'The semantic engine restarted repeatedly during workspace synchronization.';
-      Exit(False);
-    end;
-  end;
-  Result := RemoveMissingFiles(AFiles, AError);
-  if Result then
-    FLastRestartCount := FClient.RestartCount;
+  if not SynchronizeIndexState(AFiles, ADefines, AError) then
+    Exit(False);
+  if not PersistCache(AFiles, ADefines, AError) then
+    Exit(False);
+  FLastRestartCount := FClient.RestartCount;
+  Result := True;
 end;
 
 { TRadIASemanticWorkspaceCoordinator }

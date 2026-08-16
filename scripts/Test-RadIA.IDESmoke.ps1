@@ -6,9 +6,12 @@ param(
     [int]$Cycles = 10,
     [ValidateRange(30, 1800)]
     [int]$StartupTimeoutSeconds = 180,
+    [ValidateRange(1, 100)]
+    [int]$WebViewTransitionCount = 25,
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
+    [switch]$ExerciseWebViewLifecycle,
     [switch]$ExerciseTerminal,
     [switch]$ExerciseInlineCompletion,
     [switch]$ExerciseInlineReview,
@@ -20,6 +23,7 @@ param(
     [string]$UpgradeFromPackagePath = "",
     [string]$EvidencePath = "",
     [string]$TerminalEvidencePath = "",
+    [string]$WebViewLifecycleEvidencePath = "",
     [string]$InlineCompletionEvidencePath = "",
     [string]$InlineReviewEvidencePath = "",
     [string]$AgentRuntimeEvidencePath = "",
@@ -51,6 +55,15 @@ if ($InlineReviewEvidencePath -and -not $ExerciseInlineReview) {
 }
 if ($TerminalEvidencePath -and -not $ExerciseTerminal) {
     throw "Terminal evidence requires -ExerciseTerminal."
+}
+if ($WebViewLifecycleEvidencePath -and -not $ExerciseWebViewLifecycle) {
+    throw (
+        "WebView lifecycle evidence requires " +
+        "-ExerciseWebViewLifecycle."
+    )
+}
+if ($ExerciseWebViewLifecycle -and -not $ExerciseDocking) {
+    throw "WebView lifecycle validation requires -ExerciseDocking."
 }
 if ($AgentRuntimeEvidencePath -and -not $ExerciseAgentRuntime) {
     throw (
@@ -368,6 +381,17 @@ public static class RadIADockingSmokeNative
 
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr handle);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetWindowPos(
+        IntPtr handle,
+        IntPtr insertAfter,
+        int x,
+        int y,
+        int width,
+        int height,
+        uint flags
+    );
 
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(
@@ -933,6 +957,84 @@ function Wait-RadIATerminalDiagnostic {
         )
         TabStopCount = $diagnostic.tabStopCount
     }
+}
+
+function Invoke-RadIAWebViewHostTransitions {
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$DockInfo,
+        [Parameter(Mandatory)]
+        [int]$TransitionCount
+    )
+
+    $originalWidth = $DockInfo.Right - $DockInfo.Left
+    $originalHeight = $DockInfo.Bottom - $DockInfo.Top
+    if ($originalWidth -lt 300 -or $originalHeight -lt 200) {
+        throw "The WebView dock host has unusable initial geometry."
+    }
+    $noMoveNoOrderNoActivate = 0x0002 -bor 0x0004 -bor 0x0010
+    for ($index = 1; $index -le $TransitionCount; $index++) {
+        [void][RadIADockingSmokeNative]::ShowWindow(
+            $DockInfo.Handle,
+            0
+        )
+        [void][RadIADockingSmokeNative]::ShowWindow(
+            $DockInfo.Handle,
+            5
+        )
+        $width = $originalWidth + $(if ($index % 2 -eq 0) { 24 } else { -24 })
+        $height = $originalHeight + $(if ($index % 3 -eq 0) { 18 } else { -18 })
+        if (-not [RadIADockingSmokeNative]::SetWindowPos(
+            $DockInfo.Handle,
+            [IntPtr]::Zero,
+            0,
+            0,
+            $width,
+            $height,
+            $noMoveNoOrderNoActivate
+        )) {
+            throw "WebView dock-host resize failed at transition $index."
+        }
+        Start-Sleep -Milliseconds 40
+    }
+    if (-not [RadIADockingSmokeNative]::SetWindowPos(
+        $DockInfo.Handle,
+        [IntPtr]::Zero,
+        0,
+        0,
+        $originalWidth,
+        $originalHeight,
+        $noMoveNoOrderNoActivate
+    )) {
+        throw "The WebView dock-host geometry could not be restored."
+    }
+    return $TransitionCount
+}
+
+function Wait-RadIAWebViewLifecycleDiagnostic {
+    param(
+        [Parameter(Mandatory)]
+        [string]$EvidencePath,
+        [Parameter(Mandatory)]
+        [int]$TimeoutSeconds
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        if (Test-Path -LiteralPath $EvidencePath -PathType Leaf) {
+            $diagnostic = Get-Content `
+                -LiteralPath $EvidencePath `
+                -Raw `
+                -Encoding UTF8 |
+                ConvertFrom-Json
+            if ($diagnostic.status -eq "passed") {
+                return $diagnostic
+            }
+            throw "The WebView lifecycle smoke reported a failure."
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "The RadIA WebView did not publish lifecycle evidence."
 }
 
 function Wait-RadIAInlineCompletionDiagnostic {
@@ -1858,6 +1960,7 @@ $inlineSmokeUnitPath = ""
 $inlineReviewActivationUnitPath = ""
 $inlineSmokeLogPath = ""
 $terminalSmokeRoot = ""
+$webViewSmokeRoot = ""
 $agentSmokeCheckpointDirectory = ""
 $script:InlineLogSettingsInitialized = $false
 $script:KnowledgeSettingsInitialized = $false
@@ -1995,6 +2098,19 @@ if ($ExerciseTerminal) {
     New-Item `
         -ItemType Directory `
         -Path $terminalSmokeRoot `
+        -Force |
+        Out-Null
+}
+if ($ExerciseWebViewLifecycle) {
+    $webViewSmokeRoot = Join-Path (
+        "$repositoryRoot\Output\Validation\IDESmokeDiagnostics"
+    ) (
+        "WebView-$DelphiVersion-$platform-" +
+        [Guid]::NewGuid().ToString("N")
+    )
+    New-Item `
+        -ItemType Directory `
+        -Path $webViewSmokeRoot `
         -Force |
         Out-Null
 }
@@ -2260,6 +2376,7 @@ if ($UpgradeFromPackagePath) {
 $results = @()
 $dockedGeometry = $null
 for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
+    $webViewTransitions = 0
     $startedAt = [DateTime]::UtcNow
     $packageLifecycleSeconds = 0
     $packageLifecycleModes = @()
@@ -2308,6 +2425,12 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $terminalSmokeRoot `
             "cycle-$cycle.json"
     }
+    $webViewSmokePath = ""
+    if ($ExerciseWebViewLifecycle) {
+        $webViewSmokePath = Join-Path `
+            $webViewSmokeRoot `
+            "cycle-$cycle.json"
+    }
     $inlineSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_COMPLETION
     $inlineReviewSmokeEnvironment = $env:RADIA_IDE_SMOKE_INLINE_REVIEW
     $inlineReviewSmokePath = ""
@@ -2317,6 +2440,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             "review-cycle-$cycle.json"
     }
     $terminalSmokeEnvironment = $env:RADIA_IDE_SMOKE_TERMINAL
+    $webViewSmokeEnvironment = (
+        $env:RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE
+    )
     $agentSmokeEnvironment = $env:RADIA_IDE_SMOKE_AGENT_RUNTIME
     $workflowSmokeEnvironment = (
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW
@@ -2330,6 +2456,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         if ($ExerciseTerminal) {
             $env:RADIA_IDE_SMOKE_TERMINAL = $terminalSmokePath
+        }
+        if ($ExerciseWebViewLifecycle) {
+            $env:RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE = $webViewSmokePath
         }
         if ($ExerciseAgentRuntime) {
             $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = (
@@ -2355,6 +2484,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         $env:RADIA_IDE_SMOKE_INLINE_COMPLETION = $inlineSmokeEnvironment
         $env:RADIA_IDE_SMOKE_INLINE_REVIEW = $inlineReviewSmokeEnvironment
         $env:RADIA_IDE_SMOKE_TERMINAL = $terminalSmokeEnvironment
+        $env:RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE = (
+            $webViewSmokeEnvironment
+        )
         $env:RADIA_IDE_SMOKE_AGENT_RUNTIME = $agentSmokeEnvironment
         $env:RADIA_IDE_SMOKE_DECLARATIVE_WORKFLOW = (
             $workflowSmokeEnvironment
@@ -2495,6 +2627,15 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $terminalDiagnostic = Wait-RadIATerminalDiagnostic `
                 -EvidencePath $terminalSmokePath `
                 -TimeoutSeconds 60
+        }
+        $webViewDiagnostic = $null
+        if ($ExerciseWebViewLifecycle) {
+            $webViewDiagnostic = Wait-RadIAWebViewLifecycleDiagnostic `
+                -EvidencePath $webViewSmokePath `
+                -TimeoutSeconds 90
+            $webViewTransitions = Invoke-RadIAWebViewHostTransitions `
+                -DockInfo $dockInfo `
+                -TransitionCount $WebViewTransitionCount
         }
         $inlineDiagnostic = $null
         if ($ExerciseInlineCompletion -or $ExerciseInlineReview) {
@@ -3021,6 +3162,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             Platform = $ideState.platform
             ToolCount = $runtimeToolNames.Count
             DescendantCount = $descendants.Count
+            ShutdownClean = $true
             Seconds = $elapsed
             DockingExercised = [bool]$ExerciseDocking
             DockPositionRestored = (
@@ -3028,6 +3170,28 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 $cycle -ge 2
             )
             TerminalExercised = [bool]$ExerciseTerminal
+            WebViewLifecycleExercised = (
+                [bool]$ExerciseWebViewLifecycle
+            )
+            WebViewHostTransitions = $(
+                if ($ExerciseWebViewLifecycle) {
+                    $webViewTransitions
+                } else {
+                    0
+                }
+            )
+            WebViewStateRestored = (
+                [bool]$ExerciseWebViewLifecycle -and
+                $webViewDiagnostic.draftRestored -and
+                $webViewDiagnostic.advancedRestored
+            )
+            WebViewRecoveryGeneration = $(
+                if ($webViewDiagnostic) {
+                    $webViewDiagnostic.generation
+                } else {
+                    0
+                }
+            )
             TerminalOpened = (
                 [bool]$ExerciseTerminal -and
                 $terminalDiagnostic.Opened
@@ -3299,6 +3463,11 @@ if ($ExerciseTerminal) {
         "tab stops passed."
     )
 }
+if ($ExerciseWebViewLifecycle) {
+    Write-Host (
+        "WebView failure recovery and in-memory state restoration passed."
+    )
+}
 if ($ExerciseAgentRuntime) {
     Write-Host (
         "Agent runtime pause, persistence, resume, and completion passed."
@@ -3343,6 +3512,14 @@ if ($EvidencePath) {
         cyclesPassed = $results.Count
         dockingExercised = [bool]$ExerciseDocking
         terminalExercised = [bool]$ExerciseTerminal
+        webViewLifecycleExercised = [bool]$ExerciseWebViewLifecycle
+        webViewTransitionCount = $(
+            if ($ExerciseWebViewLifecycle) {
+                $WebViewTransitionCount
+            } else {
+                0
+            }
+        )
         inlineCompletionExercised = [bool]$ExerciseInlineCompletion
         inlineReviewExercised = [bool]$ExerciseInlineReview
         agentRuntimeExercised = [bool]$ExerciseAgentRuntime
@@ -3361,6 +3538,49 @@ if ($EvidencePath) {
         ConvertTo-Json -Depth 6 |
         Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
     Write-Host "IDE smoke evidence created: $resolvedEvidencePath"
+}
+if ($WebViewLifecycleEvidencePath) {
+    $sourceCommit = Get-RadIACleanSourceCommit `
+        -RepositoryRoot $repositoryRoot `
+        -EvidenceName "WebView lifecycle"
+    $resolvedWebViewEvidencePath = [IO.Path]::GetFullPath(
+        $WebViewLifecycleEvidencePath
+    )
+    $webViewEvidenceDirectory = Split-Path -Parent (
+        $resolvedWebViewEvidencePath
+    )
+    if ($webViewEvidenceDirectory) {
+        New-Item `
+            -ItemType Directory `
+            -Force `
+            -Path $webViewEvidenceDirectory |
+            Out-Null
+    }
+    [PSCustomObject]@{
+        schemaVersion = 1
+        productVersion = $expectedVersion
+        sourceCommit = $sourceCommit
+        delphiVersion = $DelphiVersion
+        platform = $platform
+        cyclesRequested = $Cycles
+        cyclesPassed = $results.Count
+        recoveryPassed = @(
+            $results | Where-Object { $_.WebViewStateRestored }
+        ).Count -eq $Cycles
+        shutdownPassed = @(
+            $results | Where-Object { $_.ShutdownClean }
+        ).Count -eq $Cycles
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+        cycles = $results
+    } |
+        ConvertTo-Json -Depth 6 |
+        Set-Content `
+            -LiteralPath $resolvedWebViewEvidencePath `
+            -Encoding UTF8
+    Write-Host (
+        "WebView lifecycle evidence created: " +
+        $resolvedWebViewEvidencePath
+    )
 }
 if ($TerminalEvidencePath) {
     $sourceCommit = Get-RadIACleanSourceCommit `

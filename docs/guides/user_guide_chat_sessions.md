@@ -18,6 +18,17 @@ O Rad IA se acopla diretamente à barra lateral da IDE do Delphi, fornecendo um 
     **More** revela executor, sessão CLI, jornada, escopo e rota efetiva para quem precisar de
     controle avançado. As duas linhas se reorganizam sem rolagem horizontal quando o painel fica
     estreito.
+*   **Recuperação do painel**: Se a criação, navegação ou processo do WebView2 falhar, o RadIA tenta
+    recriar o painel até duas vezes por sequência de falhas. O rascunho, a posição da conversa e a
+    abertura das opções avançadas são preservados somente em memória. O texto ainda não enviado
+    não é gravado em disco.
+*   **Encerramento seguro**: Ao fechar a IDE, o RadIA libera antecipadamente o painel e o controller
+    do WebView2, interrompe o motor semântico e o servidor MCP e aguarda suas operações em segundo
+    plano antes que o Delphi descarregue o package. Nenhuma ação manual é necessária.
+
+Se as duas tentativas falharem, feche e reabra o painel. Consulte
+[Solução de problemas](troubleshooting_agentic_platform.md#painel-de-chat-e-webview2) antes de
+apagar qualquer cache.
 
 ---
 

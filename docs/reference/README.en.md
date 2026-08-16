@@ -1,6 +1,7 @@
 # Reference
 
 - [Everything RadIA can do](capabilities.en.md): canonical user-oriented reference
+- [Semantic intelligence in the editor](semantic_intelligence.en.md): delivered capabilities, activation, evidence, and limits
 - [Detailed feature inventory](features.en.md): individual features, categories, and status
 - [Settings](settings_reference.en.md)
 - [Slash commands](slash_commands.en.md)

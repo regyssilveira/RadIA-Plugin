@@ -3,19 +3,16 @@
 Este arquivo contém somente trabalho aberto. Histórico, marcos concluídos, métricas e notas de
 release não pertencem ao backlog.
 
-## Estado atual
+## Goal ativo: fechamento determinístico da experiência Delphi
 
-Não existe goal ativo nem item aberto aprovado no backlog público.
+Encerrar com evidência reproduzível todas as diferenças acionáveis da experiência atual, reutilizando
+as capacidades existentes antes de implementar qualquer nova infraestrutura.
 
-A plataforma determinística de integração e ponta a ponta que constava anteriormente como pendente
-foi concluída. O gate obrigatório `Test-RadIA.ReleaseUsage.ps1` reúne as suítes DUnitX do Delphi 12
-e 13, os cenários registrados de integração e uso, a calculadora, a geração e abertura de projetos e
-a matriz automatizada nos três alvos suportados. O contrato vigente está na
-[matriz automatizada de testes de uso](../development/usage_test_matrix.md).
+Não há item aberto neste goal. O fechamento depende apenas da execução do ledger e do gate integrado
+no commit candidato; qualquer falha reabre o critério correspondente antes de uma release.
 
-Novas propostas somente entram neste arquivo depois de aprovadas como trabalho executável, com
-resultado observável e critérios de aceitação. Ideias ainda não aprovadas não são apresentadas como
-compromisso do produto.
+O escopo exclui repositório público ou marketplace de extensões, C++Builder, Delphi 11, Lazarus,
+GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.
 
 ## Definição de concluído para novos itens
 

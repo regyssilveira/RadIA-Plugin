@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.15.1
+# Manual completo do RadIA 2.16.0
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -39,7 +39,7 @@ são restaurados na próxima abertura do Delphi. Se o painel for fechado antes d
 fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.15.1`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.16.0`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -655,7 +655,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 185 tools internas registradas.
+- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 187 tools internas registradas.
 - O [assistente de threads e PPL](threading_assistant.md) audita e prepara modernizações concorrentes seguras.
 - O [retrofit OpenAPI/Swagger](openapi_retrofit.md) integra documentação em APIs DEXT existentes.
 - A [modernização DEXT e de forms](dext_form_modernization.md) executa lotes reversíveis com gates.

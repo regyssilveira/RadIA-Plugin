@@ -1,10 +1,10 @@
 param(
     [string]$OutputPath = (
-        ".\Output\Evidence\terminal_high_fidelity_evidence_2.6.0.json"
+        ".\Output\Evidence\terminal_high_fidelity_evidence.json"
     ),
-    [int]$ExpectedTestCount = 1024,
+    [int]$MinimumTestCount = 1309,
     [string]$VisualSmokeEvidencePath = (
-        ".\Output\Evidence\terminal_smoke_evidence_2.6.0.json"
+        ".\Output\Evidence\terminal_smoke_evidence.json"
     )
 )
 
@@ -38,23 +38,30 @@ $requiredTests = @(
     "ScreenNegotiatesBracketedPasteAndMouseInput",
     "ScreenUsesDisplayWidthForWideAndCombiningCharacters",
     "ScreenReflowsSoftWrapsAndPreservesHardBreaks",
-    "ScreenSupportsTuiInsertDeleteAndEraseCharacters"
+    "ScreenSupportsTuiInsertDeleteAndEraseCharacters",
+    "ParsesDelphiCompilerLocations",
+    "ParsesColonLocationsAndAnsiOutput",
+    "RejectsUnstructuredOrUnsafeOutput",
+    "CreatesBoundedRedactedChatPrompt"
 )
 $targetDefinitions = @(
     @{
         delphiVersion = "23.0"
         platform = "Win32"
-        resultPath = "Output\23.0\bin\Win32\Debug\dunitx-results.xml"
+        resultPath = "Output\23.0\bin\Win32\Debug\dunitx-main-results.xml"
+        externalResultPath = "Output\23.0\bin\Win32\Debug\dunitx-external-results.xml"
     },
     @{
         delphiVersion = "37.0"
         platform = "Win32"
-        resultPath = "Output\37.0\bin\Win32\Debug\dunitx-results.xml"
+        resultPath = "Output\37.0\bin\Win32\Debug\dunitx-main-results.xml"
+        externalResultPath = "Output\37.0\bin\Win32\Debug\dunitx-external-results.xml"
     },
     @{
         delphiVersion = "37.0"
         platform = "Win64"
-        resultPath = "Output\37.0\bin\Win64\Debug\dunitx-results.xml"
+        resultPath = "Output\37.0\bin\Win64\Debug\dunitx-main-results.xml"
+        externalResultPath = ""
     }
 )
 
@@ -67,7 +74,7 @@ foreach ($definition in $targetDefinitions) {
     [xml]$document = Get-Content -LiteralPath $resultPath -Raw
     $root = $document.'test-results'
     if (
-        [int]$root.total -ne $ExpectedTestCount -or
+        [int]$root.total -lt $MinimumTestCount -or
         [int]$root.errors -ne 0 -or
         [int]$root.failures -ne 0 -or
         [int]$root.ignored -ne 0 -or
@@ -75,10 +82,40 @@ foreach ($definition in $targetDefinitions) {
     ) {
         throw "DUnitX matrix failed for $($definition.delphiVersion) $($definition.platform)."
     }
+    $externalDocument = $null
+    if ($definition.externalResultPath) {
+        $externalResultPath = Join-Path `
+            $repositoryRoot `
+            $definition.externalResultPath
+        if (-not (Test-Path -LiteralPath $externalResultPath -PathType Leaf)) {
+            throw "External DUnitX evidence was not found: $externalResultPath"
+        }
+        [xml]$externalDocument = Get-Content `
+            -LiteralPath $externalResultPath `
+            -Raw
+        $externalRoot = $externalDocument.'test-results'
+        if (
+            [int]$externalRoot.total -lt 1 -or
+            [int]$externalRoot.errors -ne 0 -or
+            [int]$externalRoot.failures -ne 0 -or
+            [int]$externalRoot.ignored -ne 0 -or
+            [int]$externalRoot.'not-run' -ne 0
+        ) {
+            throw (
+                "External DUnitX matrix failed for " +
+                "$($definition.delphiVersion) $($definition.platform)."
+            )
+        }
+    }
     foreach ($testName in $requiredTests) {
         $testCase = $document.SelectSingleNode(
             "//test-case[@name='$testName']"
         )
+        if (-not $testCase -and $externalDocument) {
+            $testCase = $externalDocument.SelectSingleNode(
+                "//test-case[@name='$testName']"
+            )
+        }
         if (-not $testCase -or $testCase.result -ne "Success") {
             throw (
                 "Required terminal test '$testName' did not pass for " +
