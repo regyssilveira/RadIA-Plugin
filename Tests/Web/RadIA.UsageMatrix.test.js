@@ -75,6 +75,9 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /startupRetryUsed/u);
   assert.match(source, /attemptCount/u);
   assert.match(source, /Delphi did not become ready for the smoke test/u);
+  assert.match(source, /The Delphi File menu did not open/u);
+  assert.match(source, /The Delphi file dialog did not open/u);
+  assert.match(source, /Test-RadIAReleaseJourneyRetryable/u);
   assert.match(source, /previousErrorActionPreference/u);
   assert.match(source, /\$ErrorActionPreference = "Continue"/u);
   assert.ok(
