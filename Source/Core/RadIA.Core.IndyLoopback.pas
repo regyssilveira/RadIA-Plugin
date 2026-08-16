@@ -36,7 +36,8 @@ type
 implementation
 
 uses
-  System.SysUtils, IdSocketHandle, System.NetEncoding, RadIA.Core.Logger;
+  System.SysUtils, IdGlobal, IdSocketHandle, System.NetEncoding,
+  RadIA.Core.Logger;
 
 { TRadIAIndyLoopbackServer }
 
@@ -99,6 +100,7 @@ begin
   LBinding := FServer.Bindings.Add;
   LBinding.IP := '127.0.0.1';
   LBinding.Port := FPort;
+  LBinding.ReuseSocket := rsTrue;
 
   TLogger.Log('Starting Indy loopback server on 127.0.0.1:' + FPort.ToString, 'IndyLoopback');
   FServer.Active := True;
