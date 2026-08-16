@@ -527,6 +527,7 @@
         "InspectFireDACProject",
         "AuditFireDACTransactions",
         "InspectFireDACConfiguration",
+        "AnalyzeFireDACThreadSafety",
         "DiagnoseDelphiDependencies",
         "AuditDelphiLocalization",
         "PrepareLocalizationExtraction"

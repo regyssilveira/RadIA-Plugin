@@ -24,6 +24,8 @@ type
     [Test]
     procedure InspectsFireDACConfigurationWithoutReturningCredentials;
     [Test]
+    procedure AnalyzesFireDACThreadSafetyWithoutExecutingSql;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -276,6 +278,23 @@ begin
   Assert.Contains(LResult.ContentJson, '"driverId":"SQLite"');
   Assert.Contains(LResult.ContentJson, '"credentialsCollected":false');
   Assert.DoesNotContain(LResult.ContentJson, 'never-return');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.AnalyzesFireDACThreadSafetyWithoutExecutingSql;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Worker.pas'),
+    'type TDataModule = class' + sLineBreak +
+    '  MainConnection: TFDConnection;' + sLineBreak +
+    'end;' + sLineBreak +
+    'TTask.Run(procedure begin MainConnection.Open; end);'
+  );
+  LResult := ExecuteTool(FRootPath, 'AnalyzeFireDACThreadSafety');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.thread.shared-component');
+  Assert.Contains(LResult.ContentJson, '"sqlExecuted":false');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;

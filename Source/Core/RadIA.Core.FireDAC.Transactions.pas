@@ -49,7 +49,6 @@ type
       const AFileName: string;
       const AResult: TRadIAFireDACTransactionAnalysis
     );
-    function SanitizePascal(const AContent: string): string;
   public
     function Analyze(
       const AContent: string;
@@ -62,10 +61,8 @@ implementation
 uses
   System.JSON,
   System.RegularExpressions,
-  System.SysUtils;
-
-type
-  TRadIAPascalMaskState = (pmsCode, pmsString, pmsBraceComment, pmsParenComment, pmsLineComment);
+  System.SysUtils,
+  RadIA.Core.FireDAC.PascalMask;
 
 constructor TRadIAFireDACTransactionUsage.Create(
   const AName: string;
@@ -157,70 +154,6 @@ begin
   Result := FUsages.Count;
 end;
 
-function TRadIAFireDACTransactionAnalyzer.SanitizePascal(const AContent: string): string;
-var
-  I: Integer;
-  LChars: TArray<Char>;
-  LState: TRadIAPascalMaskState;
-begin
-  LChars := AContent.ToCharArray;
-  LState := pmsCode;
-  I := Low(LChars);
-  while I <= High(LChars) do
-  begin
-    case LState of
-      pmsCode:
-        if LChars[I] = '''' then
-          LState := pmsString
-        else if LChars[I] = '{' then
-          LState := pmsBraceComment
-        else if (LChars[I] = '(') and (I < High(LChars)) and (LChars[I + 1] = '*') then
-          LState := pmsParenComment
-        else if (LChars[I] = '/') and (I < High(LChars)) and (LChars[I + 1] = '/') then
-          LState := pmsLineComment;
-      pmsString:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if (AContent.Chars[I] = '''') and (I < High(LChars)) and (AContent.Chars[I + 1] = '''') then
-          begin
-            Inc(I);
-            LChars[I] := ' ';
-          end
-          else if AContent.Chars[I] = '''' then
-            LState := pmsCode;
-        end;
-      pmsBraceComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if AContent.Chars[I] = '}' then
-            LState := pmsCode;
-        end;
-      pmsParenComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if (AContent.Chars[I] = '*') and (I < High(LChars)) and (AContent.Chars[I + 1] = ')') then
-          begin
-            Inc(I);
-            LChars[I] := ' ';
-            LState := pmsCode;
-          end;
-        end;
-      pmsLineComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if CharInSet(AContent.Chars[I], [#10, #13]) then
-            LState := pmsCode;
-        end;
-    end;
-    Inc(I);
-  end;
-  Result := string.Create(LChars);
-end;
-
 procedure TRadIAFireDACTransactionAnalyzer.AddUsageFindings(
   const AUsage: TRadIAFireDACTransactionUsage;
   const AFileName: string;
@@ -293,7 +226,7 @@ begin
   try
     Result := TRadIAFireDACTransactionAnalysis.Create;
     try
-      LSanitized := SanitizePascal(AContent);
+      LSanitized := RadIAMaskPascalNonCode(AContent);
       LLineNumber := 0;
       for LLine in LSanitized.Split([sLineBreak]) do
       begin

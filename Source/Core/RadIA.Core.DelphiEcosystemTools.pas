@@ -37,6 +37,7 @@ type
     detFireDACProject,
     detFireDACTransactions,
     detFireDACConfiguration,
+    detFireDACThreadSafety,
     detDependencies,
     detLocalization
   );
@@ -333,6 +334,8 @@ begin
       Exit(TRadIAToolResult.Succeeded(LScanner.AuditTransactions(AProject.RootPath)));
     if FKind = detFireDACConfiguration then
       Exit(TRadIAToolResult.Succeeded(LScanner.InspectConfiguration(AProject.RootPath)));
+    if FKind = detFireDACThreadSafety then
+      Exit(TRadIAToolResult.Succeeded(LScanner.AnalyzeThreadSafety(AProject.RootPath)));
     LInventory := LScanner.Scan(AProject.RootPath);
     try
       LRoot := TJSONObject.ParseJSONValue(LInventory.ToJson) as TJSONObject;
@@ -371,7 +374,13 @@ begin
       'project_root_unavailable',
       'No active project root is available.'
     ));
-  if FKind in [detFireDAC, detFireDACProject, detFireDACTransactions, detFireDACConfiguration] then
+  if FKind in [
+    detFireDAC,
+    detFireDACProject,
+    detFireDACTransactions,
+    detFireDACConfiguration,
+    detFireDACThreadSafety
+  ] then
     Exit(ExecuteFireDAC(LProject));
   LFiles := CollectFiles(LProject.RootPath);
   LRoot := TJSONObject.Create;
@@ -429,6 +438,15 @@ begin
         'InspectFireDACConfiguration',
         '1.0.0',
         'Inspects bounded FireDAC configuration while discarding credentials and absolute paths.',
+        CEmptyInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
+    detFireDACThreadSafety:
+      Result := TRadIAToolDescriptor.Create(
+        'AnalyzeFireDACThreadSafety',
+        '1.0.0',
+        'Finds shared FireDAC components and unsafe UI access in bounded background contexts.',
         CEmptyInputSchema,
         '{"type":"object"}',
         trReadOnly
@@ -576,6 +594,11 @@ begin
     AWorkspace,
     ABoundary,
     detFireDACConfiguration
+  ));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(
+    AWorkspace,
+    ABoundary,
+    detFireDACThreadSafety
   ));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detDependencies));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detLocalization));

@@ -32,6 +32,8 @@ type
     procedure AuditsTransactionsAcrossBoundedPascalFiles;
     [Test]
     procedure InspectsConfigurationWithoutReturningSecretsOrAbsolutePaths;
+    [Test]
+    procedure AnalyzesThreadSafetyAcrossBoundedPascalFiles;
   end;
 
 implementation
@@ -254,6 +256,30 @@ begin
   Assert.Contains(LJson, '"credentialsCollected":false');
   Assert.DoesNotContain(LJson, 'hidden-password');
   Assert.DoesNotContain(LJson, 'D:\Private');
+end;
+
+procedure TRadIAFireDACScannerTests.AnalyzesThreadSafetyAcrossBoundedPascalFiles;
+var
+  LJson: string;
+  LScanner: TRadIAFireDACScanner;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Worker.pas'),
+    'type TDataModule = class' + sLineBreak +
+    '  MainConnection: TFDConnection;' + sLineBreak +
+    'end;' + sLineBreak +
+    'TTask.Run(procedure begin MainConnection.Open; end);'
+  );
+  LScanner := TRadIAFireDACScanner.Create(TRadIAWorkspaceBoundary.Create);
+  try
+    LJson := LScanner.AnalyzeThreadSafety(FRootPath);
+  finally
+    LScanner.Free;
+  end;
+  Assert.Contains(LJson, 'firedac.thread.shared-component');
+  Assert.Contains(LJson, '"file":"Worker.pas"');
+  Assert.Contains(LJson, '"sqlExecuted":false');
+  Assert.DoesNotContain(LJson, 'MainConnection.Open');
 end;
 
 initialization

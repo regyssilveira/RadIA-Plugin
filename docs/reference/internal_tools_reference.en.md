@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 192 internal tools: what each one does and at what stage
+This page explains RadIA's 193 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -137,6 +137,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 | `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL or collecting credentials. | When reviewing the data layer before specialized analysis. |
 | `AuditFireDACTransactions` | Audits transaction flows in bounded Pascal files without executing SQL or connecting to a database. | When locating potentially unsafe commit, rollback, or early-exit flows. |
 | `InspectFireDACConfiguration` | Inspects bounded FireDAC configuration while discarding credentials and absolute paths. | When reviewing drivers, connection definitions, options, and libraries before execution. |
+| `AnalyzeFireDACThreadSafety` | Finds shared FireDAC components and unsafe UI access in bounded workers. | When reviewing parallel tasks before running database operations in the background. |
 | `AnalyzeFireDACQuery` | Analyzes bounded SQL, statements, and placeholders without executing or returning the query text. | When reviewing a selected FireDAC query before any execution. |
 | `ValidateFireDACParameters` | Validates binding names, types, directions, sizes, and null state without executing SQL. | When locating inconsistent parameters before preparing a fix. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
