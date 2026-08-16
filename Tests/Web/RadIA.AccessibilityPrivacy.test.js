@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const repositoryRoot = path.resolve('.');
 const webRoot = path.join(repositoryRoot, 'Source', 'UI', 'Web');
@@ -9,6 +10,10 @@ const chatHtml = fs.readFileSync(path.join(webRoot, 'chat.html'), 'utf8');
 const chatJs = fs.readFileSync(path.join(webRoot, 'chat.js'), 'utf8');
 const chatCss = fs.readFileSync(path.join(webRoot, 'chat.css'), 'utf8');
 const diffHtml = fs.readFileSync(path.join(webRoot, 'diff.html'), 'utf8');
+const webDependencies = fs.readFileSync(
+  path.join(webRoot, 'vendor', 'DEPENDENCIES.md'),
+  'utf8'
+);
 const configFrame = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigFrame.pas'),
   'utf8'
@@ -33,6 +38,21 @@ const configForm = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ConfigForm.pas'),
   'utf8'
 );
+const diffForm = fs.readFileSync(
+  path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.DiffForm.pas'),
+  'utf8'
+);
+
+function renderUntrustedMarkdown(markdown) {
+  const marked = require('../../Source/UI/Web/vendor/marked.min.js');
+  const Prism = require('../../Source/UI/Web/vendor/prism.min.js');
+  require('../../Source/UI/Web/vendor/prism-pascal.min.js');
+  const rendererSetup = chatJs.substring(0, chatJs.indexOf('const chatContainer'));
+  const context = { globalThis: null, marked, Prism };
+  context.globalThis = context;
+  vm.runInNewContext(rendererSetup, context);
+  return context.marked.parse(markdown);
+}
 const projectWizard = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'UI', 'RadIA.UI.ProjectWizard.pas'),
   'utf8'
@@ -226,4 +246,100 @@ test('diff review announces selection state and errors', () => {
   assert.match(diffHtml, /<output id="selection-summary" aria-live="polite"/);
   assert.match(diffHtml, /id="selection-error" role="alert" aria-live="assertive"/);
   assert.match(diffHtml, /setAttribute\(\s*'aria-pressed'/);
+});
+
+test('web surfaces declare a content security policy that blocks exfiltration', () => {
+  for (const surface of [chatHtml, diffHtml]) {
+    assert.match(surface, /http-equiv="Content-Security-Policy"/u);
+    assert.match(surface, /default-src 'self'/u);
+    assert.match(surface, /connect-src 'none'/u);
+    assert.match(surface, /frame-src 'none'/u);
+    assert.match(surface, /object-src 'none'/u);
+    assert.match(surface, /img-src 'self' data:/u);
+  }
+});
+
+test('content security policy precedes every script and stylesheet', () => {
+  for (const surface of [chatHtml, diffHtml]) {
+    const cspIndex = surface.indexOf('Content-Security-Policy');
+    const scriptIndex = surface.indexOf('<script');
+    const linkIndex = surface.indexOf('<link');
+    assert.ok(cspIndex > -1, 'the policy must be declared');
+    if (scriptIndex > -1) {
+      assert.ok(cspIndex < scriptIndex, 'the policy must precede the first script');
+    }
+    if (linkIndex > -1) {
+      assert.ok(cspIndex < linkIndex, 'the policy must precede the first stylesheet');
+    }
+  }
+});
+
+test('the policy never allows remote origins for images or connections', () => {
+  for (const surface of [chatHtml, diffHtml]) {
+    const declaration = surface.match(/http-equiv="Content-Security-Policy"\s+content="([^"]+)"/u);
+    assert.ok(declaration, 'the policy declaration must be readable');
+    assert.doesNotMatch(declaration[1], /https?:/u);
+  }
+});
+
+test('CLI login runs the executable without a shell interpreter', () => {
+  assert.doesNotMatch(configFrame, /LInfo\.lpFile := 'cmd\.exe'/u);
+  assert.match(configFrame, /LInfo\.lpFile := PChar\(LDetection\.ExecutablePath\)/u);
+  assert.doesNotMatch(configFrame, /LParameters := '\/c ""'/u);
+});
+
+test('native WebView handlers reject messages from unexpected documents', () => {
+  assert.match(chatFrame, /Get_Source\(LSource\)/u);
+  assert.match(chatFrame, /TPath\.Combine\(FWebFilesDir, 'chat\.html'\)/u);
+  assert.match(chatFrame, /Rejected WebView message from unexpected source/u);
+  assert.match(diffForm, /Get_Source\(LSource\)/u);
+  assert.match(diffForm, /TPath\.Combine\(FWebFilesDir, 'diff\.html'\)/u);
+});
+
+test('runtime package excludes the obsolete remote-page bridge', () => {
+  assert.equal(fs.existsSync(path.join(webRoot, 'bridge.js')), false);
+  assert.match(chatHtml, /<script src="chat-bridge\.js"><\/script>/u);
+  assert.doesNotMatch(chatHtml, /<script src="bridge\.js"><\/script>/u);
+});
+
+test('bundled syntax highlighter is the patched PrismJS release', () => {
+  assert.match(webDependencies, /PrismJS 1\.30\.0/u);
+  assert.match(webDependencies, /local-only loading policy/u);
+});
+
+test('configurable command and provider labels are rendered as text', () => {
+  assert.match(chatJs, /appendCommandText\(info, 'slash-command-name', cmd\.name\)/u);
+  assert.match(chatJs, /element\.textContent = String\(text \?\? ''\)/u);
+  assert.match(chatJs, /renderProviderDropdownValue\(getProviderIcon\(p\.value\), p\.name\)/u);
+  assert.match(chatJs, /name\.textContent = String\(providerName \?\? ''\)/u);
+  assert.doesNotMatch(chatJs, /<span>\$\{p\.name\}<\/span>/u);
+});
+
+test('model Markdown cannot inject executable HTML into the chat surface', () => {
+  assert.match(chatJs, /renderer\.html = function[\s\S]*return escapeHtml/u);
+  assert.match(chatJs, /renderer\.image = function[\s\S]*markdown-image-placeholder/u);
+  assert.match(chatJs, /renderer\.link = function[\s\S]*isSafeMarkdownLink/u);
+  assert.match(chatJs, /\['http', 'https', 'mailto', 'file'\]\.includes\(scheme\)/u);
+  assert.match(chatJs, /const renderedCode = renderCodeForLanguage\(code, highlightLanguage\)/u);
+  assert.match(chatJs, /const safeDisplayPath = escapeHtml\(filepath\)/u);
+});
+
+test('untrusted Markdown payloads are neutralized by the real renderer', () => {
+  const renderedHtml = renderUntrustedMarkdown(
+    '<img src=x onerror="chrome.webview.postMessage(1)">'
+  );
+  const renderedLinks = renderUntrustedMarkdown(
+    '[run](java\u0000script:alert(1))\n\n' +
+    '![remote](https://attacker.example/leak)'
+  );
+  const renderedCode = renderUntrustedMarkdown(
+    '```pascal\n</code><img src=x onerror=alert(1)>\n```'
+  );
+
+  assert.doesNotMatch(renderedHtml, /<img/iu);
+  assert.match(renderedHtml, /&lt;img/u);
+  assert.doesNotMatch(renderedLinks, /href=|<img|attacker\.example/iu);
+  assert.match(renderedLinks, /markdown-image-placeholder/u);
+  assert.doesNotMatch(renderedCode, /<img|<script|<iframe/iu);
+  assert.match(renderedCode, /&lt;/u);
 });

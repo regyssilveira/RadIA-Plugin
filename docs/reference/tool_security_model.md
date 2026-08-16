@@ -22,6 +22,11 @@ ao escopo declarado e falhar se suas precondições não forem satisfeitas.
 Uma tool sensível só pode substituir a negação padrão quando seu descritor declara
 `ConsentEveryTime`. Nesse caso, cada chamada abre o diálogo e `AllowSession` nunca é reutilizado.
 
+Ferramentas federadas por servidores MCP externos (nome iniciado por `mcp.`) não recebem a
+liberação automática de somente leitura. Como o nível de risco delas é declarado pela concessão
+configurada, e não pelo próprio RadIA, a primeira chamada sempre abre o diálogo de consentimento.
+Escolher `AllowSession` mantém a aprovação válida pelo restante da sessão.
+
 ## 3. Decisões de consentimento
 
 - `AllowOnce`: permite apenas a requisição atual.

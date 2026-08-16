@@ -25,7 +25,9 @@ edição manual suportado.
 ### Consumir um servidor externo no RadIA
 
 1. Abra **External MCP Servers** e preencha ID, nome, comando, argumentos, diretório e timeout; ou
-   use **Import...** para carregar um JSON com `mcpServers`/`servers` no preview local.
+   use **Import...** para carregar um JSON com `mcpServers`/`servers` no preview local. Servidores
+   importados chegam desabilitados, a menos que o arquivo declare `"enabled": true`; habilite cada
+   um conscientemente antes de aplicar.
 2. Use **Add / Update** e confira a lista. Nenhum processo ou arquivo muda nessa etapa.
 3. Clique **Test** para conectar e descobrir tools, resources e prompts sem publicar a tool.
 4. Selecione uma tool descoberta e crie a concessão local com risco, consentimento e argumentos de
@@ -213,7 +215,7 @@ Para automação reproduzível, prefira sempre `mcp.<pid>.json`.
 1. Abra o Delphi e um projeto.
 2. Confirme que `mcp.<pid>.json` foi criado.
 3. Inicie ou recarregue o servidor no cliente MCP.
-4. Verifique que `initialize` retorna RadIA `2.15.0`.
+4. Verifique que `initialize` retorna RadIA `2.15.1`.
 5. Execute `tools/list`.
 6. Chame `GetIDEState` e `GetActiveProject`.
 7. Para testar consentimento, use uma tool mutável somente em um projeto descartável.

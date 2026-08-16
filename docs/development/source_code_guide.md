@@ -194,7 +194,7 @@ A interface de chat é desenhada localmente usando arquivos web empacotados. Tod
 
 *   **HTML Principal**: [chat.html](../../Source/UI/Web/chat.html) (Contém a estrutura visual e o container do chat).
 *   **Folhas de Estilo**: [chat.css](../../Source/UI/Web/chat.css) (Controla o layout base do chat) e [chat-theme.css](../../Source/UI/Web/chat-theme.css) (Controla as variáveis de cores para os temas Light/Dark adaptados da IDE).
-*   **Lógica JS**: [chat.js](../../Source/UI/Web/chat.js) (Controla a renderização de mensagens, markdown e eventos de interface do chat) e [bridge.js](../../Source/UI/Web/bridge.js) (Implementa o canal de comunicação de ponte de dados entre a BPL e a WebView2).
+*   **Lógica JS**: [chat.js](../../Source/UI/Web/chat.js) controla a renderização de mensagens, Markdown e eventos da interface; [chat-bridge.js](../../Source/UI/Web/chat-bridge.js) é o canal local e restrito entre a página empacotada e a BPL.
 
 > [!IMPORTANT]
 > Toda modificação nos arquivos Javascript ou de layout web localizados em `Source/UI/Web` exige a execução do linter para certificar-se de que não há bugs de sintaxe. Na raiz do projeto, execute:

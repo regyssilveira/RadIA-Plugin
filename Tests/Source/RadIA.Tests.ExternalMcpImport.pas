@@ -12,6 +12,8 @@ type
     [Test]
     procedure ImportsStandardConfigurationWithoutExecutingIt;
     [Test]
+    procedure ImportsExplicitlyEnabledServerAsEnabled;
+    [Test]
     procedure RejectsInvalidServerWithoutPartialImport;
   end;
 
@@ -42,6 +44,25 @@ begin
   Assert.AreEqual('C:\Tools\server.exe', LServers[0].Command);
   Assert.AreEqual<Integer>(2, Length(LServers[0].Arguments));
   Assert.AreEqual<Cardinal>(45000, LServers[0].TimeoutMs);
+  { Imported servers stay disabled until the user enables them explicitly }
+  Assert.IsFalse(LServers[0].Enabled);
+end;
+
+procedure TRadIAExternalMcpImportTests.ImportsExplicitlyEnabledServerAsEnabled;
+var
+  LError: string;
+  LServers: TArray<TRadIAExternalMcpServerConfig>;
+begin
+  Assert.IsTrue(
+    TRadIAExternalMcpConfigImporter.ImportJson(
+      '{"mcpServers":{"local-files":{' +
+      '"command":"C:\\Tools\\server.exe","enabled":true}}}',
+      LServers,
+      LError
+    ),
+    LError
+  );
+  Assert.AreEqual<Integer>(1, Length(LServers));
   Assert.IsTrue(LServers[0].Enabled);
 end;
 

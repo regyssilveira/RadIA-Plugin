@@ -2542,18 +2542,18 @@ begin
       0
     ) <> mrYes then
       Exit;
-    LParameters := '/c ""' + LDetection.ExecutablePath + '" logout"';
+    LParameters := 'logout';
   end
   else
   case LDefinition.Kind of
     ckCodex:
-      LParameters := '/c ""' + LDetection.ExecutablePath + '" login"';
+      LParameters := 'login';
     ckClaude:
-      LParameters := '/c ""' + LDetection.ExecutablePath + '" auth login"';
+      LParameters := 'auth login';
     ckGemini:
-      LParameters := '/c ""' + LDetection.ExecutablePath + '""';
+      LParameters := '';
     ckCopilot:
-      LParameters := '/c ""' + LDetection.ExecutablePath + '" login"';
+      LParameters := 'login';
   end;
   if not SameText(FBtnCliLogin.Caption, 'Logout') and (MessageDlg(
     'Open the guided login for ' + LDefinition.DisplayName + '?' +
@@ -2569,7 +2569,9 @@ begin
   LInfo.fMask := SEE_MASK_NOCLOSEPROCESS;
   LInfo.Wnd := Handle;
   LInfo.lpVerb := 'open';
-  LInfo.lpFile := 'cmd.exe';
+  { Launch the CLI executable directly. Routing through "cmd.exe /c" would let
+    shell metacharacters in the configured executable path run arbitrary commands. }
+  LInfo.lpFile := PChar(LDetection.ExecutablePath);
   LInfo.lpParameters := PChar(LParameters);
   LInfo.nShow := SW_SHOWNORMAL;
   if not ShellExecuteEx(@LInfo) then

@@ -1,4 +1,4 @@
-# Complete RadIA 2.15.0 user manual
+# Complete RadIA 2.15.1 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -30,7 +30,7 @@ the next time Delphi opens. If the panel is closed before exiting, it remains cl
 session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.15.0`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.15.1`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -289,7 +289,7 @@ workspace confinement cannot be disabled.
 - Dockable Markdown chat with Pascal highlighting and IDE themes.
 - Streaming responses and cancellation.
 - Multiple persistent sessions and prompt history.
-- Markdown and HTML conversation export.
+- Markdown and HTML conversation export with automatic redaction of known tokens and secrets.
 - Reusable templates, backups, and custom slash commands.
 - Token and estimated cost tracking with a local quota.
 

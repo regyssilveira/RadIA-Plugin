@@ -43,7 +43,47 @@ function normalizeCodeLanguage(language, code) {
     return 'pascal';
   }
 
-  return normalized || 'pascal';
+  return normalized.replace(/[^a-z0-9_-]/gu, '') || 'pascal';
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function getMarkedTokenText(tokenOrText, fallback = '') {
+  if (typeof tokenOrText === 'string') {
+    return tokenOrText;
+  }
+  return tokenOrText?.text || tokenOrText?.raw || fallback;
+}
+
+function isSafeMarkdownLink(href) {
+  const normalized = String(href || '')
+    .replace(/[\u0000-\u0020]+/gu, '')
+    .toLowerCase();
+  const schemeMatch = /^([a-z][a-z0-9+.-]*):/u.exec(normalized);
+  const scheme = schemeMatch?.[1] || '';
+  return normalized !== '' &&
+    (!scheme || ['http', 'https', 'mailto', 'file'].includes(scheme));
+}
+
+function renderCodeForLanguage(code, language) {
+  if (Prism.languages[language]) {
+    return Prism.highlight(code, Prism.languages[language], language);
+  }
+  return escapeHtml(code);
+}
+
+function getProjectFileAttributes(isProjectFile, safeFilepath) {
+  if (!isProjectFile) {
+    return '';
+  }
+  return `data-filepath="${safeFilepath}" data-project-file="true"`;
 }
 
 function getCodeHeaderTitle(language, highlightLanguage) {
@@ -100,6 +140,23 @@ const SVG_ICONS = {
 };
 
 const renderer = new marked.Renderer();
+renderer.html = function(tokenOrHtml) {
+  return escapeHtml(tokenOrHtml?.raw || tokenOrHtml);
+};
+renderer.link = function(tokenOrHref, title, text) {
+  const href = typeof tokenOrHref === 'object' ? tokenOrHref.href : tokenOrHref;
+  const label = getMarkedTokenText(tokenOrHref, text || href);
+  if (!isSafeMarkdownLink(href)) {
+    return escapeHtml(label);
+  }
+  const safeTitle = typeof tokenOrHref === 'object' ? tokenOrHref.title : title;
+  const titleAttribute = safeTitle ? ` title="${escapeHtml(safeTitle)}"` : '';
+  return `<a href="${escapeHtml(href)}"${titleAttribute}>${escapeHtml(label)}</a>`;
+};
+renderer.image = function(tokenOrHref, title, text) {
+  const label = getMarkedTokenText(tokenOrHref, text || title || 'Image');
+  return `<span class="markdown-image-placeholder">${escapeHtml(label)}</span>`;
+};
 renderer.code = function(codeOrToken, lang) {
   let code = '';
   let language = '';
@@ -138,10 +195,15 @@ renderer.code = function(codeOrToken, lang) {
   const highlightLanguage = normalizeCodeLanguage(language, code);
   const isPascal = highlightLanguage === 'pascal';
   const headerTitleText = getCodeHeaderTitle(language, highlightLanguage);
-  const headerTitle = isProjectFile ? `${headerTitleText} - ${filepath}` : headerTitleText;
+  const safeFilepath = escapeHtml(filepath);
+  const headerTitle = isProjectFile
+    ? `${escapeHtml(headerTitleText)} - ${safeFilepath}`
+    : escapeHtml(headerTitleText);
+  const renderedCode = renderCodeForLanguage(code, highlightLanguage);
+  const projectFileAttributes = getProjectFileAttributes(isProjectFile, safeFilepath);
 
   return `
-    <div class="code-block-container" ${isProjectFile ? `data-filepath="${filepath}" data-project-file="true"` : ''}>
+    <div class="code-block-container" ${projectFileAttributes}>
       <div class="code-header">
         <span>${headerTitle}</span>
         <div class="code-header-actions">
@@ -152,7 +214,7 @@ renderer.code = function(codeOrToken, lang) {
             : ''}
         </div>
       </div>
-      <pre><code class="language-${highlightLanguage}">${code}</code></pre>
+      <pre><code class="language-${highlightLanguage}">${renderedCode}</code></pre>
     </div>
   `;
 };
@@ -3397,7 +3459,7 @@ function hideSlashPopup() {
 
 function renderSlashCommands() {
   const popup = document.getElementById('slash-commands-popup');
-  popup.innerHTML = '';
+  popup.replaceChildren();
 
   if (slashPopupSelectedIndex >= filteredSlashCommands.length) {
     slashPopupSelectedIndex = 0;
@@ -3410,15 +3472,14 @@ function renderSlashCommands() {
       item.classList.add('selected');
     }
 
-    item.innerHTML = `
-      <div class="slash-command-info">
-        <span class="slash-command-name">${cmd.name}</span>
-        <span class="slash-command-desc">${cmd.desc}</span>
-        ${cmd.usage ? `<span class="slash-command-usage">${cmd.usage}</span>` : ''}
-        ${cmd.example ? `<span class="slash-command-example">Example: ${cmd.example}</span>` : ''}
-      </div>
-      ${cmd.shortcut ? `<span class="slash-command-shortcut">${cmd.shortcut}</span>` : ''}
-    `;
+    const info = document.createElement('div');
+    info.className = 'slash-command-info';
+    appendCommandText(info, 'slash-command-name', cmd.name);
+    appendCommandText(info, 'slash-command-desc', cmd.desc);
+    if (cmd.usage) appendCommandText(info, 'slash-command-usage', cmd.usage);
+    if (cmd.example) appendCommandText(info, 'slash-command-example', `Example: ${cmd.example}`);
+    item.appendChild(info);
+    if (cmd.shortcut) appendCommandText(item, 'slash-command-shortcut', cmd.shortcut);
 
     item.addEventListener('mousedown', (e) => {
       e.preventDefault();
@@ -3428,6 +3489,13 @@ function renderSlashCommands() {
 
     popup.appendChild(item);
   });
+}
+
+function appendCommandText(parent, className, text) {
+  const element = document.createElement('span');
+  element.className = className;
+  element.textContent = String(text ?? '');
+  parent.appendChild(element);
 }
 
 function insertSlashCommand(commandText) {
@@ -3809,6 +3877,7 @@ function processProjectFiles(contentElement) {
 
   fileBlocks.forEach((block) => {
     const filepath = block.dataset.filepath;
+    const safeDisplayPath = escapeHtml(filepath);
     const ext = filepath.split('.').pop().toLowerCase();
     const copyBtn = block.querySelector('.copy-btn');
     if (!copyBtn) return;
@@ -3863,7 +3932,7 @@ function processProjectFiles(contentElement) {
     item.innerHTML = `
       <div class="file-item-info">
         <span class="file-item-icon" style="color: ${iconColor};">${fileIconSvg}</span>
-        <span class="file-item-name" title="${filepath}">${filepath}</span>
+        <span class="file-item-name" title="${safeDisplayPath}">${safeDisplayPath}</span>
       </div>
       <div class="file-item-actions">
         <button class="file-item-btn" title="View file code" onclick="scrollToBlock('${blockId}')">
@@ -3985,7 +4054,7 @@ function initializeConfig(data) {
       selectProvider.value = p.value;
       selectProvider.dispatchEvent(new Event('change'));
 
-      providerDropdownValue.innerHTML = `${getProviderIcon(p.value)}<span>${p.name}</span>`;
+      renderProviderDropdownValue(getProviderIcon(p.value), p.name);
       setDropdownOpen(providerDropdownWrapper, providerDropdownTrigger, false);
       providerDropdownTrigger.focus();
     });
@@ -4000,9 +4069,7 @@ function initializeConfig(data) {
     providerOptionsList.appendChild(listItem);
   });
 
-  providerDropdownValue.innerHTML = activeIcon
-    ? `${activeIcon}<span>${activeText}</span>`
-    : `<span>${activeText}</span>`;
+  renderProviderDropdownValue(activeIcon, activeText);
 
   updateModelsList(data.models, data.activeModel, data.modelSelectionEnabled !== false);
   AVAILABLE_TOOLS = Array.isArray(data.tools) ? data.tools : [];
@@ -4034,6 +4101,18 @@ function initializeConfig(data) {
   }
 
 
+}
+
+function renderProviderDropdownValue(iconHtml, providerName) {
+  providerDropdownValue.replaceChildren();
+  if (iconHtml) {
+    const icon = document.createElement('span');
+    icon.innerHTML = iconHtml;
+    providerDropdownValue.appendChild(icon);
+  }
+  const name = document.createElement('span');
+  name.textContent = String(providerName ?? '');
+  providerDropdownValue.appendChild(name);
 }
 
 function applyModelSelectionState() {

@@ -52,6 +52,10 @@ type
     [Test]
     procedure ReadOnlyToolExecutesWithoutConsent;
     [Test]
+    procedure FederatedReadOnlyToolRequiresConsent;
+    [Test]
+    procedure FederatedReadOnlyToolDoesNotExecuteWhenConsentIsDenied;
+    [Test]
     procedure DeniedToolDoesNotExecute;
     [Test]
     procedure CancelledToolDoesNotExecuteAndIsAudited;
@@ -573,6 +577,66 @@ begin
   Assert.AreEqual(1, LTool.ExecutionCount);
   Assert.AreEqual(0, LConsent.RequestCount);
   Assert.AreEqual(aoSucceeded, LAudit.GetEvents[0].Outcome);
+end;
+
+procedure TTestRadIAToolSecurity.FederatedReadOnlyToolRequiresConsent;
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LTool: TTestRadIATool;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LTool := TTestRadIATool.Create('mcp.server.readFile', trReadOnly);
+  LRegistry.RegisterTool(LTool);
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowOnce);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  LResult := LExecutor.Execute(CreateRequest('mcp.server.readFile'));
+
+  Assert.IsTrue(LResult.Success);
+  Assert.AreEqual(1, LTool.ExecutionCount);
+  Assert.AreEqual(1, LConsent.RequestCount);
+end;
+
+procedure TTestRadIAToolSecurity.
+  FederatedReadOnlyToolDoesNotExecuteWhenConsentIsDenied;
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LTool: TTestRadIATool;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LTool := TTestRadIATool.Create('mcp.server.readFile', trReadOnly);
+  LRegistry.RegisterTool(LTool);
+  LConsent := TTestRadIAConsentProvider.Create(cdDeny);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  LResult := LExecutor.Execute(CreateRequest('mcp.server.readFile'));
+
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual(0, LTool.ExecutionCount);
+  Assert.AreEqual(1, LConsent.RequestCount);
+  Assert.AreEqual(aoDenied, LAudit.GetEvents[0].Outcome);
 end;
 
 procedure TTestRadIAToolSecurity.PerExecutionConsentIsNeverCached;

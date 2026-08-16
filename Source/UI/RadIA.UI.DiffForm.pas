@@ -58,6 +58,7 @@ type
     function CleanSuggestedCode(const AResponse: string): string;
     procedure PostToWebView(const AAction, AText: string);
     procedure ProcessWebMessage(const AMessage: string);
+    function IsExpectedWebMessageSource(const AArgs: TWebMessageReceivedEventArgs): Boolean;
   public
     procedure InitializeDiff(const AUnitName, AOriginalCode: string; const AWebFilesDir: string = '');
     procedure InitializePreparedDiff(
@@ -374,7 +375,7 @@ var
   LJsonText: PWideChar;
   LText: PWideChar;
 begin
-  if not Assigned(Args.ArgsInterface) then
+  if not Assigned(Args.ArgsInterface) or not IsExpectedWebMessageSource(Args) then
     Exit;
   if Succeeded(Args.ArgsInterface.TryGetWebMessageAsString(LText)) then
   begin
@@ -392,6 +393,29 @@ begin
   finally
     CoTaskMemFree(LJsonText);
   end;
+end;
+
+function TRadIAFormAIDiff.IsExpectedWebMessageSource(
+  const AArgs: TWebMessageReceivedEventArgs
+): Boolean;
+var
+  LExpectedSource: string;
+  LSource: PWideChar;
+  LSourceText: string;
+begin
+  Result := False;
+  if not Assigned(AArgs.ArgsInterface) then
+    Exit;
+  LSource := nil;
+  if Failed(AArgs.ArgsInterface.Get_Source(LSource)) then
+    Exit;
+  try
+    LSourceText := string(LSource);
+  finally
+    CoTaskMemFree(LSource);
+  end;
+  LExpectedSource := 'file:///' + TPath.Combine(FWebFilesDir, 'diff.html').Replace('\', '/');
+  Result := SameText(LSourceText, LExpectedSource);
 end;
 
 procedure TRadIAFormAIDiff.ProcessWebMessage(

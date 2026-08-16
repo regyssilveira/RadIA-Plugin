@@ -42,3 +42,17 @@ project content in context sent to the selected provider.
 
 Preserve audit data when required for traceability. Remove indexes only after closing every IDE
 and according to the organization's retention policy.
+
+### Chat surface and export protections
+
+*   **Safe rendering and Content Security Policy (CSP):** model Markdown escapes raw HTML, removes
+    images, and rejects links with executable schemes. As defense in depth, chat and diff also block
+    remote connections, images, frames, and objects through CSP.
+*   **Secret redaction on export:** exporting the conversation to Markdown or HTML runs the content
+    through the secret redactor, which replaces `Bearer` tokens, AWS access keys, and sensitive
+    JSON fields (`api_key`, `password`, `authorization`, among others) with `[REDACTED]`.
+*   **Redaction in diagnostic logs:** the payload summary written to `%APPDATA%\RadIA\Logs` applies
+    the same redaction before truncating the sample.
+*   **CLI login without a shell interpreter:** guided authentication runs the CLI binary directly
+    instead of going through `cmd.exe`, so special characters in the configured path are never
+    interpreted as commands.
