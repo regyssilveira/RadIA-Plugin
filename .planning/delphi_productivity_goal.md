@@ -157,6 +157,10 @@ Dependências: DelphiEnvironment, ProjectKnowledge, DesignerVisualDiff e Develop
 - Documentação pt-BR/en-US, hints e testes documentais na mesma entrega.
 - SonarQube aprovado, sem supressões.
 
+Adendo aprovado: a validação unificada de código foi revalidada no estado atual. `ValidateDelphiCode` combina
+regras nativas, Check do compilador, DelphiLint isolado e Sonar, enquanto correções usam preview, consentimento
+e rollback. Não existe um segundo motor concorrente a manter.
+
 ## Primeira fatia executável
 
 Implementar o roteador de intenção em modo de recomendação, sem execução automática. Ele deve
