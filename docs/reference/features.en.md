@@ -49,6 +49,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **RadIA Doctor and Status** | Diagnostics | `/doctor` checks readiness and recommends the next action; `/status` inventories configuration and availability without exposing credentials. | ✅ Completed (v2.2.1) |
 | **Unified Problems panel** | Chat UX | Collects build, DUnitX, coverage, memory, DFM/PAS, threading, and review findings with filters, navigation, and reviewable actions. | ✅ Completed |
 | **Unified Delphi code validation** | Intelligence | Consolidates native rules, compiler Check, isolated DelphiLint, and Sonar into navigable findings; quick fixes become consented, reversible previews. | ✅ Completed |
+| **Hierarchy refactoring** | Intelligence | Coordinates compatible member renames across an ancestor, overrides, and exact usages, blocking overloads and ambiguous relationships before a reversible preview. | ✅ Completed |
 | **CLI/MCP Setup Assistant** | Integration | Detects, explains, requests consent, installs or configures, validates, and provides complete manual fallback without an IDE restart. | ✅ Completed (v2.2.1) |
 | **Explicit execution routes** | Chat UX | Separates Chat/Agent mode, RadIA native orchestration, and direct CLI while showing the effective route, transport, and credential. | ✅ Completed (v2.3.1) |
 | **Intent recommendation** | Chat UX | Recognizes creation, build, tests, and diagnostics locally; lets users confirm, review, or remain in chat and keeps only sanitized local counters. | ✅ Completed |

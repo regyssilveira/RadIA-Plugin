@@ -49,6 +49,21 @@ segura quando não consegue obter conteúdo textual completo.
 O retorno contém `previewId`, arquivos afetados e quantidade de substituições confirmadas. Nenhuma
 mutação ocorre durante a preparação.
 
+### Renomear um membro em toda a hierarquia
+
+Quando um método possui declaração ancestral e overrides, peça explicitamente para renomear o membro
+em toda a hierarquia. O RadIA relaciona apenas tipos indexados, compara a assinatura sem confundir
+diretivas como `virtual` e `override` e reúne declarações, implementações e usos exatos no mesmo preview.
+
+```text
+/tool PrepareRenameSymbol {"symbol":"Execute","newName":"Run","container":"TBaseWorker","unit":"Worker","includeHierarchy":true}
+```
+
+Se houver overloads, informe também `signature` com a assinatura exata. Tipo homônimo, ancestral não
+qualificado ambíguo, overload sem assinatura, referência candidata ou arquivo alterado interrompem a
+preparação. O retorno inclui `hierarchySymbolCount`; a aplicação e a reversão continuam sendo feitas por
+`ApplyMultiFilePatch` e `RevertMultiFilePatch`.
+
 ## Alterar a assinatura de uma rotina
 
 Use `PrepareChangeSignature` quando precisar adicionar, remover, renomear, reordenar ou alterar

@@ -66,6 +66,8 @@ Pelo chat e pelo menu contextual do editor, o RadIA pode:
 - compartilhar unit, símbolo vigente, imports e declarações próximas entre Ghost Text, ações
   contextuais e agente, com inspeção somente leitura pelo menu do editor;
 - preparar, aplicar e reverter correções revisadas.
+- renomear membros em ancestrais e overrides como uma única alteração transacional, bloqueando
+  overloads ou relações de herança ambíguas.
 
 Quando uma ação compatível não recebe seleção, ela pode usar a unit ativa como contexto.
 

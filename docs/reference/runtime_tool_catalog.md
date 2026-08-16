@@ -47,7 +47,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
-| `PrepareRenameSymbol` | Prepara uma renomeação semântica exata em Pascal e DFM, incluindo arquivos fechados, sem alterar o projeto. | `RadIA.Core.SemanticRefactoringTools.pas` |
+| `PrepareRenameSymbol` | Prepara uma renomeação semântica exata em Pascal e DFM, incluindo arquivos fechados e, opcionalmente, membros coordenados entre ancestrais e overrides. | `RadIA.Core.SemanticRefactoringTools.pas` |
 
 ## Refatoração semântica de assinaturas
 

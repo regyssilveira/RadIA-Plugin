@@ -106,6 +106,11 @@ Dependências: jornadas, Agent Runtime, Tool Registry, Tool Views e Project Heal
 5. Selecionar, executar e explicar testes afetados.
 6. Expandir refatorações somente após a base atingir os gates.
 
+Estado: identidade e referências, Find All References, Rename Symbol, impacto de testes, Change
+Signature, Extract Method, Move Type e renomeação coordenada de membros entre ancestral e overrides
+estão concluídos com preview, fingerprint, consentimento, rollback e bloqueio de ambiguidades. M2
+concluído.
+
 Dependências: Semantic Engine, DFM/PAS Audit, MultiFilePatch, DevelopmentTransaction, DUnitX e
 Coverage.
 

@@ -52,6 +52,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Recomendação por intenção** | Chat UX | Reconhece criação, build, testes e diagnóstico localmente; permite confirmar, revisar ou continuar no chat e mantém somente contadores locais sanitizados. | ✅ Concluído |
 | **Painel de problemas unificado** | Chat UX | Reúne achados de build, DUnitX, cobertura, memória, DFM/PAS, threads e revisão com filtros, navegação e ações revisáveis. | ✅ Concluído |
 | **Validação unificada de código Delphi** | Inteligência | Consolida regras nativas, Check do compilador, DelphiLint isolado e Sonar em achados navegáveis; quick fixes viram previews consentidos e reversíveis. | ✅ Concluído |
+| **Refatoração de hierarquia** | Inteligência | Renomeia de forma coordenada membros compatíveis entre ancestral, overrides e usos exatos, bloqueando overloads e relações ambíguas antes do preview reversível. | ✅ Concluído |
 | **ChatGPT Pro via Codex CLI** | Provedor | Usa a sessão e a cota ChatGPT/Codex tanto como transporte do provider nativo quanto na execução CLI direta; API Key permanece separada. | ✅ Concluído (v2.3.1) |
 | **Cópia universal de texto** | Chat UX | Oferece cópia para respostas, JSON, resultados de tools e demais payloads textuais, preservando o conteúdo original. | ✅ Concluído (v2.3.1) |
 | **Ajuda integrada** | Chat UX | `/help` resume capacidades e abre os guias públicos no navegador padrão. | ✅ Concluído (v2.2.2) |

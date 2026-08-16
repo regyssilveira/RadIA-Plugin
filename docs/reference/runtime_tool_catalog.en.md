@@ -47,7 +47,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 | Tool | Purpose | Source unit |
 |---|---|---|
-| `PrepareRenameSymbol` | Prepares an exact semantic Delphi symbol rename across Pascal and DFM files. | `RadIA.Core.SemanticRefactoringTools.pas` |
+| `PrepareRenameSymbol` | Prepares an exact semantic Delphi symbol rename, optionally across a proven class hierarchy. | `RadIA.Core.SemanticRefactoringTools.pas` |
 
 ## Semantic signature refactoring
 

@@ -95,7 +95,7 @@ test('release usage plan adds the intent recommendation contract once', () => {
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
-  assert.equal(plan.runCount, 5);
+  assert.equal(plan.runCount, 6);
   assert.equal(intentRuns.length, 1);
   assert.equal(intentRuns[0].targetId, 'host-neutral');
   assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
@@ -106,5 +106,12 @@ test('release usage plan adds the intent recommendation contract once', () => {
   assert.equal(problemRuns[0].targetId, 'host-neutral');
   assert.ok(
     problemRuns[0].requiredEvidence.includes('safe-source-navigation')
+  );
+  const hierarchyRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'semantic-hierarchy-refactoring'
+  );
+  assert.equal(hierarchyRuns.length, 1);
+  assert.ok(
+    hierarchyRuns[0].requiredEvidence.includes('ambiguous-overload-blocked')
   );
 });

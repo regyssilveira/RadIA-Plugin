@@ -48,6 +48,21 @@ content is unavailable.
 The result contains the `previewId`, affected files, and confirmed replacement count. Preparation never
 mutates the workspace.
 
+### Rename a member across its hierarchy
+
+When a method has an ancestor declaration and overrides, explicitly request a hierarchy-wide member
+rename. RadIA relates indexed types only, compares signatures without confusing directives such as
+`virtual` and `override`, and combines declarations, implementations, and exact usages in one preview.
+
+```text
+/tool PrepareRenameSymbol {"symbol":"Execute","newName":"Run","container":"TBaseWorker","unit":"Worker","includeHierarchy":true}
+```
+
+For overloads, also supply the exact `signature`. A homonymous type, ambiguous unqualified ancestor,
+overload without a signature, candidate reference, or changed file stops preparation. The result includes
+`hierarchySymbolCount`; application and rollback still use `ApplyMultiFilePatch` and
+`RevertMultiFilePatch`.
+
 ## Change a routine signature
 
 Use `PrepareChangeSignature` to add, remove, rename, reorder, or change parameters of a procedure,

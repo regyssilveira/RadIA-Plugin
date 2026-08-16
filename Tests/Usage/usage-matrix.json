@@ -14,7 +14,8 @@
       "scenarioIds": [
         "ide-startup-shutdown",
         "intent-recommendation",
-        "unified-problems-panel"
+        "unified-problems-panel",
+        "semantic-hierarchy-refactoring"
       ]
     }
   ],
@@ -76,6 +77,19 @@
         "severity-and-category-filters",
         "safe-source-navigation",
         "reviewable-recommended-action"
+      ]
+    },
+    {
+      "id": "semantic-hierarchy-refactoring",
+      "scope": "host",
+      "runner": "node-test",
+      "testPath": "Tests/Web/RadIA.SemanticHierarchyRefactoring.test.js",
+      "requiredEvidence": [
+        "hierarchy-scoped-input",
+        "exact-references-only",
+        "preview-before-consent",
+        "apply-and-rollback-regression",
+        "ambiguous-overload-blocked"
       ]
     }
   ]

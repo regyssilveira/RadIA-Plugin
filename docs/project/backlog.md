@@ -42,7 +42,7 @@ ignorado ou reprovado bloqueia a release.
   arquivos fechados, transação multiarquivo e rollback.
 - [x] **Refatorações semânticas transacionais:** Extract Method, Move Type e Change Signature com
   análise estrutural, preview, fingerprint, consentimento, aplicação multiarquivo e rollback.
-- [ ] **Refatorações de hierarquia:** expandir a base validada para membros herdados, overrides e
+- [x] **Refatorações de hierarquia:** expandir a base validada para membros herdados, overrides e
   mudanças coordenadas entre classes ancestrais e descendentes.
 - [x] **Testes selecionados por impacto:** relacionar diff, símbolos, dependências, fixtures e
   cobertura para executar e justificar o menor conjunto seguro de testes DUnitX.

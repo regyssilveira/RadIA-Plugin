@@ -1388,7 +1388,8 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIASemanticQueryService>,
     TRadIAContainer.Resolve<IRadIAEditorMutationFacade>,
-    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>
+    TRadIAContainer.Resolve<IRadIAMultiFilePatchService>,
+    TRadIAContainer.Resolve<IRadIASemanticHierarchyService>
   );
   RegisterRadIASemanticChangeSignatureTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,

@@ -17,7 +17,7 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Help | `/help`, fillable command examples, and documentation links opened in the default browser. |
 | Journeys | Conversational intake that preserves answers, plus minimal and controller-based DEXT project generation. |
 | Providers | Gemini, OpenAI, Azure OpenAI, Claude, Bedrock, Copilot, DeepSeek, Groq, Qwen, Mistral, OpenRouter, Ollama, LM Studio, OpenAI-compatible and JSON-defined providers. |
-| Editor | Read live buffers and selections, explain, review, refactor, generate tests and documentation, compare Ghost Text alternatives, and inspect semantic context shared with the agent. |
+| Editor | Read live buffers and selections, explain, review, refactor, generate tests and documentation, compare Ghost Text alternatives, inspect shared semantic context, and coordinate member renames across ancestors and overrides. |
 | Review | Smart Diff, inline reviews, reviewed fixes, safe apply and controlled revert. |
 | Generation | DTOs and models from JSON or DDL, methods from comments and complete Delphi projects. |
 | Templates | Console, VCL, FMX, Library, Package, DUnitX, and Windows Service with preview, staging, validation, open, build, and rollback. |
@@ -53,7 +53,7 @@ RadIA presents the plan before the first tool call. Regular questions remain ord
 
 ## References
 
-- [All 171 registered built-in tools](runtime_tool_catalog.en.md)
+- [All 172 registered built-in tools](runtime_tool_catalog.en.md)
 - [Operational reference for every tool](internal_tools_reference.en.md)
 - [All slash commands](slash_commands.en.md)
 - [Complete user manual](../guides/user_manual.en.md)

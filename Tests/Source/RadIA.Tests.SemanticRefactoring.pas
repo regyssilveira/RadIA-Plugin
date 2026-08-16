@@ -50,6 +50,10 @@ type
     procedure RejectsAmbiguousAndCyclicMoveType;
     [Test]
     procedure RejectsStaleMoveTypePreview;
+    [Test]
+    procedure RenamesMemberAcrossClassHierarchy;
+    [Test]
+    procedure RejectsAmbiguousHierarchyMemberOverload;
   end;
 
 implementation
@@ -125,7 +129,8 @@ type
   TRadIARenameQueryStub = class(
     TInterfacedObject,
     IRadIASemanticQueryService,
-    IRadIASemanticRoutineService
+    IRadIASemanticRoutineService,
+    IRadIASemanticHierarchyService
   )
   private
     FAmbiguous: Boolean;
@@ -182,6 +187,10 @@ type
       const AMemberName: string
     ): Boolean;
     function ListPublicApiSymbols(
+      out ASymbols: TArray<TRadIASemanticLocation>;
+      out AError: string
+    ): Boolean;
+    function ListTypeSymbols(
       out ASymbols: TArray<TRadIASemanticLocation>;
       out AError: string
     ): Boolean;
@@ -397,6 +406,54 @@ function TRadIARenameQueryStub.FindReferences(
   out AError: string
 ): Boolean;
 begin
+  if SameText(ASymbolId, 'sym-base-run') then
+  begin
+    AReferences := [
+      TRadIASemanticReferenceLocation.Create(
+        'Main',
+        FMainFile,
+        1,
+        1,
+        'exact',
+        'hierarchy-declaration'
+      ).WithOffsets(
+        Pos('Run;', FWorkspace.ContentOf(FMainFile)) - 1,
+        Length('Run')
+      )
+    ];
+    AError := '';
+    Exit(not AIncludeCandidates and (AMaxItems = 1000));
+  end;
+  if SameText(ASymbolId, 'sym-child-run') then
+  begin
+    AReferences := [
+      TRadIASemanticReferenceLocation.Create(
+        'Other',
+        FOtherFile,
+        1,
+        1,
+        'exact',
+        'hierarchy-override'
+      ).WithOffsets(
+        Pos('Run;', FWorkspace.ContentOf(FOtherFile)) - 1,
+        Length('Run')
+      ),
+      TRadIASemanticReferenceLocation.Create(
+        'Other',
+        FOtherFile,
+        1,
+        1,
+        'exact',
+        'hierarchy-call'
+      ).WithOffsets(
+        Pos('Run;', FWorkspace.ContentOf(FOtherFile),
+          Pos('Run;', FWorkspace.ContentOf(FOtherFile)) + 1) - 1,
+        Length('Run')
+      )
+    ];
+    AError := '';
+    Exit(not AIncludeCandidates and (AMaxItems = 1000));
+  end;
   if SameText(ASymbolId, 'sym-worker') then
   begin
     AReferences := [
@@ -624,6 +681,40 @@ function TRadIARenameQueryStub.FindSymbols(
   out AError: string
 ): Boolean;
 begin
+  if SameText(AName, 'Run') then
+  begin
+    ASymbols := [
+      TRadIASemanticLocation.Create(
+        AName,
+        'method',
+        'TBaseWorker',
+        FMainFile,
+        'procedure Run; virtual;',
+        Pos('Run;', FWorkspace.ContentOf(FMainFile)) - 1
+      ).WithIdentity('sym-base-run', 'Main'),
+      TRadIASemanticLocation.Create(
+        AName,
+        'method',
+        'TChildWorker',
+        FOtherFile,
+        'procedure Run; override;',
+        Pos('Run;', FWorkspace.ContentOf(FOtherFile)) - 1
+      ).WithIdentity('sym-child-run', 'Other')
+    ];
+    if FAmbiguous then
+      ASymbols := ASymbols + [
+        TRadIASemanticLocation.Create(
+          AName,
+          'method',
+          'TBaseWorker',
+          FMainFile,
+          'procedure Run(const AValue: Integer); virtual;',
+          Pos('Run;', FWorkspace.ContentOf(FMainFile)) - 1
+        ).WithIdentity('sym-base-run-overload', 'Main')
+      ];
+    AError := '';
+    Exit(True);
+  end;
   if SameText(AName, 'TWorker') then
   begin
     ASymbols := [
@@ -827,6 +918,33 @@ function TRadIARenameQueryStub.ListPublicApiSymbols(
 ): Boolean;
 begin
   ASymbols := nil;
+  AError := '';
+  Result := True;
+end;
+
+function TRadIARenameQueryStub.ListTypeSymbols(
+  out ASymbols: TArray<TRadIASemanticLocation>;
+  out AError: string
+): Boolean;
+begin
+  ASymbols := [
+    TRadIASemanticLocation.Create(
+      'TBaseWorker',
+      'class',
+      '',
+      FMainFile,
+      'TBaseWorker = class',
+      0
+    ).WithIdentity('type-base-worker', 'Main'),
+    TRadIASemanticLocation.Create(
+      'TChildWorker',
+      'class',
+      '',
+      FOtherFile,
+      'TChildWorker = class(TBaseWorker)',
+      0
+    ).WithIdentity('type-child-worker', 'Other').WithAncestors(['TBaseWorker'])
+  ];
   AError := '';
   Result := True;
 end;
@@ -1162,6 +1280,117 @@ begin
     )
   );
   Assert.AreEqual('ambiguous_symbol', LResult.ErrorCode);
+end;
+
+procedure TRadIASemanticRefactoringTests.RenamesMemberAcrossClassHierarchy;
+var
+  LHierarchy: IRadIASemanticHierarchyService;
+  LInspect: IRadIARenameWorkspaceInspect;
+  LPatches: IRadIAMultiFilePatchService;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LRoot: TJSONObject;
+  LPreviewId: string;
+begin
+  LInspect := FWorkspace as IRadIARenameWorkspaceInspect;
+  LInspect.AddFile(
+    FMainFile,
+    'type TBaseWorker = class procedure Run; virtual; end;'
+  );
+  LInspect.AddFile(
+    FOtherFile,
+    'type TChildWorker = class(TBaseWorker) procedure Run; override; end; ' +
+    'begin Worker.Run; end;'
+  );
+  LQueries := TRadIARenameQueryStub.Create(
+    LInspect,
+    FMainFile,
+    FOtherFile,
+    FFormFile,
+    False
+  );
+  Assert.IsTrue(Supports(LQueries, IRadIASemanticHierarchyService, LHierarchy));
+  LPatches := FPatchService as IRadIAMultiFilePatchService;
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticRefactoringTools(
+    LRegistry,
+    LQueries,
+    FWorkspace as IRadIAEditorMutationFacade,
+    LPatches,
+    LHierarchy
+  );
+  LResult := LRegistry.Resolve('PrepareRenameSymbol').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareRenameSymbol',
+      '{"symbol":"Run","newName":"Execute","container":"TBaseWorker",' +
+      '"unit":"Main","includeHierarchy":true}',
+      'hierarchy-rename-test'
+    )
+  );
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LResult.ContentJson, '"hierarchySymbolCount":2');
+  Assert.Contains(LResult.ContentJson, '"replacementCount":3');
+  LRoot := TJSONObject.ParseJSONValue(LResult.ContentJson) as TJSONObject;
+  try
+    LPreviewId := LRoot.GetValue<string>('previewId');
+  finally
+    LRoot.Free;
+  end;
+  Assert.IsTrue(LPatches.Apply(LPreviewId).Success);
+  Assert.Contains(LInspect.ContentOf(FMainFile), 'Execute; virtual');
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'Execute; override');
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'Worker.Execute');
+  Assert.IsTrue(LPatches.Revert(LPreviewId).Success);
+  Assert.Contains(LInspect.ContentOf(FMainFile), 'Run; virtual');
+  Assert.Contains(LInspect.ContentOf(FOtherFile), 'Worker.Run');
+end;
+
+procedure TRadIASemanticRefactoringTests.
+  RejectsAmbiguousHierarchyMemberOverload;
+var
+  LHierarchy: IRadIASemanticHierarchyService;
+  LInspect: IRadIARenameWorkspaceInspect;
+  LQueries: IRadIASemanticQueryService;
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+begin
+  LInspect := FWorkspace as IRadIARenameWorkspaceInspect;
+  LInspect.AddFile(
+    FMainFile,
+    'type TBaseWorker = class procedure Run; virtual; end;'
+  );
+  LInspect.AddFile(
+    FOtherFile,
+    'type TChildWorker = class(TBaseWorker) procedure Run; override; end;'
+  );
+  LQueries := TRadIARenameQueryStub.Create(
+    LInspect,
+    FMainFile,
+    FOtherFile,
+    FFormFile,
+    True
+  );
+  Assert.IsTrue(Supports(LQueries, IRadIASemanticHierarchyService, LHierarchy));
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIASemanticRefactoringTools(
+    LRegistry,
+    LQueries,
+    FWorkspace as IRadIAEditorMutationFacade,
+    FPatchService as IRadIAMultiFilePatchService,
+    LHierarchy
+  );
+  LResult := LRegistry.Resolve('PrepareRenameSymbol').Execute(
+    TRadIAToolRequest.Create(
+      'PrepareRenameSymbol',
+      '{"symbol":"Run","newName":"Execute","container":"TBaseWorker",' +
+      '"unit":"Main","includeHierarchy":true}',
+      'ambiguous-hierarchy-rename-test'
+    )
+  );
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('hierarchy_precondition_failed', LResult.ErrorCode);
+  Assert.Contains(LResult.ErrorMessage, 'exact signature');
 end;
 
 initialization
