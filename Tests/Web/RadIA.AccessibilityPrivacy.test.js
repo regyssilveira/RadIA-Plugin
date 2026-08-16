@@ -285,7 +285,7 @@ test('model Markdown cannot inject executable HTML into the chat surface', () =>
   assert.match(chatJs, /renderer\.image = function[\s\S]*markdown-image-placeholder/u);
   assert.match(chatJs, /renderer\.link = function[\s\S]*isSafeMarkdownLink/u);
   assert.match(chatJs, /\['http', 'https', 'mailto', 'file'\]\.includes\(scheme\)/u);
-  assert.match(chatJs, /const renderedCode = Prism\.languages\[highlightLanguage\]/u);
+  assert.match(chatJs, /const renderedCode = renderCodeForLanguage\(code, highlightLanguage\)/u);
   assert.match(chatJs, /const safeDisplayPath = escapeHtml\(filepath\)/u);
 });
 

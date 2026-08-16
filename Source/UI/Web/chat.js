@@ -66,9 +66,24 @@ function isSafeMarkdownLink(href) {
   const normalized = String(href || '')
     .replace(/[\u0000-\u0020]+/gu, '')
     .toLowerCase();
-  const scheme = normalized.match(/^([a-z][a-z0-9+.-]*):/u)?.[1] || '';
+  const schemeMatch = /^([a-z][a-z0-9+.-]*):/u.exec(normalized);
+  const scheme = schemeMatch?.[1] || '';
   return normalized !== '' &&
     (!scheme || ['http', 'https', 'mailto', 'file'].includes(scheme));
+}
+
+function renderCodeForLanguage(code, language) {
+  if (Prism.languages[language]) {
+    return Prism.highlight(code, Prism.languages[language], language);
+  }
+  return escapeHtml(code);
+}
+
+function getProjectFileAttributes(isProjectFile, safeFilepath) {
+  if (!isProjectFile) {
+    return '';
+  }
+  return `data-filepath="${safeFilepath}" data-project-file="true"`;
 }
 
 function getCodeHeaderTitle(language, highlightLanguage) {
@@ -184,12 +199,8 @@ renderer.code = function(codeOrToken, lang) {
   const headerTitle = isProjectFile
     ? `${escapeHtml(headerTitleText)} - ${safeFilepath}`
     : escapeHtml(headerTitleText);
-  const renderedCode = Prism.languages[highlightLanguage]
-    ? Prism.highlight(code, Prism.languages[highlightLanguage], highlightLanguage)
-    : escapeHtml(code);
-  const projectFileAttributes = isProjectFile
-    ? `data-filepath="${safeFilepath}" data-project-file="true"`
-    : '';
+  const renderedCode = renderCodeForLanguage(code, highlightLanguage);
+  const projectFileAttributes = getProjectFileAttributes(isProjectFile, safeFilepath);
 
   return `
     <div class="code-block-container" ${projectFileAttributes}>
