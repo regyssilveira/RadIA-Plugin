@@ -355,7 +355,8 @@ External tools do not have an alternative execution path: chat and MCP continue 
 central enforcer of policy, consent, audit and opt-out. The release of the token
 `IRadIAToolExtensionRegistration` removes only tools belonging to the extension.
 
-See `docs/tool_extension_guide.md` and the package at `Examples/ToolExtension`.
+See the [tool extension guide](tool_extension_guide.en.md) and the package at
+`Examples/ToolExtension`.
 
 ## 13. Criteria for adding a tool
 

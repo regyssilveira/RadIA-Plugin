@@ -46,17 +46,17 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Exportação de Conversa** | Chat UX | Botão para salvar histórico nos formatos Markdown (.md) ou HTML autônomo com Prism.js. | ✅ Concluído |
 | **Templates de Prompt** | Chat UX | Biblioteca de templates rápidos de prompt com substituição de código e o comando `/template`. | ✅ Concluído |
 | **Slash Commands Dinâmicos** | Chat UX | Mapeamento dinâmico de templates para comandos de barra (ex: `/createprojectarch`), sincronizados e autocompletados no WebView2. | ✅ Concluído |
-| **Doctor e Status do RadIA** | Diagnóstico | `/doctor` verifica prontidão e recomenda a próxima ação; `/status` inventaria configuração e disponibilidade sem expor credenciais. | ✅ Concluído (v2.2.1) |
-| **Assistente CLI/MCP** | Integração | Detecta, explica, solicita consentimento, instala ou configura, valida e oferece fallback manual completo sem exigir reinício da IDE. | ✅ Concluído (v2.2.1) |
-| **Rotas explícitas de execução** | Chat UX | Separa modo Chat/Agent, orquestração RadIA native e CLI direto, mostrando rota, transporte e credencial efetivos. | ✅ Concluído (v2.3.1) |
+| **Doctor e Status do RadIA** | Diagnóstico | `/doctor` verifica prontidão e recomenda a próxima ação; `/status` inventaria configuração e disponibilidade sem expor credenciais. | ✅ Concluído |
+| **Assistente CLI/MCP** | Integração | Detecta, explica, solicita consentimento, instala ou configura, valida e oferece fallback manual completo sem exigir reinício da IDE. | ✅ Concluído |
+| **Rotas explícitas de execução** | Chat UX | Separa modo Chat/Agent, orquestração RadIA native e CLI direto, mostrando rota, transporte e credencial efetivos. | ✅ Concluído |
 | **Recomendação por intenção** | Chat UX | Reconhece criação, build, testes e diagnóstico localmente; permite confirmar, revisar ou continuar no chat e mantém somente contadores locais sanitizados. | ✅ Concluído |
 | **Painel de problemas unificado** | Chat UX | Reúne achados de build, DUnitX, cobertura, memória, DFM/PAS, threads e revisão com filtros, navegação e ações revisáveis. | ✅ Concluído |
 | **Validação unificada de código Delphi** | Inteligência | Consolida regras nativas, Check do compilador, DelphiLint isolado e Sonar em achados navegáveis; quick fixes viram previews consentidos e reversíveis. | ✅ Concluído |
 | **Refatoração de hierarquia** | Inteligência | Renomeia de forma coordenada membros compatíveis entre ancestral, overrides e usos exatos, bloqueando overloads e relações ambíguas antes do preview reversível. | ✅ Concluído |
-| **ChatGPT Pro via Codex CLI** | Provedor | Usa a sessão e a cota ChatGPT/Codex tanto como transporte do provider nativo quanto na execução CLI direta; API Key permanece separada. | ✅ Concluído (v2.3.1) |
-| **Cópia universal de texto** | Chat UX | Oferece cópia para respostas, JSON, resultados de tools e demais payloads textuais, preservando o conteúdo original. | ✅ Concluído (v2.3.1) |
-| **Ajuda integrada** | Chat UX | `/help` resume capacidades e abre os guias públicos no navegador padrão. | ✅ Concluído (v2.2.2) |
-| **Jornadas DEXT conversacionais** | Projetos | Coleta requisitos ausentes em várias mensagens, preserva o contexto e gera APIs minimalistas ou com controllers. | ✅ Concluído (v2.2.2) |
+| **ChatGPT Pro via Codex CLI** | Provedor | Usa a sessão e a cota ChatGPT/Codex tanto como transporte do provider nativo quanto na execução CLI direta; API Key permanece separada. | ✅ Concluído |
+| **Cópia universal de texto** | Chat UX | Oferece cópia para respostas, JSON, resultados de tools e demais payloads textuais, preservando o conteúdo original. | ✅ Concluído |
+| **Ajuda integrada** | Chat UX | `/help` resume capacidades e abre os guias públicos no navegador padrão. | ✅ Concluído |
+| **Jornadas DEXT conversacionais** | Projetos | Coleta requisitos ausentes em várias mensagens, preserva o contexto e gera APIs minimalistas ou com controllers. | ✅ Concluído |
 | **Skills e Templates Declarativos** | Extensibilidade | Manifesto schema 2 com hot reload, autocomplete e permissão mínima `chat.prompt`. | ✅ Concluído |
 | **Aliases Declarativos de Tools** | Extensibilidade | Schema 3 registra aliases seguros no chat e MCP, herdando risco, schemas e consentimento da tool interna. | ✅ Concluído |
 | **Workflows Declarativos** | Extensibilidade | Schema 5 encadeia até 16 tools internas com risco herdado, limites e policy central por etapa, sem shell arbitrário. | ✅ Concluído |
@@ -130,7 +130,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Extensões Declarativas Assinadas** | Segurança | Pacotes RSA-SHA256 com fingerprint, confiança no primeiro uso e revogação visual. | ✅ Concluído |
 | **Addon Studio** | Extensibilidade | Criação, sandbox, instalação, exportação e assinatura visual de comandos, skills, conhecimento, templates, aliases, journeys e workflows. | ✅ Concluído |
 | **Portabilidade de Skills** | Extensibilidade | Publicação transacional para quatro CLIs com preview, consentimento, hashes e preservação de conflitos. | ✅ Concluído |
-| **Terminal de alta fidelidade** | Terminal | True color, atributos, alternate screen, bracketed paste, mouse SGR e links OSC 8 sob consentimento. | ✅ Concluído (v2.4.0) |
+| **Terminal de alta fidelidade** | Terminal | True color, atributos, alternate screen, bracketed paste, mouse SGR e links OSC 8 sob consentimento. | ✅ Concluído |
 | **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |
 | **Assistente de threads e PPL** | Concorrência | Detecta riscos e só prepara patches com sincronização VCL, cancelamento e tratamento de exceções validados. | ✅ Concluído |
 | **Retrofit OpenAPI/Swagger** | APIs existentes | Inventaria rotas DEXT e prepara integração Swagger revisável sem recriar o projeto. | ✅ Concluído |

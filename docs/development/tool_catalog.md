@@ -355,7 +355,8 @@ Ferramentas externas não possuem um caminho alternativo de execução: chat e M
 executor central de política, consentimento, auditoria e cancelamento. A liberação do token
 `IRadIAToolExtensionRegistration` remove somente as ferramentas pertencentes à extensão.
 
-Consulte `docs/tool_extension_guide.md` e o pacote em `Examples/ToolExtension`.
+Consulte o [guia de extensões de tools](tool_extension_guide.md) e o pacote em
+`Examples/ToolExtension`.
 
 ## 13. Critérios para adicionar uma ferramenta
 

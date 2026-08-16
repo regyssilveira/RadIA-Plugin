@@ -218,7 +218,7 @@ See also the [Complete RadIA User Manual](user_manual.en.md).
 
 ## Safe CLI client provisioning
 
-RadIA 2.2 includes a provisioning engine for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot
+RadIA includes a provisioning engine for Codex CLI, Claude Code, Gemini CLI, and GitHub Copilot
 CLI. Its visual integration is available on the settings screen, while the core contract
 enforces this workflow:
 

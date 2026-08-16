@@ -3,41 +3,23 @@
 This file contains open work only. History, completed milestones, metrics, and release notes do not
 belong in the backlog.
 
-The backlog does not record versions, completed deliveries, evidence, or internal plans.
+## Current status
 
-## Active goal: complete and deterministic Delphi experience
+There is no active goal or approved open item in the public backlog.
 
-Turn common Delphi developer objectives into simple, safe, and verifiable flows, reusing existing
-tools before expanding the catalog.
+The deterministic integration and end-to-end platform previously recorded as pending is complete.
+The mandatory `Test-RadIA.ReleaseUsage.ps1` gate brings together the Delphi 12 and 13 DUnitX suites,
+registered integration and usage scenarios, the calculator, project generation and opening, and the
+automated matrix on all three supported targets. Its current contract is documented in the
+[automated usage test matrix](../development/usage_test_matrix.en.md).
 
-The only open workstream is consolidation of the automated usage platform. Internal engineering
-plans remain separate from public documentation.
+New proposals enter this file only after they are approved as executable work with an observable
+outcome and acceptance criteria. Ideas that have not been approved are not presented as product
+commitments.
 
-## Cross-cutting foundation — automated usage tests
+## Definition of done for new items
 
-- [ ] **Integration and end-to-end platform:** automate isolated installation, Delphi startup,
-  sanitized configuration, chat, tools, editor, Designer, build, tests, debugger, terminal, consent,
-  and failure recovery on Delphi 12 and 13 targets.
-
-The platform must have three layers:
-
-1. service and adapter integration without opening the IDE;
-2. OTA integration loaded into a disposable Delphi instance;
-3. end-to-end user journeys with fixture projects, real actions, and verifiable evidence.
-
-Gate: a clean run must install RadIA in an isolated environment, open every supported IDE, execute
-the critical matrix, collect logs, screenshots, and structured results, and restore the environment
-without human intervention. Failures must identify the stage, IDE version, and diagnostic artifact
-without exposing credentials.
-
-This gate is mandatory for every release. Publication must run, through the same command and without
-skip options, the complete integration and end-to-end suite, calculator creation plus its functional
-and DUnitX tests, and immediate project creation, opening, and navigation. A missing, skipped, or
-failed group blocks the release.
-
-## Definition of done
-
-Each item requires:
+Every new item must require:
 
 - a documented contract and threat model before implementation;
 - proven Delphi 12 and 13 support, with unavailable capabilities reported explicitly;
