@@ -70,6 +70,10 @@ The versioned manifest lives at `.planning/competitive_closure_manifest.json`. T
 a dirty worktree, a mismatched version or commit, missing or duplicate fronts and checks, evidence
 without a command and artifact, and any closure that does not cover all three supported targets.
 
+Every check must run through `scripts/Invoke-RadIA.CompetitiveClosureCheck.ps1`. The runner writes a
+log and JSON envelope with commit, version, command, targets, duration, and result before updating
+the ledger. The validator opens the artifact and verifies its provenance; a path alone is insufficient.
+
 ## F1 mandatory semantic scenarios
 
 - completion after `.` for locals, parameters, fields, properties, `Self`, `Result`, and globals;

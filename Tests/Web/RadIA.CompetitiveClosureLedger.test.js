@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 
 const repositoryRoot = path.resolve('.');
@@ -50,6 +51,36 @@ function createLedger() {
   };
 }
 
+function closeCheck(ledger, frontIndex, checkIndex, targets = manifest.supportedTargets) {
+  const front = ledger.fronts[frontIndex];
+  const check = front.checks[checkIndex];
+  const evidenceName = `test-${randomUUID()}.json`;
+  const relativeArtifact = path.join(
+    'Output',
+    'Validation',
+    'CompetitiveClosure',
+    'TestArtifacts',
+    evidenceName
+  );
+  const artifact = path.join(repositoryRoot, relativeArtifact);
+  check.status = 'closed';
+  check.command = 'npm run test:semantic-corpus:12';
+  check.artifact = relativeArtifact;
+  check.targets = [...targets];
+  fs.mkdirSync(path.dirname(artifact), { recursive: true });
+  fs.writeFileSync(artifact, JSON.stringify({
+    schemaVersion: 1,
+    productVersion: ledger.productVersion,
+    sourceCommit: ledger.sourceCommit,
+    frontId: front.id,
+    checkId: check.id,
+    command: check.command,
+    targets: [...targets],
+    status: 'passed'
+  }, null, 2));
+  return check;
+}
+
 function validateLedger(ledger) {
   const temporaryRoot = fs.mkdtempSync(
     path.join(os.tmpdir(), 'radia-closure-ledger-')
@@ -73,6 +104,11 @@ function validateLedger(ledger) {
       { cwd: repositoryRoot, encoding: 'utf8' }
     );
   } finally {
+    ledger.fronts.flatMap(front => front.checks).forEach(check => {
+      if (check.artifact && check.artifact.includes('TestArtifacts')) {
+        fs.rmSync(path.join(repositoryRoot, check.artifact), { force: true });
+      }
+    });
     fs.rmSync(temporaryRoot, { recursive: true, force: true });
   }
 }
@@ -91,10 +127,7 @@ test('accepts an active ledger without promoting untested fronts', () => {
 test('rejects a closed front with a required check that is not closed', () => {
   const ledger = createLedger();
   ledger.fronts[0].status = 'closed';
-  ledger.fronts[0].checks[0].status = 'closed';
-  ledger.fronts[0].checks[0].command = 'npm run test:semantic-corpus:12';
-  ledger.fronts[0].checks[0].artifact = 'semantic-corpus-12.json';
-  ledger.fronts[0].checks[0].targets = [...manifest.supportedTargets];
+  closeCheck(ledger, 0, 0);
   const result = validateLedger(ledger);
 
   assert.notEqual(result.status, 0);
@@ -133,11 +166,7 @@ test('rejects a closed check without reproducible command and artifact', () => {
 
 test('rejects a closed check without all supported targets', () => {
   const ledger = createLedger();
-  const check = ledger.fronts[0].checks[0];
-  check.status = 'closed';
-  check.command = 'npm run test:semantic-corpus:12';
-  check.artifact = 'semantic-corpus-12.json';
-  check.targets = ['delphi12-win32'];
+  closeCheck(ledger, 0, 0, ['delphi12-win32']);
   const result = validateLedger(ledger);
 
   assert.notEqual(result.status, 0);

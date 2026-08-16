@@ -59,6 +59,54 @@ function Assert-ExactSet {
     }
 }
 
+function Read-ClosureEvidence {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Artifact,
+        [Parameter(Mandatory = $true)]
+        [string]$Repository,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedCommit,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedVersion,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedFront,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedCheck,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedCommand
+    )
+
+    if ([IO.Path]::IsPathRooted($Artifact)) {
+        throw "Closure evidence paths must be repository-relative."
+    }
+    $evidenceRoot = [IO.Path]::GetFullPath(
+        (Join-Path $Repository "Output\Validation\CompetitiveClosure")
+    )
+    $resolvedArtifact = [IO.Path]::GetFullPath((Join-Path $Repository $Artifact))
+    if (-not $resolvedArtifact.StartsWith($evidenceRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Closure evidence must remain under Output/Validation/CompetitiveClosure."
+    }
+    if (-not (Test-Path -LiteralPath $resolvedArtifact -PathType Leaf)) {
+        throw "Closure evidence was not found: $Artifact"
+    }
+    $evidence = Get-Content -LiteralPath $resolvedArtifact -Raw | ConvertFrom-Json
+    if ($evidence.schemaVersion -ne 1) {
+        throw "Closure evidence has an unsupported schema version: $Artifact"
+    }
+    if (($evidence.sourceCommit -ne $ExpectedCommit) -or
+        ($evidence.productVersion -ne $ExpectedVersion)) {
+        throw "Closure evidence provenance does not match the ledger: $Artifact"
+    }
+    if (($evidence.frontId -ne $ExpectedFront) -or
+        ($evidence.checkId -ne $ExpectedCheck) -or
+        ($evidence.command -ne $ExpectedCommand) -or
+        ($evidence.status -ne "passed")) {
+        throw "Closure evidence result does not match the closed check: $Artifact"
+    }
+    return $evidence
+}
+
 if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
     $RepositoryRoot = Join-Path $PSScriptRoot ".."
 }
@@ -143,6 +191,18 @@ foreach ($manifestFront in $manifest.fronts) {
                 -Expected @($manifest.supportedTargets) `
                 -Actual @($targets) `
                 -Description "Targets for closed check '$($check.id)'"
+            $evidence = Read-ClosureEvidence `
+                -Artifact $artifact `
+                -Repository $RepositoryRoot `
+                -ExpectedCommit $headCommit `
+                -ExpectedVersion $package.version `
+                -ExpectedFront $manifestFront.id `
+                -ExpectedCheck $check.id `
+                -ExpectedCommand $command
+            Assert-ExactSet `
+                -Expected @($manifest.supportedTargets) `
+                -Actual @($evidence.targets) `
+                -Description "Evidence targets for closed check '$($check.id)'"
         }
     }
 

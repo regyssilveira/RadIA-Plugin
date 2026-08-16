@@ -75,6 +75,10 @@ O manifesto versionado fica em `.planning/competitive_closure_manifest.json`. O 
 worktree sujo, versão ou commit divergente, frentes ou checks ausentes, duplicidades, evidência sem
 comando e artefato e qualquer fechamento que não cubra os três alvos suportados.
 
+Cada check deve ser executado por `scripts/Invoke-RadIA.CompetitiveClosureCheck.ps1`. O runner grava
+log e envelope JSON com commit, versão, comando, alvos, duração e resultado antes de atualizar o
+ledger. O validador abre o artefato e confere sua proveniência; apenas informar um caminho não basta.
+
 ## Fase 1 — inteligência de código comprovada
 
 Completion, membros ausentes e navegação já existem. Esta fase mede, corrige e fecha a diferença sem
