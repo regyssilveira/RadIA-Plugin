@@ -1255,22 +1255,18 @@ function TRadIATerminalFrame.TryGetSelectedDiagnostic(
   out ADiagnostic: TRadIATerminalDiagnostic
 ): Boolean;
 var
-  LCaretLine: NativeInt;
+  LCaretLine: Integer;
   LText: string;
 begin
   ADiagnostic := Default(TRadIATerminalDiagnostic);
   LText := FOutputEditor.SelText.Trim;
   if TRadIATerminalDiagnosticParser.TryParse(LText, ADiagnostic) then
     Exit(True);
-  LCaretLine := FOutputEditor.Perform(
-    EM_LINEFROMCHAR,
-    FOutputEditor.SelStart,
-    0
-  );
+  LCaretLine := FOutputEditor.CaretPos.Y;
   if (LCaretLine < 0) or (LCaretLine >= FOutputEditor.Lines.Count) then
     Exit(False);
   Result := TRadIATerminalDiagnosticParser.TryParse(
-    FOutputEditor.Lines[Integer(LCaretLine)],
+    FOutputEditor.Lines[LCaretLine],
     ADiagnostic
   );
 end;
