@@ -141,6 +141,26 @@ $openingResults = @()
 $openingEvidencePath = Join-Path `
     $resolvedEvidenceRoot `
     "project-opening-matrix.json"
+
+function Test-RadIAReleaseJourneyRetryable {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Output
+    )
+
+    $retryableMessages = @(
+        "Delphi did not become ready for the smoke test.",
+        "The Delphi File menu did not open.",
+        "The Delphi file dialog did not open."
+    )
+    foreach ($message in $retryableMessages) {
+        if ($Output.Contains($message)) {
+            return $true
+        }
+    }
+    return $false
+}
+
 foreach ($target in $openingTargets) {
     $arguments = @(
         "-NoProfile",
@@ -167,7 +187,7 @@ foreach ($target in $openingTargets) {
     $startupRetryUsed = $false
     if (
         $exitCode -ne 0 -and
-        $output.Contains("Delphi did not become ready for the smoke test.")
+        (Test-RadIAReleaseJourneyRetryable -Output $output)
     ) {
         $firstAttemptOutput = $output
         Stop-RadIAReleaseIDEProcesses
