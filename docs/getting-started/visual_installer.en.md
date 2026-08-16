@@ -54,21 +54,21 @@ powershell.exe -ExecutionPolicy Bypass `
 
 ## RadIA updates
 
-RadIA 2.8.0 does not automatically check for, download, or install new versions. Users must download
+RadIA does not automatically check for, download, or install new versions. Users must download
 the release installer, close every Delphi instance, and run it manually. The
 `New-RadIA.ReleaseChannel.ps1` script remains only as technical preparation for a future updater;
-its `stable.json` is neither consumed by the product nor published in the current release.
+its `stable.json` is neither consumed by the product nor attached to the GitHub Release.
 
 ## Release pipeline
 
-The `.github/workflows/release.yml` workflow runs the complete chain on a Windows Delphi runner:
+The official process runs locally on a Windows machine with Delphi:
 
 1. verifies that the tag is exactly `v` plus the `package.json` version;
 2. runs lint, Web tests, and the documentation audit;
 3. rebuilds the three Release packages from the tag commit;
 4. verifies that all packages share the version, clean commit, and valid hashes;
 5. builds and validates the installer without a certificate dependency;
-6. preserves evidence in the workflow's internal artifact and in the versioned audit;
+6. preserves evidence only under `Output/`, outside documentation and the release;
 7. publishes only the installer to users.
 
 The three ZIP files are still generated temporarily as verified installer inputs. They are not
@@ -77,8 +77,10 @@ users. Contributors who prefer manual builds or packaging can use `build.ps1`. T
 preserving per-target version, architecture, manifest, and SHA-256 validation before the installer
 is assembled.
 
-The workflow can run manually without publishing to validate the distribution; a `v*` tag
-publishes the release. Audit the pipeline contract locally with:
+The `.github/workflows/release.yml` workflow is an optional manual repetition. It is not triggered
+by a push, pull request, or tag, does not generate the official artifact, and does not replace the
+local gate. The tag and release are published only after validating the local installer. Audit the
+contract with:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `

@@ -30,7 +30,7 @@ the next time Delphi opens. If the panel is closed before exiting, it remains cl
 session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.8.0`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.15.0`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).

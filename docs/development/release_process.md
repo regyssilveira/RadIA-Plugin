@@ -76,7 +76,7 @@ em `Output/` ou em um diretório temporário ignorado pelo Git.
 4. Crie e envie a tag anotada em `main`. O envio da tag não deve iniciar o workflow de release.
 5. Publique imediatamente o instalador local com `gh release create`; não aguarde o GitHub gerar artefatos.
 6. Baixe o instalador publicado e confirme que seu SHA-256 é igual ao da evidência local.
-7. Confirme que a release contém somente o instalador e verifique a atualização automática pelo canal estável.
+7. Confirme que a release contém somente o instalador e que o SHA-256 publicado coincide com a evidência local.
 
 Exemplo de publicação do artefato já validado:
 

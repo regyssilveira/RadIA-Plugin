@@ -55,22 +55,21 @@ powershell.exe -ExecutionPolicy Bypass `
 
 ## Atualizações do RadIA
 
-O RadIA 2.8.0 não verifica, baixa ou instala novas versões automaticamente. O usuário deve baixar o
+O RadIA não verifica, baixa ou instala novas versões automaticamente. O usuário deve baixar o
 instalador da release, fechar todas as instâncias do Delphi e executá-lo manualmente. O script
 `New-RadIA.ReleaseChannel.ps1` permanece apenas como preparação técnica para um atualizador futuro;
-seu `stable.json` não é consumido pelo produto nem publicado na release atual.
+seu `stable.json` não é consumido pelo produto nem anexado à GitHub Release.
 
 ## Pipeline de release
 
-O workflow `.github/workflows/release.yml` executa a cadeia completa em um runner Windows com
-Delphi:
+O processo oficial é executado localmente em uma máquina Windows com Delphi:
 
 1. confirma que a tag é exatamente `v` mais a versão do `package.json`;
 2. executa lint, testes Web e auditoria da documentação;
 3. recompila os três pacotes Release a partir do commit da tag;
 4. confirma que os pacotes compartilham versão, commit limpo e hashes válidos;
 5. gera e valida o instalador sem depender de certificado;
-6. preserva as evidências no artefato interno da execução e na auditoria versionada;
+6. preserva as evidências somente em `Output/`, fora da documentação e da release;
 7. publica somente o instalador para o usuário.
 
 Os três ZIPs continuam sendo gerados temporariamente como entradas verificáveis do instalador.
@@ -79,8 +78,9 @@ oferecido ao usuário. Quem preferir compilar ou empacotar manualmente pode usar
 downloads técnicos redundantes sem remover a validação individual de versão, arquitetura,
 manifesto e SHA-256 feita antes de montar o instalador.
 
-O workflow pode ser acionado manualmente sem publicação para validar a distribuição; uma tag `v*`
-publica o release. O contrato do pipeline pode ser auditado localmente com:
+O workflow `.github/workflows/release.yml` é uma repetição manual opcional. Ele não é disparado por
+push, pull request ou tag, não gera o artefato oficial e não substitui o gate local. A tag e a release
+são publicadas somente depois que o instalador local foi validado. O contrato pode ser auditado com:
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass `

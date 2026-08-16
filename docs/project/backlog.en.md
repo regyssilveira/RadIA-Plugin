@@ -10,9 +10,8 @@ The backlog does not record versions, completed deliveries, evidence, or interna
 Turn common Delphi developer objectives into simple, safe, and verifiable flows, reusing existing
 tools before expanding the catalog.
 
-The order below is mandatory; items within a milestone may run in parallel only when they do not
-share contracts or IDE surfaces. Internal engineering plans remain separate from public
-documentation.
+The only open workstream is consolidation of the automated usage platform. Internal engineering
+plans remain separate from public documentation.
 
 ## Cross-cutting foundation — automated usage tests
 
@@ -35,44 +34,6 @@ This gate is mandatory for every release. Publication must run, through the same
 skip options, the complete integration and end-to-end suite, calculator creation plus its functional
 and DUnitX tests, and immediate project creation, opening, and navigation. A missing, skipped, or
 failed group blocks the release.
-
-## Milestone 2 — code intelligence
-
-- [x] **Rename Symbol and Find All References:** stable identity, preview, Pascal/DFM consistency,
-  closed files, multi-file transactions, and rollback.
-- [x] **Transactional semantic refactorings:** Extract Method, Move Type, and Change Signature with
-  structural analysis, preview, fingerprint, consent, multi-file application, and rollback.
-- [ ] **Hierarchy refactorings:** expand the validated foundation to inherited members, overrides,
-  and coordinated changes across ancestor and descendant classes.
-- [x] **Impact-based test selection:** relate diffs, symbols, dependencies, fixtures, and coverage to
-  execute and justify the smallest safe DUnitX test set.
-
-Gate: rename a symbol used by multiple units and a DFM, run only affected tests, and revert the
-entire operation without losing code.
-
-## Milestone 3 — advanced diagnostics
-
-- [ ] **Advanced debugger:** conditional breakpoints, hit counts, exceptions, and logpoints while
-  respecting the effective capabilities of Delphi 12 and 13.
-- [ ] **Automation for windowless controls:** add an authorized VCL adapter for `TGraphicControl`,
-  frames, and custom controls without global coordinates.
-- [ ] **Performance diagnostics:** measure scenarios, main-thread stalls, CPU, memory, and duration,
-  comparing evidence before and after a correction.
-
-Gate: reproduce a conditional defect, interact with a control without an `HWND`, and prove a
-performance improvement across comparable executions.
-
-## Milestone 4 — Delphi ecosystem
-
-- [ ] **FireDAC and database assistant:** inventory connections, queries, parameters, transactions,
-  and datasets, operating read-only by default.
-- [ ] **Delphi dependency health:** detect missing or incompatible libraries, packages, GetIt, Boss,
-  paths, and versions and provide actionable guidance.
-- [ ] **Localization and resource audit:** inventory Pascal/DFM text, prepare extraction to
-  `resourcestring`, and verify languages and visual layout.
-
-Gate: diagnose a data application on a clean machine and produce reviewable corrections for
-dependencies, data access, and localization.
 
 ## Definition of done
 

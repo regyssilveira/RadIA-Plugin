@@ -12,8 +12,8 @@ frentes só entram em execução quando possuírem resultado observável e crit�
 
 ## Goal atual
 
-O trabalho aprovado prioriza quatro resultados, nesta ordem: experiência universal, inteligência de
-código, diagnóstico avançado e integração com o ecossistema Delphi. O escopo executável e seus gates
-estão no [backlog](backlog.md); o roadmap não reserva versões nem mantém listas especulativas.
+O trabalho aberto prioriza uma plataforma automatizada e determinística de integração e ponta a
+ponta para a experiência Delphi completa. O escopo executável e seus gates estão no
+[backlog](backlog.md); o roadmap não reserva versões nem mantém listas especulativas.
 
 Delphi 11, C++, Lazarus, marketplace e leitura de DCU permanecem fora da direção atual.

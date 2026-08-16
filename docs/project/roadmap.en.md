@@ -12,8 +12,8 @@ enter execution only with an observable outcome and an acceptance criterion.
 
 ## Current goal
 
-The approved work prioritizes four outcomes in this order: universal experience, code intelligence,
-advanced diagnostics, and Delphi ecosystem integration. The executable scope and its gates are in
-the [backlog](backlog.en.md); the roadmap does not reserve versions or keep speculative lists.
+The open work prioritizes one deterministic integration and end-to-end automation platform for the
+complete Delphi experience. The executable scope and its gates are in the
+[backlog](backlog.en.md); the roadmap does not reserve versions or keep speculative lists.
 
 Delphi 11, C++, Lazarus, marketplace work, and DCU reading remain outside the current direction.

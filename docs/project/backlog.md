@@ -10,9 +10,8 @@ O backlog não registra versões, entregas concluídas, evidências ou planos in
 Transformar objetivos comuns do programador Delphi em fluxos simples, seguros e verificáveis,
 aproveitando as ferramentas existentes antes de ampliar o catálogo.
 
-A ordem abaixo é obrigatória; itens de um marco podem ser desenvolvidos em paralelo somente quando
-não compartilham contratos ou superfícies da IDE. Planos internos de engenharia permanecem
-separados da documentação pública.
+A única frente aberta é a consolidação da plataforma automatizada de uso. Planos internos de
+engenharia permanecem separados da documentação pública.
 
 ## Fundação transversal — testes automatizados de uso
 
@@ -35,44 +34,6 @@ Esse gate integra obrigatoriamente toda release. A publicação deve executar, n
 opções de exclusão, a suíte completa de integração e ponta a ponta, a criação e os testes funcionais e
 DUnitX da calculadora e a criação, abertura e navegação imediata de projetos. Um desses grupos ausente,
 ignorado ou reprovado bloqueia a release.
-
-## Marco 2 — inteligência de código
-
-- [x] **Rename Symbol e Find All References:** identidade estável, preview, consistência Pascal/DFM,
-  arquivos fechados, transação multiarquivo e rollback.
-- [x] **Refatorações semânticas transacionais:** Extract Method, Move Type e Change Signature com
-  análise estrutural, preview, fingerprint, consentimento, aplicação multiarquivo e rollback.
-- [x] **Refatorações de hierarquia:** expandir a base validada para membros herdados, overrides e
-  mudanças coordenadas entre classes ancestrais e descendentes.
-- [x] **Testes selecionados por impacto:** relacionar diff, símbolos, dependências, fixtures e
-  cobertura para executar e justificar o menor conjunto seguro de testes DUnitX.
-
-Gate: renomear um símbolo usado por várias units e pelo DFM, executar somente os testes afetados e
-reverter toda a operação sem perda de código.
-
-## Marco 3 — diagnóstico avançado
-
-- [x] **Debugger avançado:** breakpoints condicionais, hit count, exceções e logpoints, respeitando
-  as capacidades efetivas do Delphi 12 e 13.
-- [x] **Automação de controles sem janela própria:** adicionar um adaptador VCL autorizado para
-  `TGraphicControl`, frames e controles customizados sem usar coordenadas globais.
-- [x] **Diagnóstico de performance:** medir cenários, bloqueio da thread principal, CPU, memória e
-  duração, comparando evidência anterior e posterior à correção.
-
-Gate: reproduzir um problema condicionado, interagir com um controle sem `HWND` e comprovar uma
-melhoria de desempenho em execuções comparáveis.
-
-## Marco 4 — ecossistema Delphi
-
-- [x] **Assistente FireDAC e banco de dados:** inventariar conexões, queries, parâmetros,
-  transações e datasets; operar em modo somente leitura por padrão.
-- [x] **Saúde de dependências Delphi:** detectar bibliotecas, packages, GetIt, Boss, paths e versões
-  ausentes ou incompatíveis e produzir orientação acionável.
-- [x] **Auditoria de localização e recursos:** inventariar textos Pascal/DFM, preparar extração para
-  `resourcestring` e verificar idiomas e layout visual.
-
-Gate: diagnosticar uma aplicação de dados em uma máquina limpa e produzir correções revisáveis para
-dependências, acesso a dados e localização.
 
 ## Definição de concluído
 

@@ -641,6 +641,26 @@ test('release metadata and operational protocols follow the package version', ()
     path.join(repositoryRoot, 'sonar-project.properties'),
     'utf8'
   );
+  const manualEnglish = fs.readFileSync(
+    documentationPath('user_manual.en.md'),
+    'utf8'
+  );
+  const installerPortuguese = fs.readFileSync(
+    documentationPath('visual_installer.md'),
+    'utf8'
+  );
+  const installerEnglish = fs.readFileSync(
+    documentationPath('visual_installer.en.md'),
+    'utf8'
+  );
+  const releasePortuguese = fs.readFileSync(
+    documentationPath('release_process.md'),
+    'utf8'
+  );
+  const releaseEnglish = fs.readFileSync(
+    documentationPath('release_process.en.md'),
+    'utf8'
+  );
 
   assert.doesNotMatch(project, /FileVersion=2\.2\.1\.0/u);
   assert.match(project, new RegExp(`FileVersion=${escapedVersion}\\.0`, 'u'));
@@ -648,6 +668,14 @@ test('release metadata and operational protocols follow the package version', ()
   [mcpPortuguese, mcpEnglish].forEach(document => {
     assert.match(document, new RegExp(`initialize[^\\n]+${escapedVersion}`, 'u'));
   });
+  assert.match(manualEnglish, new RegExp(`Rad IA Chat v${escapedVersion}`, 'u'));
+  [installerPortuguese, installerEnglish].forEach(document => {
+    assert.doesNotMatch(document, /RadIA 2\.8\.0/u);
+  });
+  assert.match(installerPortuguese, /não é disparado por/u);
+  assert.match(installerEnglish, /is not triggered/u);
+  assert.doesNotMatch(releasePortuguese, /atualização automática pelo canal estável/u);
+  assert.doesNotMatch(releaseEnglish, /automatic update through the stable channel/u);
   assert.match(sonarProject, new RegExp(`sonar\\.projectVersion=${escapedVersion}`, 'u'));
 });
 

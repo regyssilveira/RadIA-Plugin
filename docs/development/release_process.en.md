@@ -76,7 +76,7 @@ under `Output/` or a temporary Git-ignored directory.
 4. Create and push the annotated tag from `main`. Pushing the tag must not start the release workflow.
 5. Immediately publish the local installer with `gh release create`; do not wait for GitHub to build artifacts.
 6. Download the published installer and confirm that its SHA-256 matches the local evidence.
-7. Confirm that the release contains only the installer and verify automatic update through the stable channel.
+7. Confirm that the release contains only the installer and that its SHA-256 matches the local evidence.
 
 Example for publishing the already validated artifact:
 
