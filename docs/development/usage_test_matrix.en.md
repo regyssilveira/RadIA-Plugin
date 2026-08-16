@@ -79,6 +79,8 @@ session from locking binaries without terminating terminals or project processes
 An exact IDE startup-readiness failure allows one bounded retry of the same target. The first output is preserved
 in evidence with `attemptCount: 2` and `startupRetryUsed: true`. Any functional, build, test, navigation, debug,
 or shutdown failure blocks immediately without a retry.
+The child process standard output and stderr are captured with its exit code; stderr cannot terminate the
+orchestrator before it records the attempt and applies this policy.
 
 If `DEXT_ROOT` is not configured, only DEXT templates are recorded as `not-required`; all other
 templates and gates remain mandatory. When `DEXT_ROOT` exists, DEXT servers and endpoints are also

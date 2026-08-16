@@ -119,8 +119,14 @@ foreach ($target in $openingTargets) {
         $arguments += "-IDE64"
     }
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
-    $output = & powershell.exe @arguments 2>&1 | Out-String
-    $exitCode = $LASTEXITCODE
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     $attemptCount = 1
     $startupRetryUsed = $false
     if (
@@ -130,8 +136,13 @@ foreach ($target in $openingTargets) {
         $firstAttemptOutput = $output
         Stop-RadIAReleaseIDEProcesses
         Stop-RadIAReleaseAuxiliaryProcesses
-        $output = & powershell.exe @arguments 2>&1 | Out-String
-        $exitCode = $LASTEXITCODE
+        try {
+            $ErrorActionPreference = "Continue"
+            $output = & powershell.exe @arguments 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
         $attemptCount = 2
         $startupRetryUsed = $true
         $output = (

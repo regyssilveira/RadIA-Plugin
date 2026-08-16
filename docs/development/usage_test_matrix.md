@@ -79,6 +79,8 @@ de uma sessão anterior bloqueie a substituição dos binários, sem encerrar te
 Uma falha exata de prontidão na inicialização da IDE permite uma única retentativa limitada do mesmo alvo.
 A primeira saída é preservada na evidência com `attemptCount: 2` e `startupRetryUsed: true`. Qualquer falha
 funcional, de build, teste, navegação, debug ou encerramento bloqueia imediatamente sem retentativa.
+A saída padrão e o stderr do processo filho são capturados junto com o exit code; stderr não pode interromper
+o orquestrador antes que ele registre a tentativa e aplique essa política.
 
 Se `DEXT_ROOT` não estiver configurado, somente os templates DEXT são registrados como
 `not-required`; os demais templates e gates continuam obrigatórios. Quando `DEXT_ROOT` existe, os
