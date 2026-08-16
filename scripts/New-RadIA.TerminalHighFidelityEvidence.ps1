@@ -48,13 +48,13 @@ $targetDefinitions = @(
     @{
         delphiVersion = "23.0"
         platform = "Win32"
-        resultPath = "Output\23.0\bin\Win32\Debug\dunitx-results.xml"
+        resultPath = "Output\23.0\bin\Win32\Debug\dunitx-main-results.xml"
         externalResultPath = "Output\23.0\bin\Win32\Debug\dunitx-external-results.xml"
     },
     @{
         delphiVersion = "37.0"
         platform = "Win32"
-        resultPath = "Output\37.0\bin\Win32\Debug\dunitx-results.xml"
+        resultPath = "Output\37.0\bin\Win32\Debug\dunitx-main-results.xml"
         externalResultPath = "Output\37.0\bin\Win32\Debug\dunitx-external-results.xml"
     },
     @{
