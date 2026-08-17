@@ -465,6 +465,16 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ExplainFireDACQuery` | Structures deterministic SQL facts, hypotheses, and limitations for AI explanation. | `RadIA.Core.FireDAC.Tools.pas` |
 | `ExplainFireDACFinding` | Structures a FireDAC finding for AI explanation without accepting evidence or secret values. | `RadIA.Core.FireDAC.Tools.pas` |
 
+## Safe FireDAC artifact previews
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `GenerateFireDACRepositoryPreview` | Prepares a deterministic FireDAC repository preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACDataModulePreview` | Prepares a deterministic FireDAC data module preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACQueryPreview` | Prepares a deterministic FireDAC query preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACDTOPreview` | Prepares a deterministic FireDAC DTO preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACTests` | Prepares a deterministic FireDAC DUnitX test preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+
 ## Delphi ecosystem diagnostics
 
 | Tool | Purpose | Source unit |
@@ -530,7 +540,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 65
-- Registered built-in tools: 199
+- Registered groups: 66
+- Registered built-in tools: 204
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 199 internal tools: what each one does and at what stage
+This page explains RadIA's 204 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -144,6 +144,11 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 | `ExplainFireDACQuery` | Structures facts, hypotheses, and limitations for AI explanation without echoing SQL. | When requesting an explanation grounded in deterministic query analysis. |
 | `ExplainFireDACFinding` | Structures a finding for AI explanation without accepting free-form evidence or secrets. | When explaining impact and next steps without promoting hypotheses to facts. |
 | `ValidateFireDACParameters` | Validates binding names, types, directions, sizes, and null state without executing SQL. | When locating inconsistent parameters before preparing a fix. |
+| `GenerateFireDACRepositoryPreview` | Prepares a deterministic FireDAC repository unit without creating files. | When reviewing structure and ownership before adding a repository to the project. |
+| `GenerateFireDACDataModulePreview` | Prepares a DataModule unit with explicit FireDAC connection ownership. | When reviewing connection infrastructure before creating the file. |
+| `GenerateFireDACQueryPreview` | Prepares an isolated `TFDQuery` configuration unit without executing SQL. | When reviewing a typed query before adding it to the project. |
+| `GenerateFireDACDTOPreview` | Prepares a minimal, deterministic DTO unit. | When reviewing the data contract before creating the file. |
+| `GenerateFireDACTests` | Prepares a DUnitX fixture for the FireDAC artifact without writing it. | When planning automated coverage together with the data code. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
 |`AuditDelphiLocalization`|Find visible Pascal and DFM text that may move to `resourcestring`.|Before preparing a reviewable extraction or comparing languages.|
 |`PrepareLocalizationExtraction`|Prepare an immutable patch that moves one active-unit literal to `resourcestring` without applying changes.|After selecting a candidate; application uses `ApplyPatch` with consent and reversal uses `RevertPatch`.|

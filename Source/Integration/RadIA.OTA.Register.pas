@@ -75,6 +75,7 @@ uses
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Core.RuntimePerformance,
   RadIA.Core.DelphiEcosystemTools,
+  RadIA.Core.FireDAC.Generation,
   RadIA.Core.FireDAC.Tools,
   RadIA.Core.LocalDatabase,
   RadIA.Core.LocalDatabaseTools,
@@ -1745,6 +1746,10 @@ initialization
     TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
   );
   RegisterRadIAFireDACTools(TRadIAContainer.Resolve<IRadIAToolRegistry>);
+  RegisterRadIAFireDACGenerationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
+  );
   RegisterRadIALocalDatabaseTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,

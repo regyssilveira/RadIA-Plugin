@@ -16,8 +16,9 @@ documentação bilíngue e auditoria requisito por requisito.
 
 A fundação já disponível cobre inventário, análise de SQL selecionado e embutido, parâmetros,
 transações, configuração, thread safety, comparação com schema SQLite local e contexto estruturado
-para explicações por IA. Permanecem abertos geração, correções reversíveis, gates de migração e a
-matriz E2E completa.
+para explicações por IA. Também estão disponíveis previews determinísticos e sem escrita para
+repository, DataModule, query, DTO e fixture DUnitX. Permanecem abertos os fluxos de aplicação e
+reversão desses artefatos, correções reversíveis, gates de migração e a matriz E2E completa.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

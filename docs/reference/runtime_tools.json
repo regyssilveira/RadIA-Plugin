@@ -522,6 +522,17 @@
       ]
     },
     {
+      "name": "Safe FireDAC artifact previews",
+      "source": "Source/Core/RadIA.Core.FireDAC.Generation.pas",
+      "tools": [
+        "GenerateFireDACRepositoryPreview",
+        "GenerateFireDACDataModulePreview",
+        "GenerateFireDACQueryPreview",
+        "GenerateFireDACDTOPreview",
+        "GenerateFireDACTests"
+      ]
+    },
+    {
       "name": "Delphi ecosystem diagnostics",
       "source": "Source/Core/RadIA.Core.DelphiEcosystemTools.pas",
       "tools": [

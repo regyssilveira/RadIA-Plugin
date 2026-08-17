@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 199 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 204 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -144,6 +144,11 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `ExplainFireDACQuery` | Estrutura fatos, hipóteses e limitações para explicação por IA sem ecoar o SQL. | Ao pedir uma explicação baseada na análise determinística da query. |
 | `ExplainFireDACFinding` | Estrutura um finding para explicação por IA sem aceitar evidência livre ou segredos. | Ao explicar impacto e próximos passos sem promover hipóteses a fatos. |
 | `ValidateFireDACParameters` | Valida nomes, tipos, direção, tamanho e estado null dos bindings sem executar SQL. | Ao localizar parâmetros inconsistentes antes de preparar uma correção. |
+| `GenerateFireDACRepositoryPreview` | Prepara uma unit de repository FireDAC determinística sem criar arquivos. | Ao revisar estrutura e ownership antes de adicionar um repository ao projeto. |
+| `GenerateFireDACDataModulePreview` | Prepara uma unit de DataModule com conexão FireDAC de ownership explícito. | Ao revisar a infraestrutura de conexão antes de criar o arquivo. |
+| `GenerateFireDACQueryPreview` | Prepara uma unit isolada de configuração de `TFDQuery` sem executar SQL. | Ao revisar uma consulta tipada antes de adicioná-la ao projeto. |
+| `GenerateFireDACDTOPreview` | Prepara uma unit DTO mínima e determinística. | Ao revisar o contrato de dados antes de criar o arquivo. |
+| `GenerateFireDACTests` | Prepara uma fixture DUnitX para o artefato FireDAC sem gravá-la. | Ao planejar a cobertura automatizada junto com o código de dados. |
 | `DiagnoseDelphiDependencies` | Verifica paths declarados no projeto e manifestos de dependências sem instalar componentes. | Antes de preparar uma máquina ou corrigir falhas de compilação por dependência. |
 | `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | Antes de preparar uma extração revisável ou comparar idiomas. |
 | `PrepareLocalizationExtraction` | Prepara um patch imutável que move um literal da unit ativa para `resourcestring`, sem aplicar alterações. | Após escolher um candidato; a aplicação usa `ApplyPatch` com consentimento e a reversão usa `RevertPatch`. |

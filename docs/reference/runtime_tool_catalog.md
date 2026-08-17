@@ -465,6 +465,16 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ExplainFireDACQuery` | Estrutura fatos, hipóteses e limitações para explicação por IA sem ecoar o SQL. | `RadIA.Core.FireDAC.Tools.pas` |
 | `ExplainFireDACFinding` | Estrutura um finding para explicação por IA sem aceitar evidência livre ou segredos. | `RadIA.Core.FireDAC.Tools.pas` |
 
+## Previews seguros de artefatos FireDAC
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `GenerateFireDACRepositoryPreview` | Prepara uma unit de repository FireDAC determinística sem criar arquivos. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACDataModulePreview` | Prepara uma unit de DataModule com conexão FireDAC de ownership explícito. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACQueryPreview` | Prepara uma unit isolada de configuração de `TFDQuery` sem executar SQL. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACDTOPreview` | Prepara uma unit DTO mínima e determinística. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACTests` | Prepara uma fixture DUnitX para o artefato FireDAC sem gravá-la. | `RadIA.Core.FireDAC.Generation.pas` |
+
 ## Diagnóstico do ecossistema Delphi
 
 | Ferramenta | O que faz | Unit de origem |
@@ -530,7 +540,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 65
-- Ferramentas internas registradas: 199
+- Grupos registrados: 66
+- Ferramentas internas registradas: 204
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.
