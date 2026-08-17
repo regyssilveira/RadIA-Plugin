@@ -2380,8 +2380,24 @@ try {
             -Force
 
         if ($ExerciseTestCorrection) {
-            Open-RadIAPath -Process $process -Path $unitPath
-            Start-Sleep -Seconds 2
+            $testUnitNavigation = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "NavigateToFile" `
+                -Arguments @{
+                    fileName = $unitPath
+                    line = 1
+                    column = 1
+                }
+            if (-not $testUnitNavigation.fileName -or
+                -not [IO.Path]::GetFullPath(
+                    $testUnitNavigation.fileName
+                ).Equals(
+                    [IO.Path]::GetFullPath($unitPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )) {
+                throw "The DUnitX repair unit did not become active in the editor."
+            }
             $testContentBeforeFailure = Invoke-RadIATool `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
