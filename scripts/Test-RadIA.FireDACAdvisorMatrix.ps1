@@ -559,7 +559,15 @@ foreach ($run in $runs) {
             break
         }
     } finally {
+        $runFailed = $null -ne $exitCode -and $exitCode -ne 0
+        if ($runFailed) {
+            Write-Warning (
+                "FireDAC fixture remains after failure for inspection: " +
+                $fixture.Root
+            )
+        }
         if (-not $KeepFixtures -and
+            -not $runFailed -and
             (Test-Path -LiteralPath $fixture.Root -PathType Container)) {
             try {
                 Remove-Item `

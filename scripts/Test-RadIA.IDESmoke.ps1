@@ -2475,7 +2475,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 }
             if ($tests.status -ne "succeeded" -or
                 $tests.report.allPassed -ne $true) {
-                throw "DUnitX did not pass after the FireDAC parameter fix."
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass after the FireDAC parameter fix: $details"
             }
             $testsPassed = $true
             $artifactState = "applied"
@@ -2668,7 +2669,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 }
             if ($tests.status -ne "succeeded" -or
                 $tests.report.allPassed -ne $true) {
-                throw "DUnitX did not pass after the ADO migration batch."
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass after the ADO migration batch: $details"
             }
             $testsPassed = $true
             $gate = Invoke-RadIASmokeToolWithConsent `
@@ -2825,7 +2827,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 }
             if ($tests.status -ne "succeeded" -or
                 $tests.report.allPassed -ne $true) {
-                throw "DUnitX did not pass before the migration rollback gate."
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass before the migration rollback gate: $details"
             }
             $testsPassed = $true
             $gate = Invoke-RadIASmokeToolWithConsent `
