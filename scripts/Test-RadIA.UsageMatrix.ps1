@@ -201,6 +201,7 @@ foreach ($run in $planEntries) {
             DelphiVersion = $run.delphiVersion
             Install = $true
             Package = $true
+            Release = $true
         }
         if ($run.ideArchitecture -eq "Win64") {
             $installArguments.IDE64 = $true
