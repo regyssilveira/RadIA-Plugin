@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.1
+# Manual completo do RadIA 2.17.2
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -39,12 +39,13 @@ Depois de instalar o pacote correspondente à IDE, abra o Delphi. O RadIA é car
 da IDE e disponibiliza seu painel acoplável. Posicione o painel como uma aba lateral ou janela
 flutuante.
 
-A visibilidade, o modo acoplado ou flutuante e as dimensões do painel acompanham o desktop da IDE e
-são restaurados na próxima abertura do Delphi. Se o painel for fechado antes de sair, ele permanece
-fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
+O modo acoplado ou flutuante acompanha o desktop nativo do Delphi. O RadIA também registra a
+visibilidade real e a última geometria flutuante para preservar a escolha do usuário quando a IDE
+troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o painel for fechado antes
+de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.1`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.2`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 

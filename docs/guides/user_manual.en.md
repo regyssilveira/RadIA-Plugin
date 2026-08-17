@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.1 user manual
+# Complete RadIA 2.17.2 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -30,12 +30,13 @@ After installing the package for the intended IDE architecture, open Delphi and 
 panel. Configure a provider under `Tools > Options > Rad IA`, select a model, create a session, and
 send a prompt with `Ctrl + Enter`.
 
-Panel visibility, docked or floating mode, and dimensions follow the IDE desktop and are restored
-the next time Delphi opens. If the panel is closed before exiting, it remains closed in the next
-session; use `Tools > RadIA > Chat` to open it again.
+Docked or floating mode follows the native Delphi desktop. RadIA also records the actual visibility
+and last floating geometry to preserve the user's choice when the IDE switches between named
+layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed before exiting, it
+remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.1`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.2`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).

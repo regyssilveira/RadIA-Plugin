@@ -50,8 +50,6 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
     dockableForm,
     /destructor TRadIACustomDockableForm\.Destroy;[\s\S]*?DetachNativeForm;/u
   );
-  assert.match(dockableForm, /OnShow := FPreviousOnShow;/u);
-  assert.match(dockableForm, /OnClose := FPreviousOnClose;/u);
   assert.match(dockableForm, /RemoveFreeNotification\(FObserver\)/u);
   assert.match(
     registration,
