@@ -108,9 +108,9 @@ begin
     LInventory.AddRelationship(LRelationship);
     LInventory.AddFinding(LFinding);
     LInventory.AddFinding(LFinding);
-    Assert.AreEqual(1, Length(LInventory.Components));
-    Assert.AreEqual(1, Length(LInventory.Relationships));
-    Assert.AreEqual(1, Length(LInventory.Findings));
+    Assert.AreEqual<NativeInt>(1, Length(LInventory.Components));
+    Assert.AreEqual<NativeInt>(1, Length(LInventory.Relationships));
+    Assert.AreEqual<NativeInt>(1, Length(LInventory.Findings));
   finally
     LInventory.Free;
   end;
