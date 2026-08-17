@@ -68,10 +68,7 @@ type
       out AError: string
     ): Boolean;
     function Initialize(out AError: string): Boolean;
-    function EnsureTransport(
-      const AAttempt: Integer;
-      out AError: string
-    ): Boolean;
+    function EnsureTransport(out AError: string): Boolean;
     function WaitForResponse(
       const AIsCancelled: TFunc<Boolean>;
       out AResponse: string;
@@ -387,15 +384,12 @@ begin
 end;
 
 function TRadIASemanticEngineSupervisor.EnsureTransport(
-  const AAttempt: Integer;
   out AError: string
 ): Boolean;
 begin
   if FTransport.Running then
     Exit(True);
   Result := StartTransport(AError);
-  if not Result and (AAttempt = 0) then
-    Inc(FRestartCount);
 end;
 
 function TRadIASemanticEngineSupervisor.Initialize(
@@ -457,6 +451,7 @@ function TRadIASemanticEngineSupervisor.RequestCancelable(
 var
   LAttempt: Integer;
   LRequest: string;
+  LRestartRecorded: Boolean;
   LStopwatch: TStopwatch;
 begin
   AResponse := '';
@@ -478,10 +473,25 @@ begin
       FConsecutiveFailureCount := 0;
     end;
     LStopwatch := TStopwatch.StartNew;
+    LRestartRecorded := False;
     for LAttempt := 0 to 1 do
     begin
-      if not EnsureTransport(LAttempt, AError) then
+      if not FTransport.Running and
+        (LAttempt = 0) and
+        (FRequestCount > 1) then
+      begin
+        Inc(FRestartCount);
+        LRestartRecorded := True;
+      end;
+      if not EnsureTransport(AError) then
+      begin
+        if (LAttempt = 0) and not LRestartRecorded then
+        begin
+          Inc(FRestartCount);
+          LRestartRecorded := True;
+        end;
         Continue;
+      end;
       Inc(FNextRequestId);
       LRequest := BuildRequest(FNextRequestId, AMethod, AParameters);
       if Exchange(LRequest, AIsCancelled, AResponse, AError) then
@@ -502,7 +512,11 @@ begin
       Stop;
       if LAttempt = 0 then
       begin
-        Inc(FRestartCount);
+        if not LRestartRecorded then
+        begin
+          Inc(FRestartCount);
+          LRestartRecorded := True;
+        end;
         Sleep(CRestartBackoffMs);
       end;
     end;

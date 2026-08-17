@@ -20,6 +20,8 @@ type
     [Test]
     procedure SupervisorRecoversAfterPackagedEngineCrash;
     [Test]
+    procedure SupervisorCountsSuccessfulRestartBetweenRequests;
+    [Test]
     procedure SupervisorRestartsAfterTransportFailure;
     [Test]
     procedure SupervisorOpensCircuitAfterRepeatedFailures;
@@ -252,6 +254,44 @@ begin
       LError
     );
     Assert.Contains(LResponse, '"tokens"');
+    Assert.AreEqual(1, LSupervisor.RestartCount);
+  finally
+    LSupervisor.Free;
+  end;
+end;
+
+procedure TRadIASemanticClientTests.
+  SupervisorCountsSuccessfulRestartBetweenRequests;
+var
+  LError: string;
+  LPath: string;
+  LResponse: string;
+  LSupervisor: TRadIASemanticEngineSupervisor;
+  LTransport: IRadIAExternalMcpTransport;
+  LTransportObject: TRadIACancellableSemanticTransport;
+begin
+  LPath := TPath.Combine(
+    ExtractFilePath(ParamStr(0)),
+    'RadIA.Semantic.Engine.exe'
+  );
+  LTransportObject := TRadIACancellableSemanticTransport.Create;
+  LTransport := LTransportObject;
+  LSupervisor := TRadIASemanticEngineSupervisor.Create(
+    LPath,
+    5000,
+    LTransport
+  );
+  try
+    Assert.IsTrue(
+      LSupervisor.Request('initialize', '{}', LResponse, LError),
+      LError
+    );
+    Assert.AreEqual(0, LSupervisor.RestartCount);
+    LTransportObject.Stop;
+    Assert.IsTrue(
+      LSupervisor.Request('initialize', '{}', LResponse, LError),
+      LError
+    );
     Assert.AreEqual(1, LSupervisor.RestartCount);
   finally
     LSupervisor.Free;
