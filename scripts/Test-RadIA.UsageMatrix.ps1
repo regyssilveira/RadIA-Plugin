@@ -54,6 +54,23 @@ function Get-RadIAEvidenceValue {
     return $value
 }
 
+function Stop-RadIAUsageAuxiliaryProcesses {
+    if (Get-Process bds -ErrorAction SilentlyContinue) {
+        return
+    }
+    $processes = @(
+        Get-Process `
+            -Name "RadIA.Semantic.Engine", "RadIA.MCP.Bridge" `
+            -ErrorAction SilentlyContinue
+    )
+    foreach ($process in $processes) {
+        Stop-Process -Id $process.Id -Force
+        if (-not $process.WaitForExit(10000)) {
+            throw "RadIA auxiliary process did not stop between journeys."
+        }
+    }
+}
+
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Usage matrix manifest was not found: $manifestPath"
 }
@@ -195,6 +212,7 @@ $results = @()
 $matrixStopwatch = [Diagnostics.Stopwatch]::StartNew()
 $installedTargetId = ""
 foreach ($run in $planEntries) {
+    Stop-RadIAUsageAuxiliaryProcesses
     if ($Profile -eq "release" -and $run.scope -ne "host" -and
         $installedTargetId -ne $run.targetId) {
         $installArguments = @{
