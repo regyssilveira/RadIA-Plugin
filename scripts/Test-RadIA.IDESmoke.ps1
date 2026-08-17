@@ -1648,6 +1648,8 @@ function Invoke-RadIASmokeToolWithConsent {
         [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
         [Parameter(Mandatory)][string]$Name,
         [hashtable]$Arguments = @{},
+        [ValidateSet("Allow once", "Deny", "Cancel")]
+        [string]$ConsentButtonText = "Allow once",
         [switch]$ExpectError
     )
 
@@ -1702,15 +1704,15 @@ function Invoke-RadIASmokeToolWithConsent {
         $consentWindow = Wait-RadIAConsentWindowState `
             -IDEProcess $IDEProcess `
             -Visible $true
-        $allowButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+        $consentButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
             $consentWindow,
-            "Allow once"
+            $ConsentButtonText
         )
-        if ($allowButton -eq [IntPtr]::Zero) {
-            throw "The Allow once consent button was not found."
+        if ($consentButton -eq [IntPtr]::Zero) {
+            throw "The $ConsentButtonText consent button was not found."
         }
         [void][RadIAKnowledgeSmokeNative]::SendMessage(
-            $allowButton,
+            $consentButton,
             0x00F5,
             [IntPtr]0,
             [IntPtr]0
@@ -1779,6 +1781,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     )
 
     $consentObserved = $false
+    $consentDecision = "not-required"
     $databaseFingerprintBefore = ""
     $databaseFingerprintAfter = ""
     $results = @()
@@ -1891,6 +1894,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                     maxRows = 2
                 }
             $consentObserved = $true
+            $consentDecision = "allowed-once"
             $databaseFingerprintAfter = (
                 Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
             ).Hash.ToLowerInvariant()
@@ -1932,6 +1936,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 } `
                 -ExpectError
             $consentObserved = $true
+            $consentDecision = "allowed-once"
             $databaseFingerprintAfter = (
                 Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
             ).Hash.ToLowerInvariant()
@@ -1943,6 +1948,39 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 throw "Rejected SQLite DML changed the database."
             }
             $results = @($rejection)
+        }
+        "firedac-repository-preview-denied" {
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GenerateFireDACRepositoryPreview" `
+                -Arguments @{
+                    unitName = "RadIA.E2E.CustomerRepository"
+                    entityName = "Customer"
+                    tableName = "customer"
+                    relativeDirectory = "Generated"
+                    registerInProject = $false
+                }
+            if (-not $preview.previewId -or $preview.state -ne "prepared") {
+                throw "The FireDAC repository preview was not prepared."
+            }
+            if (Test-Path -LiteralPath $preview.fileName -PathType Leaf) {
+                throw "The FireDAC repository preview created a file."
+            }
+            $denial = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId } `
+                -ConsentButtonText "Deny" `
+                -ExpectError
+            $consentObserved = $true
+            $consentDecision = "denied"
+            if (Test-Path -LiteralPath $preview.fileName -PathType Leaf) {
+                throw "Denied FireDAC repository application created a file."
+            }
+            $results = @($preview, $denial)
         }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
@@ -1963,6 +2001,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         platform = $Platform
         status = "passed"
         consentObserved = $consentObserved
+        consentDecision = $consentDecision
         databaseFingerprintBefore = $databaseFingerprintBefore
         databaseFingerprintAfter = $databaseFingerprintAfter
         resultFingerprints = $fingerprints

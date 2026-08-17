@@ -64,21 +64,21 @@
     },
     {
       "id": "firedac-repository-applied",
-      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "RunBuild", "RunDUnitXTests"],
+      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "BuildProject", "RunDUnitXTests"],
       "mutationExpected": true,
       "rollbackExpected": false,
       "requiredEvidence": ["explicit-consent", "file-created", "build-passed", "tests-passed"]
     },
     {
       "id": "firedac-build-failure-rollback",
-      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "RunBuild", "RevertGeneratedArtifact"],
+      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "BuildProject", "RevertGeneratedArtifact"],
       "mutationExpected": true,
       "rollbackExpected": true,
       "requiredEvidence": ["build-failed", "rollback-succeeded", "file-absent"]
     },
     {
       "id": "firedac-parameter-smart-diff",
-      "tools": ["ValidateFireDACParameters", "PrepareFireDACParameterFix", "ApplyFireDACFix", "RunBuild", "RunDUnitXTests"],
+      "tools": ["ValidateFireDACParameters", "PrepareFireDACParameterFix", "ApplyFireDACFix", "BuildProject", "RunDUnitXTests"],
       "mutationExpected": true,
       "rollbackExpected": false,
       "requiredEvidence": ["smart-diff-reviewed", "explicit-consent", "build-passed", "tests-passed"]

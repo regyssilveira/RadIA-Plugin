@@ -24,7 +24,8 @@ $connectedScenarioIds = @(
     "firedac-unsafe-transaction",
     "firedac-shared-thread-connection",
     "firedac-sqlite-grid-csv",
-    "firedac-sqlite-dml-rejection"
+    "firedac-sqlite-dml-rejection",
+    "firedac-repository-preview-denied"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -382,10 +383,14 @@ foreach ($run in $runs) {
             "-FireDACProjectPath",
             $fixture.ProjectPath,
             "-FireDACEvidencePath",
-            $runEvidence,
-            "-FireDACDatabasePath",
-            $fixture.DatabasePath
+            $runEvidence
         )
+        if ($fixture.DatabasePath) {
+            $arguments += @(
+                "-FireDACDatabasePath",
+                $fixture.DatabasePath
+            )
+        }
         if ($run.ideArchitecture -eq "Win64") {
             $arguments += "-IDE64"
         }

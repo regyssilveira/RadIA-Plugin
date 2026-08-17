@@ -11,6 +11,12 @@ const manifestPath = path.join(
   'Usage',
   'firedac-advisor-matrix.json'
 );
+const runtimeCatalogPath = path.join(
+  root,
+  'docs',
+  'reference',
+  'runtime_tools.json'
+);
 const runnerPath = path.join(
   root,
   'scripts',
@@ -29,6 +35,13 @@ test('FireDAC Advisor matrix defines all 16 goal scenarios', () => {
   );
   assert.ok(manifest.scenarios.every(item => item.tools.length > 0));
   assert.ok(manifest.scenarios.every(item => item.requiredEvidence.length > 0));
+  const catalog = JSON.parse(fs.readFileSync(runtimeCatalogPath, 'utf8'));
+  const runtimeTools = new Set(catalog.groups.flatMap(group => group.tools));
+  assert.deepEqual(
+    [...new Set(manifest.scenarios.flatMap(item => item.tools))]
+      .filter(tool => !runtimeTools.has(tool)),
+    []
+  );
 });
 
 test('FireDAC Advisor plan expands to 48 deterministic IDE runs', () => {
@@ -59,7 +72,7 @@ test('FireDAC Advisor plan expands to 48 deterministic IDE runs', () => {
   );
 });
 
-test('FireDAC Advisor runner connects seven read-only scenarios', () => {
+test('FireDAC Advisor runner connects eight safe IDE scenarios', () => {
   const runner = fs.readFileSync(runnerPath, 'utf8');
   const smoke = fs.readFileSync(smokePath, 'utf8');
   const connectedScenarios = [
@@ -69,7 +82,8 @@ test('FireDAC Advisor runner connects seven read-only scenarios', () => {
     'firedac-unsafe-transaction',
     'firedac-shared-thread-connection',
     'firedac-sqlite-grid-csv',
-    'firedac-sqlite-dml-rejection'
+    'firedac-sqlite-dml-rejection',
+    'firedac-repository-preview-denied'
   ];
   const connectedTools = [
     'InspectFireDACProject',
@@ -80,7 +94,9 @@ test('FireDAC Advisor runner connects seven read-only scenarios', () => {
     'AnalyzeFireDACThreadSafety',
     'PrepareFireDACThreadSafetyPlan',
     'InspectLocalSQLiteDatabase',
-    'PreviewLocalSQLiteQuery'
+    'PreviewLocalSQLiteQuery',
+    'GenerateFireDACRepositoryPreview',
+    'ApplyGeneratedArtifact'
   ];
 
   connectedScenarios.forEach(scenario => {
