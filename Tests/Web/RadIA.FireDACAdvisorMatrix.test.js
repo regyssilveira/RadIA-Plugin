@@ -59,7 +59,7 @@ test('FireDAC Advisor plan expands to 48 deterministic IDE runs', () => {
   );
 });
 
-test('FireDAC Advisor runner connects the first five read-only scenarios', () => {
+test('FireDAC Advisor runner connects seven read-only scenarios', () => {
   const runner = fs.readFileSync(runnerPath, 'utf8');
   const smoke = fs.readFileSync(smokePath, 'utf8');
   const connectedScenarios = [
@@ -67,7 +67,9 @@ test('FireDAC Advisor runner connects the first five read-only scenarios', () =>
     'firedac-selected-sql-analysis',
     'firedac-credential-redaction',
     'firedac-unsafe-transaction',
-    'firedac-shared-thread-connection'
+    'firedac-shared-thread-connection',
+    'firedac-sqlite-grid-csv',
+    'firedac-sqlite-dml-rejection'
   ];
   const connectedTools = [
     'InspectFireDACProject',
@@ -76,7 +78,9 @@ test('FireDAC Advisor runner connects the first five read-only scenarios', () =>
     'InspectFireDACConfiguration',
     'AuditFireDACTransactions',
     'AnalyzeFireDACThreadSafety',
-    'PrepareFireDACThreadSafetyPlan'
+    'PrepareFireDACThreadSafetyPlan',
+    'InspectLocalSQLiteDatabase',
+    'PreviewLocalSQLiteQuery'
   ];
 
   connectedScenarios.forEach(scenario => {
@@ -86,6 +90,9 @@ test('FireDAC Advisor runner connects the first five read-only scenarios', () =>
   connectedTools.forEach(tool => assert.ok(smoke.includes(`"${tool}"`)));
   assert.match(runner, /IDE execution is not connected for/);
   assert.match(smoke, /evidence must remain inside Output/);
+  assert.match(smoke, /TRadIAConsentForm/);
+  assert.match(smoke, /Allow once/);
+  assert.match(smoke, /unsafe_sql/);
   assert.doesNotMatch(smoke, /radia-e2e-secret[^\r\n]*result/);
 });
 

@@ -22,7 +22,9 @@ $connectedScenarioIds = @(
     "firedac-selected-sql-analysis",
     "firedac-credential-redaction",
     "firedac-unsafe-transaction",
-    "firedac-shared-thread-connection"
+    "firedac-shared-thread-connection",
+    "firedac-sqlite-grid-csv",
+    "firedac-sqlite-dml-rejection"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -65,6 +67,7 @@ function New-RadIAFireDACFixture {
     $dfmPath = Join-Path $fixtureRoot "RadIA.FireDAC.E2E.Data.dfm"
     $projectPath = Join-Path $fixtureRoot "RadIAFireDACE2E.dproj"
     $programPath = Join-Path $fixtureRoot "RadIAFireDACE2E.dpr"
+    $databasePath = ""
     $programContent = @'
 program RadIAFireDACE2E;
 
@@ -168,9 +171,56 @@ end
     Set-RadIAFireDACFixtureContent `
         -Path $projectPath `
         -Content $projectContent
+    if ($ScenarioId -in @(
+        "firedac-sqlite-grid-csv",
+        "firedac-sqlite-dml-rejection"
+    )) {
+        $databasePath = Join-Path $fixtureRoot "firedac-e2e.sqlite"
+        $python = Get-Command python.exe -ErrorAction SilentlyContinue
+        if (-not $python) {
+            throw "Python is required to create the SQLite E2E fixture."
+        }
+        $fixtureCode = @'
+import sqlite3
+import sys
+
+connection = sqlite3.connect(sys.argv[1])
+connection.execute(
+    "create table customer(id integer primary key, name text, access_token text)"
+)
+connection.executemany(
+    "insert into customer(id, name, access_token) values (?, ?, ?)",
+    [
+        (1, "Ada", "radia-secret-one"),
+        (2, "Grace", "radia-secret-two"),
+        (3, "Linus", "radia-secret-three"),
+    ],
+)
+connection.commit()
+connection.close()
+'@
+        $fixtureCodeBase64 = [Convert]::ToBase64String(
+            [Text.Encoding]::UTF8.GetBytes($fixtureCode)
+        )
+        $bootstrapCode = (
+            "import base64,sys;" +
+            "payload=sys.argv[1];" +
+            "sys.argv=[sys.argv[0],sys.argv[2]];" +
+            "exec(base64.b64decode(payload))"
+        )
+        & $python.Source `
+            -c $bootstrapCode `
+            $fixtureCodeBase64 `
+            $databasePath
+        if ($LASTEXITCODE -ne 0 -or
+            -not (Test-Path -LiteralPath $databasePath -PathType Leaf)) {
+            throw "The SQLite E2E fixture could not be created."
+        }
+    }
     return [PSCustomObject]@{
         Root = $fixtureRoot
         ProjectPath = $projectPath
+        DatabasePath = $databasePath
     }
 }
 
@@ -332,7 +382,9 @@ foreach ($run in $runs) {
             "-FireDACProjectPath",
             $fixture.ProjectPath,
             "-FireDACEvidencePath",
-            $runEvidence
+            $runEvidence,
+            "-FireDACDatabasePath",
+            $fixture.DatabasePath
         )
         if ($run.ideArchitecture -eq "Win64") {
             $arguments += "-IDE64"

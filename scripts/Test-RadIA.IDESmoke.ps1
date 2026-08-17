@@ -32,7 +32,8 @@ param(
     [string]$FirstValueEvidencePath = "",
     [string]$FireDACScenarioId = "",
     [string]$FireDACProjectPath = "",
-    [string]$FireDACEvidencePath = ""
+    [string]$FireDACEvidencePath = "",
+    [string]$FireDACDatabasePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -97,6 +98,9 @@ if ($FireDACScenarioId -and -not $FireDACProjectPath) {
 }
 if ($FireDACEvidencePath -and -not $FireDACScenarioId) {
     throw "FireDAC evidence requires -FireDACScenarioId."
+}
+if ($FireDACDatabasePath -and -not $FireDACScenarioId) {
+    throw "A FireDAC database fixture requires -FireDACScenarioId."
 }
 
 function Get-RadIAProcessDescendants {
@@ -460,7 +464,7 @@ public static class RadIADockingSmokeNative
 }
 
 if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-    $ExerciseInlineReview) {
+    $ExerciseInlineReview -or $FireDACScenarioId) {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type @"
 using System;
@@ -1616,6 +1620,138 @@ function Invoke-RadIASmokeTool {
     return $response.result.structuredContent
 }
 
+function Wait-RadIAConsentWindowState {
+    param(
+        [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)][bool]$Visible,
+        [ValidateRange(1, 120)][int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $window = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+            [uint32]$IDEProcess.Id,
+            "TRadIAConsentForm"
+        )
+        if (($window -ne [IntPtr]::Zero) -eq $Visible) {
+            return $window
+        }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "The RadIA consent dialog did not reach the expected state."
+}
+
+function Invoke-RadIASmokeToolWithConsent {
+    param(
+        [Parameter(Mandatory)][string]$BridgePath,
+        [Parameter(Mandatory)][string]$InstanceFile,
+        [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)][string]$Name,
+        [hashtable]$Arguments = @{},
+        [switch]$ExpectError
+    )
+
+    $requestKey = [Guid]::NewGuid().ToString("N")
+    $requestRoot = Join-Path ([IO.Path]::GetTempPath()) (
+        "radia-firedac-consent-$requestKey"
+    )
+    $inputPath = "$requestRoot.in"
+    $outputPath = "$requestRoot.out"
+    $errorPath = "$requestRoot.err"
+    $initializeRequest = @{
+        jsonrpc = "2.0"
+        id = 1
+        method = "initialize"
+        params = @{
+            protocolVersion = "2025-06-18"
+            capabilities = @{}
+            clientInfo = @{
+                name = "radia-firedac-smoke"
+                version = "1"
+            }
+        }
+    } | ConvertTo-Json -Depth 8 -Compress
+    $initializedRequest = @{
+        jsonrpc = "2.0"
+        method = "notifications/initialized"
+        params = @{}
+    } | ConvertTo-Json -Depth 4 -Compress
+    $callRequest = @{
+        jsonrpc = "2.0"
+        id = 2
+        method = "tools/call"
+        params = @{
+            name = $Name
+            arguments = $Arguments
+        }
+    } | ConvertTo-Json -Depth 8 -Compress
+    $requests = @($initializeRequest, $initializedRequest, $callRequest)
+    Set-Content `
+        -LiteralPath $inputPath `
+        -Value $requests `
+        -Encoding UTF8
+    $bridgeProcess = $null
+    try {
+        $bridgeProcess = Start-Process `
+            -FilePath $BridgePath `
+            -ArgumentList "`"$InstanceFile`"" `
+            -RedirectStandardInput $inputPath `
+            -RedirectStandardOutput $outputPath `
+            -RedirectStandardError $errorPath `
+            -PassThru
+        $consentWindow = Wait-RadIAConsentWindowState `
+            -IDEProcess $IDEProcess `
+            -Visible $true
+        $allowButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+            $consentWindow,
+            "Allow once"
+        )
+        if ($allowButton -eq [IntPtr]::Zero) {
+            throw "The Allow once consent button was not found."
+        }
+        [void][RadIAKnowledgeSmokeNative]::SendMessage(
+            $allowButton,
+            0x00F5,
+            [IntPtr]0,
+            [IntPtr]0
+        )
+        [void](Wait-RadIAConsentWindowState `
+            -IDEProcess $IDEProcess `
+            -Visible $false)
+        if (-not $bridgeProcess.WaitForExit(120000)) {
+            throw "The MCP bridge timed out while executing $Name."
+        }
+        $response = @(
+            Get-Content -LiteralPath $outputPath |
+                ForEach-Object { $_ | ConvertFrom-Json } |
+                Where-Object { $_.id -eq 2 }
+        ) | Select-Object -First 1
+        if ($ExpectError) {
+            if (-not $response -or
+                (-not $response.error -and -not $response.result.isError)) {
+                throw "Tool $Name unexpectedly succeeded."
+            }
+            return $response
+        }
+        if (-not $response -or $response.error -or
+            $response.result.isError) {
+            $details = $response | ConvertTo-Json -Depth 8 -Compress
+            throw "Tool $Name failed after consent: $details"
+        }
+        return $response.result.structuredContent
+    } finally {
+        if ($bridgeProcess -and -not $bridgeProcess.HasExited) {
+            Stop-Process -Id $bridgeProcess.Id -Force
+            [void]$bridgeProcess.WaitForExit(5000)
+        }
+        foreach ($temporaryPath in @($inputPath, $outputPath, $errorPath)) {
+            if (Test-Path -LiteralPath $temporaryPath) {
+                Remove-Item -LiteralPath $temporaryPath -Force
+            }
+        }
+    }
+}
+
 function Get-RadIAStringSha256 {
     param([Parameter(Mandatory)][string]$Value)
 
@@ -1634,12 +1770,17 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     param(
         [Parameter(Mandatory)][string]$BridgePath,
         [Parameter(Mandatory)][string]$InstanceFile,
+        [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
         [Parameter(Mandatory)][string]$ScenarioId,
         [Parameter(Mandatory)][string]$DelphiVersion,
         [Parameter(Mandatory)][string]$Platform,
+        [string]$DatabasePath = "",
         [string]$EvidencePath = ""
     )
 
+    $consentObserved = $false
+    $databaseFingerprintBefore = ""
+    $databaseFingerprintAfter = ""
     $results = @()
     switch ($ScenarioId) {
         "firedac-inventory-navigation" {
@@ -1724,6 +1865,85 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 }
             $results = @($analysis, $plan)
         }
+        "firedac-sqlite-grid-csv" {
+            if (-not $DatabasePath) {
+                throw "The SQLite grid scenario requires a database fixture."
+            }
+            $databaseFingerprintBefore = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $schema = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectLocalSQLiteDatabase" `
+                -Arguments @{ filePath = $DatabasePath }
+            $preview = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "PreviewLocalSQLiteQuery" `
+                -Arguments @{
+                    filePath = $DatabasePath
+                    sql = (
+                        "select id, name, access_token from customer " +
+                        "order by id"
+                    )
+                    maxRows = 2
+                }
+            $consentObserved = $true
+            $databaseFingerprintAfter = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $serialized = $preview | ConvertTo-Json -Depth 8 -Compress
+            if ($schema.readOnly -ne $true -or $schema.objectCount -lt 1) {
+                throw "The SQLite schema inspection was not read-only and bounded."
+            }
+            if ($preview.rowCount -ne 2 -or $preview.truncated -ne $true) {
+                throw "The SQLite preview did not return a paginated grid."
+            }
+            if ($preview.exportSanitized -ne $true -or
+                "access_token" -notin @($preview.redactedColumns)) {
+                throw "The SQLite preview did not sanitize its CSV export."
+            }
+            if ($serialized.Contains("radia-secret")) {
+                throw "The SQLite preview leaked a fixture secret."
+            }
+            if ($databaseFingerprintBefore -ne $databaseFingerprintAfter) {
+                throw "The read-only SQLite preview changed the database."
+            }
+            $results = @($schema, $preview)
+        }
+        "firedac-sqlite-dml-rejection" {
+            if (-not $DatabasePath) {
+                throw "The SQLite DML scenario requires a database fixture."
+            }
+            $databaseFingerprintBefore = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $rejection = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "PreviewLocalSQLiteQuery" `
+                -Arguments @{
+                    filePath = $DatabasePath
+                    sql = "delete from customer"
+                    maxRows = 2
+                } `
+                -ExpectError
+            $consentObserved = $true
+            $databaseFingerprintAfter = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $serialized = $rejection | ConvertTo-Json -Depth 8 -Compress
+            if (-not $serialized.Contains("unsafe_sql")) {
+                throw "The SQLite preview did not reject mutating SQL."
+            }
+            if ($databaseFingerprintBefore -ne $databaseFingerprintAfter) {
+                throw "Rejected SQLite DML changed the database."
+            }
+            $results = @($rejection)
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -1742,6 +1962,9 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         delphiVersion = $DelphiVersion
         platform = $Platform
         status = "passed"
+        consentObserved = $consentObserved
+        databaseFingerprintBefore = $databaseFingerprintBefore
+        databaseFingerprintAfter = $databaseFingerprintAfter
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
     }
@@ -2790,9 +3013,11 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             $fireDACDiagnostic = Invoke-RadIAFireDACReadOnlyScenario `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
+                -IDEProcess $process `
                 -ScenarioId $FireDACScenarioId `
                 -DelphiVersion $DelphiVersion `
                 -Platform $platform `
+                -DatabasePath $FireDACDatabasePath `
                 -EvidencePath $FireDACEvidencePath
         }
         $terminalDiagnostic = $null
