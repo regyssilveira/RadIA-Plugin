@@ -29,7 +29,10 @@ param(
     [string]$AgentRuntimeEvidencePath = "",
     [string]$DeclarativeWorkflowEvidencePath = "",
     [string]$KnowledgeEvidencePath = "",
-    [string]$FirstValueEvidencePath = ""
+    [string]$FirstValueEvidencePath = "",
+    [string]$FireDACScenarioId = "",
+    [string]$FireDACProjectPath = "",
+    [string]$FireDACEvidencePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -88,6 +91,12 @@ if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
         "Cross-version upgrade validation requires " +
         "-ExercisePackageLifecycle."
     )
+}
+if ($FireDACScenarioId -and -not $FireDACProjectPath) {
+    throw "A FireDAC IDE scenario requires -FireDACProjectPath."
+}
+if ($FireDACEvidencePath -and -not $FireDACScenarioId) {
+    throw "FireDAC evidence requires -FireDACScenarioId."
 }
 
 function Get-RadIAProcessDescendants {
@@ -1607,6 +1616,157 @@ function Invoke-RadIASmokeTool {
     return $response.result.structuredContent
 }
 
+function Get-RadIAStringSha256 {
+    param([Parameter(Mandatory)][string]$Value)
+
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Value)
+        return (
+            [BitConverter]::ToString($algorithm.ComputeHash($bytes))
+        ).Replace("-", "").ToLowerInvariant()
+    } finally {
+        $algorithm.Dispose()
+    }
+}
+
+function Invoke-RadIAFireDACReadOnlyScenario {
+    param(
+        [Parameter(Mandatory)][string]$BridgePath,
+        [Parameter(Mandatory)][string]$InstanceFile,
+        [Parameter(Mandatory)][string]$ScenarioId,
+        [Parameter(Mandatory)][string]$DelphiVersion,
+        [Parameter(Mandatory)][string]$Platform,
+        [string]$EvidencePath = ""
+    )
+
+    $results = @()
+    switch ($ScenarioId) {
+        "firedac-inventory-navigation" {
+            $inventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $report = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetFireDACProjectReport"
+            if ($inventory.connectionCount -lt 1) {
+                throw "FireDAC inventory did not find the fixture connection."
+            }
+            if (@($inventory.components).Count -lt 2) {
+                throw "FireDAC inventory did not return navigable components."
+            }
+            $results = @($inventory, $report)
+        }
+        "firedac-selected-sql-analysis" {
+            $analysis = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "AnalyzeFireDACQuery" `
+                -Arguments @{
+                    sql = "select private_token from customer where id = :Id"
+                }
+            $serialized = $analysis | ConvertTo-Json -Depth 8 -Compress
+            if ($analysis.sqlExecuted -ne $false) {
+                throw "FireDAC query analysis reported SQL execution."
+            }
+            if ($serialized.Contains("private_token")) {
+                throw "FireDAC query analysis echoed the SQL payload."
+            }
+            $results = @($analysis)
+        }
+        "firedac-credential-redaction" {
+            $configuration = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACConfiguration"
+            $serialized = $configuration |
+                ConvertTo-Json -Depth 8 -Compress
+            if ($configuration.credentialsCollected -ne $false) {
+                throw "FireDAC configuration reported credential collection."
+            }
+            if ($serialized.Contains("radia-e2e-secret")) {
+                throw "FireDAC configuration leaked the fixture credential."
+            }
+            $results = @($configuration)
+        }
+        "firedac-unsafe-transaction" {
+            $audit = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "AuditFireDACTransactions"
+            $serialized = $audit | ConvertTo-Json -Depth 8 -Compress
+            if (-not $serialized.Contains("firedac.transaction.rollback-missing")) {
+                throw "FireDAC transaction audit did not find the missing rollback."
+            }
+            $results = @($audit)
+        }
+        "firedac-shared-thread-connection" {
+            $analysis = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "AnalyzeFireDACThreadSafety"
+            $serialized = $analysis | ConvertTo-Json -Depth 8 -Compress
+            if (-not $serialized.Contains("firedac.thread.shared-component")) {
+                throw "FireDAC thread analysis did not find shared access."
+            }
+            $plan = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareFireDACThreadSafetyPlan" `
+                -Arguments @{
+                    componentType = "TFDConnection"
+                    sharedConnection = $true
+                    sharedDataset = $true
+                    uiAccessFromWorker = $true
+                    ownerScope = "shared"
+                }
+            $results = @($analysis, $plan)
+        }
+        default {
+            throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
+        }
+    }
+
+    $fingerprints = @(
+        $results | ForEach-Object {
+            Get-RadIAStringSha256 `
+                -Value ($_ | ConvertTo-Json -Depth 10 -Compress)
+        }
+    )
+    $evidence = [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "fireDACAdvisorIDE"
+        scenarioId = $ScenarioId
+        delphiVersion = $DelphiVersion
+        platform = $Platform
+        status = "passed"
+        resultFingerprints = $fingerprints
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+    }
+    if ($EvidencePath) {
+        $resolvedEvidence = [IO.Path]::GetFullPath($EvidencePath)
+        $outputRoot = [IO.Path]::GetFullPath(
+            (Join-Path $script:repositoryRoot "Output")
+        )
+        if (-not $resolvedEvidence.StartsWith(
+            $outputRoot + [IO.Path]::DirectorySeparatorChar,
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "FireDAC IDE evidence must remain inside Output."
+        }
+        New-Item `
+            -ItemType Directory `
+            -Path (Split-Path -Parent $resolvedEvidence) `
+            -Force |
+            Out-Null
+        $evidence | ConvertTo-Json -Depth 6 |
+            Set-Content -LiteralPath $resolvedEvidence -Encoding UTF8
+    }
+    return $evidence
+}
+
 function Invoke-RadIAKnowledgeDiagnostic {
     param(
         [Parameter(Mandatory)]
@@ -2419,6 +2579,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     if ($ExerciseKnowledge) {
         $launchArguments = @($knowledgeSmokeProjectPath)
     }
+    if ($FireDACScenarioId) {
+        $launchArguments = @($FireDACProjectPath)
+    }
     $terminalSmokePath = ""
     if ($ExerciseTerminal) {
         $terminalSmokePath = Join-Path `
@@ -2621,6 +2784,16 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         if (-not $ideState.versionName) {
             throw "IDE version name was empty in cycle $cycle."
+        }
+        $fireDACDiagnostic = $null
+        if ($FireDACScenarioId) {
+            $fireDACDiagnostic = Invoke-RadIAFireDACReadOnlyScenario `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ScenarioId $FireDACScenarioId `
+                -DelphiVersion $DelphiVersion `
+                -Platform $platform `
+                -EvidencePath $FireDACEvidencePath
         }
         $terminalDiagnostic = $null
         if ($ExerciseTerminal) {

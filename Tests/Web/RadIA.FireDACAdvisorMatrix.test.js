@@ -16,6 +16,7 @@ const runnerPath = path.join(
   'scripts',
   'Test-RadIA.FireDACAdvisorMatrix.ps1'
 );
+const smokePath = path.join(root, 'scripts', 'Test-RadIA.IDESmoke.ps1');
 
 test('FireDAC Advisor matrix defines all 16 goal scenarios', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -56,4 +57,61 @@ test('FireDAC Advisor plan expands to 48 deterministic IDE runs', () => {
       .filter(run => run.scenarioId === 'firedac-shutdown-during-analysis')
       .every(run => run.requiredEvidence.includes('no-deadlock'))
   );
+});
+
+test('FireDAC Advisor runner connects the first five read-only scenarios', () => {
+  const runner = fs.readFileSync(runnerPath, 'utf8');
+  const smoke = fs.readFileSync(smokePath, 'utf8');
+  const connectedScenarios = [
+    'firedac-inventory-navigation',
+    'firedac-selected-sql-analysis',
+    'firedac-credential-redaction',
+    'firedac-unsafe-transaction',
+    'firedac-shared-thread-connection'
+  ];
+  const connectedTools = [
+    'InspectFireDACProject',
+    'GetFireDACProjectReport',
+    'AnalyzeFireDACQuery',
+    'InspectFireDACConfiguration',
+    'AuditFireDACTransactions',
+    'AnalyzeFireDACThreadSafety',
+    'PrepareFireDACThreadSafetyPlan'
+  ];
+
+  connectedScenarios.forEach(scenario => {
+    assert.ok(runner.includes(`"${scenario}"`));
+    assert.ok(smoke.includes(`"${scenario}"`));
+  });
+  connectedTools.forEach(tool => assert.ok(smoke.includes(`"${tool}"`)));
+  assert.match(runner, /IDE execution is not connected for/);
+  assert.match(smoke, /evidence must remain inside Output/);
+  assert.doesNotMatch(smoke, /radia-e2e-secret[^\r\n]*result/);
+});
+
+test('FireDAC Advisor plan supports deterministic scenario and target filters', () => {
+  const output = execFileSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-File',
+      runnerPath,
+      '-PlanOnly',
+      '-ScenarioId',
+      'firedac-inventory-navigation',
+      '-TargetId',
+      'delphi12-win32'
+    ],
+    { encoding: 'utf8' }
+  );
+  const plan = JSON.parse(output);
+  assert.equal(plan.targetCount, 3);
+  assert.equal(plan.scenarioCount, 16);
+  assert.equal(plan.selectedTargetCount, 1);
+  assert.equal(plan.selectedScenarioCount, 1);
+  assert.equal(plan.runCount, 1);
+  assert.equal(plan.runs[0].scenarioId, 'firedac-inventory-navigation');
+  assert.equal(plan.runs[0].targetId, 'delphi12-win32');
 });

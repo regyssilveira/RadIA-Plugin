@@ -3,6 +3,11 @@ param(
     [string]$EvidencePath = (
         ".\Output\Validation\FireDACAdvisor\firedac-advisor-plan.json"
     ),
+    [string[]]$ScenarioId = @(),
+    [string[]]$TargetId = @(),
+    [ValidateRange(30, 1800)]
+    [int]$StartupTimeoutSeconds = 180,
+    [switch]$KeepFixtures,
     [switch]$PlanOnly
 )
 
@@ -11,6 +16,163 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path `
     $repositoryRoot `
     "Tests\Usage\firedac-advisor-matrix.json"
+$smokePath = Join-Path $PSScriptRoot "Test-RadIA.IDESmoke.ps1"
+$connectedScenarioIds = @(
+    "firedac-inventory-navigation",
+    "firedac-selected-sql-analysis",
+    "firedac-credential-redaction",
+    "firedac-unsafe-transaction",
+    "firedac-shared-thread-connection"
+)
+
+function Set-RadIAFireDACFixtureContent {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Content
+    )
+
+    $normalized = $Content.Replace("`r`n", "`n").Replace("`n", "`r`n")
+    Set-Content `
+        -LiteralPath $Path `
+        -Value $normalized `
+        -Encoding UTF8 `
+        -NoNewline
+}
+
+function Expand-RadIAFireDACFilter {
+    param([string[]]$Value)
+
+    return @(
+        $Value |
+            ForEach-Object { $_ -split ',' } |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ }
+    )
+}
+
+function New-RadIAFireDACFixture {
+    param(
+        [Parameter(Mandatory = $true)][string]$ScenarioId,
+        [Parameter(Mandatory = $true)][string]$TargetId
+    )
+
+    $fixtureRoot = Join-Path `
+        $repositoryRoot `
+        ("Output\Validation\FireDACAdvisor\Fixtures\" +
+            "$ScenarioId-$TargetId-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
+    $unitPath = Join-Path $fixtureRoot "RadIA.FireDAC.E2E.Data.pas"
+    $dfmPath = Join-Path $fixtureRoot "RadIA.FireDAC.E2E.Data.dfm"
+    $projectPath = Join-Path $fixtureRoot "RadIAFireDACE2E.dproj"
+    $programPath = Join-Path $fixtureRoot "RadIAFireDACE2E.dpr"
+    $programContent = @'
+program RadIAFireDACE2E;
+
+uses
+  RadIA.FireDAC.E2E.Data in 'RadIA.FireDAC.E2E.Data.pas';
+
+begin
+end.
+'@
+    Set-RadIAFireDACFixtureContent `
+        -Path $programPath `
+        -Content $programContent
+    $unitContent = @'
+unit RadIA.FireDAC.E2E.Data;
+
+interface
+
+uses
+  FireDAC.Comp.Client,
+  System.Threading;
+
+type
+  TRadIAFireDACE2EData = class
+  private
+    FConnection: TFDConnection;
+    FQuery: TFDQuery;
+  public
+    procedure LoadCustomer;
+    procedure RunWorker;
+    procedure SaveCustomer;
+  end;
+
+implementation
+
+procedure TRadIAFireDACE2EData.LoadCustomer;
+begin
+  FQuery.SQL.Text := 'select id from customer where id = :Id';
+  FQuery.ParamByName('Id').AsString := '1';
+end;
+
+procedure TRadIAFireDACE2EData.RunWorker;
+begin
+  TTask.Run(
+    procedure
+    begin
+      FConnection.Open;
+      FQuery.Open;
+    end
+  );
+end;
+
+procedure TRadIAFireDACE2EData.SaveCustomer;
+begin
+  FConnection.StartTransaction;
+  FQuery.ExecSQL;
+  FConnection.Commit;
+end;
+
+end.
+'@
+    Set-RadIAFireDACFixtureContent `
+        -Path $unitPath `
+        -Content $unitContent
+    $dfmContent = @'
+object RadIAFireDACE2EData: TRadIAFireDACE2EData
+  object MainConnection: TFDConnection
+    Params.Strings = (
+      'DriverID=SQLite'
+      'Password=radia-e2e-secret')
+  end
+  object CustomerQuery: TFDQuery
+    Connection = MainConnection
+    SQL.Strings = (
+      'select id from customer where id = :Id')
+  end
+end
+'@
+    Set-RadIAFireDACFixtureContent `
+        -Path $dfmPath `
+        -Content $dfmContent
+    $projectContent = @'
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{82A22732-E130-4892-B2FD-51BCBDF847F6}</ProjectGuid>
+    <MainSource>RadIAFireDACE2E.dpr</MainSource>
+    <ProjectVersion>20.3</ProjectVersion>
+    <FrameworkType>VCL</FrameworkType>
+    <Base>True</Base>
+    <Config Condition="'$(Config)'==''">Debug</Config>
+    <Platform Condition="'$(Platform)'==''">Win32</Platform>
+    <TargetedPlatforms>3</TargetedPlatforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <DelphiCompile Include="RadIAFireDACE2E.dpr">
+      <MainSource>MainSource</MainSource>
+    </DelphiCompile>
+    <DCCReference Include="RadIA.FireDAC.E2E.Data.pas"/>
+  </ItemGroup>
+</Project>
+'@
+    Set-RadIAFireDACFixtureContent `
+        -Path $projectPath `
+        -Content $projectContent
+    return [PSCustomObject]@{
+        Root = $fixtureRoot
+        ProjectPath = $projectPath
+    }
+}
 
 function Resolve-RadIAFireDACEvidencePath {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -37,6 +199,8 @@ if ($manifest.schemaVersion -ne 1) {
 }
 $targets = @($manifest.targets)
 $scenarios = @($manifest.scenarios)
+$ScenarioId = @(Expand-RadIAFireDACFilter -Value $ScenarioId)
+$TargetId = @(Expand-RadIAFireDACFilter -Value $TargetId)
 if ($targets.Count -ne 3) {
     throw "FireDAC Advisor matrix must contain exactly three IDE targets."
 }
@@ -59,8 +223,34 @@ $duplicateIds = @(
 if ($duplicateIds.Count -gt 0) {
     throw "FireDAC Advisor matrix contains duplicate scenario identifiers."
 }
+$unknownScenarios = @(
+    $ScenarioId | Where-Object { $_ -notin @($scenarios.id) }
+)
+if ($unknownScenarios.Count -gt 0) {
+    throw "Unknown FireDAC scenario(s): $($unknownScenarios -join ', ')"
+}
+$unknownTargets = @(
+    $TargetId | Where-Object { $_ -notin @($targets.id) }
+)
+if ($unknownTargets.Count -gt 0) {
+    throw "Unknown FireDAC target(s): $($unknownTargets -join ', ')"
+}
+$selectedScenarios = @(
+    if ($ScenarioId.Count -gt 0) {
+        $scenarios | Where-Object { $_.id -in $ScenarioId }
+    } else {
+        $scenarios
+    }
+)
+$selectedTargets = @(
+    if ($TargetId.Count -gt 0) {
+        $targets | Where-Object { $_.id -in $TargetId }
+    } else {
+        $targets
+    }
+)
 $runs = @()
-foreach ($scenario in $scenarios) {
+foreach ($scenario in $selectedScenarios) {
     if ($scenario.id -notmatch '^firedac-[a-z0-9-]+$') {
         throw "Invalid FireDAC Advisor scenario identifier: $($scenario.id)"
     }
@@ -73,7 +263,7 @@ foreach ($scenario in $scenarios) {
     if ($scenario.rollbackExpected -and -not $scenario.mutationExpected) {
         throw "Scenario $($scenario.id) expects rollback without mutation."
     }
-    foreach ($target in $targets) {
+    foreach ($target in $selectedTargets) {
         $runs += [PSCustomObject]@{
             scenarioId = $scenario.id
             targetId = $target.id
@@ -91,7 +281,9 @@ $plan = [PSCustomObject]@{
     schemaVersion = 1
     evidenceKind = "fireDACAdvisorIDEPlan"
     targetCount = $targets.Count
+    selectedTargetCount = $selectedTargets.Count
     scenarioCount = $scenarios.Count
+    selectedScenarioCount = $selectedScenarios.Count
     runCount = $runs.Count
     runs = $runs
 }
@@ -100,12 +292,111 @@ if ($PlanOnly) {
     exit 0
 }
 
+$unsupported = @(
+    $selectedScenarios |
+        Where-Object { $_.id -notin $connectedScenarioIds }
+)
+if ($unsupported.Count -gt 0) {
+    throw (
+        "FireDAC IDE execution is not connected for: " +
+        (($unsupported.id | Sort-Object) -join ", ")
+    )
+}
 $resolvedEvidence = Resolve-RadIAFireDACEvidencePath -Path $EvidencePath
 $evidenceDirectory = Split-Path -Parent $resolvedEvidence
 New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
-$plan | ConvertTo-Json -Depth 7 |
+$results = @()
+foreach ($run in $runs) {
+    $fixture = New-RadIAFireDACFixture `
+        -ScenarioId $run.scenarioId `
+        -TargetId $run.targetId
+    try {
+        $runEvidence = Join-Path `
+            $evidenceDirectory `
+            "$($run.scenarioId)-$($run.targetId).json"
+        $arguments = @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            $smokePath,
+            "-DelphiVersion",
+            $run.delphiVersion,
+            "-Cycles",
+            "1",
+            "-StartupTimeoutSeconds",
+            [string]$StartupTimeoutSeconds,
+            "-SkipPackageHashCheck",
+            "-FireDACScenarioId",
+            $run.scenarioId,
+            "-FireDACProjectPath",
+            $fixture.ProjectPath,
+            "-FireDACEvidencePath",
+            $runEvidence
+        )
+        if ($run.ideArchitecture -eq "Win64") {
+            $arguments += "-IDE64"
+        }
+        $previousErrorAction = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = "Continue"
+            $output = & powershell.exe @arguments 2>&1 | Out-String
+            $exitCode = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorAction
+        }
+        $results += [PSCustomObject]@{
+            scenarioId = $run.scenarioId
+            targetId = $run.targetId
+            status = if ($exitCode -eq 0) { "passed" } else { "failed" }
+            exitCode = $exitCode
+            evidencePath = $runEvidence
+            outputTail = if ($output.Length -gt 4096) {
+                $output.Substring($output.Length - 4096)
+            } else {
+                $output
+            }
+        }
+        if ($exitCode -ne 0) {
+            break
+        }
+    } finally {
+        if (-not $KeepFixtures -and
+            (Test-Path -LiteralPath $fixture.Root -PathType Container)) {
+            try {
+                Remove-Item `
+                    -LiteralPath $fixture.Root `
+                    -Recurse `
+                    -Force `
+                    -ErrorAction Stop
+            } catch {
+                Write-Warning (
+                    "FireDAC fixture remains for inspection because it is " +
+                    "locked: $($fixture.Root)"
+                )
+            }
+        }
+    }
+}
+$status = if (
+    $results.Count -eq $runs.Count -and
+    @($results | Where-Object { $_.status -ne "passed" }).Count -eq 0
+) {
+    "passed"
+} else {
+    "failed"
+}
+[PSCustomObject]@{
+    schemaVersion = 1
+    evidenceKind = "fireDACAdvisorIDEMatrix"
+    status = $status
+    expectedRunCount = $runs.Count
+    runCount = $results.Count
+    generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+    runs = $results
+} | ConvertTo-Json -Depth 7 |
     Set-Content -LiteralPath $resolvedEvidence -Encoding UTF8
-throw (
-    "FireDAC Advisor IDE execution is not connected yet. " +
-    "The deterministic 48-run plan was written to $resolvedEvidence."
-)
+if ($status -ne "passed") {
+    throw "FireDAC Advisor IDE matrix failed: $resolvedEvidence"
+}
+Write-Host "FireDAC Advisor IDE matrix passed: $resolvedEvidence"
