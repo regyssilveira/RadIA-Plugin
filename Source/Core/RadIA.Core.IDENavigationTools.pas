@@ -424,21 +424,21 @@ begin
         'NavigateToFile',
         'Opens a source file owned by an open project and selects a position.',
         CNavigateFileInputSchema,
-        trReversibleWrite
+        trReadOnly
       );
     intkNavigateToSymbol:
       Result := BuildDescriptor(
         'NavigateToSymbol',
         'Moves the active editor to a declared symbol.',
         CSymbolInputSchema,
-        trReversibleWrite
+        trReadOnly
       );
     intkNavigateToDevelopmentSurface:
       Result := BuildDescriptor(
         'NavigateToDevelopmentSurface',
         'Activates Code or Design from an explicit surface or development intent.',
         CDevelopmentSurfaceInputSchema,
-        trReversibleWrite
+        trReadOnly
       );
     intkListIDEActions:
       Result := BuildDescriptor(

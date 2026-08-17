@@ -81,6 +81,13 @@ var
   LDefinition: TRadIAJourneyDefinition;
 begin
   Assert.IsTrue(
+    TRadIAJourneyCatalog.Find('/journey create', LDefinition)
+  );
+  Assert.Contains(LDefinition.Objective, 'CreateProjectFromTemplate');
+  Assert.Contains(LDefinition.Objective, 'OpenCreatedProject succeed');
+  Assert.Contains(LDefinition.Objective, 'GetKnowledgeStatus');
+  Assert.Contains(LDefinition.Objective, 'project index is ready');
+  Assert.IsTrue(
     TRadIAJourneyCatalog.Find('/journey fix-build', LDefinition)
   );
   Assert.Contains(LDefinition.Objective, 'Present a minimal repair plan');

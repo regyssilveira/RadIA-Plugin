@@ -113,7 +113,7 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   assert.match(smoke, /\$response\.result\.isError/u);
   assert.match(
     smoke,
-    /Invoke-RadIASmokeToolWithConsent[\s\S]*?-Name "NavigateToFile"/u
+    /Invoke-RadIASmokeTool `[\s\S]*?-Name "NavigateToFile"/u
   );
   assert.match(
     smoke,

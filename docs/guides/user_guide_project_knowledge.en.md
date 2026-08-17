@@ -36,7 +36,9 @@ and document reads enforce result and payload limits.
 
 Search results and document chunks show an **Open source** action in chat. It uses `NavigateToFile`
 to open the file at the first line of the excerpt. Navigation is read-only and remains subject to
-the active workspace boundary and the normal tool policy.
+the active workspace boundary and the normal tool policy, without a consent prompt. For newly created
+projects, RadIA waits for `GetKnowledgeStatus` to confirm that the index is ready before requesting a
+document body.
 
 The tools also expose local metrics without telemetry: indexing and search report `durationMs`,
 each result retains its relevance scores, and `GetKnowledgeStatus` reports
