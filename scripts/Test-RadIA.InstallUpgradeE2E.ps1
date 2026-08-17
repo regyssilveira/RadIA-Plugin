@@ -43,12 +43,12 @@ $previousWindowVisible = if ($hadWindowVisible) {
 $settingsPreserved = $false
 try {
     New-ItemProperty -LiteralPath $settingsPath -Name "WindowVisible" `
-        -PropertyType DWord -Value 0 -Force | Out-Null
+        -PropertyType DWord -Value 1 -Force | Out-Null
     & (Join-Path $PSScriptRoot "Test-RadIA.IDESmoke.ps1") @arguments
     $settingsPreserved = (
         Get-ItemPropertyValue -LiteralPath $settingsPath `
             -Name "WindowVisible" -ErrorAction Stop
-    ) -eq 0
+    ) -eq 1
 } finally {
     if ($hadWindowVisible) {
         Set-ItemProperty -LiteralPath $settingsPath -Name "WindowVisible" `
