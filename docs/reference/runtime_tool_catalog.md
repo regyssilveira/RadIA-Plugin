@@ -544,7 +544,8 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `InventoryLegacyDataAccess` | Inventaria referências a BDE, ADO e dbExpress no projeto ativo. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PlanLegacyMigrationBatches` | Agrupa os achados por tecnologia e arquivo em lotes limitados. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PrepareLegacyMigrationBatch` | Prepara um preview reversível somente para substituições determinísticas. | `RadIA.Core.LegacyDataMigrationTools.pas` |
-| `RecordLegacyMigrationGate` | Registra evidências de build e testes e reverte o lote aplicado se um gate falhar. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `ApplyLegacyMigrationBatch` | Aplica um lote preparado e registra seu estado na sessão de migração. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `RecordLegacyMigrationGate` | Registra fingerprints das evidências FireDAC, build e DUnitX e reverte o lote se um gate falhar. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `GetLegacyMigrationReport` | Consolida compatibilidade, gates e ações manuais pendentes. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PlanDextAndFormModernization` | Planeja DEXT e decomposição de forms sem reescrita automática. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 
@@ -558,6 +559,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 68
-- Ferramentas internas registradas: 211
+- Ferramentas internas registradas: 212
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

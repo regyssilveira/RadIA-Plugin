@@ -18,12 +18,11 @@ type
     FUnitFile: string;
     FWorkspace: TRadIAMultiFileWorkspaceStub;
     function Execute(const AName: string; const AArguments: string): TRadIAToolResult;
-    function PreviewIdOf(const AJson: string): string;
   public
     [Setup]
     procedure Setup;
     [Test]
-    procedure RegistersSixMigrationTools;
+    procedure RegistersSevenMigrationTools;
     [Test]
     procedure InventoriesPlansAndPreparesActiveProject;
     [Test]
@@ -34,7 +33,6 @@ implementation
 
 uses
   System.IOUtils,
-  System.JSON,
   System.SysUtils,
   RadIA.Core.LegacyDataMigrationTools,
   RadIA.Core.Patches,
@@ -50,20 +48,6 @@ begin
   Result := FRegistry.Resolve(AName).Execute(
     TRadIAToolRequest.Create(AName, AArguments, 'test')
   );
-end;
-
-function TRadIALegacyDataMigrationToolTests.PreviewIdOf(
-  const AJson: string
-): string;
-var
-  LJson: TJSONObject;
-begin
-  LJson := TJSONObject.ParseJSONValue(AJson) as TJSONObject;
-  try
-    Result := LJson.GetValue<string>('previewId', '');
-  finally
-    LJson.Free;
-  end;
 end;
 
 procedure TRadIALegacyDataMigrationToolTests.Setup;
@@ -97,11 +81,13 @@ begin
   );
 end;
 
-procedure TRadIALegacyDataMigrationToolTests.RegistersSixMigrationTools;
+procedure TRadIALegacyDataMigrationToolTests.RegistersSevenMigrationTools;
 begin
-  Assert.AreEqual<Integer>(6, FRegistry.Count);
-  Assert.AreEqual(trReversibleWrite,
+  Assert.AreEqual<Integer>(7, FRegistry.Count);
+  Assert.AreEqual(trReadOnly,
     FRegistry.Resolve('PrepareLegacyMigrationBatch').Descriptor.Risk);
+  Assert.AreEqual(trReversibleWrite,
+    FRegistry.Resolve('ApplyLegacyMigrationBatch').Descriptor.Risk);
   Assert.AreEqual(trReadOnly,
     FRegistry.Resolve('GetLegacyMigrationReport').Descriptor.Risk);
 end;
@@ -126,10 +112,8 @@ end;
 
 procedure TRadIALegacyDataMigrationToolTests.FailedGateRevertsAppliedBatch;
 var
-  LApply: TRadIAMultiFilePatchResult;
   LBatchId: string;
   LPrepare: TRadIAToolResult;
-  LPreviewId: string;
   LResult: TRadIAToolResult;
 begin
   Execute('InventoryLegacyDataAccess', '{}');
@@ -144,17 +128,28 @@ begin
       '{"batchId":"' + LBatchId + '"}');
   end;
   Assert.IsTrue(LPrepare.Success, LPrepare.ErrorMessage);
-  LPreviewId := PreviewIdOf(LPrepare.ContentJson);
-  LApply := FPatchService.Apply(LPreviewId);
-  Assert.IsTrue(LApply.Success, LApply.ErrorMessage);
+  LResult := Execute('RecordLegacyMigrationGate',
+    '{"batchId":"' + LBatchId + '","fireDACPassed":true,' +
+    '"buildPassed":true,"testsPassed":true,' +
+    '"fireDACEvidence":"advisor passed","buildEvidence":"build passed",' +
+    '"testEvidence":"tests passed"}');
+  Assert.IsFalse(LResult.Success);
+  Assert.AreEqual('batch_not_applied', LResult.ErrorCode);
+  LResult := Execute('ApplyLegacyMigrationBatch',
+    '{"batchId":"' + LBatchId + '"}');
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
   Assert.Contains(FWorkspace.ContentOf(FUnitFile), 'TFDQuery');
   LResult := Execute('RecordLegacyMigrationGate',
-    '{"batchId":"' + LBatchId + '","buildPassed":false,' +
-    '"testsPassed":true,"buildEvidence":"compiler error",' +
+    '{"batchId":"' + LBatchId + '","fireDACPassed":false,' +
+    '"buildPassed":true,"testsPassed":true,' +
+    '"fireDACEvidence":"advisor finding","buildEvidence":"build passed",' +
     '"testEvidence":"tests passed"}');
   Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
   Assert.Contains(LResult.ContentJson, 'reverted');
   Assert.Contains(FWorkspace.ContentOf(FUnitFile), 'TADOQuery');
+  LResult := Execute('GetLegacyMigrationReport', '{}');
+  Assert.Contains(LResult.ContentJson, 'fireDACEvidenceFingerprint');
+  Assert.DoesNotContain(LResult.ContentJson, 'advisor finding');
 end;
 
 initialization

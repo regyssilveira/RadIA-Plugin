@@ -608,6 +608,7 @@
         "InventoryLegacyDataAccess",
         "PlanLegacyMigrationBatches",
         "PrepareLegacyMigrationBatch",
+        "ApplyLegacyMigrationBatch",
         "RecordLegacyMigrationGate",
         "GetLegacyMigrationReport",
         "PlanDextAndFormModernization"

@@ -544,6 +544,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `InventoryLegacyDataAccess` | Inventories BDE, ADO and dbExpress references in the active project. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PlanLegacyMigrationBatches` | Groups legacy data findings into bounded technology and file batches. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PrepareLegacyMigrationBatch` | Prepares a reversible preview for deterministic changes in one batch. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `ApplyLegacyMigrationBatch` | Applies one prepared migration batch before FireDAC, build and test gates. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `RecordLegacyMigrationGate` | Records build and test evidence, reverting a failed applied batch. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `GetLegacyMigrationReport` | Reports batch compatibility, gate evidence and required manual actions. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PlanDextAndFormModernization` | Plans DEXT adoption and form decomposition after data migration. | `RadIA.Core.LegacyDataMigrationTools.pas` |
@@ -558,6 +559,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 68
-- Registered built-in tools: 211
+- Registered built-in tools: 212
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 211 internal tools: what each one does and at what stage
+This page explains RadIA's 212 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -483,7 +483,8 @@ store the selection as learning material.
 | `InventoryLegacyDataAccess` | Inventories BDE, ADO, and dbExpress references in the active project. | Before planning a FireDAC migration. |
 | `PlanLegacyMigrationBatches` | Groups findings by technology and file into bounded batches. | After inventory, without starting a full rewrite. |
 | `PrepareLegacyMigrationBatch` | Prepares a reversible preview only for deterministic replacements. | After reviewing batch risks and manual actions. |
-| `RecordLegacyMigrationGate` | Records build and test evidence and reverts an applied batch when a gate fails. | After applying and validating each batch. |
+| `ApplyLegacyMigrationBatch` | Applies a prepared batch and records its state in the migration session. | After review and consent, before the FireDAC, build, and DUnitX gates. |
+| `RecordLegacyMigrationGate` | Records FireDAC, build, and DUnitX evidence fingerprints and reverts the batch when a gate fails. | After applying and validating each batch. |
 | `GetLegacyMigrationReport` | Consolidates compatibility, gates, and pending manual actions. | During and at the end of migration. |
 | `PlanDextAndFormModernization` | Plans DEXT and form decomposition without automatic rewriting. | After stabilizing the FireDAC batches. |
 

@@ -20,7 +20,9 @@ for AI explanations. Deterministic, write-free previews are also available for r
 modules, queries, DTOs, and DUnitX fixtures, together with evidence-aware query optimization and
 thread-safety plans. Applying and reverting those artifacts remain open. Reversible fixes now cover
 proven parameter accessor mismatches and missing rollbacks with preview ownership and fingerprints.
-Composite build and test gates, migration gates, and the complete E2E matrix remain open.
+Composite gates for isolated fixes remain open. Legacy migration now owns batch application and
+FireDAC, build, and DUnitX gates with rollback. E2E automation of those gates and the complete matrix
+remain open.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

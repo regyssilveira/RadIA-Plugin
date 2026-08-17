@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 211 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 212 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -483,7 +483,8 @@ não grava a seleção como material didático.
 | `InventoryLegacyDataAccess` | Inventaria referências a BDE, ADO e dbExpress no projeto ativo. | Antes de planejar uma migração para FireDAC. |
 | `PlanLegacyMigrationBatches` | Agrupa os achados por tecnologia e arquivo em lotes limitados. | Depois do inventário, sem iniciar uma reescrita total. |
 | `PrepareLegacyMigrationBatch` | Prepara um preview reversível somente para substituições determinísticas. | Após revisar riscos e ações manuais do lote. |
-| `RecordLegacyMigrationGate` | Registra evidências de build e testes e reverte o lote aplicado se um gate falhar. | Depois de aplicar e validar cada lote. |
+| `ApplyLegacyMigrationBatch` | Aplica um lote preparado e registra seu estado na sessão de migração. | Após revisão e consentimento, antes dos gates FireDAC, build e DUnitX. |
+| `RecordLegacyMigrationGate` | Registra fingerprints das evidências FireDAC, build e DUnitX e reverte o lote se um gate falhar. | Depois de aplicar e validar cada lote. |
 | `GetLegacyMigrationReport` | Consolida compatibilidade, gates e ações manuais pendentes. | Durante e ao encerrar a migração. |
 | `PlanDextAndFormModernization` | Planeja DEXT e decomposição de forms sem reescrita automática. | Depois de estabilizar os lotes FireDAC. |
 
