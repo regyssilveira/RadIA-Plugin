@@ -484,6 +484,7 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `InspectLocalSQLiteDatabase` | Reads tables, views, and columns from a workspace-local SQLite database without executing user SQL. | `RadIA.Core.LocalDatabaseTools.pas` |
 | `PreviewLocalSQLiteQuery` | Runs one reviewed read-only SQLite query with bounded rows and sanitized grid and CSV output. | `RadIA.Core.LocalDatabaseTools.pas` |
+| `CompareFireDACCodeWithSchema` | Compares typed FireDAC expectations with an authorized workspace-local SQLite schema. | `RadIA.Core.LocalDatabaseTools.pas` |
 
 ## FastMM5 log evidence
 
@@ -527,6 +528,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 65
-- Registered built-in tools: 195
+- Registered built-in tools: 196
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

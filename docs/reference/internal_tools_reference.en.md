@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 195 internal tools: what each one does and at what stage
+This page explains RadIA's 196 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -478,6 +478,7 @@ store the selection as learning material.
 | Tool | What it does | When it is triggered |
 |---|---|---|
 | `InspectLocalSQLiteDatabase` | Reads tables, views, and columns from a workspace-local SQLite file without executing user SQL. | When the agent needs the local schema before proposing a query. |
+| `CompareFireDACCodeWithSchema` | Compares typed FireDAC expectations with an authorized read-only local SQLite schema. | When validating tables, columns, types, and nullability without querying row data. |
 | `PreviewLocalSQLiteQuery` | Runs one read-only query, limits results to 500 rows, and redacts sensitive columns in the grid and CSV. | After the user reviews the query; consent is required on every execution. |
 
 ## Trigger examples

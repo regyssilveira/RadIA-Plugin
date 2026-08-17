@@ -18,17 +18,20 @@ procedure RegisterRadIALocalDatabaseTools(
 implementation
 
 uses
+  System.Generics.Collections,
   System.IOUtils,
   System.JSON,
   System.Math,
   System.StrUtils,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.FireDAC.Model,
+  RadIA.Core.FireDAC.Schema;
 
 const
   CMaximumDatabaseBytes = 512 * 1024 * 1024;
 
 type
-  TRadIALocalDatabaseToolKind = (ldtInspect, ldtPreviewQuery);
+  TRadIALocalDatabaseToolKind = (ldtInspect, ldtPreviewQuery, ldtCompareFireDACSchema);
 
   TRadIALocalDatabaseTool = class(TInterfacedObject, IRadIATool)
   private
@@ -36,6 +39,10 @@ type
     FKind: TRadIALocalDatabaseToolKind;
     FService: IRadIALocalDatabaseService;
     FWorkspace: IRadIAWorkspaceFacade;
+    function CompareFireDACSchema(
+      const AInput: TJSONObject;
+      const ASchema: TJSONObject
+    ): TRadIAToolResult;
     function ResolveDatabasePath(
       const ACandidate: string;
       out AFileName: string;
@@ -125,6 +132,54 @@ begin
   Result := True;
 end;
 
+function TRadIALocalDatabaseTool.CompareFireDACSchema(
+  const AInput: TJSONObject;
+  const ASchema: TJSONObject
+): TRadIAToolResult;
+var
+  LComparison: TRadIAFireDACSchemaComparison;
+  LComparator: TRadIAFireDACSchemaComparator;
+  LExpectation: TJSONObject;
+  LExpectations: TJSONArray;
+  LItems: TList<TRadIAFireDACSchemaExpectation>;
+  LValue: TJSONValue;
+begin
+  LExpectations := AInput.GetValue<TJSONArray>('expectations');
+  if not Assigned(LExpectations) or (LExpectations.Count = 0) then
+    Exit(TRadIAToolResult.Failed('expectations_required', 'At least one schema expectation is required.'));
+  if LExpectations.Count > CRadIAFireDACMaximumSchemaExpectations then
+    Exit(TRadIAToolResult.Failed('too_many_expectations', 'The schema expectation limit was exceeded.'));
+  LItems := TList<TRadIAFireDACSchemaExpectation>.Create;
+  LComparator := TRadIAFireDACSchemaComparator.Create;
+  try
+    for LValue in LExpectations do
+    begin
+      if not (LValue is TJSONObject) then
+        Exit(TRadIAToolResult.Failed('invalid_expectation', 'Each expectation must be an object.'));
+      LExpectation := TJSONObject(LValue);
+      if LExpectation.GetValue<string>('table', '').Trim.IsEmpty or
+        LExpectation.GetValue<string>('column', '').Trim.IsEmpty then
+        Exit(TRadIAToolResult.Failed('invalid_expectation', 'Each expectation requires table and column.'));
+      LItems.Add(TRadIAFireDACSchemaExpectation.Create(
+        LExpectation.GetValue<string>('table', ''),
+        LExpectation.GetValue<string>('column', ''),
+        LExpectation.GetValue<string>('dataType', ''),
+        LExpectation.GetValue<string>('nullable', 'unknown'),
+        TRadIAFireDACLocation.Create('', 0)
+      ));
+    end;
+    LComparison := LComparator.Compare(ASchema, LItems.ToArray);
+    try
+      Result := TRadIAToolResult.Succeeded(LComparison.ToJson, LComparison.Truncated);
+    finally
+      LComparison.Free;
+    end;
+  finally
+    LComparator.Free;
+    LItems.Free;
+  end;
+end;
+
 function TRadIALocalDatabaseTool.Execute(
   const ARequest: TRadIAToolRequest
 ): TRadIAToolResult;
@@ -155,7 +210,7 @@ begin
     try
       try
         case FKind of
-          ldtInspect:
+          ldtInspect, ldtCompareFireDACSchema:
             if not FService.Inspect(
               LFileName,
               LResult,
@@ -189,6 +244,8 @@ begin
             E.Message
           ));
       end;
+      if FKind = ldtCompareFireDACSchema then
+        Exit(CompareFireDACSchema(LInput, LResult));
       LResult.AddPair('databaseFile', TPath.GetFileName(LFileName));
       Result := TRadIAToolResult.Succeeded(LResult.ToJSON);
     finally
@@ -211,6 +268,17 @@ const
     '"filePath":{"type":"string","minLength":1,"maxLength":1024},' +
     '"sql":{"type":"string","minLength":1,"maxLength":32768},' +
     '"maxRows":{"type":"integer","minimum":1,"maximum":500}}}';
+  CCompareInputSchema =
+    '{"type":"object","additionalProperties":false,' +
+    '"required":["filePath","expectations"],"properties":{' +
+    '"filePath":{"type":"string","minLength":1,"maxLength":1024},' +
+    '"expectations":{"type":"array","minItems":1,"maxItems":2048,' +
+    '"items":{"type":"object","additionalProperties":false,' +
+    '"required":["table","column"],"properties":{' +
+    '"table":{"type":"string","minLength":1,"maxLength":128},' +
+    '"column":{"type":"string","minLength":1,"maxLength":128},' +
+    '"dataType":{"type":"string","maxLength":64},' +
+    '"nullable":{"type":"string","enum":["unknown","true","false"]}}}}}}';
 begin
   case FKind of
     ldtInspect:
@@ -231,6 +299,15 @@ begin
         '{"type":"object"}',
         trSensitive
       ).WithConsentEveryTime;
+    ldtCompareFireDACSchema:
+      Result := TRadIAToolDescriptor.Create(
+        'CompareFireDACCodeWithSchema',
+        '1.0.0',
+        'Compares typed FireDAC expectations with an authorized workspace-local SQLite schema.',
+        CCompareInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
   end;
 end;
 
@@ -257,6 +334,14 @@ begin
       ABoundary,
       AService,
       ldtPreviewQuery
+    )
+  );
+  ARegistry.RegisterTool(
+    TRadIALocalDatabaseTool.Create(
+      AWorkspace,
+      ABoundary,
+      AService,
+      ldtCompareFireDACSchema
     )
   );
 end;

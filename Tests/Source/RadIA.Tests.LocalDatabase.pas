@@ -26,6 +26,8 @@ type
     procedure RejectsMutatingAndCompoundSql;
     [Test]
     procedure ToolsRejectDatabaseOutsideWorkspace;
+    [Test]
+    procedure ComparesFireDACExpectationsWithAuthorizedSchema;
   end;
 
 implementation
@@ -299,7 +301,35 @@ begin
   );
   Assert.IsFalse(LResult.Success);
   Assert.AreEqual('outside_workspace', LResult.ErrorCode);
-  Assert.AreEqual(2, LRegistry.Count);
+  Assert.AreEqual(3, LRegistry.Count);
+end;
+
+procedure TRadIALocalDatabaseTests.ComparesFireDACExpectationsWithAuthorizedSchema;
+var
+  LRegistry: IRadIAToolRegistry;
+  LResult: TRadIAToolResult;
+  LTool: IRadIATool;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIALocalDatabaseTools(
+    LRegistry,
+    TRadIALocalDatabaseTestWorkspace.Create(FRootPath),
+    TRadIAWorkspaceBoundary.Create,
+    TRadIALocalDatabaseService.Create
+  );
+  LTool := LRegistry.Resolve('CompareFireDACCodeWithSchema');
+  LResult := LTool.Execute(TRadIAToolRequest.Create(
+    'CompareFireDACCodeWithSchema',
+    '{"filePath":"fixture.sqlite","expectations":[' +
+    '{"table":"customers","column":"id","dataType":"string","nullable":"true"},' +
+    '{"table":"customers","column":"missing"}]}',
+    'schema-comparison'
+  ));
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.schema.type-mismatch');
+  Assert.Contains(LResult.ContentJson, 'firedac.schema.column-missing');
+  Assert.Contains(LResult.ContentJson, '"schemaReadOnly":true');
+  Assert.DoesNotContain(LResult.ContentJson, 'secret-one');
 end;
 
 initialization

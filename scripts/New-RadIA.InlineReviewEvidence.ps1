@@ -1,7 +1,7 @@
 param(
     [string]$ValidationPath = ".\Output\Validation\InlineReview",
     [string]$OutputPath = ".\Output\Validation\InlineReview\evidence.json",
-    [int]$RequiredToolCount = 195
+    [int]$RequiredToolCount = 196
 )
 
 $ErrorActionPreference = "Stop"
