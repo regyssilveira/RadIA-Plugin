@@ -29,8 +29,8 @@ try {
     $env:RADIA_IDE_SMOKE_CANCELLATION = $resolvedEvidence
     $arguments = @{
         DelphiVersion = $DelphiVersion
-        Cycles = 2
-        ExerciseDocking = $true
+        Cycles = 1
+        UserJourneyEvidencePath = $resolvedEvidence
     }
     if ($IDE64) {
         $arguments.IDE64 = $true

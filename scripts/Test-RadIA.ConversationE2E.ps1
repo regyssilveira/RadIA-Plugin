@@ -39,8 +39,8 @@ try {
     }
     $arguments = @{
         DelphiVersion = $DelphiVersion
-        Cycles = 2
-        ExerciseDocking = $true
+        Cycles = 1
+        UserJourneyEvidencePath = $resolvedEvidence
     }
     if ($IDE64) {
         $arguments.IDE64 = $true
