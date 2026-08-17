@@ -8,6 +8,8 @@ param(
 
     [switch]$Complete,
 
+    [switch]$ReadOnly,
+
     [string]$EvidencePath = ""
 )
 
@@ -26,6 +28,9 @@ if ($Complete) {
     $arguments += @("-ExerciseDebugger", "-ExerciseCalculatorRuntime")
 } else {
     $arguments += @("-SkipBuildAndTests", "-SkipTemplateBuild")
+}
+if ($ReadOnly) {
+    $arguments += "-ReadOnlyOnly"
 }
 if ($IDE64) {
     $arguments += "-IDE64"

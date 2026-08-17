@@ -177,6 +177,7 @@
       "id": "read-only-without-consent",
       "scope": "user-journey",
       "runner": "Test-RadIA.ProjectCreationNavigation.ps1",
+      "runnerArguments": ["-ReadOnly"],
       "targetIds": [
         "delphi12-win32",
         "delphi13-win32",

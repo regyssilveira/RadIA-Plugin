@@ -13,6 +13,7 @@ param(
     [switch]$ExerciseTestCorrection,
     [switch]$ExerciseGit,
     [switch]$ExerciseProjectTransition,
+    [switch]$ReadOnlyOnly,
     [switch]$IDE64,
     [string]$EvidencePath = ""
 )
@@ -1609,6 +1610,7 @@ try {
     }
     $readOnlyConsentPassed = $true
     $developmentSurfaceCancellationPassed = $true
+    if (-not $ReadOnlyOnly) {
     $propertyPreview = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
@@ -2592,6 +2594,7 @@ try {
         if (-not $statusAfterClose.loaded) {
             throw "The knowledge index was unavailable after closing the unit."
         }
+    }
     }
     }
 
