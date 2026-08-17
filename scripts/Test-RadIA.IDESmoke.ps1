@@ -2276,15 +2276,31 @@ function Invoke-RadIAFireDACReadOnlyScenario {
             $rollbackSucceeded = $true
             $programPath = [IO.Path]::ChangeExtension($ProjectPath, ".dpr")
             $programContent = Get-Content -LiteralPath $programPath -Raw
-            $programContent = $programContent.Replace(
-                "  RadIAIntentionalCompilerFailure;`r`n",
-                ""
-            )
-            Set-Content `
-                -LiteralPath $programPath `
-                -Value $programContent `
-                -Encoding UTF8 `
-                -NoNewline
+            $cleanupPatch = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $programPath
+                    baseRevision = Get-RadIAStringSha256 $programContent
+                    originalText = (
+                        "  RadIAIntentionalCompilerFailure;`r`n"
+                    )
+                    replacementText = ""
+                }
+            $cleanupApplied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyPatch" `
+                -Arguments @{ previewId = $cleanupPatch.previewId }
+            Save-RadIAActiveEditor -IDEProcess $IDEProcess
+            $cleanProgramContent = Get-Content -LiteralPath $programPath -Raw
+            if ($cleanProgramContent.Contains(
+                "RadIAIntentionalCompilerFailure"
+            )) {
+                throw "The rollback fixture cleanup patch was not persisted."
+            }
             $cleanupBuild = Invoke-RadIASmokeToolWithConsent `
                 -BridgePath $BridgePath `
                 -InstanceFile $InstanceFile `
@@ -2303,6 +2319,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 $applied,
                 $build,
                 $reverted,
+                $cleanupPatch,
+                $cleanupApplied,
                 $cleanupBuild
             )
         }

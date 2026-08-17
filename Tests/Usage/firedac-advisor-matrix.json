@@ -75,7 +75,9 @@
         "GenerateFireDACRepositoryPreview",
         "ApplyGeneratedArtifact",
         "BuildProject",
-        "RevertGeneratedArtifact"
+        "RevertGeneratedArtifact",
+        "PreparePatch",
+        "ApplyPatch"
       ],
       "mutationExpected": true,
       "rollbackExpected": true,
