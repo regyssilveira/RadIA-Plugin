@@ -839,7 +839,8 @@ function Test-RadIAPluginShutdownCompleted {
         $shutdownBlock.Contains(
             "Background threads remaining after shutdown wait: 0"
         ) -and
-        $shutdownBlock.Contains("TRadIAWizard.Destroy completed")
+        $shutdownBlock.Contains("TRadIAWizard.Destroy completed") -and
+        $shutdownBlock -notmatch '(?i)access violation|eaccessviolation'
     )
 }
 

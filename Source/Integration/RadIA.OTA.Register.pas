@@ -468,11 +468,13 @@ procedure TRadIAWizard.ReleaseEditorHook;
 begin
   if not Assigned(FEditorHook) then
     Exit;
-  TRadIAEditorHook(FEditorHook).Uninstall;
   if GIsShuttingDown then
     FEditorHook := nil
   else
+  begin
+    TRadIAEditorHook(FEditorHook).Uninstall;
     FreeAndNil(FEditorHook);
+  end;
 end;
 
 procedure TRadIAWizard.ReleaseKnowledgeNotifier;
@@ -560,7 +562,10 @@ begin
   LogDebug('TRadIAWizard.Destroy menus released');
   ReleaseEditorHook;
   LogDebug('TRadIAWizard.Destroy editor hook released');
-  FOptionsPages.Free;
+  if GIsShuttingDown then
+    FOptionsPages := nil
+  else
+    FreeAndNil(FOptionsPages);
   LogDebug('TRadIAWizard.Destroy owned objects released');
   WaitForBackgroundServices;
 
