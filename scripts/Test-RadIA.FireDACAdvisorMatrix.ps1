@@ -29,7 +29,8 @@ $connectedScenarioIds = @(
     "firedac-repository-applied",
     "firedac-build-failure-rollback",
     "firedac-parameter-smart-diff",
-    "firedac-stale-preview-rejection"
+    "firedac-stale-preview-rejection",
+    "firedac-ado-migration-batch"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -143,6 +144,29 @@ end;
 
 end.
 '@
+    if ($ScenarioId -in @(
+        "firedac-ado-migration-batch",
+        "firedac-migration-gate-rollback"
+    )) {
+        $unitContent = $unitContent.Replace(
+            "FireDAC.Comp.Client,",
+            "Data.Win.ADODB,"
+        ).Replace(
+            "    FConnection: TFDConnection;`n",
+            ""
+        ).Replace(
+            "    FQuery: TFDQuery;",
+            "    FQuery: TADOQuery;"
+        ).Replace(
+            "      FConnection.Open;`n      FQuery.Open;",
+            "      if Assigned(FQuery) then`n        FQuery.Open;"
+        ).Replace(
+            "  FConnection.StartTransaction;`n" +
+            "  FQuery.ExecSQL;`n" +
+            "  FConnection.Commit;",
+            "  if Assigned(FQuery) then`n    FQuery.ExecSQL;"
+        )
+    }
     Set-RadIAFireDACFixtureContent `
         -Path $unitPath `
         -Content $unitContent
@@ -272,7 +296,9 @@ connection.close()
     }
     if ($ScenarioId -in @(
         "firedac-repository-applied",
-        "firedac-parameter-smart-diff"
+        "firedac-parameter-smart-diff",
+        "firedac-ado-migration-batch",
+        "firedac-migration-gate-rollback"
     )) {
         $testSourcePlatform = if ($TargetId -eq "delphi13-ide64") {
             "Win64"

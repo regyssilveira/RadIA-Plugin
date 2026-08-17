@@ -1797,6 +1797,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $smartDiffReviewed = $false
     $stalePreviewRejected = $false
     $laterChangePreserved = $false
+    $migrationGatePassed = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2377,6 +2378,124 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 $reverted
             )
         }
+        "firedac-ado-migration-batch" {
+            if (-not $ProjectPath -or -not $TestExecutablePath) {
+                throw "The migration scenario requires project and DUnitX fixtures."
+            }
+            $inventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InventoryLegacyDataAccess"
+            $adoFinding = @(
+                $inventory.findings |
+                    Where-Object {
+                        $_.technology -eq "ADO" -and
+                        $_.canPrepare -eq $true
+                    }
+            ) | Select-Object -First 1
+            if (-not $adoFinding) {
+                throw "The migration inventory did not find a preparable ADO usage."
+            }
+            $plan = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PlanLegacyMigrationBatches"
+            $batch = @(
+                $plan.batches |
+                    Where-Object {
+                        $_.technology -eq "ADO" -and
+                        $_.canPrepare -eq $true
+                    }
+            ) | Select-Object -First 1
+            if (-not $batch.batchId) {
+                throw "The migration planner did not create a preparable ADO batch."
+            }
+            $prepared = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied") {
+                throw "The ADO migration batch was not applied."
+            }
+            $fireDAC = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $fireDACJson = $fireDAC | ConvertTo-Json -Depth 10 -Compress
+            if (-not $fireDACJson.Contains("TFDQuery")) {
+                throw "The applied migration did not produce a FireDAC query."
+            }
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $true) {
+                throw "The migrated ADO batch did not build."
+            }
+            $buildPassed = $true
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                throw "DUnitX did not pass after the ADO migration batch."
+            }
+            $testsPassed = $true
+            $gate = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RecordLegacyMigrationGate" `
+                -Arguments @{
+                    batchId = $batch.batchId
+                    fireDACPassed = $true
+                    buildPassed = $true
+                    testsPassed = $true
+                    fireDACEvidence = Get-RadIAStringSha256 $fireDACJson
+                    buildEvidence = Get-RadIAStringSha256 (
+                        $build | ConvertTo-Json -Depth 8 -Compress
+                    )
+                    testEvidence = Get-RadIAStringSha256 (
+                        $tests | ConvertTo-Json -Depth 8 -Compress
+                    )
+                }
+            if ($gate.state -ne "validated") {
+                throw "The ADO migration gate was not validated."
+            }
+            $migrationGatePassed = $true
+            $artifactState = "validated"
+            $results = @(
+                $inventory,
+                $plan,
+                $prepared,
+                $applied,
+                $fireDAC,
+                $build,
+                $tests,
+                $gate
+            )
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2406,6 +2525,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         smartDiffReviewed = $smartDiffReviewed
         stalePreviewRejected = $stalePreviewRejected
         laterChangePreserved = $laterChangePreserved
+        migrationGatePassed = $migrationGatePassed
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
