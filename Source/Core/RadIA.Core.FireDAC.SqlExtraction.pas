@@ -42,6 +42,7 @@ type
     destructor Destroy; override;
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
     procedure AddSource(const ASource: TRadIAFireDACSqlSource);
+    function Findings: TArray<TRadIAFireDACFinding>;
     function Sources: TArray<TRadIAFireDACSqlSource>;
     function ToJson: string;
     property Truncated: Boolean read FTruncated write FTruncated;
@@ -142,6 +143,11 @@ begin
   Result := FSources.ToArray;
 end;
 
+function TRadIAFireDACSqlExtraction.Findings: TArray<TRadIAFireDACFinding>;
+begin
+  Result := FFindings.ToArray;
+end;
+
 function TRadIAFireDACSqlExtraction.ToJson: string;
 var
   LAnalysis: TRadIAFireDACSqlAnalysis;
@@ -235,7 +241,8 @@ begin
   Result := TDictionary<string, string>.Create;
   LMatch := TRegEx.Match(
     AContent,
-    '(?im)^\s*(?:const\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?);'
+    '(?im)^\s*(?:const\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*' +
+    '((?:''(?:''''|[^''])*''|[^;])*)'
   );
   while LMatch.Success do
   begin
@@ -318,7 +325,8 @@ begin
     try
       ExtractMatches(
         AContent, LMasked, AFileName,
-        '(?is)\b([A-Za-z_][A-Za-z0-9_]*)\.SQL\.Text\s*:=\s*(.*?);',
+        '(?is)\b([A-Za-z_][A-Za-z0-9_]*)\.SQL\.Text\s*:=\s*' +
+        '((?:''(?:''''|[^''])*''|[^;])*)\s*;',
         'sql-text', LConstants, Result
       );
       ExtractMatches(

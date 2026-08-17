@@ -525,6 +525,7 @@
       "tools": [
         "InspectFireDACUsage",
         "InspectFireDACProject",
+        "GetFireDACProjectReport",
         "AuditFireDACTransactions",
         "InspectFireDACConfiguration",
         "AnalyzeFireDACThreadSafety",

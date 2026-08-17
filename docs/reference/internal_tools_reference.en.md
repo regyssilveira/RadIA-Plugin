@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 193 internal tools: what each one does and at what stage
+This page explains RadIA's 194 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -135,6 +135,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`CancelRuntimePerformanceMeasurement`|Stop active sampling without producing evidence.|When the scenario is cancelled or fails, or when the user abandons the measurement.|
 | `InspectFireDACUsage` | Preserves legacy counters and returns the same structured project inventory. | For existing consumers and automations that still use the original name. |
 | `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL or collecting credentials. | When reviewing the data layer before specialized analysis. |
+| `GetFireDACProjectReport` | Aggregates inventory and sanitized analysis of embedded FireDAC SQL. | When reviewing the FireDAC layer with navigable locations. |
 | `AuditFireDACTransactions` | Audits transaction flows in bounded Pascal files without executing SQL or connecting to a database. | When locating potentially unsafe commit, rollback, or early-exit flows. |
 | `InspectFireDACConfiguration` | Inspects bounded FireDAC configuration while discarding credentials and absolute paths. | When reviewing drivers, connection definitions, options, and libraries before execution. |
 | `AnalyzeFireDACThreadSafety` | Finds shared FireDAC components and unsafe UI access in bounded workers. | When reviewing parallel tasks before running database operations in the background. |

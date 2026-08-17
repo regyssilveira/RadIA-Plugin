@@ -14,6 +14,10 @@ O goal não pode ser encerrado por uma entrega parcial. A conclusão exige todas
 os testes unitários, de contrato, segurança e integração, os 16 cenários E2E, builds Delphi 12 e 13,
 documentação bilíngue e auditoria requisito por requisito.
 
+A fundação já disponível cobre inventário, análise de SQL selecionado e embutido, parâmetros,
+transações, configuração e thread safety. Permanecem abertos schema, assistência por IA, geração,
+correções reversíveis, gates de migração e a matriz E2E completa.
+
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.
 

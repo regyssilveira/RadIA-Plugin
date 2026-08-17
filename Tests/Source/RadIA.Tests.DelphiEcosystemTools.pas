@@ -26,6 +26,8 @@ type
     [Test]
     procedure AnalyzesFireDACThreadSafetyWithoutExecutingSql;
     [Test]
+    procedure GetsSanitizedFireDACProjectReport;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -295,6 +297,20 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, 'firedac.thread.shared-component');
   Assert.Contains(LResult.ContentJson, '"sqlExecuted":false');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.GetsSanitizedFireDACProjectReport;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'Query.SQL.Text := ''select id from customer where id = :Id'';'
+  );
+  LResult := ExecuteTool(FRootPath, 'GetFireDACProjectReport');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"name":"Id"');
+  Assert.DoesNotContain(LResult.ContentJson, 'select id from customer');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;

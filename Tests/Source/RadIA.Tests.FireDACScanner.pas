@@ -34,6 +34,8 @@ type
     procedure InspectsConfigurationWithoutReturningSecretsOrAbsolutePaths;
     [Test]
     procedure AnalyzesThreadSafetyAcrossBoundedPascalFiles;
+    [Test]
+    procedure BuildsProjectReportWithSanitizedSqlAnalysis;
   end;
 
 implementation
@@ -280,6 +282,31 @@ begin
   Assert.Contains(LJson, '"file":"Worker.pas"');
   Assert.Contains(LJson, '"sqlExecuted":false');
   Assert.DoesNotContain(LJson, 'MainConnection.Open');
+end;
+
+procedure TRadIAFireDACScannerTests.BuildsProjectReportWithSanitizedSqlAnalysis;
+var
+  LJson: string;
+  LScanner: TRadIAFireDACScanner;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'type TDataModule = class' + sLineBreak +
+    '  Query: TFDQuery;' + sLineBreak +
+    'end;' + sLineBreak +
+    'Query.SQL.Text := ''select id from customer where id = :Id; select 2;'';'
+  );
+  LScanner := TRadIAFireDACScanner.Create(TRadIAWorkspaceBoundary.Create);
+  try
+    LJson := LScanner.GetProjectReport(FRootPath);
+  finally
+    LScanner.Free;
+  end;
+  Assert.Contains(LJson, '"inventory"');
+  Assert.Contains(LJson, '"sqlAnalyses"');
+  Assert.Contains(LJson, '"name":"Id"');
+  Assert.Contains(LJson, 'firedac.sql.multiple-statements');
+  Assert.DoesNotContain(LJson, 'select id from customer');
 end;
 
 initialization

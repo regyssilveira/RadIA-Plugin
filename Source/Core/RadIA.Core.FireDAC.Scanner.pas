@@ -55,6 +55,7 @@ type
     constructor Create(const ABoundary: IRadIAWorkspaceBoundary);
     function AnalyzeThreadSafety(const ARootPath: string): string;
     function AuditTransactions(const ARootPath: string): string;
+    function GetProjectReport(const ARootPath: string): string;
     function InspectConfiguration(const ARootPath: string): string;
     function Scan(const ARootPath: string): TRadIAFireDACInventory;
   end;
@@ -70,6 +71,8 @@ uses
   System.StrUtils,
   System.SysUtils,
   RadIA.Core.FireDAC.Configuration,
+  RadIA.Core.FireDAC.SqlExtraction,
+  RadIA.Core.FireDAC.SqlAnalyzer,
   RadIA.Core.FireDAC.ThreadSafety,
   RadIA.Core.FireDAC.Transactions;
 
@@ -85,6 +88,84 @@ begin
   if not Assigned(ABoundary) then
     raise EArgumentNilException.Create('ABoundary');
   FBoundary := ABoundary;
+end;
+
+function TRadIAFireDACScanner.GetProjectReport(const ARootPath: string): string;
+var
+  LContent: string;
+  LAnalysis: TRadIAFireDACSqlAnalysis;
+  LAnalyzer: TRadIAFireDACSqlAnalyzer;
+  LExtraction: TRadIAFireDACSqlExtraction;
+  LExtractor: TRadIAFireDACSqlExtractor;
+  LFileName: string;
+  LFiles: TArray<string>;
+  LFinding: TRadIAFireDACFinding;
+  LFindings: TJSONArray;
+  LInventory: TRadIAFireDACInventory;
+  LObject: TJSONObject;
+  LRelativeName: string;
+  LRoot: TJSONObject;
+  LSqlAnalyses: TJSONArray;
+  LSource: TRadIAFireDACSqlSource;
+begin
+  LInventory := Scan(ARootPath);
+  LExtractor := TRadIAFireDACSqlExtractor.Create;
+  LAnalyzer := TRadIAFireDACSqlAnalyzer.Create;
+  LRoot := TJSONObject.Create;
+  try
+    LFiles := CollectFiles(ARootPath, LInventory);
+    LObject := TJSONObject.ParseJSONValue(LInventory.ToJson) as TJSONObject;
+    LRoot.AddPair('inventory', LObject);
+    LSqlAnalyses := TJSONArray.Create;
+    LFindings := TJSONArray.Create;
+    for LFinding in LInventory.Findings do
+      LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+    for LFileName in LFiles do
+    begin
+      LRelativeName := RelativeName(ARootPath, LFileName);
+      if not ReadSupportedFile(LFileName, LRelativeName, LInventory, LContent) then
+        Continue;
+      if SameText(TPath.GetExtension(LFileName), '.pas') then
+        LExtraction := LExtractor.ExtractPascal(LContent, LRelativeName)
+      else if SameText(TPath.GetExtension(LFileName), '.dfm') then
+        LExtraction := LExtractor.ExtractDfm(LContent, LRelativeName)
+      else
+        Continue;
+      try
+        for LFinding in LExtraction.Findings do
+          LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+        for LSource in LExtraction.Sources do
+        begin
+          if LSource.Dynamic then
+            Continue;
+          LAnalysis := LAnalyzer.Analyze(
+            LSource.Sql,
+            LSource.Location.FileName,
+            LSource.Location.Line
+          );
+          try
+            for LFinding in LAnalysis.Findings do
+              LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+          finally
+            LAnalysis.Free;
+          end;
+        end;
+        if Length(LExtraction.Sources) > 0 then
+          LSqlAnalyses.AddElement(TJSONObject.ParseJSONValue(LExtraction.ToJson));
+      finally
+        LExtraction.Free;
+      end;
+    end;
+    LRoot.AddPair('sqlAnalyses', LSqlAnalyses);
+    LRoot.AddPair('findings', LFindings);
+    LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
+    Result := LRoot.ToJSON;
+  finally
+    LRoot.Free;
+    LAnalyzer.Free;
+    LExtractor.Free;
+    LInventory.Free;
+  end;
 end;
 
 function TRadIAFireDACScanner.RelativeName(

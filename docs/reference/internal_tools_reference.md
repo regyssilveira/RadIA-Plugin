@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 193 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 194 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -135,6 +135,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `CancelRuntimePerformanceMeasurement` | Interrompe a amostragem ativa sem criar evidência. | Em cancelamentos, falhas do cenário ou quando o usuário decide abandonar a medição. |
 | `InspectFireDACUsage` | Mantém as contagens legadas e retorna o mesmo inventário estruturado da inspeção de projeto. | Para consumidores existentes e automações que ainda usam o nome original. |
 | `InspectFireDACProject` | Inventaria componentes e relações FireDAC em PAS e DFM limitados, sem executar SQL nem coletar credenciais. | Ao revisar a camada de dados antes das análises especializadas. |
+| `GetFireDACProjectReport` | Agrega inventário e análise sanitizada do SQL FireDAC embutido. | Ao revisar a camada FireDAC com localizações navegáveis. |
 | `AuditFireDACTransactions` | Audita fluxos transacionais em arquivos Pascal limitados, sem executar SQL ou conectar ao banco. | Ao localizar commit, rollback ou saída antecipada potencialmente inseguros. |
 | `InspectFireDACConfiguration` | Inspeciona configuração FireDAC limitada, descartando credenciais e paths absolutos. | Ao revisar drivers, connection definitions, options e bibliotecas antes da execução. |
 | `AnalyzeFireDACThreadSafety` | Localiza componentes FireDAC compartilhados e acesso inseguro à UI em workers limitados. | Ao revisar tarefas paralelas antes de executar operações de banco em background. |

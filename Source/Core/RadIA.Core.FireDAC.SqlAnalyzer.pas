@@ -48,6 +48,7 @@ type
     destructor Destroy; override;
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
     procedure AddParameter(const AParameter: TRadIAFireDACSqlParameter);
+    function Findings: TArray<TRadIAFireDACFinding>;
     function Parameters: TArray<TRadIAFireDACSqlParameter>;
     function ToJson: string;
     property StatementCount: Integer read FStatementCount write FStatementCount;
@@ -162,6 +163,11 @@ end;
 function TRadIAFireDACSqlAnalysis.Parameters: TArray<TRadIAFireDACSqlParameter>;
 begin
   Result := FParameters.ToArray;
+end;
+
+function TRadIAFireDACSqlAnalysis.Findings: TArray<TRadIAFireDACFinding>;
+begin
+  Result := FFindings.ToArray;
 end;
 
 function TRadIAFireDACSqlAnalysis.ToJson: string;

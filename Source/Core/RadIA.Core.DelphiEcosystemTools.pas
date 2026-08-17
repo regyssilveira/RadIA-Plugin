@@ -35,6 +35,7 @@ type
   TRadIADelphiEcosystemToolKind = (
     detFireDAC,
     detFireDACProject,
+    detFireDACReport,
     detFireDACTransactions,
     detFireDACConfiguration,
     detFireDACThreadSafety,
@@ -330,6 +331,8 @@ var
 begin
   LScanner := TRadIAFireDACScanner.Create(FBoundary);
   try
+    if FKind = detFireDACReport then
+      Exit(TRadIAToolResult.Succeeded(LScanner.GetProjectReport(AProject.RootPath)));
     if FKind = detFireDACTransactions then
       Exit(TRadIAToolResult.Succeeded(LScanner.AuditTransactions(AProject.RootPath)));
     if FKind = detFireDACConfiguration then
@@ -377,6 +380,7 @@ begin
   if FKind in [
     detFireDAC,
     detFireDACProject,
+    detFireDACReport,
     detFireDACTransactions,
     detFireDACConfiguration,
     detFireDACThreadSafety
@@ -420,6 +424,15 @@ begin
         'InspectFireDACProject',
         '1.0.0',
         'Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL.',
+        CEmptyInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
+    detFireDACReport:
+      Result := TRadIAToolDescriptor.Create(
+        'GetFireDACProjectReport',
+        '1.0.0',
+        'Returns a bounded FireDAC inventory and sanitized embedded SQL analysis without execution.',
         CEmptyInputSchema,
         '{"type":"object"}',
         trReadOnly
@@ -585,6 +598,7 @@ begin
     raise EArgumentNilException.Create('ARegistry');
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDAC));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDACProject));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(AWorkspace, ABoundary, detFireDACReport));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(
     AWorkspace,
     ABoundary,
