@@ -92,6 +92,137 @@ type
     smsBlockComment
   );
 
+procedure MaskSqlCharacter(
+  const ACharacters: TArray<Char>;
+  const AIndex: Integer
+);
+begin
+  if not CharInSet(ACharacters[AIndex], [#10, #13]) then
+    ACharacters[AIndex] := ' ';
+end;
+
+procedure EnterSqlMaskState(
+  const ASql: string;
+  const AIndex: Integer;
+  var AState: TRadIAFireDACSqlMaskState
+);
+begin
+  if ASql.Chars[AIndex] = '''' then
+    AState := smsSingleQuote
+  else if ASql.Chars[AIndex] = '"' then
+    AState := smsDoubleQuote
+  else if (AIndex < ASql.Length - 1) and
+    (ASql.Chars[AIndex] = '-') and
+    (ASql.Chars[AIndex + 1] = '-') then
+    AState := smsLineComment
+  else if (AIndex < ASql.Length - 1) and
+    (ASql.Chars[AIndex] = '/') and
+    (ASql.Chars[AIndex + 1] = '*') then
+    AState := smsBlockComment;
+end;
+
+procedure MaskSqlSingleQuote(
+  const ASql: string;
+  const ACharacters: TArray<Char>;
+  var AIndex: Integer;
+  var AState: TRadIAFireDACSqlMaskState
+);
+begin
+  MaskSqlCharacter(ACharacters, AIndex);
+  if (ASql.Chars[AIndex] = '''') and
+    (AIndex < High(ACharacters)) and
+    (ASql.Chars[AIndex + 1] = '''') then
+  begin
+    Inc(AIndex);
+    ACharacters[AIndex] := ' ';
+  end
+  else if ASql.Chars[AIndex] = '''' then
+    AState := smsCode;
+end;
+
+procedure MaskSqlDoubleQuote(
+  const ASql: string;
+  const ACharacters: TArray<Char>;
+  const AIndex: Integer;
+  var AState: TRadIAFireDACSqlMaskState
+);
+begin
+  MaskSqlCharacter(ACharacters, AIndex);
+  if ASql.Chars[AIndex] = '"' then
+    AState := smsCode;
+end;
+
+procedure MaskSqlLineComment(
+  const ASql: string;
+  const ACharacters: TArray<Char>;
+  const AIndex: Integer;
+  var AState: TRadIAFireDACSqlMaskState
+);
+begin
+  MaskSqlCharacter(ACharacters, AIndex);
+  if CharInSet(ASql.Chars[AIndex], [#10, #13]) then
+    AState := smsCode;
+end;
+
+procedure MaskSqlBlockComment(
+  const ASql: string;
+  const ACharacters: TArray<Char>;
+  var AIndex: Integer;
+  var AState: TRadIAFireDACSqlMaskState
+);
+begin
+  MaskSqlCharacter(ACharacters, AIndex);
+  if (ASql.Chars[AIndex] = '*') and
+    (AIndex < High(ACharacters)) and
+    (ASql.Chars[AIndex + 1] = '/') then
+  begin
+    Inc(AIndex);
+    ACharacters[AIndex] := ' ';
+    AState := smsCode;
+  end;
+end;
+
+function SqlStatementKindFromToken(
+  const AToken: string
+): TRadIAFireDACSqlStatementKind;
+begin
+  if AToken = 'select' then
+    Exit(fskSelect);
+  if AToken = 'insert' then
+    Exit(fskInsert);
+  if AToken = 'update' then
+    Exit(fskUpdate);
+  if AToken = 'delete' then
+    Exit(fskDelete);
+  if AToken = 'merge' then
+    Exit(fskMerge);
+  if MatchText(AToken, ['execute', 'exec']) then
+    Exit(fskExecute);
+  if MatchText(AToken, ['create', 'alter', 'drop', 'truncate']) then
+    Exit(fskDdl);
+  Result := fskUnknown;
+end;
+
+function TryReadTopLevelSqlToken(
+  const ASql: string;
+  const ADepth: Integer;
+  var AIndex: Integer;
+  out AToken: string
+): Boolean;
+var
+  LStart: Integer;
+begin
+  Result := (ADepth = 0) and
+    CharInSet(ASql[AIndex], ['A'..'Z', 'a'..'z', '_']);
+  if not Result then
+    Exit;
+  LStart := AIndex;
+  while (AIndex <= High(ASql)) and
+    CharInSet(ASql[AIndex], ['A'..'Z', 'a'..'z', '0'..'9', '_']) do
+    Inc(AIndex);
+  AToken := LowerCase(ASql.Substring(LStart - 1, AIndex - LStart));
+end;
+
 function RadIAFireDACSqlStatementKindName(const AKind: TRadIAFireDACSqlStatementKind): string;
 const
   CNames: array[TRadIAFireDACSqlStatementKind] of string = (
@@ -211,64 +342,28 @@ end;
 
 function TRadIAFireDACSqlAnalyzer.MaskUntrustedSegments(const ASql: string): string;
 var
-  I: Integer;
+  LIndex: Integer;
   LChars: TArray<Char>;
   LState: TRadIAFireDACSqlMaskState;
 begin
   LChars := ASql.ToCharArray;
   LState := smsCode;
-  I := Low(LChars);
-  while I <= High(LChars) do
+  LIndex := Low(LChars);
+  while LIndex <= High(LChars) do
   begin
     case LState of
       smsCode:
-        if LChars[I] = '''' then
-          LState := smsSingleQuote
-        else if LChars[I] = '"' then
-          LState := smsDoubleQuote
-        else if (LChars[I] = '-') and (I < High(LChars)) and (LChars[I + 1] = '-') then
-          LState := smsLineComment
-        else if (LChars[I] = '/') and (I < High(LChars)) and (LChars[I + 1] = '*') then
-          LState := smsBlockComment;
+        EnterSqlMaskState(ASql, LIndex, LState);
       smsSingleQuote:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if (ASql.Chars[I] = '''') and (I < High(LChars)) and (ASql.Chars[I + 1] = '''') then
-          begin
-            Inc(I);
-            LChars[I] := ' ';
-          end
-          else if ASql.Chars[I] = '''' then
-            LState := smsCode;
-        end;
+        MaskSqlSingleQuote(ASql, LChars, LIndex, LState);
       smsDoubleQuote:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if ASql.Chars[I] = '"' then
-            LState := smsCode;
-        end;
+        MaskSqlDoubleQuote(ASql, LChars, LIndex, LState);
       smsLineComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if CharInSet(ASql.Chars[I], [#10, #13]) then
-            LState := smsCode;
-        end;
+        MaskSqlLineComment(ASql, LChars, LIndex, LState);
       smsBlockComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if (ASql.Chars[I] = '*') and (I < High(LChars)) and (ASql.Chars[I + 1] = '/') then
-          begin
-            Inc(I);
-            LChars[I] := ' ';
-            LState := smsCode;
-          end;
-        end;
+        MaskSqlBlockComment(ASql, LChars, LIndex, LState);
     end;
-    Inc(I);
+    Inc(LIndex);
   end;
   Result := string.Create(LChars);
 end;
@@ -279,7 +374,6 @@ function TRadIAFireDACSqlAnalyzer.ClassifyStatement(
 var
   LDepth: Integer;
   LIndex: Integer;
-  LStart: Integer;
   LToken: string;
 begin
   Result := fskUnknown;
@@ -291,27 +385,16 @@ begin
       Inc(LDepth)
     else if (AMaskedSql[LIndex] = ')') and (LDepth > 0) then
       Dec(LDepth)
-    else if (LDepth = 0) and CharInSet(AMaskedSql[LIndex], ['A'..'Z', 'a'..'z', '_']) then
+    else if TryReadTopLevelSqlToken(
+      AMaskedSql,
+      LDepth,
+      LIndex,
+      LToken
+    ) then
     begin
-      LStart := LIndex;
-      while (LIndex <= High(AMaskedSql)) and
-        CharInSet(AMaskedSql[LIndex], ['A'..'Z', 'a'..'z', '0'..'9', '_']) do
-        Inc(LIndex);
-      LToken := LowerCase(AMaskedSql.Substring(LStart - 1, LIndex - LStart));
-      if LToken = 'select' then
-        Exit(fskSelect);
-      if LToken = 'insert' then
-        Exit(fskInsert);
-      if LToken = 'update' then
-        Exit(fskUpdate);
-      if LToken = 'delete' then
-        Exit(fskDelete);
-      if LToken = 'merge' then
-        Exit(fskMerge);
-      if MatchText(LToken, ['execute', 'exec']) then
-        Exit(fskExecute);
-      if MatchText(LToken, ['create', 'alter', 'drop', 'truncate']) then
-        Exit(fskDdl);
+      Result := SqlStatementKindFromToken(LToken);
+      if Result <> fskUnknown then
+        Exit;
       Continue;
     end;
     Inc(LIndex);

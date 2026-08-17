@@ -3,6 +3,8 @@ unit RadIA.Core.FireDAC.Scanner;
 interface
 
 uses
+  System.Generics.Collections,
+  System.JSON,
   RadIA.Core.FireDAC.Model,
   RadIA.Core.WorkspaceBoundary;
 
@@ -15,6 +17,20 @@ type
       const AFileName: string;
       const ALine: Integer
     );
+    procedure AddConfigurationReportFile(
+      const ARootPath: string;
+      const AFileName: string;
+      const AInventory: TRadIAFireDACInventory;
+      const AConfigurations: TJSONArray;
+      const AFindings: TJSONArray
+    );
+    procedure AddProjectReportFile(
+      const ARootPath: string;
+      const AFileName: string;
+      const AInventory: TRadIAFireDACInventory;
+      const ASqlAnalyses: TJSONArray;
+      const AFindings: TJSONArray
+    );
     procedure AnalyzeDfm(
       const AContent: string;
       const AFileName: string;
@@ -24,6 +40,13 @@ type
       const AContent: string;
       const AFileName: string;
       const AInventory: TRadIAFireDACInventory
+    );
+    procedure AnalyzePascalCodeLine(
+      const ALine: string;
+      const AFileName: string;
+      const ALineNumber: Integer;
+      const AInventory: TRadIAFireDACInventory;
+      var ACurrentOwner: string
     );
     procedure AnalyzeProject(
       const AContent: string;
@@ -51,6 +74,19 @@ type
       out AContent: string
     ): Boolean;
     function RelativeName(const ARootPath: string; const AFileName: string): string;
+    function TryCloseDfmComponent(
+      const ALine: string;
+      const AOwners: TStack<string>;
+      var ACurrentComponent: string
+    ): Boolean;
+    function TryOpenDfmComponent(
+      const ALine: string;
+      const AFileName: string;
+      const ALineNumber: Integer;
+      const AInventory: TRadIAFireDACInventory;
+      const AOwners: TStack<string>;
+      var ACurrentComponent: string
+    ): Boolean;
   public
     constructor Create(const ABoundary: IRadIAWorkspaceBoundary);
     function AnalyzeThreadSafety(const ARootPath: string): string;
@@ -64,15 +100,14 @@ type
 implementation
 
 uses
-  System.Generics.Collections,
   System.Generics.Defaults,
   System.IOUtils,
-  System.JSON,
   System.RegularExpressions,
   System.StrUtils,
   System.SysUtils,
   RadIA.Core.FireDAC.Configuration,
   RadIA.Core.FireDAC.Environment,
+  RadIA.Core.FireDAC.PascalMask,
   RadIA.Core.FireDAC.SqlExtraction,
   RadIA.Core.FireDAC.SqlAnalyzer,
   RadIA.Core.FireDAC.ThreadSafety,
@@ -146,27 +181,77 @@ begin
   end;
 end;
 
-function TRadIAFireDACScanner.GetProjectReport(const ARootPath: string): string;
+procedure TRadIAFireDACScanner.AddProjectReportFile(
+  const ARootPath: string;
+  const AFileName: string;
+  const AInventory: TRadIAFireDACInventory;
+  const ASqlAnalyses: TJSONArray;
+  const AFindings: TJSONArray
+);
 var
-  LContent: string;
   LAnalysis: TRadIAFireDACSqlAnalysis;
   LAnalyzer: TRadIAFireDACSqlAnalyzer;
+  LContent: string;
   LExtraction: TRadIAFireDACSqlExtraction;
   LExtractor: TRadIAFireDACSqlExtractor;
+  LFinding: TRadIAFireDACFinding;
+  LRelativeName: string;
+  LSource: TRadIAFireDACSqlSource;
+begin
+  LRelativeName := RelativeName(ARootPath, AFileName);
+  if not ReadSupportedFile(AFileName, LRelativeName, AInventory, LContent) then
+    Exit;
+  LExtractor := TRadIAFireDACSqlExtractor.Create;
+  LAnalyzer := TRadIAFireDACSqlAnalyzer.Create;
+  try
+    if SameText(TPath.GetExtension(AFileName), '.pas') then
+      LExtraction := LExtractor.ExtractPascal(LContent, LRelativeName)
+    else if SameText(TPath.GetExtension(AFileName), '.dfm') then
+      LExtraction := LExtractor.ExtractDfm(LContent, LRelativeName)
+    else
+      Exit;
+    try
+      for LFinding in LExtraction.Findings do
+        AFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+      for LSource in LExtraction.Sources do
+      begin
+        if LSource.Dynamic then
+          Continue;
+        LAnalysis := LAnalyzer.Analyze(
+          LSource.Sql,
+          LSource.Location.FileName,
+          LSource.Location.Line
+        );
+        try
+          for LFinding in LAnalysis.Findings do
+            AFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+        finally
+          LAnalysis.Free;
+        end;
+      end;
+      if Length(LExtraction.Sources) > 0 then
+        ASqlAnalyses.AddElement(TJSONObject.ParseJSONValue(LExtraction.ToJson));
+    finally
+      LExtraction.Free;
+    end;
+  finally
+    LAnalyzer.Free;
+    LExtractor.Free;
+  end;
+end;
+
+function TRadIAFireDACScanner.GetProjectReport(const ARootPath: string): string;
+var
   LFileName: string;
   LFiles: TArray<string>;
   LFinding: TRadIAFireDACFinding;
   LFindings: TJSONArray;
   LInventory: TRadIAFireDACInventory;
   LObject: TJSONObject;
-  LRelativeName: string;
   LRoot: TJSONObject;
   LSqlAnalyses: TJSONArray;
-  LSource: TRadIAFireDACSqlSource;
 begin
   LInventory := Scan(ARootPath);
-  LExtractor := TRadIAFireDACSqlExtractor.Create;
-  LAnalyzer := TRadIAFireDACSqlAnalyzer.Create;
   LRoot := TJSONObject.Create;
   try
     LFiles := CollectFiles(ARootPath, LInventory);
@@ -177,49 +262,19 @@ begin
     for LFinding in LInventory.Findings do
       LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
     for LFileName in LFiles do
-    begin
-      LRelativeName := RelativeName(ARootPath, LFileName);
-      if not ReadSupportedFile(LFileName, LRelativeName, LInventory, LContent) then
-        Continue;
-      if SameText(TPath.GetExtension(LFileName), '.pas') then
-        LExtraction := LExtractor.ExtractPascal(LContent, LRelativeName)
-      else if SameText(TPath.GetExtension(LFileName), '.dfm') then
-        LExtraction := LExtractor.ExtractDfm(LContent, LRelativeName)
-      else
-        Continue;
-      try
-        for LFinding in LExtraction.Findings do
-          LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
-        for LSource in LExtraction.Sources do
-        begin
-          if LSource.Dynamic then
-            Continue;
-          LAnalysis := LAnalyzer.Analyze(
-            LSource.Sql,
-            LSource.Location.FileName,
-            LSource.Location.Line
-          );
-          try
-            for LFinding in LAnalysis.Findings do
-              LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
-          finally
-            LAnalysis.Free;
-          end;
-        end;
-        if Length(LExtraction.Sources) > 0 then
-          LSqlAnalyses.AddElement(TJSONObject.ParseJSONValue(LExtraction.ToJson));
-      finally
-        LExtraction.Free;
-      end;
-    end;
+      AddProjectReportFile(
+        ARootPath,
+        LFileName,
+        LInventory,
+        LSqlAnalyses,
+        LFindings
+      );
     LRoot.AddPair('sqlAnalyses', LSqlAnalyses);
     LRoot.AddPair('findings', LFindings);
     LRoot.AddPair('sqlExecuted', TJSONBool.Create(False));
     Result := LRoot.ToJSON;
   finally
     LRoot.Free;
-    LAnalyzer.Free;
-    LExtractor.Free;
     LInventory.Free;
   end;
 end;
@@ -237,35 +292,25 @@ end;
 function TRadIAFireDACScanner.ComponentKind(
   const AClassName: string
 ): TRadIAFireDACComponentKind;
+const
+  CClassNames: array[0..13] of string = (
+    'TFDManager', 'TFDConnection', 'TFDTransaction', 'TFDQuery',
+    'TFDCommand', 'TFDTable', 'TFDStoredProc', 'TFDMemTable',
+    'TFDLocalSQL', 'TFDUpdateSQL', 'TFDScript', 'TFDBatchMove',
+    'TFDGUIxWaitCursor', 'TDataSource'
+  );
+  CKinds: array[0..13] of TRadIAFireDACComponentKind = (
+    fckManager, fckConnection, fckTransaction, fckQuery,
+    fckCommand, fckTable, fckStoredProcedure, fckMemoryTable,
+    fckLocalSql, fckUpdateSql, fckScript, fckBatchMove,
+    fckWaitCursor, fckDataSource
+  );
+var
+  LIndex: Integer;
 begin
-  if SameText(AClassName, 'TFDManager') then
-    Exit(fckManager);
-  if SameText(AClassName, 'TFDConnection') then
-    Exit(fckConnection);
-  if SameText(AClassName, 'TFDTransaction') then
-    Exit(fckTransaction);
-  if SameText(AClassName, 'TFDQuery') then
-    Exit(fckQuery);
-  if SameText(AClassName, 'TFDCommand') then
-    Exit(fckCommand);
-  if SameText(AClassName, 'TFDTable') then
-    Exit(fckTable);
-  if SameText(AClassName, 'TFDStoredProc') then
-    Exit(fckStoredProcedure);
-  if SameText(AClassName, 'TFDMemTable') then
-    Exit(fckMemoryTable);
-  if SameText(AClassName, 'TFDLocalSQL') then
-    Exit(fckLocalSql);
-  if SameText(AClassName, 'TFDUpdateSQL') then
-    Exit(fckUpdateSql);
-  if SameText(AClassName, 'TFDScript') then
-    Exit(fckScript);
-  if SameText(AClassName, 'TFDBatchMove') then
-    Exit(fckBatchMove);
-  if SameText(AClassName, 'TFDGUIxWaitCursor') then
-    Exit(fckWaitCursor);
-  if SameText(AClassName, 'TDataSource') then
-    Exit(fckDataSource);
+  for LIndex := Low(CClassNames) to High(CClassNames) do
+    if SameText(AClassName, CClassNames[LIndex]) then
+      Exit(CKinds[LIndex]);
   if TRegEx.IsMatch(AClassName, '(?i)^TFDPhys.+DriverLink$') then
     Exit(fckDriverLink);
   if TRegEx.IsMatch(AClassName, '(?i)^TFDMoni.+ClientLink$') then
@@ -355,14 +400,10 @@ procedure TRadIAFireDACScanner.AnalyzeDfm(
   const AInventory: TRadIAFireDACInventory
 );
 var
-  LClassName: string;
   LCurrentComponent: string;
   LLine: string;
   LLineNumber: Integer;
-  LMatch: TMatch;
-  LName: string;
   LOwners: TStack<string>;
-  LOwnerName: string;
 begin
   LCurrentComponent := '';
   LOwners := TStack<string>.Create;
@@ -371,40 +412,17 @@ begin
     for LLine in AContent.Split([sLineBreak]) do
     begin
       Inc(LLineNumber);
-      LMatch := TRegEx.Match(
+      if TryOpenDfmComponent(
         LLine,
-        '(?i)^\s*(?:object|inherited|inline)\s+([A-Za-z_][A-Za-z0-9_]*):\s*([A-Za-z_][A-Za-z0-9_.]*)'
-      );
-      if LMatch.Success then
-      begin
-        LName := LMatch.Groups[1].Value;
-        LClassName := LMatch.Groups[2].Value;
-        if LOwners.Count > 0 then
-          LOwnerName := LOwners.Peek
-        else
-          LOwnerName := '';
-        LOwners.Push(LName);
-        LCurrentComponent := LName;
-        if IsSupportedClass(LClassName) then
-          AInventory.AddComponent(TRadIAFireDACComponent.Create(
-            LName,
-            LClassName,
-            ComponentKind(LClassName),
-            TRadIAFireDACLocation.Create(AFileName, LLineNumber),
-            LOwnerName
-          ));
+        AFileName,
+        LLineNumber,
+        AInventory,
+        LOwners,
+        LCurrentComponent
+      ) then
         Continue;
-      end;
-      if SameText(LLine.Trim, 'end') then
-      begin
-        if LOwners.Count > 0 then
-          LOwners.Pop;
-        if LOwners.Count > 0 then
-          LCurrentComponent := LOwners.Peek
-        else
-          LCurrentComponent := '';
+      if TryCloseDfmComponent(LLine, LOwners, LCurrentComponent) then
         Continue;
-      end;
       AnalyzeRelationshipLine(LLine, LCurrentComponent, AFileName, LLineNumber, AInventory);
       if IsCredentialLine(LLine) then
         AddCredentialFinding(AInventory, AFileName, LLineNumber);
@@ -414,97 +432,142 @@ begin
   end;
 end;
 
+function TRadIAFireDACScanner.TryOpenDfmComponent(
+  const ALine: string;
+  const AFileName: string;
+  const ALineNumber: Integer;
+  const AInventory: TRadIAFireDACInventory;
+  const AOwners: TStack<string>;
+  var ACurrentComponent: string
+): Boolean;
+var
+  LClassName: string;
+  LMatch: TMatch;
+  LName: string;
+  LOwnerName: string;
+begin
+  LMatch := TRegEx.Match(
+    ALine,
+    '(?i)^\s*(?:object|inherited|inline)\s+([A-Za-z_][A-Za-z0-9_]*):\s*([A-Za-z_][A-Za-z0-9_.]*)'
+  );
+  Result := LMatch.Success;
+  if not Result then
+    Exit;
+  LName := LMatch.Groups[1].Value;
+  LClassName := LMatch.Groups[2].Value;
+  if AOwners.Count > 0 then
+    LOwnerName := AOwners.Peek
+  else
+    LOwnerName := '';
+  AOwners.Push(LName);
+  ACurrentComponent := LName;
+  if IsSupportedClass(LClassName) then
+    AInventory.AddComponent(TRadIAFireDACComponent.Create(
+      LName,
+      LClassName,
+      ComponentKind(LClassName),
+      TRadIAFireDACLocation.Create(AFileName, ALineNumber),
+      LOwnerName
+    ));
+end;
+
+function TRadIAFireDACScanner.TryCloseDfmComponent(
+  const ALine: string;
+  const AOwners: TStack<string>;
+  var ACurrentComponent: string
+): Boolean;
+begin
+  Result := SameText(ALine.Trim, 'end');
+  if not Result then
+    Exit;
+  if AOwners.Count > 0 then
+    AOwners.Pop;
+  if AOwners.Count > 0 then
+    ACurrentComponent := AOwners.Peek
+  else
+    ACurrentComponent := '';
+end;
+
 procedure TRadIAFireDACScanner.AnalyzePascal(
   const AContent: string;
   const AFileName: string;
   const AInventory: TRadIAFireDACInventory
 );
 var
-  LClassName: string;
-  LCodeLine: string;
   LCurrentOwner: string;
-  LInBlockComment: Boolean;
   LLine: string;
   LLineNumber: Integer;
+  LMaskedContent: string;
+begin
+  LCurrentOwner := '';
+  LLineNumber := 0;
+  LMaskedContent := RadIAMaskPascalNonCode(AContent);
+  for LLine in LMaskedContent.Split([sLineBreak]) do
+  begin
+    Inc(LLineNumber);
+    AnalyzePascalCodeLine(
+      LLine,
+      AFileName,
+      LLineNumber,
+      AInventory,
+      LCurrentOwner
+    );
+  end;
+end;
+
+procedure TRadIAFireDACScanner.AnalyzePascalCodeLine(
+  const ALine: string;
+  const AFileName: string;
+  const ALineNumber: Integer;
+  const AInventory: TRadIAFireDACInventory;
+  var ACurrentOwner: string
+);
+var
+  LClassName: string;
   LMatch: TMatch;
   LName: string;
 begin
-  LCurrentOwner := '';
-  LInBlockComment := False;
-  LLineNumber := 0;
-  for LLine in AContent.Split([sLineBreak]) do
+  LMatch := TRegEx.Match(
+    ALine,
+    '(?i)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*class(?:\s*\([^)]*\))?'
+  );
+  if LMatch.Success then
+    ACurrentOwner := LMatch.Groups[1].Value;
+  LMatch := TRegEx.Match(
+    ALine,
+    '(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(' + CClassPattern + ')\b'
+  );
+  if not LMatch.Success then
+    LMatch := TRegEx.Match(
+      ALine,
+      '(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*:=\s*(' + CClassPattern + ')\.Create\b'
+    );
+  if LMatch.Success then
   begin
-    Inc(LLineNumber);
-    LCodeLine := LLine;
-    if LInBlockComment then
-    begin
-      if LCodeLine.Contains('}') then
-      begin
-        LCodeLine := LCodeLine.Substring(LCodeLine.IndexOf('}') + 1);
-        LInBlockComment := False;
-      end
-      else if LCodeLine.Contains('*)') then
-      begin
-        LCodeLine := LCodeLine.Substring(LCodeLine.IndexOf('*)') + 2);
-        LInBlockComment := False;
-      end
-      else
-        Continue;
-    end;
-    if LCodeLine.Trim.StartsWith('//') then
-      Continue;
-    if LCodeLine.Trim.StartsWith('{') and not LCodeLine.Contains('}') then
-    begin
-      LInBlockComment := True;
-      Continue;
-    end;
-    if LCodeLine.Trim.StartsWith('(*') and not LCodeLine.Contains('*)') then
-    begin
-      LInBlockComment := True;
-      Continue;
-    end;
-    LMatch := TRegEx.Match(
-      LCodeLine,
-      '(?i)^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*class(?:\s*\([^)]*\))?'
-    );
-    if LMatch.Success then
-      LCurrentOwner := LMatch.Groups[1].Value;
-    LMatch := TRegEx.Match(
-      LCodeLine,
-      '(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(' + CClassPattern + ')\b'
-    );
-    if not LMatch.Success then
-      LMatch := TRegEx.Match(
-        LCodeLine,
-        '(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*:=\s*(' + CClassPattern + ')\.Create\b'
-      );
-    if LMatch.Success then
-    begin
-      LName := LMatch.Groups[1].Value;
-      LClassName := LMatch.Groups[2].Value;
-      AInventory.AddComponent(TRadIAFireDACComponent.Create(
-        LName,
-        LClassName,
-        ComponentKind(LClassName),
-        TRadIAFireDACLocation.Create(AFileName, LLineNumber),
-        LCurrentOwner
-      ));
-    end;
-    LMatch := TRegEx.Match(
-      LCodeLine,
-      '(?i)\b([A-Za-z_][A-Za-z0-9_]*)\.(?:Connection|Transaction|UpdateObject|DataSet)\s*:='
-    );
-    if LMatch.Success then
-      AnalyzeRelationshipLine(
-        LCodeLine,
-        LMatch.Groups[1].Value,
-        AFileName,
-        LLineNumber,
-        AInventory
-      );
-    if IsCredentialLine(LCodeLine) then
-      AddCredentialFinding(AInventory, AFileName, LLineNumber);
+    LName := LMatch.Groups[1].Value;
+    LClassName := LMatch.Groups[2].Value;
+    AInventory.AddComponent(TRadIAFireDACComponent.Create(
+      LName,
+      LClassName,
+      ComponentKind(LClassName),
+      TRadIAFireDACLocation.Create(AFileName, ALineNumber),
+      ACurrentOwner
+    ));
   end;
+  LMatch := TRegEx.Match(
+    ALine,
+    '(?i)\b([A-Za-z_][A-Za-z0-9_]*)\.(?:Connection|Transaction|UpdateObject|DataSet)\s*:='
+  );
+  if LMatch.Success then
+    AnalyzeRelationshipLine(
+      ALine,
+      LMatch.Groups[1].Value,
+      AFileName,
+      ALineNumber,
+      AInventory
+    );
+  if IsCredentialLine(ALine) then
+    AddCredentialFinding(AInventory, AFileName, ALineNumber);
 end;
 
 procedure TRadIAFireDACScanner.AnalyzeProject(
@@ -767,55 +830,75 @@ begin
   end;
 end;
 
-function TRadIAFireDACScanner.InspectConfiguration(const ARootPath: string): string;
+procedure TRadIAFireDACScanner.AddConfigurationReportFile(
+  const ARootPath: string;
+  const AFileName: string;
+  const AInventory: TRadIAFireDACInventory;
+  const AConfigurations: TJSONArray;
+  const AFindings: TJSONArray
+);
 var
   LAnalysis: TRadIAFireDACConfigurationAnalysis;
   LAnalyzer: TRadIAFireDACConfigurationAnalyzer;
-  LConfigurations: TJSONArray;
   LContent: string;
   LExtension: string;
-  LFileName: string;
-  LFiles: TArray<string>;
   LFinding: TRadIAFireDACFinding;
-  LFindings: TJSONArray;
-  LInventory: TRadIAFireDACInventory;
   LObject: TJSONObject;
   LRelativeName: string;
+begin
+  LExtension := TPath.GetExtension(AFileName).ToLower;
+  if not MatchText(LExtension, ['.pas', '.dfm']) then
+    Exit;
+  LRelativeName := RelativeName(ARootPath, AFileName);
+  if not ReadSupportedFile(AFileName, LRelativeName, AInventory, LContent) then
+    Exit;
+  LAnalyzer := TRadIAFireDACConfigurationAnalyzer.Create;
+  try
+    if SameText(LExtension, '.pas') then
+      LAnalysis := LAnalyzer.AnalyzePascal(LContent, LRelativeName)
+    else
+      LAnalysis := LAnalyzer.AnalyzeDfm(LContent, LRelativeName);
+    try
+      for LFinding in LAnalysis.Findings do
+        AFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
+      if LAnalysis.EntryCount = 0 then
+        Exit;
+      LObject := TJSONObject.ParseJSONValue(LAnalysis.ToJson) as TJSONObject;
+      if Assigned(LObject) then
+        AConfigurations.AddElement(LObject);
+    finally
+      LAnalysis.Free;
+    end;
+  finally
+    LAnalyzer.Free;
+  end;
+end;
+
+function TRadIAFireDACScanner.InspectConfiguration(const ARootPath: string): string;
+var
+  LConfigurations: TJSONArray;
+  LFileName: string;
+  LFiles: TArray<string>;
+  LFindings: TJSONArray;
+  LInventory: TRadIAFireDACInventory;
   LRoot: TJSONObject;
 begin
   if ARootPath.Trim.IsEmpty or not TDirectory.Exists(ARootPath) then
     raise EDirectoryNotFoundException.Create('A valid project root is required.');
   LInventory := TRadIAFireDACInventory.Create;
-  LAnalyzer := TRadIAFireDACConfigurationAnalyzer.Create;
   LRoot := TJSONObject.Create;
   try
     LFiles := CollectFiles(ARootPath, LInventory);
     LConfigurations := TJSONArray.Create;
     LFindings := TJSONArray.Create;
     for LFileName in LFiles do
-    begin
-      LExtension := TPath.GetExtension(LFileName).ToLower;
-      if not MatchText(LExtension, ['.pas', '.dfm']) then
-        Continue;
-      LRelativeName := RelativeName(ARootPath, LFileName);
-      if not ReadSupportedFile(LFileName, LRelativeName, LInventory, LContent) then
-        Continue;
-      if SameText(LExtension, '.pas') then
-        LAnalysis := LAnalyzer.AnalyzePascal(LContent, LRelativeName)
-      else
-        LAnalysis := LAnalyzer.AnalyzeDfm(LContent, LRelativeName);
-      try
-        for LFinding in LAnalysis.Findings do
-          LFindings.AddElement(RadIAFireDACFindingToJson(LFinding));
-        if LAnalysis.EntryCount = 0 then
-          Continue;
-        LObject := TJSONObject.ParseJSONValue(LAnalysis.ToJson) as TJSONObject;
-        if Assigned(LObject) then
-          LConfigurations.AddElement(LObject);
-      finally
-        LAnalysis.Free;
-      end;
-    end;
+      AddConfigurationReportFile(
+        ARootPath,
+        LFileName,
+        LInventory,
+        LConfigurations,
+        LFindings
+      );
     LRoot.AddPair('scannedFileCount', TJSONNumber.Create(Length(LFiles)));
     LRoot.AddPair('truncated', TJSONBool.Create(LInventory.Truncated));
     LRoot.AddPair('configurations', LConfigurations);
@@ -825,7 +908,6 @@ begin
     Result := LRoot.ToJSON;
   finally
     LRoot.Free;
-    LAnalyzer.Free;
     LInventory.Free;
   end;
 end;

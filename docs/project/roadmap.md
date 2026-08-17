@@ -11,12 +11,11 @@ compreender, compilar, testar e depurar projetos sem exigir que o usuário conhe
 interna. Evoluções futuras devem primeiro demonstrar ganho observável para esse fluxo e possuir
 critérios de aceitação verificáveis.
 
-## Ciclo ativo
+## Próximo ciclo
 
-O ciclo atual desenvolve o **FireDAC Advisor** como uma capacidade completa de engenharia de dados
-para Delphi. O ciclo parte de contratos e testes, avança por inventário e analisadores determinísticos,
-integra explicações e geração por IA e termina com mutações reversíveis, migração e validação E2E no
-Delphi 12 e 13. O escopo executável e os gates permanecem no [backlog](backlog.md).
+Não há novo ciclo comprometido. A próxima iniciativa deverá ser planejada no
+[backlog](backlog.md) com resultado observável, segurança, testes e documentação definidos antes da
+implementação.
 
 Delphi 11, C++, Lazarus, marketplace, repositório público de extensões, troca do WebView e leitura de
 DCU permanecem fora da direção atual.

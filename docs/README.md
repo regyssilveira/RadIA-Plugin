@@ -30,6 +30,7 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 | Entender precedência por solicitação, sessão e projeto | [Configurações por escopo](guides/hierarchical_settings.md) |
 | Criar, editar, compilar e testar projetos | [Jornadas ponta a ponta](guides/user_guide_journeys.md) |
 | Executar somente testes DUnitX afetados | [Testes por impacto](guides/impact_based_tests.md) |
+| Auditar e modernizar uma camada FireDAC | [FireDAC Advisor](guides/firedac_advisor.md) |
 | Criar um projeto pelo chat | [New Project Wizard](guides/project_wizard.md) |
 | Usar chat e sessões | [Chat e sessões](guides/user_guide_chat_sessions.md) |
 | Usar o editor e gerar código | [Editor e geração](guides/user_guide_editor_generation.md) |

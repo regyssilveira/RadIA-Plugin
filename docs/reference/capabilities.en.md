@@ -45,6 +45,10 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | FireDAC inventory | Locate bounded PAS/DFM components and relationships without executing SQL or returning credential values. |
 | Local SQLite | Discover tables, views, and columns, then preview one consented read-only query with bounded, redacted grid and CSV output. |
 
+FireDAC analysis also covers SQL, parameters, transactions, configuration, thread safety, and an
+authorized SQLite schema. Generation and fixes use preview, consent, fingerprints, build, DUnitX,
+and rollback. See [FireDAC Advisor](../guides/firedac_advisor.en.md).
+
 Local structural completion after `.` belongs to the Ghost Text flow: it may provide an unambiguous
 continuation without calling AI, but it does not replace or inject items into the native CodeInsight
 popup. References, hierarchy, and missing members also have explicit scope and activation. See

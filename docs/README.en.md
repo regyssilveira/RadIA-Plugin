@@ -29,6 +29,7 @@ Internal plans, audits, test results, and release notes do not belong in this tr
 | Understand request, session, and project precedence | [Scoped settings](guides/hierarchical_settings.en.md) |
 | Create, edit, build, and test projects | [End-to-end journeys](guides/user_guide_journeys.en.md) |
 | Run only affected DUnitX tests | [Impact-based tests](guides/impact_based_tests.en.md) |
+| Audit and modernize a FireDAC layer | [FireDAC Advisor](guides/firedac_advisor.en.md) |
 | Create a project from chat | [New Project Wizard](guides/project_wizard.en.md) |
 | Use chat and sessions | [Chat and sessions](guides/user_guide_chat_sessions.en.md) |
 | Work with the editor and generate code | [Editor and generation](guides/user_guide_editor_generation.en.md) |

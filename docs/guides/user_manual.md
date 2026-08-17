@@ -659,6 +659,7 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 - O [assistente de threads e PPL](threading_assistant.md) audita e prepara modernizações concorrentes seguras.
 - O [retrofit OpenAPI/Swagger](openapi_retrofit.md) integra documentação em APIs DEXT existentes.
 - A [modernização DEXT e de forms](dext_form_modernization.md) executa lotes reversíveis com gates.
+- O [FireDAC Advisor](firedac_advisor.md) audita, gera previews e executa correções ou migrações com gates.
 - A automação runtime usa controles Win32 por padrão. Controles VCL sem `HWND` exigem o preview de
   instrumentação Debug, consentimento, recompilação e uma nova sessão; consulte o guia de
   [diagnóstico runtime](runtime_debug_automation.md#controles-vcl-sem-hwnd).
@@ -684,6 +685,7 @@ quando existirem. No terminal, os hints também documentam `Enter`, `Ctrl+R` e `
 - [MCP](mcp_integration_guide.md)
 - [Conhecimento local](user_guide_project_knowledge.md)
 - [Designer e debugger](user_guide_designer_debugger.md)
+- [FireDAC Advisor](firedac_advisor.md)
 - [Solução de problemas](troubleshooting_agentic_platform.md)
 - [Arquitetura agentiva](../development/agentic_architecture.md)
 - [Segurança](../reference/tool_security_model.md)

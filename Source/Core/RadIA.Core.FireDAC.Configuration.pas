@@ -63,7 +63,7 @@ type
     ): TRadIAFireDACConfigurationEntry;
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
     function Entries: TArray<TRadIAFireDACConfigurationEntry>;
-    function EntryCount: Integer;
+    function EntryCount: Int64;
     function Findings: TArray<TRadIAFireDACFinding>;
     function ToJson: string;
   end;
@@ -80,6 +80,13 @@ type
       const ALine: Integer;
       const AResult: TRadIAFireDACConfigurationAnalysis
     );
+    function AddDfmEntry(
+      const AName: string;
+      const AClassName: string;
+      const AFileName: string;
+      const ALineNumber: Integer;
+      const AResult: TRadIAFireDACConfigurationAnalysis
+    ): TRadIAFireDACConfigurationEntry;
     procedure AnalyzeDuplicates(const AResult: TRadIAFireDACConfigurationAnalysis);
     procedure AnalyzeEntry(
       const AEntry: TRadIAFireDACConfigurationEntry;
@@ -121,7 +128,6 @@ uses
   System.IOUtils,
   System.JSON,
   System.RegularExpressions,
-  System.StrUtils,
   System.SysUtils;
 
 constructor TRadIAFireDACConfigurationEntry.Create(
@@ -185,7 +191,7 @@ begin
     FFindings.Add(AFinding);
 end;
 
-function TRadIAFireDACConfigurationAnalysis.EntryCount: Integer;
+function TRadIAFireDACConfigurationAnalysis.EntryCount: Int64;
 begin
   Result := FEntries.Count;
 end;
@@ -469,6 +475,33 @@ begin
   Result := TRegEx.IsMatch(AClassName, '(?i)^TFDPhys.+DriverLink$');
 end;
 
+function TRadIAFireDACConfigurationAnalyzer.AddDfmEntry(
+  const AName: string;
+  const AClassName: string;
+  const AFileName: string;
+  const ALineNumber: Integer;
+  const AResult: TRadIAFireDACConfigurationAnalysis
+): TRadIAFireDACConfigurationEntry;
+begin
+  Result := nil;
+  if SameText(AClassName, 'TFDConnection') then
+    Result := AResult.AddOrGetEntry(
+      AName,
+      AClassName,
+      fcfgConnection,
+      AFileName,
+      ALineNumber
+    )
+  else if IsDriverLinkClass(AClassName) then
+    Result := AResult.AddOrGetEntry(
+      AName,
+      AClassName,
+      fcfgDriverLink,
+      AFileName,
+      ALineNumber
+    );
+end;
+
 function TRadIAFireDACConfigurationAnalyzer.AnalyzeDfm(
   const AContent: string;
   const AFileName: string
@@ -493,23 +526,13 @@ begin
       );
       if LMatch.Success then
       begin
-        LCurrent := nil;
-        if SameText(LMatch.Groups[2].Value, 'TFDConnection') then
-          LCurrent := Result.AddOrGetEntry(
-            LMatch.Groups[1].Value,
-            LMatch.Groups[2].Value,
-            fcfgConnection,
-            AFileName,
-            LLineNumber
-          )
-        else if IsDriverLinkClass(LMatch.Groups[2].Value) then
-          LCurrent := Result.AddOrGetEntry(
-            LMatch.Groups[1].Value,
-            LMatch.Groups[2].Value,
-            fcfgDriverLink,
-            AFileName,
-            LLineNumber
-          );
+        LCurrent := AddDfmEntry(
+          LMatch.Groups[1].Value,
+          LMatch.Groups[2].Value,
+          AFileName,
+          LLineNumber,
+          Result
+        );
         Continue;
       end;
       if not Assigned(LCurrent) then

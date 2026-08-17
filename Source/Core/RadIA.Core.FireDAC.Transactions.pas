@@ -39,7 +39,7 @@ type
       const ALine: Integer
     ): TRadIAFireDACTransactionUsage;
     function ToJson: string;
-    function UsageCount: Integer;
+    function UsageCount: Int64;
   end;
 
   TRadIAFireDACTransactionAnalyzer = class
@@ -47,6 +47,12 @@ type
     procedure AddUsageFindings(
       const AUsage: TRadIAFireDACTransactionUsage;
       const AFileName: string;
+      const AResult: TRadIAFireDACTransactionAnalysis
+    );
+    procedure AnalyzeLine(
+      const ALine: string;
+      const ALineNumber: Integer;
+      const AActive: TList<TRadIAFireDACTransactionUsage>;
       const AResult: TRadIAFireDACTransactionAnalysis
     );
   public
@@ -149,7 +155,7 @@ begin
   Result := FFindings.ToArray;
 end;
 
-function TRadIAFireDACTransactionAnalysis.UsageCount: Integer;
+function TRadIAFireDACTransactionAnalysis.UsageCount: Int64;
 begin
   Result := FUsages.Count;
 end;
@@ -218,7 +224,6 @@ var
   LActive: TList<TRadIAFireDACTransactionUsage>;
   LLine: string;
   LLineNumber: Integer;
-  LMatch: TMatch;
   LSanitized: string;
   LUsage: TRadIAFireDACTransactionUsage;
 begin
@@ -231,34 +236,7 @@ begin
       for LLine in LSanitized.Split([sLineBreak]) do
       begin
         Inc(LLineNumber);
-        LMatch := TRegEx.Match(
-          LLine,
-          '(?i)\b([A-Za-z_][A-Za-z0-9_.]*)\.(StartTransaction|Commit|Rollback)\b'
-        );
-        while LMatch.Success do
-        begin
-          LUsage := Result.AddOrGetUsage(LMatch.Groups[1].Value, LLineNumber);
-          if SameText(LMatch.Groups[2].Value, 'StartTransaction') then
-          begin
-            LUsage.StartCount := LUsage.StartCount + 1;
-            if not LActive.Contains(LUsage) then
-              LActive.Add(LUsage);
-          end
-          else if SameText(LMatch.Groups[2].Value, 'Commit') then
-          begin
-            LUsage.CommitCount := LUsage.CommitCount + 1;
-            LActive.Remove(LUsage);
-          end
-          else
-          begin
-            LUsage.RollbackCount := LUsage.RollbackCount + 1;
-            LActive.Remove(LUsage);
-          end;
-          LMatch := LMatch.NextMatch;
-        end;
-        if TRegEx.IsMatch(LLine, '(?i)\bExit\s*(?:\([^)]*\))?\s*;') then
-          for LUsage in LActive do
-            LUsage.EarlyExitCount := LUsage.EarlyExitCount + 1;
+        AnalyzeLine(LLine, LLineNumber, LActive, Result);
       end;
       for LUsage in Result.FUsages do
         AddUsageFindings(LUsage, AFileName, Result);
@@ -269,6 +247,46 @@ begin
   finally
     LActive.Free;
   end;
+end;
+
+procedure TRadIAFireDACTransactionAnalyzer.AnalyzeLine(
+  const ALine: string;
+  const ALineNumber: Integer;
+  const AActive: TList<TRadIAFireDACTransactionUsage>;
+  const AResult: TRadIAFireDACTransactionAnalysis
+);
+var
+  LMatch: TMatch;
+  LUsage: TRadIAFireDACTransactionUsage;
+begin
+  LMatch := TRegEx.Match(
+    ALine,
+    '(?i)\b([A-Za-z_][A-Za-z0-9_.]*)\.(StartTransaction|Commit|Rollback)\b'
+  );
+  while LMatch.Success do
+  begin
+    LUsage := AResult.AddOrGetUsage(LMatch.Groups[1].Value, ALineNumber);
+    if SameText(LMatch.Groups[2].Value, 'StartTransaction') then
+    begin
+      LUsage.StartCount := LUsage.StartCount + 1;
+      if not AActive.Contains(LUsage) then
+        AActive.Add(LUsage);
+    end
+    else if SameText(LMatch.Groups[2].Value, 'Commit') then
+    begin
+      LUsage.CommitCount := LUsage.CommitCount + 1;
+      AActive.Remove(LUsage);
+    end
+    else
+    begin
+      LUsage.RollbackCount := LUsage.RollbackCount + 1;
+      AActive.Remove(LUsage);
+    end;
+    LMatch := LMatch.NextMatch;
+  end;
+  if TRegEx.IsMatch(ALine, '(?i)\bExit\s*(?:\([^)]*\))?\s*;') then
+    for LUsage in AActive do
+      LUsage.EarlyExitCount := LUsage.EarlyExitCount + 1;
 end;
 
 end.

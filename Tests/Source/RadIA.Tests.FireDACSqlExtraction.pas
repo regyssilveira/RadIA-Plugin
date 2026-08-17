@@ -22,7 +22,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.FireDAC.SqlExtraction;
 
 procedure TRadIAFireDACSqlExtractionTests.ExtractsMultilineSqlTextAndSqlAdd;

@@ -25,7 +25,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.FireDAC.Configuration;
 
 function TRadIAFireDACConfigurationTests.AnalyzeDfm(const AContent: string): string;

@@ -33,7 +33,6 @@ implementation
 
 uses
   System.RegularExpressions,
-  System.SysUtils,
   RadIA.Core.FireDAC.SqlAnalyzer;
 
 function TRadIAFireDACSqlAnalyzerTests.AnalyzeJson(const ASql: string): string;

@@ -252,7 +252,7 @@ begin
   try
     for LIndex := 0 to LBindings.Count - 1 do
     begin
-      if not TryParseBinding(LBindings.Items[LIndex], LBinding) then
+      if not TryParseBinding(LBindings[LIndex], LBinding) then
         Exit(TRadIAToolResult.Failed('invalid_binding', 'Each binding requires a non-empty name.'));
       if not ContainsBinding(LBindingValues, LBinding.Name) then
         LBindingValues.Add(LBinding);

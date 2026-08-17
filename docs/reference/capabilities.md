@@ -288,7 +288,10 @@ Consulte [Modelo de segurança](tool_security_model.md) e
 
 `InspectFireDACProject` inventaria componentes e relações FireDAC com localização em PAS e DFM,
 sem executar SQL nem devolver valores de credenciais. `InspectFireDACUsage` preserva compatibilidade
-com as contagens anteriores e retorna o mesmo inventário estruturado. O RadIA também diagnostica paths e
+com as contagens anteriores e retorna o mesmo inventário estruturado. Análises especializadas cobrem
+SQL, parâmetros, transações, configuração, thread safety e schema SQLite; geração e correções usam
+preview, consentimento, fingerprint, build, DUnitX e rollback. Consulte o
+[FireDAC Advisor](../guides/firedac_advisor.md). O RadIA também diagnostica paths e
 manifestos ausentes sem instalar componentes e localiza textos visíveis em Pascal/DFM. Para localização,
 `PrepareLocalizationExtraction` cria somente um preview imutável na unit ativa; `ApplyPatch` exige consentimento
 e `RevertPatch` restaura a alteração. A comparação entre idiomas reutiliza os snapshots e o diff visual existentes.

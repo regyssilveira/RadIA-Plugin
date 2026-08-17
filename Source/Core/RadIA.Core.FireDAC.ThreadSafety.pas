@@ -43,7 +43,7 @@ type
     destructor Destroy; override;
     procedure AddContext(const AContext: TRadIAFireDACThreadContext);
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
-    function ContextCount: Integer;
+    function ContextCount: Int64;
     function Findings: TArray<TRadIAFireDACFinding>;
     function ToJson: string;
     property Truncated: Boolean read FTruncated write FTruncated;
@@ -138,7 +138,7 @@ begin
   FFindings.Add(AFinding);
 end;
 
-function TRadIAFireDACThreadSafetyAnalysis.ContextCount: Integer;
+function TRadIAFireDACThreadSafetyAnalysis.ContextCount: Int64;
 begin
   Result := FContexts.Count;
 end;
@@ -224,9 +224,9 @@ function TRadIAFireDACThreadSafetyAnalyzer.ContextText(
   const AStartIndex: Integer
 ): string;
 var
-  C: Char;
-  I: Integer;
+  LCharacter: Char;
   LLastIndex: Integer;
+  LLineIndex: Integer;
   LParenthesisDepth: Integer;
 begin
   Result := '';
@@ -234,13 +234,13 @@ begin
   LLastIndex := AStartIndex + CRadIAFireDACThreadContextLineLimit - 1;
   if LLastIndex > High(ALines) then
     LLastIndex := High(ALines);
-  for I := AStartIndex to LLastIndex do
+  for LLineIndex := AStartIndex to LLastIndex do
   begin
-    Result := Result + ALines[I] + sLineBreak;
-    for C in ALines[I] do
-      if C = '(' then
+    Result := Result + ALines[LLineIndex] + sLineBreak;
+    for LCharacter in ALines[LLineIndex] do
+      if LCharacter = '(' then
         Inc(LParenthesisDepth)
-      else if C = ')' then
+      else if LCharacter = ')' then
         Dec(LParenthesisDepth);
     if LParenthesisDepth <= 0 then
       Break;

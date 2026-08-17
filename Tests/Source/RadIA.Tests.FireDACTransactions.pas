@@ -24,7 +24,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.FireDAC.Transactions;
 
 function TRadIAFireDACTransactionTests.AnalyzeJson(const ASource: string): string;

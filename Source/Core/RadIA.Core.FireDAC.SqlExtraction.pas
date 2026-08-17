@@ -45,7 +45,6 @@ type
     function Findings: TArray<TRadIAFireDACFinding>;
     function Sources: TArray<TRadIAFireDACSqlSource>;
     function ToJson: string;
-    property Truncated: Boolean read FTruncated write FTruncated;
   end;
 
   TRadIAFireDACSqlExtractor = class

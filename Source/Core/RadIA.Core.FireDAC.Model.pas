@@ -169,7 +169,6 @@ type
     function Components: TArray<TRadIAFireDACComponent>;
     function Findings: TArray<TRadIAFireDACFinding>;
     function Relationships: TArray<TRadIAFireDACRelationship>;
-    function ProjectReferences: TArray<string>;
     function ToJson: string;
     property ScannedFileCount: Integer read FScannedFileCount write FScannedFileCount;
     property ParameterReferenceCount: Integer read FParameterReferenceCount write FParameterReferenceCount;
@@ -419,11 +418,6 @@ end;
 function TRadIAFireDACInventory.Relationships: TArray<TRadIAFireDACRelationship>;
 begin
   Result := FRelationships.ToArray;
-end;
-
-function TRadIAFireDACInventory.ProjectReferences: TArray<string>;
-begin
-  Result := FProjectReferences.ToArray;
 end;
 
 function ComponentToJson(const AComponent: TRadIAFireDACComponent): TJSONObject;

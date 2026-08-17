@@ -28,7 +28,6 @@ type
 implementation
 
 uses
-  System.SysUtils,
   RadIA.Core.FireDAC.ThreadSafety;
 
 function TRadIAFireDACThreadSafetyTests.AnalyzeJson(const ASource: string): string;

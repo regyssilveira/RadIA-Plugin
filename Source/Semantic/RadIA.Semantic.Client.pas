@@ -3,6 +3,7 @@ unit RadIA.Semantic.Client;
 interface
 
 uses
+  System.Diagnostics,
   System.SysUtils,
   RadIA.Core.ExternalMcpTransport,
   RadIA.Semantic.Workspace;
@@ -68,7 +69,22 @@ type
       out AError: string
     ): Boolean;
     function Initialize(out AError: string): Boolean;
+    function BeginRequest(out AError: string): Boolean;
     function EnsureTransport(out AError: string): Boolean;
+    function PrepareTransport(
+      const AAttempt: Integer;
+      var ARestartRecorded: Boolean;
+      out AError: string
+    ): Boolean;
+    procedure RecordFailedRequest(
+      const AError: string;
+      const AStopwatch: TStopwatch
+    );
+    procedure RecordRestart(
+      const AAttempt: Integer;
+      var ARestartRecorded: Boolean
+    );
+    procedure RecordSuccessfulRequest(const AStopwatch: TStopwatch);
     function WaitForResponse(
       const AIsCancelled: TFunc<Boolean>;
       out AResponse: string;
@@ -105,7 +121,6 @@ implementation
 
 uses
   System.Classes,
-  System.Diagnostics,
   System.IOUtils,
   System.JSON,
   System.SyncObjs,
@@ -441,6 +456,86 @@ begin
   );
 end;
 
+function TRadIASemanticEngineSupervisor.BeginRequest(
+  out AError: string
+): Boolean;
+begin
+  Inc(FRequestCount);
+  Result := GetTickCount64 >= FCircuitOpenUntil;
+  if not Result then
+  begin
+    AError :=
+      'The semantic engine circuit is temporarily open. ' +
+      'The caller must use its bounded fallback.';
+    FLastError := AError;
+    Exit;
+  end;
+  if FCircuitOpenUntil <> 0 then
+  begin
+    FCircuitOpenUntil := 0;
+    FConsecutiveFailureCount := 0;
+  end;
+end;
+
+function TRadIASemanticEngineSupervisor.PrepareTransport(
+  const AAttempt: Integer;
+  var ARestartRecorded: Boolean;
+  out AError: string
+): Boolean;
+begin
+  if not FTransport.Running and
+    (AAttempt = 0) and
+    (FRequestCount > 1) then
+  begin
+    Inc(FRestartCount);
+    ARestartRecorded := True;
+  end;
+  Result := EnsureTransport(AError);
+  if not Result and (AAttempt = 0) and not ARestartRecorded then
+  begin
+    Inc(FRestartCount);
+    ARestartRecorded := True;
+  end;
+end;
+
+procedure TRadIASemanticEngineSupervisor.RecordRestart(
+  const AAttempt: Integer;
+  var ARestartRecorded: Boolean
+);
+begin
+  Stop;
+  if AAttempt <> 0 then
+    Exit;
+  if not ARestartRecorded then
+  begin
+    Inc(FRestartCount);
+    ARestartRecorded := True;
+  end;
+  Sleep(CRestartBackoffMs);
+end;
+
+procedure TRadIASemanticEngineSupervisor.RecordSuccessfulRequest(
+  const AStopwatch: TStopwatch
+);
+begin
+  FLastLatencyMs := AStopwatch.ElapsedMilliseconds;
+  FConsecutiveFailureCount := 0;
+  FLastError := '';
+end;
+
+procedure TRadIASemanticEngineSupervisor.RecordFailedRequest(
+  const AError: string;
+  const AStopwatch: TStopwatch
+);
+begin
+  FLastLatencyMs := AStopwatch.ElapsedMilliseconds;
+  Inc(FFailureCount);
+  Inc(FConsecutiveFailureCount);
+  FLastError := AError;
+  if FConsecutiveFailureCount >= CFailureThreshold then
+    FCircuitOpenUntil := GetTickCount64 + CCircuitCooldownMs;
+end;
+
 function TRadIASemanticEngineSupervisor.RequestCancelable(
   const AMethod: string;
   const AParameters: string;
@@ -458,48 +553,20 @@ begin
   AError := '';
   TMonitor.Enter(FRequestLock);
   try
-    Inc(FRequestCount);
-    if GetTickCount64 < FCircuitOpenUntil then
-    begin
-      AError :=
-        'The semantic engine circuit is temporarily open. ' +
-        'The caller must use its bounded fallback.';
-      FLastError := AError;
+    if not BeginRequest(AError) then
       Exit(False);
-    end;
-    if FCircuitOpenUntil <> 0 then
-    begin
-      FCircuitOpenUntil := 0;
-      FConsecutiveFailureCount := 0;
-    end;
     LStopwatch := TStopwatch.StartNew;
     LRestartRecorded := False;
     for LAttempt := 0 to 1 do
     begin
-      if not FTransport.Running and
-        (LAttempt = 0) and
-        (FRequestCount > 1) then
-      begin
-        Inc(FRestartCount);
-        LRestartRecorded := True;
-      end;
-      if not EnsureTransport(AError) then
-      begin
-        if (LAttempt = 0) and not LRestartRecorded then
-        begin
-          Inc(FRestartCount);
-          LRestartRecorded := True;
-        end;
+      if not PrepareTransport(LAttempt, LRestartRecorded, AError) then
         Continue;
-      end;
       Inc(FNextRequestId);
       LRequest := BuildRequest(FNextRequestId, AMethod, AParameters);
       if Exchange(LRequest, AIsCancelled, AResponse, AError) then
       begin
         LStopwatch.Stop;
-        FLastLatencyMs := LStopwatch.ElapsedMilliseconds;
-        FConsecutiveFailureCount := 0;
-        FLastError := '';
+        RecordSuccessfulRequest(LStopwatch);
         Exit(True);
       end;
       if Assigned(AIsCancelled) and AIsCancelled() then
@@ -509,24 +576,10 @@ begin
         FLastError := AError;
         Exit(False);
       end;
-      Stop;
-      if LAttempt = 0 then
-      begin
-        if not LRestartRecorded then
-        begin
-          Inc(FRestartCount);
-          LRestartRecorded := True;
-        end;
-        Sleep(CRestartBackoffMs);
-      end;
+      RecordRestart(LAttempt, LRestartRecorded);
     end;
     LStopwatch.Stop;
-    FLastLatencyMs := LStopwatch.ElapsedMilliseconds;
-    Inc(FFailureCount);
-    Inc(FConsecutiveFailureCount);
-    FLastError := AError;
-    if FConsecutiveFailureCount >= CFailureThreshold then
-      FCircuitOpenUntil := GetTickCount64 + CCircuitCooldownMs;
+    RecordFailedRequest(AError, LStopwatch);
     Result := False;
   finally
     TMonitor.Exit(FRequestLock);

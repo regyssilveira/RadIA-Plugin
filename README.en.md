@@ -74,6 +74,7 @@ Delphi 11 is outside the current support matrix.
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/guides/project_wizard.en.md) |
 | DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/guides/user_guide_dext_journeys.en.md) |
 | Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/guides/user_guide_journeys.en.md) |
+| FireDAC | Audit and modernize data through gates | [FireDAC Advisor](docs/guides/firedac_advisor.en.md) |
 | Designer and debugger | Components, events, execution, breakpoints, watches, and call stack | [Designer and debugger](docs/guides/user_guide_designer_debugger.en.md) |
 | Runtime diagnostics | Reproduce a visual failure, fix it, and replay the scenario | [Runtime diagnostics](docs/guides/runtime_debug_automation.en.md) |
 | Memory | Instrument Debug builds with FastMM5 and compare a fix | [FastMM5 diagnostics](docs/guides/fastmm5_diagnostic_session.en.md) |

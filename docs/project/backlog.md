@@ -5,36 +5,13 @@ release não pertencem ao backlog.
 
 ## Estado atual
 
-O goal ativo é o **FireDAC Advisor**. O trabalho abrange inventário, SQL, parâmetros, transações,
-configuração, drivers, thread safety, schema, assistência por IA, geração, correções reversíveis,
-migração, documentação e validação nas IDEs suportadas. O contrato executável interno mantém os
-limites de segurança, a matriz de testes e a definição de pronto deste ciclo.
+Não há item de engenharia ativo neste backlog. O FireDAC Advisor concluiu seu contrato funcional,
+de segurança, documentação bilíngue, builds Delphi 12 e 13, testes unitários e de integração e a
+matriz E2E de 16 cenários nos três targets suportados. Sua superfície pública e seu modo de uso estão
+registrados nas referências e no guia do produto.
 
-O goal não pode ser encerrado por uma entrega parcial. A conclusão exige todas as tools planejadas,
-os testes unitários, de contrato, segurança e integração, os 16 cenários E2E, builds Delphi 12 e 13,
-documentação bilíngue e auditoria requisito por requisito.
-
-A fundação já disponível cobre inventário, análise de SQL selecionado e embutido, parâmetros,
-transações, configuração, thread safety, comparação com schema SQLite local e contexto estruturado
-para explicações por IA. Também estão disponíveis previews determinísticos e sem escrita para
-repository, DataModule, query, DTO e fixture DUnitX, além de planos orientados por evidências para
-otimização de query e thread safety. Permanecem abertos os fluxos de aplicação e reversão desses
-artefatos. Correções reversíveis já cobrem mismatch comprovado de accessor de parâmetro e rollback
-ausente, com ownership do preview e fingerprint. Permanecem abertos os gates compostos de build e
-teste para correções isoladas. A migração legado agora possui aplicação própria e gates FireDAC,
-build e DUnitX com rollback. O contrato da matriz E2E já enumera 16 cenários em Delphi 12 Win32,
-Delphi 13 Win32 e Delphi 13 IDE64, totalizando 48 execuções determinísticas. Permanecem abertos a
-conexão completa desse plano ao runner MCP/IDE real e a coleta das evidências runtime. Os 16 cenários
-estão conectados e aprovados nos três targets, totalizando 48 execuções reais: inventário,
-análise sanitizada de SQL, redação de credenciais, transação sem rollback, compartilhamento em
-thread, grid/CSV SQLite consentido, rejeição de DML sem alteração do banco e preview de repository
-com aplicação negada, aplicação consentida seguida por build e DUnitX ou rollback após gate de build
-falho, correção consentida de accessor de parâmetro com Smart Diff, build e DUnitX e rejeição de
-preview obsoleto sem sobrescrever uma mudança posterior e migração ADO para FireDAC com inspeção,
-build, DUnitX e gate validado, falha de gate com restauração integral do legado e troca/reabertura de
-projeto sem contexto obsoleto e shutdown durante análise sem deadlock, AV ou processo órfão. A
-análise de SQL agora captura a seleção real do editor nos três targets, sem executar ou ecoar a
-consulta. Ainda falta executar a matriz consolidada final sobre o commit candidato.
+Novos ciclos devem entrar aqui somente depois de possuírem resultado observável, escopo, ameaças,
+critérios de aceitação e plano de validação definidos.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

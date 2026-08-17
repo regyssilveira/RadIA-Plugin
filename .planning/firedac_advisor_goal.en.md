@@ -1,5 +1,8 @@
 # FireDAC Advisor goal
 
+**Status:** completed. The contract below remains as the auditable reference for the delivery and
+regression matrix.
+
 ## Observable outcome
 
 RadIA must understand the active project's FireDAC layer, present components and relationships with

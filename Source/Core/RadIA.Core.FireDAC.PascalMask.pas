@@ -12,68 +12,123 @@ uses
 type
   TRadIAPascalMaskState = (pmsCode, pmsString, pmsBraceComment, pmsParenComment, pmsLineComment);
 
+  TRadIAPascalMasker = class
+  private
+    FCharacters: TArray<Char>;
+    FContent: string;
+    FIndex: Integer;
+    FState: TRadIAPascalMaskState;
+    procedure EnterState;
+    procedure MaskCurrentCharacter;
+    procedure ProcessBraceComment;
+    procedure ProcessCharacter;
+    procedure ProcessLineComment;
+    procedure ProcessParenComment;
+    procedure ProcessString;
+  public
+    constructor Create(const AContent: string);
+    function Execute: string;
+  end;
+
+constructor TRadIAPascalMasker.Create(const AContent: string);
+begin
+  inherited Create;
+  FContent := AContent;
+  FCharacters := AContent.ToCharArray;
+  FIndex := Low(FCharacters);
+  FState := pmsCode;
+end;
+
+procedure TRadIAPascalMasker.EnterState;
+begin
+  if FCharacters[FIndex] = '''' then
+    FState := pmsString
+  else if FCharacters[FIndex] = '{' then
+    FState := pmsBraceComment
+  else if (FIndex < High(FCharacters)) and
+    (FCharacters[FIndex] = '(') and (FCharacters[FIndex + 1] = '*') then
+    FState := pmsParenComment
+  else if (FIndex < High(FCharacters)) and
+    (FCharacters[FIndex] = '/') and (FCharacters[FIndex + 1] = '/') then
+    FState := pmsLineComment;
+end;
+
+function TRadIAPascalMasker.Execute: string;
+begin
+  while FIndex <= High(FCharacters) do
+  begin
+    ProcessCharacter;
+    Inc(FIndex);
+  end;
+  Result := string.Create(FCharacters);
+end;
+
+procedure TRadIAPascalMasker.MaskCurrentCharacter;
+begin
+  if not CharInSet(FCharacters[FIndex], [#10, #13]) then
+    FCharacters[FIndex] := ' ';
+end;
+
+procedure TRadIAPascalMasker.ProcessBraceComment;
+begin
+  MaskCurrentCharacter;
+  if FContent.Chars[FIndex] = '}' then
+    FState := pmsCode;
+end;
+
+procedure TRadIAPascalMasker.ProcessCharacter;
+begin
+  case FState of
+    pmsCode: EnterState;
+    pmsString: ProcessString;
+    pmsBraceComment: ProcessBraceComment;
+    pmsParenComment: ProcessParenComment;
+    pmsLineComment: ProcessLineComment;
+  end;
+end;
+
+procedure TRadIAPascalMasker.ProcessLineComment;
+begin
+  MaskCurrentCharacter;
+  if CharInSet(FContent.Chars[FIndex], [#10, #13]) then
+    FState := pmsCode;
+end;
+
+procedure TRadIAPascalMasker.ProcessParenComment;
+begin
+  MaskCurrentCharacter;
+  if (FIndex < High(FCharacters)) and
+    (FContent.Chars[FIndex] = '*') and (FContent.Chars[FIndex + 1] = ')') then
+  begin
+    Inc(FIndex);
+    FCharacters[FIndex] := ' ';
+    FState := pmsCode;
+  end;
+end;
+
+procedure TRadIAPascalMasker.ProcessString;
+begin
+  MaskCurrentCharacter;
+  if (FContent.Chars[FIndex] = '''') and (FIndex < High(FCharacters)) and
+    (FContent.Chars[FIndex + 1] = '''') then
+  begin
+    Inc(FIndex);
+    FCharacters[FIndex] := ' ';
+  end
+  else if FContent.Chars[FIndex] = '''' then
+    FState := pmsCode;
+end;
+
 function RadIAMaskPascalNonCode(const AContent: string): string;
 var
-  I: Integer;
-  LChars: TArray<Char>;
-  LState: TRadIAPascalMaskState;
+  LMasker: TRadIAPascalMasker;
 begin
-  LChars := AContent.ToCharArray;
-  LState := pmsCode;
-  I := Low(LChars);
-  while I <= High(LChars) do
-  begin
-    case LState of
-      pmsCode:
-        if LChars[I] = '''' then
-          LState := pmsString
-        else if LChars[I] = '{' then
-          LState := pmsBraceComment
-        else if (LChars[I] = '(') and (I < High(LChars)) and (LChars[I + 1] = '*') then
-          LState := pmsParenComment
-        else if (LChars[I] = '/') and (I < High(LChars)) and (LChars[I + 1] = '/') then
-          LState := pmsLineComment;
-      pmsString:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if (AContent.Chars[I] = '''') and (I < High(LChars)) and (AContent.Chars[I + 1] = '''') then
-          begin
-            Inc(I);
-            LChars[I] := ' ';
-          end
-          else if AContent.Chars[I] = '''' then
-            LState := pmsCode;
-        end;
-      pmsBraceComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if AContent.Chars[I] = '}' then
-            LState := pmsCode;
-        end;
-      pmsParenComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if (AContent.Chars[I] = '*') and (I < High(LChars)) and (AContent.Chars[I + 1] = ')') then
-          begin
-            Inc(I);
-            LChars[I] := ' ';
-            LState := pmsCode;
-          end;
-        end;
-      pmsLineComment:
-        begin
-          if not CharInSet(LChars[I], [#10, #13]) then
-            LChars[I] := ' ';
-          if CharInSet(AContent.Chars[I], [#10, #13]) then
-            LState := pmsCode;
-        end;
-    end;
-    Inc(I);
+  LMasker := TRadIAPascalMasker.Create(AContent);
+  try
+    Result := LMasker.Execute;
+  finally
+    LMasker.Free;
   end;
-  Result := string.Create(LChars);
 end;
 
 end.

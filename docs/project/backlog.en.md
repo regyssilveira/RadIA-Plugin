@@ -5,36 +5,13 @@ belong in the backlog.
 
 ## Current state
 
-The active goal is the **FireDAC Advisor**. Work covers inventory, SQL, parameters, transactions,
-configuration, drivers, thread safety, schemas, AI assistance, generation, reversible fixes,
-migration, documentation, and validation on supported IDEs. The internal executable contract keeps
-this cycle's security limits, test matrix, and definition of done.
+There is no active engineering item in this backlog. FireDAC Advisor completed its functional and
+security contract, bilingual documentation, Delphi 12 and 13 builds, unit and integration tests,
+and the 16-scenario E2E matrix on all three supported targets. Its public surface and usage are
+recorded in the product references and guide.
 
-The goal cannot close on a partial delivery. Completion requires every planned tool, unit, contract,
-security, and integration tests, all 16 E2E scenarios, Delphi 12 and 13 builds, bilingual
-documentation, and a requirement-by-requirement audit.
-
-The available foundation covers inventory, selected and embedded SQL analysis, parameters,
-transactions, configuration, thread safety, local SQLite schema comparison, and structured context
-for AI explanations. Deterministic, write-free previews are also available for repositories, data
-modules, queries, DTOs, and DUnitX fixtures, together with evidence-aware query optimization and
-thread-safety plans. Applying and reverting those artifacts remain open. Reversible fixes now cover
-proven parameter accessor mismatches and missing rollbacks with preview ownership and fingerprints.
-Composite gates for isolated fixes remain open. Legacy migration now owns batch application and
-FireDAC, build, and DUnitX gates with rollback. The E2E matrix contract now enumerates 16 scenarios
-across Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, producing 48 deterministic runs.
-Fully connecting that plan to the real MCP/IDE runner and collecting runtime evidence remain open.
-All 16 scenarios are connected and passing on all three targets, producing 48 real executions:
-inventory, sanitized SQL analysis, credential redaction, missing transaction rollback, cross-thread
-sharing, consented SQLite grid/CSV, DML rejection with an unchanged database, and a repository
-preview whose application is denied, consented and followed by build and DUnitX, or rolled back
-after a failed build gate, the consented parameter accessor fix with Smart Diff, build, and DUnitX,
-stale-preview rejection without overwriting a later change, and ADO-to-FireDAC migration with
-inspection, build, DUnitX, and a validated gate, plus failed-gate rollback that restores the complete
-legacy source, project switching/reopening without stale context, and shutdown during analysis with
-no deadlock, access violation, or orphan process. SQL analysis now captures the real editor
-selection on all three targets without executing or echoing the query. The final consolidated
-matrix must still run on the candidate commit.
+New cycles must enter this file only after defining an observable outcome, scope, threats,
+acceptance criteria, and validation plan.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

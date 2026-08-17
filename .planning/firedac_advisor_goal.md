@@ -1,5 +1,8 @@
 # Goal do FireDAC Advisor
 
+**Status:** concluído. O contrato abaixo permanece como referência auditável da entrega e da matriz
+de regressão.
+
 ## Resultado observável
 
 O RadIA deve compreender a camada FireDAC do projeto ativo, apresentar componentes e relações com

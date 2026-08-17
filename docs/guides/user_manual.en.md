@@ -522,6 +522,7 @@ See the [security model](../reference/tool_security_model.en.md) and
 - The [thread and PPL assistant](threading_assistant.en.md) audits and prepares safe concurrency modernization.
 - The [OpenAPI/Swagger retrofit](openapi_retrofit.en.md) integrates documentation into existing DEXT APIs.
 - [DEXT and form modernization](dext_form_modernization.en.md) executes reversible, gated batches.
+- [FireDAC Advisor](firedac_advisor.en.md) audits, previews, fixes, and migrates data access through gates.
 - Runtime automation uses Win32 controls by default. VCL controls without an `HWND` require the
   reviewed Debug instrumentation, consent, a rebuild, and a new session; see the
   [runtime diagnostics guide](runtime_debug_automation.en.md#vcl-controls-without-an-hwnd).
@@ -547,6 +548,7 @@ hints also document `Enter`, `Ctrl+R`, and `Ctrl+P`.
 - [MCP](mcp_integration_guide.en.md)
 - [Local knowledge](user_guide_project_knowledge.en.md)
 - [Designer and debugger](user_guide_designer_debugger.en.md)
+- [FireDAC Advisor](firedac_advisor.en.md)
 - [Troubleshooting](troubleshooting_agentic_platform.en.md)
 - [Agentic architecture](../development/agentic_architecture.en.md)
 - [Security](../reference/tool_security_model.en.md)
