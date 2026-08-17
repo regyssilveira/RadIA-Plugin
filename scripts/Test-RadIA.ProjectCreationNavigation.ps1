@@ -4,7 +4,11 @@ param(
     [ValidateSet("23.0", "37.0")]
     [string]$DelphiVersion,
 
-    [switch]$IDE64
+    [switch]$IDE64,
+
+    [switch]$Complete,
+
+    [string]$EvidencePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,12 +20,18 @@ $arguments = @(
     "-File",
     $smokePath,
     "-DelphiVersion",
-    $DelphiVersion,
-    "-SkipBuildAndTests",
-    "-SkipTemplateBuild"
+    $DelphiVersion
 )
+if ($Complete) {
+    $arguments += @("-ExerciseDebugger", "-ExerciseCalculatorRuntime")
+} else {
+    $arguments += @("-SkipBuildAndTests", "-SkipTemplateBuild")
+}
 if ($IDE64) {
     $arguments += "-IDE64"
+}
+if ($EvidencePath) {
+    $arguments += @("-EvidencePath", $EvidencePath)
 }
 
 & powershell.exe @arguments

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "product": "RadIA",
+  "promises": [
+    {
+      "id": "direct-conversational-answer",
+      "publicStatement": "Simple questions receive a direct answer without an agent plan or consent.",
+      "priority": "critical",
+      "maximumDurationSeconds": 20,
+      "expectedOutcomes": ["answer-visible", "no-agent-plan", "no-consent-request"],
+      "forbiddenOutcomes": ["step-limit-reached", "build-started"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "first-conversation"
+    },
+    {
+      "id": "natural-vcl-project-creation",
+      "publicStatement": "A natural-language request creates, opens, builds, and runs a working VCL application.",
+      "priority": "critical",
+      "maximumDurationSeconds": 300,
+      "expectedOutcomes": ["project-opened", "build-passed", "application-ran"],
+      "forbiddenOutcomes": ["step-limit-reached", "false-success-message"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "natural-vcl-project-creation"
+    },
+    {
+      "id": "build-failure-repair",
+      "publicStatement": "The agent reproduces and repairs a compiler failure and proves the successful rebuild.",
+      "priority": "critical",
+      "maximumDurationSeconds": 240,
+      "expectedOutcomes": ["failure-reproduced", "source-corrected", "rebuild-passed"],
+      "forbiddenOutcomes": ["failure-hidden", "unverified-fix"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "build-failure-repair"
+    },
+    {
+      "id": "dunitx-create-run-repair",
+      "publicStatement": "The agent creates, runs, and repairs DUnitX tests without hiding failures.",
+      "priority": "critical",
+      "maximumDurationSeconds": 300,
+      "expectedOutcomes": ["test-failed", "test-corrected", "suite-passed"],
+      "forbiddenOutcomes": ["test-skipped", "failure-hidden"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "dunitx-create-run-repair"
+    },
+    {
+      "id": "chat-window-state-persistence",
+      "publicStatement": "Chat visibility, size, position, and dock state survive an IDE restart.",
+      "priority": "critical",
+      "maximumDurationSeconds": 180,
+      "expectedOutcomes": ["closed-state-restored", "bounds-restored", "dock-state-restored"],
+      "forbiddenOutcomes": ["forced-open", "default-bounds-restored"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "chat-window-state-persistence"
+    },
+    {
+      "id": "read-only-without-consent",
+      "publicStatement": "Read-only inspection and navigation complete without mutation consent prompts.",
+      "priority": "critical",
+      "maximumDurationSeconds": 60,
+      "expectedOutcomes": ["inspection-completed", "navigation-completed", "no-consent-request"],
+      "forbiddenOutcomes": ["consent-timeout", "file-changed"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "read-only-without-consent"
+    },
+    {
+      "id": "agent-completes-within-step-budget",
+      "publicStatement": "Supported journeys complete without stopping at the configured agent step limit.",
+      "priority": "critical",
+      "maximumDurationSeconds": 300,
+      "expectedOutcomes": ["journey-completed", "budget-remaining"],
+      "forbiddenOutcomes": ["step-limit-reached", "repeated-read-only-loop"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "agent-step-budget"
+    },
+    {
+      "id": "request-cancellation-recovery",
+      "publicStatement": "A running request can be cancelled and the next message works without restarting Delphi.",
+      "priority": "critical",
+      "maximumDurationSeconds": 90,
+      "expectedOutcomes": ["request-cancelled", "ui-idle", "next-answer-visible"],
+      "forbiddenOutcomes": ["stuck-busy-state", "ide-restart-required"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "request-cancellation-recovery"
+    },
+    {
+      "id": "provider-cli-failure-recovery",
+      "publicStatement": "Provider and CLI failures offer recovery while preserving the session.",
+      "priority": "critical",
+      "maximumDurationSeconds": 120,
+      "expectedOutcomes": ["actionable-error-visible", "session-preserved", "retry-succeeded"],
+      "forbiddenOutcomes": ["raw-exception-visible", "silent-failure", "chat-frozen"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "provider-cli-failure-recovery"
+    },
+    {
+      "id": "clean-install-and-upgrade",
+      "publicStatement": "Installation and in-place upgrade load the package and preserve supported settings.",
+      "priority": "critical",
+      "maximumDurationSeconds": 300,
+      "expectedOutcomes": ["package-loaded", "version-updated", "settings-preserved", "clean-shutdown"],
+      "forbiddenOutcomes": ["duplicate-package", "stale-binary-loaded", "orphan-process"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "clean-install-and-upgrade"
+    },
+    {
+      "id": "project-session-isolation",
+      "publicStatement": "Switching projects and chat sessions does not leak context, edits, or pending actions.",
+      "priority": "critical",
+      "maximumDurationSeconds": 180,
+      "expectedOutcomes": ["project-context-switched", "session-context-isolated", "pending-action-isolated"],
+      "forbiddenOutcomes": ["cross-project-edit", "cross-session-response"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "project-session-isolation"
+    },
+    {
+      "id": "sensitive-data-redaction",
+      "publicStatement": "Diagnostics and evidence never expose credentials, tokens, or sensitive prompt contents.",
+      "priority": "critical",
+      "maximumDurationSeconds": 90,
+      "expectedOutcomes": ["secret-redacted", "prompt-content-omitted", "diagnostic-actionable"],
+      "forbiddenOutcomes": ["secret-in-log", "secret-in-evidence", "full-prompt-in-telemetry"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "sensitive-data-redaction"
+    }
+  ]
+}

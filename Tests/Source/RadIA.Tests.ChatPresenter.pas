@@ -296,6 +296,10 @@ type
     [Test]
     procedure TestIntentRecommendationCanContinueAsChat;
     [Test]
+    procedure TestPendingIntentDoesNotCrossChatSessions;
+    [Test]
+    procedure TestPendingJourneyDoesNotCrossChatSessions;
+    [Test]
     procedure TestCompleteCalculatorPromptStartsGuardedAgentJourney;
     [Test]
     procedure TestNaturalConsolePromptPt;
@@ -1377,6 +1381,42 @@ begin
 
   Assert.Contains(FMockView.PostedMessages.Text, 'no longer active');
   Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+end;
+
+procedure TTestChatPresenter.TestPendingIntentDoesNotCrossChatSessions;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('crie uma calculadora VCL');
+  Assert.Contains(FMockView.PostedMessages.Text, '"intent":"Create project"');
+
+  FPresenter.CreateNewSession;
+  FMockView.PostedMessages.Clear;
+  FPresenter.ProcessWebMessage('{' +
+    '"action":"accept_intent_recommendation"' +
+  '}');
+  DrainQueuedCalls;
+
+  Assert.Contains(FMockView.PostedMessages.Text, 'no longer active');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, 'Which destination folder');
+end;
+
+procedure TTestChatPresenter.TestPendingJourneyDoesNotCrossChatSessions;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('crie uma calculadora VCL');
+  FPresenter.ProcessWebMessage('{' +
+    '"action":"accept_intent_recommendation"' +
+  '}');
+  DrainQueuedCalls;
+  Assert.Contains(FMockView.PostedMessages.Text, 'Which destination folder');
+
+  FPresenter.CreateNewSession;
+  FMockView.PostedMessages.Clear;
+  FPresenter.SendPromptText('D:\IsolatedDestination');
+
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, 'Which project name');
 end;
 
 procedure TTestChatPresenter.

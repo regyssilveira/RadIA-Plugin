@@ -1283,6 +1283,8 @@ function renderAgentState(data) {
     'cancel_request',
     status !== 'running'
   ));
+  continueAgentBudgetSmoke(card, state);
+  continueNaturalVclSmoke(card, state);
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
@@ -1375,6 +1377,15 @@ function renderIntentRecommendation(data) {
   card.append(heading, explanation, route, controls);
   chatContainer.appendChild(card);
   chatContainer.scrollTop = chatContainer.scrollHeight;
+  if (naturalVclSmoke && data.intent === 'Create project') {
+    naturalVclSmoke.recommendationAccepted = true;
+    controls.querySelector('.intent-recommendation-button.primary')?.click();
+  }
+  if (sessionIsolationSmoke && data.intent === 'Create project' &&
+      sessionIsolationSmoke.phase === 'waiting-recommendation') {
+    sessionIsolationSmoke.phase = 'waiting-session-switch';
+    postMessageToDelphi({ action: 'new_session' });
+  }
 }
 
 function getExecutionRouteKind(route = activeExecutionRoute) {
@@ -3059,6 +3070,354 @@ function submitPrompt(text, clearEditor = true) {
   if (clearEditor) clearPromptEditor();
 }
 
+let conversationSmoke = null;
+let cancellationSmoke = null;
+let providerRecoverySmoke = null;
+let agentBudgetSmoke = null;
+let naturalVclSmoke = null;
+let sessionIsolationSmoke = null;
+
+function finishConversationSmoke(status, reason = '') {
+  if (!conversationSmoke) return;
+  const assistantMessages = [...document.querySelectorAll(
+    '.message-assistant .message-content'
+  )];
+  const responseText = assistantMessages.at(-1)?.textContent?.trim() || '';
+  const planVisible = Boolean(document.querySelector('.agent-run-card'));
+  const consentVisible = Boolean(document.querySelector(
+    '.consent-card, [data-consent-request], .agent-consent'
+  ));
+  const stepLimitReached = document.body.textContent.includes(
+    'configured step limit'
+  );
+  const elapsedMilliseconds = Math.round(
+    globalThis.performance.now() - conversationSmoke.startedAt
+  );
+  postMessageToDelphi({
+    action: 'conversation_smoke_result',
+    status,
+    reason,
+    promptSubmitted: conversationSmoke.promptSubmitted,
+    answerVisible: responseText.length > 0,
+    responseText,
+    planVisible,
+    consentVisible,
+    stepLimitReached,
+    elapsedMilliseconds
+  });
+  clearTimeout(conversationSmoke.timeoutId);
+  conversationSmoke = null;
+}
+
+globalThis.beginConversationSmoke = function beginConversationSmoke(
+  prompt,
+  timeoutMilliseconds = 20000
+) {
+  if (conversationSmoke) return;
+  conversationSmoke = {
+    promptSubmitted: String(prompt),
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(
+      () => finishConversationSmoke('failed', 'timeout'),
+      timeoutMilliseconds
+    )
+  };
+  setPromptText(conversationSmoke.promptSubmitted);
+  submitPrompt(conversationSmoke.promptSubmitted);
+};
+
+function finishCancellationSmoke(status, reason = '') {
+  if (!cancellationSmoke) return;
+  const assistantMessages = [...document.querySelectorAll(
+    '.message-assistant .message-content'
+  )];
+  const responseText = assistantMessages.at(-1)?.textContent?.trim() || '';
+  postMessageToDelphi({
+    action: 'cancellation_smoke_result',
+    status,
+    reason,
+    requestCancelled: cancellationSmoke.cancelRequested,
+    uiIdle: requestInProgress === false,
+    nextAnswerVisible:
+      assistantMessages.length > cancellationSmoke.initialAnswerCount &&
+      responseText.length > 0,
+    ideRestartRequired: false,
+    elapsedMilliseconds: Math.round(
+      globalThis.performance.now() - cancellationSmoke.startedAt
+    )
+  });
+  clearTimeout(cancellationSmoke.timeoutId);
+  cancellationSmoke = null;
+}
+
+globalThis.beginCancellationSmoke = function beginCancellationSmoke(
+  timeoutMilliseconds = 30000
+) {
+  if (cancellationSmoke) return;
+  cancellationSmoke = {
+    phase: 'waiting',
+    cancelRequested: false,
+    initialAnswerCount: document.querySelectorAll(
+      '.message-assistant .message-content'
+    ).length,
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(
+      () => finishCancellationSmoke('failed', 'timeout'),
+      timeoutMilliseconds
+    )
+  };
+  setPromptText('Who are you? Wait for cancellation.');
+  submitPrompt('Who are you? Wait for cancellation.');
+  const busyDeadline = globalThis.performance.now() + 5000;
+  const waitForBusyState = setInterval(() => {
+    if (!cancellationSmoke) {
+      clearInterval(waitForBusyState);
+      return;
+    }
+    if (requestInProgress) {
+      clearInterval(waitForBusyState);
+      cancellationSmoke.phase = 'cancelling';
+      cancellationSmoke.cancelRequested = true;
+      btnSendPrompt.click();
+    } else if (globalThis.performance.now() >= busyDeadline) {
+      clearInterval(waitForBusyState);
+      finishCancellationSmoke('failed', 'request-not-running');
+    }
+  }, 50);
+};
+
+function finishProviderRecoverySmoke(status, reason = '') {
+  if (!providerRecoverySmoke) return;
+  const assistantMessages = [...document.querySelectorAll(
+    '.message-assistant .message-content'
+  )];
+  postMessageToDelphi({
+    action: 'provider_recovery_smoke_result',
+    status,
+    reason,
+    actionableErrorVisible: providerRecoverySmoke.actionableErrorVisible,
+    sessionPreserved: providerRecoverySmoke.sessionPreserved,
+    retrySucceeded:
+      assistantMessages.length > providerRecoverySmoke.errorAnswerCount,
+    rawExceptionVisible: document.body.textContent.includes(
+      'RADIA_INTERNAL_PROVIDER_EXCEPTION'
+    ),
+    chatFrozen: requestInProgress,
+    elapsedMilliseconds: Math.round(
+      globalThis.performance.now() - providerRecoverySmoke.startedAt
+    )
+  });
+  clearTimeout(providerRecoverySmoke.timeoutId);
+  providerRecoverySmoke = null;
+}
+
+globalThis.beginProviderRecoverySmoke = function beginProviderRecoverySmoke(
+  timeoutMilliseconds = 60000
+) {
+  if (providerRecoverySmoke) return;
+  providerRecoverySmoke = {
+    phase: 'failure',
+    initialUserCount: document.querySelectorAll('.message-user').length,
+    errorAnswerCount: 0,
+    actionableErrorVisible: false,
+    sessionPreserved: false,
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(
+      () => finishProviderRecoverySmoke('failed', 'timeout'),
+      timeoutMilliseconds
+    )
+  };
+  setPromptText('Who are you? Simulate provider timeout.');
+  submitPrompt('Who are you? Simulate provider timeout.');
+};
+
+function continueAgentBudgetSmoke(card, state) {
+  if (!agentBudgetSmoke) return;
+  const status = state.status || '';
+  if (status === 'awaitingApproval' && !agentBudgetSmoke.approved) {
+    const approveButton = [...card.querySelectorAll('.agent-control-button')]
+      .find(button => button.textContent === 'Approve plan');
+    if (!approveButton || approveButton.disabled) return;
+    agentBudgetSmoke.approved = true;
+    approveButton.click();
+    return;
+  }
+  if (status !== 'completed') return;
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const toolSteps = steps.filter(step => step.toolName === 'GetIDEState');
+  const stepCount = Number(state.stepCount || steps.length);
+  const maxSteps = Number(state.maxSteps || 0);
+  postMessageToDelphi({
+    action: 'agent_budget_smoke_result',
+    status: 'passed',
+    planApproved: agentBudgetSmoke.approved,
+    journeyCompleted: true,
+    budgetRemaining: maxSteps > 0 && stepCount < maxSteps,
+    repeatedReadOnlyLoop: toolSteps.length !== 1,
+    stepLimitReached: document.body.textContent.includes(
+      'configured step limit'
+    ),
+    stepCount,
+    maxSteps,
+    elapsedMilliseconds: Math.round(
+      globalThis.performance.now() - agentBudgetSmoke.startedAt
+    )
+  });
+  clearTimeout(agentBudgetSmoke.timeoutId);
+  agentBudgetSmoke = null;
+}
+
+globalThis.beginAgentBudgetSmoke = function beginAgentBudgetSmoke(
+  timeoutMilliseconds = 120000
+) {
+  if (agentBudgetSmoke) return;
+  agentBudgetSmoke = {
+    approved: false,
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(() => {
+      if (!agentBudgetSmoke) return;
+      postMessageToDelphi({
+        action: 'agent_budget_smoke_result',
+        status: 'failed',
+        reason: 'timeout'
+      });
+      agentBudgetSmoke = null;
+    }, timeoutMilliseconds)
+  };
+  setPromptText('Inspect the current IDE state once and report it.');
+  submitPrompt('Inspect the current IDE state once and report it.');
+};
+
+function finishNaturalVclSmoke(status, reason = '', state = {}) {
+  if (!naturalVclSmoke) return;
+  const steps = Array.isArray(state.steps) ? state.steps : [];
+  const succeeded = toolName => steps.some(
+    step => step.toolName === toolName && step.success === true
+  );
+  const bodyText = document.body.textContent || '';
+  postMessageToDelphi({
+    action: 'natural_vcl_smoke_result',
+    status,
+    reason,
+    recommendationAccepted: naturalVclSmoke.recommendationAccepted,
+    previewSucceeded: succeeded('PreviewProjectTemplate'),
+    creationSucceeded: succeeded('CreateProjectFromTemplate'),
+    projectOpened: succeeded('OpenCreatedProject'),
+    buildPassed: succeeded('BuildProject'),
+    applicationStarted: succeeded('StartDebugging'),
+    cliCompletedEarly:
+      bodyText.includes('CLI task completed.') &&
+      !succeeded('CreateProjectFromTemplate'),
+    toolUnavailable:
+      bodyText.includes('PreviewProjectTemplate') &&
+      (bodyText.includes('not available') || bodyText.includes('não está disponível')),
+    elapsedMilliseconds: Math.round(
+      globalThis.performance.now() - naturalVclSmoke.startedAt
+    )
+  });
+  clearTimeout(naturalVclSmoke.timeoutId);
+  naturalVclSmoke = null;
+}
+
+function continueNaturalVclSmoke(card, state) {
+  if (!naturalVclSmoke) return;
+  const status = state.status || '';
+  if (status === 'awaitingApproval' && !naturalVclSmoke.planApproved) {
+    const approveButton = [...card.querySelectorAll('.agent-control-button')]
+      .find(button => button.textContent === 'Approve plan');
+    if (!approveButton || approveButton.disabled) return;
+    naturalVclSmoke.planApproved = true;
+    approveButton.click();
+    return;
+  }
+  if (status === 'completed') {
+    const steps = Array.isArray(state.steps) ? state.steps : [];
+    const required = [
+      'PreviewProjectTemplate',
+      'CreateProjectFromTemplate',
+      'OpenCreatedProject',
+      'BuildProject',
+      'StartDebugging'
+    ];
+    const complete = required.every(toolName => steps.some(
+      step => step.toolName === toolName && step.success === true
+    ));
+    finishNaturalVclSmoke(complete ? 'passed' : 'failed',
+      complete ? '' : 'completed-before-required-evidence', state);
+  } else if (status === 'failed' || status === 'cancelled') {
+    finishNaturalVclSmoke('failed', `agent-${status}`, state);
+  }
+}
+
+globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
+  prompt,
+  timeoutMilliseconds = 300000
+) {
+  if (naturalVclSmoke) return;
+  naturalVclSmoke = {
+    recommendationAccepted: false,
+    planApproved: false,
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(
+      () => finishNaturalVclSmoke('failed', 'timeout'),
+      timeoutMilliseconds
+    )
+  };
+  setPromptText(String(prompt));
+  submitPrompt(String(prompt));
+};
+
+globalThis.resumeNaturalVclSmoke = function resumeNaturalVclSmoke(
+  timeoutMilliseconds = 300000
+) {
+  if (naturalVclSmoke) return;
+  naturalVclSmoke = {
+    recommendationAccepted: true,
+    planApproved: true,
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(
+      () => finishNaturalVclSmoke('failed', 'timeout-after-navigation'),
+      timeoutMilliseconds
+    )
+  };
+};
+
+function finishSessionIsolationSmoke(status, reason = '') {
+  if (!sessionIsolationSmoke) return;
+  postMessageToDelphi({
+    action: 'session_isolation_smoke_result',
+    status,
+    reason,
+    sessionContextIsolated: sessionIsolationSmoke.sessionSwitched,
+    pendingActionIsolated: sessionIsolationSmoke.pendingActionRejected,
+    historyCleared: sessionIsolationSmoke.historyCleared,
+    elapsedMilliseconds: Math.round(
+      globalThis.performance.now() - sessionIsolationSmoke.startedAt
+    )
+  });
+  clearTimeout(sessionIsolationSmoke.timeoutId);
+  sessionIsolationSmoke = null;
+}
+
+globalThis.beginSessionIsolationSmoke = function beginSessionIsolationSmoke(
+  timeoutMilliseconds = 60000
+) {
+  if (sessionIsolationSmoke) return;
+  sessionIsolationSmoke = {
+    initialSessionId: currentProblemSessionId,
+    phase: 'waiting-recommendation',
+    sessionSwitched: false,
+    pendingActionRejected: false,
+    historyCleared: false,
+    startedAt: globalThis.performance.now(),
+    timeoutId: setTimeout(
+      () => finishSessionIsolationSmoke('failed', 'timeout'),
+      timeoutMilliseconds
+    )
+  };
+  submitPrompt('Crie uma calculadora VCL.');
+};
+
 function queuePrompt() {
   const text = promptTextarea.value.trim();
   if (!text) return;
@@ -3748,6 +4107,17 @@ function addMessage(role, text, provider, model) {
 
   chatContainer.appendChild(wrapper);
 
+  if (sessionIsolationSmoke && role === 'assistant' &&
+      String(text).includes('no longer active')) {
+    sessionIsolationSmoke.pendingActionRejected = true;
+    finishSessionIsolationSmoke(
+      sessionIsolationSmoke.sessionSwitched && sessionIsolationSmoke.historyCleared
+        ? 'passed'
+        : 'failed',
+      sessionIsolationSmoke.sessionSwitched ? '' : 'session-not-switched'
+    );
+  }
+
   if (role === 'assistant') {
     createResponseTechnicalSummary(wrapper, provider, model);
     activeResponseContext = null;
@@ -4411,7 +4781,75 @@ function setRequestState(inProgress) {
   applyModelSelectionState();
   executionRouteSelector.disabled = inProgress;
   updateComposerRoute();
-  if (!inProgress) setTimeout(dispatchNextQueuedPrompt, 0);
+  if (!inProgress) {
+    setTimeout(dispatchNextQueuedPrompt, 0);
+    if (providerRecoverySmoke?.phase === 'failure') {
+      providerRecoverySmoke.phase = 'retry';
+      setTimeout(() => {
+        if (!providerRecoverySmoke) return;
+        const assistantMessages = [...document.querySelectorAll(
+          '.message-assistant .message-content'
+        )];
+        const errorText = assistantMessages.at(-1)?.textContent || '';
+        providerRecoverySmoke.errorAnswerCount = assistantMessages.length;
+        providerRecoverySmoke.actionableErrorVisible =
+          errorText.includes('retry') &&
+          (errorText.includes('connection') || errorText.includes('Settings'));
+        providerRecoverySmoke.sessionPreserved =
+          document.querySelectorAll('.message-user').length >
+          providerRecoverySmoke.initialUserCount;
+        setPromptText('Who are you?');
+        submitPrompt('Who are you?');
+      }, 100);
+    } else if (providerRecoverySmoke?.phase === 'retry') {
+      providerRecoverySmoke.phase = 'complete';
+      setTimeout(() => {
+        if (!providerRecoverySmoke) return;
+        const assistantCount = document.querySelectorAll(
+          '.message-assistant .message-content'
+        ).length;
+        const passed =
+          providerRecoverySmoke.actionableErrorVisible &&
+          providerRecoverySmoke.sessionPreserved &&
+          assistantCount > providerRecoverySmoke.errorAnswerCount;
+        finishProviderRecoverySmoke(
+          passed ? 'passed' : 'failed',
+          passed ? '' : 'recovery-contract-not-observed'
+        );
+      }, 100);
+    }
+    if (cancellationSmoke?.phase === 'cancelling') {
+      cancellationSmoke.phase = 'recovery';
+      setTimeout(() => {
+        if (!cancellationSmoke) return;
+        setPromptText('Who are you?');
+        submitPrompt('Who are you?');
+      }, 50);
+    } else if (cancellationSmoke?.phase === 'recovery') {
+      setTimeout(() => {
+        if (!cancellationSmoke) return;
+        const answerVisible = Boolean(document.querySelector(
+          '.message-assistant .message-content'
+        ));
+        finishCancellationSmoke(
+          answerVisible ? 'passed' : 'failed',
+          answerVisible ? '' : 'recovery-answer-not-visible'
+        );
+      }, 50);
+    }
+    if (conversationSmoke) {
+      setTimeout(() => {
+        if (!conversationSmoke) return;
+        const answerVisible = Boolean(document.querySelector(
+          '.message-assistant .message-content'
+        ));
+        finishConversationSmoke(
+          answerVisible ? 'passed' : 'failed',
+          answerVisible ? '' : 'answer-not-visible'
+        );
+      }, 50);
+    }
+  }
 }
 
 function setContextText(text) {
@@ -4429,6 +4867,16 @@ function updateSessions(sessions, activeSessionId) {
     clearCollectedProblems();
   }
   if (activeSessionId) currentProblemSessionId = activeSessionId;
+  if (sessionIsolationSmoke &&
+      sessionIsolationSmoke.phase === 'waiting-session-switch' &&
+      activeSessionId &&
+      activeSessionId !== sessionIsolationSmoke.initialSessionId) {
+    sessionIsolationSmoke.sessionSwitched = true;
+    sessionIsolationSmoke.historyCleared =
+      document.querySelectorAll('.message-user').length === 0;
+    sessionIsolationSmoke.phase = 'waiting-stale-action-rejection';
+    postMessageToDelphi({ action: 'accept_intent_recommendation' });
+  }
   sessionsList.innerHTML = '';
 
   if (!sessions || sessions.length === 0) {
@@ -4642,7 +5090,7 @@ if (globalThis.chrome?.webview) {
       return;
     }
     const data = event.data;
-    console.log('[DEBUG] Received message from Delphi:', data);
+    console.log('[DEBUG] Received message from Delphi:', data.action || 'unknown');
     switch (data.action) {
       case 'add_message':           addMessage(data.role, data.text, data.provider, data.model); break;
       case 'update_message':        updateMessage(data.text, data.isDone, data.provider, data.model); break;

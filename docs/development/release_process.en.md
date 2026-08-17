@@ -29,6 +29,7 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
 `Test-RadIA.ReleaseUsage.ps1` is mandatory for every release and runs, as one indivisible gate, the
+validation that every critical public promise has a real E2E journey on every supported target,
 complete DUnitX suites on Delphi 12 and 13, the entire registered integration and end-to-end suite,
 calculator creation plus its functional and DUnitX tests, immediate project creation and opening, and
 the automated usage matrix on Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64. It produces

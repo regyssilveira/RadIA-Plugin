@@ -459,6 +459,8 @@ type
       var AValidation: TRadIAAgentValidationState
     );
     function IsMutationTool(const AToolName: string): Boolean;
+    function HasSuccessfulToolStep(const AToolName: string): Boolean;
+    function IsProjectCreationObjective: Boolean;
     function ResolveRiskName(const AToolName: string): string;
     function ExtractAffectedFiles(
       const AArgumentsJson: string;
@@ -2538,6 +2540,25 @@ begin
     SameText(AToolName, 'ApplyDesignerEvent');
 end;
 
+function TRadIAAgentRuntime.HasSuccessfulToolStep(
+  const AToolName: string
+): Boolean;
+var
+  LStep: TRadIAAgentStep;
+begin
+  for LStep in FSteps do
+    if LStep.Success and SameText(LStep.ToolName, AToolName) then
+      Exit(True);
+  Result := False;
+end;
+
+function TRadIAAgentRuntime.IsProjectCreationObjective: Boolean;
+begin
+  Result := FObjective.Contains(
+    'Create a Delphi project from the user requirements.'
+  );
+end;
+
 function TRadIAAgentRuntime.ResolveRiskName(
   const AToolName: string
 ): string;
@@ -2768,6 +2789,29 @@ var
   LValidation: TRadIAAgentValidationState;
 begin
   LValidation := AnalyzeValidationState;
+  if IsProjectCreationObjective and
+    not HasSuccessfulToolStep('PreviewProjectTemplate') then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: call PreviewProjectTemplate ' +
+      'and use its successful result before creating the project.';
+    Exit(False);
+  end;
+  if IsProjectCreationObjective and
+    not HasSuccessfulToolStep('CreateProjectFromTemplate') then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: call CreateProjectFromTemplate ' +
+      'with the reviewed preview before claiming completion.';
+    Exit(False);
+  end;
+  if IsProjectCreationObjective and
+    not HasSuccessfulToolStep('OpenCreatedProject') then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: open the created project in the IDE.';
+    Exit(False);
+  end;
   if LValidation.MutationPending and FExecutionContract.RequireBuild and
     not LValidation.BuildPassed then
   begin
@@ -2782,6 +2826,20 @@ begin
     AMessage :=
       'Validation gate rejected completion: run the required tests after ' +
       'the latest mutation.';
+    Exit(False);
+  end;
+  if IsProjectCreationObjective and not LValidation.ExecutionRun then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: start the created application ' +
+      'and record successful execution evidence.';
+    Exit(False);
+  end;
+  if IsProjectCreationObjective and not LValidation.ExecutionPassed then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: the created application did not ' +
+      'start successfully.';
     Exit(False);
   end;
   if LValidation.TestsRun and not LValidation.TestsPassed then

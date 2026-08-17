@@ -162,6 +162,8 @@ type
     [Test]
     procedure TestMutationRequiresSuccessfulBuildBeforeCompletion;
     [Test]
+    procedure TestProjectCreationRejectsCompletionBeforeRequiredJourney;
+    [Test]
     procedure TestValidationSnapshotIncludesBuildDUnitXAndCoverageEvidence;
     [Test]
     procedure TestFailedBuildRequiresCorrectionAndSuccessfulRebuild;
@@ -1545,6 +1547,52 @@ begin
       LStoreObject.SnapshotJson.Replace('\/', '/'),
       '"affectedFiles":["Source/Unit1.pas"]'
     );
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestProjectCreationRejectsCompletionBeforeRequiredJourney;
+var
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"status":"succeeded"}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Approve project creation.',
+      '[{"title":"Create and validate"}]'
+    ),
+    TRadIAAgentDecision.Complete('Stopped after inspection.'),
+    TRadIAAgentDecision.CallTool('PreviewProjectTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('OpenCreatedProject', '{}'),
+    TRadIAAgentDecision.CallTool('BuildProject', '{}'),
+    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
+    TRadIAAgentDecision.Complete('Project created and executed.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Create a Delphi project from the user requirements.',
+      'project-creation-gate-session',
+      '',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('project-creation-gate-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual('Project created and executed.', LResult.Message);
+    Assert.AreEqual(5, LExecutorObject.CallCount);
   finally
     LRuntime.Free;
   end;

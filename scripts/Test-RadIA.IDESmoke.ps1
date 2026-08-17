@@ -10,6 +10,7 @@ param(
     [int]$WebViewTransitionCount = 25,
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
+    [switch]$DevelopmentCandidate,
     [switch]$ExerciseDocking,
     [switch]$ExpectDockHidden,
     [switch]$ExerciseWebViewLifecycle,
@@ -31,6 +32,8 @@ param(
     [string]$DeclarativeWorkflowEvidencePath = "",
     [string]$KnowledgeEvidencePath = "",
     [string]$FirstValueEvidencePath = "",
+    [string]$UserJourneyEvidencePath = "",
+    [string]$UserJourneyExecutablePath = "",
     [string]$FireDACScenarioId = "",
     [string]$FireDACProjectPath = "",
     [string]$FireDACEvidencePath = "",
@@ -43,6 +46,9 @@ if ($EvidencePath -and $SkipPackageHashCheck) {
         "Evidence output requires package provenance validation. " +
         "Remove -SkipPackageHashCheck."
     )
+}
+if ($DevelopmentCandidate -and -not $EvidencePath) {
+    throw "Development candidate validation requires -EvidencePath."
 }
 if ($ExercisePackageLifecycle -and -not $EvidencePath) {
     throw (
@@ -3819,7 +3825,7 @@ $installedPackageHash = (
     Get-FileHash -LiteralPath $radIABpl -Algorithm SHA256
 ).Hash
 if (-not $SkipPackageHashCheck) {
-    if (-not $EvidencePath) {
+    if (-not $EvidencePath -or $DevelopmentCandidate) {
         $builtPackagePath = Join-Path (
             "$repositoryRoot\Output\$DelphiVersion\bpl\$platform"
         ) "RadIA.bpl"
@@ -3834,6 +3840,24 @@ if (-not $SkipPackageHashCheck) {
                 "Installed RadIA package does not match the current build. " +
                 "Close Delphi and reinstall before running the IDE smoke."
             )
+        }
+        if ($DevelopmentCandidate) {
+            $releaseSourceCommit = (
+                & git -C $repositoryRoot rev-parse HEAD
+            ).Trim()
+            $releasePackageName = (
+                "RadIA-v$expectedVersion-Delphi-$DelphiVersion-" +
+                "$platform-Release.zip"
+            )
+            $releasePackagePath = Join-Path (
+                "$repositoryRoot\Output\Packages"
+            ) $releasePackageName
+            if (-not (Test-Path -LiteralPath $releasePackagePath -PathType Leaf)) {
+                throw "Development candidate package was not found."
+            }
+            $releasePackageHash = (
+                Get-FileHash -LiteralPath $releasePackagePath -Algorithm SHA256
+            ).Hash
         }
     } else {
         $releaseEvidencePath = Join-Path (
@@ -4599,6 +4623,55 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
                 -ExpectedToolCount $expectedToolNames.Count
+        }
+        if ($UserJourneyEvidencePath) {
+            $userJourneyDeadline = [DateTime]::UtcNow.AddSeconds(300)
+            while (-not (Test-Path -LiteralPath $UserJourneyEvidencePath)) {
+                if ([DateTime]::UtcNow -ge $userJourneyDeadline) {
+                    throw "The user-journey evidence was not generated before timeout."
+                }
+                if ($process.HasExited) {
+                    throw "Delphi exited before generating user-journey evidence."
+                }
+                Start-Sleep -Milliseconds 250
+            }
+        }
+        if ($UserJourneyExecutablePath) {
+            $resolvedJourneyExecutable = [IO.Path]::GetFullPath(
+                $UserJourneyExecutablePath
+            )
+            $journeyProcessDeadline = [DateTime]::UtcNow.AddSeconds(15)
+            do {
+                $journeyProcesses = @(
+                    Get-Process -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            try {
+                                $_.Path -and
+                                    [IO.Path]::GetFullPath($_.Path) -eq
+                                        $resolvedJourneyExecutable
+                            } catch {
+                                $false
+                            }
+                        }
+                )
+                if ($journeyProcesses.Count -eq 0) {
+                    Start-Sleep -Milliseconds 100
+                }
+            } while (
+                $journeyProcesses.Count -eq 0 -and
+                [DateTime]::UtcNow -lt $journeyProcessDeadline
+            )
+            if ($journeyProcesses.Count -eq 0) {
+                throw "The user-journey application process was not observed."
+            }
+            foreach ($journeyProcess in $journeyProcesses) {
+                if (-not $journeyProcess.CloseMainWindow()) {
+                    throw "The user-journey application rejected shutdown."
+                }
+                if (-not $journeyProcess.WaitForExit(10000)) {
+                    throw "The user-journey application did not close in time."
+                }
+            }
         }
 
         $descendants = @(

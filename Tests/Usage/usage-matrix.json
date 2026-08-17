@@ -13,6 +13,19 @@
       "description": "Runs IDE lifecycle and critical user-facing capability contracts.",
       "scenarioIds": [
         "ide-startup-shutdown",
+        "first-conversation",
+        "chat-window-state-persistence",
+        "read-only-without-consent",
+        "request-cancellation-recovery",
+        "sensitive-data-redaction",
+        "provider-cli-failure-recovery",
+        "clean-install-and-upgrade",
+        "agent-step-budget",
+        "natural-vcl-project-creation",
+        "build-failure-repair",
+        "dunitx-create-run-repair",
+        "project-session-isolation",
+        "vcl-project-creation-lifecycle",
         "intent-recommendation",
         "unified-problems-panel",
         "semantic-hierarchy-refactoring",
@@ -52,6 +65,285 @@
         "tool-contract-valid",
         "clean-shutdown",
         "no-orphan-processes"
+      ]
+    },
+    {
+      "id": "agent-step-budget",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.AgentBudgetE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "plan-approved",
+        "journey-completed",
+        "budget-remaining",
+        "no-repeated-read-only-loop"
+      ],
+      "requiredEvidence": [
+        "planApproved",
+        "journeyCompleted",
+        "budgetRemaining"
+      ]
+    },
+    {
+      "id": "clean-install-and-upgrade",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.InstallUpgradeE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "package-loaded",
+        "version-updated",
+        "settings-preserved",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "packageLoaded",
+        "versionUpdated",
+        "settingsPreserved",
+        "cleanShutdown"
+      ]
+    },
+    {
+      "id": "provider-cli-failure-recovery",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.ProviderRecoveryE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "actionable-error-visible",
+        "session-preserved",
+        "retry-succeeded",
+        "raw-exception-hidden"
+      ],
+      "requiredEvidence": [
+        "actionableErrorVisible",
+        "sessionPreserved",
+        "retrySucceeded"
+      ]
+    },
+    {
+      "id": "sensitive-data-redaction",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.ConversationE2E.ps1",
+      "runnerArguments": ["-SensitiveDataAudit"],
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "secret-redacted",
+        "prompt-content-omitted",
+        "diagnostic-actionable"
+      ],
+      "requiredEvidence": [
+        "secretRedacted",
+        "promptContentOmitted",
+        "diagnosticActionable"
+      ]
+    },
+    {
+      "id": "request-cancellation-recovery",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.CancellationE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "request-cancelled",
+        "ui-idle",
+        "next-answer-visible",
+        "no-ide-restart"
+      ],
+      "requiredEvidence": [
+        "requestCancelled",
+        "uiIdle",
+        "nextAnswerVisible"
+      ]
+    },
+    {
+      "id": "read-only-without-consent",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.ProjectCreationNavigation.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "inspection-completed",
+        "navigation-completed",
+        "no-consent-request",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "phases.readOnlyConsentPassed",
+        "phases.shutdownPassed"
+      ]
+    },
+    {
+      "id": "chat-window-state-persistence",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.ChatWindowPersistenceE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "closed-state-restored",
+        "bounds-restored",
+        "dock-state-restored",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "closedStateRestored",
+        "boundsRestored",
+        "dockStateRestored",
+        "cleanShutdown"
+      ]
+    },
+    {
+      "id": "first-conversation",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.ConversationE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "answer-visible",
+        "no-agent-plan",
+        "no-consent-request",
+        "completed-within-20-seconds"
+      ],
+      "requiredEvidence": [
+        "answerVisible"
+      ]
+    },
+    {
+      "id": "natural-vcl-project-creation",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.NaturalVclChatE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "project-opened",
+        "build-passed",
+        "application-ran",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "recommendationAccepted",
+        "previewSucceeded",
+        "creationSucceeded",
+        "projectOpened",
+        "buildPassed",
+        "applicationStarted"
+      ]
+    },
+    {
+      "id": "build-failure-repair",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.BuildRepairE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "failure-reproduced",
+        "source-corrected",
+        "rebuild-passed",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "phases.compilerFailureObservedAndFixed",
+        "phases.buildPassed",
+        "phases.shutdownPassed"
+      ]
+    },
+    {
+      "id": "dunitx-create-run-repair",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.DUnitXRepairE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "test-failed",
+        "test-corrected",
+        "suite-passed",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "phases.testFailureObservedAndFixed",
+        "phases.testsPassed",
+        "phases.shutdownPassed"
+      ]
+    },
+    {
+      "id": "project-session-isolation",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.ProjectSessionIsolationE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "project-context-switched",
+        "session-context-isolated",
+        "pending-action-isolated",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "phases.projectContextSwitched",
+        "phases.sessionContextIsolated",
+        "phases.pendingActionIsolated",
+        "phases.shutdownPassed"
+      ]
+    },
+    {
+      "id": "vcl-project-creation-lifecycle",
+      "scope": "ide-journey",
+      "runner": "Test-RadIA.ProjectCreationNavigation.ps1",
+      "runnerArguments": ["-Complete"],
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "project-created-and-opened",
+        "calculator-built-and-started",
+        "primary-calculation-observed",
+        "knowledge-index-ready-before-document-read",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "phases.projectCreated",
+        "phases.buildPassed",
+        "debugger.runtimeScenarioPassed",
+        "phases.shutdownPassed"
       ]
     },
     {

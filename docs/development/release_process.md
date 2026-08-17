@@ -29,6 +29,7 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
 `Test-RadIA.ReleaseUsage.ps1` é obrigatório em toda release e executa, como um único gate indivisível,
+a validação de que cada promessa pública crítica possui uma jornada E2E real nos alvos suportados,
 as suítes DUnitX completas no Delphi 12 e 13, toda a suíte registrada de integração e ponta a ponta, a
 criação e os testes funcionais e DUnitX da calculadora, a criação e abertura imediata de projetos e a
 matriz automatizada de uso no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. O gate produz evidência

@@ -15,6 +15,30 @@ O manifesto versionado fica em `Tests/Usage/usage-matrix.json`. Cada cenário de
 quantidade de ciclos, timeout e evidências obrigatórias. O runner não usa coordenadas absolutas nem
 provider real no perfil obrigatório.
 
+Contratos `host` validam estrutura, mas não contam como prova de uma promessa pública. Somente cenários
+`user-journey`, executados na IDE real e com resultados observáveis verdadeiros na evidência, podem cobrir
+as promessas registradas em `Tests/Usage/release-promises.json`. Execute a auditoria com:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ReleasePromises.ps1 `
+  -Enforce
+```
+
+A criação VCL começa no campo real do chat, aceita a recomendação exibida ao usuário e exige evidência
+estruturada de preview, criação, abertura, build e execução. A jornada reprova conclusão antecipada do CLI,
+tool indisponível, ausência do arquivo de projeto ou qualquer etapa obrigatória não executada.
+
+O isolamento de sessão também usa a WebView real: deixa uma recomendação pendente na conversa anterior,
+cria outra conversa, confirma que o histórico foi limpo e exige a rejeição da aprovação antiga. A troca e
+o rollback de projeto continuam sendo comprovados pela jornada da IDE. Nenhum resultado pode reutilizar o
+booleano de consentimento como substituto para isolamento de chat ou de ação pendente.
+
+Cada promessa também declara duração máxima, resultados esperados e resultados proibidos. A cobertura
+obrigatória inclui conversa direta, criação VCL, correção de build, DUnitX, persistência da janela,
+consentimento somente para mutações, orçamento de passos, cancelamento, recuperação de provedor/CLI,
+instalação e atualização, isolamento de contexto e proteção de dados sensíveis.
+
 ## Consultar o plano sem abrir o Delphi
 
 ```powershell
@@ -38,7 +62,8 @@ powershell.exe -ExecutionPolicy Bypass `
   -Profile startup
 ```
 
-O resultado agregado fica em `Output/Validation/UsageMatrix/usage-matrix.json`. Durante o
+O resultado agregado fica em `Output/Validation/UsageMatrix/usage-matrix.json`. No perfil `release`, o
+orquestrador agrupa as jornadas por alvo e instala o pacote correspondente antes de executá-las. Durante o
 desenvolvimento, a evidência informa que a origem está suja e que a proveniência do pacote não foi
 exigida; esse resultado não autoriza uma release.
 

@@ -75,6 +75,12 @@ New-Item `
     -Force |
     Out-Null
 
+& (Join-Path $PSScriptRoot "Test-RadIA.ReleasePromises.ps1") `
+    -Enforce `
+    -EvidencePath (
+        Join-Path $resolvedEvidenceRoot "release-promise-coverage.json"
+    )
+
 $unitTestTargets = @(
     [PSCustomObject]@{ Id = "delphi12-win32"; Version = "23.0" },
     [PSCustomObject]@{ Id = "delphi13-win32"; Version = "37.0" }
@@ -259,7 +265,8 @@ foreach ($target in $openingTargets) {
     )
 
 Write-Host (
-    "Release usage gate passed: complete DUnitX, registered integration " +
+    "Release usage gate passed: public promises, complete DUnitX, " +
+    "registered integration " +
     "and end-to-end scenarios, calculator, generated projects, project " +
     "opening, and automated usage matrix."
 )

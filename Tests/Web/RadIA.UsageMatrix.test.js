@@ -65,6 +65,8 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Test-RadIA\.GeneratedProjects\.ps1/u);
   assert.match(source, /New-RadIA\.GeneratedProjectsEvidence\.ps1/u);
   assert.match(source, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
+  assert.match(source, /Test-RadIA\.ReleasePromises\.ps1/u);
+  assert.match(source, /-Enforce/u);
   assert.match(source, /Test-RadIA\.UsageMatrix\.ps1/u);
   assert.match(source, /-Profile "release"/u);
   assert.doesNotMatch(source, /RequirePackageProvenance/u);
@@ -90,7 +92,7 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(retryBlock, /Install-RadIAReleaseTarget/u);
 });
 
-test('release usage plan adds the intent recommendation contract once', () => {
+test('release usage plan separates host contracts from IDE journeys', () => {
   const output = execFileSync(
     'powershell.exe',
     [
@@ -115,10 +117,30 @@ test('release usage plan adds the intent recommendation contract once', () => {
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
-  assert.equal(plan.runCount, 7);
+  assert.equal(plan.runCount, 46);
   assert.equal(intentRuns.length, 1);
   assert.equal(intentRuns[0].targetId, 'host-neutral');
   assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
+  const conversationRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'first-conversation'
+  );
+  assert.equal(conversationRuns.length, 3);
+  assert.ok(conversationRuns.every((run) => run.scope === 'user-journey'));
+  const windowStateRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'chat-window-state-persistence'
+  );
+  assert.equal(windowStateRuns.length, 3);
+  assert.ok(windowStateRuns.every(
+    (run) => run.requiredEvidence.includes('boundsRestored')
+  ));
+  const creationRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'vcl-project-creation-lifecycle'
+  );
+  assert.equal(creationRuns.length, 3);
+  assert.ok(creationRuns.every((run) => run.scope === 'ide-journey'));
+  assert.ok(
+    creationRuns.every((run) => run.requiredEvidence.includes('phases.buildPassed'))
+  );
   const problemRuns = plan.runs.filter(
     (run) => run.scenarioId === 'unified-problems-panel'
   );
