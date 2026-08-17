@@ -50,7 +50,10 @@ test('chat exposes the effective route independently from agent mode', () => {
   assert.match(chatJs, /RTK saved/u);
   assert.match(chatJs, /action: 'set_agent_executor'/u);
   assert.match(presenter, /procedure TRadIAChatPresenter\.SetAgentExecutor/u);
-  assert.match(presenter, /if FAgentModeEnabled then[\s\S]*StartAgentRun\(LProcessed\)/u);
+  assert.match(
+    presenter,
+    /if FAgentModeEnabled and not LConversational then[\s\S]*StartAgentRun\(LProcessed\)/u
+  );
   assert.match(
     presenter,
     /if TryStartCliAgentRun\(LProcessed, LEffectiveSettings\) then/u

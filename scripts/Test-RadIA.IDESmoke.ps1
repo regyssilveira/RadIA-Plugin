@@ -11,6 +11,7 @@ param(
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
     [switch]$ExerciseDocking,
+    [switch]$ExpectDockHidden,
     [switch]$ExerciseWebViewLifecycle,
     [switch]$ExerciseTerminal,
     [switch]$ExerciseInlineCompletion,
@@ -69,6 +70,9 @@ if ($WebViewLifecycleEvidencePath -and -not $ExerciseWebViewLifecycle) {
 }
 if ($ExerciseWebViewLifecycle -and -not $ExerciseDocking) {
     throw "WebView lifecycle validation requires -ExerciseDocking."
+}
+if ($ExerciseDocking -and $ExpectDockHidden) {
+    throw "Docking exercise and hidden-dock validation are mutually exclusive."
 }
 if ($AgentRuntimeEvidencePath -and -not $ExerciseAgentRuntime) {
     throw (
@@ -359,7 +363,7 @@ function Invoke-RadIAPackageLifecycle {
 
 $ErrorActionPreference = "Stop"
 
-if ($ExerciseDocking) {
+if ($ExerciseDocking -or $ExpectDockHidden) {
     if ($Cycles -lt 2) {
         throw "Docking validation requires at least two IDE cycles."
     }
@@ -3346,7 +3350,7 @@ function Invoke-RadIAFirstValueDiagnostic {
 }
 
 function Restore-RadIADockingVisibility {
-    if (-not $script:ExerciseDocking) {
+    if (-not $script:ExerciseDocking -and -not $script:ExpectDockHidden) {
         return
     }
     if ($script:DockingHadWindowVisible) {
@@ -3534,7 +3538,7 @@ trap {
     exit 1
 }
 
-if ($ExerciseDocking) {
+if ($ExerciseDocking -or $ExpectDockHidden) {
     $script:DockingRegistryPath = (
         "HKCU:\Software\Embarcadero\BDS\" +
         "$DelphiVersion\RadIA"
@@ -3561,7 +3565,7 @@ if ($ExerciseDocking) {
         -LiteralPath $script:DockingRegistryPath `
         -Name "WindowVisible" `
         -PropertyType DWord `
-        -Value 1 `
+        -Value $(if ($ExpectDockHidden) { 0 } else { 1 }) `
         -Force |
         Out-Null
 }
@@ -4112,6 +4116,13 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                         "after restarting Delphi."
                     )
                 }
+            }
+        }
+        if ($ExpectDockHidden) {
+            Start-Sleep -Seconds 3
+            $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
+            if (Get-RadIADockInfo -Process $currentProcess) {
+                throw "The RadIA chat opened despite the persisted hidden state."
             }
         }
 
@@ -5089,6 +5100,10 @@ if ($ExerciseDocking) {
         "Native TOTADockForm visibility and desktop-state " +
         "restoration passed."
     )
+    Restore-RadIADockingVisibility
+}
+if ($ExpectDockHidden) {
+    Write-Host "Native RadIA chat remained hidden across IDE startup."
     Restore-RadIADockingVisibility
 }
 if ($ExerciseInlineCompletion) {
