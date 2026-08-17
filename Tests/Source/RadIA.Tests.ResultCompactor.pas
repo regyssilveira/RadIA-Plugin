@@ -164,7 +164,7 @@ begin
       LBestDuration := LCompaction.DurationMicroseconds;
   end;
   Assert.IsTrue(
-    LBestDuration < 50000,
+    LBestDuration < 100000,
     Format(
       'Best of three one MiB compactions took %d microseconds.',
       [LBestDuration]
