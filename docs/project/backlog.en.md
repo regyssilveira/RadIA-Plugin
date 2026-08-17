@@ -32,9 +32,9 @@ after a failed build gate, the consented parameter accessor fix with Smart Diff,
 stale-preview rejection without overwriting a later change, and ADO-to-FireDAC migration with
 inspection, build, DUnitX, and a validated gate, plus failed-gate rollback that restores the complete
 legacy source, project switching/reopening without stale context, and shutdown during analysis with
-no deadlock, access violation, or orphan process. The smoke's controlled SQL input must still be
-replaced with a real editor selection before the final consolidated matrix runs on the candidate
-commit.
+no deadlock, access violation, or orphan process. SQL analysis now captures the real editor
+selection on all three targets without executing or echoing the query. The final consolidated
+matrix must still run on the candidate commit.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

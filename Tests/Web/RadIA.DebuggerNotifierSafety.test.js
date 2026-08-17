@@ -111,9 +111,9 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   );
   assert.match(smoke, /function Invoke-RadIABlockLineClick/u);
   assert.match(smoke, /\$response\.result\.isError/u);
-  assert.doesNotMatch(
+  assert.match(
     smoke,
-    /Invoke-RadIASmokeTool[\s\S]*?-Name "NavigateToFile"/u
+    /Invoke-RadIASmokeToolWithConsent[\s\S]*?-Name "NavigateToFile"/u
   );
   assert.match(
     smoke,

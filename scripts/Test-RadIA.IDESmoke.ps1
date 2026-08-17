@@ -816,6 +816,50 @@ function Save-RadIAActiveEditor {
     Start-Sleep -Seconds 2
 }
 
+function Select-RadIAEditorCharacters {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)]
+        [ValidateRange(1, 4096)]
+        [int]$CharacterCount
+    )
+
+    $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+        [uint32]$IDEProcess.Id,
+        "TAppBuilder"
+    )
+    if ($mainWindow -eq [IntPtr]::Zero) {
+        throw "The Delphi editor window is not available for selection."
+    }
+    [void][RadIAKnowledgeSmokeNative]::ShowWindow($mainWindow, 9)
+    [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow($mainWindow)
+    [System.Windows.Forms.SendKeys]::SendWait(
+        "+{RIGHT " + $CharacterCount + "}"
+    )
+    Start-Sleep -Seconds 1
+}
+
+function Set-RadIAEditorCaretPosition {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateRange(1, 1000000)]
+        [int]$Line,
+        [Parameter(Mandatory)]
+        [ValidateRange(1, 1000000)]
+        [int]$Column
+    )
+
+    [System.Windows.Forms.SendKeys]::SendWait("^{HOME}")
+    if ($Line -gt 1) {
+        [System.Windows.Forms.SendKeys]::SendWait("{DOWN " + ($Line - 1) + "}")
+    }
+    if ($Column -gt 1) {
+        [System.Windows.Forms.SendKeys]::SendWait("{RIGHT " + ($Column - 1) + "}")
+    }
+    Start-Sleep -Milliseconds 250
+}
+
 function Open-RadIAEditorFile {
     param(
         [Parameter(Mandatory)]
@@ -1879,21 +1923,80 @@ function Invoke-RadIAFireDACReadOnlyScenario {
             $results = @($inventory, $report)
         }
         "firedac-selected-sql-analysis" {
+            if (-not $ProjectPath) {
+                throw "The selected SQL scenario requires its project fixture."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            $selectedSql = "select id from customer where id = :Id"
+            $sourceLines = @(
+                (Get-Content -LiteralPath $targetFile -Raw).
+                    Replace("`r`n", "`n").
+                    Replace("`r", "`n").
+                    Split("`n")
+            )
+            $sqlLine = 0
+            $sqlColumn = 0
+            for ($index = 0; $index -lt $sourceLines.Count; $index++) {
+                $columnIndex = $sourceLines[$index].IndexOf(
+                    $selectedSql,
+                    [StringComparison]::Ordinal
+                )
+                if ($columnIndex -ge 0) {
+                    $sqlLine = $index + 1
+                    $sqlColumn = $columnIndex + 1
+                    break
+                }
+            }
+            if ($sqlLine -lt 1 -or $sqlColumn -lt 1) {
+                throw "The SQL fixture text was not found."
+            }
+            $navigation = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "NavigateToFile" `
+                -Arguments @{
+                    fileName = $targetFile
+                    line = $sqlLine
+                    column = $sqlColumn
+                }
+            Invoke-RadIAEditorRepaint -IDEProcess $IDEProcess
+            Set-RadIAEditorCaretPosition `
+                -Line $sqlLine `
+                -Column $sqlColumn
+            Select-RadIAEditorCharacters `
+                -IDEProcess $IDEProcess `
+                -CharacterCount $selectedSql.Length
+            $selection = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorSelection"
+            if ($selection.content -ne $selectedSql) {
+                $actualSelection = ConvertTo-Json $selection.content -Compress
+                throw (
+                    "The real editor SQL selection did not match the fixture. " +
+                    "Actual selection: $actualSelection"
+                )
+            }
             $analysis = Invoke-RadIASmokeTool `
                 -BridgePath $BridgePath `
                 -InstanceFile $InstanceFile `
                 -Name "AnalyzeFireDACQuery" `
                 -Arguments @{
-                    sql = "select private_token from customer where id = :Id"
+                    sql = $selection.content
                 }
             $serialized = $analysis | ConvertTo-Json -Depth 8 -Compress
             if ($analysis.sqlExecuted -ne $false) {
                 throw "FireDAC query analysis reported SQL execution."
             }
-            if ($serialized.Contains("private_token")) {
+            if ($serialized.Contains($selectedSql)) {
                 throw "FireDAC query analysis echoed the SQL payload."
             }
-            $results = @($analysis)
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $results = @($navigation, $selection, $analysis)
         }
         "firedac-credential-redaction" {
             $configuration = Invoke-RadIASmokeTool `

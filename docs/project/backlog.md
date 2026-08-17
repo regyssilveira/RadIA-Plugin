@@ -32,9 +32,9 @@ com aplicação negada, aplicação consentida seguida por build e DUnitX ou rol
 falho, correção consentida de accessor de parâmetro com Smart Diff, build e DUnitX e rejeição de
 preview obsoleto sem sobrescrever uma mudança posterior e migração ADO para FireDAC com inspeção,
 build, DUnitX e gate validado, falha de gate com restauração integral do legado e troca/reabertura de
-projeto sem contexto obsoleto e shutdown durante análise sem deadlock, AV ou processo órfão. Ainda
-falta substituir a entrada SQL controlada do smoke pela captura real da seleção no editor e executar
-a matriz consolidada final sobre o commit candidato.
+projeto sem contexto obsoleto e shutdown durante análise sem deadlock, AV ou processo órfão. A
+análise de SQL agora captura a seleção real do editor nos três targets, sem executar ou ecoar a
+consulta. Ainda falta executar a matriz consolidada final sobre o commit candidato.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

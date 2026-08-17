@@ -96,6 +96,8 @@ test('FireDAC Advisor runner connects all sixteen safe IDE scenarios', () => {
   const connectedTools = [
     'InspectFireDACProject',
     'GetFireDACProjectReport',
+    'NavigateToFile',
+    'GetEditorSelection',
     'AnalyzeFireDACQuery',
     'InspectFireDACConfiguration',
     'AuditFireDACTransactions',

@@ -15,7 +15,7 @@
     },
     {
       "id": "firedac-selected-sql-analysis",
-      "tools": ["AnalyzeFireDACQuery"],
+      "tools": ["NavigateToFile", "GetEditorSelection", "AnalyzeFireDACQuery"],
       "mutationExpected": false,
       "rollbackExpected": false,
       "requiredEvidence": ["sql-not-executed", "sql-not-echoed"]
