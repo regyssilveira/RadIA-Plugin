@@ -233,7 +233,10 @@ foreach ($run in $planEntries) {
         if ($run.ideArchitecture -eq "Win64") {
             $arguments += "-IDE64"
         }
-        $arguments += @($run.runnerArguments)
+        $arguments += @(
+            $run.runnerArguments |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        )
         $output = & powershell.exe @arguments 2>&1 | Out-String
         $exitCode = $LASTEXITCODE
         if ($exitCode -eq 0) {
