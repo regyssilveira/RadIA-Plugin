@@ -19,6 +19,10 @@ type
     procedure ValidatesTypedBindingMetadata;
     [Test]
     procedure RejectsMissingSql;
+    [Test]
+    procedure StructuresQueryExplanationWithoutEchoingSql;
+    [Test]
+    procedure StructuresFindingExplanationWithoutEvidenceInput;
   end;
 
 implementation
@@ -111,6 +115,39 @@ begin
   ));
   Assert.IsFalse(LResult.Success);
   Assert.AreEqual('sql_required', LResult.ErrorCode);
+end;
+
+procedure TRadIAFireDACToolsTests.StructuresQueryExplanationWithoutEchoingSql;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := CreateRegistry.Resolve('ExplainFireDACQuery').Execute(TRadIAToolRequest.Create(
+    'ExplainFireDACQuery',
+    '{"sql":"select private_token from account where id = :Id"}',
+    'explain-query'
+  ));
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"deterministicFacts"');
+  Assert.Contains(LResult.ContentJson, '"hypotheses"');
+  Assert.Contains(LResult.ContentJson, '"limitations"');
+  Assert.Contains(LResult.ContentJson, '"contentTrust":"untrusted-data"');
+  Assert.DoesNotContain(LResult.ContentJson, 'private_token');
+end;
+
+procedure TRadIAFireDACToolsTests.StructuresFindingExplanationWithoutEvidenceInput;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := CreateRegistry.Resolve('ExplainFireDACFinding').Execute(TRadIAToolRequest.Create(
+    'ExplainFireDACFinding',
+    '{"ruleId":"firedac.schema.column-missing","severity":"high",' +
+    '"confidence":"proven","automaticFixAvailable":false}',
+    'explain-finding'
+  ));
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.schema.column-missing');
+  Assert.Contains(LResult.ContentJson, 'must not invent schema');
+  Assert.DoesNotContain(LResult.ContentJson, 'evidence');
 end;
 
 initialization

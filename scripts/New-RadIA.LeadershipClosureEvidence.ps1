@@ -10,7 +10,7 @@ param(
     [ValidateRange(1, 50)]
     [int]$RequiredCycles = 10,
     [ValidateRange(1, 1000)]
-    [int]$RequiredToolCount = 197
+    [int]$RequiredToolCount = 199
 )
 
 $ErrorActionPreference = "Stop"

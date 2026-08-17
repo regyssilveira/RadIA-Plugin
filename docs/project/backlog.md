@@ -15,8 +15,9 @@ os testes unitários, de contrato, segurança e integração, os 16 cenários E2
 documentação bilíngue e auditoria requisito por requisito.
 
 A fundação já disponível cobre inventário, análise de SQL selecionado e embutido, parâmetros,
-transações, configuração, thread safety e comparação com schema SQLite local. Permanecem abertos
-assistência por IA, geração, correções reversíveis, gates de migração e a matriz E2E completa.
+transações, configuração, thread safety, comparação com schema SQLite local e contexto estruturado
+para explicações por IA. Permanecem abertos geração, correções reversíveis, gates de migração e a
+matriz E2E completa.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

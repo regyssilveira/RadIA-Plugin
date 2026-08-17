@@ -462,6 +462,8 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 |---|---|---|
 | `AnalyzeFireDACQuery` | Analisa SQL limitado, statements e placeholders sem executar ou devolver o texto da consulta. | `RadIA.Core.FireDAC.Tools.pas` |
 | `ValidateFireDACParameters` | Valida nomes, tipos, direção, tamanho e estado null dos bindings sem executar SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ExplainFireDACQuery` | Estrutura fatos, hipóteses e limitações para explicação por IA sem ecoar o SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ExplainFireDACFinding` | Estrutura um finding para explicação por IA sem aceitar evidência livre ou segredos. | `RadIA.Core.FireDAC.Tools.pas` |
 
 ## Diagnóstico do ecossistema Delphi
 
@@ -529,6 +531,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 65
-- Ferramentas internas registradas: 197
+- Ferramentas internas registradas: 199
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

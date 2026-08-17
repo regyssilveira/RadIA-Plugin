@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 197 internal tools: what each one does and at what stage
+This page explains RadIA's 199 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -141,6 +141,8 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 | `DiagnoseFireDACEnvironment` | Statically diagnoses DriverID and driver links without connecting or installing components. | When checking runtime configuration before running the application. |
 | `AnalyzeFireDACThreadSafety` | Finds shared FireDAC components and unsafe UI access in bounded workers. | When reviewing parallel tasks before running database operations in the background. |
 | `AnalyzeFireDACQuery` | Analyzes bounded SQL, statements, and placeholders without executing or returning the query text. | When reviewing a selected FireDAC query before any execution. |
+| `ExplainFireDACQuery` | Structures facts, hypotheses, and limitations for AI explanation without echoing SQL. | When requesting an explanation grounded in deterministic query analysis. |
+| `ExplainFireDACFinding` | Structures a finding for AI explanation without accepting free-form evidence or secrets. | When explaining impact and next steps without promoting hypotheses to facts. |
 | `ValidateFireDACParameters` | Validates binding names, types, directions, sizes, and null state without executing SQL. | When locating inconsistent parameters before preparing a fix. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
 |`AuditDelphiLocalization`|Find visible Pascal and DFM text that may move to `resourcestring`.|Before preparing a reviewable extraction or comparing languages.|

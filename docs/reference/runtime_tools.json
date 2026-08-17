@@ -516,7 +516,9 @@
       "source": "Source/Core/RadIA.Core.FireDAC.Tools.pas",
       "tools": [
         "AnalyzeFireDACQuery",
-        "ValidateFireDACParameters"
+        "ValidateFireDACParameters",
+        "ExplainFireDACQuery",
+        "ExplainFireDACFinding"
       ]
     },
     {

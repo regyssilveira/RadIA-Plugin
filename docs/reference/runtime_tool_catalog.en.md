@@ -462,6 +462,8 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `AnalyzeFireDACQuery` | Analyzes bounded SQL text without connecting to or querying a database. | `RadIA.Core.FireDAC.Tools.pas` |
 | `ValidateFireDACParameters` | Validates FireDAC binding names, types, directions, sizes, and null state without executing SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ExplainFireDACQuery` | Structures deterministic SQL facts, hypotheses, and limitations for AI explanation. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ExplainFireDACFinding` | Structures a FireDAC finding for AI explanation without accepting evidence or secret values. | `RadIA.Core.FireDAC.Tools.pas` |
 
 ## Delphi ecosystem diagnostics
 
@@ -529,6 +531,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 65
-- Registered built-in tools: 197
+- Registered built-in tools: 199
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

@@ -15,8 +15,9 @@ security, and integration tests, all 16 E2E scenarios, Delphi 12 and 13 builds, 
 documentation, and a requirement-by-requirement audit.
 
 The available foundation covers inventory, selected and embedded SQL analysis, parameters,
-transactions, configuration, thread safety, and local SQLite schema comparison. AI assistance,
-generation, reversible fixes, migration gates, and the complete E2E matrix remain open.
+transactions, configuration, thread safety, local SQLite schema comparison, and structured context
+for AI explanations. Generation, reversible fixes, migration gates, and the complete E2E matrix
+remain open.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

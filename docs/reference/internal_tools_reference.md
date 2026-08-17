@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 197 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 199 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -141,6 +141,8 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `DiagnoseFireDACEnvironment` | Diagnostica estaticamente DriverID e driver links sem conectar nem instalar componentes. | Ao verificar a configuração de runtime antes de executar a aplicação. |
 | `AnalyzeFireDACThreadSafety` | Localiza componentes FireDAC compartilhados e acesso inseguro à UI em workers limitados. | Ao revisar tarefas paralelas antes de executar operações de banco em background. |
 | `AnalyzeFireDACQuery` | Analisa SQL limitado, statements e placeholders sem executar ou devolver o texto da consulta. | Ao revisar uma consulta FireDAC selecionada antes de qualquer execução. |
+| `ExplainFireDACQuery` | Estrutura fatos, hipóteses e limitações para explicação por IA sem ecoar o SQL. | Ao pedir uma explicação baseada na análise determinística da query. |
+| `ExplainFireDACFinding` | Estrutura um finding para explicação por IA sem aceitar evidência livre ou segredos. | Ao explicar impacto e próximos passos sem promover hipóteses a fatos. |
 | `ValidateFireDACParameters` | Valida nomes, tipos, direção, tamanho e estado null dos bindings sem executar SQL. | Ao localizar parâmetros inconsistentes antes de preparar uma correção. |
 | `DiagnoseDelphiDependencies` | Verifica paths declarados no projeto e manifestos de dependências sem instalar componentes. | Antes de preparar uma máquina ou corrigir falhas de compilação por dependência. |
 | `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | Antes de preparar uma extração revisável ou comparar idiomas. |
