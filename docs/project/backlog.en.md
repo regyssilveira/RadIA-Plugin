@@ -24,10 +24,12 @@ Composite gates for isolated fixes remain open. Legacy migration now owns batch 
 FireDAC, build, and DUnitX gates with rollback. The E2E matrix contract now enumerates 16 scenarios
 across Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, producing 48 deterministic runs.
 Fully connecting that plan to the real MCP/IDE runner and collecting runtime evidence remain open.
-The first five read-only scenarios are connected and passing on Delphi 12 Win32: inventory,
+The first five read-only scenarios are connected and passing on Delphi 12 and 13 Win32: inventory,
 sanitized SQL analysis, credential redaction, missing transaction rollback, and cross-thread
-sharing. Those five still need Delphi 13 Win32 and IDE64 execution, the other eleven remain to be
-connected, and the smoke's controlled SQL input must be replaced with a real editor selection.
+sharing. Four pass on IDE64; the transaction audit returns the expected result, but `bds.exe` does
+not exit cleanly after the tool, a failure reproduced three times and still open. The other eleven
+scenarios remain to be connected, and the smoke's controlled SQL input must be replaced with a real
+editor selection.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.
