@@ -1,5 +1,7 @@
 # Direção do projeto
 
+Não há goal de execução ativo neste momento.
+
 - [Roadmap](roadmap.md): visão futura sem histórico de versões.
 - [Backlog](backlog.md): somente trabalho aberto.
 

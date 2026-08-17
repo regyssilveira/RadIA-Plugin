@@ -83,6 +83,9 @@ projeto. Planos internos, auditorias, resultados de testes e notas de versão n�
 
 ## Direção do projeto
 
+Não há goal de execução ativo neste momento. Novas iniciativas só passam a ser ativas depois de
+receberem contrato verificável no backlog.
+
 - [Índice de direção do projeto](project/README.md).
 - [Roadmap](project/roadmap.md): direção e resultados futuros.
 - [Backlog](project/backlog.md): somente trabalho aberto e verificável.

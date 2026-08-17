@@ -82,6 +82,9 @@ Internal plans, audits, test results, and release notes do not belong in this tr
 
 ## Project direction
 
+There is no active execution goal at this time. New initiatives become active only after receiving
+a verifiable contract in the backlog.
+
 - [Project direction index](project/README.en.md).
 - [Roadmap](project/roadmap.en.md): direction and future outcomes.
 - [Backlog](project/backlog.en.md): only open, verifiable work.
