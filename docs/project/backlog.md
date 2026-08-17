@@ -22,7 +22,9 @@ otimização de query e thread safety. Permanecem abertos os fluxos de aplicaç�
 artefatos. Correções reversíveis já cobrem mismatch comprovado de accessor de parâmetro e rollback
 ausente, com ownership do preview e fingerprint. Permanecem abertos os gates compostos de build e
 teste para correções isoladas. A migração legado agora possui aplicação própria e gates FireDAC,
-build e DUnitX com rollback. Permanecem abertos a automação E2E desses gates e a matriz completa.
+build e DUnitX com rollback. O contrato da matriz E2E já enumera 16 cenários em Delphi 12 Win32,
+Delphi 13 Win32 e Delphi 13 IDE64, totalizando 48 execuções determinísticas. Permanecem abertos a
+conexão desse plano ao runner MCP/IDE real e a coleta das evidências runtime.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

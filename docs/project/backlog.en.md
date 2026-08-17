@@ -21,8 +21,9 @@ modules, queries, DTOs, and DUnitX fixtures, together with evidence-aware query 
 thread-safety plans. Applying and reverting those artifacts remain open. Reversible fixes now cover
 proven parameter accessor mismatches and missing rollbacks with preview ownership and fingerprints.
 Composite gates for isolated fixes remain open. Legacy migration now owns batch application and
-FireDAC, build, and DUnitX gates with rollback. E2E automation of those gates and the complete matrix
-remain open.
+FireDAC, build, and DUnitX gates with rollback. The E2E matrix contract now enumerates 16 scenarios
+across Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, producing 48 deterministic runs.
+Connecting that plan to the real MCP/IDE runner and collecting runtime evidence remain open.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

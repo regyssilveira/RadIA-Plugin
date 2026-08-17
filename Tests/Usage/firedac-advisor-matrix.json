@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "targets": [
+    { "id": "delphi12-win32", "delphiVersion": "23.0", "ide64": false },
+    { "id": "delphi13-win32", "delphiVersion": "37.0", "ide64": false },
+    { "id": "delphi13-ide64", "delphiVersion": "37.0", "ide64": true }
+  ],
+  "scenarios": [
+    {
+      "id": "firedac-inventory-navigation",
+      "tools": ["InspectFireDACProject", "GetFireDACProjectReport"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["navigable-location", "no-file-change"]
+    },
+    {
+      "id": "firedac-selected-sql-analysis",
+      "tools": ["AnalyzeFireDACQuery"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["sql-not-executed", "sql-not-echoed"]
+    },
+    {
+      "id": "firedac-credential-redaction",
+      "tools": ["InspectFireDACConfiguration"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["credential-finding", "secret-not-returned"]
+    },
+    {
+      "id": "firedac-unsafe-transaction",
+      "tools": ["AuditFireDACTransactions"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["rollback-finding", "navigable-location"]
+    },
+    {
+      "id": "firedac-shared-thread-connection",
+      "tools": ["AnalyzeFireDACThreadSafety", "PrepareFireDACThreadSafetyPlan"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["shared-connection-finding", "main-thread-ui-step"]
+    },
+    {
+      "id": "firedac-sqlite-grid-csv",
+      "tools": ["InspectLocalSQLiteDatabase", "PreviewLocalSQLiteQuery"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["explicit-consent", "paginated-grid", "sanitized-csv"]
+    },
+    {
+      "id": "firedac-sqlite-dml-rejection",
+      "tools": ["PreviewLocalSQLiteQuery"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["dml-rejected", "database-fingerprint-unchanged"]
+    },
+    {
+      "id": "firedac-repository-preview-denied",
+      "tools": ["GenerateFireDACRepositoryPreview"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["preview-rendered", "consent-denied", "file-absent"]
+    },
+    {
+      "id": "firedac-repository-applied",
+      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "RunBuild", "RunDUnitXTests"],
+      "mutationExpected": true,
+      "rollbackExpected": false,
+      "requiredEvidence": ["explicit-consent", "file-created", "build-passed", "tests-passed"]
+    },
+    {
+      "id": "firedac-build-failure-rollback",
+      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "RunBuild", "RevertGeneratedArtifact"],
+      "mutationExpected": true,
+      "rollbackExpected": true,
+      "requiredEvidence": ["build-failed", "rollback-succeeded", "file-absent"]
+    },
+    {
+      "id": "firedac-parameter-smart-diff",
+      "tools": ["ValidateFireDACParameters", "PrepareFireDACParameterFix", "ApplyFireDACFix", "RunBuild", "RunDUnitXTests"],
+      "mutationExpected": true,
+      "rollbackExpected": false,
+      "requiredEvidence": ["smart-diff-reviewed", "explicit-consent", "build-passed", "tests-passed"]
+    },
+    {
+      "id": "firedac-stale-preview-rejection",
+      "tools": ["PrepareFireDACParameterFix", "ApplyFireDACFix"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["buffer-changed-after-preview", "precondition-rejected"]
+    },
+    {
+      "id": "firedac-ado-migration-batch",
+      "tools": ["InventoryLegacyDataAccess", "PlanLegacyMigrationBatches", "PrepareLegacyMigrationBatch", "ApplyLegacyMigrationBatch", "RecordLegacyMigrationGate"],
+      "mutationExpected": true,
+      "rollbackExpected": false,
+      "requiredEvidence": ["firedac-gate-passed", "build-passed", "tests-passed"]
+    },
+    {
+      "id": "firedac-migration-gate-rollback",
+      "tools": ["PrepareLegacyMigrationBatch", "ApplyLegacyMigrationBatch", "RecordLegacyMigrationGate"],
+      "mutationExpected": true,
+      "rollbackExpected": true,
+      "requiredEvidence": ["gate-failed", "rollback-succeeded", "legacy-source-restored"]
+    },
+    {
+      "id": "firedac-project-context-reset",
+      "tools": ["InspectFireDACProject", "GetFireDACProjectReport"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["project-switched", "project-reopened", "no-stale-location"]
+    },
+    {
+      "id": "firedac-shutdown-during-analysis",
+      "tools": ["InspectFireDACProject", "AnalyzeFireDACThreadSafety"],
+      "mutationExpected": false,
+      "rollbackExpected": false,
+      "requiredEvidence": ["analysis-in-flight", "clean-shutdown", "no-deadlock", "no-access-violation", "no-orphan-thread"]
+    }
+  ]
+}
