@@ -14,6 +14,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `ListOpenFiles` | Lista arquivos abertos e buffers disponíveis. | `RadIA.Core.WorkspaceTools.pas` |
 | `ListProjectUnits` | Lista as units pertencentes ao projeto ativo. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetEditorContent` | Lê o conteúdo vivo de um buffer da IDE. | `RadIA.Core.WorkspaceTools.pas` |
+| `SaveActiveFile` | Salva o buffer ativo pela própria IDE. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetEditorSelection` | Lê a seleção atual do editor. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | `RadIA.Core.WorkspaceTools.pas` |
@@ -559,6 +560,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 68
-- Ferramentas internas registradas: 212
+- Ferramentas internas registradas: 213
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

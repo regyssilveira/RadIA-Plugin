@@ -47,6 +47,7 @@ type
       const AFileName: string;
       const AMaxCharacters: Integer
     ): TRadIAEditorContent;
+    function SaveFile(const AFileName: string): Boolean;
     function ReloadFile(const AFileName: string): Boolean;
   end;
 
@@ -153,6 +154,20 @@ begin
   ) then
     Exit;
   Result := LActionServices.ReloadFile(AFileName);
+end;
+
+function SaveModuleFile(const AFileName: string): Boolean;
+var
+  LActionServices: IOTAActionServices;
+begin
+  Result := False;
+  if not Supports(
+    BorlandIDEServices,
+    IOTAActionServices,
+    LActionServices
+  ) then
+    Exit;
+  Result := LActionServices.SaveFile(AFileName);
 end;
 
 function GetActiveProjectFromOTA: IOTAProject;
@@ -406,6 +421,22 @@ begin
     procedure
     begin
       LResult := ReloadModuleFile(AFileName);
+    end
+  );
+  Result := LResult;
+end;
+
+function TRadIAOTAWorkspaceFacade.SaveFile(
+  const AFileName: string
+): Boolean;
+var
+  LResult: Boolean;
+begin
+  LResult := False;
+  RunOnMainThread(
+    procedure
+    begin
+      LResult := SaveModuleFile(AFileName);
     end
   );
   Result := LResult;

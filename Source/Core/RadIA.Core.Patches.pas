@@ -87,7 +87,8 @@ type
   end;
 
   IRadIAEditorPersistenceFacade = interface
-    ['{8F34CC93-37C1-4A48-820F-9072C350E2D4}']
+    ['{8304CDBC-B794-4885-9570-1068BE535D6D}']
+    function SaveFile(const AFileName: string): Boolean;
     function ReloadFile(const AFileName: string): Boolean;
   end;
 

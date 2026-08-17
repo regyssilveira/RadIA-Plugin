@@ -46,6 +46,7 @@ type
       const AFileName: string;
       const AMaxCharacters: Integer
     ): TRadIAEditorContent;
+    function SaveFile(const AFileName: string): Boolean;
     function ReloadFile(const AFileName: string): Boolean;
   end;
 
@@ -303,6 +304,16 @@ begin
 end;
 
 function TRadIAMemorySessionWorkspaceMock.ReloadFile(
+  const AFileName: string
+): Boolean;
+begin
+  Result := SameText(
+    AFileName,
+    TPath.Combine(MemorySessionFixtureRoot, 'Demo.dpr')
+  );
+end;
+
+function TRadIAMemorySessionWorkspaceMock.SaveFile(
   const AFileName: string
 ): Boolean;
 begin

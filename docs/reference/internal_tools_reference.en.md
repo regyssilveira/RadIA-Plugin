@@ -34,6 +34,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`ListOpenFiles`|Lists open files and available buffers.|To locate live context or avoid reading an outdated copy of the disk.|
 |`ListProjectUnits`|Lists the units belonging to the active project.|In architectural analysis, dependency search and multi-file planning.|
 |`GetEditorContent`|Reads the live contents of an IDE buffer.|Before analyzing or preparing a change, including when there are unsaved changes.|
+|`SaveActiveFile`|Saves the active buffer through the IDE.|After an approved change that must be persisted before build or tests.|
 |`GetEditorSelection`|Reads the current editor selection.|In actions directed at a snippet, such as explaining, reviewing, testing or refactoring.|
 |`GetCursorPosition`|Returns cursor file, row and column.|To contextualize errors, symbols, insertions and anchored revisions.|
 |`GetCompilerMessages`|Collects structured errors and warnings.|After a build or when the objective involves fixing build failures.|

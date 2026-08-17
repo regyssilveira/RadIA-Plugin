@@ -361,6 +361,8 @@ function Invoke-RadIAFileMenuCommand {
 function Save-RadIAEditorBuffer {
     param(
         [Parameter(Mandatory = $true)]
+        [Diagnostics.Process]$Process,
+        [Parameter(Mandatory = $true)]
         [string]$BridgePath,
         [Parameter(Mandatory = $true)]
         [string]$InstanceFile,
@@ -380,8 +382,34 @@ function Save-RadIAEditorBuffer {
     )) {
         throw "The active editor does not match the expected save target."
     }
-    $utf8WithoutBom = [Text.UTF8Encoding]::new($false)
-    [IO.File]::WriteAllText($expectedFullPath, $editor.content, $utf8WithoutBom)
+    $expectedContent = [Text.RegularExpressions.Regex]::Replace(
+        $editor.content,
+        "`r`n?",
+        "`n"
+    )
+    $saveResult = Invoke-RadIAToolWithConsent `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -IDEProcess $Process `
+        -Name "SaveActiveFile"
+    if (-not $saveResult.saved -or
+        -not [IO.Path]::GetFullPath($saveResult.fileName).Equals(
+            $expectedFullPath,
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+        throw "The RadIA save tool did not persist the active editor file."
+    }
+    Wait-RadIACondition -TimeoutSeconds 10 -Condition {
+        if (-not (Test-Path -LiteralPath $expectedFullPath -PathType Leaf)) {
+            return $false
+        }
+        $savedContent = [Text.RegularExpressions.Regex]::Replace(
+            [IO.File]::ReadAllText($expectedFullPath),
+            "`r`n?",
+            "`n"
+        )
+        $savedContent -eq $expectedContent
+    } -FailureMessage "The Delphi editor did not save the expected content."
 }
 
 function Set-RadIAFileDialogPath {
@@ -2257,6 +2285,7 @@ try {
     }
 
     Save-RadIAEditorBuffer `
+        -Process $process `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
         -ExpectedPath $unitPath
@@ -2299,6 +2328,7 @@ try {
                 }
             )
             Save-RadIAEditorBuffer `
+                -Process $process `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
                 -ExpectedPath $unitPath
@@ -2330,6 +2360,7 @@ try {
                 }
             )
             Save-RadIAEditorBuffer `
+                -Process $process `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
                 -ExpectedPath $unitPath
@@ -2422,6 +2453,7 @@ try {
                 }
             )
             Save-RadIAEditorBuffer `
+                -Process $process `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
                 -ExpectedPath $unitPath
@@ -2471,6 +2503,7 @@ try {
                 }
             )
             Save-RadIAEditorBuffer `
+                -Process $process `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
                 -ExpectedPath $unitPath

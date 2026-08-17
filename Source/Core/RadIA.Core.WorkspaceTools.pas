@@ -4,7 +4,8 @@ interface
 
 uses
   RadIA.Core.Tools,
-  RadIA.Core.Workspace;
+  RadIA.Core.Workspace,
+  RadIA.Core.Patches;
 
 procedure RegisterRadIAWorkspaceTools(
   const ARegistry: IRadIAToolRegistry;
@@ -25,6 +26,7 @@ type
     wtkListOpenFiles,
     wtkListProjectUnits,
     wtkGetEditorContent,
+    wtkSaveActiveFile,
     wtkGetEditorSelection,
     wtkGetCursorPosition,
     wtkGetCompilerMessages
@@ -37,7 +39,8 @@ type
     function BuildDescriptor(
       const AName: string;
       const ADescription: string;
-      const AInputSchema: string
+      const AInputSchema: string;
+      const ARisk: TRadIAToolRisk = trReadOnly
     ): TRadIAToolDescriptor;
     function ExecuteGetIDEState: TRadIAToolResult;
     function ExecuteGetActiveProject: TRadIAToolResult;
@@ -47,6 +50,7 @@ type
     function ExecuteGetEditorContent(
       const ARequest: TRadIAToolRequest
     ): TRadIAToolResult;
+    function ExecuteSaveActiveFile: TRadIAToolResult;
     function ExecuteGetEditorSelection: TRadIAToolResult;
     function ExecuteGetCursorPosition: TRadIAToolResult;
     function ExecuteGetCompilerMessages(
@@ -138,7 +142,8 @@ end;
 function TRadIAWorkspaceTool.BuildDescriptor(
   const AName: string;
   const ADescription: string;
-  const AInputSchema: string
+  const AInputSchema: string;
+  const ARisk: TRadIAToolRisk
 ): TRadIAToolDescriptor;
 begin
   Result := TRadIAToolDescriptor.Create(
@@ -147,7 +152,7 @@ begin
     ADescription,
     AInputSchema,
     CObjectOutputSchema,
-    trReadOnly
+    ARisk
   );
 end;
 
@@ -168,6 +173,8 @@ begin
       Result := ExecuteListProjectUnits;
     wtkGetEditorContent:
       Result := ExecuteGetEditorContent(ARequest);
+    wtkSaveActiveFile:
+      Result := ExecuteSaveActiveFile;
     wtkGetEditorSelection:
       Result := ExecuteGetEditorSelection;
     wtkGetCursorPosition:
@@ -326,6 +333,38 @@ begin
   end;
 end;
 
+function TRadIAWorkspaceTool.ExecuteSaveActiveFile: TRadIAToolResult;
+var
+  LContent: TRadIAEditorContent;
+  LJson: TJSONObject;
+  LPersistence: IRadIAEditorPersistenceFacade;
+begin
+  if not Supports(FWorkspace, IRadIAEditorPersistenceFacade, LPersistence) then
+    Exit(TRadIAToolResult.Failed(
+      'editor_persistence_unavailable',
+      'The active workspace cannot save editor files.'
+    ));
+  LContent := FWorkspace.GetEditorContent(1);
+  if LContent.FileName = '' then
+    Exit(TRadIAToolResult.Failed(
+      'active_file_unavailable',
+      'No active editor file is available to save.'
+    ));
+  if not LPersistence.SaveFile(LContent.FileName) then
+    Exit(TRadIAToolResult.Failed(
+      'editor_save_failed',
+      'The Delphi IDE could not save the active editor file.'
+    ));
+  LJson := TJSONObject.Create;
+  try
+    LJson.AddPair('fileName', LContent.FileName);
+    LJson.AddPair('saved', TJSONBool.Create(True));
+    Result := TRadIAToolResult.Succeeded(LJson.ToJSON);
+  finally
+    LJson.Free;
+  end;
+end;
+
 function TRadIAWorkspaceTool.ExecuteGetIDEState:
   TRadIAToolResult;
 var
@@ -408,6 +447,13 @@ begin
         'GetEditorContent',
         'Returns the live active editor content with a revision.',
         CEditorInputSchema
+      );
+    wtkSaveActiveFile:
+      Result := BuildDescriptor(
+        'SaveActiveFile',
+        'Saves the active Delphi editor buffer through the IDE.',
+        CEmptyInputSchema,
+        trReversibleWrite
       );
     wtkGetEditorSelection:
       Result := BuildDescriptor(
