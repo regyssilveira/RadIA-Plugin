@@ -247,6 +247,7 @@ type
       const AProvider: string;
       const AModel: string;
       const ATokenLimit: Integer;
+      const AMaxSteps: Integer;
       out AProviderSettings: TRadIAAgentProviderSettings;
       out ALimits: TRadIAAgentLimits
     );
@@ -4363,6 +4364,7 @@ var
   LEffectiveSettings: TRadIAResolvedExecutionSettings;
   LGuard: IRadIALifecycleGuard;
   LAgentTokenLimit: Integer;
+  LAgentMaxSteps: Integer;
   LLimits: TRadIAAgentLimits;
   LProviderSettings: TRadIAAgentProviderSettings;
   LProject: TRadIAProjectSnapshot;
@@ -4406,10 +4408,16 @@ begin
     LProjectId := LProject.FileName;
   end;
   LAgentTokenLimit := ResolveScopedAgentTokenLimit(LEffectiveSettings);
+  LAgentMaxSteps := 20;
+  if AObjective.Contains(
+    'Create a Delphi project from the user requirements.'
+  ) then
+    LAgentMaxSteps := 40;
   ResolveAgentRuntimeSettings(
     LActiveProvider,
     LActiveModel,
     LAgentTokenLimit,
+    LAgentMaxSteps,
     LProviderSettings,
     LLimits
   );
@@ -4485,6 +4493,7 @@ procedure TRadIAChatPresenter.ResolveAgentRuntimeSettings(
   const AProvider: string;
   const AModel: string;
   const ATokenLimit: Integer;
+  const AMaxSteps: Integer;
   out AProviderSettings: TRadIAAgentProviderSettings;
   out ALimits: TRadIAAgentLimits
 );
@@ -4511,7 +4520,7 @@ begin
         LPricing
       );
       ALimits := TRadIAAgentLimits.Create(
-        20,
+        AMaxSteps,
         3,
         15 * 60 * 1000,
         ATokenLimit,
@@ -4524,7 +4533,7 @@ begin
       BuildAgentToolCatalogJson
     );
     ALimits := TRadIAAgentLimits.Create(
-      20,
+      AMaxSteps,
       3,
       15 * 60 * 1000,
       ATokenLimit,

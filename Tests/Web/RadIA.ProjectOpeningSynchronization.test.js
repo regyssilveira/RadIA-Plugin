@@ -37,8 +37,17 @@ test('project readiness compares the registered project path', () => {
 test('IDE integration navigates immediately after opening a generated project', () => {
   assert.match(
     integrationSmokeSource,
-    /OpenCreatedProject[\s\S]*?NavigateToFile[\s\S]*?generatedFormSourcePath/u
+    /OpenCreatedProject[\s\S]*?Invoke-RadIATool `[\s\S]*?NavigateToFile[\s\S]*?generatedFormSourcePath/u
   );
+  assert.doesNotMatch(
+    integrationSmokeSource,
+    /immediateNavigation = Invoke-RadIAToolWithConsent/u
+  );
+  assert.match(
+    integrationSmokeSource,
+    /NavigateToFile[\s\S]*?GetKnowledgeStatus[\s\S]*?fileCount[\s\S]*?GetKnowledgeDocument/u
+  );
+  assert.match(integrationSmokeSource, /unexpectedly waited for consent/u);
   assert.match(integrationGateSource, /SkipTemplateBuild/u);
   assert.match(integrationGateSource, /SkipBuildAndTests/u);
 });

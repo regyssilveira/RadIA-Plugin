@@ -39,7 +39,9 @@ excessivos.
 
 Os resultados de busca e os chunks de um documento exibem a ação **Open source** no chat. Ela usa
 `NavigateToFile` para abrir o arquivo diretamente na linha inicial do trecho. A navegação é somente
-leitura e continua sujeita ao limite do workspace ativo e à política normal de ferramentas.
+leitura, não solicita consentimento e continua sujeita ao limite do workspace ativo e à política normal
+de ferramentas. Em projetos recém-criados, o RadIA aguarda `GetKnowledgeStatus` confirmar que o índice
+está pronto antes de solicitar o conteúdo de um documento.
 
 As ferramentas também expõem métricas locais, sem telemetria: a indexação e a busca informam
 `durationMs`, cada resultado mantém seus scores de relevância e `GetKnowledgeStatus` informa
