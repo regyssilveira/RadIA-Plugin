@@ -245,7 +245,9 @@ O modo agente oferece:
 - limites de passos, tokens, tempo, custo e repetição;
 - build e validação como parte do objetivo quando solicitados.
 
-Perguntas comuns continuam como chat e não iniciam automaticamente um loop de ferramentas.
+Perguntas comuns continuam como chat e não iniciam automaticamente um loop de ferramentas. Quando
+o transporte selecionado é um CLI, o RadIA usa uma execução conversacional isolada, com esforço
+baixo e sem retomar a sessão de uma tarefa agentiva anterior.
 
 Consulte [Manual completo](../guides/user_manual.md), [Custos do agente](agent_pricing.md) e
 [Compactação de resultados](../guides/agent_result_compaction.md).

@@ -216,6 +216,10 @@ type
     [Test]
     procedure TestGlobalPromptWithCommandLineBreakUsesTemplate;
     [Test]
+    procedure TestConversationalCliPromptPreservesRadIAIdentity;
+    [Test]
+    procedure TestConversationalQuestionBypassesAgentPlan;
+    [Test]
     procedure TestDeclarativeExtensionCommandReloadsWithoutRestart;
     [Test]
     procedure TestDeclarativeExtensionAppearsInSlashCatalog;
@@ -1696,6 +1700,33 @@ begin
   Assert.IsTrue(LProcessed.StartsWith('Explain this Delphi Pascal code briefly.', True), LProcessed);
   Assert.IsFalse(LProcessed.StartsWith('Review the following Delphi Pascal code block', True), LProcessed);
   Assert.IsTrue(LProcessed.Contains('TForm1 = class(TForm)'));
+end;
+
+procedure TTestChatPresenter.TestConversationalCliPromptPreservesRadIAIdentity;
+var
+  LPrompt: string;
+begin
+  LPrompt := FPresenter.TestBuildConversationalCliPrompt('Quem é você?');
+
+  Assert.Contains(LPrompt, 'You are RadIA');
+  Assert.Contains(LPrompt, 'do not inspect files');
+  Assert.Contains(LPrompt, 'do not inspect files, run commands, create a plan');
+  Assert.Contains(LPrompt, 'Quem é você?');
+end;
+
+procedure TTestChatPresenter.TestConversationalQuestionBypassesAgentPlan;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('Quem é você?');
+  DrainQueuedCalls;
+
+  Assert.IsTrue(FMockView.RequestStateInProgress);
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+
+  FPresenter.CancelRequest;
 end;
 
 procedure TTestChatPresenter.TestSlashCommandUsesProvidedCodeBlock;

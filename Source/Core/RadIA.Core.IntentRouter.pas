@@ -48,6 +48,7 @@ type
       out ARecommendation: TRadIAIntentRecommendation
     ): Boolean; static;
   public
+    class function IsConversationalPrompt(const AInput: string): Boolean; static;
     class function TryRecommend(
       const AInput: string;
       out ARecommendation: TRadIAIntentRecommendation
@@ -179,6 +180,32 @@ begin
     Exit(True);
   end;
   Result := False;
+end;
+
+class function TRadIAIntentRouter.IsConversationalPrompt(
+  const AInput: string
+): Boolean;
+const
+  CConversationalStarts: array[0..24] of string = (
+    'bom dia', 'boa tarde', 'boa noite', 'hello', 'hi ', 'olá', 'ola',
+    'quem ', 'who ', 'o que ', 'what ', 'por que ', 'porque ', 'why ',
+    'como ', 'how ', 'qual ', 'quais ', 'quando ', 'where ', 'onde ',
+    'explique ', 'explain ', 'me fale ', 'tell me '
+  );
+var
+  LPrefix: string;
+  LText: string;
+begin
+  LText := LowerCase(Trim(AInput));
+  if LText.IsEmpty or LText.StartsWith('/') then
+    Exit(False);
+  if LText.EndsWith('?') then
+    Exit(True);
+  for LPrefix in CConversationalStarts do
+    if LText.StartsWith(LPrefix) then
+      Exit(True);
+  Result := SameText(LText, 'hi') or SameText(LText, 'olá') or
+    SameText(LText, 'ola') or SameText(LText, 'hello');
 end;
 
 class function TRadIAIntentRouter.TryRecommend(

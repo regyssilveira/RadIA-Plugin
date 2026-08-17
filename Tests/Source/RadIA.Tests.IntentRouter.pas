@@ -20,6 +20,8 @@ type
     [Test]
     procedure LeavesOrdinaryChatAndExplicitCommandsUntouched;
     [Test]
+    procedure RoutesConversationalQuestionsDirectlyToChat;
+    [Test]
     procedure RoutesBeginnerPromptMatrix;
   end;
 
@@ -145,6 +147,30 @@ begin
     Assert.IsTrue(TRadIAIntentRouter.TryRecommend(LPrompt, LRecommendation), LPrompt);
     Assert.AreEqual(rikDiagnose, LRecommendation.Intent, LPrompt);
   end;
+end;
+
+procedure TTestRadIAIntentRouter.RoutesConversationalQuestionsDirectlyToChat;
+begin
+  Assert.IsTrue(TRadIAIntentRouter.IsConversationalPrompt('Quem é você?'));
+  Assert.IsTrue(TRadIAIntentRouter.IsConversationalPrompt('O que é FireDAC?'));
+  Assert.IsTrue(TRadIAIntentRouter.IsConversationalPrompt(
+    'Como funcionam transações no Delphi?'
+  ));
+  Assert.IsTrue(TRadIAIntentRouter.IsConversationalPrompt(
+    'Explique a diferença entre commit e rollback'
+  ));
+  Assert.IsTrue(TRadIAIntentRouter.IsConversationalPrompt(
+    'Você conhece o componente TFDMemTable?'
+  ));
+  Assert.IsFalse(TRadIAIntentRouter.IsConversationalPrompt(
+    'Audite o uso de FireDAC deste projeto'
+  ));
+  Assert.IsFalse(TRadIAIntentRouter.IsConversationalPrompt(
+    'Corrija o erro de compilação deste projeto'
+  ));
+  Assert.IsFalse(TRadIAIntentRouter.IsConversationalPrompt(
+    '/agent run inspect the active project'
+  ));
 end;
 
 initialization

@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.0
+# Manual completo do RadIA 2.17.1
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -28,6 +28,11 @@ Digite `/help` no chat para consultar capacidades, comandos principais e links p
 links são abertos no navegador padrão. Jornadas iniciadas sem todos os dados entram em coleta
 conversacional e mantêm cada resposta até a execução ou até `/journey cancel`.
 
+Perguntas diretas, como “quem é você?” ou “o que é FireDAC?”, seguem pelo Chat mesmo quando o botão
+Agent está ativo. Elas não criam plano nem pedem aprovação. Se o Chat usa um executor CLI, a
+pergunta recebe uma execução conversacional isolada e de esforço baixo, sem herdar a sessão da
+tarefa agentiva anterior.
+
 ### 2.1 Abrir o painel
 
 Depois de instalar o pacote correspondente à IDE, abra o Delphi. O RadIA é carregado como package
@@ -39,7 +44,7 @@ são restaurados na próxima abertura do Delphi. Se o painel for fechado antes d
 fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.1`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 

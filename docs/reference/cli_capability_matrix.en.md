@@ -15,7 +15,7 @@
 
 ## Current matrix
 
-| Executor | Structured output | Session ID | Stable resume | Model | MCP | Dedicated FIM | RadIA 2.17.0 use |
+| Executor | Structured output | Session ID | Stable resume | Model | MCP | Dedicated FIM | RadIA 2.17.1 use |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Codex CLI | Yes, JSONL | Structured event | `exec resume <id>` | Yes | Yes | Not declared | New execution per message |
 | Claude Code | Yes, stream JSON | Structured event | `--resume <id>` | Yes | Yes | Not declared | New execution per message |
