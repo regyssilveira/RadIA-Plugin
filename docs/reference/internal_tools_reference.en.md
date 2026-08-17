@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 206 internal tools: what each one does and at what stage
+This page explains RadIA's 211 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -151,6 +151,11 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 | `GenerateFireDACTests` | Prepares a DUnitX fixture for the FireDAC artifact without writing it. | When planning automated coverage together with the data code. |
 | `PrepareFireDACQueryOptimization` | Prepares an optimization plan without executing SQL and keeps gains without an execution plan as hypotheses. | After deterministic analysis and before any change or benchmark. |
 | `PrepareFireDACThreadSafetyPlan` | Prepares a worker-isolation plan for connections, datasets, transactions, and UI. | After locating cross-thread sharing and before preparing a patch. |
+| `PrepareFireDACParameterFix` | Prepares a deterministic parameter accessor replacement for a proven finding. | After validating a type mismatch and before application consent. |
+| `PrepareFireDACTransactionFix` | Prepares deterministic rollback insertion for a proven finding. | After the audit locates a handler without rollback and before consent. |
+| `PrepareFireDACFix` | Routes a supported, proven FireDAC rule to its deterministic preparer. | From the fix action of a finding in the problems panel. |
+| `ApplyFireDACFix` | Applies only an Advisor-owned preview whose fingerprint remains valid. | After review and explicit user consent. |
+| `RevertFireDACFix` | Reverts only an applied FireDAC fix with no later editor changes. | When the user undoes the fix or a later gate requests rollback. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
 |`AuditDelphiLocalization`|Find visible Pascal and DFM text that may move to `resourcestring`.|Before preparing a reviewable extraction or comparing languages.|
 |`PrepareLocalizationExtraction`|Prepare an immutable patch that moves one active-unit literal to `resourcestring` without applying changes.|After selecting a candidate; application uses `ApplyPatch` with consent and reversal uses `RevertPatch`.|

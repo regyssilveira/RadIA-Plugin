@@ -482,6 +482,16 @@ This list contains only the built-in tools registered by the current package. Ar
 | `PrepareFireDACQueryOptimization` | Prepares an evidence-aware FireDAC query optimization plan without executing SQL. | `RadIA.Core.FireDAC.Plans.pas` |
 | `PrepareFireDACThreadSafetyPlan` | Prepares a deterministic FireDAC worker-isolation plan without changing source files. | `RadIA.Core.FireDAC.Plans.pas` |
 
+## Reversible FireDAC fixes
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareFireDACParameterFix` | Prepares a proven FireDAC parameter accessor fix without changing the editor. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `PrepareFireDACTransactionFix` | Prepares a proven missing FireDAC rollback fix without changing the editor. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `PrepareFireDACFix` | Routes a proven supported FireDAC finding to a deterministic patch preview. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `ApplyFireDACFix` | Applies a reviewed FireDAC-owned fix when its editor fingerprint still matches. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `RevertFireDACFix` | Reverts an applied FireDAC-owned fix when its proposed fingerprint still matches. | `RadIA.Core.FireDAC.Fixes.pas` |
+
 ## Delphi ecosystem diagnostics
 
 | Tool | Purpose | Source unit |
@@ -547,7 +557,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 67
-- Registered built-in tools: 206
+- Registered groups: 68
+- Registered built-in tools: 211
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

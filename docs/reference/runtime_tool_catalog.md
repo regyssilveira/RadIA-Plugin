@@ -482,6 +482,16 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `PrepareFireDACQueryOptimization` | Prepara um plano de otimização sem executar SQL e mantém ganhos sem plano de execução como hipóteses. | `RadIA.Core.FireDAC.Plans.pas` |
 | `PrepareFireDACThreadSafetyPlan` | Prepara um plano de isolamento de conexão, dataset, transação e UI por worker. | `RadIA.Core.FireDAC.Plans.pas` |
 
+## Correções FireDAC reversíveis
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareFireDACParameterFix` | Prepara uma troca determinística de accessor de parâmetro para um finding comprovado. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `PrepareFireDACTransactionFix` | Prepara a inclusão determinística de rollback para um finding comprovado. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `PrepareFireDACFix` | Encaminha uma regra FireDAC suportada e comprovada ao preparador determinístico correspondente. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `ApplyFireDACFix` | Aplica somente preview pertencente ao Advisor e com fingerprint ainda válido. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `RevertFireDACFix` | Reverte somente uma correção FireDAC aplicada e ainda sem alterações posteriores. | `RadIA.Core.FireDAC.Fixes.pas` |
+
 ## Diagnóstico do ecossistema Delphi
 
 | Ferramenta | O que faz | Unit de origem |
@@ -547,7 +557,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 67
-- Ferramentas internas registradas: 206
+- Grupos registrados: 68
+- Ferramentas internas registradas: 211
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

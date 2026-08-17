@@ -541,6 +541,17 @@
       ]
     },
     {
+      "name": "Reversible FireDAC fixes",
+      "source": "Source/Core/RadIA.Core.FireDAC.Fixes.pas",
+      "tools": [
+        "PrepareFireDACParameterFix",
+        "PrepareFireDACTransactionFix",
+        "PrepareFireDACFix",
+        "ApplyFireDACFix",
+        "RevertFireDACFix"
+      ]
+    },
+    {
       "name": "Delphi ecosystem diagnostics",
       "source": "Source/Core/RadIA.Core.DelphiEcosystemTools.pas",
       "tools": [

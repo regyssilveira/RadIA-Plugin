@@ -19,7 +19,9 @@ transações, configuração, thread safety, comparação com schema SQLite loca
 para explicações por IA. Também estão disponíveis previews determinísticos e sem escrita para
 repository, DataModule, query, DTO e fixture DUnitX, além de planos orientados por evidências para
 otimização de query e thread safety. Permanecem abertos os fluxos de aplicação e reversão desses
-artefatos, correções reversíveis, gates de migração e a matriz E2E completa.
+artefatos. Correções reversíveis já cobrem mismatch comprovado de accessor de parâmetro e rollback
+ausente, com ownership do preview e fingerprint. Permanecem abertos os gates compostos de build e
+teste, gates de migração e a matriz E2E completa.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.
