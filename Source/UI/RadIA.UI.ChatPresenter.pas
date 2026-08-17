@@ -253,8 +253,10 @@ type
     procedure StartAgentRun(const AObjective: string);
     function TryStartCliAgentRun(
       const AObjective: string;
-      const ASettings: TRadIAResolvedExecutionSettings
+      const ASettings: TRadIAResolvedExecutionSettings;
+      const AConversational: Boolean = False
     ): Boolean;
+    function BuildConversationalCliPrompt(const APromptText: string): string;
     procedure HandleCliAgentFinished(
       const AResult: TRadIACliProcessResult;
       const ADefinition: TRadIACliDefinition;
@@ -492,6 +494,7 @@ type
 
     {$IFDEF TESTS}
     function TestPreProcessPrompt(const APromptText: string): string;
+    function TestBuildConversationalCliPrompt(const APromptText: string): string;
     {$ENDIF}
 
     property SessionManager: TRadIASessionManager read FSessionManager;
@@ -1666,6 +1669,7 @@ end;
 
 procedure TRadIAChatPresenter.SendPromptText(const APromptText: string);
 var
+  LConversational: Boolean;
   LEffectiveSettings: TRadIAResolvedExecutionSettings;
   LPreflightMessage: string;
   LProcessed: string;
@@ -1674,6 +1678,7 @@ begin
     Exit;
 
   EnsureJourneyProjectBoundary;
+  LConversational := TRadIAIntentRouter.IsConversationalPrompt(APromptText);
   LProcessed := PreProcessPrompt(APromptText);
   LEffectiveSettings := ResolveEffectiveExecutionSettings;
   if not CheckChatPreflight(LEffectiveSettings, LPreflightMessage) then
@@ -1682,12 +1687,12 @@ begin
     Exit;
   end;
   PostToWebView('add_message', 'user', APromptText);
-  if FAgentModeEnabled then
+  if FAgentModeEnabled and not LConversational then
   begin
     StartAgentRun(LProcessed);
     Exit;
   end;
-  if TryStartCliAgentRun(LProcessed, LEffectiveSettings) then
+  if TryStartCliAgentRun(LProcessed, LEffectiveSettings, LConversational) then
     Exit;
   SendPromptToAI(LProcessed);
 end;
@@ -4531,9 +4536,22 @@ begin
   end;
 end;
 
+function TRadIAChatPresenter.BuildConversationalCliPrompt(
+  const APromptText: string
+): string;
+begin
+  Result :=
+    'You are RadIA, the AI assistant integrated into RAD Studio for Delphi development. ' +
+    'Answer the user directly in the user''s language. This is a conversational request: ' +
+    'do not inspect files, run commands, create a plan, or describe yourself as the CLI executor.' +
+    sLineBreak + sLineBreak +
+    'User message:' + sLineBreak + APromptText;
+end;
+
 function TRadIAChatPresenter.TryStartCliAgentRun(
   const AObjective: string;
-  const ASettings: TRadIAResolvedExecutionSettings
+  const ASettings: TRadIAResolvedExecutionSettings;
+  const AConversational: Boolean
 ): Boolean;
 var
   LDefinition: TRadIACliDefinition;
@@ -4541,10 +4559,12 @@ var
   LExternalSessionId: string;
   LGuard: IRadIALifecycleGuard;
   LInvocation: TRadIACliInvocation;
+  LPrompt: string;
   LProject: TRadIAProjectSnapshot;
   LSession: TSessionInfo;
   LSessionId: string;
   LTimeoutMs: Integer;
+  LReasoningEffort: string;
   LUserMessage: IRadIAChatMessage;
   LWorkingDirectory: string;
 begin
@@ -4586,17 +4606,25 @@ begin
 
   LExternalSessionId := '';
   LSessionId := FSessionManager.ActiveSessionId;
-  if FSessionManager.TryGetSession(LSessionId, LSession) and
+  if not AConversational and
+    FSessionManager.TryGetSession(LSessionId, LSession) and
     SameText(LSession.CliClientId, LDefinition.Id) and
     SameText(LSession.CliWorkingDirectory, LWorkingDirectory) then
     LExternalSessionId := LSession.CliExternalSessionId;
+  LPrompt := AObjective;
+  LReasoningEffort := FAgentExecutorSettings.Load.ReasoningEffort;
+  if AConversational then
+  begin
+    LPrompt := BuildConversationalCliPrompt(AObjective);
+    LReasoningEffort := 'low';
+  end;
   LInvocation := TRadIACliInvocationBuilder.Build(
     LDefinition,
     LDetection.ExecutablePath,
-    AObjective,
+    LPrompt,
     LWorkingDirectory,
     LExternalSessionId,
-    FAgentExecutorSettings.Load.ReasoningEffort
+    LReasoningEffort
   );
   LUserMessage := TRadIAChatMessage.CreateMessage(
     mrUser,
@@ -5618,6 +5646,13 @@ end;
 function TRadIAChatPresenter.TestPreProcessPrompt(const APromptText: string): string;
 begin
   Result := PreProcessPrompt(APromptText);
+end;
+
+function TRadIAChatPresenter.TestBuildConversationalCliPrompt(
+  const APromptText: string
+): string;
+begin
+  Result := BuildConversationalCliPrompt(APromptText);
 end;
 {$ENDIF}
 

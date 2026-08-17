@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.0 user manual
+# Complete RadIA 2.17.1 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -21,6 +21,11 @@ Type `/help` in chat for capabilities, primary commands, and guide links. Links 
 browser. Journeys started without every required value enter conversational intake and retain each
 answer until execution or `/journey cancel`.
 
+Direct questions such as “who are you?” or “what is FireDAC?” stay in Chat even while the Agent
+button is enabled. They neither create a plan nor request approval. If Chat uses a CLI executor,
+the question receives an isolated low-effort conversational run and does not inherit the previous
+agent task session.
+
 After installing the package for the intended IDE architecture, open Delphi and dock the RadIA
 panel. Configure a provider under `Tools > Options > Rad IA`, select a model, create a session, and
 send a prompt with `Ctrl + Enter`.
@@ -30,7 +35,7 @@ the next time Delphi opens. If the panel is closed before exiting, it remains cl
 session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.0`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.1`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).

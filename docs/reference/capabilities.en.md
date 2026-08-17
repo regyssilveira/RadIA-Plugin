@@ -42,6 +42,10 @@ and IDE64 rules therefore enter the context with stable, queryable citations.
 | Extensions | Visual creation, sandbox, install, export, signing, and management plus a versioned tool API protected by the policy pipeline. |
 | Declarative extensions | Hot-reloaded commands, skills, journeys, knowledge, references, templates, aliases, and audited workflows with transactional package resources. |
 | Skill portability | Project-scoped publication to four CLIs with preview, central consent, ownership hashes, rollback, and conflict preservation. |
+
+Ordinary questions remain in Chat and do not start a tool loop or require plan approval. With a CLI
+transport, RadIA uses an isolated low-effort conversational run instead of resuming a previous
+agent task.
 | FireDAC inventory | Locate bounded PAS/DFM components and relationships without executing SQL or returning credential values. |
 | Local SQLite | Discover tables, views, and columns, then preview one consented read-only query with bounded, redacted grid and CSV output. |
 
