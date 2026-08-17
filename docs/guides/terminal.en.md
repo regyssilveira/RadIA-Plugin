@@ -178,5 +178,5 @@ geometry, input and output, the **New terminal**, **Close terminal**, **Run**, *
 **Open error**, and **Send to chat** controls, the five accessible labels, at least 13 navigable
 points per Tab, two profiles and one
 non-empty palette. The current matrix exclusively covers Delphi 12 Win32, Delphi 13 Win32 and Delphi
-13 IDE64, all with the current catalog of 187 tools. Detailed evidence remains outside `docs` as
+13 IDE64, all with the current catalog of 212 tools. Detailed evidence remains outside `docs` as
 historical record.

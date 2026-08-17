@@ -456,11 +456,53 @@ This list contains only the built-in tools registered by the current package. Ar
 | `CompareRuntimePerformanceEvidence` | Compares the same scenario across distinct runtime sessions and builds. | `RadIA.Core.RuntimePerformance.pas` |
 | `CancelRuntimePerformanceMeasurement` | Cancels active performance sampling without producing evidence. | `RadIA.Core.RuntimePerformance.pas` |
 
+## FireDAC query diagnostics
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `AnalyzeFireDACQuery` | Analyzes bounded SQL text without connecting to or querying a database. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ValidateFireDACParameters` | Validates FireDAC binding names, types, directions, sizes, and null state without executing SQL. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ExplainFireDACQuery` | Structures deterministic SQL facts, hypotheses, and limitations for AI explanation. | `RadIA.Core.FireDAC.Tools.pas` |
+| `ExplainFireDACFinding` | Structures a FireDAC finding for AI explanation without accepting evidence or secret values. | `RadIA.Core.FireDAC.Tools.pas` |
+
+## Safe FireDAC artifact previews
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `GenerateFireDACRepositoryPreview` | Prepares a deterministic FireDAC repository preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACDataModulePreview` | Prepares a deterministic FireDAC data module preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACQueryPreview` | Prepares a deterministic FireDAC query preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACDTOPreview` | Prepares a deterministic FireDAC DTO preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+| `GenerateFireDACTests` | Prepares a deterministic FireDAC DUnitX test preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
+
+## Evidence-aware FireDAC plans
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareFireDACQueryOptimization` | Prepares an evidence-aware FireDAC query optimization plan without executing SQL. | `RadIA.Core.FireDAC.Plans.pas` |
+| `PrepareFireDACThreadSafetyPlan` | Prepares a deterministic FireDAC worker-isolation plan without changing source files. | `RadIA.Core.FireDAC.Plans.pas` |
+
+## Reversible FireDAC fixes
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareFireDACParameterFix` | Prepares a proven FireDAC parameter accessor fix without changing the editor. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `PrepareFireDACTransactionFix` | Prepares a proven missing FireDAC rollback fix without changing the editor. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `PrepareFireDACFix` | Routes a proven supported FireDAC finding to a deterministic patch preview. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `ApplyFireDACFix` | Applies a reviewed FireDAC-owned fix when its editor fingerprint still matches. | `RadIA.Core.FireDAC.Fixes.pas` |
+| `RevertFireDACFix` | Reverts an applied FireDAC-owned fix when its proposed fingerprint still matches. | `RadIA.Core.FireDAC.Fixes.pas` |
+
 ## Delphi ecosystem diagnostics
 
 | Tool | Purpose | Source unit |
 |---|---|---|
-| `InspectFireDACUsage` | Inventories FireDAC connections, queries, parameters, transactions, and risks without executing SQL. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `InspectFireDACUsage` | Returns the structured FireDAC project inventory while preserving legacy usage counters. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `GetFireDACProjectReport` | Returns a bounded FireDAC inventory and sanitized embedded SQL analysis without execution. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `AuditFireDACTransactions` | Audits bounded Pascal transaction flows without executing SQL or connecting to a database. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `InspectFireDACConfiguration` | Inspects bounded FireDAC configuration while discarding credentials and absolute paths. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `DiagnoseFireDACEnvironment` | Diagnoses static FireDAC driver configuration without connections or installation. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `AnalyzeFireDACThreadSafety` | Finds shared FireDAC components and unsafe UI access in bounded background contexts. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `DiagnoseDelphiDependencies` | Diagnoses Delphi project search paths and dependency manifests without installing anything. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `AuditDelphiLocalization` | Inventories user-visible Pascal and DFM literals for localization review. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `PrepareLocalizationExtraction` | Prepares an immutable patch that moves one active-unit literal to resourcestring. | `RadIA.Core.DelphiEcosystemTools.pas` |
@@ -471,6 +513,8 @@ This list contains only the built-in tools registered by the current package. Ar
 |---|---|---|
 | `InspectLocalSQLiteDatabase` | Reads tables, views, and columns from a workspace-local SQLite database without executing user SQL. | `RadIA.Core.LocalDatabaseTools.pas` |
 | `PreviewLocalSQLiteQuery` | Runs one reviewed read-only SQLite query with bounded rows and sanitized grid and CSV output. | `RadIA.Core.LocalDatabaseTools.pas` |
+| `CompareFireDACCodeWithSchema` | Compares typed FireDAC expectations with an authorized workspace-local SQLite schema. | `RadIA.Core.LocalDatabaseTools.pas` |
+| `GenerateFireDACSchemaReport` | Generates a sanitized FireDAC-oriented report from a workspace-local SQLite schema. | `RadIA.Core.LocalDatabaseTools.pas` |
 
 ## FastMM5 log evidence
 
@@ -500,6 +544,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `InventoryLegacyDataAccess` | Inventories BDE, ADO and dbExpress references in the active project. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PlanLegacyMigrationBatches` | Groups legacy data findings into bounded technology and file batches. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PrepareLegacyMigrationBatch` | Prepares a reversible preview for deterministic changes in one batch. | `RadIA.Core.LegacyDataMigrationTools.pas` |
+| `ApplyLegacyMigrationBatch` | Applies one prepared migration batch before FireDAC, build and test gates. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `RecordLegacyMigrationGate` | Records build and test evidence, reverting a failed applied batch. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `GetLegacyMigrationReport` | Reports batch compatibility, gate evidence and required manual actions. | `RadIA.Core.LegacyDataMigrationTools.pas` |
 | `PlanDextAndFormModernization` | Plans DEXT adoption and form decomposition after data migration. | `RadIA.Core.LegacyDataMigrationTools.pas` |
@@ -513,7 +558,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 64
-- Registered built-in tools: 187
+- Registered groups: 68
+- Registered built-in tools: 212
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

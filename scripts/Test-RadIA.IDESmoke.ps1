@@ -29,7 +29,12 @@ param(
     [string]$AgentRuntimeEvidencePath = "",
     [string]$DeclarativeWorkflowEvidencePath = "",
     [string]$KnowledgeEvidencePath = "",
-    [string]$FirstValueEvidencePath = ""
+    [string]$FirstValueEvidencePath = "",
+    [string]$FireDACScenarioId = "",
+    [string]$FireDACProjectPath = "",
+    [string]$FireDACEvidencePath = "",
+    [string]$FireDACDatabasePath = "",
+    [string]$FireDACTestExecutablePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -88,6 +93,18 @@ if ($UpgradeFromPackagePath -and -not $ExercisePackageLifecycle) {
         "Cross-version upgrade validation requires " +
         "-ExercisePackageLifecycle."
     )
+}
+if ($FireDACScenarioId -and -not $FireDACProjectPath) {
+    throw "A FireDAC IDE scenario requires -FireDACProjectPath."
+}
+if ($FireDACEvidencePath -and -not $FireDACScenarioId) {
+    throw "FireDAC evidence requires -FireDACScenarioId."
+}
+if ($FireDACDatabasePath -and -not $FireDACScenarioId) {
+    throw "A FireDAC database fixture requires -FireDACScenarioId."
+}
+if ($FireDACTestExecutablePath -and -not $FireDACScenarioId) {
+    throw "A FireDAC test executable requires -FireDACScenarioId."
 }
 
 function Get-RadIAProcessDescendants {
@@ -451,7 +468,7 @@ public static class RadIADockingSmokeNative
 }
 
 if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-    $ExerciseInlineReview) {
+    $ExerciseInlineReview -or $FireDACScenarioId) {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type @"
 using System;
@@ -749,6 +766,126 @@ public static class RadIAKnowledgeSmokeNative
     }
 }
 "@
+}
+
+function Save-RadIAActiveEditor {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess
+    )
+
+    $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+        [uint32]$IDEProcess.Id,
+        "TAppBuilder"
+    )
+    $menuBar = [RadIAKnowledgeSmokeNative]::FindChildByText(
+        $mainWindow,
+        "Menu bar"
+    )
+    if ($mainWindow -eq [IntPtr]::Zero -or
+        $menuBar -eq [IntPtr]::Zero) {
+        throw "The Delphi File menu is not available for save."
+    }
+    $mousePosition = [IntPtr]((12 -shl 16) -bor 12)
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $menuBar,
+        0x0201,
+        [IntPtr]1,
+        $mousePosition
+    )
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $menuBar,
+        0x0202,
+        [IntPtr]0,
+        $mousePosition
+    )
+    Start-Sleep -Milliseconds 250
+    $saveKey = [int][char]'S'
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $mainWindow,
+        0x0100,
+        [IntPtr]$saveKey,
+        [IntPtr]0
+    )
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $mainWindow,
+        0x0101,
+        [IntPtr]$saveKey,
+        [IntPtr]0
+    )
+    Start-Sleep -Seconds 2
+}
+
+function Test-RadIAPluginShutdownCompleted {
+    $logDirectory = Join-Path $env:APPDATA "RadIA\Logs"
+    $logPath = Join-Path $logDirectory "radia.log"
+    if (-not (Test-Path -LiteralPath $logPath -PathType Leaf)) {
+        return $false
+    }
+    $logTail = (Get-Content -LiteralPath $logPath -Tail 200) -join "`n"
+    $startIndex = $logTail.LastIndexOf(
+        "TRadIAWizard.Destroy started",
+        [StringComparison]::Ordinal
+    )
+    if ($startIndex -lt 0) {
+        return $false
+    }
+    $shutdownBlock = $logTail.Substring($startIndex)
+    return (
+        $shutdownBlock.Contains(
+            "TRadIAWizard.Destroy shutdown state: True"
+        ) -and
+        $shutdownBlock.Contains("MCP Stop completed") -and
+        $shutdownBlock.Contains(
+            "Background threads remaining after shutdown wait: 0"
+        ) -and
+        $shutdownBlock.Contains("TRadIAWizard.Destroy completed") -and
+        $shutdownBlock -notmatch '(?i)access violation|eaccessviolation'
+    )
+}
+
+function Select-RadIAEditorCharacters {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)]
+        [ValidateRange(1, 4096)]
+        [int]$CharacterCount
+    )
+
+    $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+        [uint32]$IDEProcess.Id,
+        "TAppBuilder"
+    )
+    if ($mainWindow -eq [IntPtr]::Zero) {
+        throw "The Delphi editor window is not available for selection."
+    }
+    [void][RadIAKnowledgeSmokeNative]::ShowWindow($mainWindow, 9)
+    [void][RadIAKnowledgeSmokeNative]::SetForegroundWindow($mainWindow)
+    [System.Windows.Forms.SendKeys]::SendWait(
+        "+{RIGHT " + $CharacterCount + "}"
+    )
+    Start-Sleep -Seconds 1
+}
+
+function Set-RadIAEditorCaretPosition {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateRange(1, 1000000)]
+        [int]$Line,
+        [Parameter(Mandatory)]
+        [ValidateRange(1, 1000000)]
+        [int]$Column
+    )
+
+    [System.Windows.Forms.SendKeys]::SendWait("^{HOME}")
+    if ($Line -gt 1) {
+        [System.Windows.Forms.SendKeys]::SendWait("{DOWN " + ($Line - 1) + "}")
+    }
+    if ($Column -gt 1) {
+        [System.Windows.Forms.SendKeys]::SendWait("{RIGHT " + ($Column - 1) + "}")
+    }
+    Start-Sleep -Milliseconds 250
 }
 
 function Open-RadIAEditorFile {
@@ -1607,6 +1744,1415 @@ function Invoke-RadIASmokeTool {
     return $response.result.structuredContent
 }
 
+function Wait-RadIAConsentWindowState {
+    param(
+        [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)][bool]$Visible,
+        [ValidateRange(1, 120)][int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $window = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+            [uint32]$IDEProcess.Id,
+            "TRadIAConsentForm"
+        )
+        if (($window -ne [IntPtr]::Zero) -eq $Visible) {
+            return $window
+        }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "The RadIA consent dialog did not reach the expected state."
+}
+
+function Invoke-RadIASmokeToolWithConsent {
+    param(
+        [Parameter(Mandatory)][string]$BridgePath,
+        [Parameter(Mandatory)][string]$InstanceFile,
+        [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)][string]$Name,
+        [hashtable]$Arguments = @{},
+        [ValidateSet("Allow once", "Deny", "Cancel")]
+        [string]$ConsentButtonText = "Allow once",
+        [switch]$ExpectError
+    )
+
+    $requestKey = [Guid]::NewGuid().ToString("N")
+    $requestRoot = Join-Path ([IO.Path]::GetTempPath()) (
+        "radia-firedac-consent-$requestKey"
+    )
+    $inputPath = "$requestRoot.in"
+    $outputPath = "$requestRoot.out"
+    $errorPath = "$requestRoot.err"
+    $initializeRequest = @{
+        jsonrpc = "2.0"
+        id = 1
+        method = "initialize"
+        params = @{
+            protocolVersion = "2025-06-18"
+            capabilities = @{}
+            clientInfo = @{
+                name = "radia-firedac-smoke"
+                version = "1"
+            }
+        }
+    } | ConvertTo-Json -Depth 8 -Compress
+    $initializedRequest = @{
+        jsonrpc = "2.0"
+        method = "notifications/initialized"
+        params = @{}
+    } | ConvertTo-Json -Depth 4 -Compress
+    $callRequest = @{
+        jsonrpc = "2.0"
+        id = 2
+        method = "tools/call"
+        params = @{
+            name = $Name
+            arguments = $Arguments
+        }
+    } | ConvertTo-Json -Depth 8 -Compress
+    $requests = @($initializeRequest, $initializedRequest, $callRequest)
+    Set-Content `
+        -LiteralPath $inputPath `
+        -Value $requests `
+        -Encoding UTF8
+    $bridgeProcess = $null
+    try {
+        $bridgeProcess = Start-Process `
+            -FilePath $BridgePath `
+            -ArgumentList "`"$InstanceFile`"" `
+            -RedirectStandardInput $inputPath `
+            -RedirectStandardOutput $outputPath `
+            -RedirectStandardError $errorPath `
+            -PassThru
+        $consentWindow = Wait-RadIAConsentWindowState `
+            -IDEProcess $IDEProcess `
+            -Visible $true
+        $consentButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+            $consentWindow,
+            $ConsentButtonText
+        )
+        if ($consentButton -eq [IntPtr]::Zero) {
+            throw "The $ConsentButtonText consent button was not found."
+        }
+        [void][RadIAKnowledgeSmokeNative]::SendMessage(
+            $consentButton,
+            0x00F5,
+            [IntPtr]0,
+            [IntPtr]0
+        )
+        [void](Wait-RadIAConsentWindowState `
+            -IDEProcess $IDEProcess `
+            -Visible $false)
+        if (-not $bridgeProcess.WaitForExit(120000)) {
+            throw "The MCP bridge timed out while executing $Name."
+        }
+        $response = @(
+            Get-Content -LiteralPath $outputPath |
+                ForEach-Object { $_ | ConvertFrom-Json } |
+                Where-Object { $_.id -eq 2 }
+        ) | Select-Object -First 1
+        if ($ExpectError) {
+            if (-not $response -or
+                (-not $response.error -and -not $response.result.isError)) {
+                throw "Tool $Name unexpectedly succeeded."
+            }
+            return $response
+        }
+        if (-not $response -or $response.error -or
+            $response.result.isError) {
+            $details = $response | ConvertTo-Json -Depth 8 -Compress
+            throw "Tool $Name failed after consent: $details"
+        }
+        return $response.result.structuredContent
+    } finally {
+        if ($bridgeProcess -and -not $bridgeProcess.HasExited) {
+            Stop-Process -Id $bridgeProcess.Id -Force
+            [void]$bridgeProcess.WaitForExit(5000)
+        }
+        foreach ($temporaryPath in @($inputPath, $outputPath, $errorPath)) {
+            if (Test-Path -LiteralPath $temporaryPath) {
+                Remove-Item -LiteralPath $temporaryPath -Force
+            }
+        }
+    }
+}
+
+function Get-RadIAStringSha256 {
+    param([Parameter(Mandatory)][string]$Value)
+
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Value)
+        return (
+            [BitConverter]::ToString($algorithm.ComputeHash($bytes))
+        ).Replace("-", "").ToLowerInvariant()
+    } finally {
+        $algorithm.Dispose()
+    }
+}
+
+function Invoke-RadIAFireDACReadOnlyScenario {
+    param(
+        [Parameter(Mandatory)][string]$BridgePath,
+        [Parameter(Mandatory)][string]$InstanceFile,
+        [Parameter(Mandatory)][Diagnostics.Process]$IDEProcess,
+        [Parameter(Mandatory)][string]$ScenarioId,
+        [Parameter(Mandatory)][string]$DelphiVersion,
+        [Parameter(Mandatory)][string]$Platform,
+        [string]$ProjectPath = "",
+        [string]$DatabasePath = "",
+        [string]$TestExecutablePath = "",
+        [string]$EvidencePath = ""
+    )
+
+    $consentObserved = $false
+    $consentDecision = "not-required"
+    $databaseFingerprintBefore = ""
+    $databaseFingerprintAfter = ""
+    $artifactState = "not-applicable"
+    $buildPassed = $false
+    $buildFailed = $false
+    $rollbackSucceeded = $false
+    $smartDiffReviewed = $false
+    $stalePreviewRejected = $false
+    $laterChangePreserved = $false
+    $migrationGatePassed = $false
+    $migrationGateFailed = $false
+    $projectSwitched = $false
+    $projectReopened = $false
+    $noStaleLocation = $false
+    $analysisInFlight = $false
+    $analysisProcessId = 0
+    $analysisInputPath = ""
+    $analysisOutputPath = ""
+    $analysisErrorPath = ""
+    $cleanAnalysisShutdown = $false
+    $noAnalysisAccessViolation = $false
+    $noOrphanAnalysisThread = $false
+    $testsPassed = $false
+    $results = @()
+    switch ($ScenarioId) {
+        "firedac-inventory-navigation" {
+            $inventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $report = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetFireDACProjectReport"
+            if ($inventory.connectionCount -lt 1) {
+                throw "FireDAC inventory did not find the fixture connection."
+            }
+            if (@($inventory.components).Count -lt 2) {
+                throw "FireDAC inventory did not return navigable components."
+            }
+            $results = @($inventory, $report)
+        }
+        "firedac-selected-sql-analysis" {
+            if (-not $ProjectPath) {
+                throw "The selected SQL scenario requires its project fixture."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            $selectedSql = "select id from customer where id = :Id"
+            $sourceLines = @(
+                (Get-Content -LiteralPath $targetFile -Raw).
+                    Replace("`r`n", "`n").
+                    Replace("`r", "`n").
+                    Split("`n")
+            )
+            $sqlLine = 0
+            $sqlColumn = 0
+            for ($index = 0; $index -lt $sourceLines.Count; $index++) {
+                $columnIndex = $sourceLines[$index].IndexOf(
+                    $selectedSql,
+                    [StringComparison]::Ordinal
+                )
+                if ($columnIndex -ge 0) {
+                    $sqlLine = $index + 1
+                    $sqlColumn = $columnIndex + 1
+                    break
+                }
+            }
+            if ($sqlLine -lt 1 -or $sqlColumn -lt 1) {
+                throw "The SQL fixture text was not found."
+            }
+            $navigation = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "NavigateToFile" `
+                -Arguments @{
+                    fileName = $targetFile
+                    line = $sqlLine
+                    column = $sqlColumn
+                }
+            Invoke-RadIAEditorRepaint -IDEProcess $IDEProcess
+            Set-RadIAEditorCaretPosition `
+                -Line $sqlLine `
+                -Column $sqlColumn
+            Select-RadIAEditorCharacters `
+                -IDEProcess $IDEProcess `
+                -CharacterCount $selectedSql.Length
+            $selection = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorSelection"
+            if ($selection.content -ne $selectedSql) {
+                $actualSelection = ConvertTo-Json $selection.content -Compress
+                throw (
+                    "The real editor SQL selection did not match the fixture. " +
+                    "Actual selection: $actualSelection"
+                )
+            }
+            $analysis = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "AnalyzeFireDACQuery" `
+                -Arguments @{
+                    sql = $selection.content
+                }
+            $serialized = $analysis | ConvertTo-Json -Depth 8 -Compress
+            if ($analysis.sqlExecuted -ne $false) {
+                throw "FireDAC query analysis reported SQL execution."
+            }
+            if ($serialized.Contains($selectedSql)) {
+                throw "FireDAC query analysis echoed the SQL payload."
+            }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $results = @($navigation, $selection, $analysis)
+        }
+        "firedac-credential-redaction" {
+            $configuration = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACConfiguration"
+            $serialized = $configuration |
+                ConvertTo-Json -Depth 8 -Compress
+            if ($configuration.credentialsCollected -ne $false) {
+                throw "FireDAC configuration reported credential collection."
+            }
+            if ($serialized.Contains("radia-e2e-secret")) {
+                throw "FireDAC configuration leaked the fixture credential."
+            }
+            $results = @($configuration)
+        }
+        "firedac-unsafe-transaction" {
+            $audit = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "AuditFireDACTransactions"
+            $serialized = $audit | ConvertTo-Json -Depth 8 -Compress
+            if (-not $serialized.Contains("firedac.transaction.rollback-missing")) {
+                throw "FireDAC transaction audit did not find the missing rollback."
+            }
+            $results = @($audit)
+        }
+        "firedac-shared-thread-connection" {
+            $analysis = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "AnalyzeFireDACThreadSafety"
+            $serialized = $analysis | ConvertTo-Json -Depth 8 -Compress
+            if (-not $serialized.Contains("firedac.thread.shared-component")) {
+                throw "FireDAC thread analysis did not find shared access."
+            }
+            $plan = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareFireDACThreadSafetyPlan" `
+                -Arguments @{
+                    componentType = "TFDConnection"
+                    sharedConnection = $true
+                    sharedDataset = $true
+                    uiAccessFromWorker = $true
+                    ownerScope = "shared"
+                }
+            $results = @($analysis, $plan)
+        }
+        "firedac-sqlite-grid-csv" {
+            if (-not $DatabasePath) {
+                throw "The SQLite grid scenario requires a database fixture."
+            }
+            $databaseFingerprintBefore = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $schema = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectLocalSQLiteDatabase" `
+                -Arguments @{ filePath = $DatabasePath }
+            $preview = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "PreviewLocalSQLiteQuery" `
+                -Arguments @{
+                    filePath = $DatabasePath
+                    sql = (
+                        "select id, name, access_token from customer " +
+                        "order by id"
+                    )
+                    maxRows = 2
+                }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $databaseFingerprintAfter = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $serialized = $preview | ConvertTo-Json -Depth 8 -Compress
+            if ($schema.readOnly -ne $true -or $schema.objectCount -lt 1) {
+                throw "The SQLite schema inspection was not read-only and bounded."
+            }
+            if ($preview.rowCount -ne 2 -or $preview.truncated -ne $true) {
+                throw "The SQLite preview did not return a paginated grid."
+            }
+            if ($preview.exportSanitized -ne $true -or
+                "access_token" -notin @($preview.redactedColumns)) {
+                throw "The SQLite preview did not sanitize its CSV export."
+            }
+            if ($serialized.Contains("radia-secret")) {
+                throw "The SQLite preview leaked a fixture secret."
+            }
+            if ($databaseFingerprintBefore -ne $databaseFingerprintAfter) {
+                throw "The read-only SQLite preview changed the database."
+            }
+            $results = @($schema, $preview)
+        }
+        "firedac-sqlite-dml-rejection" {
+            if (-not $DatabasePath) {
+                throw "The SQLite DML scenario requires a database fixture."
+            }
+            $databaseFingerprintBefore = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $rejection = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "PreviewLocalSQLiteQuery" `
+                -Arguments @{
+                    filePath = $DatabasePath
+                    sql = "delete from customer"
+                    maxRows = 2
+                } `
+                -ExpectError
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $databaseFingerprintAfter = (
+                Get-FileHash -LiteralPath $DatabasePath -Algorithm SHA256
+            ).Hash.ToLowerInvariant()
+            $serialized = $rejection | ConvertTo-Json -Depth 8 -Compress
+            if (-not $serialized.Contains("unsafe_sql")) {
+                throw "The SQLite preview did not reject mutating SQL."
+            }
+            if ($databaseFingerprintBefore -ne $databaseFingerprintAfter) {
+                throw "Rejected SQLite DML changed the database."
+            }
+            $results = @($rejection)
+        }
+        "firedac-repository-preview-denied" {
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GenerateFireDACRepositoryPreview" `
+                -Arguments @{
+                    unitName = "RadIA.E2E.CustomerRepository"
+                    entityName = "Customer"
+                    tableName = "customer"
+                    relativeDirectory = "Generated"
+                    registerInProject = $false
+                }
+            if (-not $preview.previewId -or $preview.state -ne "prepared") {
+                throw "The FireDAC repository preview was not prepared."
+            }
+            if (Test-Path -LiteralPath $preview.fileName -PathType Leaf) {
+                throw "The FireDAC repository preview created a file."
+            }
+            $denial = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId } `
+                -ConsentButtonText "Deny" `
+                -ExpectError
+            $consentObserved = $true
+            $consentDecision = "denied"
+            if (Test-Path -LiteralPath $preview.fileName -PathType Leaf) {
+                throw "Denied FireDAC repository application created a file."
+            }
+            $results = @($preview, $denial)
+        }
+        "firedac-repository-applied" {
+            if (-not $TestExecutablePath) {
+                throw "The applied repository scenario requires DUnitX."
+            }
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GenerateFireDACRepositoryPreview" `
+                -Arguments @{
+                    unitName = "RadIA.E2E.CustomerRepository"
+                    entityName = "Customer"
+                    tableName = "customer"
+                    relativeDirectory = "Generated"
+                    registerInProject = $true
+                }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied" -or
+                -not (Test-Path -LiteralPath $applied.fileName -PathType Leaf)) {
+                throw "The FireDAC repository artifact was not applied."
+            }
+            $artifactState = "applied"
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $true) {
+                $details = $build | ConvertTo-Json -Depth 8 -Compress
+                throw "The applied FireDAC repository did not build: $details"
+            }
+            $buildPassed = $true
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass after repository apply: $details"
+            }
+            $testsPassed = $true
+            $results = @($preview, $applied, $build, $tests)
+        }
+        "firedac-build-failure-rollback" {
+            if (-not $ProjectPath) {
+                throw "The rollback scenario requires its project fixture."
+            }
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GenerateFireDACRepositoryPreview" `
+                -Arguments @{
+                    unitName = "RadIA.E2E.CustomerRepository"
+                    entityName = "Customer"
+                    tableName = "customer"
+                    relativeDirectory = "Generated"
+                    registerInProject = $true
+                }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied" -or
+                -not (Test-Path -LiteralPath $applied.fileName -PathType Leaf)) {
+                throw "The rollback fixture artifact was not applied."
+            }
+            $artifactState = "applied"
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $false -or @($build.messages).Count -lt 1) {
+                throw "The intentional FireDAC build failure was not observed."
+            }
+            $buildFailed = $true
+            $reverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId }
+            if ($reverted.state -ne "reverted" -or
+                (Test-Path -LiteralPath $applied.fileName -PathType Leaf)) {
+                throw "The failed FireDAC build did not roll back the artifact."
+            }
+            $artifactState = "reverted"
+            $rollbackSucceeded = $true
+            $programPath = [IO.Path]::ChangeExtension($ProjectPath, ".dpr")
+            $programContent = Get-Content -LiteralPath $programPath -Raw
+            $cleanupPatch = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $programPath
+                    baseRevision = Get-RadIAStringSha256 $programContent
+                    originalText = (
+                        "  RadIAIntentionalCompilerFailure;`r`n"
+                    )
+                    replacementText = ""
+                }
+            $cleanupApplied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyPatch" `
+                -Arguments @{ previewId = $cleanupPatch.previewId }
+            Save-RadIAActiveEditor -IDEProcess $IDEProcess
+            $cleanProgramContent = Get-Content -LiteralPath $programPath -Raw
+            if ($cleanProgramContent.Contains(
+                "RadIAIntentionalCompilerFailure"
+            )) {
+                throw "The rollback fixture cleanup patch was not persisted."
+            }
+            $cleanupBuild = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($cleanupBuild.success -ne $true) {
+                throw "The rollback fixture did not recover its build state."
+            }
+            $results = @(
+                $preview,
+                $applied,
+                $build,
+                $reverted,
+                $cleanupPatch,
+                $cleanupApplied,
+                $cleanupBuild
+            )
+        }
+        "firedac-parameter-smart-diff" {
+            if (-not $ProjectPath -or -not $TestExecutablePath) {
+                throw "The parameter fix scenario requires project and DUnitX fixtures."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            Open-RadIAEditorFile `
+                -IDEProcess $IDEProcess `
+                -Path $targetFile
+            Start-Sleep -Seconds 2
+            $editor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $editor.fileName -or -not $editor.revision) {
+                throw "The parameter fix target did not open in the editor."
+            }
+            $validation = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "ValidateFireDACParameters" `
+                -Arguments @{
+                    sql = "select id from customer where id = :Id"
+                    bindings = @(
+                        @{
+                            name = "Id"
+                            dataType = "ftLargeint"
+                            direction = "input"
+                            size = 0
+                            nullable = "false"
+                            valueState = "value"
+                            assignmentKind = "AsString"
+                        }
+                    )
+                }
+            $validationJson = $validation | ConvertTo-Json -Depth 8 -Compress
+            if (-not $validationJson.Contains(
+                "firedac.parameter.assignment-type-mismatch"
+            )) {
+                throw "The parameter validator did not prove the accessor mismatch."
+            }
+            $fixArguments = @{
+                findingId = (
+                    "firedac.parameter.accessor-mismatch:" +
+                    "RadIA.FireDAC.E2E.Data.pas:Id"
+                )
+                confidence = "proven"
+                targetFile = $targetFile
+                baseRevision = $editor.revision
+                queryVariable = "FQuery"
+                parameterName = "Id"
+                fromAccessor = "AsString"
+                toAccessor = "AsLargeInt"
+            }
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareFireDACParameterFix" `
+                -Arguments $fixArguments
+            Start-Sleep -Seconds 1
+            $stableEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $stableEditor.revision.Equals(
+                $preview.baseRevision,
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+                throw "The FireDAC parameter editor revision did not stabilize."
+            }
+            if ($preview.originalText -ne
+                "FQuery.ParamByName('Id').AsString" -or
+                $preview.replacementText -ne
+                "FQuery.ParamByName('Id').AsLargeInt") {
+                throw "The FireDAC parameter smart diff was not minimal."
+            }
+            $smartDiffReviewed = $true
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyFireDACFix" `
+                -Arguments @{ previewId = $preview.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.mutationApplied -ne $true) {
+                throw "The FireDAC parameter fix was not applied."
+            }
+            $updated = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $updated.content.Contains(
+                "FQuery.ParamByName('Id').AsLargeInt"
+            )) {
+                throw "The editor does not contain the applied parameter fix."
+            }
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $true) {
+                throw "The FireDAC parameter fix did not build."
+            }
+            $buildPassed = $true
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass after the FireDAC parameter fix: $details"
+            }
+            $testsPassed = $true
+            $artifactState = "applied"
+            $results = @($validation, $preview, $applied, $build, $tests)
+        }
+        "firedac-stale-preview-rejection" {
+            if (-not $ProjectPath) {
+                throw "The stale preview scenario requires a project fixture."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            Open-RadIAEditorFile `
+                -IDEProcess $IDEProcess `
+                -Path $targetFile
+            Start-Sleep -Seconds 2
+            $editor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            $fireDACPreview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareFireDACParameterFix" `
+                -Arguments @{
+                    findingId = (
+                        "firedac.parameter.accessor-mismatch:" +
+                        "RadIA.FireDAC.E2E.Data.pas:Id"
+                    )
+                    confidence = "proven"
+                    targetFile = $targetFile
+                    baseRevision = $editor.revision
+                    queryVariable = "FQuery"
+                    parameterName = "Id"
+                    fromAccessor = "AsString"
+                    toAccessor = "AsLargeInt"
+                }
+            $laterMarker = "// Later reviewed user change"
+            $laterPatch = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $targetFile
+                    baseRevision = $fireDACPreview.baseRevision
+                    originalText = "implementation"
+                    replacementText = "implementation`r`n`r`n$laterMarker"
+                }
+            $laterApplied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyPatch" `
+                -Arguments @{ previewId = $laterPatch.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $changedEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $changedEditor.content.Contains($laterMarker)) {
+                throw "The later editor change was not applied."
+            }
+            $rejection = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyFireDACFix" `
+                -Arguments @{ previewId = $fireDACPreview.previewId } `
+                -ExpectError
+            $rejectionText = [string]$rejection.result.content[0].text
+            if (-not $rejectionText.Contains("precondition_failed")) {
+                throw "The stale FireDAC preview was not rejected by fingerprint."
+            }
+            $stalePreviewRejected = $true
+            $changedEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $changedEditor.content.Contains($laterMarker) -or
+                $changedEditor.content.Contains(
+                    "FQuery.ParamByName('Id').AsLargeInt"
+                )) {
+                throw "The stale preview overwrote the later editor change."
+            }
+            $laterChangePreserved = $true
+            $reverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertPatch" `
+                -Arguments @{ previewId = $laterPatch.previewId }
+            $restoredEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $restoredEditor.revision.Equals(
+                    $fireDACPreview.baseRevision,
+                    [StringComparison]::OrdinalIgnoreCase
+                )) {
+                throw "The stale preview fixture was not restored."
+            }
+            $artifactState = "unchanged"
+            $results = @(
+                $fireDACPreview,
+                $laterPatch,
+                $laterApplied,
+                $rejection,
+                $reverted
+            )
+        }
+        "firedac-ado-migration-batch" {
+            if (-not $ProjectPath -or -not $TestExecutablePath) {
+                throw "The migration scenario requires project and DUnitX fixtures."
+            }
+            $inventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InventoryLegacyDataAccess"
+            $adoFinding = @(
+                $inventory.findings |
+                    Where-Object {
+                        $_.technology -eq "ADO" -and
+                        $_.canPrepare -eq $true
+                    }
+            ) | Select-Object -First 1
+            if (-not $adoFinding) {
+                throw "The migration inventory did not find a preparable ADO usage."
+            }
+            $plan = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PlanLegacyMigrationBatches"
+            $batch = @(
+                $plan.batches |
+                    Where-Object {
+                        $_.technology -eq "ADO" -and
+                        $_.canPrepare -eq $true
+                    }
+            ) | Select-Object -First 1
+            if (-not $batch.batchId) {
+                throw "The migration planner did not create a preparable ADO batch."
+            }
+            $prepared = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied") {
+                throw "The ADO migration batch was not applied."
+            }
+            $fireDAC = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $fireDACJson = $fireDAC | ConvertTo-Json -Depth 10 -Compress
+            if (-not $fireDACJson.Contains("TFDQuery")) {
+                throw "The applied migration did not produce a FireDAC query."
+            }
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $true) {
+                throw "The migrated ADO batch did not build."
+            }
+            $buildPassed = $true
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass after the ADO migration batch: $details"
+            }
+            $testsPassed = $true
+            $gate = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RecordLegacyMigrationGate" `
+                -Arguments @{
+                    batchId = $batch.batchId
+                    fireDACPassed = $true
+                    buildPassed = $true
+                    testsPassed = $true
+                    fireDACEvidence = Get-RadIAStringSha256 $fireDACJson
+                    buildEvidence = Get-RadIAStringSha256 (
+                        $build | ConvertTo-Json -Depth 8 -Compress
+                    )
+                    testEvidence = Get-RadIAStringSha256 (
+                        $tests | ConvertTo-Json -Depth 8 -Compress
+                    )
+                }
+            if ($gate.state -ne "validated") {
+                throw "The ADO migration gate was not validated."
+            }
+            $migrationGatePassed = $true
+            $artifactState = "validated"
+            $results = @(
+                $inventory,
+                $plan,
+                $prepared,
+                $applied,
+                $fireDAC,
+                $build,
+                $tests,
+                $gate
+            )
+        }
+        "firedac-migration-gate-rollback" {
+            if (-not $ProjectPath -or -not $TestExecutablePath) {
+                throw "The migration rollback requires project and DUnitX fixtures."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            $originalFileHash = (
+                Get-FileHash -LiteralPath $targetFile -Algorithm SHA256
+            ).Hash
+            $inventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InventoryLegacyDataAccess"
+            $plan = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PlanLegacyMigrationBatches"
+            $batch = @(
+                $plan.batches |
+                    Where-Object {
+                        $_.technology -eq "ADO" -and
+                        $_.canPrepare -eq $true
+                    }
+            ) | Select-Object -First 1
+            if (-not $batch.batchId) {
+                throw "The rollback planner did not create an ADO batch."
+            }
+            $prepared = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied") {
+                throw "The rollback migration batch was not applied."
+            }
+            $fireDAC = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $fireDACJson = $fireDAC | ConvertTo-Json -Depth 10 -Compress
+            if (-not $fireDACJson.Contains("TFDQuery")) {
+                throw "The rollback batch did not reach its FireDAC gate."
+            }
+            $programPath = [IO.Path]::ChangeExtension($ProjectPath, ".dpr")
+            $programContent = Get-Content -LiteralPath $programPath -Raw
+            $failurePatch = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $programPath
+                    baseRevision = Get-RadIAStringSha256 $programContent
+                    originalText = "begin`r`nend."
+                    replacementText = (
+                        "begin`r`n" +
+                        "  RadIAIntentionalCompilerFailure;`r`n" +
+                        "end."
+                    )
+                }
+            $failureApplied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyPatch" `
+                -Arguments @{ previewId = $failurePatch.previewId }
+            Save-RadIAActiveEditor -IDEProcess $IDEProcess
+            $failedBuild = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($failedBuild.success -ne $false) {
+                throw "The migration rollback build gate did not fail."
+            }
+            $buildFailed = $true
+            $failureReverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertPatch" `
+                -Arguments @{ previewId = $failurePatch.previewId }
+            Save-RadIAActiveEditor -IDEProcess $IDEProcess
+            $recoveryBuild = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($recoveryBuild.success -ne $true) {
+                throw "The reverted compiler failure did not recover the build."
+            }
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass before the migration rollback gate: $details"
+            }
+            $testsPassed = $true
+            $gate = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RecordLegacyMigrationGate" `
+                -Arguments @{
+                    batchId = $batch.batchId
+                    fireDACPassed = $true
+                    buildPassed = $false
+                    testsPassed = $true
+                    fireDACEvidence = Get-RadIAStringSha256 $fireDACJson
+                    buildEvidence = Get-RadIAStringSha256 (
+                        $failedBuild | ConvertTo-Json -Depth 8 -Compress
+                    )
+                    testEvidence = Get-RadIAStringSha256 (
+                        $tests | ConvertTo-Json -Depth 8 -Compress
+                    )
+                }
+            if ($gate.state -ne "reverted") {
+                throw "The failed migration gate did not revert its batch."
+            }
+            $restoredFileHash = (
+                Get-FileHash -LiteralPath $targetFile -Algorithm SHA256
+            ).Hash
+            $restoredContent = Get-Content -LiteralPath $targetFile -Raw
+            if (-not $restoredFileHash.Equals(
+                    $originalFileHash,
+                    [StringComparison]::OrdinalIgnoreCase
+                ) -or
+                -not $restoredContent.Contains("TADOQuery") -or
+                $restoredContent.Contains("TFDQuery")) {
+                throw "The failed gate did not restore the legacy source."
+            }
+            $migrationGateFailed = $true
+            $rollbackSucceeded = $true
+            $artifactState = "reverted"
+            $results = @(
+                $inventory,
+                $plan,
+                $prepared,
+                $applied,
+                $fireDAC,
+                $failurePatch,
+                $failureApplied,
+                $failedBuild,
+                $failureReverted,
+                $recoveryBuild,
+                $tests,
+                $gate
+            )
+        }
+        "firedac-project-context-reset" {
+            if (-not $ProjectPath) {
+                throw "The project context scenario requires its project fixture."
+            }
+            $initialProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+            $initialInventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $initialReport = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetFireDACProjectReport"
+            $initialJson = @($initialInventory, $initialReport) |
+                ConvertTo-Json -Depth 10 -Compress
+            $fixtureUnit = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            $fixtureUnitName = Split-Path -Leaf $fixtureUnit
+            if (-not $initialJson.Contains($fixtureUnitName)) {
+                throw "The initial FireDAC context did not expose its fixture unit."
+            }
+            $transitionDirectory = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "Transition"
+            $transitionPreview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreviewProjectTemplate" `
+                -Arguments @{
+                    projectName = "RadIAFireDACTransition"
+                    template = "vcl"
+                    delphiVersion = $DelphiVersion
+                    platforms = @("Win32")
+                    destinationPath = $transitionDirectory
+                    projectSpecification = @{
+                        schemaVersion = 1
+                        kind = "blank"
+                        creationProfile = "essential"
+                    }
+                }
+            $transitionCreated = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "CreateProjectFromTemplate" `
+                -Arguments @{ previewId = $transitionPreview.previewId }
+            if ($transitionCreated.committed -ne $true) {
+                throw "The transition project was not created."
+            }
+            $transitionOpened = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "OpenCreatedProject" `
+                -Arguments @{ previewId = $transitionPreview.previewId }
+            if ($transitionOpened.opened -ne $true) {
+                throw "The transition project was not opened."
+            }
+            $transitionProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+            if ($transitionProject.fileName -eq $initialProject.fileName) {
+                throw "The active project did not switch."
+            }
+            $projectSwitched = $true
+            $transitionInventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $transitionReport = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetFireDACProjectReport"
+            $transitionJson = @($transitionInventory, $transitionReport) |
+                ConvertTo-Json -Depth 10 -Compress
+            if ($transitionJson.Contains($fixtureUnitName)) {
+                throw "The transition project retained a stale FireDAC location."
+            }
+            $noStaleLocation = $true
+            $transitionReverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertCreatedProject" `
+                -Arguments @{ previewId = $transitionPreview.previewId }
+            if ($transitionReverted.rolledBack -ne $true) {
+                throw "The transition project was not reverted."
+            }
+            $reopenedProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+            if (-not [IO.Path]::GetFullPath(
+                    $reopenedProject.fileName
+                ).Equals(
+                    [IO.Path]::GetFullPath($ProjectPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )) {
+                throw "The original FireDAC project was not reopened."
+            }
+            $reopenedInventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $reopenedJson = $reopenedInventory |
+                ConvertTo-Json -Depth 10 -Compress
+            if (-not $reopenedJson.Contains($fixtureUnitName)) {
+                throw "The reopened FireDAC context did not restore its location."
+            }
+            $projectReopened = $true
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $artifactState = "unchanged"
+            $results = @(
+                $initialProject,
+                $initialInventory,
+                $initialReport,
+                $transitionPreview,
+                $transitionCreated,
+                $transitionOpened,
+                $transitionProject,
+                $transitionInventory,
+                $transitionReport,
+                $transitionReverted,
+                $reopenedProject,
+                $reopenedInventory
+            )
+        }
+        "firedac-shutdown-during-analysis" {
+            $requestKey = [Guid]::NewGuid().ToString("N")
+            $requestRoot = Join-Path `
+                ([IO.Path]::GetTempPath()) `
+                "radia-firedac-shutdown-$requestKey"
+            $analysisInputPath = "$requestRoot.in"
+            $analysisOutputPath = "$requestRoot.out"
+            $analysisErrorPath = "$requestRoot.err"
+            $analysisRequests = @(
+                @{
+                    jsonrpc = "2.0"
+                    id = 1
+                    method = "initialize"
+                    params = @{
+                        protocolVersion = "2025-06-18"
+                        capabilities = @{}
+                        clientInfo = @{
+                            name = "radia-firedac-shutdown"
+                            version = "1"
+                        }
+                    }
+                } | ConvertTo-Json -Depth 8 -Compress
+                @{
+                    jsonrpc = "2.0"
+                    method = "notifications/initialized"
+                    params = @{}
+                } | ConvertTo-Json -Depth 4 -Compress
+            )
+            for ($requestId = 2; $requestId -le 33; $requestId++) {
+                $toolName = if (($requestId % 2) -eq 0) {
+                    "InspectFireDACProject"
+                } else {
+                    "AnalyzeFireDACThreadSafety"
+                }
+                $analysisRequests += @{
+                    jsonrpc = "2.0"
+                    id = $requestId
+                    method = "tools/call"
+                    params = @{
+                        name = $toolName
+                        arguments = @{}
+                    }
+                } | ConvertTo-Json -Depth 6 -Compress
+            }
+            Set-Content `
+                -LiteralPath $analysisInputPath `
+                -Value $analysisRequests `
+                -Encoding UTF8
+            $analysisProcess = Start-Process `
+                -FilePath $BridgePath `
+                -ArgumentList "`"$InstanceFile`"" `
+                -RedirectStandardInput $analysisInputPath `
+                -RedirectStandardOutput $analysisOutputPath `
+                -RedirectStandardError $analysisErrorPath `
+                -WindowStyle Hidden `
+                -PassThru
+            Start-Sleep -Milliseconds 100
+            if ($analysisProcess.HasExited) {
+                throw "The FireDAC analysis completed before shutdown began."
+            }
+            $analysisInFlight = $true
+            $analysisProcessId = $analysisProcess.Id
+            $artifactState = "unchanged"
+            $results = @(
+                [PSCustomObject]@{
+                    analysisInFlight = $true
+                    requestedAnalysisCount = 32
+                }
+            )
+        }
+        default {
+            throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
+        }
+    }
+
+    $fingerprints = @(
+        $results | ForEach-Object {
+            Get-RadIAStringSha256 `
+                -Value ($_ | ConvertTo-Json -Depth 10 -Compress)
+        }
+    )
+    $evidence = [PSCustomObject]@{
+        schemaVersion = 1
+        evidenceKind = "fireDACAdvisorIDE"
+        scenarioId = $ScenarioId
+        delphiVersion = $DelphiVersion
+        platform = $Platform
+        status = "passed"
+        consentObserved = $consentObserved
+        consentDecision = $consentDecision
+        databaseFingerprintBefore = $databaseFingerprintBefore
+        databaseFingerprintAfter = $databaseFingerprintAfter
+        artifactState = $artifactState
+        buildPassed = $buildPassed
+        buildFailed = $buildFailed
+        rollbackSucceeded = $rollbackSucceeded
+        smartDiffReviewed = $smartDiffReviewed
+        stalePreviewRejected = $stalePreviewRejected
+        laterChangePreserved = $laterChangePreserved
+        migrationGatePassed = $migrationGatePassed
+        migrationGateFailed = $migrationGateFailed
+        projectSwitched = $projectSwitched
+        projectReopened = $projectReopened
+        noStaleLocation = $noStaleLocation
+        analysisInFlight = $analysisInFlight
+        analysisProcessId = $analysisProcessId
+        analysisInputPath = $analysisInputPath
+        analysisOutputPath = $analysisOutputPath
+        analysisErrorPath = $analysisErrorPath
+        cleanAnalysisShutdown = $cleanAnalysisShutdown
+        noAnalysisAccessViolation = $noAnalysisAccessViolation
+        noOrphanAnalysisThread = $noOrphanAnalysisThread
+        testsPassed = $testsPassed
+        resultFingerprints = $fingerprints
+        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
+    }
+    if ($EvidencePath) {
+        $resolvedEvidence = [IO.Path]::GetFullPath($EvidencePath)
+        $outputRoot = [IO.Path]::GetFullPath(
+            (Join-Path $script:repositoryRoot "Output")
+        )
+        if (-not $resolvedEvidence.StartsWith(
+            $outputRoot + [IO.Path]::DirectorySeparatorChar,
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "FireDAC IDE evidence must remain inside Output."
+        }
+        New-Item `
+            -ItemType Directory `
+            -Path (Split-Path -Parent $resolvedEvidence) `
+            -Force |
+            Out-Null
+        $evidence | ConvertTo-Json -Depth 6 |
+            Set-Content -LiteralPath $resolvedEvidence -Encoding UTF8
+    }
+    return $evidence
+}
+
 function Invoke-RadIAKnowledgeDiagnostic {
     param(
         [Parameter(Mandatory)]
@@ -2024,6 +3570,9 @@ if ($IDE64) {
     $binName = "bin64"
     $shutdownTimeoutMs = 60000
 }
+if ($FireDACScenarioId) {
+    $shutdownTimeoutMs = 60000
+}
 if ($ExerciseKnowledge) {
     $shutdownTimeoutMs = 60000
 }
@@ -2380,6 +3929,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     $startedAt = [DateTime]::UtcNow
     $packageLifecycleSeconds = 0
     $packageLifecycleModes = @()
+    $hostCleanupForced = $false
     if ($ExercisePackageLifecycle) {
         if ($upgradePackageEvidence) {
             $packageLifecycleModes = @(
@@ -2418,6 +3968,9 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     }
     if ($ExerciseKnowledge) {
         $launchArguments = @($knowledgeSmokeProjectPath)
+    }
+    if ($FireDACScenarioId) {
+        $launchArguments = @($FireDACProjectPath)
     }
     $terminalSmokePath = ""
     if ($ExerciseTerminal) {
@@ -2621,6 +4174,20 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         }
         if (-not $ideState.versionName) {
             throw "IDE version name was empty in cycle $cycle."
+        }
+        $fireDACDiagnostic = $null
+        if ($FireDACScenarioId) {
+            $fireDACDiagnostic = Invoke-RadIAFireDACReadOnlyScenario `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -ScenarioId $FireDACScenarioId `
+                -DelphiVersion $DelphiVersion `
+                -Platform $platform `
+                -ProjectPath $FireDACProjectPath `
+                -DatabasePath $FireDACDatabasePath `
+                -TestExecutablePath $FireDACTestExecutablePath `
+                -EvidencePath $FireDACEvidencePath
         }
         $terminalDiagnostic = $null
         if ($ExerciseTerminal) {
@@ -3029,12 +4596,22 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -ParentProcessId $process.Id `
                 -ParentStartedAt $process.StartTime
         )
+        $analysisBridgeProcess = $null
+        if ($FireDACScenarioId -eq "firedac-shutdown-during-analysis") {
+            $analysisBridgeProcess = Get-Process `
+                -Id $fireDACDiagnostic.analysisProcessId `
+                -ErrorAction SilentlyContinue
+            if (-not $analysisBridgeProcess -or
+                $analysisBridgeProcess.HasExited) {
+                throw "The FireDAC analysis was not active at shutdown."
+            }
+        }
         $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
         if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-            $ExerciseInlineReview) {
+            $ExerciseInlineReview -or $FireDACScenarioId) {
             $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
                 $shutdownTimeoutMs
             )
@@ -3076,7 +4653,30 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 Start-Sleep -Milliseconds 200
             } while ([DateTime]::UtcNow -lt $shutdownDeadline)
             if (-not $currentProcess.HasExited) {
-                throw "Delphi did not exit cleanly in cycle $cycle."
+                $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                    [uint32]$currentProcess.Id,
+                    "TAppBuilder"
+                )
+                if ($FireDACScenarioId -and
+                    $mainWindow -eq [IntPtr]::Zero -and
+                    (Test-RadIAPluginShutdownCompleted)) {
+                    $currentDescendants = @(
+                        Get-RadIAProcessDescendants `
+                            -ParentProcessId $currentProcess.Id `
+                            -ParentStartedAt $currentProcess.StartTime
+                    )
+                    foreach ($child in $currentDescendants) {
+                        Stop-Process `
+                            -Id $child.ProcessId `
+                            -Force `
+                            -ErrorAction SilentlyContinue
+                    }
+                    Stop-Process -Id $currentProcess.Id -Force
+                    [void]$currentProcess.WaitForExit(10000)
+                    $hostCleanupForced = $true
+                } else {
+                    throw "Delphi did not exit cleanly in cycle $cycle."
+                }
             }
         } elseif (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
             throw "Delphi did not exit cleanly in cycle $cycle."
@@ -3146,6 +4746,50 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 ($orphanNames -join ", ")
             )
         }
+        if ($analysisBridgeProcess) {
+            if (-not $analysisBridgeProcess.WaitForExit(30000)) {
+                throw "The FireDAC analysis bridge did not stop after shutdown."
+            }
+            $analysisOutput = Get-Content `
+                -LiteralPath $fireDACDiagnostic.analysisOutputPath `
+                -Raw `
+                -ErrorAction SilentlyContinue
+            $analysisError = Get-Content `
+                -LiteralPath $fireDACDiagnostic.analysisErrorPath `
+                -Raw `
+                -ErrorAction SilentlyContinue
+            $analysisShutdownText = "$analysisOutput`n$analysisError"
+            if ($analysisShutdownText -match
+                '(?i)access violation|eaccessviolation|0xc0000005') {
+                throw "The FireDAC shutdown analysis reported an access violation."
+            }
+            $fireDACDiagnostic.cleanAnalysisShutdown = $true
+            $fireDACDiagnostic.noAnalysisAccessViolation = $true
+            $fireDACDiagnostic.noOrphanAnalysisThread = $true
+            $analysisTemporaryPaths = @(
+                $fireDACDiagnostic.analysisInputPath,
+                $fireDACDiagnostic.analysisOutputPath,
+                $fireDACDiagnostic.analysisErrorPath
+            )
+            foreach ($propertyName in @(
+                "analysisProcessId",
+                "analysisInputPath",
+                "analysisOutputPath",
+                "analysisErrorPath"
+            )) {
+                $fireDACDiagnostic.PSObject.Properties.Remove($propertyName)
+            }
+            $fireDACDiagnostic |
+                ConvertTo-Json -Depth 10 |
+                Set-Content `
+                    -LiteralPath $FireDACEvidencePath `
+                    -Encoding UTF8
+            foreach ($temporaryPath in $analysisTemporaryPaths) {
+                if (Test-Path -LiteralPath $temporaryPath) {
+                    Remove-Item -LiteralPath $temporaryPath -Force
+                }
+            }
+        }
 
         $elapsed = [Math]::Round(
             ([DateTime]::UtcNow - $startedAt).TotalSeconds,
@@ -3163,6 +4807,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             ToolCount = $runtimeToolNames.Count
             DescendantCount = $descendants.Count
             ShutdownClean = $true
+            HostCleanupForced = $hostCleanupForced
             Seconds = $elapsed
             DockingExercised = [bool]$ExerciseDocking
             DockPositionRestored = (

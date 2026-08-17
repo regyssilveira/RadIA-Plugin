@@ -19,6 +19,7 @@ implementation
 
 uses
   System.Generics.Collections,
+  System.Hash,
   System.IOUtils,
   System.JSON,
   System.SysUtils,
@@ -29,6 +30,7 @@ type
     lmtInventory,
     lmtPlanBatches,
     lmtPrepareBatch,
+    lmtApplyBatch,
     lmtRecordGate,
     lmtReport,
     lmtPlanDext
@@ -39,10 +41,13 @@ type
     function Inventory: string;
     function PlanBatches: string;
     function PrepareBatch(const ABatchId: string): TRadIAToolResult;
+    function ApplyBatch(const ABatchId: string): TRadIAToolResult;
     function RecordGate(
       const ABatchId: string;
+      const AFireDACPassed: Boolean;
       const ABuildPassed: Boolean;
       const ATestsPassed: Boolean;
+      const AFireDACEvidence: string;
       const ABuildEvidence: string;
       const ATestEvidence: string
     ): TRadIAToolResult;
@@ -61,6 +66,7 @@ type
     FPreviewIds: TDictionary<string, string>;
     FStates: TDictionary<string, string>;
     FBuildEvidence: TDictionary<string, string>;
+    FFireDACEvidence: TDictionary<string, string>;
     FTestEvidence: TDictionary<string, string>;
     FWorkspace: IRadIAWorkspaceFacade;
     FMutation: IRadIAEditorMutationFacade;
@@ -87,10 +93,13 @@ type
     function Inventory: string;
     function PlanBatches: string;
     function PrepareBatch(const ABatchId: string): TRadIAToolResult;
+    function ApplyBatch(const ABatchId: string): TRadIAToolResult;
     function RecordGate(
       const ABatchId: string;
+      const AFireDACPassed: Boolean;
       const ABuildPassed: Boolean;
       const ATestsPassed: Boolean;
+      const AFireDACEvidence: string;
       const ABuildEvidence: string;
       const ATestEvidence: string
     ): TRadIAToolResult;
@@ -118,11 +127,14 @@ const
     '{"type":"object","required":["batchId"],"properties":{' +
     '"batchId":{"type":"string"}},"additionalProperties":false}';
   CGateInputSchema =
-    '{"type":"object","required":["batchId","buildPassed",' +
-    '"testsPassed","buildEvidence","testEvidence"],"properties":{' +
-    '"batchId":{"type":"string"},"buildPassed":{"type":"boolean"},' +
-    '"testsPassed":{"type":"boolean"},"buildEvidence":{"type":"string"},' +
-    '"testEvidence":{"type":"string"}},"additionalProperties":false}';
+    '{"type":"object","required":["batchId","fireDACPassed","buildPassed",' +
+    '"testsPassed","fireDACEvidence","buildEvidence","testEvidence"],"properties":{' +
+    '"batchId":{"type":"string"},"fireDACPassed":{"type":"boolean"},' +
+    '"buildPassed":{"type":"boolean"},"testsPassed":{"type":"boolean"},' +
+    '"fireDACEvidence":{"type":"string","minLength":1,"maxLength":256},' +
+    '"buildEvidence":{"type":"string","minLength":1,"maxLength":256},' +
+    '"testEvidence":{"type":"string","minLength":1,"maxLength":256}},' +
+    '"additionalProperties":false}';
   COutputSchema = '{"type":"object"}';
 
 procedure RegisterRadIALegacyDataMigrationTools(
@@ -161,11 +173,13 @@ begin
   FPreviewIds := TDictionary<string, string>.Create;
   FStates := TDictionary<string, string>.Create;
   FBuildEvidence := TDictionary<string, string>.Create;
+  FFireDACEvidence := TDictionary<string, string>.Create;
   FTestEvidence := TDictionary<string, string>.Create;
 end;
 
 destructor TRadIALegacyMigrationSession.Destroy;
 begin
+  FFireDACEvidence.Free;
   FTestEvidence.Free;
   FBuildEvidence.Free;
   FStates.Free;
@@ -235,6 +249,7 @@ begin
   FPreviewIds.Clear;
   FStates.Clear;
   FBuildEvidence.Clear;
+  FFireDACEvidence.Clear;
   FTestEvidence.Clear;
   LJson := TJSONObject.Create;
   try
@@ -261,6 +276,28 @@ begin
   finally
     LJson.Free;
   end;
+end;
+
+function TRadIALegacyMigrationSession.ApplyBatch(
+  const ABatchId: string
+): TRadIAToolResult;
+var
+  LPreviewId: string;
+  LResult: TRadIAMultiFilePatchResult;
+  LState: string;
+begin
+  if not FPreviewIds.TryGetValue(ABatchId, LPreviewId) then
+    Exit(TRadIAToolResult.Failed('batch_not_prepared', 'Prepare the migration batch first.'));
+  if not FStates.TryGetValue(ABatchId, LState) or not SameText(LState, 'prepared') then
+    Exit(TRadIAToolResult.Failed('invalid_batch_state', 'Only a prepared batch can be applied.'));
+  LResult := FPatches.Apply(LPreviewId);
+  if not LResult.Success then
+    Exit(TRadIAToolResult.Failed(LResult.ErrorCode, LResult.ErrorMessage));
+  FStates.AddOrSetValue(ABatchId, 'applied');
+  Result := TRadIAToolResult.Succeeded(
+    Format('{"batchId":"%s","previewId":"%s","state":"applied"}',
+      [ABatchId, LPreviewId])
+  );
 end;
 
 function TRadIALegacyMigrationSession.PlanBatches: string;
@@ -365,8 +402,10 @@ end;
 
 function TRadIALegacyMigrationSession.RecordGate(
   const ABatchId: string;
+  const AFireDACPassed: Boolean;
   const ABuildPassed: Boolean;
   const ATestsPassed: Boolean;
+  const AFireDACEvidence: string;
   const ABuildEvidence: string;
   const ATestEvidence: string
 ): TRadIAToolResult;
@@ -376,14 +415,23 @@ var
   LState: string;
 begin
   if not FPreviewIds.TryGetValue(ABatchId, LPreviewId) then
-    Exit(TRadIAToolResult.Failed('batch_not_prepared', 'Prepare and apply the batch first.'));
+    Exit(TRadIAToolResult.Failed('batch_not_prepared', 'Prepare the batch first.'));
+  if not FStates.TryGetValue(ABatchId, LState) or not SameText(LState, 'applied') then
+    Exit(TRadIAToolResult.Failed('batch_not_applied', 'Apply the batch before recording gates.'));
+  if Trim(AFireDACEvidence) = '' then
+    Exit(TRadIAToolResult.Failed('missing_firedac_evidence', 'FireDAC evidence is required.'));
   if Trim(ABuildEvidence) = '' then
     Exit(TRadIAToolResult.Failed('missing_build_evidence', 'Build evidence is required.'));
   if Trim(ATestEvidence) = '' then
     Exit(TRadIAToolResult.Failed('missing_test_evidence', 'Test evidence is required.'));
-  FBuildEvidence.AddOrSetValue(ABatchId, ABuildEvidence);
-  FTestEvidence.AddOrSetValue(ABatchId, ATestEvidence);
-  if ABuildPassed and ATestsPassed then
+  if (Length(AFireDACEvidence) > 256) or
+    (Length(ABuildEvidence) > 256) or
+    (Length(ATestEvidence) > 256) then
+    Exit(TRadIAToolResult.Failed('evidence_too_large', 'Gate evidence must not exceed 256 characters.'));
+  FFireDACEvidence.AddOrSetValue(ABatchId, THashSHA2.GetHashString(AFireDACEvidence));
+  FBuildEvidence.AddOrSetValue(ABatchId, THashSHA2.GetHashString(ABuildEvidence));
+  FTestEvidence.AddOrSetValue(ABatchId, THashSHA2.GetHashString(ATestEvidence));
+  if AFireDACPassed and ABuildPassed and ATestsPassed then
     LState := 'validated'
   else
   begin
@@ -394,8 +442,10 @@ begin
   end;
   FStates.AddOrSetValue(ABatchId, LState);
   Result := TRadIAToolResult.Succeeded(
-    Format('{"batchId":"%s","state":"%s","buildPassed":%s,"testsPassed":%s}',
-      [ABatchId, LState, LowerCase(BoolToStr(ABuildPassed, True)),
+    Format('{"batchId":"%s","state":"%s","fireDACPassed":%s,' +
+      '"buildPassed":%s,"testsPassed":%s}',
+      [ABatchId, LState, LowerCase(BoolToStr(AFireDACPassed, True)),
+      LowerCase(BoolToStr(ABuildPassed, True)),
       LowerCase(BoolToStr(ATestsPassed, True))])
   );
 end;
@@ -422,6 +472,9 @@ begin
       LItem.AddPair('batchId', LBatch.Id);
       LItem.AddPair('file', LBatch.FileName);
       LItem.AddPair('state', LState);
+      if not FFireDACEvidence.TryGetValue(LBatch.Id, LEvidence) then
+        LEvidence := '';
+      LItem.AddPair('fireDACEvidenceFingerprint', LEvidence);
       if not FBuildEvidence.TryGetValue(LBatch.Id, LEvidence) then
         LEvidence := '';
       LItem.AddPair('buildEvidence', LEvidence);
@@ -485,10 +538,14 @@ begin
         Exit(TRadIAToolResult.Failed('invalid_arguments', 'Arguments must be a JSON object.'));
       if FKind = lmtPrepareBatch then
         Exit(FSession.PrepareBatch(LJson.GetValue<string>('batchId', '')));
+      if FKind = lmtApplyBatch then
+        Exit(FSession.ApplyBatch(LJson.GetValue<string>('batchId', '')));
       Result := FSession.RecordGate(
         LJson.GetValue<string>('batchId', ''),
+        LJson.GetValue<Boolean>('fireDACPassed', False),
         LJson.GetValue<Boolean>('buildPassed', False),
         LJson.GetValue<Boolean>('testsPassed', False),
+        LJson.GetValue<string>('fireDACEvidence', ''),
         LJson.GetValue<string>('buildEvidence', ''),
         LJson.GetValue<string>('testEvidence', '')
       );
@@ -524,6 +581,11 @@ begin
         LName := 'PrepareLegacyMigrationBatch';
         LDescription := 'Prepares a reversible preview for deterministic changes in one batch.';
       end;
+    lmtApplyBatch:
+      begin
+        LName := 'ApplyLegacyMigrationBatch';
+        LDescription := 'Applies one prepared migration batch before FireDAC, build and test gates.';
+      end;
     lmtRecordGate:
       begin
         LName := 'RecordLegacyMigrationGate';
@@ -538,13 +600,13 @@ begin
     LName := 'PlanDextAndFormModernization';
     LDescription := 'Plans DEXT adoption and form decomposition after data migration.';
   end;
-  if FKind = lmtPrepareBatch then
+  if FKind in [lmtPrepareBatch, lmtApplyBatch] then
     LInputSchema := CBatchInputSchema
   else if FKind = lmtRecordGate then
     LInputSchema := CGateInputSchema
   else
     LInputSchema := CEmptyInputSchema;
-  if FKind in [lmtPrepareBatch, lmtRecordGate] then
+  if FKind in [lmtApplyBatch, lmtRecordGate] then
     LRisk := trReversibleWrite
   else
     LRisk := trReadOnly;

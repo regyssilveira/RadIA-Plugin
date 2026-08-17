@@ -512,10 +512,56 @@
       ]
     },
     {
+      "name": "FireDAC query diagnostics",
+      "source": "Source/Core/RadIA.Core.FireDAC.Tools.pas",
+      "tools": [
+        "AnalyzeFireDACQuery",
+        "ValidateFireDACParameters",
+        "ExplainFireDACQuery",
+        "ExplainFireDACFinding"
+      ]
+    },
+    {
+      "name": "Safe FireDAC artifact previews",
+      "source": "Source/Core/RadIA.Core.FireDAC.Generation.pas",
+      "tools": [
+        "GenerateFireDACRepositoryPreview",
+        "GenerateFireDACDataModulePreview",
+        "GenerateFireDACQueryPreview",
+        "GenerateFireDACDTOPreview",
+        "GenerateFireDACTests"
+      ]
+    },
+    {
+      "name": "Evidence-aware FireDAC plans",
+      "source": "Source/Core/RadIA.Core.FireDAC.Plans.pas",
+      "tools": [
+        "PrepareFireDACQueryOptimization",
+        "PrepareFireDACThreadSafetyPlan"
+      ]
+    },
+    {
+      "name": "Reversible FireDAC fixes",
+      "source": "Source/Core/RadIA.Core.FireDAC.Fixes.pas",
+      "tools": [
+        "PrepareFireDACParameterFix",
+        "PrepareFireDACTransactionFix",
+        "PrepareFireDACFix",
+        "ApplyFireDACFix",
+        "RevertFireDACFix"
+      ]
+    },
+    {
       "name": "Delphi ecosystem diagnostics",
       "source": "Source/Core/RadIA.Core.DelphiEcosystemTools.pas",
       "tools": [
         "InspectFireDACUsage",
+        "InspectFireDACProject",
+        "GetFireDACProjectReport",
+        "AuditFireDACTransactions",
+        "InspectFireDACConfiguration",
+        "DiagnoseFireDACEnvironment",
+        "AnalyzeFireDACThreadSafety",
         "DiagnoseDelphiDependencies",
         "AuditDelphiLocalization",
         "PrepareLocalizationExtraction"
@@ -526,7 +572,9 @@
       "source": "Source/Core/RadIA.Core.LocalDatabaseTools.pas",
       "tools": [
         "InspectLocalSQLiteDatabase",
-        "PreviewLocalSQLiteQuery"
+        "PreviewLocalSQLiteQuery",
+        "CompareFireDACCodeWithSchema",
+        "GenerateFireDACSchemaReport"
       ]
     },
     {
@@ -560,6 +608,7 @@
         "InventoryLegacyDataAccess",
         "PlanLegacyMigrationBatches",
         "PrepareLegacyMigrationBatch",
+        "ApplyLegacyMigrationBatch",
         "RecordLegacyMigrationGate",
         "GetLegacyMigrationReport",
         "PlanDextAndFormModernization"

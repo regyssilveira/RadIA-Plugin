@@ -75,6 +75,10 @@ uses
   RadIA.OTA.RuntimeVclTransport,
   RadIA.Core.RuntimePerformance,
   RadIA.Core.DelphiEcosystemTools,
+  RadIA.Core.FireDAC.Generation,
+  RadIA.Core.FireDAC.Fixes,
+  RadIA.Core.FireDAC.Plans,
+  RadIA.Core.FireDAC.Tools,
   RadIA.Core.LocalDatabase,
   RadIA.Core.LocalDatabaseTools,
   RadIA.OTA.RuntimePerformance,
@@ -464,11 +468,13 @@ procedure TRadIAWizard.ReleaseEditorHook;
 begin
   if not Assigned(FEditorHook) then
     Exit;
-  TRadIAEditorHook(FEditorHook).Uninstall;
   if GIsShuttingDown then
     FEditorHook := nil
   else
+  begin
+    TRadIAEditorHook(FEditorHook).Uninstall;
     FreeAndNil(FEditorHook);
+  end;
 end;
 
 procedure TRadIAWizard.ReleaseKnowledgeNotifier;
@@ -556,7 +562,10 @@ begin
   LogDebug('TRadIAWizard.Destroy menus released');
   ReleaseEditorHook;
   LogDebug('TRadIAWizard.Destroy editor hook released');
-  FOptionsPages.Free;
+  if GIsShuttingDown then
+    FOptionsPages := nil
+  else
+    FreeAndNil(FOptionsPages);
   LogDebug('TRadIAWizard.Destroy owned objects released');
   WaitForBackgroundServices;
 
@@ -1740,6 +1749,17 @@ initialization
   RegisterRadIADelphiEcosystemTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
+    TRadIAContainer.Resolve<IRadIAPatchService>,
+    TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>
+  );
+  RegisterRadIAFireDACTools(TRadIAContainer.Resolve<IRadIAToolRegistry>);
+  RegisterRadIAFireDACGenerationTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
+    TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
+  );
+  RegisterRadIAFireDACPlanTools(TRadIAContainer.Resolve<IRadIAToolRegistry>);
+  RegisterRadIAFireDACFixTools(
+    TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAPatchService>
   );
   RegisterRadIALocalDatabaseTools(

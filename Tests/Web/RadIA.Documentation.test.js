@@ -1196,6 +1196,11 @@ test('source installation deploys extension tooling and preserves shared Web ass
 test('planning and update documentation follow the new separation', () => {
   const portugueseHub = fs.readFileSync(documentationPath('README.md'), 'utf8');
   const englishHub = fs.readFileSync(documentationPath('README.en.md'), 'utf8');
+  const portugueseProjectHub = fs.readFileSync(documentationPath('project', 'README.md'), 'utf8');
+  const englishProjectHub = fs.readFileSync(
+    documentationPath('project', 'README.en.md'),
+    'utf8'
+  );
   const portugueseBacklog = fs.readFileSync(documentationPath('backlog.md'), 'utf8');
   const englishBacklog = fs.readFileSync(documentationPath('backlog.en.md'), 'utf8');
   const releaseWorkflow = fs.readFileSync(
@@ -1207,16 +1212,14 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /Não há item ou goal aberto/u);
-  assert.match(englishBacklog, /There is no open item or active goal/u);
-  assert.ok(
-    /^\s*- \[ \]/mu.test(portugueseBacklog) ||
-      /Não há item ou goal aberto/u.test(portugueseBacklog)
-  );
-  assert.ok(
-    /^\s*- \[ \]/mu.test(englishBacklog) ||
-      /There is no open item or active goal/u.test(englishBacklog)
-  );
+  assert.match(portugueseBacklog, /Não há item de engenharia ativo/u);
+  assert.match(englishBacklog, /There is no active engineering item/u);
+  assert.match(portugueseHub, /Não há goal de execução ativo/u);
+  assert.match(englishHub, /There is no active execution goal/u);
+  assert.match(portugueseProjectHub, /Não há goal de execução ativo/u);
+  assert.match(englishProjectHub, /There is no active execution goal/u);
+  assert.doesNotMatch(portugueseBacklog, /^\s*- \[ \]/mu);
+  assert.doesNotMatch(englishBacklog, /^\s*- \[ \]/mu);
   assert.match(portugueseBacklog, /fora do escopo repositório público ou marketplace/u);
   assert.match(englishBacklog, /public extension repository or marketplace[\s\S]*remain out of scope/u);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);

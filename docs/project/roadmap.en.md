@@ -13,9 +13,8 @@ criteria.
 
 ## Next cycle
 
-There is no active goal. The next cycle will be defined only when a proposed improvement has an
-observable gain, baseline, metric, reproducible scenario, and evidence required on the same commit.
-Approved work will be recorded in the [backlog](backlog.en.md) before implementation.
+No new cycle is committed. The next initiative must be planned in the [backlog](backlog.en.md) with
+its observable outcome, security, tests, and documentation defined before implementation.
 
 Delphi 11, C++, Lazarus, marketplace work, a public extension repository, WebView replacement, and
 DCU reading remain outside the current direction.

@@ -139,3 +139,4 @@ initialization/finalization, and imports outside the project, and applies throug
 | **OpenAPI/Swagger retrofit** | Existing APIs | Inventories DEXT routes and prepares reviewable Swagger integration without recreating the project. | ✅ Completed |
 | **DEXT adoption and form decomposition** | Modernization | Prepares reversible stages only after validated migration, parity evidence, and DFM/Pascal audit; failed build or tests revert the stage. | ✅ Completed |
 | **Local SQLite inspection** | Data | Discovers schema and previews one consented read-only query with bounds and secret redaction. | ✅ Completed |
+| **FireDAC Advisor** | Data | Audits and modernizes FireDAC with reversible gates. | ✅ Completed |

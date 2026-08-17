@@ -13,9 +13,9 @@ critérios de aceitação verificáveis.
 
 ## Próximo ciclo
 
-Não existe goal ativo. O próximo ciclo será definido somente quando houver uma melhoria com ganho
-observável, baseline, métrica, cenário reproduzível e evidência exigida no mesmo commit. O trabalho
-aprovado será registrado no [backlog](backlog.md) antes da implementação.
+Não há novo ciclo comprometido. A próxima iniciativa deverá ser planejada no
+[backlog](backlog.md) com resultado observável, segurança, testes e documentação definidos antes da
+implementação.
 
 Delphi 11, C++, Lazarus, marketplace, repositório público de extensões, troca do WebView e leitura de
 DCU permanecem fora da direção atual.

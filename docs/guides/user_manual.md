@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.16.0
+# Manual completo do RadIA 2.17.0
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -39,7 +39,7 @@ são restaurados na próxima abertura do Delphi. Se o painel for fechado antes d
 fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.16.0`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.0`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -655,10 +655,11 @@ Use o instalador visual, que detecta e valida a versão e a arquitetura selecion
 
 - Prompt livre não inicia automaticamente um loop autônomo de tools.
 - `/tools` é a referência do catálogo disponível em runtime.
-- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 187 tools internas registradas.
+- O [catálogo gerado do runtime](../reference/runtime_tool_catalog.md) lista as 212 tools internas registradas.
 - O [assistente de threads e PPL](threading_assistant.md) audita e prepara modernizações concorrentes seguras.
 - O [retrofit OpenAPI/Swagger](openapi_retrofit.md) integra documentação em APIs DEXT existentes.
 - A [modernização DEXT e de forms](dext_form_modernization.md) executa lotes reversíveis com gates.
+- O [FireDAC Advisor](firedac_advisor.md) audita, gera previews e executa correções ou migrações com gates.
 - A automação runtime usa controles Win32 por padrão. Controles VCL sem `HWND` exigem o preview de
   instrumentação Debug, consentimento, recompilação e uma nova sessão; consulte o guia de
   [diagnóstico runtime](runtime_debug_automation.md#controles-vcl-sem-hwnd).
@@ -684,6 +685,7 @@ quando existirem. No terminal, os hints também documentam `Enter`, `Ctrl+R` e `
 - [MCP](mcp_integration_guide.md)
 - [Conhecimento local](user_guide_project_knowledge.md)
 - [Designer e debugger](user_guide_designer_debugger.md)
+- [FireDAC Advisor](firedac_advisor.md)
 - [Solução de problemas](troubleshooting_agentic_platform.md)
 - [Arquitetura agentiva](../development/agentic_architecture.md)
 - [Segurança](../reference/tool_security_model.md)

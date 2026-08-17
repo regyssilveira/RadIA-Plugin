@@ -1,4 +1,4 @@
-# Complete RadIA 2.16.0 user manual
+# Complete RadIA 2.17.0 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -30,7 +30,7 @@ the next time Delphi opens. If the panel is closed before exiting, it remains cl
 session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.16.0`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.0`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -518,10 +518,11 @@ See the [security model](../reference/tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 187 registered built-in tools.
+- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 212 registered built-in tools.
 - The [thread and PPL assistant](threading_assistant.en.md) audits and prepares safe concurrency modernization.
 - The [OpenAPI/Swagger retrofit](openapi_retrofit.en.md) integrates documentation into existing DEXT APIs.
 - [DEXT and form modernization](dext_form_modernization.en.md) executes reversible, gated batches.
+- [FireDAC Advisor](firedac_advisor.en.md) audits, previews, fixes, and migrates data access through gates.
 - Runtime automation uses Win32 controls by default. VCL controls without an `HWND` require the
   reviewed Debug instrumentation, consent, a rebuild, and a new session; see the
   [runtime diagnostics guide](runtime_debug_automation.en.md#vcl-controls-without-an-hwnd).
@@ -547,6 +548,7 @@ hints also document `Enter`, `Ctrl+R`, and `Ctrl+P`.
 - [MCP](mcp_integration_guide.en.md)
 - [Local knowledge](user_guide_project_knowledge.en.md)
 - [Designer and debugger](user_guide_designer_debugger.en.md)
+- [FireDAC Advisor](firedac_advisor.en.md)
 - [Troubleshooting](troubleshooting_agentic_platform.en.md)
 - [Agentic architecture](../development/agentic_architecture.en.md)
 - [Security](../reference/tool_security_model.en.md)

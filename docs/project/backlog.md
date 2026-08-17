@@ -5,9 +5,13 @@ release não pertencem ao backlog.
 
 ## Estado atual
 
-Não há item ou goal aberto. O fechamento determinístico da experiência Delphi foi concluído e validado
-pelos gates integrados da versão publicada. Novos trabalhos só entram neste arquivo quando possuírem
-escopo executável e critérios de aceitação definidos.
+Não há item de engenharia ativo neste backlog. O FireDAC Advisor concluiu seu contrato funcional,
+de segurança, documentação bilíngue, builds Delphi 12 e 13, testes unitários e de integração e a
+matriz E2E de 16 cenários nos três targets suportados. Sua superfície pública e seu modo de uso estão
+registrados nas referências e no guia do produto.
+
+Novos ciclos devem entrar aqui somente depois de possuírem resultado observável, escopo, ameaças,
+critérios de aceitação e plano de validação definidos.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

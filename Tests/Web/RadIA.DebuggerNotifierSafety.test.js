@@ -111,15 +111,31 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   );
   assert.match(smoke, /function Invoke-RadIABlockLineClick/u);
   assert.match(smoke, /\$response\.result\.isError/u);
-  assert.doesNotMatch(
+  assert.match(
     smoke,
-    /Invoke-RadIASmokeTool[\s\S]*?-Name "NavigateToFile"/u
+    /Invoke-RadIASmokeToolWithConsent[\s\S]*?-Name "NavigateToFile"/u
   );
   assert.match(
     smoke,
     /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u
   );
   assert.match(smoke, /diagnostic\.painted/u);
+  assert.match(smoke, /Test-RadIAPluginShutdownCompleted/u);
+  assert.match(smoke, /Background threads remaining after shutdown wait: 0/u);
+  assert.match(smoke, /HostCleanupForced/u);
+  assert.match(smoke, /access violation\|eaccessviolation/u);
+  const registration = fs.readFileSync(
+    path.join('Source', 'Integration', 'RadIA.OTA.Register.pas'),
+    'utf8'
+  );
+  assert.match(
+    registration,
+    /if GIsShuttingDown then\s+FOptionsPages := nil/u
+  );
+  assert.match(
+    registration,
+    /if GIsShuttingDown then\s+FEditorHook := nil\s+else\s+begin\s+TRadIAEditorHook/u
+  );
 });
 
 test('inline completion diagnostic defers acceptance until after preview paint', () => {

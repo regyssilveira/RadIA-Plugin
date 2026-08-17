@@ -77,6 +77,7 @@ Delphi 11 não faz parte da matriz atual.
 | Projetos | Criar projetos, units e forms com preview e validação | [Criação de projetos](docs/guides/project_wizard.md) |
 | DEXT | Criar APIs minimalistas ou com controllers por jornadas guiadas | [Jornadas DEXT](docs/guides/user_guide_dext_journeys.md) |
 | Build e testes | Compilar, estruturar erros, executar DUnitX e usar resultados como gate | [Jornadas](docs/guides/user_guide_journeys.md) |
+| FireDAC | Auditar e modernizar dados com gates | [FireDAC Advisor](docs/guides/firedac_advisor.md) |
 | Designer | Consultar e alterar componentes, propriedades, eventos e layout | [Designer e debugger](docs/guides/user_guide_designer_debugger.md) |
 | Debugger | Iniciar, pausar, continuar, executar passos, breakpoints, watches e call stack | [Designer e debugger](docs/guides/user_guide_designer_debugger.md) |
 | Diagnóstico runtime | Reproduzir uma falha visual, corrigir e repetir o mesmo cenário | [Diagnóstico runtime](docs/guides/runtime_debug_automation.md) |
@@ -106,7 +107,7 @@ RadIA, enquanto **Codex CLI direto** entrega a execução completa ao CLI. Veja 
 - `/help` resume o produto e aponta para a documentação aplicável.
 - `/journey` lista jornadas que coletam dados ausentes sem perder o contexto da conversa.
 - `/scope` mostra valores efetivos e permite sobrescrever ou restaurar herança sem reiniciar a IDE.
-- [Catálogo das 187 ferramentas](docs/reference/runtime_tool_catalog.md) lista o catálogo interno gerado.
+- [Catálogo das 212 ferramentas](docs/reference/runtime_tool_catalog.md) lista o catálogo interno gerado.
 - [Refatoração semântica segura](docs/guides/semantic_refactoring.md) explica referências, Rename Symbol,
   preview, consentimento e rollback.
 - [Referência operacional](docs/reference/internal_tools_reference.md) explica o que cada ferramenta faz e

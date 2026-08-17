@@ -1,5 +1,7 @@
 # Project direction
 
+There is no active execution goal at this time.
+
 - [Roadmap](roadmap.en.md): future direction without release history.
 - [Backlog](backlog.en.md): open work only.
 

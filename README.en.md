@@ -74,6 +74,7 @@ Delphi 11 is outside the current support matrix.
 | Projects | Create projects, units, and forms with preview and validation | [Project wizard](docs/guides/project_wizard.en.md) |
 | DEXT | Create minimal or controller-based APIs through guided journeys | [DEXT journeys](docs/guides/user_guide_dext_journeys.en.md) |
 | Build and tests | Build, structure errors, run DUnitX, and gate changes | [Journeys](docs/guides/user_guide_journeys.en.md) |
+| FireDAC | Audit and modernize data through gates | [FireDAC Advisor](docs/guides/firedac_advisor.en.md) |
 | Designer and debugger | Components, events, execution, breakpoints, watches, and call stack | [Designer and debugger](docs/guides/user_guide_designer_debugger.en.md) |
 | Runtime diagnostics | Reproduce a visual failure, fix it, and replay the scenario | [Runtime diagnostics](docs/guides/runtime_debug_automation.en.md) |
 | Memory | Instrument Debug builds with FastMM5 and compare a fix | [FastMM5 diagnostics](docs/guides/fastmm5_diagnostic_session.en.md) |
@@ -103,7 +104,7 @@ session and quota. In the latter route, **RadIA native** keeps orchestration ins
 - `/help` summarizes the product and links to the applicable documentation.
 - `/journey` lists journeys that collect missing input without losing conversational context.
 - `/scope` shows effective values and overrides or restores inheritance without an IDE restart.
-- The [187-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
+- The [212-tool runtime catalog](docs/reference/runtime_tool_catalog.en.md) lists built-in registrations.
 - [Safe semantic refactoring](docs/guides/semantic_refactoring.en.md) explains references, Rename Symbol,
   preview, consent, and rollback.
 - The [operational reference](docs/reference/internal_tools_reference.en.md) explains purpose and activation.

@@ -18,6 +18,18 @@ type
     [Test]
     procedure InventoriesFireDACWithoutReturningCredentialValues;
     [Test]
+    procedure PreservesFireDACUsageCompatibilityWithStructuredProjectInventory;
+    [Test]
+    procedure AuditsFireDACTransactionsWithoutExecutingSql;
+    [Test]
+    procedure InspectsFireDACConfigurationWithoutReturningCredentials;
+    [Test]
+    procedure AnalyzesFireDACThreadSafetyWithoutExecutingSql;
+    [Test]
+    procedure GetsSanitizedFireDACProjectReport;
+    [Test]
+    procedure DiagnosesFireDACEnvironmentWithoutExternalActions;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -34,7 +46,8 @@ uses
   RadIA.Core.Patches,
   RadIA.Core.ToolRegistry,
   RadIA.Core.Tools,
-  RadIA.Core.Workspace;
+  RadIA.Core.Workspace,
+  RadIA.Core.WorkspaceBoundary;
 
 type
   TRadIAEcosystemPatchStub = class(TInterfacedObject, IRadIAPatchService)
@@ -187,7 +200,8 @@ begin
   RegisterRadIADelphiEcosystemTools(
     LRegistry,
     TRadIAEcosystemWorkspaceStub.Create(ARootPath),
-    TRadIAEcosystemPatchStub.Create
+    TRadIAEcosystemPatchStub.Create,
+    TRadIAWorkspaceBoundary.Create
   );
   LTool := LRegistry.Resolve(AToolName);
   Result := LTool.Execute(TRadIAToolRequest.Create(AToolName, '{}', 'ecosystem-test'));
@@ -210,6 +224,111 @@ begin
   Assert.Contains(LResult.ContentJson, '"connectionCount":1');
   Assert.Contains(LResult.ContentJson, '"credentialsCollected":false');
   Assert.IsFalse(LResult.ContentJson.Contains('do-not-return'));
+end;
+
+procedure TTestRadIADelphiEcosystemTools.PreservesFireDACUsageCompatibilityWithStructuredProjectInventory;
+var
+  LProjectResult: TRadIAToolResult;
+  LUsageResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'type TDataModule = class' + sLineBreak +
+    '  Connection: TFDConnection;' + sLineBreak +
+    '  Query: TFDQuery;' + sLineBreak +
+    'end;'
+  );
+  LUsageResult := ExecuteTool(FRootPath, 'InspectFireDACUsage');
+  LProjectResult := ExecuteTool(FRootPath, 'InspectFireDACProject');
+  Assert.IsTrue(LUsageResult.Success);
+  Assert.IsTrue(LProjectResult.Success);
+  Assert.Contains(LUsageResult.ContentJson, '"connectionCount":1');
+  Assert.Contains(LProjectResult.ContentJson, '"connectionCount":1');
+  Assert.Contains(LUsageResult.ContentJson, '"components"');
+  Assert.Contains(LProjectResult.ContentJson, '"components"');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.AuditsFireDACTransactionsWithoutExecutingSql;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'procedure Save;' + sLineBreak +
+    'begin' + sLineBreak +
+    '  MainTransaction.StartTransaction;' + sLineBreak +
+    'end;'
+  );
+  LResult := ExecuteTool(FRootPath, 'AuditFireDACTransactions');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.transaction.commit-missing');
+  Assert.Contains(LResult.ContentJson, '"sqlExecuted":false');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.InspectsFireDACConfigurationWithoutReturningCredentials;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.dfm'),
+    'object MainConnection: TFDConnection' + sLineBreak +
+    '  Params.Strings = (' + sLineBreak +
+    '    ''DriverID=SQLite''' + sLineBreak +
+    '    ''Password=never-return'')' + sLineBreak +
+    'end'
+  );
+  LResult := ExecuteTool(FRootPath, 'InspectFireDACConfiguration');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"driverId":"SQLite"');
+  Assert.Contains(LResult.ContentJson, '"credentialsCollected":false');
+  Assert.DoesNotContain(LResult.ContentJson, 'never-return');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.AnalyzesFireDACThreadSafetyWithoutExecutingSql;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Worker.pas'),
+    'type TDataModule = class' + sLineBreak +
+    '  MainConnection: TFDConnection;' + sLineBreak +
+    'end;' + sLineBreak +
+    'TTask.Run(procedure begin MainConnection.Open; end);'
+  );
+  LResult := ExecuteTool(FRootPath, 'AnalyzeFireDACThreadSafety');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'firedac.thread.shared-component');
+  Assert.Contains(LResult.ContentJson, '"sqlExecuted":false');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.GetsSanitizedFireDACProjectReport;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.pas'),
+    'Query.SQL.Text := ''select id from customer where id = :Id'';'
+  );
+  LResult := ExecuteTool(FRootPath, 'GetFireDACProjectReport');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"name":"Id"');
+  Assert.DoesNotContain(LResult.ContentJson, 'select id from customer');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.DiagnosesFireDACEnvironmentWithoutExternalActions;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.dfm'),
+    'object Connection: TFDConnection' + sLineBreak +
+    '  Params.Strings = (''DriverID=SQLite'')' + sLineBreak +
+    'end'
+  );
+  LResult := ExecuteTool(FRootPath, 'DiagnoseFireDACEnvironment');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"configuredDriverIds":["SQLite"]');
+  Assert.Contains(LResult.ContentJson, '"driverInstallationAttempted":false');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;
@@ -257,7 +376,8 @@ begin
   RegisterRadIADelphiEcosystemTools(
     LRegistry,
     TRadIAEcosystemWorkspaceStub.Create(FRootPath),
-    TRadIAEcosystemPatchStub.Create
+    TRadIAEcosystemPatchStub.Create,
+    TRadIAWorkspaceBoundary.Create
   );
   LResult := LRegistry.Resolve('PrepareLocalizationExtraction').Execute(
     TRadIAToolRequest.Create(

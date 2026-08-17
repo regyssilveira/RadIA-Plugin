@@ -30,6 +30,7 @@ catalogs.
 - [DUnitX runner](dunitx_runner.en.md)
 - [Git workflow](git_workflow.en.md)
 - [Legacy data-access migration](legacy_data_migration.en.md)
+- [FireDAC Advisor](firedac_advisor.en.md)
 - [Safe local database access](local_database.en.md)
 - [DEXT journeys](user_guide_dext_journeys.en.md)
 - [Thread and PPL assistant](threading_assistant.en.md)

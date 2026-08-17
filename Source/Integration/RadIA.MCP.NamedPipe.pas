@@ -970,6 +970,8 @@ end;
 {$ENDIF}
 
 procedure TRadIANamedPipeMcpServer.Stop;
+const
+  CShutdownWorkerTimeoutMs = 5000;
 begin
   TLogger.Log('MCP Stop entered', 'MCP');
   if TInterlocked.Exchange(FRunning, 0) = 0 then
@@ -979,6 +981,17 @@ begin
   begin
     FWorker.Terminate;
     TLogger.Log('MCP Stop waiting for worker', 'MCP');
+    if GIsShuttingDown and
+      (WaitForSingleObject(
+        FWorker.Handle,
+        CShutdownWorkerTimeoutMs
+      ) <> WAIT_OBJECT_0) then
+    begin
+      TLogger.Log('MCP Stop left worker to process shutdown', 'MCP');
+      FWorker := nil;
+      DeleteConnectionFile;
+      Exit;
+    end;
     FWorker.WaitFor;
     TLogger.Log('MCP Stop worker finished', 'MCP');
     FWorker.Free;

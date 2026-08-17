@@ -5,9 +5,13 @@ belong in the backlog.
 
 ## Current state
 
-There is no open item or active goal. The deterministic Delphi experience closure was completed and
-validated by the integrated gates of the published version. New work enters this file only after it
-has an executable scope and defined acceptance criteria.
+There is no active engineering item in this backlog. FireDAC Advisor completed its functional and
+security contract, bilingual documentation, Delphi 12 and 13 builds, unit and integration tests,
+and the 16-scenario E2E matrix on all three supported targets. Its public surface and usage are
+recorded in the product references and guide.
+
+New cycles must enter this file only after defining an observable outcome, scope, threats,
+acceptance criteria, and validation plan.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

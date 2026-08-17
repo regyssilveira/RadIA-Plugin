@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 187 internal tools: what each one does and at what stage
+This page explains RadIA's 212 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
@@ -133,7 +133,29 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |`CompleteRuntimePerformanceMeasurement`|Stop sampling and produce evidence only after the same scenario succeeds in the same session and build.|Immediately after `RunRuntimeScenario`; insufficient samples and changed sessions are rejected.|
 |`CompareRuntimePerformanceEvidence`|Compare duration, CPU, peak working set/private bytes, and unresponsive samples across builds.|After replaying the same scenario key in a distinct session and build; it flags changes above 10% or worse responsiveness.|
 |`CancelRuntimePerformanceMeasurement`|Stop active sampling without producing evidence.|When the scenario is cancelled or fails, or when the user abandons the measurement.|
-|`InspectFireDACUsage`|Inventory connections, queries, parameters, transactions, and potentially mutable SQL without executing commands or collecting credential values.|When reviewing the data layer or preparing a clean machine.|
+| `InspectFireDACUsage` | Preserves legacy counters and returns the same structured project inventory. | For existing consumers and automations that still use the original name. |
+| `InspectFireDACProject` | Inventories FireDAC components and relationships in bounded PAS and DFM files without executing SQL or collecting credentials. | When reviewing the data layer before specialized analysis. |
+| `GetFireDACProjectReport` | Aggregates inventory and sanitized analysis of embedded FireDAC SQL. | When reviewing the FireDAC layer with navigable locations. |
+| `AuditFireDACTransactions` | Audits transaction flows in bounded Pascal files without executing SQL or connecting to a database. | When locating potentially unsafe commit, rollback, or early-exit flows. |
+| `InspectFireDACConfiguration` | Inspects bounded FireDAC configuration while discarding credentials and absolute paths. | When reviewing drivers, connection definitions, options, and libraries before execution. |
+| `DiagnoseFireDACEnvironment` | Statically diagnoses DriverID and driver links without connecting or installing components. | When checking runtime configuration before running the application. |
+| `AnalyzeFireDACThreadSafety` | Finds shared FireDAC components and unsafe UI access in bounded workers. | When reviewing parallel tasks before running database operations in the background. |
+| `AnalyzeFireDACQuery` | Analyzes bounded SQL, statements, and placeholders without executing or returning the query text. | When reviewing a selected FireDAC query before any execution. |
+| `ExplainFireDACQuery` | Structures facts, hypotheses, and limitations for AI explanation without echoing SQL. | When requesting an explanation grounded in deterministic query analysis. |
+| `ExplainFireDACFinding` | Structures a finding for AI explanation without accepting free-form evidence or secrets. | When explaining impact and next steps without promoting hypotheses to facts. |
+| `ValidateFireDACParameters` | Validates binding names, types, directions, sizes, and null state without executing SQL. | When locating inconsistent parameters before preparing a fix. |
+| `GenerateFireDACRepositoryPreview` | Prepares a deterministic FireDAC repository unit without creating files. | When reviewing structure and ownership before adding a repository to the project. |
+| `GenerateFireDACDataModulePreview` | Prepares a DataModule unit with explicit FireDAC connection ownership. | When reviewing connection infrastructure before creating the file. |
+| `GenerateFireDACQueryPreview` | Prepares an isolated `TFDQuery` configuration unit without executing SQL. | When reviewing a typed query before adding it to the project. |
+| `GenerateFireDACDTOPreview` | Prepares a minimal, deterministic DTO unit. | When reviewing the data contract before creating the file. |
+| `GenerateFireDACTests` | Prepares a DUnitX fixture for the FireDAC artifact without writing it. | When planning automated coverage together with the data code. |
+| `PrepareFireDACQueryOptimization` | Prepares an optimization plan without executing SQL and keeps gains without an execution plan as hypotheses. | After deterministic analysis and before any change or benchmark. |
+| `PrepareFireDACThreadSafetyPlan` | Prepares a worker-isolation plan for connections, datasets, transactions, and UI. | After locating cross-thread sharing and before preparing a patch. |
+| `PrepareFireDACParameterFix` | Prepares a deterministic parameter accessor replacement for a proven finding. | After validating a type mismatch and before application consent. |
+| `PrepareFireDACTransactionFix` | Prepares deterministic rollback insertion for a proven finding. | After the audit locates a handler without rollback and before consent. |
+| `PrepareFireDACFix` | Routes a supported, proven FireDAC rule to its deterministic preparer. | From the fix action of a finding in the problems panel. |
+| `ApplyFireDACFix` | Applies only an Advisor-owned preview whose fingerprint remains valid. | After review and explicit user consent. |
+| `RevertFireDACFix` | Reverts only an applied FireDAC fix with no later editor changes. | When the user undoes the fix or a later gate requests rollback. |
 |`DiagnoseDelphiDependencies`|Check project paths and dependency manifests without installing components.|Before preparing a machine or repairing dependency-related build failures.|
 |`AuditDelphiLocalization`|Find visible Pascal and DFM text that may move to `resourcestring`.|Before preparing a reviewable extraction or comparing languages.|
 |`PrepareLocalizationExtraction`|Prepare an immutable patch that moves one active-unit literal to `resourcestring` without applying changes.|After selecting a candidate; application uses `ApplyPatch` with consent and reversal uses `RevertPatch`.|
@@ -461,7 +483,8 @@ store the selection as learning material.
 | `InventoryLegacyDataAccess` | Inventories BDE, ADO, and dbExpress references in the active project. | Before planning a FireDAC migration. |
 | `PlanLegacyMigrationBatches` | Groups findings by technology and file into bounded batches. | After inventory, without starting a full rewrite. |
 | `PrepareLegacyMigrationBatch` | Prepares a reversible preview only for deterministic replacements. | After reviewing batch risks and manual actions. |
-| `RecordLegacyMigrationGate` | Records build and test evidence and reverts an applied batch when a gate fails. | After applying and validating each batch. |
+| `ApplyLegacyMigrationBatch` | Applies a prepared batch and records its state in the migration session. | After review and consent, before the FireDAC, build, and DUnitX gates. |
+| `RecordLegacyMigrationGate` | Records FireDAC, build, and DUnitX evidence fingerprints and reverts the batch when a gate fails. | After applying and validating each batch. |
 | `GetLegacyMigrationReport` | Consolidates compatibility, gates, and pending manual actions. | During and at the end of migration. |
 | `PlanDextAndFormModernization` | Plans DEXT and form decomposition without automatic rewriting. | After stabilizing the FireDAC batches. |
 
@@ -470,6 +493,8 @@ store the selection as learning material.
 | Tool | What it does | When it is triggered |
 |---|---|---|
 | `InspectLocalSQLiteDatabase` | Reads tables, views, and columns from a workspace-local SQLite file without executing user SQL. | When the agent needs the local schema before proposing a query. |
+| `CompareFireDACCodeWithSchema` | Compares typed FireDAC expectations with an authorized read-only local SQLite schema. | When validating tables, columns, types, and nullability without querying row data. |
+| `GenerateFireDACSchemaReport` | Generates a sanitized FireDAC report from the local SQLite schema without querying rows. | When documenting tables, views, columns, and sensitive flags in the authorized database. |
 | `PreviewLocalSQLiteQuery` | Runs one read-only query, limits results to 500 rows, and redacts sensitive columns in the grid and CSV. | After the user reviews the query; consent is required on every execution. |
 
 ## Trigger examples
