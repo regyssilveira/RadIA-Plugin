@@ -3521,6 +3521,9 @@ if ($IDE64) {
     $binName = "bin64"
     $shutdownTimeoutMs = 60000
 }
+if ($FireDACScenarioId) {
+    $shutdownTimeoutMs = 120000
+}
 if ($ExerciseKnowledge) {
     $shutdownTimeoutMs = 60000
 }
