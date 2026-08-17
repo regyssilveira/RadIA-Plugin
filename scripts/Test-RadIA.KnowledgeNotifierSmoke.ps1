@@ -572,6 +572,41 @@ function Invoke-RadIATool {
     return $response.result.structuredContent
 }
 
+function Get-RadIAKnowledgeDocumentWhenReady {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BridgePath,
+        [Parameter(Mandatory = $true)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory = $true)]
+        [string]$FileName,
+        [ValidateRange(1, 120)]
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        try {
+            return Invoke-RadIATool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetKnowledgeDocument" `
+                -Arguments @{
+                    fileName = $FileName
+                    maxCharacters = 65536
+                }
+        } catch {
+            if (-not $_.Exception.Message.Contains(
+                "knowledge_document_not_found"
+            )) {
+                throw
+            }
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "The requested knowledge document did not become ready."
+}
+
 function Invoke-RadIAToolWithConsent {
     param(
         [Parameter(Mandatory = $true)]
@@ -1504,14 +1539,10 @@ try {
         if (-not $knowledgeStatus.loaded -or $knowledgeStatus.fileCount -lt 1) {
             throw "The generated project knowledge index did not become ready."
         }
-        $generatedDocument = Invoke-RadIATool `
+        $generatedDocument = Get-RadIAKnowledgeDocumentWhenReady `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
-            -Name "GetKnowledgeDocument" `
-            -Arguments @{
-                fileName = $generatedFormSourcePath
-                maxCharacters = 65536
-            }
+            -FileName $generatedFormSourcePath
         if ($generatedDocument.chunks.Count -lt 1) {
             throw "The generated form was absent from the ready knowledge index."
         }
@@ -2622,14 +2653,10 @@ try {
             throw "The IDE did not rename the active smoke unit."
         }
 
-        $renamedDocument = Invoke-RadIATool `
+        $renamedDocument = Get-RadIAKnowledgeDocumentWhenReady `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
-            -Name "GetKnowledgeDocument" `
-            -Arguments @{
-                fileName = $renamedUnitPath
-                maxCharacters = 65536
-            }
+            -FileName $renamedUnitPath
         if ($renamedDocument.chunks.Count -lt 1) {
             throw "The renamed unit was not present in the knowledge index."
         }
