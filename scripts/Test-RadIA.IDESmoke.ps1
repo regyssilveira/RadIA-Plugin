@@ -33,7 +33,8 @@ param(
     [string]$FireDACScenarioId = "",
     [string]$FireDACProjectPath = "",
     [string]$FireDACEvidencePath = "",
-    [string]$FireDACDatabasePath = ""
+    [string]$FireDACDatabasePath = "",
+    [string]$FireDACTestExecutablePath = ""
 )
 
 if ($EvidencePath -and $SkipPackageHashCheck) {
@@ -101,6 +102,9 @@ if ($FireDACEvidencePath -and -not $FireDACScenarioId) {
 }
 if ($FireDACDatabasePath -and -not $FireDACScenarioId) {
     throw "A FireDAC database fixture requires -FireDACScenarioId."
+}
+if ($FireDACTestExecutablePath -and -not $FireDACScenarioId) {
+    throw "A FireDAC test executable requires -FireDACScenarioId."
 }
 
 function Get-RadIAProcessDescendants {
@@ -1777,6 +1781,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         [Parameter(Mandatory)][string]$DelphiVersion,
         [Parameter(Mandatory)][string]$Platform,
         [string]$DatabasePath = "",
+        [string]$TestExecutablePath = "",
         [string]$EvidencePath = ""
     )
 
@@ -1784,6 +1789,9 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $consentDecision = "not-required"
     $databaseFingerprintBefore = ""
     $databaseFingerprintAfter = ""
+    $artifactState = "not-applicable"
+    $buildPassed = $false
+    $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
         "firedac-inventory-navigation" {
@@ -1982,6 +1990,66 @@ function Invoke-RadIAFireDACReadOnlyScenario {
             }
             $results = @($preview, $denial)
         }
+        "firedac-repository-applied" {
+            if (-not $TestExecutablePath) {
+                throw "The applied repository scenario requires DUnitX."
+            }
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GenerateFireDACRepositoryPreview" `
+                -Arguments @{
+                    unitName = "RadIA.E2E.CustomerRepository"
+                    entityName = "Customer"
+                    tableName = "customer"
+                    relativeDirectory = "Generated"
+                    registerInProject = $true
+                }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied" -or
+                -not (Test-Path -LiteralPath $applied.fileName -PathType Leaf)) {
+                throw "The FireDAC repository artifact was not applied."
+            }
+            $artifactState = "applied"
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $true) {
+                $details = $build | ConvertTo-Json -Depth 8 -Compress
+                throw "The applied FireDAC repository did not build: $details"
+            }
+            $buildPassed = $true
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                $details = $tests | ConvertTo-Json -Depth 8 -Compress
+                throw "DUnitX did not pass after repository apply: $details"
+            }
+            $testsPassed = $true
+            $results = @($preview, $applied, $build, $tests)
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2004,6 +2072,9 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         consentDecision = $consentDecision
         databaseFingerprintBefore = $databaseFingerprintBefore
         databaseFingerprintAfter = $databaseFingerprintAfter
+        artifactState = $artifactState
+        buildPassed = $buildPassed
+        testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
     }
@@ -3057,6 +3128,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -DelphiVersion $DelphiVersion `
                 -Platform $platform `
                 -DatabasePath $FireDACDatabasePath `
+                -TestExecutablePath $FireDACTestExecutablePath `
                 -EvidencePath $FireDACEvidencePath
         }
         $terminalDiagnostic = $null
@@ -3471,7 +3543,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
         if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-            $ExerciseInlineReview) {
+            $ExerciseInlineReview -or $FireDACScenarioId) {
             $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
                 $shutdownTimeoutMs
             )

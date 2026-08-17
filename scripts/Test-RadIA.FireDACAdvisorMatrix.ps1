@@ -25,7 +25,8 @@ $connectedScenarioIds = @(
     "firedac-shared-thread-connection",
     "firedac-sqlite-grid-csv",
     "firedac-sqlite-dml-rejection",
-    "firedac-repository-preview-denied"
+    "firedac-repository-preview-denied",
+    "firedac-repository-applied"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -69,6 +70,7 @@ function New-RadIAFireDACFixture {
     $projectPath = Join-Path $fixtureRoot "RadIAFireDACE2E.dproj"
     $programPath = Join-Path $fixtureRoot "RadIAFireDACE2E.dpr"
     $databasePath = ""
+    $testExecutablePath = ""
     $programContent = @'
 program RadIAFireDACE2E;
 
@@ -160,13 +162,51 @@ end
     <Config Condition="'$(Config)'==''">Debug</Config>
     <Platform Condition="'$(Platform)'==''">Win32</Platform>
     <TargetedPlatforms>3</TargetedPlatforms>
+    <AppType>Application</AppType>
+    <ProjectName Condition="'$(ProjectName)'==''">RadIAFireDACE2E</ProjectName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+    <Base>true</Base>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+    <Cfg_1>true</Cfg_1>
+    <CfgParent>Base</CfgParent>
+    <Base>true</Base>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Base)'!=''">
+    <DCC_DcuOutput>.\.radia\debug\dcu</DCC_DcuOutput>
+    <DCC_ExeOutput>.</DCC_ExeOutput>
   </PropertyGroup>
   <ItemGroup>
     <DelphiCompile Include="RadIAFireDACE2E.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
     <DCCReference Include="RadIA.FireDAC.E2E.Data.pas"/>
+    <BuildConfiguration Include="Base">
+      <Key>Base</Key>
+    </BuildConfiguration>
+    <BuildConfiguration Include="Debug">
+      <Key>Cfg_1</Key>
+      <CfgParent>Base</CfgParent>
+    </BuildConfiguration>
   </ItemGroup>
+  <ProjectExtensions>
+    <Borland.Personality>Delphi.Personality.12</Borland.Personality>
+    <Borland.ProjectType/>
+    <BorlandProject>
+      <Delphi.Personality>
+        <Source>
+          <Source Name="MainSource">RadIAFireDACE2E.dpr</Source>
+        </Source>
+      </Delphi.Personality>
+      <Platforms>
+        <Platform value="Win32">True</Platform>
+      </Platforms>
+    </BorlandProject>
+    <ProjectFileVersion>12</ProjectFileVersion>
+  </ProjectExtensions>
+  <Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets"
+    Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
 </Project>
 '@
     Set-RadIAFireDACFixtureContent `
@@ -218,10 +258,52 @@ connection.close()
             throw "The SQLite E2E fixture could not be created."
         }
     }
+    if ($ScenarioId -eq "firedac-repository-applied") {
+        $testSourcePlatform = if ($TargetId -eq "delphi13-ide64") {
+            "Win64"
+        } else {
+            "Win32"
+        }
+        $testSourceVersion = if ($TargetId -eq "delphi12-win32") {
+            "23.0"
+        } else {
+            "37.0"
+        }
+        $testSourcePath = Join-Path `
+            $repositoryRoot `
+            ("Output\$testSourceVersion\bin\$testSourcePlatform\" +
+                "Debug\RadIATests.exe")
+        if (-not (Test-Path -LiteralPath $testSourcePath -PathType Leaf)) {
+            throw "The DUnitX E2E executable was not found: $testSourcePath"
+        }
+        $testExecutablePath = Join-Path `
+            $fixtureRoot `
+            "RadIAFireDACE2ETests.exe"
+        Copy-Item `
+            -LiteralPath $testSourcePath `
+            -Destination $testExecutablePath
+        foreach ($supportExecutable in @(
+            "RadIA.MCP.Bridge.exe",
+            "RadIA.Semantic.Engine.exe"
+        )) {
+            $supportSourcePath = Join-Path `
+                (Split-Path -Parent $testSourcePath) `
+                $supportExecutable
+            if (-not (Test-Path `
+                -LiteralPath $supportSourcePath `
+                -PathType Leaf)) {
+                throw "DUnitX support executable missing: $supportSourcePath"
+            }
+            Copy-Item `
+                -LiteralPath $supportSourcePath `
+                -Destination (Join-Path $fixtureRoot $supportExecutable)
+        }
+    }
     return [PSCustomObject]@{
         Root = $fixtureRoot
         ProjectPath = $projectPath
         DatabasePath = $databasePath
+        TestExecutablePath = $testExecutablePath
     }
 }
 
@@ -389,6 +471,12 @@ foreach ($run in $runs) {
             $arguments += @(
                 "-FireDACDatabasePath",
                 $fixture.DatabasePath
+            )
+        }
+        if ($fixture.TestExecutablePath) {
+            $arguments += @(
+                "-FireDACTestExecutablePath",
+                $fixture.TestExecutablePath
             )
         }
         if ($run.ideArchitecture -eq "Win64") {
