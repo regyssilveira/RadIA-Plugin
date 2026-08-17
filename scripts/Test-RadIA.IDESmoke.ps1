@@ -1984,10 +1984,9 @@ function Invoke-RadIAFireDACReadOnlyScenario {
             if ($sqlLine -lt 1 -or $sqlColumn -lt 1) {
                 throw "The SQL fixture text was not found."
             }
-            $navigation = Invoke-RadIASmokeToolWithConsent `
+            $navigation = Invoke-RadIASmokeTool `
                 -BridgePath $BridgePath `
                 -InstanceFile $InstanceFile `
-                -IDEProcess $IDEProcess `
                 -Name "NavigateToFile" `
                 -Arguments @{
                     fileName = $targetFile

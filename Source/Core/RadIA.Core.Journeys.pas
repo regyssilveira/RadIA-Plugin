@@ -474,6 +474,11 @@ begin
       'profile only after the user explicitly selects or requests those additions. With no active project, ' +
       'use the user-approved destination parent as authorizedRoot. Use OpenCreatedProject, ' +
       'ValidateCreatedProject, and IDE execution tools instead of invoking MSBuild from a CLI. ' +
+      'Do not call NavigateToFile, NavigateToSymbol, or GetKnowledgeDocument before ' +
+      'CreateProjectFromTemplate and OpenCreatedProject succeed. After opening the project, call ' +
+      'GetKnowledgeStatus and only request an indexed document when the status confirms that the ' +
+      'project index is ready. Avoid repeating workspace inspection after the destination, project ' +
+      'type, platform, and active IDE state are known. ' +
       'For executable projects, start the application after a successful build, confirm its main ' +
       'window, exercise the primary user scenario, and record the observed result. When the ' +
       'reviewed preview declares a companionTestExecutable, run that executable through ' +

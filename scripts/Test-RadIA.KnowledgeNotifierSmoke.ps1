@@ -417,7 +417,8 @@ function Invoke-RadIATool {
         [string]$InstanceFile,
         [Parameter(Mandatory = $true)]
         [string]$Name,
-        [hashtable]$Arguments = @{}
+        [hashtable]$Arguments = @{},
+        [switch]$ExpectError
     )
 
     $initialize = @{
@@ -480,8 +481,14 @@ function Invoke-RadIATool {
         throw "Tool $Name failed: $($response.error.message)"
     }
     if ($response.result.isError) {
+        if ($ExpectError) {
+            return $response.result
+        }
         $message = $response.result.content[0].text
         throw "Tool $Name returned an error: $message"
+    }
+    if ($ExpectError) {
+        throw "Tool $Name unexpectedly succeeded."
     }
     return $response.result.structuredContent
 }
@@ -1348,10 +1355,10 @@ try {
         if (-not $templateOpen.opened) {
             throw "The generated VCL project was not opened."
         }
-        $immediateNavigation = Invoke-RadIAToolWithConsent `
+        $navigationStartedAt = [DateTime]::UtcNow
+        $immediateNavigation = Invoke-RadIATool `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
-            -IDEProcess $process `
             -Name "NavigateToFile" `
             -Arguments @{
                 fileName = $generatedFormSourcePath
@@ -1369,6 +1376,35 @@ try {
                 "Navigation failed immediately after opening the " +
                 "generated project."
             )
+        }
+        if (([DateTime]::UtcNow - $navigationStartedAt).TotalSeconds -ge 15) {
+            throw "Read-only source navigation unexpectedly waited for consent."
+        }
+
+        $knowledgeDeadline = [DateTime]::UtcNow.AddSeconds(30)
+        do {
+            $knowledgeStatus = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetKnowledgeStatus"
+            if ($knowledgeStatus.loaded -and $knowledgeStatus.fileCount -gt 0) {
+                break
+            }
+            Start-Sleep -Milliseconds 250
+        } while ([DateTime]::UtcNow -lt $knowledgeDeadline)
+        if (-not $knowledgeStatus.loaded -or $knowledgeStatus.fileCount -lt 1) {
+            throw "The generated project knowledge index did not become ready."
+        }
+        $generatedDocument = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "GetKnowledgeDocument" `
+            -Arguments @{
+                fileName = $generatedFormSourcePath
+                maxCharacters = 65536
+            }
+        if ($generatedDocument.chunks.Count -lt 1) {
+            throw "The generated form was absent from the ready knowledge index."
         }
     } else {
         $templateValidation = Invoke-RadIAToolWithConsent `
@@ -1443,10 +1479,9 @@ try {
         $activeForm.name -ne "RadIAMainForm") {
         throw "The generated VCL form did not become active in the Designer."
     }
-    $designNavigation = Invoke-RadIAToolWithConsent `
+    $designNavigation = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
-        -IDEProcess $process `
         -Name "NavigateToDevelopmentSurface" `
         -Arguments @{
             fileName = $generatedFormSourcePath
@@ -1456,10 +1491,9 @@ try {
         throw "The edit-layout intent did not activate the Form Designer."
     }
     $developmentSurfaceDesignPassed = $true
-    $codeNavigation = Invoke-RadIAToolWithConsent `
+    $codeNavigation = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
-        -IDEProcess $process `
         -Name "NavigateToDevelopmentSurface" `
         -Arguments @{
             fileName = $generatedFormSourcePath
@@ -1469,10 +1503,9 @@ try {
         throw "The implement-event intent did not activate the Code editor."
     }
     $developmentSurfaceCodePassed = $true
-    [void](Invoke-RadIAToolWithConsent `
+    [void](Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
-        -IDEProcess $process `
         -Name "NavigateToDevelopmentSurface" `
         -Arguments @{
             fileName = $generatedFormSourcePath
@@ -1481,18 +1514,19 @@ try {
         -ExpectError
     )
     $developmentSurfaceErrorPassed = $true
-    [void](Invoke-RadIAToolWithConsent `
+    $surfaceNavigationStartedAt = [DateTime]::UtcNow
+    $surfaceNavigation = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
-        -IDEProcess $process `
         -Name "NavigateToDevelopmentSurface" `
         -Arguments @{
             fileName = $generatedFormSourcePath
             intent = "edit-layout"
-        } `
-        -ConsentButtonText "Cancel" `
-        -ExpectError
-    )
+        }
+    if (-not $surfaceNavigation.message -or
+        ([DateTime]::UtcNow - $surfaceNavigationStartedAt).TotalSeconds -ge 15) {
+        throw "Read-only surface navigation unexpectedly waited for consent."
+    }
     $developmentSurfaceCancellationPassed = $true
     $propertyPreview = Invoke-RadIATool `
         -BridgePath $bridgePath `
@@ -2001,10 +2035,9 @@ try {
             -not $executionResults[1].success) {
             throw "The replacement project did not validate."
         }
-        $transitionNavigation = Invoke-RadIAToolWithConsent `
+        $transitionNavigation = Invoke-RadIATool `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
-            -IDEProcess $process `
             -Name "NavigateToFile" `
             -Arguments @{
                 fileName = $transitionProjectSourcePath

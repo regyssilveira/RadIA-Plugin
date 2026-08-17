@@ -354,11 +354,13 @@ begin
   Assert.IsTrue(FRegistry.TryResolve('ListProjectGroupProjects', LTool));
   Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
   Assert.IsTrue(FRegistry.TryResolve('NavigateToFile', LTool));
-  Assert.AreEqual(trReversibleWrite, LTool.Descriptor.Risk);
+  Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
+  Assert.IsTrue(FRegistry.TryResolve('NavigateToSymbol', LTool));
+  Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
   Assert.IsTrue(
     FRegistry.TryResolve('NavigateToDevelopmentSurface', LTool)
   );
-  Assert.AreEqual(trReversibleWrite, LTool.Descriptor.Risk);
+  Assert.AreEqual(trReadOnly, LTool.Descriptor.Risk);
   Assert.IsTrue(FRegistry.TryResolve('ExecuteIDEAction', LTool));
   Assert.AreEqual(trExecution, LTool.Descriptor.Risk);
 end;
