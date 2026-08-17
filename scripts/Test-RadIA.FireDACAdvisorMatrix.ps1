@@ -28,7 +28,8 @@ $connectedScenarioIds = @(
     "firedac-repository-preview-denied",
     "firedac-repository-applied",
     "firedac-build-failure-rollback",
-    "firedac-parameter-smart-diff"
+    "firedac-parameter-smart-diff",
+    "firedac-stale-preview-rejection"
 )
 
 function Set-RadIAFireDACFixtureContent {

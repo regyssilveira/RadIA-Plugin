@@ -71,28 +71,51 @@
     },
     {
       "id": "firedac-build-failure-rollback",
-      "tools": ["GenerateFireDACRepositoryPreview", "ApplyGeneratedArtifact", "BuildProject", "RevertGeneratedArtifact"],
+      "tools": [
+        "GenerateFireDACRepositoryPreview",
+        "ApplyGeneratedArtifact",
+        "BuildProject",
+        "RevertGeneratedArtifact"
+      ],
       "mutationExpected": true,
       "rollbackExpected": true,
       "requiredEvidence": ["build-failed", "rollback-succeeded", "file-absent"]
     },
     {
       "id": "firedac-parameter-smart-diff",
-      "tools": ["ValidateFireDACParameters", "PrepareFireDACParameterFix", "ApplyFireDACFix", "BuildProject", "RunDUnitXTests"],
+      "tools": [
+        "ValidateFireDACParameters",
+        "PrepareFireDACParameterFix",
+        "ApplyFireDACFix",
+        "BuildProject",
+        "RunDUnitXTests"
+      ],
       "mutationExpected": true,
       "rollbackExpected": false,
       "requiredEvidence": ["smart-diff-reviewed", "explicit-consent", "build-passed", "tests-passed"]
     },
     {
       "id": "firedac-stale-preview-rejection",
-      "tools": ["PrepareFireDACParameterFix", "ApplyFireDACFix"],
+      "tools": [
+        "PrepareFireDACParameterFix",
+        "PreparePatch",
+        "ApplyPatch",
+        "ApplyFireDACFix",
+        "RevertPatch"
+      ],
       "mutationExpected": false,
       "rollbackExpected": false,
       "requiredEvidence": ["buffer-changed-after-preview", "precondition-rejected"]
     },
     {
       "id": "firedac-ado-migration-batch",
-      "tools": ["InventoryLegacyDataAccess", "PlanLegacyMigrationBatches", "PrepareLegacyMigrationBatch", "ApplyLegacyMigrationBatch", "RecordLegacyMigrationGate"],
+      "tools": [
+        "InventoryLegacyDataAccess",
+        "PlanLegacyMigrationBatches",
+        "PrepareLegacyMigrationBatch",
+        "ApplyLegacyMigrationBatch",
+        "RecordLegacyMigrationGate"
+      ],
       "mutationExpected": true,
       "rollbackExpected": false,
       "requiredEvidence": ["firedac-gate-passed", "build-passed", "tests-passed"]
@@ -116,7 +139,13 @@
       "tools": ["InspectFireDACProject", "AnalyzeFireDACThreadSafety"],
       "mutationExpected": false,
       "rollbackExpected": false,
-      "requiredEvidence": ["analysis-in-flight", "clean-shutdown", "no-deadlock", "no-access-violation", "no-orphan-thread"]
+      "requiredEvidence": [
+        "analysis-in-flight",
+        "clean-shutdown",
+        "no-deadlock",
+        "no-access-violation",
+        "no-orphan-thread"
+      ]
     }
   ]
 }

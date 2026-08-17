@@ -1795,6 +1795,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $buildFailed = $false
     $rollbackSucceeded = $false
     $smartDiffReviewed = $false
+    $stalePreviewRejected = $false
+    $laterChangePreserved = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2269,6 +2271,112 @@ function Invoke-RadIAFireDACReadOnlyScenario {
             $artifactState = "applied"
             $results = @($validation, $preview, $applied, $build, $tests)
         }
+        "firedac-stale-preview-rejection" {
+            if (-not $ProjectPath) {
+                throw "The stale preview scenario requires a project fixture."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            Open-RadIAEditorFile `
+                -IDEProcess $IDEProcess `
+                -Path $targetFile
+            Start-Sleep -Seconds 2
+            $editor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            $fireDACPreview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareFireDACParameterFix" `
+                -Arguments @{
+                    findingId = (
+                        "firedac.parameter.accessor-mismatch:" +
+                        "RadIA.FireDAC.E2E.Data.pas:Id"
+                    )
+                    confidence = "proven"
+                    targetFile = $targetFile
+                    baseRevision = $editor.revision
+                    queryVariable = "FQuery"
+                    parameterName = "Id"
+                    fromAccessor = "AsString"
+                    toAccessor = "AsLargeInt"
+                }
+            $laterMarker = "// Later reviewed user change"
+            $laterPatch = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $targetFile
+                    baseRevision = $fireDACPreview.baseRevision
+                    originalText = "implementation"
+                    replacementText = "implementation`r`n`r`n$laterMarker"
+                }
+            $laterApplied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyPatch" `
+                -Arguments @{ previewId = $laterPatch.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $changedEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $changedEditor.content.Contains($laterMarker)) {
+                throw "The later editor change was not applied."
+            }
+            $rejection = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyFireDACFix" `
+                -Arguments @{ previewId = $fireDACPreview.previewId } `
+                -ExpectError
+            $rejectionText = [string]$rejection.result.content[0].text
+            if (-not $rejectionText.Contains("precondition_failed")) {
+                throw "The stale FireDAC preview was not rejected by fingerprint."
+            }
+            $stalePreviewRejected = $true
+            $changedEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $changedEditor.content.Contains($laterMarker) -or
+                $changedEditor.content.Contains(
+                    "FQuery.ParamByName('Id').AsLargeInt"
+                )) {
+                throw "The stale preview overwrote the later editor change."
+            }
+            $laterChangePreserved = $true
+            $reverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertPatch" `
+                -Arguments @{ previewId = $laterPatch.previewId }
+            $restoredEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $restoredEditor.revision.Equals(
+                    $fireDACPreview.baseRevision,
+                    [StringComparison]::OrdinalIgnoreCase
+                )) {
+                throw "The stale preview fixture was not restored."
+            }
+            $artifactState = "unchanged"
+            $results = @(
+                $fireDACPreview,
+                $laterPatch,
+                $laterApplied,
+                $rejection,
+                $reverted
+            )
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2296,6 +2404,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         buildFailed = $buildFailed
         rollbackSucceeded = $rollbackSucceeded
         smartDiffReviewed = $smartDiffReviewed
+        stalePreviewRejected = $stalePreviewRejected
+        laterChangePreserved = $laterChangePreserved
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
