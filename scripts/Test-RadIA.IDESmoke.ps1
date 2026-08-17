@@ -1780,6 +1780,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         [Parameter(Mandatory)][string]$ScenarioId,
         [Parameter(Mandatory)][string]$DelphiVersion,
         [Parameter(Mandatory)][string]$Platform,
+        [string]$ProjectPath = "",
         [string]$DatabasePath = "",
         [string]$TestExecutablePath = "",
         [string]$EvidencePath = ""
@@ -1791,6 +1792,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $databaseFingerprintAfter = ""
     $artifactState = "not-applicable"
     $buildPassed = $false
+    $buildFailed = $false
+    $rollbackSucceeded = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2050,6 +2053,92 @@ function Invoke-RadIAFireDACReadOnlyScenario {
             $testsPassed = $true
             $results = @($preview, $applied, $build, $tests)
         }
+        "firedac-build-failure-rollback" {
+            if (-not $ProjectPath) {
+                throw "The rollback scenario requires its project fixture."
+            }
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GenerateFireDACRepositoryPreview" `
+                -Arguments @{
+                    unitName = "RadIA.E2E.CustomerRepository"
+                    entityName = "Customer"
+                    tableName = "customer"
+                    relativeDirectory = "Generated"
+                    registerInProject = $true
+                }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied" -or
+                -not (Test-Path -LiteralPath $applied.fileName -PathType Leaf)) {
+                throw "The rollback fixture artifact was not applied."
+            }
+            $artifactState = "applied"
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $false -or @($build.messages).Count -lt 1) {
+                throw "The intentional FireDAC build failure was not observed."
+            }
+            $buildFailed = $true
+            $reverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertGeneratedArtifact" `
+                -Arguments @{ previewId = $preview.previewId }
+            if ($reverted.state -ne "reverted" -or
+                (Test-Path -LiteralPath $applied.fileName -PathType Leaf)) {
+                throw "The failed FireDAC build did not roll back the artifact."
+            }
+            $artifactState = "reverted"
+            $rollbackSucceeded = $true
+            $programPath = [IO.Path]::ChangeExtension($ProjectPath, ".dpr")
+            $programContent = Get-Content -LiteralPath $programPath -Raw
+            $programContent = $programContent.Replace(
+                "  RadIAIntentionalCompilerFailure;`r`n",
+                ""
+            )
+            Set-Content `
+                -LiteralPath $programPath `
+                -Value $programContent `
+                -Encoding UTF8 `
+                -NoNewline
+            $cleanupBuild = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($cleanupBuild.success -ne $true) {
+                throw "The rollback fixture did not recover its build state."
+            }
+            $results = @(
+                $preview,
+                $applied,
+                $build,
+                $reverted,
+                $cleanupBuild
+            )
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2074,6 +2163,8 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         databaseFingerprintAfter = $databaseFingerprintAfter
         artifactState = $artifactState
         buildPassed = $buildPassed
+        buildFailed = $buildFailed
+        rollbackSucceeded = $rollbackSucceeded
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
@@ -3127,6 +3218,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -ScenarioId $FireDACScenarioId `
                 -DelphiVersion $DelphiVersion `
                 -Platform $platform `
+                -ProjectPath $FireDACProjectPath `
                 -DatabasePath $FireDACDatabasePath `
                 -TestExecutablePath $FireDACTestExecutablePath `
                 -EvidencePath $FireDACEvidencePath

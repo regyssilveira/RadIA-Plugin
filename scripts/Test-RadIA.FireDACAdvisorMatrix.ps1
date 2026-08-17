@@ -26,7 +26,8 @@ $connectedScenarioIds = @(
     "firedac-sqlite-grid-csv",
     "firedac-sqlite-dml-rejection",
     "firedac-repository-preview-denied",
-    "firedac-repository-applied"
+    "firedac-repository-applied",
+    "firedac-build-failure-rollback"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -80,6 +81,12 @@ uses
 begin
 end.
 '@
+    if ($ScenarioId -eq "firedac-build-failure-rollback") {
+        $programContent = $programContent.Replace(
+            "begin`nend.",
+            "begin`n  RadIAIntentionalCompilerFailure;`nend."
+        )
+    }
     Set-RadIAFireDACFixtureContent `
         -Path $programPath `
         -Content $programContent
