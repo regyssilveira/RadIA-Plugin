@@ -32,7 +32,8 @@ $connectedScenarioIds = @(
     "firedac-stale-preview-rejection",
     "firedac-ado-migration-batch",
     "firedac-migration-gate-rollback",
-    "firedac-project-context-reset"
+    "firedac-project-context-reset",
+    "firedac-shutdown-during-analysis"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -168,6 +169,15 @@ end.
             "  FConnection.Commit;",
             "  if Assigned(FQuery) then`n    FQuery.ExecSQL;"
         )
+    }
+    if ($ScenarioId -eq "firedac-shutdown-during-analysis") {
+        $padding = [Text.StringBuilder]::new()
+        for ($index = 1; $index -le 20000; $index++) {
+            [void]$padding.AppendLine(
+                "// FireDAC bounded shutdown analysis item $index"
+            )
+        }
+        $unitContent += "`n" + $padding.ToString()
     }
     Set-RadIAFireDACFixtureContent `
         -Path $unitPath `

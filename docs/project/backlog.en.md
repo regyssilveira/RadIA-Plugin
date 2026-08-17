@@ -24,15 +24,17 @@ Composite gates for isolated fixes remain open. Legacy migration now owns batch 
 FireDAC, build, and DUnitX gates with rollback. The E2E matrix contract now enumerates 16 scenarios
 across Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64, producing 48 deterministic runs.
 Fully connecting that plan to the real MCP/IDE runner and collecting runtime evidence remain open.
-Fifteen scenarios are connected and passing on all three targets, producing 45 real executions:
+All 16 scenarios are connected and passing on all three targets, producing 48 real executions:
 inventory, sanitized SQL analysis, credential redaction, missing transaction rollback, cross-thread
 sharing, consented SQLite grid/CSV, DML rejection with an unchanged database, and a repository
 preview whose application is denied, consented and followed by build and DUnitX, or rolled back
 after a failed build gate, the consented parameter accessor fix with Smart Diff, build, and DUnitX,
 stale-preview rejection without overwriting a later change, and ADO-to-FireDAC migration with
 inspection, build, DUnitX, and a validated gate, plus failed-gate rollback that restores the complete
-legacy source, and project switching/reopening without stale context. The shutdown scenario remains
-to be connected, and the smoke's controlled SQL input must be replaced with a real editor selection.
+legacy source, project switching/reopening without stale context, and shutdown during analysis with
+no deadlock, access violation, or orphan process. The smoke's controlled SQL input must still be
+replaced with a real editor selection before the final consolidated matrix runs on the candidate
+commit.
 
 A public extension repository or marketplace, C++Builder, Delphi 11, Lazarus, GetIt,
 Embarcadero-exclusive integrations, and replacement of the current WebView remain out of scope.

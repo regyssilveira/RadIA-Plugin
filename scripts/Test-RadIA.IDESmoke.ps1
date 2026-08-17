@@ -1850,6 +1850,14 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $projectSwitched = $false
     $projectReopened = $false
     $noStaleLocation = $false
+    $analysisInFlight = $false
+    $analysisProcessId = 0
+    $analysisInputPath = ""
+    $analysisOutputPath = ""
+    $analysisErrorPath = ""
+    $cleanAnalysisShutdown = $false
+    $noAnalysisAccessViolation = $false
+    $noOrphanAnalysisThread = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2855,6 +2863,76 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 $reopenedInventory
             )
         }
+        "firedac-shutdown-during-analysis" {
+            $requestKey = [Guid]::NewGuid().ToString("N")
+            $requestRoot = Join-Path `
+                ([IO.Path]::GetTempPath()) `
+                "radia-firedac-shutdown-$requestKey"
+            $analysisInputPath = "$requestRoot.in"
+            $analysisOutputPath = "$requestRoot.out"
+            $analysisErrorPath = "$requestRoot.err"
+            $analysisRequests = @(
+                @{
+                    jsonrpc = "2.0"
+                    id = 1
+                    method = "initialize"
+                    params = @{
+                        protocolVersion = "2025-06-18"
+                        capabilities = @{}
+                        clientInfo = @{
+                            name = "radia-firedac-shutdown"
+                            version = "1"
+                        }
+                    }
+                } | ConvertTo-Json -Depth 8 -Compress
+                @{
+                    jsonrpc = "2.0"
+                    method = "notifications/initialized"
+                    params = @{}
+                } | ConvertTo-Json -Depth 4 -Compress
+            )
+            for ($requestId = 2; $requestId -le 33; $requestId++) {
+                $toolName = if (($requestId % 2) -eq 0) {
+                    "InspectFireDACProject"
+                } else {
+                    "AnalyzeFireDACThreadSafety"
+                }
+                $analysisRequests += @{
+                    jsonrpc = "2.0"
+                    id = $requestId
+                    method = "tools/call"
+                    params = @{
+                        name = $toolName
+                        arguments = @{}
+                    }
+                } | ConvertTo-Json -Depth 6 -Compress
+            }
+            Set-Content `
+                -LiteralPath $analysisInputPath `
+                -Value $analysisRequests `
+                -Encoding UTF8
+            $analysisProcess = Start-Process `
+                -FilePath $BridgePath `
+                -ArgumentList "`"$InstanceFile`"" `
+                -RedirectStandardInput $analysisInputPath `
+                -RedirectStandardOutput $analysisOutputPath `
+                -RedirectStandardError $analysisErrorPath `
+                -WindowStyle Hidden `
+                -PassThru
+            Start-Sleep -Milliseconds 100
+            if ($analysisProcess.HasExited) {
+                throw "The FireDAC analysis completed before shutdown began."
+            }
+            $analysisInFlight = $true
+            $analysisProcessId = $analysisProcess.Id
+            $artifactState = "unchanged"
+            $results = @(
+                [PSCustomObject]@{
+                    analysisInFlight = $true
+                    requestedAnalysisCount = 32
+                }
+            )
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2889,6 +2967,14 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         projectSwitched = $projectSwitched
         projectReopened = $projectReopened
         noStaleLocation = $noStaleLocation
+        analysisInFlight = $analysisInFlight
+        analysisProcessId = $analysisProcessId
+        analysisInputPath = $analysisInputPath
+        analysisOutputPath = $analysisOutputPath
+        analysisErrorPath = $analysisErrorPath
+        cleanAnalysisShutdown = $cleanAnalysisShutdown
+        noAnalysisAccessViolation = $noAnalysisAccessViolation
+        noOrphanAnalysisThread = $noOrphanAnalysisThread
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
@@ -4354,6 +4440,16 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -ParentProcessId $process.Id `
                 -ParentStartedAt $process.StartTime
         )
+        $analysisBridgeProcess = $null
+        if ($FireDACScenarioId -eq "firedac-shutdown-during-analysis") {
+            $analysisBridgeProcess = Get-Process `
+                -Id $fireDACDiagnostic.analysisProcessId `
+                -ErrorAction SilentlyContinue
+            if (-not $analysisBridgeProcess -or
+                $analysisBridgeProcess.HasExited) {
+                throw "The FireDAC analysis was not active at shutdown."
+            }
+        }
         $currentProcess = Get-Process -Id $process.Id -ErrorAction Stop
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
@@ -4470,6 +4566,50 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 "IDE descendants remained after cycle $cycle`: " +
                 ($orphanNames -join ", ")
             )
+        }
+        if ($analysisBridgeProcess) {
+            if (-not $analysisBridgeProcess.WaitForExit(30000)) {
+                throw "The FireDAC analysis bridge did not stop after shutdown."
+            }
+            $analysisOutput = Get-Content `
+                -LiteralPath $fireDACDiagnostic.analysisOutputPath `
+                -Raw `
+                -ErrorAction SilentlyContinue
+            $analysisError = Get-Content `
+                -LiteralPath $fireDACDiagnostic.analysisErrorPath `
+                -Raw `
+                -ErrorAction SilentlyContinue
+            $analysisShutdownText = "$analysisOutput`n$analysisError"
+            if ($analysisShutdownText -match
+                '(?i)access violation|eaccessviolation|0xc0000005') {
+                throw "The FireDAC shutdown analysis reported an access violation."
+            }
+            $fireDACDiagnostic.cleanAnalysisShutdown = $true
+            $fireDACDiagnostic.noAnalysisAccessViolation = $true
+            $fireDACDiagnostic.noOrphanAnalysisThread = $true
+            $analysisTemporaryPaths = @(
+                $fireDACDiagnostic.analysisInputPath,
+                $fireDACDiagnostic.analysisOutputPath,
+                $fireDACDiagnostic.analysisErrorPath
+            )
+            foreach ($propertyName in @(
+                "analysisProcessId",
+                "analysisInputPath",
+                "analysisOutputPath",
+                "analysisErrorPath"
+            )) {
+                $fireDACDiagnostic.PSObject.Properties.Remove($propertyName)
+            }
+            $fireDACDiagnostic |
+                ConvertTo-Json -Depth 10 |
+                Set-Content `
+                    -LiteralPath $FireDACEvidencePath `
+                    -Encoding UTF8
+            foreach ($temporaryPath in $analysisTemporaryPaths) {
+                if (Test-Path -LiteralPath $temporaryPath) {
+                    Remove-Item -LiteralPath $temporaryPath -Force
+                }
+            }
         }
 
         $elapsed = [Math]::Round(
