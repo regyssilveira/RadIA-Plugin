@@ -1794,6 +1794,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $buildPassed = $false
     $buildFailed = $false
     $rollbackSucceeded = $false
+    $smartDiffReviewed = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2139,6 +2140,135 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 $cleanupBuild
             )
         }
+        "firedac-parameter-smart-diff" {
+            if (-not $ProjectPath -or -not $TestExecutablePath) {
+                throw "The parameter fix scenario requires project and DUnitX fixtures."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            Open-RadIAEditorFile `
+                -IDEProcess $IDEProcess `
+                -Path $targetFile
+            Start-Sleep -Seconds 2
+            $editor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $editor.fileName -or -not $editor.revision) {
+                throw "The parameter fix target did not open in the editor."
+            }
+            $validation = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "ValidateFireDACParameters" `
+                -Arguments @{
+                    sql = "select id from customer where id = :Id"
+                    bindings = @(
+                        @{
+                            name = "Id"
+                            dataType = "ftLargeint"
+                            direction = "input"
+                            size = 0
+                            nullable = "false"
+                            valueState = "value"
+                            assignmentKind = "AsString"
+                        }
+                    )
+                }
+            $validationJson = $validation | ConvertTo-Json -Depth 8 -Compress
+            if (-not $validationJson.Contains(
+                "firedac.parameter.assignment-type-mismatch"
+            )) {
+                throw "The parameter validator did not prove the accessor mismatch."
+            }
+            $fixArguments = @{
+                findingId = (
+                    "firedac.parameter.accessor-mismatch:" +
+                    "RadIA.FireDAC.E2E.Data.pas:Id"
+                )
+                confidence = "proven"
+                targetFile = $targetFile
+                baseRevision = $editor.revision
+                queryVariable = "FQuery"
+                parameterName = "Id"
+                fromAccessor = "AsString"
+                toAccessor = "AsLargeInt"
+            }
+            $preview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareFireDACParameterFix" `
+                -Arguments $fixArguments
+            Start-Sleep -Seconds 1
+            $stableEditor = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $stableEditor.revision.Equals(
+                $preview.baseRevision,
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+                throw "The FireDAC parameter editor revision did not stabilize."
+            }
+            if ($preview.originalText -ne
+                "FQuery.ParamByName('Id').AsString" -or
+                $preview.replacementText -ne
+                "FQuery.ParamByName('Id').AsLargeInt") {
+                throw "The FireDAC parameter smart diff was not minimal."
+            }
+            $smartDiffReviewed = $true
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyFireDACFix" `
+                -Arguments @{ previewId = $preview.previewId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.mutationApplied -ne $true) {
+                throw "The FireDAC parameter fix was not applied."
+            }
+            $updated = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetEditorContent"
+            if (-not $updated.content.Contains(
+                "FQuery.ParamByName('Id').AsLargeInt"
+            )) {
+                throw "The editor does not contain the applied parameter fix."
+            }
+            $build = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($build.success -ne $true) {
+                throw "The FireDAC parameter fix did not build."
+            }
+            $buildPassed = $true
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                throw "DUnitX did not pass after the FireDAC parameter fix."
+            }
+            $testsPassed = $true
+            $artifactState = "applied"
+            $results = @($validation, $preview, $applied, $build, $tests)
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2165,6 +2295,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         buildPassed = $buildPassed
         buildFailed = $buildFailed
         rollbackSucceeded = $rollbackSucceeded
+        smartDiffReviewed = $smartDiffReviewed
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")

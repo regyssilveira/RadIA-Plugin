@@ -27,7 +27,8 @@ $connectedScenarioIds = @(
     "firedac-sqlite-dml-rejection",
     "firedac-repository-preview-denied",
     "firedac-repository-applied",
-    "firedac-build-failure-rollback"
+    "firedac-build-failure-rollback",
+    "firedac-parameter-smart-diff"
 )
 
 function Set-RadIAFireDACFixtureContent {
@@ -37,6 +38,9 @@ function Set-RadIAFireDACFixtureContent {
     )
 
     $normalized = $Content.Replace("`r`n", "`n").Replace("`n", "`r`n")
+    if (-not $normalized.EndsWith("`r`n")) {
+        $normalized += "`r`n"
+    }
     Set-Content `
         -LiteralPath $Path `
         -Value $normalized `
@@ -265,7 +269,10 @@ connection.close()
             throw "The SQLite E2E fixture could not be created."
         }
     }
-    if ($ScenarioId -eq "firedac-repository-applied") {
+    if ($ScenarioId -in @(
+        "firedac-repository-applied",
+        "firedac-parameter-smart-diff"
+    )) {
         $testSourcePlatform = if ($TargetId -eq "delphi13-ide64") {
             "Win64"
         } else {

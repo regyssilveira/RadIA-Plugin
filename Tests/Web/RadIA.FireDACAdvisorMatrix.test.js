@@ -72,7 +72,7 @@ test('FireDAC Advisor plan expands to 48 deterministic IDE runs', () => {
   );
 });
 
-test('FireDAC Advisor runner connects ten safe IDE scenarios', () => {
+test('FireDAC Advisor runner connects eleven safe IDE scenarios', () => {
   const runner = fs.readFileSync(runnerPath, 'utf8');
   const smoke = fs.readFileSync(smokePath, 'utf8');
   const connectedScenarios = [
@@ -85,7 +85,8 @@ test('FireDAC Advisor runner connects ten safe IDE scenarios', () => {
     'firedac-sqlite-dml-rejection',
     'firedac-repository-preview-denied',
     'firedac-repository-applied',
-    'firedac-build-failure-rollback'
+    'firedac-build-failure-rollback',
+    'firedac-parameter-smart-diff'
   ];
   const connectedTools = [
     'InspectFireDACProject',
@@ -100,6 +101,9 @@ test('FireDAC Advisor runner connects ten safe IDE scenarios', () => {
     'GenerateFireDACRepositoryPreview',
     'ApplyGeneratedArtifact',
     'RevertGeneratedArtifact',
+    'ValidateFireDACParameters',
+    'PrepareFireDACParameterFix',
+    'ApplyFireDACFix',
     'BuildProject',
     'RunDUnitXTests'
   ];
