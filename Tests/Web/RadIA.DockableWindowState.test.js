@@ -12,6 +12,10 @@ const register = fs.readFileSync(
   path.join(repositoryRoot, 'Source', 'Integration', 'RadIA.OTA.Register.pas'),
   'utf8'
 );
+const ideSmoke = fs.readFileSync(
+  path.join(repositoryRoot, 'scripts', 'Test-RadIA.IDESmoke.ps1'),
+  'utf8'
+);
 
 test('desktop-created native form is attached instead of duplicated', () => {
   assert.match(dockableForm, /FrameCreated[\s\S]*AttachNativeForm\(GetParentForm\(AFrame\)\)/u);
@@ -26,13 +30,56 @@ test('saved desktop geometry is not overwritten by default dimensions', () => {
   );
 });
 
-test('visibility follows actual native form show and close events', () => {
-  assert.doesNotMatch(register, /RestoreWindowVisibility/u);
+test('native desktop owns docking while actual window messages persist user intent', () => {
   assert.match(
     dockableForm,
-    /OnShow := FormShow;[\s\S]*OnClose := FormClose/u
+    /AMessage\.Msg = CM_SHOWINGCHANGED[\s\S]*SaveVisibility\(FForm\.Visible\)/u
   );
-  assert.match(dockableForm, /FormShow[\s\S]*SaveVisibility\(True\)/u);
-  assert.match(dockableForm, /FormClose[\s\S]*SaveVisibility\(False\)/u);
+  assert.match(
+    dockableForm,
+    /AMessage\.Msg = WM_EXITSIZEMOVE[\s\S]*SavePersistedBounds/u
+  );
+  assert.match(
+    dockableForm,
+    /PrepareDockableFormsForShutdown[\s\S]*PersistCurrentState[\s\S]*ReleaseForm/u
+  );
   assert.match(register, /DockableForm\.RestoreDockableFormVisibility/u);
+  assert.match(
+    dockableForm,
+    /if not FHasSavedWindowState then[\s\S]*LoadPersistedBounds/u
+  );
+});
+
+test('native host state is observed even when OTA suppresses form messages', () => {
+  assert.match(
+    dockableForm,
+    /FTimer\.Interval := 500;[\s\S]*FTimer\.OnTimer := TimerEvent/u
+  );
+  assert.match(
+    dockableForm,
+    /SynchronizeCurrentState[\s\S]*FForm\.BoundsRect[\s\S]*FForm\.Visible/u
+  );
+  assert.match(
+    dockableForm,
+    /procedure TRadIACustomDockableForm\.FormRemoved;[\s\S]*SavePersistedBounds;[\s\S]*SaveVisibility\(False\)/u
+  );
+});
+
+test('dockable forms register directly during the package Register procedure', () => {
+  assert.match(
+    register,
+    /procedure Register;[\s\S]*DockableForm\.RegisterDockableForm;[\s\S]*LWizardServices\.AddWizard/u
+  );
+  assert.doesNotMatch(
+    register,
+    /constructor TRadIAWizard\.Create;[\s\S]*DockableForm\.RegisterDockableForm/u
+  );
+});
+
+test('real IDE smoke rejects automatic chat opening from a hidden state', () => {
+  assert.match(ideSmoke, /\[switch\]\$ExpectDockHidden/u);
+  assert.match(
+    ideSmoke,
+    /if \(\$ExpectDockHidden\)[\s\S]*Get-RadIADockInfo[\s\S]*opened despite the persisted hidden state/u
+  );
 });

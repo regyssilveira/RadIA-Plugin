@@ -17,10 +17,13 @@ uses
   System.IniFiles,
   System.SysUtils,
   System.Win.Registry,
+  Winapi.Messages,
   Winapi.Windows,
   DesignIntf,
   Vcl.ActnList,
   Vcl.ComCtrls,
+  Vcl.Controls,
+  Vcl.ExtCtrls,
   Vcl.Forms,
   Vcl.ImgList,
   Vcl.Menus,
@@ -38,6 +41,8 @@ type
   TRadIADockableFormObserver = class(TComponent)
   private
     FHost: TRadIACustomDockableForm;
+    FTimer: TTimer;
+    procedure TimerEvent(Sender: TObject);
   protected
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
@@ -55,17 +60,22 @@ type
     FDefaultWidth: Integer;
     FDefaultHeight: Integer;
     FHasSavedWindowState: Boolean;
-    FPreviousOnShow: TNotifyEvent;
-    FPreviousOnClose: TCloseEvent;
+    FObservedBounds: TRect;
+    FObservedStateInitialized: Boolean;
+    FObservedVisible: Boolean;
+    FPreviousWindowProc: TWndMethod;
     procedure ApplyIDETheme;
     procedure ApplyWindowIdentity;
     procedure AttachNativeForm(AForm: TCustomForm);
     procedure DetachNativeForm;
     procedure EnsureFrameContent;
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormWindowProc(var AMessage: TMessage);
     procedure FormRemoved;
-    procedure FormShow(Sender: TObject);
+    procedure LoadPersistedBounds;
+    procedure PersistCurrentState;
+    procedure SavePersistedBounds;
     procedure SaveVisibility(const AVisible: Boolean);
+    procedure SynchronizeCurrentState;
   public
     constructor Create(
       const ACaption: string;
@@ -224,6 +234,10 @@ constructor TRadIADockableFormObserver.Create(AHost: TRadIACustomDockableForm);
 begin
   inherited Create(nil);
   FHost := AHost;
+  FTimer := TTimer.Create(Self);
+  FTimer.Interval := 500;
+  FTimer.OnTimer := TimerEvent;
+  FTimer.Enabled := True;
 end;
 
 procedure TRadIADockableFormObserver.Notification(
@@ -235,6 +249,12 @@ begin
   if (Operation = opRemove) and Assigned(FHost) and
     (AComponent = FHost.FForm) then
     FHost.FormRemoved;
+end;
+
+procedure TRadIADockableFormObserver.TimerEvent(Sender: TObject);
+begin
+  if Assigned(FHost) and not GIsShuttingDown then
+    FHost.SynchronizeCurrentState;
 end;
 
 { TRadIACustomDockableForm }
@@ -266,22 +286,49 @@ end;
 procedure PrepareDockableFormsForShutdown;
 begin
   if Assigned(GRadIADockableFormHost) then
+  begin
+    GRadIADockableFormHost.PersistCurrentState;
     GRadIADockableFormHost.ReleaseForm;
+  end;
   if Assigned(GRadIATerminalDockableFormHost) then
+  begin
+    GRadIATerminalDockableFormHost.PersistCurrentState;
     GRadIATerminalDockableFormHost.ReleaseForm;
+  end;
+end;
+
+procedure RestoreDockableFormVisibility;
+var
+  LRegistry: TRegistry;
+  LServices: IOTAServices;
+  LVisible: Boolean;
+begin
+  LVisible := False;
+  if not Supports(BorlandIDEServices, IOTAServices, LServices) then
+    Exit;
+  LRegistry := TRegistry.Create;
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if LRegistry.OpenKeyReadOnly(
+      LServices.GetBaseRegistryKey + '\RadIA'
+    ) and LRegistry.ValueExists('WindowVisible') then
+      LVisible := LRegistry.ReadBool('WindowVisible');
+  finally
+    LRegistry.Free;
+  end;
+  if Assigned(GRadIADockableFormHost) and LVisible then
+    GRadIADockableFormHost.Show;
 end;
 
 procedure TRadIACustomDockableForm.DetachNativeForm;
 begin
   if not Assigned(FForm) then
     Exit;
-  TRadIAAccessibleCustomForm(FForm).OnShow := FPreviousOnShow;
-  TRadIAAccessibleCustomForm(FForm).OnClose := FPreviousOnClose;
+  TRadIAAccessibleCustomForm(FForm).WindowProc := FPreviousWindowProc;
   FForm.RemoveFreeNotification(FObserver);
   FForm := nil;
   FFrame := nil;
-  FPreviousOnShow := nil;
-  FPreviousOnClose := nil;
+  FPreviousWindowProc := nil;
 end;
 
 procedure TRadIACustomDockableForm.ApplyIDETheme;
@@ -341,49 +388,44 @@ end;
 
 procedure TRadIACustomDockableForm.FormRemoved;
 begin
+  if Assigned(FForm) and not GIsShuttingDown then
+  begin
+    SavePersistedBounds;
+    SaveVisibility(False);
+  end;
   FForm := nil;
   FFrame := nil;
+  FPreviousWindowProc := nil;
 end;
 
-procedure TRadIACustomDockableForm.FormClose(
-  Sender: TObject;
-  var Action: TCloseAction
-);
-begin
-  SaveVisibility(False);
-  if Assigned(FPreviousOnClose) then
-    FPreviousOnClose(Sender, Action);
-end;
-
-procedure TRadIACustomDockableForm.FormShow(Sender: TObject);
-begin
-  SaveVisibility(True);
-  if Assigned(FPreviousOnShow) then
-    FPreviousOnShow(Sender);
-end;
-
-procedure RestoreDockableFormVisibility;
+procedure TRadIACustomDockableForm.SynchronizeCurrentState;
 var
-  LRegistry: TRegistry;
-  LServices: IOTAServices;
+  LBounds: TRect;
   LVisible: Boolean;
 begin
-  LVisible := False;
-  if not Supports(BorlandIDEServices, IOTAServices, LServices) then
+  if not Assigned(FForm) then
     Exit;
-  LRegistry := TRegistry.Create;
-  try
-    LRegistry.RootKey := HKEY_CURRENT_USER;
-    if LRegistry.OpenKeyReadOnly(
-      LServices.GetBaseRegistryKey + '\RadIA'
-    ) and LRegistry.ValueExists('WindowVisible') then
-      LVisible := LRegistry.ReadBool('WindowVisible');
-  finally
-    LRegistry.Free;
-  end;
+  LBounds := FForm.BoundsRect;
+  LVisible := FForm.Visible;
+  if not FObservedStateInitialized or (LVisible <> FObservedVisible) then
+    SaveVisibility(LVisible);
+  if not FObservedStateInitialized or not EqualRect(LBounds, FObservedBounds) then
+    SavePersistedBounds;
+  FObservedBounds := LBounds;
+  FObservedVisible := LVisible;
+  FObservedStateInitialized := True;
+end;
 
-  if Assigned(GRadIADockableFormHost) and LVisible then
-    GRadIADockableFormHost.Show;
+procedure TRadIACustomDockableForm.FormWindowProc(var AMessage: TMessage);
+begin
+  if Assigned(FPreviousWindowProc) then
+    FPreviousWindowProc(AMessage);
+  if not Assigned(FForm) then
+    Exit;
+  if AMessage.Msg = CM_SHOWINGCHANGED then
+    SaveVisibility(FForm.Visible)
+  else if AMessage.Msg = WM_EXITSIZEMOVE then
+    SavePersistedBounds;
 end;
 
 procedure TRadIACustomDockableForm.FrameCreated(AFrame: TCustomFrame);
@@ -401,10 +443,8 @@ begin
   FForm := AForm;
   FForm.FreeNotification(FObserver);
   FForm.Caption := GetCaption;
-  FPreviousOnShow := TRadIAAccessibleCustomForm(FForm).OnShow;
-  FPreviousOnClose := TRadIAAccessibleCustomForm(FForm).OnClose;
-  TRadIAAccessibleCustomForm(FForm).OnShow := FormShow;
-  TRadIAAccessibleCustomForm(FForm).OnClose := FormClose;
+  FPreviousWindowProc := TRadIAAccessibleCustomForm(FForm).WindowProc;
+  TRadIAAccessibleCustomForm(FForm).WindowProc := FormWindowProc;
   ApplyWindowIdentity;
 end;
 
@@ -454,6 +494,73 @@ procedure TRadIACustomDockableForm.LoadWindowState(
 );
 begin
   FHasSavedWindowState := ADesktop.SectionExists(ASection);
+  TLogger.Log(
+    'Desktop state loaded for ' + FIdentifier + ': section=' + ASection +
+    ', source=' + ADesktop.ClassName +
+    ', exists=' + BoolToStr(FHasSavedWindowState, True) + '.',
+    'DockableForm'
+  );
+end;
+
+procedure TRadIACustomDockableForm.LoadPersistedBounds;
+var
+  LRegistry: TRegistry;
+  LServices: IOTAServices;
+begin
+  if FIdentifier <> 'RadIADockableForm' then
+    Exit;
+  if not Supports(BorlandIDEServices, IOTAServices, LServices) then
+    Exit;
+  LRegistry := TRegistry.Create;
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if not LRegistry.OpenKeyReadOnly(LServices.GetBaseRegistryKey + '\RadIA') then
+      Exit;
+    if LRegistry.ValueExists('WindowWidth') then
+      FForm.Width := LRegistry.ReadInteger('WindowWidth');
+    if LRegistry.ValueExists('WindowHeight') then
+      FForm.Height := LRegistry.ReadInteger('WindowHeight');
+    if LRegistry.ValueExists('WindowLeft') then
+      FForm.Left := LRegistry.ReadInteger('WindowLeft');
+    if LRegistry.ValueExists('WindowTop') then
+      FForm.Top := LRegistry.ReadInteger('WindowTop');
+  finally
+    LRegistry.Free;
+  end;
+end;
+
+procedure TRadIACustomDockableForm.PersistCurrentState;
+begin
+  if not Assigned(FForm) then
+    Exit;
+  SaveVisibility(FForm.Visible);
+  SavePersistedBounds;
+end;
+
+procedure TRadIACustomDockableForm.SavePersistedBounds;
+var
+  LRegistry: TRegistry;
+  LServices: IOTAServices;
+begin
+  if (FIdentifier <> 'RadIADockableForm') or not Assigned(FForm) then
+    Exit;
+  if not TRadIAAccessibleCustomForm(FForm).Floating then
+    Exit;
+  if not Supports(BorlandIDEServices, IOTAServices, LServices) then
+    Exit;
+  LRegistry := TRegistry.Create;
+  try
+    LRegistry.RootKey := HKEY_CURRENT_USER;
+    if LRegistry.OpenKey(LServices.GetBaseRegistryKey + '\RadIA', True) then
+    begin
+      LRegistry.WriteInteger('WindowWidth', FForm.Width);
+      LRegistry.WriteInteger('WindowHeight', FForm.Height);
+      LRegistry.WriteInteger('WindowLeft', FForm.Left);
+      LRegistry.WriteInteger('WindowTop', FForm.Top);
+    end;
+  finally
+    LRegistry.Free;
+  end;
 end;
 
 procedure TRadIACustomDockableForm.SaveVisibility(const AVisible: Boolean);
@@ -465,14 +572,10 @@ begin
     Exit;
   if not Supports(BorlandIDEServices, IOTAServices, LServices) then
     Exit;
-
   LRegistry := TRegistry.Create;
   try
     LRegistry.RootKey := HKEY_CURRENT_USER;
-    if LRegistry.OpenKey(
-      LServices.GetBaseRegistryKey + '\RadIA',
-      True
-    ) then
+    if LRegistry.OpenKey(LServices.GetBaseRegistryKey + '\RadIA', True) then
       LRegistry.WriteBool('WindowVisible', AVisible);
   finally
     LRegistry.Free;
@@ -492,7 +595,12 @@ procedure TRadIACustomDockableForm.SaveWindowState(
   AIsProject: Boolean
 );
 begin
-  // The native IDE host persists its standard docking state.
+  TLogger.Log(
+    'Desktop state saved for ' + FIdentifier + ': section=' + ASection +
+    ', source=' + ADesktop.ClassName +
+    ', project=' + BoolToStr(AIsProject, True) + '.',
+    'DockableForm'
+  );
 end;
 
 procedure TRadIACustomDockableForm.Show;
@@ -524,6 +632,7 @@ begin
     begin
       FForm.Width := FDefaultWidth;
       FForm.Height := FDefaultHeight;
+      LoadPersistedBounds;
     end;
     TLogger.Log(
       'Native form created for ' + FIdentifier + ': ' + FForm.ClassName + '.',

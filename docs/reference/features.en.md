@@ -36,7 +36,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Goal-oriented Entry** | Chat UX | Welcome screen that starts with understanding, fixing, creating, or debugging, keeps the complete platform visible, and prepares requests without sending. | ✅ Completed |
 | **IDE Theme Integration** | Chat UX | Dark/Light adaptation to the Delphi theme, including Mountain Mist as light, scrollbar polish, and consistent code blocks. | ✅ Completed |
 | **Keyboard Shortcuts** | Chat UX | Shortcut `Ctrl + Enter` to send prompts and simple `Enter` for line breaks. | ✅ Completed |
-| **Layout Persistence** | Chat UX | Automatic saving and restoration of floating window size/position and visibility at startup. | ✅ Completed |
+| **Layout Persistence** | Chat UX | The native desktop restores docking; actual visibility and floating geometry preserve the user's choice across IDE layouts. | ✅ Completed |
 | **Streaming Responses** | Chat UX | Real-time incremental token rendering (SSE) for OpenAI, Gemini, Claude, and Ollama. | ✅ Completed |
 | **Multiple Chat Sessions** | Chat UX | Create, rename, delete, and isolate conversations in a collapsible sidebar, with actions locked during active requests. | ✅ Completed |
 | **Persistent Chat History** | Chat UX | Automatic local JSON storage and on-demand reload of previous chat sessions. | ✅ Completed |

@@ -371,6 +371,10 @@ begin
     TRadIAConfig.SetBaseRegistryPath(LOTAServices.GetBaseRegistryKey + '\RadIA');
   end;
 
+  {$IFNDEF TESTS}
+  RadIA.OTA.DockableForm.RegisterDockableForm;
+  {$ENDIF}
+
   if Supports(BorlandIDEServices, IOTAWizardServices, LWizardServices) then
   begin
     LogDebug('IOTAWizardServices supported');
@@ -410,10 +414,6 @@ begin
 
   FOptionsPages := TInterfaceList.Create;
   FApplicationEvents := TRadIAApplicationShutdownObserver.Create;
-
-  {$IFNDEF TESTS}
-  RadIA.OTA.DockableForm.RegisterDockableForm;
-  {$ENDIF}
 
   { Register custom forms in IDE Theming Services }
   if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then

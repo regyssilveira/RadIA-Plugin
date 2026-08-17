@@ -36,7 +36,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Entrada Orientada a Objetivos** | Chat UX | Tela inicial que começa por entender, corrigir, criar ou depurar, mantém a plataforma completa visível e prepara o pedido sem envio automático. | ✅ Concluído |
 | **Tema Integrado à IDE** | Chat UX | Adaptação Dark/Light ao tema do Delphi, incluindo Mountain Mist como light, scrollbar e blocos de código consistentes. | ✅ Concluído |
 | **Atalhos de Teclado** | Chat UX | Atalho `Ctrl + Enter` para enviar prompts e `Enter` para quebra de linha. | ✅ Concluído |
-| **Persistência de Layout** | Chat UX | Salvamento e restauração automática de tamanho/posição flutuante e visibilidade no startup. | ✅ Concluído |
+| **Persistência de Layout** | Chat UX | O desktop nativo restaura o dock; visibilidade real e geometria flutuante preservam a escolha do usuário entre layouts da IDE. | ✅ Concluído |
 | **Streaming de Respostas** | Chat UX | Respostas incrementais token a token (SSE) nos provedores OpenAI, Gemini, Claude e Ollama. | ✅ Concluído |
 | **Múltiplas Sessões de Chat** | Chat UX | Criação, renomeação, exclusão e isolamento de conversas em barra lateral retrátil (bloqueadas durante requisições ativas). | ✅ Concluído |
 | **Histórico de Chat Persistente** | Chat UX | Salvamento automático em JSON e restauração sob demanda das sessões anteriores de chat. | ✅ Concluído |
