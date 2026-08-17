@@ -1847,6 +1847,9 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $laterChangePreserved = $false
     $migrationGatePassed = $false
     $migrationGateFailed = $false
+    $projectSwitched = $false
+    $projectReopened = $false
+    $noStaleLocation = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2719,6 +2722,139 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 $gate
             )
         }
+        "firedac-project-context-reset" {
+            if (-not $ProjectPath) {
+                throw "The project context scenario requires its project fixture."
+            }
+            $initialProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+            $initialInventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $initialReport = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetFireDACProjectReport"
+            $initialJson = @($initialInventory, $initialReport) |
+                ConvertTo-Json -Depth 10 -Compress
+            $fixtureUnit = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            $fixtureUnitName = Split-Path -Leaf $fixtureUnit
+            if (-not $initialJson.Contains($fixtureUnitName)) {
+                throw "The initial FireDAC context did not expose its fixture unit."
+            }
+            $transitionDirectory = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "Transition"
+            $transitionPreview = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreviewProjectTemplate" `
+                -Arguments @{
+                    projectName = "RadIAFireDACTransition"
+                    template = "vcl"
+                    delphiVersion = $DelphiVersion
+                    platforms = @("Win32")
+                    destinationPath = $transitionDirectory
+                    projectSpecification = @{
+                        schemaVersion = 1
+                        kind = "blank"
+                        creationProfile = "essential"
+                    }
+                }
+            $transitionCreated = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "CreateProjectFromTemplate" `
+                -Arguments @{ previewId = $transitionPreview.previewId }
+            if ($transitionCreated.committed -ne $true) {
+                throw "The transition project was not created."
+            }
+            $transitionOpened = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "OpenCreatedProject" `
+                -Arguments @{ previewId = $transitionPreview.previewId }
+            if ($transitionOpened.opened -ne $true) {
+                throw "The transition project was not opened."
+            }
+            $transitionProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+            if ($transitionProject.fileName -eq $initialProject.fileName) {
+                throw "The active project did not switch."
+            }
+            $projectSwitched = $true
+            $transitionInventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $transitionReport = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetFireDACProjectReport"
+            $transitionJson = @($transitionInventory, $transitionReport) |
+                ConvertTo-Json -Depth 10 -Compress
+            if ($transitionJson.Contains($fixtureUnitName)) {
+                throw "The transition project retained a stale FireDAC location."
+            }
+            $noStaleLocation = $true
+            $transitionReverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertCreatedProject" `
+                -Arguments @{ previewId = $transitionPreview.previewId }
+            if ($transitionReverted.rolledBack -ne $true) {
+                throw "The transition project was not reverted."
+            }
+            $reopenedProject = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetActiveProject"
+            if (-not [IO.Path]::GetFullPath(
+                    $reopenedProject.fileName
+                ).Equals(
+                    [IO.Path]::GetFullPath($ProjectPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )) {
+                throw "The original FireDAC project was not reopened."
+            }
+            $reopenedInventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $reopenedJson = $reopenedInventory |
+                ConvertTo-Json -Depth 10 -Compress
+            if (-not $reopenedJson.Contains($fixtureUnitName)) {
+                throw "The reopened FireDAC context did not restore its location."
+            }
+            $projectReopened = $true
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            $artifactState = "unchanged"
+            $results = @(
+                $initialProject,
+                $initialInventory,
+                $initialReport,
+                $transitionPreview,
+                $transitionCreated,
+                $transitionOpened,
+                $transitionProject,
+                $transitionInventory,
+                $transitionReport,
+                $transitionReverted,
+                $reopenedProject,
+                $reopenedInventory
+            )
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2750,6 +2886,9 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         laterChangePreserved = $laterChangePreserved
         migrationGatePassed = $migrationGatePassed
         migrationGateFailed = $migrationGateFailed
+        projectSwitched = $projectSwitched
+        projectReopened = $projectReopened
+        noStaleLocation = $noStaleLocation
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")

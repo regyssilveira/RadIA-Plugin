@@ -136,7 +136,15 @@
     },
     {
       "id": "firedac-project-context-reset",
-      "tools": ["InspectFireDACProject", "GetFireDACProjectReport"],
+      "tools": [
+        "InspectFireDACProject",
+        "GetFireDACProjectReport",
+        "GetActiveProject",
+        "PreviewProjectTemplate",
+        "CreateProjectFromTemplate",
+        "OpenCreatedProject",
+        "RevertCreatedProject"
+      ],
       "mutationExpected": false,
       "rollbackExpected": false,
       "requiredEvidence": ["project-switched", "project-reopened", "no-stale-location"]
