@@ -95,6 +95,8 @@ type
     [Test]
     procedure NamedPipeStopDisconnectsIdleClient;
     [Test]
+    procedure NamedPipeShutdownStopRemainsBounded;
+    [Test]
     procedure ProtocolHandlesRepeatedRequests;
     [Test]
     procedure CancelNotificationStopsCooperativeTool;
@@ -118,6 +120,7 @@ uses
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliProcess,
   RadIA.Core.McpHandshake,
+  RadIA.Core.Types,
   RadIA.MCP.NamedPipe,
   RadIA.Tests.Patches,
   RadIA.Core.ToolRegistry,
@@ -769,6 +772,38 @@ begin
   finally
     if LPipe <> INVALID_HANDLE_VALUE then
       CloseHandle(LPipe);
+    LServer.Stop;
+    LServer := nil;
+    if TDirectory.Exists(LRootPath) then
+      TDirectory.Delete(LRootPath, True);
+  end;
+end;
+
+procedure TTestRadIAMcpProtocol.NamedPipeShutdownStopRemainsBounded;
+var
+  LConnectionFile: string;
+  LOriginalShuttingDown: Boolean;
+  LRootPath: string;
+  LServer: IRadIAMcpServer;
+  LStopwatch: TStopwatch;
+begin
+  LServer := CreateNamedPipeServer(LRootPath, LConnectionFile);
+  LOriginalShuttingDown := GIsShuttingDown;
+  try
+    LServer.Start;
+    GIsShuttingDown := True;
+    LStopwatch := TStopwatch.StartNew;
+    LServer.Stop;
+    LStopwatch.Stop;
+
+    Assert.IsTrue(
+      LStopwatch.ElapsedMilliseconds < 6000,
+      'MCP shutdown must not wait indefinitely for its worker.'
+    );
+    Assert.IsFalse(LServer.Running);
+    Assert.IsFalse(TFile.Exists(LConnectionFile));
+  finally
+    GIsShuttingDown := LOriginalShuttingDown;
     LServer.Stop;
     LServer := nil;
     if TDirectory.Exists(LRootPath) then
