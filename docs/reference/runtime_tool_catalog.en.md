@@ -475,6 +475,13 @@ This list contains only the built-in tools registered by the current package. Ar
 | `GenerateFireDACDTOPreview` | Prepares a deterministic FireDAC DTO preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
 | `GenerateFireDACTests` | Prepares a deterministic FireDAC DUnitX test preview without creating files. | `RadIA.Core.FireDAC.Generation.pas` |
 
+## Evidence-aware FireDAC plans
+
+| Tool | Purpose | Source unit |
+|---|---|---|
+| `PrepareFireDACQueryOptimization` | Prepares an evidence-aware FireDAC query optimization plan without executing SQL. | `RadIA.Core.FireDAC.Plans.pas` |
+| `PrepareFireDACThreadSafetyPlan` | Prepares a deterministic FireDAC worker-isolation plan without changing source files. | `RadIA.Core.FireDAC.Plans.pas` |
+
 ## Delphi ecosystem diagnostics
 
 | Tool | Purpose | Source unit |
@@ -540,7 +547,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 ## Summary
 
-- Registered groups: 66
-- Registered built-in tools: 204
+- Registered groups: 67
+- Registered built-in tools: 206
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

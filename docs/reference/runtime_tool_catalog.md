@@ -475,6 +475,13 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `GenerateFireDACDTOPreview` | Prepara uma unit DTO mínima e determinística. | `RadIA.Core.FireDAC.Generation.pas` |
 | `GenerateFireDACTests` | Prepara uma fixture DUnitX para o artefato FireDAC sem gravá-la. | `RadIA.Core.FireDAC.Generation.pas` |
 
+## Planos FireDAC orientados por evidências
+
+| Ferramenta | O que faz | Unit de origem |
+|---|---|---|
+| `PrepareFireDACQueryOptimization` | Prepara um plano de otimização sem executar SQL e mantém ganhos sem plano de execução como hipóteses. | `RadIA.Core.FireDAC.Plans.pas` |
+| `PrepareFireDACThreadSafetyPlan` | Prepara um plano de isolamento de conexão, dataset, transação e UI por worker. | `RadIA.Core.FireDAC.Plans.pas` |
+
 ## Diagnóstico do ecossistema Delphi
 
 | Ferramenta | O que faz | Unit de origem |
@@ -540,7 +547,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 ## Resumo
 
-- Grupos registrados: 66
-- Ferramentas internas registradas: 204
+- Grupos registrados: 67
+- Ferramentas internas registradas: 206
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

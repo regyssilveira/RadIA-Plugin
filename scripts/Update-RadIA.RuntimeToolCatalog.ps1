@@ -86,6 +86,7 @@ $portugueseGroupNames = @{
     "Delphi ecosystem diagnostics" = "Diagnóstico do ecossistema Delphi"
     "FireDAC query diagnostics" = "Diagnóstico de consultas FireDAC"
     "Safe FireDAC artifact previews" = "Previews seguros de artefatos FireDAC"
+    "Evidence-aware FireDAC plans" = "Planos FireDAC orientados por evidências"
     "Safe local database inspection" = "Inspeção segura de banco local"
     "FastMM5 log evidence" = "Evidências de logs do FastMM5"
     "Composed memory diagnostic sessions" = "Sessões compostas de diagnóstico de memória"

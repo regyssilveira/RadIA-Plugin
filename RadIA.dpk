@@ -150,6 +150,7 @@ contains
   RadIA.Core.FireDAC.ThreadSafety in 'Source\Core\RadIA.Core.FireDAC.ThreadSafety.pas',
   RadIA.Core.FireDAC.Tools in 'Source\Core\RadIA.Core.FireDAC.Tools.pas',
   RadIA.Core.FireDAC.Generation in 'Source\Core\RadIA.Core.FireDAC.Generation.pas',
+  RadIA.Core.FireDAC.Plans in 'Source\Core\RadIA.Core.FireDAC.Plans.pas',
   RadIA.Core.DelphiEcosystemTools in 'Source\Core\RadIA.Core.DelphiEcosystemTools.pas',
   RadIA.Core.LocalDatabase in 'Source\Core\RadIA.Core.LocalDatabase.pas',
   RadIA.Core.LocalDatabaseTools in 'Source\Core\RadIA.Core.LocalDatabaseTools.pas',

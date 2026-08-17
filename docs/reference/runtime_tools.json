@@ -533,6 +533,14 @@
       ]
     },
     {
+      "name": "Evidence-aware FireDAC plans",
+      "source": "Source/Core/RadIA.Core.FireDAC.Plans.pas",
+      "tools": [
+        "PrepareFireDACQueryOptimization",
+        "PrepareFireDACThreadSafetyPlan"
+      ]
+    },
+    {
       "name": "Delphi ecosystem diagnostics",
       "source": "Source/Core/RadIA.Core.DelphiEcosystemTools.pas",
       "tools": [

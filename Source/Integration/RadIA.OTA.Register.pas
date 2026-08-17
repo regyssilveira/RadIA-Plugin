@@ -76,6 +76,7 @@ uses
   RadIA.Core.RuntimePerformance,
   RadIA.Core.DelphiEcosystemTools,
   RadIA.Core.FireDAC.Generation,
+  RadIA.Core.FireDAC.Plans,
   RadIA.Core.FireDAC.Tools,
   RadIA.Core.LocalDatabase,
   RadIA.Core.LocalDatabaseTools,
@@ -1750,6 +1751,7 @@ initialization
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAGeneratedArtifactService>
   );
+  RegisterRadIAFireDACPlanTools(TRadIAContainer.Resolve<IRadIAToolRegistry>);
   RegisterRadIALocalDatabaseTools(
     TRadIAContainer.Resolve<IRadIAToolRegistry>,
     TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,

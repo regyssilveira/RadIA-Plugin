@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 204 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 206 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -149,6 +149,8 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `GenerateFireDACQueryPreview` | Prepara uma unit isolada de configuração de `TFDQuery` sem executar SQL. | Ao revisar uma consulta tipada antes de adicioná-la ao projeto. |
 | `GenerateFireDACDTOPreview` | Prepara uma unit DTO mínima e determinística. | Ao revisar o contrato de dados antes de criar o arquivo. |
 | `GenerateFireDACTests` | Prepara uma fixture DUnitX para o artefato FireDAC sem gravá-la. | Ao planejar a cobertura automatizada junto com o código de dados. |
+| `PrepareFireDACQueryOptimization` | Prepara um plano de otimização sem executar SQL e mantém ganhos sem plano de execução como hipóteses. | Depois da análise determinística, antes de qualquer alteração ou benchmark. |
+| `PrepareFireDACThreadSafetyPlan` | Prepara um plano de isolamento de conexão, dataset, transação e UI por worker. | Depois de localizar compartilhamento entre threads, antes de preparar um patch. |
 | `DiagnoseDelphiDependencies` | Verifica paths declarados no projeto e manifestos de dependências sem instalar componentes. | Antes de preparar uma máquina ou corrigir falhas de compilação por dependência. |
 | `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | Antes de preparar uma extração revisável ou comparar idiomas. |
 | `PrepareLocalizationExtraction` | Prepara um patch imutável que move um literal da unit ativa para `resourcestring`, sem aplicar alterações. | Após escolher um candidato; a aplicação usa `ApplyPatch` com consentimento e a reversão usa `RevertPatch`. |
