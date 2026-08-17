@@ -140,6 +140,7 @@ contains
   RadIA.Core.FireDAC.Model in 'Source\Core\RadIA.Core.FireDAC.Model.pas',
   RadIA.Core.FireDAC.PascalMask in 'Source\Core\RadIA.Core.FireDAC.PascalMask.pas',
   RadIA.Core.FireDAC.Configuration in 'Source\Core\RadIA.Core.FireDAC.Configuration.pas',
+  RadIA.Core.FireDAC.Environment in 'Source\Core\RadIA.Core.FireDAC.Environment.pas',
   RadIA.Core.FireDAC.Scanner in 'Source\Core\RadIA.Core.FireDAC.Scanner.pas',
   RadIA.Core.FireDAC.SqlAnalyzer in 'Source\Core\RadIA.Core.FireDAC.SqlAnalyzer.pas',
   RadIA.Core.FireDAC.SqlExtraction in 'Source\Core\RadIA.Core.FireDAC.SqlExtraction.pas',

@@ -472,6 +472,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `GetFireDACProjectReport` | Agrega inventário e análise sanitizada do SQL FireDAC embutido. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `AuditFireDACTransactions` | Audita fluxos transacionais em arquivos Pascal limitados, sem executar SQL ou conectar ao banco. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `InspectFireDACConfiguration` | Inspeciona configuração FireDAC limitada, descartando credenciais e paths absolutos. | `RadIA.Core.DelphiEcosystemTools.pas` |
+| `DiagnoseFireDACEnvironment` | Diagnostica estaticamente DriverID e driver links sem conectar nem instalar componentes. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `AnalyzeFireDACThreadSafety` | Localiza componentes FireDAC compartilhados e acesso inseguro à UI em workers limitados. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `DiagnoseDelphiDependencies` | Verifica paths declarados no projeto e manifestos de dependências sem instalar componentes. | `RadIA.Core.DelphiEcosystemTools.pas` |
 | `AuditDelphiLocalization` | Localiza textos visíveis em Pascal e DFM candidatos a `resourcestring`. | `RadIA.Core.DelphiEcosystemTools.pas` |
@@ -526,6 +527,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 65
-- Ferramentas internas registradas: 194
+- Ferramentas internas registradas: 195
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

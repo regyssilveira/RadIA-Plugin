@@ -38,6 +38,7 @@ type
     detFireDACReport,
     detFireDACTransactions,
     detFireDACConfiguration,
+    detFireDACEnvironment,
     detFireDACThreadSafety,
     detDependencies,
     detLocalization
@@ -337,6 +338,8 @@ begin
       Exit(TRadIAToolResult.Succeeded(LScanner.AuditTransactions(AProject.RootPath)));
     if FKind = detFireDACConfiguration then
       Exit(TRadIAToolResult.Succeeded(LScanner.InspectConfiguration(AProject.RootPath)));
+    if FKind = detFireDACEnvironment then
+      Exit(TRadIAToolResult.Succeeded(LScanner.DiagnoseEnvironment(AProject.RootPath)));
     if FKind = detFireDACThreadSafety then
       Exit(TRadIAToolResult.Succeeded(LScanner.AnalyzeThreadSafety(AProject.RootPath)));
     LInventory := LScanner.Scan(AProject.RootPath);
@@ -383,6 +386,7 @@ begin
     detFireDACReport,
     detFireDACTransactions,
     detFireDACConfiguration,
+    detFireDACEnvironment,
     detFireDACThreadSafety
   ] then
     Exit(ExecuteFireDAC(LProject));
@@ -451,6 +455,15 @@ begin
         'InspectFireDACConfiguration',
         '1.0.0',
         'Inspects bounded FireDAC configuration while discarding credentials and absolute paths.',
+        CEmptyInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
+    detFireDACEnvironment:
+      Result := TRadIAToolDescriptor.Create(
+        'DiagnoseFireDACEnvironment',
+        '1.0.0',
+        'Diagnoses static FireDAC driver configuration without connections or installation.',
         CEmptyInputSchema,
         '{"type":"object"}',
         trReadOnly
@@ -608,6 +621,11 @@ begin
     AWorkspace,
     ABoundary,
     detFireDACConfiguration
+  ));
+  ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(
+    AWorkspace,
+    ABoundary,
+    detFireDACEnvironment
   ));
   ARegistry.RegisterTool(TRadIADelphiEcosystemTool.Create(
     AWorkspace,

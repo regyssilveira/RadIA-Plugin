@@ -28,6 +28,8 @@ type
     [Test]
     procedure GetsSanitizedFireDACProjectReport;
     [Test]
+    procedure DiagnosesFireDACEnvironmentWithoutExternalActions;
+    [Test]
     procedure ReportsMissingDependencyPaths;
     [Test]
     procedure FindsLocalizationCandidates;
@@ -311,6 +313,22 @@ begin
   Assert.IsTrue(LResult.Success);
   Assert.Contains(LResult.ContentJson, '"name":"Id"');
   Assert.DoesNotContain(LResult.ContentJson, 'select id from customer');
+end;
+
+procedure TTestRadIADelphiEcosystemTools.DiagnosesFireDACEnvironmentWithoutExternalActions;
+var
+  LResult: TRadIAToolResult;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.dfm'),
+    'object Connection: TFDConnection' + sLineBreak +
+    '  Params.Strings = (''DriverID=SQLite'')' + sLineBreak +
+    'end'
+  );
+  LResult := ExecuteTool(FRootPath, 'DiagnoseFireDACEnvironment');
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"configuredDriverIds":["SQLite"]');
+  Assert.Contains(LResult.ContentJson, '"driverInstallationAttempted":false');
 end;
 
 procedure TTestRadIADelphiEcosystemTools.ReportsMissingDependencyPaths;

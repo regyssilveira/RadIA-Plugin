@@ -62,6 +62,7 @@ type
       const ALine: Integer
     ): TRadIAFireDACConfigurationEntry;
     procedure AddFinding(const AFinding: TRadIAFireDACFinding);
+    function Entries: TArray<TRadIAFireDACConfigurationEntry>;
     function EntryCount: Integer;
     function Findings: TArray<TRadIAFireDACFinding>;
     function ToJson: string;
@@ -192,6 +193,11 @@ end;
 function TRadIAFireDACConfigurationAnalysis.Findings: TArray<TRadIAFireDACFinding>;
 begin
   Result := FFindings.ToArray;
+end;
+
+function TRadIAFireDACConfigurationAnalysis.Entries: TArray<TRadIAFireDACConfigurationEntry>;
+begin
+  Result := FEntries.ToArray;
 end;
 
 function ConfigurationKindName(const AKind: TRadIAFireDACConfigurationKind): string;

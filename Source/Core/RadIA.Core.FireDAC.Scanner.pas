@@ -55,6 +55,7 @@ type
     constructor Create(const ABoundary: IRadIAWorkspaceBoundary);
     function AnalyzeThreadSafety(const ARootPath: string): string;
     function AuditTransactions(const ARootPath: string): string;
+    function DiagnoseEnvironment(const ARootPath: string): string;
     function GetProjectReport(const ARootPath: string): string;
     function InspectConfiguration(const ARootPath: string): string;
     function Scan(const ARootPath: string): TRadIAFireDACInventory;
@@ -71,6 +72,7 @@ uses
   System.StrUtils,
   System.SysUtils,
   RadIA.Core.FireDAC.Configuration,
+  RadIA.Core.FireDAC.Environment,
   RadIA.Core.FireDAC.SqlExtraction,
   RadIA.Core.FireDAC.SqlAnalyzer,
   RadIA.Core.FireDAC.ThreadSafety,
@@ -88,6 +90,60 @@ begin
   if not Assigned(ABoundary) then
     raise EArgumentNilException.Create('ABoundary');
   FBoundary := ABoundary;
+end;
+
+function TRadIAFireDACScanner.DiagnoseEnvironment(const ARootPath: string): string;
+var
+  LAnalysis: TRadIAFireDACConfigurationAnalysis;
+  LAnalyzer: TRadIAFireDACConfigurationAnalyzer;
+  LContent: string;
+  LEnvironment: TRadIAFireDACEnvironmentAnalysis;
+  LExtension: string;
+  LFileName: string;
+  LFiles: TArray<string>;
+  LFinding: TRadIAFireDACFinding;
+  LInventory: TRadIAFireDACInventory;
+  LRelativeName: string;
+begin
+  if ARootPath.Trim.IsEmpty or not TDirectory.Exists(ARootPath) then
+    raise EDirectoryNotFoundException.Create('A valid project root is required.');
+  LInventory := TRadIAFireDACInventory.Create;
+  try
+    LAnalyzer := TRadIAFireDACConfigurationAnalyzer.Create;
+    try
+      LEnvironment := TRadIAFireDACEnvironmentAnalysis.Create;
+      try
+        LFiles := CollectFiles(ARootPath, LInventory);
+        for LFileName in LFiles do
+        begin
+          LExtension := TPath.GetExtension(LFileName).ToLower;
+          if not MatchText(LExtension, ['.pas', '.dfm']) then
+            Continue;
+          LRelativeName := RelativeName(ARootPath, LFileName);
+          if not ReadSupportedFile(LFileName, LRelativeName, LInventory, LContent) then
+            Continue;
+          if SameText(LExtension, '.pas') then
+            LAnalysis := LAnalyzer.AnalyzePascal(LContent, LRelativeName)
+          else
+            LAnalysis := LAnalyzer.AnalyzeDfm(LContent, LRelativeName);
+          try
+            LEnvironment.AnalyzeEntries(LAnalysis.Entries);
+            for LFinding in LAnalysis.Findings do
+              LEnvironment.AddFinding(LFinding);
+          finally
+            LAnalysis.Free;
+          end;
+        end;
+        Result := LEnvironment.ToJson;
+      finally
+        LEnvironment.Free;
+      end;
+    finally
+      LAnalyzer.Free;
+    end;
+  finally
+    LInventory.Free;
+  end;
 end;
 
 function TRadIAFireDACScanner.GetProjectReport(const ARootPath: string): string;

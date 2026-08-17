@@ -528,6 +528,7 @@
         "GetFireDACProjectReport",
         "AuditFireDACTransactions",
         "InspectFireDACConfiguration",
+        "DiagnoseFireDACEnvironment",
         "AnalyzeFireDACThreadSafety",
         "DiagnoseDelphiDependencies",
         "AuditDelphiLocalization",

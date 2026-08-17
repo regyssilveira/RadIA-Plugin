@@ -36,6 +36,8 @@ type
     procedure AnalyzesThreadSafetyAcrossBoundedPascalFiles;
     [Test]
     procedure BuildsProjectReportWithSanitizedSqlAnalysis;
+    [Test]
+    procedure DiagnosesStaticFireDACEnvironment;
   end;
 
 implementation
@@ -307,6 +309,27 @@ begin
   Assert.Contains(LJson, '"name":"Id"');
   Assert.Contains(LJson, 'firedac.sql.multiple-statements');
   Assert.DoesNotContain(LJson, 'select id from customer');
+end;
+
+procedure TRadIAFireDACScannerTests.DiagnosesStaticFireDACEnvironment;
+var
+  LJson: string;
+  LScanner: TRadIAFireDACScanner;
+begin
+  TFile.WriteAllText(
+    TPath.Combine(FRootPath, 'Data.dfm'),
+    'object Connection: TFDConnection' + sLineBreak +
+    '  Params.Strings = (''DriverID=FB'')' + sLineBreak +
+    'end'
+  );
+  LScanner := TRadIAFireDACScanner.Create(TRadIAWorkspaceBoundary.Create);
+  try
+    LJson := LScanner.DiagnoseEnvironment(FRootPath);
+  finally
+    LScanner.Free;
+  end;
+  Assert.Contains(LJson, 'firedac.environment.driver-link-not-declared');
+  Assert.Contains(LJson, '"connectionAttempted":false');
 end;
 
 initialization
