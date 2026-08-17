@@ -30,7 +30,8 @@ $connectedScenarioIds = @(
     "firedac-build-failure-rollback",
     "firedac-parameter-smart-diff",
     "firedac-stale-preview-rejection",
-    "firedac-ado-migration-batch"
+    "firedac-ado-migration-batch",
+    "firedac-migration-gate-rollback"
 )
 
 function Set-RadIAFireDACFixtureContent {

@@ -24,15 +24,16 @@ ausente, com ownership do preview e fingerprint. Permanecem abertos os gates com
 teste para correções isoladas. A migração legado agora possui aplicação própria e gates FireDAC,
 build e DUnitX com rollback. O contrato da matriz E2E já enumera 16 cenários em Delphi 12 Win32,
 Delphi 13 Win32 e Delphi 13 IDE64, totalizando 48 execuções determinísticas. Permanecem abertos a
-conexão completa desse plano ao runner MCP/IDE real e a coleta das evidências runtime. Treze cenários
-já estão conectados e aprovados nos três targets, totalizando 39 execuções reais: inventário,
+conexão completa desse plano ao runner MCP/IDE real e a coleta das evidências runtime. Quatorze
+cenários já estão conectados e aprovados nos três targets, totalizando 42 execuções reais: inventário,
 análise sanitizada de SQL, redação de credenciais, transação sem rollback, compartilhamento em
 thread, grid/CSV SQLite consentido, rejeição de DML sem alteração do banco e preview de repository
 com aplicação negada, aplicação consentida seguida por build e DUnitX ou rollback após gate de build
 falho, correção consentida de accessor de parâmetro com Smart Diff, build e DUnitX e rejeição de
 preview obsoleto sem sobrescrever uma mudança posterior e migração ADO para FireDAC com inspeção,
-build, DUnitX e gate validado. Ainda faltam conectar os outros três cenários e substituir a entrada
-SQL controlada do smoke pela captura real da seleção no editor.
+build, DUnitX e gate validado, além da falha de gate com restauração integral do legado. Ainda faltam
+conectar os outros dois cenários e substituir a entrada SQL controlada do smoke pela captura real da
+seleção no editor.
 
 Permanecem fora do escopo repositório público ou marketplace de extensões, C++Builder, Delphi 11,
 Lazarus, GetIt, integrações exclusivas da Embarcadero e substituição do WebView atual.

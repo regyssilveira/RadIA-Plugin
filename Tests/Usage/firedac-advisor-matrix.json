@@ -122,7 +122,14 @@
     },
     {
       "id": "firedac-migration-gate-rollback",
-      "tools": ["PrepareLegacyMigrationBatch", "ApplyLegacyMigrationBatch", "RecordLegacyMigrationGate"],
+      "tools": [
+        "PrepareLegacyMigrationBatch",
+        "ApplyLegacyMigrationBatch",
+        "RecordLegacyMigrationGate",
+        "PreparePatch",
+        "ApplyPatch",
+        "RevertPatch"
+      ],
       "mutationExpected": true,
       "rollbackExpected": true,
       "requiredEvidence": ["gate-failed", "rollback-succeeded", "legacy-source-restored"]

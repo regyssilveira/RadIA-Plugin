@@ -768,6 +768,54 @@ public static class RadIAKnowledgeSmokeNative
 "@
 }
 
+function Save-RadIAActiveEditor {
+    param(
+        [Parameter(Mandatory)]
+        [Diagnostics.Process]$IDEProcess
+    )
+
+    $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+        [uint32]$IDEProcess.Id,
+        "TAppBuilder"
+    )
+    $menuBar = [RadIAKnowledgeSmokeNative]::FindChildByText(
+        $mainWindow,
+        "Menu bar"
+    )
+    if ($mainWindow -eq [IntPtr]::Zero -or
+        $menuBar -eq [IntPtr]::Zero) {
+        throw "The Delphi File menu is not available for save."
+    }
+    $mousePosition = [IntPtr]((12 -shl 16) -bor 12)
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $menuBar,
+        0x0201,
+        [IntPtr]1,
+        $mousePosition
+    )
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $menuBar,
+        0x0202,
+        [IntPtr]0,
+        $mousePosition
+    )
+    Start-Sleep -Milliseconds 250
+    $saveKey = [int][char]'S'
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $mainWindow,
+        0x0100,
+        [IntPtr]$saveKey,
+        [IntPtr]0
+    )
+    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+        $mainWindow,
+        0x0101,
+        [IntPtr]$saveKey,
+        [IntPtr]0
+    )
+    Start-Sleep -Seconds 2
+}
+
 function Open-RadIAEditorFile {
     param(
         [Parameter(Mandatory)]
@@ -1798,6 +1846,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
     $stalePreviewRejected = $false
     $laterChangePreserved = $false
     $migrationGatePassed = $false
+    $migrationGateFailed = $false
     $testsPassed = $false
     $results = @()
     switch ($ScenarioId) {
@@ -2496,6 +2545,180 @@ function Invoke-RadIAFireDACReadOnlyScenario {
                 $gate
             )
         }
+        "firedac-migration-gate-rollback" {
+            if (-not $ProjectPath -or -not $TestExecutablePath) {
+                throw "The migration rollback requires project and DUnitX fixtures."
+            }
+            $targetFile = Join-Path `
+                (Split-Path -Parent $ProjectPath) `
+                "RadIA.FireDAC.E2E.Data.pas"
+            $originalFileHash = (
+                Get-FileHash -LiteralPath $targetFile -Algorithm SHA256
+            ).Hash
+            $inventory = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InventoryLegacyDataAccess"
+            $plan = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PlanLegacyMigrationBatches"
+            $batch = @(
+                $plan.batches |
+                    Where-Object {
+                        $_.technology -eq "ADO" -and
+                        $_.canPrepare -eq $true
+                    }
+            ) | Select-Object -First 1
+            if (-not $batch.batchId) {
+                throw "The rollback planner did not create an ADO batch."
+            }
+            $prepared = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PrepareLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $applied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyLegacyMigrationBatch" `
+                -Arguments @{ batchId = $batch.batchId }
+            $consentObserved = $true
+            $consentDecision = "allowed-once"
+            if ($applied.state -ne "applied") {
+                throw "The rollback migration batch was not applied."
+            }
+            $fireDAC = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "InspectFireDACProject"
+            $fireDACJson = $fireDAC | ConvertTo-Json -Depth 10 -Compress
+            if (-not $fireDACJson.Contains("TFDQuery")) {
+                throw "The rollback batch did not reach its FireDAC gate."
+            }
+            $programPath = [IO.Path]::ChangeExtension($ProjectPath, ".dpr")
+            $programContent = Get-Content -LiteralPath $programPath -Raw
+            $failurePatch = Invoke-RadIASmokeTool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $programPath
+                    baseRevision = Get-RadIAStringSha256 $programContent
+                    originalText = "begin`r`nend."
+                    replacementText = (
+                        "begin`r`n" +
+                        "  RadIAIntentionalCompilerFailure;`r`n" +
+                        "end."
+                    )
+                }
+            $failureApplied = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "ApplyPatch" `
+                -Arguments @{ previewId = $failurePatch.previewId }
+            Save-RadIAActiveEditor -IDEProcess $IDEProcess
+            $failedBuild = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($failedBuild.success -ne $false) {
+                throw "The migration rollback build gate did not fail."
+            }
+            $buildFailed = $true
+            $failureReverted = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RevertPatch" `
+                -Arguments @{ previewId = $failurePatch.previewId }
+            Save-RadIAActiveEditor -IDEProcess $IDEProcess
+            $recoveryBuild = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if ($recoveryBuild.success -ne $true) {
+                throw "The reverted compiler failure did not recover the build."
+            }
+            $tests = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $TestExecutablePath
+                    timeoutMs = 600000
+                }
+            if ($tests.status -ne "succeeded" -or
+                $tests.report.allPassed -ne $true) {
+                throw "DUnitX did not pass before the migration rollback gate."
+            }
+            $testsPassed = $true
+            $gate = Invoke-RadIASmokeToolWithConsent `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -IDEProcess $IDEProcess `
+                -Name "RecordLegacyMigrationGate" `
+                -Arguments @{
+                    batchId = $batch.batchId
+                    fireDACPassed = $true
+                    buildPassed = $false
+                    testsPassed = $true
+                    fireDACEvidence = Get-RadIAStringSha256 $fireDACJson
+                    buildEvidence = Get-RadIAStringSha256 (
+                        $failedBuild | ConvertTo-Json -Depth 8 -Compress
+                    )
+                    testEvidence = Get-RadIAStringSha256 (
+                        $tests | ConvertTo-Json -Depth 8 -Compress
+                    )
+                }
+            if ($gate.state -ne "reverted") {
+                throw "The failed migration gate did not revert its batch."
+            }
+            $restoredFileHash = (
+                Get-FileHash -LiteralPath $targetFile -Algorithm SHA256
+            ).Hash
+            $restoredContent = Get-Content -LiteralPath $targetFile -Raw
+            if (-not $restoredFileHash.Equals(
+                    $originalFileHash,
+                    [StringComparison]::OrdinalIgnoreCase
+                ) -or
+                -not $restoredContent.Contains("TADOQuery") -or
+                $restoredContent.Contains("TFDQuery")) {
+                throw "The failed gate did not restore the legacy source."
+            }
+            $migrationGateFailed = $true
+            $rollbackSucceeded = $true
+            $artifactState = "reverted"
+            $results = @(
+                $inventory,
+                $plan,
+                $prepared,
+                $applied,
+                $fireDAC,
+                $failurePatch,
+                $failureApplied,
+                $failedBuild,
+                $failureReverted,
+                $recoveryBuild,
+                $tests,
+                $gate
+            )
+        }
         default {
             throw "FireDAC IDE scenario is not connected yet: $ScenarioId"
         }
@@ -2526,6 +2749,7 @@ function Invoke-RadIAFireDACReadOnlyScenario {
         stalePreviewRejected = $stalePreviewRejected
         laterChangePreserved = $laterChangePreserved
         migrationGatePassed = $migrationGatePassed
+        migrationGateFailed = $migrationGateFailed
         testsPassed = $testsPassed
         resultFingerprints = $fingerprints
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
