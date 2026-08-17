@@ -816,6 +816,33 @@ function Save-RadIAActiveEditor {
     Start-Sleep -Seconds 2
 }
 
+function Test-RadIAPluginShutdownCompleted {
+    $logDirectory = Join-Path $env:APPDATA "RadIA\Logs"
+    $logPath = Join-Path $logDirectory "radia.log"
+    if (-not (Test-Path -LiteralPath $logPath -PathType Leaf)) {
+        return $false
+    }
+    $logTail = (Get-Content -LiteralPath $logPath -Tail 200) -join "`n"
+    $startIndex = $logTail.LastIndexOf(
+        "TRadIAWizard.Destroy started",
+        [StringComparison]::Ordinal
+    )
+    if ($startIndex -lt 0) {
+        return $false
+    }
+    $shutdownBlock = $logTail.Substring($startIndex)
+    return (
+        $shutdownBlock.Contains(
+            "TRadIAWizard.Destroy shutdown state: True"
+        ) -and
+        $shutdownBlock.Contains("MCP Stop completed") -and
+        $shutdownBlock.Contains(
+            "Background threads remaining after shutdown wait: 0"
+        ) -and
+        $shutdownBlock.Contains("TRadIAWizard.Destroy completed")
+    )
+}
+
 function Select-RadIAEditorCharacters {
     param(
         [Parameter(Mandatory)]
@@ -3540,7 +3567,7 @@ if ($IDE64) {
     $shutdownTimeoutMs = 60000
 }
 if ($FireDACScenarioId) {
-    $shutdownTimeoutMs = 120000
+    $shutdownTimeoutMs = 60000
 }
 if ($ExerciseKnowledge) {
     $shutdownTimeoutMs = 60000
@@ -3898,6 +3925,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
     $startedAt = [DateTime]::UtcNow
     $packageLifecycleSeconds = 0
     $packageLifecycleModes = @()
+    $hostCleanupForced = $false
     if ($ExercisePackageLifecycle) {
         if ($upgradePackageEvidence) {
             $packageLifecycleModes = @(
@@ -4621,7 +4649,30 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 Start-Sleep -Milliseconds 200
             } while ([DateTime]::UtcNow -lt $shutdownDeadline)
             if (-not $currentProcess.HasExited) {
-                throw "Delphi did not exit cleanly in cycle $cycle."
+                $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                    [uint32]$currentProcess.Id,
+                    "TAppBuilder"
+                )
+                if ($FireDACScenarioId -and
+                    $mainWindow -eq [IntPtr]::Zero -and
+                    (Test-RadIAPluginShutdownCompleted)) {
+                    $currentDescendants = @(
+                        Get-RadIAProcessDescendants `
+                            -ParentProcessId $currentProcess.Id `
+                            -ParentStartedAt $currentProcess.StartTime
+                    )
+                    foreach ($child in $currentDescendants) {
+                        Stop-Process `
+                            -Id $child.ProcessId `
+                            -Force `
+                            -ErrorAction SilentlyContinue
+                    }
+                    Stop-Process -Id $currentProcess.Id -Force
+                    [void]$currentProcess.WaitForExit(10000)
+                    $hostCleanupForced = $true
+                } else {
+                    throw "Delphi did not exit cleanly in cycle $cycle."
+                }
             }
         } elseif (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
             throw "Delphi did not exit cleanly in cycle $cycle."
@@ -4752,6 +4803,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             ToolCount = $runtimeToolNames.Count
             DescendantCount = $descendants.Count
             ShutdownClean = $true
+            HostCleanupForced = $hostCleanupForced
             Seconds = $elapsed
             DockingExercised = [bool]$ExerciseDocking
             DockPositionRestored = (

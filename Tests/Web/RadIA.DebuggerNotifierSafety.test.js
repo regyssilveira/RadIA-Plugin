@@ -120,6 +120,9 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
     /RadIAKnowledgeSmokeNative\]::RepaintDescendants/u
   );
   assert.match(smoke, /diagnostic\.painted/u);
+  assert.match(smoke, /Test-RadIAPluginShutdownCompleted/u);
+  assert.match(smoke, /Background threads remaining after shutdown wait: 0/u);
+  assert.match(smoke, /HostCleanupForced/u);
 });
 
 test('inline completion diagnostic defers acceptance until after preview paint', () => {
