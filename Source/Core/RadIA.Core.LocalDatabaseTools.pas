@@ -31,7 +31,12 @@ const
   CMaximumDatabaseBytes = 512 * 1024 * 1024;
 
 type
-  TRadIALocalDatabaseToolKind = (ldtInspect, ldtPreviewQuery, ldtCompareFireDACSchema);
+  TRadIALocalDatabaseToolKind = (
+    ldtInspect,
+    ldtPreviewQuery,
+    ldtCompareFireDACSchema,
+    ldtGenerateFireDACSchemaReport
+  );
 
   TRadIALocalDatabaseTool = class(TInterfacedObject, IRadIATool)
   private
@@ -210,7 +215,7 @@ begin
     try
       try
         case FKind of
-          ldtInspect, ldtCompareFireDACSchema:
+          ldtInspect, ldtCompareFireDACSchema, ldtGenerateFireDACSchemaReport:
             if not FService.Inspect(
               LFileName,
               LResult,
@@ -246,6 +251,12 @@ begin
       end;
       if FKind = ldtCompareFireDACSchema then
         Exit(CompareFireDACSchema(LInput, LResult));
+      if FKind = ldtGenerateFireDACSchemaReport then
+      begin
+        LResult.AddPair('reportKind', 'firedac-schema');
+        LResult.AddPair('dialect', 'sqlite');
+        LResult.AddPair('schemaOnly', TJSONBool.Create(True));
+      end;
       LResult.AddPair('databaseFile', TPath.GetFileName(LFileName));
       Result := TRadIAToolResult.Succeeded(LResult.ToJSON);
     finally
@@ -308,6 +319,15 @@ begin
         '{"type":"object"}',
         trReadOnly
       );
+    ldtGenerateFireDACSchemaReport:
+      Result := TRadIAToolDescriptor.Create(
+        'GenerateFireDACSchemaReport',
+        '1.0.0',
+        'Generates a sanitized FireDAC-oriented report from a workspace-local SQLite schema.',
+        CFileInputSchema,
+        '{"type":"object"}',
+        trReadOnly
+      );
   end;
 end;
 
@@ -342,6 +362,14 @@ begin
       ABoundary,
       AService,
       ldtCompareFireDACSchema
+    )
+  );
+  ARegistry.RegisterTool(
+    TRadIALocalDatabaseTool.Create(
+      AWorkspace,
+      ABoundary,
+      AService,
+      ldtGenerateFireDACSchemaReport
     )
   );
 end;

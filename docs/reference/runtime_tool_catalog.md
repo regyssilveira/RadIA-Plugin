@@ -485,6 +485,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | `InspectLocalSQLiteDatabase` | Lê tabelas, views e colunas de um arquivo SQLite dentro do workspace sem executar SQL fornecido pelo usuário. | `RadIA.Core.LocalDatabaseTools.pas` |
 | `PreviewLocalSQLiteQuery` | Executa uma única consulta somente leitura, limita o resultado a 500 linhas e oculta colunas sensíveis no grid e no CSV. | `RadIA.Core.LocalDatabaseTools.pas` |
 | `CompareFireDACCodeWithSchema` | Compara expectativas FireDAC tipadas com um schema SQLite local autorizado e read-only. | `RadIA.Core.LocalDatabaseTools.pas` |
+| `GenerateFireDACSchemaReport` | Gera um relatório FireDAC sanitizado do schema SQLite local sem consultar linhas. | `RadIA.Core.LocalDatabaseTools.pas` |
 
 ## Evidências de logs do FastMM5
 
@@ -528,6 +529,6 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 ## Resumo
 
 - Grupos registrados: 65
-- Ferramentas internas registradas: 196
+- Ferramentas internas registradas: 197
 - Extensões podem registrar ferramentas adicionais em runtime.
 - O comando `/tools` permanece autoritativo para a instância ativa da IDE.

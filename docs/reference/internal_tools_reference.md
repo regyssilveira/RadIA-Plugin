@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 196 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 197 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -479,6 +479,7 @@ não grava a seleção como material didático.
 |---|---|---|
 | `InspectLocalSQLiteDatabase` | Lê tabelas, views e colunas de um arquivo SQLite dentro do workspace sem executar SQL fornecido pelo usuário. | Quando o agente precisa conhecer o schema local antes de propor uma consulta. |
 | `CompareFireDACCodeWithSchema` | Compara expectativas FireDAC tipadas com um schema SQLite local autorizado e read-only. | Ao validar tabelas, colunas, tipos e nulabilidade sem consultar dados. |
+| `GenerateFireDACSchemaReport` | Gera um relatório FireDAC sanitizado do schema SQLite local sem consultar linhas. | Ao documentar tabelas, views, colunas e flags sensíveis do banco autorizado. |
 | `PreviewLocalSQLiteQuery` | Executa uma única consulta somente leitura, limita o resultado a 500 linhas e oculta colunas sensíveis no grid e no CSV. | Depois que o usuário revisa a consulta; exige consentimento em toda execução. |
 
 ## Exemplos de acionamento

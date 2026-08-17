@@ -541,7 +541,8 @@
       "tools": [
         "InspectLocalSQLiteDatabase",
         "PreviewLocalSQLiteQuery",
-        "CompareFireDACCodeWithSchema"
+        "CompareFireDACCodeWithSchema",
+        "GenerateFireDACSchemaReport"
       ]
     },
     {
