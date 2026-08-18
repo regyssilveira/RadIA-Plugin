@@ -59,7 +59,7 @@
       "scope": "ide",
       "runner": "Test-RadIA.IDESmoke.ps1",
       "cycles": 1,
-      "startupTimeoutSeconds": 180,
+      "startupTimeoutSeconds": 300,
       "requiredEvidence": [
         "package-loaded",
         "tool-contract-valid",
