@@ -98,3 +98,8 @@ gera e compila somente a aplicação solicitada. O perfil `complete`, ou o perfi
 `dunitx`, acrescenta o projeto companion, expõe seu executável no preview e permite executar os cinco
 testes de operações e divisão por zero pelo runner do RadIA. Esses adicionais só entram após pedido
 ou escolha explícita do usuário. A matriz vigente abrange Delphi 12 Win32 e Delphi 13 Win32/IDE64.
+
+A especificação de calculadora aceita `schemaVersion: 2` e o recurso
+`features.operationHistory`. Quando `enabled` é verdadeiro, preview e criação preservam a lista de
+operações e a ação de limpeza. A matriz de release executa a aplicação, registra `2 + 3 = 5` no
+histórico e confirma que **Clear history** deixa a lista vazia nos três alvos suportados.

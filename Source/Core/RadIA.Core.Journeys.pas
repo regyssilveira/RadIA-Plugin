@@ -219,6 +219,16 @@ begin
   AppendCreateContextValue(Result, LLowerContext, 'project', LProjectName);
   AppendCreateContextValue(Result, LLowerContext, 'type', LProjectType);
   AppendCreateContextValue(Result, LLowerContext, 'platform', 'Win32');
+  if ContainsAnyText(LLowerContext, ['calculadora', 'calculator']) and
+    ContainsAnyText(
+      LLowerContext,
+      [
+        'historico', 'histórico', 'lista de calculos', 'lista de cálculos',
+        'ultimas operacoes', 'últimas operações', 'operation history',
+        'calculation history'
+      ]
+    ) then
+    Result := Result + ' feature="operationHistory"';
 end;
 
 class function TRadIAJourneyCatalog.TryInferCreateProject(
@@ -471,7 +481,14 @@ begin
       'essential by default. Never add tests or other optional project features based only on a ' +
       'generic request for a project. After the essential project builds, present explicit choices ' +
       'to keep it as-is or add DUnitX and other available features. Apply a complete or custom ' +
-      'profile only after the user explicitly selects or requests those additions. With no active project, ' +
+      'profile only after the user explicitly selects or requests those additions. ' +
+      'When calculator context includes feature="operationHistory", preserve it with ' +
+      'projectSpecification schemaVersion 2 and features.operationHistory enabled and clearAction true. ' +
+      'The preview, plan, completion criteria, generated files, and runtime evidence must all retain every ' +
+      'explicit functional feature from the user context. A successful build alone does not prove a requested ' +
+      'feature. For operation history, exercise two calculations, verify their ordered history entries, clear ' +
+      'the history, and verify that it is empty before completing. ' +
+      'With no active project, ' +
       'use the user-approved destination parent as authorizedRoot. Use OpenCreatedProject, ' +
       'ValidateCreatedProject, and IDE execution tools instead of invoking MSBuild from a CLI. ' +
       'Do not call NavigateToFile, NavigateToSymbol, or GetKnowledgeDocument before ' +

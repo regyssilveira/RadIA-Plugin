@@ -2174,6 +2174,7 @@ function TRadIAAgentRuntime.CheckRepeatedCall(
   const ADecision: TRadIAAgentDecision
 ): Boolean;
 var
+  LAllowedRepeatedCalls: Integer;
   LSignature: string;
 begin
   LSignature := BuildCallSignature(ADecision);
@@ -2184,7 +2185,10 @@ begin
     FLastCallSignature := LSignature;
     FRepeatedCallCount := 1;
   end;
-  Result := FRepeatedCallCount <= FLimits.MaxRepeatedCalls;
+  LAllowedRepeatedCalls := FLimits.MaxRepeatedCalls;
+  if SameText(ADecision.ToolName, 'GetToolResultRange') then
+    LAllowedRepeatedCalls := 1;
+  Result := FRepeatedCallCount <= LAllowedRepeatedCalls;
 end;
 
 function TRadIAAgentRuntime.CanContinueLoop: Boolean;

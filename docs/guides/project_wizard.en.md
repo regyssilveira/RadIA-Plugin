@@ -92,3 +92,8 @@ the `dunitx` option, adds the companion project, exposes its executable in the p
 the five operation and division-by-zero tests through the RadIA runner. These extras are included
 only after an explicit user request or choice. The current matrix covers Delphi 12 Win32 and Delphi
 13 Win32/IDE64.
+
+The calculator specification accepts `schemaVersion: 2` and the `features.operationHistory`
+feature. When `enabled` is true, preview and creation preserve the operation list and its clear
+action. The release matrix runs the application, records `2 + 3 = 5` in history, and confirms that
+**Clear history** leaves the list empty on all three supported targets.
