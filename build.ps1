@@ -203,7 +203,11 @@ if ($IDE64) {
 
 # Processar Desinstalacao (se a flag -Uninstall for fornecida)
 if ($Uninstall) {
-    if (Get-Process bds -ErrorAction SilentlyContinue) {
+    $runningIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($runningIDEs.Count -gt 0) {
         Write-Host ""
         Write-Host "=========================================================================" -ForegroundColor Red
         Write-Host "ERRO: A IDE do Delphi (bds.exe) esta aberta no momento." -ForegroundColor Red
@@ -841,7 +845,11 @@ if ($Package) {
 
 # 10. Instalacao automatizada (se a flag -Install for fornecida)
 if ($Install) {
-    if (Get-Process bds -ErrorAction SilentlyContinue) {
+    $runningIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($runningIDEs.Count -gt 0) {
         Write-Host ""
         Write-Host "=========================================================================" -ForegroundColor Red
         Write-Host "ERRO: A IDE do Delphi (bds.exe) esta aberta no momento." -ForegroundColor Red

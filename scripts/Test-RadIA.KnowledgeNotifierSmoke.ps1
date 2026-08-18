@@ -1127,6 +1127,7 @@ if (-not (Test-Path -LiteralPath $bridgePath -PathType Leaf)) {
 
 $targetProcesses = @(
     Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited } |
         Where-Object {
             try {
                 [IO.Path]::GetFullPath($_.Path).Equals(

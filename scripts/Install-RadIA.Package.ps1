@@ -256,7 +256,10 @@ if ($Mode -ne "Uninstall" -and -not (Test-Path -LiteralPath $ideBin)) {
     throw "Delphi IDE binary directory was not found: $ideBin"
 }
 
-$runningIDEs = @(Get-Process bds -ErrorAction SilentlyContinue)
+$runningIDEs = @(
+    Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited }
+)
 $runningIDEPaths = @(
     $runningIDEs |
         ForEach-Object {

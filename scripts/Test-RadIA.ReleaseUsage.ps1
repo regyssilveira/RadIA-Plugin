@@ -15,7 +15,11 @@ if (-not $resolvedEvidenceRoot.StartsWith(
 )) {
     throw "Release usage evidence must remain inside Output."
 }
-if (Get-Process bds -ErrorAction SilentlyContinue) {
+$runningIDEs = @(
+    Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited }
+)
+if ($runningIDEs.Count -gt 0) {
     throw "Close all Delphi IDE instances before the release usage gate."
 }
 
@@ -34,7 +38,10 @@ function Stop-RadIAReleaseAuxiliaryProcesses {
 }
 
 function Stop-RadIAReleaseIDEProcesses {
-    $processes = @(Get-Process bds -ErrorAction SilentlyContinue)
+    $processes = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
     foreach ($process in $processes) {
         Stop-Process -Id $process.Id -Force
         if (-not $process.WaitForExit(10000)) {

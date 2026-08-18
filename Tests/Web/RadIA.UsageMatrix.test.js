@@ -58,6 +58,7 @@ test('usage matrix plan is deterministic and does not start Delphi', () => {
 
 test('release gate composes calculator, opening, and usage tests', () => {
   const source = fs.readFileSync(releaseRunnerPath, 'utf8');
+  const matrixSource = fs.readFileSync(runnerPath, 'utf8');
   assert.match(source, /build\.ps1/u);
   assert.match(source, /-Test/u);
   assert.match(source, /Version = "23\.0"/u);
@@ -73,6 +74,8 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /installationTargets/u);
   assert.match(source, /Install = \$true/u);
   assert.match(source, /Stop-RadIAReleaseAuxiliaryProcesses/u);
+  assert.match(source, /Where-Object \{ -not \$_\.HasExited \}/u);
+  assert.match(matrixSource, /Where-Object \{ -not \$_\.HasExited \}/u);
   assert.match(source, /RadIA\.Semantic\.Engine/u);
   assert.match(source, /startupRetryUsed/u);
   assert.match(source, /attemptCount/u);

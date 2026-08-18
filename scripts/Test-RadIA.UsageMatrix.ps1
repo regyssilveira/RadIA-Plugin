@@ -55,7 +55,11 @@ function Get-RadIAEvidenceValue {
 }
 
 function Stop-RadIAUsageAuxiliaryProcesses {
-    if (Get-Process bds -ErrorAction SilentlyContinue) {
+    $runningIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($runningIDEs.Count -gt 0) {
         return
     }
     $processes = @(
