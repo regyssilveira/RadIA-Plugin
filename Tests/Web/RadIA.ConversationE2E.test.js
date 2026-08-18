@@ -98,11 +98,15 @@ test('natural VCL smoke accepts the real route and requires complete evidence', 
   assert.match(chatScript, /retryPreviewActive/u);
   assert.match(chatScript, /destinationRetried &&/u);
   assert.match(chatScript, /destinationRecovered/u);
+  assert.match(chatScript, /recoveryCardVisible/u);
+  assert.match(chatScript, /previousRunFinished/u);
+  assert.match(chatScript, /chatContainer\.appendChild\(card\)/u);
   assert.match(chatScript, /requirementsPreserved/u);
   assert.match(chatScript, /nativeOrchestration/u);
   assert.match(chatScript, /CLI task completed\./u);
   assert.match(chatFrame, /RADIA_IDE_SMOKE_NATURAL_VCL_RETRY_DESTINATION/u);
   assert.match(presenter, /journey_input_requested/u);
+  assert.match(presenter, /New destination received\. Preparing the recovered project plan\./u);
   assert.match(presenter, /FActiveJourneyContext := LContext/u);
   assert.match(presenter, /FActiveJourneyDefinition := LDefinition/u);
   assert.match(presenter, /FActiveJourneyNative := True/u);

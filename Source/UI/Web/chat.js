@@ -1187,7 +1187,17 @@ function renderAgentState(data) {
 
   const sessionId = state.sessionId || 'active';
   let card = AGENT_CARDS.get(sessionId);
-  if (!card) {
+  const status = state.status || 'unknown';
+  if (card) {
+    const previousStatus = card.dataset.status || '';
+    const previousRunFinished = ['completed', 'cancelled', 'failed']
+      .includes(previousStatus);
+    const recoveredRunStarted = !['completed', 'cancelled', 'failed']
+      .includes(status);
+    if (previousRunFinished && recoveredRunStarted) {
+      chatContainer.appendChild(card);
+    }
+  } else {
     card = document.createElement('section');
     card.className = 'agent-run-card';
     card.innerHTML =
@@ -1212,7 +1222,6 @@ function renderAgentState(data) {
     chatContainer.appendChild(card);
   }
 
-  const status = state.status || 'unknown';
   card.dataset.status = status;
   card.querySelector('.agent-run-status').textContent = status;
   card.querySelector('.agent-run-objective').textContent = state.objective || '';
@@ -3322,6 +3331,7 @@ function finishNaturalVclSmoke(status, reason = '', state = {}) {
     buildPassed: succeeded('BuildProject'),
     applicationStarted: succeeded('StartDebugging'),
     destinationRecovered: naturalVclSmoke.destinationRetried,
+    recoveryCardVisible: naturalVclSmoke.recoveryCardVisible,
     requirementsPreserved:
       String(state.objective || '').includes('operationHistory'),
     nativeOrchestration: naturalVclSmoke.nativeOrchestrationObserved,
@@ -3419,6 +3429,11 @@ function continueNaturalVclSmoke(card, state) {
   );
   if (retryObjectiveActive) {
     naturalVclSmoke.recoveryPending = false;
+    naturalVclSmoke.recoveryCardVisible =
+      card === chatContainer.lastElementChild;
+    if (naturalVclSmoke.recoveryCardVisible) {
+      postMessageToDelphi({ action: 'natural_vcl_recovery_visible' });
+    }
   }
   if (naturalVclSmoke.destinationRetried &&
       (!retryObjectiveActive || !retryPreviewActive) &&
@@ -3442,6 +3457,7 @@ globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
     planApproved: false,
     pendingApproval: null,
     recoveryPending: false,
+    recoveryCardVisible: false,
     recoveryRequestReady: false,
     recoveryStateObserved: false,
     retryDestination: String(retryDestination),
@@ -3456,7 +3472,8 @@ globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
 };
 
 globalThis.resumeNaturalVclSmoke = function resumeNaturalVclSmoke(
-  timeoutMilliseconds = 300000
+  timeoutMilliseconds = 300000,
+  recoveryCardVisible = false
 ) {
   if (naturalVclSmoke) return;
   naturalVclSmoke = {
@@ -3467,6 +3484,7 @@ globalThis.resumeNaturalVclSmoke = function resumeNaturalVclSmoke(
     planApproved: true,
     pendingApproval: null,
     recoveryPending: false,
+    recoveryCardVisible: Boolean(recoveryCardVisible),
     recoveryRequestReady: true,
     recoveryStateObserved: true,
     retryDestination: '',

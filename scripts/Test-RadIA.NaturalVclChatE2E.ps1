@@ -83,6 +83,7 @@ $passed =
     $evidence.buildPassed -eq $true -and
     $evidence.applicationStarted -eq $true -and
     $evidence.destinationRecovered -eq $true -and
+    $evidence.recoveryCardVisible -eq $true -and
     $evidence.requirementsPreserved -eq $true -and
     $evidence.nativeOrchestration -eq $true -and
     $evidence.cliCompletedEarly -eq $false -and

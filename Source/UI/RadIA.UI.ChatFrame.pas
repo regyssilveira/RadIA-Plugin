@@ -85,6 +85,7 @@ type
     FAgentBudgetSmokeEvidencePath: string;
     FAgentBudgetSmokeStarted: Boolean;
     FNaturalVclSmokeEvidencePath: string;
+    FNaturalVclRecoveryVisible: Boolean;
     FNaturalVclSmokeStarted: Boolean;
     FSessionIsolationSmokeEvidencePath: string;
     FSessionIsolationSmokeStarted: Boolean;
@@ -820,6 +821,7 @@ begin
     GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')
   );
   FNaturalVclSmokeStarted := False;
+  FNaturalVclRecoveryVisible := False;
   FSessionIsolationSmokeEvidencePath := Trim(
     GetEnvironmentVariable('RADIA_IDE_SMOKE_SESSION_ISOLATION')
   );
@@ -1400,6 +1402,14 @@ begin
     if not (LJson is TJSONObject) then
       Exit;
     LRoot := TJSONObject(LJson);
+    if SameText(
+      LRoot.GetValue<string>('action', ''),
+      'natural_vcl_recovery_visible'
+    ) then
+    begin
+      FNaturalVclRecoveryVisible := True;
+      Exit(True);
+    end;
     if not SameText(
       LRoot.GetValue<string>('action', ''),
       'webview_lifecycle_state'
@@ -1895,6 +1905,7 @@ begin
       LRoot.GetValue<Boolean>('buildPassed', False) and
       LRoot.GetValue<Boolean>('applicationStarted', False) and
       LRoot.GetValue<Boolean>('destinationRecovered', False) and
+      FNaturalVclRecoveryVisible and
       LRoot.GetValue<Boolean>('requirementsPreserved', False) and
       LRoot.GetValue<Boolean>('nativeOrchestration', False) and
       not LRoot.GetValue<Boolean>('cliCompletedEarly', True) and
@@ -1935,6 +1946,10 @@ begin
       LEvidence.AddPair(
         'destinationRecovered',
         TJSONBool.Create(LRoot.GetValue<Boolean>('destinationRecovered', False))
+      );
+      LEvidence.AddPair(
+        'recoveryCardVisible',
+        TJSONBool.Create(FNaturalVclRecoveryVisible)
       );
       LEvidence.AddPair(
         'requirementsPreserved',
@@ -1984,7 +1999,10 @@ begin
     Exit;
   if FNaturalVclSmokeStarted then
   begin
-    FEdgeBrowser.ExecuteScript('resumeNaturalVclSmoke(300000);');
+    FEdgeBrowser.ExecuteScript(
+      'resumeNaturalVclSmoke(300000, ' +
+      LowerCase(BoolToStr(FNaturalVclRecoveryVisible, True)) + ');'
+    );
     Exit;
   end;
   FNaturalVclSmokeStarted := True;
