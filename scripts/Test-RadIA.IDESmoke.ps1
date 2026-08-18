@@ -4750,8 +4750,7 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 [uint32]$currentProcess.Id,
                 "TAppBuilder"
             )
-            if ($FireDACScenarioId -and
-                $mainWindow -eq [IntPtr]::Zero -and
+            if ($mainWindow -eq [IntPtr]::Zero -and
                 (Test-RadIAPluginShutdownCompleted)) {
                 $currentDescendants = @(
                     Get-RadIAProcessDescendants `

@@ -121,6 +121,14 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   );
   assert.match(smoke, /diagnostic\.painted/u);
   assert.match(smoke, /Test-RadIAPluginShutdownCompleted/u);
+  assert.match(
+    smoke,
+    /if \(\$mainWindow -eq \[IntPtr\]::Zero -and\s+\(Test-RadIAPluginShutdownCompleted\)\)/u
+  );
+  assert.doesNotMatch(
+    smoke,
+    /if \(\$FireDACScenarioId -and\s+\$mainWindow -eq \[IntPtr\]::Zero/u
+  );
   assert.match(smoke, /Background threads remaining after shutdown wait: 0/u);
   assert.match(smoke, /HostCleanupForced/u);
   assert.match(smoke, /access violation\|eaccessviolation/u);
