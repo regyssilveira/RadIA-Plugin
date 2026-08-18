@@ -33,6 +33,8 @@ type
     procedure TestCalculatorEssentialProfileOmitsCompanionTests;
     [Test]
     procedure TestCalculatorCustomProfileCanIncludeDUnitX;
+    [Test]
+    procedure TestCalculatorHistoryFeatureProducesFunctionalHistory;
   end;
 
 implementation
@@ -170,6 +172,7 @@ begin
       for LFile in LPlan.Files do
       begin
         Assert.DoesNotContain(LFile.RelativePath, 'Tests');
+        Assert.DoesNotContain(LFile.Content, 'OperationHistory');
         if SameText(LFile.RelativePath, 'EssentialCalculator.dproj') then
           Assert.DoesNotContain(LFile.Content, 'RadIABuildCompanionTests');
       end;
@@ -178,6 +181,63 @@ begin
         '"creationProfile":"essential"'
       );
       Assert.DoesNotContain(LPlan.PreviewJson, 'companionTestProject');
+    finally
+      LPlan.Free;
+    end;
+  finally
+    LEngine.Free;
+  end;
+end;
+
+procedure TTestRadIAProjectTemplates.
+  TestCalculatorHistoryFeatureProducesFunctionalHistory;
+var
+  LEngine: TRadIAProjectTemplateEngine;
+  LFile: TRadIAProjectTemplateFile;
+  LFoundDfm: Boolean;
+  LFoundSource: Boolean;
+  LPlan: TRadIAProjectTemplatePlan;
+begin
+  LEngine := TRadIAProjectTemplateEngine.Create;
+  try
+    LPlan := LEngine.BuildPlan(
+      TRadIAProjectTemplateRequest.Create(
+        'HistoryCalculator',
+        ptkVcl,
+        '37.0',
+        ['Win32'],
+        '{"schemaVersion":2,"kind":"calculator",' +
+        '"creationProfile":"essential","features":{' +
+        '"operationHistory":{"enabled":true,"clearAction":true}}}'
+      )
+    );
+    try
+      LFoundDfm := False;
+      LFoundSource := False;
+      for LFile in LPlan.Files do
+      begin
+        if SameText(LFile.RelativePath, 'MainForm.dfm') then
+        begin
+          LFoundDfm := True;
+          Assert.Contains(LFile.Content, 'object OperationHistory: TListBox');
+          Assert.Contains(LFile.Content, 'object HistoryStatus: TEdit');
+          Assert.Contains(LFile.Content, 'object ClearHistoryButton: TButton');
+          Assert.Contains(LFile.Content, 'OnClick = ClearHistoryClick');
+        end;
+        if SameText(LFile.RelativePath, 'MainForm.pas') then
+        begin
+          LFoundSource := True;
+          Assert.Contains(LFile.Content, 'procedure TRadIAMainForm.AddHistoryEntry');
+          Assert.Contains(LFile.Content, 'OperationHistory.Items.Add(HistoryStatus.Text)');
+          Assert.Contains(LFile.Content, 'HistoryStatus.Clear');
+          Assert.Contains(LFile.Content, 'AddHistoryEntry(LLeft, LOperator');
+          Assert.Contains(LFile.Content, 'OperationHistory.Clear');
+          Assert.Contains(LFile.Content, 'if FPendingOperator = '''' then');
+        end;
+      end;
+      Assert.IsTrue(LFoundDfm);
+      Assert.IsTrue(LFoundSource);
+      Assert.Contains(LPlan.PreviewJson, '"operationHistory"');
     finally
       LPlan.Free;
     end;

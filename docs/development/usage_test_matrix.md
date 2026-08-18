@@ -82,6 +82,8 @@ Esse comando compõe, sem opções para pular os gates principais:
 2. todos os cenários registrados de integração e ponta a ponta aplicáveis aos alvos suportados;
 3. geração e build de todos os templates suportados no Delphi 12 e 13;
 4. operação visual `2 + 3 = 5` na calculadora VCL;
+   o cenário também comprova que o pedido de histórico gera `2 + 3 = 5` na lista e que a ação de
+   limpeza deixa a lista vazia;
 5. execução dos cinco testes DUnitX da calculadora;
 6. criação, abertura e navegação imediata de projeto nos três alvos da IDE;
 7. instalação explícita do build atual e matriz de inicialização/encerramento nos três alvos;

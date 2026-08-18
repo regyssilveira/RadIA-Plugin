@@ -82,6 +82,8 @@ This command composes the following gates without options to skip their main req
 2. run every registered integration and end-to-end scenario applicable to supported targets;
 3. generate and build every supported template on Delphi 12 and 13;
 4. perform the visual `2 + 3 = 5` operation in the VCL calculator;
+   the scenario also proves that a history request records `2 + 3 = 5` in the list and that clearing
+   leaves the list empty;
 5. run all five calculator DUnitX tests;
 6. create, open, and immediately navigate a project on all three IDE targets;
 7. explicitly install the current build and run the startup/shutdown matrix on all three targets;

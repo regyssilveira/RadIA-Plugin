@@ -73,6 +73,12 @@ explicit choices to keep the project as-is, add DUnitX, or request other increme
 choice does `complete`, or `custom` with `dunitx`, include `companionTestProject` and
 `companionTestExecutable`, build the companion suite, and run it with `RunDUnitXTests`.
 
+When the request includes **operation history**, **calculation list**, or an equivalent phrase, that
+requirement is preserved in the structured specification and preview. The generated calculator records
+each completed operation in order and provides **Clear history**. The journey can only complete after
+running real calculations, checking the history, and verifying that it can be cleared; a green build
+alone does not satisfy this request.
+
 ## Execution model
 
 1. The command visually enables agent mode when necessary.

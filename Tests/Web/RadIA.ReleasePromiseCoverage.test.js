@@ -17,6 +17,7 @@ test('critical public promises have stable user-journey identifiers', () => {
     [
       'direct-conversational-answer',
       'natural-vcl-project-creation',
+      'calculator-requirement-fidelity',
       'build-failure-repair',
       'dunitx-create-run-repair',
       'chat-window-state-persistence',

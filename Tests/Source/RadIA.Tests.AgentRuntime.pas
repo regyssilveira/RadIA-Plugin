@@ -180,6 +180,8 @@ type
     [Test]
     procedure TestStopsRepeatedToolCalls;
     [Test]
+    procedure TestStopsDuplicateArtifactRangeImmediately;
+    [Test]
     procedure TestPauseAndResumeFromCheckpoint;
     [Test]
     procedure TestReplayStepAppendsAuditedPausedResult;
@@ -1438,6 +1440,50 @@ begin
     );
     Assert.AreEqual(asAwaitingApproval, LResult.Status);
     LResult := LRuntime.Resume('repeat-session');
+    Assert.AreEqual(asFailed, LResult.Status);
+    Assert.AreEqual(1, LResult.StepCount);
+    Assert.Contains(LResult.Message, 'repeated too many times');
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestStopsDuplicateArtifactRangeImmediately;
+var
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"content":"same range"}')
+  );
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Review artifact recovery.',
+      '[{"title":"Recover one artifact range"}]'
+    ),
+    TRadIAAgentDecision.CallTool(
+      'GetToolResultRange',
+      '{"artifactId":"artifact-1","offset":0,"length":100}'
+    ),
+    TRadIAAgentDecision.CallTool(
+      'GetToolResultRange',
+      '{"artifactId":"artifact-1","offset":0,"length":100}'
+    )
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Recover one artifact range.',
+      'duplicate-artifact-range-session',
+      'project',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('duplicate-artifact-range-session');
     Assert.AreEqual(asFailed, LResult.Status);
     Assert.AreEqual(1, LResult.StepCount);
     Assert.Contains(LResult.Message, 'repeated too many times');
