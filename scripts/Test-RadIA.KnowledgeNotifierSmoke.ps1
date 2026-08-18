@@ -292,24 +292,36 @@ function Invoke-RadIAFileMenuCommand {
         throw "The Delphi File menu is not available."
     }
     $mousePosition = [IntPtr]((12 -shl 16) -bor 12)
-    [void][RadIAWindowNative]::PostMessage(
-        $menuBar,
-        0x0201,
-        [IntPtr]1,
-        $mousePosition
-    )
-    [void][RadIAWindowNative]::PostMessage(
-        $menuBar,
-        0x0202,
-        [IntPtr]0,
-        $mousePosition
-    )
-    Wait-RadIACondition -TimeoutSeconds 5 -Condition {
-        [RadIAWindowNative]::FindVisibleWindow(
-            [uint32]$Process.Id,
-            "TIDEStylePopupMenu"
-        ) -ne [IntPtr]::Zero
-    } -FailureMessage "The Delphi File menu did not open."
+    $menuOpened = $false
+    for ($attempt = 1; $attempt -le 3 -and -not $menuOpened; $attempt++) {
+        [void][RadIAWindowNative]::SetForegroundWindow($mainWindow)
+        Start-Sleep -Milliseconds 250
+        [void][RadIAWindowNative]::PostMessage(
+            $menuBar,
+            0x0201,
+            [IntPtr]1,
+            $mousePosition
+        )
+        [void][RadIAWindowNative]::PostMessage(
+            $menuBar,
+            0x0202,
+            [IntPtr]0,
+            $mousePosition
+        )
+        $menuDeadline = [DateTime]::UtcNow.AddSeconds(5)
+        while ([DateTime]::UtcNow -lt $menuDeadline -and -not $menuOpened) {
+            $menuOpened = [RadIAWindowNative]::FindVisibleWindow(
+                [uint32]$Process.Id,
+                "TIDEStylePopupMenu"
+            ) -ne [IntPtr]::Zero
+            if (-not $menuOpened) {
+                Start-Sleep -Milliseconds 250
+            }
+        }
+    }
+    if (-not $menuOpened) {
+        throw "The Delphi File menu did not open after 3 attempts."
+    }
 
     if ($AccessKey) {
         $virtualKey = [int][char]$AccessKey.ToUpperInvariant()
@@ -2783,6 +2795,19 @@ try {
         -ErrorAction SilentlyContinue
     if ($remainingProcess) {
         if ($remainingProcess.MainWindowHandle -ne [IntPtr]::Zero) {
+            $onboardingWindow = [RadIAWindowNative]::FindVisibleWindow(
+                [uint32]$process.Id,
+                "TRadIAOnboardingForm"
+            )
+            if ($onboardingWindow -ne [IntPtr]::Zero) {
+                [void][RadIAWindowNative]::PostMessage(
+                    $onboardingWindow,
+                    0x0010,
+                    [IntPtr]0,
+                    [IntPtr]0
+                )
+                Start-Sleep -Milliseconds 250
+            }
             [void]$remainingProcess.CloseMainWindow()
             if (-not $remainingProcess.WaitForExit(3000)) {
                 $shutdownDeadline = [DateTime]::UtcNow.AddSeconds(
