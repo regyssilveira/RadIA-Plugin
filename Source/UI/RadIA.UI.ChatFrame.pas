@@ -1749,6 +1749,10 @@ begin
       LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
       LEvidence.AddPair('evidenceKind', 'naturalVclChatJourney');
       LEvidence.AddPair('status', IfThen(LPassed, 'passed', 'failed'));
+      LEvidence.AddPair('reason', LRoot.GetValue<string>('reason', ''));
+      LEvidence.AddPair('failedTool', LRoot.GetValue<string>('failedTool', ''));
+      LEvidence.AddPair('errorCode', LRoot.GetValue<string>('errorCode', ''));
+      LEvidence.AddPair('agentMessage', LRoot.GetValue<string>('agentMessage', ''));
       LEvidence.AddPair(
         'recommendationAccepted',
         TJSONBool.Create(LRoot.GetValue<Boolean>('recommendationAccepted', False))

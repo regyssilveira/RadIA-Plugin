@@ -82,6 +82,8 @@ test('natural VCL smoke accepts the real route and requires complete evidence', 
   assert.match(chatScript, /BuildProject/u);
   assert.match(chatScript, /StartDebugging/u);
   assert.match(chatScript, /completed-before-required-evidence/u);
+  assert.match(chatScript, /failedTool: failedStep\.toolName/u);
+  assert.match(chatScript, /agentMessage: state\.message/u);
   assert.match(chatScript, /CLI task completed\./u);
   assert.match(presenter, /not AObjective\.Contains/u);
   assert.match(presenter, /Create a Delphi project from the user requirements\./u);

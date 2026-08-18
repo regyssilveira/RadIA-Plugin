@@ -1,7 +1,8 @@
 # Agent result compaction and recovery
 
-RadIA's internal RTK reduces large results before the model's next decision. The complete result
-remains the source of truth and can be recovered without repeating a build, test, Git, or other tool.
+RadIA's internal RTK reduces large results before the model's next decision. While retained, the
+complete result remains the source of truth and can be recovered without repeating a build, test,
+Git, or other tool.
 
 ## Configuration
 
@@ -29,9 +30,10 @@ default is 120,000. `RADIA_RESULT_COMPACTION_PROFILE` can temporarily override t
 
 ## Preservation and recovery
 
-Complete results are stored by session and step with SHA-256 and atomic writes. A session accepts up
-to 100 artifacts and 64 Mi characters; an artifact accepts 8 Mi characters. Artifacts expire after
-14 days and cleanup runs when the plugin loads.
+Complete results are stored by session and step with SHA-256 and atomic writes. A session keeps its
+100 newest artifacts within 64 Mi characters; reaching either limit evicts the oldest artifacts
+instead of blocking new runs. An artifact accepts 8 Mi characters. Artifacts also expire after 14
+days and cleanup runs when the plugin loads.
 
 Compacted context reports `artifactId`, hash, size, and `fullResultAvailable`. The agent can use:
 
@@ -39,7 +41,8 @@ Compacted context reports `artifactId`, hash, size, and `fullResultAvailable`. T
 - `GetToolResultRange` to recover up to 65,536 characters per call.
 
 Both tools enforce the active session and reject traversal, session spoofing, and invalid ranges.
-Checkpoints, replay, UI, and validation gates preserve the complete result.
+Checkpoints, replay, UI, and validation gates preserve the reference. After retention evicts an old
+artifact, the retrieval tools report that it is no longer available.
 
 ## Metrics and diagnostics
 

@@ -84,7 +84,7 @@ type
     procedure ValidateArtifactId(const AArtifactId: string);
     procedure ValidateOptions;
     procedure ValidateSessionId(const ASessionId: string);
-    procedure ValidateSessionQuota(
+    procedure EnsureSessionCapacity(
       const ASessionDirectory: string;
       const AArtifactPath: string;
       const AContentCharacters: Integer
@@ -247,7 +247,7 @@ begin
     TDirectory.CreateDirectory(LDirectory);
     if not TFile.Exists(LPath) then
     begin
-      ValidateSessionQuota(LDirectory, LPath, Length(AContent));
+      EnsureSessionCapacity(LDirectory, LPath, Length(AContent));
       LTemporaryPath := LPath + '.' + TGUID.NewGuid.ToString + '.tmp';
       TFile.WriteAllText(LTemporaryPath, AContent, TEncoding.UTF8);
       try
@@ -399,7 +399,7 @@ begin
     );
 end;
 
-procedure TRadIAAgentFileResultStore.ValidateSessionQuota(
+procedure TRadIAAgentFileResultStore.EnsureSessionCapacity(
   const ASessionDirectory: string;
   const AArtifactPath: string;
   const AContentCharacters: Integer
@@ -408,10 +408,9 @@ var
   LCharacters: Int64;
   LFile: string;
   LFiles: TArray<string>;
+  LOldestFile: string;
 begin
   LFiles := TDirectory.GetFiles(ASessionDirectory, '*.json');
-  if Length(LFiles) >= FOptions.MaximumArtifactsPerSession then
-    raise EInvalidOpException.Create('Result artifact session quota exceeded.');
   LCharacters := 0;
   for LFile in LFiles do
     if not SameText(LFile, AArtifactPath) then
@@ -419,8 +418,23 @@ begin
         LCharacters,
         Length(TFile.ReadAllText(LFile, TEncoding.UTF8))
       );
-  if LCharacters + AContentCharacters > FOptions.MaximumSessionCharacters then
-    raise EInvalidOpException.Create('Result character session quota exceeded.');
+  while (Length(LFiles) >= FOptions.MaximumArtifactsPerSession) or
+    (LCharacters + AContentCharacters > FOptions.MaximumSessionCharacters) do
+  begin
+    if Length(LFiles) = 0 then
+      raise EInvalidOpException.Create('Result artifact cannot fit session capacity.');
+    LOldestFile := LFiles[0];
+    for LFile in LFiles do
+      if TFile.GetLastWriteTime(LFile) <
+        TFile.GetLastWriteTime(LOldestFile) then
+        LOldestFile := LFile;
+    Dec(
+      LCharacters,
+      Length(TFile.ReadAllText(LOldestFile, TEncoding.UTF8))
+    );
+    TFile.Delete(LOldestFile);
+    LFiles := TDirectory.GetFiles(ASessionDirectory, '*.json');
+  end;
 end;
 
 procedure TRadIAAgentFileResultStore.ValidateSessionId(

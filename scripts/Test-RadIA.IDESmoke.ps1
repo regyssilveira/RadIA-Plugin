@@ -4632,6 +4632,19 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 }
                 Start-Sleep -Milliseconds 250
             }
+            $userJourneyEvidence = Get-Content `
+                -LiteralPath $UserJourneyEvidencePath `
+                -Raw |
+                ConvertFrom-Json
+            if ($userJourneyEvidence.status -ne "passed") {
+                throw (
+                    "The user journey failed: " +
+                    "reason=$($userJourneyEvidence.reason); " +
+                    "tool=$($userJourneyEvidence.failedTool); " +
+                    "error=$($userJourneyEvidence.errorCode); " +
+                    "message=$($userJourneyEvidence.agentMessage)."
+                )
+            }
         }
         if ($UserJourneyExecutablePath) {
             $resolvedJourneyExecutable = [IO.Path]::GetFullPath(

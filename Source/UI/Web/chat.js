@@ -3291,6 +3291,7 @@ globalThis.beginAgentBudgetSmoke = function beginAgentBudgetSmoke(
 function finishNaturalVclSmoke(status, reason = '', state = {}) {
   if (!naturalVclSmoke) return;
   const steps = Array.isArray(state.steps) ? state.steps : [];
+  const failedStep = steps.find(step => step.success === false) || {};
   const succeeded = toolName => steps.some(
     step => step.toolName === toolName && step.success === true
   );
@@ -3299,6 +3300,9 @@ function finishNaturalVclSmoke(status, reason = '', state = {}) {
     action: 'natural_vcl_smoke_result',
     status,
     reason,
+    failedTool: failedStep.toolName || '',
+    errorCode: failedStep.errorCode || '',
+    agentMessage: state.message || '',
     recommendationAccepted: naturalVclSmoke.recommendationAccepted,
     previewSucceeded: succeeded('PreviewProjectTemplate'),
     creationSucceeded: succeeded('CreateProjectFromTemplate'),

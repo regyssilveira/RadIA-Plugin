@@ -22,7 +22,7 @@ type
     [Test]
     procedure RetrievalToolsRespectSessionBoundary;
     [Test]
-    procedure EnforcesSessionQuotas;
+    procedure EvictsOldestArtifactAtSessionCapacity;
     [Test]
     procedure CleansExpiredArtifacts;
     [Test]
@@ -114,21 +114,30 @@ begin
   Assert.IsFalse(TFile.Exists(LPath));
 end;
 
-procedure TRadIAAgentResultStoreTests.EnforcesSessionQuotas;
+procedure TRadIAAgentResultStoreTests.EvictsOldestArtifactAtSessionCapacity;
 var
+  LFirst: TRadIAAgentResultArtifact;
+  LLatest: TRadIAAgentResultArtifact;
   LOptions: TRadIAAgentResultStoreOptions;
+  LPath: string;
+  LSummary: TRadIAAgentResultArtifact;
   LStore: IRadIAAgentResultStore;
 begin
   LOptions := TRadIAAgentResultStoreOptions.Create(10, 2, 12, 1);
   LStore := TRadIAAgentFileResultStore.Create(FDirectory, LOptions);
-  LStore.Store('session-1', 1, '123456');
+  LFirst := LStore.Store('session-1', 1, '123456');
+  LPath := TPath.Combine(
+    TPath.Combine(FDirectory, 'session-1'),
+    LFirst.ArtifactId + '.json'
+  );
+  TFile.SetLastWriteTime(LPath, Now - 1);
   LStore.Store('session-1', 2, '123456');
-  Assert.WillRaise(
-    procedure
-    begin
-      LStore.Store('session-1', 3, 'x');
-    end,
-    EInvalidOpException
+  LLatest := LStore.Store('session-1', 3, 'x');
+  Assert.IsFalse(
+    LStore.TryGetSummary('session-1', LFirst.ArtifactId, LSummary)
+  );
+  Assert.IsTrue(
+    LStore.TryGetSummary('session-1', LLatest.ArtifactId, LSummary)
   );
 end;
 
