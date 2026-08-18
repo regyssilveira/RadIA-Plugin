@@ -42,6 +42,11 @@ Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma re
 catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser
 editada manualmente para contornar uma falha.
 
+Use o Delphi 12 (`-DelphiVersion "23.0"`) no scanner estático. O analisador Delphi atual não interpreta
+corretamente construções novas da RTL do Delphi 13 e pode produzir falsos positivos de símbolos não usados.
+Essa escolha limita somente o parser estático: o gate indivisível continua compilando, testando e executando
+as jornadas no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+
 O workflow `SonarQube release gate` do GitHub Actions é uma repetição manual opcional, dependente de um
 runner Windows `self-hosted` registrado e disponível. Ele não é disparado por push, pull request ou tag,
 não substitui o gate local e nunca deve bloquear uma release enquanto aguarda infraestrutura externa.

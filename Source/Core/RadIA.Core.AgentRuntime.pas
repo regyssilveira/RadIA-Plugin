@@ -479,6 +479,9 @@ type
     function ValidationAllowsCompletion(
       out AMessage: string
     ): Boolean;
+    function ProjectCreationAllowsCompletion(
+      out AMessage: string
+    ): Boolean;
   public
     constructor Create(
       const AToolExecutor: IRadIAToolExecutor;
@@ -2789,29 +2792,8 @@ var
   LValidation: TRadIAAgentValidationState;
 begin
   LValidation := AnalyzeValidationState;
-  if IsProjectCreationObjective and
-    not HasSuccessfulToolStep('PreviewProjectTemplate') then
-  begin
-    AMessage :=
-      'Validation gate rejected completion: call PreviewProjectTemplate ' +
-      'and use its successful result before creating the project.';
+  if not ProjectCreationAllowsCompletion(AMessage) then
     Exit(False);
-  end;
-  if IsProjectCreationObjective and
-    not HasSuccessfulToolStep('CreateProjectFromTemplate') then
-  begin
-    AMessage :=
-      'Validation gate rejected completion: call CreateProjectFromTemplate ' +
-      'with the reviewed preview before claiming completion.';
-    Exit(False);
-  end;
-  if IsProjectCreationObjective and
-    not HasSuccessfulToolStep('OpenCreatedProject') then
-  begin
-    AMessage :=
-      'Validation gate rejected completion: open the created project in the IDE.';
-    Exit(False);
-  end;
   if LValidation.MutationPending and FExecutionContract.RequireBuild and
     not LValidation.BuildPassed then
   begin
@@ -2847,6 +2829,37 @@ begin
     AMessage :=
       'Validation gate rejected completion: the latest DUnitX run failed. ' +
       'Inspect the report, correct the cause, rebuild, and rerun tests.';
+    Exit(False);
+  end;
+  AMessage := '';
+  Result := True;
+end;
+
+function TRadIAAgentRuntime.ProjectCreationAllowsCompletion(
+  out AMessage: string
+): Boolean;
+begin
+  Result := not IsProjectCreationObjective;
+  if Result then
+    Exit;
+  if not HasSuccessfulToolStep('PreviewProjectTemplate') then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: call PreviewProjectTemplate ' +
+      'and use its successful result before creating the project.';
+    Exit(False);
+  end;
+  if not HasSuccessfulToolStep('CreateProjectFromTemplate') then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: call CreateProjectFromTemplate ' +
+      'with the reviewed preview before claiming completion.';
+    Exit(False);
+  end;
+  if not HasSuccessfulToolStep('OpenCreatedProject') then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: open the created project in the IDE.';
     Exit(False);
   end;
   AMessage := '';

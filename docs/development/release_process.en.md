@@ -42,6 +42,11 @@ Run the scanner **locally** and require a passing Quality Gate for the same revi
 catalog, installer, and smoke tests must point to the same clean commit. Evidence must never be edited
 manually to bypass a failure.
 
+Use Delphi 12 (`-DelphiVersion "23.0"`) for static scanning. The current Delphi analyzer cannot parse
+some newer Delphi 13 RTL constructs correctly and may report unused-symbol false positives. This choice
+affects only the static parser: the indivisible gate still builds, tests, and runs the journeys on Delphi
+12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+
 The GitHub Actions `SonarQube release gate` workflow is an optional manual repetition that depends on an
 available registered Windows `self-hosted` runner. Pushes, pull requests, and tags do not start it. It
 does not replace the local gate and must never block a release while waiting for external infrastructure.

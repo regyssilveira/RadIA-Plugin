@@ -252,6 +252,10 @@ type
       out ALimits: TRadIAAgentLimits
     );
     procedure StartAgentRun(const AObjective: string);
+    function TryStartExternalAgentRun(
+      const AObjective: string;
+      const ASettings: TRadIAResolvedExecutionSettings
+    ): Boolean;
     function TryStartCliAgentRun(
       const AObjective: string;
       const ASettings: TRadIAResolvedExecutionSettings;
@@ -4415,11 +4419,7 @@ var
   LUserMessage: IRadIAChatMessage;
 begin
   LEffectiveSettings := ResolveEffectiveExecutionSettings;
-  if not AObjective.Contains(
-    'Create a Delphi project from the user requirements.'
-  ) and
-    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) = '') and
-    TryStartCliAgentRun(AObjective, LEffectiveSettings) then
+  if TryStartExternalAgentRun(AObjective, LEffectiveSettings) then
     Exit;
   if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
   begin
@@ -4598,6 +4598,19 @@ begin
     'do not inspect files, run commands, create a plan, or describe yourself as the CLI executor.' +
     sLineBreak + sLineBreak +
     'User message:' + sLineBreak + APromptText;
+end;
+
+function TRadIAChatPresenter.TryStartExternalAgentRun(
+  const AObjective: string;
+  const ASettings: TRadIAResolvedExecutionSettings
+): Boolean;
+begin
+  Result :=
+    not AObjective.Contains(
+      'Create a Delphi project from the user requirements.'
+    ) and
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) = '') and
+    TryStartCliAgentRun(AObjective, ASettings);
 end;
 
 function TRadIAChatPresenter.TryStartCliAgentRun(

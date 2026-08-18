@@ -52,6 +52,6 @@ jobs:
         run: |
           .\run-sonar-analysis.ps1 `
             -Test `
-            -DelphiVersion "37.0" `
+            -DelphiVersion "23.0" `
             -HostUrl $env:SONAR_HOST_URL `
             -QualityGate

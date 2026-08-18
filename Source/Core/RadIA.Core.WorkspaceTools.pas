@@ -4,8 +4,7 @@ interface
 
 uses
   RadIA.Core.Tools,
-  RadIA.Core.Workspace,
-  RadIA.Core.Patches;
+  RadIA.Core.Workspace;
 
 procedure RegisterRadIAWorkspaceTools(
   const ARegistry: IRadIAToolRegistry;
@@ -16,7 +15,8 @@ implementation
 
 uses
   System.JSON,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.Patches;
 
 type
   TRadIAWorkspaceToolKind = (

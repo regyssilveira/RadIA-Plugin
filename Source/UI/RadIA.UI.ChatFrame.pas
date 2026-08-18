@@ -193,6 +193,15 @@ const
 
 type
   TRadIAConversationSmokeService = class(TInterfacedObject, IRadIAService)
+  private
+    function TrySendNaturalVclPrompt(
+      const APrompt: string;
+      const ACallback: TCompletionCallback
+    ): Boolean;
+    function TrySendAgentBudgetPrompt(
+      const APrompt: string;
+      const ACallback: TCompletionCallback
+    ): Boolean;
   public
     function GetEffectiveSystemPrompt: string;
     procedure ResolveParameters(const AProviderName: string;
@@ -393,11 +402,30 @@ procedure TRadIAConversationSmokeService.SendPrompt(
   const AProfile: TAIRequestProfile
 );
 begin
-  if (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')) <> '') and
-    APrompt.Contains('CURRENT_STATE:') then
-  begin
-    if not AgentStatePlanApproved(APrompt) then
-      ACallback(
+  if TrySendNaturalVclPrompt(APrompt, ACallback) then
+    Exit;
+  if TrySendAgentBudgetPrompt(APrompt, ACallback) then
+    Exit;
+  ACallback(
+    'I am RadIA, your Delphi development assistant.',
+    '',
+    False,
+    TTokenUsage.Empty
+  );
+end;
+
+function TRadIAConversationSmokeService.TrySendNaturalVclPrompt(
+  const APrompt: string;
+  const ACallback: TCompletionCallback
+): Boolean;
+begin
+  Result :=
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')) <> '') and
+    APrompt.Contains('CURRENT_STATE:');
+  if not Result then
+    Exit;
+  if not AgentStatePlanApproved(APrompt) then
+    ACallback(
         '{"kind":"plan","message":"Create and validate the VCL project.",' +
         '"steps":[{"title":"Create project",' +
         '"description":"Preview, create, open, build, and run"}]}',
@@ -483,13 +511,20 @@ begin
         False,
         TTokenUsage.Empty
       );
+end;
+
+function TRadIAConversationSmokeService.TrySendAgentBudgetPrompt(
+  const APrompt: string;
+  const ACallback: TCompletionCallback
+): Boolean;
+begin
+  Result :=
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) <> '') and
+    APrompt.Contains('CURRENT_STATE:');
+  if not Result then
     Exit;
-  end;
-  if (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) <> '') and
-    APrompt.Contains('CURRENT_STATE:') then
-  begin
-    if not AgentStatePlanApproved(APrompt) then
-      ACallback(
+  if not AgentStatePlanApproved(APrompt) then
+    ACallback(
         '{"kind":"plan","message":"Approve IDE inspection.",' +
         '"steps":[{"title":"Inspect IDE",' +
         '"description":"Read the current IDE state once"}]}',
@@ -511,14 +546,6 @@ begin
         False,
         TTokenUsage.Empty
       );
-    Exit;
-  end;
-  ACallback(
-    'I am RadIA, your Delphi development assistant.',
-    '',
-    False,
-    TTokenUsage.Empty
-  );
 end;
 
 procedure TRadIAConversationSmokeService.SendPromptStream(

@@ -4051,12 +4051,44 @@ function shouldRenderMessageAsMarkdown(role, text) {
   return role === 'assistant' || role === 'system' || text.includes('```');
 }
 
+function createMessageHeader(role, text, provider, model, wrapper, avatar) {
+  const info = SENDER_INFO[role] || SENDER_INFO.assistant;
+  const header = document.createElement('div');
+  header.classList.add('message-header', info.headerClass);
+  header.textContent = role === 'assistant' && provider && model
+    ? `${info.name} - ${provider} (${model})`
+    : info.name;
+  if (role === 'assistant') {
+    decorateAssistantRoute(wrapper, avatar, header);
+  }
+  if (role === 'assistant' || role === 'system') {
+    header.appendChild(createTextCopyButton(
+      () => text,
+      'Copy response',
+      'message-copy-button'
+    ));
+  }
+  return header;
+}
+
+function createMessageContent(role, text) {
+  const content = document.createElement('div');
+  content.classList.add('message-content');
+  if (shouldRenderMessageAsMarkdown(role, text)) {
+    content.innerHTML = marked.parse(text);
+    processProjectFiles(content);
+    return content;
+  }
+  const paragraph = document.createElement('p');
+  paragraph.textContent = text;
+  content.appendChild(paragraph);
+  return content;
+}
+
 function addMessage(role, text, provider, model) {
   hideTypingIndicator();
   hideWelcomeScreen();
-  if (text === undefined || text === null) {
-    text = '';
-  }
+  text ??= '';
   const info = SENDER_INFO[role] || SENDER_INFO.assistant;
 
   const wrapper = document.createElement('div');
@@ -4074,35 +4106,8 @@ function addMessage(role, text, provider, model) {
   const body = document.createElement('div');
   body.classList.add('message-body');
 
-  const header = document.createElement('div');
-  header.classList.add('message-header', info.headerClass);
-  let headerText = info.name;
-  if (role === 'assistant' && provider && model) {
-    headerText += ` - ${provider} (${model})`;
-  }
-  header.textContent = headerText;
-  if (role === 'assistant') {
-    decorateAssistantRoute(wrapper, avatar, header);
-  }
-  if (role === 'assistant' || role === 'system') {
-    header.appendChild(createTextCopyButton(
-      () => text,
-      'Copy response',
-      'message-copy-button'
-    ));
-  }
-
-  const content = document.createElement('div');
-  content.classList.add('message-content');
-
-  if (shouldRenderMessageAsMarkdown(role, text)) {
-    content.innerHTML = marked.parse(text);
-    processProjectFiles(content);
-  } else {
-    const p = document.createElement('p');
-    p.textContent = text;
-    content.appendChild(p);
-  }
+  const header = createMessageHeader(role, text, provider, model, wrapper, avatar);
+  const content = createMessageContent(role, text);
 
   body.appendChild(header);
   body.appendChild(content);
@@ -4871,8 +4876,7 @@ function updateSessions(sessions, activeSessionId) {
     clearCollectedProblems();
   }
   if (activeSessionId) currentProblemSessionId = activeSessionId;
-  if (sessionIsolationSmoke &&
-      sessionIsolationSmoke.phase === 'waiting-session-switch' &&
+  if (sessionIsolationSmoke?.phase === 'waiting-session-switch' &&
       activeSessionId &&
       activeSessionId !== sessionIsolationSmoke.initialSessionId) {
     sessionIsolationSmoke.sessionSwitched = true;
@@ -4883,7 +4887,7 @@ function updateSessions(sessions, activeSessionId) {
   }
   sessionsList.innerHTML = '';
 
-  if (!sessions || sessions.length === 0) {
+  if (!sessions?.length) {
     sessionsList.innerHTML = `<li class="no-sessions">No conversations active</li>`;
     return;
   }
