@@ -13,6 +13,11 @@ const releaseRunnerPath = path.join(
   'Test-RadIA.ReleaseUsage.ps1'
 );
 const buildPath = path.join(root, 'build.ps1');
+const smokeRunnerPath = path.join(
+  root,
+  'scripts',
+  'Test-RadIA.KnowledgeNotifierSmoke.ps1'
+);
 
 test('usage matrix covers every supported IDE target', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -61,6 +66,7 @@ test('release gate composes calculator, opening, and usage tests', () => {
   const source = fs.readFileSync(releaseRunnerPath, 'utf8');
   const matrixSource = fs.readFileSync(runnerPath, 'utf8');
   const buildSource = fs.readFileSync(buildPath, 'utf8');
+  const smokeSource = fs.readFileSync(smokeRunnerPath, 'utf8');
   assert.match(source, /build\.ps1/u);
   assert.match(source, /-Test/u);
   assert.match(source, /Version = "23\.0"/u);
@@ -85,6 +91,10 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /attemptCount/u);
   assert.match(source, /Delphi did not become ready for the smoke test/u);
   assert.match(source, /The Delphi File menu did not open/u);
+  assert.match(smokeSource, /\$attempt -le 3 -and -not \$menuOpened/u);
+  assert.match(smokeSource, /SetForegroundWindow\(\$mainWindow\)/u);
+  assert.match(smokeSource, /TRadIAOnboardingForm/u);
+  assert.match(smokeSource, /\$onboardingWindow/u);
   assert.match(source, /The Delphi file dialog did not open/u);
   assert.match(source, /Test-RadIAReleaseJourneyRetryable/u);
   assert.match(source, /previousErrorActionPreference/u);
