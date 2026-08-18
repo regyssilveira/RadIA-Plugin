@@ -158,19 +158,27 @@ function Get-RadIATargetIDEProcesses {
         [string]$ExecutablePath
     )
 
-    return @(
-        Get-Process bds -ErrorAction SilentlyContinue |
-            Where-Object {
-                try {
-                    [IO.Path]::GetFullPath($_.Path).Equals(
-                        [IO.Path]::GetFullPath($ExecutablePath),
-                        [StringComparison]::OrdinalIgnoreCase
-                    )
-                } catch {
-                    $false
-                }
-            }
+    $result = @()
+    $candidates = @(
+        Get-Process bds -ErrorAction SilentlyContinue
     )
+    foreach ($candidate in $candidates) {
+        try {
+            $liveProcess = [Diagnostics.Process]::GetProcessById(
+                $candidate.Id
+            )
+            if (-not $liveProcess.HasExited -and
+                [IO.Path]::GetFullPath($liveProcess.Path).Equals(
+                [IO.Path]::GetFullPath($ExecutablePath),
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+                $result += $liveProcess
+            }
+        } catch {
+            continue
+        }
+    }
+    return $result
 }
 
 function Invoke-RadIAPackageCommand {
@@ -4782,6 +4790,50 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             ($targetProcesses.Count -gt 0) -and
             ([DateTime]::UtcNow -lt $rootDeadline)
         )
+        if ($targetProcesses.Count -gt 0 -and
+            (Test-RadIAPluginShutdownCompleted)) {
+            $verifiedShutdownHosts = @(
+                $targetProcesses |
+                    Where-Object {
+                        [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                            [uint32]$_.Id,
+                            "TAppBuilder"
+                        ) -eq [IntPtr]::Zero
+                    }
+            )
+            if ($verifiedShutdownHosts.Count -eq $targetProcesses.Count) {
+                foreach ($verifiedHost in $verifiedShutdownHosts) {
+                    $verifiedDescendants = @(
+                        Get-RadIAProcessDescendants `
+                            -ParentProcessId $verifiedHost.Id `
+                            -ParentStartedAt $verifiedHost.StartTime
+                    )
+                    foreach ($verifiedChild in $verifiedDescendants) {
+                        Stop-Process `
+                            -Id $verifiedChild.ProcessId `
+                            -Force `
+                            -ErrorAction SilentlyContinue
+                    }
+                    Stop-Process `
+                        -Id $verifiedHost.Id `
+                        -Force `
+                        -ErrorAction SilentlyContinue
+                }
+                $hostCleanupForced = $true
+                $cleanupRootDeadline = [DateTime]::UtcNow.AddSeconds(10)
+                do {
+                    $targetProcesses = @(
+                        Get-RadIATargetIDEProcesses -ExecutablePath $bdsPath
+                    )
+                    if ($targetProcesses.Count -gt 0) {
+                        Start-Sleep -Milliseconds 100
+                    }
+                } while (
+                    ($targetProcesses.Count -gt 0) -and
+                    ([DateTime]::UtcNow -lt $cleanupRootDeadline)
+                )
+            }
+        }
         if ($targetProcesses.Count -gt 0) {
             $targetProcessIds = @(
                 $targetProcesses |

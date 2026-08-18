@@ -129,6 +129,14 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
     smoke,
     /if \(\$FireDACScenarioId -and\s+\$mainWindow -eq \[IntPtr\]::Zero/u
   );
+  assert.match(smoke, /\$verifiedShutdownHosts/u);
+  assert.match(smoke, /\[Diagnostics\.Process\]::GetProcessById/u);
+  assert.match(smoke, /-not \$liveProcess\.HasExited/u);
+  assert.match(
+    smoke,
+    /\$verifiedShutdownHosts\.Count -eq \$targetProcesses\.Count/u
+  );
+  assert.match(smoke, /\$cleanupRootDeadline/u);
   assert.match(smoke, /Background threads remaining after shutdown wait: 0/u);
   assert.match(smoke, /HostCleanupForced/u);
   assert.match(smoke, /access violation\|eaccessviolation/u);
