@@ -308,16 +308,24 @@ begin
 end;
 
 procedure PrepareDockableFormsForShutdown;
+var
+  LPreviousShutdownState: Boolean;
 begin
-  if Assigned(GRadIADockableFormHost) then
-  begin
-    GRadIADockableFormHost.PersistCurrentState;
-    GRadIADockableFormHost.ReleaseForm;
-  end;
-  if Assigned(GRadIATerminalDockableFormHost) then
-  begin
-    GRadIATerminalDockableFormHost.PersistCurrentState;
-    GRadIATerminalDockableFormHost.ReleaseForm;
+  LPreviousShutdownState := GIsShuttingDown;
+  GIsShuttingDown := True;
+  try
+    if Assigned(GRadIADockableFormHost) then
+    begin
+      GRadIADockableFormHost.PersistCurrentState;
+      GRadIADockableFormHost.ReleaseForm;
+    end;
+    if Assigned(GRadIATerminalDockableFormHost) then
+    begin
+      GRadIATerminalDockableFormHost.PersistCurrentState;
+      GRadIATerminalDockableFormHost.ReleaseForm;
+    end;
+  finally
+    GIsShuttingDown := LPreviousShutdownState;
   end;
 end;
 
