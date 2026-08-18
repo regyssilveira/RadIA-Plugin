@@ -1,6 +1,6 @@
 # Operational reference of internal tools
 
-This page explains RadIA's 212 internal tools: what each one does and at what stage
+This page explains RadIA's 213 internal tools: what each one does and at what stage
 it is usually triggered.
 
 The [generated catalog](runtime_tool_catalog.en.md) remains the technical source for registered names.
