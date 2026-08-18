@@ -75,6 +75,19 @@ type
     FRecoveryQueued: Boolean;
     FWebViewSmokeEvidencePath: string;
     FWebViewSmokeStarted: Boolean;
+    FConversationSmokeEvidencePath: string;
+    FConversationSmokePrompt: string;
+    FConversationSmokeStarted: Boolean;
+    FCancellationSmokeEvidencePath: string;
+    FCancellationSmokeStarted: Boolean;
+    FProviderRecoverySmokeEvidencePath: string;
+    FProviderRecoverySmokeStarted: Boolean;
+    FAgentBudgetSmokeEvidencePath: string;
+    FAgentBudgetSmokeStarted: Boolean;
+    FNaturalVclSmokeEvidencePath: string;
+    FNaturalVclSmokeStarted: Boolean;
+    FSessionIsolationSmokeEvidencePath: string;
+    FSessionIsolationSmokeStarted: Boolean;
     FWebStateJson: string;
     FWebViewLifecycle: TRadIAWebViewLifecycle;
 
@@ -95,9 +108,21 @@ type
     function CaptureWebViewState(const AJson: string): Boolean;
     function ContinueWebViewLifecycleSmoke(const AJson: string): Boolean;
     function CaptureWebViewSmokeResult(const AJson: string): Boolean;
+    function CaptureConversationSmokeResult(const AJson: string): Boolean;
+    function CaptureCancellationSmokeResult(const AJson: string): Boolean;
+    function CaptureProviderRecoverySmokeResult(const AJson: string): Boolean;
+    function CaptureAgentBudgetSmokeResult(const AJson: string): Boolean;
+    function CaptureNaturalVclSmokeResult(const AJson: string): Boolean;
+    function CaptureSessionIsolationSmokeResult(const AJson: string): Boolean;
     procedure ProcessWebPayload(const AJson: string);
     procedure RestoreWebViewState;
     procedure RunWebViewLifecycleSmoke;
+    procedure RunConversationSmoke;
+    procedure RunCancellationSmoke;
+    procedure RunProviderRecoverySmoke;
+    procedure RunAgentBudgetSmoke;
+    procedure RunNaturalVclSmoke;
+    procedure RunSessionIsolationSmoke;
     procedure CMShowingChanged(var Message: TMessage); message CM_SHOWINGCHANGED;
     procedure InitializeWebView;
     procedure CopyWebFiles;
@@ -158,12 +183,405 @@ uses
   RadIA.Core.Mediator, RadIA.Core.Logger, RadIA.Core.Container,
   Winapi.ActiveX, RadIA.Core.ProviderRegistry, RadIA.Core.Types, Winapi.Windows,
   Winapi.ShellAPI, RadIA.Core.Interfaces, RadIA.OTA.DockableForm,
-  RadIA.UI.ExtensionManagerForm;
+  RadIA.UI.ExtensionManagerForm, RadIA.Core.TokenUsage, RadIA.Core.Cache,
+  RadIA.Core.HierarchicalSettings;
 
 {$R *.dfm}
 
 const
   CWebViewScrollbarStyleId = 'radia-scrollbar-style';
+
+type
+  TRadIAConversationSmokeService = class(TInterfacedObject, IRadIAService)
+  private
+    function TrySendNaturalVclPrompt(
+      const APrompt: string;
+      const ACallback: TCompletionCallback
+    ): Boolean;
+    function TrySendAgentBudgetPrompt(
+      const APrompt: string;
+      const ACallback: TCompletionCallback
+    ): Boolean;
+  public
+    function GetEffectiveSystemPrompt: string;
+    procedure ResolveParameters(const AProviderName: string;
+      const AProfile: TAIRequestProfile; out ATemperature: Double;
+      out AMaxTokens: Integer);
+    function CreateActiveProvider: IRadIAProvider;
+    function TrimHistory(const AHistory: TArray<IRadIAChatMessage>):
+      TArray<IRadIAChatMessage>;
+    procedure SendPrompt(const APrompt: string;
+      const AHistory: TArray<IRadIAChatMessage>;
+      const ACallback: TCompletionCallback;
+      const AProfile: TAIRequestProfile = rpGeneralChat);
+    procedure SendPromptStream(const APrompt: string;
+      const AHistory: TArray<IRadIAChatMessage>;
+      const ACallback: TStreamChunkCallback;
+      const AProfile: TAIRequestProfile = rpGeneralChat);
+    procedure SendPromptStreamWithSettings(const APrompt: string;
+      const AHistory: TArray<IRadIAChatMessage>;
+      const ACallback: TStreamChunkCallback;
+      const AProfile: TAIRequestProfile;
+      const ASettings: TRadIAExecutionSettings);
+    procedure CancelCurrentRequest;
+    procedure ClearCache;
+    function ListCacheEntries: TArray<TRadIACacheEntrySnapshot>;
+    function RemoveCacheEntry(const AHash: string): Boolean;
+  end;
+
+procedure TRadIAConversationSmokeService.CancelCurrentRequest;
+begin
+  if True then ; // The pending deterministic smoke callback is intentionally discarded.
+end;
+
+procedure TRadIAConversationSmokeService.ClearCache;
+begin
+  if True then ; // The smoke service has no cache.
+end;
+
+function TRadIAConversationSmokeService.CreateActiveProvider: IRadIAProvider;
+begin
+  Result := nil;
+end;
+
+function TRadIAConversationSmokeService.GetEffectiveSystemPrompt: string;
+begin
+  Result := '';
+end;
+
+function TRadIAConversationSmokeService.ListCacheEntries:
+  TArray<TRadIACacheEntrySnapshot>;
+begin
+  Result := [];
+end;
+
+function ParseAgentCurrentState(const APrompt: string): TJSONObject;
+var
+  LMarkerPosition: Integer;
+  LStateText: string;
+  LValue: TJSONValue;
+begin
+  Result := nil;
+  LMarkerPosition := APrompt.IndexOf('CURRENT_STATE:');
+  if LMarkerPosition < 0 then
+    Exit;
+  LStateText := Trim(APrompt.Substring(
+    LMarkerPosition + Length('CURRENT_STATE:')
+  ));
+  LValue := TJSONObject.ParseJSONValue(LStateText);
+  if LValue is TJSONObject then
+    Result := TJSONObject(LValue)
+  else
+    LValue.Free;
+end;
+
+function AgentStatePlanApproved(const APrompt: string): Boolean;
+var
+  LState: TJSONObject;
+begin
+  LState := ParseAgentCurrentState(APrompt);
+  try
+    Result := Assigned(LState) and
+      LState.GetValue<Boolean>('planApproved', False);
+  finally
+    LState.Free;
+  end;
+end;
+
+function FindSuccessfulAgentToolStep(
+  const APrompt: string;
+  const AToolName: string
+): TJSONObject;
+var
+  LItem: TJSONValue;
+  LState: TJSONObject;
+  LSteps: TJSONArray;
+  LStep: TJSONObject;
+begin
+  Result := nil;
+  LState := ParseAgentCurrentState(APrompt);
+  if not Assigned(LState) then
+    Exit;
+  try
+    LSteps := LState.GetValue<TJSONArray>('steps');
+    if not Assigned(LSteps) then
+      Exit;
+    for LItem in LSteps do
+      if LItem is TJSONObject then
+      begin
+        LStep := TJSONObject(LItem);
+        if SameText(LStep.GetValue<string>('toolName', ''), AToolName) and
+          LStep.GetValue<Boolean>('success', False) then
+          Exit(TJSONObject.ParseJSONValue(LStep.ToJSON) as TJSONObject);
+      end;
+  finally
+    LState.Free;
+  end;
+end;
+
+function AgentStateHasSuccessfulTool(
+  const APrompt: string;
+  const AToolName: string
+): Boolean;
+var
+  LStep: TJSONObject;
+begin
+  LStep := FindSuccessfulAgentToolStep(APrompt, AToolName);
+  try
+    Result := Assigned(LStep);
+  finally
+    LStep.Free;
+  end;
+end;
+
+function AgentToolResultString(
+  const APrompt: string;
+  const AToolName: string;
+  const APropertyName: string
+): string;
+var
+  LResultJson: TJSONValue;
+  LStep: TJSONObject;
+begin
+  Result := '';
+  LStep := FindSuccessfulAgentToolStep(APrompt, AToolName);
+  if not Assigned(LStep) then
+    Exit;
+  try
+    LResultJson := TJSONObject.ParseJSONValue(
+      LStep.GetValue<string>('result', '')
+    );
+    try
+      if LResultJson is TJSONObject then
+        Result := TJSONObject(LResultJson).GetValue<string>(
+          APropertyName,
+          ''
+        );
+    finally
+      LResultJson.Free;
+    end;
+  finally
+    LStep.Free;
+  end;
+end;
+
+function JsonQuoted(const AValue: string): string;
+var
+  LJson: TJSONString;
+begin
+  LJson := TJSONString.Create(AValue);
+  try
+    Result := LJson.ToJSON;
+  finally
+    LJson.Free;
+  end;
+end;
+
+function TRadIAConversationSmokeService.RemoveCacheEntry(
+  const AHash: string
+): Boolean;
+begin
+  Result := False;
+end;
+
+procedure TRadIAConversationSmokeService.ResolveParameters(
+  const AProviderName: string;
+  const AProfile: TAIRequestProfile;
+  out ATemperature: Double;
+  out AMaxTokens: Integer
+);
+begin
+  ATemperature := 0;
+  AMaxTokens := 64;
+end;
+
+procedure TRadIAConversationSmokeService.SendPrompt(
+  const APrompt: string;
+  const AHistory: TArray<IRadIAChatMessage>;
+  const ACallback: TCompletionCallback;
+  const AProfile: TAIRequestProfile
+);
+begin
+  if TrySendNaturalVclPrompt(APrompt, ACallback) then
+    Exit;
+  if TrySendAgentBudgetPrompt(APrompt, ACallback) then
+    Exit;
+  ACallback(
+    'I am RadIA, your Delphi development assistant.',
+    '',
+    False,
+    TTokenUsage.Empty
+  );
+end;
+
+function TRadIAConversationSmokeService.TrySendNaturalVclPrompt(
+  const APrompt: string;
+  const ACallback: TCompletionCallback
+): Boolean;
+begin
+  Result :=
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')) <> '') and
+    APrompt.Contains('CURRENT_STATE:');
+  if not Result then
+    Exit;
+  if not AgentStatePlanApproved(APrompt) then
+    ACallback(
+        '{"kind":"plan","message":"Create and validate the VCL project.",' +
+        '"steps":[{"title":"Create project",' +
+        '"description":"Preview, create, open, build, and run"}]}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if not AgentStateHasSuccessfulTool(
+      APrompt,
+      'PreviewProjectTemplate'
+    ) then
+      ACallback(
+        '{"kind":"tool","tool":"PreviewProjectTemplate","arguments":{' +
+        '"projectName":"RadIAUserCalculator","template":"vcl",' +
+        '"delphiVersion":' + JsonQuoted(GetEnvironmentVariable(
+          'RADIA_IDE_SMOKE_DELPHI_VERSION'
+        )) + ',"platforms":[' + JsonQuoted(GetEnvironmentVariable(
+          'RADIA_IDE_SMOKE_TARGET_PLATFORM'
+        )) + '],"destinationPath":' + JsonQuoted(GetEnvironmentVariable(
+          'RADIA_IDE_SMOKE_NATURAL_VCL_DESTINATION'
+        )) + ',"authorizedRoot":' + JsonQuoted(GetEnvironmentVariable(
+          'RADIA_IDE_SMOKE_NATURAL_VCL_ROOT'
+        )) + ',"projectSpecification":{"schemaVersion":1,' +
+        '"kind":"calculator","creationProfile":"essential"}}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if not AgentStateHasSuccessfulTool(
+      APrompt,
+      'CreateProjectFromTemplate'
+    ) then
+      ACallback(
+        '{"kind":"tool","tool":"CreateProjectFromTemplate",' +
+        '"arguments":{"previewId":' + JsonQuoted(
+          AgentToolResultString(
+            APrompt,
+            'PreviewProjectTemplate',
+            'previewId'
+          )
+        ) + '}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if not AgentStateHasSuccessfulTool(
+      APrompt,
+      'OpenCreatedProject'
+    ) then
+      ACallback(
+        '{"kind":"tool","tool":"OpenCreatedProject",' +
+        '"arguments":{"previewId":' + JsonQuoted(
+          AgentToolResultString(
+            APrompt,
+            'PreviewProjectTemplate',
+            'previewId'
+          )
+        ) + '}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if not AgentStateHasSuccessfulTool(APrompt, 'BuildProject') then
+      ACallback(
+        '{"kind":"tool","tool":"BuildProject",' +
+        '"arguments":{"mode":"build","timeoutMs":600000,' +
+        '"clearMessages":true}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if not AgentStateHasSuccessfulTool(APrompt, 'StartDebugging') then
+      ACallback(
+        '{"kind":"tool","tool":"StartDebugging","arguments":{}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else
+      ACallback(
+        '{"kind":"complete","message":"Project created, built, and started."}',
+        '',
+        False,
+        TTokenUsage.Empty
+      );
+end;
+
+function TRadIAConversationSmokeService.TrySendAgentBudgetPrompt(
+  const APrompt: string;
+  const ACallback: TCompletionCallback
+): Boolean;
+begin
+  Result :=
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) <> '') and
+    APrompt.Contains('CURRENT_STATE:');
+  if not Result then
+    Exit;
+  if not AgentStatePlanApproved(APrompt) then
+    ACallback(
+        '{"kind":"plan","message":"Approve IDE inspection.",' +
+        '"steps":[{"title":"Inspect IDE",' +
+        '"description":"Read the current IDE state once"}]}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if not AgentStateHasSuccessfulTool(APrompt, 'GetIDEState') then
+      ACallback(
+        '{"kind":"tool","tool":"GetIDEState","arguments":{}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else
+      ACallback(
+        '{"kind":"complete","message":"IDE inspection completed."}',
+        '',
+        False,
+        TTokenUsage.Empty
+      );
+end;
+
+procedure TRadIAConversationSmokeService.SendPromptStream(
+  const APrompt: string;
+  const AHistory: TArray<IRadIAChatMessage>;
+  const ACallback: TStreamChunkCallback;
+  const AProfile: TAIRequestProfile
+);
+begin
+  if APrompt.Contains('Wait for cancellation.') then
+    Exit;
+  if APrompt.Contains('Simulate provider timeout.') then
+  begin
+    ACallback('', True, 'RADIA_INTERNAL_PROVIDER_EXCEPTION timeout');
+    Exit;
+  end;
+  ACallback('I am RadIA, your Delphi development assistant.', True, '');
+end;
+
+procedure TRadIAConversationSmokeService.SendPromptStreamWithSettings(
+  const APrompt: string;
+  const AHistory: TArray<IRadIAChatMessage>;
+  const ACallback: TStreamChunkCallback;
+  const AProfile: TAIRequestProfile;
+  const ASettings: TRadIAExecutionSettings
+);
+begin
+  SendPromptStream(APrompt, AHistory, ACallback, AProfile);
+end;
+
+function TRadIAConversationSmokeService.TrimHistory(
+  const AHistory: TArray<IRadIAChatMessage>
+): TArray<IRadIAChatMessage>;
+begin
+  Result := Copy(AHistory);
+end;
 
 procedure TRadIAFrameAIChat.ExecutePrompt(const APrompt: string);
 begin
@@ -239,6 +657,8 @@ end;
 
 constructor TRadIAFrameAIChat.Create(AOwner: TComponent);
 var
+  LDataDir: string;
+  LService: IRadIAService;
   LThemingServices: IOTAIDEThemingServices;
 begin
   inherited Create(AOwner);
@@ -250,6 +670,35 @@ begin
     GetEnvironmentVariable('RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE')
   );
   FWebViewSmokeStarted := False;
+  FConversationSmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_CONVERSATION')
+  );
+  FConversationSmokeStarted := False;
+  FConversationSmokePrompt := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_CONVERSATION_PROMPT')
+  );
+  if FConversationSmokePrompt = '' then
+    FConversationSmokePrompt := 'Who are you?';
+  FCancellationSmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_CANCELLATION')
+  );
+  FCancellationSmokeStarted := False;
+  FProviderRecoverySmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_PROVIDER_RECOVERY')
+  );
+  FProviderRecoverySmokeStarted := False;
+  FAgentBudgetSmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')
+  );
+  FAgentBudgetSmokeStarted := False;
+  FNaturalVclSmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')
+  );
+  FNaturalVclSmokeStarted := False;
+  FSessionIsolationSmokeEvidencePath := Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_SESSION_ISOLATION')
+  );
+  FSessionIsolationSmokeStarted := False;
   FWebStateJson := '{}';
   FWebViewLifecycle := TRadIAWebViewLifecycle.Create(2);
 
@@ -266,7 +715,22 @@ begin
   FWebFilesDir := TPath.Combine(TPath.GetHomePath, 'RadIA\Web');
   CopyWebFiles;
 
-  FPresenter := TRadIAChatPresenter.Create(Self, nil);
+  if (FConversationSmokeEvidencePath <> '') or
+    (FCancellationSmokeEvidencePath <> '') or
+    (FProviderRecoverySmokeEvidencePath <> '') or
+    (FAgentBudgetSmokeEvidencePath <> '') or
+    (FNaturalVclSmokeEvidencePath <> '') or
+    (FSessionIsolationSmokeEvidencePath <> '') then
+  begin
+    LDataDir := TPath.Combine(
+      TPath.GetTempPath,
+      'RadIA-Conversation-Smoke'
+    );
+    LService := TRadIAConversationSmokeService.Create;
+    FPresenter := TRadIAChatPresenter.Create(Self, nil, LService, LDataDir);
+  end
+  else
+    FPresenter := TRadIAChatPresenter.Create(Self, nil);
 
   if Supports(BorlandIDEServices, IOTAIDEThemingServices, LThemingServices) then
   begin
@@ -854,6 +1318,18 @@ begin
     Exit;
   if CaptureWebViewSmokeResult(AJson) then
     Exit;
+  if CaptureConversationSmokeResult(AJson) then
+    Exit;
+  if CaptureCancellationSmokeResult(AJson) then
+    Exit;
+  if CaptureProviderRecoverySmokeResult(AJson) then
+    Exit;
+  if CaptureAgentBudgetSmokeResult(AJson) then
+    Exit;
+  if CaptureNaturalVclSmokeResult(AJson) then
+    Exit;
+  if CaptureSessionIsolationSmokeResult(AJson) then
+    Exit;
   LAction := '';
   LJson := TJSONObject.ParseJSONValue(AJson);
   try
@@ -867,7 +1343,532 @@ begin
   begin
     RestoreWebViewState;
     RunWebViewLifecycleSmoke;
+    RunConversationSmoke;
+    RunCancellationSmoke;
+    RunProviderRecoverySmoke;
+    RunAgentBudgetSmoke;
+    RunNaturalVclSmoke;
+    RunSessionIsolationSmoke;
   end;
+end;
+
+function TRadIAFrameAIChat.CaptureSessionIsolationSmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LEvidenceDirectory: string;
+  LJson: TJSONValue;
+  LRoot: TJSONObject;
+begin
+  Result := False;
+  if FSessionIsolationSmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'session_isolation_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LEvidenceDirectory := ExtractFileDir(FSessionIsolationSmokeEvidencePath);
+    if LEvidenceDirectory <> '' then
+      ForceDirectories(LEvidenceDirectory);
+    TFile.WriteAllText(
+      FSessionIsolationSmokeEvidencePath,
+      LRoot.ToJSON,
+      TEncoding.UTF8
+    );
+  finally
+    LJson.Free;
+  end;
+end;
+
+function TRadIAFrameAIChat.CaptureConversationSmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LAnswerVisible: Boolean;
+  LConsentVisible: Boolean;
+  LDuration: Integer;
+  LEvidence: TJSONObject;
+  LEvidenceDirectory: string;
+  LJson: TJSONValue;
+  LPassed: Boolean;
+  LPlanVisible: Boolean;
+  LRoot: TJSONObject;
+  LStepLimitReached: Boolean;
+begin
+  Result := False;
+  if FConversationSmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'conversation_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LAnswerVisible := LRoot.GetValue<Boolean>('answerVisible', False);
+    LConsentVisible := LRoot.GetValue<Boolean>('consentVisible', False);
+    LPlanVisible := LRoot.GetValue<Boolean>('planVisible', False);
+    LStepLimitReached := LRoot.GetValue<Boolean>('stepLimitReached', False);
+    LDuration := LRoot.GetValue<Integer>('elapsedMilliseconds', MaxInt);
+    LPassed := SameText(LRoot.GetValue<string>('status', ''), 'passed') and
+      LAnswerVisible and not LConsentVisible and not LPlanVisible and
+      not LStepLimitReached and (LDuration <= 20000);
+    LEvidence := TJSONObject.Create;
+    try
+      LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvidence.AddPair('evidenceKind', 'directConversationSmoke');
+      LEvidence.AddPair('status', IfThen(LPassed, 'passed', 'failed'));
+      LEvidence.AddPair('answerVisible', TJSONBool.Create(LAnswerVisible));
+      LEvidence.AddPair('planVisible', TJSONBool.Create(LPlanVisible));
+      LEvidence.AddPair('consentVisible', TJSONBool.Create(LConsentVisible));
+      LEvidence.AddPair(
+        'stepLimitReached',
+        TJSONBool.Create(LStepLimitReached)
+      );
+      LEvidence.AddPair('elapsedMilliseconds', TJSONNumber.Create(LDuration));
+      LEvidence.AddPair('promptContentStored', TJSONBool.Create(False));
+      LEvidence.AddPair('responseContentStored', TJSONBool.Create(False));
+      LEvidenceDirectory := ExtractFileDir(FConversationSmokeEvidencePath);
+      if LEvidenceDirectory <> '' then
+        ForceDirectories(LEvidenceDirectory);
+      TFile.WriteAllText(
+        FConversationSmokeEvidencePath,
+        LEvidence.ToJSON,
+        TEncoding.UTF8
+      );
+    finally
+      LEvidence.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RunConversationSmoke;
+var
+  LPromptJson: TJSONString;
+begin
+  if (FConversationSmokeEvidencePath = '') or
+    FConversationSmokeStarted or not Assigned(FEdgeBrowser) then
+    Exit;
+  FConversationSmokeStarted := True;
+  LPromptJson := TJSONString.Create(FConversationSmokePrompt);
+  try
+    FEdgeBrowser.ExecuteScript(
+      'beginConversationSmoke(' + LPromptJson.ToJSON + ', 20000);'
+    );
+  finally
+    LPromptJson.Free;
+  end;
+end;
+
+function TRadIAFrameAIChat.CaptureCancellationSmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LDuration: Integer;
+  LEvidence: TJSONObject;
+  LEvidenceDirectory: string;
+  LIdeRestartRequired: Boolean;
+  LJson: TJSONValue;
+  LNextAnswerVisible: Boolean;
+  LPassed: Boolean;
+  LRequestCancelled: Boolean;
+  LRoot: TJSONObject;
+  LUiIdle: Boolean;
+begin
+  Result := False;
+  if FCancellationSmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'cancellation_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LRequestCancelled := LRoot.GetValue<Boolean>('requestCancelled', False);
+    LUiIdle := LRoot.GetValue<Boolean>('uiIdle', False);
+    LNextAnswerVisible := LRoot.GetValue<Boolean>('nextAnswerVisible', False);
+    LIdeRestartRequired := LRoot.GetValue<Boolean>('ideRestartRequired', True);
+    LDuration := LRoot.GetValue<Integer>('elapsedMilliseconds', MaxInt);
+    LPassed := SameText(LRoot.GetValue<string>('status', ''), 'passed') and
+      LRequestCancelled and LUiIdle and LNextAnswerVisible and
+      not LIdeRestartRequired and (LDuration <= 90000);
+    LEvidence := TJSONObject.Create;
+    try
+      LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvidence.AddPair('evidenceKind', 'requestCancellationSmoke');
+      LEvidence.AddPair('status', IfThen(LPassed, 'passed', 'failed'));
+      LEvidence.AddPair(
+        'requestCancelled',
+        TJSONBool.Create(LRequestCancelled)
+      );
+      LEvidence.AddPair('uiIdle', TJSONBool.Create(LUiIdle));
+      LEvidence.AddPair(
+        'nextAnswerVisible',
+        TJSONBool.Create(LNextAnswerVisible)
+      );
+      LEvidence.AddPair(
+        'ideRestartRequired',
+        TJSONBool.Create(LIdeRestartRequired)
+      );
+      LEvidence.AddPair('elapsedMilliseconds', TJSONNumber.Create(LDuration));
+      LEvidenceDirectory := ExtractFileDir(FCancellationSmokeEvidencePath);
+      if LEvidenceDirectory <> '' then
+        ForceDirectories(LEvidenceDirectory);
+      TFile.WriteAllText(
+        FCancellationSmokeEvidencePath,
+        LEvidence.ToJSON,
+        TEncoding.UTF8
+      );
+    finally
+      LEvidence.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RunCancellationSmoke;
+begin
+  if (FCancellationSmokeEvidencePath = '') or
+    FCancellationSmokeStarted or not Assigned(FEdgeBrowser) then
+    Exit;
+  FCancellationSmokeStarted := True;
+  FEdgeBrowser.ExecuteScript('beginCancellationSmoke(30000);');
+end;
+
+function TRadIAFrameAIChat.CaptureProviderRecoverySmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LActionableErrorVisible: Boolean;
+  LChatFrozen: Boolean;
+  LDuration: Integer;
+  LEvidence: TJSONObject;
+  LEvidenceDirectory: string;
+  LJson: TJSONValue;
+  LPassed: Boolean;
+  LRawExceptionVisible: Boolean;
+  LRetrySucceeded: Boolean;
+  LRoot: TJSONObject;
+  LSessionPreserved: Boolean;
+begin
+  Result := False;
+  if FProviderRecoverySmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'provider_recovery_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LActionableErrorVisible := LRoot.GetValue<Boolean>(
+      'actionableErrorVisible',
+      False
+    );
+    LSessionPreserved := LRoot.GetValue<Boolean>('sessionPreserved', False);
+    LRetrySucceeded := LRoot.GetValue<Boolean>('retrySucceeded', False);
+    LRawExceptionVisible := LRoot.GetValue<Boolean>(
+      'rawExceptionVisible',
+      True
+    );
+    LChatFrozen := LRoot.GetValue<Boolean>('chatFrozen', True);
+    LDuration := LRoot.GetValue<Integer>('elapsedMilliseconds', MaxInt);
+    LPassed := SameText(LRoot.GetValue<string>('status', ''), 'passed') and
+      LActionableErrorVisible and LSessionPreserved and LRetrySucceeded and
+      not LRawExceptionVisible and not LChatFrozen and (LDuration <= 120000);
+    LEvidence := TJSONObject.Create;
+    try
+      LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvidence.AddPair('evidenceKind', 'providerRecoverySmoke');
+      LEvidence.AddPair('status', IfThen(LPassed, 'passed', 'failed'));
+      LEvidence.AddPair(
+        'actionableErrorVisible',
+        TJSONBool.Create(LActionableErrorVisible)
+      );
+      LEvidence.AddPair(
+        'sessionPreserved',
+        TJSONBool.Create(LSessionPreserved)
+      );
+      LEvidence.AddPair('retrySucceeded', TJSONBool.Create(LRetrySucceeded));
+      LEvidence.AddPair(
+        'rawExceptionVisible',
+        TJSONBool.Create(LRawExceptionVisible)
+      );
+      LEvidence.AddPair('chatFrozen', TJSONBool.Create(LChatFrozen));
+      LEvidence.AddPair('elapsedMilliseconds', TJSONNumber.Create(LDuration));
+      LEvidenceDirectory := ExtractFileDir(FProviderRecoverySmokeEvidencePath);
+      if LEvidenceDirectory <> '' then
+        ForceDirectories(LEvidenceDirectory);
+      TFile.WriteAllText(
+        FProviderRecoverySmokeEvidencePath,
+        LEvidence.ToJSON,
+        TEncoding.UTF8
+      );
+    finally
+      LEvidence.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RunProviderRecoverySmoke;
+begin
+  if (FProviderRecoverySmokeEvidencePath = '') or
+    FProviderRecoverySmokeStarted or not Assigned(FEdgeBrowser) then
+    Exit;
+  FProviderRecoverySmokeStarted := True;
+  FEdgeBrowser.ExecuteScript('beginProviderRecoverySmoke(60000);');
+end;
+
+function TRadIAFrameAIChat.CaptureAgentBudgetSmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LBudgetRemaining: Boolean;
+  LDuration: Integer;
+  LEvidence: TJSONObject;
+  LEvidenceDirectory: string;
+  LJourneyCompleted: Boolean;
+  LJson: TJSONValue;
+  LPassed: Boolean;
+  LPlanApproved: Boolean;
+  LRepeatedReadOnlyLoop: Boolean;
+  LRoot: TJSONObject;
+  LStepCount: Integer;
+  LStepLimitReached: Boolean;
+begin
+  Result := False;
+  if FAgentBudgetSmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'agent_budget_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LPlanApproved := LRoot.GetValue<Boolean>('planApproved', False);
+    LJourneyCompleted := LRoot.GetValue<Boolean>('journeyCompleted', False);
+    LBudgetRemaining := LRoot.GetValue<Boolean>('budgetRemaining', False);
+    LRepeatedReadOnlyLoop := LRoot.GetValue<Boolean>(
+      'repeatedReadOnlyLoop',
+      True
+    );
+    LStepLimitReached := LRoot.GetValue<Boolean>('stepLimitReached', True);
+    LStepCount := LRoot.GetValue<Integer>('stepCount', MaxInt);
+    LDuration := LRoot.GetValue<Integer>('elapsedMilliseconds', MaxInt);
+    LPassed := SameText(LRoot.GetValue<string>('status', ''), 'passed') and
+      LPlanApproved and LJourneyCompleted and LBudgetRemaining and
+      not LRepeatedReadOnlyLoop and not LStepLimitReached and
+      (LDuration <= 300000);
+    LEvidence := TJSONObject.Create;
+    try
+      LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvidence.AddPair('evidenceKind', 'agentStepBudgetSmoke');
+      LEvidence.AddPair('status', IfThen(LPassed, 'passed', 'failed'));
+      LEvidence.AddPair('planApproved', TJSONBool.Create(LPlanApproved));
+      LEvidence.AddPair(
+        'journeyCompleted',
+        TJSONBool.Create(LJourneyCompleted)
+      );
+      LEvidence.AddPair(
+        'budgetRemaining',
+        TJSONBool.Create(LBudgetRemaining)
+      );
+      LEvidence.AddPair(
+        'repeatedReadOnlyLoop',
+        TJSONBool.Create(LRepeatedReadOnlyLoop)
+      );
+      LEvidence.AddPair(
+        'stepLimitReached',
+        TJSONBool.Create(LStepLimitReached)
+      );
+      LEvidence.AddPair('stepCount', TJSONNumber.Create(LStepCount));
+      LEvidence.AddPair('elapsedMilliseconds', TJSONNumber.Create(LDuration));
+      LEvidenceDirectory := ExtractFileDir(FAgentBudgetSmokeEvidencePath);
+      if LEvidenceDirectory <> '' then
+        ForceDirectories(LEvidenceDirectory);
+      TFile.WriteAllText(
+        FAgentBudgetSmokeEvidencePath,
+        LEvidence.ToJSON,
+        TEncoding.UTF8
+      );
+    finally
+      LEvidence.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RunAgentBudgetSmoke;
+begin
+  if (FAgentBudgetSmokeEvidencePath = '') or
+    FAgentBudgetSmokeStarted or not Assigned(FEdgeBrowser) then
+    Exit;
+  FAgentBudgetSmokeStarted := True;
+  FEdgeBrowser.ExecuteScript('beginAgentBudgetSmoke(120000);');
+end;
+
+function TRadIAFrameAIChat.CaptureNaturalVclSmokeResult(
+  const AJson: string
+): Boolean;
+var
+  LEvidence: TJSONObject;
+  LEvidenceDirectory: string;
+  LJson: TJSONValue;
+  LPassed: Boolean;
+  LRoot: TJSONObject;
+begin
+  Result := False;
+  if FNaturalVclSmokeEvidencePath = '' then
+    Exit;
+  LJson := TJSONObject.ParseJSONValue(AJson);
+  try
+    if not (LJson is TJSONObject) then
+      Exit;
+    LRoot := TJSONObject(LJson);
+    if not SameText(
+      LRoot.GetValue<string>('action', ''),
+      'natural_vcl_smoke_result'
+    ) then
+      Exit;
+    Result := True;
+    LPassed := SameText(LRoot.GetValue<string>('status', ''), 'passed') and
+      LRoot.GetValue<Boolean>('recommendationAccepted', False) and
+      LRoot.GetValue<Boolean>('previewSucceeded', False) and
+      LRoot.GetValue<Boolean>('creationSucceeded', False) and
+      LRoot.GetValue<Boolean>('projectOpened', False) and
+      LRoot.GetValue<Boolean>('buildPassed', False) and
+      LRoot.GetValue<Boolean>('applicationStarted', False) and
+      not LRoot.GetValue<Boolean>('cliCompletedEarly', True) and
+      not LRoot.GetValue<Boolean>('toolUnavailable', True);
+    LEvidence := TJSONObject.Create;
+    try
+      LEvidence.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvidence.AddPair('evidenceKind', 'naturalVclChatJourney');
+      LEvidence.AddPair('status', IfThen(LPassed, 'passed', 'failed'));
+      LEvidence.AddPair('reason', LRoot.GetValue<string>('reason', ''));
+      LEvidence.AddPair('failedTool', LRoot.GetValue<string>('failedTool', ''));
+      LEvidence.AddPair('errorCode', LRoot.GetValue<string>('errorCode', ''));
+      LEvidence.AddPair('agentMessage', LRoot.GetValue<string>('agentMessage', ''));
+      LEvidence.AddPair(
+        'recommendationAccepted',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('recommendationAccepted', False))
+      );
+      LEvidence.AddPair(
+        'previewSucceeded',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('previewSucceeded', False))
+      );
+      LEvidence.AddPair(
+        'creationSucceeded',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('creationSucceeded', False))
+      );
+      LEvidence.AddPair(
+        'projectOpened',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('projectOpened', False))
+      );
+      LEvidence.AddPair(
+        'buildPassed',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('buildPassed', False))
+      );
+      LEvidence.AddPair(
+        'applicationStarted',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('applicationStarted', False))
+      );
+      LEvidence.AddPair(
+        'cliCompletedEarly',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('cliCompletedEarly', True))
+      );
+      LEvidence.AddPair(
+        'toolUnavailable',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('toolUnavailable', True))
+      );
+      LEvidence.AddPair(
+        'elapsedMilliseconds',
+        TJSONNumber.Create(LRoot.GetValue<Integer>('elapsedMilliseconds', MaxInt))
+      );
+      LEvidenceDirectory := ExtractFileDir(FNaturalVclSmokeEvidencePath);
+      if LEvidenceDirectory <> '' then
+        ForceDirectories(LEvidenceDirectory);
+      TFile.WriteAllText(
+        FNaturalVclSmokeEvidencePath,
+        LEvidence.ToJSON,
+        TEncoding.UTF8
+      );
+    finally
+      LEvidence.Free;
+    end;
+  finally
+    LJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RunNaturalVclSmoke;
+var
+  LDestination: string;
+  LPrompt: string;
+  LPromptJson: TJSONString;
+begin
+  if (FNaturalVclSmokeEvidencePath = '') or not Assigned(FEdgeBrowser) then
+    Exit;
+  if FNaturalVclSmokeStarted then
+  begin
+    FEdgeBrowser.ExecuteScript('resumeNaturalVclSmoke(300000);');
+    Exit;
+  end;
+  FNaturalVclSmokeStarted := True;
+  LDestination := GetEnvironmentVariable(
+    'RADIA_IDE_SMOKE_NATURAL_VCL_DESTINATION'
+  );
+  LPrompt :=
+    'Crie uma calculadora em VCL que exiba também o histórico das operações ' +
+    'matemáticas realizadas. Grave em ' + LDestination;
+  LPromptJson := TJSONString.Create(LPrompt);
+  try
+    FEdgeBrowser.ExecuteScript(
+      'beginNaturalVclSmoke(' + LPromptJson.ToJSON + ', 300000);'
+    );
+  finally
+    LPromptJson.Free;
+  end;
+end;
+
+procedure TRadIAFrameAIChat.RunSessionIsolationSmoke;
+begin
+  if (FSessionIsolationSmokeEvidencePath = '') or
+    FSessionIsolationSmokeStarted or not Assigned(FEdgeBrowser) then
+    Exit;
+  FSessionIsolationSmokeStarted := True;
+  FEdgeBrowser.ExecuteScript('beginSessionIsolationSmoke(60000);');
 end;
 
 function TRadIAFrameAIChat.ContinueWebViewLifecycleSmoke(

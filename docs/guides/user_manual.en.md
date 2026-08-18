@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.3 user manual
+# Complete RadIA 2.17.4 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.3`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.4`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -524,7 +524,7 @@ See the [security model](../reference/tool_security_model.en.md) and
 
 - Free-form prompts do not automatically start an autonomous tool loop.
 - `/tools` is the authoritative runtime catalog.
-- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 212 registered built-in tools.
+- The [generated runtime catalog](../reference/runtime_tool_catalog.en.md) lists the 213 registered built-in tools.
 - The [thread and PPL assistant](threading_assistant.en.md) audits and prepares safe concurrency modernization.
 - The [OpenAPI/Swagger retrofit](openapi_retrofit.en.md) integrates documentation into existing DEXT APIs.
 - [DEXT and form modernization](dext_form_modernization.en.md) executes reversible, gated batches.

@@ -37,6 +37,44 @@ function Resolve-RadIAUsageEvidencePath {
     return $resolved
 }
 
+function Get-RadIAEvidenceValue {
+    param(
+        [Parameter(Mandatory = $true)]$Evidence,
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    $value = $Evidence
+    foreach ($segment in $Path.Split('.')) {
+        $property = $value.PSObject.Properties[$segment]
+        if (-not $property) {
+            return $null
+        }
+        $value = $property.Value
+    }
+    return $value
+}
+
+function Stop-RadIAUsageAuxiliaryProcesses {
+    $runningIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($runningIDEs.Count -gt 0) {
+        return
+    }
+    $processes = @(
+        Get-Process `
+            -Name "RadIA.Semantic.Engine", "RadIA.MCP.Bridge" `
+            -ErrorAction SilentlyContinue
+    )
+    foreach ($process in $processes) {
+        Stop-Process -Id $process.Id -Force
+        if (-not $process.WaitForExit(10000)) {
+            throw "RadIA auxiliary process did not stop between journeys."
+        }
+    }
+}
+
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Usage matrix manifest was not found: $manifestPath"
 }
@@ -111,17 +149,10 @@ if ($selectedTargets.Count -eq 0 -or $selectedScenarios.Count -eq 0) {
 $resolvedEvidencePath = Resolve-RadIAUsageEvidencePath -Path $EvidencePath
 $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
 $planEntries = @()
-foreach ($scenario in $selectedScenarios) {
-    $scenarioTargets = if ($scenario.scope -eq "host") {
-        @([PSCustomObject]@{
-            id = "host-neutral"
-            delphiVersion = ""
-            ide64 = $false
-        })
-    } else {
-        $selectedTargets
-    }
-    foreach ($target in $scenarioTargets) {
+foreach ($target in $selectedTargets) {
+    foreach ($scenario in @($selectedScenarios | Where-Object {
+        $_.scope -ne "host"
+    })) {
         $targetEvidence = Join-Path `
             $evidenceDirectory `
             "$($scenario.id)-$($target.id).json"
@@ -137,7 +168,29 @@ foreach ($scenario in $selectedScenarios) {
             evidencePath = $targetEvidence
             scope = $scenario.scope
             testPath = $scenario.testPath
+            runnerArguments = @($scenario.runnerArguments)
         }
+    }
+}
+foreach ($scenario in @($selectedScenarios | Where-Object {
+    $_.scope -eq "host"
+})) {
+    $targetEvidence = Join-Path `
+        $evidenceDirectory `
+        "$($scenario.id)-host-neutral.json"
+    $planEntries += [PSCustomObject]@{
+        targetId = "host-neutral"
+        delphiVersion = ""
+        ideArchitecture = "Win32"
+        scenarioId = $scenario.id
+        runner = $scenario.runner
+        cycles = $scenario.cycles
+        startupTimeoutSeconds = $scenario.startupTimeoutSeconds
+        requiredEvidence = @($scenario.requiredEvidence)
+        evidencePath = $targetEvidence
+        scope = $scenario.scope
+        testPath = $scenario.testPath
+        runnerArguments = @($scenario.runnerArguments)
     }
 }
 
@@ -161,12 +214,76 @@ New-Item `
     Out-Null
 $results = @()
 $matrixStopwatch = [Diagnostics.Stopwatch]::StartNew()
+$installedTargetId = ""
 foreach ($run in $planEntries) {
+    Stop-RadIAUsageAuxiliaryProcesses
+    if ($Profile -eq "release" -and $run.scope -ne "host" -and
+        $installedTargetId -ne $run.targetId) {
+        $installArguments = @{
+            DelphiVersion = $run.delphiVersion
+            Install = $true
+            Package = $true
+            Release = $true
+        }
+        if ($run.ideArchitecture -eq "Win64") {
+            $installArguments.IDE64 = $true
+        }
+        & (Join-Path $repositoryRoot "build.ps1") @installArguments
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not install the current package for $($run.targetId)."
+        }
+        $installedTargetId = $run.targetId
+    }
     $stopwatch = [Diagnostics.Stopwatch]::StartNew()
     if ($run.scope -eq "host") {
         $testFile = Join-Path $repositoryRoot $run.testPath
         $output = & node --test --test-isolation=none $testFile 2>&1 | Out-String
         $exitCode = $LASTEXITCODE
+        } elseif ($run.scope -in @("ide-journey", "user-journey")) {
+        $journeyPath = Join-Path $PSScriptRoot $run.runner
+        $arguments = @(
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            $journeyPath,
+            "-DelphiVersion",
+            $run.delphiVersion,
+            "-EvidencePath",
+            $run.evidencePath
+        )
+        if ($run.ideArchitecture -eq "Win64") {
+            $arguments += "-IDE64"
+        }
+        $arguments += @(
+            $run.runnerArguments |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+        )
+        $output = & powershell.exe @arguments 2>&1 | Out-String
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -eq 0) {
+            if (-not (Test-Path -LiteralPath $run.evidencePath -PathType Leaf)) {
+                $output += "`r`nUser-journey evidence was not created."
+                $exitCode = 1
+            } else {
+                $journeyEvidence = Get-Content `
+                    -LiteralPath $run.evidencePath `
+                    -Raw |
+                    ConvertFrom-Json
+                foreach ($requiredPath in $run.requiredEvidence) {
+                    if ((Get-RadIAEvidenceValue `
+                        -Evidence $journeyEvidence `
+                        -Path $requiredPath) -ne $true) {
+                        $output += (
+                            "`r`nRequired observable evidence was not true: " +
+                            $requiredPath
+                        )
+                        $exitCode = 1
+                        break
+                    }
+                }
+            }
+        }
     } else {
         $arguments = @(
             "-NoProfile",
@@ -202,7 +319,10 @@ foreach ($run in $planEntries) {
         status = $status
         exitCode = $exitCode
         durationMs = $stopwatch.ElapsedMilliseconds
-        evidencePath = if ($RequirePackageProvenance -and $run.scope -eq "ide") {
+        evidencePath = if (
+            $run.scope -eq "user-journey" -or
+            ($RequirePackageProvenance -and $run.scope -eq "ide")
+        ) {
             $run.evidencePath
         } else {
             ""

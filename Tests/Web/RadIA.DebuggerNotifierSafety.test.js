@@ -121,6 +121,28 @@ test('IDE smoke requests a native editor repaint before visual acceptance', () =
   );
   assert.match(smoke, /diagnostic\.painted/u);
   assert.match(smoke, /Test-RadIAPluginShutdownCompleted/u);
+  assert.match(
+    smoke,
+    /if \(\$mainWindow -eq \[IntPtr\]::Zero -and\s+\(Test-RadIAPluginShutdownCompleted\)\)/u
+  );
+  assert.doesNotMatch(
+    smoke,
+    /if \(\$FireDACScenarioId -and\s+\$mainWindow -eq \[IntPtr\]::Zero/u
+  );
+  assert.match(smoke, /\$verifiedShutdownHosts/u);
+  assert.match(smoke, /\[Diagnostics\.Process\]::GetProcessById/u);
+  assert.match(smoke, /-not \$liveProcess\.HasExited/u);
+  assert.match(
+    smoke,
+    /\$verifiedShutdownHosts\.Count -eq \$targetProcesses\.Count/u
+  );
+  assert.match(smoke, /\$cleanupRootDeadline/u);
+  assert.match(smoke, /Legacy installer process gate was not recognized/u);
+  assert.match(smoke, /\$legacyProcessGateCount -ne 1/u);
+  assert.match(smoke, /\$compatibleProcessGate/u);
+  assert.match(smoke, /Legacy installer manifest entry was not recognized/u);
+  assert.match(smoke, /\$legacyInstallerEntries\[0\]\.sha256/u);
+  assert.match(smoke, /\$legacyInstallerEntries\[0\]\.size/u);
   assert.match(smoke, /Background threads remaining after shutdown wait: 0/u);
   assert.match(smoke, /HostCleanupForced/u);
   assert.match(smoke, /access violation\|eaccessviolation/u);

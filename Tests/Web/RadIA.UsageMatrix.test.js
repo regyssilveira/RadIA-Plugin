@@ -12,6 +12,7 @@ const releaseRunnerPath = path.join(
   'scripts',
   'Test-RadIA.ReleaseUsage.ps1'
 );
+const buildPath = path.join(root, 'build.ps1');
 
 test('usage matrix covers every supported IDE target', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -58,6 +59,8 @@ test('usage matrix plan is deterministic and does not start Delphi', () => {
 
 test('release gate composes calculator, opening, and usage tests', () => {
   const source = fs.readFileSync(releaseRunnerPath, 'utf8');
+  const matrixSource = fs.readFileSync(runnerPath, 'utf8');
+  const buildSource = fs.readFileSync(buildPath, 'utf8');
   assert.match(source, /build\.ps1/u);
   assert.match(source, /-Test/u);
   assert.match(source, /Version = "23\.0"/u);
@@ -65,12 +68,18 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Test-RadIA\.GeneratedProjects\.ps1/u);
   assert.match(source, /New-RadIA\.GeneratedProjectsEvidence\.ps1/u);
   assert.match(source, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
+  assert.match(source, /Test-RadIA\.ReleasePromises\.ps1/u);
+  assert.match(source, /-Enforce/u);
   assert.match(source, /Test-RadIA\.UsageMatrix\.ps1/u);
   assert.match(source, /-Profile "release"/u);
   assert.doesNotMatch(source, /RequirePackageProvenance/u);
   assert.match(source, /installationTargets/u);
   assert.match(source, /Install = \$true/u);
   assert.match(source, /Stop-RadIAReleaseAuxiliaryProcesses/u);
+  assert.match(source, /Where-Object \{ -not \$_\.HasExited \}/u);
+  assert.match(matrixSource, /Where-Object \{ -not \$_\.HasExited \}/u);
+  assert.match(buildSource, /function Copy-RadIAReplaceableFile/u);
+  assert.match(buildSource, /\.pending-delete-\$PID-/u);
   assert.match(source, /RadIA\.Semantic\.Engine/u);
   assert.match(source, /startupRetryUsed/u);
   assert.match(source, /attemptCount/u);
@@ -90,7 +99,7 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(retryBlock, /Install-RadIAReleaseTarget/u);
 });
 
-test('release usage plan adds the intent recommendation contract once', () => {
+test('release usage plan separates host contracts from IDE journeys', () => {
   const output = execFileSync(
     'powershell.exe',
     [
@@ -115,10 +124,30 @@ test('release usage plan adds the intent recommendation contract once', () => {
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
-  assert.equal(plan.runCount, 7);
+  assert.equal(plan.runCount, 46);
   assert.equal(intentRuns.length, 1);
   assert.equal(intentRuns[0].targetId, 'host-neutral');
   assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
+  const conversationRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'first-conversation'
+  );
+  assert.equal(conversationRuns.length, 3);
+  assert.ok(conversationRuns.every((run) => run.scope === 'user-journey'));
+  const windowStateRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'chat-window-state-persistence'
+  );
+  assert.equal(windowStateRuns.length, 3);
+  assert.ok(windowStateRuns.every(
+    (run) => run.requiredEvidence.includes('boundsRestored')
+  ));
+  const creationRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'vcl-project-creation-lifecycle'
+  );
+  assert.equal(creationRuns.length, 3);
+  assert.ok(creationRuns.every((run) => run.scope === 'ide-journey'));
+  assert.ok(
+    creationRuns.every((run) => run.requiredEvidence.includes('phases.buildPassed'))
+  );
   const problemRuns = plan.runs.filter(
     (run) => run.scenarioId === 'unified-problems-panel'
   );

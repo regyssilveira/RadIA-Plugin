@@ -1,7 +1,7 @@
 # Compactação e recuperação de resultados do agente
 
-O RTK interno do RadIA reduz resultados extensos antes da próxima decisão do modelo. O resultado
-integral continua sendo a fonte de verdade e pode ser recuperado sem repetir build, teste, Git ou
+O RTK interno do RadIA reduz resultados extensos antes da próxima decisão do modelo. Enquanto retido,
+o resultado integral é a fonte de verdade e pode ser recuperado sem repetir build, teste, Git ou
 outra ferramenta.
 
 ## Configuração
@@ -30,7 +30,8 @@ Abra **Tools > Options > Rad IA > General / Logs**.
 ## Preservação e recuperação
 
 Resultados integrais são armazenados por sessão e etapa, com SHA-256 e gravação atômica. Cada sessão
-aceita no máximo 100 artefatos e 64 Mi caracteres; cada artefato aceita 8 Mi caracteres. Artefatos
+mantém os 100 artefatos mais recentes dentro de 64 Mi caracteres; ao atingir um limite, remove os
+mais antigos sem bloquear novas execuções. Cada artefato aceita 8 Mi caracteres. Artefatos também
 expiram após 14 dias e a limpeza ocorre ao carregar o plugin.
 
 O contexto compactado informa `artifactId`, hash, tamanho e `fullResultAvailable`. O agente pode usar:
@@ -39,7 +40,8 @@ O contexto compactado informa `artifactId`, hash, tamanho e `fullResultAvailable
 - `GetToolResultRange`, para recuperar até 65.536 caracteres por chamada.
 
 As ferramentas respeitam a sessão ativa, rejeitam traversal, spoofing de sessão e ranges inválidos.
-Checkpoints, replay, UI e validation gates preservam o resultado integral.
+Checkpoints, replay, UI e validation gates preservam a referência. Após a retenção remover um
+artefato antigo, as ferramentas informam que ele não está mais disponível.
 
 ## Métricas e diagnóstico
 

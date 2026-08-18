@@ -252,6 +252,10 @@ type
       out ALimits: TRadIAAgentLimits
     );
     procedure StartAgentRun(const AObjective: string);
+    function TryStartExternalAgentRun(
+      const AObjective: string;
+      const ASettings: TRadIAResolvedExecutionSettings
+    ): Boolean;
     function TryStartCliAgentRun(
       const AObjective: string;
       const ASettings: TRadIAResolvedExecutionSettings;
@@ -460,6 +464,7 @@ type
 
     procedure HandleStreamCancel(const AActiveProvider, AActiveModel: string; var AFullResponse: string);
     procedure HandleStreamError(const AError, AActiveProvider, AActiveModel: string; var AFullResponse: string);
+    function BuildProviderRecoveryMessage(const AError: string): string;
     procedure HandleStreamDone(const APromptText, AActiveProvider, AActiveModel, AFullResponse: string);
     procedure ProcessStreamChunk(const ACtx: TStreamChunkCtx; var ADoneHandled: Boolean; var AFullResponse: string);
     procedure ProcessDTOGeneratorChunk(const AChunk, AError: string; const AIsDone: Boolean;
@@ -1412,6 +1417,7 @@ begin
   FHistory := [];
   FAccumulatedUsage := TTokenUsage.Empty;
   ResetPendingJourney;
+  ClearPendingIntent;
   PostToWebView('clear_chat', '', '');
   PostToWebView('update_tokens', '', '');
 
@@ -1445,6 +1451,8 @@ begin
     Exit;
 
   SaveChatHistory;
+  ResetPendingJourney;
+  ClearPendingIntent;
   LSession := FSessionManager.CreateSession('Initial Chat');
   FSessionManager.ActiveSessionId := LSession.Id;
   FConfig.ActiveSessionId := LSession.Id;
@@ -1494,6 +1502,8 @@ begin
 
   FHistory := [];
   FAccumulatedUsage := TTokenUsage.Empty;
+  ResetPendingJourney;
+  ClearPendingIntent;
   PostToWebView('clear_chat', '', '');
   PostToWebView('update_tokens', '', '');
 
@@ -1508,6 +1518,9 @@ begin
 
   if not FSessionManager.ActiveSessionId.IsEmpty and not SameText(FSessionManager.ActiveSessionId, ASessionId) then
     SaveChatHistory;
+
+  ResetPendingJourney;
+  ClearPendingIntent;
 
   FSessionManager.ActiveSessionId := ASessionId;
   FSessionManager.UpdateSessionActivity(ASessionId);
@@ -1693,7 +1706,12 @@ begin
     StartAgentRun(LProcessed);
     Exit;
   end;
-  if TryStartCliAgentRun(LProcessed, LEffectiveSettings, LConversational) then
+  if (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_CONVERSATION')) = '') and
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_CANCELLATION')) = '') and
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_PROVIDER_RECOVERY')) = '') and
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) = '') and
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')) = '') and
+    TryStartCliAgentRun(LProcessed, LEffectiveSettings, LConversational) then
     Exit;
   SendPromptToAI(LProcessed);
 end;
@@ -1827,8 +1845,8 @@ begin
   if Assigned(Self.FJourneyContext) then
     Self.FJourneyContext.CompleteActivity;
   Self.FView.SetRequestState(False);
-  TLogger.Log(Format('SendPromptToAI error callback: %s', [AError]), 'UI');
-  LDisplayError := AError;
+  TLogger.Log('SendPromptToAI received a provider error.', 'UI');
+  LDisplayError := BuildProviderRecoveryMessage(AError);
   if not AFullResponse.IsEmpty then
   begin
     AFullResponse := AFullResponse + #13#10#13#10 + '**Error:** ' + LDisplayError;
@@ -1848,6 +1866,25 @@ begin
   end;
 
   // Web error handling removed
+end;
+
+function TRadIAChatPresenter.BuildProviderRecoveryMessage(
+  const AError: string
+): string;
+var
+  LNormalized: string;
+begin
+  LNormalized := AError.ToLowerInvariant;
+  if LNormalized.Contains('timeout') or LNormalized.Contains('timed out') then
+    Result := 'The provider timed out. Check the connection and provider status, then retry this message.'
+  else if LNormalized.Contains('credential') or
+    LNormalized.Contains('unauthorized') or
+    LNormalized.Contains('authentication') then
+    Result := 'Provider authentication failed. Review the configured credentials in Settings, then retry.'
+  else if LNormalized.Contains('cli') or LNormalized.Contains('executable') then
+    Result := 'The selected CLI is unavailable. Review its path in Settings or select a native provider, then retry.'
+  else
+    Result := 'The provider request failed. Review the provider settings and connection, then retry this message.';
 end;
 
 procedure TRadIAChatPresenter.ProcessStreamChunk(const ACtx: TStreamChunkCtx;
@@ -2438,7 +2475,7 @@ begin
   if SameText(AAction, 'insert_code') or SameText(AAction, 'apply_code') then
     HandleInsertCodeMessage(AJson.GetValue<string>('code', ''))
   else if AAction = 'log' then
-    TLogger.Log('JS Console: ' + AJson.GetValue<string>('text', ''), 'WebView')
+    TLogger.Log('WebView console message received.', 'WebView')
   else if AAction = 'ready' then
     HandleReadyMessage
   else if AAction = 'open_settings' then
@@ -2818,6 +2855,12 @@ var
   LProviderId: string;
 begin
   AMessage := '';
+  if (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_CONVERSATION')) <> '') or
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_CANCELLATION')) <> '') or
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_PROVIDER_RECOVERY')) <> '') or
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) <> '') or
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')) <> '') then
+    Exit(True);
   FConfig.Load;
   LProviderId := ASettings.Values.ProviderId;
   if not IsProviderConfigured(LProviderId) then
@@ -4376,7 +4419,7 @@ var
   LUserMessage: IRadIAChatMessage;
 begin
   LEffectiveSettings := ResolveEffectiveExecutionSettings;
-  if TryStartCliAgentRun(AObjective, LEffectiveSettings) then
+  if TryStartExternalAgentRun(AObjective, LEffectiveSettings) then
     Exit;
   if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
   begin
@@ -4555,6 +4598,19 @@ begin
     'do not inspect files, run commands, create a plan, or describe yourself as the CLI executor.' +
     sLineBreak + sLineBreak +
     'User message:' + sLineBreak + APromptText;
+end;
+
+function TRadIAChatPresenter.TryStartExternalAgentRun(
+  const AObjective: string;
+  const ASettings: TRadIAResolvedExecutionSettings
+): Boolean;
+begin
+  Result :=
+    not AObjective.Contains(
+      'Create a Delphi project from the user requirements.'
+    ) and
+    (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')) = '') and
+    TryStartCliAgentRun(AObjective, ASettings);
 end;
 
 function TRadIAChatPresenter.TryStartCliAgentRun(
@@ -5469,7 +5525,6 @@ var
   LAction: string;
   LMessage: string;
 begin
-  TLogger.Log('ProcessWebMessage raw: ' + AMessage, 'UI');
   LMessage := AMessage.Trim;
   LParsed := TJSONObject.ParseJSONValue(LMessage);
   if not Assigned(LParsed) then
@@ -5491,6 +5546,7 @@ begin
 
     LJson := TJSONObject(LParsed);
     LAction := LJson.GetValue<string>('action', '');
+    TLogger.Log('ProcessWebMessage action: ' + LAction, 'UI');
     DispatchWebMessage(LAction, LJson);
   finally
     LParsed.Free;

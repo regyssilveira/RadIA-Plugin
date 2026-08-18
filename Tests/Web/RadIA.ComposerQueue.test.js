@@ -20,7 +20,10 @@ test('composer exposes an accessible follow-up queue while a turn is active', ()
 test('composer queue is bounded and dispatches only after the active turn', () => {
   assert.match(chatJs, /MAX_QUEUED_PROMPTS = 5/u);
   assert.match(chatJs, /if \(requestInProgress \|\| queuedPrompts\.length === 0\) return/u);
-  assert.match(chatJs, /if \(!inProgress\) setTimeout\(dispatchNextQueuedPrompt, 0\)/u);
+  assert.match(
+    chatJs,
+    /if \(!inProgress\)\s*\{\s*setTimeout\(dispatchNextQueuedPrompt, 0\);/u
+  );
   assert.match(chatJs, /if \(requestInProgress\) queuePrompt\(\)/u);
   assert.match(chatJs, /queuedPrompts\.length = 0/u);
 });

@@ -10,6 +10,7 @@ param(
     [int]$WebViewTransitionCount = 25,
     [switch]$IDE64,
     [switch]$SkipPackageHashCheck,
+    [switch]$DevelopmentCandidate,
     [switch]$ExerciseDocking,
     [switch]$ExpectDockHidden,
     [switch]$ExerciseWebViewLifecycle,
@@ -31,6 +32,8 @@ param(
     [string]$DeclarativeWorkflowEvidencePath = "",
     [string]$KnowledgeEvidencePath = "",
     [string]$FirstValueEvidencePath = "",
+    [string]$UserJourneyEvidencePath = "",
+    [string]$UserJourneyExecutablePath = "",
     [string]$FireDACScenarioId = "",
     [string]$FireDACProjectPath = "",
     [string]$FireDACEvidencePath = "",
@@ -43,6 +46,9 @@ if ($EvidencePath -and $SkipPackageHashCheck) {
         "Evidence output requires package provenance validation. " +
         "Remove -SkipPackageHashCheck."
     )
+}
+if ($DevelopmentCandidate -and -not $EvidencePath) {
+    throw "Development candidate validation requires -EvidencePath."
 }
 if ($ExercisePackageLifecycle -and -not $EvidencePath) {
     throw (
@@ -152,19 +158,27 @@ function Get-RadIATargetIDEProcesses {
         [string]$ExecutablePath
     )
 
-    return @(
-        Get-Process bds -ErrorAction SilentlyContinue |
-            Where-Object {
-                try {
-                    [IO.Path]::GetFullPath($_.Path).Equals(
-                        [IO.Path]::GetFullPath($ExecutablePath),
-                        [StringComparison]::OrdinalIgnoreCase
-                    )
-                } catch {
-                    $false
-                }
-            }
+    $result = @()
+    $candidates = @(
+        Get-Process bds -ErrorAction SilentlyContinue
     )
+    foreach ($candidate in $candidates) {
+        try {
+            $liveProcess = [Diagnostics.Process]::GetProcessById(
+                $candidate.Id
+            )
+            if (-not $liveProcess.HasExited -and
+                [IO.Path]::GetFullPath($liveProcess.Path).Equals(
+                [IO.Path]::GetFullPath($ExecutablePath),
+                [StringComparison]::OrdinalIgnoreCase
+            )) {
+                $result += $liveProcess
+            }
+        } catch {
+            continue
+        }
+    }
+    return $result
 }
 
 function Invoke-RadIAPackageCommand {
@@ -224,6 +238,70 @@ function Invoke-RadIALegacyPackageInstall {
     )
     if ($script:IDE64) {
         $arguments += "-IDE64"
+    }
+
+    $legacySource = Get-Content -LiteralPath $InstallerPath -Raw
+    $legacyProcessGate = (
+        '$runningIDEs = @(Get-Process bds -ErrorAction SilentlyContinue)'
+    )
+    $exitedSnapshots = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { $_.HasExited }
+    )
+    $liveIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($liveIDEs.Count -eq 0 -and $exitedSnapshots.Count -gt 0) {
+        $legacyProcessGateCount = (
+            [regex]::Matches(
+                $legacySource,
+                [regex]::Escape($legacyProcessGate)
+            )
+        ).Count
+        if ($legacyProcessGateCount -ne 1) {
+            throw "Legacy installer process gate was not recognized."
+        }
+        $compatibleProcessGate = @'
+$runningIDEs = @(
+    Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited }
+)
+'@
+        $legacySource = $legacySource.Replace(
+            $legacyProcessGate,
+            $compatibleProcessGate.TrimEnd()
+        )
+        Set-Content `
+            -LiteralPath $InstallerPath `
+            -Value $legacySource `
+            -Encoding UTF8
+        $legacyManifestPath = Join-Path (
+            Split-Path -Parent (Split-Path -Parent $InstallerPath)
+        ) "manifest.json"
+        $legacyManifest = Get-Content `
+            -LiteralPath $legacyManifestPath `
+            -Raw |
+            ConvertFrom-Json
+        $legacyInstallerEntries = @(
+            $legacyManifest.files |
+                Where-Object {
+                    $_.path -eq "Scripts/Install-RadIA.Package.ps1"
+                }
+        )
+        if ($legacyInstallerEntries.Count -ne 1) {
+            throw "Legacy installer manifest entry was not recognized."
+        }
+        $legacyInstallerFile = Get-Item -LiteralPath $InstallerPath
+        $legacyInstallerEntries[0].size = $legacyInstallerFile.Length
+        $legacyInstallerEntries[0].sha256 = (
+            Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256
+        ).Hash
+        $legacyManifest |
+            ConvertTo-Json -Depth 8 |
+            Set-Content `
+                -LiteralPath $legacyManifestPath `
+                -Encoding UTF8
     }
 
     $previousErrorAction = $ErrorActionPreference
@@ -471,10 +549,8 @@ public static class RadIADockingSmokeNative
 "@
 }
 
-if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-    $ExerciseInlineReview -or $FireDACScenarioId) {
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type @"
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -770,7 +846,6 @@ public static class RadIAKnowledgeSmokeNative
     }
 }
 "@
-}
 
 function Save-RadIAActiveEditor {
     param(
@@ -3819,7 +3894,7 @@ $installedPackageHash = (
     Get-FileHash -LiteralPath $radIABpl -Algorithm SHA256
 ).Hash
 if (-not $SkipPackageHashCheck) {
-    if (-not $EvidencePath) {
+    if (-not $EvidencePath -or $DevelopmentCandidate) {
         $builtPackagePath = Join-Path (
             "$repositoryRoot\Output\$DelphiVersion\bpl\$platform"
         ) "RadIA.bpl"
@@ -3834,6 +3909,24 @@ if (-not $SkipPackageHashCheck) {
                 "Installed RadIA package does not match the current build. " +
                 "Close Delphi and reinstall before running the IDE smoke."
             )
+        }
+        if ($DevelopmentCandidate) {
+            $releaseSourceCommit = (
+                & git -C $repositoryRoot rev-parse HEAD
+            ).Trim()
+            $releasePackageName = (
+                "RadIA-v$expectedVersion-Delphi-$DelphiVersion-" +
+                "$platform-Release.zip"
+            )
+            $releasePackagePath = Join-Path (
+                "$repositoryRoot\Output\Packages"
+            ) $releasePackageName
+            if (-not (Test-Path -LiteralPath $releasePackagePath -PathType Leaf)) {
+                throw "Development candidate package was not found."
+            }
+            $releasePackageHash = (
+                Get-FileHash -LiteralPath $releasePackagePath -Algorithm SHA256
+            ).Hash
         }
     } else {
         $releaseEvidencePath = Join-Path (
@@ -4600,6 +4693,76 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 -InstanceFile $instanceFile `
                 -ExpectedToolCount $expectedToolNames.Count
         }
+        if ($UserJourneyEvidencePath) {
+            $userJourneyDeadline = [DateTime]::UtcNow.AddSeconds(300)
+            while (-not (Test-Path -LiteralPath $UserJourneyEvidencePath)) {
+                if ([DateTime]::UtcNow -ge $userJourneyDeadline) {
+                    throw "The user-journey evidence was not generated before timeout."
+                }
+                if ($process.HasExited) {
+                    throw "Delphi exited before generating user-journey evidence."
+                }
+                Start-Sleep -Milliseconds 250
+            }
+            $userJourneyEvidence = Get-Content `
+                -LiteralPath $UserJourneyEvidencePath `
+                -Raw |
+                ConvertFrom-Json
+            if ($userJourneyEvidence.status -ne "passed") {
+                throw (
+                    "The user journey failed: " +
+                    "reason=$($userJourneyEvidence.reason); " +
+                    "tool=$($userJourneyEvidence.failedTool); " +
+                    "error=$($userJourneyEvidence.errorCode); " +
+                    "message=$($userJourneyEvidence.agentMessage)."
+                )
+            }
+        }
+        if ($UserJourneyExecutablePath) {
+            $resolvedJourneyExecutable = [IO.Path]::GetFullPath(
+                $UserJourneyExecutablePath
+            )
+            $journeyProcessDeadline = [DateTime]::UtcNow.AddSeconds(15)
+            do {
+                $journeyProcesses = @(
+                    Get-Process -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            try {
+                                $_.Path -and
+                                    [IO.Path]::GetFullPath($_.Path) -eq
+                                        $resolvedJourneyExecutable
+                            } catch {
+                                $false
+                            }
+                        }
+                )
+                if ($journeyProcesses.Count -eq 0) {
+                    Start-Sleep -Milliseconds 100
+                }
+            } while (
+                $journeyProcesses.Count -eq 0 -and
+                [DateTime]::UtcNow -lt $journeyProcessDeadline
+            )
+            if ($journeyProcesses.Count -eq 0) {
+                throw "The user-journey application process was not observed."
+            }
+            foreach ($journeyProcess in $journeyProcesses) {
+                $journeyProcess.Refresh()
+                if ($journeyProcess.HasExited) {
+                    continue
+                }
+                if (-not $journeyProcess.CloseMainWindow()) {
+                    $journeyProcess.Refresh()
+                    if (-not $journeyProcess.HasExited) {
+                        throw "The user-journey application rejected shutdown."
+                    }
+                    continue
+                }
+                if (-not $journeyProcess.WaitForExit(10000)) {
+                    throw "The user-journey application did not close in time."
+                }
+            }
+        }
 
         $descendants = @(
             Get-RadIAProcessDescendants `
@@ -4620,76 +4783,64 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
-        if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-            $ExerciseInlineReview -or $FireDACScenarioId) {
-            $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
-                $shutdownTimeoutMs
+        $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
+            $shutdownTimeoutMs
+        )
+        do {
+            $currentProcess.Refresh()
+            if ($currentProcess.HasExited) {
+                break
+            }
+            $confirmWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                [uint32]$currentProcess.Id,
+                "TMessageForm"
             )
-            do {
-                $currentProcess.Refresh()
-                if ($currentProcess.HasExited) {
-                    break
-                }
-                $confirmWindow = (
-                    [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
-                        [uint32]$currentProcess.Id,
-                        "TMessageForm"
-                    )
+            if ($confirmWindow -ne [IntPtr]::Zero) {
+                $noButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+                    $confirmWindow,
+                    "&No"
                 )
-                if ($confirmWindow -ne [IntPtr]::Zero) {
-                    $noButton = (
-                        [RadIAKnowledgeSmokeNative]::FindChildByText(
-                            $confirmWindow,
-                            "&No"
-                        )
+                if ($noButton -eq [IntPtr]::Zero) {
+                    $noButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+                        $confirmWindow,
+                        "&Não"
                     )
-                    if ($noButton -eq [IntPtr]::Zero) {
-                        $noButton = (
-                            [RadIAKnowledgeSmokeNative]::FindChildByText(
-                                $confirmWindow,
-                                "&Não"
-                            )
-                        )
-                    }
-                    if ($noButton -ne [IntPtr]::Zero) {
-                        [void][RadIAKnowledgeSmokeNative]::PostMessage(
-                            $noButton,
-                            0x00F5,
-                            [IntPtr]0,
-                            [IntPtr]0
-                        )
-                    }
                 }
-                Start-Sleep -Milliseconds 200
-            } while ([DateTime]::UtcNow -lt $shutdownDeadline)
-            if (-not $currentProcess.HasExited) {
-                $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
-                    [uint32]$currentProcess.Id,
-                    "TAppBuilder"
-                )
-                if ($FireDACScenarioId -and
-                    $mainWindow -eq [IntPtr]::Zero -and
-                    (Test-RadIAPluginShutdownCompleted)) {
-                    $currentDescendants = @(
-                        Get-RadIAProcessDescendants `
-                            -ParentProcessId $currentProcess.Id `
-                            -ParentStartedAt $currentProcess.StartTime
+                if ($noButton -ne [IntPtr]::Zero) {
+                    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+                        $noButton,
+                        0x00F5,
+                        [IntPtr]0,
+                        [IntPtr]0
                     )
-                    foreach ($child in $currentDescendants) {
-                        Stop-Process `
-                            -Id $child.ProcessId `
-                            -Force `
-                            -ErrorAction SilentlyContinue
-                    }
-                    Stop-Process -Id $currentProcess.Id -Force
-                    [void]$currentProcess.WaitForExit(10000)
-                    $hostCleanupForced = $true
-                } else {
-                    throw "Delphi did not exit cleanly in cycle $cycle."
                 }
             }
-        } elseif (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
-            throw "Delphi did not exit cleanly in cycle $cycle."
+            Start-Sleep -Milliseconds 200
+        } while ([DateTime]::UtcNow -lt $shutdownDeadline)
+        if (-not $currentProcess.HasExited) {
+            $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                [uint32]$currentProcess.Id,
+                "TAppBuilder"
+            )
+            if ($mainWindow -eq [IntPtr]::Zero -and
+                (Test-RadIAPluginShutdownCompleted)) {
+                $currentDescendants = @(
+                    Get-RadIAProcessDescendants `
+                        -ParentProcessId $currentProcess.Id `
+                        -ParentStartedAt $currentProcess.StartTime
+                )
+                foreach ($child in $currentDescendants) {
+                    Stop-Process `
+                        -Id $child.ProcessId `
+                        -Force `
+                        -ErrorAction SilentlyContinue
+                }
+                Stop-Process -Id $currentProcess.Id -Force
+                [void]$currentProcess.WaitForExit(10000)
+                $hostCleanupForced = $true
+            } else {
+                throw "Delphi did not exit cleanly in cycle $cycle."
+            }
         }
         $rootDeadline = [DateTime]::UtcNow.AddSeconds(10)
         do {
@@ -4703,6 +4854,50 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
             ($targetProcesses.Count -gt 0) -and
             ([DateTime]::UtcNow -lt $rootDeadline)
         )
+        if ($targetProcesses.Count -gt 0 -and
+            (Test-RadIAPluginShutdownCompleted)) {
+            $verifiedShutdownHosts = @(
+                $targetProcesses |
+                    Where-Object {
+                        [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                            [uint32]$_.Id,
+                            "TAppBuilder"
+                        ) -eq [IntPtr]::Zero
+                    }
+            )
+            if ($verifiedShutdownHosts.Count -eq $targetProcesses.Count) {
+                foreach ($verifiedHost in $verifiedShutdownHosts) {
+                    $verifiedDescendants = @(
+                        Get-RadIAProcessDescendants `
+                            -ParentProcessId $verifiedHost.Id `
+                            -ParentStartedAt $verifiedHost.StartTime
+                    )
+                    foreach ($verifiedChild in $verifiedDescendants) {
+                        Stop-Process `
+                            -Id $verifiedChild.ProcessId `
+                            -Force `
+                            -ErrorAction SilentlyContinue
+                    }
+                    Stop-Process `
+                        -Id $verifiedHost.Id `
+                        -Force `
+                        -ErrorAction SilentlyContinue
+                }
+                $hostCleanupForced = $true
+                $cleanupRootDeadline = [DateTime]::UtcNow.AddSeconds(10)
+                do {
+                    $targetProcesses = @(
+                        Get-RadIATargetIDEProcesses -ExecutablePath $bdsPath
+                    )
+                    if ($targetProcesses.Count -gt 0) {
+                        Start-Sleep -Milliseconds 100
+                    }
+                } while (
+                    ($targetProcesses.Count -gt 0) -and
+                    ([DateTime]::UtcNow -lt $cleanupRootDeadline)
+                )
+            }
+        }
         if ($targetProcesses.Count -gt 0) {
             $targetProcessIds = @(
                 $targetProcesses |

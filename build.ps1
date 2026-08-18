@@ -12,6 +12,39 @@ $ErrorActionPreference = "Stop"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+function Copy-RadIAReplaceableFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [Parameter(Mandatory = $true)]
+        [string]$Destination
+    )
+
+    try {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Force
+        return
+    } catch [IO.IOException] {
+        if (-not (Test-Path -LiteralPath $Destination -PathType Leaf)) {
+            throw
+        }
+    }
+    $pendingPath = (
+        $Destination + ".pending-delete-$PID-" +
+        [DateTime]::UtcNow.ToString("yyyyMMddHHmmssfff")
+    )
+    Move-Item -LiteralPath $Destination -Destination $pendingPath
+    try {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Force
+    } catch {
+        if (-not (Test-Path -LiteralPath $Destination) -and
+            (Test-Path -LiteralPath $pendingPath)) {
+            Move-Item -LiteralPath $pendingPath -Destination $Destination
+        }
+        throw
+    }
+    Remove-Item -LiteralPath $pendingPath -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "         Iniciando Build do Rad IA           " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -203,7 +236,11 @@ if ($IDE64) {
 
 # Processar Desinstalacao (se a flag -Uninstall for fornecida)
 if ($Uninstall) {
-    if (Get-Process bds -ErrorAction SilentlyContinue) {
+    $runningIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($runningIDEs.Count -gt 0) {
         Write-Host ""
         Write-Host "=========================================================================" -ForegroundColor Red
         Write-Host "ERRO: A IDE do Delphi (bds.exe) esta aberta no momento." -ForegroundColor Red
@@ -841,7 +878,11 @@ if ($Package) {
 
 # 10. Instalacao automatizada (se a flag -Install for fornecida)
 if ($Install) {
-    if (Get-Process bds -ErrorAction SilentlyContinue) {
+    $runningIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($runningIDEs.Count -gt 0) {
         Write-Host ""
         Write-Host "=========================================================================" -ForegroundColor Red
         Write-Host "ERRO: A IDE do Delphi (bds.exe) esta aberta no momento." -ForegroundColor Red
@@ -930,7 +971,9 @@ if ($Install) {
     }
 
     Write-Host "Copiando binarios e recursos para as pastas da IDE..." -ForegroundColor Yellow
-    Copy-Item -Path ".\Output\$delphiVer\bpl\$platform\RadIA.bpl" -Destination $targetBpl -Force
+    Copy-RadIAReplaceableFile `
+        -Source ".\Output\$delphiVer\bpl\$platform\RadIA.bpl" `
+        -Destination $targetBpl
     Copy-Item `
         -Path ".\Output\$delphiVer\bin\$platform\$configName\RadIA.MCP.Bridge.exe" `
         -Destination $targetBridge `

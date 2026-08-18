@@ -29,6 +29,7 @@ powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
 `Test-RadIA.ReleaseUsage.ps1` é obrigatório em toda release e executa, como um único gate indivisível,
+a validação de que cada promessa pública crítica possui uma jornada E2E real nos alvos suportados,
 as suítes DUnitX completas no Delphi 12 e 13, toda a suíte registrada de integração e ponta a ponta, a
 criação e os testes funcionais e DUnitX da calculadora, a criação e abertura imediata de projetos e a
 matriz automatizada de uso no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. O gate produz evidência
@@ -40,6 +41,11 @@ o próprio runner interrompe a execução quando encontra um cenário cadastrado
 Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma revisão. Builds, testes,
 catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser
 editada manualmente para contornar uma falha.
+
+Use o Delphi 12 (`-DelphiVersion "23.0"`) no scanner estático. O analisador Delphi atual não interpreta
+corretamente construções novas da RTL do Delphi 13 e pode produzir falsos positivos de símbolos não usados.
+Essa escolha limita somente o parser estático: o gate indivisível continua compilando, testando e executando
+as jornadas no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 
 O workflow `SonarQube release gate` do GitHub Actions é uma repetição manual opcional, dependente de um
 runner Windows `self-hosted` registrado e disponível. Ele não é disparado por push, pull request ou tag,

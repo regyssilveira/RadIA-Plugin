@@ -190,6 +190,30 @@ begin
   if Trim(
     GetEnvironmentVariable('RADIA_IDE_SMOKE_WEBVIEW_LIFECYCLE')
   ) <> '' then
+    GRadIADockableFormHost.Show
+  else if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')
+  ) <> '' then
+    GRadIADockableFormHost.Show
+  else if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_SESSION_ISOLATION')
+  ) <> '' then
+    GRadIADockableFormHost.Show
+  else if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_CONVERSATION')
+  ) <> '' then
+    GRadIADockableFormHost.Show
+  else if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_CANCELLATION')
+  ) <> '' then
+    GRadIADockableFormHost.Show
+  else if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_PROVIDER_RECOVERY')
+  ) <> '' then
+    GRadIADockableFormHost.Show
+  else if Trim(
+    GetEnvironmentVariable('RADIA_IDE_SMOKE_AGENT_BUDGET')
+  ) <> '' then
     GRadIADockableFormHost.Show;
   TLogger.Log('Native chat and terminal docks registered.', 'DockableForm');
 end;
@@ -284,16 +308,24 @@ begin
 end;
 
 procedure PrepareDockableFormsForShutdown;
+var
+  LPreviousShutdownState: Boolean;
 begin
-  if Assigned(GRadIADockableFormHost) then
-  begin
-    GRadIADockableFormHost.PersistCurrentState;
-    GRadIADockableFormHost.ReleaseForm;
-  end;
-  if Assigned(GRadIATerminalDockableFormHost) then
-  begin
-    GRadIATerminalDockableFormHost.PersistCurrentState;
-    GRadIATerminalDockableFormHost.ReleaseForm;
+  LPreviousShutdownState := GIsShuttingDown;
+  GIsShuttingDown := True;
+  try
+    if Assigned(GRadIADockableFormHost) then
+    begin
+      GRadIADockableFormHost.PersistCurrentState;
+      GRadIADockableFormHost.ReleaseForm;
+    end;
+    if Assigned(GRadIATerminalDockableFormHost) then
+    begin
+      GRadIATerminalDockableFormHost.PersistCurrentState;
+      GRadIATerminalDockableFormHost.ReleaseForm;
+    end;
+  finally
+    GIsShuttingDown := LPreviousShutdownState;
   end;
 end;
 

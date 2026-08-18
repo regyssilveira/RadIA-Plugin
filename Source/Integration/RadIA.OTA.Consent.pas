@@ -402,6 +402,11 @@ begin
   Result := cdDeny;
   if GIsShuttingDown or Application.Terminated then
     Exit;
+  if SameText(
+    Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_AUTO_CONSENT')),
+    '1'
+  ) then
+    Exit(cdAllowOnce);
 
   if not FConsentGate.Acquire(
     EffectiveTimeoutMs,

@@ -14,6 +14,7 @@ This list contains only the built-in tools registered by the current package. Ar
 | `ListOpenFiles` | Lists files currently open in the Delphi IDE. | `RadIA.Core.WorkspaceTools.pas` |
 | `ListProjectUnits` | Lists units owned by the active Delphi project. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetEditorContent` | Returns the live active editor content with a revision. | `RadIA.Core.WorkspaceTools.pas` |
+| `SaveActiveFile` | Saves the active Delphi editor buffer through the IDE. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetEditorSelection` | Returns the active editor selection and cursor position. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCursorPosition` | Returns the active editor cursor position. | `RadIA.Core.WorkspaceTools.pas` |
 | `GetCompilerMessages` | Returns structured compiler messages from the IDE. | `RadIA.Core.WorkspaceTools.pas` |
@@ -559,6 +560,6 @@ This list contains only the built-in tools registered by the current package. Ar
 ## Summary
 
 - Registered groups: 68
-- Registered built-in tools: 212
+- Registered built-in tools: 213
 - Extensions can register additional tools at runtime.
 - The `/tools` command remains authoritative for the active IDE instance.

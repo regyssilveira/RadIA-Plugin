@@ -15,7 +15,11 @@ if (-not $resolvedEvidenceRoot.StartsWith(
 )) {
     throw "Release usage evidence must remain inside Output."
 }
-if (Get-Process bds -ErrorAction SilentlyContinue) {
+$runningIDEs = @(
+    Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited }
+)
+if ($runningIDEs.Count -gt 0) {
     throw "Close all Delphi IDE instances before the release usage gate."
 }
 
@@ -34,7 +38,10 @@ function Stop-RadIAReleaseAuxiliaryProcesses {
 }
 
 function Stop-RadIAReleaseIDEProcesses {
-    $processes = @(Get-Process bds -ErrorAction SilentlyContinue)
+    $processes = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
     foreach ($process in $processes) {
         Stop-Process -Id $process.Id -Force
         if (-not $process.WaitForExit(10000)) {
@@ -74,6 +81,12 @@ New-Item `
     -Path $resolvedEvidenceRoot `
     -Force |
     Out-Null
+
+& (Join-Path $PSScriptRoot "Test-RadIA.ReleasePromises.ps1") `
+    -Enforce `
+    -EvidencePath (
+        Join-Path $resolvedEvidenceRoot "release-promise-coverage.json"
+    )
 
 $unitTestTargets = @(
     [PSCustomObject]@{ Id = "delphi12-win32"; Version = "23.0" },
@@ -259,7 +272,8 @@ foreach ($target in $openingTargets) {
     )
 
 Write-Host (
-    "Release usage gate passed: complete DUnitX, registered integration " +
+    "Release usage gate passed: public promises, complete DUnitX, " +
+    "registered integration " +
     "and end-to-end scenarios, calculator, generated projects, project " +
     "opening, and automated usage matrix."
 )

@@ -1,6 +1,6 @@
 # Referência operacional das ferramentas internas
 
-Esta página explica as 212 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
+Esta página explica as 213 ferramentas internas do RadIA: o que cada uma faz e em qual etapa
 ela costuma ser acionada.
 
 O [catálogo gerado](runtime_tool_catalog.md) continua sendo a fonte técnica dos nomes registrados.
@@ -34,6 +34,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | `ListOpenFiles` | Lista arquivos abertos e buffers disponíveis. | Para localizar contexto vivo ou evitar ler uma cópia desatualizada do disco. |
 | `ListProjectUnits` | Lista as units pertencentes ao projeto ativo. | Em análises de arquitetura, busca de dependências e planejamento multi-arquivo. |
 | `GetEditorContent` | Lê o conteúdo vivo de um buffer da IDE. | Antes de analisar ou preparar uma alteração, inclusive quando há mudanças não salvas. |
+| `SaveActiveFile` | Salva o buffer ativo pela própria IDE. | Depois de uma alteração aprovada que precisa ser persistida antes do build ou teste. |
 | `GetEditorSelection` | Lê a seleção atual do editor. | Em ações direcionadas a um trecho, como explicar, revisar, testar ou refatorar. |
 | `GetCursorPosition` | Retorna arquivo, linha e coluna do cursor. | Para contextualizar erros, símbolos, inserções e revisões ancoradas. |
 | `GetCompilerMessages` | Coleta erros e warnings estruturados. | Depois de um build ou quando o objetivo envolve corrigir falhas de compilação. |

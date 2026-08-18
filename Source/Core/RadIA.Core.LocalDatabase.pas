@@ -253,6 +253,7 @@ end;
 function TRadIASqliteApi.LibraryPath: string;
 var
   LCandidates: TList<string>;
+  LArchitecturePath: string;
   LCandidate: string;
   LExecutableDirectory: string;
   LPathEntry: string;
@@ -264,19 +265,35 @@ begin
     LExecutableDirectory := TPath.GetDirectoryName(ParamStr(0));
     LCandidates.Add(TPath.Combine(LExecutableDirectory, 'sqlite3.dll'));
     if not GetEnvironmentVariable('BDSBIN').IsEmpty then
-      LCandidates.Add(
-        TPath.Combine(GetEnvironmentVariable('BDSBIN'), 'sqlite3.dll')
-      );
+    begin
+      LPathEntry := GetEnvironmentVariable('BDSBIN');
+      {$IFDEF WIN64}
+      if SameText(TPath.GetFileName(LPathEntry), 'bin') then
+        LPathEntry := TPath.Combine(TPath.GetDirectoryName(LPathEntry), 'bin64');
+      {$ELSE}
+      if SameText(TPath.GetFileName(LPathEntry), 'bin64') then
+        LPathEntry := TPath.Combine(TPath.GetDirectoryName(LPathEntry), 'bin');
+      {$ENDIF}
+      LCandidates.Add(TPath.Combine(LPathEntry, 'sqlite3.dll'));
+    end;
     for LPathEntry in GetEnvironmentVariable('PATH').Split([';']) do
       if LPathEntry.Contains('\Embarcadero\Studio\') then
       begin
+        LArchitecturePath := LPathEntry;
         {$IFDEF WIN64}
-        if SameText(TPath.GetFileName(LPathEntry), 'bin') then
-          LCandidates.Add(
-            TPath.Combine(TPath.GetDirectoryName(LPathEntry), 'bin64\sqlite3.dll')
+        if SameText(TPath.GetFileName(LArchitecturePath), 'bin') then
+          LArchitecturePath := TPath.Combine(
+            TPath.GetDirectoryName(LArchitecturePath),
+            'bin64'
+          );
+        {$ELSE}
+        if SameText(TPath.GetFileName(LArchitecturePath), 'bin64') then
+          LArchitecturePath := TPath.Combine(
+            TPath.GetDirectoryName(LArchitecturePath),
+            'bin'
           );
         {$ENDIF}
-        LCandidates.Add(TPath.Combine(LPathEntry, 'sqlite3.dll'));
+        LCandidates.Add(TPath.Combine(LArchitecturePath, 'sqlite3.dll'));
       end;
     LStudioRoot := GetEnvironmentVariable('BDS');
     if not LStudioRoot.IsEmpty then

@@ -12,6 +12,7 @@
         "ListOpenFiles",
         "ListProjectUnits",
         "GetEditorContent",
+        "SaveActiveFile",
         "GetEditorSelection",
         "GetCursorPosition",
         "GetCompilerMessages"

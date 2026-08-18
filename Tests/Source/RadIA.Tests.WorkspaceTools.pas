@@ -4,13 +4,15 @@ interface
 
 uses
   DUnitX.TestFramework,
+  RadIA.Core.Patches,
   RadIA.Core.Tools,
   RadIA.Core.Workspace;
 
 type
   TRadIAFakeWorkspaceFacade = class(
     TInterfacedObject,
-    IRadIAWorkspaceFacade
+    IRadIAWorkspaceFacade,
+    IRadIAEditorPersistenceFacade
   )
   public
     function GetIDEState: TRadIAIDEState;
@@ -26,6 +28,8 @@ type
     function GetCompilerMessages(
       const AMaxCount: Integer
     ): TArray<TRadIACompilerMessage>;
+    function SaveFile(const AFileName: string): Boolean;
+    function ReloadFile(const AFileName: string): Boolean;
   end;
 
   [TestFixture]
@@ -44,11 +48,13 @@ type
     procedure TearDown;
 
     [Test]
-    procedure TestRegistersCompleteReadOnlySlice;
+    procedure TestRegistersCompleteWorkspaceSlice;
     [Test]
     procedure TestGetIDEStateReturnsStructuredJson;
     [Test]
     procedure TestGetEditorContentReportsTruncation;
+    [Test]
+    procedure TestSaveActiveFileUsesPersistence;
     [Test]
     procedure TestGetCompilerMessagesReturnsStructuredMessages;
     [Test]
@@ -61,6 +67,7 @@ implementation
 
 uses
   System.JSON,
+  System.SysUtils,
   RadIA.Core.ToolRegistry,
   RadIA.Core.WorkspaceTools;
 
@@ -159,6 +166,20 @@ begin
   Result := [
     'C:\Sample\Sample.Unit.pas'
   ];
+end;
+
+function TRadIAFakeWorkspaceFacade.ReloadFile(
+  const AFileName: string
+): Boolean;
+begin
+  Result := False;
+end;
+
+function TRadIAFakeWorkspaceFacade.SaveFile(
+  const AFileName: string
+): Boolean;
+begin
+  Result := SameText(AFileName, 'C:\Sample\Sample.Unit.pas');
 end;
 
 { TTestRadIAWorkspaceTools }
@@ -270,17 +291,30 @@ begin
   Assert.Contains(LResult.ContentJson, 'Second.pas');
 end;
 
-procedure TTestRadIAWorkspaceTools.TestRegistersCompleteReadOnlySlice;
+procedure TTestRadIAWorkspaceTools.TestSaveActiveFileUsesPersistence;
+var
+  LResult: TRadIAToolResult;
+begin
+  LResult := ExecuteTool('SaveActiveFile', '{}');
+
+  Assert.IsTrue(LResult.Success, LResult.ErrorMessage);
+  Assert.Contains(LResult.ContentJson, '"saved":true');
+  Assert.Contains(LResult.ContentJson, 'Sample.Unit.pas');
+end;
+
+procedure TTestRadIAWorkspaceTools.TestRegistersCompleteWorkspaceSlice;
 var
   LTool: IRadIATool;
 begin
-  Assert.AreEqual(9, FRegistry.Count);
+  Assert.AreEqual(10, FRegistry.Count);
   Assert.IsTrue(FRegistry.TryResolve('GetIDEState', LTool));
   Assert.IsTrue(FRegistry.TryResolve('GetActiveProject', LTool));
   Assert.IsTrue(FRegistry.TryResolve('GetActiveUnit', LTool));
   Assert.IsTrue(FRegistry.TryResolve('ListOpenFiles', LTool));
   Assert.IsTrue(FRegistry.TryResolve('ListProjectUnits', LTool));
   Assert.IsTrue(FRegistry.TryResolve('GetEditorContent', LTool));
+  Assert.IsTrue(FRegistry.TryResolve('SaveActiveFile', LTool));
+  Assert.AreEqual(trReversibleWrite, LTool.Descriptor.Risk);
   Assert.IsTrue(FRegistry.TryResolve('GetEditorSelection', LTool));
   Assert.IsTrue(FRegistry.TryResolve('GetCursorPosition', LTool));
   Assert.IsTrue(FRegistry.TryResolve('GetCompilerMessages', LTool));

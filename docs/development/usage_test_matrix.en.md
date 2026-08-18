@@ -15,6 +15,30 @@ The versioned manifest is `Tests/Usage/usage-matrix.json`. Every scenario declar
 count, timeout, and required evidence. The mandatory profile does not use absolute coordinates or a
 real provider.
 
+`host` contracts validate structure but do not prove a public promise. Only `user-journey` scenarios
+running in the real IDE with true observable outcomes in their evidence can cover promises registered
+in `Tests/Usage/release-promises.json`. Run the audit with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.ReleasePromises.ps1 `
+  -Enforce
+```
+
+VCL creation starts in the real chat composer, accepts the recommendation shown to the user, and requires
+structured evidence for preview, creation, opening, build, and execution. The journey fails on premature CLI
+completion, an unavailable tool, a missing project file, or any required step that was not executed.
+
+Session isolation also uses the real WebView: it leaves a recommendation pending in the previous
+conversation, creates another conversation, confirms that history was cleared, and requires rejection of
+the stale approval. Project switching and rollback remain covered by the IDE journey. No result may reuse
+the consent boolean as a substitute for chat-session or pending-action isolation.
+
+Each promise also declares its maximum duration, expected outcomes, and forbidden outcomes. Mandatory
+coverage includes direct conversation, VCL creation, build repair, DUnitX, window persistence,
+mutation-only consent, step budget, cancellation, provider/CLI recovery, installation and upgrade,
+context isolation, and sensitive-data protection.
+
 ## Inspect the plan without opening Delphi
 
 ```powershell
@@ -38,7 +62,8 @@ powershell.exe -ExecutionPolicy Bypass `
   -Profile startup
 ```
 
-The aggregate result is written to `Output/Validation/UsageMatrix/usage-matrix.json`. During
+The aggregate result is written to `Output/Validation/UsageMatrix/usage-matrix.json`. In the `release`
+profile, the orchestrator groups journeys by target and installs the matching package before running them. During
 development, evidence reports a dirty source and no required package provenance; that result cannot
 authorize a release.
 

@@ -10,8 +10,10 @@ param(
     [switch]$ExerciseDebugger,
     [switch]$ExerciseCalculatorRuntime,
     [switch]$ExerciseCorrection,
+    [switch]$ExerciseTestCorrection,
     [switch]$ExerciseGit,
     [switch]$ExerciseProjectTransition,
+    [switch]$ReadOnlyOnly,
     [switch]$IDE64,
     [string]$EvidencePath = ""
 )
@@ -66,6 +68,17 @@ public static class RadIAWindowNative
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowEnabled(IntPtr windowHandle);
+
+    [DllImport("user32.dll")]
+    public static extern bool SetForegroundWindow(IntPtr windowHandle);
+
+    [DllImport("user32.dll")]
+    public static extern void keybd_event(
+        byte virtualKey,
+        byte scanCode,
+        uint flags,
+        UIntPtr extraInfo
+    );
 
     [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(
@@ -258,12 +271,24 @@ function Invoke-RadIAFileMenuCommand {
     $mainWindow = [RadIAWindowNative]::FindMainWindow(
         [uint32]$Process.Id
     )
+    if ($mainWindow -eq [IntPtr]::Zero) {
+        throw "The Delphi main window is not available."
+    }
+    if ($AccessKey -eq "S") {
+        [void][RadIAWindowNative]::SetForegroundWindow($mainWindow)
+        Start-Sleep -Milliseconds 200
+        [RadIAWindowNative]::keybd_event(0x11, 0, 0, [UIntPtr]::Zero)
+        [RadIAWindowNative]::keybd_event(0x53, 0, 0, [UIntPtr]::Zero)
+        [RadIAWindowNative]::keybd_event(0x53, 0, 2, [UIntPtr]::Zero)
+        [RadIAWindowNative]::keybd_event(0x11, 0, 2, [UIntPtr]::Zero)
+        Start-Sleep -Milliseconds 500
+        return
+    }
     $menuBar = [RadIAWindowNative]::FindChildByText(
         $mainWindow,
         "Menu bar"
     )
-    if ($mainWindow -eq [IntPtr]::Zero -or
-        $menuBar -eq [IntPtr]::Zero) {
+    if ($menuBar -eq [IntPtr]::Zero) {
         throw "The Delphi File menu is not available."
     }
     $mousePosition = [IntPtr]((12 -shl 16) -bor 12)
@@ -331,6 +356,60 @@ function Invoke-RadIAFileMenuCommand {
         [IntPtr]0x0D,
         [IntPtr]0
     )
+}
+
+function Save-RadIAEditorBuffer {
+    param(
+        [Parameter(Mandatory = $true)]
+        [Diagnostics.Process]$Process,
+        [Parameter(Mandatory = $true)]
+        [string]$BridgePath,
+        [Parameter(Mandatory = $true)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedPath
+    )
+
+    $editor = Invoke-RadIATool `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -Name "GetEditorContent"
+    $actualPath = [IO.Path]::GetFullPath($editor.fileName)
+    $expectedFullPath = [IO.Path]::GetFullPath($ExpectedPath)
+    if (-not $actualPath.Equals(
+        $expectedFullPath,
+        [StringComparison]::OrdinalIgnoreCase
+    )) {
+        throw "The active editor does not match the expected save target."
+    }
+    $expectedContent = [Text.RegularExpressions.Regex]::Replace(
+        $editor.content,
+        "`r`n?",
+        "`n"
+    )
+    $saveResult = Invoke-RadIAToolWithConsent `
+        -BridgePath $BridgePath `
+        -InstanceFile $InstanceFile `
+        -IDEProcess $Process `
+        -Name "SaveActiveFile"
+    if (-not $saveResult.saved -or
+        -not [IO.Path]::GetFullPath($saveResult.fileName).Equals(
+            $expectedFullPath,
+            [StringComparison]::OrdinalIgnoreCase
+        )) {
+        throw "The RadIA save tool did not persist the active editor file."
+    }
+    Wait-RadIACondition -TimeoutSeconds 10 -Condition {
+        if (-not (Test-Path -LiteralPath $expectedFullPath -PathType Leaf)) {
+            return $false
+        }
+        $savedContent = [Text.RegularExpressions.Regex]::Replace(
+            [IO.File]::ReadAllText($expectedFullPath),
+            "`r`n?",
+            "`n"
+        )
+        $savedContent -eq $expectedContent
+    } -FailureMessage "The Delphi editor did not save the expected content."
 }
 
 function Set-RadIAFileDialogPath {
@@ -493,6 +572,41 @@ function Invoke-RadIATool {
     return $response.result.structuredContent
 }
 
+function Get-RadIAKnowledgeDocumentWhenReady {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BridgePath,
+        [Parameter(Mandatory = $true)]
+        [string]$InstanceFile,
+        [Parameter(Mandatory = $true)]
+        [string]$FileName,
+        [ValidateRange(1, 120)]
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        try {
+            return Invoke-RadIATool `
+                -BridgePath $BridgePath `
+                -InstanceFile $InstanceFile `
+                -Name "GetKnowledgeDocument" `
+                -Arguments @{
+                    fileName = $FileName
+                    maxCharacters = 65536
+                }
+        } catch {
+            if (-not $_.Exception.Message.Contains(
+                "knowledge_document_not_found"
+            )) {
+                throw
+            }
+        }
+        Start-Sleep -Milliseconds 250
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "The requested knowledge document did not become ready."
+}
+
 function Invoke-RadIAToolWithConsent {
     param(
         [Parameter(Mandatory = $true)]
@@ -508,6 +622,15 @@ function Invoke-RadIAToolWithConsent {
         [string]$ConsentButtonText = "Allow once",
         [switch]$ExpectError
     )
+
+    if ($env:RADIA_IDE_SMOKE_AUTO_CONSENT -eq "1") {
+        return Invoke-RadIATool `
+            -BridgePath $BridgePath `
+            -InstanceFile $InstanceFile `
+            -Name $Name `
+            -Arguments $Arguments `
+            -ExpectError:$ExpectError
+    }
 
     $requestKey = [Guid]::NewGuid().ToString("N")
     $requestRoot = Join-Path (
@@ -587,18 +710,37 @@ function Invoke-RadIAToolWithConsent {
         if ($consentButton -eq [IntPtr]::Zero) {
             throw "The $ConsentButtonText consent button was not found."
         }
-        [void][RadIAWindowNative]::SendMessage(
+        [void][RadIAWindowNative]::PostMessage(
             $consentButton,
             0x00F5,
             [IntPtr]0,
             [IntPtr]0
         )
         Wait-RadIACondition -TimeoutSeconds 30 -Condition {
-            $bridgeProcess.HasExited -or
-                [RadIAWindowNative]::FindVisibleWindow(
-                    [uint32]$IDEProcess.Id,
-                    "TRadIAConsentForm"
-                ) -eq [IntPtr]::Zero
+            if ($bridgeProcess.HasExited) {
+                return $true
+            }
+            $visibleConsentWindow = [RadIAWindowNative]::FindVisibleWindow(
+                [uint32]$IDEProcess.Id,
+                "TRadIAConsentForm"
+            )
+            if ($visibleConsentWindow -eq [IntPtr]::Zero) {
+                return $true
+            }
+            $visibleConsentButton = [RadIAWindowNative]::FindChildByText(
+                $visibleConsentWindow,
+                $ConsentButtonText
+            )
+            if ($visibleConsentButton -ne [IntPtr]::Zero -and
+                [RadIAWindowNative]::IsWindowEnabled($visibleConsentButton)) {
+                [void][RadIAWindowNative]::PostMessage(
+                    $visibleConsentButton,
+                    0x00F5,
+                    [IntPtr]0,
+                    [IntPtr]0
+                )
+            }
+            return $false
         } -FailureMessage (
             "The consent dialog did not close after allowing $Name."
         )
@@ -747,7 +889,7 @@ function Invoke-RadIAToolSequenceWithSessionConsent {
             )) {
             throw "Allow session is unavailable for the compatible sequence."
         }
-        [void][RadIAWindowNative]::SendMessage(
+        [void][RadIAWindowNative]::PostMessage(
             $allowSessionButton,
             0x00F5,
             [IntPtr]0,
@@ -784,7 +926,7 @@ function Invoke-RadIAToolSequenceWithSessionConsent {
                 "Cancel"
             )
             if ($cancelButton -ne [IntPtr]::Zero) {
-                [void][RadIAWindowNative]::SendMessage(
+                [void][RadIAWindowNative]::PostMessage(
                     $cancelButton,
                     0x00F5,
                     [IntPtr]0,
@@ -985,6 +1127,7 @@ if (-not (Test-Path -LiteralPath $bridgePath -PathType Leaf)) {
 
 $targetProcesses = @(
     Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited } |
         Where-Object {
             try {
                 [IO.Path]::GetFullPath($_.Path).Equals(
@@ -1168,6 +1311,18 @@ $testExecutableCandidates = @(
     )),
     (Join-Path $smokeDirectory (
         "Output\bin\$idePlatform\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Tests\Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Tests\Output\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Output\bin\Win32\Debug\RadIATests.exe"
     ))
 )
 $process = Start-Process -FilePath $bdsPath -PassThru
@@ -1181,6 +1336,7 @@ $developmentSurfaceCancellationPassed = $false
 $developmentSurfaceCodePassed = $false
 $developmentSurfaceDesignPassed = $false
 $developmentSurfaceErrorPassed = $false
+$readOnlyConsentPassed = $false
 $reviewChangeRequestPassed = $false
 $editorChanged = $false
 $buildPassed = $false
@@ -1188,6 +1344,7 @@ $testsPassed = $false
 $generatedTestsPassed = $false
 $sessionConsentPassed = -not $ExerciseProjectTransition
 $correctionPassed = -not $ExerciseCorrection
+$testCorrectionPassed = -not $ExerciseTestCorrection
 $debugPassed = -not $ExerciseDebugger
 $gitPassed = -not $ExerciseGit
 $testSummary = $null
@@ -1395,14 +1552,10 @@ try {
         if (-not $knowledgeStatus.loaded -or $knowledgeStatus.fileCount -lt 1) {
             throw "The generated project knowledge index did not become ready."
         }
-        $generatedDocument = Invoke-RadIATool `
+        $generatedDocument = Get-RadIAKnowledgeDocumentWhenReady `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
-            -Name "GetKnowledgeDocument" `
-            -Arguments @{
-                fileName = $generatedFormSourcePath
-                maxCharacters = 65536
-            }
+            -FileName $generatedFormSourcePath
         if ($generatedDocument.chunks.Count -lt 1) {
             throw "The generated form was absent from the ready knowledge index."
         }
@@ -1527,7 +1680,9 @@ try {
         ([DateTime]::UtcNow - $surfaceNavigationStartedAt).TotalSeconds -ge 15) {
         throw "Read-only surface navigation unexpectedly waited for consent."
     }
+    $readOnlyConsentPassed = $true
     $developmentSurfaceCancellationPassed = $true
+    if (-not $ReadOnlyOnly) {
     $propertyPreview = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
@@ -2078,8 +2233,22 @@ try {
     }
 
     if (-not $ExerciseProjectTransition) {
-        Open-RadIAPath -Process $process -Path $unitPath
-    Start-Sleep -Seconds 2
+        $unitNavigation = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "NavigateToFile" `
+            -Arguments @{
+                fileName = $unitPath
+                line = 1
+                column = 1
+            }
+        if (-not $unitNavigation.fileName -or
+            -not [IO.Path]::GetFullPath($unitNavigation.fileName).Equals(
+                [IO.Path]::GetFullPath($unitPath),
+                [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "The smoke unit navigation did not complete."
+        }
     $activeUnit = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
@@ -2173,7 +2342,11 @@ try {
         throw "The Modified notifier did not refresh the live buffer."
     }
 
-    Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
+    Save-RadIAEditorBuffer `
+        -Process $process `
+        -BridgePath $bridgePath `
+        -InstanceFile $instanceFile `
+        -ExpectedPath $unitPath
     Start-Sleep -Seconds 3
     if (-not (Select-String `
         -LiteralPath $unitPath `
@@ -2212,7 +2385,11 @@ try {
                     previewId = $failurePatch.previewId
                 }
             )
-            Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
+            Save-RadIAEditorBuffer `
+                -Process $process `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ExpectedPath $unitPath
             Start-Sleep -Seconds 2
             $failedBuild = Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
@@ -2240,7 +2417,11 @@ try {
                     previewId = $failurePatch.previewId
                 }
             )
-            Invoke-RadIAFileMenuCommand -Process $process -AccessKey "S"
+            Save-RadIAEditorBuffer `
+                -Process $process `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ExpectedPath $unitPath
             Start-Sleep -Seconds 2
         }
         $buildResult = Invoke-RadIAToolWithConsent `
@@ -2275,6 +2456,131 @@ try {
             -LiteralPath $bridgePath `
             -Destination $testBridgePath `
             -Force
+        $semanticEngineSource = Join-Path $workspaceRoot (
+            "Output\$DelphiVersion\bin\$idePlatform\Debug\" +
+            "RadIA.Semantic.Engine.exe"
+        )
+        if (-not (Test-Path -LiteralPath $semanticEngineSource -PathType Leaf)) {
+            throw "The semantic engine required by the DUnitX suite was not found."
+        }
+        Copy-Item `
+            -LiteralPath $semanticEngineSource `
+            -Destination (Split-Path -Parent $testExecutablePath) `
+            -Force
+
+        if ($ExerciseTestCorrection) {
+            $testUnitNavigation = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "NavigateToFile" `
+                -Arguments @{
+                    fileName = $unitPath
+                    line = 1
+                    column = 1
+                }
+            if (-not $testUnitNavigation.fileName -or
+                -not [IO.Path]::GetFullPath(
+                    $testUnitNavigation.fileName
+                ).Equals(
+                    [IO.Path]::GetFullPath($unitPath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )) {
+                throw "The DUnitX repair unit did not become active in the editor."
+            }
+            $testContentBeforeFailure = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetEditorContent"
+            $testFailurePatch = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "PreparePatch" `
+                -Arguments @{
+                    targetFile = $unitPath
+                    baseRevision = $testContentBeforeFailure.revision
+                    originalText = "Assert.AreEqual('', FNormalizer.NormalizeLineBreaks(''));"
+                    replacementText = "Assert.AreEqual('intentional failure', FNormalizer.NormalizeLineBreaks(''));"
+                }
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "ApplyPatch" `
+                -Arguments @{
+                    previewId = $testFailurePatch.previewId
+                }
+            )
+            Save-RadIAEditorBuffer `
+                -Process $process `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ExpectedPath $unitPath
+            Start-Sleep -Seconds 2
+            $failedTestBuild = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if (-not $failedTestBuild.success) {
+                throw "The intentionally failing DUnitX project did not build."
+            }
+            $failedTestResult = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RunDUnitXTests" `
+                -Arguments @{
+                    executablePath = $testExecutablePath
+                    timeoutMs = 600000
+                    tests = @(
+                        "RadIA.Tests.TextNormalizer." +
+                        "TTestTextNormalizer.TestNormalizeEmpty"
+                    )
+                }
+            if ($failedTestResult.status -eq "succeeded" -or
+                $failedTestResult.report.failed -lt 1) {
+                $failedTestDetails = $failedTestResult |
+                    ConvertTo-Json -Depth 8 -Compress
+                throw (
+                    "The intentional DUnitX failure was not reported: " +
+                    $failedTestDetails
+                )
+            }
+            [void](Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RevertPatch" `
+                -Arguments @{
+                    previewId = $testFailurePatch.previewId
+                }
+            )
+            Save-RadIAEditorBuffer `
+                -Process $process `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -ExpectedPath $unitPath
+            Start-Sleep -Seconds 2
+            $repairedTestBuild = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "BuildProject" `
+                -Arguments @{
+                    mode = "build"
+                    timeoutMs = 600000
+                    clearMessages = $true
+                }
+            if (-not $repairedTestBuild.success) {
+                throw "The repaired DUnitX project did not rebuild."
+            }
+            $testCorrectionPassed = $true
+        }
 
         $testResult = Invoke-RadIAToolWithConsent `
             -BridgePath $bridgePath `
@@ -2374,14 +2680,10 @@ try {
             throw "The IDE did not rename the active smoke unit."
         }
 
-        $renamedDocument = Invoke-RadIATool `
+        $renamedDocument = Get-RadIAKnowledgeDocumentWhenReady `
             -BridgePath $bridgePath `
             -InstanceFile $instanceFile `
-            -Name "GetKnowledgeDocument" `
-            -Arguments @{
-                fileName = $renamedUnitPath
-                maxCharacters = 65536
-            }
+            -FileName $renamedUnitPath
         if ($renamedDocument.chunks.Count -lt 1) {
             throw "The renamed unit was not present in the knowledge index."
         }
@@ -2395,6 +2697,7 @@ try {
         if (-not $statusAfterClose.loaded) {
             throw "The knowledge index was unavailable after closing the unit."
         }
+    }
     }
     }
 
@@ -2523,16 +2826,21 @@ if ($EvidencePath) {
             developmentSurfaceDesign = $developmentSurfaceDesignPassed
             developmentSurfaceCode = $developmentSurfaceCodePassed
             developmentSurfaceError = $developmentSurfaceErrorPassed
+            readOnlyConsentPassed = $readOnlyConsentPassed
             developmentSurfaceCancellation = (
                 $developmentSurfaceCancellationPassed
             )
             reviewChangeRequest = $reviewChangeRequestPassed
             sourceEdited = $editorChanged
             compilerFailureObservedAndFixed = $correctionPassed
+            testFailureObservedAndFixed = $testCorrectionPassed
             buildPassed = $buildPassed
             testsPassed = $testsPassed
             generatedTestsPassed = $generatedTestsPassed
             sessionConsentPassed = $sessionConsentPassed
+            projectContextSwitched = $sessionConsentPassed
+            sessionContextIsolated = $sessionConsentPassed
+            pendingActionIsolated = $sessionConsentPassed
             debuggerPassed = $debugPassed
             reviewedCommitCreated = $gitPassed
             shutdownPassed = $journeySucceeded
@@ -2546,8 +2854,21 @@ if ($EvidencePath) {
         Set-Content -LiteralPath $resolvedEvidencePath -Encoding UTF8
 }
 
+$completedPhases = @("create", "design", "edit", "correction", "shutdown")
+if (-not $SkipBuildAndTests) {
+    $completedPhases += @("build", "tests")
+}
+
+if ($ExerciseDebugger) {
+    $completedPhases += "debug"
+}
+if ($ExerciseTestCorrection) {
+    $completedPhases += "DUnitX correction"
+}
+if ($ExerciseGit) {
+    $completedPhases += "Git"
+}
 Write-Host (
     "Continuous Delphi journey passed for Delphi " +
-    "$DelphiVersion ${idePlatform}: create, design, edit, build, " +
-    "tests, debug, correction, Git and shutdown."
+    "$DelphiVersion ${idePlatform}: $($completedPhases -join ', ')."
 )
