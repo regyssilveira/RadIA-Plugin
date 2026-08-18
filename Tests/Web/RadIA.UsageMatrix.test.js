@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const root = path.resolve('.');
@@ -62,7 +62,7 @@ test('usage matrix plan is deterministic and does not start Delphi', () => {
   );
 });
 
-test('release gate composes calculator, opening, and usage tests', () => {
+test('release gate composes bounded critical validation', () => {
   const source = fs.readFileSync(releaseRunnerPath, 'utf8');
   const matrixSource = fs.readFileSync(runnerPath, 'utf8');
   const buildSource = fs.readFileSync(buildPath, 'utf8');
@@ -73,43 +73,33 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Version = "37\.0"/u);
   assert.match(source, /Test-RadIA\.GeneratedProjects\.ps1/u);
   assert.match(source, /New-RadIA\.GeneratedProjectsEvidence\.ps1/u);
-  assert.match(source, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
   assert.match(source, /Test-RadIA\.ReleasePromises\.ps1/u);
   assert.match(source, /-Enforce/u);
   assert.match(source, /Test-RadIA\.UsageMatrix\.ps1/u);
+  assert.match(source, /-Profile "startup"/u);
   assert.match(source, /-Profile "release"/u);
+  assert.match(source, /\[switch\]\$PlanOnly/u);
+  assert.match(source, /totalIdeRunCount/u);
   assert.doesNotMatch(source, /RequirePackageProvenance/u);
-  assert.match(source, /installationTargets/u);
-  assert.match(source, /Install = \$true/u);
+  assert.doesNotMatch(source, /installationTargets/u);
+  assert.doesNotMatch(source, /openingTargets/u);
   assert.match(source, /Stop-RadIAReleaseAuxiliaryProcesses/u);
   assert.match(source, /Where-Object \{ -not \$_\.HasExited \}/u);
   assert.match(matrixSource, /Where-Object \{ -not \$_\.HasExited \}/u);
+  assert.match(
+    matrixSource,
+    /\$Profile -in @\("startup", "release", "regression"\)/u
+  );
   assert.match(buildSource, /function Copy-RadIAReplaceableFile/u);
   assert.match(buildSource, /\.pending-delete-\$PID-/u);
   assert.match(source, /RadIA\.Semantic\.Engine/u);
-  assert.match(source, /startupRetryUsed/u);
-  assert.match(source, /attemptCount/u);
-  assert.match(source, /Delphi did not become ready for the smoke test/u);
-  assert.match(source, /The Delphi File menu did not open/u);
   assert.match(smokeSource, /\$attempt -le 3 -and -not \$menuOpened/u);
   assert.match(smokeSource, /SetForegroundWindow\(\$mainWindow\)/u);
   assert.match(smokeSource, /TRadIAOnboardingForm/u);
   assert.match(smokeSource, /\$onboardingWindow/u);
-  assert.match(source, /The Delphi file dialog did not open/u);
-  assert.match(source, /Test-RadIAReleaseJourneyRetryable/u);
-  assert.match(source, /previousErrorActionPreference/u);
-  assert.match(source, /\$ErrorActionPreference = "Continue"/u);
-  assert.ok(
-    source.indexOf('$installationTargets = @(') <
-      source.indexOf('$openingTargets = @(')
-  );
-  const retryStart = source.indexOf('$firstAttemptOutput = $output');
-  const retryEnd = source.indexOf('$attemptCount = 2', retryStart);
-  const retryBlock = source.slice(retryStart, retryEnd);
-  assert.match(retryBlock, /Install-RadIAReleaseTarget/u);
 });
 
-test('release usage plan separates host contracts from IDE journeys', () => {
+test('release usage plan is bounded to the representative target', () => {
   const output = execFileSync(
     'powershell.exe',
     [
@@ -125,43 +115,32 @@ test('release usage plan separates host contracts from IDE journeys', () => {
     { encoding: 'utf8' }
   );
   const plan = JSON.parse(output);
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  assert.equal(plan.scenarioCount, manifest.scenarios.length);
-  assert.deepEqual(
-    [...new Set(plan.runs.map((run) => run.scenarioId))].sort(),
-    manifest.scenarios.map((scenario) => scenario.id).sort()
-  );
+  assert.equal(plan.targetCount, 1);
+  assert.equal(plan.scenarioCount, 9);
+  assert.equal(plan.runCount, 9);
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
-  assert.equal(plan.runCount, 49);
   assert.equal(intentRuns.length, 1);
   assert.equal(intentRuns[0].targetId, 'host-neutral');
   assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
   const conversationRuns = plan.runs.filter(
     (run) => run.scenarioId === 'first-conversation'
   );
-  assert.equal(conversationRuns.length, 3);
+  assert.equal(conversationRuns.length, 1);
+  assert.equal(conversationRuns[0].targetId, 'delphi13-win32');
   assert.ok(conversationRuns.every((run) => run.scope === 'user-journey'));
   const windowStateRuns = plan.runs.filter(
     (run) => run.scenarioId === 'chat-window-state-persistence'
   );
-  assert.equal(windowStateRuns.length, 3);
+  assert.equal(windowStateRuns.length, 1);
   assert.ok(windowStateRuns.every(
     (run) => run.requiredEvidence.includes('boundsRestored')
   ));
-  const creationRuns = plan.runs.filter(
-    (run) => run.scenarioId === 'vcl-project-creation-lifecycle'
-  );
-  assert.equal(creationRuns.length, 3);
-  assert.ok(creationRuns.every((run) => run.scope === 'ide-journey'));
-  assert.ok(
-    creationRuns.every((run) => run.requiredEvidence.includes('phases.buildPassed'))
-  );
   const historyRuns = plan.runs.filter(
     (run) => run.scenarioId === 'calculator-history-fidelity'
   );
-  assert.equal(historyRuns.length, 3);
+  assert.equal(historyRuns.length, 1);
   assert.ok(historyRuns.every((run) => run.scope === 'user-journey'));
   assert.ok(historyRuns.every(
     (run) => run.requiredEvidence.includes('debugger.operationHistoryPassed')
@@ -189,5 +168,57 @@ test('release usage plan separates host contracts from IDE journeys', () => {
     breakpointRuns[0].requiredEvidence.includes(
       'unsupported-exception-filter-explicit'
     )
+  );
+});
+
+test('regression plan retains every scenario on compatible targets', () => {
+  const output = execFileSync(
+    'powershell.exe',
+    [
+      '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', runnerPath,
+      '-Profile', 'regression', '-PlanOnly'
+    ],
+    { encoding: 'utf8' }
+  );
+  const plan = JSON.parse(output);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  assert.equal(plan.scenarioCount, manifest.scenarios.length);
+  assert.equal(plan.runCount, 49);
+  assert.deepEqual(
+    [...new Set(plan.runs.map((run) => run.scenarioId))].sort(),
+    manifest.scenarios.map((scenario) => scenario.id).sort()
+  );
+});
+
+test('targeted plan runs only explicit scenarios and targets', () => {
+  const output = execFileSync(
+    'powershell.exe',
+    [
+      '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', runnerPath,
+      '-Profile', 'targeted', '-ScenarioId', 'calculator-history-fidelity',
+      '-TargetId', 'delphi13-win32', '-PlanOnly'
+    ],
+    { encoding: 'utf8' }
+  );
+  const plan = JSON.parse(output);
+  assert.equal(plan.scenarioCount, 1);
+  assert.equal(plan.runCount, 1);
+  assert.equal(plan.runs[0].scenarioId, 'calculator-history-fidelity');
+  assert.equal(plan.runs[0].targetId, 'delphi13-win32');
+});
+
+test('targeted plan rejects an implicit broad selection', () => {
+  const result = spawnSync(
+    'powershell.exe',
+    [
+      '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', runnerPath,
+      '-Profile', 'targeted', '-PlanOnly'
+    ],
+    { encoding: 'utf8' }
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(
+    `${result.stdout}${result.stderr}`,
+    /targeted profile requires at least one -ScenarioId/u
   );
 });

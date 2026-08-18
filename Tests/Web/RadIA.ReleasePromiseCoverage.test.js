@@ -47,6 +47,6 @@ test('promise gate rejects contracts disguised as user E2E evidence', () => {
   assert.match(gate, /maximum-duration-missing/u);
   assert.match(gate, /expected-outcomes-missing/u);
   assert.match(gate, /forbidden-outcomes-missing/u);
-  assert.match(gate, /scenario-not-required-by-release/u);
+  assert.match(gate, /scenario-not-required-by-regression/u);
   assert.match(gate, /Release promises without mandatory user-journey E2E coverage/u);
 });

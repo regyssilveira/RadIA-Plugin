@@ -44,7 +44,7 @@ recriado quando houver uma nova recomendação.
 A matriz automatizada exercita dezesseis pedidos naturais em português e inglês para criação de
 projeto, correção de build, testes e diagnóstico. Perguntas educativas ou ambíguas continuam no
 chat. Esses testes usam o classificador Pascal real nas suítes DUnitX de Delphi 12 e 13 e integram o
-gate indivisível de release.
+gate crítico de release e a certificação completa de regressão.
 
 Consulte [Jornadas Delphi](../guides/user_guide_journeys.md) para os fluxos disponíveis e
 [Modelo de segurança](tool_security_model.md) para as proteções aplicadas após a confirmação.

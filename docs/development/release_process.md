@@ -28,15 +28,16 @@ node --test --test-isolation=none Tests/Web/RadIA.Documentation.test.js
 powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
-`Test-RadIA.ReleaseUsage.ps1` é obrigatório em toda release e executa, como um único gate indivisível,
-a validação de que cada promessa pública crítica possui uma jornada E2E real nos alvos suportados,
-as suítes DUnitX completas no Delphi 12 e 13, toda a suíte registrada de integração e ponta a ponta, a
-criação e os testes funcionais e DUnitX da calculadora, a criação e abertura imediata de projetos e a
-matriz automatizada de uso no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64. O gate produz evidência
-sanitizada em `Output/Validation/ReleaseUsage` e qualquer grupo, alvo ou cenário ausente, ignorado ou
-reprovado bloqueia a publicação. Não execute nem aprove esses grupos isoladamente para autorizar uma
-release. O perfil `release` deve incluir todos os cenários registrados em `Tests/Usage/usage-matrix.json`;
-o próprio runner interrompe a execução quando encontra um cenário cadastrado fora desse perfil.
+`Test-RadIA.ReleaseUsage.ps1` é obrigatório em toda release. Ele executa as suítes DUnitX completas no
+Delphi 12 e 13, todos os templates, smoke de startup/shutdown nos três alvos e as jornadas críticas no
+Delphi 13 Win32 representativo. O gate produz evidência sanitizada em `Output/Validation/ReleaseUsage` e
+qualquer etapa executada que reprove bloqueia a publicação.
+
+A certificação `regression` preserva todos os 49 fluxos nos alvos compatíveis, mas é executada sob demanda.
+Ela é obrigatória para releases maiores e mudanças no instalador, WebView2, shutdown, isolamento de sessão,
+segurança/consentimento, infraestrutura E2E ou suporte de targets. Durante o desenvolvimento, use o perfil
+`targeted` com `-ScenarioId` e `-TargetId`. Consulte
+[Matriz automatizada de testes de uso](usage_test_matrix.md) para a tabela de decisão e os comandos.
 
 Execute o scanner **localmente** e exija o Quality Gate aprovado para a mesma revisão. Builds, testes,
 catálogo, instalador e smokes devem apontar para o mesmo commit limpo. Nenhuma evidência deve ser
@@ -44,8 +45,8 @@ editada manualmente para contornar uma falha.
 
 Use o Delphi 12 (`-DelphiVersion "23.0"`) no scanner estático. O analisador Delphi atual não interpreta
 corretamente construções novas da RTL do Delphi 13 e pode produzir falsos positivos de símbolos não usados.
-Essa escolha limita somente o parser estático: o gate indivisível continua compilando, testando e executando
-as jornadas no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+Essa escolha limita somente o parser estático: o gate continua compilando e testando os dois Delphis e
+executando o smoke de compatibilidade no Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
 
 O workflow `SonarQube release gate` do GitHub Actions é uma repetição manual opcional, dependente de um
 runner Windows `self-hosted` registrado e disponível. Ele não é disparado por push, pull request ou tag,

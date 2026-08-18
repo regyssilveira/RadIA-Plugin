@@ -56,4 +56,4 @@ anterior enquanto o preview permanecer válido.
 - rejeição comprovada de DFM, dependência privada, ciclo e revisão obsoleta;
 - aplicação e rollback com igualdade exata dos arquivos originais;
 - build e testes no Delphi 12 e 13;
-- cenário de integração registrado no gate indivisível de release.
+- cenário de integração registrado no gate direcionado e na regressão completa.
