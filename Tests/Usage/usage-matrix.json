@@ -22,6 +22,7 @@
         "clean-install-and-upgrade",
         "agent-step-budget",
         "natural-vcl-project-creation",
+        "calculator-history-fidelity",
         "build-failure-repair",
         "dunitx-create-run-repair",
         "project-session-isolation",
@@ -337,6 +338,8 @@
         "project-created-and-opened",
         "calculator-built-and-started",
         "primary-calculation-observed",
+        "operation-history-recorded",
+        "history-clear-verified",
         "knowledge-index-ready-before-document-read",
         "clean-shutdown"
       ],
@@ -344,6 +347,30 @@
         "phases.projectCreated",
         "phases.buildPassed",
         "debugger.runtimeScenarioPassed",
+        "debugger.operationHistoryPassed",
+        "phases.shutdownPassed"
+      ]
+    },
+    {
+      "id": "calculator-history-fidelity",
+      "scope": "user-journey",
+      "runner": "Test-RadIA.NaturalVclCreationE2E.ps1",
+      "targetIds": [
+        "delphi12-win32",
+        "delphi13-win32",
+        "delphi13-ide64"
+      ],
+      "observableOutcomes": [
+        "history-request-preserved",
+        "operation-history-recorded",
+        "history-clear-verified",
+        "clean-shutdown"
+      ],
+      "requiredEvidence": [
+        "phases.projectCreated",
+        "phases.buildPassed",
+        "debugger.runtimeScenarioPassed",
+        "debugger.operationHistoryPassed",
         "phases.shutdownPassed"
       ]
     },

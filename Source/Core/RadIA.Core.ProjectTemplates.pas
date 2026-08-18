@@ -124,6 +124,9 @@ type
     function IncludesCalculatorTests(
       const ARequest: TRadIAProjectTemplateRequest
     ): Boolean;
+    function IncludesCalculatorHistory(
+      const ARequest: TRadIAProjectTemplateRequest
+    ): Boolean;
     function IsVclCalculator(
       const ARequest: TRadIAProjectTemplateRequest
     ): Boolean;
@@ -248,6 +251,7 @@ end;
 function TRadIAProjectTemplatePlan.PreviewJson: string;
 var
   LCompanionTestProject: string;
+  LFeatures: TJSONValue;
   LFile: TRadIAProjectTemplateFile;
   LFileJson: TJSONObject;
   LFiles: TJSONArray;
@@ -275,6 +279,7 @@ begin
             LSpecification.GetValue<string>('kind', ''),
             'calculator'
           ) then
+        begin
           LRoot.AddPair(
             'creationProfile',
             LSpecification.GetValue<string>(
@@ -282,6 +287,10 @@ begin
               'essential'
             )
           );
+          LFeatures := LSpecification.GetValue('features');
+          if Assigned(LFeatures) then
+            LRoot.AddPair('features', LFeatures.Clone as TJSONValue);
+        end;
       finally
         LSpecification.Free;
       end;
@@ -705,16 +714,152 @@ begin
   end;
 end;
 
+function TRadIAProjectTemplateEngine.IncludesCalculatorHistory(
+  const ARequest: TRadIAProjectTemplateRequest
+): Boolean;
+var
+  LFeatures: TJSONObject;
+  LHistory: TJSONObject;
+  LJson: TJSONObject;
+begin
+  Result := False;
+  LJson := TJSONObject.ParseJSONValue(
+    ARequest.SpecificationJson
+  ) as TJSONObject;
+  try
+    if not Assigned(LJson) then
+      Exit;
+    LFeatures := LJson.GetValue('features') as TJSONObject;
+    if not Assigned(LFeatures) then
+      Exit;
+    LHistory := LFeatures.GetValue('operationHistory') as TJSONObject;
+    Result := Assigned(LHistory) and
+      LHistory.GetValue<Boolean>('enabled', False);
+  finally
+    LJson.Free;
+  end;
+end;
+
 function TRadIAProjectTemplateEngine.BuildVclCalculatorFiles(
   const ARequest: TRadIAProjectTemplateRequest;
   const ATemplateId: string
 ): TArray<TRadIAProjectTemplateFile>;
 var
   LDfm: string;
+  LEqualsImplementation: string;
+  LHistoryDfm: string;
+  LHistoryPrivate: string;
+  LHistoryPublished: string;
+  LHistoryWidth: Integer;
   LProjectName: string;
   LSource: string;
 begin
   LProjectName := ARequest.ProjectName;
+  LHistoryPublished := '';
+  LHistoryPrivate := '';
+  LHistoryDfm := '';
+  LHistoryWidth := 260;
+  if IncludesCalculatorHistory(ARequest) then
+  begin
+    LHistoryWidth := 520;
+    LHistoryPublished :=
+      '    ClearHistoryButton: TButton;' + sLineBreak +
+      '    HistoryStatus: TEdit;' + sLineBreak +
+      '    OperationHistory: TListBox;' + sLineBreak +
+      '    procedure ClearHistoryClick(Sender: TObject);' + sLineBreak;
+    LHistoryPrivate :=
+      '    procedure AddHistoryEntry(' + sLineBreak +
+      '      const ALeft: Double;' + sLineBreak +
+      '      const AOperator: string;' + sLineBreak +
+      '      const ARight, AResult: Double' + sLineBreak +
+      '    );' + sLineBreak;
+    LEqualsImplementation :=
+      'procedure TRadIAMainForm.AddHistoryEntry(' + sLineBreak +
+      '  const ALeft: Double;' + sLineBreak +
+      '  const AOperator: string;' + sLineBreak +
+      '  const ARight, AResult: Double' + sLineBreak +
+      ');' + sLineBreak +
+      'begin' + sLineBreak +
+      '  HistoryStatus.Text := Format(''%g %s %g = %g'', [' +
+      'ALeft, AOperator, ARight, AResult]);' + sLineBreak +
+      '  OperationHistory.Items.Add(HistoryStatus.Text);' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak +
+      'procedure TRadIAMainForm.ClearHistoryClick(Sender: TObject);' + sLineBreak +
+      'begin' + sLineBreak +
+      '  OperationHistory.Clear;' + sLineBreak +
+      '  HistoryStatus.Clear;' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak +
+      'procedure TRadIAMainForm.EqualsClick(Sender: TObject);' + sLineBreak +
+      'var' + sLineBreak +
+      '  LLeft: Double;' + sLineBreak +
+      '  LOperator: string;' + sLineBreak +
+      '  LRight: Double;' + sLineBreak +
+      'begin' + sLineBreak +
+      '  if FPendingOperator = '''' then' + sLineBreak +
+      '    Exit;' + sLineBreak +
+      '  LLeft := FAccumulator;' + sLineBreak +
+      '  LOperator := FPendingOperator;' + sLineBreak +
+      '  LRight := CurrentValue;' + sLineBreak +
+      '  try' + sLineBreak +
+      '    ApplyPendingOperator;' + sLineBreak +
+      '    Display.Text := FloatToStr(FAccumulator);' + sLineBreak +
+      '    AddHistoryEntry(LLeft, LOperator, LRight, FAccumulator);' + sLineBreak +
+      '    FPendingOperator := '''';' + sLineBreak +
+      '    FNewEntry := True;' + sLineBreak +
+      '  except' + sLineBreak +
+      '    on E: EDivByZero do' + sLineBreak +
+      '    begin' + sLineBreak +
+      '      Display.Text := ''Cannot divide by zero'';' + sLineBreak +
+      '      FPendingOperator := '''';' + sLineBreak +
+      '      FNewEntry := True;' + sLineBreak +
+      '    end;' + sLineBreak +
+      '  end;' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak;
+    LHistoryDfm :=
+      '  object OperationHistory: TListBox' + sLineBreak +
+      '    Left = 276' + sLineBreak +
+      '    Top = 16' + sLineBreak +
+      '    Width = 228' + sLineBreak +
+      '    Height = 225' + sLineBreak +
+      '    ItemHeight = 15' + sLineBreak +
+      '    TabOrder = 18' + sLineBreak +
+      '  end' + sLineBreak +
+      '  object HistoryStatus: TEdit' + sLineBreak +
+      '    Left = 276' + sLineBreak +
+      '    Top = 249' + sLineBreak +
+      '    Width = 228' + sLineBreak +
+      '    Height = 23' + sLineBreak +
+      '    ReadOnly = True' + sLineBreak +
+      '    TabOrder = 19' + sLineBreak +
+      '  end' + sLineBreak +
+      '  object ClearHistoryButton: TButton' + sLineBreak +
+      '    Left = 276' + sLineBreak +
+      '    Top = 281' + sLineBreak +
+      '    Width = 228' + sLineBreak +
+      '    Height = 33' + sLineBreak +
+      '    Caption = ''Clear history''' + sLineBreak +
+      '    TabOrder = 20' + sLineBreak +
+      '    OnClick = ClearHistoryClick' + sLineBreak +
+      '  end' + sLineBreak;
+  end
+  else
+    LEqualsImplementation :=
+      'procedure TRadIAMainForm.EqualsClick(Sender: TObject);' + sLineBreak +
+      'begin' + sLineBreak +
+      '  try' + sLineBreak +
+      '    ApplyPendingOperator;' + sLineBreak +
+      '    Display.Text := FloatToStr(FAccumulator);' + sLineBreak +
+      '    FPendingOperator := '''';' + sLineBreak +
+      '    FNewEntry := True;' + sLineBreak +
+      '  except' + sLineBreak +
+      '    on E: EDivByZero do' + sLineBreak +
+      '    begin' + sLineBreak +
+      '      Display.Text := ''Cannot divide by zero'';' + sLineBreak +
+      '      FPendingOperator := '''';' + sLineBreak +
+      '      FNewEntry := True;' + sLineBreak +
+      '    end;' + sLineBreak +
+      '  end;' + sLineBreak +
+      'end;' + sLineBreak + sLineBreak;
   LSource :=
     'unit MainForm;' + sLineBreak + sLineBreak +
     'interface' + sLineBreak + sLineBreak +
@@ -746,6 +891,7 @@ begin
     '    ThreeButton: TButton;' + sLineBreak +
     '    TwoButton: TButton;' + sLineBreak +
     '    ZeroButton: TButton;' + sLineBreak +
+    LHistoryPublished +
     '    procedure ClearClick(Sender: TObject);' + sLineBreak +
     '    procedure DigitClick(Sender: TObject);' + sLineBreak +
     '    procedure EqualsClick(Sender: TObject);' + sLineBreak +
@@ -754,6 +900,7 @@ begin
     '    FAccumulator: Double;' + sLineBreak +
     '    FNewEntry: Boolean;' + sLineBreak +
     '    FPendingOperator: string;' + sLineBreak +
+    LHistoryPrivate +
     '    function CurrentValue: Double;' + sLineBreak +
     '    procedure ApplyPendingOperator;' + sLineBreak +
     '  end;' + sLineBreak + sLineBreak +
@@ -810,22 +957,7 @@ begin
     '  FPendingOperator := TButton(Sender).Caption;' + sLineBreak +
     '  FNewEntry := True;' + sLineBreak +
     'end;' + sLineBreak + sLineBreak +
-    'procedure TRadIAMainForm.EqualsClick(Sender: TObject);' + sLineBreak +
-    'begin' + sLineBreak +
-    '  try' + sLineBreak +
-    '    ApplyPendingOperator;' + sLineBreak +
-    '    Display.Text := FloatToStr(FAccumulator);' + sLineBreak +
-    '    FPendingOperator := '''';' + sLineBreak +
-    '    FNewEntry := True;' + sLineBreak +
-    '  except' + sLineBreak +
-    '    on E: EDivByZero do' + sLineBreak +
-    '    begin' + sLineBreak +
-    '      Display.Text := ''Cannot divide by zero'';' + sLineBreak +
-    '      FPendingOperator := '''';' + sLineBreak +
-    '      FNewEntry := True;' + sLineBreak +
-    '    end;' + sLineBreak +
-    '  end;' + sLineBreak +
-    'end;' + sLineBreak + sLineBreak +
+    LEqualsImplementation +
     'end.' + sLineBreak;
   LDfm :=
     'object RadIAMainForm: TRadIAMainForm' + sLineBreak +
@@ -833,7 +965,7 @@ begin
     '  Top = 0' + sLineBreak +
     '  Caption = ''' + LProjectName + '''' + sLineBreak +
     '  ClientHeight = 330' + sLineBreak +
-    '  ClientWidth = 260' + sLineBreak +
+    '  ClientWidth = ' + LHistoryWidth.ToString + sLineBreak +
     '  Position = poScreenCenter' + sLineBreak +
     '  object Display: TEdit' + sLineBreak +
     '    Left = 16' + sLineBreak +
@@ -846,6 +978,7 @@ begin
     '    Text = ''0''' + sLineBreak +
     '  end' + sLineBreak +
     BuildCalculatorButtons +
+    LHistoryDfm +
     'end' + sLineBreak;
   Result := [
     TRadIAProjectTemplateFile.Create(

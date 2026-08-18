@@ -1397,9 +1397,15 @@ try {
             platforms = @("Win32")
             destinationPath = $generatedProjectDirectory
             projectSpecification = @{
-                schemaVersion = 1
+                schemaVersion = 2
                 kind = "calculator"
                 creationProfile = "complete"
+                features = @{
+                    operationHistory = @{
+                        enabled = $true
+                        clearAction = $true
+                    }
+                }
             }
         }
     if (-not $templatePreview.previewId) {
@@ -1935,7 +1941,7 @@ try {
             if (-not $calculatorWindow -or -not $controlTree) {
                 throw "The calculator control tree was not discovered."
             }
-            $requiredControls = @("2", "+", "3", "=")
+            $requiredControls = @("2", "+", "3", "=", "Clear history")
             $controlsByText = @{}
             foreach ($controlText in $requiredControls) {
                 $control = @(
@@ -2015,6 +2021,74 @@ try {
                     ($scenarioResult | ConvertTo-Json -Depth 8 -Compress)
                 )
             }
+            $controlTree = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetRuntimeControlTree" `
+                -Arguments @{ windowId = $calculatorWindow.windowId }
+            $historyControl = @(
+                $controlTree.controls |
+                    Where-Object {
+                        $_.className -eq "TEdit" -and
+                        $_.text -eq "2 + 3 = 5"
+                    }
+            ) | Select-Object -First 1
+            if (-not $historyControl) {
+                throw (
+                    "The calculator did not preserve the requested operation history: " +
+                    $(if ($historyControl) { $historyControl.text } else { "missing" })
+                )
+            }
+            $clearPreview = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "PrepareRuntimeScenario" `
+                -Arguments @{
+                    name = "Clear calculator operation history"
+                    limits = @{
+                        maxActions = 2
+                        maxDurationMs = 5000
+                        maxRepetitions = 1
+                    }
+                    actions = @(
+                        @{
+                            kind = "invoke"
+                            targetId = $controlsByText["Clear history"].controlId
+                            timeoutMs = 1000
+                        },
+                        @{
+                            kind = "wait"
+                            timeoutMs = 250
+                        }
+                    )
+                }
+            $clearResult = Invoke-RadIAToolWithConsent `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -IDEProcess $process `
+                -Name "RunRuntimeScenario" `
+                -Arguments @{ previewId = $clearPreview.previewId }
+            if ($clearResult.state -ne "succeeded") {
+                throw "The calculator history clear scenario failed."
+            }
+            $controlTree = Invoke-RadIATool `
+                -BridgePath $bridgePath `
+                -InstanceFile $instanceFile `
+                -Name "GetRuntimeControlTree" `
+                -Arguments @{ windowId = $calculatorWindow.windowId }
+            $historyControl = @(
+                $controlTree.controls |
+                    Where-Object {
+                        $_.className -eq "TEdit" -and
+                        $_.text -eq ""
+                    }
+            ) | Select-Object -First 1
+            if (-not $historyControl -or $historyControl.text -ne "") {
+                throw (
+                    "The calculator operation history was not cleared: " +
+                    $(if ($historyControl) { $historyControl.text } else { "missing" })
+                )
+            }
             $stopResult = Invoke-RadIAToolWithConsent `
                 -BridgePath $bridgePath `
                 -InstanceFile $instanceFile `
@@ -2039,6 +2113,7 @@ try {
             callStackFrameCount = $callStack.frames.Count
             timelineEventCount = $timeline.events.Count
             runtimeScenarioPassed = $ExerciseCalculatorRuntime.IsPresent
+            operationHistoryPassed = $ExerciseCalculatorRuntime.IsPresent
             runtimeControlCount = if ($ExerciseCalculatorRuntime) {
                 $controlTree.count
             } else {

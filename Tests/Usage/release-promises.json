@@ -23,6 +23,16 @@
       "scenarioId": "natural-vcl-project-creation"
     },
     {
+      "id": "calculator-requirement-fidelity",
+      "publicStatement": "A calculator requested with operation history records calculations and clears the history.",
+      "priority": "critical",
+      "maximumDurationSeconds": 300,
+      "expectedOutcomes": ["history-request-preserved", "operation-recorded", "history-cleared"],
+      "forbiddenOutcomes": ["basic-calculator-substitution", "false-success-message", "step-limit-reached"],
+      "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
+      "scenarioId": "calculator-history-fidelity"
+    },
+    {
       "id": "build-failure-repair",
       "publicStatement": "The agent reproduces and repairs a compiler failure and proves the successful rebuild.",
       "priority": "critical",

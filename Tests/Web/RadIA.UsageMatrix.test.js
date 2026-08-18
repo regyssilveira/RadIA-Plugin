@@ -124,7 +124,7 @@ test('release usage plan separates host contracts from IDE journeys', () => {
   const intentRuns = plan.runs.filter(
     (run) => run.scenarioId === 'intent-recommendation'
   );
-  assert.equal(plan.runCount, 46);
+  assert.equal(plan.runCount, 49);
   assert.equal(intentRuns.length, 1);
   assert.equal(intentRuns[0].targetId, 'host-neutral');
   assert.ok(intentRuns[0].requiredEvidence.includes('chat-fallback'));
@@ -148,6 +148,14 @@ test('release usage plan separates host contracts from IDE journeys', () => {
   assert.ok(
     creationRuns.every((run) => run.requiredEvidence.includes('phases.buildPassed'))
   );
+  const historyRuns = plan.runs.filter(
+    (run) => run.scenarioId === 'calculator-history-fidelity'
+  );
+  assert.equal(historyRuns.length, 3);
+  assert.ok(historyRuns.every((run) => run.scope === 'user-journey'));
+  assert.ok(historyRuns.every(
+    (run) => run.requiredEvidence.includes('debugger.operationHistoryPassed')
+  ));
   const problemRuns = plan.runs.filter(
     (run) => run.scenarioId === 'unified-problems-panel'
   );

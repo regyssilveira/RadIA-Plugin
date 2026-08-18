@@ -98,6 +98,8 @@ pasta de destino e plataforma — antes de apresentar o plano para aprovação.
 2. A IA processará a requisição e retornará a lista completa de arquivos estruturados (projeto `.dpr`,
    configurações `.dproj`, unidades de lógica `.pas` e telas `.dfm`). Para calculadoras VCL, o
    compositor nativo já fornece visor, teclado e operações básicas funcionais.
+   Se o pedido mencionar histórico, a especificação inclui esse recurso explicitamente e o projeto
+   recebe uma lista ordenada de operações e a ação **Clear history**.
 3. O Rad IA exibirá um painel com estilo *glassmorphism* contendo a lista dos arquivos gerados.
 4. **Fluxo de Gravação**:
    * Clique em **Criar Projeto e Abrir na IDE** na UI do chat.

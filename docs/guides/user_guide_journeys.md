@@ -73,6 +73,12 @@ para manter o projeto como está, adicionar DUnitX ou solicitar outros increment
 escolha o perfil `complete`, ou `custom` com `dunitx`, inclui `companionTestProject` e
 `companionTestExecutable`, compila a suíte companion e executa os testes com `RunDUnitXTests`.
 
+Quando o pedido inclui **histórico de operações**, **lista de cálculos** ou expressão equivalente,
+esse requisito é preservado na especificação estruturada e no preview. A calculadora gerada registra
+cada operação concluída em ordem e oferece **Clear history**. A jornada só pode concluir depois de
+executar cálculos reais, conferir o histórico e verificar sua limpeza; um build verde, isoladamente,
+não atende esse pedido.
+
 ## Como a execução funciona
 
 1. O comando ativa visualmente o modo agente quando necessário.

@@ -134,12 +134,17 @@ const
     '"authorizedRoot":{"type":"string"},' +
     '"destinationPath":{"type":"string"},' +
     '"projectSpecification":{"type":"object","properties":{' +
-    '"schemaVersion":{"type":"integer","const":1},' +
+    '"schemaVersion":{"type":"integer","enum":[1,2]},' +
     '"kind":{"type":"string","enum":["calculator"]},' +
     '"creationProfile":{"type":"string","enum":[' +
     '"essential","complete","custom"],"default":"essential"},' +
     '"optionalFeatures":{"type":"array","uniqueItems":true,' +
-    '"items":{"type":"string","enum":["dunitx"]}}},' +
+    '"items":{"type":"string","enum":["dunitx"]}},' +
+    '"features":{"type":"object","properties":{' +
+    '"operationHistory":{"type":"object","properties":{' +
+    '"enabled":{"type":"boolean"},"clearAction":{"type":"boolean"}},' +
+    '"required":["enabled"],"additionalProperties":false}},' +
+    '"additionalProperties":false}},' +
     '"required":["schemaVersion","kind"],' +
     '"additionalProperties":false},' +
     '"apiSpecification":{"type":"object","required":[' +

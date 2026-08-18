@@ -98,6 +98,8 @@ and platform — before showing the approval plan.
 2. The AI processes the request and returns the complete file set (project `.dpr`, configuration
    `.dproj`, logic units `.pas`, and UI forms `.dfm`). For VCL calculators, the native composer
    provides a functional display, keypad, and basic operations.
+   If the request mentions history, the specification includes that feature explicitly and the project
+   receives an ordered operation list and a **Clear history** action.
 3. Rad IA will display a glassmorphism-styled panel showing the list of generated files.
 4. **Saving Workflow**:
    * Click **Criar Projeto e Abrir na IDE** (Create Project and Open in IDE) in the chat UI.

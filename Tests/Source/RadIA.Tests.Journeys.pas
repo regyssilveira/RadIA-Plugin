@@ -34,6 +34,8 @@ type
     [Test]
     procedure NaturalCreateContextExtractsDestinationNameAndDefaultPlatform;
     [Test]
+    procedure NaturalCalculatorHistoryPreservesFunctionalFeature;
+    [Test]
     procedure NaturalPromptsNormalizeEverySupportedTemplate;
   end;
 
@@ -351,6 +353,18 @@ begin
   Assert.Contains(LContext, 'platform="Win32"');
   Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
   Assert.IsFalse(LDefinition.NextRequiredInput(LContext, LField, LQuestion));
+end;
+
+procedure TTestRadIAJourneys.
+  NaturalCalculatorHistoryPreservesFunctionalFeature;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.NormalizeCreateContext(
+    'crie uma calculadora com histórico de operações em D:\HistoryCalculator'
+  );
+  Assert.Contains(LContext, 'feature="operationHistory"');
+  Assert.Contains(LContext, 'type="VCL"');
 end;
 
 procedure TTestRadIAJourneys.NaturalPromptsNormalizeEverySupportedTemplate;
