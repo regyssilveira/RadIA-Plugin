@@ -10,7 +10,30 @@
     },
     {
       "id": "release",
-      "description": "Runs IDE lifecycle and critical user-facing capability contracts.",
+      "description": "Runs the bounded release-critical journeys on the representative IDE target.",
+      "targetIds": [
+        "delphi13-win32"
+      ],
+      "scenarioIds": [
+        "first-conversation",
+        "chat-window-state-persistence",
+        "clean-install-and-upgrade",
+        "natural-vcl-project-creation",
+        "calculator-history-fidelity",
+        "intent-recommendation",
+        "unified-problems-panel",
+        "semantic-hierarchy-refactoring",
+        "advanced-breakpoints"
+      ]
+    },
+    {
+      "id": "targeted",
+      "description": "Runs only explicitly selected scenarios on compatible targets.",
+      "scenarioIds": []
+    },
+    {
+      "id": "regression",
+      "description": "Runs every registered scenario on every compatible IDE target.",
       "scenarioIds": [
         "ide-startup-shutdown",
         "first-conversation",

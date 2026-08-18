@@ -44,7 +44,7 @@ recommendation.
 The automated matrix exercises sixteen natural Portuguese and English requests across project
 creation, build repair, tests, and diagnostics. Educational or ambiguous questions remain in chat.
 These tests execute the real Pascal classifier in the Delphi 12 and 13 DUnitX suites and belong to
-the indivisible release gate.
+the critical release gate and the complete regression certification.
 
 See [Delphi journeys](../guides/user_guide_journeys.en.md) for available workflows and the
 [security model](tool_security_model.en.md) for protections applied after confirmation.

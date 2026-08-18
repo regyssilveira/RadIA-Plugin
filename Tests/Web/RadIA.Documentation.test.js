@@ -614,7 +614,7 @@ test('current release gates use the generated catalog size', () => {
   });
 });
 
-test('release keeps integration, calculator, and project journeys indivisible', () => {
+test('release documents bounded, targeted, and regression gates', () => {
   const portuguese = fs.readFileSync(documentationPath('release_process.md'), 'utf8');
   const english = fs.readFileSync(documentationPath('release_process.en.md'), 'utf8');
   const usageMatrix = fs.readFileSync(documentationPath('usage_test_matrix.md'), 'utf8');
@@ -623,14 +623,16 @@ test('release keeps integration, calculator, and project journeys indivisible', 
     'utf8'
   );
 
-  assert.match(portuguese, /toda a suíte registrada de integração e ponta a ponta/u);
-  assert.match(english, /entire registered integration and end-to-end suite/u);
-  assert.match(usageMatrix, /sem opções para pular os gates principais/u);
-  assert.match(usageMatrix, /não aceita filtro, exclusão ou aprovação parcial/u);
+  assert.match(portuguese, /certificação `regression`/u);
+  assert.match(english, /`regression` certification/u);
+  assert.match(usageMatrix, /Todos os 49 fluxos/u);
+  assert.match(usageMatrix, /-Profile targeted/u);
+  assert.match(usageMatrix, /-Profile regression/u);
   assert.match(releaseRunner, /build\.ps1[\s\S]*-Test/u);
   assert.match(releaseRunner, /Test-RadIA\.GeneratedProjects\.ps1/u);
-  assert.match(releaseRunner, /Test-RadIA\.ProjectCreationNavigation\.ps1/u);
   assert.match(releaseRunner, /Test-RadIA\.UsageMatrix\.ps1/u);
+  assert.match(releaseRunner, /-Profile "startup"/u);
+  assert.match(releaseRunner, /-Profile "release"/u);
 });
 
 test('release metadata and operational protocols follow the package version', () => {

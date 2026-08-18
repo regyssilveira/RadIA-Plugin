@@ -17,9 +17,11 @@ if ($promises.schemaVersion -ne 1 -or $usage.schemaVersion -ne 1) {
     throw "Unsupported promise or usage matrix schema."
 }
 
-$releaseProfile = @($usage.profiles | Where-Object { $_.id -eq "release" })
-if ($releaseProfile.Count -ne 1) {
-    throw "The release usage profile is missing or duplicated."
+$regressionProfile = @(
+    $usage.profiles | Where-Object { $_.id -eq "regression" }
+)
+if ($regressionProfile.Count -ne 1) {
+    throw "The regression usage profile is missing or duplicated."
 }
 
 $results = @()
@@ -43,8 +45,8 @@ foreach ($promise in $promises.promises) {
         if ($scenario[0].scope -ne "user-journey") {
             $reasons += "scenario-is-not-a-user-journey"
         }
-        if ($promise.scenarioId -notin $releaseProfile[0].scenarioIds) {
-            $reasons += "scenario-not-required-by-release"
+        if ($promise.scenarioId -notin $regressionProfile[0].scenarioIds) {
+            $reasons += "scenario-not-required-by-regression"
         }
         $missingTargets = @(
             $promise.requiredTargets |

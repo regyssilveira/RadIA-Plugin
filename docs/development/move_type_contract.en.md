@@ -56,4 +56,4 @@ content while the preview remains valid.
 - proven rejection of DFM, private dependency, cycle, and stale revision;
 - application and rollback with exact equality to the original files;
 - Delphi 12 and 13 builds and tests;
-- an integration scenario registered in the indivisible release gate.
+- an integration scenario registered in the targeted gate and full regression.

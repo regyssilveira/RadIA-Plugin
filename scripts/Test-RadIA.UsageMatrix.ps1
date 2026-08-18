@@ -1,9 +1,11 @@
 [CmdletBinding()]
 param(
-    [ValidateSet("startup", "release")]
+    [ValidateSet("startup", "release", "targeted", "regression")]
     [string]$Profile = "startup",
 
     [string[]]$TargetId = @(),
+
+    [string[]]$ScenarioId = @(),
 
     [string]$EvidencePath = (
         ".\Output\Validation\UsageMatrix\usage-matrix.json"
@@ -92,7 +94,7 @@ $profileDefinition = @(
 if ($profileDefinition.Count -ne 1) {
     throw "Usage profile was not found: $Profile"
 }
-if ($Profile -eq "release") {
+if ($Profile -eq "regression") {
     $registeredScenarioIds = @($manifest.scenarios.id | Sort-Object -Unique)
     $releaseScenarioEntries = @($profileDefinition[0].scenarioIds)
     $releaseScenarioIds = @(
@@ -118,7 +120,7 @@ if ($Profile -eq "release") {
         $duplicateReleaseScenarios.Count -gt 0
     ) {
         throw (
-            "The release profile must contain every registered usage " +
+            "The regression profile must contain every registered usage " +
             "scenario exactly once. Missing: " +
             "$($missingReleaseScenarios -join ', '). Unknown: " +
             "$($unknownReleaseScenarios -join ', '). Duplicated: " +
@@ -126,7 +128,22 @@ if ($Profile -eq "release") {
         )
     }
 }
+if ($Profile -eq "targeted" -and $ScenarioId.Count -eq 0) {
+    throw "The targeted profile requires at least one -ScenarioId."
+}
+$unknownScenarios = @(
+    $ScenarioId | Where-Object { $_ -notin @($manifest.scenarios.id) }
+)
+if ($unknownScenarios.Count -gt 0) {
+    throw "Unknown usage scenario(s): $($unknownScenarios -join ', ')"
+}
 $selectedTargets = @($manifest.targets)
+if ($TargetId.Count -eq 0 -and $profileDefinition[0].targetIds) {
+    $selectedTargets = @(
+        $manifest.targets |
+            Where-Object { $_.id -in @($profileDefinition[0].targetIds) }
+    )
+}
 if ($TargetId.Count -gt 0) {
     $unknownTargets = @(
         $TargetId | Where-Object { $_ -notin @($manifest.targets.id) }
@@ -138,9 +155,13 @@ if ($TargetId.Count -gt 0) {
         $manifest.targets | Where-Object { $_.id -in $TargetId }
     )
 }
+$selectedScenarioIds = @($profileDefinition[0].scenarioIds)
+if ($ScenarioId.Count -gt 0) {
+    $selectedScenarioIds = @($ScenarioId)
+}
 $selectedScenarios = @(
     $manifest.scenarios |
-        Where-Object { $_.id -in $profileDefinition[0].scenarioIds }
+        Where-Object { $_.id -in $selectedScenarioIds }
 )
 if ($selectedTargets.Count -eq 0 -or $selectedScenarios.Count -eq 0) {
     throw "Usage matrix selection is empty."
@@ -151,7 +172,8 @@ $evidenceDirectory = Split-Path -Parent $resolvedEvidencePath
 $planEntries = @()
 foreach ($target in $selectedTargets) {
     foreach ($scenario in @($selectedScenarios | Where-Object {
-        $_.scope -ne "host"
+        $_.scope -ne "host" -and
+        (-not $_.targetIds -or $target.id -in @($_.targetIds))
     })) {
         $targetEvidence = Join-Path `
             $evidenceDirectory `
@@ -217,7 +239,8 @@ $matrixStopwatch = [Diagnostics.Stopwatch]::StartNew()
 $installedTargetId = ""
 foreach ($run in $planEntries) {
     Stop-RadIAUsageAuxiliaryProcesses
-    if ($Profile -eq "release" -and $run.scope -ne "host" -and
+    if ($Profile -in @("startup", "release", "regression") -and
+        $run.scope -ne "host" -and
         $installedTargetId -ne $run.targetId) {
         $installArguments = @{
             DelphiVersion = $run.delphiVersion

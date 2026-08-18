@@ -1,7 +1,7 @@
 # Matriz automatizada de testes de uso
 
 A matriz de uso valida o RadIA como produto dentro do Delphi, complementando testes unitários e Web.
-Ela é obrigatória para toda release e cobre Delphi 12 Win32, Delphi 13 Win32 e Delphi 13 IDE64.
+Ela possui níveis diferentes para não transformar toda entrega em uma certificação de várias horas.
 
 ## Camadas
 
@@ -52,6 +52,20 @@ powershell.exe -ExecutionPolicy Bypass `
 `-PlanOnly` valida o manifesto e retorna JSON com todas as combinações que seriam executadas. Não
 inicia, instala ou modifica a IDE.
 
+## Níveis de execução
+
+| Nível | Quando usar | Abrangência |
+|---|---|---|
+| `release` | Toda publicação corretiva ou menor | Suítes completas, templates, startup nos três alvos e jornadas críticas no Delphi 13 Win32 |
+| `targeted` | Durante o desenvolvimento e após uma correção localizada | Somente cenários e alvos informados explicitamente |
+| `regression` | Release maior, mudança transversal ou investigação de instabilidade | Todos os 49 fluxos em todos os alvos compatíveis |
+
+Execute obrigatoriamente `regression` quando houver mudança no instalador, lifecycle da WebView2,
+shutdown da IDE, isolamento de sessão, segurança/consentimento, orquestrador E2E ou matriz de targets.
+Também execute antes de uma release maior, após uma falha que não possa ser isolada e quando a seleção
+direcionada não representar com segurança a superfície alterada. A regressão completa é uma certificação
+sob demanda; ela não bloqueia rotineiramente releases menores já cobertas pelo gate `release`.
+
 ## Executar durante o desenvolvimento
 
 Feche todas as instâncias do Delphi e execute:
@@ -63,9 +77,29 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O resultado agregado fica em `Output/Validation/UsageMatrix/usage-matrix.json`. No perfil `release`, o
-orquestrador agrupa as jornadas por alvo e instala o pacote correspondente antes de executá-las. Durante o
+orquestrador executa as jornadas críticas no Delphi 13 Win32. Durante o
 desenvolvimento, a evidência informa que a origem está suja e que a proveniência do pacote não foi
 exigida; esse resultado não autoriza uma release.
+
+Para executar somente a área alterada, informe cenário e alvo explicitamente:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.UsageMatrix.ps1 `
+  -Profile targeted `
+  -ScenarioId calculator-history-fidelity `
+  -TargetId delphi13-win32
+```
+
+Use `-PlanOnly` antes da execução para conferir o custo e as combinações sem abrir o Delphi. Exemplos de
+seleção: UI usa `chat-window-state-persistence`; agente usa `agent-step-budget` e
+`request-cancellation-recovery`; geração usa `natural-vcl-project-creation` e
+`calculator-history-fidelity`; testes e reparo usam `build-failure-repair` e
+`dunitx-create-run-repair`.
+
+O perfil `targeted` usa o build já instalado e nunca troca silenciosamente a IDE do desenvolvedor. Instale
+explicitamente a revisão desejada com `build.ps1 -Install` antes de executá-lo. Os perfis `startup`,
+`release` e `regression` geram e instalam seus próprios pacotes por alvo.
 
 ## Gate obrigatório de release
 
@@ -76,22 +110,32 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
-Esse comando compõe, sem opções para pular os gates principais:
+Antes de ocupar a máquina, acrescente `-PlanOnly` para obter o plano agregado sem compilar, instalar ou
+abrir o Delphi.
+
+Esse comando compõe o gate rápido e obrigatório:
 
 1. suítes DUnitX completas do RadIA no Delphi 12 e 13;
-2. todos os cenários registrados de integração e ponta a ponta aplicáveis aos alvos suportados;
+2. smoke de inicialização e encerramento nos três alvos suportados;
 3. geração e build de todos os templates suportados no Delphi 12 e 13;
 4. operação visual `2 + 3 = 5` na calculadora VCL;
    o cenário também comprova que o pedido de histórico gera `2 + 3 = 5` na lista e que a ação de
    limpeza deixa a lista vazia;
 5. execução dos cinco testes DUnitX da calculadora;
-6. criação, abertura e navegação imediata de projeto nos três alvos da IDE;
-7. instalação explícita do build atual e matriz de inicialização/encerramento nos três alvos;
+6. criação, abertura e navegação imediata no Delphi 13 Win32 representativo;
+7. instalação limpa e atualização no alvo representativo;
 8. roteamento real de pedidos iniciantes para criação, build, testes e diagnóstico, com fallback
    educativo e contadores locais sanitizados.
 
-A entrada de uma funcionalidade na matriz torna seu cenário obrigatório nas releases seguintes. O
-runner de release não aceita filtro, exclusão ou aprovação parcial desses grupos.
+O perfil `regression` continua contendo todos os cenários registrados exatamente uma vez e os distribui
+pelos alvos compatíveis. Execute a certificação completa com:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.UsageMatrix.ps1 `
+  -Profile regression `
+  -EvidencePath Output\Validation\UsageMatrix\regression.json
+```
 
 A proveniência dos packages e do instalador é validada depois, no gate de empacotamento, porque esses
 artefatos ainda não existem durante `Test-RadIA.ReleaseUsage.ps1`. Usar `-RequirePackageProvenance`
@@ -121,7 +165,9 @@ preserva evidência parcial e bloqueia a publicação; repetir um cenário não 
 em sucesso.
 
 O perfil `startup` comprova package carregado, contrato de tools válido, shutdown limpo e ausência de
-processos órfãos. O perfil `release` também executa contratos críticos independentes da IDE. O
+processos órfãos. O perfil `release` executa contratos críticos independentes da IDE e jornadas
+representativas. O perfil `targeted` exige `-ScenarioId`; o perfil `regression` impede que um cenário
+registrado fique fora da certificação completa. O
 primeiro comprova confirmação explícita da rota por intenção, revisão do comando, continuação no chat
 e validação do comando pendente pelo host. A suíte DUnitX executa dezesseis prompts naturais contra
 o classificador Pascal real; o contrato host-neutral confirma que a telemetria não aceita conteúdo

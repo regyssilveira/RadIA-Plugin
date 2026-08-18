@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$EvidenceRoot = ".\Output\Validation\ReleaseUsage"
+    [string]$EvidenceRoot = ".\Output\Validation\ReleaseUsage",
+    [switch]$PlanOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +15,25 @@ if (-not $resolvedEvidenceRoot.StartsWith(
     [StringComparison]::OrdinalIgnoreCase
 )) {
     throw "Release usage evidence must remain inside Output."
+}
+if ($PlanOnly) {
+    $matrixRunner = Join-Path $PSScriptRoot "Test-RadIA.UsageMatrix.ps1"
+    $startupPlan = & $matrixRunner -Profile "startup" -PlanOnly |
+        ConvertFrom-Json
+    $releasePlan = & $matrixRunner -Profile "release" -PlanOnly |
+        ConvertFrom-Json
+    [PSCustomObject]@{
+        schemaVersion = 1
+        profile = "release-gate"
+        unitTestTargetCount = 2
+        generatedProjectTargetCount = 2
+        startupRunCount = $startupPlan.runCount
+        criticalRunCount = $releasePlan.runCount
+        totalIdeRunCount = $startupPlan.runCount + $releasePlan.runCount
+        startupPlan = $startupPlan
+        criticalPlan = $releasePlan
+    } | ConvertTo-Json -Depth 8
+    exit 0
 }
 $runningIDEs = @(
     Get-Process bds -ErrorAction SilentlyContinue |
@@ -34,44 +54,6 @@ function Stop-RadIAReleaseAuxiliaryProcesses {
                 "$($process.ProcessName):$($process.Id)."
             )
         }
-    }
-}
-
-function Stop-RadIAReleaseIDEProcesses {
-    $processes = @(
-        Get-Process bds -ErrorAction SilentlyContinue |
-            Where-Object { -not $_.HasExited }
-    )
-    foreach ($process in $processes) {
-        Stop-Process -Id $process.Id -Force
-        if (-not $process.WaitForExit(10000)) {
-            throw "Delphi process did not stop after a failed startup probe."
-        }
-    }
-}
-
-function Install-RadIAReleaseTarget {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$DelphiVersion,
-        [switch]$IDE64
-    )
-
-    Stop-RadIAReleaseAuxiliaryProcesses
-    $installArguments = @{
-        DelphiVersion = $DelphiVersion
-        Install = $true
-    }
-    if ($IDE64) {
-        $installArguments.IDE64 = $true
-    }
-    & (Join-Path $repositoryRoot "build.ps1") @installArguments
-    if ($LASTEXITCODE -ne 0) {
-        throw (
-            "The current build could not be installed for Delphi " +
-            "$DelphiVersion " +
-            $(if ($IDE64) { "Win64" } else { "Win32" }) + "."
-        )
     }
 }
 
@@ -134,146 +116,20 @@ foreach ($target in $generatedProjectTargets) {
         Join-Path $resolvedEvidenceRoot "generated-projects-matrix.json"
     )
 
-$installationTargets = @(
-    [PSCustomObject]@{ Version = "23.0"; IDE64 = $false },
-    [PSCustomObject]@{ Version = "37.0"; IDE64 = $false },
-    [PSCustomObject]@{ Version = "37.0"; IDE64 = $true }
-)
-foreach ($target in $installationTargets) {
-    Install-RadIAReleaseTarget `
-        -DelphiVersion $target.Version `
-        -IDE64:$target.IDE64
-}
-
-$openingTargets = @(
-    [PSCustomObject]@{ Id = "delphi12-win32"; Version = "23.0"; IDE64 = $false },
-    [PSCustomObject]@{ Id = "delphi13-win32"; Version = "37.0"; IDE64 = $false },
-    [PSCustomObject]@{ Id = "delphi13-ide64"; Version = "37.0"; IDE64 = $true }
-)
-$openingResults = @()
-$openingEvidencePath = Join-Path `
-    $resolvedEvidenceRoot `
-    "project-opening-matrix.json"
-
-function Test-RadIAReleaseJourneyRetryable {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Output
+& (Join-Path $PSScriptRoot "Test-RadIA.UsageMatrix.ps1") `
+    -Profile "startup" `
+    -EvidencePath (
+        Join-Path $resolvedEvidenceRoot "startup-matrix.json"
     )
-
-    $retryableMessages = @(
-        "Delphi did not become ready for the smoke test.",
-        "The Delphi File menu did not open.",
-        "The Delphi file dialog did not open."
-    )
-    foreach ($message in $retryableMessages) {
-        if ($Output.Contains($message)) {
-            return $true
-        }
-    }
-    return $false
-}
-
-foreach ($target in $openingTargets) {
-    $arguments = @(
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        (Join-Path $PSScriptRoot "Test-RadIA.ProjectCreationNavigation.ps1"),
-        "-DelphiVersion",
-        $target.Version
-    )
-    if ($target.IDE64) {
-        $arguments += "-IDE64"
-    }
-    $stopwatch = [Diagnostics.Stopwatch]::StartNew()
-    $previousErrorActionPreference = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = "Continue"
-        $output = & powershell.exe @arguments 2>&1 | Out-String
-        $exitCode = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $previousErrorActionPreference
-    }
-    $attemptCount = 1
-    $startupRetryUsed = $false
-    if (
-        $exitCode -ne 0 -and
-        (Test-RadIAReleaseJourneyRetryable -Output $output)
-    ) {
-        $firstAttemptOutput = $output
-        Stop-RadIAReleaseIDEProcesses
-        Install-RadIAReleaseTarget `
-            -DelphiVersion $target.Version `
-            -IDE64:$target.IDE64
-        try {
-            $ErrorActionPreference = "Continue"
-            $output = & powershell.exe @arguments 2>&1 | Out-String
-            $exitCode = $LASTEXITCODE
-        } finally {
-            $ErrorActionPreference = $previousErrorActionPreference
-        }
-        $attemptCount = 2
-        $startupRetryUsed = $true
-        $output = (
-            "First startup attempt failed and was preserved:`r`n" +
-            $firstAttemptOutput +
-            "`r`nBounded startup retry:`r`n" +
-            $output
-        )
-    }
-    $stopwatch.Stop()
-    $openingResults += [PSCustomObject]@{
-        targetId = $target.Id
-        delphiVersion = $target.Version
-        ideArchitecture = if ($target.IDE64) { "Win64" } else { "Win32" }
-        status = if ($exitCode -eq 0) { "passed" } else { "failed" }
-        exitCode = $exitCode
-        durationMs = $stopwatch.ElapsedMilliseconds
-        attemptCount = $attemptCount
-        startupRetryUsed = $startupRetryUsed
-        outputTail = if ($output.Length -gt 8192) {
-            $output.Substring($output.Length - 8192)
-        } else {
-            $output
-        }
-    }
-    [PSCustomObject]@{
-        schemaVersion = 1
-        evidenceKind = "projectCreationOpeningMatrix"
-        product = "RadIA"
-        status = if (
-            @($openingResults | Where-Object { $_.status -eq "failed" }).Count `
-                -eq 0
-        ) {
-            "passed"
-        } else {
-            "failed"
-        }
-        expectedTargetCount = $openingTargets.Count
-        completedTargetCount = $openingResults.Count
-        generatedAtUtc = [DateTime]::UtcNow.ToString("o")
-        targets = $openingResults
-    } |
-        ConvertTo-Json -Depth 6 |
-        Set-Content `
-            -LiteralPath $openingEvidencePath `
-            -Encoding UTF8
-    if ($exitCode -ne 0) {
-        throw "Project creation and opening failed for $($target.Id)."
-    }
-}
 
 & (Join-Path $PSScriptRoot "Test-RadIA.UsageMatrix.ps1") `
     -Profile "release" `
     -EvidencePath (
-        Join-Path $resolvedEvidenceRoot "automated-usage-matrix.json"
+        Join-Path $resolvedEvidenceRoot "release-critical-matrix.json"
     )
 
 Write-Host (
     "Release usage gate passed: public promises, complete DUnitX, " +
-    "registered integration " +
-    "and end-to-end scenarios, calculator, generated projects, project " +
-    "opening, and automated usage matrix."
+    "generated projects, startup smoke on every supported target, and " +
+    "bounded release-critical journeys on the representative target."
 )
