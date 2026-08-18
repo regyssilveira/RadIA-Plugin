@@ -3354,18 +3354,39 @@ function trySubmitNaturalVclRecovery() {
 function handleJourneyInputRequested(data) {
   if (!naturalVclSmoke || data.text !== 'destination') return;
   naturalVclSmoke.recoveryRequestReady = true;
+}
+
+function handleNaturalVclRecoveryMessage(data) {
+  if (!naturalVclSmoke || data.role !== 'assistant' ||
+      !naturalVclSmoke.recoveryStateObserved ||
+      naturalVclSmoke.destinationRetried) return;
+  naturalVclSmoke.recoveryRequestReady = true;
   trySubmitNaturalVclRecovery();
 }
 
 function continueNaturalVclSmoke(card, state) {
   if (!naturalVclSmoke) return;
   const status = state.status || '';
+  const stateSteps = Array.isArray(state.steps) ? state.steps : [];
   const retryObjectiveActive = naturalVclSmoke.retryDestination &&
     String(state.objective || '').includes(naturalVclSmoke.retryDestination);
+  const retryPreviewActive = stateSteps.some(step =>
+    step.toolName === 'PreviewProjectTemplate' && step.success === true &&
+    String(step.arguments || '').includes(naturalVclSmoke.retryDestination)
+  );
   if (retryObjectiveActive) {
     naturalVclSmoke.recoveryPending = false;
   }
+  if (naturalVclSmoke.destinationRetried &&
+      (!retryObjectiveActive || !retryPreviewActive) &&
+      (status === 'failed' || status === 'cancelled')) {
+    return;
+  }
   if (status === 'awaitingApproval' && !naturalVclSmoke.planApproved) {
+    if (requestInProgress) {
+      naturalVclSmoke.pendingApproval = { card, state };
+      return;
+    }
     const approveButton = [...card.querySelectorAll('.agent-control-button')]
       .find(button => button.textContent === 'Approve plan');
     if (!approveButton || approveButton.disabled) return;
@@ -3374,7 +3395,7 @@ function continueNaturalVclSmoke(card, state) {
     return;
   }
   if (status === 'completed') {
-    const steps = Array.isArray(state.steps) ? state.steps : [];
+    const steps = stateSteps;
     const required = [
       'PreviewProjectTemplate',
       'CreateProjectFromTemplate',
@@ -3409,6 +3430,7 @@ globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
     destinationRetried: false,
     nativeOrchestrationObserved: false,
     planApproved: false,
+    pendingApproval: null,
     recoveryPending: false,
     recoveryRequestReady: false,
     recoveryStateObserved: false,
@@ -3433,6 +3455,7 @@ globalThis.resumeNaturalVclSmoke = function resumeNaturalVclSmoke(
     nativeOrchestrationObserved:
       activeExecutionRoute.orchestrator === 'radia-native',
     planApproved: true,
+    pendingApproval: null,
     recoveryPending: false,
     recoveryRequestReady: true,
     recoveryStateObserved: true,
@@ -4845,6 +4868,15 @@ function setRequestState(inProgress) {
     providerDropdownTrigger.setAttribute('aria-disabled', 'false');
     btnQueuePrompt.classList.add('hidden');
     promptTextarea.placeholder = 'Ask Rad IA or type / for commands...';
+    if (naturalVclSmoke?.recoveryStateObserved &&
+        naturalVclSmoke.recoveryRequestReady) {
+      trySubmitNaturalVclRecovery();
+    }
+    if (naturalVclSmoke?.pendingApproval) {
+      naturalVclSmoke.pendingApproval = null;
+      naturalVclSmoke.planApproved = true;
+      postMessageToDelphi({ action: 'approve_agent' });
+    }
   }
   applyModelSelectionState();
   executionRouteSelector.disabled = inProgress;
@@ -5159,7 +5191,10 @@ if (globalThis.chrome?.webview) {
     const data = event.data;
     console.log('[DEBUG] Received message from Delphi:', data.action || 'unknown');
     switch (data.action) {
-      case 'add_message':           addMessage(data.role, data.text, data.provider, data.model); break;
+      case 'add_message':
+        addMessage(data.role, data.text, data.provider, data.model);
+        handleNaturalVclRecoveryMessage(data);
+        break;
       case 'update_message':        updateMessage(data.text, data.isDone, data.provider, data.model); break;
       case 'clear_chat':            clearChat();                                                 break;
       case 'set_theme':             setTheme(data);                                              break;

@@ -3913,7 +3913,12 @@ begin
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
   if LIsNativeJourney then
+  begin
+    FActiveJourneyContext := LContext;
+    FActiveJourneyDefinition := LDefinition;
+    FActiveJourneyNative := True;
     LObjective := LDefinition.BuildAgentObjective(LContext)
+  end
   else
   begin
     LObjective := LDeclarative.Prompt + sLineBreak + sLineBreak +
@@ -4471,6 +4476,10 @@ var
   LUserMessage: IRadIAChatMessage;
 begin
   LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  FNativeOrchestrationOverride := RequiresNativeCreationOrchestration(
+    AObjective,
+    LEffectiveSettings.Values.ExecutorId
+  );
   if TryStartExternalAgentRun(AObjective, LEffectiveSettings) then
     Exit;
   if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
@@ -4484,11 +4493,6 @@ begin
   end;
   if not CheckQuotaAvailability then
     Exit;
-
-  FNativeOrchestrationOverride := RequiresNativeCreationOrchestration(
-    AObjective,
-    LEffectiveSettings.Values.ExecutorId
-  );
 
   LActiveProvider := LEffectiveSettings.Values.ProviderId;
   LActiveModel := LEffectiveSettings.Values.ModelId;

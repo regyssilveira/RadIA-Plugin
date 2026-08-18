@@ -241,18 +241,30 @@ class function TRadIAJourneyCatalog.ReplaceCreateDestination(
 ): string;
 var
   LDestination: string;
+  LMatch: TMatch;
+  LPreviousDestination: string;
 begin
   LDestination := ADestination.Trim.Replace('"', '');
   if LDestination.IsEmpty then
     Exit(AContext);
-  Result := TRegEx.Replace(
+  LMatch := TRegEx.Match(
     AContext,
     'destination=(?:"[^"]*"|''[^'']*''|[^\s]+)',
-    'destination="' + LDestination + '"',
     [roIgnoreCase]
   );
-  if SameText(Result, AContext) then
-    Result := AContext.Trim + ' destination="' + LDestination + '"';
+  if LMatch.Success then
+  begin
+    LPreviousDestination := LMatch.Value.Substring(
+      Length('destination=')
+    ).Trim(['"', '''']);
+    Result := AContext.Replace(
+      LPreviousDestination,
+      LDestination,
+      [rfReplaceAll, rfIgnoreCase]
+    )
+  end
+  else
+    Result := 'destination="' + LDestination + '" ' + AContext.Trim;
 end;
 
 class function TRadIAJourneyCatalog.TryInferCreateProject(

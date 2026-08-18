@@ -978,11 +978,13 @@ var
   LDecisionProvider: IRadIAAgentDecisionProvider;
   LEvent: TEvent;
   LExecutor: IRadIAToolExecutor;
+  LFinishedAfterRelease: Boolean;
   LResult: TRadIAAgentRunResult;
   LService: IRadIAService;
   LStateJson: string;
   LStore: IRadIAAgentCheckpointStore;
 begin
+  LFinishedAfterRelease := False;
   LEvent := TEvent.Create(nil, True, False, '');
   try
     LService := TRadIAMockAgentService.Create(
@@ -1007,6 +1009,7 @@ begin
       end,
       procedure(const ARunResult: TRadIAAgentRunResult)
       begin
+        LFinishedAfterRelease := not LController.IsRunning;
         LResult := ARunResult;
         LEvent.SetEvent;
       end
@@ -1021,6 +1024,7 @@ begin
 
     Assert.AreEqual(wrSignaled, LEvent.WaitFor(5000));
     Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.IsTrue(LFinishedAfterRelease);
     Assert.AreEqual('Async objective completed.', LResult.Message);
     Assert.Contains(LStateJson, '"status":"completed"');
   finally

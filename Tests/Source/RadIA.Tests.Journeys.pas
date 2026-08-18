@@ -39,6 +39,8 @@ type
     procedure NaturalPromptsNormalizeEverySupportedTemplate;
     [Test]
     procedure ReplacesOnlyCreateDestinationDuringRecovery;
+    [Test]
+    procedure PrependsRecoveryDestinationToLegacyContext;
   end;
 
 implementation
@@ -47,12 +49,24 @@ uses
   System.SysUtils,
   RadIA.Core.Journeys;
 
+procedure TTestRadIAJourneys.PrependsRecoveryDestinationToLegacyContext;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+    'Create a calculator with operation history',
+    'D:\New\Calculator'
+  );
+  Assert.StartsWith('destination="D:\New\Calculator" ', LContext);
+  Assert.Contains(LContext, 'operation history');
+end;
+
 procedure TTestRadIAJourneys.ReplacesOnlyCreateDestinationDuringRecovery;
 var
   LContext: string;
 begin
   LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
-    'Create a calculator with operation history ' +
+    'Create a calculator with operation history in D:\Old\Calculator ' +
       'destination="D:\Old\Calculator" project="CalculatorApp" ' +
       'type="VCL" platform="Win32" feature="operationHistory"',
     'D:\New\Calculator'

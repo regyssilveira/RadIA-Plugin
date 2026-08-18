@@ -334,12 +334,28 @@ begin
   end;
 end;
 
+function AgentStateObjectiveContains(
+  const APrompt: string;
+  const AValue: string
+): Boolean;
+var
+  LState: TJSONObject;
+begin
+  LState := ParseAgentCurrentState(APrompt);
+  try
+    Result := Assigned(LState) and
+      LState.GetValue<string>('objective', '').Contains(AValue);
+  finally
+    LState.Free;
+  end;
+end;
+
 function AgentStateHasFailedTool(
   const APrompt: string;
   const AToolName: string
 ): Boolean;
 var
-  LItem: TJSONValue;
+  LIndex: Integer;
   LState: TJSONObject;
   LSteps: TJSONArray;
   LStep: TJSONObject;
@@ -352,16 +368,46 @@ begin
     LSteps := LState.GetValue<TJSONArray>('steps');
     if not Assigned(LSteps) then
       Exit;
-    for LItem in LSteps do
-      if LItem is TJSONObject then
+    for LIndex := LSteps.Count - 1 downto 0 do
+      if LSteps.Items[LIndex] is TJSONObject then
       begin
-        LStep := TJSONObject(LItem);
+        LStep := TJSONObject(LSteps.Items[LIndex]);
         if SameText(LStep.GetValue<string>('toolName', ''), AToolName) and
           not LStep.GetValue<Boolean>('success', True) then
           Exit(True);
       end;
   finally
     LState.Free;
+  end;
+end;
+
+function AgentStateHasSuccessfulToolDestination(
+  const APrompt: string;
+  const AToolName: string;
+  const ADestination: string
+): Boolean;
+var
+  LArguments: TJSONObject;
+  LStep: TJSONObject;
+begin
+  Result := False;
+  LStep := FindSuccessfulAgentToolStep(APrompt, AToolName);
+  if not Assigned(LStep) then
+    Exit;
+  try
+    LArguments := TJSONObject.ParseJSONValue(
+      LStep.GetValue<string>('arguments', '')
+    ) as TJSONObject;
+    try
+      Result := Assigned(LArguments) and SameText(
+        LArguments.GetValue<string>('destinationPath', ''),
+        ADestination
+      );
+    finally
+      LArguments.Free;
+    end;
+  finally
+    LStep.Free;
   end;
 end;
 
@@ -451,6 +497,8 @@ function TRadIAConversationSmokeService.TrySendNaturalVclPrompt(
 ): Boolean;
 var
   LDestination: string;
+  LPreviewReady: Boolean;
+  LRecoveryRun: Boolean;
   LRetryDestination: string;
 begin
   Result :=
@@ -465,8 +513,21 @@ begin
     'RADIA_IDE_SMOKE_NATURAL_VCL_RETRY_DESTINATION'
   );
   if not LRetryDestination.IsEmpty and
-    APrompt.Contains(LRetryDestination) then
+    AgentStateObjectiveContains(APrompt, LRetryDestination) then
     LDestination := LRetryDestination;
+  LRecoveryRun := SameText(LDestination, LRetryDestination) and
+    not LRetryDestination.IsEmpty;
+  if LRecoveryRun then
+    LPreviewReady := AgentStateHasSuccessfulToolDestination(
+      APrompt,
+      'PreviewProjectTemplate',
+      LRetryDestination
+    )
+  else
+    LPreviewReady := AgentStateHasSuccessfulTool(
+      APrompt,
+      'PreviewProjectTemplate'
+    );
   if not AgentStatePlanApproved(APrompt) then
     ACallback(
         '{"kind":"plan","message":"Create and validate the VCL project.",' +
@@ -476,10 +537,7 @@ begin
         False,
         TTokenUsage.Empty
       )
-    else if not AgentStateHasSuccessfulTool(
-      APrompt,
-      'PreviewProjectTemplate'
-    ) then
+    else if not LPreviewReady then
       ACallback(
         '{"kind":"tool","tool":"PreviewProjectTemplate","arguments":{' +
         '"projectName":"RadIAUserCalculator","template":"vcl",' +
@@ -499,7 +557,7 @@ begin
     else if AgentStateHasFailedTool(
       APrompt,
       'CreateProjectFromTemplate'
-    ) then
+    ) and not LRecoveryRun then
       ACallback(
         '{"kind":"fail","message":"Choose another destination."}',
         '',
