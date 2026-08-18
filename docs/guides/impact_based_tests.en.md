@@ -1,8 +1,8 @@
 # Impact-based DUnitX tests
 
 During development, RadIA can calculate and run the smallest DUnitX fixture set it can safely justify.
-This shortens feedback without weakening the release gate, which still runs every suite, the calculator,
-and project opening scenarios.
+This shortens feedback. The release gate still runs complete suites on both compilers, while localized
+E2E journeys use the usage matrix `targeted` profile.
 
 ## How selection works
 
@@ -24,4 +24,5 @@ fixtures, a coverage report that omits a changed unit, more than 100 filters, or
 files. Files and reports outside the workspace are rejected.
 
 Use impact selection for fast development feedback. Every release still runs the complete Delphi 12 and
-13 suites, calculator functional and DUnitX tests, and project creation, opening, and navigation gates.
+13 suites and the critical E2E set. Use full regression under the conditions documented in
+[Automated usage test matrix](../development/usage_test_matrix.en.md).

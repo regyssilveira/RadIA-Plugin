@@ -1,7 +1,7 @@
 # Automated usage test matrix
 
-The usage matrix validates RadIA as a product inside Delphi, complementing unit and Web tests. It is
-mandatory for every release and covers Delphi 12 Win32, Delphi 13 Win32, and Delphi 13 IDE64.
+The usage matrix validates RadIA as a product inside Delphi, complementing unit and Web tests. It has
+separate levels so routine delivery does not become a multi-hour certification.
 
 ## Layers
 
@@ -52,6 +52,18 @@ powershell.exe -ExecutionPolicy Bypass `
 `-PlanOnly` validates the manifest and returns JSON with every combination that would run. It does
 not start, install, or modify the IDE.
 
+## Execution levels
+
+| Level | When to use | Coverage |
+|---|---|---|
+| `release` | Every patch or minor publication | Complete suites, templates, startup on three targets, and critical journeys on Delphi 13 Win32 |
+| `targeted` | Development and localized fixes | Only explicitly selected scenarios and targets |
+| `regression` | Major releases, cross-cutting changes, or instability investigations | All 49 flows on every compatible target |
+
+Run `regression` for changes to the installer, WebView2 lifecycle, IDE shutdown, session isolation,
+security/consent, E2E orchestration, or the target matrix. Also run it before a major release, after a
+failure that cannot be isolated, or when targeted selection cannot safely represent the changed surface.
+
 ## Run during development
 
 Close every Delphi instance and run:
@@ -62,10 +74,26 @@ powershell.exe -ExecutionPolicy Bypass `
   -Profile startup
 ```
 
-The aggregate result is written to `Output/Validation/UsageMatrix/usage-matrix.json`. In the `release`
-profile, the orchestrator groups journeys by target and installs the matching package before running them. During
+The aggregate result is written to `Output/Validation/UsageMatrix/usage-matrix.json`. The `release`
+profile runs critical journeys on Delphi 13 Win32. During
 development, evidence reports a dirty source and no required package provenance; that result cannot
 authorize a release.
+
+For a localized change, select the scenario and target explicitly:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.UsageMatrix.ps1 `
+  -Profile targeted `
+  -ScenarioId calculator-history-fidelity `
+  -TargetId delphi13-win32
+```
+
+Use `-PlanOnly` first to inspect cost and combinations without opening Delphi.
+
+The `targeted` profile uses the already installed build and never silently replaces a developer's IDE.
+Explicitly install the intended revision with `build.ps1 -Install` first. The `startup`, `release`, and
+`regression` profiles build and install their own packages per target.
 
 ## Mandatory release gate
 
@@ -76,22 +104,32 @@ powershell.exe -ExecutionPolicy Bypass `
   -File scripts\Test-RadIA.ReleaseUsage.ps1
 ```
 
-This command composes the following gates without options to skip their main requirements:
+Before occupying the machine, add `-PlanOnly` to obtain the aggregate plan without building, installing,
+or opening Delphi.
+
+This command composes the bounded mandatory gate:
 
 1. run the complete RadIA DUnitX suites on Delphi 12 and 13;
-2. run every registered integration and end-to-end scenario applicable to supported targets;
+2. run startup and shutdown smoke tests on all three supported targets;
 3. generate and build every supported template on Delphi 12 and 13;
 4. perform the visual `2 + 3 = 5` operation in the VCL calculator;
    the scenario also proves that a history request records `2 + 3 = 5` in the list and that clearing
    leaves the list empty;
 5. run all five calculator DUnitX tests;
-6. create, open, and immediately navigate a project on all three IDE targets;
-7. explicitly install the current build and run the startup/shutdown matrix on all three targets;
+6. create, open, and immediately navigate a project on representative Delphi 13 Win32;
+7. validate clean installation and upgrade on the representative target;
 8. route real beginner requests for creation, build, tests, and diagnostics, including educational
    fallback and sanitized local counters.
 
-Once a feature enters the matrix, its scenario becomes mandatory in every following release. The
-release runner accepts no filter, exclusion, or partial approval for these groups.
+The `regression` profile still contains every registered scenario exactly once and distributes them
+across compatible targets. Run the full certification with:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Test-RadIA.UsageMatrix.ps1 `
+  -Profile regression `
+  -EvidencePath Output\Validation\UsageMatrix\regression.json
+```
 
 Package and installer provenance is validated afterwards by the packaging gate because those artifacts do not
 exist yet while `Test-RadIA.ReleaseUsage.ps1` runs. Using `-RequirePackageProvenance` before
@@ -121,7 +159,9 @@ preserves partial evidence and blocks publication; retrying a scenario does not 
 failure into a pass.
 
 The `startup` profile proves that the package loaded, the tool contract is valid, shutdown is clean,
-and no orphan process remains. The `release` profile also executes critical IDE-neutral contracts.
+and no orphan process remains. The `release` profile executes critical host contracts and representative
+journeys. `targeted` requires `-ScenarioId`; `regression` prevents registered scenarios from falling out
+of the full certification.
 The first proves explicit intent-route confirmation, command review, chat fallback, and host
 validation of the pending command. DUnitX runs sixteen natural prompts against the real Pascal
 classifier; the host-neutral contract confirms that telemetry cannot accept prompt content. New

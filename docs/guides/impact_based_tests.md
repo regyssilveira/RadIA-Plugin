@@ -1,8 +1,9 @@
 # Testes DUnitX selecionados por impacto
 
 Durante o desenvolvimento, o RadIA pode calcular e executar o menor conjunto de fixtures DUnitX que
-consegue justificar com segurança. Essa seleção reduz o tempo de feedback sem enfraquecer o gate de
-release, que continua executando todas as suítes, a calculadora e a abertura de projetos.
+consegue justificar com segurança. Essa seleção reduz o tempo de feedback. O gate de release continua
+executando as suítes completas nos dois compiladores, enquanto jornadas E2E localizadas usam o perfil
+`targeted` da matriz de uso.
 
 ## Como a seleção funciona
 
@@ -53,5 +54,6 @@ dependências continua sendo responsável pela seleção das fixtures.
 
 Use a seleção por impacto para feedback rápido após mudanças localizadas. Use `RunDUnitXTests` sem
 filtros quando quiser solicitar explicitamente toda a suíte. Em qualquer release, o processo oficial
-ignora otimizações de impacto e executa obrigatoriamente as suítes completas no Delphi 12 e 13, os
-testes funcionais e DUnitX da calculadora e a criação, abertura e navegação de projetos.
+executa as suítes completas no Delphi 12 e 13 e o conjunto E2E crítico. Use a regressão completa nas
+condições documentadas em
+[Matriz automatizada de testes de uso](../development/usage_test_matrix.md).
