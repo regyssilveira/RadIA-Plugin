@@ -477,10 +477,8 @@ public static class RadIADockingSmokeNative
 "@
 }
 
-if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-    $ExerciseInlineReview -or $FireDACScenarioId) {
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type @"
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type @"
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -776,7 +774,6 @@ public static class RadIAKnowledgeSmokeNative
     }
 }
 "@
-}
 
 function Save-RadIAActiveEditor {
     param(
@@ -4693,76 +4690,65 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
         if (-not $currentProcess.CloseMainWindow()) {
             throw "Delphi rejected the shutdown request in cycle $cycle."
         }
-        if ($ExerciseKnowledge -or $ExerciseInlineCompletion -or
-            $ExerciseInlineReview -or $FireDACScenarioId) {
-            $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
-                $shutdownTimeoutMs
+        $shutdownDeadline = [DateTime]::UtcNow.AddMilliseconds(
+            $shutdownTimeoutMs
+        )
+        do {
+            $currentProcess.Refresh()
+            if ($currentProcess.HasExited) {
+                break
+            }
+            $confirmWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                [uint32]$currentProcess.Id,
+                "TMessageForm"
             )
-            do {
-                $currentProcess.Refresh()
-                if ($currentProcess.HasExited) {
-                    break
-                }
-                $confirmWindow = (
-                    [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
-                        [uint32]$currentProcess.Id,
-                        "TMessageForm"
-                    )
+            if ($confirmWindow -ne [IntPtr]::Zero) {
+                $noButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+                    $confirmWindow,
+                    "&No"
                 )
-                if ($confirmWindow -ne [IntPtr]::Zero) {
-                    $noButton = (
-                        [RadIAKnowledgeSmokeNative]::FindChildByText(
-                            $confirmWindow,
-                            "&No"
-                        )
+                if ($noButton -eq [IntPtr]::Zero) {
+                    $noButton = [RadIAKnowledgeSmokeNative]::FindChildByText(
+                        $confirmWindow,
+                        "&Não"
                     )
-                    if ($noButton -eq [IntPtr]::Zero) {
-                        $noButton = (
-                            [RadIAKnowledgeSmokeNative]::FindChildByText(
-                                $confirmWindow,
-                                "&Não"
-                            )
-                        )
-                    }
-                    if ($noButton -ne [IntPtr]::Zero) {
-                        [void][RadIAKnowledgeSmokeNative]::PostMessage(
-                            $noButton,
-                            0x00F5,
-                            [IntPtr]0,
-                            [IntPtr]0
-                        )
-                    }
                 }
-                Start-Sleep -Milliseconds 200
-            } while ([DateTime]::UtcNow -lt $shutdownDeadline)
-            if (-not $currentProcess.HasExited) {
-                $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
-                    [uint32]$currentProcess.Id,
-                    "TAppBuilder"
-                )
-                if ($FireDACScenarioId -and
-                    $mainWindow -eq [IntPtr]::Zero -and
-                    (Test-RadIAPluginShutdownCompleted)) {
-                    $currentDescendants = @(
-                        Get-RadIAProcessDescendants `
-                            -ParentProcessId $currentProcess.Id `
-                            -ParentStartedAt $currentProcess.StartTime
+                if ($noButton -ne [IntPtr]::Zero) {
+                    [void][RadIAKnowledgeSmokeNative]::PostMessage(
+                        $noButton,
+                        0x00F5,
+                        [IntPtr]0,
+                        [IntPtr]0
                     )
-                    foreach ($child in $currentDescendants) {
-                        Stop-Process `
-                            -Id $child.ProcessId `
-                            -Force `
-                            -ErrorAction SilentlyContinue
-                    }
-                    Stop-Process -Id $currentProcess.Id -Force
-                    [void]$currentProcess.WaitForExit(10000)
-                    $hostCleanupForced = $true
-                } else {
-                    throw "Delphi did not exit cleanly in cycle $cycle."
                 }
             }
-        } elseif (-not $currentProcess.WaitForExit($shutdownTimeoutMs)) {
-            throw "Delphi did not exit cleanly in cycle $cycle."
+            Start-Sleep -Milliseconds 200
+        } while ([DateTime]::UtcNow -lt $shutdownDeadline)
+        if (-not $currentProcess.HasExited) {
+            $mainWindow = [RadIAKnowledgeSmokeNative]::FindVisibleWindow(
+                [uint32]$currentProcess.Id,
+                "TAppBuilder"
+            )
+            if ($FireDACScenarioId -and
+                $mainWindow -eq [IntPtr]::Zero -and
+                (Test-RadIAPluginShutdownCompleted)) {
+                $currentDescendants = @(
+                    Get-RadIAProcessDescendants `
+                        -ParentProcessId $currentProcess.Id `
+                        -ParentStartedAt $currentProcess.StartTime
+                )
+                foreach ($child in $currentDescendants) {
+                    Stop-Process `
+                        -Id $child.ProcessId `
+                        -Force `
+                        -ErrorAction SilentlyContinue
+                }
+                Stop-Process -Id $currentProcess.Id -Force
+                [void]$currentProcess.WaitForExit(10000)
+                $hostCleanupForced = $true
+            } else {
+                throw "Delphi did not exit cleanly in cycle $cycle."
+            }
         }
         $rootDeadline = [DateTime]::UtcNow.AddSeconds(10)
         do {
