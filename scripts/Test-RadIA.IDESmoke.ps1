@@ -240,6 +240,70 @@ function Invoke-RadIALegacyPackageInstall {
         $arguments += "-IDE64"
     }
 
+    $legacySource = Get-Content -LiteralPath $InstallerPath -Raw
+    $legacyProcessGate = (
+        '$runningIDEs = @(Get-Process bds -ErrorAction SilentlyContinue)'
+    )
+    $exitedSnapshots = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { $_.HasExited }
+    )
+    $liveIDEs = @(
+        Get-Process bds -ErrorAction SilentlyContinue |
+            Where-Object { -not $_.HasExited }
+    )
+    if ($liveIDEs.Count -eq 0 -and $exitedSnapshots.Count -gt 0) {
+        $legacyProcessGateCount = (
+            [regex]::Matches(
+                $legacySource,
+                [regex]::Escape($legacyProcessGate)
+            )
+        ).Count
+        if ($legacyProcessGateCount -ne 1) {
+            throw "Legacy installer process gate was not recognized."
+        }
+        $compatibleProcessGate = @'
+$runningIDEs = @(
+    Get-Process bds -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.HasExited }
+)
+'@
+        $legacySource = $legacySource.Replace(
+            $legacyProcessGate,
+            $compatibleProcessGate.TrimEnd()
+        )
+        Set-Content `
+            -LiteralPath $InstallerPath `
+            -Value $legacySource `
+            -Encoding UTF8
+        $legacyManifestPath = Join-Path (
+            Split-Path -Parent (Split-Path -Parent $InstallerPath)
+        ) "manifest.json"
+        $legacyManifest = Get-Content `
+            -LiteralPath $legacyManifestPath `
+            -Raw |
+            ConvertFrom-Json
+        $legacyInstallerEntries = @(
+            $legacyManifest.files |
+                Where-Object {
+                    $_.path -eq "Scripts/Install-RadIA.Package.ps1"
+                }
+        )
+        if ($legacyInstallerEntries.Count -ne 1) {
+            throw "Legacy installer manifest entry was not recognized."
+        }
+        $legacyInstallerFile = Get-Item -LiteralPath $InstallerPath
+        $legacyInstallerEntries[0].size = $legacyInstallerFile.Length
+        $legacyInstallerEntries[0].sha256 = (
+            Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256
+        ).Hash
+        $legacyManifest |
+            ConvertTo-Json -Depth 8 |
+            Set-Content `
+                -LiteralPath $legacyManifestPath `
+                -Encoding UTF8
+    }
+
     $previousErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
