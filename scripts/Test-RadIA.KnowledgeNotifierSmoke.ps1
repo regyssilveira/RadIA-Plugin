@@ -2232,8 +2232,22 @@ try {
     }
 
     if (-not $ExerciseProjectTransition) {
-        Open-RadIAPath -Process $process -Path $unitPath
-    Start-Sleep -Seconds 2
+        $unitNavigation = Invoke-RadIATool `
+            -BridgePath $bridgePath `
+            -InstanceFile $instanceFile `
+            -Name "NavigateToFile" `
+            -Arguments @{
+                fileName = $unitPath
+                line = 1
+                column = 1
+            }
+        if (-not $unitNavigation.fileName -or
+            -not [IO.Path]::GetFullPath($unitNavigation.fileName).Equals(
+                [IO.Path]::GetFullPath($unitPath),
+                [StringComparison]::OrdinalIgnoreCase
+        )) {
+            throw "The smoke unit navigation did not complete."
+        }
     $activeUnit = Invoke-RadIATool `
         -BridgePath $bridgePath `
         -InstanceFile $instanceFile `
