@@ -60,7 +60,11 @@ test('real IDE E2E navigates without consent and waits for knowledge readiness',
   assert.doesNotMatch(e2e, /immediateNavigation = Invoke-RadIAToolWithConsent/u);
   assert.match(
     e2e,
-    /NavigateToFile[\s\S]*?GetKnowledgeStatus[\s\S]*?fileCount[\s\S]*?GetKnowledgeDocument/u
+    /NavigateToFile[\s\S]*?GetKnowledgeStatus[\s\S]*?fileCount[\s\S]*?Get-RadIAKnowledgeDocumentWhenReady/u
+  );
+  assert.match(
+    e2e,
+    /function Get-RadIAKnowledgeDocumentWhenReady[\s\S]*?-Name "GetKnowledgeDocument"/u
   );
   assert.match(e2e, /unexpectedly waited for consent/u);
 });

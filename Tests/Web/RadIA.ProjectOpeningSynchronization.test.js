@@ -45,7 +45,11 @@ test('IDE integration navigates immediately after opening a generated project', 
   );
   assert.match(
     integrationSmokeSource,
-    /NavigateToFile[\s\S]*?GetKnowledgeStatus[\s\S]*?fileCount[\s\S]*?GetKnowledgeDocument/u
+    /NavigateToFile[\s\S]*?GetKnowledgeStatus[\s\S]*?fileCount[\s\S]*?Get-RadIAKnowledgeDocumentWhenReady/u
+  );
+  assert.match(
+    integrationSmokeSource,
+    /function Get-RadIAKnowledgeDocumentWhenReady[\s\S]*?-Name "GetKnowledgeDocument"/u
   );
   assert.match(integrationSmokeSource, /unexpectedly waited for consent/u);
   assert.match(integrationGateSource, /SkipTemplateBuild/u);
