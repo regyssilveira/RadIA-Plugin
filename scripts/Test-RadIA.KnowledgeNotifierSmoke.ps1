@@ -1310,6 +1310,18 @@ $testExecutableCandidates = @(
     )),
     (Join-Path $smokeDirectory (
         "Output\bin\$idePlatform\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Tests\Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Tests\Output\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Output\$DelphiVersion\bin\Win32\Debug\RadIATests.exe"
+    )),
+    (Join-Path $smokeDirectory (
+        "Output\bin\Win32\Debug\RadIATests.exe"
     ))
 )
 $process = Start-Process -FilePath $bdsPath -PassThru

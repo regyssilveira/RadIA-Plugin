@@ -27,6 +27,7 @@ type
       const ARootPath: string;
       const AExtension: string
     ): string;
+    function ReadProcessOutput(const AFileName: string): string;
     function ExecuteProcess(
       const ACommandLine: string;
       const AWorkingDirectory: string;
@@ -136,6 +137,18 @@ begin
   );
 end;
 
+function TRadIAOTADUnitXRunner.ReadProcessOutput(
+  const AFileName: string
+): string;
+begin
+  try
+    Result := TFile.ReadAllText(AFileName, TEncoding.UTF8);
+  except
+    on EEncodingError do
+      Result := TFile.ReadAllText(AFileName, TEncoding.Default);
+  end;
+end;
+
 function TRadIAOTADUnitXRunner.Execute(
   const ARequest: TRadIADUnitXRunRequest
 ): TRadIADUnitXRunResult;
@@ -208,7 +221,7 @@ begin
 
     LOutput := '';
     if TFile.Exists(LOutputPath) then
-      LOutput := TFile.ReadAllText(LOutputPath, TEncoding.UTF8);
+      LOutput := ReadProcessOutput(LOutputPath);
     LParser := TRadIADUnitXReportParser.Create;
     try
       LReport := LParser.Parse(
