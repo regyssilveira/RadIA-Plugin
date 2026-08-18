@@ -37,6 +37,10 @@ type
     procedure NaturalCalculatorHistoryPreservesFunctionalFeature;
     [Test]
     procedure NaturalPromptsNormalizeEverySupportedTemplate;
+    [Test]
+    procedure ReplacesOnlyCreateDestinationDuringRecovery;
+    [Test]
+    procedure PrependsRecoveryDestinationToLegacyContext;
   end;
 
 implementation
@@ -44,6 +48,35 @@ implementation
 uses
   System.SysUtils,
   RadIA.Core.Journeys;
+
+procedure TTestRadIAJourneys.PrependsRecoveryDestinationToLegacyContext;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+    'Create a calculator with operation history',
+    'D:\New\Calculator'
+  );
+  Assert.StartsWith('destination="D:\New\Calculator" ', LContext);
+  Assert.Contains(LContext, 'operation history');
+end;
+
+procedure TTestRadIAJourneys.ReplacesOnlyCreateDestinationDuringRecovery;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+    'Create a calculator with operation history in D:\Old\Calculator ' +
+      'destination="D:\Old\Calculator" project="CalculatorApp" ' +
+      'type="VCL" platform="Win32" feature="operationHistory"',
+    'D:\New\Calculator'
+  );
+  Assert.Contains(LContext, 'destination="D:\New\Calculator"');
+  Assert.DoesNotContain(LContext, 'D:\Old\Calculator');
+  Assert.Contains(LContext, 'Create a calculator with operation history');
+  Assert.Contains(LContext, 'project="CalculatorApp"');
+  Assert.Contains(LContext, 'feature="operationHistory"');
+end;
 
 procedure TTestRadIAJourneys.CatalogContainsFiveEndToEndJourneys;
 var

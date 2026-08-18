@@ -54,6 +54,7 @@ type
     class procedure CompactBuildMessages(const ARoot: TJSONObject); static;
     class procedure CompactKnowledgeItems(const ARoot: TJSONObject); static;
     class procedure CompactListItems(const ARoot: TJSONObject); static;
+    class procedure CompactRuntimeControls(const ARoot: TJSONObject); static;
     class function CompactLines(const AText: string): string; static;
     class function CompactText(const AText: string): string; static;
     class function ExtractCriticalLines(const AText: string): string; static;
@@ -184,6 +185,8 @@ begin
       SameText(AToolName, 'ListIDEActions') or
       SameText(AToolName, 'ListProjectGroupProjects') then
       CompactListItems(LRoot);
+    if SameText(AToolName, 'GetRuntimeControlTree') then
+      CompactRuntimeControls(LRoot);
     for LFieldName in ['output', 'diff'] do
     begin
       if not IsCompactableField(AToolName, LFieldName) then
@@ -214,6 +217,79 @@ begin
     );
   finally
     LRoot.Free;
+  end;
+end;
+
+class procedure TRadIAResultCompactor.CompactRuntimeControls(
+  const ARoot: TJSONObject
+);
+var
+  LControls: TJSONArray;
+  LHasSemanticPaths: Boolean;
+  LIndex: Integer;
+  LKeptControl: TJSONValue;
+  LNewControls: TJSONArray;
+  LObject: TJSONObject;
+  LOmitted: Integer;
+  LPair: TJSONPair;
+  LParentId: string;
+  LPath: string;
+  LValue: TJSONValue;
+begin
+  LValue := ARoot.GetValue('controls');
+  if not (LValue is TJSONArray) then
+    Exit;
+  LControls := TJSONArray(LValue);
+  LHasSemanticPaths := False;
+  for LIndex := 0 to LControls.Count - 1 do
+  begin
+    if not (LControls[LIndex] is TJSONObject) then
+      Continue;
+    LPath := TJSONObject(LControls[LIndex]).GetValue<string>('path', '');
+    if LPath.Contains('/') then
+    begin
+      LHasSemanticPaths := True;
+      Break;
+    end;
+  end;
+  if not LHasSemanticPaths then
+    Exit;
+  LNewControls := TJSONArray.Create;
+  try
+    LOmitted := 0;
+    for LIndex := 0 to LControls.Count - 1 do
+    begin
+      if not (LControls[LIndex] is TJSONObject) then
+      begin
+        Inc(LOmitted);
+        Continue;
+      end;
+      LObject := TJSONObject(LControls[LIndex]);
+      LPath := LObject.GetValue<string>('path', '');
+      LParentId := LObject.GetValue<string>('parentId', '');
+      if not LPath.Contains('/') and (LParentId <> '') then
+      begin
+        Inc(LOmitted);
+        Continue;
+      end;
+      LKeptControl := TJSONObject.ParseJSONValue(LObject.ToJSON);
+      LNewControls.AddElement(LKeptControl);
+    end;
+    if LOmitted = 0 then
+      Exit;
+    LPair := ARoot.RemovePair('controls');
+    LPair.Free;
+    ARoot.AddPair('controls', LNewControls);
+    LPair := ARoot.RemovePair('count');
+    LPair.Free;
+    ARoot.AddPair(
+      'count',
+      TJSONNumber.Create(LNewControls.Count)
+    );
+    LNewControls := nil;
+    ARoot.AddPair('omittedDuplicateControls', TJSONNumber.Create(LOmitted));
+  finally
+    LNewControls.Free;
   end;
 end;
 

@@ -145,6 +145,13 @@ arquivos ou variáveis de ambiente.
 - A seleção não habilita opções de aprovação automática dos CLIs.
 - MCP continua sendo provisionado e diagnosticado separadamente.
 
+Quando o Codex CLI transporta decisões do orquestrador nativo, o RadIA inicia uma sessão isolada,
+somente leitura e sem carregar o `config.toml` do usuário. A sessão mantém o identificador necessário
+para continuar as decisões do mesmo agente. A autenticação do Codex continua válida, mas ferramentas
+MCP, regras e configurações externas não podem executar operações IDE fora do executor nativo auditado.
+Em jornadas de criação, a interface mostra o orquestrador nativo efetivo mesmo quando a preferência
+persistida para outras tarefas é um executor CLI.
+
 Essa configuração estabelece os perfis e a preferência persistente usados pelo transporte descrito
 a seguir.
 

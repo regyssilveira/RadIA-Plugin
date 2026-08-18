@@ -334,6 +334,104 @@ begin
   end;
 end;
 
+function AgentStateObjectiveContains(
+  const APrompt: string;
+  const AValue: string
+): Boolean;
+var
+  LState: TJSONObject;
+begin
+  LState := ParseAgentCurrentState(APrompt);
+  try
+    Result := Assigned(LState) and
+      LState.GetValue<string>('objective', '').Contains(AValue);
+  finally
+    LState.Free;
+  end;
+end;
+
+function AgentStateHasFailedTool(
+  const APrompt: string;
+  const AToolName: string
+): Boolean;
+var
+  LIndex: Integer;
+  LState: TJSONObject;
+  LSteps: TJSONArray;
+  LStep: TJSONObject;
+begin
+  Result := False;
+  LState := ParseAgentCurrentState(APrompt);
+  if not Assigned(LState) then
+    Exit;
+  try
+    LSteps := LState.GetValue<TJSONArray>('steps');
+    if not Assigned(LSteps) then
+      Exit;
+    for LIndex := LSteps.Count - 1 downto 0 do
+      if LSteps[LIndex] is TJSONObject then
+      begin
+        LStep := TJSONObject(LSteps[LIndex]);
+        if SameText(LStep.GetValue<string>('toolName', ''), AToolName) and
+          not LStep.GetValue<Boolean>('success', True) then
+          Exit(True);
+      end;
+  finally
+    LState.Free;
+  end;
+end;
+
+function AgentStateHasSuccessfulToolDestination(
+  const APrompt: string;
+  const AToolName: string;
+  const ADestination: string
+): Boolean; forward;
+
+function NaturalVclPreviewReady(
+  const APrompt: string;
+  const ARetryDestination: string;
+  const ARecoveryRun: Boolean
+): Boolean;
+begin
+  if ARecoveryRun then
+    Exit(AgentStateHasSuccessfulToolDestination(
+      APrompt,
+      'PreviewProjectTemplate',
+      ARetryDestination
+    ));
+  Result := AgentStateHasSuccessfulTool(APrompt, 'PreviewProjectTemplate');
+end;
+
+function AgentStateHasSuccessfulToolDestination(
+  const APrompt: string;
+  const AToolName: string;
+  const ADestination: string
+): Boolean;
+var
+  LArguments: TJSONObject;
+  LStep: TJSONObject;
+begin
+  Result := False;
+  LStep := FindSuccessfulAgentToolStep(APrompt, AToolName);
+  if not Assigned(LStep) then
+    Exit;
+  try
+    LArguments := TJSONObject.ParseJSONValue(
+      LStep.GetValue<string>('arguments', '')
+    ) as TJSONObject;
+    try
+      Result := Assigned(LArguments) and SameText(
+        LArguments.GetValue<string>('destinationPath', ''),
+        ADestination
+      );
+    finally
+      LArguments.Free;
+    end;
+  finally
+    LStep.Free;
+  end;
+end;
+
 function AgentToolResultString(
   const APrompt: string;
   const AToolName: string;
@@ -418,12 +516,33 @@ function TRadIAConversationSmokeService.TrySendNaturalVclPrompt(
   const APrompt: string;
   const ACallback: TCompletionCallback
 ): Boolean;
+var
+  LDestination: string;
+  LPreviewReady: Boolean;
+  LRecoveryRun: Boolean;
+  LRetryDestination: string;
 begin
   Result :=
     (Trim(GetEnvironmentVariable('RADIA_IDE_SMOKE_NATURAL_VCL')) <> '') and
     APrompt.Contains('CURRENT_STATE:');
   if not Result then
     Exit;
+  LDestination := GetEnvironmentVariable(
+    'RADIA_IDE_SMOKE_NATURAL_VCL_DESTINATION'
+  );
+  LRetryDestination := GetEnvironmentVariable(
+    'RADIA_IDE_SMOKE_NATURAL_VCL_RETRY_DESTINATION'
+  );
+  if not LRetryDestination.IsEmpty and
+    AgentStateObjectiveContains(APrompt, LRetryDestination) then
+    LDestination := LRetryDestination;
+  LRecoveryRun := SameText(LDestination, LRetryDestination) and
+    not LRetryDestination.IsEmpty;
+  LPreviewReady := NaturalVclPreviewReady(
+    APrompt,
+    LRetryDestination,
+    LRecoveryRun
+  );
   if not AgentStatePlanApproved(APrompt) then
     ACallback(
         '{"kind":"plan","message":"Create and validate the VCL project.",' +
@@ -433,10 +552,7 @@ begin
         False,
         TTokenUsage.Empty
       )
-    else if not AgentStateHasSuccessfulTool(
-      APrompt,
-      'PreviewProjectTemplate'
-    ) then
+    else if not LPreviewReady then
       ACallback(
         '{"kind":"tool","tool":"PreviewProjectTemplate","arguments":{' +
         '"projectName":"RadIAUserCalculator","template":"vcl",' +
@@ -444,12 +560,21 @@ begin
           'RADIA_IDE_SMOKE_DELPHI_VERSION'
         )) + ',"platforms":[' + JsonQuoted(GetEnvironmentVariable(
           'RADIA_IDE_SMOKE_TARGET_PLATFORM'
-        )) + '],"destinationPath":' + JsonQuoted(GetEnvironmentVariable(
-          'RADIA_IDE_SMOKE_NATURAL_VCL_DESTINATION'
-        )) + ',"authorizedRoot":' + JsonQuoted(GetEnvironmentVariable(
+        )) + '],"destinationPath":' + JsonQuoted(LDestination) +
+        ',"authorizedRoot":' + JsonQuoted(GetEnvironmentVariable(
           'RADIA_IDE_SMOKE_NATURAL_VCL_ROOT'
         )) + ',"projectSpecification":{"schemaVersion":1,' +
         '"kind":"calculator","creationProfile":"essential"}}}',
+        '',
+        False,
+        TTokenUsage.Empty
+      )
+    else if AgentStateHasFailedTool(
+      APrompt,
+      'CreateProjectFromTemplate'
+    ) and not LRecoveryRun then
+      ACallback(
+        '{"kind":"fail","message":"Choose another destination."}',
         '',
         False,
         TTokenUsage.Empty
@@ -1769,6 +1894,9 @@ begin
       LRoot.GetValue<Boolean>('projectOpened', False) and
       LRoot.GetValue<Boolean>('buildPassed', False) and
       LRoot.GetValue<Boolean>('applicationStarted', False) and
+      LRoot.GetValue<Boolean>('destinationRecovered', False) and
+      LRoot.GetValue<Boolean>('requirementsPreserved', False) and
+      LRoot.GetValue<Boolean>('nativeOrchestration', False) and
       not LRoot.GetValue<Boolean>('cliCompletedEarly', True) and
       not LRoot.GetValue<Boolean>('toolUnavailable', True);
     LEvidence := TJSONObject.Create;
@@ -1805,6 +1933,18 @@ begin
         TJSONBool.Create(LRoot.GetValue<Boolean>('applicationStarted', False))
       );
       LEvidence.AddPair(
+        'destinationRecovered',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('destinationRecovered', False))
+      );
+      LEvidence.AddPair(
+        'requirementsPreserved',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('requirementsPreserved', False))
+      );
+      LEvidence.AddPair(
+        'nativeOrchestration',
+        TJSONBool.Create(LRoot.GetValue<Boolean>('nativeOrchestration', False))
+      );
+      LEvidence.AddPair(
         'cliCompletedEarly',
         TJSONBool.Create(LRoot.GetValue<Boolean>('cliCompletedEarly', True))
       );
@@ -1837,6 +1977,8 @@ var
   LDestination: string;
   LPrompt: string;
   LPromptJson: TJSONString;
+  LRetryDestination: string;
+  LRetryJson: TJSONString;
 begin
   if (FNaturalVclSmokeEvidencePath = '') or not Assigned(FEdgeBrowser) then
     Exit;
@@ -1849,15 +1991,21 @@ begin
   LDestination := GetEnvironmentVariable(
     'RADIA_IDE_SMOKE_NATURAL_VCL_DESTINATION'
   );
+  LRetryDestination := GetEnvironmentVariable(
+    'RADIA_IDE_SMOKE_NATURAL_VCL_RETRY_DESTINATION'
+  );
   LPrompt :=
     'Crie uma calculadora em VCL que exiba também o histórico das operações ' +
     'matemáticas realizadas. Grave em ' + LDestination;
   LPromptJson := TJSONString.Create(LPrompt);
+  LRetryJson := TJSONString.Create(LRetryDestination);
   try
     FEdgeBrowser.ExecuteScript(
-      'beginNaturalVclSmoke(' + LPromptJson.ToJSON + ', 300000);'
+      'beginNaturalVclSmoke(' + LPromptJson.ToJSON + ', ' +
+        LRetryJson.ToJSON + ', 300000);'
     );
   finally
+    LRetryJson.Free;
     LPromptJson.Free;
   end;
 end;

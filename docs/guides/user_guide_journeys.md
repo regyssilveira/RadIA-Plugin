@@ -79,6 +79,11 @@ cada operação concluída em ordem e oferece **Clear history**. A jornada só p
 executar cálculos reais, conferir o histórico e verificar sua limpeza; um build verde, isoladamente,
 não atende esse pedido.
 
+Se a pasta de destino já existir, a execução informa o conflito e mantém a jornada aguardando outro
+destino. A resposta seguinte substitui somente o caminho: tipo do projeto, plataforma, nome e requisitos
+funcionais — inclusive o histórico — continuam no objetivo. O cartão de recomendação é consumido
+visualmente no primeiro clique para não sugerir que a mesma ação ainda está disponível.
+
 ## Como a execução funciona
 
 1. O comando ativa visualmente o modo agente quando necessário.

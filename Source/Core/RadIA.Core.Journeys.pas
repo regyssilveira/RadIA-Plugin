@@ -94,6 +94,10 @@ type
     class function NormalizeCreateContext(
       const AContext: string
     ): string; static;
+    class function ReplaceCreateDestination(
+      const AContext: string;
+      const ADestination: string
+    ): string; static;
     class function HelpText: string; static;
   end;
 
@@ -229,6 +233,38 @@ begin
       ]
     ) then
     Result := Result + ' feature="operationHistory"';
+end;
+
+class function TRadIAJourneyCatalog.ReplaceCreateDestination(
+  const AContext: string;
+  const ADestination: string
+): string;
+var
+  LDestination: string;
+  LMatch: TMatch;
+  LPreviousDestination: string;
+begin
+  LDestination := ADestination.Trim.Replace('"', '');
+  if LDestination.IsEmpty then
+    Exit(AContext);
+  LMatch := TRegEx.Match(
+    AContext,
+    'destination=(?:"[^"]*"|''[^'']*''|[^\s]+)',
+    [roIgnoreCase]
+  );
+  if LMatch.Success then
+  begin
+    LPreviousDestination := LMatch.Value.Substring(
+      Length('destination=')
+    ).Trim(['"', '''']);
+    Result := AContext.Replace(
+      LPreviousDestination,
+      LDestination,
+      [rfReplaceAll, rfIgnoreCase]
+    );
+  end
+  else
+    Result := 'destination="' + LDestination + '" ' + AContext.Trim;
 end;
 
 class function TRadIAJourneyCatalog.TryInferCreateProject(
