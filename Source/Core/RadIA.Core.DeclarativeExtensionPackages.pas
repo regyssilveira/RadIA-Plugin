@@ -229,6 +229,10 @@ type
       const AManager: TRadIADeclarativeExtensionManager;
       const AExtensionId: string
     ): string; static;
+    class procedure RestoreResourceBackup(
+      const ABackupDirectory: string;
+      const ATargetDirectory: string
+    ); static;
     class procedure WriteResources(
       const ARootDirectory: string;
       const AResources: TArray<TRadIADeclarativeExtensionPackageFile>
@@ -1021,9 +1025,36 @@ begin
     TDirectory.Delete(AState.TargetDirectory, True);
   if TDirectory.Exists(AState.BackupDirectory) and
     not TDirectory.Exists(AState.TargetDirectory) then
-    TDirectory.Move(AState.BackupDirectory, AState.TargetDirectory);
+    RestoreResourceBackup(
+      AState.BackupDirectory,
+      AState.TargetDirectory
+    );
   if AState.TargetDirectory <> '' then
     AManager.Reload(AReservedCommands);
+end;
+
+class procedure
+  TRadIADeclarativeExtensionPackageInstaller.RestoreResourceBackup(
+  const ABackupDirectory: string;
+  const ATargetDirectory: string
+);
+const
+  CMaximumAttempts = 5;
+  CRetryDelayMilliseconds = 100;
+var
+  LAttempt: Integer;
+begin
+  for LAttempt := 1 to CMaximumAttempts do
+  begin
+    try
+      TDirectory.Move(ABackupDirectory, ATargetDirectory);
+      Exit;
+    except
+      if LAttempt = CMaximumAttempts then
+        raise;
+      TThread.Sleep(CRetryDelayMilliseconds);
+    end;
+  end;
 end;
 
 class function
