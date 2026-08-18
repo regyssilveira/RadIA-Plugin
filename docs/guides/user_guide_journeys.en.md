@@ -82,7 +82,9 @@ alone does not satisfy this request.
 If the destination directory already exists, the run reports the conflict and keeps the journey waiting
 for another destination. The next reply replaces only the path: project type, platform, name, and
 functional requirements — including history — remain in the objective. The recommendation card is
-visibly consumed on the first click so it does not suggest that the same action is still available.
+visibly consumed on the first click so it does not suggest that the same action is still available. When
+the new path arrives, chat immediately confirms recovery and moves the recovered plan to the end of the
+conversation, where its new approval remains visible.
 
 ## Execution model
 

@@ -82,7 +82,9 @@ não atende esse pedido.
 Se a pasta de destino já existir, a execução informa o conflito e mantém a jornada aguardando outro
 destino. A resposta seguinte substitui somente o caminho: tipo do projeto, plataforma, nome e requisitos
 funcionais — inclusive o histórico — continuam no objetivo. O cartão de recomendação é consumido
-visualmente no primeiro clique para não sugerir que a mesma ação ainda está disponível.
+visualmente no primeiro clique para não sugerir que a mesma ação ainda está disponível. Ao receber o
+novo caminho, o chat confirma imediatamente a retomada e move o plano recuperado para o final da
+conversa, onde a nova aprovação permanece visível.
 
 ## Como a execução funciona
 

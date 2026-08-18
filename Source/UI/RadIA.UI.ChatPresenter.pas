@@ -3734,6 +3734,12 @@ begin
   else
     LObjective := FPendingJourneyDeclarativePrompt + sLineBreak + sLineBreak +
       'User-provided context: ' + FPendingJourneyContext;
+  if SameText(FPendingJourneyField, 'destination') then
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'New destination received. Preparing the recovered project plan.'
+    );
   ResetPendingJourney;
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
