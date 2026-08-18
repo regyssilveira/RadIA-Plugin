@@ -91,6 +91,10 @@ powershell.exe -ExecutionPolicy Bypass `
 
 Use `-PlanOnly` first to inspect cost and combinations without opening Delphi.
 
+`natural-vcl-project-creation` deliberately starts with an existing directory. The scenario passes only
+when the simulated user supplies another destination, the original requirements remain in the objective,
+execution stays on the native orchestrator, and the project is created, opened, built, and started.
+
 The `targeted` profile uses the already installed build and never silently replaces a developer's IDE.
 Explicitly install the intended revision with `build.ps1 -Install` first. The `startup`, `release`, and
 `regression` profiles build and install their own packages per target.

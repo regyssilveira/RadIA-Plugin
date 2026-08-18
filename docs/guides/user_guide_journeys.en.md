@@ -79,6 +79,11 @@ each completed operation in order and provides **Clear history**. The journey ca
 running real calculations, checking the history, and verifying that it can be cleared; a green build
 alone does not satisfy this request.
 
+If the destination directory already exists, the run reports the conflict and keeps the journey waiting
+for another destination. The next reply replaces only the path: project type, platform, name, and
+functional requirements — including history — remain in the objective. The recommendation card is
+visibly consumed on the first click so it does not suggest that the same action is still available.
+
 ## Execution model
 
 1. The command visually enables agent mode when necessary.

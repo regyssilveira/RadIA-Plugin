@@ -944,8 +944,9 @@ function renderAgentPlanItems(planElement, plan) {
   planElement.replaceChildren();
   plan.forEach(planStep => {
     const item = document.createElement('li');
-    const title = planStep?.title || 'Planned step';
-    const description = planStep?.description || '';
+    const stringStep = typeof planStep === 'string' ? planStep.trim() : '';
+    const title = stringStep || planStep?.title || 'Planned step';
+    const description = stringStep ? '' : (planStep?.description || '');
     item.textContent = description ? `${title} — ${description}` : title;
     planElement.appendChild(item);
   });
@@ -1303,6 +1304,9 @@ function formatToolPayload(payload) {
 function updateExecutionRoute(route) {
   if (!executionRoute || !route) return;
   activeExecutionRoute = { ...activeExecutionRoute, ...route };
+  if (naturalVclSmoke && route.orchestrator === 'radia-native') {
+    naturalVclSmoke.nativeOrchestrationObserved = true;
+  }
   executionRoute.textContent = `Effective: ${route.label || 'Chat | Native provider'}`;
   executionRoute.title = route.details || route.label || 'Effective execution route';
   executionRoute.dataset.mode = route.mode || 'chat';
@@ -1335,9 +1339,17 @@ function createIntentRecommendationButton(label, action, primary = false) {
   button.addEventListener('click', () => {
     postMessageToDelphi({ action });
     if (action !== 'review_intent_recommendation') {
-      button.closest('.intent-recommendation-card')
-        ?.querySelectorAll('button')
+      const card = button.closest('.intent-recommendation-card');
+      card?.querySelectorAll('button')
         .forEach(item => { item.disabled = true; });
+      card?.classList.add('intent-recommendation-resolved');
+      const status = document.createElement('span');
+      status.className = 'intent-recommendation-status';
+      status.textContent = action === 'accept_intent_recommendation'
+        ? 'Starting recommended route…'
+        : 'Continuing as chat…';
+      card?.querySelector('.intent-recommendation-controls')
+        ?.replaceChildren(status);
     }
   });
   return button;
@@ -3309,6 +3321,10 @@ function finishNaturalVclSmoke(status, reason = '', state = {}) {
     projectOpened: succeeded('OpenCreatedProject'),
     buildPassed: succeeded('BuildProject'),
     applicationStarted: succeeded('StartDebugging'),
+    destinationRecovered: naturalVclSmoke.destinationRetried,
+    requirementsPreserved:
+      String(state.objective || '').includes('operationHistory'),
+    nativeOrchestration: naturalVclSmoke.nativeOrchestrationObserved,
     cliCompletedEarly:
       bodyText.includes('CLI task completed.') &&
       !succeeded('CreateProjectFromTemplate'),
@@ -3323,9 +3339,32 @@ function finishNaturalVclSmoke(status, reason = '', state = {}) {
   naturalVclSmoke = null;
 }
 
+function trySubmitNaturalVclRecovery() {
+  if (!naturalVclSmoke || naturalVclSmoke.destinationRetried ||
+      !naturalVclSmoke.recoveryStateObserved ||
+      !naturalVclSmoke.recoveryRequestReady ||
+      !naturalVclSmoke.retryDestination) return;
+  naturalVclSmoke.destinationRetried = true;
+  naturalVclSmoke.recoveryPending = true;
+  naturalVclSmoke.planApproved = false;
+  setPromptText(naturalVclSmoke.retryDestination);
+  submitPrompt(naturalVclSmoke.retryDestination);
+}
+
+function handleJourneyInputRequested(data) {
+  if (!naturalVclSmoke || data.text !== 'destination') return;
+  naturalVclSmoke.recoveryRequestReady = true;
+  trySubmitNaturalVclRecovery();
+}
+
 function continueNaturalVclSmoke(card, state) {
   if (!naturalVclSmoke) return;
   const status = state.status || '';
+  const retryObjectiveActive = naturalVclSmoke.retryDestination &&
+    String(state.objective || '').includes(naturalVclSmoke.retryDestination);
+  if (retryObjectiveActive) {
+    naturalVclSmoke.recoveryPending = false;
+  }
   if (status === 'awaitingApproval' && !naturalVclSmoke.planApproved) {
     const approveButton = [...card.querySelectorAll('.agent-control-button')]
       .find(button => button.textContent === 'Approve plan');
@@ -3348,6 +3387,12 @@ function continueNaturalVclSmoke(card, state) {
     ));
     finishNaturalVclSmoke(complete ? 'passed' : 'failed',
       complete ? '' : 'completed-before-required-evidence', state);
+  } else if (status === 'failed' && state.recoveryInput === 'destination' &&
+      !naturalVclSmoke.destinationRetried) {
+    naturalVclSmoke.recoveryStateObserved = true;
+    trySubmitNaturalVclRecovery();
+  } else if (status === 'failed' && naturalVclSmoke.recoveryPending) {
+    return;
   } else if (status === 'failed' || status === 'cancelled') {
     finishNaturalVclSmoke('failed', `agent-${status}`, state);
   }
@@ -3355,12 +3400,19 @@ function continueNaturalVclSmoke(card, state) {
 
 globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
   prompt,
+  retryDestination = '',
   timeoutMilliseconds = 300000
 ) {
   if (naturalVclSmoke) return;
   naturalVclSmoke = {
     recommendationAccepted: false,
+    destinationRetried: false,
+    nativeOrchestrationObserved: false,
     planApproved: false,
+    recoveryPending: false,
+    recoveryRequestReady: false,
+    recoveryStateObserved: false,
+    retryDestination: String(retryDestination),
     startedAt: globalThis.performance.now(),
     timeoutId: setTimeout(
       () => finishNaturalVclSmoke('failed', 'timeout'),
@@ -3377,7 +3429,14 @@ globalThis.resumeNaturalVclSmoke = function resumeNaturalVclSmoke(
   if (naturalVclSmoke) return;
   naturalVclSmoke = {
     recommendationAccepted: true,
+    destinationRetried: true,
+    nativeOrchestrationObserved:
+      activeExecutionRoute.orchestrator === 'radia-native',
     planApproved: true,
+    recoveryPending: false,
+    recoveryRequestReady: true,
+    recoveryStateObserved: true,
+    retryDestination: '',
     startedAt: globalThis.performance.now(),
     timeoutId: setTimeout(
       () => finishNaturalVclSmoke('failed', 'timeout-after-navigation'),
@@ -5122,6 +5181,7 @@ if (globalThis.chrome?.webview) {
       case 'chat_preflight':        renderChatPreflight(data);                                   break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
       case 'execution_route':       updateExecutionRoute(data);                                  break;
+      case 'journey_input_requested': handleJourneyInputRequested(data);                          break;
       case 'execution_scope':       updateExecutionScope(data);                                  break;
       case 'agent_state':           renderAgentState(data);                                      break;
       case 'agent_history':         renderAgentHistory(data);                                    break;

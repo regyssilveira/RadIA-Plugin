@@ -97,6 +97,10 @@ seleção: UI usa `chat-window-state-persistence`; agente usa `agent-step-budget
 `calculator-history-fidelity`; testes e reparo usam `build-failure-repair` e
 `dunitx-create-run-repair`.
 
+`natural-vcl-project-creation` começa deliberadamente com uma pasta já existente. O cenário só passa
+quando o usuário simulado informa outro destino, os requisitos originais permanecem no objetivo, a
+execução continua no orquestrador nativo e o projeto é criado, aberto, compilado e iniciado.
+
 O perfil `targeted` usa o build já instalado e nunca troca silenciosamente a IDE do desenvolvedor. Instale
 explicitamente a revisão desejada com `build.ps1 -Install` antes de executá-lo. Os perfis `startup`,
 `release` e `regression` geram e instalam seus próprios pacotes por alvo.

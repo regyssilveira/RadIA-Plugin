@@ -37,6 +37,8 @@ type
     procedure NaturalCalculatorHistoryPreservesFunctionalFeature;
     [Test]
     procedure NaturalPromptsNormalizeEverySupportedTemplate;
+    [Test]
+    procedure ReplacesOnlyCreateDestinationDuringRecovery;
   end;
 
 implementation
@@ -44,6 +46,23 @@ implementation
 uses
   System.SysUtils,
   RadIA.Core.Journeys;
+
+procedure TTestRadIAJourneys.ReplacesOnlyCreateDestinationDuringRecovery;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+    'Create a calculator with operation history ' +
+      'destination="D:\Old\Calculator" project="CalculatorApp" ' +
+      'type="VCL" platform="Win32" feature="operationHistory"',
+    'D:\New\Calculator'
+  );
+  Assert.Contains(LContext, 'destination="D:\New\Calculator"');
+  Assert.DoesNotContain(LContext, 'D:\Old\Calculator');
+  Assert.Contains(LContext, 'Create a calculator with operation history');
+  Assert.Contains(LContext, 'project="CalculatorApp"');
+  Assert.Contains(LContext, 'feature="operationHistory"');
+end;
 
 procedure TTestRadIAJourneys.CatalogContainsFiveEndToEndJourneys;
 var

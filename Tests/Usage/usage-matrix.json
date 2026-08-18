@@ -269,6 +269,9 @@
         "delphi13-ide64"
       ],
       "observableOutcomes": [
+        "existing-destination-recovered",
+        "original-requirements-preserved",
+        "native-orchestration-used",
         "project-opened",
         "build-passed",
         "application-ran",
@@ -276,6 +279,9 @@
       ],
       "requiredEvidence": [
         "recommendationAccepted",
+        "destinationRecovered",
+        "requirementsPreserved",
+        "nativeOrchestration",
         "previewSucceeded",
         "creationSucceeded",
         "projectOpened",

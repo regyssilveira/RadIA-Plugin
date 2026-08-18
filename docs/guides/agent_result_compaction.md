@@ -26,6 +26,8 @@ Abra **Tools > Options > Rad IA > General / Logs**.
 - Ferramentas sem regra conhecida usam passthrough.
 - A projeção só é aplicada quando fica menor que o JSON original.
 - Falha de parsing ou validação usa fallback automático para o JSON original.
+- Árvores de controles em execução preferem paths semânticos e removem duplicatas nativas quando ambas
+  representam o mesmo formulário, sem eliminar a raiz da janela.
 
 ## Preservação e recuperação
 
@@ -38,6 +40,11 @@ O contexto compactado informa `artifactId`, hash, tamanho e `fullResultAvailable
 
 - `GetToolResultSummary`, para confirmar hash, tamanho e etapa;
 - `GetToolResultRange`, para recuperar até 65.536 caracteres por chamada.
+
+Uma resposta com `hasMore=false` encerra a recuperação daquele intervalo. O RadIA não transforma o
+resultado dessa ferramenta em outro artefato e, se o modelo repetir imediatamente a mesma leitura,
+devolve uma orientação estruturada para continuar a validação funcional. Uma nova repetição ainda é
+interrompida pelo limite de segurança.
 
 As ferramentas respeitam a sessão ativa, rejeitam traversal, spoofing de sessão e ranges inválidos.
 Checkpoints, replay, UI e validation gates preservam a referência. Após a retenção remover um

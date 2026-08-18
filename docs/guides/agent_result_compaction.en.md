@@ -27,6 +27,8 @@ default is 120,000. `RADIA_RESULT_COMPACTION_PROFILE` can temporarily override t
 - Tools without a known rule pass through unchanged.
 - A projection is applied only when it is smaller than the original JSON.
 - Parsing or validation failure falls back to the original JSON.
+- Runtime control trees prefer semantic paths and remove native duplicates when both represent the same
+  form, without removing the window root.
 
 ## Preservation and recovery
 
@@ -39,6 +41,10 @@ Compacted context reports `artifactId`, hash, size, and `fullResultAvailable`. T
 
 - `GetToolResultSummary` to confirm hash, size, and step;
 - `GetToolResultRange` to recover up to 65,536 characters per call.
+
+A response with `hasMore=false` completes recovery for that range. RadIA does not turn this tool result
+into another artifact and, if the model immediately repeats the same read, returns structured guidance
+to continue functional validation. A further repetition is still stopped by the safety limit.
 
 Both tools enforce the active session and reject traversal, session spoofing, and invalid ranges.
 Checkpoints, replay, UI, and validation gates preserve the reference. After retention evicts an old
