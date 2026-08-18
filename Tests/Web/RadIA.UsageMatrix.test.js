@@ -12,6 +12,7 @@ const releaseRunnerPath = path.join(
   'scripts',
   'Test-RadIA.ReleaseUsage.ps1'
 );
+const buildPath = path.join(root, 'build.ps1');
 
 test('usage matrix covers every supported IDE target', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -59,6 +60,7 @@ test('usage matrix plan is deterministic and does not start Delphi', () => {
 test('release gate composes calculator, opening, and usage tests', () => {
   const source = fs.readFileSync(releaseRunnerPath, 'utf8');
   const matrixSource = fs.readFileSync(runnerPath, 'utf8');
+  const buildSource = fs.readFileSync(buildPath, 'utf8');
   assert.match(source, /build\.ps1/u);
   assert.match(source, /-Test/u);
   assert.match(source, /Version = "23\.0"/u);
@@ -76,6 +78,8 @@ test('release gate composes calculator, opening, and usage tests', () => {
   assert.match(source, /Stop-RadIAReleaseAuxiliaryProcesses/u);
   assert.match(source, /Where-Object \{ -not \$_\.HasExited \}/u);
   assert.match(matrixSource, /Where-Object \{ -not \$_\.HasExited \}/u);
+  assert.match(buildSource, /function Copy-RadIAReplaceableFile/u);
+  assert.match(buildSource, /\.pending-delete-\$PID-/u);
   assert.match(source, /RadIA\.Semantic\.Engine/u);
   assert.match(source, /startupRetryUsed/u);
   assert.match(source, /attemptCount/u);

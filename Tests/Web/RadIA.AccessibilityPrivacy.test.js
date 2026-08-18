@@ -125,6 +125,8 @@ test('primary RadIA windows expose the package version in their captions', () =>
 test('installers block when any Delphi IDE process is open', () => {
   assert.match(packageInstaller, /Get-Process bds/u);
   assert.match(packageInstaller, /Where-Object \{ -not \$_\.HasExited \}/u);
+  assert.match(packageInstaller, /function Copy-RadIAReplaceableFile/u);
+  assert.match(packageInstaller, /\.pending-delete-\$PID-/u);
   assert.match(packageInstaller, /Close all Delphi IDE instances before changing RadIA/u);
   assert.match(packageInstaller, /\$runningIDEs\.Count -gt 0/u);
   assert.doesNotMatch(packageInstaller, /Close all instances of the target Delphi IDE/u);

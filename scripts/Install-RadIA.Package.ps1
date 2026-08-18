@@ -16,6 +16,39 @@ $packageRoot = [IO.Path]::GetFullPath(
 )
 $manifestFile = Join-Path $packageRoot "manifest.json"
 
+function Copy-RadIAReplaceableFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [Parameter(Mandatory = $true)]
+        [string]$Destination
+    )
+
+    try {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Force
+        return
+    } catch [IO.IOException] {
+        if (-not (Test-Path -LiteralPath $Destination -PathType Leaf)) {
+            throw
+        }
+    }
+    $pendingPath = (
+        $Destination + ".pending-delete-$PID-" +
+        [DateTime]::UtcNow.ToString("yyyyMMddHHmmssfff")
+    )
+    Move-Item -LiteralPath $Destination -Destination $pendingPath
+    try {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Force
+    } catch {
+        if (-not (Test-Path -LiteralPath $Destination) -and
+            (Test-Path -LiteralPath $pendingPath)) {
+            Move-Item -LiteralPath $pendingPath -Destination $Destination
+        }
+        throw
+    }
+    Remove-Item -LiteralPath $pendingPath -Force -ErrorAction SilentlyContinue
+}
+
 function Resolve-PackageFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -352,10 +385,9 @@ New-Item `
     -Path $targetBplDirectory, $targetDcpDirectory |
     Out-Null
 
-Copy-Item `
-    -LiteralPath (Resolve-PackageFile "Bpl\RadIA.bpl") `
-    -Destination (Join-Path $targetBplDirectory "RadIA.bpl") `
-    -Force
+Copy-RadIAReplaceableFile `
+    -Source (Resolve-PackageFile "Bpl\RadIA.bpl") `
+    -Destination (Join-Path $targetBplDirectory "RadIA.bpl")
 Copy-Item `
     -LiteralPath (Resolve-PackageFile "Bin\RadIA.MCP.Bridge.exe") `
     -Destination (Join-Path $targetBplDirectory "RadIA.MCP.Bridge.exe") `
