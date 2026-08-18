@@ -261,7 +261,7 @@ begin
       LPreviousDestination,
       LDestination,
       [rfReplaceAll, rfIgnoreCase]
-    )
+    );
   end
   else
     Result := 'destination="' + LDestination + '" ' + AContext.Trim;

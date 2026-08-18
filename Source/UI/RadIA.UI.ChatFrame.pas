@@ -369,9 +369,9 @@ begin
     if not Assigned(LSteps) then
       Exit;
     for LIndex := LSteps.Count - 1 downto 0 do
-      if LSteps.Items[LIndex] is TJSONObject then
+      if LSteps[LIndex] is TJSONObject then
       begin
-        LStep := TJSONObject(LSteps.Items[LIndex]);
+        LStep := TJSONObject(LSteps[LIndex]);
         if SameText(LStep.GetValue<string>('toolName', ''), AToolName) and
           not LStep.GetValue<Boolean>('success', True) then
           Exit(True);
@@ -379,6 +379,27 @@ begin
   finally
     LState.Free;
   end;
+end;
+
+function AgentStateHasSuccessfulToolDestination(
+  const APrompt: string;
+  const AToolName: string;
+  const ADestination: string
+): Boolean; forward;
+
+function NaturalVclPreviewReady(
+  const APrompt: string;
+  const ARetryDestination: string;
+  const ARecoveryRun: Boolean
+): Boolean;
+begin
+  if ARecoveryRun then
+    Exit(AgentStateHasSuccessfulToolDestination(
+      APrompt,
+      'PreviewProjectTemplate',
+      ARetryDestination
+    ));
+  Result := AgentStateHasSuccessfulTool(APrompt, 'PreviewProjectTemplate');
 end;
 
 function AgentStateHasSuccessfulToolDestination(
@@ -517,17 +538,11 @@ begin
     LDestination := LRetryDestination;
   LRecoveryRun := SameText(LDestination, LRetryDestination) and
     not LRetryDestination.IsEmpty;
-  if LRecoveryRun then
-    LPreviewReady := AgentStateHasSuccessfulToolDestination(
-      APrompt,
-      'PreviewProjectTemplate',
-      LRetryDestination
-    )
-  else
-    LPreviewReady := AgentStateHasSuccessfulTool(
-      APrompt,
-      'PreviewProjectTemplate'
-    );
+  LPreviewReady := NaturalVclPreviewReady(
+    APrompt,
+    LRetryDestination,
+    LRecoveryRun
+  );
   if not AgentStatePlanApproved(APrompt) then
     ACallback(
         '{"kind":"plan","message":"Create and validate the VCL project.",' +

@@ -3917,7 +3917,7 @@ begin
     FActiveJourneyContext := LContext;
     FActiveJourneyDefinition := LDefinition;
     FActiveJourneyNative := True;
-    LObjective := LDefinition.BuildAgentObjective(LContext)
+    LObjective := LDefinition.BuildAgentObjective(LContext);
   end
   else
   begin

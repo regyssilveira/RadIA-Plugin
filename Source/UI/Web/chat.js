@@ -3364,6 +3364,49 @@ function handleNaturalVclRecoveryMessage(data) {
   trySubmitNaturalVclRecovery();
 }
 
+function approveNaturalVclSmokePlan(card, state) {
+  if ((state.status || '') !== 'awaitingApproval' ||
+      naturalVclSmoke.planApproved) return false;
+  if (requestInProgress) {
+    naturalVclSmoke.pendingApproval = { card, state };
+    return true;
+  }
+  const approveButton = [...card.querySelectorAll('.agent-control-button')]
+    .find(button => button.textContent === 'Approve plan');
+  if (!approveButton || approveButton.disabled) return true;
+  naturalVclSmoke.planApproved = true;
+  approveButton.click();
+  return true;
+}
+
+function finishNaturalVclSmokeFromState(status, state, stateSteps) {
+  if (status === 'completed') {
+    const required = [
+      'PreviewProjectTemplate',
+      'CreateProjectFromTemplate',
+      'OpenCreatedProject',
+      'BuildProject',
+      'StartDebugging'
+    ];
+    const complete = required.every(toolName => stateSteps.some(
+      step => step.toolName === toolName && step.success === true
+    ));
+    finishNaturalVclSmoke(complete ? 'passed' : 'failed',
+      complete ? '' : 'completed-before-required-evidence', state);
+    return;
+  }
+  if (status === 'failed' && state.recoveryInput === 'destination' &&
+      !naturalVclSmoke.destinationRetried) {
+    naturalVclSmoke.recoveryStateObserved = true;
+    trySubmitNaturalVclRecovery();
+    return;
+  }
+  if (status === 'failed' && naturalVclSmoke.recoveryPending) return;
+  if (status === 'failed' || status === 'cancelled') {
+    finishNaturalVclSmoke('failed', `agent-${status}`, state);
+  }
+}
+
 function continueNaturalVclSmoke(card, state) {
   if (!naturalVclSmoke) return;
   const status = state.status || '';
@@ -3382,41 +3425,8 @@ function continueNaturalVclSmoke(card, state) {
       (status === 'failed' || status === 'cancelled')) {
     return;
   }
-  if (status === 'awaitingApproval' && !naturalVclSmoke.planApproved) {
-    if (requestInProgress) {
-      naturalVclSmoke.pendingApproval = { card, state };
-      return;
-    }
-    const approveButton = [...card.querySelectorAll('.agent-control-button')]
-      .find(button => button.textContent === 'Approve plan');
-    if (!approveButton || approveButton.disabled) return;
-    naturalVclSmoke.planApproved = true;
-    approveButton.click();
-    return;
-  }
-  if (status === 'completed') {
-    const steps = stateSteps;
-    const required = [
-      'PreviewProjectTemplate',
-      'CreateProjectFromTemplate',
-      'OpenCreatedProject',
-      'BuildProject',
-      'StartDebugging'
-    ];
-    const complete = required.every(toolName => steps.some(
-      step => step.toolName === toolName && step.success === true
-    ));
-    finishNaturalVclSmoke(complete ? 'passed' : 'failed',
-      complete ? '' : 'completed-before-required-evidence', state);
-  } else if (status === 'failed' && state.recoveryInput === 'destination' &&
-      !naturalVclSmoke.destinationRetried) {
-    naturalVclSmoke.recoveryStateObserved = true;
-    trySubmitNaturalVclRecovery();
-  } else if (status === 'failed' && naturalVclSmoke.recoveryPending) {
-    return;
-  } else if (status === 'failed' || status === 'cancelled') {
-    finishNaturalVclSmoke('failed', `agent-${status}`, state);
-  }
+  if (approveNaturalVclSmokePlan(card, state)) return;
+  finishNaturalVclSmokeFromState(status, state, stateSteps);
 }
 
 globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
@@ -4839,6 +4849,17 @@ function updateModelsList(models, activeModel, enabled = true) {
   updateComposerRoute();
 }
 
+function continueNaturalVclSmokeAfterRequest() {
+  if (naturalVclSmoke?.recoveryStateObserved &&
+      naturalVclSmoke.recoveryRequestReady) {
+    trySubmitNaturalVclRecovery();
+  }
+  if (!naturalVclSmoke?.pendingApproval) return;
+  naturalVclSmoke.pendingApproval = null;
+  naturalVclSmoke.planApproved = true;
+  postMessageToDelphi({ action: 'approve_agent' });
+}
+
 function setRequestState(inProgress) {
   console.log('[DEBUG] setRequestState called with:', inProgress);
   requestInProgress = inProgress;
@@ -4868,15 +4889,7 @@ function setRequestState(inProgress) {
     providerDropdownTrigger.setAttribute('aria-disabled', 'false');
     btnQueuePrompt.classList.add('hidden');
     promptTextarea.placeholder = 'Ask Rad IA or type / for commands...';
-    if (naturalVclSmoke?.recoveryStateObserved &&
-        naturalVclSmoke.recoveryRequestReady) {
-      trySubmitNaturalVclRecovery();
-    }
-    if (naturalVclSmoke?.pendingApproval) {
-      naturalVclSmoke.pendingApproval = null;
-      naturalVclSmoke.planApproved = true;
-      postMessageToDelphi({ action: 'approve_agent' });
-    }
+    continueNaturalVclSmokeAfterRequest();
   }
   applyModelSelectionState();
   executionRouteSelector.disabled = inProgress;
