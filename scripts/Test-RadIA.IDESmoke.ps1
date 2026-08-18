@@ -4662,8 +4662,16 @@ for ($cycle = 1; $cycle -le $Cycles; $cycle++) {
                 throw "The user-journey application process was not observed."
             }
             foreach ($journeyProcess in $journeyProcesses) {
+                $journeyProcess.Refresh()
+                if ($journeyProcess.HasExited) {
+                    continue
+                }
                 if (-not $journeyProcess.CloseMainWindow()) {
-                    throw "The user-journey application rejected shutdown."
+                    $journeyProcess.Refresh()
+                    if (-not $journeyProcess.HasExited) {
+                        throw "The user-journey application rejected shutdown."
+                    }
+                    continue
                 }
                 if (-not $journeyProcess.WaitForExit(10000)) {
                     throw "The user-journey application did not close in time."
