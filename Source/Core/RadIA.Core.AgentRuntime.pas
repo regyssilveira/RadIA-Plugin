@@ -468,6 +468,7 @@ type
     function IsMutationTool(const AToolName: string): Boolean;
     function HasSuccessfulToolStep(const AToolName: string): Boolean;
     function IsProjectCreationObjective: Boolean;
+    function ProjectCreationRequiresExecution: Boolean;
     function ResolveRiskName(const AToolName: string): string;
     function ExtractAffectedFiles(
       const AArgumentsJson: string;
@@ -2651,6 +2652,14 @@ begin
   );
 end;
 
+function TRadIAAgentRuntime.ProjectCreationRequiresExecution: Boolean;
+begin
+  Result := IsProjectCreationObjective and ContainsText(
+    FObjective,
+    'runtimeValidation="required"'
+  );
+end;
+
 function TRadIAAgentRuntime.ResolveRiskName(
   const AToolName: string
 ): string;
@@ -2899,14 +2908,14 @@ begin
       'the latest mutation.';
     Exit(False);
   end;
-  if IsProjectCreationObjective and not LValidation.ExecutionRun then
+  if ProjectCreationRequiresExecution and not LValidation.ExecutionRun then
   begin
     AMessage :=
       'Validation gate rejected completion: start the created application ' +
       'and record successful execution evidence.';
     Exit(False);
   end;
-  if IsProjectCreationObjective and not LValidation.ExecutionPassed then
+  if ProjectCreationRequiresExecution and not LValidation.ExecutionPassed then
   begin
     AMessage :=
       'Validation gate rejected completion: the created application did not ' +

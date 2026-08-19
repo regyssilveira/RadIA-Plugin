@@ -548,7 +548,7 @@ begin
     ACallback(
         '{"kind":"plan","message":"Create and validate the VCL project.",' +
         '"steps":[{"title":"Create project",' +
-        '"description":"Preview, create, open, build, and run"}]}',
+        '"description":"Preview, create, open, inspect, and build"}]}',
         '',
         False,
         TTokenUsage.Empty
@@ -623,16 +623,9 @@ begin
         False,
         TTokenUsage.Empty
       )
-    else if not AgentStateHasSuccessfulTool(APrompt, 'StartDebugging') then
-      ACallback(
-        '{"kind":"tool","tool":"StartDebugging","arguments":{}}',
-        '',
-        False,
-        TTokenUsage.Empty
-      )
     else
       ACallback(
-        '{"kind":"complete","message":"Project created, built, and started."}',
+        '{"kind":"complete","message":"Project created, inspected, and built."}',
         '',
         False,
         TTokenUsage.Empty

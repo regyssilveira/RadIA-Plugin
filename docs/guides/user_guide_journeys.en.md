@@ -30,8 +30,14 @@ The complete local classification contract and its safeguards are documented in
 [Intent routing](../reference/intent_routing.en.md).
 
 Every recipe has four required phases. Each phase defines the expected work and the evidence that
-must appear in the timeline. The run also receives three completion criteria, so the agent cannot
+must appear in the timeline. The run also receives completion criteria, so the agent cannot
 claim success merely because it produced a text response.
+
+For ordinary project creation, a successful build is the default final gate. RadIA opens the project,
+structurally checks the requested requirements, and builds it, but does not start or debug the application
+without an explicit user request. When execution is requested, its result is reported separately: a runtime
+failure does not turn a successful build into a compilation failure. Dedicated E2E tests continue to run
+applications in controlled environments to validate functional behavior.
 
 | Command | Objective |
 |---|---|

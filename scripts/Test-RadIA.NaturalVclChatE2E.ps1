@@ -81,7 +81,7 @@ $passed =
     $evidence.creationSucceeded -eq $true -and
     $evidence.projectOpened -eq $true -and
     $evidence.buildPassed -eq $true -and
-    $evidence.applicationStarted -eq $true -and
+    $evidence.applicationStarted -eq $false -and
     $evidence.destinationRecovered -eq $true -and
     $evidence.recoveryCardVisible -eq $true -and
     $evidence.requirementsPreserved -eq $true -and

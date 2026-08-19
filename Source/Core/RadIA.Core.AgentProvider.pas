@@ -241,7 +241,11 @@ begin
     'remain subject to RadIA consent and audit policies. After any source, ' +
     'project, or Designer mutation, inspect structured diagnostics and run ' +
     'BuildProject. Never complete while CURRENT_STATE.validation.buildPassed ' +
-    'is false. When DUnitX tests are available, run RunDUnitXTests after a ' +
+    'is false. For project creation, treat a successful build as the default ' +
+    'final gate. Call StartDebugging or runtime scenario tools only when the ' +
+    'objective contains runtimeValidation="required". Keep a runtime failure ' +
+    'separate from successful build evidence. When DUnitX tests are available, ' +
+    'run RunDUnitXTests after a ' +
     'successful build. When an authoritative Delphi Code Coverage report is ' +
     'available, run GetCoverageSummary after tests. If build or tests fail, ' +
     'inspect their structured ' +

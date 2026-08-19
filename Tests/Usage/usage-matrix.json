@@ -274,7 +274,7 @@
         "native-orchestration-used",
         "project-opened",
         "build-passed",
-        "application-ran",
+        "application-not-started-by-default",
         "clean-shutdown"
       ],
       "requiredEvidence": [
@@ -285,8 +285,7 @@
         "previewSucceeded",
         "creationSucceeded",
         "projectOpened",
-        "buildPassed",
-        "applicationStarted"
+        "buildPassed"
       ]
     },
     {

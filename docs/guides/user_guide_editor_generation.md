@@ -109,12 +109,13 @@ pasta de destino e plataforma — antes de apresentar o plano para aprovação.
 > **Gravação Segura de Projetos:**
 > Por medidas de segurança e para evitar sobregravações acidentais de código existente, a pasta selecionada para a geração do projeto **deve estar totalmente vazia**. O Rad IA bloqueará o processo de gravação física no disco caso a pasta possua quaisquer outros arquivos.
 
-5. **Abertura e validação na IDE**: após a gravação, o RadIA abre o `.dproj`, compila pelo próprio
-   Delphi, corrige erros dentro dos limites aprovados e executa projetos que produzam aplicativo.
-   A conclusão informa evidências de criação, build, abertura da janela e validação funcional.
+5. **Abertura e validação na IDE**: após a gravação, o RadIA abre o `.dproj`, confere estruturalmente
+   os requisitos, compila pelo próprio Delphi e corrige erros dentro dos limites aprovados. O aplicativo
+   só é iniciado quando o usuário pede explicitamente execução ou validação funcional. A conclusão
+   distingue criação, build e eventual resultado runtime.
 
 O CLI externo não precisa localizar `msbuild` no `PATH` para esse fluxo. A criação, o build e a
-execução são conduzidos pelas ferramentas nativas do RadIA. Quando um CLI participa da análise, o
+execução opcional são conduzidos pelas ferramentas nativas do RadIA. Quando um CLI participa da análise, o
 chat mostra uma atividade expansível com etapa atual, tempo decorrido e saída técnica.
 
 Links de projeto abrem o arquivo na IDE. Links web são enviados ao navegador padrão e nunca

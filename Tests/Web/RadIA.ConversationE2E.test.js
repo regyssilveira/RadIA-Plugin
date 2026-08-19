@@ -84,7 +84,12 @@ test('natural VCL smoke accepts the real route and requires complete evidence', 
   assert.match(chatScript, /CreateProjectFromTemplate/u);
   assert.match(chatScript, /OpenCreatedProject/u);
   assert.match(chatScript, /BuildProject/u);
-  assert.match(chatScript, /StartDebugging/u);
+  assert.match(chatScript, /applicationStarted: succeeded\('StartDebugging'\)/u);
+  assert.match(
+    chatScript,
+    /const required = \[[\s\S]*?'BuildProject'\s*\];/u
+  );
+  assert.match(chatFrame, /Project created, inspected, and built\./u);
   assert.match(chatScript, /completed-before-required-evidence/u);
   assert.match(chatScript, /failedTool: failedStep\.toolName/u);
   assert.match(chatScript, /agentMessage: state\.message/u);

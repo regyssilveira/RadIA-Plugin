@@ -99,7 +99,9 @@ seleção: UI usa `chat-window-state-persistence`; agente usa `agent-step-budget
 
 `natural-vcl-project-creation` começa deliberadamente com uma pasta já existente. O cenário só passa
 quando o usuário simulado informa outro destino, os requisitos originais permanecem no objetivo, a
-execução continua no orquestrador nativo e o projeto é criado, aberto, compilado e iniciado.
+execução continua no orquestrador nativo e o projeto é criado, aberto e compilado sem iniciar o aplicativo.
+Esse é o gate representativo da experiência padrão. `calculator-history-fidelity` e
+`vcl-project-creation-lifecycle` pedem e validam execução funcional em ambiente controlado.
 
 O perfil `targeted` usa o build já instalado e nunca troca silenciosamente a IDE do desenvolvedor. Instale
 explicitamente a revisão desejada com `build.ps1 -Install` antes de executá-lo. Os perfis `startup`,

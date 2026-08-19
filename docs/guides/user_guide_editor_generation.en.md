@@ -109,12 +109,13 @@ and platform — before showing the approval plan.
 > **Safe Project Generation:**
 > For security reasons and to avoid accidentally overwriting existing code, the selected folder for project generation **must be completely empty**. Rad IA will block the physical saving process if the chosen directory contains any files.
 
-5. **IDE loading and validation**: after writing the files, RadIA opens the `.dproj`, builds it through
-   Delphi, repairs errors within the approved boundaries, and runs executable projects. Completion
-   reports creation, build, visible-window, and functional-validation evidence.
+5. **IDE loading and validation**: after writing the files, RadIA opens the `.dproj`, structurally checks
+   the requirements, builds it through Delphi, and repairs errors within the approved boundaries. The
+   application starts only when the user explicitly requests execution or functional validation.
+   Completion distinguishes creation, build, and any runtime result.
 
 The external CLI does not need to find `msbuild` on `PATH` for this workflow. RadIA's native tools
-perform project creation, build, and execution. When a CLI assists the analysis, the chat displays
+perform project creation, build, and optional execution. When a CLI assists the analysis, the chat displays
 an expandable activity card with its current stage, elapsed time, and technical output.
 
 Project links open in the IDE. Web links open in the default browser and never replace the main chat

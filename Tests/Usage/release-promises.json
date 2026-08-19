@@ -14,10 +14,14 @@
     },
     {
       "id": "natural-vcl-project-creation",
-      "publicStatement": "A natural-language request creates, opens, builds, and runs a working VCL application.",
+      "publicStatement": "A request creates, opens, inspects, and builds a VCL app without running it by default.",
       "priority": "critical",
       "maximumDurationSeconds": 300,
-      "expectedOutcomes": ["project-opened", "build-passed", "application-ran"],
+      "expectedOutcomes": [
+        "project-opened",
+        "build-passed",
+        "application-not-started-by-default"
+      ],
       "forbiddenOutcomes": ["step-limit-reached", "false-success-message"],
       "requiredTargets": ["delphi12-win32", "delphi13-win32", "delphi13-ide64"],
       "scenarioId": "natural-vcl-project-creation"

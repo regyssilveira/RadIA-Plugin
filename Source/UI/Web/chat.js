@@ -3395,8 +3395,7 @@ function finishNaturalVclSmokeFromState(status, state, stateSteps) {
       'PreviewProjectTemplate',
       'CreateProjectFromTemplate',
       'OpenCreatedProject',
-      'BuildProject',
-      'StartDebugging'
+      'BuildProject'
     ];
     const complete = required.every(toolName => stateSteps.some(
       step => step.toolName === toolName && step.success === true
