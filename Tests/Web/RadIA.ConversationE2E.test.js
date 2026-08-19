@@ -94,6 +94,7 @@ test('natural VCL smoke accepts the real route and requires complete evidence', 
     chatFrame,
     /not LRoot\.GetValue<Boolean>\('applicationStarted', True\)/u
   );
+  assert.doesNotMatch(naturalVclRunner, /UserJourneyExecutablePath/u);
   assert.match(chatScript, /completed-before-required-evidence/u);
   assert.match(chatScript, /failedTool: failedStep\.toolName/u);
   assert.match(chatScript, /agentMessage: state\.message/u);

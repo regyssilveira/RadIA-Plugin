@@ -44,15 +44,10 @@ try {
     $env:RADIA_IDE_SMOKE_DELPHI_VERSION = $DelphiVersion
     $env:RADIA_IDE_SMOKE_TARGET_PLATFORM = if ($IDE64) { "Win64" } else { "Win32" }
     $env:RADIA_IDE_SMOKE_AUTO_CONSENT = "1"
-    $targetPlatform = $env:RADIA_IDE_SMOKE_TARGET_PLATFORM
-    $journeyExecutable = Join-Path $destination (
-        "bin\$targetPlatform\Debug\RadIAUserCalculator.exe"
-    )
     $arguments = @{
         DelphiVersion = $DelphiVersion
         Cycles = 1
         UserJourneyEvidencePath = $resolvedEvidence
-        UserJourneyExecutablePath = $journeyExecutable
     }
     if ($IDE64) {
         $arguments.IDE64 = $true
