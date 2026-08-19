@@ -1896,7 +1896,7 @@ begin
       LRoot.GetValue<Boolean>('creationSucceeded', False) and
       LRoot.GetValue<Boolean>('projectOpened', False) and
       LRoot.GetValue<Boolean>('buildPassed', False) and
-      LRoot.GetValue<Boolean>('applicationStarted', False) and
+      not LRoot.GetValue<Boolean>('applicationStarted', True) and
       LRoot.GetValue<Boolean>('destinationRecovered', False) and
       FNaturalVclRecoveryVisible and
       LRoot.GetValue<Boolean>('requirementsPreserved', False) and
