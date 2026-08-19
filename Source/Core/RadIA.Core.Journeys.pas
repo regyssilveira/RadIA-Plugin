@@ -223,6 +223,24 @@ begin
   AppendCreateContextValue(Result, LLowerContext, 'project', LProjectName);
   AppendCreateContextValue(Result, LLowerContext, 'type', LProjectType);
   AppendCreateContextValue(Result, LLowerContext, 'platform', 'Win32');
+  if ContainsAnyText(
+    LLowerContext,
+    [
+      'run the application', 'execute the application',
+      'start the application', 'runtime validation',
+      'functional validation', 'execute o aplicativo',
+      'execute o projeto', 'rode o aplicativo', 'rode o projeto',
+      'inicie o aplicativo', 'inicie o projeto',
+      'validação runtime', 'validacao runtime',
+      'validação funcional', 'validacao funcional'
+    ]
+  ) then
+    AppendCreateContextValue(
+      Result,
+      LLowerContext,
+      'runtimeValidation',
+      'required'
+    );
   if ContainsAnyText(LLowerContext, ['calculadora', 'calculator']) and
     ContainsAnyText(
       LLowerContext,
@@ -520,10 +538,10 @@ begin
       'profile only after the user explicitly selects or requests those additions. ' +
       'When calculator context includes feature="operationHistory", preserve it with ' +
       'projectSpecification schemaVersion 2 and features.operationHistory enabled and clearAction true. ' +
-      'The preview, plan, completion criteria, generated files, and runtime evidence must all retain every ' +
+      'The preview, plan, completion criteria, and generated files must all retain every ' +
       'explicit functional feature from the user context. A successful build alone does not prove a requested ' +
-      'feature. For operation history, exercise two calculations, verify their ordered history entries, clear ' +
-      'the history, and verify that it is empty before completing. ' +
+      'feature. Inspect the generated structure and implementation for every requested feature before completing. ' +
+      'For operation history, verify the controls, event wiring, ordered-entry implementation, and clear action. ' +
       'With no active project, ' +
       'use the user-approved destination parent as authorizedRoot. Use OpenCreatedProject, ' +
       'ValidateCreatedProject, and IDE execution tools instead of invoking MSBuild from a CLI. ' +
@@ -532,8 +550,10 @@ begin
       'GetKnowledgeStatus and only request an indexed document when the status confirms that the ' +
       'project index is ready. Avoid repeating workspace inspection after the destination, project ' +
       'type, platform, and active IDE state are known. ' +
-      'For executable projects, start the application after a successful build, confirm its main ' +
-      'window, exercise the primary user scenario, and record the observed result. When the ' +
+      'A successful build is the default final gate for ordinary project creation. Do not start or debug the ' +
+      'application unless the user explicitly requests execution or functional runtime validation. If execution ' +
+      'is explicitly requested, keep build and runtime results separate: a runtime failure does not invalidate a ' +
+      'successful build, and the final report must state which validation was not completed. When the ' +
       'reviewed preview declares a companionTestExecutable, run that executable through ' +
       'RunDUnitXTests after the build and include its report in the completion evidence.',
       [
@@ -554,14 +574,14 @@ begin
         ),
         TRadIAJourneyPhase.Create(
           'Verify',
-          'Build the target, repair reviewed defects, run executable output, and test its primary scenario.',
-          'Provide build iterations, compiler messages, visible-window and functional-test evidence.'
+          'Build the target, repair reviewed defects, and inspect requested features in the generated structure.',
+          'Provide build iterations, compiler messages, and structural evidence for requested features.'
         )
       ],
       [
         'The requested project is open in the IDE.',
         'The selected target builds or a specific external blocker is proven.',
-        'Executable output starts and its primary user scenario passes, or a blocker is proven.',
+        'Requested features have structural evidence; runtime evidence is required only when explicitly requested.',
         'Architecture, usage, dependencies, and third-party provenance are documented when applicable.'
       ]
     ),

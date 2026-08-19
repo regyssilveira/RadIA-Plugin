@@ -164,6 +164,8 @@ type
     [Test]
     procedure TestProjectCreationRejectsCompletionBeforeRequiredJourney;
     [Test]
+    procedure TestProjectCreationRequiresExecutionOnlyWhenExplicit;
+    [Test]
     procedure TestValidationSnapshotIncludesBuildDUnitXAndCoverageEvidence;
     [Test]
     procedure TestFailedBuildRequiresCorrectionAndSuccessfulRebuild;
@@ -1738,8 +1740,7 @@ begin
     TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
     TRadIAAgentDecision.CallTool('OpenCreatedProject', '{}'),
     TRadIAAgentDecision.CallTool('BuildProject', '{}'),
-    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
-    TRadIAAgentDecision.Complete('Project created and executed.')
+    TRadIAAgentDecision.Complete('Project created and built.')
   ]);
   LStore := TRadIAMemoryAgentCheckpointStore.Create;
   LRuntime := NewRuntime(LExecutor, LProvider, LStore);
@@ -1753,7 +1754,54 @@ begin
     Assert.AreEqual(asAwaitingApproval, LResult.Status);
     LResult := LRuntime.Resume('project-creation-gate-session');
     Assert.AreEqual(asCompleted, LResult.Status);
-    Assert.AreEqual('Project created and executed.', LResult.Message);
+    Assert.AreEqual('Project created and built.', LResult.Message);
+    Assert.AreEqual(4, LExecutorObject.CallCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestProjectCreationRequiresExecutionOnlyWhenExplicit;
+var
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"status":"succeeded"}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan('Approve creation.', '[{"title":"Create"}]'),
+    TRadIAAgentDecision.CallTool('PreviewProjectTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('OpenCreatedProject', '{}'),
+    TRadIAAgentDecision.CallTool('BuildProject', '{}'),
+    TRadIAAgentDecision.Complete('Build passed.'),
+    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
+    TRadIAAgentDecision.Complete('Project created, built, and executed.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Create a Delphi project from the user requirements. ' +
+        'User-provided context: runtimeValidation="required"',
+      'explicit-runtime-gate-session',
+      '',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('explicit-runtime-gate-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual(
+      'Project created, built, and executed.',
+      LResult.Message
+    );
     Assert.AreEqual(5, LExecutorObject.CallCount);
   finally
     LRuntime.Free;

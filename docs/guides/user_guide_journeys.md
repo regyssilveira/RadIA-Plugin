@@ -30,8 +30,14 @@ O contrato completo da classificação local e suas proteções está em
 [Roteamento de intenção](../reference/intent_routing.md).
 
 Cada receita possui quatro fases obrigatórias. Cada fase define o trabalho esperado e a evidência
-que deve aparecer na timeline. A execução também recebe três critérios de conclusão; o agente não
+que deve aparecer na timeline. A execução também recebe critérios de conclusão; o agente não
 deve declarar sucesso apenas porque produziu uma resposta textual.
+
+Na criação comum de projetos, o build aprovado é o gate final padrão. O RadIA abre o projeto, confere
+estruturalmente os requisitos solicitados e compila, mas não inicia nem depura o aplicativo sem um pedido
+explícito do usuário. Quando a execução for solicitada, seu resultado é informado separadamente: uma falha
+runtime não transforma um build aprovado em falha de compilação. Testes E2E específicos continuam executando
+aplicativos em ambiente controlado para validar comportamento funcional.
 
 | Comando | Objetivo |
 |---|---|
