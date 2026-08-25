@@ -249,7 +249,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
-| `BuildProject` | Executa `make`, `build`, `check` ou `clean` com diagnóstico estruturado. | `RadIA.Core.BuildTools.pas` |
+| `BuildProject` | Executa `make`, `build`, `check` ou `clean` com diagnósticos exclusivos da execução atual. | `RadIA.Core.BuildTools.pas` |
 | `CancelBuild` | Solicita o cancelamento cooperativo do build ativo. | `RadIA.Core.BuildTools.pas` |
 | `GetBuildStatus` | Retorna estado, duração e resultado do build controlado. | `RadIA.Core.BuildTools.pas` |
 

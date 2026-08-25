@@ -297,7 +297,7 @@ passes `execution` classification and does not accept arbitrary names received f
 
 |Tool|What it does|When it is triggered|
 |---|---|---|
-|`BuildProject`|Runs `make`, `build`, `check`, or `clean` with structured diagnostics.|To validate changes, reproduce errors, or meet the build gate.|
+|`BuildProject`|Runs `make`, `build`, `check`, or `clean` with diagnostics from the current execution only.|To validate changes, reproduce errors, or meet the build gate.|
 |`CancelBuild`|Requests co-op cancellation of the active build.|By the cancel button, by the agent or when a timeout is reached.|
 |`GetBuildStatus`|Returns state, duration and result of the controlled build.|While the agent tracks the build or before starting another.|
 

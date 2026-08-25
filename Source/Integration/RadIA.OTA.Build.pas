@@ -64,7 +64,8 @@ uses
   System.SysUtils,
   System.SyncObjs,
   ToolsAPI,
-  Winapi.Windows;
+  Winapi.Windows,
+  RadIA.Core.Logger;
 
 const
   CBuildBusy = 'build_busy';
@@ -314,6 +315,7 @@ var
   LExitCode: Cardinal;
   LIDERoot: string;
   LMessages: TArray<TRadIACompilerMessage>;
+  LMessageSource: string;
   LOutputPath: string;
   LPlatform: string;
   LProject: TRadIAProjectSnapshot;
@@ -390,6 +392,7 @@ begin
     if (LStatus = bsSucceeded) and (LExitCode <> 0) then
       LStatus := bsFailed;
     LMessages := ParseBuildMessages(LOutputPath);
+    LMessageSource := 'process-output';
     if (LStatus = bsFailed) and (Length(LMessages) = 0) then
     begin
       LCommandLine := ReadBuildFailureMessage(LOutputPath);
@@ -403,13 +406,28 @@ begin
           0,
           0
         );
+        LMessageSource := 'process-failure-output';
       end;
     end;
     System.SysUtils.DeleteFile(LOutputPath);
     if Length(LMessages) = 0 then
-      LMessages := FWorkspace.GetCompilerMessages(200);
+      LMessageSource := 'none';
     LStopwatch.Stop;
     SetStatus(LStatus);
+    TLogger.Log(
+      Format(
+        'Build completed: status=%d, exitCode=%d, messages=%d, ' +
+        'messageSource=%s, clearMessages=%s.',
+        [
+          Ord(LStatus),
+          LExitCode,
+          Length(LMessages),
+          LMessageSource,
+          BoolToStr(ARequest.ClearMessages, True)
+        ]
+      ),
+      'Build'
+    );
     Result := TRadIABuildResult.Completed(
       LStatus,
       LProject,

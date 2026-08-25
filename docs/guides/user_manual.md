@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.8
+# Manual completo do RadIA 2.17.9
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.8`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.9`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -452,7 +452,7 @@ Consulte o [guia de ferramentas agentivas](user_guide_agentic_tools.md).
 
 ### 4.7 Build
 
-- `BuildProject`: modos `make`, `build`, `check` e `clean`.
+- `BuildProject`: modos `make`, `build`, `check` e `clean`; as mensagens retornadas pertencem somente ao build atual.
 - `GetBuildStatus`: estado do build controlado.
 - `CancelBuild`: cancelamento cooperativo.
 - `GetCompilerMessages`: erros e warnings estruturados.
