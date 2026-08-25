@@ -105,6 +105,9 @@ class function TRadIABuildResult.Completed(
   const ADurationMs: Int64;
   const AMessages: TArray<TRadIACompilerMessage>
 ): TRadIABuildResult;
+var
+  LMessage: TRadIACompilerMessage;
+  LMessageCount: Integer;
 begin
   Result.FSuccess := AStatus = bsSucceeded;
   Result.FStatus := AStatus;
@@ -112,7 +115,16 @@ begin
   Result.FConfiguration := AProject.Configuration;
   Result.FPlatform := AProject.Platform;
   Result.FDurationMs := ADurationMs;
-  Result.FMessages := Copy(AMessages);
+  SetLength(Result.FMessages, Length(AMessages));
+  LMessageCount := 0;
+  for LMessage in AMessages do
+  begin
+    if Result.FSuccess and (LMessage.Severity = cmsError) then
+      Continue;
+    Result.FMessages[LMessageCount] := LMessage;
+    Inc(LMessageCount);
+  end;
+  SetLength(Result.FMessages, LMessageCount);
   Result.FErrorCode := '';
   Result.FErrorMessage := '';
 end;

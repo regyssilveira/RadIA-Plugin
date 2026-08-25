@@ -30,13 +30,19 @@ type
     [Test]
     procedure CreateJourneyCollectsProjectDestinationAndPlatform;
     [Test]
-    procedure CreateJourneyRequiresRuntimeValidation;
+    procedure CreateJourneyUsesBuildAsDefaultFinalGate;
     [Test]
     procedure NaturalCreateContextExtractsDestinationNameAndDefaultPlatform;
+    [Test]
+    procedure NaturalCreateContextMarksExplicitRuntimeValidation;
     [Test]
     procedure NaturalCalculatorHistoryPreservesFunctionalFeature;
     [Test]
     procedure NaturalPromptsNormalizeEverySupportedTemplate;
+    [Test]
+    procedure ReplacesOnlyCreateDestinationDuringRecovery;
+    [Test]
+    procedure PrependsRecoveryDestinationToLegacyContext;
   end;
 
 implementation
@@ -44,6 +50,35 @@ implementation
 uses
   System.SysUtils,
   RadIA.Core.Journeys;
+
+procedure TTestRadIAJourneys.PrependsRecoveryDestinationToLegacyContext;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+    'Create a calculator with operation history',
+    'D:\New\Calculator'
+  );
+  Assert.StartsWith('destination="D:\New\Calculator" ', LContext);
+  Assert.Contains(LContext, 'operation history');
+end;
+
+procedure TTestRadIAJourneys.ReplacesOnlyCreateDestinationDuringRecovery;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+    'Create a calculator with operation history in D:\Old\Calculator ' +
+      'destination="D:\Old\Calculator" project="CalculatorApp" ' +
+      'type="VCL" platform="Win32" feature="operationHistory"',
+    'D:\New\Calculator'
+  );
+  Assert.Contains(LContext, 'destination="D:\New\Calculator"');
+  Assert.DoesNotContain(LContext, 'D:\Old\Calculator');
+  Assert.Contains(LContext, 'Create a calculator with operation history');
+  Assert.Contains(LContext, 'project="CalculatorApp"');
+  Assert.Contains(LContext, 'feature="operationHistory"');
+end;
 
 procedure TTestRadIAJourneys.CatalogContainsFiveEndToEndJourneys;
 var
@@ -224,15 +259,16 @@ begin
   end;
 end;
 
-procedure TTestRadIAJourneys.CreateJourneyRequiresRuntimeValidation;
+procedure TTestRadIAJourneys.CreateJourneyUsesBuildAsDefaultFinalGate;
 var
   LDefinition: TRadIAJourneyDefinition;
 begin
   Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
-  Assert.Contains(LDefinition.Objective, 'start the application');
-  Assert.Contains(LDefinition.Objective, 'exercise the primary user scenario');
+  Assert.Contains(LDefinition.Objective, 'successful build is the default final gate');
+  Assert.Contains(LDefinition.Objective, 'unless the user explicitly requests execution');
+  Assert.Contains(LDefinition.Objective, 'runtime failure does not invalidate a successful build');
   Assert.AreEqual(NativeInt(4), Length(LDefinition.SuccessCriteria));
-  Assert.Contains(LDefinition.SuccessCriteria[2], 'primary user scenario passes');
+  Assert.Contains(LDefinition.SuccessCriteria[2], 'runtime evidence is required only when explicitly requested');
 end;
 
 procedure TTestRadIAJourneys.InfersProjectCreationFromNaturalLanguage;
@@ -351,8 +387,20 @@ begin
   Assert.Contains(LContext, 'project="calculadora"');
   Assert.Contains(LContext, 'type="VCL"');
   Assert.Contains(LContext, 'platform="Win32"');
+  Assert.DoesNotContain(LContext, 'runtimeValidation');
   Assert.IsTrue(TRadIAJourneyCatalog.Find('/journey create', LDefinition));
   Assert.IsFalse(LDefinition.NextRequiredInput(LContext, LField, LQuestion));
+end;
+
+procedure TTestRadIAJourneys.
+  NaturalCreateContextMarksExplicitRuntimeValidation;
+var
+  LContext: string;
+begin
+  LContext := TRadIAJourneyCatalog.NormalizeCreateContext(
+    'crie uma calculadora VCL e execute o aplicativo'
+  );
+  Assert.Contains(LContext, 'runtimeValidation="required"');
 end;
 
 procedure TTestRadIAJourneys.

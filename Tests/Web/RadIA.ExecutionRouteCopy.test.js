@@ -61,6 +61,11 @@ test('chat exposes the effective route independently from agent mode', () => {
   assert.match(presenter, /LEffective := ResolveEffectiveExecutionSettings/u);
   assert.match(presenter, /if ASettings\.Kind = aekCli then/u);
   assert.match(presenter, /AOrchestrator := 'external-cli'/u);
+  assert.match(presenter, /FNativeOrchestrationOverride/u);
+  assert.match(
+    presenter,
+    /if FNativeOrchestrationOverride or[\s\S]*?SameText\(LEffective\.Values\.ExecutorId, 'native'\)/u
+  );
   assert.match(presenter, /Exit\('Chat \| ' \+ ACliClientId \+ ' CLI direct'\)/u);
   assert.match(presenter, /ChatGPT Pro via Codex CLI/u);
   assert.match(chatJs, /executionRouteSelector\.disabled = requestInProgress/u);

@@ -144,6 +144,13 @@ native.
 - The selection does not enable automatic approval options for CLIs.
 - MCP continues to be provisioned and diagnosed separately.
 
+When Codex CLI transports decisions for the native orchestrator, RadIA starts an isolated, read-only
+session without loading the user's `config.toml`. The session retains the identifier required to continue
+decisions for the same agent. Codex authentication remains available, while MCP tools, rules, and external
+settings cannot execute IDE operations outside the audited native executor. During creation journeys, the
+interface shows the effective native orchestrator even when the persisted preference for other tasks is a
+CLI executor.
+
 This configuration establishes the profiles and persistent preference used by the described transport
 next.
 

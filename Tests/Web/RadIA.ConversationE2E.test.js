@@ -8,6 +8,10 @@ const presenter = fs.readFileSync(
   'Source/UI/RadIA.UI.ChatPresenter.pas',
   'utf8'
 );
+const naturalVclRunner = fs.readFileSync(
+  'scripts/Test-RadIA.NaturalVclChatE2E.ps1',
+  'utf8'
+);
 
 test('conversation smoke submits through the real composer path', () => {
   assert.match(chatScript, /globalThis\.beginConversationSmoke/u);
@@ -80,13 +84,50 @@ test('natural VCL smoke accepts the real route and requires complete evidence', 
   assert.match(chatScript, /CreateProjectFromTemplate/u);
   assert.match(chatScript, /OpenCreatedProject/u);
   assert.match(chatScript, /BuildProject/u);
-  assert.match(chatScript, /StartDebugging/u);
+  assert.match(chatScript, /applicationStarted: succeeded\('StartDebugging'\)/u);
+  assert.match(
+    chatScript,
+    /const required = \[[\s\S]*?'BuildProject'\s*\];/u
+  );
+  assert.match(chatFrame, /Project created, inspected, and built\./u);
+  assert.match(
+    chatFrame,
+    /not LRoot\.GetValue<Boolean>\('applicationStarted', True\)/u
+  );
+  assert.doesNotMatch(naturalVclRunner, /UserJourneyExecutablePath/u);
   assert.match(chatScript, /completed-before-required-evidence/u);
   assert.match(chatScript, /failedTool: failedStep\.toolName/u);
   assert.match(chatScript, /agentMessage: state\.message/u);
+  assert.match(chatScript, /state\.recoveryInput === 'destination'/u);
+  assert.match(chatScript, /naturalVclSmoke\.recoveryPending/u);
+  assert.match(chatScript, /recoveryRequestReady/u);
+  assert.match(chatScript, /recoveryStateObserved/u);
+  assert.match(chatScript, /pendingApproval/u);
+  assert.match(chatScript, /handleJourneyInputRequested/u);
+  assert.match(chatScript, /retryObjectiveActive/u);
+  assert.match(chatScript, /retryPreviewActive/u);
+  assert.match(chatScript, /destinationRetried &&/u);
+  assert.match(chatScript, /destinationRecovered/u);
+  assert.match(chatScript, /recoveryCardVisible/u);
+  assert.match(chatScript, /previousRunFinished/u);
+  assert.match(chatScript, /chatContainer\.appendChild\(card\)/u);
+  assert.match(chatScript, /requirementsPreserved/u);
+  assert.match(chatScript, /nativeOrchestration/u);
   assert.match(chatScript, /CLI task completed\./u);
+  assert.match(chatFrame, /RADIA_IDE_SMOKE_NATURAL_VCL_RETRY_DESTINATION/u);
+  assert.match(presenter, /journey_input_requested/u);
+  assert.match(presenter, /New destination received\. Preparing the recovered project plan\./u);
+  assert.match(presenter, /FActiveJourneyContext := LContext/u);
+  assert.match(presenter, /FActiveJourneyDefinition := LDefinition/u);
+  assert.match(presenter, /FActiveJourneyNative := True/u);
+  assert.match(naturalVclRunner, /New-Item -ItemType File/u);
+  assert.match(naturalVclRunner, /existing\.txt/u);
   assert.match(presenter, /not AObjective\.Contains/u);
   assert.match(presenter, /Create a Delphi project from the user requirements\./u);
+  assert.ok(
+    presenter.indexOf('FNativeOrchestrationOverride :=') <
+      presenter.indexOf('if TryStartExternalAgentRun(AObjective')
+  );
 });
 
 test('session isolation smoke rejects a pending action after chat switch', () => {

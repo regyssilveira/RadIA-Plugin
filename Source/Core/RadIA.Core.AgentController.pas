@@ -192,6 +192,7 @@ begin
         end;
         SetRuntime(nil);
         LRuntime.Free;
+        TInterlocked.Exchange(FRunning, 0);
         if Assigned(FOnFinished) then
           FOnFinished(LResult);
       finally

@@ -42,6 +42,11 @@ type
     function ParseCodexModelLine(const ALine: string): TArray<string>;
     function ParseCodexModelList(const AOutput: string): TArray<string>;
   protected
+    function BuildCodexCommandLine(
+      const ACodexPath: string;
+      const AModel: string;
+      const AThreadId: string
+    ): string;
     function GetCodexExecutablePath: string; virtual;
     function UsesCodexCliTransport: Boolean;
     function GetBaseUrl: string; override;
@@ -76,6 +81,25 @@ constructor TRadIAOpenAIProvider.Create(const AConfig: IRadIAConfig);
 begin
   inherited Create(AConfig);
   FProviderId := 'OpenAI';
+end;
+
+function TRadIAOpenAIProvider.BuildCodexCommandLine(
+  const ACodexPath: string;
+  const AModel: string;
+  const AThreadId: string
+): string;
+begin
+  if AThreadId.IsEmpty then
+    Exit(Format(
+      '"%s" -m %s exec --json --sandbox read-only ' +
+        '--ignore-user-config --skip-git-repo-check -',
+      [ACodexPath, AModel]
+    ));
+  Result := Format(
+    '"%s" -m %s exec --sandbox read-only --ignore-user-config ' +
+      'resume --json --skip-git-repo-check "%s" -',
+    [ACodexPath, AModel, AThreadId]
+  );
 end;
 
 function TRadIAOpenAIProvider.GetBaseUrl: string;
@@ -844,18 +868,11 @@ begin
     Exit;
   end;
 
-  if FThreadId.IsEmpty then
-  begin
-    LCmdLine := Format(
-      '"%s" -m %s exec --json --sandbox read-only --ephemeral --skip-git-repo-check -',
-      [LCodexPath, LActiveModel]);
-  end
-  else
-  begin
-    LCmdLine := Format(
-      '"%s" -m %s exec resume --json --skip-git-repo-check "%s" -',
-      [LCodexPath, LActiveModel, FThreadId]);
-  end;
+  LCmdLine := BuildCodexCommandLine(
+    LCodexPath,
+    LActiveModel,
+    FThreadId
+  );
 
   LPromptToSend := APrompt;
   if FThreadId.IsEmpty then

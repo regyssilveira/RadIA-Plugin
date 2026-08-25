@@ -11,6 +11,11 @@ type
   protected
     function GetCodexExecutablePath: string; override;
   public
+    function CodexCommandLine(
+      const ACodexPath: string;
+      const AModel: string;
+      const AThreadId: string = ''
+    ): string;
     function IsUsingCodexCliTransport: Boolean;
   end;
 
@@ -62,6 +67,8 @@ type
     [Test]
     procedure TestOpenAI_LegacyOAuthAndProUseCodexCli;
     [Test]
+    procedure TestOpenAI_CodexTransportIgnoresUserTools;
+    [Test]
     procedure TestOpenAI_SendPromptAsync_CliOAuth_CodexNotFound;
     [Test]
     procedure TestOpenAI_SendPromptStreamAsync_CliOAuth_CodexNotFound;
@@ -92,9 +99,42 @@ begin
   Result := '';
 end;
 
+function TTestRadIAOpenAIProvider.CodexCommandLine(
+  const ACodexPath: string;
+  const AModel: string;
+  const AThreadId: string
+): string;
+begin
+  Result := BuildCodexCommandLine(ACodexPath, AModel, AThreadId);
+end;
+
 function TTestRadIAOpenAIProvider.IsUsingCodexCliTransport: Boolean;
 begin
   Result := UsesCodexCliTransport;
+end;
+
+procedure TTestRadIAProviders.TestOpenAI_CodexTransportIgnoresUserTools;
+var
+  LCommandLine: string;
+begin
+  LCommandLine := FOpenAIProv.CodexCommandLine(
+    'C:\Tools\codex.exe',
+    'gpt-5.6-luna'
+  );
+  Assert.Contains(LCommandLine, '--ignore-user-config');
+  Assert.Contains(LCommandLine, '--sandbox read-only');
+  Assert.IsFalse(LCommandLine.Contains('--ephemeral'));
+  LCommandLine := FOpenAIProv.CodexCommandLine(
+    'C:\Tools\codex.exe',
+    'gpt-5.6-luna',
+    'thread-1'
+  );
+  Assert.Contains(
+    LCommandLine,
+    'exec --sandbox read-only --ignore-user-config resume'
+  );
+  Assert.Contains(LCommandLine, '--ignore-user-config');
+  Assert.Contains(LCommandLine, '--sandbox read-only');
 end;
 
 { TTestRadIAProviders }

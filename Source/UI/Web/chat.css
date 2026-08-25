@@ -3687,6 +3687,11 @@ body.light-theme .agent-step-git-diff .is-removal {
   opacity: 0.55;
 }
 
+.intent-recommendation-status {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 620px) {
   .intent-recommendation-card {
     margin: 10px 12px;

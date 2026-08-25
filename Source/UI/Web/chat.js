@@ -944,8 +944,9 @@ function renderAgentPlanItems(planElement, plan) {
   planElement.replaceChildren();
   plan.forEach(planStep => {
     const item = document.createElement('li');
-    const title = planStep?.title || 'Planned step';
-    const description = planStep?.description || '';
+    const stringStep = typeof planStep === 'string' ? planStep.trim() : '';
+    const title = stringStep || planStep?.title || 'Planned step';
+    const description = stringStep ? '' : (planStep?.description || '');
     item.textContent = description ? `${title} — ${description}` : title;
     planElement.appendChild(item);
   });
@@ -1186,7 +1187,17 @@ function renderAgentState(data) {
 
   const sessionId = state.sessionId || 'active';
   let card = AGENT_CARDS.get(sessionId);
-  if (!card) {
+  const status = state.status || 'unknown';
+  if (card) {
+    const previousStatus = card.dataset.status || '';
+    const previousRunFinished = ['completed', 'cancelled', 'failed']
+      .includes(previousStatus);
+    const recoveredRunStarted = !['completed', 'cancelled', 'failed']
+      .includes(status);
+    if (previousRunFinished && recoveredRunStarted) {
+      chatContainer.appendChild(card);
+    }
+  } else {
     card = document.createElement('section');
     card.className = 'agent-run-card';
     card.innerHTML =
@@ -1211,7 +1222,6 @@ function renderAgentState(data) {
     chatContainer.appendChild(card);
   }
 
-  const status = state.status || 'unknown';
   card.dataset.status = status;
   card.querySelector('.agent-run-status').textContent = status;
   card.querySelector('.agent-run-objective').textContent = state.objective || '';
@@ -1303,6 +1313,9 @@ function formatToolPayload(payload) {
 function updateExecutionRoute(route) {
   if (!executionRoute || !route) return;
   activeExecutionRoute = { ...activeExecutionRoute, ...route };
+  if (naturalVclSmoke && route.orchestrator === 'radia-native') {
+    naturalVclSmoke.nativeOrchestrationObserved = true;
+  }
   executionRoute.textContent = `Effective: ${route.label || 'Chat | Native provider'}`;
   executionRoute.title = route.details || route.label || 'Effective execution route';
   executionRoute.dataset.mode = route.mode || 'chat';
@@ -1335,9 +1348,17 @@ function createIntentRecommendationButton(label, action, primary = false) {
   button.addEventListener('click', () => {
     postMessageToDelphi({ action });
     if (action !== 'review_intent_recommendation') {
-      button.closest('.intent-recommendation-card')
-        ?.querySelectorAll('button')
+      const card = button.closest('.intent-recommendation-card');
+      card?.querySelectorAll('button')
         .forEach(item => { item.disabled = true; });
+      card?.classList.add('intent-recommendation-resolved');
+      const status = document.createElement('span');
+      status.className = 'intent-recommendation-status';
+      status.textContent = action === 'accept_intent_recommendation'
+        ? 'Starting recommended route…'
+        : 'Continuing as chat…';
+      card?.querySelector('.intent-recommendation-controls')
+        ?.replaceChildren(status);
     }
   });
   return button;
@@ -3309,6 +3330,11 @@ function finishNaturalVclSmoke(status, reason = '', state = {}) {
     projectOpened: succeeded('OpenCreatedProject'),
     buildPassed: succeeded('BuildProject'),
     applicationStarted: succeeded('StartDebugging'),
+    destinationRecovered: naturalVclSmoke.destinationRetried,
+    recoveryCardVisible: naturalVclSmoke.recoveryCardVisible,
+    requirementsPreserved:
+      String(state.objective || '').includes('operationHistory'),
+    nativeOrchestration: naturalVclSmoke.nativeOrchestrationObserved,
     cliCompletedEarly:
       bodyText.includes('CLI task completed.') &&
       !succeeded('CreateProjectFromTemplate'),
@@ -3323,44 +3349,117 @@ function finishNaturalVclSmoke(status, reason = '', state = {}) {
   naturalVclSmoke = null;
 }
 
-function continueNaturalVclSmoke(card, state) {
-  if (!naturalVclSmoke) return;
-  const status = state.status || '';
-  if (status === 'awaitingApproval' && !naturalVclSmoke.planApproved) {
-    const approveButton = [...card.querySelectorAll('.agent-control-button')]
-      .find(button => button.textContent === 'Approve plan');
-    if (!approveButton || approveButton.disabled) return;
-    naturalVclSmoke.planApproved = true;
-    approveButton.click();
-    return;
+function trySubmitNaturalVclRecovery() {
+  if (!naturalVclSmoke || naturalVclSmoke.destinationRetried ||
+      !naturalVclSmoke.recoveryStateObserved ||
+      !naturalVclSmoke.recoveryRequestReady ||
+      !naturalVclSmoke.retryDestination) return;
+  naturalVclSmoke.destinationRetried = true;
+  naturalVclSmoke.recoveryPending = true;
+  naturalVclSmoke.planApproved = false;
+  setPromptText(naturalVclSmoke.retryDestination);
+  submitPrompt(naturalVclSmoke.retryDestination);
+}
+
+function handleJourneyInputRequested(data) {
+  if (!naturalVclSmoke || data.text !== 'destination') return;
+  naturalVclSmoke.recoveryRequestReady = true;
+}
+
+function handleNaturalVclRecoveryMessage(data) {
+  if (!naturalVclSmoke || data.role !== 'assistant' ||
+      !naturalVclSmoke.recoveryStateObserved ||
+      naturalVclSmoke.destinationRetried) return;
+  naturalVclSmoke.recoveryRequestReady = true;
+  trySubmitNaturalVclRecovery();
+}
+
+function approveNaturalVclSmokePlan(card, state) {
+  if ((state.status || '') !== 'awaitingApproval' ||
+      naturalVclSmoke.planApproved) return false;
+  if (requestInProgress) {
+    naturalVclSmoke.pendingApproval = { card, state };
+    return true;
   }
+  const approveButton = [...card.querySelectorAll('.agent-control-button')]
+    .find(button => button.textContent === 'Approve plan');
+  if (!approveButton || approveButton.disabled) return true;
+  naturalVclSmoke.planApproved = true;
+  approveButton.click();
+  return true;
+}
+
+function finishNaturalVclSmokeFromState(status, state, stateSteps) {
   if (status === 'completed') {
-    const steps = Array.isArray(state.steps) ? state.steps : [];
     const required = [
       'PreviewProjectTemplate',
       'CreateProjectFromTemplate',
       'OpenCreatedProject',
-      'BuildProject',
-      'StartDebugging'
+      'BuildProject'
     ];
-    const complete = required.every(toolName => steps.some(
+    const complete = required.every(toolName => stateSteps.some(
       step => step.toolName === toolName && step.success === true
     ));
     finishNaturalVclSmoke(complete ? 'passed' : 'failed',
       complete ? '' : 'completed-before-required-evidence', state);
-  } else if (status === 'failed' || status === 'cancelled') {
+    return;
+  }
+  if (status === 'failed' && state.recoveryInput === 'destination' &&
+      !naturalVclSmoke.destinationRetried) {
+    naturalVclSmoke.recoveryStateObserved = true;
+    trySubmitNaturalVclRecovery();
+    return;
+  }
+  if (status === 'failed' && naturalVclSmoke.recoveryPending) return;
+  if (status === 'failed' || status === 'cancelled') {
     finishNaturalVclSmoke('failed', `agent-${status}`, state);
   }
 }
 
+function continueNaturalVclSmoke(card, state) {
+  if (!naturalVclSmoke) return;
+  const status = state.status || '';
+  const stateSteps = Array.isArray(state.steps) ? state.steps : [];
+  const retryObjectiveActive = naturalVclSmoke.retryDestination &&
+    String(state.objective || '').includes(naturalVclSmoke.retryDestination);
+  const retryPreviewActive = stateSteps.some(step =>
+    step.toolName === 'PreviewProjectTemplate' && step.success === true &&
+    String(step.arguments || '').includes(naturalVclSmoke.retryDestination)
+  );
+  if (retryObjectiveActive) {
+    naturalVclSmoke.recoveryPending = false;
+    naturalVclSmoke.recoveryCardVisible =
+      card === chatContainer.lastElementChild;
+    if (naturalVclSmoke.recoveryCardVisible) {
+      postMessageToDelphi({ action: 'natural_vcl_recovery_visible' });
+    }
+  }
+  if (naturalVclSmoke.destinationRetried &&
+      (!retryObjectiveActive || !retryPreviewActive) &&
+      (status === 'failed' || status === 'cancelled')) {
+    return;
+  }
+  if (approveNaturalVclSmokePlan(card, state)) return;
+  finishNaturalVclSmokeFromState(status, state, stateSteps);
+}
+
 globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
   prompt,
+  retryDestination = '',
   timeoutMilliseconds = 300000
 ) {
   if (naturalVclSmoke) return;
   naturalVclSmoke = {
     recommendationAccepted: false,
+    destinationRetried: false,
+    nativeOrchestrationObserved: false,
     planApproved: false,
+    pendingApproval: null,
+    recoveryPending: false,
+    recoveryCardVisible: false,
+    recoveryRequestReady: false,
+    recoveryStateObserved: false,
+    retryDestination: String(retryDestination),
     startedAt: globalThis.performance.now(),
     timeoutId: setTimeout(
       () => finishNaturalVclSmoke('failed', 'timeout'),
@@ -3372,12 +3471,22 @@ globalThis.beginNaturalVclSmoke = function beginNaturalVclSmoke(
 };
 
 globalThis.resumeNaturalVclSmoke = function resumeNaturalVclSmoke(
-  timeoutMilliseconds = 300000
+  timeoutMilliseconds = 300000,
+  recoveryCardVisible = false
 ) {
   if (naturalVclSmoke) return;
   naturalVclSmoke = {
     recommendationAccepted: true,
+    destinationRetried: true,
+    nativeOrchestrationObserved:
+      activeExecutionRoute.orchestrator === 'radia-native',
     planApproved: true,
+    pendingApproval: null,
+    recoveryPending: false,
+    recoveryCardVisible: Boolean(recoveryCardVisible),
+    recoveryRequestReady: true,
+    recoveryStateObserved: true,
+    retryDestination: '',
     startedAt: globalThis.performance.now(),
     timeoutId: setTimeout(
       () => finishNaturalVclSmoke('failed', 'timeout-after-navigation'),
@@ -4757,6 +4866,17 @@ function updateModelsList(models, activeModel, enabled = true) {
   updateComposerRoute();
 }
 
+function continueNaturalVclSmokeAfterRequest() {
+  if (naturalVclSmoke?.recoveryStateObserved &&
+      naturalVclSmoke.recoveryRequestReady) {
+    trySubmitNaturalVclRecovery();
+  }
+  if (!naturalVclSmoke?.pendingApproval) return;
+  naturalVclSmoke.pendingApproval = null;
+  naturalVclSmoke.planApproved = true;
+  postMessageToDelphi({ action: 'approve_agent' });
+}
+
 function setRequestState(inProgress) {
   console.log('[DEBUG] setRequestState called with:', inProgress);
   requestInProgress = inProgress;
@@ -4786,6 +4906,7 @@ function setRequestState(inProgress) {
     providerDropdownTrigger.setAttribute('aria-disabled', 'false');
     btnQueuePrompt.classList.add('hidden');
     promptTextarea.placeholder = 'Ask Rad IA or type / for commands...';
+    continueNaturalVclSmokeAfterRequest();
   }
   applyModelSelectionState();
   executionRouteSelector.disabled = inProgress;
@@ -5100,7 +5221,10 @@ if (globalThis.chrome?.webview) {
     const data = event.data;
     console.log('[DEBUG] Received message from Delphi:', data.action || 'unknown');
     switch (data.action) {
-      case 'add_message':           addMessage(data.role, data.text, data.provider, data.model); break;
+      case 'add_message':
+        addMessage(data.role, data.text, data.provider, data.model);
+        handleNaturalVclRecoveryMessage(data);
+        break;
       case 'update_message':        updateMessage(data.text, data.isDone, data.provider, data.model); break;
       case 'clear_chat':            clearChat();                                                 break;
       case 'set_theme':             setTheme(data);                                              break;
@@ -5122,6 +5246,7 @@ if (globalThis.chrome?.webview) {
       case 'chat_preflight':        renderChatPreflight(data);                                   break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
       case 'execution_route':       updateExecutionRoute(data);                                  break;
+      case 'journey_input_requested': handleJourneyInputRequested(data);                          break;
       case 'execution_scope':       updateExecutionScope(data);                                  break;
       case 'agent_state':           renderAgentState(data);                                      break;
       case 'agent_history':         renderAgentHistory(data);                                    break;

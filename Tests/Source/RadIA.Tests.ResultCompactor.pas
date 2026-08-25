@@ -31,6 +31,8 @@ type
     procedure PreservesDiffHeadersInsideLargeDiff;
     [Test]
     procedure CompactsLargeWorkspaceListWithProvenance;
+    [Test]
+    procedure PrefersSemanticRuntimeControlsOverDuplicateNativeControls;
   end;
 
 implementation
@@ -266,6 +268,36 @@ begin
   Assert.Contains(LCompaction.CompactedJson, 'Unit001.pas');
   Assert.Contains(LCompaction.CompactedJson, 'Unit100.pas');
   Assert.Contains(LCompaction.CompactedJson, '"omittedItems":50');
+end;
+
+procedure TTestRadIAResultCompactor.
+  PrefersSemanticRuntimeControlsOverDuplicateNativeControls;
+var
+  LCompaction: TRadIAResultCompaction;
+begin
+  LCompaction := TRadIAResultCompactor.Compact(
+    'GetRuntimeControlTree',
+    '{"windowId":"window-1","controls":[' +
+      '{"controlId":"native","parentId":"window-1",' +
+      '"className":"TButton","text":"Clear history",' +
+      '"path":"TButton[0]","capabilities":["invoke"]},' +
+      '{"controlId":"form","parentId":"",' +
+      '"className":"TRadIAMainForm","text":"CalculatorApp",' +
+      '"path":"RadIAMainForm","capabilities":["close"]},' +
+      '{"controlId":"semantic","parentId":"form",' +
+      '"className":"TButton","text":"Clear history",' +
+      '"path":"RadIAMainForm/ClearHistoryButton",' +
+      '"capabilities":["invoke"]}],"count":3}'
+  );
+  Assert.IsTrue(LCompaction.Compacted);
+  Assert.Contains(LCompaction.CompactedJson, '"controlId":"semantic"');
+  Assert.Contains(LCompaction.CompactedJson, '"controlId":"form"');
+  Assert.DoesNotContain(LCompaction.CompactedJson, '"controlId":"native"');
+  Assert.Contains(
+    LCompaction.CompactedJson,
+    '"omittedDuplicateControls":1'
+  );
+  Assert.Contains(LCompaction.CompactedJson, '"count":2');
 end;
 
 initialization

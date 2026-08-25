@@ -164,6 +164,8 @@ type
     [Test]
     procedure TestProjectCreationRejectsCompletionBeforeRequiredJourney;
     [Test]
+    procedure TestProjectCreationRequiresExecutionOnlyWhenExplicit;
+    [Test]
     procedure TestValidationSnapshotIncludesBuildDUnitXAndCoverageEvidence;
     [Test]
     procedure TestFailedBuildRequiresCorrectionAndSuccessfulRebuild;
@@ -180,7 +182,9 @@ type
     [Test]
     procedure TestStopsRepeatedToolCalls;
     [Test]
-    procedure TestStopsDuplicateArtifactRangeImmediately;
+    procedure TestRecoversDuplicateCompletedArtifactRange;
+    [Test]
+    procedure TestReportsDestinationRecoveryAfterExistingDirectory;
     [Test]
     procedure TestPauseAndResumeFromCheckpoint;
     [Test]
@@ -205,6 +209,8 @@ type
     procedure TestProviderRejectsInvalidDecision;
     [Test]
     procedure TestProviderBuildsDecisionFromService;
+    [Test]
+    procedure TestProviderLimitsProjectCreationToolCatalog;
     [Test]
     procedure TestControllerRunsAgentAsynchronously;
     [Test]
@@ -974,11 +980,13 @@ var
   LDecisionProvider: IRadIAAgentDecisionProvider;
   LEvent: TEvent;
   LExecutor: IRadIAToolExecutor;
+  LFinishedAfterRelease: Boolean;
   LResult: TRadIAAgentRunResult;
   LService: IRadIAService;
   LStateJson: string;
   LStore: IRadIAAgentCheckpointStore;
 begin
+  LFinishedAfterRelease := False;
   LEvent := TEvent.Create(nil, True, False, '');
   try
     LService := TRadIAMockAgentService.Create(
@@ -1003,6 +1011,7 @@ begin
       end,
       procedure(const ARunResult: TRadIAAgentRunResult)
       begin
+        LFinishedAfterRelease := not LController.IsRunning;
         LResult := ARunResult;
         LEvent.SetEvent;
       end
@@ -1017,6 +1026,7 @@ begin
 
     Assert.AreEqual(wrSignaled, LEvent.WaitFor(5000));
     Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.IsTrue(LFinishedAfterRelease);
     Assert.AreEqual('Async objective completed.', LResult.Message);
     Assert.Contains(LStateJson, '"status":"completed"');
   finally
@@ -1313,6 +1323,41 @@ begin
   Assert.Contains(LDecision.ArgumentsJson, '"path":"unit.pas"');
   Assert.Contains(LServiceObject.Prompt, 'CURRENT_STATE:');
   Assert.Contains(LServiceObject.Prompt, '{"objective":"Inspect"}');
+  Assert.Contains(
+    LServiceObject.Prompt,
+    'When GetToolResultRange returns hasMore=false'
+  );
+end;
+
+procedure TTestRadIAAgentRuntime.TestProviderLimitsProjectCreationToolCatalog;
+var
+  LProvider: IRadIAAgentDecisionProvider;
+  LService: IRadIAService;
+  LServiceObject: TRadIAMockAgentService;
+begin
+  LServiceObject := TRadIAMockAgentService.Create(
+    '{"kind":"complete","message":"Done."}'
+  );
+  LService := LServiceObject;
+  LProvider := TRadIAAgentServiceDecisionProvider.Create(
+    LService,
+    [],
+    TRadIAAgentProviderSettings.Default(
+      '[{"name":"BuildProject"},{"name":"ReadFile"},' +
+        '{"name":"CreateProjectFromTemplate"}]'
+    )
+  );
+
+  LProvider.NextDecision(
+    '{"objective":"Create a Delphi project from the user requirements."}'
+  );
+
+  Assert.Contains(LServiceObject.Prompt, '"name":"BuildProject"');
+  Assert.Contains(
+    LServiceObject.Prompt,
+    '"name":"CreateProjectFromTemplate"'
+  );
+  Assert.DoesNotContain(LServiceObject.Prompt, '"name":"ReadFile"');
 end;
 
 procedure TTestRadIAAgentRuntime.TestProviderParsesFencedCompletion;
@@ -1448,17 +1493,29 @@ begin
   end;
 end;
 
-procedure TTestRadIAAgentRuntime.TestStopsDuplicateArtifactRangeImmediately;
+procedure TTestRadIAAgentRuntime.TestRecoversDuplicateCompletedArtifactRange;
 var
   LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
   LProvider: IRadIAAgentDecisionProvider;
+  LResultDirectory: string;
+  LResultStore: IRadIAAgentResultStore;
   LStore: IRadIAAgentCheckpointStore;
+  LStoreObject: TRadIAMemoryAgentCheckpointStore;
   LRuntime: TRadIAAgentRuntime;
   LResult: TRadIAAgentRunResult;
 begin
-  LExecutor := TRadIAMockAgentToolExecutor.Create(
-    TRadIAToolResult.Succeeded('{"content":"same range"}')
+  LResultDirectory := TPath.Combine(
+    TPath.GetTempPath,
+    'RadIA-ArtifactRecoveryResult-' + TGUID.NewGuid.ToString
   );
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded(
+      '{"content":"same range","returnedCharacters":10,' +
+      '"totalCharacters":10,"hasMore":false}'
+    )
+  );
+  LExecutor := LExecutorObject;
   LProvider := TRadIAMockAgentDecisionProvider.Create([
     TRadIAAgentDecision.Plan(
       'Review artifact recovery.',
@@ -1471,10 +1528,20 @@ begin
     TRadIAAgentDecision.CallTool(
       'GetToolResultRange',
       '{"artifactId":"artifact-1","offset":0,"length":100}'
-    )
+    ),
+    TRadIAAgentDecision.Complete('Artifact reviewed.')
   ]);
-  LStore := TRadIAMemoryAgentCheckpointStore.Create;
-  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  LStoreObject := TRadIAMemoryAgentCheckpointStore.Create;
+  LStore := LStoreObject;
+  LResultStore := TRadIAAgentFileResultStore.Create(LResultDirectory);
+  LRuntime := TRadIAAgentRuntime.Create(
+    LExecutor,
+    LProvider,
+    LStore,
+    nil,
+    TRadIAResultCompactor.Create,
+    LResultStore
+  );
   try
     LResult := LRuntime.Start(
       'Recover one artifact range.',
@@ -1484,9 +1551,60 @@ begin
     );
     Assert.AreEqual(asAwaitingApproval, LResult.Status);
     LResult := LRuntime.Resume('duplicate-artifact-range-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual(2, LResult.StepCount);
+    Assert.AreEqual(1, LExecutorObject.CallCount);
+    Assert.Contains(
+      LStoreObject.SnapshotJson,
+      'artifact_range_already_complete'
+    );
+    Assert.DoesNotContain(
+      LStoreObject.SnapshotJson,
+      '"resultArtifactId"'
+    );
+  finally
+    LRuntime.Free;
+    if TDirectory.Exists(LResultDirectory) then
+      TDirectory.Delete(LResultDirectory, True);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestReportsDestinationRecoveryAfterExistingDirectory;
+var
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Failed(
+      'tool_execution_failed',
+      'Project destination folder must be empty.'
+    )
+  );
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Create the requested project.',
+      '[{"title":"Create project"}]'
+    ),
+    TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
+    TRadIAAgentDecision.Fail('Choose another destination.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Create a calculator with operation history.',
+      'destination-recovery-session',
+      '',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('destination-recovery-session');
     Assert.AreEqual(asFailed, LResult.Status);
-    Assert.AreEqual(1, LResult.StepCount);
-    Assert.Contains(LResult.Message, 'repeated too many times');
+    Assert.AreEqual('destination', LResult.RecoveryInput);
   finally
     LRuntime.Free;
   end;
@@ -1622,8 +1740,7 @@ begin
     TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
     TRadIAAgentDecision.CallTool('OpenCreatedProject', '{}'),
     TRadIAAgentDecision.CallTool('BuildProject', '{}'),
-    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
-    TRadIAAgentDecision.Complete('Project created and executed.')
+    TRadIAAgentDecision.Complete('Project created and built.')
   ]);
   LStore := TRadIAMemoryAgentCheckpointStore.Create;
   LRuntime := NewRuntime(LExecutor, LProvider, LStore);
@@ -1637,7 +1754,54 @@ begin
     Assert.AreEqual(asAwaitingApproval, LResult.Status);
     LResult := LRuntime.Resume('project-creation-gate-session');
     Assert.AreEqual(asCompleted, LResult.Status);
-    Assert.AreEqual('Project created and executed.', LResult.Message);
+    Assert.AreEqual('Project created and built.', LResult.Message);
+    Assert.AreEqual(4, LExecutorObject.CallCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestProjectCreationRequiresExecutionOnlyWhenExplicit;
+var
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"status":"succeeded"}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan('Approve creation.', '[{"title":"Create"}]'),
+    TRadIAAgentDecision.CallTool('PreviewProjectTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('OpenCreatedProject', '{}'),
+    TRadIAAgentDecision.CallTool('BuildProject', '{}'),
+    TRadIAAgentDecision.Complete('Build passed.'),
+    TRadIAAgentDecision.CallTool('StartDebugging', '{}'),
+    TRadIAAgentDecision.Complete('Project created, built, and executed.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Create a Delphi project from the user requirements. ' +
+        'User-provided context: runtimeValidation="required"',
+      'explicit-runtime-gate-session',
+      '',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('explicit-runtime-gate-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual(
+      'Project created, built, and executed.',
+      LResult.Message
+    );
     Assert.AreEqual(5, LExecutorObject.CallCount);
   finally
     LRuntime.Free;

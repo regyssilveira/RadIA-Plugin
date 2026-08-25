@@ -26,8 +26,9 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 VCL creation starts in the real chat composer, accepts the recommendation shown to the user, and requires
-structured evidence for preview, creation, opening, build, and execution. The journey fails on premature CLI
-completion, an unavailable tool, a missing project file, or any required step that was not executed.
+structured evidence for preview, creation, opening, structural requirement preservation, and build without
+starting the application by default. The journey fails on premature CLI completion, an unavailable tool, a
+missing project file, or any required step that was not executed.
 
 Session isolation also uses the real WebView: it leaves a recommendation pending in the previous
 conversation, creates another conversation, confirms that history was cleared, and requires rejection of
@@ -90,6 +91,12 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 Use `-PlanOnly` first to inspect cost and combinations without opening Delphi.
+
+`natural-vcl-project-creation` deliberately starts with an existing directory. The scenario passes only
+when the simulated user supplies another destination, the original requirements remain in the objective,
+execution stays on the native orchestrator, and the project is created, opened, and built without starting
+the application. This is the representative gate for the default experience. `calculator-history-fidelity`
+and `vcl-project-creation-lifecycle` request and validate functional execution in a controlled environment.
 
 The `targeted` profile uses the already installed build and never silently replaces a developer's IDE.
 Explicitly install the intended revision with `build.ps1 -Install` first. The `startup`, `release`, and

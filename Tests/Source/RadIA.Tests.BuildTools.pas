@@ -56,6 +56,8 @@ type
     procedure StatusToolIsReadOnly;
     [Test]
     procedure CancelToolReturnsStructuredResult;
+    [Test]
+    procedure SuccessfulBuildExcludesErrorMessages;
   end;
 
 implementation
@@ -199,6 +201,47 @@ begin
   FBuildFacade.CurrentStatus := bsRunning;
   LResult := ExecuteTool('GetBuildStatus', '{}');
   Assert.Contains(LResult.ContentJson, '"status":"running"');
+end;
+
+procedure TTestRadIABuildTools.SuccessfulBuildExcludesErrorMessages;
+var
+  LProject: TRadIAProjectSnapshot;
+  LResult: TRadIAToolResult;
+begin
+  LProject := TRadIAProjectSnapshot.Create(
+    'ProjectOne',
+    'C:\Project\ProjectOne.dproj',
+    'C:\Project',
+    'Debug',
+    'Win32'
+  );
+  FBuildFacade.BuildResult := TRadIABuildResult.Completed(
+    bsSucceeded,
+    LProject,
+    250,
+    [
+      TRadIACompilerMessage.Create(
+        cmsError,
+        'F1027 Unit not found: System',
+        'MainForm.pas',
+        1,
+        0
+      ),
+      TRadIACompilerMessage.Create(
+        cmsWarning,
+        'W1000 Symbol deprecated',
+        'MainForm.pas',
+        2,
+        0
+      )
+    ]
+  );
+
+  LResult := ExecuteTool('BuildProject', '{}');
+
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, 'W1000 Symbol deprecated');
+  Assert.IsFalse(LResult.ContentJson.Contains('F1027'));
 end;
 
 initialization

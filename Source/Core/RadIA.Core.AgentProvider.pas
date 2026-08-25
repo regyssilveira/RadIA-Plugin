@@ -52,6 +52,8 @@ type
     FPromptTokens: Integer;
     FCompletionTokens: Integer;
     function BuildDecisionPrompt(const AContextJson: string): string;
+    function BuildRelevantToolCatalog(const AContextJson: string): string;
+    class function IsProjectCreationTool(const AName: string): Boolean; static;
   public
     constructor Create(
       const AService: IRadIAService;
@@ -76,6 +78,7 @@ implementation
 
 uses
   System.JSON,
+  System.StrUtils,
   System.SyncObjs,
   RadIA.Core.TokenUsage,
   RadIA.Core.Types;
@@ -238,15 +241,84 @@ begin
     'remain subject to RadIA consent and audit policies. After any source, ' +
     'project, or Designer mutation, inspect structured diagnostics and run ' +
     'BuildProject. Never complete while CURRENT_STATE.validation.buildPassed ' +
-    'is false. When DUnitX tests are available, run RunDUnitXTests after a ' +
+    'is false. For project creation, treat a successful build as the default ' +
+    'final gate. Call StartDebugging or runtime scenario tools only when the ' +
+    'objective contains runtimeValidation="required". Keep a runtime failure ' +
+    'separate from successful build evidence. When DUnitX tests are available, ' +
+    'run RunDUnitXTests after a ' +
     'successful build. When an authoritative Delphi Code Coverage report is ' +
     'available, run GetCoverageSummary after tests. If build or tests fail, ' +
     'inspect their structured ' +
     'result, prepare the smallest reviewable correction, request consent, ' +
-    'apply it, and repeat. Do not repeat an unchanged patch or tool call.' +
+    'apply it, and repeat. Do not repeat an unchanged patch or tool call. ' +
+    'When GetToolResultRange returns hasMore=false, the requested range is ' +
+    'complete. Do not request that artifact range again; continue with the ' +
+    'next functional validation step.' +
     sLineBreak +
-    'TOOLS:' + sLineBreak + FSettings.ToolCatalogJson + sLineBreak +
+    'TOOLS:' + sLineBreak + BuildRelevantToolCatalog(AContextJson) + sLineBreak +
     'CURRENT_STATE:' + sLineBreak + AContextJson;
+end;
+
+function TRadIAAgentServiceDecisionProvider.BuildRelevantToolCatalog(
+  const AContextJson: string
+): string;
+var
+  LFiltered: TJSONArray;
+  LIndex: Integer;
+  LItem: TJSONObject;
+  LName: string;
+  LSource: TJSONArray;
+  LValue: TJSONValue;
+begin
+  Result := FSettings.ToolCatalogJson;
+  if not AContextJson.Contains(
+    'Create a Delphi project from the user requirements.'
+  ) then
+    Exit;
+  LSource := TJSONObject.ParseJSONValue(
+    FSettings.ToolCatalogJson
+  ) as TJSONArray;
+  if not Assigned(LSource) then
+    Exit;
+  LFiltered := TJSONArray.Create;
+  try
+    for LIndex := 0 to LSource.Count - 1 do
+    begin
+      if not (LSource[LIndex] is TJSONObject) then
+        Continue;
+      LItem := TJSONObject(LSource[LIndex]);
+      LName := LItem.GetValue<string>('name', '');
+      if not IsProjectCreationTool(LName) then
+        Continue;
+      LValue := TJSONObject.ParseJSONValue(LItem.ToJSON);
+      LFiltered.AddElement(LValue);
+    end;
+    if LFiltered.Count > 0 then
+      Result := LFiltered.ToJSON;
+  finally
+    LFiltered.Free;
+    LSource.Free;
+  end;
+end;
+
+class function TRadIAAgentServiceDecisionProvider.IsProjectCreationTool(
+  const AName: string
+): Boolean;
+begin
+  Result := IndexText(AName, [
+    'GetActiveProject', 'GetIDEState', 'GetGitStatus', 'ListOpenFiles',
+    'GetInstallationHealth', 'DiagnoseDelphiDependencies',
+    'GetKnowledgeStatus', 'SearchKnowledge', 'RetrieveKnowledge',
+    'GetKnowledgeDocument', 'PreviewProjectTemplate',
+    'CreateProjectFromTemplate', 'OpenCreatedProject',
+    'ValidateCreatedProject', 'BuildProject', 'GetBuildStatus',
+    'GetCompilerMessages', 'RunDUnitXTests', 'GetCoverageSummary',
+    'StartDebugging', 'StopDebugging', 'GetDebuggerState',
+    'GetRuntimeWindows', 'GetRuntimeControlTree',
+    'PreviewRuntimeScenario', 'RunRuntimeScenario',
+    'GetRuntimeScenarioStatus', 'CancelRuntimeScenario',
+    'GetProjectHealth', 'GetToolResultRange'
+  ]) >= 0;
 end;
 
 procedure TRadIAAgentServiceDecisionProvider.CancelDecision;

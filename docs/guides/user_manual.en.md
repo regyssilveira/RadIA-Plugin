@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.5 user manual
+# Complete RadIA 2.17.9 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.5`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.9`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -357,7 +357,8 @@ See the [agentic tools guide](user_guide_agentic_tools.en.md).
 
 ### 4.6 Build
 
-`BuildProject` supports `make`, `build`, `check`, and `clean`. `GetBuildStatus`, `CancelBuild`, and
+`BuildProject` supports `make`, `build`, `check`, and `clean`, and returns messages from the current
+build only. `GetBuildStatus`, `CancelBuild`, and
 `GetCompilerMessages` expose controlled execution and structured output. A build does not grant
 permission to run its binary.
 

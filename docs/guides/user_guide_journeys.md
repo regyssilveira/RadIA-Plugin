@@ -30,8 +30,14 @@ O contrato completo da classificação local e suas proteções está em
 [Roteamento de intenção](../reference/intent_routing.md).
 
 Cada receita possui quatro fases obrigatórias. Cada fase define o trabalho esperado e a evidência
-que deve aparecer na timeline. A execução também recebe três critérios de conclusão; o agente não
+que deve aparecer na timeline. A execução também recebe critérios de conclusão; o agente não
 deve declarar sucesso apenas porque produziu uma resposta textual.
+
+Na criação comum de projetos, o build aprovado é o gate final padrão. O RadIA abre o projeto, confere
+estruturalmente os requisitos solicitados e compila, mas não inicia nem depura o aplicativo sem um pedido
+explícito do usuário. Quando a execução for solicitada, seu resultado é informado separadamente: uma falha
+runtime não transforma um build aprovado em falha de compilação. Testes E2E específicos continuam executando
+aplicativos em ambiente controlado para validar comportamento funcional.
 
 | Comando | Objetivo |
 |---|---|
@@ -78,6 +84,13 @@ esse requisito é preservado na especificação estruturada e no preview. A calc
 cada operação concluída em ordem e oferece **Clear history**. A jornada só pode concluir depois de
 executar cálculos reais, conferir o histórico e verificar sua limpeza; um build verde, isoladamente,
 não atende esse pedido.
+
+Se a pasta de destino já existir, a execução informa o conflito e mantém a jornada aguardando outro
+destino. A resposta seguinte substitui somente o caminho: tipo do projeto, plataforma, nome e requisitos
+funcionais — inclusive o histórico — continuam no objetivo. O cartão de recomendação é consumido
+visualmente no primeiro clique para não sugerir que a mesma ação ainda está disponível. Ao receber o
+novo caminho, o chat confirma imediatamente a retomada e move o plano recuperado para o final da
+conversa, onde a nova aprovação permanece visível.
 
 ## Como a execução funciona
 

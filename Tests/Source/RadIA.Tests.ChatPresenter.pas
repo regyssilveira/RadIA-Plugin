@@ -1453,7 +1453,14 @@ begin
     'companionTestExecutable'
   );
   Assert.Contains(FMockView.PostedMessages.Text, 'RunDUnitXTests');
-  Assert.Contains(FMockView.PostedMessages.Text, 'start the application');
+  Assert.Contains(
+    FMockView.PostedMessages.Text,
+    'successful build is the default final gate'
+  );
+  Assert.DoesNotContain(
+    FMockView.PostedMessages.Text,
+    'runtimeValidation=\"required\"'
+  );
   Assert.Contains(
     FMockView.PostedMessages.Text,
     'destination=\"D:\\CalculatorAcceptance\"'

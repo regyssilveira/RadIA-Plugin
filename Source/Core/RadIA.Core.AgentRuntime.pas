@@ -141,15 +141,18 @@ type
     FStatus: TRadIAAgentStatus;
     FMessage: string;
     FStepCount: Integer;
+    FRecoveryInput: string;
   public
     constructor Create(
       const AStatus: TRadIAAgentStatus;
       const AMessage: string;
-      const AStepCount: Integer
+      const AStepCount: Integer;
+      const ARecoveryInput: string = ''
     );
     property Status: TRadIAAgentStatus read FStatus;
     property Message: string read FMessage;
     property StepCount: Integer read FStepCount;
+    property RecoveryInput: string read FRecoveryInput;
   end;
 
   IRadIAAgentDecisionProvider = interface
@@ -389,6 +392,10 @@ type
     function CheckRepeatedCall(
       const ADecision: TRadIAAgentDecision
     ): Boolean;
+    function DetectRecoveryInput: string;
+    function TryRecoverCompletedArtifactRangeRepeat(
+      const ADecision: TRadIAAgentDecision
+    ): Boolean;
     procedure AddToolStep(
       const ADecision: TRadIAAgentDecision;
       const ACorrelationId: string;
@@ -461,6 +468,7 @@ type
     function IsMutationTool(const AToolName: string): Boolean;
     function HasSuccessfulToolStep(const AToolName: string): Boolean;
     function IsProjectCreationObjective: Boolean;
+    function ProjectCreationRequiresExecution: Boolean;
     function ResolveRiskName(const AToolName: string): string;
     function ExtractAffectedFiles(
       const AArgumentsJson: string;
@@ -778,12 +786,14 @@ end;
 constructor TRadIAAgentRunResult.Create(
   const AStatus: TRadIAAgentStatus;
   const AMessage: string;
-  const AStepCount: Integer
+  const AStepCount: Integer;
+  const ARecoveryInput: string
 );
 begin
   FStatus := AStatus;
   FMessage := AMessage;
   FStepCount := AStepCount;
+  FRecoveryInput := ARecoveryInput;
 end;
 
 { TRadIAAgentCheckpointSummary }
@@ -1262,7 +1272,8 @@ begin
   LStep.CorrelationId := ACorrelationId;
   LStep.Success := AResult.Success;
   LStep.ResultJson := AResult.ContentJson;
-  if Assigned(FResultStore) and (LStep.ResultJson <> '') then
+  if Assigned(FResultStore) and (LStep.ResultJson <> '') and
+    not SameText(ADecision.ToolName, 'GetToolResultRange') then
   begin
     LArtifact := FResultStore.Store(
       FSessionId,
@@ -1817,6 +1828,7 @@ var
   LMetricsJson: TJSONObject;
   LMetrics: TRadIAAgentCompactionMetrics;
   LProfile: TRadIACompactionProfile;
+  LRecoveryInput: string;
   LRoot: TJSONObject;
   LStepArray: TJSONArray;
 begin
@@ -1832,6 +1844,9 @@ begin
     LRoot.AddPair('objective', FObjective);
     LRoot.AddPair('status', RadIAAgentStatusName(FStatus));
     LRoot.AddPair('message', FMessage);
+    LRecoveryInput := DetectRecoveryInput;
+    if not LRecoveryInput.IsEmpty then
+      LRoot.AddPair('recoveryInput', LRecoveryInput);
     LRoot.AddPair('planApproved', TJSONBool.Create(FPlanApproved));
     if HasValidPlan then
       LRoot.AddPair(
@@ -2191,6 +2206,51 @@ begin
   Result := FRepeatedCallCount <= LAllowedRepeatedCalls;
 end;
 
+function TRadIAAgentRuntime.TryRecoverCompletedArtifactRangeRepeat(
+  const ADecision: TRadIAAgentDecision
+): Boolean;
+var
+  LLastStep: TRadIAAgentStep;
+  LRecoveryResult: TRadIAToolResult;
+  LRoot: TJSONObject;
+begin
+  Result := False;
+  if not SameText(ADecision.ToolName, 'GetToolResultRange') or
+    (FSteps.Count = 0) then
+    Exit;
+  LLastStep := FSteps.Last;
+  if not LLastStep.Success or
+    not SameText(LLastStep.ToolName, ADecision.ToolName) or
+    (BuildCallSignature(ADecision) <> FLastCallSignature) then
+    Exit;
+  LRoot := TJSONObject.ParseJSONValue(LLastStep.ResultJson) as TJSONObject;
+  if not Assigned(LRoot) then
+    Exit;
+  try
+    if LRoot.GetValue<Boolean>('hasMore', True) then
+      Exit;
+  finally
+    LRoot.Free;
+  end;
+  LRecoveryResult := TRadIAToolResult.Failed(
+    'artifact_range_already_complete',
+    'The requested artifact range is already fully available in the ' +
+      'decision context. Do not request it again. Continue with the next ' +
+      'functional validation step.'
+  );
+  AddToolStep(
+    ADecision,
+    TGUID.NewGuid.ToString,
+    LRecoveryResult,
+    ElapsedMilliseconds,
+    0
+  );
+  FRepeatedCallCount := 1;
+  UpdatePeriodicSummary;
+  NotifyAndCheckpoint;
+  Result := True;
+end;
+
 function TRadIAAgentRuntime.CanContinueLoop: Boolean;
 begin
   Result := False;
@@ -2271,8 +2331,32 @@ begin
   Result := TRadIAAgentRunResult.Create(
     FStatus,
     FMessage,
-    FSteps.Count
+    FSteps.Count,
+    DetectRecoveryInput
   );
+end;
+
+function TRadIAAgentRuntime.DetectRecoveryInput: string;
+var
+  LIndex: Integer;
+  LStep: TRadIAAgentStep;
+begin
+  Result := '';
+  if FStatus <> asFailed then
+    Exit;
+  for LIndex := FSteps.Count - 1 downto 0 do
+  begin
+    LStep := FSteps[LIndex];
+    if SameText(LStep.ToolName, 'CreateProjectFromTemplate') and
+      LStep.Success then
+      Exit;
+    if SameText(LStep.ToolName, 'CreateProjectFromTemplate') and
+      (ContainsText(LStep.ErrorMessage, 'directory already exists') or
+       ContainsText(LStep.ErrorMessage, 'destination folder must be empty') or
+       ContainsText(LStep.ErrorMessage, 'destination points to an existing file') or
+       SameText(LStep.ErrorCode, 'target_exists')) then
+      Exit('destination');
+  end;
 end;
 
 procedure TRadIAAgentRuntime.HandleCompletionDecision(
@@ -2351,6 +2435,8 @@ begin
     ChangeStatus(asFailed, 'Agent selected an empty tool name.');
     Exit;
   end;
+  if TryRecoverCompletedArtifactRangeRepeat(ADecision) then
+    Exit(True);
   if not CheckRepeatedCall(ADecision) then
   begin
     ChangeStatus(
@@ -2563,6 +2649,14 @@ function TRadIAAgentRuntime.IsProjectCreationObjective: Boolean;
 begin
   Result := FObjective.Contains(
     'Create a Delphi project from the user requirements.'
+  );
+end;
+
+function TRadIAAgentRuntime.ProjectCreationRequiresExecution: Boolean;
+begin
+  Result := IsProjectCreationObjective and ContainsText(
+    FObjective,
+    'runtimeValidation="required"'
   );
 end;
 
@@ -2814,14 +2908,14 @@ begin
       'the latest mutation.';
     Exit(False);
   end;
-  if IsProjectCreationObjective and not LValidation.ExecutionRun then
+  if ProjectCreationRequiresExecution and not LValidation.ExecutionRun then
   begin
     AMessage :=
       'Validation gate rejected completion: start the created application ' +
       'and record successful execution evidence.';
     Exit(False);
   end;
-  if IsProjectCreationObjective and not LValidation.ExecutionPassed then
+  if ProjectCreationRequiresExecution and not LValidation.ExecutionPassed then
   begin
     AMessage :=
       'Validation gate rejected completion: the created application did not ' +

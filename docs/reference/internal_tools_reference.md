@@ -297,7 +297,7 @@ passa pela classificação `execution` e não aceita nomes arbitrários recebido
 
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
-| `BuildProject` | Executa `make`, `build`, `check` ou `clean` com diagnóstico estruturado. | Para validar mudanças, reproduzir erros ou cumprir o gate de build. |
+| `BuildProject` | Executa `make`, `build`, `check` ou `clean` com diagnósticos exclusivos da execução atual. | Para validar mudanças, reproduzir erros ou cumprir o gate de build. |
 | `CancelBuild` | Solicita o cancelamento cooperativo do build ativo. | Pelo botão de cancelamento, pelo agente ou quando um timeout é atingido. |
 | `GetBuildStatus` | Retorna estado, duração e resultado do build controlado. | Enquanto o agente acompanha a compilação ou antes de iniciar outra. |
 

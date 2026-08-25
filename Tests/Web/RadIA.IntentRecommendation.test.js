@@ -32,6 +32,15 @@ test('host validates recommendation actions against pending state', () => {
   assert.match(presenter, /dismiss_intent_recommendation/u);
 });
 
+test('accepted recommendation is visibly consumed before execution starts', () => {
+  assert.match(chatScript, /intent-recommendation-resolved/u);
+  assert.match(chatScript, /Starting recommended route…/u);
+  assert.match(
+    chatScript,
+    /querySelector\('\.intent-recommendation-controls'\)[\s\S]*?replaceChildren\(status\)/u
+  );
+});
+
 test('natural intent creates a recommendation instead of direct journey execution', () => {
   assert.match(presenter, /TRadIAIntentRouter\.TryRecommend/u);
   assert.match(presenter, /PostIntentRecommendation\(LRecommendation\)/u);

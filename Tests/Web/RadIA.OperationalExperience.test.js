@@ -42,6 +42,17 @@ test('technical agent details remain available below the simplified summary', ()
   assert.match(chatScript, /Technical details/u);
 });
 
+test('persisted string plan steps keep their real titles', () => {
+  assert.match(
+    chatScript,
+    /typeof planStep === 'string' \? planStep\.trim\(\) : ''/u
+  );
+  assert.match(
+    chatScript,
+    /const title = stringStep \|\| planStep\?\.title \|\| 'Planned step'/u
+  );
+});
+
 test('optional project additions are user-initiated after completion', () => {
   assert.match(chatScript, /state\.status !== 'completed'/u);
   assert.match(chatScript, /Add DUnitX tests/u);

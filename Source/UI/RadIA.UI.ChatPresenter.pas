@@ -97,6 +97,7 @@ type
     FAgentModeEnabled: Boolean;
     FAgentController: IRadIAAgentRunController;
     FAgentExecutorSettings: TRadIAAgentExecutorSettingsStore;
+    FNativeOrchestrationOverride: Boolean;
     FCliProcessSession: IRadIACliProcessSession;
     FPendingJourneyActive: Boolean;
     FPendingJourneyContext: string;
@@ -104,6 +105,9 @@ type
     FPendingJourneyDefinition: TRadIAJourneyDefinition;
     FPendingJourneyField: string;
     FPendingJourneyNative: Boolean;
+    FActiveJourneyContext: string;
+    FActiveJourneyDefinition: TRadIAJourneyDefinition;
+    FActiveJourneyNative: Boolean;
     FPendingIntentActive: Boolean;
     FPendingIntentCommand: string;
     FPendingIntentConfidence: string;
@@ -251,6 +255,10 @@ type
       out AProviderSettings: TRadIAAgentProviderSettings;
       out ALimits: TRadIAAgentLimits
     );
+    function RequiresNativeCreationOrchestration(
+      const AObjective: string;
+      const AExecutorId: string
+    ): Boolean;
     procedure StartAgentRun(const AObjective: string);
     function TryStartExternalAgentRun(
       const AObjective: string;
@@ -3716,6 +3724,9 @@ procedure TRadIAChatPresenter.StartPendingJourney;
 var
   LObjective: string;
 begin
+  FActiveJourneyContext := FPendingJourneyContext;
+  FActiveJourneyDefinition := FPendingJourneyDefinition;
+  FActiveJourneyNative := FPendingJourneyNative;
   if FPendingJourneyNative then
     LObjective := FPendingJourneyDefinition.BuildAgentObjective(
       FPendingJourneyContext
@@ -3723,6 +3734,12 @@ begin
   else
     LObjective := FPendingJourneyDeclarativePrompt + sLineBreak + sLineBreak +
       'User-provided context: ' + FPendingJourneyContext;
+  if SameText(FPendingJourneyField, 'destination') then
+    PostToWebView(
+      'add_message',
+      'assistant',
+      'New destination received. Preparing the recovered project plan.'
+    );
   ResetPendingJourney;
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
@@ -3760,6 +3777,13 @@ begin
   PostToWebView('add_message', 'user', APromptText);
   if FPendingJourneyField = 'goal' then
     FPendingJourneyContext := LAnswer
+  else if SameText(FPendingJourneyField, 'destination') and
+    FPendingJourneyNative and
+    SameText(FPendingJourneyDefinition.Command, '/journey create') then
+    FPendingJourneyContext := TRadIAJourneyCatalog.ReplaceCreateDestination(
+      FPendingJourneyContext,
+      LAnswer
+    )
   else
   begin
     if not FPendingJourneyContext.IsEmpty then
@@ -3895,7 +3919,12 @@ begin
   if not FAgentModeEnabled then
     SetAgentModeEnabled(True);
   if LIsNativeJourney then
-    LObjective := LDefinition.BuildAgentObjective(LContext)
+  begin
+    FActiveJourneyContext := LContext;
+    FActiveJourneyDefinition := LDefinition;
+    FActiveJourneyNative := True;
+    LObjective := LDefinition.BuildAgentObjective(LContext);
+  end
   else
   begin
     LObjective := LDeclarative.Prompt + sLineBreak + sLineBreak +
@@ -4196,6 +4225,29 @@ begin
       begin
         if not LGuard.IsAlive then
           Exit;
+        if (AResult.Status = asFailed) and
+          SameText(AResult.RecoveryInput, 'destination') and
+          FActiveJourneyNative and
+          SameText(FActiveJourneyDefinition.Command, '/journey create') then
+        begin
+          FPendingJourneyActive := True;
+          FPendingJourneyContext := FActiveJourneyContext;
+          FPendingJourneyDefinition := FActiveJourneyDefinition;
+          FPendingJourneyField := 'destination';
+          FPendingJourneyNative := True;
+          PostToWebView(
+            'journey_input_requested',
+            '',
+            'destination'
+          );
+        end;
+        if AResult.Status in [asCompleted, asCancelled, asFailed] then
+        begin
+          FActiveJourneyContext := '';
+          FActiveJourneyDefinition := Default(TRadIAJourneyDefinition);
+          FActiveJourneyNative := False;
+          FNativeOrchestrationOverride := False;
+        end;
         FRequestInProgress := False;
         if Assigned(FJourneyContext) then
           FJourneyContext.CompleteActivity;
@@ -4217,6 +4269,7 @@ begin
             AProvider,
             AModel
           );
+        PostExecutionRouteToWeb;
       end
     )
   );
@@ -4396,6 +4449,16 @@ begin
   end;
 end;
 
+function TRadIAChatPresenter.RequiresNativeCreationOrchestration(
+  const AObjective: string;
+  const AExecutorId: string
+): Boolean;
+begin
+  Result := AObjective.Contains(
+    'Create a Delphi project from the user requirements.'
+  ) and not SameText(AExecutorId, 'native');
+end;
+
 procedure TRadIAChatPresenter.StartAgentRun(
   const AObjective: string
 );
@@ -4419,6 +4482,10 @@ var
   LUserMessage: IRadIAChatMessage;
 begin
   LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  FNativeOrchestrationOverride := RequiresNativeCreationOrchestration(
+    AObjective,
+    LEffectiveSettings.Values.ExecutorId
+  );
   if TryStartExternalAgentRun(AObjective, LEffectiveSettings) then
     Exit;
   if not Assigned(FToolExecutor) or not Assigned(FToolRegistry) then
@@ -4503,6 +4570,7 @@ begin
     LActiveModel
   );
   FHistory := FHistory + [LUserMessage];
+  PostExecutionRouteToWeb;
   SaveChatHistory;
   FRequestInProgress := True;
   if Assigned(FJourneyContext) then
@@ -5226,7 +5294,8 @@ begin
   LEffective := ResolveEffectiveExecutionSettings;
   LProvider := LEffective.Values.ProviderId;
   LAuthType := FConfig.GetProviderAuthType(LProvider);
-  if SameText(LEffective.Values.ExecutorId, 'native') then
+  if FNativeOrchestrationOverride or
+    SameText(LEffective.Values.ExecutorId, 'native') then
     LSettings := TRadIAAgentExecutorSettings.Create(aekNative, '')
   else
     LSettings := TRadIAAgentExecutorSettings.Create(

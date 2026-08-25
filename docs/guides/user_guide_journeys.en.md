@@ -30,8 +30,14 @@ The complete local classification contract and its safeguards are documented in
 [Intent routing](../reference/intent_routing.en.md).
 
 Every recipe has four required phases. Each phase defines the expected work and the evidence that
-must appear in the timeline. The run also receives three completion criteria, so the agent cannot
+must appear in the timeline. The run also receives completion criteria, so the agent cannot
 claim success merely because it produced a text response.
+
+For ordinary project creation, a successful build is the default final gate. RadIA opens the project,
+structurally checks the requested requirements, and builds it, but does not start or debug the application
+without an explicit user request. When execution is requested, its result is reported separately: a runtime
+failure does not turn a successful build into a compilation failure. Dedicated E2E tests continue to run
+applications in controlled environments to validate functional behavior.
 
 | Command | Objective |
 |---|---|
@@ -78,6 +84,13 @@ requirement is preserved in the structured specification and preview. The genera
 each completed operation in order and provides **Clear history**. The journey can only complete after
 running real calculations, checking the history, and verifying that it can be cleared; a green build
 alone does not satisfy this request.
+
+If the destination directory already exists, the run reports the conflict and keeps the journey waiting
+for another destination. The next reply replaces only the path: project type, platform, name, and
+functional requirements — including history — remain in the objective. The recommendation card is
+visibly consumed on the first click so it does not suggest that the same action is still available. When
+the new path arrives, chat immediately confirms recovery and moves the recovered plan to the end of the
+conversation, where its new approval remains visible.
 
 ## Execution model
 
