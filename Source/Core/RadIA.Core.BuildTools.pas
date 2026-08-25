@@ -210,7 +210,7 @@ begin
   Result := TRadIAToolDescriptor.Create(
     'BuildProject',
     '1.0.0',
-    'Builds the active project without running its output.',
+    'Builds the active project and returns diagnostics from this build only.',
     CBuildInputSchema,
     CBuildOutputSchema,
     trExecution

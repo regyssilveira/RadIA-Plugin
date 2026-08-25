@@ -249,7 +249,7 @@ This list contains only the built-in tools registered by the current package. Ar
 
 | Tool | Purpose | Source unit |
 |---|---|---|
-| `BuildProject` | Builds the active project without running its output. | `RadIA.Core.BuildTools.pas` |
+| `BuildProject` | Builds the active project and returns diagnostics from this build only. | `RadIA.Core.BuildTools.pas` |
 | `CancelBuild` | Requests cancellation of the active background build. | `RadIA.Core.BuildTools.pas` |
 | `GetBuildStatus` | Returns the current or most recent build status. | `RadIA.Core.BuildTools.pas` |
 
