@@ -220,6 +220,8 @@ type
     [Test]
     procedure TestConversationalQuestionBypassesAgentPlan;
     [Test]
+    procedure TestExplicitEditorPromptWaitsForWebViewAndBypassesAgentPlan;
+    [Test]
     procedure TestDeclarativeExtensionCommandReloadsWithoutRestart;
     [Test]
     procedure TestDeclarativeExtensionAppearsInSlashCatalog;
@@ -1770,6 +1772,30 @@ begin
   DrainQueuedCalls;
 
   Assert.IsTrue(FMockView.RequestStateInProgress);
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+
+  FPresenter.CancelRequest;
+end;
+
+procedure TTestChatPresenter.
+  TestExplicitEditorPromptWaitsForWebViewAndBypassesAgentPlan;
+const
+  CPrompt = 'Implement the method from its reviewed comment.';
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := False;
+
+  FPresenter.HandleGlobalPromptRequest(CPrompt, True);
+
+  Assert.IsFalse(FMockView.RequestStateInProgress);
+  Assert.DoesNotContain(FMockView.PostedMessages.Text, CPrompt);
+
+  FPresenter.OnWebViewReady;
+  DrainQueuedCalls;
+
+  Assert.IsTrue(FMockView.RequestStateInProgress);
+  Assert.Contains(FMockView.PostedMessages.Text, CPrompt);
   Assert.DoesNotContain(FMockView.PostedMessages.Text, '"action":"agent_state"');
   Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
 

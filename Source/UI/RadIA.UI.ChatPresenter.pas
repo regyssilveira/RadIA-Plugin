@@ -75,6 +75,7 @@ type
     FLoadingConfig: Boolean;
     FWebViewReady: Boolean;
     FPendingWebMessages: TList<string>;
+    FPendingGlobalPrompt: string;
     FWebFilesDir: string;
     FLifecycleGuard: IInterface;
     FActiveModels: TArray<string>;
@@ -167,6 +168,7 @@ type
     function CanChangeSession: Boolean;
 
     procedure SendInitialConfigToWeb;
+    procedure SendDirectPromptText(const APromptText: string);
     procedure SendModelsUpdateToWeb(
       const AModels: TArray<string>;
       const AActiveModel: string;
@@ -581,6 +583,7 @@ begin
   FLoadingConfig := False;
   FWebViewReady := False;
   FPendingWebMessages := TList<string>.Create;
+  FPendingGlobalPrompt := '';
   FLifecycleGuard := TLifecycleGuard.Create;
   FActiveModels := [];
   FPendingPrompt := '';
@@ -1647,7 +1650,43 @@ end;
 
 procedure TRadIAChatPresenter.HandleGlobalPromptRequest(const APrompt: string; const AOpenChat: Boolean);
 begin
-  SendPromptText(APrompt);
+  if not FWebViewReady then
+  begin
+    FPendingGlobalPrompt := APrompt;
+    TLogger.Log(
+      'HandleGlobalPromptRequest: Prompt deferred until WebView is ready.',
+      'UI'
+    );
+    Exit;
+  end;
+  SendDirectPromptText(APrompt);
+end;
+
+procedure TRadIAChatPresenter.SendDirectPromptText(
+  const APromptText: string
+);
+var
+  LEffectiveSettings: TRadIAResolvedExecutionSettings;
+  LPreflightMessage: string;
+  LProcessed: string;
+begin
+  if TryHandleToolPrompt(APromptText) then
+    Exit;
+
+  EnsureJourneyProjectBoundary;
+  LProcessed := PreProcessPrompt(APromptText);
+  LEffectiveSettings := ResolveEffectiveExecutionSettings;
+  if not CheckChatPreflight(LEffectiveSettings, LPreflightMessage) then
+  begin
+    ShowChatPreflightFailure(APromptText, LPreflightMessage);
+    Exit;
+  end;
+  TLogger.Log(
+    'SendDirectPromptText: Executing explicit IDE action without agent planning.',
+    'UI'
+  );
+  PostToWebView('add_message', 'user', APromptText);
+  SendPromptToAI(LProcessed);
 end;
 
 procedure TRadIAChatPresenter.SendPrompt;
@@ -2238,6 +2277,7 @@ end;
 procedure TRadIAChatPresenter.OnWebViewReady;
 var
   LMsgStr: string;
+  LPendingGlobalPrompt: string;
 begin
   FWebViewReady := True;
   FView.ApplyCurrentTheme;
@@ -2248,6 +2288,11 @@ begin
     FView.PostMessageToWeb(LMsgStr);
   end;
   FPendingWebMessages.Clear;
+
+  LPendingGlobalPrompt := FPendingGlobalPrompt;
+  FPendingGlobalPrompt := '';
+  if not LPendingGlobalPrompt.IsEmpty then
+    SendDirectPromptText(LPendingGlobalPrompt);
 
   if FRequestInProgress then
   begin
