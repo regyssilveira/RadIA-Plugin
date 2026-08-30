@@ -1190,6 +1190,7 @@ begin
     LTargetUrl := 'file:///' + TPath.Combine(FWebFilesDir, 'chat.html').Replace('\', '/') +
       '?theme=' + GetWebThemeName(GetCurrentIDEThemeName);
     TLogger.Log('UpdateWebViewNavigation: Navigating to local chat: ' + LTargetUrl, 'UI');
+    FPresenter.WebViewReady := False;
     FWebViewLifecycle.BeginNavigation;
     FEdgeBrowser.Navigate(LTargetUrl);
   end;

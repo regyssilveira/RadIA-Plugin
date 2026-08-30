@@ -15,6 +15,10 @@ test('chat uses bounded WebView recovery and shutdown-safe callbacks', () => {
   const ideSmoke = read('scripts/Test-RadIA.IDESmoke.ps1');
 
   assert.match(frame, /TRadIAWebViewLifecycle\.Create\(2\)/u);
+  assert.match(
+    frame,
+    /UpdateWebViewNavigation;[\s\S]*?FPresenter\.WebViewReady := False;[\s\S]*?FEdgeBrowser\.Navigate/u
+  );
   assert.match(frame, /OnProcessFailed := EdgeBrowserProcessFailed/u);
   assert.match(frame, /ScheduleWebViewRecovery/u);
   assert.doesNotMatch(frame, /FEdgeBrowser\.CloseBrowserProcess;/u);

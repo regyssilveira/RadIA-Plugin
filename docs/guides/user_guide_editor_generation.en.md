@@ -16,6 +16,12 @@ Rad IA connects natively to the Delphi code editor using the Open Tools API (OTA
    * **Optimize/Refactor (`/refactor`):** Rewrites code aiming for performance, readability, and compliance with Clean Code and SOLID principles.
    * **Find Bugs (`/bugs`):** Scans the code for memory leaks (missing try..finally blocks), unhandled exceptions, and logic flaws.
    * **Generate Unit Tests (`/test`):** Automatically generates structured test classes and methods using the DUnitX framework.
+   * **Create Implementation from Comment:** With the cursor inside an empty method that contains a
+     natural-language comment, directly generates the bounded implementation.
+
+Implementation creation is an explicit editor action. It waits for chat loading to finish, sends the
+request directly to the configured provider, and neither creates nor requests approval for an agent plan,
+even when Agent mode is enabled. Applying the generated code remains subject to user review.
 
 > The **Rad IA** submenu is inserted at the top of the editor context menu after the IDE builds its native items, preserving compatibility with Delphi 12/13 and menus added by other plugins.
 

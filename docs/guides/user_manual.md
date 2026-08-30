@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.9
+# Manual completo do RadIA 2.17.10
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.9`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.10`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -385,6 +385,11 @@ Pelo menu contextual do editor, o RadIA pode:
 - revisar a unit;
 - criar o corpo de um método a partir de comentário;
 - analisar warnings de compilador, thread safety e recursos do Windows.
+
+**Create Implementation from Comment** aguarda o painel de chat ficar pronto e executa diretamente
+no provider configurado. Como o clique no menu já expressa uma intenção delimitada, essa ação não cria
+nem solicita aprovação de plano, mesmo quando o modo Agent está habilitado. O código gerado ainda deve
+ser revisado antes da aplicação.
 
 Sem seleção ativa, ações compatíveis usam a unit inteira como contexto.
 
