@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.10 user manual
+# Complete RadIA 2.17.11 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.10`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.11`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -316,8 +316,9 @@ tests, create XML documentation, analyze warnings, and generate method bodies fr
 
 **Create Implementation from Comment** waits until the chat panel is ready and runs directly through
 the configured provider. Because the menu click already expresses a bounded intent, this action neither
-creates nor requests approval for a plan, even when Agent mode is enabled. Generated code still requires
-review before it is applied.
+creates nor requests approval for a plan, even when Agent mode is enabled. The code replaces only the captured
+empty method. If that method changes during generation, the application is cancelled without inserting code
+at the cursor.
 
 It also generates DTOs and models from JSON or DDL and can create complete Delphi project
 structures. Smart Diff lets users review generated changes before applying them.

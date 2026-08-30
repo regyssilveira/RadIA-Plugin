@@ -21,7 +21,9 @@ Rad IA connects natively to the Delphi code editor using the Open Tools API (OTA
 
 Implementation creation is an explicit editor action. It waits for chat loading to finish, sends the
 request directly to the configured provider, and neither creates nor requests approval for an agent plan,
-even when Agent mode is enabled. Applying the generated code remains subject to user review.
+even when Agent mode is enabled. The implementation replaces only the originally captured empty method. If
+that method changes while the response is generated, Rad IA cancels the application without inserting code at
+the current cursor position.
 
 > The **Rad IA** submenu is inserted at the top of the editor context menu after the IDE builds its native items, preserving compatibility with Delphi 12/13 and menus added by other plugins.
 
