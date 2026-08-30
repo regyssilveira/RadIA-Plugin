@@ -166,22 +166,46 @@ class function TRadIAOTAHelper.ReplaceOriginalTextMatch(const AEditor: IRadIAEdi
   const ANewText, AOriginalText: string): Boolean;
 var
   LBufferText: string;
-  LMatchPos, LStartOffset, LLengthBytes: Integer;
+  LCandidate: string;
+
+  function TryReplaceCandidate(const ACandidate: string): Boolean;
+  var
+    LLengthBytes: Integer;
+    LMatchPos: Integer;
+    LStartOffset: Integer;
+  begin
+    Result := False;
+    LMatchPos := Pos(ACandidate, LBufferText);
+    if LMatchPos <= 0 then
+      Exit;
+
+    LStartOffset := System.SysUtils.TEncoding.UTF8.GetByteCount(
+      Copy(LBufferText, 1, LMatchPos - 1)
+    );
+    LLengthBytes := System.SysUtils.TEncoding.UTF8.GetByteCount(ACandidate);
+    AEditor.ReplaceText(LStartOffset, LLengthBytes, NormalizeLineBreaks(ANewText));
+    Result := True;
+  end;
 begin
   Result := False;
   if not Assigned(AEditor) then
     Exit;
 
   LBufferText := AEditor.GetText;
-  LMatchPos := Pos(AOriginalText, LBufferText);
-  if LMatchPos <= 0 then
-    Exit;
+  if TryReplaceCandidate(AOriginalText) then
+    Exit(True);
 
-  LStartOffset := System.SysUtils.TEncoding.UTF8.GetByteCount(Copy(LBufferText, 1, LMatchPos - 1));
-  LLengthBytes := System.SysUtils.TEncoding.UTF8.GetByteCount(AOriginalText);
+  LCandidate := NormalizeLineBreaks(AOriginalText);
+  if (LCandidate <> AOriginalText) and TryReplaceCandidate(LCandidate) then
+    Exit(True);
 
-  AEditor.ReplaceText(LStartOffset, LLengthBytes, NormalizeLineBreaks(ANewText));
-  Result := True;
+  LCandidate := LCandidate.Replace(#13#10, #10);
+  if (LCandidate <> AOriginalText) and TryReplaceCandidate(LCandidate) then
+    Exit(True);
+
+  LCandidate := LCandidate.Replace(#10, #13);
+  if (LCandidate <> AOriginalText) and TryReplaceCandidate(LCandidate) then
+    Exit(True);
 end;
 
 class function TRadIAOTAHelper.InsertFormattedText(const AEditor: IRadIAEditorAdapter;
@@ -217,17 +241,12 @@ begin
     if AReplaceWholeBuffer then
       Exit(ReplaceWholeBufferText(LEditor, ANewText));
 
+    if not AOriginalText.Trim.IsEmpty then
+      Exit(ReplaceOriginalTextMatch(LEditor, ANewText, AOriginalText));
+
     LSelectedText := LEditor.GetSelectedText;
     if not LSelectedText.IsEmpty then
-    begin
       LEditor.ReplaceSelection('');
-    end;
-
-    if LSelectedText.IsEmpty and not AOriginalText.Trim.IsEmpty then
-    begin
-      if ReplaceOriginalTextMatch(LEditor, ANewText, AOriginalText) then
-        Exit(True);
-    end;
 
     Result := InsertFormattedText(LEditor, ANewText);
   end;

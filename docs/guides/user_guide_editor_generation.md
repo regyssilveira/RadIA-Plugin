@@ -21,7 +21,9 @@ O Rad IA conecta-se nativamente ao editor de código do Delphi usando a Open Too
 
 A criação de implementação é uma ação explícita do editor. Ela aguarda o chat terminar de carregar,
 envia a solicitação diretamente ao provider configurado e não cria nem solicita aprovação de um plano,
-mesmo quando o modo Agent está habilitado. A aplicação do código continua sujeita à revisão do usuário.
+mesmo quando o modo Agent está habilitado. A implementação substitui somente o método vazio originalmente
+capturado. Se esse método mudar enquanto a resposta é gerada, o Rad IA cancela a aplicação sem inserir código
+na posição atual do cursor.
 
 > O submenu **Rad IA** é inserido no topo do menu contextual do editor após a IDE montar os itens nativos, mantendo compatibilidade com Delphi 12/13 e com menus adicionados por outros plugins.
 
