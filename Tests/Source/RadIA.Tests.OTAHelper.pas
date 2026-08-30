@@ -66,6 +66,10 @@ type
     [Test]
     procedure TestReplaceActiveEditorText;
     [Test]
+    procedure TestReplaceActiveEditorTextMatchesDifferentLineBreaks;
+    [Test]
+    procedure TestReplaceActiveEditorTextDoesNotInsertWhenTargetChanged;
+    [Test]
     procedure TestInsertTextAtCursor;
     [Test]
     procedure TestInsertTextAtLineColumn;
@@ -272,6 +276,40 @@ begin
   FMockEditor.CursorColumn := 10;
   Assert.IsTrue(TRadIAOTAHelper.ReplaceActiveEditorText('selected'));
   Assert.AreEqual('Original selected text'#13#10, FMockEditor.Text);
+end;
+
+procedure TTestOTAHelper.TestReplaceActiveEditorTextMatchesDifferentLineBreaks;
+const
+  COriginalMethod = 'procedure DoWork;'#13#10'begin'#13#10'  // implement'#13#10'end;';
+  CGeneratedMethod = 'procedure DoWork;'#13#10'begin'#13#10'  Run;'#13#10'end;';
+begin
+  FMockEditor.Text := 'implementation'#10#10 +
+    'procedure DoWork;'#10'begin'#10'  // implement'#10'end;'#10#10'end.';
+
+  Assert.IsTrue(
+    TRadIAOTAHelper.ReplaceActiveEditorText(CGeneratedMethod, False, COriginalMethod)
+  );
+  Assert.AreEqual(
+    'implementation'#10#10 + CGeneratedMethod + #10#10'end.',
+    FMockEditor.Text
+  );
+  Assert.Contains(FMockEditor.Text, '  Run;');
+  Assert.IsFalse(FMockEditor.Text.Contains('// implement'));
+end;
+
+procedure TTestOTAHelper.TestReplaceActiveEditorTextDoesNotInsertWhenTargetChanged;
+const
+  CChangedBuffer = 'procedure DoWork;'#13#10'begin'#13#10'  ExistingCode;'#13#10'end;';
+  COriginalMethod = 'procedure DoWork;'#13#10'begin'#13#10'  // implement'#13#10'end;';
+begin
+  FMockEditor.Text := CChangedBuffer;
+  FMockEditor.CursorLine := 3;
+  FMockEditor.CursorColumn := 3;
+
+  Assert.IsFalse(
+    TRadIAOTAHelper.ReplaceActiveEditorText('procedure DoWork; begin Run; end;', False, COriginalMethod)
+  );
+  Assert.AreEqual(CChangedBuffer, FMockEditor.Text);
 end;
 
 procedure TTestOTAHelper.TestInsertTextAtCursor;
