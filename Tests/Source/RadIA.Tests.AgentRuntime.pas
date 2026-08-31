@@ -1327,6 +1327,14 @@ begin
     LServiceObject.Prompt,
     'When GetToolResultRange returns hasMore=false'
   );
+  Assert.Contains(
+    LServiceObject.Prompt,
+    'a successful BuildProject, complete immediately'
+  );
+  Assert.Contains(
+    LServiceObject.Prompt,
+    'Do not list, navigate to, read, or audit generated template files'
+  );
 end;
 
 procedure TTestRadIAAgentRuntime.TestProviderLimitsProjectCreationToolCatalog;
@@ -1754,7 +1762,10 @@ begin
     Assert.AreEqual(asAwaitingApproval, LResult.Status);
     LResult := LRuntime.Resume('project-creation-gate-session');
     Assert.AreEqual(asCompleted, LResult.Status);
-    Assert.AreEqual('Project created and built.', LResult.Message);
+    Assert.AreEqual(
+      'The requested project was created, opened in Delphi, and built successfully.',
+      LResult.Message
+    );
     Assert.AreEqual(4, LExecutorObject.CallCount);
   finally
     LRuntime.Free;

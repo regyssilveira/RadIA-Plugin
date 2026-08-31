@@ -242,7 +242,12 @@ begin
     'project, or Designer mutation, inspect structured diagnostics and run ' +
     'BuildProject. Never complete while CURRENT_STATE.validation.buildPassed ' +
     'is false. For project creation, treat a successful build as the default ' +
-    'final gate. Call StartDebugging or runtime scenario tools only when the ' +
+    'final gate. After PreviewProjectTemplate, CreateProjectFromTemplate, ' +
+    'OpenCreatedProject, and a successful BuildProject, complete immediately. ' +
+    'Do not list, navigate to, read, or audit generated template files merely ' +
+    'to reconfirm content already guaranteed by the reviewed template. Only ' +
+    'continue when the objective explicitly requires tests, runtime validation, ' +
+    'or another unmet result. Call StartDebugging or runtime scenario tools only when the ' +
     'objective contains runtimeValidation="required". Keep a runtime failure ' +
     'separate from successful build evidence. When DUnitX tests are available, ' +
     'run RunDUnitXTests after a ' +

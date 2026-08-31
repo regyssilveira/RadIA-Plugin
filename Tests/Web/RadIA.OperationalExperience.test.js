@@ -20,6 +20,7 @@ test('project creation exposes a stable user-facing operation timeline', () => {
     'Creating project files',
     'Opening project in Delphi',
     'Building the project',
+    'Finalizing project validation',
     'Project ready'
   ];
   labels.forEach(label => assert.match(chatScript, new RegExp(label, 'u')));
