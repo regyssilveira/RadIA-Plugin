@@ -490,6 +490,9 @@ type
     function ProjectCreationAllowsCompletion(
       out AMessage: string
     ): Boolean;
+    function TryCompleteValidatedProjectCreation(
+      const AToolName: string
+    ): Boolean;
   public
     constructor Create(
       const AToolExecutor: IRadIAToolExecutor;
@@ -2497,7 +2500,29 @@ begin
   end;
   if not CheckExecutionContract then
     Exit(True);
+  if TryCompleteValidatedProjectCreation(ADecision.ToolName) then
+    Exit(True);
   NotifyAndCheckpoint;
+  Result := True;
+end;
+
+function TRadIAAgentRuntime.TryCompleteValidatedProjectCreation(
+  const AToolName: string
+): Boolean;
+var
+  LValidationMessage: string;
+begin
+  Result := False;
+  if not SameText(AToolName, 'BuildProject') or
+    not IsProjectCreationObjective then
+    Exit;
+  if not ValidationAllowsCompletion(LValidationMessage) then
+    Exit;
+
+  ChangeStatus(
+    asCompleted,
+    'The requested project was created, opened in Delphi, and built successfully.'
+  );
   Result := True;
 end;
 

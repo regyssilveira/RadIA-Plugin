@@ -1030,7 +1030,9 @@ function renderProjectOperationSummary(card, state) {
     item.setAttribute('aria-current', stageState === 'current' ? 'step' : 'false');
     marker.className = 'agent-operation-marker';
     marker.setAttribute('aria-hidden', 'true');
-    label.textContent = stage.label;
+    label.textContent = stage.id === 'complete' && stageState === 'current'
+      ? 'Finalizing project validation'
+      : stage.label;
     item.append(marker, label);
     stagesElement.appendChild(item);
   });
