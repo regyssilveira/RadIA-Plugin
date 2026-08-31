@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.11
+# Manual completo do RadIA 2.17.12
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.11`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.12`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -240,7 +240,11 @@ Para habilitar a estimativa e o limite monetário, configure o
 
 Na criação de projetos, a central apresenta primeiro uma visão operacional estável: preparação,
 revisão da estrutura, criação dos arquivos, abertura no Delphi, build e conclusão. A etapa atual
-permanece destacada enquanto o trabalho acontece. O cartão informa explicitamente que DUnitX e
+permanece destacada enquanto o trabalho acontece; antes da confirmação final, o cartão mostra
+**Finalizing project validation**, e não **Project ready**. Para criações por template, um build
+aprovado encerra imediatamente a execução quando testes ou validação em runtime não foram solicitados.
+O agente não relê nem audita arquivos gerados apenas para reconfirmar o template. O cartão informa
+explicitamente que DUnitX e
 outros adicionais não serão criados automaticamente e mostra o resultado esperado antes da
 execução terminar. Métricas, riscos, evidências e argumentos continuam disponíveis em
 **Technical details**, sem ocupar a leitura principal. Depois de um build bem-sucedido, ações como

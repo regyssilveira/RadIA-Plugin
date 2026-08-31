@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.11 user manual
+# Complete RadIA 2.17.12 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.11`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.12`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -200,7 +200,10 @@ To enable monetary estimates and enforcement, configure the
 
 During project creation, the execution center first presents a stable operational view: preparation,
 structure review, file creation, opening in Delphi, build, and completion. The current stage remains
-highlighted while work continues. The card explicitly states that DUnitX and other additions are not
+highlighted while work continues; before final confirmation, the card shows **Finalizing project
+validation**, not **Project ready**. For template-based creation, a successful build completes the run
+immediately when tests or runtime validation were not requested. The agent does not reread or audit
+generated files merely to reconfirm the template. The card explicitly states that DUnitX and other additions are not
 created automatically and shows the expected result before execution finishes. Metrics, risks,
 evidence, and arguments remain available under **Technical details** without dominating the primary
 reading path. After a successful build, actions such as **Add DUnitX tests** only prepare a new
