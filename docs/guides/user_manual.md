@@ -139,6 +139,10 @@ o transporte HTTP nativo e a cobrança da plataforma API. **ChatGPT Pro via Code
 a cota da conta ChatGPT/Codex. O login é compartilhado pelas duas rotas Codex, mas a orquestração não:
 **RadIA native** mantém o controle no RadIA, enquanto **Codex CLI direto** entrega a execução ao CLI.
 
+Se o Codex CLI rejeitar a retomada de uma sessão anterior antes de responder, o RadIA preserva o
+diagnóstico completo e tenta uma única vez em uma sessão nova. A recuperação não repete respostas que
+já tenham começado a ser produzidas.
+
 O caminho de um CLI portátil pode ser selecionado com **Browse...**. O mesmo caminho é usado por
 **Diagnose**, pelo executor externo e pelo transporte ChatGPT Pro, sem exigir uma instalação npm.
 Consulte [Orquestração nativa e executores por CLI](cli_executors.md) para a matriz completa.

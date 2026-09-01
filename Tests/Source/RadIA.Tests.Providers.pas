@@ -61,6 +61,8 @@ type
     [Test]
     procedure TestOpenAI_RunCodexLoop_SemanticErrorPath;
     [Test]
+    procedure TestOpenAI_RunCodexLoop_RecoversFromRejectedResume;
+    [Test]
     procedure TestOpenAI_ParseCodexModelList;
     [Test]
     procedure TestOpenAI_OAuthFallbackUsesCurrentModels;
@@ -509,6 +511,19 @@ begin
   Assert.Contains(LResponse, 'requires a newer Codex CLI');
   Assert.Contains(LResponse, 'ChatGPT Pro still uses Codex CLI as its transport');
   Assert.Contains(LResponse, 'Update channel');
+
+  // Test Case 8: multiline CLI diagnostics are preserved instead of overwritten
+  LParams[0] := 'error: unexpected argument ''--legacy-option'' found';
+  LParams[1] := '';
+  LParams[2] := '';
+  LParams[3] := 0;
+  LParams[4] := 0;
+  LMethod.Invoke(FOpenAIProv, LParams);
+  LParams[0] := 'For more information, try ''--help''.';
+  LMethod.Invoke(FOpenAIProv, LParams);
+  LResponse := LParams[2].AsString;
+  Assert.Contains(LResponse, 'unexpected argument');
+  Assert.Contains(LResponse, 'For more information');
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_ReadCodexOutputPipe;
@@ -586,12 +601,13 @@ begin
       Assert.Contains(AError, 'Failed to create the Codex process');
     end;
 
-  SetLength(LInvokeParams, 5);
+  SetLength(LInvokeParams, 6);
   LInvokeParams[0] := 'invalid_codex_cli_executable_name.exe';
   LInvokeParams[1] := 'test prompt';
   LInvokeParams[2] := TValue.From<TCompletionCallback>(LCallback);
   LInvokeParams[3] := TValue.From<TStreamChunkCallback>(nil);
   LInvokeParams[4] := False;
+  LInvokeParams[5] := '';
 
   LMethod.Invoke(FOpenAIProv, LInvokeParams);
 
@@ -630,12 +646,13 @@ begin
       Assert.AreEqual('hello from cmd', AResponse);
     end;
 
-  SetLength(LInvokeParams, 5);
+  SetLength(LInvokeParams, 6);
   LInvokeParams[0] := LCmdLine;
   LInvokeParams[1] := 'test prompt';
   LInvokeParams[2] := TValue.From<TCompletionCallback>(LCallback);
   LInvokeParams[3] := TValue.From<TStreamChunkCallback>(nil);
   LInvokeParams[4] := False;
+  LInvokeParams[5] := '';
 
   LMethod.Invoke(FOpenAIProv, LInvokeParams);
 
@@ -675,17 +692,67 @@ begin
       Assert.Contains(AError, 'Refresh the model list');
       Assert.Contains(AError, '/doctor --deep');
     end;
-  SetLength(LInvokeParams, 5);
+  SetLength(LInvokeParams, 6);
   LInvokeParams[0] := LCmdLine;
   LInvokeParams[1] := 'test prompt';
   LInvokeParams[2] := TValue.From<TCompletionCallback>(LCallback);
   LInvokeParams[3] := TValue.From<TStreamChunkCallback>(nil);
   LInvokeParams[4] := False;
+  LInvokeParams[5] := '';
 
   LMethod.Invoke(FOpenAIProv, LInvokeParams);
   CheckSynchronize(2000);
 
   Assert.IsTrue(LCallbackCalled, 'Semantic CLI errors must use the error callback');
+end;
+
+procedure TTestRadIAProviders.TestOpenAI_RunCodexLoop_RecoversFromRejectedResume;
+var
+  LCallback: TCompletionCallback;
+  LCallbackCalled: Boolean;
+  LContext: TRttiContext;
+  LInvokeParams: TArray<TValue>;
+  LMethod: TRttiMethod;
+  LRecoveryCmdLine: string;
+  LRejectedCmdLine: string;
+  LType: TRttiInstanceType;
+begin
+  LContext := TRttiContext.Create;
+  LType := LContext.GetType(TRadIAOpenAIProvider) as TRttiInstanceType;
+  LMethod := LType.GetMethod('RunCodexLoop');
+  Assert.IsNotNull(LMethod, 'RunCodexLoop method must exist');
+  LCallbackCalled := False;
+  LRejectedCmdLine :=
+    'cmd.exe /d /s /c "echo error: unexpected argument found & ' +
+    'echo For more information, try ''--help''. & exit /b 2"';
+  LRecoveryCmdLine :=
+    'cmd.exe /d /s /c echo {"type":"item.completed","item":{' +
+    '"text":"recovered response"}}';
+  LCallback :=
+    procedure(
+      const AResponse: string;
+      const AError: string;
+      AFromCache: Boolean;
+      const AUsage: TTokenUsage
+    )
+    begin
+      LCallbackCalled := True;
+      Assert.IsTrue(AFromCache);
+      Assert.IsEmpty(AError);
+      Assert.AreEqual('recovered response', AResponse);
+    end;
+  SetLength(LInvokeParams, 6);
+  LInvokeParams[0] := LRejectedCmdLine;
+  LInvokeParams[1] := 'test prompt';
+  LInvokeParams[2] := TValue.From<TCompletionCallback>(LCallback);
+  LInvokeParams[3] := TValue.From<TStreamChunkCallback>(nil);
+  LInvokeParams[4] := False;
+  LInvokeParams[5] := LRecoveryCmdLine;
+
+  LMethod.Invoke(FOpenAIProv, LInvokeParams);
+  CheckSynchronize(2000);
+
+  Assert.IsTrue(LCallbackCalled, 'Rejected session resume must retry as a new CLI session');
 end;
 
 procedure TTestRadIAProviders.TestOpenAI_ParseCodexModelList;

@@ -106,6 +106,9 @@ API Platform billing. **ChatGPT Pro via Codex CLI** uses the ChatGPT/Codex accou
 Both Codex routes share the same CLI login, but not the same orchestration: **RadIA native** keeps
 control in RadIA, while **Codex CLI direct** delegates execution to the CLI.
 
+If Codex CLI rejects an earlier session resume before returning a response, RadIA preserves the full
+diagnostic and retries once with a new session. Recovery never repeats a response that already started.
+
 The chat header displays the conversation's effective route. Examples include **Chat | OpenAI
 native**, **Chat | RadIA native | ChatGPT Pro via Codex CLI**, **Agent | RadIA native | OpenAI**, and
 **Agent | codex CLI direct**. The indicator represents the path actually in use. MCP
