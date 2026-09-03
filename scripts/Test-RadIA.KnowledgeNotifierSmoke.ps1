@@ -2830,8 +2830,13 @@ try {
                 $shutdownDeadline = [DateTime]::UtcNow.AddSeconds(
                     $ShutdownTimeoutSeconds
                 )
+                $shutdownPollCount = 0
                 while (-not $remainingProcess.HasExited -and
                     [DateTime]::UtcNow -lt $shutdownDeadline) {
+                    if (($shutdownPollCount % 5) -eq 0) {
+                        [void]$remainingProcess.CloseMainWindow()
+                    }
+                    $shutdownPollCount++
                     $confirmWindow =
                         [RadIAWindowNative]::FindVisibleWindow(
                             [uint32]$process.Id,
