@@ -77,6 +77,17 @@ function Stop-RadIAUsageAuxiliaryProcesses {
     }
 }
 
+function Stop-RadIAUsageProcessesAfterFailure {
+    $processes = @(Get-Process bds -ErrorAction SilentlyContinue)
+    foreach ($process in $processes) {
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        if (-not $process.HasExited -and -not $process.WaitForExit(30000)) {
+            throw "The failed journey left Delphi running."
+        }
+    }
+    Stop-RadIAUsageAuxiliaryProcesses
+}
+
 if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Usage matrix manifest was not found: $manifestPath"
 }
@@ -303,7 +314,7 @@ foreach ($run in $planEntries) {
                     "Journey $($run.scenarioId) failed once; retrying after " +
                     "cleaning auxiliary processes."
                 )
-                Stop-RadIAUsageAuxiliaryProcesses
+                Stop-RadIAUsageProcessesAfterFailure
             }
         }
         if ($exitCode -eq 0) {
