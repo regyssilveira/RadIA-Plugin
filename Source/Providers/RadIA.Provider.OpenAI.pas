@@ -635,82 +635,7 @@ var
   LUsage: TTokenUsage;
   LExitCode: DWORD;
 begin
-  if CreateCodexProcess(ACmdLine, LHReadOut, LHWriteIn, LPi) then
-  begin
-    WritePromptToPipe(LHWriteIn, APrompt);
-
-    LResponseText := '';
-    LInputTokens := 0;
-    LOutputTokens := 0;
-
-    ReadCodexOutputPipe(LHReadOut, AIsStream, AStreamCallback, LResponseText, LInputTokens, LOutputTokens);
-    CloseHandle(LHReadOut);
-
-    WaitForSingleObject(LPi.hProcess, INFINITE);
-    GetExitCodeProcess(LPi.hProcess, LExitCode);
-    CloseHandle(LPi.hProcess);
-    CloseHandle(LPi.hThread);
-
-    LUsage.PromptTokens := LInputTokens;
-    LUsage.CompletionTokens := LOutputTokens;
-    LUsage.TotalTokens := LInputTokens + LOutputTokens;
-    if LExitCode <> 0 then
-    begin
-      if not ARecoveryCmdLine.IsEmpty and IsCodexUsageError(LResponseText) then
-      begin
-        TLogger.Log(
-          'Codex CLI rejected session resume arguments. Retrying with a new session.',
-          'OpenAI'
-        );
-        FThreadId := '';
-        RunCodexLoop(
-          ARecoveryCmdLine,
-          APrompt,
-          ACallback,
-          AStreamCallback,
-          AIsStream,
-          ''
-        );
-        Exit;
-      end;
-      if LResponseText.IsEmpty then
-        LResponseText := Format(
-          'Codex CLI exited with code %d without diagnostic output.',
-          [LExitCode]
-        );
-      LResponseText := NormalizeCodexResponseError(LResponseText);
-      QueueError(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        LResponseText
-      );
-    end
-    else if LResponseText.StartsWith('Codex CLI error:', True) or
-      LResponseText.StartsWith('Error:', True) then
-      QueueError(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        NormalizeCodexResponseError(LResponseText)
-      )
-    else if LResponseText.IsEmpty then
-      QueueError(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        'Codex CLI completed without returning an assistant response.'
-      )
-    else
-      QueueCompletion(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        LResponseText,
-        LUsage
-      );
-  end
-  else
+  if not CreateCodexProcess(ACmdLine, LHReadOut, LHWriteIn, LPi) then
   begin
     QueueError(
       AIsStream,
@@ -718,7 +643,80 @@ begin
       ACallback,
       BuildCodexExecutableError('Failed to create the Codex process.')
     );
+    Exit;
   end;
+  WritePromptToPipe(LHWriteIn, APrompt);
+
+  LResponseText := '';
+  LInputTokens := 0;
+  LOutputTokens := 0;
+
+  ReadCodexOutputPipe(LHReadOut, AIsStream, AStreamCallback, LResponseText, LInputTokens, LOutputTokens);
+  CloseHandle(LHReadOut);
+
+  WaitForSingleObject(LPi.hProcess, INFINITE);
+  GetExitCodeProcess(LPi.hProcess, LExitCode);
+  CloseHandle(LPi.hProcess);
+  CloseHandle(LPi.hThread);
+
+  LUsage.PromptTokens := LInputTokens;
+  LUsage.CompletionTokens := LOutputTokens;
+  LUsage.TotalTokens := LInputTokens + LOutputTokens;
+  if LExitCode <> 0 then
+  begin
+    if not ARecoveryCmdLine.IsEmpty and IsCodexUsageError(LResponseText) then
+    begin
+      TLogger.Log(
+        'Codex CLI rejected session resume arguments. Retrying with a new session.',
+        'OpenAI'
+      );
+      FThreadId := '';
+      RunCodexLoop(
+        ARecoveryCmdLine,
+        APrompt,
+        ACallback,
+        AStreamCallback,
+        AIsStream,
+        ''
+      );
+      Exit;
+    end;
+    if LResponseText.IsEmpty then
+      LResponseText := Format(
+        'Codex CLI exited with code %d without diagnostic output.',
+        [LExitCode]
+      );
+    LResponseText := NormalizeCodexResponseError(LResponseText);
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      LResponseText
+    );
+  end
+  else if LResponseText.StartsWith('Codex CLI error:', True) or
+    LResponseText.StartsWith('Error:', True) then
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      NormalizeCodexResponseError(LResponseText)
+    )
+  else if LResponseText.IsEmpty then
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      'Codex CLI completed without returning an assistant response.'
+    )
+  else
+    QueueCompletion(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      LResponseText,
+      LUsage
+    );
 end;
 
 procedure TRadIAOpenAIProvider.ProcessCodexJsonLine(const AJsonStr: string;
