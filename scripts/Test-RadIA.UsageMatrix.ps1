@@ -70,8 +70,8 @@ function Stop-RadIAUsageAuxiliaryProcesses {
             -ErrorAction SilentlyContinue
     )
     foreach ($process in $processes) {
-        Stop-Process -Id $process.Id -Force
-        if (-not $process.WaitForExit(10000)) {
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        if (-not $process.HasExited -and -not $process.WaitForExit(10000)) {
             throw "RadIA auxiliary process did not stop between journeys."
         }
     }
