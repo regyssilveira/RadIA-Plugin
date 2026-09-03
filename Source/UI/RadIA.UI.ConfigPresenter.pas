@@ -444,7 +444,9 @@ begin
       Exit(False);
     end;
 
-    if not TryStrToInt(FView.GetMaxTokensInput(LProviderId), LMax) or (LMax <= 0) then
+    if (Trim(FView.GetMaxTokensInput(LProviderId)) <> '') and
+      (not TryStrToInt(FView.GetMaxTokensInput(LProviderId), LMax) or
+      (LMax <= 0)) then
     begin
       FView.ShowMessageDialog(Format('Max Tokens for %s must be a valid positive integer', [LProviderId]));
       Exit(False);
