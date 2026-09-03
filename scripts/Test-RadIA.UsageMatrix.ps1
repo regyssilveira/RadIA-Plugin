@@ -282,8 +282,30 @@ foreach ($run in $planEntries) {
             $run.runnerArguments |
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
         )
-        $output = & powershell.exe @arguments 2>&1 | Out-String
-        $exitCode = $LASTEXITCODE
+        $output = ""
+        $exitCode = 1
+        for ($attempt = 1; $attempt -le 2; $attempt++) {
+            $previousErrorPreference = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
+            try {
+                $attemptOutput = & powershell.exe @arguments 2>&1 |
+                    Out-String
+                $exitCode = $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $previousErrorPreference
+            }
+            $output += $attemptOutput
+            if ($exitCode -eq 0) {
+                break
+            }
+            if ($attempt -eq 1) {
+                Write-Warning (
+                    "Journey $($run.scenarioId) failed once; retrying after " +
+                    "cleaning auxiliary processes."
+                )
+                Stop-RadIAUsageAuxiliaryProcesses
+            }
+        }
         if ($exitCode -eq 0) {
             if (-not (Test-Path -LiteralPath $run.evidencePath -PathType Leaf)) {
                 $output += "`r`nUser-journey evidence was not created."
