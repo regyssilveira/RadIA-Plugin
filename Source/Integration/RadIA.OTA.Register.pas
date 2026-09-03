@@ -270,7 +270,6 @@ begin
     );
   if not LIsCloseRequest then
     Exit;
-  GIsShuttingDown := True;
   RadIA.OTA.DockableForm.PrepareDockableFormsForShutdown;
 end;
 

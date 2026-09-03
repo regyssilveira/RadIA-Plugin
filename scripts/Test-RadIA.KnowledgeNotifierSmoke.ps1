@@ -2109,6 +2109,23 @@ try {
             if (-not $stopResult.accepted) {
                 throw "The calculator debug session did not stop."
             }
+            Wait-RadIACondition -TimeoutSeconds 90 -Condition {
+                try {
+                    $stoppedState = Invoke-RadIATool `
+                        -BridgePath $bridgePath `
+                        -InstanceFile $instanceFile `
+                        -Name "GetDebuggerState"
+                    $stoppedState.state -in @(
+                        "no_process",
+                        "terminated",
+                        "nothing"
+                    )
+                } catch {
+                    $false
+                }
+            } -FailureMessage (
+                "The calculator debug process did not finish after StopDebugging."
+            )
         } else {
             Complete-RadIADebugSession `
                 -BridgePath $bridgePath `
