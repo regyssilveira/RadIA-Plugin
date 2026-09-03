@@ -403,7 +403,7 @@ end;
 
 function TMockConfigView.GetMaxTokensInput(const AProviderId: string): string;
 begin
-  if not MaxTokensMap.TryGetValue(AProviderId, Result) then Result := '2048';
+  if not MaxTokensMap.TryGetValue(AProviderId, Result) then Result := '';
 end;
 
 procedure TMockConfigView.SetMaxTokensInput(const AProviderId: string; const AValue: string);

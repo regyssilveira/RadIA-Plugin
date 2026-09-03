@@ -165,12 +165,15 @@ begin
   LInvocation := BuildInvocation('codex');
   Assert.AreEqual('exec', LInvocation.Arguments[0]);
   Assert.AreEqual('--json', LInvocation.Arguments[1]);
-  Assert.AreEqual('-c', LInvocation.Arguments[3]);
+  Assert.AreEqual('--ignore-user-config', LInvocation.Arguments[3]);
+  Assert.AreEqual('--sandbox', LInvocation.Arguments[4]);
+  Assert.AreEqual('workspace-write', LInvocation.Arguments[5]);
+  Assert.AreEqual('-c', LInvocation.Arguments[6]);
   Assert.AreEqual(
     'model_reasoning_effort=medium',
-    LInvocation.Arguments[4]
+    LInvocation.Arguments[7]
   );
-  Assert.AreEqual('Explain this unit', LInvocation.Arguments[7]);
+  Assert.AreEqual('Explain this unit', LInvocation.Arguments[10]);
 end;
 
 procedure TRadIAAgentExecutorTests.CommandLineQuotesPromptWithoutShellExpansion;
@@ -318,8 +321,8 @@ var
 begin
   LInvocation := BuildInvocation('codex');
   Assert.AreEqual('--skip-git-repo-check', LInvocation.Arguments[2]);
-  Assert.AreEqual('--cd', LInvocation.Arguments[5]);
-  Assert.AreEqual('C:\Project', LInvocation.Arguments[6]);
+  Assert.AreEqual('--cd', LInvocation.Arguments[8]);
+  Assert.AreEqual('C:\Project', LInvocation.Arguments[9]);
 end;
 
 procedure TRadIAAgentExecutorTests.ScopeIdentityRejectsCrossProjectJourney;
@@ -391,12 +394,15 @@ begin
   );
   Assert.AreEqual('resume', LInvocation.Arguments[1]);
   Assert.AreEqual('--skip-git-repo-check', LInvocation.Arguments[3]);
-  Assert.AreEqual('-c', LInvocation.Arguments[4]);
+  Assert.AreEqual('--ignore-user-config', LInvocation.Arguments[4]);
+  Assert.AreEqual('--sandbox', LInvocation.Arguments[5]);
+  Assert.AreEqual('workspace-write', LInvocation.Arguments[6]);
+  Assert.AreEqual('-c', LInvocation.Arguments[7]);
   Assert.AreEqual(
     'model_reasoning_effort=medium',
-    LInvocation.Arguments[5]
+    LInvocation.Arguments[8]
   );
-  Assert.AreEqual('session-123', LInvocation.Arguments[6]);
+  Assert.AreEqual('session-123', LInvocation.Arguments[9]);
 
   Assert.IsTrue(TRadIACliCatalog.FindById('claude', LDefinition));
   LInvocation := TRadIACliInvocationBuilder.Build(

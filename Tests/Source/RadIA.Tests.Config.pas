@@ -47,6 +47,8 @@ type
     [Test]
     procedure TestAdvancedSettingsPersistence;
     [Test]
+    procedure TestMaxTokensDefaultsToUnlimited;
+    [Test]
     procedure TestProviderSpecificSettingsAreSavedUnderProviderKeys;
     [Test]
     procedure TestOAuthTokenEncryptionAndDecryption;
@@ -343,6 +345,12 @@ begin
   Assert.AreEqual(1024, FConfig.GetMaxTokens('Gemini'));
   Assert.AreEqual(30, FConfig.GetTimeout('Gemini'));
   Assert.IsFalse(FConfig.SmartConfigEnabled);
+end;
+
+procedure TTestRadIAConfig.TestMaxTokensDefaultsToUnlimited;
+begin
+  Assert.AreEqual(0, FConfig.GetMaxTokens('Gemini'));
+  Assert.IsFalse(FConfig.QuotaEnabled);
 end;
 
 procedure TTestRadIAConfig.TestProviderSpecificSettingsAreSavedUnderProviderKeys;

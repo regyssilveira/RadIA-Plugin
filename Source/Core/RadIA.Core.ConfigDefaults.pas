@@ -95,7 +95,7 @@ end;
 
 class function TConfigDefaults.MaxTokens: Integer;
 begin
-  Result := 2048;
+  Result := 0;
 end;
 
 class function TConfigDefaults.OllamaBaseUrl: string;

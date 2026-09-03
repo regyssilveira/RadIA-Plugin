@@ -40,6 +40,8 @@ type
     [Test]
     procedure JsonProvisionCreatesBackup;
     [Test]
+    procedure JsonProvisionRejectsUnmanagedRadiaServer;
+    [Test]
     procedure ProvisionRejectsMissingBridge;
     [Test]
     procedure InvalidJsonIsNotOverwritten;
@@ -49,6 +51,8 @@ type
     procedure JsonRemovalPreservesOtherServers;
     [Test]
     procedure TomlProvisionPreservesUnmanagedContent;
+    [Test]
+    procedure TomlProvisionRejectsUnmanagedRadiaServer;
     [Test]
     procedure TomlRepairReplacesManagedBlock;
     [Test]
@@ -182,7 +186,8 @@ begin
   LStorageObject.AddFile(CBridgePath, 'binary');
   LStorageObject.AddFile(
     CConfigPath,
-    '{"mcpServers":{"radia":{"command":"old.exe"}}}'
+    '{"mcpServers":{"radia":{"command":"old.exe",' +
+    '"_radiaManaged":true}}}'
   );
   LProvisioner := TRadIAMcpProvisioner.Create(LStorage);
   try
@@ -226,11 +231,37 @@ begin
       CBridgePath
     );
     Assert.IsTrue(LResult.Succeeded);
-    Assert.AreEqual(CConfigPath + '.radia.bak', LResult.BackupPath);
+    Assert.IsTrue(LResult.BackupPath.StartsWith(CConfigPath + '.radia.'));
+    Assert.IsTrue(LResult.BackupPath.EndsWith('.bak'));
     Assert.AreEqual(
       '{"theme":"dark"}',
       LStorageObject.ReadText(LResult.BackupPath)
     );
+  finally
+    LProvisioner.Free;
+  end;
+end;
+
+procedure TRadIAMcpProvisioningTests.JsonProvisionRejectsUnmanagedRadiaServer;
+var
+  LStorageObject: TRadIAFakeMcpConfigStorage;
+  LStorage: IRadIAMcpConfigStorage;
+  LProvisioner: TRadIAMcpProvisioner;
+  LResult: TRadIAMcpProvisionResult;
+begin
+  LStorageObject := TRadIAFakeMcpConfigStorage.Create;
+  LStorage := LStorageObject;
+  LStorageObject.AddFile(CBridgePath, 'binary');
+  LStorageObject.AddFile(
+    CConfigPath,
+    '{"mcpServers":{"radia":{"command":"custom.exe"}}}'
+  );
+  LProvisioner := TRadIAMcpProvisioner.Create(LStorage);
+  try
+    LResult := LProvisioner.Provision(JsonProfile, CConfigPath, CBridgePath);
+    Assert.IsFalse(LResult.Succeeded);
+    Assert.Contains(LResult.Message, 'unmanaged');
+    Assert.Contains(LStorageObject.ReadText(CConfigPath), 'custom.exe');
   finally
     LProvisioner.Free;
   end;
@@ -275,23 +306,48 @@ var
   LStorage: IRadIAMcpConfigStorage;
   LProvisioner: TRadIAMcpProvisioner;
   LContent: string;
+  LResult: TRadIAMcpProvisionResult;
 begin
   LStorageObject := TRadIAFakeMcpConfigStorage.Create;
   LStorage := LStorageObject;
   LStorageObject.AddFile(
     CConfigPath,
     '{"mcpServers":{"other":{"command":"other.exe"},' +
-    '"radia":{"command":"bridge.exe"}}}'
+    '"radia":{"command":"bridge.exe","_radiaManaged":true}}}'
   );
   LProvisioner := TRadIAMcpProvisioner.Create(LStorage);
   try
-    Assert.IsTrue(
-      LProvisioner.Remove(JsonProfile, CConfigPath).Succeeded
-    );
+    LResult := LProvisioner.Remove(JsonProfile, CConfigPath);
+    Assert.IsTrue(LResult.Succeeded);
     LContent := LStorageObject.ReadText(CConfigPath);
     Assert.Contains(LContent, '"other"');
     Assert.IsFalse(LContent.Contains('"radia"'));
-    Assert.IsTrue(LStorageObject.FileExists(CConfigPath + '.radia.bak'));
+    Assert.IsTrue(LResult.BackupPath.EndsWith('.bak'));
+  finally
+    LProvisioner.Free;
+  end;
+end;
+
+procedure TRadIAMcpProvisioningTests.TomlProvisionRejectsUnmanagedRadiaServer;
+var
+  LStorageObject: TRadIAFakeMcpConfigStorage;
+  LStorage: IRadIAMcpConfigStorage;
+  LProvisioner: TRadIAMcpProvisioner;
+  LResult: TRadIAMcpProvisionResult;
+begin
+  LStorageObject := TRadIAFakeMcpConfigStorage.Create;
+  LStorage := LStorageObject;
+  LStorageObject.AddFile(CBridgePath, 'binary');
+  LStorageObject.AddFile(
+    CConfigPath,
+    '[mcp_servers.radia]' + sLineBreak + 'command = "custom.exe"'
+  );
+  LProvisioner := TRadIAMcpProvisioner.Create(LStorage);
+  try
+    LResult := LProvisioner.Provision(TomlProfile, CConfigPath, CBridgePath);
+    Assert.IsFalse(LResult.Succeeded);
+    Assert.Contains(LResult.Message, 'unmanaged');
+    Assert.Contains(LStorageObject.ReadText(CConfigPath), 'custom.exe');
   finally
     LProvisioner.Free;
   end;
