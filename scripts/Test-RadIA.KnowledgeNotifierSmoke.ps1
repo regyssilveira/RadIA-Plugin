@@ -1184,12 +1184,12 @@ function Remove-RadIAKnowledgeSmokeDirectory {
         [string]$Path
     )
 
-    for ($attempt = 1; $attempt -le 20; $attempt++) {
+    for ($attempt = 1; $attempt -le 60; $attempt++) {
         try {
             Remove-Item -LiteralPath $Path -Recurse -Force
             return
         } catch {
-            if ($attempt -eq 20) {
+            if ($attempt -eq 60) {
                 throw
             }
             Start-Sleep -Milliseconds 500
