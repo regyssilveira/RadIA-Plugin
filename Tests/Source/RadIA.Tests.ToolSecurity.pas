@@ -66,6 +66,8 @@ type
     [Test]
     procedure SessionConsentIsScopedAndRevocable;
     [Test]
+    procedure AiControlFilesAlwaysRequireFreshConsent;
+    [Test]
     procedure PerExecutionConsentIsNeverCached;
     [Test]
     procedure TerminalAuthorizationSharesSessionConsentAndAudit;
@@ -510,6 +512,42 @@ begin
   Assert.AreEqual<Integer>(2, Length(LEvents));
   Assert.AreEqual(cdAllowSession, LEvents[0].Decision);
   Assert.AreEqual(cdAllowSession, LEvents[1].Decision);
+end;
+
+procedure TTestRadIAToolSecurity.AiControlFilesAlwaysRequireFreshConsent;
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+  LTool: TTestRadIATool;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LTool := TTestRadIATool.Create('ApplyPatch', trReversibleWrite);
+  LRegistry.RegisterTool(LTool);
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowSession);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  Assert.IsTrue(LExecutor.Execute(CreateRequest(
+    'ApplyPatch',
+    '{"filePath":"C:\\Project\\AGENTS.md"}'
+  )).Success);
+  Assert.IsTrue(LExecutor.Execute(CreateRequest(
+    'ApplyPatch',
+    '{"filePath":"C:\\Project\\AGENTS.md"}'
+  )).Success);
+
+  Assert.AreEqual(2, LConsent.RequestCount);
+  Assert.AreEqual(2, LTool.ExecutionCount);
+  Assert.AreEqual(cdAllowOnce, LAudit.GetEvents[0].Decision);
+  Assert.AreEqual(cdAllowOnce, LAudit.GetEvents[1].Decision);
 end;
 
 procedure TTestRadIAToolSecurity.JsonLinesAuditPersistsStructuredEvent;

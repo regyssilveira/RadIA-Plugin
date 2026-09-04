@@ -17,7 +17,7 @@ type
       var AInputTokens, AOutputTokens: Integer);
     procedure RunCodexLoop(const ACmdLine: string; const APrompt: string;
       const ACallback: TCompletionCallback; const AStreamCallback: TStreamChunkCallback;
-      const AIsStream: Boolean);
+      const AIsStream: Boolean; const ARecoveryCmdLine: string = '');
     procedure ProcessCodexJsonLine(const AJsonStr: string; out ADeltaText: string;
       var AResponseText: string; var AInputTokens, AOutputTokens: Integer);
     procedure ProcessCodexEvent(
@@ -504,6 +504,22 @@ begin
   end;
 end;
 
+procedure AppendCodexDiagnostic(var AResponseText: string; const ADiagnostic: string);
+begin
+  if ADiagnostic.Trim.IsEmpty then
+    Exit;
+  if AResponseText.IsEmpty then
+    AResponseText := 'Codex CLI error: ' + ADiagnostic.Trim
+  else
+    AResponseText := AResponseText + sLineBreak + ADiagnostic.Trim;
+end;
+
+function IsCodexUsageError(const AResponseText: string): Boolean;
+begin
+  Result := ContainsText(AResponseText, 'For more information, try ''--help''') or
+    ContainsText(AResponseText, 'Usage: codex');
+end;
+
 procedure QueueCompletion(const AIsStream: Boolean; const AStreamCallback: TStreamChunkCallback;
   const ACallback: TCompletionCallback; const AResponseText: string; const AUsage: TTokenUsage);
 begin
@@ -610,7 +626,7 @@ end;
 
 procedure TRadIAOpenAIProvider.RunCodexLoop(const ACmdLine: string; const APrompt: string;
   const ACallback: TCompletionCallback; const AStreamCallback: TStreamChunkCallback;
-  const AIsStream: Boolean);
+  const AIsStream: Boolean; const ARecoveryCmdLine: string);
 var
   LHReadOut, LHWriteIn: THandle;
   LPi: TProcessInformation;
@@ -619,65 +635,7 @@ var
   LUsage: TTokenUsage;
   LExitCode: DWORD;
 begin
-  if CreateCodexProcess(ACmdLine, LHReadOut, LHWriteIn, LPi) then
-  begin
-    WritePromptToPipe(LHWriteIn, APrompt);
-
-    LResponseText := '';
-    LInputTokens := 0;
-    LOutputTokens := 0;
-
-    ReadCodexOutputPipe(LHReadOut, AIsStream, AStreamCallback, LResponseText, LInputTokens, LOutputTokens);
-    CloseHandle(LHReadOut);
-
-    WaitForSingleObject(LPi.hProcess, INFINITE);
-    GetExitCodeProcess(LPi.hProcess, LExitCode);
-    CloseHandle(LPi.hProcess);
-    CloseHandle(LPi.hThread);
-
-    LUsage.PromptTokens := LInputTokens;
-    LUsage.CompletionTokens := LOutputTokens;
-    LUsage.TotalTokens := LInputTokens + LOutputTokens;
-    if LExitCode <> 0 then
-    begin
-      if LResponseText.IsEmpty then
-        LResponseText := Format(
-          'Codex CLI exited with code %d without diagnostic output.',
-          [LExitCode]
-        );
-      LResponseText := NormalizeCodexResponseError(LResponseText);
-      QueueError(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        LResponseText
-      );
-    end
-    else if LResponseText.StartsWith('Codex CLI error:', True) or
-      LResponseText.StartsWith('Error:', True) then
-      QueueError(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        NormalizeCodexResponseError(LResponseText)
-      )
-    else if LResponseText.IsEmpty then
-      QueueError(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        'Codex CLI completed without returning an assistant response.'
-      )
-    else
-      QueueCompletion(
-        AIsStream,
-        AStreamCallback,
-        ACallback,
-        LResponseText,
-        LUsage
-      );
-  end
-  else
+  if not CreateCodexProcess(ACmdLine, LHReadOut, LHWriteIn, LPi) then
   begin
     QueueError(
       AIsStream,
@@ -685,7 +643,80 @@ begin
       ACallback,
       BuildCodexExecutableError('Failed to create the Codex process.')
     );
+    Exit;
   end;
+  WritePromptToPipe(LHWriteIn, APrompt);
+
+  LResponseText := '';
+  LInputTokens := 0;
+  LOutputTokens := 0;
+
+  ReadCodexOutputPipe(LHReadOut, AIsStream, AStreamCallback, LResponseText, LInputTokens, LOutputTokens);
+  CloseHandle(LHReadOut);
+
+  WaitForSingleObject(LPi.hProcess, INFINITE);
+  GetExitCodeProcess(LPi.hProcess, LExitCode);
+  CloseHandle(LPi.hProcess);
+  CloseHandle(LPi.hThread);
+
+  LUsage.PromptTokens := LInputTokens;
+  LUsage.CompletionTokens := LOutputTokens;
+  LUsage.TotalTokens := LInputTokens + LOutputTokens;
+  if LExitCode <> 0 then
+  begin
+    if not ARecoveryCmdLine.IsEmpty and IsCodexUsageError(LResponseText) then
+    begin
+      TLogger.Log(
+        'Codex CLI rejected session resume arguments. Retrying with a new session.',
+        'OpenAI'
+      );
+      FThreadId := '';
+      RunCodexLoop(
+        ARecoveryCmdLine,
+        APrompt,
+        ACallback,
+        AStreamCallback,
+        AIsStream,
+        ''
+      );
+      Exit;
+    end;
+    if LResponseText.IsEmpty then
+      LResponseText := Format(
+        'Codex CLI exited with code %d without diagnostic output.',
+        [LExitCode]
+      );
+    LResponseText := NormalizeCodexResponseError(LResponseText);
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      LResponseText
+    );
+  end
+  else if LResponseText.StartsWith('Codex CLI error:', True) or
+    LResponseText.StartsWith('Error:', True) then
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      NormalizeCodexResponseError(LResponseText)
+    )
+  else if LResponseText.IsEmpty then
+    QueueError(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      'Codex CLI completed without returning an assistant response.'
+    )
+  else
+    QueueCompletion(
+      AIsStream,
+      AStreamCallback,
+      ACallback,
+      LResponseText,
+      LUsage
+    );
 end;
 
 procedure TRadIAOpenAIProvider.ProcessCodexJsonLine(const AJsonStr: string;
@@ -700,16 +731,14 @@ begin
     on E: Exception do
     begin
       TLogger.Log('Error parsing Codex JSON: ' + E.Message, 'OpenAI');
-      if not AJsonStr.Trim.IsEmpty then
-        AResponseText := 'Codex CLI error: ' + AJsonStr.Trim;
+      AppendCodexDiagnostic(AResponseText, AJsonStr);
       Exit;
     end;
   end;
 
   if not Assigned(LJson) then
   begin
-    if not AJsonStr.Trim.IsEmpty then
-      AResponseText := 'Codex CLI error: ' + AJsonStr.Trim;
+    AppendCodexDiagnostic(AResponseText, AJsonStr);
     Exit;
   end;
 
@@ -841,6 +870,7 @@ var
   LThread: TThread;
   LSystemPrompt: string;
   LPromptToSend: string;
+  LRecoveryCmdLine: string;
 begin
   LActiveModel := GetActiveModel;
 
@@ -873,6 +903,13 @@ begin
     LActiveModel,
     FThreadId
   );
+  LRecoveryCmdLine := '';
+  if not FThreadId.IsEmpty then
+    LRecoveryCmdLine := BuildCodexCommandLine(
+      LCodexPath,
+      LActiveModel,
+      ''
+    );
 
   LPromptToSend := APrompt;
   if FThreadId.IsEmpty then
@@ -885,7 +922,14 @@ begin
   LThread := TThread.CreateAnonymousThread(
     procedure
     begin
-      RunCodexLoop(LCmdLine, LPromptToSend, ACallback, AStreamCallback, AIsStream);
+      RunCodexLoop(
+        LCmdLine,
+        LPromptToSend,
+        ACallback,
+        AStreamCallback,
+        AIsStream,
+        LRecoveryCmdLine
+      );
     end
   );
 

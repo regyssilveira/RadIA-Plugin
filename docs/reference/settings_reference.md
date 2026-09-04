@@ -22,7 +22,7 @@ consulte o [manual do usuário](../guides/user_manual.md); para problemas, consu
 | API Key | Ao conectar uma conta por chave | Autentica chamadas ao provider. É armazenada com DPAPI. A cobrança e os limites pertencem à conta do provider. |
 | Obter API Key | Quando ainda não possui uma chave | Abre a página oficial do provider. O RadIA não cria, lê ou transmite a chave até o usuário inseri-la. |
 | Temperature (0.0 - 1.0) | Para respostas mais determinísticas ou criativas | Valores baixos reduzem variação; valores altos ampliam variação. **Auto (Smart Parameters)** pode assumir esse ajuste. |
-| Max Output Tokens | Para limitar o tamanho máximo de uma resposta | Não representa a janela total de contexto nem um limite de cobrança. Valores altos podem elevar tempo e custo. |
+| Max Output Tokens | Para limitar explicitamente uma resposta | Vazio por padrão: o RadIA não impõe limite e usa o padrão do provider. Não representa a janela de contexto nem um limite de cobrança. |
 | Timeout (seconds) | Quando o provider ou a rede exige mais tempo | Cancela a espera local após o limite; não altera limites do serviço remoto. |
 
 ### Gemini
@@ -142,6 +142,9 @@ O diálogo é único para chat, agente, MCP e terminal. **Source** identifica cl
 os argumentos são sanitizados antes da exibição e solicitações concorrentes aguardam somente até o
 timeout configurado. Tools sensíveis continuam negadas, exceto quando o contrato exige
 `ConsentEveryTime`; essa exceção nunca permite autorização de sessão.
+Arquivos que controlam outras IAs, como `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `default.rules` e
+conteúdo em `.codex`, `.claude`, `.gemini`, `.copilot` ou `.github/skills`, sempre exigem uma nova
+confirmação de escrita. Uma permissão concedida para a sessão não é reutilizada nesses arquivos.
 
 ## Knowledge & Embeddings
 
@@ -192,7 +195,7 @@ Use **External MCP Servers** para o fluxo inverso: consumir servidores locais de
 | MCP client configuration | Somente para override ou diagnóstico avançado | Caminho completo do JSON/TOML do cliente. O padrão é detectado por cliente. |
 | RadIA MCP bridge | Somente se a instalação foi movida ou reparada | Caminho da bridge fornecida pelo instalador junto à BPL. Não requer download separado. |
 | Preview | Antes de conectar ou reparar | Mostra o conteúdo proposto sem gravar arquivos. |
-| Connect / Repair | Para adicionar ou corrigir a entrada `radia` | Pede confirmação, cria `.radia.bak`, grava, verifica e restaura o original se a verificação falhar. |
+| Connect / Repair | Para adicionar ou corrigir a entrada `radia` | Pede confirmação, cria backup versionado, grava e verifica. Recusa substituir uma entrada `radia` não gerenciada. |
 | Disconnect | Para remover a integração | Remove somente a entrada gerenciada pelo RadIA e mantém as demais configurações do cliente. |
 | Test Handshake | Depois de conectar e com a IDE ativa | Executa `initialize`, `ping` e `tools/list`; não modifica projeto nem configurações. |
 

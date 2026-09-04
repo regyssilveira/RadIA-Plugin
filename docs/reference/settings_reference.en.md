@@ -15,7 +15,7 @@ templates, logs, or screenshots. Saving provider settings refreshes models witho
 | Custom Base URL | Only for an OpenAI-compatible endpoint | Empty uses OpenAI. Include `/v1` when required. Do not send secrets to an untrusted endpoint. |
 | Server URL | For Ollama or LM Studio | Enter scheme, host, and port. Use HTTP only on loopback or trusted networks. These providers need no cloud key or CLI. |
 | Temperature | To control output variation | Lower is more deterministic. Smart Parameters can manage this value. |
-| Max Output Tokens | To cap one response | It is neither the total context window nor a billing cap. |
+| Max Output Tokens | To explicitly cap one response | Empty by default: RadIA imposes no limit and uses the provider default. It is neither the context window nor a billing cap. |
 | Timeout | To bound provider waiting | Cancels local waiting and does not alter remote limits. |
 | GitHub User Token | When an existing Copilot token is available | Stored with DPAPI; use only the current user's token. |
 | Connect GitHub Account | To use GitHub device flow | Opens official authorization and stores the resulting token. |
@@ -110,6 +110,9 @@ The same dialog serves chat, native agent, MCP, and terminal. **Source** identif
 arguments are redacted before display, and concurrent requests wait only for the configured timeout.
 Sensitive tools remain denied unless their contract requires `ConsentEveryTime`; that exception can
 never create a session permission.
+Files that control other AI tools, including `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `default.rules`,
+and content under `.codex`, `.claude`, `.gemini`, `.copilot`, or `.github/skills`, always require a
+fresh write confirmation. Session permission is never reused for these files.
 
 ## CLI & MCP
 
@@ -133,7 +136,7 @@ Use **External MCP Servers** for the inverse flow: consuming local servers insid
 | MCP client configuration | For advanced path override | Full JSON/TOML path; the client default is detected automatically. |
 | RadIA MCP bridge | Only after moving or repairing installation | Installed beside the BPL; no separate bridge download is required. |
 | Preview | Before connecting | Shows proposed content without writing. |
-| Connect / Repair | To add or fix the managed entry | Confirms, backs up to `.radia.bak`, writes, verifies, and restores on failure. |
+| Connect / Repair | To add or fix the managed entry | Confirms, creates a versioned backup, writes, and verifies. It refuses to replace an unmanaged `radia` entry. |
 | Disconnect | To remove integration | Removes only the RadIA-managed entry. |
 | Test Handshake | After connecting | Runs `initialize`, `ping`, and `tools/list` without changing the project. |
 

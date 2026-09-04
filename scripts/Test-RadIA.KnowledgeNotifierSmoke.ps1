@@ -1184,12 +1184,12 @@ function Remove-RadIAKnowledgeSmokeDirectory {
         [string]$Path
     )
 
-    for ($attempt = 1; $attempt -le 20; $attempt++) {
+    for ($attempt = 1; $attempt -le 60; $attempt++) {
         try {
             Remove-Item -LiteralPath $Path -Recurse -Force
             return
         } catch {
-            if ($attempt -eq 20) {
+            if ($attempt -eq 60) {
                 throw
             }
             Start-Sleep -Milliseconds 500
@@ -2109,6 +2109,23 @@ try {
             if (-not $stopResult.accepted) {
                 throw "The calculator debug session did not stop."
             }
+            Wait-RadIACondition -TimeoutSeconds 90 -Condition {
+                try {
+                    $stoppedState = Invoke-RadIATool `
+                        -BridgePath $bridgePath `
+                        -InstanceFile $instanceFile `
+                        -Name "GetDebuggerState"
+                    $stoppedState.state -in @(
+                        "no_process",
+                        "terminated",
+                        "nothing"
+                    )
+                } catch {
+                    $false
+                }
+            } -FailureMessage (
+                "The calculator debug process did not finish after StopDebugging."
+            )
         } else {
             Complete-RadIADebugSession `
                 -BridgePath $bridgePath `
@@ -2813,8 +2830,13 @@ try {
                 $shutdownDeadline = [DateTime]::UtcNow.AddSeconds(
                     $ShutdownTimeoutSeconds
                 )
+                $shutdownPollCount = 0
                 while (-not $remainingProcess.HasExited -and
                     [DateTime]::UtcNow -lt $shutdownDeadline) {
+                    if (($shutdownPollCount % 5) -eq 0) {
+                        [void]$remainingProcess.CloseMainWindow()
+                    }
+                    $shutdownPollCount++
                     $confirmWindow =
                         [RadIAWindowNative]::FindVisibleWindow(
                             [uint32]$process.Id,

@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.12 user manual
+# Complete RadIA 2.17.13 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.12`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.13`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -105,6 +105,9 @@ OpenAI offers two explicit credential paths. **OpenAI API via API Key** uses nat
 API Platform billing. **ChatGPT Pro via Codex CLI** uses the ChatGPT/Codex account session and quota.
 Both Codex routes share the same CLI login, but not the same orchestration: **RadIA native** keeps
 control in RadIA, while **Codex CLI direct** delegates execution to the CLI.
+
+If Codex CLI rejects an earlier session resume before returning a response, RadIA preserves the full
+diagnostic and retries once with a new session. Recovery never repeats a response that already started.
 
 The chat header displays the conversation's effective route. Examples include **Chat | OpenAI
 native**, **Chat | RadIA native | ChatGPT Pro via Codex CLI**, **Agent | RadIA native | OpenAI**, and

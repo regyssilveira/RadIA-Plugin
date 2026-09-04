@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.12
+# Manual completo do RadIA 2.17.13
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.12`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.13`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -138,6 +138,10 @@ Providers por API key e providers locais não exigem CLI. Para OpenAI, **OpenAI 
 o transporte HTTP nativo e a cobrança da plataforma API. **ChatGPT Pro via Codex CLI** usa a sessão e
 a cota da conta ChatGPT/Codex. O login é compartilhado pelas duas rotas Codex, mas a orquestração não:
 **RadIA native** mantém o controle no RadIA, enquanto **Codex CLI direto** entrega a execução ao CLI.
+
+Se o Codex CLI rejeitar a retomada de uma sessão anterior antes de responder, o RadIA preserva o
+diagnóstico completo e tenta uma única vez em uma sessão nova. A recuperação não repete respostas que
+já tenham começado a ser produzidas.
 
 O caminho de um CLI portátil pode ser selecionado com **Browse...**. O mesmo caminho é usado por
 **Diagnose**, pelo executor externo e pelo transporte ChatGPT Pro, sem exigir uma instalação npm.

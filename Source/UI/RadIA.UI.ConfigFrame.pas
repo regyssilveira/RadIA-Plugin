@@ -1818,7 +1818,7 @@ begin
   LEdtMax.NumbersOnly := True;
   SetControlsHint(
     [LEdtMax],
-    'Maximum number of tokens the provider may return in one response.'
+    'Optional maximum tokens per response. Leave empty to use the provider default.'
   );
   FEdtMaxTokens.Add(AProviderId, LEdtMax);
 
@@ -3688,7 +3688,10 @@ function TRadIAFrameAIConfig.GetMaxTokensInput(const AProviderId: string): strin
 var
   LEdit: TEdit;
 begin
-  if FEdtMaxTokens.TryGetValue(AProviderId, LEdit) then Result := LEdit.Text else Result := '2048';
+  if FEdtMaxTokens.TryGetValue(AProviderId, LEdit) then
+    Result := LEdit.Text
+  else
+    Result := '';
 end;
 
 procedure TRadIAFrameAIConfig.SetMaxTokensInput(const AProviderId: string; const AValue: string);

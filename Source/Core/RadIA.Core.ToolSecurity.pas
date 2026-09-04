@@ -178,6 +178,10 @@ type
       const ARequest: TRadIAToolRequest;
       const ADescriptor: TRadIAToolDescriptor
     ): TRadIAConsentDecision;
+    function IsAiControlFileRequest(
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor
+    ): Boolean;
     function OutcomeFromResult(
       const AResult: TRadIAToolResult
     ): TRadIAAuditOutcome;
@@ -553,6 +557,7 @@ function TRadIAToolPolicyExecutor.Decide(
   const ADescriptor: TRadIAToolDescriptor
 ): TRadIAConsentDecision;
 var
+  LAiControlFile: Boolean;
   LPermissionKey: string;
 begin
   if (ADescriptor.Risk = trReadOnly) and
@@ -562,10 +567,11 @@ begin
     not ADescriptor.ConsentEveryTime then
     Exit(cdDeny);
 
+  LAiControlFile := IsAiControlFileRequest(ARequest, ADescriptor);
   LPermissionKey := BuildPermissionKey(ARequest, ADescriptor);
   TMonitor.Enter(FSessionPermissions);
   try
-    if not ADescriptor.ConsentEveryTime and
+    if not ADescriptor.ConsentEveryTime and not LAiControlFile and
       (ADescriptor.Risk <> trDestructive) and
       FSessionPermissions.ContainsKey(LPermissionKey) then
       Exit(cdAllowSession);
@@ -577,6 +583,8 @@ begin
     Exit(cdDeny);
 
   Result := FConsentProvider.RequestConsent(ARequest, ADescriptor);
+  if LAiControlFile and (Result = cdAllowSession) then
+    Result := cdAllowOnce;
   if (Result = cdAllowSession) and
     not ADescriptor.ConsentEveryTime and
     (ADescriptor.Risk <> trDestructive) then
@@ -588,6 +596,44 @@ begin
       TMonitor.Exit(FSessionPermissions);
     end;
   end;
+end;
+
+function TRadIAToolPolicyExecutor.IsAiControlFileRequest(
+  const ARequest: TRadIAToolRequest;
+  const ADescriptor: TRadIAToolDescriptor
+): Boolean;
+const
+  CProtectedNames: array[0..12] of string = (
+    'agents.md',
+    'claude.md',
+    'gemini.md',
+    'copilot-instructions.md',
+    'default.rules',
+    '.codex\\',
+    '.claude\\',
+    '.gemini\\',
+    '.copilot\\',
+    '.github\\skills',
+    '.agents\\',
+    '.cursor\\rules',
+    '.windsurf\\rules'
+  );
+var
+  LArguments: string;
+  LName: string;
+begin
+  Result := False;
+  if ADescriptor.Risk = trReadOnly then
+    Exit;
+  LArguments := LowerCase(StringReplace(
+    ARequest.ArgumentsJson,
+    '/',
+    '\',
+    [rfReplaceAll]
+  ));
+  for LName in CProtectedNames do
+    if LArguments.Contains(LName) then
+      Exit(True);
 end;
 
 destructor TRadIAToolPolicyExecutor.Destroy;

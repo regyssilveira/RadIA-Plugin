@@ -273,6 +273,7 @@ end;
 procedure TRadIAConfigPresenter.LoadConfig;
 var
   LFormatSettings: TFormatSettings;
+  LMax: Integer;
   LProviderId: string;
   LRemote: TRadIARemoteKnowledgeConfiguration;
   LShortcutConfig: IRadIAInlineShortcutConfig;
@@ -397,7 +398,11 @@ begin
   for LProviderId in FProvidersList do
   begin
     FView.SetTemperatureInput(LProviderId, FormatFloat('0.0', FConfig.GetTemperature(LProviderId), LFormatSettings));
-    FView.SetMaxTokensInput(LProviderId, IntToStr(FConfig.GetMaxTokens(LProviderId)));
+    LMax := FConfig.GetMaxTokens(LProviderId);
+    if LMax > 0 then
+      FView.SetMaxTokensInput(LProviderId, IntToStr(LMax))
+    else
+      FView.SetMaxTokensInput(LProviderId, '');
     FView.SetTimeoutInput(LProviderId, IntToStr(FConfig.GetTimeout(LProviderId)));
   end;
 
@@ -439,7 +444,9 @@ begin
       Exit(False);
     end;
 
-    if not TryStrToInt(FView.GetMaxTokensInput(LProviderId), LMax) or (LMax <= 0) then
+    if (Trim(FView.GetMaxTokensInput(LProviderId)) <> '') and
+      (not TryStrToInt(FView.GetMaxTokensInput(LProviderId), LMax) or
+      (LMax <= 0)) then
     begin
       FView.ShowMessageDialog(Format('Max Tokens for %s must be a valid positive integer', [LProviderId]));
       Exit(False);
@@ -666,7 +673,7 @@ begin
     TryStrToFloat(FView.GetTemperatureInput(LProviderId), LTemp, LFormatSettings);
     FConfig.SetTemperature(LProviderId, LTemp);
 
-    TryStrToInt(FView.GetMaxTokensInput(LProviderId), LMax);
+    LMax := StrToIntDef(Trim(FView.GetMaxTokensInput(LProviderId)), 0);
     FConfig.SetMaxTokens(LProviderId, LMax);
 
     TryStrToInt(FView.GetTimeoutInput(LProviderId), LTime);

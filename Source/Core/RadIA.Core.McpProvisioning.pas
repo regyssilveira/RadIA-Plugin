@@ -173,6 +173,9 @@ uses
   System.StrUtils,
   System.SysUtils;
 
+const
+  CRadIAManagedProperty = '_radiaManaged';
+
 { TRadIAMcpClientProfile }
 
 constructor TRadIAMcpClientProfile.Create(
@@ -356,11 +359,22 @@ end;
 function TRadIAMcpProvisioner.Backup(
   const AConfigPath: string
 ): string;
+var
+  LIndex: Integer;
+  LSuffix: string;
 begin
   Result := '';
   if not FStorage.FileExists(AConfigPath) then
     Exit;
-  Result := AConfigPath + '.radia.bak';
+  LSuffix := FormatDateTime('yyyymmdd-hhnnss-zzz', Now);
+  Result := AConfigPath + '.radia.' + LSuffix + '.bak';
+  LIndex := 1;
+  while FStorage.FileExists(Result) do
+  begin
+    Result := AConfigPath + '.radia.' + LSuffix + '-' +
+      IntToStr(LIndex) + '.bak';
+    Inc(LIndex);
+  end;
   FStorage.CopyFile(AConfigPath, Result);
 end;
 
@@ -402,6 +416,7 @@ var
   LServers: TJSONObject;
   LServer: TJSONObject;
   LPair: TJSONPair;
+  LManaged: Boolean;
 begin
   if Trim(ACurrentContent) <> '' then
   begin
@@ -428,12 +443,20 @@ begin
       LRoot.AddPair(AProfile.ServerContainer, LServers);
     end;
 
+    LValue := LServers.GetValue(CServerId);
+    LManaged := Assigned(LValue) and (LValue is TJSONObject) and
+      TJSONObject(LValue).GetValue<Boolean>(CRadIAManagedProperty, False);
+    if Assigned(LValue) and not LManaged then
+      raise EConvertError.Create(
+        'An unmanaged MCP server named "radia" already exists.'
+      );
     LPair := LServers.RemovePair(CServerId);
     LPair.Free;
     if not ARemove then
     begin
       LServer := TJSONObject.Create;
       LServer.AddPair('command', ABridgePath);
+      LServer.AddPair(CRadIAManagedProperty, TJSONBool.Create(True));
       LServers.AddPair(CServerId, LServer);
     end;
     Result := LRoot.Format(2);
@@ -454,6 +477,7 @@ var
   LEndIndex: Integer;
   LManagedBlock: string;
   LEscapedPath: string;
+  LUnmanagedHeader: string;
 begin
   LBefore := ACurrentContent;
   LAfter := '';
@@ -470,6 +494,13 @@ begin
     );
     LBefore := Copy(LBefore, 1, LStartIndex - 1);
   end;
+  if Pos(CTomlEnd, LBefore + LAfter) > 0 then
+    raise EConvertError.Create('The managed MCP TOML block is incomplete.');
+  LUnmanagedHeader := '[mcp_servers.' + CServerId + ']';
+  if Pos(LUnmanagedHeader, LBefore + LAfter) > 0 then
+    raise EConvertError.Create(
+      'An unmanaged MCP server named "radia" already exists.'
+    );
   Result := TrimRight(LBefore);
   if not ARemove then
   begin
