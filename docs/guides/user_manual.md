@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.14
+# Manual completo do RadIA 2.17.15
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.14`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.15`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -109,6 +109,23 @@ para evitar que controles sejam cortados.
 | Editor Assistance | Ghost text, atraso, exclusões e atalhos | Ao configurar sugestões no editor |
 | CLI & MCP | Executor nativo/externo, executável portátil, bridge e servidores MCP externos | Ao usar CLI, expor a IDE ou consumir um servidor MCP local |
 | Memory Diagnostics | Caminho e limites do FastMM5 | Ao investigar leaks, double free ou use-after-free |
+
+Quando **Enable logging** está ativo, o agente nativo grava eventos `AgentMetrics` na pasta definida em
+**Log Folder Path**. `agentDecision` identifica o índice da decisão, tamanho do catálogo e do contexto,
+histórico fornecido, duração, resultado e tokens relatados pelo provider. `agentToolStep` informa duração,
+tipo de tool e tamanho do resultado, sem seu conteúdo. Relacione eventos pelo `runId`, derivado de um
+hash do identificador da sessão, sem expor o identificador original. O campo
+`usageStatus` vale `reported`, `cached` ou `unknown`; `unknown` não significa zero tokens. A rota
+**codex CLI direct** não oferece as mesmas métricas por decisão interna. Não há alteração dos limites,
+do plano nem das permissões. Para reduzir repetição, o agente nativo não reenvia a versão de cada tool
+no catálogo de decisão e deixa de repetir as instruções de criação do plano depois da aprovação.
+Nomes, descrições, schemas e riscos das tools continuam disponíveis; tarefas de criação de projeto
+mantêm suas orientações específicas. Testes DUnitX e cobertura deixam de ser sugeridos como etapas
+automáticas apenas por estarem disponíveis: continuam obrigatórios quando o contrato ou o pedido os exige.
+Pedidos só de leitura não passam a exigir `BuildProject` por falta de build; mutações seguem exigindo
+build quando o contrato define esse gate.
+Uma criação de projeto com testes ou cobertura pedidos não termina automaticamente após o build.
+Essas economias não alteram o catálogo exibido por `/tools`.
 
 Cada campo e botão possui hint contextual. Para decisões de segurança, consulte o
 [modelo de segurança](../reference/tool_security_model.md); para dependências entre modo nativo, CLI e MCP,
