@@ -547,6 +547,7 @@ function RadIAAgentStatusName(
 implementation
 
 uses
+  Winapi.Windows,
   System.DateUtils,
   System.Diagnostics,
   System.Generics.Defaults,
@@ -1336,7 +1337,7 @@ begin
       LEvent.Free;
     end;
   except
-    // Diagnostics must not affect a completed tool step.
+    OutputDebugString(PChar('RadIA agent tool step metrics logging failed.'));
   end;
 end;
 

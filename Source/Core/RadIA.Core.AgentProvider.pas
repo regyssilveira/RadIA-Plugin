@@ -84,6 +84,7 @@ type
 implementation
 
 uses
+  Winapi.Windows,
   System.Diagnostics,
   System.Hash,
   System.JSON,
@@ -614,7 +615,7 @@ begin
     try
       LogRadIAAgentDecisionMetric(LMetric);
     except
-      // Diagnostics must not mask the provider outcome.
+      OutputDebugString(PChar('RadIA agent decision metrics logging failed.'));
     end;
     TMonitor.Enter(Self);
     try
