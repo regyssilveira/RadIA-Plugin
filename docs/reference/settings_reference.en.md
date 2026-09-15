@@ -64,7 +64,7 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 | Enable logging | While diagnosing a problem | Writes sanitized local diagnostics. |
 | Log Folder Path / `...` | To select log storage | Choose a writable folder not shared with untrusted users. |
 | Max Log File Size | To control disk use | Limits logs, not model responses. |
-| Enable local token quota | To track a local monthly budget | When disabled, the agent has no local per-run token budget. Provider limits still apply. |
+| Enable local token quota | To track a local monthly budget | When disabled, the agent has no local per-run token budget. Progress-checked step windows, duration, and loop protection remain independent. Provider limits still apply. |
 | Monthly Token Limit / Used Tokens | To configure and inspect local tracking | Usage is an estimate and may differ from provider accounting. |
 | Reset Usage | To restart local tracking | Resets only the local counter. |
 | Agent result compaction profile | To balance savings and diagnosis | `Conservative` is the default; `Balanced` reduces older-step budgets further; `Off` restores complete context. It does not alter checkpoints or tool results. |

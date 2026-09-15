@@ -26,6 +26,7 @@ test('conversation smoke rejects plans, consent, step limits, and timeout', () =
   assert.match(chatScript, /planVisible/u);
   assert.match(chatScript, /consentVisible/u);
   assert.match(chatScript, /stepLimitReached/u);
+  assert.match(chatScript, /full step window without new tool progress/u);
   assert.match(chatScript, /finishConversationSmoke\('failed', 'timeout'\)/u);
   assert.match(chatFrame, /LDuration <= 20000/u);
 });
@@ -68,6 +69,7 @@ test('provider recovery smoke requires actionable retry without raw errors', () 
 });
 
 test('agent budget smoke uses plan approval and one real read-only tool', () => {
+  assert.match(chatScript, /-step progress window/u);
   assert.match(chatScript, /globalThis\.beginAgentBudgetSmoke/u);
   assert.match(chatScript, /continueAgentBudgetSmoke/u);
   assert.match(chatScript, /button\.textContent === 'Approve plan'/u);

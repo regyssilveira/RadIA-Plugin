@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.13
+# Manual completo do RadIA 2.17.14
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.13`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.14`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -85,6 +85,13 @@ permanece na página local do Rad IA e não é usado como navegador para esses d
 Quando **Enable local token quota** está desligado, execuções do agente mostram `tokens (unlimited)`
 e não são interrompidas por um orçamento local de tokens. Limites da conta ou do provider continuam
 independentes.
+
+O agente usa janelas de 20 etapas, ou 40 ao criar um projeto. Ao fim de cada janela,
+ele continua automaticamente se houver resultado novo ou uma mudança distinta
+bem-sucedida. Uma janela inteira de falhas ou resultados repetidos encerra a execução
+para evitar loops improdutivos.
+Esse mecanismo é independente da quota de tokens; duração, chamadas repetidas e
+limites do contrato de execução continuam sendo verificados separadamente.
 
 ### 2.4 Mapa das configurações
 

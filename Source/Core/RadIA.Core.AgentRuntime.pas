@@ -349,6 +349,11 @@ type
       const ADecision: TRadIAAgentDecision
     ): Boolean;
     function CanContinueLoop: Boolean;
+    function HasRecentStepProgress: Boolean;
+    function IsNovelSuccessfulStep(const AIndex: Integer): Boolean;
+    function StepProgressFingerprint(
+      const AStep: TRadIAAgentStep
+    ): string;
     procedure ExecuteNextDecision;
     procedure HandleCompletionDecision(
       const ADecision: TRadIAAgentDecision
@@ -2271,15 +2276,95 @@ begin
     ChangeStatus(asPaused, 'Agent run was paused.');
     Exit;
   end;
-  if FSteps.Count >= FLimits.MaxSteps then
+  if (FSteps.Count > 0) and
+    ((FSteps.Count mod FLimits.MaxSteps) = 0) and
+    not HasRecentStepProgress then
   begin
     ChangeStatus(
       asFailed,
-      'Agent stopped after reaching the configured step limit.'
+      'Agent stopped after a full step window without new tool progress.'
     );
     Exit;
   end;
   Result := True;
+end;
+
+function TRadIAAgentRuntime.HasRecentStepProgress: Boolean;
+var
+  LIndex: Integer;
+  LWindowStart: NativeInt;
+begin
+  Result := False;
+  LWindowStart := FSteps.Count - FLimits.MaxSteps;
+  if LWindowStart < 0 then
+    LWindowStart := 0;
+  for LIndex := FSteps.Count - 1 downto LWindowStart do
+  begin
+    if IsNovelSuccessfulStep(LIndex) then
+      Exit(True);
+  end;
+end;
+
+function TRadIAAgentRuntime.IsNovelSuccessfulStep(
+  const AIndex: Integer
+): Boolean;
+var
+  LCurrentStep: TRadIAAgentStep;
+  LFingerprint: string;
+  LIndex: Integer;
+  LPriorStep: TRadIAAgentStep;
+begin
+  Result := False;
+  LCurrentStep := FSteps[AIndex];
+  if not LCurrentStep.Success then
+    Exit;
+  LFingerprint := StepProgressFingerprint(LCurrentStep);
+  if LFingerprint = '' then
+    Exit;
+  for LIndex := 0 to AIndex - 1 do
+  begin
+    LPriorStep := FSteps[LIndex];
+    if not LPriorStep.Success or
+      not SameText(LPriorStep.ToolName, LCurrentStep.ToolName) then
+      Continue;
+    if (StepProgressFingerprint(LPriorStep) = LFingerprint) and
+      (not LCurrentStep.Mutation or
+       (LPriorStep.ArgumentsJson = LCurrentStep.ArgumentsJson)) then
+      Exit;
+  end;
+  Result := True;
+end;
+
+function TRadIAAgentRuntime.StepProgressFingerprint(
+  const AStep: TRadIAAgentStep
+): string;
+var
+  LBuild: TJSONObject;
+  LValue: TJSONValue;
+begin
+  if SameText(AStep.ToolName, 'BuildProject') then
+  begin
+    LValue := TJSONObject.ParseJSONValue(AStep.ResultJson);
+    try
+      if LValue is TJSONObject then
+      begin
+        LBuild := TJSONObject(LValue);
+        if not LBuild.GetValue<Boolean>('success', AStep.Success) then
+          Exit('');
+        Exit(
+          'build:' + LBuild.GetValue<string>('status', '') + #10 +
+          LBuild.GetValue<string>('projectFile', '') + #10 +
+          LBuild.GetValue<string>('configuration', '') + #10 +
+          LBuild.GetValue<string>('platform', '')
+        );
+      end;
+    finally
+      LValue.Free;
+    end;
+  end;
+  Result := 'result:' + AStep.ResultArtifactHash;
+  if AStep.ResultArtifactHash = '' then
+    Result := 'result:' + AStep.ResultJson;
 end;
 
 function TRadIAAgentRuntime.ExecuteDecision(
@@ -3058,9 +3143,11 @@ begin
     raise EArgumentException.Create(
       'Agent checkpoint session does not match the requested session.'
     );
-  if FSteps.Count >= FLimits.MaxSteps then
+  if (FSteps.Count > 0) and
+    ((FSteps.Count mod FLimits.MaxSteps) = 0) and
+    not HasRecentStepProgress then
     raise EInvalidOp.Create(
-      'Agent step replay would exceed the configured step limit.'
+      'Agent step replay cannot extend a window without successful tool results.'
     );
   LFound := False;
   for LStep in FSteps do

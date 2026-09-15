@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.13 user manual
+# Complete RadIA 2.17.14 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.13`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.14`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -53,6 +53,12 @@ Rad IA's local page and is not used as a browser for those destinations.
 
 When **Enable local token quota** is disabled, agent runs show `tokens (unlimited)` and are not
 stopped by a local token budget. Account and provider limits remain independent.
+
+The agent uses windows of 20 steps, or 40 when creating a project. At the end of
+each window, it continues automatically after a new result or a distinct successful
+change. A full window of failures or repeated results stops unproductive loops. This is
+independent of the token quota; duration, repeated calls, and execution-contract
+limits are checked separately.
 
 ### 2.1 Settings map
 

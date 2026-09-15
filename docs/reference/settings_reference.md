@@ -118,7 +118,7 @@ endpoint e permissão; não reinicie a IDE como primeira tentativa.
 | Enable logging | Ao investigar problemas | Registra diagnósticos locais sanitizados. Desative quando não precisar de investigação prolongada. |
 | Log Folder Path / `...` | Para mudar ou escolher a pasta de logs | Use uma pasta gravável. Não selecione pastas compartilhadas com usuários não confiáveis. |
 | Max Log File Size (KB) | Para controlar uso de disco | Limita a rotação/tamanho dos logs locais, não a resposta do modelo. |
-| Enable local token quota | Para impor um aviso/limite local mensal | Desligado, o agente não aplica orçamento local de tokens por execução. Não substitui limites do provider. |
+| Enable local token quota | Para impor um aviso/limite local mensal | Desligado, o agente não aplica orçamento local de tokens por execução. Janelas de etapas com verificação de progresso, duração e proteção contra loops continuam independentes. Não substitui limites do provider. |
 | Monthly Token Limit | Ao definir o orçamento local | Quantidade mensal aceita pelo controle do RadIA. |
 | Monthly Used Tokens | Para acompanhar consumo estimado | Contador local; pode divergir da contabilização oficial do provider. |
 | Reset Usage | Ao iniciar deliberadamente um novo acompanhamento | Zera somente o contador local, sem alterar cobrança externa. |
