@@ -2295,7 +2295,9 @@ var
   LWindowStart: Integer;
 begin
   Result := False;
-  LWindowStart := Max(0, FSteps.Count - FLimits.MaxSteps);
+  LWindowStart := FSteps.Count - FLimits.MaxSteps;
+  if LWindowStart < 0 then
+    LWindowStart := 0;
   for LIndex := FSteps.Count - 1 downto LWindowStart do
   begin
     if IsNovelSuccessfulStep(LIndex) then
