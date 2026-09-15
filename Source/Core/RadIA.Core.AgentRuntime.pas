@@ -473,6 +473,7 @@ type
     function IsMutationTool(const AToolName: string): Boolean;
     function HasSuccessfulToolStep(const AToolName: string): Boolean;
     function IsProjectCreationObjective: Boolean;
+    function ProjectCreationHasRequestedTestsOrCoverage: Boolean;
     function ProjectCreationRequiresExecution: Boolean;
     function ResolveRiskName(const AToolName: string): string;
     function ExtractAffectedFiles(
@@ -546,14 +547,17 @@ function RadIAAgentStatusName(
 implementation
 
 uses
+  Winapi.Windows,
   System.DateUtils,
   System.Diagnostics,
   System.Generics.Defaults,
   System.IOUtils,
   System.Math,
+  System.Hash,
   System.StrUtils,
   System.SyncObjs,
-  System.SysUtils;
+  System.SysUtils,
+  RadIA.Core.Logger;
 
 type
   TRadIAAgentCancellationToken = class(
@@ -1269,6 +1273,9 @@ procedure TRadIAAgentRuntime.AddToolStep(
 );
 var
   LArtifact: TRadIAAgentResultArtifact;
+  LDescriptor: TRadIAToolDescriptor;
+  LEvent: TJSONObject;
+  LKnownToolName: string;
   LStep: TRadIAAgentStep;
 begin
   LStep := Default(TRadIAAgentStep);
@@ -1307,6 +1314,31 @@ begin
   else
     LStep.AffectedFiles := [];
   FSteps.Add(LStep);
+  try
+    LKnownToolName := 'unknown';
+    if Assigned(FDescriptorProvider) and
+      FDescriptorProvider.TryGetToolDescriptor(LStep.ToolName, LDescriptor) then
+      LKnownToolName := LDescriptor.Name;
+    LEvent := TJSONObject.Create;
+    try
+      LEvent.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvent.AddPair('event', 'agentToolStep');
+      LEvent.AddPair('runId', Copy(THashSHA2.GetHashString(FSessionId), 1, 16));
+      LEvent.AddPair('stepIndex', TJSONNumber.Create(LStep.Index));
+      LEvent.AddPair('toolName', LKnownToolName);
+      LEvent.AddPair('risk', LStep.Risk);
+      LEvent.AddPair('success', TJSONBool.Create(LStep.Success));
+      LEvent.AddPair('mutation', TJSONBool.Create(LStep.Mutation));
+      LEvent.AddPair('durationMilliseconds', TJSONNumber.Create(LStep.DurationMilliseconds));
+      LEvent.AddPair('resultCharacters', TJSONNumber.Create(Length(LStep.ResultJson)));
+      LEvent.AddPair('affectedFileCount', TJSONNumber.Create(Length(LStep.AffectedFiles)));
+      TLogger.Log(LEvent.ToJSON, 'AgentMetrics');
+    finally
+      LEvent.Free;
+    end;
+  except
+    OutputDebugString(PChar('RadIA agent tool step metrics logging failed.'));
+  end;
 end;
 
 function TRadIAAgentRuntime.AnalyzeValidationState:
@@ -2601,6 +2633,8 @@ begin
   if not SameText(AToolName, 'BuildProject') or
     not IsProjectCreationObjective then
     Exit;
+  if ProjectCreationHasRequestedTestsOrCoverage then
+    Exit;
   if not ValidationAllowsCompletion(LValidationMessage) then
     Exit;
 
@@ -2760,6 +2794,15 @@ begin
   Result := FObjective.Contains(
     'Create a Delphi project from the user requirements.'
   );
+end;
+
+function TRadIAAgentRuntime.ProjectCreationHasRequestedTestsOrCoverage: Boolean;
+begin
+  Result := FExecutionContract.RequireTests or
+    ContainsText(FObjective, 'DUnitX') or
+    ContainsText(FObjective, 'test') or
+    ContainsText(FObjective, 'coverage') or
+    ContainsText(FObjective, 'cobertura');
 end;
 
 function TRadIAAgentRuntime.ProjectCreationRequiresExecution: Boolean;

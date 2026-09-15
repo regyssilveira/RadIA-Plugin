@@ -1226,3 +1226,41 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishBacklog, /public extension repository or marketplace[\s\S]*remain out of scope/u);
   assert.doesNotMatch(releaseWorkflow, /Output\\Distribution\\stable\.json/u);
 });
+
+test('agent metrics documentation describes safe logging and unknown usage', () => {
+  const source = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.AgentProvider.pas'),
+    'utf8'
+  );
+  const portugueseReference = fs.readFileSync(
+    documentationPath('reference', 'settings_reference.md'),
+    'utf8'
+  );
+  const englishReference = fs.readFileSync(
+    documentationPath('reference', 'settings_reference.en.md'),
+    'utf8'
+  );
+  const portugueseManual = fs.readFileSync(
+    documentationPath('guides', 'user_manual.md'),
+    'utf8'
+  );
+  const englishManual = fs.readFileSync(
+    documentationPath('guides', 'user_manual.en.md'),
+    'utf8'
+  );
+
+  assert.match(source, /AgentMetrics/u);
+  assert.match(source, /RemovePair\('version'\)/u);
+  assert.match(source, /if not APlanApproved then/u);
+  assert.match(source, /executionContract\.requireTests/u);
+  [portugueseReference, englishReference].forEach(document => {
+    assert.match(document, /AgentMetrics/u);
+  });
+  [portugueseManual, englishManual].forEach(document => {
+    assert.match(document, /agentDecision/u);
+    assert.match(document, /agentToolStep/u);
+    assert.match(document, /unknown/u);
+    assert.match(document, /\/tools/u);
+    assert.match(document, /DUnitX/u);
+  });
+});

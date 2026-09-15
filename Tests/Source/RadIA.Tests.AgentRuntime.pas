@@ -142,6 +142,17 @@ type
     property Usage: TTokenUsage read FUsage write FUsage;
   end;
 
+  TRadIAMockAgentMetricsLogger = class(TInterfacedObject, IRadIALogger)
+  private
+    FEntries: TList<string>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Configure(const AEnabled: Boolean; const APath: string; const AMaxSizeKB: Integer);
+    procedure Log(const AMsg: string; const ATag: string = 'Debug');
+    property Entries: TList<string> read FEntries;
+  end;
+
   [TestFixture]
   TTestRadIAAgentRuntime = class
   private
@@ -165,6 +176,8 @@ type
     procedure TestProjectCreationRejectsCompletionBeforeRequiredJourney;
     [Test]
     procedure TestProjectCreationRequiresExecutionOnlyWhenExplicit;
+    [Test]
+    procedure TestProjectCreationDoesNotAutoCompleteBeforeRequestedTests;
     [Test]
     procedure TestValidationSnapshotIncludesBuildDUnitXAndCoverageEvidence;
     [Test]
@@ -224,6 +237,12 @@ type
     [Test]
     procedure TestProviderLimitsProjectCreationToolCatalog;
     [Test]
+    procedure TestDecisionPromptOmitsCatalogVersionAndApprovedPlanInstructions;
+    [Test]
+    procedure TestDecisionMetricsReportUsageWithoutPrompt;
+    [Test]
+    procedure TestToolMetricsExcludeArgumentsAndResults;
+    [Test]
     procedure TestControllerRunsAgentAsynchronously;
     [Test]
     procedure TestControllerCancellationUnblocksProviderWait;
@@ -252,7 +271,35 @@ uses
   RadIA.Core.AgentResultStore,
   RadIA.Core.AgentPricing,
   RadIA.Core.AgentProvider,
+  RadIA.Core.Logger,
   RadIA.Core.ResultCompactor;
+
+constructor TRadIAMockAgentMetricsLogger.Create;
+begin
+  inherited Create;
+  FEntries := TList<string>.Create;
+end;
+
+destructor TRadIAMockAgentMetricsLogger.Destroy;
+begin
+  FEntries.Free;
+  inherited Destroy;
+end;
+
+procedure TRadIAMockAgentMetricsLogger.Configure(
+  const AEnabled: Boolean;
+  const APath: string;
+  const AMaxSizeKB: Integer
+);
+begin
+  // Configuration is irrelevant to the in-memory logger.
+end;
+
+procedure TRadIAMockAgentMetricsLogger.Log(const AMsg, ATag: string);
+begin
+  if ATag = 'AgentMetrics' then
+    FEntries.Add(AMsg);
+end;
 
 procedure TTestRadIAAgentRuntime.AssertDecisionContextBudgetAtStepCount(
   const AStepCount: Integer
@@ -1341,9 +1388,9 @@ begin
   );
   Assert.Contains(
     LServiceObject.Prompt,
-    'a successful BuildProject, complete immediately'
+    'Cover the requested outcome, inspection, implementation, and validation'
   );
-  Assert.Contains(
+  Assert.DoesNotContain(
     LServiceObject.Prompt,
     'Do not list, navigate to, read, or audit generated template files'
   );
@@ -1369,7 +1416,8 @@ begin
   );
 
   LProvider.NextDecision(
-    '{"objective":"Create a Delphi project from the user requirements."}'
+    '{"objective":"Create a Delphi project from the user requirements.",' +
+    '"planApproved":true}'
   );
 
   Assert.Contains(LServiceObject.Prompt, '"name":"BuildProject"');
@@ -1378,6 +1426,132 @@ begin
     '"name":"CreateProjectFromTemplate"'
   );
   Assert.DoesNotContain(LServiceObject.Prompt, '"name":"ReadFile"');
+  Assert.Contains(LServiceObject.Prompt, 'a successful BuildProject, complete immediately');
+  Assert.DoesNotContain(LServiceObject.Prompt, 'Before the first tool call');
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestDecisionPromptOmitsCatalogVersionAndApprovedPlanInstructions;
+var
+  LApprovedPrompt: string;
+  LProvider: IRadIAAgentDecisionProvider;
+  LService: IRadIAService;
+  LServiceObject: TRadIAMockAgentService;
+begin
+  LServiceObject := TRadIAMockAgentService.Create(
+    '{"kind":"complete","message":"Done."}'
+  );
+  LService := LServiceObject;
+  LProvider := TRadIAAgentServiceDecisionProvider.Create(
+    LService,
+    [],
+    TRadIAAgentProviderSettings.Default(
+      '[{"name":"ReadFile","version":"1.0.0",' +
+      '"description":"Read a source file.","risk":"readOnly",' +
+      '"inputSchema":"{}"}]'
+    )
+  );
+
+  LProvider.NextDecision('{"objective":"Inspect source","planApproved":true}');
+  LApprovedPrompt := LServiceObject.Prompt;
+
+  Assert.Contains(LApprovedPrompt, '"name":"ReadFile"');
+  Assert.Contains(LApprovedPrompt, '"risk":"readOnly"');
+  Assert.Contains(LApprovedPrompt, '"inputSchema":');
+  Assert.DoesNotContain(LApprovedPrompt, '"version":"1.0.0"');
+  Assert.DoesNotContain(LApprovedPrompt, 'Before the first tool call');
+  Assert.DoesNotContain(LApprovedPrompt, 'PreviewProjectTemplate');
+  Assert.Contains(LApprovedPrompt, 'Read-only objectives do not require BuildProject');
+
+  LProvider.NextDecision('{"objective":"Inspect source","planApproved":false}');
+
+  Assert.Contains(LServiceObject.Prompt, 'Before the first tool call');
+  Assert.IsTrue(Length(LServiceObject.Prompt) > Length(LApprovedPrompt) + 200);
+end;
+
+procedure TTestRadIAAgentRuntime.TestDecisionMetricsReportUsageWithoutPrompt;
+var
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
+  LProvider: IRadIAAgentDecisionProvider;
+  LService: IRadIAService;
+  LServiceObject: TRadIAMockAgentService;
+  LUsage: TTokenUsage;
+begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
+    LServiceObject := TRadIAMockAgentService.Create(
+      '{"kind":"complete","message":"Done."}'
+    );
+    LUsage := TTokenUsage.Empty;
+    LUsage.PromptTokens := 12;
+    LUsage.CompletionTokens := 3;
+    LServiceObject.Usage := LUsage;
+    LService := LServiceObject;
+    LProvider := TRadIAAgentServiceDecisionProvider.Create(
+      LService,
+      [],
+      TRadIAAgentProviderSettings.Default('[{"name":"ReadFile"}]')
+    );
+
+    LProvider.NextDecision(
+      '{"sessionId":"safe-run","objective":"SECRET_OBJECTIVE","steps":[]}'
+    );
+
+    Assert.AreEqual(1, LLoggerObject.Entries.Count);
+    Assert.Contains(LLoggerObject.Entries[0], '"event":"agentDecision"');
+    Assert.Contains(LLoggerObject.Entries[0], '"promptTokens":12');
+    Assert.Contains(LLoggerObject.Entries[0], '"completionTokens":3');
+    Assert.Contains(LLoggerObject.Entries[0], '"catalogCharacters":');
+    Assert.DoesNotContain(LLoggerObject.Entries[0], 'SECRET_OBJECTIVE');
+    Assert.DoesNotContain(LLoggerObject.Entries[0], 'ReadFile');
+    Assert.DoesNotContain(LLoggerObject.Entries[0], 'safe-run');
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestToolMetricsExcludeArgumentsAndResults;
+var
+  LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
+  LProvider: IRadIAAgentDecisionProvider;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
+    LExecutor := TRadIAMockAgentToolExecutor.Create(
+      TRadIAToolResult.Succeeded('{"content":"SECRET_RESULT"}')
+    );
+    LProvider := TRadIAMockAgentDecisionProvider.Create([
+      TRadIAAgentDecision.Plan('Inspect.', '[{"title":"Inspect"}]'),
+      TRadIAAgentDecision.CallTool('ReadFile', '{"secret":"SECRET_ARGUMENT"}'),
+      TRadIAAgentDecision.Complete('Done.')
+    ]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LRuntime.Start('Inspect.', 'safe-tool-run', 'project', TRadIAAgentLimits.Default);
+      LRuntime.Resume('safe-tool-run');
+      Assert.AreEqual(1, LLoggerObject.Entries.Count);
+      Assert.Contains(LLoggerObject.Entries[0], '"event":"agentToolStep"');
+      Assert.Contains(LLoggerObject.Entries[0], '"toolName":"ReadFile"');
+      Assert.Contains(LLoggerObject.Entries[0], '"resultCharacters":');
+      Assert.DoesNotContain(LLoggerObject.Entries[0], 'SECRET_ARGUMENT');
+      Assert.DoesNotContain(LLoggerObject.Entries[0], 'SECRET_RESULT');
+      Assert.DoesNotContain(LLoggerObject.Entries[0], 'safe-tool-run');
+    finally
+      LRuntime.Free;
+    end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
+  end;
 end;
 
 procedure TTestRadIAAgentRuntime.TestProviderParsesFencedCompletion;
@@ -2119,6 +2293,48 @@ begin
       'Project created, built, and executed.',
       LResult.Message
     );
+    Assert.AreEqual(5, LExecutorObject.CallCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestProjectCreationDoesNotAutoCompleteBeforeRequestedTests;
+var
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"status":"succeeded"}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan('Create and test.', '[{"title":"Build and test"}]'),
+    TRadIAAgentDecision.CallTool('PreviewProjectTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('CreateProjectFromTemplate', '{}'),
+    TRadIAAgentDecision.CallTool('OpenCreatedProject', '{}'),
+    TRadIAAgentDecision.CallTool('BuildProject', '{}'),
+    TRadIAAgentDecision.CallTool('RunDUnitXTests', '{}'),
+    TRadIAAgentDecision.Complete('Project created, built, and tested.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Create a Delphi project from the user requirements. Execute o teste.',
+      'project-tests-session',
+      '',
+      TRadIAAgentLimits.Default
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('project-tests-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual('Project created, built, and tested.', LResult.Message);
     Assert.AreEqual(5, LExecutorObject.CallCount);
   finally
     LRuntime.Free;

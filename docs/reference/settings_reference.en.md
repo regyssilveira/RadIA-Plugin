@@ -62,6 +62,7 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 | Inject Delphi version in prompt | For version-sensitive code | Adds the active Delphi version to reduce incompatible output. |
 | Prefer concise AI responses | For shorter defaults | Explicit requests can still ask for details. |
 | Enable logging | While diagnosing a problem | Writes sanitized local diagnostics. |
+| Native agent metrics in the log | When diagnosing latency or token consumption | With **Enable logging** on, `AgentMetrics` events record character counts, provider-reported tokens, duration, outcome, and decision kind. They exclude prompts, code, arguments, and results. |
 | Log Folder Path / `...` | To select log storage | Choose a writable folder not shared with untrusted users. |
 | Max Log File Size | To control disk use | Limits logs, not model responses. |
 | Enable local token quota | To track a local monthly budget | When disabled, the agent has no local per-run token budget. Progress-checked step windows, duration, and loop protection remain independent. Provider limits still apply. |

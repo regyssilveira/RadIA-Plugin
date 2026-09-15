@@ -1,4 +1,4 @@
-# Complete RadIA 2.17.14 user manual
+# Complete RadIA 2.17.15 user manual
 
 > Use `/help` to compare Chat, Agent, CLI, and MCP. When a plan awaits approval, select
 > **Approve plan** or type `/agent resume`.
@@ -36,7 +36,7 @@ layouts such as `Startup Layout` and `Debug Layout`. If the panel is closed befo
 remains closed in the next session; use `Tools > RadIA > Chat` to open it again.
 
 The chat panel caption and primary RadIA windows show the loaded version, for example
-`Rad IA Chat v2.17.14`, so support can confirm the installed build quickly.
+`Rad IA Chat v2.17.15`, so support can confirm the installed build quickly.
 
 Supported credentials are protected locally with Windows DPAPI. Ollama and LM Studio can run
 locally. See the [installation guide](../getting-started/install_config.en.md).
@@ -76,6 +76,22 @@ from being clipped.
 | Editor Assistance | Ghost text, delay, exclusions, and shortcuts | When configuring editor suggestions |
 | CLI & MCP | Native/external executor, portable executable, bridge, and external MCP servers | When using a CLI, exposing the IDE, or consuming a local MCP server |
 | Memory Diagnostics | FastMM5 path and execution limits | When investigating leaks, double free, or use-after-free |
+
+When **Enable logging** is on, the native agent writes `AgentMetrics` events in **Log Folder Path**.
+`agentDecision` records decision index, catalog and context sizes, supplied history, duration, outcome,
+and provider-reported tokens. `agentToolStep` records duration, tool type, and result size without its
+contents. Join events by `runId`, which is derived from a session ID hash without exposing the original
+ID. `usageStatus` is `reported`, `cached`, or `unknown`; `unknown` does not
+mean zero tokens. The **codex CLI direct** route does not expose equivalent per-decision internal
+metrics. This instrumentation does not change limits, plans, or permissions. To reduce repetition, the
+native agent omits each tool version from its decision catalog and stops repeating initial-plan
+instructions after approval. Tool names, descriptions, schemas, and risks remain available; project
+creation retains its specific guidance. DUnitX tests and coverage are no longer suggested solely because
+they are available: they remain required when the contract or request requires them. Read-only requests
+do not require `BuildProject` merely because no build occurred; mutations still require a build when the
+contract defines that gate. Project creation
+with requested tests or coverage does not finish automatically after the build. These savings do not
+change the `/tools` catalog shown to users.
 
 Every field and button provides a contextual hint. See the [security model](../reference/tool_security_model.en.md)
 for security decisions and the [executor matrix](cli_executors.en.md) for native, CLI, and MCP
