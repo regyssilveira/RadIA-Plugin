@@ -2292,7 +2292,7 @@ end;
 function TRadIAAgentRuntime.HasRecentStepProgress: Boolean;
 var
   LIndex: Integer;
-  LWindowStart: Integer;
+  LWindowStart: NativeInt;
 begin
   Result := False;
   LWindowStart := FSteps.Count - FLimits.MaxSteps;
