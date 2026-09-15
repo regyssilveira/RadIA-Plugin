@@ -178,7 +178,19 @@ type
     [Test]
     procedure TestDecisionContextBudgetAcrossRequiredStepCounts;
     [Test]
-    procedure TestStopsAtStepLimit;
+    procedure TestContinuesAfterSuccessfulStepWindow;
+    [Test]
+    procedure TestStopsAfterStepWindowWithoutProgress;
+    [Test]
+    procedure TestCompletesBeyondStepWindowWithoutTokenBudget;
+    [Test]
+    procedure TestStopsRepeatedSuccessfulResultsAtSecondWindow;
+    [Test]
+    procedure TestResumesCheckpointAtProgressWindowBoundary;
+    [Test]
+    procedure TestRepeatedBuildsDoNotRenewProgressWindow;
+    [Test]
+    procedure TestDistinctSuccessfulMutationsRenewProgressWindow;
     [Test]
     procedure TestStopsRepeatedToolCalls;
     [Test]
@@ -1425,7 +1437,7 @@ begin
   Assert.IsTrue(LRaised);
 end;
 
-procedure TTestRadIAAgentRuntime.TestStopsAtStepLimit;
+procedure TTestRadIAAgentRuntime.TestContinuesAfterSuccessfulStepWindow;
 var
   LExecutor: IRadIAToolExecutor;
   LProvider: IRadIAAgentDecisionProvider;
@@ -1441,8 +1453,9 @@ begin
       'Approve limited plan.',
       '[{"title":"Run first tool"},{"title":"Run second tool"}]'
     ),
-    TRadIAAgentDecision.CallTool('FirstTool', '{}'),
-    TRadIAAgentDecision.CallTool('SecondTool', '{}')
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":1}'),
+    TRadIAAgentDecision.CallTool('GetIDEState', '{}'),
+    TRadIAAgentDecision.Complete('Finished successfully.')
   ]);
   LStore := TRadIAMemoryAgentCheckpointStore.Create;
   LRuntime := NewRuntime(LExecutor, LProvider, LStore);
@@ -1455,9 +1468,302 @@ begin
     );
     Assert.AreEqual(asAwaitingApproval, LResult.Status);
     LResult := LRuntime.Resume('limit-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual(2, LResult.StepCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestStopsAfterStepWindowWithoutProgress;
+var
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Failed('unavailable', 'The tool is unavailable.')
+  );
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Approve bounded plan.',
+      '[{"title":"Try available tools"}]'
+    ),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":1}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":2}'),
+    TRadIAAgentDecision.CallTool('GetEditorContent', '{"step":3}')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Stop when no tool succeeds.',
+      'no-progress-session',
+      'project',
+      TRadIAAgentLimits.Create(2, 3)
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('no-progress-session');
     Assert.AreEqual(asFailed, LResult.Status);
-    Assert.AreEqual(1, LResult.StepCount);
-    Assert.Contains(LResult.Message, 'step limit');
+    Assert.AreEqual(2, LResult.StepCount);
+    Assert.Contains(LResult.Message, 'without new tool progress');
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestCompletesBeyondStepWindowWithoutTokenBudget;
+var
+  LDecisions: TArray<TRadIAAgentDecision>;
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LIndex: Integer;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  SetLength(LDecisions, 27);
+  LDecisions[0] := TRadIAAgentDecision.Plan(
+    'Approve a longer plan.',
+    '[{"title":"Read project context"}]'
+  );
+  for LIndex := 1 to 25 do
+    LDecisions[LIndex] := TRadIAAgentDecision.CallTool(
+      'GetEditorContent',
+      Format('{"step":%d}', [LIndex])
+    );
+  LDecisions[26] := TRadIAAgentDecision.Complete('Finished.');
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{}')
+  );
+  LExecutorObject.OnExecute :=
+    procedure
+    begin
+      LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+        Format('{"revision":%d}', [LExecutorObject.CallCount])
+      );
+    end;
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create(LDecisions);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Complete a long read-only task.',
+      'long-progress-session',
+      'project',
+      TRadIAAgentLimits.Create(20, 3, 60000, 0)
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('long-progress-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual(25, LResult.StepCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestStopsRepeatedSuccessfulResultsAtSecondWindow;
+var
+  LDecisions: TArray<TRadIAAgentDecision>;
+  LExecutor: IRadIAToolExecutor;
+  LIndex: Integer;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  SetLength(LDecisions, 47);
+  LDecisions[0] := TRadIAAgentDecision.Plan(
+    'Approve bounded reads.',
+    '[{"title":"Read project context"}]'
+  );
+  for LIndex := 1 to 45 do
+    LDecisions[LIndex] := TRadIAAgentDecision.CallTool(
+      'GetEditorContent',
+      Format('{"step":%d}', [LIndex])
+    );
+  LDecisions[46] := TRadIAAgentDecision.Complete('Done.');
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"content":"unchanged"}')
+  );
+  LProvider := TRadIAMockAgentDecisionProvider.Create(LDecisions);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Avoid repeating unchanged reads.',
+      'repeated-results-session',
+      'project',
+      TRadIAAgentLimits.Create(20, 3, 60000, 0)
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('repeated-results-session');
+    Assert.AreEqual(asFailed, LResult.Status);
+    Assert.AreEqual(40, LResult.StepCount);
+    Assert.Contains(LResult.Message, 'without new tool progress');
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestResumesCheckpointAtProgressWindowBoundary;
+var
+  LDecisions: TArray<TRadIAAgentDecision>;
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LIndex: Integer;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  SetLength(LDecisions, 27);
+  LDecisions[0] := TRadIAAgentDecision.Plan(
+    'Approve a resumable plan.',
+    '[{"title":"Read project context"}]'
+  );
+  for LIndex := 1 to 25 do
+    LDecisions[LIndex] := TRadIAAgentDecision.CallTool(
+      'GetEditorContent',
+      Format('{"step":%d}', [LIndex])
+    );
+  LDecisions[26] := TRadIAAgentDecision.Complete('Done.');
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create(LDecisions);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LExecutorObject.OnExecute :=
+      procedure
+      begin
+        LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+          Format('{"revision":%d}', [LExecutorObject.CallCount])
+        );
+        if LExecutorObject.CallCount = 20 then
+          LRuntime.RequestPause;
+      end;
+    LResult := LRuntime.Start(
+      'Resume after a progress window.',
+      'window-resume-session',
+      'project',
+      TRadIAAgentLimits.Create(20, 3, 60000, 0)
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('window-resume-session');
+    Assert.AreEqual(asPaused, LResult.Status);
+    Assert.AreEqual(20, LResult.StepCount);
+    LResult := LRuntime.Resume('window-resume-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual(25, LResult.StepCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestRepeatedBuildsDoNotRenewProgressWindow;
+var
+  LDecisions: TArray<TRadIAAgentDecision>;
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LIndex: Integer;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  SetLength(LDecisions, 47);
+  LDecisions[0] := TRadIAAgentDecision.Plan(
+    'Approve bounded validation.',
+    '[{"title":"Build the project"}]'
+  );
+  for LIndex := 1 to 45 do
+    LDecisions[LIndex] := TRadIAAgentDecision.CallTool(
+      'BuildProject',
+      Format('{"attempt":%d}', [LIndex])
+    );
+  LDecisions[46] := TRadIAAgentDecision.Complete('Done.');
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{}')
+  );
+  LExecutorObject.OnExecute :=
+    procedure
+    var
+      LMessages: string;
+    begin
+      LMessages := '[]';
+      if Odd(LExecutorObject.CallCount) then
+        LMessages := '[{"text":"Build output"}]';
+      LExecutorObject.ToolResult := TRadIAToolResult.Succeeded(
+        Format(
+          '{"success":true,"status":"succeeded",' +
+          '"projectFile":"Project.dproj","configuration":"Debug",' +
+          '"platform":"Win32","durationMs":%d,"messages":%s}',
+          [LExecutorObject.CallCount, LMessages]
+        )
+      );
+    end;
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create(LDecisions);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Avoid repeating the same successful build.',
+      'repeated-build-session',
+      'Project.dproj',
+      TRadIAAgentLimits.Create(20, 3, 60000, 0)
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('repeated-build-session');
+    Assert.AreEqual(asFailed, LResult.Status);
+    Assert.AreEqual(40, LResult.StepCount);
+    Assert.Contains(LResult.Message, 'without new tool progress');
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestDistinctSuccessfulMutationsRenewProgressWindow;
+var
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  LExecutor := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"applied":true}')
+  );
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Approve two independent changes.',
+      '[{"title":"Edit two files"}]'
+    ),
+    TRadIAAgentDecision.CallTool('ApplyPatch', '{"path":"First.pas"}'),
+    TRadIAAgentDecision.CallTool('ApplyPatch', '{"path":"Second.pas"}'),
+    TRadIAAgentDecision.Fail('Stop after the second change.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Apply distinct changes.',
+      'distinct-mutation-session',
+      'project',
+      TRadIAAgentLimits.Create(1, 3)
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('distinct-mutation-session');
+    Assert.AreEqual(asFailed, LResult.Status);
+    Assert.AreEqual(2, LResult.StepCount);
+    Assert.Contains(LResult.Message, 'Stop after the second change.');
   finally
     LRuntime.Free;
   end;

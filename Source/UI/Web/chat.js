@@ -1235,7 +1235,7 @@ function renderAgentState(data) {
     ? `${state.totalTokens || 0}/${state.maxTotalTokens} tokens`
     : `${state.totalTokens || 0} tokens (unlimited)`;
   let metricsText =
-    `${steps.length}/${state.maxSteps || 0} steps · ` +
+    `${steps.length} steps · ${state.maxSteps || 0}-step progress window · ` +
     `${tokenBudget} · ` +
     `${elapsedSeconds}s/${Math.round((state.maxDurationMilliseconds || 0) / 1000)}s`;
   if (state.pricingConfigured) {
@@ -3112,6 +3112,8 @@ function finishConversationSmoke(status, reason = '') {
   ));
   const stepLimitReached = document.body.textContent.includes(
     'configured step limit'
+  ) || document.body.textContent.includes(
+    'full step window without new tool progress'
   );
   const elapsedMilliseconds = Math.round(
     globalThis.performance.now() - conversationSmoke.startedAt
@@ -3279,6 +3281,8 @@ function continueAgentBudgetSmoke(card, state) {
     repeatedReadOnlyLoop: toolSteps.length !== 1,
     stepLimitReached: document.body.textContent.includes(
       'configured step limit'
+    ) || document.body.textContent.includes(
+      'full step window without new tool progress'
     ),
     stepCount,
     maxSteps,
