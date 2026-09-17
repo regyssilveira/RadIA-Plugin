@@ -11,8 +11,15 @@ param(
 $ErrorActionPreference = "Stop"
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $platform = if ($IDE64) { "Win64" } else { "Win32" }
+$previousTag = (
+    & git -C $repositoryRoot describe --tags --abbrev=0 "HEAD^"
+).Trim()
+if ($LASTEXITCODE -ne 0 -or $previousTag -notmatch '^v\d+\.\d+\.\d+$') {
+    throw "The previous release tag could not be resolved."
+}
+$previousVersion = $previousTag.Substring(1)
 $previousPackage = Join-Path $repositoryRoot (
-    "Output\Packages\RadIA-v2.17.2-Delphi-" +
+    "Output\Packages\RadIA-v$previousVersion-Delphi-" +
     "$DelphiVersion-$platform-Release.zip"
 )
 if (-not (Test-Path -LiteralPath $previousPackage -PathType Leaf)) {
