@@ -15,6 +15,7 @@ type
     function GetAlternateScreen: Boolean;
     function GetBracketedPaste: Boolean;
     function GetMouseMode: Integer;
+    function DiagnosticSnapshotJson: string;
     function PreparePaste(const AText: string): string;
     function EncodeMouse(
       const AButton: Integer;
@@ -60,6 +61,7 @@ type
     function GetAlternateScreen: Boolean;
     function GetBracketedPaste: Boolean;
     function GetMouseMode: Integer;
+    function DiagnosticSnapshotJson: string;
     function PreparePaste(const AText: string): string;
     function EncodeMouse(
       const AButton: Integer;
@@ -118,6 +120,11 @@ end;
 function TRadIANativeTerminalEmulator.GetMouseMode: Integer;
 begin
   Result := FScreen.MouseMode;
+end;
+
+function TRadIANativeTerminalEmulator.DiagnosticSnapshotJson: string;
+begin
+  Result := FScreen.DiagnosticSnapshotJson;
 end;
 
 function TRadIANativeTerminalEmulator.PreparePaste(

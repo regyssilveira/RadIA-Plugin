@@ -288,6 +288,10 @@ Saída Unicode fragmentada, caracteres CJK, emoji, marcas combinantes, resize co
 comuns de aplicações TUI são tratados pelo modelo de tela. Recursos gráficos ou protocolo de mouse
 podem exigir um terminal externo. Veja a referência completa em [Terminal](terminal.md).
 
+O modo **Direct input** envia teclas somente quando o campo do terminal está focado. Drag and drop e
+`Ctrl+V` inserem caminhos entre aspas sem executar comandos; imagens exigem confirmação e usam um
+PNG temporário limitado a 10 MB.
+
 O chat, o terminal e o contexto enviado às ações do editor podem compartilhar uma identidade de
 jornada sem duplicar o histórico da conversa nem a saída do terminal. O botão **Journey** permite
 vincular ou desvincular visualmente; `/context`, `/context new`, `/context detach` e

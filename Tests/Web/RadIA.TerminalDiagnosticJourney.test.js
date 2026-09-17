@@ -32,3 +32,32 @@ test('terminal guides document error navigation and sanitized chat handoff', () 
     assert.match(content, /13/);
   }
 });
+
+test('terminal direct input and dropped files remain scoped and reviewable', () => {
+  const frame = read('Source/UI/RadIA.UI.TerminalFrame.pas');
+  const terminal = read('Source/Core/RadIA.Core.Terminal.pas');
+
+  assert.match(frame, /FDirectInputButton\.Caption := 'Direct input'/);
+  assert.match(frame, /FindControl\(GetFocus\) <> FDirectInputButton/);
+  assert.match(frame, /DragAcceptFiles\(Handle, True\)/);
+  assert.match(frame, /'Send the dropped path or paths to the active terminal\?'/);
+  assert.match(frame, /FSession\.WriteInput\(FScreen\.PreparePaste\(LFormattedPaths\)\)/);
+  assert.doesNotMatch(frame, /PreparePaste\(LFormattedPaths \+ #13\)/);
+  assert.match(terminal, /Result := Result \+ '"' \+ LPath \+ '"'/);
+});
+
+test('terminal metrics exclude command, path, key, and screen payload fields', () => {
+  const frame = read('Source/UI/RadIA.UI.TerminalFrame.pas');
+  const screen = read('Source/Core/RadIA.Core.TerminalScreen.pas');
+  const metricFields = [
+    'directInputUsed',
+    'droppedItemCount',
+    'temporaryImageCount',
+    'resizeCount',
+    'unrecognizedSequenceCount'
+  ];
+
+  metricFields.forEach(field => assert.match(`${frame}\n${screen}`, new RegExp(field)));
+  ['commandText', 'screenContent', 'filePath', 'keyText']
+    .forEach(field => assert.doesNotMatch(`${frame}\n${screen}`, new RegExp(`'${field}'`)));
+});

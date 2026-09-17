@@ -244,6 +244,10 @@ The screen model handles fragmented Unicode output, CJK, emoji, combining marks,
 common TUI operations. Graphics or mouse protocols may require an external terminal. See the full
 [terminal reference](terminal.en.md).
 
+**Direct input** sends keys only while the terminal field has focus. Drag and drop and `Ctrl+V`
+insert quoted paths without running commands; images require confirmation and use a temporary PNG
+limited to 10 MB.
+
 Chat, terminal, and the context sent to editor actions can share a journey identity without
 duplicating conversation history or terminal output. The **Journey** button links or detaches it
 visually; `/context`, `/context new`, `/context detach`, and `/context switch <id>` provide the same

@@ -48,6 +48,9 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - diretório de trabalho baseado na pasta do projeto Delphi ativo;
 - execução interativa por ConPTY, com fallback para pipes;
 - entrada contínua para responder prompts de processos ativos;
+- modo de entrada direta, restrito ao campo do terminal, para enviar teclas a aplicações interativas;
+- drag and drop de arquivos e pastas com inserção de caminhos entre aspas, sem execução automática;
+- colagem de arquivos e imagens da área de transferência, com confirmação e PNG temporário para imagens;
 - captura incremental de stdout e stderr;
 - ANSI SGR com cores normais, brilhantes, 256 cores e true color para texto e fundo;
 - negrito, itálico, sublinhado, vídeo inverso e reset seletivo de atributos;
@@ -61,6 +64,7 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - largura visual correta para CJK, emoji e marcas combinantes;
 - reflow ao redimensionar, preservando quebras de linha explícitas;
 - operações TUI de inserir, excluir e apagar caracteres, inclusive com sequências VT fragmentadas;
+- regiões de rolagem, inserção e exclusão de linhas e reverse index para aplicações TUI;
 - histórico persistente dos últimos 200 comandos;
 - busca reversa incremental com `Ctrl+R`;
 - snippets para build, testes e Git;
@@ -87,6 +91,21 @@ automaticamente o padrão `Ctrl+Alt+T`.
 
 Para recuperar um comando sem usar o mouse, digite parte dele e pressione `Ctrl+R`. Pressione
 novamente para percorrer ocorrências mais antigas. Uma edição manual reinicia a busca.
+
+### Entrada direta, arquivos e imagens
+
+Depois que uma sessão ConPTY é iniciada, **Direct input** fica disponível. Quando ativado, as teclas
+digitadas no campo de comando são enviadas imediatamente ao processo, incluindo setas, Home, End,
+Page Up, Page Down, Insert, Delete, teclas de função, Ctrl e Alt. O modo é desligado ao sair do campo
+ou quando o processo termina. Ele não altera o editor, o chat nem os atalhos globais da IDE.
+
+Arrastar arquivos ou pastas para a saída insere seus caminhos, sempre entre aspas, no campo de
+comando. O RadIA não executa o texto inserido. Durante a entrada direta, o envio requer confirmação
+e não acrescenta Enter. `Ctrl+V` segue a mesma regra para arquivos copiados.
+
+Ao colar uma imagem, o RadIA pede confirmação, limita a imagem a 10 MB e cria um PNG em
+`%TEMP%\RadIA\TerminalUploads`. O caminho é inserido como qualquer outro arquivo e o temporário é
+removido ao fechar a aba. O conteúdo da imagem não é enviado ao chat nem gravado no histórico.
 
 ### Abrir e analisar um erro de compilação
 
@@ -137,6 +156,10 @@ O terminal executa exatamente o comando informado pelo usuário. Ele não ativa 
 adiciona opções autônomas aos CLIs. O histórico é salvo em
 `%APPDATA%\RadIA\terminal-history.json` e contém somente perfil, comando, horário e código de saída.
 Stdout, stderr, tokens e credenciais não são persistidos pelo histórico.
+
+O log operacional registra apenas contadores e capacidades da sessão: redimensionamentos,
+sequências não reconhecidas, uso da entrada direta, quantidade de itens arrastados e imagens
+temporárias. Teclas, comandos, conteúdo da tela e caminhos nunca fazem parte dessas métricas.
 
 Antes de iniciar um processo, o terminal solicita autorização à mesma política de execução usada
 pelo chat, MCP e modo agente. **Allow once**, **Allow for session**, **Deny** e **Cancel** possuem a

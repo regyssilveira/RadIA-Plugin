@@ -48,6 +48,9 @@ automatically defaults to `Ctrl+Alt+T`.
 - working directory based on the active Delphi project folder;
 - interactive execution by ConPTY, with fallback to pipes;
 - continuous input to respond to prompts from active processes;
+- direct input mode, scoped to the terminal field, for sending keys to interactive applications;
+- file and folder drag and drop with quoted path insertion and no automatic execution;
+- clipboard files and images, with confirmation and a temporary PNG for images;
 - incremental capture of stdout and stderr;
 - ANSI SGR with normal, bright, 256-color, and true-color foregrounds and backgrounds;
 - bold, italic, underline, inverse video, and selective attribute reset;
@@ -61,6 +64,7 @@ automatically defaults to `Ctrl+Alt+T`.
 - correct display width for CJK, emoji, and combining marks;
 - reflow on resize while preserving explicit line breaks;
 - TUI insert, delete, and erase character operations, including fragmented VT sequences;
+- scrolling regions, line insertion and deletion, and reverse index for TUI applications;
 - persistent history of the last 200 commands;
 - incremental reverse search with `Ctrl+R`;
 - snippets for build, tests and Git;
@@ -86,6 +90,21 @@ automatically defaults to `Ctrl+Alt+T`.
 
 To recall a command without using the mouse, type part of the command and press `Ctrl+R`. press
 again to scroll through older occurrences. A manual edit restarts the search.
+
+### Direct input, files, and images
+
+After a ConPTY session starts, **Direct input** becomes available. While enabled, keys typed in the
+command field are sent immediately to the process, including arrows, Home, End, Page Up, Page Down,
+Insert, Delete, function keys, Ctrl, and Alt. The mode turns off when focus leaves the field or the
+process ends. It does not change the editor, chat, or global IDE shortcuts.
+
+Dropping files or folders on the output inserts their paths, always quoted, into the command field.
+RadIA does not execute the inserted text. During direct input, sending requires confirmation and
+does not append Enter. `Ctrl+V` follows the same rule for copied files.
+
+When an image is pasted, RadIA asks for confirmation, limits the image to 10 MB, and creates a PNG
+under `%TEMP%\RadIA\TerminalUploads`. Its path is inserted like any other file, and the temporary
+file is removed when the tab closes. Image content is not sent to chat or stored in history.
 
 ### Open and analyze a compiler error
 
@@ -136,6 +155,10 @@ The terminal executes exactly the command entered by the user. It does not activ
 adds standalone options to CLIs. History is saved in
 `%APPDATA%\RadIA\terminal-history.json` and contains only profile, command, time and exit code.
 Stdout, stderr, tokens and credentials are not persisted by history.
+
+Operational logs contain only session counters and capabilities: resize count, unrecognized
+sequences, direct-input usage, dropped-item count, and temporary-image count. Keys, commands,
+screen content, and paths are never included in these metrics.
 
 Before starting a process, the terminal requests authorization from the same execution policy used
 via chat, MCP and agent mode. **Allow once**, **Allow for session**, **Deny** and **Cancel** have the

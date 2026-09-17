@@ -154,6 +154,23 @@ type
     property Source: string read FSource;
   end;
 
+  TRadIATerminalDirectInput = class
+  public
+    class function EncodeKey(
+      const AKey: Word;
+      const AShift: Boolean;
+      const AControl: Boolean;
+      const AAlt: Boolean
+    ): string; static;
+  end;
+
+  TRadIATerminalDropFormatter = class
+  public
+    class function FormatPaths(
+      const APaths: TArray<string>
+    ): string; static;
+  end;
+
   TRadIATerminalHistoryEntry = record
   private
     FTimestampUtc: TDateTime;
@@ -224,6 +241,92 @@ uses
   System.IOUtils,
   System.JSON,
   System.SysUtils;
+
+const
+  CVirtualKeyBack = $08;
+  CVirtualKeyTab = $09;
+  CVirtualKeyReturn = $0D;
+  CVirtualKeyEscape = $1B;
+  CVirtualKeyPrior = $21;
+  CVirtualKeyNext = $22;
+  CVirtualKeyEnd = $23;
+  CVirtualKeyHome = $24;
+  CVirtualKeyLeft = $25;
+  CVirtualKeyUp = $26;
+  CVirtualKeyRight = $27;
+  CVirtualKeyDown = $28;
+  CVirtualKeyInsert = $2D;
+  CVirtualKeyDelete = $2E;
+  CVirtualKeyF1 = $70;
+  CVirtualKeyF12 = $7B;
+
+{ TRadIATerminalDirectInput }
+
+class function TRadIATerminalDirectInput.EncodeKey(
+  const AKey: Word;
+  const AShift: Boolean;
+  const AControl: Boolean;
+  const AAlt: Boolean
+): string;
+const
+  CFunctionKeys: array[0..11] of string = (
+    #27'OP', #27'OQ', #27'OR', #27'OS', #27'[15~', #27'[17~',
+    #27'[18~', #27'[19~', #27'[20~', #27'[21~', #27'[23~', #27'[24~'
+  );
+var
+  LCharacter: Char;
+begin
+  Result := '';
+  case AKey of
+    CVirtualKeyBack: Result := #127;
+    CVirtualKeyTab:
+      if AShift then
+        Result := #27'[Z'
+      else
+        Result := #9;
+    CVirtualKeyReturn: Result := #13;
+    CVirtualKeyEscape: Result := #27;
+    CVirtualKeyPrior: Result := #27'[5~';
+    CVirtualKeyNext: Result := #27'[6~';
+    CVirtualKeyEnd: Result := #27'[F';
+    CVirtualKeyHome: Result := #27'[H';
+    CVirtualKeyLeft: Result := #27'[D';
+    CVirtualKeyUp: Result := #27'[A';
+    CVirtualKeyRight: Result := #27'[C';
+    CVirtualKeyDown: Result := #27'[B';
+    CVirtualKeyInsert: Result := #27'[2~';
+    CVirtualKeyDelete: Result := #27'[3~';
+  else
+    if (AKey >= CVirtualKeyF1) and (AKey <= CVirtualKeyF12) then
+      Result := CFunctionKeys[AKey - CVirtualKeyF1]
+    else if AControl and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
+    begin
+      LCharacter := Char(AKey - Ord('A') + 1);
+      Result := LCharacter;
+    end
+    else if AAlt and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
+      Result := Char(AKey);
+  end;
+  if AAlt and (Result <> '') then
+    Result := #27 + Result;
+end;
+
+{ TRadIATerminalDropFormatter }
+
+class function TRadIATerminalDropFormatter.FormatPaths(
+  const APaths: TArray<string>
+): string;
+var
+  LPath: string;
+begin
+  Result := '';
+  for LPath in APaths do
+  begin
+    if Result <> '' then
+      Result := Result + ' ';
+    Result := Result + '"' + LPath + '"';
+  end;
+end;
 
 { TRadIATerminalTextStyle }
 
