@@ -1906,6 +1906,7 @@ function TRadIATerminalTabsFrame.HasRequiredControls(
 begin
   Result := FAddButton.Visible and
     FCloseButton.Visible and
+    ASession.FDirectInputButton.Visible and
     ASession.FRunButton.Visible and
     ASession.FStopButton.Visible and
     ASession.FClearButton.Visible and
