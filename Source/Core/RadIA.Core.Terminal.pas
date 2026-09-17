@@ -155,6 +155,16 @@ type
   end;
 
   TRadIATerminalDirectInput = class
+  private
+    class function EncodeFunctionOrModifiedKey(
+      const AKey: Word;
+      const AControl: Boolean;
+      const AAlt: Boolean
+    ): string; static;
+    class function EncodeNavigationKey(
+      const AKey: Word;
+      const AShift: Boolean
+    ): string; static;
   public
     class function EncodeKey(
       const AKey: Word;
@@ -262,9 +272,8 @@ const
 
 { TRadIATerminalDirectInput }
 
-class function TRadIATerminalDirectInput.EncodeKey(
+class function TRadIATerminalDirectInput.EncodeFunctionOrModifiedKey(
   const AKey: Word;
-  const AShift: Boolean;
   const AControl: Boolean;
   const AAlt: Boolean
 ): string;
@@ -273,8 +282,20 @@ const
     #27'OP', #27'OQ', #27'OR', #27'OS', #27'[15~', #27'[17~',
     #27'[18~', #27'[19~', #27'[20~', #27'[21~', #27'[23~', #27'[24~'
   );
-var
-  LCharacter: Char;
+begin
+  Result := '';
+  if (AKey >= CVirtualKeyF1) and (AKey <= CVirtualKeyF12) then
+    Result := CFunctionKeys[AKey - CVirtualKeyF1]
+  else if AControl and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
+    Result := Char(AKey - Ord('A') + 1)
+  else if AAlt and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
+    Result := Char(AKey);
+end;
+
+class function TRadIATerminalDirectInput.EncodeNavigationKey(
+  const AKey: Word;
+  const AShift: Boolean
+): string;
 begin
   Result := '';
   case AKey of
@@ -296,17 +317,19 @@ begin
     CVirtualKeyDown: Result := #27'[B';
     CVirtualKeyInsert: Result := #27'[2~';
     CVirtualKeyDelete: Result := #27'[3~';
-  else
-    if (AKey >= CVirtualKeyF1) and (AKey <= CVirtualKeyF12) then
-      Result := CFunctionKeys[AKey - CVirtualKeyF1]
-    else if AControl and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
-    begin
-      LCharacter := Char(AKey - Ord('A') + 1);
-      Result := LCharacter;
-    end
-    else if AAlt and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
-      Result := Char(AKey);
   end;
+end;
+
+class function TRadIATerminalDirectInput.EncodeKey(
+  const AKey: Word;
+  const AShift: Boolean;
+  const AControl: Boolean;
+  const AAlt: Boolean
+): string;
+begin
+  Result := EncodeNavigationKey(AKey, AShift);
+  if Result = '' then
+    Result := EncodeFunctionOrModifiedKey(AKey, AControl, AAlt);
   if AAlt and (Result <> '') then
     Result := #27 + Result;
 end;

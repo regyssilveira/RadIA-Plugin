@@ -83,6 +83,7 @@ type
       const ASegment: TRadIATerminalTextSegment
     );
     procedure BuildControls;
+    procedure BuildCommandControls;
     procedure BuildDiagnosticControls;
     procedure BuildPaletteControls;
     procedure ConfigureControlHints;
@@ -477,47 +478,7 @@ begin
   FHistoryLabel.FocusControl := FHistoryCombo;
   FHistoryCombo.OnChange := HistoryChange;
 
-  FCommandLabel := TLabel.Create(Self);
-  FCommandLabel.Parent := FTopPanel;
-  FCommandLabel.SetBounds(8, 55, 596, 17);
-  FCommandLabel.Caption := 'Terminal command';
-
-  FCommandEdit := TEdit.Create(Self);
-  FCommandEdit.Parent := FTopPanel;
-  FCommandEdit.SetBounds(8, 73, 596, 25);
-  FCommandLabel.FocusControl := FCommandEdit;
-  FCommandEdit.OnChange := CommandChange;
-  FCommandEdit.OnExit := CommandExit;
-  FCommandEdit.OnKeyDown := CommandKeyDown;
-  FCommandEdit.OnKeyPress := CommandKeyPress;
-
-  FDirectInputButton := TButton.Create(Self);
-  FDirectInputButton.Parent := FTopPanel;
-  FDirectInputButton.SetBounds(508, 71, 96, 27);
-  FDirectInputButton.Caption := 'Direct input';
-  FDirectInputButton.Enabled := False;
-  FDirectInputButton.OnClick := DirectInputClick;
-  FCommandEdit.Width := 492;
-
-  FRunButton := TButton.Create(Self);
-  FRunButton.Parent := FTopPanel;
-  FRunButton.SetBounds(612, 71, 72, 27);
-  FRunButton.Caption := 'Run';
-  FRunButton.Default := True;
-  FRunButton.OnClick := RunClick;
-
-  FStopButton := TButton.Create(Self);
-  FStopButton.Parent := FTopPanel;
-  FStopButton.SetBounds(692, 71, 72, 27);
-  FStopButton.Caption := 'Stop';
-  FStopButton.Enabled := False;
-  FStopButton.OnClick := StopClick;
-
-  FClearButton := TButton.Create(Self);
-  FClearButton.Parent := FTopPanel;
-  FClearButton.SetBounds(772, 71, 72, 27);
-  FClearButton.Caption := 'Clear';
-  FClearButton.OnClick := ClearClick;
+  BuildCommandControls;
 
   BuildDiagnosticControls;
 
@@ -557,6 +518,50 @@ begin
   FOutputLabel.FocusControl := FOutputEditor;
   LoadHistory;
   RefreshJourneyContext;
+end;
+
+procedure TRadIATerminalFrame.BuildCommandControls;
+begin
+  FCommandLabel := TLabel.Create(Self);
+  FCommandLabel.Parent := FTopPanel;
+  FCommandLabel.SetBounds(8, 55, 596, 17);
+  FCommandLabel.Caption := 'Terminal command';
+
+  FCommandEdit := TEdit.Create(Self);
+  FCommandEdit.Parent := FTopPanel;
+  FCommandEdit.SetBounds(8, 73, 492, 25);
+  FCommandLabel.FocusControl := FCommandEdit;
+  FCommandEdit.OnChange := CommandChange;
+  FCommandEdit.OnExit := CommandExit;
+  FCommandEdit.OnKeyDown := CommandKeyDown;
+  FCommandEdit.OnKeyPress := CommandKeyPress;
+
+  FDirectInputButton := TButton.Create(Self);
+  FDirectInputButton.Parent := FTopPanel;
+  FDirectInputButton.SetBounds(508, 71, 96, 27);
+  FDirectInputButton.Caption := 'Direct input';
+  FDirectInputButton.Enabled := False;
+  FDirectInputButton.OnClick := DirectInputClick;
+
+  FRunButton := TButton.Create(Self);
+  FRunButton.Parent := FTopPanel;
+  FRunButton.SetBounds(612, 71, 72, 27);
+  FRunButton.Caption := 'Run';
+  FRunButton.Default := True;
+  FRunButton.OnClick := RunClick;
+
+  FStopButton := TButton.Create(Self);
+  FStopButton.Parent := FTopPanel;
+  FStopButton.SetBounds(692, 71, 72, 27);
+  FStopButton.Caption := 'Stop';
+  FStopButton.Enabled := False;
+  FStopButton.OnClick := StopClick;
+
+  FClearButton := TButton.Create(Self);
+  FClearButton.Parent := FTopPanel;
+  FClearButton.SetBounds(772, 71, 72, 27);
+  FClearButton.Caption := 'Clear';
+  FClearButton.OnClick := ClearClick;
 end;
 
 procedure TRadIATerminalFrame.BuildPaletteControls;
@@ -1440,7 +1445,7 @@ begin
     Clipboard.Open;
     try
       LDropHandle := Clipboard.GetAsHandle(CF_HDROP);
-      LFiles := ReadRadIADroppedFiles(HDROP(LDropHandle));
+      LFiles := ReadRadIADroppedFiles(LDropHandle);
     finally
       Clipboard.Close;
     end;

@@ -64,6 +64,10 @@ type
       const AStyle: TRadIATerminalTextStyle
     );
     procedure ApplyCsi(const AFinalCharacter: Char);
+    procedure ApplyCsiEditing(
+      const AFinalCharacter: Char;
+      const AParameters: TArray<Integer>
+    );
     procedure ApplyPrivateMode(const AEnable: Boolean);
     procedure ApplyOsc;
     procedure ApplyEraseDisplay(const AMode: Integer);
@@ -141,8 +145,6 @@ type
     property Columns: Integer read FColumns;
     property CursorColumn: Integer read FCursorColumn;
     property MouseMode: Integer read FMouseMode;
-    property ScrollBottom: Integer read FScrollBottom;
-    property ScrollTop: Integer read FScrollTop;
   end;
 
 implementation
@@ -204,9 +206,13 @@ begin
     ApplyPrivateMode(AFinalCharacter = 'h');
     Exit;
   end;
+  if CharInSet(AFinalCharacter, ['@', 'L', 'M', 'P', 'X', 'r']) then
+  begin
+    ApplyCsiEditing(AFinalCharacter, LParameters);
+    EnsureCursor;
+    Exit;
+  end;
   case AFinalCharacter of
-    '@':
-      InsertBlankCharacters(GetParameter(LParameters, 0, 1));
     'A':
       FCursorRow := Max(
         0,
@@ -214,14 +220,6 @@ begin
       );
     'B':
       Inc(FCursorRow, GetParameter(LParameters, 0, 1));
-    'P':
-      DeleteCharacters(GetParameter(LParameters, 0, 1));
-    'X':
-      ClearRange(
-        FCursorRow,
-        FCursorColumn,
-        FCursorColumn + GetParameter(LParameters, 0, 1) - 1
-      );
     'C':
       FCursorColumn := Min(
         FColumns - 1,
@@ -262,23 +260,8 @@ begin
       ApplyEraseDisplay(GetParameter(LParameters, 0, 0));
     'K':
       ApplyEraseLine(GetParameter(LParameters, 0, 0));
-    'L':
-      InsertLines(GetParameter(LParameters, 0, 1));
-    'M':
-      DeleteLines(GetParameter(LParameters, 0, 1));
     'm':
       ApplySgr(LParameters);
-    'r':
-      begin
-        FScrollTop := Max(0, GetParameter(LParameters, 0, 1) - 1);
-        FScrollBottom := Max(
-          FScrollTop,
-          GetParameter(LParameters, 1, FRows.Count) - 1
-        );
-        EnsureRow(FScrollBottom);
-        FCursorColumn := 0;
-        FCursorRow := 0;
-      end;
     's':
       begin
         FSavedColumn := FCursorColumn;
@@ -463,6 +446,36 @@ begin
   FStyle := TRadIATerminalTextStyle.Default;
   ResetScrollRegion;
   EnsureCursor;
+end;
+
+procedure TRadIATerminalScreen.ApplyCsiEditing(
+  const AFinalCharacter: Char;
+  const AParameters: TArray<Integer>
+);
+begin
+  case AFinalCharacter of
+    '@': InsertBlankCharacters(GetParameter(AParameters, 0, 1));
+    'L': InsertLines(GetParameter(AParameters, 0, 1));
+    'M': DeleteLines(GetParameter(AParameters, 0, 1));
+    'P': DeleteCharacters(GetParameter(AParameters, 0, 1));
+    'X':
+      ClearRange(
+        FCursorRow,
+        FCursorColumn,
+        FCursorColumn + GetParameter(AParameters, 0, 1) - 1
+      );
+    'r':
+      begin
+        FScrollTop := Max(0, GetParameter(AParameters, 0, 1) - 1);
+        FScrollBottom := Max(
+          FScrollTop,
+          GetParameter(AParameters, 1, Integer(FRows.Count)) - 1
+        );
+        EnsureRow(FScrollBottom);
+        FCursorColumn := 0;
+        FCursorRow := 0;
+      end;
+  end;
 end;
 
 procedure TRadIATerminalScreen.ClearCell(
