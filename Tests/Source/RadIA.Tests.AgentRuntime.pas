@@ -1500,7 +1500,7 @@ begin
       '{"sessionId":"safe-run","objective":"SECRET_OBJECTIVE","steps":[]}'
     );
 
-    Assert.AreEqual(1, LLoggerObject.Entries.Count);
+    Assert.AreEqual<Integer>(1, LLoggerObject.Entries.Count);
     Assert.Contains(LLoggerObject.Entries[0], '"event":"agentDecision"');
     Assert.Contains(LLoggerObject.Entries[0], '"promptTokens":12');
     Assert.Contains(LLoggerObject.Entries[0], '"completionTokens":3');
@@ -1539,7 +1539,7 @@ begin
     try
       LRuntime.Start('Inspect.', 'safe-tool-run', 'project', TRadIAAgentLimits.Default);
       LRuntime.Resume('safe-tool-run');
-      Assert.AreEqual(1, LLoggerObject.Entries.Count);
+      Assert.AreEqual<Integer>(1, LLoggerObject.Entries.Count);
       Assert.Contains(LLoggerObject.Entries[0], '"event":"agentToolStep"');
       Assert.Contains(LLoggerObject.Entries[0], '"toolName":"ReadFile"');
       Assert.Contains(LLoggerObject.Entries[0], '"resultCharacters":');

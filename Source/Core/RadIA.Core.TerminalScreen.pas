@@ -50,16 +50,24 @@ type
     FPrimaryCursorColumn: Integer;
     FPrimaryCursorRow: Integer;
     FRows: TList<TRadIATerminalRow>;
+    FResizeCount: Integer;
     FSavedColumn: Integer;
     FSavedRow: Integer;
+    FScrollBottom: Integer;
+    FScrollTop: Integer;
     FState: TRadIATerminalParserState;
     FStyle: TRadIATerminalTextStyle;
+    FUnrecognizedSequenceCount: Integer;
     procedure AddRenderSegment(
       var ASegments: TArray<TRadIATerminalTextSegment>;
       const AText: string;
       const AStyle: TRadIATerminalTextStyle
     );
     procedure ApplyCsi(const AFinalCharacter: Char);
+    procedure ApplyCsiEditing(
+      const AFinalCharacter: Char;
+      const AParameters: TArray<Integer>
+    );
     procedure ApplyPrivateMode(const AEnable: Boolean);
     procedure ApplyOsc;
     procedure ApplyEraseDisplay(const AMode: Integer);
@@ -81,12 +89,16 @@ type
     procedure EnsureCursor;
     procedure EnsureRow(const ARow: Integer);
     procedure DeleteCharacters(const ACount: Integer);
+    procedure DeleteLines(const ACount: Integer);
     procedure InsertBlankCharacters(const ACount: Integer);
+    procedure InsertLines(const ACount: Integer);
+    function NewBlankRow: TRadIATerminalRow;
     function GetParameter(
       const AParameters: TArray<Integer>;
       const AIndex: Integer;
       const ADefault: Integer
     ): Integer;
+    function GetRowCount: Integer;
     function ParseParameters: TArray<Integer>;
     procedure ProcessCharacter(const ACharacter: Char);
     procedure ProcessCsiCharacter(const ACharacter: Char);
@@ -107,6 +119,9 @@ type
       const AHardBreak: Boolean
     );
     procedure PutCharacter(const AText: string; const ACodePoint: Cardinal);
+    procedure ResetScrollRegion;
+    procedure ScrollRegionDown(const ACount: Integer);
+    procedure ScrollRegionUp(const ACount: Integer);
     function StylesMatch(
       const ALeft: TRadIATerminalTextStyle;
       const ARight: TRadIATerminalTextStyle
@@ -125,6 +140,7 @@ type
       const ARow: Integer;
       const APressed: Boolean
     ): string;
+    function DiagnosticSnapshotJson: string;
     property AlternateScreen: Boolean read FAlternateScreen;
     property BracketedPaste: Boolean read FBracketedPaste;
     property Columns: Integer read FColumns;
@@ -135,6 +151,7 @@ type
 implementation
 
 uses
+  System.JSON,
   System.Math,
   System.StrUtils,
   System.SysUtils;
@@ -190,9 +207,13 @@ begin
     ApplyPrivateMode(AFinalCharacter = 'h');
     Exit;
   end;
+  if CharInSet(AFinalCharacter, ['@', 'L', 'M', 'P', 'X', 'r']) then
+  begin
+    ApplyCsiEditing(AFinalCharacter, LParameters);
+    EnsureCursor;
+    Exit;
+  end;
   case AFinalCharacter of
-    '@':
-      InsertBlankCharacters(GetParameter(LParameters, 0, 1));
     'A':
       FCursorRow := Max(
         0,
@@ -200,14 +221,6 @@ begin
       );
     'B':
       Inc(FCursorRow, GetParameter(LParameters, 0, 1));
-    'P':
-      DeleteCharacters(GetParameter(LParameters, 0, 1));
-    'X':
-      ClearRange(
-        FCursorRow,
-        FCursorColumn,
-        FCursorColumn + GetParameter(LParameters, 0, 1) - 1
-      );
     'C':
       FCursorColumn := Min(
         FColumns - 1,
@@ -260,6 +273,8 @@ begin
         FCursorColumn := FSavedColumn;
         FCursorRow := FSavedRow;
       end;
+  else
+    Inc(FUnrecognizedSequenceCount);
   end;
   EnsureCursor;
 end;
@@ -430,7 +445,38 @@ begin
   FSavedRow := 0;
   FState := psText;
   FStyle := TRadIATerminalTextStyle.Default;
+  ResetScrollRegion;
   EnsureCursor;
+end;
+
+procedure TRadIATerminalScreen.ApplyCsiEditing(
+  const AFinalCharacter: Char;
+  const AParameters: TArray<Integer>
+);
+begin
+  case AFinalCharacter of
+    '@': InsertBlankCharacters(GetParameter(AParameters, 0, 1));
+    'L': InsertLines(GetParameter(AParameters, 0, 1));
+    'M': DeleteLines(GetParameter(AParameters, 0, 1));
+    'P': DeleteCharacters(GetParameter(AParameters, 0, 1));
+    'X':
+      ClearRange(
+        FCursorRow,
+        FCursorColumn,
+        FCursorColumn + GetParameter(AParameters, 0, 1) - 1
+      );
+    'r':
+      begin
+        FScrollTop := Max(0, GetParameter(AParameters, 0, 1) - 1);
+        FScrollBottom := Max(
+          FScrollTop,
+          GetParameter(AParameters, 1, GetRowCount) - 1
+        );
+        EnsureRow(FScrollBottom);
+        FCursorColumn := 0;
+        FCursorRow := 0;
+      end;
+  end;
 end;
 
 procedure TRadIATerminalScreen.ClearCell(
@@ -500,6 +546,32 @@ begin
     IntToStr(Max(1, AColumn)) + ';' + IntToStr(Max(1, ARow)) + LFinal;
 end;
 
+function TRadIATerminalScreen.DiagnosticSnapshotJson: string;
+var
+  LSnapshot: TJSONObject;
+begin
+  LSnapshot := TJSONObject.Create;
+  try
+    LSnapshot.AddPair('schemaVersion', TJSONNumber.Create(1));
+    LSnapshot.AddPair('event', 'terminalSession');
+    LSnapshot.AddPair('columns', TJSONNumber.Create(FColumns));
+    LSnapshot.AddPair('rows', TJSONNumber.Create(FRows.Count));
+    LSnapshot.AddPair('alternateScreen', TJSONBool.Create(FAlternateScreen));
+    LSnapshot.AddPair('bracketedPaste', TJSONBool.Create(FBracketedPaste));
+    LSnapshot.AddPair('mouseMode', TJSONNumber.Create(FMouseMode));
+    LSnapshot.AddPair('scrollTop', TJSONNumber.Create(FScrollTop));
+    LSnapshot.AddPair('scrollBottom', TJSONNumber.Create(FScrollBottom));
+    LSnapshot.AddPair('resizeCount', TJSONNumber.Create(FResizeCount));
+    LSnapshot.AddPair(
+      'unrecognizedSequenceCount',
+      TJSONNumber.Create(FUnrecognizedSequenceCount)
+    );
+    Result := LSnapshot.ToJSON;
+  finally
+    LSnapshot.Free;
+  end;
+end;
+
 procedure TRadIATerminalScreen.EnterAlternateScreen;
 begin
   if FAlternateScreen then
@@ -560,6 +632,8 @@ begin
           LeaveAlternateScreen;
       2004:
         FBracketedPaste := AEnable;
+    else
+      Inc(FUnrecognizedSequenceCount);
     end;
 end;
 
@@ -595,6 +669,26 @@ begin
   FRows[FCursorRow] := LRow;
 end;
 
+procedure TRadIATerminalScreen.DeleteLines(const ACount: Integer);
+var
+  LCount: Integer;
+  LIndex: Integer;
+begin
+  if (FCursorRow < FScrollTop) or (FCursorRow > FScrollBottom) then
+    Exit;
+  LCount := Min(Max(1, ACount), FScrollBottom - FCursorRow + 1);
+  for LIndex := FCursorRow to FScrollBottom - LCount do
+  begin
+    FRows[LIndex] := FRows[LIndex + LCount];
+    FHardBreaks[LIndex] := FHardBreaks[LIndex + LCount];
+  end;
+  for LIndex := FScrollBottom - LCount + 1 to FScrollBottom do
+  begin
+    FRows[LIndex] := NewBlankRow;
+    FHardBreaks[LIndex] := False;
+  end;
+end;
+
 procedure TRadIATerminalScreen.EnsureCursor;
 begin
   FCursorColumn := EnsureRange(FCursorColumn, 0, FColumns - 1);
@@ -603,19 +697,10 @@ begin
 end;
 
 procedure TRadIATerminalScreen.EnsureRow(const ARow: Integer);
-var
-  LColumn: Integer;
-  LRow: TRadIATerminalRow;
 begin
   while FRows.Count <= ARow do
   begin
-    SetLength(LRow, FColumns);
-    for LColumn := 0 to FColumns - 1 do
-      LRow[LColumn] := TRadIATerminalScreenCell.Create(
-        ' ',
-        TRadIATerminalTextStyle.Default
-      );
-    FRows.Add(LRow);
+    FRows.Add(NewBlankRow);
     FHardBreaks.Add(False);
   end;
 end;
@@ -674,6 +759,38 @@ begin
   FRows[FCursorRow] := LRow;
 end;
 
+procedure TRadIATerminalScreen.InsertLines(const ACount: Integer);
+var
+  LCount: Integer;
+  LIndex: Integer;
+begin
+  if (FCursorRow < FScrollTop) or (FCursorRow > FScrollBottom) then
+    Exit;
+  LCount := Min(Max(1, ACount), FScrollBottom - FCursorRow + 1);
+  for LIndex := FScrollBottom downto FCursorRow + LCount do
+  begin
+    FRows[LIndex] := FRows[LIndex - LCount];
+    FHardBreaks[LIndex] := FHardBreaks[LIndex - LCount];
+  end;
+  for LIndex := FCursorRow to FCursorRow + LCount - 1 do
+  begin
+    FRows[LIndex] := NewBlankRow;
+    FHardBreaks[LIndex] := False;
+  end;
+end;
+
+function TRadIATerminalScreen.NewBlankRow: TRadIATerminalRow;
+var
+  LColumn: Integer;
+begin
+  SetLength(Result, FColumns);
+  for LColumn := 0 to FColumns - 1 do
+    Result[LColumn] := TRadIATerminalScreenCell.Create(
+      ' ',
+      TRadIATerminalTextStyle.Default
+    );
+end;
+
 function TRadIATerminalScreen.GetParameter(
   const AParameters: TArray<Integer>;
   const AIndex: Integer;
@@ -684,6 +801,15 @@ begin
     (AParameters[AIndex] = 0) then
     Exit(ADefault);
   Result := AParameters[AIndex];
+end;
+
+function TRadIATerminalScreen.GetRowCount: Integer;
+var
+  LRow: TRadIATerminalRow;
+begin
+  Result := 0;
+  for LRow in FRows do
+    Inc(Result);
 end;
 
 function TRadIATerminalScreen.ParseParameters: TArray<Integer>;
@@ -766,7 +892,11 @@ begin
     #10:
       begin
         FHardBreaks[FCursorRow] := True;
-        Inc(FCursorRow);
+        if (FCursorRow = FScrollBottom) and
+          (FScrollBottom >= FScrollTop) then
+          ScrollRegionUp(1)
+        else
+          Inc(FCursorRow);
         EnsureCursor;
       end;
     #13:
@@ -793,6 +923,15 @@ begin
   begin
     FOscBuffer := '';
     FState := psOsc;
+  end
+  else if ACharacter = 'M' then
+  begin
+    if (FCursorRow = FScrollTop) and
+      (FScrollBottom >= FScrollTop) then
+      ScrollRegionDown(1)
+    else
+      FCursorRow := Max(0, FCursorRow - 1);
+    FState := psText;
   end
   else
     FState := psText;
@@ -973,6 +1112,7 @@ begin
     );
   if (FColumns = AColumns) and (FRows.Count > 0) then
     Exit;
+  Inc(FResizeCount);
   LOldRows := FRows.ToArray;
   LOldBreaks := FHardBreaks.ToArray;
   FRows.Clear;
@@ -986,6 +1126,55 @@ begin
       LOldRows[LRowIndex],
       (LRowIndex <= High(LOldBreaks)) and LOldBreaks[LRowIndex]
     );
+  ResetScrollRegion;
+end;
+
+procedure TRadIATerminalScreen.ResetScrollRegion;
+begin
+  FScrollTop := 0;
+  FScrollBottom := -1;
+end;
+
+procedure TRadIATerminalScreen.ScrollRegionDown(const ACount: Integer);
+var
+  LCount: Integer;
+  LIndex: Integer;
+begin
+  if FScrollBottom < FScrollTop then
+    Exit;
+  EnsureRow(FScrollBottom);
+  LCount := Min(Max(1, ACount), FScrollBottom - FScrollTop + 1);
+  for LIndex := FScrollBottom downto FScrollTop + LCount do
+  begin
+    FRows[LIndex] := FRows[LIndex - LCount];
+    FHardBreaks[LIndex] := FHardBreaks[LIndex - LCount];
+  end;
+  for LIndex := FScrollTop to FScrollTop + LCount - 1 do
+  begin
+    FRows[LIndex] := NewBlankRow;
+    FHardBreaks[LIndex] := False;
+  end;
+end;
+
+procedure TRadIATerminalScreen.ScrollRegionUp(const ACount: Integer);
+var
+  LCount: Integer;
+  LIndex: Integer;
+begin
+  if FScrollBottom < FScrollTop then
+    Exit;
+  EnsureRow(FScrollBottom);
+  LCount := Min(Max(1, ACount), FScrollBottom - FScrollTop + 1);
+  for LIndex := FScrollTop to FScrollBottom - LCount do
+  begin
+    FRows[LIndex] := FRows[LIndex + LCount];
+    FHardBreaks[LIndex] := FHardBreaks[LIndex + LCount];
+  end;
+  for LIndex := FScrollBottom - LCount + 1 to FScrollBottom do
+  begin
+    FRows[LIndex] := NewBlankRow;
+    FHardBreaks[LIndex] := False;
+  end;
 end;
 
 procedure TRadIATerminalScreen.ReflowCell(

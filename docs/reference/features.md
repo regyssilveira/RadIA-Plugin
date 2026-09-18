@@ -134,6 +134,7 @@ initialization/finalization e imports fora do projeto, e usa os patches reversí
 | **Addon Studio** | Extensibilidade | Criação, sandbox, instalação, exportação e assinatura visual de comandos, skills, conhecimento, templates, aliases, journeys e workflows. | ✅ Concluído |
 | **Portabilidade de Skills** | Extensibilidade | Publicação transacional para quatro CLIs com preview, consentimento, hashes e preservação de conflitos. | ✅ Concluído |
 | **Terminal de alta fidelidade** | Terminal | True color, atributos, alternate screen, bracketed paste, mouse SGR e links OSC 8 sob consentimento. | ✅ Concluído |
+| **Entrada e arquivos no terminal** | Terminal | Entrada direta restrita ao terminal, drag and drop e colagem segura de arquivos e imagens sem execução automática. | ✅ Concluído |
 | **Delphi 12/13 e IDE64** | Compatibilidade | Delphi 12 Win32 e Delphi 13 Win32/IDE64. | ✅ Concluído |
 | **Assistente de threads e PPL** | Concorrência | Detecta riscos e só prepara patches com sincronização VCL, cancelamento e tratamento de exceções validados. | ✅ Concluído |
 | **Retrofit OpenAPI/Swagger** | APIs existentes | Inventaria rotas DEXT e prepara integração Swagger revisável sem recriar o projeto. | ✅ Concluído |

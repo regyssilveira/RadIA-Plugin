@@ -42,6 +42,11 @@ type
     FHistoryCombo: TComboBox;
     FCommandLabel: TLabel;
     FCommandEdit: TEdit;
+    FDirectInputButton: TButton;
+    FDirectInput: Boolean;
+    FDirectInputUsed: Boolean;
+    FDroppedItemCount: Integer;
+    FTemporaryImageCount: Integer;
     FPaletteLabel: TLabel;
     FPaletteEdit: TEdit;
     FPaletteCombo: TComboBox;
@@ -69,6 +74,7 @@ type
     FJourneyContext: IRadIAJourneyContextCoordinator;
     FLifecycleGuard: IInterface;
     FHyperlinks: TArray<TRadIATerminalHyperlink>;
+    FTemporaryFiles: TStringList;
     procedure ApplyDeferredFocus(
       const AGuard: IRadIATerminalLifecycleGuard
     );
@@ -77,6 +83,7 @@ type
       const ASegment: TRadIATerminalTextSegment
     );
     procedure BuildControls;
+    procedure BuildCommandControls;
     procedure BuildDiagnosticControls;
     procedure BuildPaletteControls;
     procedure ConfigureControlHints;
@@ -88,15 +95,22 @@ type
     function CanOpenLink(const AUri: string): Boolean;
     procedure ClearClick(Sender: TObject);
     procedure CommandChange(Sender: TObject);
+    procedure CommandExit(Sender: TObject);
     procedure CommandKeyDown(
       Sender: TObject;
       var Key: Word;
       Shift: TShiftState
     );
+    procedure CommandKeyPress(Sender: TObject; var Key: Char);
+    procedure DirectInputClick(Sender: TObject);
     procedure FinishCommand(
       const ACommand: string;
       const AProfileId: string;
       const AResult: TRadIACliProcessResult
+    );
+    procedure FilesDropped(
+      Sender: TObject;
+      const AFiles: TArray<string>
     );
     function GetWorkingDirectory: string;
     procedure GetTerminalSize(
@@ -106,6 +120,7 @@ type
     procedure HandleRunningInput;
     procedure HistoryChange(Sender: TObject);
     procedure LoadHistory;
+    procedure LogTerminalSession;
     procedure PaletteChange(Sender: TObject);
     procedure PaletteKeyDown(
       Sender: TObject;
@@ -136,6 +151,10 @@ type
       const APressed: Boolean
     );
     procedure SendDiagnosticClick(Sender: TObject);
+    procedure SetDirectInput(const AEnabled: Boolean);
+    function TryHandleClipboardPaste: Boolean;
+    function TrySaveClipboardImage(out AFileName: string): Boolean;
+    procedure UsePaths(const APaths: TArray<string>);
     procedure QueueCompletion(
       const AGuard: IRadIATerminalLifecycleGuard;
       const ACommand: string;
@@ -228,16 +247,37 @@ uses
   Winapi.RichEdit,
   Winapi.ShellAPI,
   Winapi.Windows,
+  Vcl.Clipbrd,
+  Vcl.Dialogs,
   Vcl.Graphics,
+  Vcl.Imaging.pngimage,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.Container,
   RadIA.Core.Mediator,
+  RadIA.Core.Logger,
   RadIA.Core.PseudoTerminal,
   RadIA.Core.Tools,
   RadIA.OTA.Helper;
 
 type
+  TRadIATerminalFilesDroppedEvent = procedure(
+    Sender: TObject;
+    const AFiles: TArray<string>
+  ) of object;
+
+  TRadIATerminalDropEdit = class(TRichEdit)
+  private
+    FOnFilesDropped: TRadIATerminalFilesDroppedEvent;
+    procedure WMDropFiles(var AMessage: TWMDropFiles); message WM_DROPFILES;
+  protected
+    procedure CreateWnd; override;
+    procedure DestroyWnd; override;
+  public
+    property OnFilesDropped: TRadIATerminalFilesDroppedEvent
+      read FOnFilesDropped write FOnFilesDropped;
+  end;
+
   TRadIATerminalLifecycleGuard = class(
     TInterfacedObject,
     IRadIATerminalLifecycleGuard
@@ -249,6 +289,51 @@ type
     function IsAlive: Boolean;
     procedure Invalidate;
   end;
+
+function ReadRadIADroppedFiles(const ADrop: HDROP): TArray<string>;
+var
+  LBuffer: TArray<Char>;
+  LCount: Integer;
+  LIndex: Integer;
+  LLength: Cardinal;
+begin
+  LCount := DragQueryFile(ADrop, $FFFFFFFF, nil, 0);
+  SetLength(Result, LCount);
+  for LIndex := 0 to LCount - 1 do
+  begin
+    LLength := DragQueryFile(ADrop, LIndex, nil, 0);
+    SetLength(LBuffer, LLength + 1);
+    DragQueryFile(ADrop, LIndex, PChar(LBuffer), Length(LBuffer));
+    Result[LIndex] := PChar(LBuffer);
+  end;
+end;
+
+{ TRadIATerminalDropEdit }
+
+procedure TRadIATerminalDropEdit.CreateWnd;
+begin
+  inherited CreateWnd;
+  DragAcceptFiles(Handle, True);
+end;
+
+procedure TRadIATerminalDropEdit.DestroyWnd;
+begin
+  DragAcceptFiles(Handle, False);
+  inherited DestroyWnd;
+end;
+
+procedure TRadIATerminalDropEdit.WMDropFiles(var AMessage: TWMDropFiles);
+var
+  LFiles: TArray<string>;
+begin
+  try
+    LFiles := ReadRadIADroppedFiles(AMessage.Drop);
+    if Assigned(FOnFilesDropped) and (Length(LFiles) > 0) then
+      FOnFilesDropped(Self, LFiles);
+  finally
+    DragFinish(AMessage.Drop);
+  end;
+end;
 
 { TRadIATerminalLifecycleGuard }
 
@@ -275,6 +360,7 @@ var
   LAppData: string;
 begin
   inherited Create(AOwner);
+  FTemporaryFiles := TStringList.Create;
   Align := alClient;
   FLifecycleGuard := TRadIATerminalLifecycleGuard.Create;
   FScreen := TRadIATerminalEmulatorFactory.CreateNative;
@@ -300,6 +386,7 @@ end;
 
 destructor TRadIATerminalFrame.Destroy;
 var
+  LFileName: string;
   LGuard: IRadIATerminalLifecycleGuard;
 begin
   if Supports(
@@ -318,6 +405,14 @@ begin
   FMediator := nil;
   FNavigation := nil;
   FHistory.Free;
+  for LFileName in FTemporaryFiles do
+    try
+      if TFile.Exists(LFileName) then
+        TFile.Delete(LFileName);
+    except
+      OutputDebugString(PChar('RadIA terminal temporary file cleanup failed.'));
+    end;
+  FTemporaryFiles.Free;
   inherited Destroy;
 end;
 
@@ -383,37 +478,7 @@ begin
   FHistoryLabel.FocusControl := FHistoryCombo;
   FHistoryCombo.OnChange := HistoryChange;
 
-  FCommandLabel := TLabel.Create(Self);
-  FCommandLabel.Parent := FTopPanel;
-  FCommandLabel.SetBounds(8, 55, 596, 17);
-  FCommandLabel.Caption := 'Terminal command';
-
-  FCommandEdit := TEdit.Create(Self);
-  FCommandEdit.Parent := FTopPanel;
-  FCommandEdit.SetBounds(8, 73, 596, 25);
-  FCommandLabel.FocusControl := FCommandEdit;
-  FCommandEdit.OnChange := CommandChange;
-  FCommandEdit.OnKeyDown := CommandKeyDown;
-
-  FRunButton := TButton.Create(Self);
-  FRunButton.Parent := FTopPanel;
-  FRunButton.SetBounds(612, 71, 72, 27);
-  FRunButton.Caption := 'Run';
-  FRunButton.Default := True;
-  FRunButton.OnClick := RunClick;
-
-  FStopButton := TButton.Create(Self);
-  FStopButton.Parent := FTopPanel;
-  FStopButton.SetBounds(692, 71, 72, 27);
-  FStopButton.Caption := 'Stop';
-  FStopButton.Enabled := False;
-  FStopButton.OnClick := StopClick;
-
-  FClearButton := TButton.Create(Self);
-  FClearButton.Parent := FTopPanel;
-  FClearButton.SetBounds(772, 71, 72, 27);
-  FClearButton.Caption := 'Clear';
-  FClearButton.OnClick := ClearClick;
+  BuildCommandControls;
 
   BuildDiagnosticControls;
 
@@ -438,7 +503,7 @@ begin
   FOutputLabel.SetBounds(8, 197, 820, 17);
   FOutputLabel.Caption := 'Terminal output';
 
-  FOutputEditor := TRichEdit.Create(Self);
+  FOutputEditor := TRadIATerminalDropEdit.Create(Self);
   FOutputEditor.Parent := Self;
   FOutputEditor.Align := alClient;
   FOutputEditor.ReadOnly := True;
@@ -449,9 +514,54 @@ begin
   FOutputEditor.OnDblClick := OutputDoubleClick;
   FOutputEditor.OnMouseDown := OutputMouseDown;
   FOutputEditor.OnMouseUp := OutputMouseUp;
+  TRadIATerminalDropEdit(FOutputEditor).OnFilesDropped := FilesDropped;
   FOutputLabel.FocusControl := FOutputEditor;
   LoadHistory;
   RefreshJourneyContext;
+end;
+
+procedure TRadIATerminalFrame.BuildCommandControls;
+begin
+  FCommandLabel := TLabel.Create(Self);
+  FCommandLabel.Parent := FTopPanel;
+  FCommandLabel.SetBounds(8, 55, 596, 17);
+  FCommandLabel.Caption := 'Terminal command';
+
+  FCommandEdit := TEdit.Create(Self);
+  FCommandEdit.Parent := FTopPanel;
+  FCommandEdit.SetBounds(8, 73, 492, 25);
+  FCommandLabel.FocusControl := FCommandEdit;
+  FCommandEdit.OnChange := CommandChange;
+  FCommandEdit.OnExit := CommandExit;
+  FCommandEdit.OnKeyDown := CommandKeyDown;
+  FCommandEdit.OnKeyPress := CommandKeyPress;
+
+  FDirectInputButton := TButton.Create(Self);
+  FDirectInputButton.Parent := FTopPanel;
+  FDirectInputButton.SetBounds(508, 71, 96, 27);
+  FDirectInputButton.Caption := 'Direct input';
+  FDirectInputButton.Enabled := False;
+  FDirectInputButton.OnClick := DirectInputClick;
+
+  FRunButton := TButton.Create(Self);
+  FRunButton.Parent := FTopPanel;
+  FRunButton.SetBounds(612, 71, 72, 27);
+  FRunButton.Caption := 'Run';
+  FRunButton.Default := True;
+  FRunButton.OnClick := RunClick;
+
+  FStopButton := TButton.Create(Self);
+  FStopButton.Parent := FTopPanel;
+  FStopButton.SetBounds(692, 71, 72, 27);
+  FStopButton.Caption := 'Stop';
+  FStopButton.Enabled := False;
+  FStopButton.OnClick := StopClick;
+
+  FClearButton := TButton.Create(Self);
+  FClearButton.Parent := FTopPanel;
+  FClearButton.SetBounds(772, 71, 72, 27);
+  FClearButton.Caption := 'Clear';
+  FClearButton.OnClick := ClearClick;
 end;
 
 procedure TRadIATerminalFrame.BuildPaletteControls;
@@ -482,6 +592,8 @@ begin
   FSnippetCombo.Hint := 'Insert a safe predefined command into the command field without running it';
   FHistoryCombo.Hint := 'Restore a command from local terminal history without executing it';
   FCommandEdit.Hint := 'Enter runs or sends input. Ctrl+R searches history and Ctrl+P opens the palette';
+  FDirectInputButton.Hint :=
+    'Send keys immediately to the active interactive terminal';
   FRunButton.Hint := 'Run the command after execution policy and consent checks';
   FStopButton.Hint := 'Cancel the active process and its child process tree';
   FClearButton.Hint := 'Clear visible terminal output without deleting command history';
@@ -496,6 +608,7 @@ begin
   FSnippetCombo.ShowHint := True;
   FHistoryCombo.ShowHint := True;
   FCommandEdit.ShowHint := True;
+  FDirectInputButton.ShowHint := True;
   FRunButton.ShowHint := True;
   FStopButton.ShowHint := True;
   FClearButton.ShowHint := True;
@@ -790,8 +903,31 @@ procedure TRadIATerminalFrame.CommandKeyDown(
 );
 var
   LCommand: string;
+  LDirectInput: string;
   LNextIndex: Integer;
 begin
+  if (Key = Ord('V')) and (ssCtrl in Shift) and
+    TryHandleClipboardPaste then
+  begin
+    Key := 0;
+    Exit;
+  end;
+  if FDirectInput and Assigned(FSession) and FSession.IsRunning and
+    FSession.IsPseudoTerminal then
+  begin
+    LDirectInput := TRadIATerminalDirectInput.EncodeKey(
+      Key,
+      ssShift in Shift,
+      ssCtrl in Shift,
+      ssAlt in Shift
+    );
+    if LDirectInput <> '' then
+    begin
+      FSession.WriteInput(LDirectInput);
+      Key := 0;
+    end;
+    Exit;
+  end;
   if (Key = Ord('P')) and (ssCtrl in Shift) then
   begin
     Key := 0;
@@ -822,6 +958,39 @@ begin
   end
   else
     FStatusLabel.Caption := 'No earlier history match';
+end;
+
+procedure TRadIATerminalFrame.FilesDropped(
+  Sender: TObject;
+  const AFiles: TArray<string>
+);
+begin
+  Inc(FDroppedItemCount, Length(AFiles));
+  UsePaths(AFiles);
+end;
+
+procedure TRadIATerminalFrame.CommandExit(Sender: TObject);
+begin
+  if FDirectInput and (FindControl(GetFocus) <> FDirectInputButton) then
+    SetDirectInput(False);
+end;
+
+procedure TRadIATerminalFrame.CommandKeyPress(
+  Sender: TObject;
+  var Key: Char
+);
+begin
+  if not FDirectInput or not Assigned(FSession) or
+    not FSession.IsRunning or not FSession.IsPseudoTerminal then
+    Exit;
+  if Key >= ' ' then
+    FSession.WriteInput(Key);
+  Key := #0;
+end;
+
+procedure TRadIATerminalFrame.DirectInputClick(Sender: TObject);
+begin
+  SetDirectInput(not FDirectInput);
 end;
 
 procedure TRadIATerminalFrame.EnsureVisibleContent;
@@ -880,6 +1049,12 @@ procedure TRadIATerminalFrame.FinishCommand(
   const AResult: TRadIACliProcessResult
 );
 begin
+  LogTerminalSession;
+  FDirectInputUsed := False;
+  FDroppedItemCount := 0;
+  FTemporaryImageCount := 0;
+  SetDirectInput(False);
+  FDirectInputButton.Enabled := False;
   FSession := nil;
   if Assigned(FJourneyContext) then
     FJourneyContext.CompleteActivity;
@@ -1173,6 +1348,8 @@ begin
         );
       end
     );
+  FDirectInputButton.Enabled := Assigned(FSession) and
+    FSession.IsPseudoTerminal;
   if Assigned(FJourneyContext) then
   begin
     FJourneyContext.BeginActivity;
@@ -1205,6 +1382,172 @@ begin
   LSnippets := TRadIATerminalCatalog.Snippets;
   if (LIndex >= Low(LSnippets)) and (LIndex <= High(LSnippets)) then
     FCommandEdit.Text := LSnippets[LIndex].Command;
+end;
+
+procedure TRadIATerminalFrame.LogTerminalSession;
+var
+  LSnapshot: TJSONObject;
+  LValue: TJSONValue;
+begin
+  try
+    LValue := TJSONObject.ParseJSONValue(FScreen.DiagnosticSnapshotJson);
+    try
+      if not (LValue is TJSONObject) then
+        Exit;
+      LSnapshot := TJSONObject(LValue);
+      LSnapshot.AddPair(
+        'directInputUsed',
+        TJSONBool.Create(FDirectInputUsed)
+      );
+      LSnapshot.AddPair(
+        'droppedItemCount',
+        TJSONNumber.Create(FDroppedItemCount)
+      );
+      LSnapshot.AddPair(
+        'temporaryImageCount',
+        TJSONNumber.Create(FTemporaryImageCount)
+      );
+      TLogger.Log(LSnapshot.ToJSON, 'TerminalMetrics');
+    finally
+      LValue.Free;
+    end;
+  except
+    OutputDebugString(PChar('RadIA terminal metrics logging failed.'));
+  end;
+end;
+
+procedure TRadIATerminalFrame.SetDirectInput(const AEnabled: Boolean);
+begin
+  FDirectInput := AEnabled and Assigned(FSession) and
+    FSession.IsRunning and FSession.IsPseudoTerminal;
+  if FDirectInput then
+  begin
+    FDirectInputUsed := True;
+    FDirectInputButton.Caption := 'Direct: on';
+    FStatusLabel.Caption := 'Direct input active; keys go to the terminal';
+    FCommandEdit.Clear;
+    FCommandEdit.SetFocus;
+  end
+  else
+    FDirectInputButton.Caption := 'Direct input';
+end;
+
+function TRadIATerminalFrame.TryHandleClipboardPaste: Boolean;
+var
+  LDropHandle: THandle;
+  LFiles: TArray<string>;
+  LImageFile: string;
+  LText: string;
+begin
+  Result := False;
+  if Clipboard.HasFormat(CF_HDROP) then
+  begin
+    Clipboard.Open;
+    try
+      LDropHandle := Clipboard.GetAsHandle(CF_HDROP);
+      LFiles := ReadRadIADroppedFiles(LDropHandle);
+    finally
+      Clipboard.Close;
+    end;
+    UsePaths(LFiles);
+    Exit(True);
+  end;
+  if Clipboard.HasFormat(CF_BITMAP) or Clipboard.HasFormat(CF_DIB) then
+  begin
+    if TrySaveClipboardImage(LImageFile) then
+      UsePaths([LImageFile]);
+    Exit(True);
+  end;
+  if FDirectInput and Clipboard.HasFormat(CF_UNICODETEXT) then
+  begin
+    LText := Clipboard.AsText;
+    if LText <> '' then
+      FSession.WriteInput(FScreen.PreparePaste(LText));
+    Exit(True);
+  end;
+end;
+
+function TRadIATerminalFrame.TrySaveClipboardImage(
+  out AFileName: string
+): Boolean;
+const
+  CMaximumImageBytes = 10 * 1024 * 1024;
+var
+  LBitmap: TBitmap;
+  LDirectory: string;
+  LEstimatedBytes: Int64;
+  LPng: TPngImage;
+begin
+  Result := False;
+  AFileName := '';
+  if MessageDlg(
+    'Save the clipboard image to a temporary PNG and insert its path?',
+    mtConfirmation,
+    [mbYes, mbNo],
+    0
+  ) <> mrYes then
+    Exit;
+  LBitmap := TBitmap.Create;
+  try
+    LBitmap.Assign(Clipboard);
+    LEstimatedBytes := Int64(LBitmap.Width) * LBitmap.Height * 4;
+    if LEstimatedBytes > CMaximumImageBytes then
+    begin
+      MessageDlg(
+        'The clipboard image exceeds the 10 MB terminal limit.',
+        mtWarning,
+        [mbOK],
+        0
+      );
+      Exit;
+    end;
+    LDirectory := TPath.Combine(
+      TPath.GetTempPath,
+      'RadIA\TerminalUploads'
+    );
+    TDirectory.CreateDirectory(LDirectory);
+    AFileName := TPath.Combine(
+      LDirectory,
+      TGUID.NewGuid.ToString + '.png'
+    );
+    LPng := TPngImage.Create;
+    try
+      LPng.Assign(LBitmap);
+      LPng.SaveToFile(AFileName);
+    finally
+      LPng.Free;
+    end;
+    FTemporaryFiles.Add(AFileName);
+    Inc(FTemporaryImageCount);
+    Result := True;
+  finally
+    LBitmap.Free;
+  end;
+end;
+
+procedure TRadIATerminalFrame.UsePaths(const APaths: TArray<string>);
+var
+  LFormattedPaths: string;
+begin
+  LFormattedPaths := TRadIATerminalDropFormatter.FormatPaths(APaths);
+  if LFormattedPaths = '' then
+    Exit;
+  if FDirectInput and Assigned(FSession) and FSession.IsRunning then
+  begin
+    if MessageDlg(
+      'Send the dropped path or paths to the active terminal?',
+      mtConfirmation,
+      [mbYes, mbNo],
+      0
+    ) = mrYes then
+      FSession.WriteInput(FScreen.PreparePaste(LFormattedPaths));
+    Exit;
+  end;
+  if FCommandEdit.Text <> '' then
+    FCommandEdit.Text := FCommandEdit.Text + ' ';
+  FCommandEdit.Text := FCommandEdit.Text + LFormattedPaths;
+  FCommandEdit.SelStart := Length(FCommandEdit.Text);
+  FCommandEdit.SetFocus;
 end;
 
 procedure TRadIATerminalFrame.StopClick(Sender: TObject);
@@ -1568,6 +1911,7 @@ function TRadIATerminalTabsFrame.HasRequiredControls(
 begin
   Result := FAddButton.Visible and
     FCloseButton.Visible and
+    ASession.FDirectInputButton.Visible and
     ASession.FRunButton.Visible and
     ASession.FStopButton.Visible and
     ASession.FClearButton.Visible and

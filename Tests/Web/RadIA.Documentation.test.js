@@ -1095,6 +1095,16 @@ test('terminal documentation defines Unicode, reflow, and TUI behavior', () => {
   assert.match(capabilities, /CJK, emoji and combining-character widths/u);
 });
 
+test('terminal documentation defines direct input, drop, paste, and private metrics', () => {
+  const portuguese = fs.readFileSync(documentationPath('terminal.md'), 'utf8');
+  const english = fs.readFileSync(documentationPath('terminal.en.md'), 'utf8');
+
+  ['Direct input', 'drag and drop', 'Ctrl+V', '10 MB', 'nunca fazem parte']
+    .forEach(term => assert.ok(portuguese.includes(term), `terminal.md is missing ${term}`));
+  ['Direct input', 'drag and drop', 'Ctrl+V', '10 MB', 'never included']
+    .forEach(term => assert.ok(english.includes(term), `terminal.en.md is missing ${term}`));
+});
+
 test('semantic intelligence is public, reachable, and explicit about its boundaries', () => {
   const portuguese = fs.readFileSync(
     documentationPath('semantic_intelligence.md'),

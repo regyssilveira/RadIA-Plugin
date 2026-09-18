@@ -1,4 +1,4 @@
-# Manual completo do RadIA 2.17.15
+# Manual completo do RadIA 2.17.16
 
 > Para comparar Chat, Agent, CLI e MCP, use `/help`. Quando um plano aguardar aprovação, clique em
 > **Approve plan** ou digite `/agent resume`.
@@ -45,7 +45,7 @@ troca entre layouts nomeados, como `Startup Layout` e `Debug Layout`. Se o paine
 de sair, ele permanece fechado na sessão seguinte; use `Tools > RadIA > Chat` para abri-lo novamente.
 
 O caption do painel de chat e das janelas principais do RadIA mostra a versão carregada, por exemplo
-`Rad IA Chat v2.17.15`, para facilitar suporte e conferência de instalação.
+`Rad IA Chat v2.17.16`, para facilitar suporte e conferência de instalação.
 
 Se o painel ou package não aparecer:
 
@@ -287,6 +287,10 @@ entre interação visual e comandos digitados.
 Saída Unicode fragmentada, caracteres CJK, emoji, marcas combinantes, resize com reflow e operações
 comuns de aplicações TUI são tratados pelo modelo de tela. Recursos gráficos ou protocolo de mouse
 podem exigir um terminal externo. Veja a referência completa em [Terminal](terminal.md).
+
+O modo **Direct input** envia teclas somente quando o campo do terminal está focado. Drag and drop e
+`Ctrl+V` inserem caminhos entre aspas sem executar comandos; imagens exigem confirmação e usam um
+PNG temporário limitado a 10 MB.
 
 O chat, o terminal e o contexto enviado às ações do editor podem compartilhar uma identidade de
 jornada sem duplicar o histórico da conversa nem a saída do terminal. O botão **Journey** permite

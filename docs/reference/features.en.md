@@ -129,6 +129,7 @@ initialization/finalization, and imports outside the project, and applies throug
 | **Transactional Move Type** | Editor | Moves an interface type and its implementations between units, updates consumers and `uses`, blocks private dependencies or cycles, and applies only after approval. | ✅ Completed |
 | **Unicode and TUI Terminal** | Terminal | Incremental UTF-8 decoding, CJK, emoji, combining marks, reflow, and ICH/DCH/ECH operations over ConPTY. | ✅ Completed |
 | **High-fidelity terminal** | Terminal | True color, attributes, alternate screen, bracketed paste, SGR mouse, and consent-gated OSC 8 links. | ✅ Completed |
+| **Terminal input and files** | Terminal | Terminal-scoped direct input, drag and drop, and safe file and image paste without automatic execution. | ✅ Completed |
 | **Local Knowledge** | Agentic | Incremental, persistent, rebuildable, per-project index. | ✅ Completed |
 | **Tool Extensions** | Infrastructure | Versioned API and sample package for external tools. | ✅ Completed |
 | **Signed Declarative Extensions** | Security | RSA-SHA256 packages with fingerprints, first-use trust, and visual revocation. | ✅ Completed |

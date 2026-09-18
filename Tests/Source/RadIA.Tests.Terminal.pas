@@ -59,6 +59,10 @@ type
     [Test]
     procedure ScreenSupportsTuiInsertDeleteAndEraseCharacters;
     [Test]
+    procedure ScreenSupportsScrollingRegionsAndLineEditing;
+    [Test]
+    procedure ScreenSupportsReverseIndexWithinScrollingRegion;
+    [Test]
     procedure NativeEmulatorPreservesScreenContract;
     [Test]
     procedure ScreenRestoresPrimaryContentAfterAlternateScreen;
@@ -78,6 +82,12 @@ type
     procedure TerminalShortcutIsConfigurableAndBackwardCompatible;
     [Test]
     procedure TerminalDisplaysTheSharedJourney;
+    [Test]
+    procedure DirectInputEncodesNavigationAndControlKeys;
+    [Test]
+    procedure DropFormatterQuotesEveryPathWithoutExecutingIt;
+    [Test]
+    procedure TerminalMetricsExcludeScreenContent;
   end;
 
 implementation
@@ -668,6 +678,107 @@ begin
     Assert.AreEqual('abcdef', SegmentsText(LScreen.RenderSegments));
     LScreen.Feed(#13#27'[2C'#27'[2X');
     Assert.AreEqual('ab  ef', SegmentsText(LScreen.RenderSegments));
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.
+  ScreenSupportsScrollingRegionsAndLineEditing;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('1'#13#10'2'#13#10'3'#13#10'4'#13#10'5');
+    LScreen.Feed(#27'[2;4r'#27'[3;1H'#27'[L' + 'X');
+    Assert.AreEqual(
+      '1' + sLineBreak + '2' + sLineBreak + 'X' + sLineBreak +
+      '3' + sLineBreak + '5',
+      SegmentsText(LScreen.RenderSegments)
+    );
+    LScreen.Feed(#27'[3;1H'#27'[M');
+    Assert.AreEqual(
+      '1' + sLineBreak + '2' + sLineBreak + '3' + sLineBreak +
+      sLineBreak + '5',
+      SegmentsText(LScreen.RenderSegments)
+    );
+    LScreen.Feed(#27'[4;1H' + 'Q'#10);
+    Assert.AreEqual(
+      '1' + sLineBreak + '3' + sLineBreak + 'Q' + sLineBreak +
+      sLineBreak + '5',
+      SegmentsText(LScreen.RenderSegments)
+    );
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.DirectInputEncodesNavigationAndControlKeys;
+begin
+  Assert.AreEqual(
+    #27'[A',
+    TRadIATerminalDirectInput.EncodeKey($26, False, False, False)
+  );
+  Assert.AreEqual(
+    #27'[Z',
+    TRadIATerminalDirectInput.EncodeKey($09, True, False, False)
+  );
+  Assert.AreEqual(
+    #3,
+    TRadIATerminalDirectInput.EncodeKey(Ord('C'), False, True, False)
+  );
+  Assert.AreEqual(
+    #27#3,
+    TRadIATerminalDirectInput.EncodeKey(Ord('C'), False, True, True)
+  );
+  Assert.AreEqual(
+    #27'[24~',
+    TRadIATerminalDirectInput.EncodeKey($7B, False, False, False)
+  );
+end;
+
+procedure TRadIATerminalTests.DropFormatterQuotesEveryPathWithoutExecutingIt;
+begin
+  Assert.AreEqual(
+    '"C:\path with space\one.pas" "D:\two.png"',
+    TRadIATerminalDropFormatter.FormatPaths(
+      ['C:\path with space\one.pas', 'D:\two.png']
+    )
+  );
+end;
+
+procedure TRadIATerminalTests.TerminalMetricsExcludeScreenContent;
+var
+  LMetrics: string;
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('sensitive terminal content'#27'[?2004h');
+    LMetrics := LScreen.DiagnosticSnapshotJson;
+    Assert.Contains(LMetrics, '"event":"terminalSession"');
+    Assert.Contains(LMetrics, '"bracketedPaste":true');
+    Assert.DoesNotContain(LMetrics, 'sensitive terminal content');
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.
+  ScreenSupportsReverseIndexWithinScrollingRegion;
+var
+  LScreen: TRadIATerminalScreen;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LScreen.Feed('1'#13#10'2'#13#10'3'#13#10'4'#13#10'5');
+    LScreen.Feed(#27'[2;4r'#27'[2;1H'#27'M' + 'X');
+    Assert.AreEqual(
+      '1' + sLineBreak + 'X' + sLineBreak + '2' + sLineBreak +
+      '3' + sLineBreak + '5',
+      SegmentsText(LScreen.RenderSegments)
+    );
   finally
     LScreen.Free;
   end;
