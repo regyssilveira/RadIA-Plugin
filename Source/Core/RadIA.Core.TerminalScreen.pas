@@ -469,7 +469,7 @@ begin
         FScrollTop := Max(0, GetParameter(AParameters, 0, 1) - 1);
         FScrollBottom := Max(
           FScrollTop,
-          GetParameter(AParameters, 1, Integer(FRows.Count)) - 1
+          GetParameter(AParameters, 1, FRows.Count) - 1
         );
         EnsureRow(FScrollBottom);
         FCursorColumn := 0;
