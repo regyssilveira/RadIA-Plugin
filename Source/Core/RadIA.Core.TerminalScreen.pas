@@ -98,6 +98,7 @@ type
       const AIndex: Integer;
       const ADefault: Integer
     ): Integer;
+    function GetRowCount: Integer;
     function ParseParameters: TArray<Integer>;
     procedure ProcessCharacter(const ACharacter: Char);
     procedure ProcessCsiCharacter(const ACharacter: Char);
@@ -469,7 +470,7 @@ begin
         FScrollTop := Max(0, GetParameter(AParameters, 0, 1) - 1);
         FScrollBottom := Max(
           FScrollTop,
-          GetParameter(AParameters, 1, FRows.Count) - 1
+          GetParameter(AParameters, 1, GetRowCount) - 1
         );
         EnsureRow(FScrollBottom);
         FCursorColumn := 0;
@@ -800,6 +801,15 @@ begin
     (AParameters[AIndex] = 0) then
     Exit(ADefault);
   Result := AParameters[AIndex];
+end;
+
+function TRadIATerminalScreen.GetRowCount: Integer;
+var
+  LRow: TRadIATerminalRow;
+begin
+  Result := 0;
+  for LRow in FRows do
+    Inc(Result);
 end;
 
 function TRadIATerminalScreen.ParseParameters: TArray<Integer>;
