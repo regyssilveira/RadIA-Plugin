@@ -243,6 +243,8 @@ type
     [Test]
     procedure TestToolMetricsExcludeArgumentsAndResults;
     [Test]
+    procedure TestRunSummaryExplainsOutcomeWithoutSensitiveContent;
+    [Test]
     procedure TestControllerRunsAgentAsynchronously;
     [Test]
     procedure TestControllerCancellationUnblocksProviderWait;
@@ -1515,12 +1517,14 @@ end;
 
 procedure TTestRadIAAgentRuntime.TestToolMetricsExcludeArgumentsAndResults;
 var
+  LEntry: string;
   LExecutor: IRadIAToolExecutor;
   LLogger: IRadIALogger;
   LLoggerObject: TRadIAMockAgentMetricsLogger;
   LProvider: IRadIAAgentDecisionProvider;
   LRuntime: TRadIAAgentRuntime;
   LStore: IRadIAAgentCheckpointStore;
+  LToolMetric: string;
 begin
   LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
   LLogger := LLoggerObject;
@@ -1539,13 +1543,79 @@ begin
     try
       LRuntime.Start('Inspect.', 'safe-tool-run', 'project', TRadIAAgentLimits.Default);
       LRuntime.Resume('safe-tool-run');
-      Assert.AreEqual<Integer>(1, LLoggerObject.Entries.Count);
-      Assert.Contains(LLoggerObject.Entries[0], '"event":"agentToolStep"');
-      Assert.Contains(LLoggerObject.Entries[0], '"toolName":"ReadFile"');
-      Assert.Contains(LLoggerObject.Entries[0], '"resultCharacters":');
-      Assert.DoesNotContain(LLoggerObject.Entries[0], 'SECRET_ARGUMENT');
-      Assert.DoesNotContain(LLoggerObject.Entries[0], 'SECRET_RESULT');
-      Assert.DoesNotContain(LLoggerObject.Entries[0], 'safe-tool-run');
+      LToolMetric := '';
+      for LEntry in LLoggerObject.Entries do
+        if Pos('"event":"agentToolStep"', LEntry) > 0 then
+          LToolMetric := LEntry;
+      Assert.IsNotEmpty(LToolMetric);
+      Assert.Contains(LToolMetric, '"toolName":"ReadFile"');
+      Assert.Contains(LToolMetric, '"resultCharacters":');
+      Assert.DoesNotContain(LToolMetric, 'SECRET_ARGUMENT');
+      Assert.DoesNotContain(LToolMetric, 'SECRET_RESULT');
+      Assert.DoesNotContain(LToolMetric, 'safe-tool-run');
+    finally
+      LRuntime.Free;
+    end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.
+  TestRunSummaryExplainsOutcomeWithoutSensitiveContent;
+var
+  LEntry: string;
+  LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
+  LProvider: IRadIAAgentDecisionProvider;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+  LSummary: string;
+begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
+    LExecutor := TRadIAMockAgentToolExecutor.Create(
+      TRadIAToolResult.Failed('expected_failure', 'SECRET_RESULT')
+    );
+    LProvider := TRadIAMockAgentDecisionProvider.Create([
+      TRadIAAgentDecision.Plan('Inspect.', '[{"title":"Inspect"}]'),
+      TRadIAAgentDecision.CallTool(
+        'ReadFile',
+        '{"path":"SECRET_ARGUMENT"}'
+      ),
+      TRadIAAgentDecision.Complete('Done.')
+    ]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LRuntime.Start(
+        'SECRET_OBJECTIVE',
+        'secret-session-id',
+        'secret-project-id',
+        TRadIAAgentLimits.Default
+      );
+      LRuntime.Resume('secret-session-id');
+
+      LSummary := '';
+      for LEntry in LLoggerObject.Entries do
+        if Pos('"event":"agentRunSummary"', LEntry) > 0 then
+          LSummary := LEntry;
+
+      Assert.IsNotEmpty(LSummary);
+      Assert.Contains(LSummary, '"status":"completed"');
+      Assert.Contains(LSummary, '"stopReason":"completed"');
+      Assert.Contains(LSummary, '"decisionCount":2');
+      Assert.Contains(LSummary, '"toolCallCount":1');
+      Assert.Contains(LSummary, '"toolFailureCount":1');
+      Assert.Contains(LSummary, '"usageStatus":"unknown"');
+      Assert.DoesNotContain(LSummary, 'SECRET_OBJECTIVE');
+      Assert.DoesNotContain(LSummary, 'SECRET_ARGUMENT');
+      Assert.DoesNotContain(LSummary, 'SECRET_RESULT');
+      Assert.DoesNotContain(LSummary, 'secret-session-id');
+      Assert.DoesNotContain(LSummary, 'secret-project-id');
     finally
       LRuntime.Free;
     end;

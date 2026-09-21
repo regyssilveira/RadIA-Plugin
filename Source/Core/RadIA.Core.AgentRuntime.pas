@@ -339,6 +339,10 @@ type
     FPromptTokensBeforeRun: Integer;
     FCompletionTokensBeforeRun: Integer;
     FEstimatedCostMicrosBeforeRun: Int64;
+    FDecisionCount: Integer;
+    FToolFailureCount: Integer;
+    FRepeatedDecisionCount: Integer;
+    FRecoveredRepeatCount: Integer;
     FValidationRejectionCount: Integer;
     FReplayOfStepIndex: Integer;
     function ExecuteLoop: TRadIAAgentRunResult;
@@ -428,6 +432,13 @@ type
     );
     function HasValidPlan: Boolean;
     function ElapsedMilliseconds: Int64;
+    function FailedStopReason: string;
+    function PausedStopReason: string;
+    function RunStopReason: string;
+    procedure LogRunSummary(
+      const AInitialStepCount: Integer;
+      const AInitialElapsedMilliseconds: Int64
+    );
     function CheckBudgets: Boolean;
     function CheckExecutionContract: Boolean;
     function CountAffectedFiles: Integer;
@@ -1314,6 +1325,8 @@ begin
   else
     LStep.AffectedFiles := [];
   FSteps.Add(LStep);
+  if not LStep.Success then
+    Inc(FToolFailureCount);
   try
     LKnownToolName := 'unknown';
     if Assigned(FDescriptorProvider) and
@@ -2234,7 +2247,10 @@ var
 begin
   LSignature := BuildCallSignature(ADecision);
   if LSignature = FLastCallSignature then
-    Inc(FRepeatedCallCount)
+  begin
+    Inc(FRepeatedCallCount);
+    Inc(FRepeatedDecisionCount);
+  end
   else
   begin
     FLastCallSignature := LSignature;
@@ -2285,6 +2301,7 @@ begin
     ElapsedMilliseconds,
     0
   );
+  Inc(FRecoveredRepeatCount);
   FRepeatedCallCount := 1;
   UpdatePeriodicSummary;
   NotifyAndCheckpoint;
@@ -2429,6 +2446,7 @@ var
   LDecision: TRadIAAgentDecision;
 begin
   try
+    Inc(FDecisionCount);
     LDecision := FDecisionProvider.NextDecision(BuildDecisionContextJson);
     if CheckBudgets then
       ExecuteDecision(LDecision);
@@ -2439,7 +2457,12 @@ begin
 end;
 
 function TRadIAAgentRuntime.ExecuteLoop: TRadIAAgentRunResult;
+var
+  LInitialElapsedMilliseconds: Int64;
+  LInitialStepCount: Integer;
 begin
+  LInitialElapsedMilliseconds := ElapsedMilliseconds;
+  LInitialStepCount := FSteps.Count;
   ChangeStatus(asRunning, 'Agent run started.');
   while FStatus = asRunning do
   begin
@@ -2454,6 +2477,7 @@ begin
     FSteps.Count,
     DetectRecoveryInput
   );
+  LogRunSummary(LInitialStepCount, LInitialElapsedMilliseconds);
 end;
 
 function TRadIAAgentRuntime.DetectRecoveryInput: string;
@@ -2537,6 +2561,121 @@ begin
       1000 / TStopwatch.Frequency
     );
   Result := FElapsedBeforeRunMilliseconds + LCurrentRunMilliseconds;
+end;
+
+procedure TRadIAAgentRuntime.LogRunSummary(
+  const AInitialStepCount: Integer;
+  const AInitialElapsedMilliseconds: Int64
+);
+var
+  LEvent: TJSONObject;
+  LUsageStatus: string;
+begin
+  LUsageStatus := 'unknown';
+  if Assigned(FUsageProvider) and
+    ((EffectivePromptTokens > 0) or (EffectiveCompletionTokens > 0)) then
+    LUsageStatus := 'reported';
+  try
+    LEvent := TJSONObject.Create;
+    try
+      LEvent.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvent.AddPair('event', 'agentRunSummary');
+      LEvent.AddPair(
+        'runId',
+        Copy(THashSHA2.GetHashString(FSessionId), 1, 16)
+      );
+      LEvent.AddPair('status', RadIAAgentStatusName(FStatus));
+      LEvent.AddPair('stopReason', RunStopReason);
+      LEvent.AddPair('decisionCount', TJSONNumber.Create(FDecisionCount));
+      LEvent.AddPair(
+        'toolCallCount',
+        TJSONNumber.Create(Max(0, FSteps.Count - AInitialStepCount))
+      );
+      LEvent.AddPair('toolFailureCount', TJSONNumber.Create(FToolFailureCount));
+      LEvent.AddPair(
+        'repeatedDecisionCount',
+        TJSONNumber.Create(FRepeatedDecisionCount)
+      );
+      LEvent.AddPair(
+        'recoveredRepeatCount',
+        TJSONNumber.Create(FRecoveredRepeatCount)
+      );
+      LEvent.AddPair(
+        'validationRejectionCount',
+        TJSONNumber.Create(FValidationRejectionCount)
+      );
+      LEvent.AddPair(
+        'durationMilliseconds',
+        TJSONNumber.Create(
+          Max(0, ElapsedMilliseconds - AInitialElapsedMilliseconds)
+        )
+      );
+      LEvent.AddPair('usageStatus', LUsageStatus);
+      LEvent.AddPair(
+        'promptTokens',
+        TJSONNumber.Create(EffectivePromptTokens)
+      );
+      LEvent.AddPair(
+        'completionTokens',
+        TJSONNumber.Create(EffectiveCompletionTokens)
+      );
+      TLogger.Log(LEvent.ToJSON, 'AgentMetrics');
+    finally
+      LEvent.Free;
+    end;
+  except
+    OutputDebugString(PChar('RadIA agent run metrics logging failed.'));
+  end;
+end;
+
+function TRadIAAgentRuntime.RunStopReason: string;
+begin
+  case FStatus of
+    asAwaitingApproval:
+      Exit('awaitingApproval');
+    asCompleted:
+      Exit('completed');
+    asCancelled:
+      Exit('cancelled');
+    asPaused:
+      Exit(PausedStopReason);
+    asFailed:
+      Exit(FailedStopReason);
+  end;
+  Result := 'unknown';
+end;
+
+function TRadIAAgentRuntime.FailedStopReason: string;
+begin
+  if ContainsText(FMessage, 'duration limit') then
+    Exit('durationLimit');
+  if ContainsText(FMessage, 'token budget') then
+    Exit('tokenBudget');
+  if ContainsText(FMessage, 'cost limit') or
+    ContainsText(FMessage, 'requires pricing') then
+    Exit('costBudget');
+  if ContainsText(FMessage, 'same tool call repeated') then
+    Exit('repeatedToolCall');
+  if ContainsText(FMessage, 'step window') then
+    Exit('stepWindowWithoutProgress');
+  if ContainsText(FMessage, 'without validation') then
+    Exit('validationRejected');
+  if ContainsText(FMessage, 'decision failed') then
+    Exit('decisionFailure');
+  if ContainsText(FMessage, 'plan') then
+    Exit('planFailure');
+  Result := 'failed';
+end;
+
+function TRadIAAgentRuntime.PausedStopReason: string;
+begin
+  if ContainsText(FMessage, 'clarification') then
+    Exit('clarification');
+  if ContainsText(FMessage, 'operation limit') then
+    Exit('operationLimit');
+  if ContainsText(FMessage, 'file limit') then
+    Exit('fileLimit');
+  Result := 'paused';
 end;
 
 function TRadIAAgentRuntime.ExecuteToolDecision(
@@ -3029,6 +3168,10 @@ begin
   FPromptTokensBeforeRun := 0;
   FCompletionTokensBeforeRun := 0;
   FEstimatedCostMicrosBeforeRun := 0;
+  FDecisionCount := 0;
+  FToolFailureCount := 0;
+  FRepeatedDecisionCount := 0;
+  FRecoveredRepeatCount := 0;
   FValidationRejectionCount := 0;
   FReplayOfStepIndex := 0;
   FExecutionContract := TRadIAAgentExecutionContract.Default;

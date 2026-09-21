@@ -56,6 +56,13 @@ artefato antigo, as ferramentas informam que ele não está mais disponível.
 decisão agrega somente contagens, duração e nome da regra; não registra código, prompts, argumentos
 ou secrets.
 
+Quando uma execução inicia, aguarda aprovação, termina, pausa ou falha, o log local também recebe um
+evento `agentRunSummary`. Ele registra somente o identificador irreversível da execução, estado, motivo
+normalizado de parada, duração, decisões, tools, falhas, repetições, recuperações e rejeições de validação.
+Tokens aparecem apenas como contadores informados pelo provedor; `usageStatus=unknown` deixa explícito
+quando essa informação não existe. Objetivo, prompt, argumentos, resultados, caminhos e identificadores
+originais de sessão ou projeto nunca fazem parte desse evento.
+
 O benchmark reproduzível é executado com:
 
 ```powershell

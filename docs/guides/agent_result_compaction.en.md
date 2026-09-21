@@ -56,6 +56,12 @@ artifact, the retrieval tools report that it is no longer available.
 Decision snapshots aggregate counts, duration, and rule name only; they do not store code, prompts,
 arguments, or secrets.
 
+When a run starts, awaits approval, completes, pauses, or fails, the local log also receives an
+`agentRunSummary` event. It contains only an irreversible run identifier, state, normalized stop reason,
+duration, decisions, tools, failures, repetitions, recoveries, and validation rejections. Token values are
+provider-reported counters only; `usageStatus=unknown` explicitly identifies unavailable usage. The event
+never contains the objective, prompt, arguments, results, paths, or original session and project identifiers.
+
 Run the reproducible benchmark with:
 
 ```powershell

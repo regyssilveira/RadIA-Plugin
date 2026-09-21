@@ -1224,8 +1224,10 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /Não há item de engenharia ativo/u);
-  assert.match(englishBacklog, /There is no active engineering item/u);
+  assert.match(portugueseBacklog, /Ciclo ativo: eficiência observável do agente/u);
+  assert.match(englishBacklog, /Active cycle: observable agent efficiency/u);
+  assert.match(portugueseBacklog, /Nenhuma release[\s\S]*autorização\s+explícita/u);
+  assert.match(englishBacklog, /no release[\s\S]*explicitly\s+authorizes/u);
   assert.match(portugueseHub, /Não há goal de execução ativo/u);
   assert.match(englishHub, /There is no active execution goal/u);
   assert.match(portugueseProjectHub, /Não há goal de execução ativo/u);
@@ -1240,6 +1242,10 @@ test('planning and update documentation follow the new separation', () => {
 test('agent metrics documentation describes safe logging and unknown usage', () => {
   const source = fs.readFileSync(
     path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.AgentProvider.pas'),
+    'utf8'
+  );
+  const runtimeSource = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.AgentRuntime.pas'),
     'utf8'
   );
   const portugueseReference = fs.readFileSync(
@@ -1258,11 +1264,22 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     documentationPath('guides', 'user_manual.en.md'),
     'utf8'
   );
+  const portugueseCompactionGuide = fs.readFileSync(
+    documentationPath('guides', 'agent_result_compaction.md'),
+    'utf8'
+  );
+  const englishCompactionGuide = fs.readFileSync(
+    documentationPath('guides', 'agent_result_compaction.en.md'),
+    'utf8'
+  );
 
   assert.match(source, /AgentMetrics/u);
   assert.match(source, /RemovePair\('version'\)/u);
   assert.match(source, /if not APlanApproved then/u);
   assert.match(source, /executionContract\.requireTests/u);
+  assert.match(runtimeSource, /agentRunSummary/u);
+  assert.match(runtimeSource, /stopReason/u);
+  assert.match(runtimeSource, /repeatedDecisionCount/u);
   [portugueseReference, englishReference].forEach(document => {
     assert.match(document, /AgentMetrics/u);
   });
@@ -1272,5 +1289,9 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     assert.match(document, /unknown/u);
     assert.match(document, /\/tools/u);
     assert.match(document, /DUnitX/u);
+  });
+  [portugueseCompactionGuide, englishCompactionGuide].forEach(document => {
+    assert.match(document, /agentRunSummary/u);
+    assert.match(document, /usageStatus=unknown/u);
   });
 });
