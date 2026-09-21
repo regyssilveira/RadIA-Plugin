@@ -15,7 +15,8 @@ uses
   RadIA.Core.Workspace, RadIA.Core.JourneyContext,
   RadIA.Core.VisualRuntimeSession,
   RadIA.Core.HierarchicalSettings,
-  RadIA.Core.HierarchicalSettingsStore;
+  RadIA.Core.HierarchicalSettingsStore,
+  RadIA.Core.ProblemProjection;
 
 type
   IRadIAChatView = interface
@@ -76,6 +77,7 @@ type
     FWebViewReady: Boolean;
     FPendingWebMessages: TList<string>;
     FPendingGlobalPrompt: string;
+    FProblemProjector: IRadIAProblemProjector;
     FWebFilesDir: string;
     FLifecycleGuard: IInterface;
     FActiveModels: TArray<string>;
@@ -319,6 +321,7 @@ type
     procedure HandleGenerateDTOMessage(const AInput, AInputType, AOutputType: string);
     procedure HandleCreateProjectMessage(const AFilesJson: string);
     procedure HandleCancelRequestMessage;
+    procedure HandleProjectProblemsMessage(const AProblemsJson: string);
     procedure HandleClearChatMessage;
     procedure HandleStreamChunkMessage(const AText: string; const AIsDone: Boolean; const AError: string);
     function TryHandleAgentCommand(
@@ -642,6 +645,7 @@ begin
   TRadIAContainer.TryResolve<IRadIAVisualRuntimeSession>(
     FVisualRuntimeSession
   );
+  TRadIAContainer.TryResolve<IRadIAProblemProjector>(FProblemProjector);
   FLastVisualSessionId := '';
   FLastVisualSequence := 0;
 
@@ -2504,6 +2508,45 @@ begin
     end);
 end;
 
+procedure TRadIAChatPresenter.HandleProjectProblemsMessage(
+  const AProblemsJson: string
+);
+begin
+  QueueOnUI(
+    procedure
+    var
+      LError: string;
+      LJson: TJSONObject;
+      LProjectedCount: Integer;
+      LSuccess: Boolean;
+    begin
+      LProjectedCount := 0;
+      if Assigned(FProblemProjector) then
+        LSuccess := FProblemProjector.ProjectSnapshot(
+          AProblemsJson,
+          LProjectedCount,
+          LError
+        )
+      else
+      begin
+        LSuccess := False;
+        LError := 'The Message View problem projector is unavailable.';
+      end;
+      LJson := TJSONObject.Create;
+      try
+        LJson.AddPair('action', 'problems_projection_result');
+        LJson.AddPair('success', TJSONBool.Create(LSuccess));
+        LJson.AddPair('count', TJSONNumber.Create(LProjectedCount));
+        if not LSuccess then
+          LJson.AddPair('error', LError);
+        PostJsonToWeb(LJson);
+      finally
+        LJson.Free;
+      end;
+    end
+  );
+end;
+
 procedure TRadIAChatPresenter.HandleClearChatMessage;
 begin
   QueueOnUI(
@@ -2580,6 +2623,7 @@ procedure TRadIAChatPresenter.DispatchInteractionMessage(const AAction: string;
 var
   LArguments: TJSONValue;
   LArgumentsJson: string;
+  LProblems: TJSONValue;
 begin
   AHandled := True;
   if AAction = 'update_stream' then
@@ -2595,6 +2639,14 @@ begin
       AJson.GetValue<string>('outputType', ''))
   else if AAction = 'cancel_request' then
     HandleCancelRequestMessage
+  else if AAction = 'project_problems' then
+  begin
+    LProblems := AJson.GetValue('problems');
+    if Assigned(LProblems) then
+      HandleProjectProblemsMessage(LProblems.ToJSON)
+    else
+      HandleProjectProblemsMessage('[]');
+  end
   else if AAction = 'execute_tool' then
   begin
     LArguments := AJson.GetValue('arguments');

@@ -113,6 +113,8 @@
         <DCCReference Include="designide.dcp"/>
         <DCCReference Include="Source\Core\RadIA.Core.Types.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.EditorDiagnostics.pas"/>
+        <DCCReference Include="Source\Core\RadIA.Core.ProblemProjection.pas"/>
+        <DCCReference Include="Source\Integration\RadIA.OTA.ProblemProjector.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Version.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.Tools.pas"/>
         <DCCReference Include="Source\Core\RadIA.Core.ResultCompactor.pas"/>

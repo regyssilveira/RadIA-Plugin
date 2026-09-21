@@ -32,7 +32,9 @@ problemas para manter a interface responsiva.
    seguro da IDE e valida se o arquivo pertence ao projeto aberto.
 4. Use **Review action** para colocar a jornada ou comando recomendado no campo de mensagem. A ação
    fica visível para revisão e não é executada automaticamente.
-5. Use **Clear** para descartar somente os achados coletados no chat atual.
+5. Use **Message View** para substituir a aba **RadIA Problems** da IDE por um snapshot dos primeiros
+   200 achados atuais. A ação é explícita e não executa nova análise.
+6. Use **Clear** para descartar os achados coletados no chat atual e limpar a projeção correspondente.
 
 O painel é lateral em janelas amplas e vira uma sobreposição em larguras menores. Fechá-lo não apaga
 os achados. Limpar a conversa ou trocar de sessão limpa a coleção associada à conversa anterior.
@@ -49,6 +51,11 @@ os achados. Limpar a conversa ou trocar de sessão limpa a coleção associada �
 O painel não modifica código, não inicia build e não aceita consentimento em nome do usuário. A
 navegação continua sujeita à política das ferramentas; comandos recomendados são apenas preparados
 no compositor.
+
+O painel **Problems** continua sendo a fonte de verdade. A Message View recebe somente uma projeção
+descartável e limitada, substituída a cada clique; ela não devolve nem acrescenta achados ao painel.
+Arquivos fora do projeto ativo aparecem como mensagens sem localização navegável. Fechar ou excluir
+a aba da IDE não remove nenhum achado do painel.
 
 ## Validação unificada de código Delphi
 

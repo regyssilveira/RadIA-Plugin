@@ -31,7 +31,9 @@ responsive.
    IDE contract and validates that the file belongs to the open project.
 4. Select **Review action** to place the recommended journey or command in the message field. The
    action remains visible for review and never runs automatically.
-5. Select **Clear** to discard only the findings collected in the current chat.
+5. Select **Message View** to replace the IDE **RadIA Problems** tab with a snapshot of the first 200
+   current findings. This explicit action does not run another analysis.
+6. Select **Clear** to discard findings collected in the current chat and clear its projection.
 
 The panel is a sidebar in wide windows and an overlay at smaller widths. Closing it preserves the
 findings. Clearing the conversation or changing sessions clears the collection associated with the
@@ -48,6 +50,11 @@ previous conversation.
 
 The panel does not modify code, start a build, or grant consent on the user's behalf. Navigation
 remains subject to tool policy; recommended commands are only prepared in the composer.
+
+The **Problems** panel remains the source of truth. Message View receives only a disposable, bounded
+projection that each click replaces; it cannot return or add findings to the panel. Files outside
+the active project appear as messages without a navigable location. Closing or deleting the IDE tab
+does not remove any panel finding.
 
 ## Unified Delphi code validation
 

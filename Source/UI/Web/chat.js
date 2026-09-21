@@ -239,6 +239,7 @@ const problemsList    = document.getElementById('problems-list');
 const problemsSeverityFilter = document.getElementById('problems-severity-filter');
 const problemsCategoryFilter = document.getElementById('problems-category-filter');
 const btnCloseProblems = document.getElementById('btn-close-problems');
+const btnProjectProblems = document.getElementById('btn-project-problems');
 const btnClearProblems = document.getElementById('btn-clear-problems');
 const btnCliNewSession = document.getElementById('btn-cli-new-session');
 const btnJourneyContext = document.getElementById('btn-journey-context');
@@ -1833,6 +1834,13 @@ function collectToolProblems(result) {
 function clearCollectedProblems() {
   COLLECTED_PROBLEMS.clear();
   renderProblemsPanel();
+  postMessageToDelphi({ action: 'project_problems', problems: [] });
+}
+
+function projectProblemsToMessageView() {
+  const problems = [...COLLECTED_PROBLEMS.values()].slice(0, 200);
+  postMessageToDelphi({ action: 'project_problems', problems });
+  showTransientStatus('Preparing the bounded Problems snapshot in Message View.');
 }
 
 function renderKnowledgeSearchResult(card, result) {
@@ -3757,6 +3765,7 @@ btnCloseProblems.addEventListener('click', () => {
 });
 
 btnClearProblems.addEventListener('click', clearCollectedProblems);
+btnProjectProblems.addEventListener('click', projectProblemsToMessageView);
 problemsSeverityFilter.addEventListener('change', renderProblemsPanel);
 problemsCategoryFilter.addEventListener('change', renderProblemsPanel);
 
@@ -5249,6 +5258,11 @@ if (globalThis.chrome?.webview) {
       case 'show_tools':            showTools(data.tools);                                       break;
       case 'tool_call':             renderToolCall(data);                                        break;
       case 'tool_result':           renderToolResult(data);                                      break;
+      case 'problems_projection_result':
+        showTransientStatus(data.success
+          ? `${data.count || 0} problem(s) projected to Message View.`
+          : data.error || 'Problems could not be projected to Message View.');
+        break;
       case 'chat_preflight':        renderChatPreflight(data);                                   break;
       case 'agent_mode_changed':    setAgentMode(data.enabled);                                  break;
       case 'execution_route':       updateExecutionRoute(data);                                  break;

@@ -172,6 +172,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineCompletion.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.EditorContext.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.EditorDiagnostics.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.ProblemProjection.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineShortcuts.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.InlineReviewTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.IDENavigation.pas"/>
@@ -281,6 +282,7 @@
         <DCCReference Include="Source\RadIA.Tests.Config.pas"/>
         <DCCReference Include="Source\RadIA.Tests.EditorHook.pas"/>
         <DCCReference Include="Source\RadIA.Tests.EditorDiagnostics.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.ProblemProjection.pas"/>
         <DCCReference Include="Source\RadIA.Tests.ContextParser.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Providers.pas"/>
         <DCCReference Include="Source\RadIA.Tests.Cache.pas"/>
