@@ -1571,6 +1571,7 @@ var
   LProvider: IRadIAAgentDecisionProvider;
   LRuntime: TRadIAAgentRuntime;
   LStore: IRadIAAgentCheckpointStore;
+  LApprovalSummary: string;
   LSummary: string;
 begin
   LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
@@ -1599,11 +1600,19 @@ begin
       );
       LRuntime.Resume('secret-session-id');
 
+      LApprovalSummary := '';
       LSummary := '';
       for LEntry in LLoggerObject.Entries do
         if Pos('"event":"agentRunSummary"', LEntry) > 0 then
-          LSummary := LEntry;
+        begin
+          if Pos('"status":"awaitingApproval"', LEntry) > 0 then
+            LApprovalSummary := LEntry
+          else if Pos('"status":"completed"', LEntry) > 0 then
+            LSummary := LEntry;
+        end;
 
+      Assert.IsNotEmpty(LApprovalSummary);
+      Assert.Contains(LApprovalSummary, '"stopReason":"awaitingApproval"');
       Assert.IsNotEmpty(LSummary);
       Assert.Contains(LSummary, '"status":"completed"');
       Assert.Contains(LSummary, '"stopReason":"completed"');
