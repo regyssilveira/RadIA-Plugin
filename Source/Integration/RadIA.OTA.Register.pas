@@ -1203,7 +1203,8 @@ initialization
         TPath.Combine(
           TPath.Combine(TPath.GetHomePath, 'RadIA'),
           'agent-checkpoints'
-        )
+        ),
+        TRadIAContainer.Resolve<IRadIASecretRedactor>
       )
     )
   );

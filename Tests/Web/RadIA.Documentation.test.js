@@ -1157,6 +1157,34 @@ test('semantic intelligence is public, reachable, and explicit about its boundar
   assert.match(englishCapabilities, /semantic_intelligence\.en\.md/u);
 });
 
+test('approved operational knowledge is bounded, redacted, reviewable, and project scoped', () => {
+  const source = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.KnowledgeHistory.pas'),
+    'utf8'
+  );
+  const portuguese = fs.readFileSync(
+    documentationPath('user_guide_project_knowledge.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    documentationPath('user_guide_project_knowledge.en.md'),
+    'utf8'
+  );
+
+  assert.match(source, /MAX_APPROVED_HISTORY_DOCUMENTS = 50/u);
+  assert.match(source, /MAX_APPROVED_HISTORY_AGE_DAYS = 30/u);
+  assert.match(source, /MAX_APPROVED_HISTORY_OBJECTIVE_CHARACTERS = 500/u);
+  assert.match(source, /FRedactor\.Redact\(AObjective\)/u);
+  assert.match(source, /THashSHA2\.GetHashString\(ASessionId\)/u);
+  [portuguese, english].forEach(document => {
+    assert.match(document, /SearchProjectKnowledge/u);
+    assert.match(document, /GetKnowledgeDocument/u);
+    assert.match(document, /ClearProjectKnowledge/u);
+  });
+  assert.match(portuguese, /outro projeto nunca/u);
+  assert.match(english, /other-project runs never/u);
+});
+
 test('chat documentation explains the bounded follow-up queue', () => {
   const portuguese = fs.readFileSync(
     documentationPath('user_guide_chat_sessions.md'),

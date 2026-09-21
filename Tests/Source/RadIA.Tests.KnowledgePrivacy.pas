@@ -41,12 +41,14 @@ type
 implementation
 
 uses
+  System.DateUtils,
   System.IOUtils,
   System.SysUtils,
   RadIA.Core.AgentRuntime,
   RadIA.Core.Config,
   RadIA.Core.KnowledgeHistory,
-  RadIA.Core.KnowledgePrivacy;
+  RadIA.Core.KnowledgePrivacy,
+  RadIA.Core.ToolSecurity;
 
 const
   CProjectId = 'C:\Projects\PrivacyDemo\PrivacyDemo.dproj';
@@ -155,9 +157,20 @@ begin
     LStore.Save(
       'approved-session',
       '{"sessionId":"approved-session","objective":' +
-      '"Refactor UniqueHistoryMarker","status":"completed",' +
+      '"Refactor UniqueHistoryMarker api_key=super-secret ' +
+      StringOfChar('X', 600) + '","status":"completed",' +
       '"projectId":"' + CProjectId.Replace('\', '\\') + '",' +
       '"planApproved":true,"steps":[{"arguments":"SecretPayload"}]}'
+    );
+    LStore.Save(
+      'expired-session',
+      '{"sessionId":"expired-session","objective":"ExpiredHistoryMarker",' +
+      '"status":"completed","projectId":"' +
+      CProjectId.Replace('\', '\\') + '","planApproved":true,"steps":[]}'
+    );
+    TFile.SetLastWriteTimeUtc(
+      TPath.Combine(LCheckpointDirectory, 'expired-session.json'),
+      IncDay(TTimeZone.Local.ToUniversalTime(Now), -31)
     );
     LStore.Save(
       'other-project',
@@ -172,7 +185,8 @@ begin
     LSource := TRadIAApprovedHistoryKnowledgeSource.Create(
       FConfig,
       TRadIAKnowledgePrivacyTestSource.Create,
-      LCheckpointDirectory
+      LCheckpointDirectory,
+      TRadIASecretRedactor.Create
     );
     LCount := Length(LSource.ListSourceFiles);
     Assert.AreEqual(2, LCount);
@@ -196,12 +210,20 @@ begin
     );
     Assert.IsTrue(LSource.ReadSourceFile(LFileName, LDocument));
     Assert.Contains(LDocument.Content, 'UniqueHistoryMarker');
+    Assert.Contains(LDocument.Content, '[REDACTED]');
+    Assert.DoesNotContain(LDocument.Content, 'super-secret');
     Assert.DoesNotContain(LDocument.Content, 'SecretPayload');
     Assert.DoesNotContain(LDocument.Content, 'OtherProjectMarker');
+    Assert.DoesNotContain(LDocument.FileName, 'approved-session');
+    Assert.IsTrue(Length(LDocument.Content) < 650);
     Assert.IsTrue(LService.RefreshProject.Success);
     LHits := LService.Search(CProjectId, 'UniqueHistoryMarker', 10);
     LCount := Length(LHits);
     Assert.AreEqual(1, LCount);
+    LCount := Length(
+      LService.Search(CProjectId, 'ExpiredHistoryMarker', 10)
+    );
+    Assert.AreEqual(0, LCount);
 
     FConfig.KnowledgeApprovedHistoryEnabled := False;
     LCount := Length(

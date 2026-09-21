@@ -152,7 +152,7 @@ confirmação de escrita. Uma permissão concedida para a sessão não é reutil
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
 | Enable local semantic project knowledge | Para pesquisas semânticas no projeto | Cria índice reconstruível local, sem rede. Vem desabilitado por padrão. |
-| Include approved agent run summaries | Para recuperar decisões de execuções anteriores | Indexa somente resumos concluídos com plano aprovado; argumentos e resultados de tools não entram. |
+| Include approved agent run summaries | Para recuperar decisões de execuções anteriores | Indexa até 50 resumos redigidos dos últimos 30 dias, isolados pelo projeto; revise-os pela pesquisa local. Argumentos e resultados de tools não entram. |
 | Knowledge excluded file fragments | Para excluir arquivos sensíveis ou gerados | Fragmentos separados por `;`; qualquer caminho correspondente fica fora do índice. |
 | Knowledge excluded project fragments | Para excluir projetos por nome ou caminho | Use para testes, terceiros, artefatos ou áreas confidenciais. |
 | Use a remote embedding provider | Quando o índice local precisar de embeddings remotos | Não envia conteúdo enquanto o consentimento remoto separado não estiver marcado e válido. |

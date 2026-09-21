@@ -87,7 +87,7 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 | Option | When to use | Effect and care |
 |---|---|---|
 | Enable local semantic project knowledge | For semantic project search | Builds a reconstructable local index without network access. |
-| Include approved run summaries | To recover approved decisions | Includes summaries only, never tool arguments or results. |
+| Include approved run summaries | To recover approved decisions | Includes up to 50 redacted summaries from the last 30 days, isolated by project and reviewable through local search. Tool arguments and results never enter. |
 | Excluded file/project fragments | To omit sensitive, generated, or third-party areas | Semicolon-separated name or path fragments. |
 | Use a remote embedding provider | When remote vectors are required | Sends nothing until separate consent and valid settings exist. |
 | Consent to sending bounded project text | After reviewing endpoint and policy | Authorizes bounded transmission and can be revoked by clearing it. |
