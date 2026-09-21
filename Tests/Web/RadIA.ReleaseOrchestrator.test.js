@@ -66,6 +66,7 @@ test('Sonar gate rejects an analysis from another revision', () => {
     path.join(repositoryRoot, 'scripts', 'Test-RadIA.SonarQualityGate.ps1'),
     'utf8'
   );
-  assert.match(sonarGate, /project_analyses\/search/u);
-  assert.match(sonarGate, /\$analysis\.revision -ne \$sourceCommit/u);
+  assert.match(sonarGate, /additionalFields=scannerContext/u);
+  assert.match(sonarGate, /sonar\\\.projectBaseDir/u);
+  assert.match(sonarGate, /\$analysisTimestamp -lt \$commitTimestamp/u);
 });

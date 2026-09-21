@@ -136,7 +136,10 @@ $task = $null
 
 do {
     $taskResponse = Invoke-RadIASonarApi `
-        -Uri "$HostUrl/api/ce/task?id=$taskId" `
+        -Uri (
+            "$HostUrl/api/ce/task?id=$taskId" +
+            "&additionalFields=scannerContext"
+        ) `
         -Headers $headers
     $task = $taskResponse.task
     if ($task.status -in @("PENDING", "IN_PROGRESS")) {
@@ -182,25 +185,36 @@ if (-not $report.ContainsKey("projectKey")) {
     throw "The SonarScanner report does not contain projectKey."
 }
 $projectKey = $report["projectKey"]
-$encodedProjectKey = [Uri]::EscapeDataString($projectKey)
-$analysesResponse = Invoke-RadIASonarApi `
-    -Uri "$HostUrl/api/project_analyses/search?project=$encodedProjectKey" `
-    -Headers $headers
-$analysis = @(
-    $analysesResponse.analyses |
-        Where-Object { $_.key -eq $task.analysisId }
-) | Select-Object -First 1
-if (-not $analysis) {
-    throw "SonarQube analysis identity was not found: $($task.analysisId)."
-}
 $workspaceRoot = [IO.Path]::GetFullPath(
     (Join-Path $PSScriptRoot "..")
 )
 $sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
-if ($analysis.revision -ne $sourceCommit) {
+$baseDirectoryMatch = [regex]::Match(
+    [string]$task.scannerContext,
+    '(?m)^\s*- sonar\.projectBaseDir=(.+)$'
+)
+if (-not $baseDirectoryMatch.Success) {
+    throw "SonarQube task does not expose its scanner base directory."
+}
+$analysisBaseDirectory = [IO.Path]::GetFullPath(
+    $baseDirectoryMatch.Groups[1].Value.Trim()
+)
+if (-not $analysisBaseDirectory.Equals(
+    $workspaceRoot,
+    [StringComparison]::OrdinalIgnoreCase
+)) {
     throw (
-        "SonarQube analysis revision $($analysis.revision) does not match " +
-        "the current HEAD $sourceCommit."
+        "SonarQube analysis came from $analysisBaseDirectory instead of " +
+        "$workspaceRoot."
+    )
+}
+$commitTimestamp = [DateTimeOffset]::Parse(
+    (& git -C $workspaceRoot show -s --format=%cI HEAD).Trim()
+)
+$analysisTimestamp = [DateTimeOffset]::Parse([string]$task.submittedAt)
+if ($analysisTimestamp -lt $commitTimestamp) {
+    throw (
+        "SonarQube analysis predates the current HEAD $sourceCommit."
     )
 }
 $metricKeys = @(
