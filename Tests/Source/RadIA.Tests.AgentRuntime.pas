@@ -150,6 +150,7 @@ type
     destructor Destroy; override;
     procedure Configure(const AEnabled: Boolean; const APath: string; const AMaxSizeKB: Integer);
     procedure Log(const AMsg: string; const ATag: string = 'Debug');
+    function LastRunSummary: string;
     property Entries: TList<string> read FEntries;
   end;
 
@@ -158,6 +159,11 @@ type
   private
     procedure AssertDecisionContextBudgetAtStepCount(
       const AStepCount: Integer
+    );
+    procedure AssertLastRunSummary(
+      const ALogger: TRadIAMockAgentMetricsLogger;
+      const AStatus: string;
+      const AStopReason: string
     );
     function NewRuntime(
       const AExecutor: IRadIAToolExecutor;
@@ -245,6 +251,8 @@ type
     [Test]
     procedure TestRunSummaryExplainsOutcomeWithoutSensitiveContent;
     [Test]
+    procedure TestRunSummaryClassifiesIncompleteDecisionMatrix;
+    [Test]
     procedure TestControllerRunsAgentAsynchronously;
     [Test]
     procedure TestControllerCancellationUnblocksProviderWait;
@@ -301,6 +309,30 @@ procedure TRadIAMockAgentMetricsLogger.Log(const AMsg, ATag: string);
 begin
   if ATag = 'AgentMetrics' then
     FEntries.Add(AMsg);
+end;
+
+function TRadIAMockAgentMetricsLogger.LastRunSummary: string;
+var
+  LIndex: Integer;
+begin
+  Result := '';
+  for LIndex := FEntries.Count - 1 downto 0 do
+    if Pos('"event":"agentRunSummary"', FEntries[LIndex]) > 0 then
+      Exit(FEntries[LIndex]);
+end;
+
+procedure TTestRadIAAgentRuntime.AssertLastRunSummary(
+  const ALogger: TRadIAMockAgentMetricsLogger;
+  const AStatus: string;
+  const AStopReason: string
+);
+var
+  LSummary: string;
+begin
+  LSummary := ALogger.LastRunSummary;
+  Assert.IsNotEmpty(LSummary);
+  Assert.Contains(LSummary, '"status":"' + AStatus + '"');
+  Assert.Contains(LSummary, '"stopReason":"' + AStopReason + '"');
 end;
 
 procedure TTestRadIAAgentRuntime.AssertDecisionContextBudgetAtStepCount(
@@ -679,11 +711,17 @@ procedure TTestRadIAAgentRuntime.TestCancelRequestedByExecutingTool;
 var
   LExecutorObject: TRadIAMockAgentToolExecutor;
   LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
   LProvider: IRadIAAgentDecisionProvider;
   LStore: IRadIAAgentCheckpointStore;
   LRuntime: TRadIAAgentRuntime;
   LResult: TRadIAAgentRunResult;
 begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
   LExecutorObject := TRadIAMockAgentToolExecutor.Create(
     TRadIAToolResult.Succeeded('{}')
   );
@@ -714,8 +752,12 @@ begin
     LResult := LRuntime.Resume('cancel-session');
     Assert.AreEqual(asCancelled, LResult.Status);
     Assert.AreEqual(1, LResult.StepCount);
+    AssertLastRunSummary(LLoggerObject, 'cancelled', 'cancelled');
   finally
     LRuntime.Free;
+  end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
   end;
 end;
 
@@ -897,12 +939,18 @@ procedure TTestRadIAAgentRuntime.TestDurationBudgetStopsAfterSlowDecision;
 var
   LExecutorObject: TRadIAMockAgentToolExecutor;
   LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
   LProviderObject: TRadIAMockAgentDecisionProvider;
   LProvider: IRadIAAgentDecisionProvider;
   LRuntime: TRadIAAgentRuntime;
   LResult: TRadIAAgentRunResult;
   LStore: IRadIAAgentCheckpointStore;
 begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
   LProviderObject := TRadIAMockAgentDecisionProvider.Create([
     TRadIAAgentDecision.Plan(
       'Slow plan.',
@@ -928,8 +976,12 @@ begin
     Assert.AreEqual(asFailed, LResult.Status);
     Assert.Contains(LResult.Message, 'duration limit');
     Assert.AreEqual(0, LExecutorObject.CallCount);
+    AssertLastRunSummary(LLoggerObject, 'failed', 'durationLimit');
   finally
     LRuntime.Free;
+  end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
   end;
 end;
 
@@ -937,6 +989,8 @@ procedure TTestRadIAAgentRuntime.TestCostBudgetStopsBeforePlanExecution;
 var
   LExecutorObject: TRadIAMockAgentToolExecutor;
   LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
   LPricing: TRadIAAgentPricing;
   LProvider: IRadIAAgentDecisionProvider;
   LRuntime: TRadIAAgentRuntime;
@@ -946,6 +1000,10 @@ var
   LStore: IRadIAAgentCheckpointStore;
   LUsage: TTokenUsage;
 begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
   LServiceObject := TRadIAMockAgentService.Create(
     '{"kind":"plan","message":"Plan.",' +
     '"steps":[{"title":"Inspect"}]}'
@@ -985,8 +1043,12 @@ begin
     Assert.Contains(LResult.Message, 'cost limit');
     Assert.AreEqual(0, LExecutorObject.CallCount);
     Assert.Contains(LRuntime.SnapshotJson, '"estimatedCostMicros":6');
+    AssertLastRunSummary(LLoggerObject, 'failed', 'costBudget');
   finally
     LRuntime.Free;
+  end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
   end;
 end;
 
@@ -1160,6 +1222,8 @@ procedure TTestRadIAAgentRuntime.TestTokenBudgetStopsBeforePlanExecution;
 var
   LExecutorObject: TRadIAMockAgentToolExecutor;
   LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
   LProvider: IRadIAAgentDecisionProvider;
   LRuntime: TRadIAAgentRuntime;
   LResult: TRadIAAgentRunResult;
@@ -1168,6 +1232,10 @@ var
   LStore: IRadIAAgentCheckpointStore;
   LUsage: TTokenUsage;
 begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
   LServiceObject := TRadIAMockAgentService.Create(
     '{"kind":"plan","message":"Plan.",' +
     '"steps":[{"title":"Inspect"}]}'
@@ -1201,8 +1269,12 @@ begin
     Assert.Contains(LResult.Message, 'local run token budget');
     Assert.AreEqual(0, LExecutorObject.CallCount);
     Assert.Contains(LRuntime.SnapshotJson, '"totalTokens":6');
+    AssertLastRunSummary(LLoggerObject, 'failed', 'tokenBudget');
   finally
     LRuntime.Free;
+  end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
   end;
 end;
 
@@ -1633,6 +1705,112 @@ begin
   end;
 end;
 
+procedure TTestRadIAAgentRuntime.
+  TestRunSummaryClassifiesIncompleteDecisionMatrix;
+var
+  LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
+    LExecutor := TRadIAMockAgentToolExecutor.Create(
+      TRadIAToolResult.Succeeded('{}')
+    );
+
+    LProvider := TRadIAMockAgentDecisionProvider.Create([]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LResult := LRuntime.Start(
+        'Missing decision.',
+        'missing-decision-session',
+        'project',
+        TRadIAAgentLimits.Default
+      );
+      Assert.AreEqual(asFailed, LResult.Status);
+      AssertLastRunSummary(
+        LLoggerObject,
+        'failed',
+        'agentReportedFailure'
+      );
+    finally
+      LRuntime.Free;
+    end;
+
+    LProvider := TRadIAMockAgentDecisionProvider.Create([
+      TRadIAAgentDecision.Plan('Invalid.', 'not-json')
+    ]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LResult := LRuntime.Start(
+        'Invalid plan.',
+        'invalid-plan-session',
+        'project',
+        TRadIAAgentLimits.Default
+      );
+      Assert.AreEqual(asFailed, LResult.Status);
+      AssertLastRunSummary(LLoggerObject, 'failed', 'planFailure');
+    finally
+      LRuntime.Free;
+    end;
+
+    LProvider := TRadIAMockAgentDecisionProvider.Create([
+      TRadIAAgentDecision.Plan('Empty tool.', '[{"title":"Inspect"}]'),
+      TRadIAAgentDecision.CallTool('', '{}')
+    ]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LResult := LRuntime.Start(
+        'Empty tool.',
+        'empty-tool-session',
+        'project',
+        TRadIAAgentLimits.Default
+      );
+      Assert.AreEqual(asAwaitingApproval, LResult.Status);
+      LResult := LRuntime.Resume('empty-tool-session');
+      Assert.AreEqual(asFailed, LResult.Status);
+      AssertLastRunSummary(LLoggerObject, 'failed', 'emptyToolName');
+    finally
+      LRuntime.Free;
+    end;
+
+    LProvider := TRadIAMockAgentDecisionProvider.Create([
+      TRadIAAgentDecision.Plan('Partial.', '[{"title":"Inspect"}]'),
+      TRadIAAgentDecision.CallTool('ReadFile', '{}')
+    ]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LRuntime.Start(
+        'Partial execution.',
+        'partial-decision-session',
+        'project',
+        TRadIAAgentLimits.Default
+      );
+      LResult := LRuntime.Resume('partial-decision-session');
+      Assert.AreEqual(asFailed, LResult.Status);
+      AssertLastRunSummary(
+        LLoggerObject,
+        'failed',
+        'agentReportedFailure'
+      );
+    finally
+      LRuntime.Free;
+    end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
+  end;
+end;
+
 procedure TTestRadIAAgentRuntime.TestProviderParsesFencedCompletion;
 var
   LDecision: TRadIAAgentDecision;
@@ -2025,11 +2203,17 @@ end;
 procedure TTestRadIAAgentRuntime.TestStopsRepeatedToolCalls;
 var
   LExecutor: IRadIAToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
   LProvider: IRadIAAgentDecisionProvider;
   LStore: IRadIAAgentCheckpointStore;
   LRuntime: TRadIAAgentRuntime;
   LResult: TRadIAAgentRunResult;
 begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
   LExecutor := TRadIAMockAgentToolExecutor.Create(
     TRadIAToolResult.Succeeded('{}')
   );
@@ -2055,8 +2239,12 @@ begin
     Assert.AreEqual(asFailed, LResult.Status);
     Assert.AreEqual(1, LResult.StepCount);
     Assert.Contains(LResult.Message, 'repeated too many times');
+    AssertLastRunSummary(LLoggerObject, 'failed', 'repeatedToolCall');
   finally
     LRuntime.Free;
+  end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
   end;
 end;
 

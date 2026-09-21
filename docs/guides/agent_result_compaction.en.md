@@ -62,6 +62,13 @@ duration, decisions, tools, failures, repetitions, recoveries, and validation re
 provider-reported counters only; `usageStatus=unknown` explicitly identifies unavailable usage. The event
 never contains the objective, prompt, arguments, results, paths, or original session and project identifiers.
 
+Stable reasons distinguish completion, pending approval, pause, cancellation, a missing or partial decision,
+an invalid plan, an empty tool, a repeated call, and duration, token, or cost limits. This classification is
+independent from the human-readable message shown to the user.
+
+Values include `completed`, `awaitingApproval`, `paused`, `cancelled`, `agentReportedFailure`, `planFailure`,
+`emptyToolName`, `repeatedToolCall`, `durationLimit`, `tokenBudget`, and `costBudget`.
+
 Run the reproducible benchmark with:
 
 ```powershell

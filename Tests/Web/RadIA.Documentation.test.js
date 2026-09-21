@@ -1293,5 +1293,8 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
   [portugueseCompactionGuide, englishCompactionGuide].forEach(document => {
     assert.match(document, /agentRunSummary/u);
     assert.match(document, /usageStatus=unknown/u);
+    assert.match(document, /agentReportedFailure/u);
+    assert.match(document, /emptyToolName/u);
+    assert.match(document, /repeatedToolCall/u);
   });
 });

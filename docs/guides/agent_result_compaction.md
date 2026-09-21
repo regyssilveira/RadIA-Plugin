@@ -63,6 +63,13 @@ Tokens aparecem apenas como contadores informados pelo provedor; `usageStatus=un
 quando essa informação não existe. Objetivo, prompt, argumentos, resultados, caminhos e identificadores
 originais de sessão ou projeto nunca fazem parte desse evento.
 
+Os motivos estáveis distinguem conclusão, aprovação pendente, pausa, cancelamento, decisão ausente ou
+parcial, plano inválido, tool vazia, chamada repetida e limites de duração, tokens ou custo. Essa
+classificação é independente da mensagem legível apresentada ao usuário.
+
+Os valores incluem `completed`, `awaitingApproval`, `paused`, `cancelled`, `agentReportedFailure`,
+`planFailure`, `emptyToolName`, `repeatedToolCall`, `durationLimit`, `tokenBudget` e `costBudget`.
+
 O benchmark reproduzível é executado com:
 
 ```powershell

@@ -325,6 +325,7 @@ type
     FSessionId: string;
     FProjectId: string;
     FMessage: string;
+    FStopReason: string;
     FPlanJson: string;
     FPlanApproved: Boolean;
     FLimits: TRadIAAgentLimits;
@@ -414,7 +415,8 @@ type
     );
     procedure ChangeStatus(
       const AStatus: TRadIAAgentStatus;
-      const AMessage: string
+      const AMessage: string;
+      const AStopReason: string = ''
     );
     procedure NotifyAndCheckpoint;
     procedure LoadSnapshot(const ASnapshotJson: string);
@@ -2028,7 +2030,8 @@ end;
 
 procedure TRadIAAgentRuntime.ChangeStatus(
   const AStatus: TRadIAAgentStatus;
-  const AMessage: string
+  const AMessage: string;
+  const AStopReason: string
 );
 begin
   if (AStatus <> asRunning) and (FRunStartedTimestamp > 0) then
@@ -2038,6 +2041,7 @@ begin
   end;
   FStatus := AStatus;
   FMessage := AMessage;
+  FStopReason := AStopReason;
   NotifyAndCheckpoint;
 end;
 
@@ -2435,9 +2439,13 @@ begin
     adComplete:
       HandleCompletionDecision(ADecision);
     adFail:
-      ChangeStatus(asFailed, ADecision.Message);
+      ChangeStatus(asFailed, ADecision.Message, 'agentReportedFailure');
   else
-    ChangeStatus(asFailed, 'Agent returned an unsupported decision.');
+    ChangeStatus(
+      asFailed,
+      'Agent returned an unsupported decision.',
+      'unsupportedDecision'
+    );
   end;
 end;
 
@@ -2531,7 +2539,11 @@ begin
   else if TInterlocked.CompareExchange(FPauseRequested, 0, 0) <> 0 then
     ChangeStatus(asPaused, 'Agent run was paused.')
   else
-    ChangeStatus(asFailed, 'Agent decision failed: ' + AMessage);
+    ChangeStatus(
+      asFailed,
+      'Agent decision failed: ' + AMessage,
+      'decisionFailure'
+    );
 end;
 
 procedure TRadIAAgentRuntime.HandlePlanDecision(
@@ -2540,12 +2552,20 @@ procedure TRadIAAgentRuntime.HandlePlanDecision(
 begin
   if FPlanApproved or HasValidPlan then
   begin
-    ChangeStatus(asFailed, 'Agent returned more than one plan.');
+    ChangeStatus(
+      asFailed,
+      'Agent returned more than one plan.',
+      'planFailure'
+    );
     Exit;
   end;
   FPlanJson := ADecision.PlanJson;
   if not HasValidPlan then
-    ChangeStatus(asFailed, 'Agent returned an invalid plan.')
+    ChangeStatus(
+      asFailed,
+      'Agent returned an invalid plan.',
+      'planFailure'
+    )
   else
     ChangeStatus(asAwaitingApproval, ADecision.Message);
 end;
@@ -2630,6 +2650,8 @@ end;
 
 function TRadIAAgentRuntime.RunStopReason: string;
 begin
+  if FStopReason <> '' then
+    Exit(FStopReason);
   case FStatus of
     asAwaitingApproval:
       Exit('awaitingApproval');
@@ -2691,7 +2713,11 @@ begin
   Result := False;
   if Trim(ADecision.ToolName) = '' then
   begin
-    ChangeStatus(asFailed, 'Agent selected an empty tool name.');
+    ChangeStatus(
+      asFailed,
+      'Agent selected an empty tool name.',
+      'emptyToolName'
+    );
     Exit;
   end;
   if TryRecoverCompletedArtifactRangeRepeat(ADecision) then
@@ -2990,6 +3016,7 @@ begin
     FProjectId := LRoot.GetValue<string>('projectId', '');
     FObjective := LRoot.GetValue<string>('objective', '');
     FMessage := LRoot.GetValue<string>('message', '');
+    FStopReason := '';
     FPlanApproved := LRoot.GetValue<Boolean>('planApproved', False);
     LPlan := LRoot.GetValue('plan');
     if Assigned(LPlan) and
@@ -3157,6 +3184,7 @@ begin
   FSessionId := '';
   FProjectId := '';
   FMessage := '';
+  FStopReason := '';
   FPlanJson := '';
   FPlanApproved := False;
   TInterlocked.Exchange(FPauseRequested, 0);
@@ -3287,6 +3315,7 @@ begin
     FRepeatedCallCount := 1;
   end;
   FStatus := asRunning;
+  FStopReason := '';
   FRunStartedTimestamp := TStopwatch.GetTimeStamp;
   Result := ExecuteLoop;
 end;
