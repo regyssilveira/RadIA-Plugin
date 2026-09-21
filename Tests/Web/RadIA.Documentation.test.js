@@ -1248,6 +1248,10 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.AgentRuntime.pas'),
     'utf8'
   );
+  const efficiencyScript = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'Measure-RadIA.AgentEfficiency.ps1'),
+    'utf8'
+  );
   const portugueseReference = fs.readFileSync(
     documentationPath('reference', 'settings_reference.md'),
     'utf8'
@@ -1280,6 +1284,9 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
   assert.match(runtimeSource, /agentRunSummary/u);
   assert.match(runtimeSource, /stopReason/u);
   assert.match(runtimeSource, /repeatedDecisionCount/u);
+  assert.match(efficiencyScript, /Get-RadIALatestRunSummaries/u);
+  assert.match(efficiencyScript, /toolCallSuppressionPercent/u);
+  assert.match(efficiencyScript, /BaselinePath/u);
   [portugueseReference, englishReference].forEach(document => {
     assert.match(document, /AgentMetrics/u);
   });
@@ -1298,5 +1305,7 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     assert.match(document, /repeatedToolCall/u);
     assert.match(document, /suppressedToolCallCount/u);
     assert.match(document, /successful_result_already_available/u);
+    assert.match(document, /Measure-RadIA\.AgentEfficiency\.ps1/u);
+    assert.match(document, /AgentEfficiencyBaseline\.json/u);
   });
 });

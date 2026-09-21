@@ -75,6 +75,29 @@ reutiliza a evidência anterior e não executa a tool novamente. O passo auditá
 `successful_result_already_available`; `suppressedToolCallCount` mede a economia real. Uma chamada que
 falhou continua elegível a nova tentativa, e o limite estrito configurado pelo usuário continua prevalecendo.
 
+### Baseline de eficiência
+
+Com o logging habilitado, gere um baseline sanitizado das execuções mais recentes:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
+  -LastRuns 100 `
+  -OutputPath Output\AgentEfficiencyBaseline.json
+```
+
+Para comparar outra amostra do mesmo fluxo, provedor, modelo e configuração:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
+  -LastRuns 100 `
+  -BaselinePath Output\AgentEfficiencyBaseline.json `
+  -OutputPath Output\AgentEfficiencyCurrent.json
+```
+
+O agregador usa somente o último resumo de cada execução, sem exportar `runId` ou caminhos. Ele mede
+decisões, tools executadas e suprimidas, repetições recuperadas, duração e tokens reportados. Execuções
+com `usageStatus=unknown` não entram na média de tokens, evitando apresentar ausência de medição como zero.
+
 O benchmark reproduzível é executado com:
 
 ```powershell

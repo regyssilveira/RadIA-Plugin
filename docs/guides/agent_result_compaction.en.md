@@ -74,6 +74,29 @@ evidence and does not execute the tool again. The auditable step reports
 `successful_result_already_available`, while `suppressedToolCallCount` measures the actual saving. A failed
 call remains eligible for retry, and a strict user-configured repetition limit still takes precedence.
 
+### Efficiency baseline
+
+With logging enabled, generate a sanitized baseline from the latest runs:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
+  -LastRuns 100 `
+  -OutputPath Output\AgentEfficiencyBaseline.json
+```
+
+Compare another sample of the same workflow, provider, model, and configuration:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
+  -LastRuns 100 `
+  -BaselinePath Output\AgentEfficiencyBaseline.json `
+  -OutputPath Output\AgentEfficiencyCurrent.json
+```
+
+The aggregator uses only the latest summary for each run without exporting `runId` values or paths. It
+measures decisions, executed and suppressed tools, recovered repetitions, duration, and reported tokens.
+Runs with `usageStatus=unknown` are excluded from token averages, so unavailable usage is never shown as zero.
+
 Run the reproducible benchmark with:
 
 ```powershell
