@@ -211,7 +211,7 @@ if (-not $analysisBaseDirectory.Equals(
 $commitTimestamp = [DateTimeOffset]::Parse(
     (& git -C $workspaceRoot show -s --format=%cI HEAD).Trim()
 )
-$analysisTimestamp = [DateTimeOffset]::Parse([string]$task.submittedAt)
+$analysisTimestamp = [DateTimeOffset]$task.submittedAt
 if ($analysisTimestamp -lt $commitTimestamp) {
     throw (
         "SonarQube analysis predates the current HEAD $sourceCommit."
