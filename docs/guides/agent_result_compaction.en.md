@@ -69,6 +69,11 @@ independent from the human-readable message shown to the user.
 Values include `completed`, `awaitingApproval`, `paused`, `cancelled`, `agentReportedFailure`, `planFailure`,
 `emptyToolName`, `repeatedToolCall`, `durationLimit`, `tokenBudget`, and `costBudget`.
 
+When an identical consecutive call repeats a tool that has just succeeded, the runtime reuses the prior
+evidence and does not execute the tool again. The auditable step reports
+`successful_result_already_available`, while `suppressedToolCallCount` measures the actual saving. A failed
+call remains eligible for retry, and a strict user-configured repetition limit still takes precedence.
+
 Run the reproducible benchmark with:
 
 ```powershell

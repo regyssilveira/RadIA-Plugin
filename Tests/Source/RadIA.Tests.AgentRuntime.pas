@@ -213,6 +213,8 @@ type
     [Test]
     procedure TestStopsRepeatedToolCalls;
     [Test]
+    procedure TestReusesSuccessfulRepeatedToolCall;
+    [Test]
     procedure TestRecoversDuplicateCompletedArtifactRange;
     [Test]
     procedure TestReportsDestinationRecoveryAfterExistingDirectory;
@@ -2243,6 +2245,64 @@ begin
   finally
     LRuntime.Free;
   end;
+  finally
+    TLogger.SetActiveLogger(TConcreteLogger.Create);
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestReusesSuccessfulRepeatedToolCall;
+var
+  LExecutor: IRadIAToolExecutor;
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LLogger: IRadIALogger;
+  LLoggerObject: TRadIAMockAgentMetricsLogger;
+  LProvider: IRadIAAgentDecisionProvider;
+  LResult: TRadIAAgentRunResult;
+  LRuntime: TRadIAAgentRuntime;
+  LStore: IRadIAAgentCheckpointStore;
+  LSummary: string;
+begin
+  LLoggerObject := TRadIAMockAgentMetricsLogger.Create;
+  LLogger := LLoggerObject;
+  TLogger.SetActiveLogger(LLogger);
+  try
+    LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+      TRadIAToolResult.Succeeded('{"content":"stable"}')
+    );
+    LExecutor := LExecutorObject;
+    LProvider := TRadIAMockAgentDecisionProvider.Create([
+      TRadIAAgentDecision.Plan(
+        'Approve reuse.',
+        '[{"title":"Inspect once"}]'
+      ),
+      TRadIAAgentDecision.CallTool('ReadFile', '{"path":"Sample.pas"}'),
+      TRadIAAgentDecision.CallTool('ReadFile', '{"path":"Sample.pas"}'),
+      TRadIAAgentDecision.Complete('Done.')
+    ]);
+    LStore := TRadIAMemoryAgentCheckpointStore.Create;
+    LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+    try
+      LRuntime.Start(
+        'Reuse successful evidence.',
+        'reuse-success-session',
+        'project',
+        TRadIAAgentLimits.Default
+      );
+      LResult := LRuntime.Resume('reuse-success-session');
+
+      Assert.AreEqual(asCompleted, LResult.Status);
+      Assert.AreEqual(1, LExecutorObject.CallCount);
+      Assert.AreEqual(2, LResult.StepCount);
+      LSummary := LLoggerObject.LastRunSummary;
+      Assert.Contains(LSummary, '"decisionCount":3');
+      Assert.Contains(LSummary, '"toolCallCount":1');
+      Assert.Contains(LSummary, '"suppressedToolCallCount":1');
+      Assert.Contains(LSummary, '"toolFailureCount":0');
+      Assert.Contains(LSummary, '"repeatedDecisionCount":1');
+      Assert.Contains(LSummary, '"recoveredRepeatCount":1');
+    finally
+      LRuntime.Free;
+    end;
   finally
     TLogger.SetActiveLogger(TConcreteLogger.Create);
   end;

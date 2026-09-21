@@ -1296,5 +1296,7 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     assert.match(document, /agentReportedFailure/u);
     assert.match(document, /emptyToolName/u);
     assert.match(document, /repeatedToolCall/u);
+    assert.match(document, /suppressedToolCallCount/u);
+    assert.match(document, /successful_result_already_available/u);
   });
 });

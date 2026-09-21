@@ -70,6 +70,11 @@ classificação é independente da mensagem legível apresentada ao usuário.
 Os valores incluem `completed`, `awaitingApproval`, `paused`, `cancelled`, `agentReportedFailure`,
 `planFailure`, `emptyToolName`, `repeatedToolCall`, `durationLimit`, `tokenBudget` e `costBudget`.
 
+Quando uma chamada idêntica e consecutiva repete uma tool que acabou de retornar sucesso, o runtime
+reutiliza a evidência anterior e não executa a tool novamente. O passo auditável informa
+`successful_result_already_available`; `suppressedToolCallCount` mede a economia real. Uma chamada que
+falhou continua elegível a nova tentativa, e o limite estrito configurado pelo usuário continua prevalecendo.
+
 O benchmark reproduzível é executado com:
 
 ```powershell

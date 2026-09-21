@@ -341,7 +341,9 @@ type
     FCompletionTokensBeforeRun: Integer;
     FEstimatedCostMicrosBeforeRun: Int64;
     FDecisionCount: Integer;
+    FToolCallCount: Integer;
     FToolFailureCount: Integer;
+    FSuppressedToolCallCount: Integer;
     FRepeatedDecisionCount: Integer;
     FRecoveredRepeatCount: Integer;
     FValidationRejectionCount: Integer;
@@ -406,12 +408,16 @@ type
     function TryRecoverCompletedArtifactRangeRepeat(
       const ADecision: TRadIAAgentDecision
     ): Boolean;
+    function TryReuseSuccessfulRepeat(
+      const ADecision: TRadIAAgentDecision
+    ): Boolean;
     procedure AddToolStep(
       const ADecision: TRadIAAgentDecision;
       const ACorrelationId: string;
       const AResult: TRadIAToolResult;
       const AStartedElapsedMilliseconds: Int64;
-      const ADurationMilliseconds: Int64
+      const ADurationMilliseconds: Int64;
+      const AExecuted: Boolean = True
     );
     procedure ChangeStatus(
       const AStatus: TRadIAAgentStatus;
@@ -438,7 +444,8 @@ type
     function PausedStopReason: string;
     function RunStopReason: string;
     procedure LogRunSummary(
-      const AInitialStepCount: Integer;
+      const AInitialToolCallCount: Integer;
+      const AInitialSuppressedToolCallCount: Integer;
       const AInitialElapsedMilliseconds: Int64
     );
     function CheckBudgets: Boolean;
@@ -1282,7 +1289,8 @@ procedure TRadIAAgentRuntime.AddToolStep(
   const ACorrelationId: string;
   const AResult: TRadIAToolResult;
   const AStartedElapsedMilliseconds: Int64;
-  const ADurationMilliseconds: Int64
+  const ADurationMilliseconds: Int64;
+  const AExecuted: Boolean
 );
 var
   LArtifact: TRadIAAgentResultArtifact;
@@ -1327,7 +1335,7 @@ begin
   else
     LStep.AffectedFiles := [];
   FSteps.Add(LStep);
-  if not LStep.Success then
+  if AExecuted and not LStep.Success then
     Inc(FToolFailureCount);
   try
     LKnownToolName := 'unknown';
@@ -1343,6 +1351,7 @@ begin
       LEvent.AddPair('toolName', LKnownToolName);
       LEvent.AddPair('risk', LStep.Risk);
       LEvent.AddPair('success', TJSONBool.Create(LStep.Success));
+      LEvent.AddPair('executed', TJSONBool.Create(AExecuted));
       LEvent.AddPair('mutation', TJSONBool.Create(LStep.Mutation));
       LEvent.AddPair('durationMilliseconds', TJSONNumber.Create(LStep.DurationMilliseconds));
       LEvent.AddPair('resultCharacters', TJSONNumber.Create(Length(LStep.ResultJson)));
@@ -2303,10 +2312,46 @@ begin
     TGUID.NewGuid.ToString,
     LRecoveryResult,
     ElapsedMilliseconds,
-    0
+    0,
+    False
   );
+  Inc(FSuppressedToolCallCount);
   Inc(FRecoveredRepeatCount);
   FRepeatedCallCount := 1;
+  UpdatePeriodicSummary;
+  NotifyAndCheckpoint;
+  Result := True;
+end;
+
+function TRadIAAgentRuntime.TryReuseSuccessfulRepeat(
+  const ADecision: TRadIAAgentDecision
+): Boolean;
+var
+  LRecoveryResult: TRadIAToolResult;
+begin
+  Result := False;
+  if (FLimits.MaxRepeatedCalls <= 1) or (FSteps.Count = 0) then
+    Exit;
+  if not FSteps.Last.Success or
+    (BuildCallSignature(ADecision) <> FLastCallSignature) then
+    Exit;
+  LRecoveryResult := TRadIAToolResult.Failed(
+    'successful_result_already_available',
+    'The identical tool call already succeeded in the preceding step. ' +
+      'Reuse that result and continue with the next unmet requirement.'
+  );
+  AddToolStep(
+    ADecision,
+    TGUID.NewGuid.ToString,
+    LRecoveryResult,
+    ElapsedMilliseconds,
+    0,
+    False
+  );
+  Inc(FSuppressedToolCallCount);
+  Inc(FRepeatedDecisionCount);
+  Inc(FRecoveredRepeatCount);
+  FRepeatedCallCount := FLimits.MaxRepeatedCalls;
   UpdatePeriodicSummary;
   NotifyAndCheckpoint;
   Result := True;
@@ -2467,10 +2512,12 @@ end;
 function TRadIAAgentRuntime.ExecuteLoop: TRadIAAgentRunResult;
 var
   LInitialElapsedMilliseconds: Int64;
-  LInitialStepCount: Integer;
+  LInitialSuppressedToolCallCount: Integer;
+  LInitialToolCallCount: Integer;
 begin
   LInitialElapsedMilliseconds := ElapsedMilliseconds;
-  LInitialStepCount := FSteps.Count;
+  LInitialToolCallCount := FToolCallCount;
+  LInitialSuppressedToolCallCount := FSuppressedToolCallCount;
   ChangeStatus(asRunning, 'Agent run started.');
   while FStatus = asRunning do
   begin
@@ -2485,7 +2532,11 @@ begin
     FSteps.Count,
     DetectRecoveryInput
   );
-  LogRunSummary(LInitialStepCount, LInitialElapsedMilliseconds);
+  LogRunSummary(
+    LInitialToolCallCount,
+    LInitialSuppressedToolCallCount,
+    LInitialElapsedMilliseconds
+  );
 end;
 
 function TRadIAAgentRuntime.DetectRecoveryInput: string;
@@ -2584,7 +2635,8 @@ begin
 end;
 
 procedure TRadIAAgentRuntime.LogRunSummary(
-  const AInitialStepCount: Integer;
+  const AInitialToolCallCount: Integer;
+  const AInitialSuppressedToolCallCount: Integer;
   const AInitialElapsedMilliseconds: Int64
 );
 var
@@ -2609,7 +2661,16 @@ begin
       LEvent.AddPair('decisionCount', TJSONNumber.Create(FDecisionCount));
       LEvent.AddPair(
         'toolCallCount',
-        TJSONNumber.Create(Max(0, FSteps.Count - AInitialStepCount))
+        TJSONNumber.Create(Max(0, FToolCallCount - AInitialToolCallCount))
+      );
+      LEvent.AddPair(
+        'suppressedToolCallCount',
+        TJSONNumber.Create(
+          Max(
+            0,
+            FSuppressedToolCallCount - AInitialSuppressedToolCallCount
+          )
+        )
       );
       LEvent.AddPair('toolFailureCount', TJSONNumber.Create(FToolFailureCount));
       LEvent.AddPair(
@@ -2722,6 +2783,8 @@ begin
   end;
   if TryRecoverCompletedArtifactRangeRepeat(ADecision) then
     Exit(True);
+  if TryReuseSuccessfulRepeat(ADecision) then
+    Exit(True);
   if not CheckRepeatedCall(ADecision) then
   begin
     ChangeStatus(
@@ -2760,6 +2823,7 @@ begin
     'workspace'
   ).WithCancellation(FCancellationToken);
   LStartedElapsedMilliseconds := ElapsedMilliseconds;
+  Inc(FToolCallCount);
   LResult := FToolExecutor.Execute(LRequest);
   LDurationMilliseconds := ElapsedMilliseconds -
     LStartedElapsedMilliseconds;
@@ -3197,7 +3261,9 @@ begin
   FCompletionTokensBeforeRun := 0;
   FEstimatedCostMicrosBeforeRun := 0;
   FDecisionCount := 0;
+  FToolCallCount := 0;
   FToolFailureCount := 0;
+  FSuppressedToolCallCount := 0;
   FRepeatedDecisionCount := 0;
   FRecoveredRepeatCount := 0;
   FValidationRejectionCount := 0;
