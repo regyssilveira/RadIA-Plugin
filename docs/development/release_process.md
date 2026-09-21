@@ -32,7 +32,9 @@ powershell.exe -ExecutionPolicy Bypass `
 ```
 
 O relatório do scanner informado deve pertencer exatamente ao `HEAD`; uma análise SonarQube de outro
-commit é rejeitada. Pacotes, instalador e evidências também devem compartilhar versão e commit.
+commit é rejeitada. Pacotes, instalador e evidências também devem compartilhar versão e commit. Para
+manter o `DryRun` sem mutações na IDE, ele grava o plano do gate de uso; as jornadas que instalam
+temporariamente o plugin são executadas apenas por `-Publish`, após autorização explícita.
 
 Execute as validações proporcionais à entrega. Uma release completa exige:
 

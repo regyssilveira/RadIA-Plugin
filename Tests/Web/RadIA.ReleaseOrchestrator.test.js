@@ -34,6 +34,7 @@ test('release orchestration is a non-publishing dry run by default', () => {
   assert.equal(plan.mode, 'dry-run');
   assert.equal(plan.mutatesRemote, false);
   assert.doesNotMatch(plan.steps.join(','), /publish-existing-tag/u);
+  assert.match(plan.steps.join(','), /mandatory-release-usage-plan/u);
 });
 
 test('release orchestration preserves gates and exact provenance checks', () => {
@@ -58,6 +59,8 @@ test('publication requires an explicit mode, main, and an exact existing tag', (
   assert.match(plan.steps.join(','), /publish-existing-tag/u);
   assert.match(orchestrator, /\$branch -ne "main"/u);
   assert.match(orchestrator, /\$tagCommit -ne \$sourceCommit/u);
+  assert.match(orchestrator, /if \(\$Publish\)[\s\S]*Test-RadIA\.ReleaseUsage/u);
+  assert.match(orchestrator, /Test-RadIA\.ReleaseUsage\.ps1" -PlanOnly/u);
   assert.match(orchestrator, /if \(\$Publish\)[\s\S]*gh release/u);
 });
 

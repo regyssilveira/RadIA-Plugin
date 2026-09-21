@@ -51,7 +51,11 @@ $steps = @(
     "supported-targets",
     "sonarqube-exact-revision",
     "build-three-release-packages",
-    "mandatory-release-usage",
+    $(if ($Publish) {
+        "mandatory-release-usage"
+    } else {
+        "mandatory-release-usage-plan"
+    }),
     "package-provenance",
     "visual-installer",
     "cross-evidence-provenance",
@@ -119,8 +123,14 @@ try {
     & ".\build.ps1" -DelphiVersion "23.0" -Release -Package
     & ".\build.ps1" -DelphiVersion "37.0" -Release -Package
     & ".\build.ps1" -DelphiVersion "37.0" -IDE64 -Release -Package
-    & ".\scripts\Test-RadIA.ReleaseUsage.ps1" `
-        -EvidenceRoot (Join-Path $distributionRoot "ReleaseUsage")
+    if ($Publish) {
+        & ".\scripts\Test-RadIA.ReleaseUsage.ps1" `
+            -EvidenceRoot (Join-Path $distributionRoot "ReleaseUsage")
+    } else {
+        $usagePlanPath = Join-Path $distributionRoot "ReleaseUsagePlan.json"
+        & ".\scripts\Test-RadIA.ReleaseUsage.ps1" -PlanOnly |
+            Set-Content -LiteralPath $usagePlanPath -Encoding UTF8
+    }
     & ".\scripts\New-RadIA.ReleaseEvidence.ps1" `
         -OutputPath $releaseEvidencePath
     & ".\scripts\New-RadIA.VisualInstaller.ps1" `
