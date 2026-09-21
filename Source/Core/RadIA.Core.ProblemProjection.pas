@@ -173,9 +173,9 @@ begin
     try
       for LIndex := 0 to Min(LArray.Count, CMaximumProblems) - 1 do
       begin
-        if not (LArray.Items[LIndex] is TJSONObject) then
+        if not (LArray[LIndex] is TJSONObject) then
           Continue;
-        LItem := TJSONObject(LArray.Items[LIndex]);
+        LItem := TJSONObject(LArray[LIndex]);
         LMessage := BoundedText(
           JsonText(LItem, 'message'),
           CMaximumMessageLength
