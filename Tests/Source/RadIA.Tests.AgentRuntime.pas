@@ -1691,6 +1691,7 @@ begin
       Assert.Contains(LSummary, '"status":"completed"');
       Assert.Contains(LSummary, '"stopReason":"completed"');
       Assert.Contains(LSummary, '"decisionCount":2');
+      Assert.Contains(LSummary, '"firstDecisionDurationMilliseconds":');
       Assert.Contains(LSummary, '"toolCallCount":1');
       Assert.Contains(LSummary, '"toolFailureCount":1');
       Assert.Contains(LSummary, '"usageStatus":"unknown"');

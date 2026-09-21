@@ -341,6 +341,7 @@ type
     FCompletionTokensBeforeRun: Integer;
     FEstimatedCostMicrosBeforeRun: Int64;
     FDecisionCount: Integer;
+    FFirstDecisionDurationMilliseconds: Int64;
     FToolCallCount: Integer;
     FToolFailureCount: Integer;
     FSuppressedToolCallCount: Integer;
@@ -2497,10 +2498,23 @@ end;
 procedure TRadIAAgentRuntime.ExecuteNextDecision;
 var
   LDecision: TRadIAAgentDecision;
+  LDecisionStartedTimestamp: Int64;
 begin
   try
     Inc(FDecisionCount);
-    LDecision := FDecisionProvider.NextDecision(BuildDecisionContextJson);
+    LDecisionStartedTimestamp := TStopwatch.GetTimeStamp;
+    try
+      LDecision := FDecisionProvider.NextDecision(BuildDecisionContextJson);
+    finally
+      if FDecisionCount = 1 then
+        FFirstDecisionDurationMilliseconds := Max(
+          0,
+          Round(
+            (TStopwatch.GetTimeStamp - LDecisionStartedTimestamp) *
+            1000 / TStopwatch.Frequency
+          )
+        );
+    end;
     if CheckBudgets then
       ExecuteDecision(LDecision);
   except
@@ -2659,6 +2673,10 @@ begin
       LEvent.AddPair('status', RadIAAgentStatusName(FStatus));
       LEvent.AddPair('stopReason', RunStopReason);
       LEvent.AddPair('decisionCount', TJSONNumber.Create(FDecisionCount));
+      LEvent.AddPair(
+        'firstDecisionDurationMilliseconds',
+        TJSONNumber.Create(Max(0, FFirstDecisionDurationMilliseconds))
+      );
       LEvent.AddPair(
         'toolCallCount',
         TJSONNumber.Create(Max(0, FToolCallCount - AInitialToolCallCount))
@@ -3261,6 +3279,7 @@ begin
   FCompletionTokensBeforeRun := 0;
   FEstimatedCostMicrosBeforeRun := 0;
   FDecisionCount := 0;
+  FFirstDecisionDurationMilliseconds := -1;
   FToolCallCount := 0;
   FToolFailureCount := 0;
   FSuppressedToolCallCount := 0;

@@ -10,12 +10,10 @@ tools, tempo e tokens; reduzir trabalho repetido sem enfraquecer consentimento, 
 
 **Escopo em ordem de entrega:**
 
-1. gates de desempenho pareados e relativos para duração, etapas, tokens e responsividade;
-2. conhecimento operacional sanitizado, limitado, revisável e isolado por projeto;
-3. orquestrador de publicação com `DryRun`, sem substituir os gates existentes.
+1. conhecimento operacional sanitizado, limitado, revisável e isolado por projeto;
+2. orquestrador de publicação com `DryRun`, sem substituir os gates existentes.
 
-**Ameaças:** baseline instável; memória local tratada como verdade; automação de publicação usando
-artefato de outro commit.
+**Ameaças:** memória local tratada como verdade; automação de publicação usando artefato de outro commit.
 
 **Validação:** DUnitX no Delphi 12 e 13, testes documentais, lint aplicável, SonarQube e cenário E2E
 proporcional antes de encerrar cada incremento. Nenhuma release faz parte deste ciclo até autorização

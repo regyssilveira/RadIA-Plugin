@@ -82,6 +82,7 @@ Com o logging habilitado, gere um baseline sanitizado das execuções mais recen
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
   -LastRuns 100 `
+  -PairingKey create-project-delphi13-standard `
   -OutputPath Output\AgentEfficiencyBaseline.json
 ```
 
@@ -90,13 +91,30 @@ Para comparar outra amostra do mesmo fluxo, provedor, modelo e configuração:
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
   -LastRuns 100 `
+  -PairingKey create-project-delphi13-standard `
   -BaselinePath Output\AgentEfficiencyBaseline.json `
   -OutputPath Output\AgentEfficiencyCurrent.json
 ```
 
 O agregador usa somente o último resumo de cada execução, sem exportar `runId` ou caminhos. Ele mede
-decisões, tools executadas e suprimidas, repetições recuperadas, duração e tokens reportados. Execuções
-com `usageStatus=unknown` não entram na média de tokens, evitando apresentar ausência de medição como zero.
+decisões, tools executadas e suprimidas, repetições recuperadas, duração, latência até a primeira decisão
+e tokens reportados. Execuções com `usageStatus=unknown` não entram na média de tokens, evitando apresentar
+ausência de medição como zero. `PairingKey` identifica a mesma combinação de cenário, provider, modelo e
+configuração; somente seu hash truncado aparece na evidência.
+
+Depois de capturar duas amostras com a mesma chave e o mesmo número de execuções, aplique o gate relativo:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.AgentEfficiencyGate.ps1 `
+  -BaselinePath Output\AgentEfficiencyBaseline.json `
+  -CurrentPath Output\AgentEfficiencyCurrent.json `
+  -OutputPath Output\AgentEfficiencyGate.json
+```
+
+Por padrão, cada amostra precisa ter pelo menos 20 execuções, responsividade medida em todas elas e uso de
+tokens reportado na mesma quantidade não nula. O gate rejeita aumentos superiores a 20% em duração ou
+latência da primeira decisão e superiores a 10% em decisões, tools ou tokens. Os limites são parâmetros
+explícitos do script; não use chaves diferentes nem reduza a amostra para fazer uma regressão passar.
 
 O benchmark reproduzível é executado com:
 

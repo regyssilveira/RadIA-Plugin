@@ -3,7 +3,8 @@ param(
     [string]$OutputPath = "",
     [ValidateRange(1, 10000)]
     [int]$LastRuns = 100,
-    [string]$BaselinePath = ""
+    [string]$BaselinePath = "",
+    [string]$PairingKey = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -31,6 +32,35 @@ function Get-RadIAAverage {
     }
     $measure = $Items | Measure-Object -Property $PropertyName -Average
     return [Math]::Round([double]$measure.Average, 2)
+}
+
+function Get-RadIAOptionalAverage {
+    param(
+        [object[]]$Items,
+        [string]$PropertyName
+    )
+
+    if ($Items.Count -eq 0) {
+        return $null
+    }
+    return Get-RadIAAverage $Items $PropertyName
+}
+
+function Get-RadIAHash {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return ""
+    }
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Value.Trim())
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $algorithm.ComputeHash($bytes)
+        return ([BitConverter]::ToString($hash) -replace '-', '').ToLowerInvariant().Substring(0, 16)
+    }
+    finally {
+        $algorithm.Dispose()
+    }
 }
 
 function Get-RadIADeltaPercent {
@@ -134,6 +164,18 @@ if ($summaries.Count -eq 0) {
 }
 
 $reportedUsage = @($summaries | Where-Object { $_.usageStatus -eq "reported" })
+$responsiveRuns = @(
+    $summaries | Where-Object {
+        $_.PSObject.Properties.Name -contains "firstDecisionDurationMilliseconds"
+    }
+)
+$reportedTokenTotals = @(
+    $reportedUsage | ForEach-Object {
+        [pscustomobject]@{
+            totalTokens = [double]$_.promptTokens + [double]$_.completionTokens
+        }
+    }
+)
 $executedToolCalls = [double](($summaries | Measure-Object -Property toolCallCount -Sum).Sum)
 $suppressedToolCalls = [double](($summaries | Measure-Object -Property suppressedToolCallCount -Sum).Sum)
 $repeatedDecisions = [double](($summaries | Measure-Object -Property repeatedDecisionCount -Sum).Sum)
@@ -161,6 +203,9 @@ $metrics = [ordered]@{
     averageToolCallCount = Get-RadIAAverage $summaries "toolCallCount"
     averageSuppressedToolCallCount = Get-RadIAAverage $summaries "suppressedToolCallCount"
     averageDurationMilliseconds = Get-RadIAAverage $summaries "durationMilliseconds"
+    averageFirstDecisionDurationMilliseconds = Get-RadIAOptionalAverage `
+        $responsiveRuns `
+        "firstDecisionDurationMilliseconds"
     totalToolCallCount = [int]$executedToolCalls
     totalSuppressedToolCallCount = [int]$suppressedToolCalls
     toolCallSuppressionPercent = Get-RadIAPercent `
@@ -169,15 +214,19 @@ $metrics = [ordered]@{
     totalRepeatedDecisionCount = [int]$repeatedDecisions
     totalRecoveredRepeatCount = [int]$recoveredRepeats
     repeatRecoveryPercent = Get-RadIAPercent $recoveredRepeats $repeatedDecisions
-    averagePromptTokens = Get-RadIAAverage $reportedUsage "promptTokens"
-    averageCompletionTokens = Get-RadIAAverage $reportedUsage "completionTokens"
+    averagePromptTokens = Get-RadIAOptionalAverage $reportedUsage "promptTokens"
+    averageCompletionTokens = Get-RadIAOptionalAverage $reportedUsage "completionTokens"
+    averageTotalTokens = Get-RadIAOptionalAverage $reportedTokenTotals "totalTokens"
 }
 
 $result = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     sample = [ordered]@{
         requestedLastRuns = $LastRuns
         analyzedRuns = $summaries.Count
+        pairingKeyHash = Get-RadIAHash $PairingKey
+        responsivenessMeasuredRunCount = $responsiveRuns.Count
+        tokenUsageMeasuredRunCount = $reportedUsage.Count
         availableSourceFileCount = $files.Count
         scannedSourceFileCount = $selection.ScannedFileCount
     }
@@ -204,6 +253,12 @@ if (-not [string]::IsNullOrWhiteSpace($BaselinePath)) {
         promptTokensDeltaPercent = Get-RadIADeltaPercent `
             $metrics.averagePromptTokens `
             $baseline.metrics.averagePromptTokens
+        totalTokensDeltaPercent = Get-RadIADeltaPercent `
+            $metrics.averageTotalTokens `
+            $baseline.metrics.averageTotalTokens
+        responsivenessDeltaPercent = Get-RadIADeltaPercent `
+            $metrics.averageFirstDecisionDurationMilliseconds `
+            $baseline.metrics.averageFirstDecisionDurationMilliseconds
     }
 }
 
