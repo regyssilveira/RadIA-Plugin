@@ -3,20 +3,8 @@
 Este arquivo contém somente trabalho aberto. Histórico, marcos concluídos, métricas e notas de
 release não pertencem ao backlog.
 
-## Ciclo ativo: eficiência observável do agente
-
-**Resultado observável:** explicar, sem conteúdo sensível, por que cada execução consumiu decisões,
-tools, tempo e tokens; reduzir trabalho repetido sem enfraquecer consentimento, validação ou rollback.
-
-**Escopo em ordem de entrega:**
-
-1. orquestrador de publicação com `DryRun`, sem substituir os gates existentes.
-
-**Ameaças:** automação de publicação usando artefato de outro commit.
-
-**Validação:** DUnitX no Delphi 12 e 13, testes documentais, lint aplicável, SonarQube e cenário E2E
-proporcional antes de encerrar cada incremento. Nenhuma release faz parte deste ciclo até autorização
-explícita do mantenedor.
+Não há itens abertos no ciclo atual. Nenhuma release será publicada sem autorização explícita do
+mantenedor.
 
 Novos ciclos devem entrar aqui somente depois de possuírem resultado observável, escopo, ameaças,
 critérios de aceitação e plano de validação definidos.

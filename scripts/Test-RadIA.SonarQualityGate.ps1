@@ -182,6 +182,27 @@ if (-not $report.ContainsKey("projectKey")) {
     throw "The SonarScanner report does not contain projectKey."
 }
 $projectKey = $report["projectKey"]
+$encodedProjectKey = [Uri]::EscapeDataString($projectKey)
+$analysesResponse = Invoke-RadIASonarApi `
+    -Uri "$HostUrl/api/project_analyses/search?project=$encodedProjectKey" `
+    -Headers $headers
+$analysis = @(
+    $analysesResponse.analyses |
+        Where-Object { $_.key -eq $task.analysisId }
+) | Select-Object -First 1
+if (-not $analysis) {
+    throw "SonarQube analysis identity was not found: $($task.analysisId)."
+}
+$workspaceRoot = [IO.Path]::GetFullPath(
+    (Join-Path $PSScriptRoot "..")
+)
+$sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
+if ($analysis.revision -ne $sourceCommit) {
+    throw (
+        "SonarQube analysis revision $($analysis.revision) does not match " +
+        "the current HEAD $sourceCommit."
+    )
+}
 $metricKeys = @(
     "bugs",
     "vulnerabilities",
@@ -270,16 +291,12 @@ Write-Host (
 )
 
 if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
-    $workspaceRoot = [IO.Path]::GetFullPath(
-        (Join-Path $PSScriptRoot "..")
-    )
     $productVersion = (
         Get-Content `
             -LiteralPath (Join-Path $workspaceRoot "package.json") `
             -Raw |
             ConvertFrom-Json
     ).version
-    $sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
     $sourceDirty = @(
         & git -C $workspaceRoot status --porcelain --untracked-files=no
     ).Count -gt 0

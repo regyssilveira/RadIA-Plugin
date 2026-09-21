@@ -20,6 +20,20 @@ powershell.exe -ExecutionPolicy Bypass `
 
 ## 2. Validate
 
+The local entry point is `scripts\Invoke-RadIA.Release.ps1`. It defaults to `DryRun`, reuses the gates
+below, and only prepares the installer and evidence under `Output\Distribution`. This mode does not
+create a tag, push, install the plugin, or modify a GitHub release:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Invoke-RadIA.Release.ps1 `
+  -DryRun `
+  -SonarHostUrl "http://127.0.0.1:9000"
+```
+
+The supplied scanner report must belong exactly to `HEAD`; a SonarQube analysis from another commit is
+rejected. Packages, installer, and evidence must also share the same version and commit.
+
 Run validations proportional to the delivery. A complete release requires:
 
 ```powershell
@@ -75,6 +89,10 @@ Scripts under `scripts/` are the executable source for detailed parameters and c
 under `Output/` or a temporary Git-ignored directory.
 
 ## 4. Publish
+
+Only after explicit maintainer approval, run the same orchestrator with `-Publish`. This mode requires
+the `main` branch, a clean worktree, and the existing `v<VERSION>` tag exactly at `HEAD`. Without
+`-Publish`, no remote operation is allowed.
 
 1. Commit and push the validated branch according to the [commit convention](commit_convention.en.md).
 2. Integrate the same revision into `develop` and then `main` without rebuilding content manually.

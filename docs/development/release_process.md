@@ -20,6 +20,20 @@ powershell.exe -ExecutionPolicy Bypass `
 
 ## 2. Validar
 
+O ponto de entrada local é `scripts\Invoke-RadIA.Release.ps1`. Ele opera em `DryRun` por padrão,
+reutiliza os gates abaixo e só prepara o instalador e as evidências em `Output\Distribution`. Esse modo
+não cria tag, não faz push, não instala o plugin e não altera uma release no GitHub:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass `
+  -File scripts\Invoke-RadIA.Release.ps1 `
+  -DryRun `
+  -SonarHostUrl "http://127.0.0.1:9000"
+```
+
+O relatório do scanner informado deve pertencer exatamente ao `HEAD`; uma análise SonarQube de outro
+commit é rejeitada. Pacotes, instalador e evidências também devem compartilhar versão e commit.
+
 Execute as validações proporcionais à entrega. Uma release completa exige:
 
 ```powershell
@@ -76,6 +90,10 @@ Os scripts em `scripts/` são a fonte executável dos parâmetros e critérios d
 em `Output/` ou em um diretório temporário ignorado pelo Git.
 
 ## 4. Publicar
+
+Somente após aprovação explícita do mantenedor, execute o mesmo orquestrador com `-Publish`. Esse modo
+exige branch `main`, árvore limpa e a tag `v<VERSAO>` já existente exatamente no `HEAD`. Sem `-Publish`,
+nenhuma operação remota é permitida.
 
 1. Faça commit e push da branch validada conforme a [convenção de commits](commit_convention.md).
 2. Integre a mesma revisão em `develop` e depois em `main`, sem reconstruir conteúdo manualmente.

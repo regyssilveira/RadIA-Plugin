@@ -1255,10 +1255,10 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /Ciclo ativo: eficiência observável do agente/u);
-  assert.match(englishBacklog, /Active cycle: observable agent efficiency/u);
+  assert.match(portugueseBacklog, /Não há itens abertos no ciclo atual/u);
+  assert.match(englishBacklog, /There are no open items in the current cycle/u);
   assert.match(portugueseBacklog, /Nenhuma release[\s\S]*autorização\s+explícita/u);
-  assert.match(englishBacklog, /no release[\s\S]*explicitly\s+authorizes/u);
+  assert.match(englishBacklog, /No release[\s\S]*explicitly\s+authorizes/u);
   assert.match(portugueseHub, /Não há goal de execução ativo/u);
   assert.match(englishHub, /There is no active execution goal/u);
   assert.match(portugueseProjectHub, /Não há goal de execução ativo/u);
