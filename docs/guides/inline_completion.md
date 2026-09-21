@@ -14,9 +14,10 @@ usuário aceita a sugestão inteira ou a próxima palavra.
 
 ## Fluxo do motor
 
-1. A integração da IDE captura prefixo, sufixo, revisão do buffer e contexto autorizado.
+1. A integração observa primeiro somente arquivo, linha e coluna e espera o cursor ficar estável.
+   Somente então captura prefixo, sufixo, revisão do buffer e contexto autorizado.
 2. O contexto é limitado antes de sair da IDE.
-3. Uma nova solicitação cancela a anterior e reinicia o debounce.
+3. Uma mudança de posição cancela a solicitação anterior e reinicia o debounce antes de reler a unit.
 4. O cache local evita chamadas repetidas para o mesmo contexto.
 5. A resposta perde cercas Markdown, sobreposição com o sufixo e conteúdo acima do limite.
 6. A entrega ocorre somente se a geração e a revisão ainda forem atuais.
@@ -27,6 +28,11 @@ Quando há um símbolo no cursor, o worker de completion consulta o índice sem�
 declarações e membros resolvidos por herança. A consulta não ocorre durante a captura OTA na thread da
 IDE. Se o processo semântico estiver indisponível, o pedido continua com o contexto limitado da unit;
 o editor permanece responsivo e o Ghost Text continua utilizável.
+
+O observador leve impede que cada evento de idle ou movimento do cursor releia e analise a unit
+inteira. Arquivo, linha e coluna iguais não iniciam outro diagnóstico; arquivos excluídos também são
+memorizados para a posição atual. Depois do debounce configurado, a captura completa ocorre uma vez.
+Se o cursor mudar durante a captura ou durante a resposta, o resultado obsoleto é descartado.
 
 Quando o cursor está após um acesso a membro, como `Form.Sa`, o RadIA consulta primeiro o índice
 estrutural local. A busca filtra o prefixo, resolve membros herdados, remove duplicidades e limita a

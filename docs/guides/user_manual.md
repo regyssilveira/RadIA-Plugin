@@ -434,7 +434,8 @@ O Ghost Text captura prefixo e sufixo limitados sem alterar o buffer. Ollama e L
 uma solicitação FIM dedicada; outros providers usam fallback tradicional identificado. Use
 **Show Inline Completion Route Status** no submenu Rad IA do editor para ver provider, modelo,
 latência e motivo do fallback. Aceite, aceite parcial, alternativa e rejeição continuam disponíveis
-por atalhos configuráveis. Consulte a [referência completa de FIM](inline_completion.md).
+por atalhos configuráveis. O observador automático espera o cursor ficar estável e cancela trabalho
+obsoleto antes de reler a unit. Consulte a [referência completa de FIM](inline_completion.md).
 
 Alterações preparadas pelo agente também podem ser revisadas bloco a bloco diretamente no gutter.
 Cada marcador permite aceitar, rejeitar, editar ou explicar a mudança; a navegação e a aplicação

@@ -50,6 +50,7 @@ contains
   RadIA.Core.SemanticChangeSignatureTools in 'Source\Core\RadIA.Core.SemanticChangeSignatureTools.pas',
   RadIA.Core.SemanticMoveTypeTools in 'Source\Core\RadIA.Core.SemanticMoveTypeTools.pas',
   RadIA.Core.Types in 'Source\Core\RadIA.Core.Types.pas',
+  RadIA.Core.EditorDiagnostics in 'Source\Core\RadIA.Core.EditorDiagnostics.pas',
   RadIA.Core.Version in 'Source\Core\RadIA.Core.Version.pas',
   RadIA.Core.Tools in 'Source\Core\RadIA.Core.Tools.pas',
   RadIA.Core.AgentRuntime in 'Source\Core\RadIA.Core.AgentRuntime.pas',

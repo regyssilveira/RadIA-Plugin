@@ -334,6 +334,9 @@ test('inline completion documents dedicated FIM, fallback, and diagnostics', () 
     assert.match(document, /completionNext/u);
     assert.match(document, /completionPrevious/u);
     assert.match(document, /painel de alternativas|alternatives panel/iu);
+    assert.match(document, /arquivo, linha e coluna|file, line, and column/iu);
+    assert.match(document, /idle event|evento de idle/iu);
+    assert.match(document, /cursor.*obsoleto|cursor.*stale/iu);
   });
 });
 

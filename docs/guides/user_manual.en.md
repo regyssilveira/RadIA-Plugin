@@ -362,7 +362,8 @@ Ghost Text captures bounded prefix and suffix without mutating the buffer. Ollam
 receive a dedicated FIM request; other providers use an identified traditional fallback. Use
 **Show Inline Completion Route Status** in the editor Rad IA submenu to see provider, model,
 latency, and fallback reason. Configurable shortcuts still provide full acceptance, partial
-acceptance, alternatives, and rejection. See the [complete FIM reference](inline_completion.en.md).
+acceptance, alternatives, and rejection. The automatic observer waits for a stable cursor and
+cancels stale work before rereading the unit. See the [complete FIM reference](inline_completion.en.md).
 
 Changes prepared by the agent can also be reviewed block by block directly in the gutter. Each
 marker can accept, reject, edit, or explain the change; navigation and application have configurable
