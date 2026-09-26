@@ -110,8 +110,8 @@ acionada pelo menu, esse mesmo contexto acompanha o trecho selecionado ou a unit
 | Aceitar toda a sugestão | `Ctrl+Alt+Direita` |
 | Aceitar somente a próxima palavra | `Ctrl+Alt+Baixo` |
 | Solicitar uma alternativa | `Ctrl+Alt+]` |
-| Próxima sugestão armazenada | `Ctrl+Shift+Baixo` |
-| Sugestão armazenada anterior | `Ctrl+Shift+Cima` |
+| Próxima sugestão armazenada | `Ctrl+Alt+Shift+PageDown` |
+| Sugestão armazenada anterior | `Ctrl+Alt+Shift+PageUp` |
 | Rejeitar a sugestão | `Ctrl+Alt+Backspace` |
 | Aceitar revisão na linha atual | `Ctrl+Alt+Enter` |
 | Rejeitar revisão na linha atual | `Ctrl+Alt+R` |
@@ -135,7 +135,7 @@ abrir o menu contextual. Para alterá-los, abra **Rad IA > Settings > Editor Ass
 ```text
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
 nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
-completionNext=Ctrl+Shift+Down; completionPrevious=Ctrl+Shift+Up;
+completionNext=Ctrl+Alt+Shift+PageDown; completionPrevious=Ctrl+Alt+Shift+PageUp;
 reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
 reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R;
 reviewNext=Ctrl+Alt+PageDown; reviewPrevious=Ctrl+Alt+PageUp;
@@ -144,7 +144,8 @@ reviewApply=Ctrl+Alt+A; reviewClear=Ctrl+Alt+Delete
 ```
 
 As ações obrigatórias são `request`, `accept`, `nextWord`, `alternative` e `reject`. Navegação entre
-respostas usa `completionNext` e `completionPrevious`. Terminal e
+respostas usa `completionNext` e `completionPrevious`. Os atalhos padrão evitam `Ctrl+Shift+Cima`
+e `Ctrl+Shift+Baixo`, preservando a navegação nativa do editor Delphi. Terminal e
 decisões de revisão usam `terminal`, `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`,
 `reviewEdit`, `reviewExplain`, `reviewApply` e `reviewClear`; perfis antigos recebem os atalhos padrão
 automaticamente. Consulte a [revisão por bloco](block_reviews.md) para entender marcadores, cores,

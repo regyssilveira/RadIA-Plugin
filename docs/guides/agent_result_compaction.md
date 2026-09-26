@@ -11,11 +11,15 @@ Abra **Tools > Options > Rad IA > General / Logs**.
 | Perfil | Comportamento |
 |---|---|
 | `Off` | Envia o resultado integral e desativa envelopes de orçamento. Use para rollback ou diagnóstico. |
-| `Conservative` | Padrão recomendado. Compacta resultados elegíveis e preserva uma margem maior de contexto. |
-| `Balanced` | Usa o mesmo compactador determinístico e um orçamento menor por etapa antiga. |
+| `Conservative` | Compacta resultados elegíveis e preserva uma margem maior de contexto. |
+| `Balanced` | Padrão recomendado. Usa o mesmo compactador determinístico e um orçamento menor. |
 
 **Maximum agent decision context characters** aceita de 16.000 a 1.000.000 caracteres; o padrão é
-120.000. `RADIA_RESULT_COMPACTION_PROFILE` pode sobrescrever temporariamente o perfil persistido.
+64.000. `RADIA_RESULT_COMPACTION_PROFILE` pode sobrescrever temporariamente o perfil persistido.
+
+O RTK trabalha junto com o contexto incremental: cada decisão recebe somente as seis etapas mais
+recentes, um resumo periódico e referências recuperáveis. O catálogo de tools também é filtrado por
+capacidade e objetivo, e o histórico completo do chat não é repetido no prompt do planejador.
 
 ## Regras atuais
 
@@ -52,7 +56,8 @@ artefato antigo, as ferramentas informam que ele não está mais disponível.
 
 ## Métricas e diagnóstico
 
-`/status agent` e `GetRadIAStatus` mostram perfil, recuperação e limite de contexto. O snapshot de
+`/status agent` e `GetRadIAStatus` mostram perfil, recuperação e limite de contexto. O log sanitizado
+`AgentTokens` separa caracteres de contexto, catálogo e mensagens de histórico omitidas. O snapshot de
 decisão agrega somente contagens, duração e nome da regra; não registra código, prompts, argumentos
 ou secrets.
 

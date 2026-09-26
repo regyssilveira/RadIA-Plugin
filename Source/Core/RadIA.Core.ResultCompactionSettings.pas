@@ -41,7 +41,7 @@ uses
   RadIA.Core.Config;
 
 const
-  CDefaultDecisionContextCharacters = 120000;
+  CDefaultDecisionContextCharacters = 64000;
   CMinimumDecisionContextCharacters = 16000;
   CMaximumDecisionContextCharacters = 1000000;
 
@@ -78,13 +78,13 @@ begin
   if not FStorage.OpenKey(FBasePath, False) then
     Exit(
       TRadIAResultCompactionSettings.Create(
-        'Conservative',
+        'Balanced',
         CDefaultDecisionContextCharacters
       )
     );
   try
     LProfileName := NormalizeProfileName(
-      FStorage.ReadString('Profile', 'Conservative')
+      FStorage.ReadString('Profile', 'Balanced')
     );
     LMaximumCharacters := FStorage.ReadInteger(
       'MaximumDecisionContextCharacters',

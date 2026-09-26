@@ -68,8 +68,8 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 | Enable local token quota | To track a local monthly budget | When disabled, the agent has no local per-run token budget. Progress-checked step windows, duration, and loop protection remain independent. Provider limits still apply. |
 | Monthly Token Limit / Used Tokens | To configure and inspect local tracking | Usage is an estimate and may differ from provider accounting. |
 | Reset Usage | To restart local tracking | Resets only the local counter. |
-| Agent result compaction profile | To balance savings and diagnosis | `Conservative` is the default; `Balanced` reduces older-step budgets further; `Off` restores complete context. It does not alter checkpoints or tool results. |
-| Maximum agent decision context characters | When the model window or journey requires a different limit | Accepts 16,000–1,000,000; default 120,000. Omitted content remains recoverable through result tools. |
+| Agent result compaction profile | To balance savings and diagnosis | `Balanced` is the default; `Conservative` keeps a larger margin; `Off` restores complete context. It does not alter checkpoints or tool results. |
+| Maximum agent decision context characters | When the model window or journey requires a different limit | Accepts 16,000–1,000,000; default 64,000. Only the six most recent steps are sent; omitted results remain recoverable. |
 
 ## Security & Consent
 
@@ -77,10 +77,14 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 |---|---|---|
 | Consent dialog timeout | To adjust decision time | Accepts 15–600 seconds. Expiration cancels and never approves. |
 | Show tool arguments | Recommended for review | Shows sanitized JSON before approval. |
+| Permission reuse level | To choose how broadly approval may be reused | `Strict` asks every time; `Tool` remembers only the exact tool; `Category` remembers the same risk category; `Trusted` covers safe tools in the same project, source, scope, and session. The default is `Category`. |
 | Session permission for reversible writes | During trusted repeated edits | Offers **Allow session** to compatible tools with the same origin, project, scope, and risk. |
 | Session permission for structural writes | During a trusted structural journey | Lets compatible preview, creation, and opening steps share approval; enabled by default. |
 | Session permission for build/tests/execution | For repeated validation | Shares approval only within the execution category; enabled by default. |
 | Revoke session permissions | After a task or when scope is uncertain | Immediately clears remembered permissions for the current IDE session. |
+
+`Trusted` never covers destructive, sensitive, `ConsentEveryTime`, or AI control-file operations.
+All remembered grants expire when the IDE closes.
 
 ## Knowledge & Embeddings
 

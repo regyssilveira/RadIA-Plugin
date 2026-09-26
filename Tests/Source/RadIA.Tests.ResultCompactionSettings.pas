@@ -60,7 +60,7 @@ begin
   try
     LLoaded := LStore.Load;
     Assert.AreEqual('Conservative', LLoaded.ProfileName);
-    Assert.AreEqual(120000, LLoaded.MaximumDecisionContextCharacters);
+    Assert.AreEqual(64000, LLoaded.MaximumDecisionContextCharacters);
   finally
     LStore.Free;
   end;

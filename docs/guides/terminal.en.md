@@ -45,6 +45,7 @@ automatically defaults to `Ctrl+Alt+T`.
 - fixed profiles for Windows PowerShell and Command Prompt;
 - profile for Git Bash when the Git for Windows installation is in `PATH`;
 - profiles for Codex, Claude, Gemini and GitHub Copilot only when the executable is detected;
+- direct startup of any detected profile without requiring an initial command or prompt;
 - working directory based on the active Delphi project folder;
 - interactive execution by ConPTY, with fallback to pipes;
 - continuous input to respond to prompts from active processes;
@@ -65,6 +66,7 @@ automatically defaults to `Ctrl+Alt+T`.
 - reflow on resize while preserving explicit line breaks;
 - TUI insert, delete, and erase character operations, including fragmented VT sequences;
 - scrolling regions, line insertion and deletion, and reverse index for TUI applications;
+- text charts using box drawing, Unicode blocks, Braille, and ANSI/RGB colors;
 - persistent history of the last 200 commands;
 - incremental reverse search with `Ctrl+R`;
 - snippets for build, tests and Git;
@@ -82,9 +84,10 @@ automatically defaults to `Ctrl+Alt+T`.
 2. Open the terminal by button, `/terminal`, menu or shortcut.
 3. Use **New terminal** to create another session.
 4. Choose the active tab shell.
-5. Type a command or select a snippet.
-6. Click **Run** or press Enter.
-7. When the process requests input, type the response and use **Send**.
+5. To open the shell or CLI directly, leave the field empty and click **Start**.
+6. To send initial input, enter a command or prompt and click **Run**.
+7. While the session is active, type directly in the terminal panel. **Send** remains available as
+   an accessible alternative for sending a complete line.
 8. Use **Stop** to cancel the process and its subprocesses.
 9. Use **Close terminal** to remove only the active tab.
 
@@ -141,6 +144,9 @@ primary content and cursor. Input is wrapped as bracketed paste only after the p
 Clicks are sent with the SGR protocol only after a tracking mode (`1000`, `1002`, or `1003`) and
 protocol `1006` have been enabled.
 
+Charts made from box-drawing characters, blocks, Unicode Braille, ANSI colors, 256 colors, or true
+color are rendered by the terminal. The visual caret follows the cursor position reported by the TUI.
+
 OSC 8 links appear underlined. Double-click one to request authorization and open an `http`, `https`,
 or `mailto` URI; other schemes are rejected. Authorization is requested for every opening through
 the same central policy used by the rest of RadIA.
@@ -151,7 +157,8 @@ external terminal when needed; RadIA does not modify or block the process.
 
 ## Security and privacy
 
-The terminal executes exactly the command entered by the user. It does not activate agent mode or
+The terminal runs exactly the selected profile and, when present, the command entered by the user.
+It does not activate agent mode or
 adds standalone options to CLIs. History is saved in
 `%APPDATA%\RadIA\terminal-history.json` and contains only profile, command, time and exit code.
 Stdout, stderr, tokens and credentials are not persisted by history.
@@ -176,7 +183,10 @@ the terminal does not read or write the contents of the MCP files during this st
 AI profiles reuse the CLI Manager catalog. Therefore, the terminal does not maintain a second
 list of names or paths: only actually detected CLIs are presented. Executables
 `.cmd` and `.bat` are safely launched from Command Prompt; native executables are called
-directly. The text you enter becomes the initial prompt or command for the selected CLI.
+directly. The text you enter becomes the initial prompt or command for the selected CLI. When the
+field is empty, only the executable starts in interactive mode. That session is not added to history
+and has no automatic timeout; it ends when the CLI exits, **Stop** is clicked, the tab closes, or the
+IDE exits.
 
 Each execution receives a Windows Job Object. Cancel execution, close the tab, download the
 plugin or terminating the IDE terminates the main process and its children. Visual updates are

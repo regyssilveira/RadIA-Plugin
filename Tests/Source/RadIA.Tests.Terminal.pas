@@ -23,7 +23,11 @@ type
     [Test]
     procedure ProfileBuildsInvocationWithCommandAsOneArgument;
     [Test]
-    procedure EmptyCommandIsRejected;
+    procedure EmptyCommandStartsInteractiveProfile;
+    [Test]
+    procedure InteractiveScriptProfileStartsDetectedCli;
+    [Test]
+    procedure KeyEncoderSupportsTuiNavigationAndControlKeys;
     [Test]
     procedure HistoryRoundTripPreservesEntries;
     [Test]
@@ -69,6 +73,8 @@ type
     [Test]
     procedure ScreenSupportsExtendedColorsAttributesAndHyperlinks;
     [Test]
+    procedure ScreenPreservesTerminalChartGlyphs;
+    [Test]
     procedure ScreenNegotiatesBracketedPasteAndMouseInput;
     [Test]
     procedure TerminalFrameCreatesAndDestroysWithoutResourceFailure;
@@ -93,6 +99,7 @@ type
 implementation
 
 uses
+  Winapi.Windows,
   System.DateUtils,
   System.IOUtils,
   System.SysUtils,
@@ -247,21 +254,57 @@ begin
   end;
 end;
 
-procedure TRadIATerminalTests.EmptyCommandIsRejected;
+procedure TRadIATerminalTests.EmptyCommandStartsInteractiveProfile;
 var
   LInvocation: TRadIACliInvocation;
   LProfile: TRadIATerminalProfile;
-  LTestMethod: TTestLocalMethod;
 begin
-  LInvocation := Default(TRadIACliInvocation);
   LProfile := TRadIATerminalCatalog.Profiles[0];
-  LTestMethod :=
-    procedure
-    begin
-      LInvocation := LProfile.BuildInvocation('', FDirectory);
-    end;
-  Assert.WillRaise(LTestMethod, EArgumentException);
-  Assert.AreEqual('', LInvocation.ExecutablePath);
+  LInvocation := LProfile.BuildInvocation('', FDirectory);
+  Assert.AreEqual('powershell.exe', LInvocation.ExecutablePath);
+  Assert.AreEqual<Integer>(4, Length(LInvocation.Arguments));
+  Assert.AreEqual('-ExecutionPolicy', LInvocation.Arguments[2]);
+  Assert.AreEqual('Bypass', LInvocation.Arguments[3]);
+end;
+
+procedure TRadIATerminalTests.InteractiveScriptProfileStartsDetectedCli;
+var
+  LEnvironment: IRadIACliEnvironment;
+  LInvocation: TRadIACliInvocation;
+  LProfiles: TArray<TRadIATerminalProfile>;
+begin
+  LEnvironment := TRadIATerminalTestEnvironment.Create(
+    ['C:\Tools\AI\claude.cmd'],
+    ['C:\Tools\AI']
+  );
+  LProfiles := TRadIATerminalCatalog.Profiles(LEnvironment);
+  Assert.AreEqual<Integer>(3, Length(LProfiles));
+  Assert.AreEqual('ai-claude', LProfiles[2].Id);
+  LInvocation := LProfiles[2].BuildInvocation('', FDirectory);
+  Assert.AreEqual(GetEnvironmentVariable('ComSpec'), LInvocation.ExecutablePath);
+  Assert.AreEqual('/C', LInvocation.Arguments[2]);
+  Assert.Contains(LInvocation.Arguments[3], 'claude.cmd');
+end;
+
+procedure TRadIATerminalTests.
+  KeyEncoderSupportsTuiNavigationAndControlKeys;
+begin
+  Assert.AreEqual(
+    #27'[A',
+    TRadIATerminalKeyEncoder.EncodeVirtualKey(VK_UP, False, False, False)
+  );
+  Assert.AreEqual(
+    #27'[1;6D',
+    TRadIATerminalKeyEncoder.EncodeVirtualKey(VK_LEFT, True, False, True)
+  );
+  Assert.AreEqual(
+    #3,
+    TRadIATerminalKeyEncoder.EncodeVirtualKey(Ord('C'), False, False, True)
+  );
+  Assert.AreEqual(
+    #27'x',
+    TRadIATerminalKeyEncoder.EncodeCharacter('x', True)
+  );
 end;
 
 procedure TRadIATerminalTests.HistoryEnforcesLimit;
@@ -448,6 +491,24 @@ begin
     Assert.IsTrue(LSegments[0].Style.Underline);
     Assert.IsTrue(LSegments[0].Style.Inverse);
     Assert.AreEqual('https://example.test', LSegments[1].Style.Hyperlink);
+  finally
+    LScreen.Free;
+  end;
+end;
+
+procedure TRadIATerminalTests.ScreenPreservesTerminalChartGlyphs;
+var
+  LScreen: TRadIATerminalScreen;
+  LText: string;
+begin
+  LScreen := TRadIATerminalScreen.Create(40);
+  try
+    LText := #$250C#$2500#$2510 + ' ' + #$2588#$2586#$2584#$2582 +
+      ' ' + #$28FF#$2847;
+    LScreen.Feed(LText);
+    Assert.AreEqual(LText, SegmentsText(LScreen.RenderSegments));
+    Assert.AreEqual<Integer>(11, LScreen.CursorColumn);
+    Assert.AreEqual<Integer>(0, LScreen.CursorRow);
   finally
     LScreen.Free;
   end;

@@ -30,12 +30,14 @@ Para uma visão completa do produto, consulte o [Manual Completo do RadIA](user_
 ## Consentimento
 
 - **Allow once:** permite somente a operação apresentada.
-- **Allow session:** reutiliza a decisão apenas para a mesma sessão, projeto, ferramenta e escopo.
+- **Allow tool:** reutiliza a decisão somente para a mesma tool, tarefa e sessão.
+- **Allow category:** reutiliza para a mesma categoria de risco, projeto, origem e escopo.
+- **Trust session:** reutiliza para tools seguras no mesmo projeto, origem e escopo.
 - **Deny:** recusa a operação sem modificar a IDE ou o workspace.
 - **Cancel:** solicita o cancelamento de uma operação em andamento.
 
-Uma autorização não é global. Mudanças de projeto, ferramenta, escopo ou nível de risco podem exigir
-novo consentimento. Operações destrutivas nunca reutilizam uma permissão de menor risco.
+O nível pode ser configurado como `Strict`, `Tool`, `Category` ou `Trusted`. Operações destrutivas,
+sensíveis, obrigatórias e alterações em regras de IA sempre ficam fora das concessões amplas.
 
 ## Leitura e mutação
 

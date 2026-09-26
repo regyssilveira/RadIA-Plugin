@@ -123,8 +123,8 @@ endpoint e permissão; não reinicie a IDE como primeira tentativa.
 | Monthly Token Limit | Ao definir o orçamento local | Quantidade mensal aceita pelo controle do RadIA. |
 | Monthly Used Tokens | Para acompanhar consumo estimado | Contador local; pode divergir da contabilização oficial do provider. |
 | Reset Usage | Ao iniciar deliberadamente um novo acompanhamento | Zera somente o contador local, sem alterar cobrança externa. |
-| Agent result compaction profile | Para equilibrar economia e diagnóstico | `Conservative` é o padrão; `Balanced` reduz mais o orçamento de etapas antigas; `Off` restaura o contexto integral. Não altera checkpoints nem resultados das tools. |
-| Maximum agent decision context characters | Quando a janela do modelo ou a jornada exigir outro limite | Aceita 16.000–1.000.000; padrão 120.000. Conteúdo omitido permanece recuperável pelas tools de resultado. |
+| Agent result compaction profile | Para equilibrar economia e diagnóstico | `Balanced` é o padrão; `Conservative` preserva uma margem maior; `Off` restaura o contexto integral. Não altera checkpoints nem resultados das tools. |
+| Maximum agent decision context characters | Quando a janela do modelo ou a jornada exigir outro limite | Aceita 16.000–1.000.000; padrão 64.000. O agente envia somente as seis etapas recentes e mantém resultados omitidos recuperáveis pelas tools de resultado. |
 
 ## Security & Consent
 
@@ -134,6 +134,7 @@ endpoint e permissão; não reinicie a IDE como primeira tentativa.
 |---|---|---|
 | Consent dialog timeout | Para aumentar ou reduzir o tempo de decisão | Aceita 15–600 segundos. Ao expirar, a operação é cancelada; nunca é aprovada automaticamente. |
 | Show tool arguments | Recomendado para revisão detalhada | Mostra JSON sanitizado antes da aprovação. Segredos continuam removidos. |
+| Permission reuse level | Para escolher quanto o RadIA pode reutilizar uma aprovação | `Strict` pergunta em cada chamada; `Tool` lembra somente a tool; `Category` lembra tools de mesmo risco; `Trusted` cobre tools seguras no mesmo projeto, origem, escopo e sessão. O padrão é `Category`. |
 | Allow session permission for reversible writes | Para reduzir confirmações em edições reversíveis | Habilita **Allow session** para tools compatíveis da mesma origem, projeto, escopo e risco. |
 | Allow session permission for structural writes | Durante uma jornada estrutural confiável | Permite que preview, criação e abertura compatíveis compartilhem a aprovação; vem habilitada. |
 | Allow session permission for build, tests, and execution | Quando o plano exigir validação repetida | Compartilha a aprovação apenas dentro da categoria de execução; vem habilitada. |
@@ -146,6 +147,8 @@ timeout configurado. Tools sensíveis continuam negadas, exceto quando o contrat
 Arquivos que controlam outras IAs, como `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `default.rules` e
 conteúdo em `.codex`, `.claude`, `.gemini`, `.copilot` ou `.github/skills`, sempre exigem uma nova
 confirmação de escrita. Uma permissão concedida para a sessão não é reutilizada nesses arquivos.
+O nível `Trusted` também não cobre operações destrutivas, sensíveis ou marcadas com
+`ConsentEveryTime`. Todas as concessões expiram ao fechar a IDE e podem ser revogadas imediatamente.
 
 ## Knowledge & Embeddings
 

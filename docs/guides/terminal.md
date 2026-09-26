@@ -45,6 +45,7 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - perfis fixos para Windows PowerShell e Command Prompt;
 - perfil para Git Bash quando a instalação do Git for Windows estiver no `PATH`;
 - perfis para Codex, Claude, Gemini e GitHub Copilot somente quando o executável for detectado;
+- abertura direta de qualquer perfil detectado, sem exigir comando ou prompt inicial;
 - diretório de trabalho baseado na pasta do projeto Delphi ativo;
 - execução interativa por ConPTY, com fallback para pipes;
 - entrada contínua para responder prompts de processos ativos;
@@ -65,6 +66,7 @@ automaticamente o padrão `Ctrl+Alt+T`.
 - reflow ao redimensionar, preservando quebras de linha explícitas;
 - operações TUI de inserir, excluir e apagar caracteres, inclusive com sequências VT fragmentadas;
 - regiões de rolagem, inserção e exclusão de linhas e reverse index para aplicações TUI;
+- gráficos textuais com box-drawing, blocos Unicode, Braille e cores ANSI/RGB;
 - histórico persistente dos últimos 200 comandos;
 - busca reversa incremental com `Ctrl+R`;
 - snippets para build, testes e Git;
@@ -83,9 +85,10 @@ automaticamente o padrão `Ctrl+Alt+T`.
 2. Abra o terminal por botão, `/terminal`, menu ou atalho.
 3. Use **New terminal** para criar outra sessão.
 4. Escolha o shell da aba ativa.
-5. Digite um comando ou selecione um snippet.
-6. Clique em **Run** ou pressione Enter.
-7. Quando o processo solicitar entrada, digite a resposta e use **Send**.
+5. Para abrir o shell ou CLI diretamente, deixe o campo vazio e clique em **Start**.
+6. Para enviar uma entrada inicial, digite um comando ou prompt e clique em **Run**.
+7. Com a sessão ativa, use o teclado diretamente no painel. O campo **Send** continua disponível
+   como alternativa para enviar uma linha completa.
 8. Use **Stop** para cancelar o processo e seus subprocessos.
 9. Use **Close terminal** para remover somente a aba ativa.
 
@@ -142,6 +145,9 @@ tela principal são restaurados. O terminal envolve a entrada com bracketed past
 processo habilitar `2004`. Cliques são enviados no protocolo SGR somente quando o processo habilita
 um modo de rastreamento (`1000`, `1002` ou `1003`) e o protocolo `1006`.
 
+Gráficos construídos com caracteres de caixa, blocos, Braille Unicode, cores ANSI, 256 cores ou
+true color são renderizados pelo terminal. O cursor visual acompanha a posição informada pela TUI.
+
 Links OSC 8 aparecem sublinhados. Dê duplo clique para solicitar autorização e abrir somente URI
 `http`, `https` ou `mailto`; outros esquemas são recusados. A autorização é solicitada em toda
 abertura e utiliza a mesma política central do restante do RadIA.
@@ -152,7 +158,8 @@ caso, abra a aplicação em seu terminal externo preferido; o RadIA não altera 
 
 ## Segurança e privacidade
 
-O terminal executa exatamente o comando informado pelo usuário. Ele não ativa modo agente nem
+O terminal executa exatamente o perfil selecionado e, quando preenchido, o comando informado pelo
+usuário. Ele não ativa modo agente nem
 adiciona opções autônomas aos CLIs. O histórico é salvo em
 `%APPDATA%\RadIA\terminal-history.json` e contém somente perfil, comando, horário e código de saída.
 Stdout, stderr, tokens e credenciais não são persistidos pelo histórico.
@@ -177,7 +184,10 @@ o terminal não lê nem grava o conteúdo dos arquivos MCP durante essa etapa.
 Os perfis de IA reutilizam o catálogo do CLI Manager. Assim, o terminal não mantém uma segunda
 lista de nomes ou caminhos: somente CLIs realmente detectados são apresentados. Executáveis
 `.cmd` e `.bat` são iniciados com segurança pelo Command Prompt; executáveis nativos são chamados
-diretamente. O texto digitado torna-se o prompt ou comando inicial do CLI selecionado.
+diretamente. O texto digitado torna-se o prompt ou comando inicial do CLI selecionado. Quando o
+campo está vazio, somente o executável é iniciado em modo interativo. Essa sessão não é adicionada
+ao histórico e não possui timeout automático; ela termina ao sair da CLI, clicar em **Stop**, fechar
+a aba ou encerrar a IDE.
 
 Cada execução recebe um Job Object do Windows. Cancelar a execução, fechar a aba, descarregar o
 plugin ou encerrar a IDE finaliza o processo principal e seus filhos. Atualizações visuais são

@@ -9,7 +9,9 @@ uses
 type
   TRadIAConsentDecision = (
     cdAllowOnce,
+    cdAllowToolSession,
     cdAllowSession,
+    cdAllowTrustedSession,
     cdDeny,
     cdCancel
   );
@@ -169,11 +171,17 @@ type
     FConsentProvider: IRadIAConsentProvider;
     FAuditSink: IRadIAToolAuditSink;
     FRedactor: IRadIASecretRedactor;
-    FSessionPermissions: TDictionary<string, Boolean>;
+    FSessionPermissions: TDictionary<string, TRadIAConsentDecision>;
     function BuildPermissionKey(
       const ARequest: TRadIAToolRequest;
-      const ADescriptor: TRadIAToolDescriptor
+      const ADescriptor: TRadIAToolDescriptor;
+      const ADecision: TRadIAConsentDecision
     ): string;
+    function TryGetCachedPermission(
+      const ARequest: TRadIAToolRequest;
+      const ADescriptor: TRadIAToolDescriptor;
+      out ADecision: TRadIAConsentDecision
+    ): Boolean;
     function Decide(
       const ARequest: TRadIAToolRequest;
       const ADescriptor: TRadIAToolDescriptor
@@ -386,7 +394,9 @@ function TRadIAJsonLinesToolAuditSink.ConsentDecisionName(
 begin
   case ADecision of
     cdAllowOnce: Result := 'AllowOnce';
+    cdAllowToolSession: Result := 'AllowToolSession';
     cdAllowSession: Result := 'AllowSession';
+    cdAllowTrustedSession: Result := 'AllowTrustedSession';
     cdCancel: Result := 'Cancel';
   else
     Result := 'Deny';
@@ -500,6 +510,8 @@ begin
   Result := Decide(ARequest, ADescriptor);
   case Result of
     cdAllowOnce,
+    cdAllowToolSession,
+    cdAllowTrustedSession,
     cdAllowSession:
       LOutcome := aoSucceeded;
     cdCancel:
@@ -514,16 +526,24 @@ end;
 
 function TRadIAToolPolicyExecutor.BuildPermissionKey(
   const ARequest: TRadIAToolRequest;
-  const ADescriptor: TRadIAToolDescriptor
+  const ADescriptor: TRadIAToolDescriptor;
+  const ADecision: TRadIAConsentDecision
 ): string;
 begin
   Result := LowerCase(
     ARequest.SessionId + #31 +
     ARequest.ProjectId + #31 +
     ARequest.Origin + #31 +
-    ARequest.Scope + #31 +
-    IntToStr(Ord(ADescriptor.Risk))
+    ARequest.Scope
   );
+  case ADecision of
+    cdAllowToolSession:
+      Result := Result + #31 + LowerCase(ADescriptor.Name);
+    cdAllowSession:
+      Result := Result + #31 + IntToStr(Ord(ADescriptor.Risk));
+    cdAllowTrustedSession:
+      Result := Result + #31 + 'trusted';
+  end;
 end;
 
 constructor TRadIAToolPolicyExecutor.Create(
@@ -549,7 +569,8 @@ begin
   FConsentProvider := AConsentProvider;
   FAuditSink := AAuditSink;
   FRedactor := ARedactor;
-  FSessionPermissions := TDictionary<string, Boolean>.Create;
+  FSessionPermissions :=
+    TDictionary<string, TRadIAConsentDecision>.Create;
 end;
 
 function TRadIAToolPolicyExecutor.Decide(
@@ -558,6 +579,7 @@ function TRadIAToolPolicyExecutor.Decide(
 ): TRadIAConsentDecision;
 var
   LAiControlFile: Boolean;
+  LDecision: TRadIAConsentDecision;
   LPermissionKey: string;
 begin
   if (ADescriptor.Risk = trReadOnly) and
@@ -568,34 +590,75 @@ begin
     Exit(cdDeny);
 
   LAiControlFile := IsAiControlFileRequest(ARequest, ADescriptor);
-  LPermissionKey := BuildPermissionKey(ARequest, ADescriptor);
-  TMonitor.Enter(FSessionPermissions);
-  try
-    if not ADescriptor.ConsentEveryTime and not LAiControlFile and
-      (ADescriptor.Risk <> trDestructive) and
-      FSessionPermissions.ContainsKey(LPermissionKey) then
-      Exit(cdAllowSession);
-  finally
-    TMonitor.Exit(FSessionPermissions);
-  end;
+  if not ADescriptor.ConsentEveryTime and not LAiControlFile and
+    (ADescriptor.Risk <> trDestructive) and
+    TryGetCachedPermission(ARequest, ADescriptor, LDecision) then
+    Exit(LDecision);
 
   if not Assigned(FConsentProvider) then
     Exit(cdDeny);
 
   Result := FConsentProvider.RequestConsent(ARequest, ADescriptor);
-  if LAiControlFile and (Result = cdAllowSession) then
+  if LAiControlFile and (Result in [
+    cdAllowToolSession,
+    cdAllowSession,
+    cdAllowTrustedSession
+  ]) then
     Result := cdAllowOnce;
-  if (Result = cdAllowSession) and
+  if (Result in [
+    cdAllowToolSession,
+    cdAllowSession,
+    cdAllowTrustedSession
+  ]) and
     not ADescriptor.ConsentEveryTime and
     (ADescriptor.Risk <> trDestructive) then
   begin
+    LDecision := Result;
+    LPermissionKey := BuildPermissionKey(
+      ARequest,
+      ADescriptor,
+      LDecision
+    );
     TMonitor.Enter(FSessionPermissions);
     try
-      FSessionPermissions.AddOrSetValue(LPermissionKey, True);
+      FSessionPermissions.AddOrSetValue(LPermissionKey, LDecision);
     finally
       TMonitor.Exit(FSessionPermissions);
     end;
   end;
+end;
+
+function TRadIAToolPolicyExecutor.TryGetCachedPermission(
+  const ARequest: TRadIAToolRequest;
+  const ADescriptor: TRadIAToolDescriptor;
+  out ADecision: TRadIAConsentDecision
+): Boolean;
+const
+  CLevels: array[0..2] of TRadIAConsentDecision = (
+    cdAllowTrustedSession,
+    cdAllowSession,
+    cdAllowToolSession
+  );
+var
+  LLevel: TRadIAConsentDecision;
+  LPermissionKey: string;
+begin
+  TMonitor.Enter(FSessionPermissions);
+  try
+    for LLevel in CLevels do
+    begin
+      LPermissionKey := BuildPermissionKey(ARequest, ADescriptor, LLevel);
+      if FSessionPermissions.ContainsKey(LPermissionKey) then
+      begin
+        ADecision := LLevel;
+        Exit(True);
+      end;
+    end;
+  finally
+    TMonitor.Exit(FSessionPermissions);
+  end;
+  ADecision := cdDeny;
+  Result := False;
 end;
 
 function TRadIAToolPolicyExecutor.IsAiControlFileRequest(

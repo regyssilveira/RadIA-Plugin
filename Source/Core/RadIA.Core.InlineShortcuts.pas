@@ -122,6 +122,12 @@ begin
     AError := 'Invalid shortcut for ' + LName + ': ' + LValue;
     Exit(False);
   end;
+  if (LAction = isaCompletionNext) and
+    (LShortcut = ShortCut(VK_DOWN, [ssCtrl, ssShift])) then
+    LShortcut := ShortCut(VK_NEXT, [ssCtrl, ssAlt, ssShift]);
+  if (LAction = isaCompletionPrevious) and
+    (LShortcut = ShortCut(VK_UP, [ssCtrl, ssShift])) then
+    LShortcut := ShortCut(VK_PRIOR, [ssCtrl, ssAlt, ssShift]);
   AProfile.FShortcuts[LAction] := LShortcut;
   ASeen[LAction] := True;
   Result := True;
@@ -224,9 +230,9 @@ begin
   Result.FShortcuts[isaAlternative] :=
     ShortCut(VK_OEM_6, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaCompletionNext] :=
-    ShortCut(VK_DOWN, [ssCtrl, ssShift]);
+    ShortCut(VK_NEXT, [ssCtrl, ssAlt, ssShift]);
   Result.FShortcuts[isaCompletionPrevious] :=
-    ShortCut(VK_UP, [ssCtrl, ssShift]);
+    ShortCut(VK_PRIOR, [ssCtrl, ssAlt, ssShift]);
   Result.FShortcuts[isaReject] := ShortCut(VK_BACK, [ssCtrl, ssAlt]);
   Result.FShortcuts[isaTerminal] := ShortCut(Ord('T'), [ssCtrl, ssAlt]);
   Result.FShortcuts[isaReviewAccept] :=

@@ -110,6 +110,8 @@ type
     [Test]
     procedure ShortcutProfileRoundTripsDefaults;
     [Test]
+    procedure ShortcutProfileMigratesConflictingCompletionArrows;
+    [Test]
     procedure ShortcutProfileRejectsDuplicateKeys;
     [Test]
     procedure ShortcutProfileRejectsMissingActions;
@@ -134,7 +136,8 @@ implementation
 uses
   RadIA.Core.EditorContext,
   RadIA.Core.InlineShortcuts,
-  System.SysUtils;
+  System.SysUtils,
+  Vcl.Menus;
 
 { TRadIAInlineCompletionProviderStub }
 
@@ -566,6 +569,33 @@ begin
   Assert.AreEqual(
     TRadIAInlineShortcutProfile.DefaultText,
     LProfile.ToText
+  );
+end;
+
+procedure TRadIAInlineCompletionTests.
+  ShortcutProfileMigratesConflictingCompletionArrows;
+var
+  LError: string;
+  LProfile: TRadIAInlineShortcutProfile;
+begin
+  Assert.IsTrue(
+    TRadIAInlineShortcutProfile.TryParse(
+      'request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right; ' +
+      'nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+]; ' +
+      'completionNext=Ctrl+Shift+Down; ' +
+      'completionPrevious=Ctrl+Shift+Up; reject=Ctrl+Alt+Backspace',
+      LProfile,
+      LError
+    ),
+    LError
+  );
+  Assert.AreEqual(
+    Integer(TextToShortCut('Ctrl+Alt+Shift+PgDn')),
+    Integer(LProfile.ShortcutFor(isaCompletionNext))
+  );
+  Assert.AreEqual(
+    Integer(TextToShortCut('Ctrl+Alt+Shift+PgUp')),
+    Integer(LProfile.ShortcutFor(isaCompletionPrevious))
   );
 end;
 

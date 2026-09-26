@@ -55,6 +55,7 @@ contains
   RadIA.Core.AgentRuntime in 'Source\Core\RadIA.Core.AgentRuntime.pas',
   RadIA.Core.ResultCompactor in 'Source\Core\RadIA.Core.ResultCompactor.pas',
   RadIA.Core.ResultCompactionSettings in 'Source\Core\RadIA.Core.ResultCompactionSettings.pas',
+  RadIA.Core.ConsentSettings in 'Source\Core\RadIA.Core.ConsentSettings.pas',
   RadIA.Core.AgentResultStore in 'Source\Core\RadIA.Core.AgentResultStore.pas',
   RadIA.Core.AgentResultTools in 'Source\Core\RadIA.Core.AgentResultTools.pas',
   RadIA.Core.AgentDiagnostic in 'Source\Core\RadIA.Core.AgentDiagnostic.pas',
