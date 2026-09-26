@@ -29,6 +29,9 @@ type
     [Category('ExternalProcess')]
     procedure PseudoTerminalStreamsInputAndResizes;
     [Test]
+    [Category('ExternalProcess')]
+    procedure InteractiveTerminalProfileStartsWithoutInitialCommand;
+    [Test]
     procedure PseudoTerminalRejectsInvalidDimensions;
     [Test]
     procedure PseudoTerminalAvailabilityMatchesRuntimeExports;
@@ -42,7 +45,8 @@ uses
   Winapi.Windows,
   RadIA.Core.AgentExecutors,
   RadIA.Core.CliProcess,
-  RadIA.Core.PseudoTerminal;
+  RadIA.Core.PseudoTerminal,
+  RadIA.Core.Terminal;
 
 function NewCommandInvocation(
   const ACommand: string
@@ -387,6 +391,46 @@ begin
       LResult.StdOut,
       'radia-conpty-input'
     );
+  finally
+    LCompleted.Free;
+  end;
+end;
+
+procedure TRadIACliProcessTests.
+  InteractiveTerminalProfileStartsWithoutInitialCommand;
+var
+  LCompleted: TEvent;
+  LDeadline: UInt64;
+  LInputWritten: Boolean;
+  LResult: TRadIACliProcessResult;
+  LSession: IRadIACliProcessSession;
+begin
+  LCompleted := TEvent.Create(nil, True, False, '');
+  try
+    LSession := TRadIAPseudoTerminalRunner.Start(
+      TRadIATerminalCatalog.Profiles[0].BuildInvocation('', GetCurrentDir),
+      80,
+      24,
+      5000,
+      nil,
+      procedure(AResult: TRadIACliProcessResult)
+      begin
+        LResult := AResult;
+        LCompleted.SetEvent;
+      end
+    );
+    LDeadline := GetTickCount64 + 2000;
+    repeat
+      LInputWritten := LSession.WriteInput(
+        'Write-Output radia-direct-profile' + #13 + 'exit' + #13
+      );
+      if not LInputWritten then
+        Sleep(10);
+    until LInputWritten or (GetTickCount64 >= LDeadline);
+    Assert.IsTrue(LInputWritten, 'Interactive profile input was not accepted.');
+    Assert.AreEqual(wrSignaled, LCompleted.WaitFor(5000));
+    Assert.IsTrue(LResult.Succeeded);
+    Assert.Contains(LResult.StdOut, 'radia-direct-profile');
   finally
     LCompleted.Free;
   end;

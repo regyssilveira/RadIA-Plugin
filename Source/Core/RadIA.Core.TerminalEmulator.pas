@@ -12,6 +12,7 @@ type
     procedure Feed(const AText: string);
     function GetColumns: Integer;
     function GetCursorColumn: Integer;
+    function GetCursorRow: Integer;
     function GetAlternateScreen: Boolean;
     function GetBracketedPaste: Boolean;
     function GetMouseMode: Integer;
@@ -27,6 +28,7 @@ type
     procedure Resize(const AColumns: Integer);
     property Columns: Integer read GetColumns;
     property CursorColumn: Integer read GetCursorColumn;
+    property CursorRow: Integer read GetCursorRow;
     property AlternateScreen: Boolean read GetAlternateScreen;
     property BracketedPaste: Boolean read GetBracketedPaste;
     property MouseMode: Integer read GetMouseMode;
@@ -58,6 +60,7 @@ type
     procedure Feed(const AText: string);
     function GetColumns: Integer;
     function GetCursorColumn: Integer;
+    function GetCursorRow: Integer;
     function GetAlternateScreen: Boolean;
     function GetBracketedPaste: Boolean;
     function GetMouseMode: Integer;
@@ -115,6 +118,11 @@ end;
 function TRadIANativeTerminalEmulator.GetCursorColumn: Integer;
 begin
   Result := FScreen.CursorColumn;
+end;
+
+function TRadIANativeTerminalEmulator.GetCursorRow: Integer;
+begin
+  Result := FScreen.CursorRow;
 end;
 
 function TRadIANativeTerminalEmulator.GetMouseMode: Integer;

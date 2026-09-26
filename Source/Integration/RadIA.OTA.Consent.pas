@@ -60,6 +60,7 @@ uses
   Vcl.Graphics,
   Vcl.StdCtrls,
   Winapi.Windows,
+  RadIA.Core.ConsentSettings,
   RadIA.Core.ConsentPresentation,
   RadIA.Core.Config,
   RadIA.Core.Types,
@@ -109,7 +110,7 @@ type
       const ADescriptor: TRadIAToolDescriptor;
       const ATimeoutMs: Cardinal;
       const AShowArguments: Boolean;
-      const AAllowSession: Boolean;
+      const AGrantLevel: TRadIAConsentGrantLevel;
       const ARedactor: IRadIASecretRedactor
     );
   end;
@@ -250,10 +251,12 @@ constructor TRadIAConsentForm.CreateConsent(
   const ADescriptor: TRadIAToolDescriptor;
   const ATimeoutMs: Cardinal;
   const AShowArguments: Boolean;
-  const AAllowSession: Boolean;
+  const AGrantLevel: TRadIAConsentGrantLevel;
   const ARedactor: IRadIASecretRedactor
 );
 var
+  LAllowSession: Boolean;
+  LSessionCaption: string;
   LPresentation: TRadIAConsentPresentation;
 begin
   inherited CreateNew(nil);
@@ -276,14 +279,30 @@ begin
 
   FAllowOnceButton := AddButton('Allow once', CAllowOnceModalResult);
   FAllowOnceButton.Hint := 'Authorize only this request.';
+  LAllowSession := AGrantLevel <> cglStrict;
+  case AGrantLevel of
+    cglTool: LSessionCaption := 'Allow tool';
+    cglTrusted: LSessionCaption := 'Trust session';
+  else
+    LSessionCaption := 'Allow category';
+  end;
   FAllowSessionButton := AddButton(
-    'Allow session',
+    LSessionCaption,
     CAllowSessionModalResult,
-    AAllowSession
+    LAllowSession
   );
-  FAllowSessionButton.Hint :=
-    'Authorize compatible tools with the same risk, source, project, and scope until revoked ' +
-    'or the IDE closes.';
+  case AGrantLevel of
+    cglTool:
+      FAllowSessionButton.Hint :=
+        'Authorize this exact tool for the current task scope and session.';
+    cglTrusted:
+      FAllowSessionButton.Hint :=
+        'Authorize safe tools for this source, project, scope, and session. ' +
+        'Destructive, sensitive, and AI control-file operations still ask.';
+  else
+    FAllowSessionButton.Hint :=
+      'Authorize compatible tools with the same risk, source, project, and scope.';
+  end;
   FDenyButton := AddButton('Deny', CDenyModalResult);
   FDenyButton.Hint := 'Reject this request without performing the action.';
   FCancelButton := AddButton('Cancel', mrCancel);
@@ -439,22 +458,38 @@ function TRadIAOTAConsentProvider.ShowConsentDialog(
   const ADescriptor: TRadIAToolDescriptor
 ): TRadIAConsentDecision;
 var
+  LGrantLevel: TRadIAConsentGrantLevel;
   LForm: TRadIAConsentForm;
+  LSettingsStore: TRadIAConsentSettingsStore;
   LTimeoutMs: Cardinal;
 begin
   LTimeoutMs := EffectiveTimeoutMs;
+  LSettingsStore := TRadIAConsentSettingsStore.Create;
+  try
+    LGrantLevel := LSettingsStore.LoadGrantLevel;
+  finally
+    LSettingsStore.Free;
+  end;
+  if not CanRememberForSession(ADescriptor.Risk) then
+    LGrantLevel := cglStrict;
   LForm := TRadIAConsentForm.CreateConsent(
     ARequest,
     ADescriptor,
     LTimeoutMs,
     FConfig.ConsentShowArguments,
-    CanRememberForSession(ADescriptor.Risk),
+    LGrantLevel,
     FRedactor
   );
   try
     case LForm.ShowModal of
       CAllowOnceModalResult: Result := cdAllowOnce;
-      CAllowSessionModalResult: Result := cdAllowSession;
+      CAllowSessionModalResult:
+        case LGrantLevel of
+          cglTool: Result := cdAllowToolSession;
+          cglTrusted: Result := cdAllowTrustedSession;
+        else
+          Result := cdAllowSession;
+        end;
       CDenyModalResult: Result := cdDeny;
     else
       Result := cdCancel;

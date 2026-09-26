@@ -233,6 +233,15 @@ marcas combinantes, reorganiza quebras automáticas no resize e interpreta cores
 true color, atributos, regiões de rolagem, alternate screen, bracketed paste, mouse SGR e hyperlinks
 OSC 8. A abertura
 de links exige consentimento. Consulte [Terminal](../guides/terminal.md) para uso, limites e solução alternativa.
+O terminal VCL acoplável oferece múltiplas abas, abertura direta de perfis detectados, ConPTY
+interativo, entrada contínua, histórico, snippets, paleta, cancelamento da árvore de processos e
+consentimento comum às demais superfícies. Entrada direta opcional envia teclas somente pelo campo
+do terminal. Arquivos, pastas e imagens podem ser inseridos por drag and drop ou área de transferência,
+sem execução automática. O modelo de tela decodifica UTF-8 entre blocos, calcula largura de CJK,
+emoji e marcas combinantes, reorganiza quebras automáticas no resize e interpreta cores de 256
+posições e true color, atributos, regiões de rolagem, gráficos textuais Unicode, alternate screen,
+bracketed paste, mouse SGR e hyperlinks OSC 8. A abertura de links exige consentimento. Consulte
+[Terminal](../guides/terminal.md) para uso, limites e solução alternativa.
 
 ## Modo agente
 

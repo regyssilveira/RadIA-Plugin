@@ -240,9 +240,11 @@ actions remain visually distinct from native Delphi commands.
 `/terminal` command. Both paths open the same dockable terminal, supporting visual and
 keyboard-driven workflows.
 
-The screen model handles fragmented Unicode output, CJK, emoji, combining marks, resize reflow, and
-common TUI operations. Graphics or mouse protocols may require an external terminal. See the full
-[terminal reference](terminal.en.md).
+Leave the input empty to open any detected shell or CLI directly, or provide an initial command or
+prompt. The active session receives keyboard input directly in the panel. The screen model handles
+fragmented Unicode output, CJK, emoji, combining marks, block and Braille text charts, resize reflow,
+and common TUI operations. Image protocols such as Sixel may still require an external terminal. See
+the full [terminal reference](terminal.en.md).
 
 **Direct input** sends keys only while the terminal field has focus. Drag and drop and `Ctrl+V`
 insert quoted paths without running commands; images require confirmation and use a temporary PNG
@@ -289,12 +291,14 @@ WebView size.
 Read-only tools may run directly. Mutating and execution tools display their name, risk, and scope:
 
 - **Allow once:** authorizes only the presented call;
-- **Allow session:** authorizes compatible calls in the current session and scope;
+- **Allow tool:** authorizes only that tool in the current task and session;
+- **Allow category:** authorizes compatible tools in the same risk category;
+- **Trust session:** authorizes safe tools in the same project, origin, and scope;
 - **Deny:** rejects without changing IDE state;
 - **Cancel:** requests cooperative cancellation.
 
-Session permission is not global. It is reused only by compatible tools with the same risk category,
-origin, project, and scope. A structural grant may cover preview, creation, and opening for the same
+Session permission is not global. Reuse can be `Strict`, `Tool`, `Category`, or `Trusted`; the
+default is `Category`. A structural grant may cover preview, creation, and opening for the same
 project without repeating the dialog; it does not cover execution or destructive actions. Tools
 marked for mandatory consent still prompt on every call.
 Use `/revoke-tools` or **Revoke session permissions** to clear every active session grant.
@@ -303,11 +307,13 @@ Under **Settings > Security & Consent**, users can configure:
 
 - consent dialog timeout from 15 to 600 seconds;
 - whether tool arguments are shown;
+- permission reuse level;
 - session permission for reversible writes;
 - session permission for structural writes;
 - session permission for builds, tests, and execution.
 
-All three categories are enabled by default so **Allow session** is available. Users may disable
+Destructive, sensitive, `ConsentEveryTime`, and AI control-file operations never receive broad
+session authorization. All three categories are enabled by default so reuse is available. Users may disable
 each category independently. Existing installations receive this new default once; subsequent
 saved choices are preserved.
 

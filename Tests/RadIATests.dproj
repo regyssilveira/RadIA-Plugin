@@ -104,6 +104,7 @@
         <DCCReference Include="..\Source\Core\RadIA.Core.Tools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ResultCompactor.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.ResultCompactionSettings.pas"/>
+        <DCCReference Include="..\Source\Core\RadIA.Core.ConsentSettings.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentResultStore.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentResultTools.pas"/>
         <DCCReference Include="..\Source\Core\RadIA.Core.AgentExecutors.pas"/>
@@ -353,6 +354,7 @@
         <DCCReference Include="Source\RadIA.Tests.ToolSecurity.pas"/>
         <DCCReference Include="Source\RadIA.Tests.ResultCompactionBenchmark.pas"/>
         <DCCReference Include="Source\RadIA.Tests.ResultCompactionSettings.pas"/>
+        <DCCReference Include="Source\RadIA.Tests.ConsentSettings.pas"/>
         <DCCReference Include="Source\RadIA.Tests.AgentResultStore.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

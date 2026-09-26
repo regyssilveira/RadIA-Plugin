@@ -31,12 +31,14 @@ For a complete product overview, see the [Complete RadIA User Manual](user_manua
 ## Consent
 
 - **Allow once:** allows only the presented operation.
-- **Allow session:** reuses the decision only for the same session, project, tool, and scope.
+- **Allow tool:** reuses the decision only for the same tool, task, and session.
+- **Allow category:** reuses it for the same risk category, project, origin, and scope.
+- **Trust session:** reuses it for safe tools in the same project, origin, and scope.
 - **Deny:** rejects the operation without changing the IDE or workspace.
 - **Cancel:** requests cancellation of an operation in progress.
 
-Authorization is not global. A different project, tool, scope, or risk may require new consent.
-Destructive operations never reuse a lower-risk permission.
+The configured level can be `Strict`, `Tool`, `Category`, or `Trusted`. Destructive, sensitive,
+mandatory-consent, and AI control-file operations always remain outside broad grants.
 
 ## Reads and mutations
 

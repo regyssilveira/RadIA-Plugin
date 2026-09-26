@@ -284,9 +284,11 @@ submenu, evitando que ações do RadIA se misturem com comandos nativos do Delph
 comando `/terminal`. Os dois caminhos abrem o mesmo terminal acoplável e preservam a preferência
 entre interação visual e comandos digitados.
 
-Saída Unicode fragmentada, caracteres CJK, emoji, marcas combinantes, resize com reflow e operações
-comuns de aplicações TUI são tratados pelo modelo de tela. Recursos gráficos ou protocolo de mouse
-podem exigir um terminal externo. Veja a referência completa em [Terminal](terminal.md).
+Deixe a entrada vazia para abrir diretamente qualquer shell ou CLI detectada, ou informe um comando
+ou prompt inicial. A sessão ativa recebe teclado diretamente no painel. Saída Unicode fragmentada,
+caracteres CJK, emoji, marcas combinantes, gráficos textuais com blocos ou Braille, resize com reflow
+e operações comuns de aplicações TUI são tratados pelo modelo de tela. Protocolos de imagem como
+Sixel ainda podem exigir um terminal externo. Veja a referência completa em [Terminal](terminal.md).
 
 O modo **Direct input** envia teclas somente quando o campo do terminal está focado. Drag and drop e
 `Ctrl+V` inserem caminhos entre aspas sem executar comandos; imagens exigem confirmação e usam um
@@ -337,12 +339,14 @@ Ferramentas de leitura podem ser executadas diretamente. Operações mutáveis o
 um diálogo com ferramenta, risco e escopo:
 
 - **Allow once:** autoriza somente aquela chamada;
-- **Allow session:** autoriza chamadas compatíveis na sessão e escopo atuais;
+- **Allow tool:** autoriza somente aquela tool na tarefa e sessão atuais;
+- **Allow category:** autoriza tools compatíveis da mesma categoria de risco;
+- **Trust session:** autoriza tools seguras no mesmo projeto, origem e escopo;
 - **Deny:** recusa sem modificar a IDE;
 - **Cancel:** solicita o cancelamento de trabalho em andamento.
 
-Permissão de sessão não é global. Ela é reutilizada somente para tools compatíveis da mesma
-categoria de risco, origem, projeto e escopo. Uma aprovação estrutural pode, por exemplo, cobrir
+Permissão de sessão não é global. O nível de reutilização pode ser `Strict`, `Tool`, `Category` ou
+`Trusted`; o padrão é `Category`. Uma aprovação estrutural pode, por exemplo, cobrir
 preview, criação e abertura do mesmo projeto sem repetir o diálogo; não cobre execução nem ações
 destrutivas. Tools marcadas para consentimento obrigatório continuam perguntando a cada chamada.
 Use `/revoke-tools` ou o botão **Revoke session permissions** para limpar todas as permissões da
@@ -352,6 +356,7 @@ Em **Settings > Security & Consent**, é possível configurar:
 
 - timeout do diálogo entre 15 e 600 segundos;
 - exibição ou ocultação dos argumentos da tool;
+- nível de reutilização de permissão;
 - permissão de sessão para escrita reversível;
 - permissão de sessão para escrita estrutural;
 - permissão de sessão para build, testes e execução.
@@ -366,7 +371,8 @@ Em **Settings > Knowledge & Embeddings**, é possível configurar:
 - memória local de resumos agentivos aprovados, desabilitada por padrão e isolada por projeto.
 - exclusões de conhecimento por fragmentos de caminho de arquivo e projeto.
 
-Tools destrutivas ou sensíveis nunca oferecem permissão de sessão. Auditoria, sanitização de
+Tools destrutivas, sensíveis, `ConsentEveryTime` e alterações em regras de IA nunca recebem a
+liberação ampla de sessão. Auditoria, sanitização de
 secrets e confinamento ao workspace não podem ser desativados.
 
 ## 4. Tudo que o RadIA pode fazer

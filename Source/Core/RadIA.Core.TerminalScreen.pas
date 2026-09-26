@@ -145,6 +145,7 @@ type
     property BracketedPaste: Boolean read FBracketedPaste;
     property Columns: Integer read FColumns;
     property CursorColumn: Integer read FCursorColumn;
+    property CursorRow: Integer read FCursorRow;
     property MouseMode: Integer read FMouseMode;
   end;
 

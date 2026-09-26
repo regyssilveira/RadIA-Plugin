@@ -12,6 +12,7 @@ uses  System.Classes,
   RadIA.Core.CliMcpSettings,
   RadIA.Core.McpProvisioning,
   RadIA.Core.FastMM5,
+  RadIA.Core.ConsentSettings,
   RadIA.Core.ResultCompactionSettings,
   RadIA.UI.ExternalMcpFrame;
 
@@ -67,6 +68,9 @@ type
     FChkConsentRememberReversible: TCheckBox;
     FChkConsentRememberStructural: TCheckBox;
     FChkConsentRememberExecution: TCheckBox;
+    FCmbConsentGrantLevel: TComboBox;
+    FLblConsentGrantLevel: TLabel;
+    FConsentSettings: TRadIAConsentSettingsStore;
     FChkKnowledgeSemanticEnabled: TCheckBox;
     FChkKnowledgeApprovedHistoryEnabled: TCheckBox;
     FEdtKnowledgeExcludedFiles: TEdit;
@@ -247,9 +251,11 @@ type
     function TryShowCategoryOverview(const ACategoryName: string): Boolean;
     procedure SaveAgentExecutorSettings;
     procedure LoadFastMM5Settings;
+    procedure LoadConsentSettings;
     procedure LoadResultCompactionSettings;
     procedure RefreshFastMM5Status;
     procedure SaveFastMM5Settings;
+    procedure SaveConsentSettings;
     procedure SaveResultCompactionSettings;
   public
     constructor Create(AOwner: TComponent); override;
@@ -789,32 +795,48 @@ begin
     132,
     360
   );
+  FLblConsentGrantLevel := CreateLabel(
+    FPnlSecurity,
+    'Permission reuse level:',
+    16,
+    164
+  );
+  FCmbConsentGrantLevel := TComboBox.Create(Self);
+  FCmbConsentGrantLevel.Parent := FPnlSecurity;
+  FCmbConsentGrantLevel.SetBounds(16, 184, 280, 25);
+  FCmbConsentGrantLevel.Style := csDropDownList;
+  FCmbConsentGrantLevel.Items.Add('Strict - ask every time');
+  FCmbConsentGrantLevel.Items.Add('Tool - remember exact tool');
+  FCmbConsentGrantLevel.Items.Add('Category - remember risk category');
+  FCmbConsentGrantLevel.Items.Add('Trusted - safe tools in task scope');
+  FCmbConsentGrantLevel.Hint :=
+    'Protected AI rules, sensitive tools, and destructive operations are never broadly authorized.';
   FChkConsentRememberReversible := CreateCheckBox(
     FPnlSecurity,
     'Allow session permission for reversible writes',
     16,
-    164,
+    224,
     380
   );
   FChkConsentRememberStructural := CreateCheckBox(
     FPnlSecurity,
     'Allow session permission for structural writes',
     16,
-    196,
+    256,
     380
   );
   FChkConsentRememberExecution := CreateCheckBox(
     FPnlSecurity,
     'Allow session permission for build, tests, and execution',
     16,
-    228,
+    288,
     420
   );
 
   FBtnRevokeConsent := TButton.Create(Self);
   FBtnRevokeConsent.Parent := FPnlSecurity;
   FBtnRevokeConsent.Left := 16;
-  FBtnRevokeConsent.Top := 276;
+  FBtnRevokeConsent.Top := 336;
   FBtnRevokeConsent.Width := 190;
   FBtnRevokeConsent.Height := 28;
   FBtnRevokeConsent.Caption := 'Revoke session permissions';
@@ -824,14 +846,14 @@ begin
     FPnlSecurity,
     'Enable local semantic project knowledge (no network)',
     16,
-    320,
+    380,
     500
   );
   FChkKnowledgeApprovedHistoryEnabled := CreateCheckBox(
     FPnlSecurity,
     'Include approved agent run summaries in local project knowledge',
     16,
-    346,
+    412,
     560
   );
   FChkKnowledgeApprovedHistoryEnabled.Hint :=
@@ -842,69 +864,69 @@ begin
     FPnlSecurity,
     'Knowledge excluded file fragments (semicolon separated):',
     16,
-    382
+    448
   );
   FEdtKnowledgeExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    402,
+    468,
     500
   );
   FLblKnowledgeExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Knowledge excluded project name or path fragments (semicolon separated):',
     16,
-    442
+    508
   );
   FEdtKnowledgeExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    462,
+    528,
     500
   );
   FChkKnowledgeRemoteEnabled := CreateCheckBox(
     FPnlSecurity,
     'Use a remote OpenAI-compatible embedding provider',
     16,
-    502,
+    568,
     520
   );
   FChkKnowledgeRemoteConsent := CreateCheckBox(
     FPnlSecurity,
     'I consent to sending bounded project text to this endpoint',
     16,
-    528,
+    594,
     560
   );
   FLblKnowledgeRemoteEndpoint := CreateLabel(
     FPnlSecurity,
     'Remote embeddings endpoint (HTTPS or loopback HTTP):',
     16,
-    562
+    628
   );
   FEdtKnowledgeRemoteEndpoint := CreateEdit(
     FPnlSecurity,
     16,
-    582,
+    648,
     500
   );
   FLblKnowledgeRemoteModel := CreateLabel(
     FPnlSecurity,
     'Embedding model:',
     16,
-    622
+    688
   );
-  FEdtKnowledgeRemoteModel := CreateEdit(FPnlSecurity, 16, 642, 240);
+  FEdtKnowledgeRemoteModel := CreateEdit(FPnlSecurity, 16, 708, 240);
   FLblKnowledgeRemoteApiKey := CreateLabel(
     FPnlSecurity,
     'API key (protected with Windows DPAPI):',
     276,
-    622
+    688
   );
   FEdtKnowledgeRemoteApiKey := CreateEdit(
     FPnlSecurity,
     276,
-    642,
+    708,
     240
   );
   FEdtKnowledgeRemoteApiKey.PasswordChar := '*';
@@ -912,26 +934,26 @@ begin
     FPnlSecurity,
     'Dimensions / timeout ms / maximum input characters:',
     16,
-    682
+    748
   );
   FEdtKnowledgeRemoteDimensions := CreateEdit(
     FPnlSecurity,
     16,
-    702,
+    768,
     100,
     True
   );
   FEdtKnowledgeRemoteTimeout := CreateEdit(
     FPnlSecurity,
     132,
-    702,
+    768,
     100,
     True
   );
   FEdtKnowledgeRemoteInputLimit := CreateEdit(
     FPnlSecurity,
     248,
-    702,
+    768,
     120,
     True
   );
@@ -939,19 +961,19 @@ begin
     FPnlSecurity,
     'Enable ghost text (inline completion; sends bounded editor context)',
     16,
-    752,
+    818,
     500
   );
   FLblInlineCompletionDelay := CreateLabel(
     FPnlSecurity,
     'Idle delay in milliseconds (250-5000):',
     16,
-    788
+    854
   );
   FEdtInlineCompletionDelay := CreateEdit(
     FPnlSecurity,
     16,
-    808,
+    874,
     100,
     True
   );
@@ -959,43 +981,43 @@ begin
     FPnlSecurity,
     'Excluded languages (semicolon separated, for example sql;markdown):',
     16,
-    848
+    914
   );
   FEdtInlineCompletionExcludedLanguages := CreateEdit(
     FPnlSecurity,
     16,
-    868,
+    934,
     500
   );
   FLblInlineCompletionExcludedFiles := CreateLabel(
     FPnlSecurity,
     'Excluded file fragments (semicolon separated):',
     16,
-    908
+    974
   );
   FEdtInlineCompletionExcludedFiles := CreateEdit(
     FPnlSecurity,
     16,
-    928,
+    994,
     500
   );
   FLblInlineCompletionExcludedProjects := CreateLabel(
     FPnlSecurity,
     'Excluded project name or path fragments (semicolon separated):',
     16,
-    968
+    1034
   );
   FEdtInlineCompletionExcludedProjects := CreateEdit(
     FPnlSecurity,
     16,
-    988,
+    1054,
     500
   );
   FLblInlineShortcutProfile := CreateLabel(
     FPnlSecurity,
     'RadIA shortcut profile:',
     16,
-    1028
+    1094
   );
   FEdtInlineShortcutProfile := CreateEdit(
     FPnlSecurity,
@@ -1366,7 +1388,7 @@ begin
   );
   SetControlsHint(
     [FCmbResultCompactionProfile],
-    'Control internal agent result compaction. Conservative is the recommended default.'
+    'Control internal agent result compaction. Balanced is the recommended default.'
   );
   SetControlsHint(
     [FEdtMaximumDecisionContext],
@@ -1662,6 +1684,7 @@ begin
   FFastMM5Settings := TRadIAFastMM5SettingsStore.Create;
   FResultCompactionSettings :=
     TRadIAResultCompactionSettingsStore.Create;
+  FConsentSettings := TRadIAConsentSettingsStore.Create;
   FCliInstallGuard := TRadIAConfigLifecycleGuard.Create;
 
   // Update RadioGroup text in runtime for OAuth
@@ -1702,6 +1725,7 @@ begin
   LoadAgentExecutorSettings;
   LoadFastMM5Settings;
   LoadResultCompactionSettings;
+  LoadConsentSettings;
 
   LActiveTheme := 'light';
   LUseIDETheme := False;
@@ -1738,6 +1762,7 @@ begin
   FCliMcpSettings.Free;
   FFastMM5Settings.Free;
   FResultCompactionSettings.Free;
+  FConsentSettings.Free;
   FPresenter.Free;
   FEdtTemperatures.Free;
   FEdtMaxTokens.Free;
@@ -2111,6 +2136,14 @@ procedure TRadIAFrameAIConfig.LoadConfig;
 begin
   FPresenter.LoadConfig;
   LoadResultCompactionSettings;
+  LoadConsentSettings;
+end;
+
+procedure TRadIAFrameAIConfig.LoadConsentSettings;
+begin
+  FCmbConsentGrantLevel.ItemIndex := Ord(
+    FConsentSettings.LoadGrantLevel
+  );
 end;
 
 procedure TRadIAFrameAIConfig.LoadResultCompactionSettings;
@@ -2121,7 +2154,7 @@ begin
   FCmbResultCompactionProfile.ItemIndex :=
     FCmbResultCompactionProfile.Items.IndexOf(LSettings.ProfileName);
   if FCmbResultCompactionProfile.ItemIndex < 0 then
-    FCmbResultCompactionProfile.ItemIndex := 1;
+    FCmbResultCompactionProfile.ItemIndex := 2;
   FEdtMaximumDecisionContext.Text :=
     IntToStr(LSettings.MaximumDecisionContextCharacters);
 end;
@@ -2132,7 +2165,7 @@ var
 begin
   LMaximumCharacters := StrToIntDef(
     Trim(FEdtMaximumDecisionContext.Text),
-    120000
+    64000
   );
   FResultCompactionSettings.Save(
     TRadIAResultCompactionSettings.Create(
@@ -2140,6 +2173,16 @@ begin
       LMaximumCharacters
     )
   );
+end;
+
+procedure TRadIAFrameAIConfig.SaveConsentSettings;
+var
+  LLevel: TRadIAConsentGrantLevel;
+begin
+  LLevel := cglCategory;
+  if FCmbConsentGrantLevel.ItemIndex in [0..3] then
+    LLevel := TRadIAConsentGrantLevel(FCmbConsentGrantLevel.ItemIndex);
+  FConsentSettings.SaveGrantLevel(LLevel);
 end;
 
 procedure TRadIAFrameAIConfig.lstTemplatesClick(Sender: TObject);
@@ -3593,6 +3636,7 @@ begin
   SaveAgentExecutorSettings;
   SaveFastMM5Settings;
   SaveResultCompactionSettings;
+  SaveConsentSettings;
   FPresenter.SaveConfig;
 end;
 

@@ -11,11 +11,15 @@ Open **Tools > Options > Rad IA > General / Logs**.
 | Profile | Behavior |
 |---|---|
 | `Off` | Sends complete results and disables budget envelopes. Use for rollback or diagnosis. |
-| `Conservative` | Recommended default. Compacts eligible results and keeps a larger context margin. |
-| `Balanced` | Uses the same deterministic compactor with a smaller budget for older steps. |
+| `Conservative` | Compacts eligible results and keeps a larger context margin. |
+| `Balanced` | Recommended default. Uses the deterministic compactor with a smaller budget. |
 
 **Maximum agent decision context characters** accepts 16,000 through 1,000,000 characters; the
-default is 120,000. `RADIA_RESULT_COMPACTION_PROFILE` can temporarily override the persisted profile.
+default is 64,000. `RADIA_RESULT_COMPACTION_PROFILE` can temporarily override the persisted profile.
+
+RTK works with incremental context: each decision receives only the six most recent steps, a periodic
+summary, and recoverable references. The tool catalog is filtered by capability and objective, and the
+complete chat history is not repeated in the planner prompt.
 
 ## Current rules
 
@@ -52,7 +56,8 @@ artifact, the retrieval tools report that it is no longer available.
 
 ## Metrics and diagnostics
 
-`/status agent` and `GetRadIAStatus` report the profile, recovery availability, and context limit.
+`/status agent` and `GetRadIAStatus` report the profile, recovery availability, and context limit. The
+sanitized `AgentTokens` log separates context characters, catalog characters, and omitted history.
 Decision snapshots aggregate counts, duration, and rule name only; they do not store code, prompts,
 arguments, or secrets.
 

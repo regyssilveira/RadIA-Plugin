@@ -259,7 +259,12 @@ begin
     trStructuralWrite
   ).WithConsentEveryTime;
   LDecision := LAuthorization.Authorize(LRequest, LDescriptor);
-  Result := LDecision in [cdAllowOnce, cdAllowSession];
+  Result := LDecision in [
+    cdAllowOnce,
+    cdAllowToolSession,
+    cdAllowSession,
+    cdAllowTrustedSession
+  ];
 end;
 
 procedure TRadIASkillPortabilityForm.CreateWnd;

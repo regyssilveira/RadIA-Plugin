@@ -330,6 +330,7 @@ type
     FLimits: TRadIAAgentLimits;
     FExecutionContract: TRadIAAgentExecutionContract;
     FPeriodicSummary: string;
+    FBuildingDecisionContext: Boolean;
     FPauseRequested: Integer;
     FCancelRequested: Integer;
     FLastCallSignature: string;
@@ -1577,7 +1578,12 @@ end;
 
 function TRadIAAgentRuntime.BuildDecisionContextJson: string;
 begin
-  Result := BuildSnapshotJson(True);
+  FBuildingDecisionContext := True;
+  try
+    Result := BuildSnapshotJson(True);
+  finally
+    FBuildingDecisionContext := False;
+  end;
 end;
 
 procedure TRadIAAgentRuntime.AddCompactionDetails(
@@ -1758,6 +1764,8 @@ function TRadIAAgentRuntime.BuildStepsJson(
   out AMetrics: TRadIAAgentCompactionMetrics
 ): TJSONArray;
 var
+  LFirstStepIndex: NativeInt;
+  LIndex: NativeInt;
   LResultBudget: Integer;
   LStep: TRadIAAgentStep;
   LStepCount: Integer;
@@ -1777,10 +1785,13 @@ begin
   if AProfile = cpBalanced then
     LResultBudget := Max(512, LResultBudget div 2);
   Result := TJSONArray.Create;
-  for LStep in FSteps do
+  LFirstStepIndex := 0;
+  if FBuildingDecisionContext and (FSteps.Count > 6) then
+    LFirstStepIndex := FSteps.Count - 6;
+  for LIndex := LFirstStepIndex to FSteps.Count - 1 do
     Result.AddElement(
       BuildStepJson(
-        LStep,
+        FSteps[LIndex],
         ACompactResults,
         AProfile,
         LResultBudget,

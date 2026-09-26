@@ -60,6 +60,21 @@ type
       const AProjectCreation: Boolean
     ): string;
     function BuildRelevantToolCatalog(const AContextJson: string): string;
+    class function ContainsAny(
+      const AText: string;
+      const AValues: array of string
+    ): Boolean; static;
+    class function MatchesToolFamily(
+      const AContext: string;
+      const AName: string;
+      const AContextValues: array of string;
+      const ANameValues: array of string
+    ): Boolean; static;
+    class function IsCoreAgentTool(const AName: string): Boolean; static;
+    class function IsRelevantTool(
+      const AName: string;
+      const AContext: string
+    ): Boolean; static;
     class function IsProjectCreationTool(const AName: string): Boolean; static;
   public
     constructor Create(
@@ -413,7 +428,12 @@ begin
       LName := LItem.GetValue<string>('name', '');
       if AContextJson.Contains(
         'Create a Delphi project from the user requirements.'
-      ) and not IsProjectCreationTool(LName) then
+      ) then
+      begin
+        if not IsProjectCreationTool(LName) then
+          Continue;
+      end
+      else if not IsRelevantTool(LName, LowerCase(AContextJson)) then
         Continue;
       LValue := TJSONObject.ParseJSONValue(LItem.ToJSON);
       LPair := TJSONObject(LValue).RemovePair('version');
@@ -426,6 +446,101 @@ begin
     LFiltered.Free;
     LSource.Free;
   end;
+end;
+
+class function TRadIAAgentServiceDecisionProvider.IsCoreAgentTool(
+  const AName: string
+): Boolean;
+begin
+  Result := IndexText(AName, [
+    'GetActiveProject', 'GetIDEState', 'GetProjectHealth',
+    'ListOpenFiles', 'ReadFile', 'SearchInFiles', 'GetCompilerMessages',
+    'GetBuildStatus', 'BuildProject', 'PreparePatch', 'ApplyPatch',
+    'GetGitStatus', 'GetGitDiff', 'GetToolResultRange'
+  ]) >= 0;
+end;
+
+class function TRadIAAgentServiceDecisionProvider.ContainsAny(
+  const AText: string;
+  const AValues: array of string
+): Boolean;
+var
+  LValue: string;
+begin
+  for LValue in AValues do
+    if AText.Contains(LValue) then
+      Exit(True);
+  Result := False;
+end;
+
+class function TRadIAAgentServiceDecisionProvider.IsRelevantTool(
+  const AName: string;
+  const AContext: string
+): Boolean;
+var
+  LName: string;
+begin
+  if IsCoreAgentTool(AName) then
+    Exit(True);
+  LName := LowerCase(AName);
+  if MatchesToolFamily(AContext, LName, ['test'], ['test']) then
+    Exit(True);
+  if MatchesToolFamily(AContext, LName, ['coverage'], ['coverage']) then
+    Exit(True);
+  if MatchesToolFamily(
+    AContext,
+    LName,
+    ['debug', 'runtime'],
+    ['debug', 'runtime']
+  ) then
+    Exit(True);
+  if MatchesToolFamily(
+    AContext,
+    LName,
+    ['form', 'dfm', 'designer'],
+    ['form', 'designer', 'component']
+  ) then
+    Exit(True);
+  if MatchesToolFamily(
+    AContext,
+    LName,
+    ['project', 'package'],
+    ['project', 'package']
+  ) then
+    Exit(True);
+  if MatchesToolFamily(
+    AContext,
+    LName,
+    ['knowledge', 'document'],
+    ['knowledge', 'document']
+  ) then
+    Exit(True);
+  if MatchesToolFamily(
+    AContext,
+    LName,
+    ['terminal', 'command'],
+    ['terminal', 'command']
+  ) then
+    Exit(True);
+  if MatchesToolFamily(AContext, LName, ['git', 'commit'], ['git']) then
+    Exit(True);
+  Result := MatchesToolFamily(
+    AContext,
+    LName,
+    ['install', 'dependency'],
+    ['install', 'dependenc']
+  );
+end;
+
+class function TRadIAAgentServiceDecisionProvider.MatchesToolFamily(
+  const AContext: string;
+  const AName: string;
+  const AContextValues: array of string;
+  const ANameValues: array of string
+): Boolean;
+begin
+  Result := ContainsAny(AContext, AContextValues) and
+    ContainsAny(AName, ANameValues);
 end;
 
 class function TRadIAAgentServiceDecisionProvider.IsProjectCreationTool(
@@ -565,6 +680,17 @@ begin
     TMonitor.Exit(Self);
   end;
   try
+    TLogger.Log(
+      Format(
+        'Agent input: context=%d chars, tools=%d chars, omittedHistory=%d messages.',
+        [
+          Length(AContextJson),
+          Length(BuildRelevantToolCatalog(AContextJson)),
+          Length(FHistory)
+        ]
+      ),
+      'AgentTokens'
+    );
     FService.SendPrompt(
       LPrompt,
       FHistory,

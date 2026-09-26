@@ -136,6 +136,12 @@ type
       Y: Integer
     );
     procedure OutputDoubleClick(Sender: TObject);
+    procedure OutputKeyDown(
+      Sender: TObject;
+      var Key: Word;
+      Shift: TShiftState
+    );
+    procedure OutputKeyPress(Sender: TObject; var Key: Char);
     procedure OpenDiagnosticClick(Sender: TObject);
     procedure OutputMouseUp(
       Sender: TObject;
@@ -155,6 +161,10 @@ type
     function TryHandleClipboardPaste: Boolean;
     function TrySaveClipboardImage(out AFileName: string): Boolean;
     procedure UsePaths(const APaths: TArray<string>);
+    function SafeCaretPosition(
+      const ALinePosition: NativeInt;
+      const AColumn: Integer
+    ): Integer;
     procedure QueueCompletion(
       const AGuard: IRadIATerminalLifecycleGuard;
       const ACommand: string;
@@ -504,14 +514,19 @@ begin
   FOutputLabel.Caption := 'Terminal output';
 
   FOutputEditor := TRadIATerminalDropEdit.Create(Self);
+  FOutputEditor := TRadIATerminalDropEdit.Create(Self);
   FOutputEditor.Parent := Self;
   FOutputEditor.Align := alClient;
   FOutputEditor.ReadOnly := True;
+  FOutputEditor.WantReturns := True;
+  FOutputEditor.WantTabs := True;
   FOutputEditor.ScrollBars := ssBoth;
   FOutputEditor.WordWrap := False;
   FOutputEditor.Font.Name := 'Consolas';
   FOutputEditor.Font.Size := 10;
   FOutputEditor.OnDblClick := OutputDoubleClick;
+  FOutputEditor.OnKeyDown := OutputKeyDown;
+  FOutputEditor.OnKeyPress := OutputKeyPress;
   FOutputEditor.OnMouseDown := OutputMouseDown;
   FOutputEditor.OnMouseUp := OutputMouseUp;
   TRadIATerminalDropEdit(FOutputEditor).OnFilesDropped := FilesDropped;
@@ -620,6 +635,8 @@ end;
 
 procedure TRadIATerminalFrame.AppendOutput(const AText: string);
 var
+  LCaretPosition: NativeInt;
+  LSafeCaretPosition: Integer;
   LSegment: TRadIATerminalTextSegment;
 begin
   if AText = '' then
@@ -631,6 +648,25 @@ begin
     FOutputEditor.Clear;
     for LSegment in FScreen.RenderSegments do
       AppendSegment(LSegment);
+    if Assigned(FSession) and FSession.IsRunning and
+      FSession.IsPseudoTerminal then
+    begin
+      LCaretPosition := SendMessage(
+        FOutputEditor.Handle,
+        EM_LINEINDEX,
+        FScreen.CursorRow,
+        0
+      );
+      LSafeCaretPosition := SafeCaretPosition(
+        LCaretPosition,
+        FScreen.CursorColumn
+      );
+      if LSafeCaretPosition >= 0 then
+        FOutputEditor.SelStart := Min(
+          Length(FOutputEditor.Text),
+          LSafeCaretPosition
+        );
+    end;
   finally
     SendMessage(FOutputEditor.Handle, WM_SETREDRAW, 1, 0);
     FOutputEditor.Invalidate;
@@ -803,7 +839,12 @@ begin
       trExecution
     ).WithConsentEveryTime;
     LDecision := FAuthorizationPolicy.Authorize(LRequest, LDescriptor);
-    Result := LDecision in [cdAllowOnce, cdAllowSession];
+    Result := LDecision in [
+      cdAllowOnce,
+      cdAllowToolSession,
+      cdAllowSession,
+      cdAllowTrustedSession
+    ];
     if not Result then
       FStatusLabel.Caption := 'Terminal link was not authorized';
   finally
@@ -880,7 +921,12 @@ begin
       LRequest,
       LDescriptor
     );
-    Result := LDecision in [cdAllowOnce, cdAllowSession];
+    Result := LDecision in [
+      cdAllowOnce,
+      cdAllowToolSession,
+      cdAllowSession,
+      cdAllowTrustedSession
+    ];
     if not Result then
       FStatusLabel.Caption := 'Terminal command was not authorized';
   finally
@@ -894,6 +940,25 @@ begin
     Exit;
   FHistorySearchIndex := -1;
   FHistorySearchQuery := '';
+  if not Assigned(FSession) or not FSession.IsRunning then
+    if Trim(FCommandEdit.Text) = '' then
+      FRunButton.Caption := 'Start'
+    else
+      FRunButton.Caption := 'Run';
+end;
+
+function TRadIATerminalFrame.SafeCaretPosition(
+  const ALinePosition: NativeInt;
+  const AColumn: Integer
+): Integer;
+var
+  LPosition: Int64;
+begin
+  LPosition := ALinePosition;
+  if (LPosition < 0) or (AColumn < 0) or
+    (LPosition > High(Integer) - Int64(AColumn)) then
+    Exit(-1);
+  Result := Integer(LPosition) + AColumn;
 end;
 
 procedure TRadIATerminalFrame.CommandKeyDown(
@@ -1060,24 +1125,28 @@ begin
     FJourneyContext.CompleteActivity;
   RefreshJourneyContext;
   FRunButton.Enabled := True;
-  FRunButton.Caption := 'Run';
+  FRunButton.Caption := 'Start';
   FStopButton.Enabled := False;
+  FProfileCombo.Enabled := True;
   if AResult.Cancelled then
     FStatusLabel.Caption := 'Cancelled'
   else if AResult.TimedOut then
     FStatusLabel.Caption := 'Timed out'
   else
     FStatusLabel.Caption := Format('Finished with exit code %d', [AResult.ExitCode]);
-  FHistory.Add(
-    TRadIATerminalHistoryEntry.Create(
-      TTimeZone.Local.ToUniversalTime(Now),
-      AProfileId,
-      ACommand,
-      AResult.ExitCode
-    )
-  );
-  FHistory.Save;
-  LoadHistory;
+  if Trim(ACommand) <> '' then
+  begin
+    FHistory.Add(
+      TRadIATerminalHistoryEntry.Create(
+        TTimeZone.Local.ToUniversalTime(Now),
+        AProfileId,
+        ACommand,
+        AResult.ExitCode
+      )
+    );
+    FHistory.Save;
+    LoadHistory;
+  end;
 end;
 
 function TRadIATerminalFrame.GetWorkingDirectory: string;
@@ -1279,6 +1348,7 @@ var
   LProfile: TRadIATerminalProfile;
   LProfiles: TArray<TRadIATerminalProfile>;
   LRows: SmallInt;
+  LTimeoutMs: Cardinal;
   LWorkingDirectory: string;
 begin
   if Assigned(FSession) and FSession.IsRunning then
@@ -1287,8 +1357,6 @@ begin
     Exit;
   end;
   LCommand := Trim(FCommandEdit.Text);
-  if LCommand = '' then
-    Exit;
   LProfiles := TRadIATerminalCatalog.Profiles;
   if (FProfileCombo.ItemIndex < Low(LProfiles)) or
     (FProfileCombo.ItemIndex > High(LProfiles)) then
@@ -1298,20 +1366,28 @@ begin
   if not CanRunCommand(LProfile, LCommand, LWorkingDirectory) then
     Exit;
   LInvocation := LProfile.BuildInvocation(LCommand, LWorkingDirectory);
-  AppendOutput(sLineBreak + '> ' + LCommand + sLineBreak);
+  if LCommand = '' then
+    AppendOutput(sLineBreak + '> Start ' + LProfile.DisplayName + sLineBreak)
+  else
+    AppendOutput(sLineBreak + '> ' + LCommand + sLineBreak);
   FRunButton.Enabled := False;
   FRunButton.Caption := 'Send';
   FStopButton.Enabled := True;
+  FProfileCombo.Enabled := False;
   FStatusLabel.Caption := 'Running in ' + LInvocation.WorkingDirectory;
   LGuard := FLifecycleGuard as IRadIATerminalLifecycleGuard;
   GetTerminalSize(LColumns, LRows);
   FScreen.Resize(LColumns);
+  if LCommand = '' then
+    LTimeoutMs := 0
+  else
+    LTimeoutMs := 30 * 60 * 1000;
   if TRadIAPseudoTerminalRunner.IsSupported then
     FSession := TRadIAPseudoTerminalRunner.Start(
       LInvocation,
       LColumns,
       LRows,
-      30 * 60 * 1000,
+      LTimeoutMs,
       procedure(AChunk: string)
       begin
         Self.QueueOutput(LGuard, AChunk);
@@ -1329,7 +1405,7 @@ begin
   else
     FSession := TRadIACliProcessRunner.StartInteractive(
       LInvocation,
-      30 * 60 * 1000,
+      LTimeoutMs,
       procedure(AChunk: string)
       begin
         Self.QueueOutput(LGuard, AChunk);
@@ -1357,6 +1433,8 @@ begin
   end;
   FRunButton.Enabled := True;
   FCommandEdit.Clear;
+  if FSession.IsPseudoTerminal then
+    FOutputEditor.SetFocus;
 end;
 
 procedure TRadIATerminalFrame.Resize;
@@ -1661,6 +1739,44 @@ begin
     Exit;
   end;
   OpenDiagnosticClick(Sender);
+end;
+
+procedure TRadIATerminalFrame.OutputKeyDown(
+  Sender: TObject;
+  var Key: Word;
+  Shift: TShiftState
+);
+var
+  LInput: string;
+begin
+  if not Assigned(FSession) or not FSession.IsRunning or
+    not FSession.IsPseudoTerminal then
+    Exit;
+  LInput := TRadIATerminalKeyEncoder.EncodeVirtualKey(
+    Key,
+    ssShift in Shift,
+    ssAlt in Shift,
+    ssCtrl in Shift
+  );
+  if LInput = '' then
+    Exit;
+  if FSession.WriteInput(LInput) then
+    Key := 0;
+end;
+
+procedure TRadIATerminalFrame.OutputKeyPress(Sender: TObject; var Key: Char);
+var
+  LInput: string;
+begin
+  if not Assigned(FSession) or not FSession.IsRunning or
+    not FSession.IsPseudoTerminal then
+    Exit;
+  LInput := TRadIATerminalKeyEncoder.EncodeCharacter(
+    Key,
+    GetKeyState(VK_MENU) < 0
+  );
+  if FSession.WriteInput(LInput) then
+    Key := #0;
 end;
 
 procedure TRadIATerminalFrame.OpenDiagnosticClick(Sender: TObject);

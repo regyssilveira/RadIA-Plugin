@@ -66,6 +66,10 @@ type
     [Test]
     procedure SessionConsentIsScopedAndRevocable;
     [Test]
+    procedure ToolConsentIsScopedToExactTool;
+    [Test]
+    procedure TrustedConsentCoversSafeRiskCategories;
+    [Test]
     procedure AiControlFilesAlwaysRequireFreshConsent;
     [Test]
     procedure PerExecutionConsentIsNeverCached;
@@ -812,6 +816,66 @@ begin
   LExecutor.RevokeSessionPermissions;
   Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
   Assert.AreEqual(3, LConsent.RequestCount);
+end;
+
+procedure TTestRadIAToolSecurity.ToolConsentIsScopedToExactTool;
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('ApplyPatch', trReversibleWrite)
+  );
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('WriteEditorFile', trReversibleWrite)
+  );
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowToolSession);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
+  Assert.AreEqual(1, LConsent.RequestCount);
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('WriteEditorFile')).Success);
+  Assert.AreEqual(2, LConsent.RequestCount);
+end;
+
+procedure TTestRadIAToolSecurity.TrustedConsentCoversSafeRiskCategories;
+var
+  LAudit: TRadIAInMemoryToolAuditSink;
+  LConsent: TTestRadIAConsentProvider;
+  LExecutor: IRadIAToolPolicyExecutor;
+  LRegistry: IRadIAToolRegistry;
+begin
+  LRegistry := TRadIAToolRegistry.Create;
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('ApplyPatch', trReversibleWrite)
+  );
+  LRegistry.RegisterTool(
+    TTestRadIATool.Create('BuildProject', trExecution)
+  );
+  LConsent := TTestRadIAConsentProvider.Create(cdAllowTrustedSession);
+  LAudit := TRadIAInMemoryToolAuditSink.Create;
+  LExecutor := TRadIAToolPolicyExecutor.Create(
+    LRegistry,
+    TRadIAToolExecutor.Create(LRegistry),
+    LConsent,
+    LAudit,
+    TRadIASecretRedactor.Create
+  );
+
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('ApplyPatch')).Success);
+  Assert.IsTrue(LExecutor.Execute(CreateRequest('BuildProject')).Success);
+  Assert.AreEqual(1, LConsent.RequestCount);
 end;
 
 procedure TTestRadIAToolSecurity.UnknownToolIsDeniedAndAudited;

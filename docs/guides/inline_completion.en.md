@@ -109,8 +109,8 @@ triggered from the menu, the same context accompanies the selected code or activ
 | Accept the entire suggestion | `Ctrl+Alt+Right` |
 | Accept only the next word | `Ctrl+Alt+Down` |
 | Request an alternative | `Ctrl+Alt+]` |
-| Next stored suggestion | `Ctrl+Shift+Down` |
-| Previous stored suggestion | `Ctrl+Shift+Up` |
+| Next stored suggestion | `Ctrl+Alt+Shift+PageDown` |
+| Previous stored suggestion | `Ctrl+Alt+Shift+PageUp` |
 | Reject the suggestion | `Ctrl+Alt+Backspace` |
 | Accept review at the current line | `Ctrl+Alt+Enter` |
 | Reject review at the current line | `Ctrl+Alt+R` |
@@ -134,7 +134,7 @@ opening the context menu. To change them, open **Rad IA > Settings > Editor Assi
 ```text
 request=Ctrl+Alt+Space; accept=Ctrl+Alt+Right;
 nextWord=Ctrl+Alt+Down; alternative=Ctrl+Alt+];
-completionNext=Ctrl+Shift+Down; completionPrevious=Ctrl+Shift+Up;
+completionNext=Ctrl+Alt+Shift+PageDown; completionPrevious=Ctrl+Alt+Shift+PageUp;
 reject=Ctrl+Alt+Backspace; terminal=Ctrl+Alt+T;
 reviewAccept=Ctrl+Alt+Enter; reviewReject=Ctrl+Alt+R;
 reviewNext=Ctrl+Alt+PageDown; reviewPrevious=Ctrl+Alt+PageUp;
@@ -143,7 +143,8 @@ reviewApply=Ctrl+Alt+A; reviewClear=Ctrl+Alt+Delete
 ```
 
 The required actions are `request`, `accept`, `nextWord`, `alternative`, and `reject`. Alternative
-navigation uses `completionNext` and `completionPrevious`. Terminal and
+navigation uses `completionNext` and `completionPrevious`. The default shortcuts avoid
+`Ctrl+Shift+Up` and `Ctrl+Shift+Down`, preserving Delphi's native editor navigation. Terminal and
 review decisions use `terminal`, `reviewAccept`, `reviewReject`, `reviewNext`, `reviewPrevious`,
 `reviewEdit`, `reviewExplain`, `reviewApply`, and `reviewClear`; legacy profiles receive the default
 shortcuts automatically. See [block-level review](block_reviews.en.md) for markers, colors,

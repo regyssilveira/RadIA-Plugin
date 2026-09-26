@@ -82,6 +82,37 @@ type
     property Style: TRadIATerminalTextStyle read FStyle;
   end;
 
+  TRadIATerminalKeyEncoder = class
+  private
+    class function EncodeFixedKey(
+      const AKey: Word;
+      const AShift: Boolean
+    ): string; static;
+    class function EncodeFunctionKey(const AKey: Word): string; static;
+    class function EncodeNavigationKey(
+      const AKey: Word;
+      const AShift: Boolean;
+      const AAlt: Boolean;
+      const ACtrl: Boolean
+    ): string; static;
+    class function ModifierParameter(
+      const AShift: Boolean;
+      const AAlt: Boolean;
+      const ACtrl: Boolean
+    ): Integer; static;
+  public
+    class function EncodeCharacter(
+      const ACharacter: Char;
+      const AAlt: Boolean = False
+    ): string; static;
+    class function EncodeVirtualKey(
+      const AKey: Word;
+      const AShift: Boolean;
+      const AAlt: Boolean;
+      const ACtrl: Boolean
+    ): string; static;
+  end;
+
   TRadIATerminalAnsiParser = class
   private
     FPending: string;
@@ -111,6 +142,7 @@ type
     FDisplayName: string;
     FExecutablePath: string;
     FArgumentsPrefix: TArray<string>;
+    FInteractiveArguments: TArray<string>;
     FCommandPrefix: string;
   public
     constructor Create(
@@ -118,7 +150,8 @@ type
       const ADisplayName: string;
       const AExecutablePath: string;
       const AArgumentsPrefix: TArray<string>;
-      const ACommandPrefix: string = ''
+      const ACommandPrefix: string = '';
+      const AInteractiveArguments: TArray<string> = nil
     );
     function BuildInvocation(
       const ACommand: string;
@@ -246,6 +279,7 @@ type
 implementation
 
 uses
+  Winapi.Windows,
   System.Classes,
   System.DateUtils,
   System.IOUtils,
@@ -351,6 +385,124 @@ begin
   end;
 end;
 
+{ TRadIATerminalKeyEncoder }
+
+class function TRadIATerminalKeyEncoder.EncodeCharacter(
+  const ACharacter: Char;
+  const AAlt: Boolean
+): string;
+begin
+  Result := ACharacter;
+  if AAlt then
+    Result := #27 + Result;
+end;
+
+class function TRadIATerminalKeyEncoder.EncodeFixedKey(
+  const AKey: Word;
+  const AShift: Boolean
+): string;
+begin
+  Result := '';
+  case AKey of
+    VK_RETURN: Result := #13;
+    VK_TAB:
+      if AShift then
+        Result := #27'[Z'
+      else
+        Result := #9;
+    VK_BACK: Result := #127;
+    VK_ESCAPE: Result := #27;
+    VK_INSERT: Result := #27'[2~';
+    VK_DELETE: Result := #27'[3~';
+    VK_PRIOR: Result := #27'[5~';
+    VK_NEXT: Result := #27'[6~';
+  end;
+  if Result = '' then
+    Result := EncodeFunctionKey(AKey);
+end;
+
+class function TRadIATerminalKeyEncoder.EncodeFunctionKey(
+  const AKey: Word
+): string;
+begin
+  Result := '';
+  case AKey of
+    VK_F1: Result := #27'OP';
+    VK_F2: Result := #27'OQ';
+    VK_F3: Result := #27'OR';
+    VK_F4: Result := #27'OS';
+    VK_F5: Result := #27'[15~';
+    VK_F6: Result := #27'[17~';
+    VK_F7: Result := #27'[18~';
+    VK_F8: Result := #27'[19~';
+    VK_F9: Result := #27'[20~';
+    VK_F10: Result := #27'[21~';
+    VK_F11: Result := #27'[23~';
+    VK_F12: Result := #27'[24~';
+  end;
+end;
+
+class function TRadIATerminalKeyEncoder.EncodeNavigationKey(
+  const AKey: Word;
+  const AShift: Boolean;
+  const AAlt: Boolean;
+  const ACtrl: Boolean
+): string;
+var
+  LFinal: Char;
+  LModifier: Integer;
+begin
+  LFinal := #0;
+  case AKey of
+    VK_UP: LFinal := 'A';
+    VK_DOWN: LFinal := 'B';
+    VK_RIGHT: LFinal := 'C';
+    VK_LEFT: LFinal := 'D';
+    VK_HOME: LFinal := 'H';
+    VK_END: LFinal := 'F';
+  end;
+  if LFinal = #0 then
+    Exit('');
+  LModifier := ModifierParameter(AShift, AAlt, ACtrl);
+  if LModifier = 1 then
+    Result := #27'[' + LFinal
+  else
+    Result := #27'[1;' + LModifier.ToString + LFinal;
+end;
+
+class function TRadIATerminalKeyEncoder.ModifierParameter(
+  const AShift: Boolean;
+  const AAlt: Boolean;
+  const ACtrl: Boolean
+): Integer;
+begin
+  Result := 1;
+  if AShift then
+    Inc(Result);
+  if AAlt then
+    Inc(Result, 2);
+  if ACtrl then
+    Inc(Result, 4);
+end;
+
+class function TRadIATerminalKeyEncoder.EncodeVirtualKey(
+  const AKey: Word;
+  const AShift: Boolean;
+  const AAlt: Boolean;
+  const ACtrl: Boolean
+): string;
+begin
+  if ACtrl and (AKey >= Ord('A')) and (AKey <= Ord('Z')) then
+  begin
+    Result := Char(AKey - Ord('A') + 1);
+    if AAlt then
+      Result := #27 + Result;
+    Exit;
+  end;
+  Result := EncodeFixedKey(AKey, AShift);
+  if Result = '' then
+    Result := EncodeNavigationKey(AKey, AShift, AAlt, ACtrl);
+end;
 { TRadIATerminalTextStyle }
 
 class function TRadIATerminalTextStyle.Default:
@@ -612,13 +764,15 @@ constructor TRadIATerminalProfile.Create(
   const ADisplayName: string;
   const AExecutablePath: string;
   const AArgumentsPrefix: TArray<string>;
-  const ACommandPrefix: string
+  const ACommandPrefix: string;
+  const AInteractiveArguments: TArray<string>
 );
 begin
   FId := AId;
   FDisplayName := ADisplayName;
   FExecutablePath := AExecutablePath;
   FArgumentsPrefix := AArgumentsPrefix;
+  FInteractiveArguments := AInteractiveArguments;
   FCommandPrefix := ACommandPrefix;
 end;
 
@@ -630,9 +784,16 @@ var
   LArguments: TArray<string>;
 begin
   if Trim(ACommand) = '' then
-    raise EArgumentException.Create('The terminal command is required.');
-  LArguments := Copy(FArgumentsPrefix);
-  LArguments := LArguments + [FCommandPrefix + ACommand];
+  begin
+    LArguments := Copy(FInteractiveArguments);
+    if Trim(FCommandPrefix) <> '' then
+      LArguments := LArguments + [Trim(FCommandPrefix)];
+  end
+  else
+  begin
+    LArguments := Copy(FArgumentsPrefix);
+    LArguments := LArguments + [FCommandPrefix + ACommand];
+  end;
   Result := TRadIACliInvocation.Create(
     FExecutablePath,
     LArguments,
@@ -719,7 +880,8 @@ begin
         ADetection.Definition.DisplayName,
         GetEnvironmentVariable('ComSpec'),
         ['/D', '/S', '/C'],
-        LCommandPrefix
+        LCommandPrefix,
+        ['/D', '/S', '/C']
       )
     );
   end;
@@ -749,13 +911,17 @@ begin
       'powershell',
       'Windows PowerShell',
       'powershell.exe',
-      ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command']
+      ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command'],
+      '',
+      ['-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass']
     ),
     TRadIATerminalProfile.Create(
       'cmd',
       'Command Prompt',
       GetEnvironmentVariable('ComSpec'),
-      ['/D', '/S', '/C']
+      ['/D', '/S', '/C'],
+      '',
+      ['/D']
     )
   ];
   LGitBash := FindGitBash(LEnvironment);
@@ -765,7 +931,9 @@ begin
         'git-bash',
         'Git Bash',
         LGitBash,
-        ['-l', '-c']
+        ['-l', '-c'],
+        '',
+        ['-l']
       )
     ];
   LDetector := TRadIACliDetector.Create(LEnvironment);

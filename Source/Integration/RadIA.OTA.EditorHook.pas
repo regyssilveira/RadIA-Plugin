@@ -190,6 +190,8 @@ type
     procedure OnShowTerminalExecute(Sender: TObject);
     procedure OnInlineCompletionAcceptExecute(Sender: TObject);
     procedure OnInlineCompletionAlternativeExecute(Sender: TObject);
+    function SelectNextInlineCompletionAlternative: Boolean;
+    function SelectPreviousInlineCompletionAlternative: Boolean;
     procedure OnInlineCompletionNextAlternativeExecute(Sender: TObject);
     procedure OnInlineCompletionPreviousAlternativeExecute(Sender: TObject);
     procedure OnInlineCompletionNextWordExecute(Sender: TObject);
@@ -374,9 +376,11 @@ procedure TRadIAInlineCompletionKeyboardBinding.CompletionNext(
   var AResult: TKeyBindingResult
 );
 begin
-  AResult := krHandled;
-  if Assigned(FOwner) then
-    FOwner.OnInlineCompletionNextAlternativeExecute(nil);
+  if Assigned(FOwner) and
+    FOwner.SelectNextInlineCompletionAlternative then
+    AResult := krHandled
+  else
+    AResult := krUnhandled;
 end;
 
 procedure TRadIAInlineCompletionKeyboardBinding.CompletionPrevious(
@@ -385,9 +389,11 @@ procedure TRadIAInlineCompletionKeyboardBinding.CompletionPrevious(
   var AResult: TKeyBindingResult
 );
 begin
-  AResult := krHandled;
-  if Assigned(FOwner) then
-    FOwner.OnInlineCompletionPreviousAlternativeExecute(nil);
+  if Assigned(FOwner) and
+    FOwner.SelectPreviousInlineCompletionAlternative then
+    AResult := krHandled
+  else
+    AResult := krUnhandled;
 end;
 
 procedure TRadIAInlineCompletionKeyboardBinding.BindKeyboard(
@@ -1593,15 +1599,25 @@ procedure TRadIAEditorHook.OnInlineCompletionNextAlternativeExecute(
   Sender: TObject
 );
 begin
-  if Assigned(FInlineCompletionController) then
-    FInlineCompletionController.SelectNextAlternative;
+  SelectNextInlineCompletionAlternative;
 end;
 
 procedure TRadIAEditorHook.OnInlineCompletionPreviousAlternativeExecute(
   Sender: TObject
 );
 begin
-  if Assigned(FInlineCompletionController) then
+  SelectPreviousInlineCompletionAlternative;
+end;
+
+function TRadIAEditorHook.SelectNextInlineCompletionAlternative: Boolean;
+begin
+  Result := Assigned(FInlineCompletionController) and
+    FInlineCompletionController.SelectNextAlternative;
+end;
+
+function TRadIAEditorHook.SelectPreviousInlineCompletionAlternative: Boolean;
+begin
+  Result := Assigned(FInlineCompletionController) and
     FInlineCompletionController.SelectPreviousAlternative;
 end;
 
