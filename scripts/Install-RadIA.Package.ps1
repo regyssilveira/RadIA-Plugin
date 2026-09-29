@@ -16,6 +16,27 @@ $packageRoot = [IO.Path]::GetFullPath(
 )
 $manifestFile = Join-Path $packageRoot "manifest.json"
 
+function Get-RadIASha256 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        try {
+            return [BitConverter]::ToString(
+                $algorithm.ComputeHash($stream)
+            ).Replace("-", "")
+        } finally {
+            $algorithm.Dispose()
+        }
+    } finally {
+        $stream.Dispose()
+    }
+}
+
 function Copy-RadIAReplaceableFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -110,7 +131,7 @@ foreach ($file in $manifest.files) {
     if ($actualSize -ne $file.size) {
         throw "Package size check failed: $normalizedPath"
     }
-    $actualHash = (Get-FileHash -LiteralPath $sourceFile -Algorithm SHA256).Hash
+    $actualHash = Get-RadIASha256 -Path $sourceFile
     if ($actualHash -ne $file.sha256) {
         throw "Package integrity check failed: $normalizedPath"
     }
@@ -170,8 +191,8 @@ function Assert-InstalledFile {
     if (-not (Test-Path -LiteralPath $Target -PathType Leaf)) {
         throw "Installed file is missing: $Target"
     }
-    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash
-    $targetHash = (Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash
+    $sourceHash = Get-RadIASha256 -Path $Source
+    $targetHash = Get-RadIASha256 -Path $Target
     if ($sourceHash -ne $targetHash) {
         throw "Installed file verification failed: $Target"
     }
@@ -214,8 +235,8 @@ function Test-FilesDiffer {
     if (-not (Test-Path -LiteralPath $Target -PathType Leaf)) {
         return $true
     }
-    $sourceHash = (Get-FileHash -LiteralPath $Source -Algorithm SHA256).Hash
-    $targetHash = (Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash
+    $sourceHash = Get-RadIASha256 -Path $Source
+    $targetHash = Get-RadIASha256 -Path $Target
     return $sourceHash -ne $targetHash
 }
 if ($RemoveUserData -and $Mode -ne "Uninstall") {
