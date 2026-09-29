@@ -3,7 +3,7 @@ unit RadIA.Core.Version;
 interface
 
 const
-  CRadIAVersion = '2.17.17';
+  CRadIAVersion = '2.17.18';
 
 function RadIAVersionedCaption(const ACaption: string): string;
 
