@@ -11,6 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module Microsoft.PowerShell.Utility -ErrorAction Stop
 
 function Copy-RadIAReplaceableFile {
     param(
