@@ -7,6 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
 $productVersion = (
     Get-Content -LiteralPath ".\package.json" -Raw |
     ConvertFrom-Json
