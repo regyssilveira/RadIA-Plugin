@@ -95,6 +95,7 @@ type
   private
     FResponse: string;
     FError: string;
+    FHistoryMessageCount: Integer;
     FPrompt: string;
     FCancelled: Boolean;
     FUsage: TTokenUsage;
@@ -138,6 +139,7 @@ type
     function ListCacheEntries: TArray<TRadIACacheEntrySnapshot>;
     function RemoveCacheEntry(const AHash: string): Boolean;
     property Prompt: string read FPrompt;
+    property HistoryMessageCount: Integer read FHistoryMessageCount;
     property Cancelled: Boolean read FCancelled;
     property Usage: TTokenUsage read FUsage write FUsage;
   end;
@@ -170,6 +172,8 @@ type
     procedure TestLocalDiagnosticPersistsPauseAndResume;
     [Test]
     procedure TestToolCallThenComplete;
+    [Test]
+    procedure TestPreparedPatchCannotCompleteBeforeApply;
     [Test]
     procedure TestMutationRequiresSuccessfulBuildBeforeCompletion;
     [Test]
@@ -237,6 +241,8 @@ type
     [Test]
     procedure TestProviderLimitsProjectCreationToolCatalog;
     [Test]
+    procedure TestProviderDoesNotExpandCatalogFromToolResults;
+    [Test]
     procedure TestDecisionPromptOmitsCatalogVersionAndApprovedPlanInstructions;
     [Test]
     procedure TestDecisionMetricsReportUsageWithoutPrompt;
@@ -268,6 +274,7 @@ uses
   System.SyncObjs,
   RadIA.Core.AgentDiagnostic,
   RadIA.Core.AgentController,
+  RadIA.Core.ChatMessage,
   RadIA.Core.AgentResultStore,
   RadIA.Core.AgentPricing,
   RadIA.Core.AgentProvider,
@@ -579,6 +586,7 @@ procedure TRadIAMockAgentService.SendPrompt(
 );
 begin
   FPrompt := APrompt;
+  FHistoryMessageCount := Length(AHistory);
   if FResponse = '__wait__' then
     Exit;
   ACallback(
@@ -1361,6 +1369,7 @@ end;
 procedure TTestRadIAAgentRuntime.TestProviderBuildsDecisionFromService;
 var
   LDecision: TRadIAAgentDecision;
+  LHistory: TArray<IRadIAChatMessage>;
   LProvider: IRadIAAgentDecisionProvider;
   LServiceObject: TRadIAMockAgentService;
   LService: IRadIAService;
@@ -1369,9 +1378,14 @@ begin
     '{"kind":"tool","tool":"ReadFile","arguments":{"path":"unit.pas"}}'
   );
   LService := LServiceObject;
+  SetLength(LHistory, 1);
+  LHistory[0] := TRadIAChatMessage.CreateMessage(
+    mrUser,
+    'Earlier conversational detail that is not part of this objective.'
+  );
   LProvider := TRadIAAgentServiceDecisionProvider.Create(
     LService,
-    [],
+    LHistory,
     TRadIAAgentProviderSettings.Default('[]')
   );
 
@@ -1382,6 +1396,8 @@ begin
   Assert.Contains(LDecision.ArgumentsJson, '"path":"unit.pas"');
   Assert.Contains(LServiceObject.Prompt, 'CURRENT_STATE:');
   Assert.Contains(LServiceObject.Prompt, '{"objective":"Inspect"}');
+  Assert.Contains(LServiceObject.Prompt, 'TOOLS:' + sLineBreak + '[]');
+  Assert.AreEqual(0, LServiceObject.HistoryMessageCount);
   Assert.Contains(
     LServiceObject.Prompt,
     'When GetToolResultRange returns hasMore=false'
@@ -2148,6 +2164,95 @@ begin
   finally
     LRuntime.Free;
   end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestPreparedPatchCannotCompleteBeforeApply;
+var
+  LExecutorObject: TRadIAMockAgentToolExecutor;
+  LExecutor: IRadIAToolExecutor;
+  LProvider: IRadIAAgentDecisionProvider;
+  LStore: IRadIAAgentCheckpointStore;
+  LRuntime: TRadIAAgentRuntime;
+  LResult: TRadIAAgentRunResult;
+begin
+  LExecutorObject := TRadIAMockAgentToolExecutor.Create(
+    TRadIAToolResult.Succeeded('{"previewId":"preview-1"}')
+  );
+  LExecutor := LExecutorObject;
+  LProvider := TRadIAMockAgentDecisionProvider.Create([
+    TRadIAAgentDecision.Plan(
+      'Approve correction plan.',
+      '[{"title":"Prepare and apply a patch"}]'
+    ),
+    TRadIAAgentDecision.CallTool(
+      'PreparePatch',
+      '{"targetFile":"Unit1.pas"}'
+    ),
+    TRadIAAgentDecision.Complete('Patch was prepared.'),
+    TRadIAAgentDecision.CallTool('ApplyPatch', '{"previewId":"preview-1"}'),
+    TRadIAAgentDecision.Complete('Patch was applied.')
+  ]);
+  LStore := TRadIAMemoryAgentCheckpointStore.Create;
+  LRuntime := NewRuntime(LExecutor, LProvider, LStore);
+  try
+    LResult := LRuntime.Start(
+      'Correct the source.',
+      'prepared-patch-session',
+      'project',
+      TRadIAAgentLimits.Default,
+      TRadIAAgentExecutionContract.Create(
+        32,
+        20,
+        5,
+        False,
+        False,
+        'Apply the reviewed patch.'
+      )
+    );
+    Assert.AreEqual(asAwaitingApproval, LResult.Status);
+    LResult := LRuntime.Resume('prepared-patch-session');
+    Assert.AreEqual(asCompleted, LResult.Status);
+    Assert.AreEqual('Patch was applied.', LResult.Message);
+    Assert.AreEqual(2, LExecutorObject.CallCount);
+  finally
+    LRuntime.Free;
+  end;
+end;
+
+procedure TTestRadIAAgentRuntime.TestProviderDoesNotExpandCatalogFromToolResults;
+var
+  LProvider: IRadIAAgentDecisionProvider;
+  LService: IRadIAService;
+  LServiceObject: TRadIAMockAgentService;
+begin
+  LServiceObject := TRadIAMockAgentService.Create(
+    '{"kind":"complete","message":"Done."}'
+  );
+  LService := LServiceObject;
+  LProvider := TRadIAAgentServiceDecisionProvider.Create(
+    LService,
+    [],
+    TRadIAAgentProviderSettings.Default(
+      '[{"name":"ReadFile"},{"name":"SearchProjectKnowledge"},' +
+        '{"name":"GetKnowledgeDocument"}]'
+    )
+  );
+
+  LProvider.NextDecision(
+    '{"objective":"Inspect the active source file.","planApproved":true,' +
+      '"steps":[{"toolName":"SearchProjectKnowledge",' +
+      '"result":"knowledge document result"}]}'
+  );
+
+  Assert.Contains(LServiceObject.Prompt, '"name":"ReadFile"');
+  Assert.DoesNotContain(
+    LServiceObject.Prompt,
+    '"name":"SearchProjectKnowledge"'
+  );
+  Assert.DoesNotContain(
+    LServiceObject.Prompt,
+    '"name":"GetKnowledgeDocument"'
+  );
 end;
 
 procedure TTestRadIAAgentRuntime.

@@ -472,6 +472,7 @@ type
       var AValidation: TRadIAAgentValidationState
     );
     function IsMutationTool(const AToolName: string): Boolean;
+    function HasUnappliedPreparedPatch: Boolean;
     function HasSuccessfulToolStep(const AToolName: string): Boolean;
     function IsProjectCreationObjective: Boolean;
     function ProjectCreationHasRequestedTestsOrCoverage: Boolean;
@@ -1775,10 +1776,10 @@ begin
   for LStep in FSteps do
     Inc(LStepCount);
   LResultBudget := Min(
-    24000,
+    4096,
     Max(
       512,
-      (FLimits.MaxDecisionContextCharacters - 40000) div
+      (FLimits.MaxDecisionContextCharacters - 24000) div
         Max(1, LStepCount)
     )
   );
@@ -1786,8 +1787,8 @@ begin
     LResultBudget := Max(512, LResultBudget div 2);
   Result := TJSONArray.Create;
   LFirstStepIndex := 0;
-  if FBuildingDecisionContext and (FSteps.Count > 6) then
-    LFirstStepIndex := FSteps.Count - 6;
+  if FBuildingDecisionContext and (FSteps.Count > 4) then
+    LFirstStepIndex := FSteps.Count - 4;
   for LIndex := LFirstStepIndex to FSteps.Count - 1 do
     Result.AddElement(
       BuildStepJson(
@@ -2800,6 +2801,48 @@ begin
   Result := False;
 end;
 
+function TRadIAAgentRuntime.HasUnappliedPreparedPatch: Boolean;
+var
+  LApplyPreviewId: string;
+  LArguments: TJSONObject;
+  LPreparePreviewId: string;
+  LResult: TJSONObject;
+  LStep: TRadIAAgentStep;
+begin
+  LPreparePreviewId := '';
+  for LStep in FSteps do
+  begin
+    if not LStep.Success then
+      Continue;
+    if SameText(LStep.ToolName, 'PreparePatch') then
+    begin
+      LResult := TJSONObject.ParseJSONValue(LStep.ResultJson) as TJSONObject;
+      try
+        if Assigned(LResult) then
+          LPreparePreviewId := LResult.GetValue<string>('previewId', '');
+      finally
+        LResult.Free;
+      end;
+      Continue;
+    end;
+    if not SameText(LStep.ToolName, 'ApplyPatch') or
+      (LPreparePreviewId = '') then
+      Continue;
+    LArguments := TJSONObject.ParseJSONValue(LStep.ArgumentsJson) as TJSONObject;
+    try
+      if Assigned(LArguments) then
+        LApplyPreviewId := LArguments.GetValue<string>('previewId', '')
+      else
+        LApplyPreviewId := '';
+    finally
+      LArguments.Free;
+    end;
+    if SameText(LApplyPreviewId, LPreparePreviewId) then
+      LPreparePreviewId := '';
+  end;
+  Result := LPreparePreviewId <> '';
+end;
+
 function TRadIAAgentRuntime.IsProjectCreationObjective: Boolean;
 begin
   Result := FObjective.Contains(
@@ -3054,6 +3097,13 @@ var
   LValidation: TRadIAAgentValidationState;
 begin
   LValidation := AnalyzeValidationState;
+  if HasUnappliedPreparedPatch then
+  begin
+    AMessage :=
+      'Validation gate rejected completion: apply the prepared patch or wait ' +
+      'for the configured write-consent policy before claiming completion.';
+    Exit(False);
+  end;
   if not ProjectCreationAllowsCompletion(AMessage) then
     Exit(False);
   if LValidation.MutationPending and FExecutionContract.RequireBuild and
