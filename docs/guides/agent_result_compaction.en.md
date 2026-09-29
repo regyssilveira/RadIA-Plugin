@@ -15,11 +15,12 @@ Open **Tools > Options > Rad IA > General / Logs**.
 | `Balanced` | Recommended default. Uses the deterministic compactor with a smaller budget. |
 
 **Maximum agent decision context characters** accepts 16,000 through 1,000,000 characters; the
-default is 64,000. `RADIA_RESULT_COMPACTION_PROFILE` can temporarily override the persisted profile.
+default is 120,000. `RADIA_RESULT_COMPACTION_PROFILE` can temporarily override the persisted profile.
 
-RTK works with incremental context: each decision receives only the six most recent steps, a periodic
-summary, and recoverable references. The tool catalog is filtered by capability and objective, and the
-complete chat history is not repeated in the planner prompt.
+RTK works with incremental context: each decision receives only the four most recent steps, a periodic
+summary, and recoverable references. The tool catalog is filtered by capability and objective.
+Conversational history is not resent to the planner; the current objective and audited state are its
+source of truth.
 
 ## Current rules
 
@@ -44,7 +45,7 @@ days and cleanup runs when the plugin loads.
 Compacted context reports `artifactId`, hash, size, and `fullResultAvailable`. The agent can use:
 
 - `GetToolResultSummary` to confirm hash, size, and step;
-- `GetToolResultRange` to recover up to 65,536 characters per call.
+- `GetToolResultRange` to recover up to 4,096 characters per call.
 
 A response with `hasMore=false` completes recovery for that range. RadIA does not turn this tool result
 into another artifact and, if the model immediately repeats the same read, returns structured guidance
@@ -57,9 +58,9 @@ artifact, the retrieval tools report that it is no longer available.
 ## Metrics and diagnostics
 
 `/status agent` and `GetRadIAStatus` report the profile, recovery availability, and context limit. The
-sanitized `AgentTokens` log separates context characters, catalog characters, and omitted history.
-Decision snapshots aggregate counts, duration, and rule name only; they do not store code, prompts,
-arguments, or secrets.
+sanitized `AgentTokens` log separates context and catalog characters and records
+`history=state-only` to confirm conversational history was not resent. Decision snapshots aggregate
+counts, duration, and rule name only; they do not store code, prompts, arguments, or secrets.
 
 Run the reproducible benchmark with:
 

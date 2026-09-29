@@ -22,6 +22,8 @@ type
     [Test]
     procedure RetrievalToolsRespectSessionBoundary;
     [Test]
+    procedure RetrievalToolCapsReturnedCharacters;
+    [Test]
     procedure EvictsOldestArtifactAtSessionCapacity;
     [Test]
     procedure CleansExpiredArtifacts;
@@ -238,6 +240,36 @@ begin
   LResult := LRangeTool.Execute(LRequest);
   Assert.IsFalse(LResult.Success);
   Assert.AreEqual('result_artifact_not_found', LResult.ErrorCode);
+end;
+
+procedure TRadIAAgentResultStoreTests.RetrievalToolCapsReturnedCharacters;
+var
+  LArtifact: TRadIAAgentResultArtifact;
+  LRangeTool: IRadIATool;
+  LRegistry: IRadIAToolRegistry;
+  LRequest: TRadIAToolRequest;
+  LResult: TRadIAToolResult;
+  LStore: IRadIAAgentResultStore;
+begin
+  LStore := TRadIAAgentFileResultStore.Create(FDirectory);
+  LArtifact := LStore.Store('session-1', 1, StringOfChar('x', 8192));
+  LRegistry := TRadIAToolRegistry.Create;
+  RegisterRadIAAgentResultTools(LRegistry, LStore);
+  LRangeTool := LRegistry.Resolve('GetToolResultRange');
+  LRequest := TRadIAToolRequest.Create(
+    'GetToolResultRange',
+    '{"artifactId":"' + LArtifact.ArtifactId + '",' +
+      '"startCharacter":0,"maxCharacters":65536}',
+    'correlation',
+    'test',
+    'session-1',
+    'project',
+    'workspace'
+  );
+  LResult := LRangeTool.Execute(LRequest);
+  Assert.IsTrue(LResult.Success);
+  Assert.Contains(LResult.ContentJson, '"returnedCharacters":4096');
+  Assert.Contains(LResult.ContentJson, '"hasMore":true');
 end;
 
 initialization

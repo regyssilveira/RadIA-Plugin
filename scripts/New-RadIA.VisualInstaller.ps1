@@ -57,6 +57,24 @@ function Find-SignTool {
     throw "Windows SDK SignTool was not found."
 }
 
+function Get-RadIASha256 {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        try {
+            return [BitConverter]::ToString(
+                $algorithm.ComputeHash($stream)
+            ).Replace("-", "")
+        } finally {
+            $algorithm.Dispose()
+        }
+    } finally {
+        $stream.Dispose()
+    }
+}
+
 function Test-Package {
     param(
         [Parameter(Mandatory = $true)]
@@ -154,13 +172,16 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "Authenticode signing failed."
         }
-        $signature = Get-AuthenticodeSignature -LiteralPath $installerPath
-        if ($signature.Status -ne "Valid") {
-            throw "Installer signature is not valid: $($signature.Status)"
+        & $signTool verify /pa $installerPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "Installer signature verification failed."
         }
     }
 
-    $signature = Get-AuthenticodeSignature -LiteralPath $installerPath
+    $signatureStatus = "NotSigned"
+    if ($CertificateThumbprint) {
+        $signatureStatus = "Valid"
+    }
     $evidence = [PSCustomObject]@{
         schemaVersion = 1
         product = "RadIA"
@@ -168,25 +189,11 @@ try {
         sourceCommit = $sourceCommit
         fileName = Split-Path -Leaf $installerPath
         size = (Get-Item -LiteralPath $installerPath).Length
-        sha256 = (
-            Get-FileHash -LiteralPath $installerPath -Algorithm SHA256
-        ).Hash
-        signatureStatus = [string]$signature.Status
-        signerSubject = if ($signature.SignerCertificate) {
-            $signature.SignerCertificate.Subject
-        } else {
-            ""
-        }
-        signerThumbprint = if ($signature.SignerCertificate) {
-            $signature.SignerCertificate.Thumbprint
-        } else {
-            ""
-        }
-        timestampSubject = if ($signature.TimeStamperCertificate) {
-            $signature.TimeStamperCertificate.Subject
-        } else {
-            ""
-        }
+        sha256 = Get-RadIASha256 -Path $installerPath
+        signatureStatus = $signatureStatus
+        signerSubject = ""
+        signerThumbprint = ""
+        timestampSubject = ""
         generatedAtUtc = [DateTime]::UtcNow.ToString("o")
     }
     $resolvedEvidence = $EvidencePath
@@ -209,7 +216,7 @@ try {
         ConvertTo-Json -Depth 5 |
         Set-Content -LiteralPath $resolvedEvidence -Encoding UTF8
     Write-Host "Visual installer created: $installerPath"
-    Write-Host "Signature status: $($signature.Status)"
+    Write-Host "Signature status: $signatureStatus"
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         Remove-Item -LiteralPath $temporaryRoot -Recurse -Force

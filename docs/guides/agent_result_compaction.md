@@ -15,11 +15,12 @@ Abra **Tools > Options > Rad IA > General / Logs**.
 | `Balanced` | Padrão recomendado. Usa o mesmo compactador determinístico e um orçamento menor. |
 
 **Maximum agent decision context characters** aceita de 16.000 a 1.000.000 caracteres; o padrão é
-64.000. `RADIA_RESULT_COMPACTION_PROFILE` pode sobrescrever temporariamente o perfil persistido.
+120.000. `RADIA_RESULT_COMPACTION_PROFILE` pode sobrescrever temporariamente o perfil persistido.
 
-O RTK trabalha junto com o contexto incremental: cada decisão recebe somente as seis etapas mais
+O RTK trabalha junto com o contexto incremental: cada decisão recebe somente as quatro etapas mais
 recentes, um resumo periódico e referências recuperáveis. O catálogo de tools também é filtrado por
-capacidade e objetivo, e o histórico completo do chat não é repetido no prompt do planejador.
+capacidade e objetivo. O histórico conversacional não é reenviado ao planejador; o objetivo atual e
+o estado auditado são a fonte de verdade da decisão.
 
 ## Regras atuais
 
@@ -43,7 +44,7 @@ expiram após 14 dias e a limpeza ocorre ao carregar o plugin.
 O contexto compactado informa `artifactId`, hash, tamanho e `fullResultAvailable`. O agente pode usar:
 
 - `GetToolResultSummary`, para confirmar hash, tamanho e etapa;
-- `GetToolResultRange`, para recuperar até 65.536 caracteres por chamada.
+- `GetToolResultRange`, para recuperar até 4.096 caracteres por chamada.
 
 Uma resposta com `hasMore=false` encerra a recuperação daquele intervalo. O RadIA não transforma o
 resultado dessa ferramenta em outro artefato e, se o modelo repetir imediatamente a mesma leitura,
@@ -57,9 +58,9 @@ artefato antigo, as ferramentas informam que ele não está mais disponível.
 ## Métricas e diagnóstico
 
 `/status agent` e `GetRadIAStatus` mostram perfil, recuperação e limite de contexto. O log sanitizado
-`AgentTokens` separa caracteres de contexto, catálogo e mensagens de histórico omitidas. O snapshot de
-decisão agrega somente contagens, duração e nome da regra; não registra código, prompts, argumentos
-ou secrets.
+`AgentTokens` separa caracteres de contexto e catálogo, além de registrar `history=state-only` para
+confirmar que o histórico conversacional não foi reenviado. O snapshot de decisão agrega somente
+contagens, duração e nome da regra; não registra código, prompts, argumentos ou secrets.
 
 O benchmark reproduzível é executado com:
 

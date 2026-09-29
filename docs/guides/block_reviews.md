@@ -11,6 +11,10 @@ A sessão é criada automaticamente quando o agente ou uma integração executa 
 os blocos e publica os marcadores. Uma nova preparação substitui a sessão anterior para evitar que
 duas propostas independentes sejam misturadas.
 
+No modo agente, uma prévia pendente impede a conclusão da tarefa. O resultado só pode ser informado
+como concluído depois que a alteração for aplicada conforme a política de consentimento e os gates de
+validação necessários forem atendidos.
+
 As ferramentas relacionadas são:
 
 | Ferramenta | O que faz | Quando usar |

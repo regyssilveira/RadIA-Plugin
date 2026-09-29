@@ -15,6 +15,7 @@ implementation
 
 uses
   System.JSON,
+  System.Math,
   System.SysUtils;
 
 type
@@ -57,7 +58,7 @@ const
     '{"type":"object","required":["artifactId","startCharacter"],' +
     '"properties":{"artifactId":{"type":"string"},' +
     '"startCharacter":{"type":"integer","minimum":0},' +
-    '"maxCharacters":{"type":"integer","minimum":1,"maximum":65536}},' +
+    '"maxCharacters":{"type":"integer","minimum":1,"maximum":4096}},' +
     '"additionalProperties":false}';
   COutputSchema = '{"type":"object"}';
 
@@ -139,7 +140,11 @@ begin
   try
     LArtifactId := LInput.GetValue<string>('artifactId', '');
     LStartCharacter := LInput.GetValue<Integer>('startCharacter', 0);
-    LMaxCharacters := LInput.GetValue<Integer>('maxCharacters', 8192);
+    LMaxCharacters := EnsureRange(
+      LInput.GetValue<Integer>('maxCharacters', 2048),
+      1,
+      4096
+    );
     try
       if not FStore.TryReadRange(
         ARequest.SessionId,

@@ -64,6 +64,9 @@ type
       const AText: string;
       const AValues: array of string
     ): Boolean; static;
+    class function ExtractObjective(
+      const AContextJson: string
+    ): string; static;
     class function MatchesToolFamily(
       const AContext: string;
       const AName: string;
@@ -71,6 +74,7 @@ type
       const ANameValues: array of string
     ): Boolean; static;
     class function IsCoreAgentTool(const AName: string): Boolean; static;
+    class function IsResultRecoveryTool(const AName: string): Boolean; static;
     class function IsRelevantTool(
       const AName: string;
       const AContext: string
@@ -333,7 +337,9 @@ begin
   if not Assigned(AService) then
     raise EArgumentNilException.Create('AService');
   FService := AService;
-  FHistory := Copy(AHistory);
+  { Agent decisions use the explicit objective and audited CURRENT_STATE. Replaying
+    conversational history on every decision duplicates context and token usage. }
+  FHistory := [];
   FSettings := ASettings;
   FRunId := TGUID.NewGuid.ToString;
 end;
@@ -368,7 +374,10 @@ begin
     'authoritative report is available. If build or tests fail, ' +
     'inspect their structured ' +
     'result, prepare the smallest reviewable correction, request consent, ' +
-    'apply it, and repeat. Do not repeat an unchanged patch or tool call. ' +
+    'apply it, and repeat. After PreparePatch succeeds, call ApplyPatch with ' +
+    'the returned previewId unless the tool policy pauses for explicit consent. ' +
+    'Never return complete while a prepared patch has not been applied. Do not ' +
+    'repeat an unchanged patch or tool call. ' +
     'When GetToolResultRange returns hasMore=false, the requested range is ' +
     'complete. Do not request that artifact range again; continue with the ' +
     'next functional validation step. Each tool call must answer an unmet ' +
@@ -402,15 +411,17 @@ function TRadIAAgentServiceDecisionProvider.BuildRelevantToolCatalog(
 ): string;
 var
   LFiltered: TJSONArray;
+  LInclude: Boolean;
   LIndex: Integer;
   LItem: TJSONObject;
   LName: string;
+  LObjective: string;
   LPair: TJSONPair;
   LParsed: TJSONValue;
   LSource: TJSONArray;
   LValue: TJSONValue;
 begin
-  Result := FSettings.ToolCatalogJson;
+  Result := '[]';
   LParsed := TJSONObject.ParseJSONValue(FSettings.ToolCatalogJson);
   if not (LParsed is TJSONArray) then
   begin
@@ -420,20 +431,23 @@ begin
   LSource := TJSONArray(LParsed);
   LFiltered := TJSONArray.Create;
   try
+    LObjective := LowerCase(ExtractObjective(AContextJson));
     for LIndex := 0 to LSource.Count - 1 do
     begin
       if not (LSource[LIndex] is TJSONObject) then
         Continue;
       LItem := TJSONObject(LSource[LIndex]);
       LName := LItem.GetValue<string>('name', '');
-      if AContextJson.Contains(
+      LInclude := IsResultRecoveryTool(LName) and AContextJson.Contains(
+        '"fullResultAvailable":true'
+      );
+      if not LInclude and AContextJson.Contains(
         'Create a Delphi project from the user requirements.'
       ) then
-      begin
-        if not IsProjectCreationTool(LName) then
-          Continue;
-      end
-      else if not IsRelevantTool(LName, LowerCase(AContextJson)) then
+        LInclude := IsProjectCreationTool(LName)
+      else if not LInclude then
+        LInclude := IsRelevantTool(LName, LObjective);
+      if not LInclude then
         Continue;
       LValue := TJSONObject.ParseJSONValue(LItem.ToJSON);
       LPair := TJSONObject(LValue).RemovePair('version');
@@ -448,16 +462,40 @@ begin
   end;
 end;
 
+class function TRadIAAgentServiceDecisionProvider.ExtractObjective(
+  const AContextJson: string
+): string;
+var
+  LRoot: TJSONObject;
+begin
+  Result := AContextJson;
+  LRoot := TJSONObject.ParseJSONValue(AContextJson) as TJSONObject;
+  if not Assigned(LRoot) then
+    Exit;
+  try
+    Result := LRoot.GetValue<string>('objective', '');
+  finally
+    LRoot.Free;
+  end;
+end;
+
 class function TRadIAAgentServiceDecisionProvider.IsCoreAgentTool(
   const AName: string
 ): Boolean;
 begin
   Result := IndexText(AName, [
-    'GetActiveProject', 'GetIDEState', 'GetProjectHealth',
-    'ListOpenFiles', 'ReadFile', 'SearchInFiles', 'GetCompilerMessages',
-    'GetBuildStatus', 'BuildProject', 'PreparePatch', 'ApplyPatch',
-    'GetGitStatus', 'GetGitDiff', 'GetToolResultRange'
+    'GetActiveProject', 'GetIDEState', 'ListOpenFiles', 'ReadFile',
+    'SearchInFiles', 'GetCompilerMessages', 'BuildProject', 'PreparePatch',
+    'ApplyPatch'
   ]) >= 0;
+end;
+
+class function TRadIAAgentServiceDecisionProvider.IsResultRecoveryTool(
+  const AName: string
+): Boolean;
+begin
+  Result := SameText(AName, 'GetToolResultSummary') or
+    SameText(AName, 'GetToolResultRange');
 end;
 
 class function TRadIAAgentServiceDecisionProvider.ContainsAny(
@@ -626,6 +664,7 @@ var
   LMetric: TRadIAAgentDecisionMetric;
   LPlanApproved: Boolean;
   LPrompt: string;
+  LObjective: string;
   LState: IRadIAAgentProviderWaitState;
   LStepsValue: TJSONValue;
   LWaitResult: TWaitResult;
@@ -662,12 +701,16 @@ begin
   finally
     LContextValue.Free;
   end;
-  LCatalog := BuildRelevantToolCatalog(AContextJson);
+  LObjective := ExtractObjective(AContextJson);
+  if LPlanApproved then
+    LCatalog := BuildRelevantToolCatalog(AContextJson)
+  else
+    LCatalog := '[]';
   LPrompt := BuildDecisionPrompt(
     AContextJson,
     LCatalog,
     LPlanApproved,
-    AContextJson.Contains('Create a Delphi project from the user requirements.')
+    LObjective.Contains('Create a Delphi project from the user requirements.')
   );
   LMetric.CatalogCharacters := Length(LCatalog);
   LMetric.PromptCharacters := Length(LPrompt);
@@ -682,11 +725,10 @@ begin
   try
     TLogger.Log(
       Format(
-        'Agent input: context=%d chars, tools=%d chars, omittedHistory=%d messages.',
+        'Agent input: context=%d chars, tools=%d chars, history=state-only.',
         [
           Length(AContextJson),
-          Length(BuildRelevantToolCatalog(AContextJson)),
-          Length(FHistory)
+          Length(LCatalog)
         ]
       ),
       'AgentTokens'

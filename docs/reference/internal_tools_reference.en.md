@@ -102,7 +102,7 @@ Groups with `Prepare`, `Apply` and `Revert` follow this cycle:
 |Tool|What it does|When it is triggered|
 |---|---|---|
 |`GetToolResultSummary`|Returns hash, size and step of an integral result preserved by the agent.|When a compressed step reports a `artifactId` and the agent needs to verify its identity before retrieving content.|
-|`GetToolResultRange`|Retrieves a limited range of the full result without rerunning the original tool.|When the compressed context omitted a necessary piece of build, test, diff, or other stored result.|
+|`GetToolResultRange`|Retrieves at most 4,096 characters from the full result without rerunning the original tool.|When the compressed context omitted a necessary piece of build, test, diff, or other stored result.|
 
 ## Project and installation health
 

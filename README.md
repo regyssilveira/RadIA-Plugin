@@ -44,6 +44,8 @@ disponíveis para inspeção e personalização.
 **Provider** escolhe o modelo e a forma de autenticação; **modo** define se há execução agentiva;
 **executor** define quem conduz a solicitação; **MCP** é uma ponte de ferramentas independente.
 Quando um plano aguardar aprovação, clique em **Approve plan** ou digite `/agent resume`.
+Uma prévia de alteração não é uma conclusão: o agente só informa sucesso depois de aplicar a
+alteração conforme a política de consentimento e concluir as validações exigidas.
 Veja a [explicação completa dos executores](docs/guides/cli_executors.md).
 
 Você não precisa escolher previamente a combinação correta para criar um projeto. Pedidos naturais

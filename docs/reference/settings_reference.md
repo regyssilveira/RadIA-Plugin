@@ -124,7 +124,7 @@ endpoint e permissão; não reinicie a IDE como primeira tentativa.
 | Monthly Used Tokens | Para acompanhar consumo estimado | Contador local; pode divergir da contabilização oficial do provider. |
 | Reset Usage | Ao iniciar deliberadamente um novo acompanhamento | Zera somente o contador local, sem alterar cobrança externa. |
 | Agent result compaction profile | Para equilibrar economia e diagnóstico | `Balanced` é o padrão; `Conservative` preserva uma margem maior; `Off` restaura o contexto integral. Não altera checkpoints nem resultados das tools. |
-| Maximum agent decision context characters | Quando a janela do modelo ou a jornada exigir outro limite | Aceita 16.000–1.000.000; padrão 64.000. O agente envia somente as seis etapas recentes e mantém resultados omitidos recuperáveis pelas tools de resultado. |
+| Maximum agent decision context characters | Quando a janela do modelo ou a jornada exigir outro limite | Aceita 16.000–1.000.000; padrão 120.000. O agente envia somente as quatro etapas recentes e mantém resultados omitidos recuperáveis pelas tools de resultado. |
 
 ## Security & Consent
 

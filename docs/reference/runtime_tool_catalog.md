@@ -107,7 +107,7 @@ Esta lista contém somente as ferramentas internas registradas pelo pacote atual
 | Ferramenta | O que faz | Unit de origem |
 |---|---|---|
 | `GetToolResultSummary` | Retorna hash, tamanho e step de um resultado integral preservado pelo agente. | `RadIA.Core.AgentResultTools.pas` |
-| `GetToolResultRange` | Recupera um intervalo limitado do resultado integral sem reexecutar a ferramenta original. | `RadIA.Core.AgentResultTools.pas` |
+| `GetToolResultRange` | Recupera até 4.096 caracteres do resultado integral sem reexecutar a ferramenta original. | `RadIA.Core.AgentResultTools.pas` |
 
 ## Saúde do projeto
 

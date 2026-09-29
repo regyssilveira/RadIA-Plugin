@@ -11,6 +11,9 @@ The session is created automatically when the agent or an integration runs `Prep
 diff, separates blocks, and publishes markers. A new preparation replaces the previous session so
 independent proposals cannot be mixed.
 
+In agent mode, a pending preview prevents task completion. The agent can report completion only
+after the change is applied according to the consent policy and every required validation gate passes.
+
 The related tools are:
 
 | Tool | What it does | When to use it |

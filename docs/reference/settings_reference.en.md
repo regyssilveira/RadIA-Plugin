@@ -69,7 +69,7 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 | Monthly Token Limit / Used Tokens | To configure and inspect local tracking | Usage is an estimate and may differ from provider accounting. |
 | Reset Usage | To restart local tracking | Resets only the local counter. |
 | Agent result compaction profile | To balance savings and diagnosis | `Balanced` is the default; `Conservative` keeps a larger margin; `Off` restores complete context. It does not alter checkpoints or tool results. |
-| Maximum agent decision context characters | When the model window or journey requires a different limit | Accepts 16,000–1,000,000; default 64,000. Only the six most recent steps are sent; omitted results remain recoverable. |
+| Maximum agent decision context characters | When the model window or journey requires a different limit | Accepts 16,000–1,000,000; default 120,000. Only the four most recent steps are sent; omitted results remain recoverable. |
 
 ## Security & Consent
 

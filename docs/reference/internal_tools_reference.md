@@ -102,7 +102,7 @@ Os grupos com `Prepare`, `Apply` e `Revert` seguem este ciclo:
 | Ferramenta | O que faz | Quando é acionada |
 |---|---|---|
 | `GetToolResultSummary` | Retorna hash, tamanho e step de um resultado integral preservado pelo agente. | Quando uma etapa compactada informa um `artifactId` e o agente precisa conferir sua identidade antes de recuperar conteúdo. |
-| `GetToolResultRange` | Recupera um intervalo limitado do resultado integral sem reexecutar a ferramenta original. | Quando o contexto compactado omitiu um trecho necessário de build, teste, diff ou outro resultado armazenado. |
+| `GetToolResultRange` | Recupera até 4.096 caracteres do resultado integral sem reexecutar a ferramenta original. | Quando o contexto compactado omitiu um trecho necessário de build, teste, diff ou outro resultado armazenado. |
 
 ## Saúde do projeto e da instalação
 

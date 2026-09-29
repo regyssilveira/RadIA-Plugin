@@ -11,6 +11,28 @@ param(
 $ErrorActionPreference = "Stop"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module Microsoft.PowerShell.Utility -ErrorAction Stop
+
+function Get-RadIASha256 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $algorithm = [Security.Cryptography.SHA256]::Create()
+        try {
+            return [BitConverter]::ToString(
+                $algorithm.ComputeHash($stream)
+            ).Replace("-", "")
+        } finally {
+            $algorithm.Dispose()
+        }
+    } finally {
+        $stream.Dispose()
+    }
+}
 
 function Copy-RadIAReplaceableFile {
     param(
@@ -806,9 +828,7 @@ if ($Package) {
                 path = $_.FullName.Substring(
                     $stagingRoot.Length + 1
                 ).Replace("\", "/")
-                sha256 = (
-                    Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
-                ).Hash
+                sha256 = Get-RadIASha256 -Path $_.FullName
                 size = $_.Length
             }
         }
@@ -863,9 +883,7 @@ if ($Package) {
             -Filter "RadIA-v$productVersion-*.zip" |
         Sort-Object Name |
         ForEach-Object {
-            $hash = (
-                Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
-            ).Hash
+            $hash = Get-RadIASha256 -Path $_.FullName
             "$hash *$($_.Name)"
         }
     )
