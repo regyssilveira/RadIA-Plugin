@@ -473,6 +473,11 @@ type
     );
     function IsMutationTool(const AToolName: string): Boolean;
     function HasUnappliedPreparedPatch: Boolean;
+    function GetPreparedPreviewId(const AResultJson: string): string;
+    function IsPreparedPatchApplied(
+      const AArgumentsJson: string;
+      const APreviewId: string
+    ): Boolean;
     function HasSuccessfulToolStep(const AToolName: string): Boolean;
     function IsProjectCreationObjective: Boolean;
     function ProjectCreationHasRequestedTestsOrCoverage: Boolean;
@@ -2803,10 +2808,7 @@ end;
 
 function TRadIAAgentRuntime.HasUnappliedPreparedPatch: Boolean;
 var
-  LApplyPreviewId: string;
-  LArguments: TJSONObject;
   LPreparePreviewId: string;
-  LResult: TJSONObject;
   LStep: TRadIAAgentStep;
 begin
   LPreparePreviewId := '';
@@ -2816,31 +2818,55 @@ begin
       Continue;
     if SameText(LStep.ToolName, 'PreparePatch') then
     begin
-      LResult := TJSONObject.ParseJSONValue(LStep.ResultJson) as TJSONObject;
-      try
-        if Assigned(LResult) then
-          LPreparePreviewId := LResult.GetValue<string>('previewId', '');
-      finally
-        LResult.Free;
-      end;
+      LPreparePreviewId := GetPreparedPreviewId(LStep.ResultJson);
       Continue;
     end;
-    if not SameText(LStep.ToolName, 'ApplyPatch') or
-      (LPreparePreviewId = '') then
-      Continue;
-    LArguments := TJSONObject.ParseJSONValue(LStep.ArgumentsJson) as TJSONObject;
-    try
-      if Assigned(LArguments) then
-        LApplyPreviewId := LArguments.GetValue<string>('previewId', '')
-      else
-        LApplyPreviewId := '';
-    finally
-      LArguments.Free;
-    end;
-    if SameText(LApplyPreviewId, LPreparePreviewId) then
+    if SameText(LStep.ToolName, 'ApplyPatch') and IsPreparedPatchApplied(
+      LStep.ArgumentsJson,
+      LPreparePreviewId
+    ) then
       LPreparePreviewId := '';
   end;
   Result := LPreparePreviewId <> '';
+end;
+
+function TRadIAAgentRuntime.GetPreparedPreviewId(
+  const AResultJson: string
+): string;
+var
+  LResult: TJSONObject;
+begin
+  Result := '';
+  LResult := TJSONObject.ParseJSONValue(AResultJson) as TJSONObject;
+  try
+    if Assigned(LResult) then
+      Result := LResult.GetValue<string>('previewId', '');
+  finally
+    LResult.Free;
+  end;
+end;
+
+function TRadIAAgentRuntime.IsPreparedPatchApplied(
+  const AArgumentsJson: string;
+  const APreviewId: string
+): Boolean;
+var
+  LArguments: TJSONObject;
+  LApplyPreviewId: string;
+begin
+  Result := False;
+  if APreviewId = '' then
+    Exit;
+  LArguments := TJSONObject.ParseJSONValue(AArgumentsJson) as TJSONObject;
+  try
+    if Assigned(LArguments) then
+      LApplyPreviewId := LArguments.GetValue<string>('previewId', '')
+    else
+      LApplyPreviewId := '';
+    Result := SameText(LApplyPreviewId, APreviewId);
+  finally
+    LArguments.Free;
+  end;
 end;
 
 function TRadIAAgentRuntime.IsProjectCreationObjective: Boolean;
