@@ -325,6 +325,7 @@ type
     FSessionId: string;
     FProjectId: string;
     FMessage: string;
+    FStopReason: string;
     FPlanJson: string;
     FPlanApproved: Boolean;
     FLimits: TRadIAAgentLimits;
@@ -340,6 +341,13 @@ type
     FPromptTokensBeforeRun: Integer;
     FCompletionTokensBeforeRun: Integer;
     FEstimatedCostMicrosBeforeRun: Int64;
+    FDecisionCount: Integer;
+    FFirstDecisionDurationMilliseconds: Int64;
+    FToolCallCount: Integer;
+    FToolFailureCount: Integer;
+    FSuppressedToolCallCount: Integer;
+    FRepeatedDecisionCount: Integer;
+    FRecoveredRepeatCount: Integer;
     FValidationRejectionCount: Integer;
     FReplayOfStepIndex: Integer;
     function ExecuteLoop: TRadIAAgentRunResult;
@@ -402,16 +410,21 @@ type
     function TryRecoverCompletedArtifactRangeRepeat(
       const ADecision: TRadIAAgentDecision
     ): Boolean;
+    function TryReuseSuccessfulRepeat(
+      const ADecision: TRadIAAgentDecision
+    ): Boolean;
     procedure AddToolStep(
       const ADecision: TRadIAAgentDecision;
       const ACorrelationId: string;
       const AResult: TRadIAToolResult;
       const AStartedElapsedMilliseconds: Int64;
-      const ADurationMilliseconds: Int64
+      const ADurationMilliseconds: Int64;
+      const AExecuted: Boolean = True
     );
     procedure ChangeStatus(
       const AStatus: TRadIAAgentStatus;
-      const AMessage: string
+      const AMessage: string;
+      const AStopReason: string = ''
     );
     procedure NotifyAndCheckpoint;
     procedure LoadSnapshot(const ASnapshotJson: string);
@@ -429,6 +442,14 @@ type
     );
     function HasValidPlan: Boolean;
     function ElapsedMilliseconds: Int64;
+    function FailedStopReason: string;
+    function PausedStopReason: string;
+    function RunStopReason: string;
+    procedure LogRunSummary(
+      const AInitialToolCallCount: Integer;
+      const AInitialSuppressedToolCallCount: Integer;
+      const AInitialElapsedMilliseconds: Int64
+    );
     function CheckBudgets: Boolean;
     function CheckExecutionContract: Boolean;
     function CountAffectedFiles: Integer;
@@ -1276,7 +1297,8 @@ procedure TRadIAAgentRuntime.AddToolStep(
   const ACorrelationId: string;
   const AResult: TRadIAToolResult;
   const AStartedElapsedMilliseconds: Int64;
-  const ADurationMilliseconds: Int64
+  const ADurationMilliseconds: Int64;
+  const AExecuted: Boolean
 );
 var
   LArtifact: TRadIAAgentResultArtifact;
@@ -1321,6 +1343,8 @@ begin
   else
     LStep.AffectedFiles := [];
   FSteps.Add(LStep);
+  if AExecuted and not LStep.Success then
+    Inc(FToolFailureCount);
   try
     LKnownToolName := 'unknown';
     if Assigned(FDescriptorProvider) and
@@ -1335,6 +1359,7 @@ begin
       LEvent.AddPair('toolName', LKnownToolName);
       LEvent.AddPair('risk', LStep.Risk);
       LEvent.AddPair('success', TJSONBool.Create(LStep.Success));
+      LEvent.AddPair('executed', TJSONBool.Create(AExecuted));
       LEvent.AddPair('mutation', TJSONBool.Create(LStep.Mutation));
       LEvent.AddPair('durationMilliseconds', TJSONNumber.Create(LStep.DurationMilliseconds));
       LEvent.AddPair('resultCharacters', TJSONNumber.Create(Length(LStep.ResultJson)));
@@ -2032,7 +2057,8 @@ end;
 
 procedure TRadIAAgentRuntime.ChangeStatus(
   const AStatus: TRadIAAgentStatus;
-  const AMessage: string
+  const AMessage: string;
+  const AStopReason: string
 );
 begin
   if (AStatus <> asRunning) and (FRunStartedTimestamp > 0) then
@@ -2042,6 +2068,7 @@ begin
   end;
   FStatus := AStatus;
   FMessage := AMessage;
+  FStopReason := AStopReason;
   NotifyAndCheckpoint;
 end;
 
@@ -2251,7 +2278,10 @@ var
 begin
   LSignature := BuildCallSignature(ADecision);
   if LSignature = FLastCallSignature then
-    Inc(FRepeatedCallCount)
+  begin
+    Inc(FRepeatedCallCount);
+    Inc(FRepeatedDecisionCount);
+  end
   else
   begin
     FLastCallSignature := LSignature;
@@ -2300,9 +2330,46 @@ begin
     TGUID.NewGuid.ToString,
     LRecoveryResult,
     ElapsedMilliseconds,
-    0
+    0,
+    False
   );
+  Inc(FSuppressedToolCallCount);
+  Inc(FRecoveredRepeatCount);
   FRepeatedCallCount := 1;
+  UpdatePeriodicSummary;
+  NotifyAndCheckpoint;
+  Result := True;
+end;
+
+function TRadIAAgentRuntime.TryReuseSuccessfulRepeat(
+  const ADecision: TRadIAAgentDecision
+): Boolean;
+var
+  LRecoveryResult: TRadIAToolResult;
+begin
+  Result := False;
+  if (FLimits.MaxRepeatedCalls <= 1) or (FSteps.Count = 0) then
+    Exit;
+  if not FSteps.Last.Success or
+    (BuildCallSignature(ADecision) <> FLastCallSignature) then
+    Exit;
+  LRecoveryResult := TRadIAToolResult.Failed(
+    'successful_result_already_available',
+    'The identical tool call already succeeded in the preceding step. ' +
+      'Reuse that result and continue with the next unmet requirement.'
+  );
+  AddToolStep(
+    ADecision,
+    TGUID.NewGuid.ToString,
+    LRecoveryResult,
+    ElapsedMilliseconds,
+    0,
+    False
+  );
+  Inc(FSuppressedToolCallCount);
+  Inc(FRepeatedDecisionCount);
+  Inc(FRecoveredRepeatCount);
+  FRepeatedCallCount := FLimits.MaxRepeatedCalls;
   UpdatePeriodicSummary;
   NotifyAndCheckpoint;
   Result := True;
@@ -2435,18 +2502,36 @@ begin
     adComplete:
       HandleCompletionDecision(ADecision);
     adFail:
-      ChangeStatus(asFailed, ADecision.Message);
+      ChangeStatus(asFailed, ADecision.Message, 'agentReportedFailure');
   else
-    ChangeStatus(asFailed, 'Agent returned an unsupported decision.');
+    ChangeStatus(
+      asFailed,
+      'Agent returned an unsupported decision.',
+      'unsupportedDecision'
+    );
   end;
 end;
 
 procedure TRadIAAgentRuntime.ExecuteNextDecision;
 var
   LDecision: TRadIAAgentDecision;
+  LDecisionStartedTimestamp: Int64;
 begin
   try
-    LDecision := FDecisionProvider.NextDecision(BuildDecisionContextJson);
+    Inc(FDecisionCount);
+    LDecisionStartedTimestamp := TStopwatch.GetTimeStamp;
+    try
+      LDecision := FDecisionProvider.NextDecision(BuildDecisionContextJson);
+    finally
+      if FDecisionCount = 1 then
+        FFirstDecisionDurationMilliseconds := Max(
+          0,
+          Round(
+            (TStopwatch.GetTimeStamp - LDecisionStartedTimestamp) *
+            1000 / TStopwatch.Frequency
+          )
+        );
+    end;
     if CheckBudgets then
       ExecuteDecision(LDecision);
   except
@@ -2456,7 +2541,14 @@ begin
 end;
 
 function TRadIAAgentRuntime.ExecuteLoop: TRadIAAgentRunResult;
+var
+  LInitialElapsedMilliseconds: Int64;
+  LInitialSuppressedToolCallCount: Integer;
+  LInitialToolCallCount: Integer;
 begin
+  LInitialElapsedMilliseconds := ElapsedMilliseconds;
+  LInitialToolCallCount := FToolCallCount;
+  LInitialSuppressedToolCallCount := FSuppressedToolCallCount;
   ChangeStatus(asRunning, 'Agent run started.');
   while FStatus = asRunning do
   begin
@@ -2470,6 +2562,11 @@ begin
     FMessage,
     FSteps.Count,
     DetectRecoveryInput
+  );
+  LogRunSummary(
+    LInitialToolCallCount,
+    LInitialSuppressedToolCallCount,
+    LInitialElapsedMilliseconds
   );
 end;
 
@@ -2524,7 +2621,11 @@ begin
   else if TInterlocked.CompareExchange(FPauseRequested, 0, 0) <> 0 then
     ChangeStatus(asPaused, 'Agent run was paused.')
   else
-    ChangeStatus(asFailed, 'Agent decision failed: ' + AMessage);
+    ChangeStatus(
+      asFailed,
+      'Agent decision failed: ' + AMessage,
+      'decisionFailure'
+    );
 end;
 
 procedure TRadIAAgentRuntime.HandlePlanDecision(
@@ -2533,12 +2634,20 @@ procedure TRadIAAgentRuntime.HandlePlanDecision(
 begin
   if FPlanApproved or HasValidPlan then
   begin
-    ChangeStatus(asFailed, 'Agent returned more than one plan.');
+    ChangeStatus(
+      asFailed,
+      'Agent returned more than one plan.',
+      'planFailure'
+    );
     Exit;
   end;
   FPlanJson := ADecision.PlanJson;
   if not HasValidPlan then
-    ChangeStatus(asFailed, 'Agent returned an invalid plan.')
+    ChangeStatus(
+      asFailed,
+      'Agent returned an invalid plan.',
+      'planFailure'
+    )
   else
     ChangeStatus(asAwaitingApproval, ADecision.Message);
 end;
@@ -2556,6 +2665,137 @@ begin
   Result := FElapsedBeforeRunMilliseconds + LCurrentRunMilliseconds;
 end;
 
+procedure TRadIAAgentRuntime.LogRunSummary(
+  const AInitialToolCallCount: Integer;
+  const AInitialSuppressedToolCallCount: Integer;
+  const AInitialElapsedMilliseconds: Int64
+);
+var
+  LEvent: TJSONObject;
+  LUsageStatus: string;
+begin
+  LUsageStatus := 'unknown';
+  if Assigned(FUsageProvider) and
+    ((EffectivePromptTokens > 0) or (EffectiveCompletionTokens > 0)) then
+    LUsageStatus := 'reported';
+  try
+    LEvent := TJSONObject.Create;
+    try
+      LEvent.AddPair('schemaVersion', TJSONNumber.Create(1));
+      LEvent.AddPair('event', 'agentRunSummary');
+      LEvent.AddPair(
+        'runId',
+        Copy(THashSHA2.GetHashString(FSessionId), 1, 16)
+      );
+      LEvent.AddPair('status', RadIAAgentStatusName(FStatus));
+      LEvent.AddPair('stopReason', RunStopReason);
+      LEvent.AddPair('decisionCount', TJSONNumber.Create(FDecisionCount));
+      LEvent.AddPair(
+        'firstDecisionDurationMilliseconds',
+        TJSONNumber.Create(Max(0, FFirstDecisionDurationMilliseconds))
+      );
+      LEvent.AddPair(
+        'toolCallCount',
+        TJSONNumber.Create(Max(0, FToolCallCount - AInitialToolCallCount))
+      );
+      LEvent.AddPair(
+        'suppressedToolCallCount',
+        TJSONNumber.Create(
+          Max(
+            0,
+            FSuppressedToolCallCount - AInitialSuppressedToolCallCount
+          )
+        )
+      );
+      LEvent.AddPair('toolFailureCount', TJSONNumber.Create(FToolFailureCount));
+      LEvent.AddPair(
+        'repeatedDecisionCount',
+        TJSONNumber.Create(FRepeatedDecisionCount)
+      );
+      LEvent.AddPair(
+        'recoveredRepeatCount',
+        TJSONNumber.Create(FRecoveredRepeatCount)
+      );
+      LEvent.AddPair(
+        'validationRejectionCount',
+        TJSONNumber.Create(FValidationRejectionCount)
+      );
+      LEvent.AddPair(
+        'durationMilliseconds',
+        TJSONNumber.Create(
+          Max(0, ElapsedMilliseconds - AInitialElapsedMilliseconds)
+        )
+      );
+      LEvent.AddPair('usageStatus', LUsageStatus);
+      LEvent.AddPair(
+        'promptTokens',
+        TJSONNumber.Create(EffectivePromptTokens)
+      );
+      LEvent.AddPair(
+        'completionTokens',
+        TJSONNumber.Create(EffectiveCompletionTokens)
+      );
+      TLogger.Log(LEvent.ToJSON, 'AgentMetrics');
+    finally
+      LEvent.Free;
+    end;
+  except
+    OutputDebugString(PChar('RadIA agent run metrics logging failed.'));
+  end;
+end;
+
+function TRadIAAgentRuntime.RunStopReason: string;
+begin
+  if FStopReason <> '' then
+    Exit(FStopReason);
+  case FStatus of
+    asAwaitingApproval:
+      Exit('awaitingApproval');
+    asCompleted:
+      Exit('completed');
+    asCancelled:
+      Exit('cancelled');
+    asPaused:
+      Exit(PausedStopReason);
+    asFailed:
+      Exit(FailedStopReason);
+  end;
+  Result := 'unknown';
+end;
+
+function TRadIAAgentRuntime.FailedStopReason: string;
+begin
+  if ContainsText(FMessage, 'duration limit') then
+    Exit('durationLimit');
+  if ContainsText(FMessage, 'token budget') then
+    Exit('tokenBudget');
+  if ContainsText(FMessage, 'cost limit') or
+    ContainsText(FMessage, 'requires pricing') then
+    Exit('costBudget');
+  if ContainsText(FMessage, 'same tool call repeated') then
+    Exit('repeatedToolCall');
+  if ContainsText(FMessage, 'step window') then
+    Exit('stepWindowWithoutProgress');
+  if ContainsText(FMessage, 'without validation') then
+    Exit('validationRejected');
+  if ContainsText(FMessage, 'decision failed') then
+    Exit('decisionFailure');
+  if ContainsText(FMessage, 'plan') then
+    Exit('planFailure');
+  Result := 'failed';
+end;
+
+function TRadIAAgentRuntime.PausedStopReason: string;
+begin
+  if ContainsText(FMessage, 'clarification') then
+    Exit('clarification');
+  if ContainsText(FMessage, 'operation limit') then
+    Exit('operationLimit');
+  if ContainsText(FMessage, 'file limit') then
+    Exit('fileLimit');
+  Result := 'paused';
+end;
+
 function TRadIAAgentRuntime.ExecuteToolDecision(
   const ADecision: TRadIAAgentDecision
 ): Boolean;
@@ -2569,10 +2809,16 @@ begin
   Result := False;
   if Trim(ADecision.ToolName) = '' then
   begin
-    ChangeStatus(asFailed, 'Agent selected an empty tool name.');
+    ChangeStatus(
+      asFailed,
+      'Agent selected an empty tool name.',
+      'emptyToolName'
+    );
     Exit;
   end;
   if TryRecoverCompletedArtifactRangeRepeat(ADecision) then
+    Exit(True);
+  if TryReuseSuccessfulRepeat(ADecision) then
     Exit(True);
   if not CheckRepeatedCall(ADecision) then
   begin
@@ -2612,6 +2858,7 @@ begin
     'workspace'
   ).WithCancellation(FCancellationToken);
   LStartedElapsedMilliseconds := ElapsedMilliseconds;
+  Inc(FToolCallCount);
   LResult := FToolExecutor.Execute(LRequest);
   LDurationMilliseconds := ElapsedMilliseconds -
     LStartedElapsedMilliseconds;
@@ -2931,6 +3178,7 @@ begin
     FProjectId := LRoot.GetValue<string>('projectId', '');
     FObjective := LRoot.GetValue<string>('objective', '');
     FMessage := LRoot.GetValue<string>('message', '');
+    FStopReason := '';
     FPlanApproved := LRoot.GetValue<Boolean>('planApproved', False);
     LPlan := LRoot.GetValue('plan');
     if Assigned(LPlan) and
@@ -3098,6 +3346,7 @@ begin
   FSessionId := '';
   FProjectId := '';
   FMessage := '';
+  FStopReason := '';
   FPlanJson := '';
   FPlanApproved := False;
   TInterlocked.Exchange(FPauseRequested, 0);
@@ -3109,6 +3358,13 @@ begin
   FPromptTokensBeforeRun := 0;
   FCompletionTokensBeforeRun := 0;
   FEstimatedCostMicrosBeforeRun := 0;
+  FDecisionCount := 0;
+  FFirstDecisionDurationMilliseconds := -1;
+  FToolCallCount := 0;
+  FToolFailureCount := 0;
+  FSuppressedToolCallCount := 0;
+  FRepeatedDecisionCount := 0;
+  FRecoveredRepeatCount := 0;
   FValidationRejectionCount := 0;
   FReplayOfStepIndex := 0;
   FExecutionContract := TRadIAAgentExecutionContract.Default;
@@ -3231,6 +3487,7 @@ begin
     FRepeatedCallCount := 1;
   end;
   FStatus := asRunning;
+  FStopReason := '';
   FRunStartedTimestamp := TStopwatch.GetTimeStamp;
   Result := ExecuteLoop;
 end;

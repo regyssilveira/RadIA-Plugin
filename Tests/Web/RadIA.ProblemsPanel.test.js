@@ -20,6 +20,14 @@ const problems = fs.readFileSync(
   path.join(root, 'Source', 'Core', 'RadIA.Core.Problems.pas'),
   'utf8'
 );
+const projection = fs.readFileSync(
+  path.join(root, 'Source', 'Core', 'RadIA.Core.ProblemProjection.pas'),
+  'utf8'
+);
+const otaProjection = fs.readFileSync(
+  path.join(root, 'Source', 'Integration', 'RadIA.OTA.ProblemProjector.pas'),
+  'utf8'
+);
 
 test('every successful tool result receives the unified problems contract', () => {
   assert.match(toolViews, /TRadIAProblemExtractor\.Extract/u);
@@ -36,6 +44,17 @@ test('problems panel is accessible, filterable, and responsive', () => {
   assert.match(chatHtml, /id="problems-severity-filter"/u);
   assert.match(chatHtml, /id="problems-category-filter"/u);
   assert.match(chatHtml, /<ul id="problems-list"/u);
+  assert.match(chatHtml, /id="btn-project-problems"/u);
+});
+
+test('Message View receives only an explicit bounded Problems snapshot', () => {
+  assert.match(chatScript, /action: 'project_problems'/u);
+  assert.match(chatScript, /\.slice\(0, 200\)/u);
+  assert.match(projection, /CMaximumProblems = 200/u);
+  assert.match(otaProjection, /CMessageGroupName = 'RadIA Problems'/u);
+  assert.match(otaProjection, /ClearMessageGroup\(LGroup\)/u);
+  assert.match(otaProjection, /FBoundary\.ValidatePath/u);
+  assert.doesNotMatch(otaProjection, /ClearAllMessages/u);
 });
 
 test('problem actions navigate safely or prepare a command for review', () => {

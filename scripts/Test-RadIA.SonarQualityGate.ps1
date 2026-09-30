@@ -136,7 +136,10 @@ $task = $null
 
 do {
     $taskResponse = Invoke-RadIASonarApi `
-        -Uri "$HostUrl/api/ce/task?id=$taskId" `
+        -Uri (
+            "$HostUrl/api/ce/task?id=$taskId" +
+            "&additionalFields=scannerContext"
+        ) `
         -Headers $headers
     $task = $taskResponse.task
     if ($task.status -in @("PENDING", "IN_PROGRESS")) {
@@ -182,6 +185,38 @@ if (-not $report.ContainsKey("projectKey")) {
     throw "The SonarScanner report does not contain projectKey."
 }
 $projectKey = $report["projectKey"]
+$workspaceRoot = [IO.Path]::GetFullPath(
+    (Join-Path $PSScriptRoot "..")
+)
+$sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
+$baseDirectoryMatch = [regex]::Match(
+    [string]$task.scannerContext,
+    '(?m)^\s*- sonar\.projectBaseDir=(.+)$'
+)
+if (-not $baseDirectoryMatch.Success) {
+    throw "SonarQube task does not expose its scanner base directory."
+}
+$analysisBaseDirectory = [IO.Path]::GetFullPath(
+    $baseDirectoryMatch.Groups[1].Value.Trim()
+)
+if (-not $analysisBaseDirectory.Equals(
+    $workspaceRoot,
+    [StringComparison]::OrdinalIgnoreCase
+)) {
+    throw (
+        "SonarQube analysis came from $analysisBaseDirectory instead of " +
+        "$workspaceRoot."
+    )
+}
+$commitTimestamp = [DateTimeOffset]::Parse(
+    (& git -C $workspaceRoot show -s --format=%cI HEAD).Trim()
+)
+$analysisTimestamp = [DateTimeOffset]$task.submittedAt
+if ($analysisTimestamp -lt $commitTimestamp) {
+    throw (
+        "SonarQube analysis predates the current HEAD $sourceCommit."
+    )
+}
 $metricKeys = @(
     "bugs",
     "vulnerabilities",
@@ -270,16 +305,12 @@ Write-Host (
 )
 
 if (-not [string]::IsNullOrWhiteSpace($EvidencePath)) {
-    $workspaceRoot = [IO.Path]::GetFullPath(
-        (Join-Path $PSScriptRoot "..")
-    )
     $productVersion = (
         Get-Content `
             -LiteralPath (Join-Path $workspaceRoot "package.json") `
             -Raw |
             ConvertFrom-Json
     ).version
-    $sourceCommit = (& git -C $workspaceRoot rev-parse HEAD).Trim()
     $sourceDirty = @(
         & git -C $workspaceRoot status --porcelain --untracked-files=no
     ).Count -gt 0

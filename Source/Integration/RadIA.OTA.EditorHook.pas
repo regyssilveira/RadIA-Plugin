@@ -5,6 +5,7 @@ interface
 uses
   System.Classes, Vcl.Menus, Vcl.Forms, Vcl.ExtCtrls,
   ToolsAPI,
+  RadIA.Core.EditorDiagnostics,
   RadIA.Core.Interfaces,
   RadIA.Core.InlineCompletion,
   RadIA.Core.InlineReviews,
@@ -127,10 +128,10 @@ type
     FEditorNotifiers: TInterfaceList;
     FConfig: IRadIAConfig;
     FAutoReviewEnabled: Boolean;
+    FEditorDiagnosticDebouncer: TRadIAEditorDiagnosticDebouncer;
     FIDEAdapter: IRadIAIDEAdapter;
     FInlineCompletionConsentGranted: Boolean;
     FInlineCompletionController: IRadIAInlineCompletionController;
-    FInlineCompletionLastKey: string;
     FInlineCompletionSessionEnabled: Boolean;
     FInlineCompletionSession: IRadIAOTAInlineCompletionSession;
     FInlineShortcutBinding: IOTAKeyboardBinding;
@@ -576,7 +577,12 @@ begin
   FOldActiveFormChange := nil;
   FInlineCompletionConsentGranted := False;
   FInlineCompletionSessionEnabled := True;
-  FInlineCompletionLastKey := '';
+  if Assigned(FConfig) then
+    FEditorDiagnosticDebouncer := TRadIAEditorDiagnosticDebouncer.Create(
+      FConfig.AutocompleteDelay
+    )
+  else
+    FEditorDiagnosticDebouncer := TRadIAEditorDiagnosticDebouncer.Create(500);
   FInlineShortcutBindingIndex := -1;
   FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
   FInlineCompletionSession := TRadIAOTAInlineCompletionSession.Create;
@@ -641,6 +647,7 @@ begin
   FInlineCompletionController := nil;
   FInlineCompletionSession.ConfigureContinuous(False, nil);
   FInlineCompletionSession := nil;
+  FEditorDiagnosticDebouncer.Free;
   FEditorNotifiers.Free;
   inherited Destroy;
 end;
@@ -1706,7 +1713,7 @@ procedure TRadIAEditorHook.OnInlineCompletionSessionToggleExecute(
 begin
   FInlineCompletionSessionEnabled :=
     not FInlineCompletionSessionEnabled;
-  FInlineCompletionLastKey := '';
+  FEditorDiagnosticDebouncer.Reset;
   if not FInlineCompletionSessionEnabled and
     Assigned(FInlineCompletionController) then
     FInlineCompletionController.Stop;
@@ -2335,6 +2342,7 @@ begin
         4000
       )
     );
+  FEditorDiagnosticDebouncer.Configure(FConfig.AutocompleteDelay);
   if LEnabled then
   begin
     LIdleHandler :=
@@ -2379,14 +2387,43 @@ end;
 
 procedure TRadIAEditorHook.RequestContinuousInlineCompletion;
 var
+  LColumn: Integer;
   LContext: TRadIAInlineCompletionContext;
+  LFileName: string;
+  LLine: Integer;
+  LObservation: TRadIAEditorDiagnosticObservation;
   LRequestKey: string;
 begin
   if not FInlineCompletionSessionEnabled or
     not Assigned(FConfig) or
     not FConfig.AutocompleteEnabled or
-    not Assigned(FInlineCompletionController) or
-    not FInlineCompletionSession.Capture(LContext) then
+    not Assigned(FInlineCompletionController) then
+    Exit;
+  if not FInlineCompletionSession.CaptureCursor(
+    LFileName,
+    LLine,
+    LColumn
+  ) then
+  begin
+    LObservation := FEditorDiagnosticDebouncer.Observe(
+      '',
+      GetTickCount64
+    );
+    if LObservation.CancelActive then
+      FInlineCompletionController.Stop;
+    Exit;
+  end;
+  LRequestKey := LFileName + '|' + LLine.ToString + '|' +
+    LColumn.ToString;
+  LObservation := FEditorDiagnosticDebouncer.Observe(
+    LRequestKey,
+    GetTickCount64
+  );
+  if LObservation.CancelActive then
+    FInlineCompletionController.Stop;
+  if LObservation.Decision <> eddReady then
+    Exit;
+  if not FInlineCompletionSession.Capture(LContext) then
     Exit;
   if not TRadIAInlineCompletionPolicy.IsAllowed(
     LContext,
@@ -2394,13 +2431,15 @@ begin
     FConfig.AutocompleteExcludedFiles,
     FConfig.AutocompleteExcludedProjects
   ) then
+  begin
+    FEditorDiagnosticDebouncer.MarkSubmitted(LRequestKey);
     Exit;
-  LRequestKey := LContext.CacheKey + '|' +
-    LContext.CursorLine.ToString + '|' +
-    LContext.CursorColumn.ToString;
-  if SameText(LRequestKey, FInlineCompletionLastKey) then
+  end;
+  if not SameText(LFileName, LContext.FileName) or
+    (LLine <> LContext.CursorLine) or
+    (LColumn <> LContext.CursorColumn) then
     Exit;
-  FInlineCompletionLastKey := LRequestKey;
+  FEditorDiagnosticDebouncer.MarkSubmitted(LRequestKey);
   FInlineCompletionController.Request(LContext);
 end;
 

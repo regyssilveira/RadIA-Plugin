@@ -334,6 +334,9 @@ test('inline completion documents dedicated FIM, fallback, and diagnostics', () 
     assert.match(document, /completionNext/u);
     assert.match(document, /completionPrevious/u);
     assert.match(document, /painel de alternativas|alternatives panel/iu);
+    assert.match(document, /arquivo, linha e coluna|file, line, and column/iu);
+    assert.match(document, /idle event|evento de idle/iu);
+    assert.match(document, /cursor.*obsoleto|cursor.*stale/iu);
   });
 });
 
@@ -1154,6 +1157,34 @@ test('semantic intelligence is public, reachable, and explicit about its boundar
   assert.match(englishCapabilities, /semantic_intelligence\.en\.md/u);
 });
 
+test('approved operational knowledge is bounded, redacted, reviewable, and project scoped', () => {
+  const source = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.KnowledgeHistory.pas'),
+    'utf8'
+  );
+  const portuguese = fs.readFileSync(
+    documentationPath('user_guide_project_knowledge.md'),
+    'utf8'
+  );
+  const english = fs.readFileSync(
+    documentationPath('user_guide_project_knowledge.en.md'),
+    'utf8'
+  );
+
+  assert.match(source, /MAX_APPROVED_HISTORY_DOCUMENTS = 50/u);
+  assert.match(source, /MAX_APPROVED_HISTORY_AGE_DAYS = 30/u);
+  assert.match(source, /MAX_APPROVED_HISTORY_OBJECTIVE_CHARACTERS = 500/u);
+  assert.match(source, /FRedactor\.Redact\(AObjective\)/u);
+  assert.match(source, /THashSHA2\.GetHashString\(ASessionId\)/u);
+  [portuguese, english].forEach(document => {
+    assert.match(document, /SearchProjectKnowledge/u);
+    assert.match(document, /GetKnowledgeDocument/u);
+    assert.match(document, /ClearProjectKnowledge/u);
+  });
+  assert.match(portuguese, /outro projeto nunca/u);
+  assert.match(english, /other-project runs never/u);
+});
+
 test('chat documentation explains the bounded follow-up queue', () => {
   const portuguese = fs.readFileSync(
     documentationPath('user_guide_chat_sessions.md'),
@@ -1224,8 +1255,10 @@ test('planning and update documentation follow the new separation', () => {
   assert.match(englishHub, /organized by task,[\s\S]*not by release/u);
   assert.doesNotMatch(portugueseBacklog, /\.planning\//u);
   assert.doesNotMatch(englishBacklog, /\.planning\//u);
-  assert.match(portugueseBacklog, /Não há item de engenharia ativo/u);
-  assert.match(englishBacklog, /There is no active engineering item/u);
+  assert.match(portugueseBacklog, /Não há itens abertos no ciclo atual/u);
+  assert.match(englishBacklog, /There are no open items in the current cycle/u);
+  assert.match(portugueseBacklog, /Nenhuma release[\s\S]*autorização\s+explícita/u);
+  assert.match(englishBacklog, /No release[\s\S]*explicitly\s+authorizes/u);
   assert.match(portugueseHub, /Não há goal de execução ativo/u);
   assert.match(englishHub, /There is no active execution goal/u);
   assert.match(portugueseProjectHub, /Não há goal de execução ativo/u);
@@ -1240,6 +1273,18 @@ test('planning and update documentation follow the new separation', () => {
 test('agent metrics documentation describes safe logging and unknown usage', () => {
   const source = fs.readFileSync(
     path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.AgentProvider.pas'),
+    'utf8'
+  );
+  const runtimeSource = fs.readFileSync(
+    path.join(repositoryRoot, 'Source', 'Core', 'RadIA.Core.AgentRuntime.pas'),
+    'utf8'
+  );
+  const efficiencyScript = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'Measure-RadIA.AgentEfficiency.ps1'),
+    'utf8'
+  );
+  const efficiencyGate = fs.readFileSync(
+    path.join(repositoryRoot, 'scripts', 'Test-RadIA.AgentEfficiencyGate.ps1'),
     'utf8'
   );
   const portugueseReference = fs.readFileSync(
@@ -1258,11 +1303,29 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     documentationPath('guides', 'user_manual.en.md'),
     'utf8'
   );
+  const portugueseCompactionGuide = fs.readFileSync(
+    documentationPath('guides', 'agent_result_compaction.md'),
+    'utf8'
+  );
+  const englishCompactionGuide = fs.readFileSync(
+    documentationPath('guides', 'agent_result_compaction.en.md'),
+    'utf8'
+  );
 
   assert.match(source, /AgentMetrics/u);
   assert.match(source, /RemovePair\('version'\)/u);
   assert.match(source, /if not APlanApproved then/u);
   assert.match(source, /executionContract\.requireTests/u);
+  assert.match(runtimeSource, /agentRunSummary/u);
+  assert.match(runtimeSource, /stopReason/u);
+  assert.match(runtimeSource, /repeatedDecisionCount/u);
+  assert.match(runtimeSource, /firstDecisionDurationMilliseconds/u);
+  assert.match(efficiencyScript, /Get-RadIALatestRunSummaries/u);
+  assert.match(efficiencyScript, /toolCallSuppressionPercent/u);
+  assert.match(efficiencyScript, /BaselinePath/u);
+  assert.match(efficiencyScript, /pairingKeyHash/u);
+  assert.match(efficiencyGate, /MaximumResponsivenessRegressionPercent/u);
+  assert.match(efficiencyGate, /same non-empty pairing key/u);
   [portugueseReference, englishReference].forEach(document => {
     assert.match(document, /AgentMetrics/u);
   });
@@ -1272,5 +1335,18 @@ test('agent metrics documentation describes safe logging and unknown usage', () 
     assert.match(document, /unknown/u);
     assert.match(document, /\/tools/u);
     assert.match(document, /DUnitX/u);
+  });
+  [portugueseCompactionGuide, englishCompactionGuide].forEach(document => {
+    assert.match(document, /agentRunSummary/u);
+    assert.match(document, /usageStatus=unknown/u);
+    assert.match(document, /agentReportedFailure/u);
+    assert.match(document, /emptyToolName/u);
+    assert.match(document, /repeatedToolCall/u);
+    assert.match(document, /suppressedToolCallCount/u);
+    assert.match(document, /successful_result_already_available/u);
+    assert.match(document, /Measure-RadIA\.AgentEfficiency\.ps1/u);
+    assert.match(document, /Test-RadIA\.AgentEfficiencyGate\.ps1/u);
+    assert.match(document, /AgentEfficiencyBaseline\.json/u);
+    assert.match(document, /PairingKey/u);
   });
 });

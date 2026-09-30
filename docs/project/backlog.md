@@ -3,12 +3,8 @@
 Este arquivo contém somente trabalho aberto. Histórico, marcos concluídos, métricas e notas de
 release não pertencem ao backlog.
 
-## Estado atual
-
-Não há item de engenharia ativo neste backlog. O FireDAC Advisor concluiu seu contrato funcional,
-de segurança, documentação bilíngue, builds Delphi 12 e 13, testes unitários e de integração e a
-matriz E2E de 16 cenários nos três targets suportados. Sua superfície pública e seu modo de uso estão
-registrados nas referências e no guia do produto.
+Não há itens abertos no ciclo atual. Nenhuma release será publicada sem autorização explícita do
+mantenedor.
 
 Novos ciclos devem entrar aqui somente depois de possuírem resultado observável, escopo, ameaças,
 critérios de aceitação e plano de validação definidos.

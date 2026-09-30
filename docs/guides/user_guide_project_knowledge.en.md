@@ -103,6 +103,13 @@ Reproducible validation of supported IDE targets is part of the pipeline and rel
 enabled, it adds only summaries of runs that belong to the current project, had a user-approved
 plan, and completed successfully.
 
-The virtual document contains the objective, status, step count, and update time. Tool arguments,
-results, and payloads are never copied. Runs from another project never enter the current index.
-Disabling the option blocks persisted results immediately; the next refresh removes them physically.
+Each virtual document contains only a redacted objective bounded to 500 characters, status, step count,
+and update time. Session identifiers appear only as hashes; tool arguments, results, and payloads are never
+copied. The index accepts at most 50 completed summaries from the last 30 days. Expired, unapproved, or
+other-project runs never enter the current index.
+
+To review the content, run **Rebuild knowledge**, search for `Approved agent run` with
+`SearchProjectKnowledge`, and open a virtual result with `GetKnowledgeDocument`. These results do not offer
+file navigation because they are not source files. **ClearProjectKnowledge** removes the project's entire
+derived index; disabling the option blocks summaries immediately and the next refresh removes them
+physically.
