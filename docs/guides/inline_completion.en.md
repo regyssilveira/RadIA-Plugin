@@ -14,9 +14,10 @@ accepts the whole suggestion or the next word.
 
 ## Engine flow
 
-1. The IDE integration captures prefix, suffix, buffer revision, and authorized context.
+1. The IDE integration first observes only file, line, and column and waits for a stable cursor.
+   Only then does it capture prefix, suffix, buffer revision, and authorized context.
 2. Context is limited before leaving the IDE.
-3. A new request cancels the previous request and restarts debounce.
+3. A position change cancels the previous request and restarts debounce before rereading the unit.
 4. A local cache avoids repeated calls for the same context.
 5. Markdown fences, suffix overlap, and over-limit content are removed from the response.
 6. Delivery occurs only while generation and revision are current.
@@ -27,6 +28,11 @@ When a symbol is under the cursor, the completion worker queries the semantic in
 declarations and inheritance-resolved members. The query does not run during OTA capture on the IDE
 thread. If the semantic process is unavailable, the request continues with bounded unit context; the
 editor remains responsive and Ghost Text remains available.
+
+The lightweight observer prevents every idle event or cursor movement from rereading and analyzing
+the complete unit. An unchanged file, line, and column do not start another diagnostic; excluded
+files are also remembered for the current position. Full capture happens once after the configured
+debounce. If the cursor changes during capture or response delivery, the stale result is discarded.
 
 When the cursor follows member access, such as `Form.Sa`, RadIA queries the local structural index
 first. The search filters the prefix, resolves inherited members, removes duplicates, and limits the

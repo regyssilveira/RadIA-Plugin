@@ -116,7 +116,7 @@ endpoint e permissão; não reinicie a IDE como primeira tentativa.
 | Inject Delphi version in prompt | Recomendado em projetos dependentes da versão | Inclui a versão ativa para reduzir sugestões incompatíveis com Delphi 12 ou 13. |
 | Prefer concise AI responses | Quando deseja respostas menores | Solicita concisão por padrão; um pedido explícito ainda pode exigir detalhes. |
 | Enable logging | Ao investigar problemas | Registra diagnósticos locais sanitizados. Desative quando não precisar de investigação prolongada. |
-| Métricas do agente nativo no log | Ao investigar demora ou consumo de tokens | Com **Enable logging** ativo, eventos `AgentMetrics` registram contagens de caracteres, tokens informados pelo provider, duração, resultado e tipo de decisão. Não incluem prompt, código, argumentos ou resultados. |
+| Métricas do agente nativo no log | Ao investigar demora ou consumo de tokens | Com **Enable logging** ativo, eventos `AgentMetrics` registram contagens de caracteres, tokens informados pelo provider, duração, latência até a primeira decisão, resultado e tipo de decisão. Não incluem prompt, código, argumentos ou resultados. |
 | Log Folder Path / `...` | Para mudar ou escolher a pasta de logs | Use uma pasta gravável. Não selecione pastas compartilhadas com usuários não confiáveis. |
 | Max Log File Size (KB) | Para controlar uso de disco | Limita a rotação/tamanho dos logs locais, não a resposta do modelo. |
 | Enable local token quota | Para impor um aviso/limite local mensal | Desligado, o agente não aplica orçamento local de tokens por execução. Janelas de etapas com verificação de progresso, duração e proteção contra loops continuam independentes. Não substitui limites do provider. |
@@ -155,7 +155,7 @@ O nível `Trusted` também não cobre operações destrutivas, sensíveis ou mar
 | Opção | Quando alterar | Efeito e cuidados |
 |---|---|---|
 | Enable local semantic project knowledge | Para pesquisas semânticas no projeto | Cria índice reconstruível local, sem rede. Vem desabilitado por padrão. |
-| Include approved agent run summaries | Para recuperar decisões de execuções anteriores | Indexa somente resumos concluídos com plano aprovado; argumentos e resultados de tools não entram. |
+| Include approved agent run summaries | Para recuperar decisões de execuções anteriores | Indexa até 50 resumos redigidos dos últimos 30 dias, isolados pelo projeto; revise-os pela pesquisa local. Argumentos e resultados de tools não entram. |
 | Knowledge excluded file fragments | Para excluir arquivos sensíveis ou gerados | Fragmentos separados por `;`; qualquer caminho correspondente fica fora do índice. |
 | Knowledge excluded project fragments | Para excluir projetos por nome ou caminho | Use para testes, terceiros, artefatos ou áreas confidenciais. |
 | Use a remote embedding provider | Quando o índice local precisar de embeddings remotos | Não envia conteúdo enquanto o consentimento remoto separado não estiver marcado e válido. |

@@ -62,6 +62,65 @@ sanitized `AgentTokens` log separates context and catalog characters and records
 `history=state-only` to confirm conversational history was not resent. Decision snapshots aggregate
 counts, duration, and rule name only; they do not store code, prompts, arguments, or secrets.
 
+When a run starts, awaits approval, completes, pauses, or fails, the local log also receives an
+`agentRunSummary` event. It contains only an irreversible run identifier, state, normalized stop reason,
+duration, decisions, tools, failures, repetitions, recoveries, and validation rejections. Token values are
+provider-reported counters only; `usageStatus=unknown` explicitly identifies unavailable usage. The event
+never contains the objective, prompt, arguments, results, paths, or original session and project identifiers.
+
+Stable reasons distinguish completion, pending approval, pause, cancellation, a missing or partial decision,
+an invalid plan, an empty tool, a repeated call, and duration, token, or cost limits. This classification is
+independent from the human-readable message shown to the user.
+
+Values include `completed`, `awaitingApproval`, `paused`, `cancelled`, `agentReportedFailure`, `planFailure`,
+`emptyToolName`, `repeatedToolCall`, `durationLimit`, `tokenBudget`, and `costBudget`.
+
+When an identical consecutive call repeats a tool that has just succeeded, the runtime reuses the prior
+evidence and does not execute the tool again. The auditable step reports
+`successful_result_already_available`, while `suppressedToolCallCount` measures the actual saving. A failed
+call remains eligible for retry, and a strict user-configured repetition limit still takes precedence.
+
+### Efficiency baseline
+
+With logging enabled, generate a sanitized baseline from the latest runs:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
+  -LastRuns 100 `
+  -PairingKey create-project-delphi13-standard `
+  -OutputPath Output\AgentEfficiencyBaseline.json
+```
+
+Compare another sample of the same workflow, provider, model, and configuration:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Measure-RadIA.AgentEfficiency.ps1 `
+  -LastRuns 100 `
+  -PairingKey create-project-delphi13-standard `
+  -BaselinePath Output\AgentEfficiencyBaseline.json `
+  -OutputPath Output\AgentEfficiencyCurrent.json
+```
+
+The aggregator uses only the latest summary for each run without exporting `runId` values or paths. It
+measures decisions, executed and suppressed tools, recovered repetitions, duration, first-decision latency,
+and reported tokens. Runs with `usageStatus=unknown` are excluded from token averages, so unavailable usage
+is never shown as zero. `PairingKey` identifies the same scenario, provider, model, and configuration; only
+its truncated hash is written to evidence.
+
+After capturing two samples with the same key and run count, apply the relative gate:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File scripts\Test-RadIA.AgentEfficiencyGate.ps1 `
+  -BaselinePath Output\AgentEfficiencyBaseline.json `
+  -CurrentPath Output\AgentEfficiencyCurrent.json `
+  -OutputPath Output\AgentEfficiencyGate.json
+```
+
+By default, each sample must contain at least 20 runs, measure responsiveness in every run, and report token
+usage for the same non-zero run count. The gate rejects increases above 20% for duration or first-decision
+latency and above 10% for decisions, tools, or tokens. Thresholds are explicit script parameters; do not use
+different keys or shrink the sample to make a regression pass.
+
 Run the reproducible benchmark with:
 
 ```powershell

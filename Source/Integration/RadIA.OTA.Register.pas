@@ -89,6 +89,7 @@ uses
   RadIA.Core.ResultCompactor,
   RadIA.Core.Extensions, RadIA.Core.Version,
   RadIA.Core.WorkspaceTools, RadIA.Core.WorkspaceBoundary,
+  RadIA.Core.ProblemProjection, RadIA.OTA.ProblemProjector,
   RadIA.Core.DelphiEnvironment, RadIA.Core.DelphiEnvironmentTools,
   RadIA.Core.SemanticMembers, RadIA.Core.SemanticMemberTools,
   RadIA.Core.SemanticHierarchyTools,
@@ -1126,6 +1127,12 @@ initialization
   TRadIAContainer.Register<IRadIAWorkspaceBoundary>(
     TRadIAWorkspaceBoundary.Create
   );
+  TRadIAContainer.Register<IRadIAProblemProjector>(
+    TRadIAOTAProblemProjector.Create(
+      TRadIAContainer.Resolve<IRadIAWorkspaceBoundary>,
+      TRadIAContainer.Resolve<IRadIAIDEAdapter>
+    )
+  );
   TRadIAContainer.Register<IRadIADebugTimelineStore>(
     TRadIAOTADebugTimelineStore.Create(
       TRadIAContainer.Resolve<IRadIAWorkspaceFacade>,
@@ -1196,7 +1203,8 @@ initialization
         TPath.Combine(
           TPath.Combine(TPath.GetHomePath, 'RadIA'),
           'agent-checkpoints'
-        )
+        ),
+        TRadIAContainer.Resolve<IRadIASecretRedactor>
       )
     )
   );

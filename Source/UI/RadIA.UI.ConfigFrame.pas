@@ -857,8 +857,8 @@ begin
     560
   );
   FChkKnowledgeApprovedHistoryEnabled.Hint :=
-    'Indexes only completed runs with an approved plan from the current project. ' +
-    'Tool arguments and results are never included.';
+    'Indexes up to 50 redacted summaries from the last 30 days for this project. ' +
+    'Review them with project knowledge search; tool payloads are never included.';
   FChkKnowledgeApprovedHistoryEnabled.ShowHint := True;
   FLblKnowledgeExcludedFiles := CreateLabel(
     FPnlSecurity,

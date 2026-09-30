@@ -107,7 +107,14 @@ A opção **Include approved agent run summaries in local project knowledge** fi
 padrão. Quando ativada, acrescenta ao índice somente resumos de execuções que pertencem ao projeto
 atual, tiveram o plano aprovado pelo usuário e foram concluídas com sucesso.
 
-O documento virtual contém objetivo, estado, quantidade de etapas e data de atualização.
-Argumentos, resultados e payloads de ferramentas não são copiados. Execuções de outro projeto
-nunca entram no índice atual. Desligar a opção bloqueia resultados persistidos imediatamente; a
-próxima atualização do índice os remove fisicamente.
+Cada documento virtual contém somente objetivo redigido e limitado a 500 caracteres, estado,
+quantidade de etapas e data de atualização. Identificadores de sessão aparecem apenas como hash;
+argumentos, resultados e payloads de ferramentas não são copiados. O índice aceita no máximo 50
+resumos concluídos nos últimos 30 dias. Execuções expiradas, não aprovadas ou de outro projeto nunca
+entram no índice atual.
+
+Para revisar o conteúdo, execute **Rebuild knowledge**, pesquise por `Approved agent run` com
+`SearchProjectKnowledge` e abra um resultado virtual com `GetKnowledgeDocument`. Esses resultados não
+oferecem navegação para arquivos porque não representam código-fonte. **ClearProjectKnowledge** remove
+todo o índice derivado do projeto; desligar a opção bloqueia os resumos imediatamente e a próxima
+atualização os remove fisicamente.

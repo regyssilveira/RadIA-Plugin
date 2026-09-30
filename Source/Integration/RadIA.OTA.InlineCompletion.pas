@@ -17,6 +17,11 @@ type
     function Capture(
       out AContext: TRadIAInlineCompletionContext
     ): Boolean;
+    function CaptureCursor(
+      out AFileName: string;
+      out ALine: Integer;
+      out AColumn: Integer
+    ): Boolean;
     procedure ConfigureContinuous(
       const AEnabled: Boolean;
       const AIdleHandler: TRadIAInlineCompletionIdleHandler
@@ -71,6 +76,11 @@ type
     ): Boolean;
     function Capture(
       out AContext: TRadIAInlineCompletionContext
+    ): Boolean;
+    function CaptureCursor(
+      out AFileName: string;
+      out ALine: Integer;
+      out AColumn: Integer
     ): Boolean;
     procedure ConfigureContinuous(
       const AEnabled: Boolean;
@@ -219,6 +229,29 @@ begin
     THashSHA2.GetHashString(LContent)
   ).WithCursor(LView.Position.Row, LView.Position.Column);
   Result := AContext.IsValid;
+end;
+
+function TRadIAOTAInlineCompletionSession.CaptureCursor(
+  out AFileName: string;
+  out ALine: Integer;
+  out AColumn: Integer
+): Boolean;
+var
+  LView: IOTAEditView;
+begin
+  AFileName := '';
+  ALine := 0;
+  AColumn := 0;
+  LView := CurrentView;
+  Result := Assigned(LView) and Assigned(LView.Buffer) and
+    Assigned(LView.Position);
+  if not Result then
+    Exit;
+  AFileName := LView.Buffer.FileName;
+  ALine := LView.Position.Row;
+  AColumn := LView.Position.Column;
+  Result := not AFileName.Trim.IsEmpty and (ALine > 0) and
+    (AColumn > 0);
 end;
 
 procedure TRadIAOTAInlineCompletionSession.Clear;

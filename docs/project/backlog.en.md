@@ -3,12 +3,8 @@
 This file contains open work only. History, completed milestones, metrics, and release notes do not
 belong in the backlog.
 
-## Current state
-
-There is no active engineering item in this backlog. FireDAC Advisor completed its functional and
-security contract, bilingual documentation, Delphi 12 and 13 builds, unit and integration tests,
-and the 16-scenario E2E matrix on all three supported targets. Its public surface and usage are
-recorded in the product references and guide.
+There are no open items in the current cycle. No release will be published until the maintainer
+explicitly authorizes it.
 
 New cycles must enter this file only after defining an observable outcome, scope, threats,
 acceptance criteria, and validation plan.
