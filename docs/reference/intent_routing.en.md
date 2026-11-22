@@ -19,6 +19,10 @@ A new prompt invalidates the previous recommendation. The WebView cannot select 
 during confirmation: the host accepts only the pending command it classified. Slash commands,
 ordinary questions, and ambiguous requests are not intercepted.
 
+Conversational questions use the direct conversational route only in Chat mode. In Agent mode, every
+prompt, including a question, is sent through the agent runtime; it is not rewritten as a
+conversational CLI prompt.
+
 ## Bounds and security
 
 - Classification does not enable Agent mode, switch provider or executor, or start a tool.
