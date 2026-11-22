@@ -26,6 +26,7 @@ type
     FSystemPrompt: string;
     FSmartConfigEnabled: Boolean;
     FInjectDelphiVersion: Boolean;
+    FPreferredResponseLanguage: string;
     FConciseResponses: Boolean;
     FLogEnabled: Boolean;
     FLogPath: string;
@@ -119,6 +120,8 @@ type
     procedure SetSmartConfigEnabled(const AValue: Boolean);
     function GetInjectDelphiVersion: Boolean;
     procedure SetInjectDelphiVersion(const AValue: Boolean);
+    function GetPreferredResponseLanguage: string;
+    procedure SetPreferredResponseLanguage(const AValue: string);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
     function GetLogEnabled: Boolean;
@@ -213,6 +216,8 @@ type
     property SystemPrompt: string read FSystemPrompt write FSystemPrompt;
     property SmartConfigEnabled: Boolean read FSmartConfigEnabled write FSmartConfigEnabled;
     property InjectDelphiVersion: Boolean read FInjectDelphiVersion write FInjectDelphiVersion;
+    property PreferredResponseLanguage: string
+      read FPreferredResponseLanguage write FPreferredResponseLanguage;
     property ConciseResponses: Boolean read FConciseResponses write FConciseResponses;
     property LogEnabled: Boolean read FLogEnabled write FLogEnabled;
     property LogPath: string read FLogPath write FLogPath;
@@ -282,6 +287,8 @@ type
     [Test]
     procedure TestLoadConfigLoadsToView;
     [Test]
+    procedure TestPreferredResponseLanguageLoadsAndSaves;
+    [Test]
     procedure TestSaveConfigValidatesUrlGeminiAndAzure;
     [Test]
     procedure TestSaveConfigValidatesTemperatureRange;
@@ -309,6 +316,7 @@ implementation
 
 uses
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.ConfigDefaults,
   RadIA.Core.Config, RadIA.Core.SettingsStorage, System.SysUtils;
 
 { TMockConfigView }
@@ -333,6 +341,7 @@ begin
   CloseViewCalled := False;
   FocusTemplateNameCalled := False;
   InjectDelphiVersion := True;
+  PreferredResponseLanguage := CPreferredLanguageAutomatic;
   ConciseResponses := True;
   ConsentTimeoutSeconds := '60';
   ConsentShowArguments := True;
@@ -441,6 +450,15 @@ function TMockConfigView.GetSmartConfigEnabled: Boolean; begin Result := SmartCo
 procedure TMockConfigView.SetSmartConfigEnabled(const AValue: Boolean); begin SmartConfigEnabled := AValue; end;
 function TMockConfigView.GetInjectDelphiVersion: Boolean; begin Result := InjectDelphiVersion; end;
 procedure TMockConfigView.SetInjectDelphiVersion(const AValue: Boolean); begin InjectDelphiVersion := AValue; end;
+function TMockConfigView.GetPreferredResponseLanguage: string;
+begin
+  Result := PreferredResponseLanguage;
+end;
+
+procedure TMockConfigView.SetPreferredResponseLanguage(const AValue: string);
+begin
+  PreferredResponseLanguage := AValue;
+end;
 function TMockConfigView.GetConciseResponses: Boolean; begin Result := ConciseResponses; end;
 procedure TMockConfigView.SetConciseResponses(const AValue: Boolean); begin ConciseResponses := AValue; end;
 function TMockConfigView.GetLogEnabled: Boolean; begin Result := LogEnabled; end;
@@ -866,6 +884,22 @@ begin
 
   Assert.AreEqual('gemini-key-123', FMockView.GetApiKey('Gemini'));
   Assert.AreEqual('http://localhost:11434', FMockView.GetCustomUrl('Ollama'));
+end;
+
+procedure TTestConfigPresenter.TestPreferredResponseLanguageLoadsAndSaves;
+begin
+  FPresenter.LoadConfig;
+  Assert.AreEqual(
+    CPreferredLanguageAutomatic,
+    FMockView.GetPreferredResponseLanguage
+  );
+
+  FMockView.SetPreferredResponseLanguage('French');
+  FMockView.SetInlineShortcutProfile(
+    TRadIAInlineShortcutProfile.DefaultText
+  );
+  FPresenter.SaveConfig;
+  Assert.AreEqual('French', FConfig.PreferredResponseLanguage);
 end;
 
 procedure TTestConfigPresenter.TestSaveConfigValidatesUrlGeminiAndAzure;

@@ -60,6 +60,7 @@ endpoint, and permissions; do not restart the IDE as the first recovery step.
 |---|---|---|
 | Auto (Smart Parameters) | Recommended by default | Chooses provider parameters that were not explicitly set. |
 | Inject Delphi version in prompt | For version-sensitive code | Adds the active Delphi version to reduce incompatible output. |
+| Preferred response language | When choosing the reply language | Automatic follows the Windows display language; None adds no language instruction; named options always request that language. |
 | Prefer concise AI responses | For shorter defaults | Explicit requests can still ask for details. |
 | Enable logging | While diagnosing a problem | Writes sanitized local diagnostics. |
 | Native agent metrics in the log | When diagnosing latency or token consumption | With **Enable logging** on, `AgentMetrics` events record character counts, provider-reported tokens, duration, first-decision latency, outcome, and decision kind. They exclude prompts, code, arguments, and results. |

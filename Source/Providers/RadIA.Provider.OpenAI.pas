@@ -839,7 +839,9 @@ begin
   if TRadIAContainer.TryResolve<IRadIAIDEAdapter>(LAdapter) then
   begin
     LDelphiVersionName := LAdapter.GetDelphiVersionName;
-    LPreferredLanguage := LAdapter.GetPreferredLanguageInstruction;
+    LPreferredLanguage := LAdapter.GetPreferredLanguageInstruction(
+      FConfig.PreferredResponseLanguage
+    );
   end;
 
   if FConfig.InjectDelphiVersion then
@@ -848,14 +850,17 @@ begin
                             'Make sure any code, syntax, keywords, and RTL components you generate are ' +
                             'fully compatible and compile in this version. Avoid newer language features ' +
                             'that are not supported in ' + LDelphiVersionName + '. ';
-    if not LPreferredLanguage.IsEmpty then
-      LDelphiVersionPrompt := LDelphiVersionPrompt + LPreferredLanguage;
-
     if LSystemPrompt.IsEmpty then
       LSystemPrompt := LDelphiVersionPrompt
     else
       LSystemPrompt := LSystemPrompt + sLineBreak + sLineBreak + LDelphiVersionPrompt;
   end;
+
+  if not LPreferredLanguage.IsEmpty then
+    if LSystemPrompt.IsEmpty then
+      LSystemPrompt := LPreferredLanguage
+    else
+      LSystemPrompt := LSystemPrompt + sLineBreak + sLineBreak + LPreferredLanguage;
 
   Result := LSystemPrompt;
 end;

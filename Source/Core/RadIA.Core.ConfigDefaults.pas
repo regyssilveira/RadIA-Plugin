@@ -3,6 +3,8 @@ unit RadIA.Core.ConfigDefaults;
 interface
 
 const
+  CPreferredLanguageAutomatic = 'Automatic';
+  CPreferredLanguageNone = 'None';
   CDefaultSystemPrompt =
     'You are a Delphi Senior Software Architect. Always reply in the user''s language.' + sLineBreak +
     'When generating, refactoring, or optimizing code:' + sLineBreak +
