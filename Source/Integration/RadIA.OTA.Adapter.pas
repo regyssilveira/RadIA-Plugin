@@ -18,7 +18,9 @@ type
     function GetActiveProjectFolder: string;
     function OpenProjectInIDE(const AProjectPath: string): Boolean;
     function GetDelphiVersionName: string;
-    function GetPreferredLanguageInstruction: string;
+    function GetPreferredLanguageInstruction(
+      const APreferredLanguage: string
+    ): string;
     function GetLastCompilerError(out AErrorMsg: string; out AFileName: string; out ALine: Integer): Boolean;
   end;
 
@@ -80,9 +82,13 @@ begin
   Result := TRadIAOTAHelper.GetDelphiVersionName;
 end;
 
-function TRadIAConcreteIDEAdapter.GetPreferredLanguageInstruction: string;
+function TRadIAConcreteIDEAdapter.GetPreferredLanguageInstruction(
+  const APreferredLanguage: string
+): string;
 begin
-  Result := TRadIAOTAHelper.GetPreferredLanguageInstruction;
+  Result := TRadIAOTAHelper.GetPreferredLanguageInstruction(
+    APreferredLanguage
+  );
 end;
 
 function TRadIAConcreteIDEAdapter.GetLastCompilerError(out AErrorMsg: string; out AFileName: string;

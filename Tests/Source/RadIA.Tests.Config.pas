@@ -31,6 +31,8 @@ type
     [Test]
     procedure TestConciseResponsesPersistence;
     [Test]
+    procedure TestPreferredResponseLanguagePersistence;
+    [Test]
     procedure TestConsentPreferencesPersistenceAndSafeDefaults;
     [Test]
     procedure TestLegacyConsentDefaultsMigrateOnce;
@@ -62,6 +64,7 @@ implementation
 
 uses
   RadIA.Core.InlineShortcuts,
+  RadIA.Core.ConfigDefaults,
   RadIA.Core.Knowledge,
   RadIA.Core.KnowledgeEmbeddings,
   System.SysUtils, System.JSON, RadIA.Core.Config;
@@ -158,6 +161,20 @@ begin
 
   FConfig.Load;
   Assert.IsFalse(FConfig.ConciseResponses);
+end;
+
+procedure TTestRadIAConfig.TestPreferredResponseLanguagePersistence;
+begin
+  Assert.AreEqual(
+    CPreferredLanguageAutomatic,
+    FConfig.PreferredResponseLanguage
+  );
+
+  FConfig.PreferredResponseLanguage := 'French';
+  FConfig.Save;
+  FConfig.Load;
+
+  Assert.AreEqual('French', FConfig.PreferredResponseLanguage);
 end;
 
 procedure TTestRadIAConfig.

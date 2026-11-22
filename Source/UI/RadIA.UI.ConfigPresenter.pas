@@ -48,6 +48,8 @@ type
     procedure SetSmartConfigEnabled(const AValue: Boolean);
     function GetInjectDelphiVersion: Boolean;
     procedure SetInjectDelphiVersion(const AValue: Boolean);
+    function GetPreferredResponseLanguage: string;
+    procedure SetPreferredResponseLanguage(const AValue: string);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
     function GetLogEnabled: Boolean;
@@ -336,6 +338,7 @@ begin
 
   FView.SetSmartConfigEnabled(FConfig.SmartConfigEnabled);
   FView.SetInjectDelphiVersion(FConfig.InjectDelphiVersion);
+  FView.SetPreferredResponseLanguage(FConfig.PreferredResponseLanguage);
   FView.SetConciseResponses(FConfig.ConciseResponses);
   FView.SetConsentTimeoutSeconds(
     IntToStr(FConfig.ConsentTimeoutSeconds)
@@ -614,6 +617,7 @@ begin
   FConfig.SetProviderBaseUrl('LMStudio', ALMStudioUrl);
   FConfig.SmartConfigEnabled := FView.GetSmartConfigEnabled;
   FConfig.InjectDelphiVersion := FView.GetInjectDelphiVersion;
+  FConfig.PreferredResponseLanguage := FView.GetPreferredResponseLanguage;
   FConfig.ConciseResponses := FView.GetConciseResponses;
   FConfig.ConsentTimeoutSeconds := StrToInt(
     FView.GetConsentTimeoutSeconds

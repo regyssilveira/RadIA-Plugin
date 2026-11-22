@@ -77,6 +77,11 @@ from being clipped.
 | CLI & MCP | Native/external executor, portable executable, bridge, and external MCP servers | When using a CLI, exposing the IDE, or consuming a local MCP server |
 | Memory Diagnostics | FastMM5 path and execution limits | When investigating leaks, double free, or use-after-free |
 
+In **Settings > General / Logs**, **Preferred response language** controls the language instruction
+added to prompts. **Automatic (<language>)** follows the Windows display language, **None** adds no
+language-specific instruction, and the alphabetized named choices request a specific response
+language. This setting is independent of **Inject Delphi version in prompt**.
+
 When **Enable logging** is on, the native agent writes `AgentMetrics` events in **Log Folder Path**.
 `agentDecision` records decision index, catalog and context sizes, supplied history, duration, outcome,
 and provider-reported tokens. `agentToolStep` records duration, tool type, and result size without its

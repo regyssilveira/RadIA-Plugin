@@ -244,7 +244,9 @@ begin
   if TRadIAContainer.TryResolve<IRadIAIDEAdapter>(LAdapter) then
   begin
     LDelphiVersionName := LAdapter.GetDelphiVersionName;
-    LPreferredLanguage := LAdapter.GetPreferredLanguageInstruction;
+    LPreferredLanguage := LAdapter.GetPreferredLanguageInstruction(
+      FConfig.PreferredResponseLanguage
+    );
     LProjectFolder := LAdapter.GetActiveProjectFolder;
   end;
 
@@ -255,11 +257,10 @@ begin
                                 'fully compatible and compile ' +
                             'in this version. Avoid newer language features that are not supported in ' +
                                 '' + LDelphiVersionName + '. ';
-    if not LPreferredLanguage.IsEmpty then
-      LDelphiVersionPrompt := LDelphiVersionPrompt + LPreferredLanguage;
-
     AppendSystemPrompt(LSystemPrompt, LDelphiVersionPrompt);
   end;
+
+  AppendSystemPrompt(LSystemPrompt, LPreferredLanguage);
 
   LGuidancePrompt := BuildDelphiGuidancePrompt;
   AppendSystemPrompt(LSystemPrompt, LGuidancePrompt);

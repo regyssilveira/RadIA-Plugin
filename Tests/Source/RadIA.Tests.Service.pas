@@ -42,6 +42,7 @@ type
     FAwsRegion: string;
     FAwsSessionToken: string;
     FInjectDelphiVersion: Boolean;
+    FPreferredResponseLanguage: string;
     FConciseResponses: Boolean;
     FConsentTimeoutSeconds: Integer;
     FConsentShowArguments: Boolean;
@@ -96,6 +97,8 @@ type
     procedure SetAwsSessionToken(const AValue: string);
     function GetInjectDelphiVersion: Boolean;
     procedure SetInjectDelphiVersion(const AValue: Boolean);
+    function GetPreferredResponseLanguage: string;
+    procedure SetPreferredResponseLanguage(const AValue: string);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
     function GetConsentTimeoutSeconds: Integer;
@@ -182,6 +185,8 @@ type
     [Test]
     procedure TestDelphiVersionInjectionWithMockAdapter;
     [Test]
+    procedure TestPreferredResponseLanguageIsIndependentOfDelphiVersion;
+    [Test]
     procedure TestCuratedDelphiGuidanceInjection;
     [Test]
     procedure TestGetEffectiveSystemPrompt;
@@ -242,6 +247,7 @@ uses
   RadIA.Core.DelphiEnvironment,
   RadIA.Core.DelphiGuidance,
   RadIA.Core.HierarchicalSettings,
+  RadIA.Core.ConfigDefaults,
   System.SysUtils, System.Classes, System.Net.URLClient, RadIA.Core.Types, RadIA.Core.Service, RadIA.Core.ChatMessage,
       RadIA.Core.Config, RadIA.Core.ProviderRegistry, RadIA.Core.SettingsStorage, RadIA.Core.Container;
 
@@ -350,6 +356,7 @@ begin
   FAwsRegion := 'us-east-1';
   FAwsSessionToken := '';
   FInjectDelphiVersion := True;
+  FPreferredResponseLanguage := CPreferredLanguageAutomatic;
   FConciseResponses := True;
   FConsentTimeoutSeconds := 60;
   FConsentShowArguments := True;
@@ -597,6 +604,16 @@ end;
 procedure TMockConfig.SetInjectDelphiVersion(const AValue: Boolean);
 begin
   FInjectDelphiVersion := AValue;
+end;
+
+function TMockConfig.GetPreferredResponseLanguage: string;
+begin
+  Result := FPreferredResponseLanguage;
+end;
+
+procedure TMockConfig.SetPreferredResponseLanguage(const AValue: string);
+begin
+  FPreferredResponseLanguage := AValue;
 end;
 
 function TMockConfig.GetConciseResponses: Boolean;
@@ -1146,7 +1163,9 @@ type
     function GetActiveProjectFolder: string;
     function OpenProjectInIDE(const AProjectPath: string): Boolean;
     function GetDelphiVersionName: string;
-    function GetPreferredLanguageInstruction: string;
+    function GetPreferredLanguageInstruction(
+      const APreferredLanguage: string
+    ): string;
     function GetLastCompilerError(out AErrorMsg: string; out AFileName: string; out ALine: Integer): Boolean;
   end;
 
@@ -1228,9 +1247,15 @@ begin
   Result := 'Delphi 99 Special';
 end;
 
-function TMockIDEAdapter.GetPreferredLanguageInstruction: string;
+function TMockIDEAdapter.GetPreferredLanguageInstruction(
+  const APreferredLanguage: string
+): string;
 begin
-  Result := 'Please reply in Klingon.';
+  if SameText(APreferredLanguage, CPreferredLanguageNone) then
+    Exit('');
+  if SameText(APreferredLanguage, CPreferredLanguageAutomatic) then
+    Exit('Please reply in Klingon.');
+  Result := 'Please reply in ' + APreferredLanguage + '.';
 end;
 
 function TMockIDEAdapter.GetLastCompilerError(out AErrorMsg: string; out AFileName: string;
@@ -1259,6 +1284,37 @@ begin
       LPrompt := LService.GetEffectiveSystemPrompt;
       Assert.IsTrue(LPrompt.Contains('Delphi 99 Special'), 'Prompt should contain mock Delphi version info');
       Assert.IsTrue(LPrompt.Contains('Please reply in Klingon.'), 'Prompt should contain mock language instruction');
+    finally
+      LService.Free;
+    end;
+  finally
+    TRadIAContainer.Clear;
+  end;
+end;
+
+procedure TTestRadIAService.
+  TestPreferredResponseLanguageIsIndependentOfDelphiVersion;
+var
+  LConfig: IRadIAConfig;
+  LService: TRadIAService;
+  LPrompt: string;
+begin
+  TRadIAContainer.Clear;
+  TRadIAContainer.Register<IRadIAIDEAdapter>(TMockIDEAdapter.Create);
+  try
+    LConfig := TMockConfig.Create(5, 'Base Prompt');
+    LService := TRadIAService.Create(LConfig);
+    try
+      LConfig.ConciseResponses := False;
+      LConfig.InjectDelphiVersion := False;
+      LConfig.PreferredResponseLanguage := 'French';
+      LPrompt := LService.GetEffectiveSystemPrompt;
+      Assert.Contains(LPrompt, 'Please reply in French.');
+      Assert.DoesNotContain(LPrompt, 'Embarcadero');
+
+      LConfig.PreferredResponseLanguage := CPreferredLanguageNone;
+      LPrompt := LService.GetEffectiveSystemPrompt;
+      Assert.DoesNotContain(LPrompt, 'Please reply in');
     finally
       LService.Free;
     end;

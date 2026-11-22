@@ -48,6 +48,7 @@ type
     FAwsRegion: string;
     FAwsSessionToken: string;
     FInjectDelphiVersion: Boolean;
+    FPreferredResponseLanguage: string;
     FConciseResponses: Boolean;
     FConsentTimeoutSeconds: Integer;
     FConsentShowArguments: Boolean;
@@ -178,6 +179,8 @@ type
     procedure SetActiveSessionId(const AValue: string);
     function GetInjectDelphiVersion: Boolean;
     procedure SetInjectDelphiVersion(const AValue: Boolean);
+    function GetPreferredResponseLanguage: string;
+    procedure SetPreferredResponseLanguage(const AValue: string);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
     function GetConsentTimeoutSeconds: Integer;
@@ -271,6 +274,7 @@ begin
   FKnowledgeExcludedProjects := '';
   FInlineShortcutProfile := TRadIAInlineShortcutProfile.DefaultText;
   FInjectDelphiVersion := True;
+  FPreferredResponseLanguage := CPreferredLanguageAutomatic;
   FConciseResponses := True;
   FConsentTimeoutSeconds := 60;
   FConsentShowArguments := True;
@@ -472,6 +476,10 @@ begin
       TRadIAInlineShortcutProfile.DefaultText
     );
     FInjectDelphiVersion := ReadRegInt('InjectDelphiVersion', 1) <> 0;
+    FPreferredResponseLanguage := ReadRegString(
+      'PreferredResponseLanguage',
+      CPreferredLanguageAutomatic
+    );
     FConciseResponses := ReadRegInt('ConciseResponses', 1) <> 0;
     FConsentTimeoutSeconds := EnsureRange(
       ReadRegInt('ConsentTimeoutSeconds', 60),
@@ -769,6 +777,10 @@ begin
       FInlineShortcutProfile
     );
     FStorage.WriteInteger('InjectDelphiVersion', IfThen(FInjectDelphiVersion, 1, 0));
+    FStorage.WriteString(
+      'PreferredResponseLanguage',
+      FPreferredResponseLanguage
+    );
     FStorage.WriteInteger('ConciseResponses', IfThen(FConciseResponses, 1, 0));
     FStorage.WriteInteger('ConsentTimeoutSeconds', FConsentTimeoutSeconds);
     FStorage.WriteInteger(
@@ -1065,6 +1077,19 @@ end;
 procedure TRadIAConfig.SetInjectDelphiVersion(const AValue: Boolean);
 begin
   FInjectDelphiVersion := AValue;
+end;
+
+function TRadIAConfig.GetPreferredResponseLanguage: string;
+begin
+  Result := FPreferredResponseLanguage;
+end;
+
+procedure TRadIAConfig.SetPreferredResponseLanguage(const AValue: string);
+begin
+  if AValue.Trim.IsEmpty then
+    FPreferredResponseLanguage := CPreferredLanguageAutomatic
+  else
+    FPreferredResponseLanguage := AValue.Trim;
 end;
 
 function TRadIAConfig.GetConciseResponses: Boolean;

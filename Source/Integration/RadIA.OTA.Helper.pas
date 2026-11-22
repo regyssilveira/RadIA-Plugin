@@ -29,14 +29,18 @@ type
     class function GetActiveProjectFolder: string;
     class function OpenProjectInIDE(const AProjectPath: string): Boolean;
     class function GetDelphiVersionName: string;
-    class function GetPreferredLanguageInstruction: string;
+    class function GetOperatingSystemLanguageName: string;
+    class function GetPreferredLanguageInstruction(
+      const APreferredLanguage: string
+    ): string;
     class function CleanCodeResponse(const AResponse: string; const AIndent: string = ''): string;
   end;
 
 implementation
 
 uses
-  Winapi.Windows, RadIA.Core.Container, System.SysUtils, System.Classes;
+  Winapi.Windows, RadIA.Core.Container, System.SysUtils, System.Classes,
+  RadIA.Core.ConfigDefaults;
 
 { TRadIAOTAHelper }
 
@@ -341,23 +345,51 @@ begin
 {$ENDIF}
 end;
 
-class function TRadIAOTAHelper.GetPreferredLanguageInstruction: string;
+class function TRadIAOTAHelper.GetOperatingSystemLanguageName: string;
 var
+  LBuffer: array[0..127] of WideChar;
+  LLocaleId: LCID;
+  LLength: Integer;
   LLangID: LANGID;
-  LPrimaryLang: Byte;
 begin
   LLangID := GetUserDefaultUILanguage;
-  LPrimaryLang := LLangID and $3FF;
-
-  case LPrimaryLang of
-    $16: Result := 'Please reply in Brazilian Portuguese.';
-    $0A: Result := 'Please reply in Spanish.';
-    $0C: Result := 'Please reply in French.';
-    $07: Result := 'Please reply in German.';
-    $10: Result := 'Please reply in Italian.';
-    else
-      Result := 'Please reply in English.';
+  LLocaleId := MAKELCID(LLangID, SORT_DEFAULT);
+  LLength := GetLocaleInfoW(
+    LLocaleId,
+    LOCALE_SENGLANGUAGE,
+    @LBuffer[0],
+    Length(LBuffer)
+  );
+  if LLength > 1 then
+  begin
+    SetString(Result, PWideChar(@LBuffer[0]), LLength - 1);
+    Exit;
   end;
+
+  Result := 'English';
+end;
+
+class function TRadIAOTAHelper.GetPreferredLanguageInstruction(
+  const APreferredLanguage: string
+): string;
+var
+  LLanguage: string;
+begin
+  if SameText(APreferredLanguage, CPreferredLanguageNone) then
+    Exit('');
+
+  if SameText(APreferredLanguage, CPreferredLanguageAutomatic) or
+    APreferredLanguage.Trim.IsEmpty then
+    LLanguage := GetOperatingSystemLanguageName
+  else
+    LLanguage := APreferredLanguage.Trim;
+
+  if SameText(LLanguage, 'Portuguese (Brazil)') then
+    LLanguage := 'Brazilian Portuguese'
+  else if SameText(LLanguage, 'Portuguese (Portugal)') then
+    LLanguage := 'European Portuguese';
+
+  Result := 'Please reply in ' + LLanguage + '.';
 end;
 
 function HasCodeFence(const ALines: TStrings): Boolean;

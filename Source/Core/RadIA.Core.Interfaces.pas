@@ -174,6 +174,8 @@ type
     procedure SetAwsSessionToken(const AValue: string);
     function GetInjectDelphiVersion: Boolean;
     procedure SetInjectDelphiVersion(const AValue: Boolean);
+    function GetPreferredResponseLanguage: string;
+    procedure SetPreferredResponseLanguage(const AValue: string);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
     function GetConsentTimeoutSeconds: Integer;
@@ -235,6 +237,8 @@ type
     property QuotaCycleStart: TDateTime read GetQuotaCycleStart write SetQuotaCycleStart;
     property ActiveSessionId: string read GetActiveSessionId write SetActiveSessionId;
     property InjectDelphiVersion: Boolean read GetInjectDelphiVersion write SetInjectDelphiVersion;
+    property PreferredResponseLanguage: string
+      read GetPreferredResponseLanguage write SetPreferredResponseLanguage;
     property ConciseResponses: Boolean read GetConciseResponses write SetConciseResponses;
     property ConsentTimeoutSeconds: Integer
       read GetConsentTimeoutSeconds write SetConsentTimeoutSeconds;
@@ -285,7 +289,9 @@ type
     function GetActiveProjectFolder: string;
     function OpenProjectInIDE(const AProjectPath: string): Boolean;
     function GetDelphiVersionName: string;
-    function GetPreferredLanguageInstruction: string;
+    function GetPreferredLanguageInstruction(
+      const APreferredLanguage: string
+    ): string;
     function GetLastCompilerError(out AErrorMsg: string; out AFileName: string; out ALine: Integer): Boolean;
   end;
 

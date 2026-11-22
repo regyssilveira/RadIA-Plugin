@@ -31,6 +31,8 @@ type
     FTsGeneral: TTabSheet;
     FPnlGeneral: TPanel;
     FChkInjectDelphiVersion: TCheckBox;
+    FCmbPreferredResponseLanguage: TComboBox;
+    FLblPreferredResponseLanguage: TLabel;
     FChkLogEnabled: TCheckBox;
     FLblLogPath: TLabel;
     FEdtLogPath: TEdit;
@@ -302,6 +304,8 @@ type
     procedure SetSmartConfigEnabled(const AValue: Boolean);
     function GetInjectDelphiVersion: Boolean;
     procedure SetInjectDelphiVersion(const AValue: Boolean);
+    function GetPreferredResponseLanguage: string;
+    procedure SetPreferredResponseLanguage(const AValue: string);
     function GetConciseResponses: Boolean;
     procedure SetConciseResponses(const AValue: Boolean);
     function GetLogEnabled: Boolean;
@@ -528,7 +532,8 @@ uses
   Winapi.Messages, Winapi.ShellAPI, RadIA.UI.GithubAuthForm,
   Winapi.Windows, System.SysUtils, ToolsAPI,
   RadIA.Core.Container, RadIA.Core.McpHandshake,
-  RadIA.Core.ToolSecurity, RadIA.Core.MemoryDiagnostics;
+  RadIA.Core.ToolSecurity, RadIA.Core.MemoryDiagnostics,
+  RadIA.OTA.Helper, RadIA.Core.ConfigDefaults;
 
 {$R *.dfm}
 
@@ -684,32 +689,66 @@ begin
     16,
     48,
     300);
+  FLblPreferredResponseLanguage := CreateLabel(
+    FPnlGeneral,
+    'Preferred response language:',
+    16,
+    80
+  );
+  FCmbPreferredResponseLanguage := TComboBox.Create(Self);
+  FCmbPreferredResponseLanguage.Parent := FPnlGeneral;
+  FCmbPreferredResponseLanguage.SetBounds(16, 98, 340, 25);
+  FCmbPreferredResponseLanguage.Style := csDropDownList;
+  FCmbPreferredResponseLanguage.Items.Add(
+    'Automatic (' + TRadIAOTAHelper.GetOperatingSystemLanguageName + ')'
+  );
+  FCmbPreferredResponseLanguage.Items.Add('None');
+  FCmbPreferredResponseLanguage.Items.Add('Arabic');
+  FCmbPreferredResponseLanguage.Items.Add('Chinese (Simplified)');
+  FCmbPreferredResponseLanguage.Items.Add('Chinese (Traditional)');
+  FCmbPreferredResponseLanguage.Items.Add('Dutch');
+  FCmbPreferredResponseLanguage.Items.Add('English');
+  FCmbPreferredResponseLanguage.Items.Add('French');
+  FCmbPreferredResponseLanguage.Items.Add('German');
+  FCmbPreferredResponseLanguage.Items.Add('Hindi');
+  FCmbPreferredResponseLanguage.Items.Add('Italian');
+  FCmbPreferredResponseLanguage.Items.Add('Japanese');
+  FCmbPreferredResponseLanguage.Items.Add('Korean');
+  FCmbPreferredResponseLanguage.Items.Add('Polish');
+  FCmbPreferredResponseLanguage.Items.Add('Portuguese (Brazil)');
+  FCmbPreferredResponseLanguage.Items.Add('Portuguese (Portugal)');
+  FCmbPreferredResponseLanguage.Items.Add('Russian');
+  FCmbPreferredResponseLanguage.Items.Add('Spanish');
+  FCmbPreferredResponseLanguage.Items.Add('Turkish');
+  FCmbPreferredResponseLanguage.Items.Add('Ukrainian');
+  FCmbPreferredResponseLanguage.Items.Add('Vietnamese');
+  FLblPreferredResponseLanguage.FocusControl := FCmbPreferredResponseLanguage;
   FChkConciseResponses := CreateCheckBox(
     FPnlGeneral,
     'Prefer concise AI responses',
     16,
-    80,
+    132,
     300);
-  FChkLogEnabled := CreateCheckBox(FPnlGeneral, 'Enable logging', 16, 112, 200);
-  FLblLogPath := CreateLabel(FPnlGeneral, 'Log Folder Path:', 16, 144);
-  FEdtLogPath := CreateEdit(FPnlGeneral, 16, 162, 320);
+  FChkLogEnabled := CreateCheckBox(FPnlGeneral, 'Enable logging', 16, 164, 200);
+  FLblLogPath := CreateLabel(FPnlGeneral, 'Log Folder Path:', 16, 196);
+  FEdtLogPath := CreateEdit(FPnlGeneral, 16, 214, 320);
 
   FBtnBrowseLogPath := TButton.Create(Self);
   FBtnBrowseLogPath.Parent := FPnlGeneral;
   FBtnBrowseLogPath.Left := 342;
-  FBtnBrowseLogPath.Top := 160;
+  FBtnBrowseLogPath.Top := 212;
   FBtnBrowseLogPath.Width := 30;
   FBtnBrowseLogPath.Height := 23;
   FBtnBrowseLogPath.Caption := '...';
   FBtnBrowseLogPath.OnClick := BtnBrowseLogPathClick;
 
-  FLblLogMaxSize := CreateLabel(FPnlGeneral, 'Max Log File Size (KB):', 16, 200);
-  FEdtLogMaxSize := CreateEdit(FPnlGeneral, 16, 218, 100, True);
+  FLblLogMaxSize := CreateLabel(FPnlGeneral, 'Max Log File Size (KB):', 16, 252);
+  FEdtLogMaxSize := CreateEdit(FPnlGeneral, 16, 270, 100, True);
 
   FGrpQuota := TGroupBox.Create(Self);
   FGrpQuota.Parent := FPnlGeneral;
   FGrpQuota.Left := 16;
-  FGrpQuota.Top := 256;
+  FGrpQuota.Top := 308;
   FGrpQuota.Width := 356;
   FGrpQuota.Height := 140;
   FGrpQuota.Caption := ' Local Token Quota ';
@@ -732,11 +771,11 @@ begin
     FPnlGeneral,
     'Agent result compaction profile:',
     16,
-    414
+    466
   );
   FCmbResultCompactionProfile := TComboBox.Create(Self);
   FCmbResultCompactionProfile.Parent := FPnlGeneral;
-  FCmbResultCompactionProfile.SetBounds(16, 432, 180, 25);
+  FCmbResultCompactionProfile.SetBounds(16, 484, 180, 25);
   FCmbResultCompactionProfile.Style := csDropDownList;
   FCmbResultCompactionProfile.Items.Add('Off');
   FCmbResultCompactionProfile.Items.Add('Conservative');
@@ -747,12 +786,12 @@ begin
     FPnlGeneral,
     'Maximum agent decision context characters:',
     216,
-    414
+    466
   );
   FEdtMaximumDecisionContext := CreateEdit(
     FPnlGeneral,
     216,
-    432,
+    484,
     156,
     True
   );
@@ -1317,6 +1356,10 @@ begin
   SetControlsHint(
     [FChkInjectDelphiVersion],
     'Add the active Delphi version to prompts so generated code targets the correct compiler.'
+  );
+  SetControlsHint(
+    [FCmbPreferredResponseLanguage],
+    'Choose the response language. Automatic follows the Windows display language; None adds no language instruction.'
   );
   SetControlsHint(
     [FChkConciseResponses],
@@ -2127,6 +2170,11 @@ begin
     FChkKnowledgeSemanticEnabled, FChkKnowledgeApprovedHistoryEnabled,
     FChkKnowledgeRemoteEnabled, FChkKnowledgeRemoteConsent,
     FChkInlineCompletionEnabled, FChkFastMM5License], LColors);
+
+  FCmbPreferredResponseLanguage.StyleElements :=
+    FCmbPreferredResponseLanguage.StyleElements - [seClient, seBorder];
+  FCmbPreferredResponseLanguage.Color := LColors.InputBgColor;
+  FCmbPreferredResponseLanguage.Font.Color := LColors.TextColor;
 
   ApplyThemeToRadioGroups([grpGeminiAuthType, grpOpenAIAuthType], LColors);
   ApplyThemeToGroupBoxes([FGrpQuota], LColors);
@@ -3847,6 +3895,44 @@ end;
 procedure TRadIAFrameAIConfig.SetInjectDelphiVersion(const AValue: Boolean);
 begin
   FChkInjectDelphiVersion.Checked := AValue;
+end;
+
+function TRadIAFrameAIConfig.GetPreferredResponseLanguage: string;
+begin
+  if FCmbPreferredResponseLanguage.ItemIndex = 0 then
+    Exit(CPreferredLanguageAutomatic);
+  if FCmbPreferredResponseLanguage.ItemIndex = 1 then
+    Exit(CPreferredLanguageNone);
+  if FCmbPreferredResponseLanguage.ItemIndex > 1 then
+    Result := FCmbPreferredResponseLanguage.Items[
+      FCmbPreferredResponseLanguage.ItemIndex
+    ]
+  else
+    Result := CPreferredLanguageAutomatic;
+end;
+
+procedure TRadIAFrameAIConfig.SetPreferredResponseLanguage(
+  const AValue: string
+);
+var
+  LIndex: Integer;
+begin
+  if SameText(AValue, CPreferredLanguageNone) then
+  begin
+    FCmbPreferredResponseLanguage.ItemIndex := 1;
+    Exit;
+  end;
+
+  if SameText(AValue, CPreferredLanguageAutomatic) or AValue.Trim.IsEmpty then
+  begin
+    FCmbPreferredResponseLanguage.ItemIndex := 0;
+    Exit;
+  end;
+
+  LIndex := FCmbPreferredResponseLanguage.Items.IndexOf(AValue);
+  if LIndex < 2 then
+    LIndex := 0;
+  FCmbPreferredResponseLanguage.ItemIndex := LIndex;
 end;
 
 function TRadIAFrameAIConfig.GetConciseResponses: Boolean;
