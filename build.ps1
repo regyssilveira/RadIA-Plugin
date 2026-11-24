@@ -67,6 +67,44 @@ function Copy-RadIAReplaceableFile {
     Remove-Item -LiteralPath $pendingPath -Force -ErrorAction SilentlyContinue
 }
 
+function Copy-RadIAFileElevated {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Source,
+        [Parameter(Mandatory = $true)]
+        [string]$Destination
+    )
+
+    $resolvedSource = [IO.Path]::GetFullPath($Source)
+    $resolvedDestination = [IO.Path]::GetFullPath($Destination)
+    if (-not (Test-Path -LiteralPath $resolvedSource -PathType Leaf)) {
+        throw "Elevated copy source was not found: $resolvedSource"
+    }
+
+    $escapedSource = $resolvedSource.Replace("'", "''")
+    $escapedDestination = $resolvedDestination.Replace("'", "''")
+    $copyScript = @"
+`$ErrorActionPreference = 'Stop'
+Copy-Item -LiteralPath '$escapedSource' -Destination '$escapedDestination' -Force
+if (-not (Test-Path -LiteralPath '$escapedDestination' -PathType Leaf)) { exit 1 }
+"@
+    $encodedCommand = [Convert]::ToBase64String(
+        [Text.Encoding]::Unicode.GetBytes($copyScript)
+    )
+    $process = Start-Process `
+        -FilePath "powershell.exe" `
+        -Verb RunAs `
+        -ArgumentList @("-NoProfile", "-EncodedCommand", $encodedCommand) `
+        -Wait `
+        -PassThru
+    if ($process.ExitCode -ne 0) {
+        throw "Elevated copy failed with exit code $($process.ExitCode)."
+    }
+    if (-not (Test-Path -LiteralPath $resolvedDestination -PathType Leaf)) {
+        throw "Elevated copy did not create the destination: $resolvedDestination"
+    }
+}
+
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "         Iniciando Build do Rad IA           " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -957,14 +995,9 @@ if ($Install) {
                     "Solicitando privilegios para copiar WebView2Loader.dll " +
                     "(32-bit) para a pasta bin da IDE..."
                 ) -ForegroundColor Yellow
-                $copyCommand = (
-                    "-Command Copy-Item -Path '$redist32' " +
-                    "-Destination '$ideBinDir\$dllName' -Force"
-                )
-                Start-Process powershell `
-                    -Verb RunAs `
-                    -ArgumentList $copyCommand `
-                    -Wait
+                Copy-RadIAFileElevated `
+                    -Source $redist32 `
+                    -Destination (Join-Path $ideBinDir $dllName)
             }
         }
     } else {
@@ -976,14 +1009,9 @@ if ($Install) {
                     "Solicitando privilegios para copiar WebView2Loader.dll " +
                     "(64-bit) para a pasta bin64 da IDE..."
                 ) -ForegroundColor Yellow
-                $copyCommand = (
-                    "-Command Copy-Item -Path '$redist64' " +
-                    "-Destination '$ideBin64Dir\$dllName' -Force"
-                )
-                Start-Process powershell `
-                    -Verb RunAs `
-                    -ArgumentList $copyCommand `
-                    -Wait
+                Copy-RadIAFileElevated `
+                    -Source $redist64 `
+                    -Destination (Join-Path $ideBin64Dir $dllName)
             }
         }
     }
