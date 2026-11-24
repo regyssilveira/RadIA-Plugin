@@ -1743,7 +1743,8 @@ begin
     Exit;
 
   EnsureJourneyProjectBoundary;
-  LConversational := TRadIAIntentRouter.IsConversationalPrompt(APromptText);
+  LConversational := not FAgentModeEnabled and
+    TRadIAIntentRouter.IsConversationalPrompt(APromptText);
   LProcessed := PreProcessPrompt(APromptText);
   LEffectiveSettings := ResolveEffectiveExecutionSettings;
   if not CheckChatPreflight(LEffectiveSettings, LPreflightMessage) then

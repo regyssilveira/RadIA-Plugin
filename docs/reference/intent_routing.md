@@ -19,6 +19,10 @@ Um novo prompt invalida a recomendação anterior. A WebView não pode escolher 
 a confirmação: o host aceita somente o comando pendente que ele próprio classificou. Comandos que
 começam com `/`, perguntas comuns e pedidos ambíguos não são interceptados.
 
+Perguntas conversacionais usam a rota direta de conversa somente no modo Chat. No modo Agente, todo
+prompt, inclusive uma pergunta, é enviado pelo Agent Runtime; ele não é reescrito como um prompt
+conversacional para CLI.
+
 ## Limites e segurança
 
 - A classificação não ativa o modo agente, não troca provider ou executor e não inicia uma tool.

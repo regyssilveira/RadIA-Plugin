@@ -220,6 +220,8 @@ type
     [Test]
     procedure TestConversationalQuestionBypassesAgentPlan;
     [Test]
+    procedure TestConversationalQuestionUsesAgentModeWhenEnabled;
+    [Test]
     procedure TestExplicitEditorPromptWaitsForWebViewAndBypassesAgentPlan;
     [Test]
     procedure TestDeclarativeExtensionCommandReloadsWithoutRestart;
@@ -1767,6 +1769,7 @@ procedure TTestChatPresenter.TestConversationalQuestionBypassesAgentPlan;
 begin
   FPresenter.Initialize('C:\mock\web');
   FPresenter.WebViewReady := True;
+  FPresenter.SendPromptText('/agent off');
 
   FPresenter.SendPromptText('Quem é você?');
   DrainQueuedCalls;
@@ -1776,6 +1779,35 @@ begin
   Assert.DoesNotContain(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
 
   FPresenter.CancelRequest;
+end;
+
+procedure TTestChatPresenter.TestConversationalQuestionUsesAgentModeWhenEnabled;
+var
+  LAttempt: Integer;
+begin
+  FPresenter.Initialize('C:\mock\web');
+  FPresenter.WebViewReady := True;
+
+  FPresenter.SendPromptText('Quem é você?');
+  DrainQueuedCalls;
+  for LAttempt := 1 to 100 do
+  begin
+    if FMockView.PostedMessages.Text.Contains(
+      '"status":"awaitingApproval"'
+    ) then
+      Break;
+    CheckSynchronize(5);
+  end;
+
+  Assert.Contains(FMockView.PostedMessages.Text, '"action":"agent_state"');
+  Assert.Contains(FMockView.PostedMessages.Text, '"status":"awaitingApproval"');
+  Assert.DoesNotContain(
+    FMockView.PostedMessages.Text,
+    'This is a conversational request'
+  );
+
+  FPresenter.ProcessWebMessage('{"action":"cancel_request"}');
+  DrainQueuedCalls;
 end;
 
 procedure TTestChatPresenter.
